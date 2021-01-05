@@ -88,11 +88,11 @@ internal class KspProcessingEnv(
         // this almost replicates what GeneratedAnnotations does except it doesn't check source
         // version because we don't have that property here yet. Instead, it tries the new one
         // first and falls back to the old one.
-        return findTypeElement("javax.annotation.processing.Generated")
-            ?: findTypeElement("javax.annotation.Generated")
+        // implement when https://github.com/google/ksp/issues/198 is fixed
+        return null
     }
 
-    override fun getDeclaredType(type: XTypeElement, vararg types: XType): KspDeclaredType {
+    override fun getDeclaredType(type: XTypeElement, vararg types: XType): KspType {
         check(type is KspTypeElement) {
             "Unexpected type element type: $type"
         }
@@ -105,14 +105,10 @@ internal class KspProcessingEnv(
                 variance = Variance.INVARIANT
             )
         }
-        val result = wrap(
+        return wrap(
             ksType = type.declaration.asType(typeArguments),
             allowPrimitives = false
         )
-        check(result is KspDeclaredType) {
-            "Expected $type to be a declared type but a non-declared type ($result) is received"
-        }
-        return result
     }
 
     override fun getArrayType(type: XType): KspArrayType {
@@ -146,7 +142,15 @@ internal class KspProcessingEnv(
         ksType = typeReference.resolve()
     )
 
-    fun wrap(ksTypeParam: KSTypeParameter, ksTypeArgument: KSTypeArgument): KspTypeArgumentType {
+    fun wrap(ksTypeParam: KSTypeParameter, ksTypeArgument: KSTypeArgument): KspType {
+        val typeRef = ksTypeArgument.type
+        if (typeRef != null && ksTypeArgument.variance == Variance.INVARIANT) {
+            // fully resolved type argument, return regular type.
+            return wrap(
+                ksType = typeRef.resolve(),
+                allowPrimitives = false
+            )
+        }
         return KspTypeArgumentType(
             env = this,
             typeArg = ksTypeArgument,
@@ -164,6 +168,17 @@ internal class KspProcessingEnv(
      */
     fun wrap(ksType: KSType, allowPrimitives: Boolean): KspType {
         val qName = ksType.declaration.qualifiedName?.asString()
+        val declaration = ksType.declaration
+        if (declaration is KSTypeParameter) {
+            return KspTypeArgumentType(
+                env = this,
+                typeArg = resolver.getTypeArgument(
+                    ksType.createTypeReference(),
+                    declaration.variance
+                ),
+                typeParam = declaration
+            )
+        }
         if (allowPrimitives && qName != null && ksType.nullability == Nullability.NOT_NULL) {
             // check for primitives
             val javaPrimitive = KspTypeMapper.getPrimitiveJavaTypeName(qName)
@@ -175,7 +190,7 @@ internal class KspProcessingEnv(
                 return voidType
             }
         }
-        return arrayTypeFactory.createIfArray(ksType) ?: KspDeclaredType(this, ksType)
+        return arrayTypeFactory.createIfArray(ksType) ?: DefaultKspType(this, ksType)
     }
 
     fun wrapClassDeclaration(declaration: KSClassDeclaration): KspTypeElement {

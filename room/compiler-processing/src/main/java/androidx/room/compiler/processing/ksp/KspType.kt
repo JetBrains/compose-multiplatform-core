@@ -19,7 +19,6 @@ package androidx.room.compiler.processing.ksp
 import androidx.room.compiler.processing.XEquality
 import androidx.room.compiler.processing.XNullability
 import androidx.room.compiler.processing.XType
-import androidx.room.compiler.processing.XTypeElement
 import androidx.room.compiler.processing.tryBox
 import androidx.room.compiler.processing.tryUnbox
 import com.google.devtools.ksp.symbol.ClassKind
@@ -53,18 +52,17 @@ internal abstract class KspType(
         }
     }
 
-    private val _typeElement by lazy {
-        check(ksType.declaration is KSClassDeclaration) {
-            """
-            Unexpected case where ksType's declaration is not a KSClassDeclaration.
-            Please file a bug.
-            """.trimIndent()
+    override val typeElement by lazy {
+        val declaration = ksType.declaration as? KSClassDeclaration
+        declaration?.let {
+            env.wrapClassDeclaration(it)
         }
-        env.wrapClassDeclaration(ksType.declaration as KSClassDeclaration)
     }
 
-    override fun asTypeElement(): XTypeElement {
-        return _typeElement
+    override val typeArguments: List<XType> by lazy {
+        ksType.arguments.mapIndexed { index, arg ->
+            env.wrap(ksType.declaration.typeParameters[index], arg)
+        }
     }
 
     override fun isAssignableFrom(other: XType): Boolean {
@@ -93,26 +91,10 @@ internal abstract class KspType(
         }
     }
 
-    override fun isInt(): Boolean {
-        return env.commonTypes.nullableInt.isAssignableFrom(ksType)
-    }
-
-    override fun isLong(): Boolean {
-        return env.commonTypes.nullableLong.isAssignableFrom(ksType)
-    }
-
-    override fun isByte(): Boolean {
-        return env.commonTypes.nullableByte.isAssignableFrom(ksType)
-    }
-
     override fun isNone(): Boolean {
         // even void is converted to Unit so we don't have none type in KSP
         // see: KspTypeTest.noneType
         return false
-    }
-
-    override fun isType(): Boolean {
-        return ksType.declaration is KSClassDeclaration
     }
 
     override fun isTypeOf(other: KClass<*>): Boolean {
@@ -136,9 +118,8 @@ internal abstract class KspType(
     }
 
     override fun extendsBound(): XType? {
-        // NOTE: wildcard does not fully exist in kotlin and when we resolve, it always seems to
-        // be mapped to the upper bound. Might still need more investigation here
-        // https://kotlinlang.org/docs/reference/generics.html#star-projections
+        // when we detect that there should be an extends bounds, KspProcessingEnv creates
+        // [KspTypeArgumentType].
         return null
     }
 

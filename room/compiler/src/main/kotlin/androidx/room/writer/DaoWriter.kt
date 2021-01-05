@@ -17,11 +17,12 @@
 package androidx.room.writer
 
 import androidx.room.compiler.processing.MethodSpecHelper
-import androidx.room.compiler.processing.XDeclaredType
 import androidx.room.compiler.processing.XElement
 import androidx.room.compiler.processing.XMethodElement
 import androidx.room.compiler.processing.XProcessingEnv
+import androidx.room.compiler.processing.XType
 import androidx.room.compiler.processing.addOriginatingElement
+import androidx.room.compiler.processing.isVoid
 import androidx.room.ext.CommonTypeNames
 import androidx.room.ext.L
 import androidx.room.ext.N
@@ -72,7 +73,7 @@ class DaoWriter(
     val processingEnv: XProcessingEnv
 ) :
     ClassWriter(dao.typeName) {
-    private val declaredDao = dao.element.asDeclaredType()
+    private val declaredDao = dao.element.type
 
     companion object {
         const val GET_LIST_OF_TYPE_CONVERTERS_METHOD = "getRequiredConverters"
@@ -532,7 +533,7 @@ class DaoWriter(
 
     private fun overrideWithoutAnnotations(
         elm: XMethodElement,
-        owner: XDeclaredType
+        owner: XType
     ): MethodSpec.Builder {
         return MethodSpecHelper.overridingWithFinalParams(elm, owner)
     }

@@ -37,7 +37,7 @@ import java.util.Map;
 import java.util.Set;
 
 public class SetSchemaRequestTest {
-
+// @exportToFramework:startStrip()
     @AppSearchDocument
     static class Card {
         @AppSearchDocument.Uri
@@ -82,6 +82,7 @@ public class SetSchemaRequestTest {
                 (indexingType = INDEXING_TYPE_PREFIXES, tokenizerType = TOKENIZER_TYPE_PLAIN)
         String mString;
     }
+// @exportToFramework:endStrip()
 
     private static Collection<String> getSchemaTypesFromSetSchemaRequest(SetSchemaRequest request) {
         HashSet<String> schemaTypes = new HashSet<>();
@@ -104,7 +105,7 @@ public class SetSchemaRequestTest {
         IllegalArgumentException expected = assertThrows(IllegalArgumentException.class,
                 () -> new SetSchemaRequest.Builder().setSchemaTypeVisibilityForPackage(
                         "InvalidSchema", /*visible=*/ true, new PackageIdentifier(
-                                "com.foo.package", /*certificate=*/ new byte[]{})).build());
+                                "com.foo.package", /*sha256Certificate=*/ new byte[]{})).build());
         assertThat(expected).hasMessageThat().contains("referenced, but were not added");
     }
 
@@ -115,12 +116,12 @@ public class SetSchemaRequestTest {
         // By default, the schema is visible.
         SetSchemaRequest request =
                 new SetSchemaRequest.Builder().addSchema(schema).build();
-        assertThat(request.getSchemasNotPlatformSurfaceable()).isEmpty();
+        assertThat(request.getSchemasNotVisibleToSystemUi()).isEmpty();
 
         request =
                 new SetSchemaRequest.Builder().addSchema(schema).setSchemaTypeVisibilityForSystemUi(
                         "Schema", true).build();
-        assertThat(request.getSchemasNotPlatformSurfaceable()).isEmpty();
+        assertThat(request.getSchemasNotVisibleToSystemUi()).isEmpty();
     }
 
     @Test
@@ -129,21 +130,22 @@ public class SetSchemaRequestTest {
         SetSchemaRequest request =
                 new SetSchemaRequest.Builder().addSchema(schema).setSchemaTypeVisibilityForSystemUi(
                         "Schema", false).build();
-        assertThat(request.getSchemasNotPlatformSurfaceable()).containsExactly("Schema");
+        assertThat(request.getSchemasNotVisibleToSystemUi()).containsExactly("Schema");
     }
 
+// @exportToFramework:startStrip()
     @Test
     public void testDataClassVisibilityForSystemUi_visible() throws Exception {
         // By default, the schema is visible.
         SetSchemaRequest request =
                 new SetSchemaRequest.Builder().addDataClass(Card.class).build();
-        assertThat(request.getSchemasNotPlatformSurfaceable()).isEmpty();
+        assertThat(request.getSchemasNotVisibleToSystemUi()).isEmpty();
 
         request =
                 new SetSchemaRequest.Builder().addDataClass(
                         Card.class).setDataClassVisibilityForSystemUi(
                         Card.class, true).build();
-        assertThat(request.getSchemasNotPlatformSurfaceable()).isEmpty();
+        assertThat(request.getSchemasNotVisibleToSystemUi()).isEmpty();
     }
 
     @Test
@@ -152,8 +154,9 @@ public class SetSchemaRequestTest {
                 new SetSchemaRequest.Builder().addDataClass(
                         Card.class).setDataClassVisibilityForSystemUi(
                         Card.class, false).build();
-        assertThat(request.getSchemasNotPlatformSurfaceable()).containsExactly("Card");
+        assertThat(request.getSchemasNotVisibleToSystemUi()).containsExactly("Card");
     }
+// @exportToFramework:endStrip()
 
     @Test
     public void testSchemaTypeVisibilityForPackage_visible() {
@@ -162,18 +165,18 @@ public class SetSchemaRequestTest {
         // By default, the schema is not visible.
         SetSchemaRequest request =
                 new SetSchemaRequest.Builder().addSchema(schema).build();
-        assertThat(request.getSchemasPackageAccessible()).isEmpty();
+        assertThat(request.getSchemasVisibleToPackages()).isEmpty();
 
         PackageIdentifier packageIdentifier = new PackageIdentifier("com.package.foo",
                 new byte[]{100});
-        Map<String, Set<PackageIdentifier>> expectedPackageVisibleMap = new ArrayMap<>();
-        expectedPackageVisibleMap.put("Schema", Collections.singleton(packageIdentifier));
+        Map<String, Set<PackageIdentifier>> expectedVisibleToPackagesMap = new ArrayMap<>();
+        expectedVisibleToPackagesMap.put("Schema", Collections.singleton(packageIdentifier));
 
         request =
                 new SetSchemaRequest.Builder().addSchema(schema).setSchemaTypeVisibilityForPackage(
                         "Schema", /*visible=*/ true, packageIdentifier).build();
-        assertThat(request.getSchemasPackageAccessible()).containsExactlyEntriesIn(
-                expectedPackageVisibleMap);
+        assertThat(request.getSchemasVisibleToPackages()).containsExactlyEntriesIn(
+                expectedVisibleToPackagesMap);
     }
 
     @Test
@@ -183,8 +186,8 @@ public class SetSchemaRequestTest {
         SetSchemaRequest request =
                 new SetSchemaRequest.Builder().addSchema(schema).setSchemaTypeVisibilityForPackage(
                         "Schema", /*visible=*/ false, new PackageIdentifier("com.package.foo",
-                                /*certificate=*/ new byte[]{})).build();
-        assertThat(request.getSchemasPackageAccessible()).isEmpty();
+                                /*sha256Certificate=*/ new byte[]{})).build();
+        assertThat(request.getSchemasVisibleToPackages()).isEmpty();
     }
 
     @Test
@@ -193,8 +196,8 @@ public class SetSchemaRequestTest {
 
         PackageIdentifier packageIdentifier = new PackageIdentifier("com.package.foo",
                 new byte[]{100});
-        Map<String, Set<PackageIdentifier>> expectedPackageVisibleMap = new ArrayMap<>();
-        expectedPackageVisibleMap.put("Schema", Collections.singleton(packageIdentifier));
+        Map<String, Set<PackageIdentifier>> expectedVisibleToPackagesMap = new ArrayMap<>();
+        expectedVisibleToPackagesMap.put("Schema", Collections.singleton(packageIdentifier));
 
         SetSchemaRequest request =
                 new SetSchemaRequest.Builder()
@@ -206,8 +209,8 @@ public class SetSchemaRequestTest {
                         .setSchemaTypeVisibilityForPackage("Schema", /*visible=*/
                                 true, packageIdentifier)
                         .build();
-        assertThat(request.getSchemasPackageAccessible()).containsExactlyEntriesIn(
-                expectedPackageVisibleMap);
+        assertThat(request.getSchemasVisibleToPackages()).containsExactlyEntriesIn(
+                expectedVisibleToPackagesMap);
     }
 
     @Test
@@ -220,35 +223,36 @@ public class SetSchemaRequestTest {
                         // First set it as visible
                         .setSchemaTypeVisibilityForPackage("Schema", /*visible=*/
                                 true, new PackageIdentifier("com.package.foo",
-                                        /*certificate=*/ new byte[]{100}))
+                                        /*sha256Certificate=*/ new byte[]{100}))
                         // Then make it not visible
                         .setSchemaTypeVisibilityForPackage("Schema", /*visible=*/
                                 false, new PackageIdentifier("com.package.foo",
-                                        /*certificate=*/ new byte[]{100}))
+                                        /*sha256Certificate=*/ new byte[]{100}))
                         .build();
 
         // Nothing should be visible.
-        assertThat(request.getSchemasPackageAccessible()).isEmpty();
+        assertThat(request.getSchemasVisibleToPackages()).isEmpty();
     }
 
+// @exportToFramework:startStrip()
     @Test
     public void testDataClassVisibilityForPackage_visible() throws Exception {
         // By default, the schema is not visible.
         SetSchemaRequest request =
                 new SetSchemaRequest.Builder().addDataClass(Card.class).build();
-        assertThat(request.getSchemasPackageAccessible()).isEmpty();
+        assertThat(request.getSchemasVisibleToPackages()).isEmpty();
 
         PackageIdentifier packageIdentifier = new PackageIdentifier("com.package.foo",
                 new byte[]{100});
-        Map<String, Set<PackageIdentifier>> expectedPackageVisibleMap = new ArrayMap<>();
-        expectedPackageVisibleMap.put("Card", Collections.singleton(packageIdentifier));
+        Map<String, Set<PackageIdentifier>> expectedVisibleToPackagesMap = new ArrayMap<>();
+        expectedVisibleToPackagesMap.put("Card", Collections.singleton(packageIdentifier));
 
         request =
                 new SetSchemaRequest.Builder().addDataClass(
                         Card.class).setDataClassVisibilityForPackage(
                         Card.class, /*visible=*/ true, packageIdentifier).build();
-        assertThat(request.getSchemasPackageAccessible()).containsExactlyEntriesIn(
-                expectedPackageVisibleMap);
+        assertThat(request.getSchemasVisibleToPackages()).containsExactlyEntriesIn(
+                expectedVisibleToPackagesMap);
     }
 
     @Test
@@ -257,9 +261,9 @@ public class SetSchemaRequestTest {
                 new SetSchemaRequest.Builder().addDataClass(
                         Card.class).setDataClassVisibilityForPackage(
                         Card.class, /*visible=*/ false,
-                        new PackageIdentifier("com.package.foo", /*certificate=*/
+                        new PackageIdentifier("com.package.foo", /*sha256Certificate=*/
                                 new byte[]{})).build();
-        assertThat(request.getSchemasPackageAccessible()).isEmpty();
+        assertThat(request.getSchemasVisibleToPackages()).isEmpty();
     }
 
     @Test
@@ -267,12 +271,12 @@ public class SetSchemaRequestTest {
         // By default, the schema is not visible.
         SetSchemaRequest request =
                 new SetSchemaRequest.Builder().addDataClass(Card.class).build();
-        assertThat(request.getSchemasPackageAccessible()).isEmpty();
+        assertThat(request.getSchemasVisibleToPackages()).isEmpty();
 
         PackageIdentifier packageIdentifier = new PackageIdentifier("com.package.foo",
                 new byte[]{100});
-        Map<String, Set<PackageIdentifier>> expectedPackageVisibleMap = new ArrayMap<>();
-        expectedPackageVisibleMap.put("Card", Collections.singleton(packageIdentifier));
+        Map<String, Set<PackageIdentifier>> expectedVisibleToPackagesMap = new ArrayMap<>();
+        expectedVisibleToPackagesMap.put("Card", Collections.singleton(packageIdentifier));
 
         request =
                 new SetSchemaRequest.Builder()
@@ -282,8 +286,8 @@ public class SetSchemaRequestTest {
                         .setDataClassVisibilityForPackage(Card.class, /*visible=*/
                                 true, packageIdentifier)
                         .build();
-        assertThat(request.getSchemasPackageAccessible()).containsExactlyEntriesIn(
-                expectedPackageVisibleMap);
+        assertThat(request.getSchemasVisibleToPackages()).containsExactlyEntriesIn(
+                expectedVisibleToPackagesMap);
     }
 
     @Test
@@ -291,7 +295,7 @@ public class SetSchemaRequestTest {
         // By default, the schema is not visible.
         SetSchemaRequest request =
                 new SetSchemaRequest.Builder().addDataClass(Card.class).build();
-        assertThat(request.getSchemasPackageAccessible()).isEmpty();
+        assertThat(request.getSchemasVisibleToPackages()).isEmpty();
 
         request =
                 new SetSchemaRequest.Builder()
@@ -299,15 +303,15 @@ public class SetSchemaRequestTest {
                         // First set it as visible
                         .setDataClassVisibilityForPackage(Card.class, /*visible=*/
                                 true, new PackageIdentifier("com.package.foo",
-                                        /*certificate=*/ new byte[]{100}))
+                                        /*sha256Certificate=*/ new byte[]{100}))
                         // Then make it not visible
                         .setDataClassVisibilityForPackage(Card.class, /*visible=*/
                                 false, new PackageIdentifier("com.package.foo",
-                                        /*certificate=*/ new byte[]{100}))
+                                        /*sha256Certificate=*/ new byte[]{100}))
                         .build();
 
         // Nothing should be visible.
-        assertThat(request.getSchemasPackageAccessible()).isEmpty();
+        assertThat(request.getSchemasVisibleToPackages()).isEmpty();
     }
 
     @Test
@@ -329,4 +333,5 @@ public class SetSchemaRequestTest {
         assertThat(getSchemaTypesFromSetSchemaRequest(request)).containsExactly("Queen",
                 "King");
     }
+// @exportToFramework:endStrip()
 }

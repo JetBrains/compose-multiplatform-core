@@ -18,6 +18,7 @@ package androidx.compose.animation.samples
 
 import androidx.annotation.Sampled
 import androidx.compose.animation.animate
+import androidx.compose.animation.animateAsState
 import androidx.compose.animation.core.AnimationVector2D
 import androidx.compose.animation.core.TwoWayConverter
 import androidx.compose.foundation.background
@@ -25,8 +26,10 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.preferredSize
+import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -36,6 +39,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 
+@Suppress("DEPRECATION")
 @Sampled
 @Composable
 fun VisibilityTransitionSample() {
@@ -46,6 +50,7 @@ fun VisibilityTransitionSample() {
     }
 }
 
+@Suppress("DEPRECATION")
 @Sampled
 @Composable
 fun ColorTransitionSample() {
@@ -58,6 +63,7 @@ fun ColorTransitionSample() {
 
 data class MySize(val width: Dp, val height: Dp)
 
+@Suppress("DEPRECATION")
 @Sampled
 @Composable
 fun ArbitraryValueTypeTransitionSample() {
@@ -81,6 +87,7 @@ fun ArbitraryValueTypeTransitionSample() {
     }
 }
 
+@Suppress("DEPRECATION")
 @Sampled
 @Composable
 fun DpAnimationSample() {
@@ -93,7 +100,7 @@ fun DpAnimationSample() {
 
 @Sampled
 @Composable
-@Suppress("UNUSED_VARIABLE")
+@Suppress("UNUSED_VARIABLE", "DEPRECATION")
 fun AnimateOffsetSample() {
     @Composable
     fun OffsetTransition(selected: Boolean) {
@@ -104,5 +111,20 @@ fun AnimateOffsetSample() {
         val intOffset: IntOffset = animate(
             if (selected) IntOffset(0, 0) else IntOffset(50, 50)
         )
+    }
+}
+
+@Sampled
+@Composable
+fun ColorAnimationSample() {
+    @Composable
+    fun ColorAnimation(primary: Boolean) {
+        // Animates to primary or secondary color, depending on whether [primary] is true
+        // [animateState] returns the current animation value in a State<Color> in this example. We
+        // use the State<Color> object as a property delegate here.
+        val color: Color by animateAsState(
+            if (primary) MaterialTheme.colors.primary else MaterialTheme.colors.secondary
+        )
+        Box(modifier = Modifier.background(color))
     }
 }

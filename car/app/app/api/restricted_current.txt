@@ -27,9 +27,7 @@ package androidx.car.app {
     method public final androidx.car.app.Session? getCurrentSession();
     method public final androidx.car.app.HostInfo? getHostInfo();
     method @CallSuper public final android.os.IBinder? onBind(android.content.Intent);
-    method public void onCarConfigurationChanged(android.content.res.Configuration);
     method public abstract androidx.car.app.Session onCreateSession();
-    method public void onNewIntent(android.content.Intent);
     method public final boolean onUnbind(android.content.Intent);
     field public static final String SERVICE_INTERFACE = "androidx.car.app.CarAppService";
   }
@@ -130,7 +128,9 @@ package androidx.car.app {
     ctor public Session();
     method public final androidx.car.app.CarContext getCarContext();
     method public androidx.lifecycle.Lifecycle getLifecycle();
+    method public void onCarConfigurationChanged(android.content.res.Configuration);
     method public abstract androidx.car.app.Screen onCreateScreen(android.content.Intent);
+    method public void onNewIntent(android.content.Intent);
   }
 
   public interface SurfaceCallback {
@@ -977,6 +977,7 @@ package androidx.car.app.notification {
     method public static androidx.car.app.notification.CarAppExtender.Builder builder();
     method public androidx.core.app.NotificationCompat.Builder extend(androidx.core.app.NotificationCompat.Builder);
     method public java.util.List<android.app.Notification.Action!> getActions();
+    method public androidx.car.app.model.CarColor? getColor();
     method public android.app.PendingIntent? getContentIntent();
     method public CharSequence? getContentText();
     method public CharSequence? getContentTitle();
@@ -992,6 +993,7 @@ package androidx.car.app.notification {
     ctor public CarAppExtender.Builder();
     method public androidx.car.app.notification.CarAppExtender.Builder addAction(@DrawableRes int, CharSequence, android.app.PendingIntent);
     method public androidx.car.app.notification.CarAppExtender build();
+    method public androidx.car.app.notification.CarAppExtender.Builder setColor(androidx.car.app.model.CarColor?);
     method public androidx.car.app.notification.CarAppExtender.Builder setContentIntent(android.app.PendingIntent?);
     method public androidx.car.app.notification.CarAppExtender.Builder setContentText(CharSequence?);
     method public androidx.car.app.notification.CarAppExtender.Builder setContentTitle(CharSequence?);

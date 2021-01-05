@@ -31,10 +31,8 @@ import androidx.camera.camera2.pipe.CameraGraph
 import androidx.camera.camera2.pipe.CameraId
 import androidx.camera.camera2.pipe.CameraMetadata
 import androidx.camera.camera2.pipe.CameraPipe
-import androidx.camera.camera2.pipe.RequestTemplate
-import androidx.camera.camera2.pipe.StreamConfig
+import androidx.camera.camera2.pipe.CameraStream.Config
 import androidx.camera.camera2.pipe.StreamFormat
-import androidx.camera.camera2.pipe.StreamType
 import androidx.camera.camera2.pipe.impl.CameraGraphModules
 import androidx.camera.camera2.pipe.impl.CameraMetadataImpl
 import androidx.camera.camera2.pipe.impl.CameraPipeModules
@@ -55,7 +53,7 @@ import javax.inject.Singleton
 /**
  * Utility class for creating, configuring, and interacting with FakeCamera objects via Robolectric
  */
-object FakeCameras {
+internal object FakeCameras {
     private val cameraIds = atomic(0)
 
     val application: Application
@@ -195,18 +193,16 @@ object FakeCameras {
 
         @Provides
         @Singleton
-        fun provideFakeGraphConfig() = CameraGraph.Config(
-            camera = fakeCamera.cameraId,
-            streams = listOf(
-                StreamConfig(
-                    Size(640, 480),
-                    StreamFormat.YUV_420_888,
-                    fakeCamera.cameraId,
-                    StreamType.SURFACE
-                )
-            ),
-            template = RequestTemplate(0)
-        )
+        fun provideFakeGraphConfig(): CameraGraph.Config {
+            val stream = Config.create(
+                Size(640, 480),
+                StreamFormat.YUV_420_888
+            )
+            return CameraGraph.Config(
+                camera = fakeCamera.cameraId,
+                streams = listOf(stream),
+            )
+        }
     }
 
     @Module(includes = [CameraGraphModules::class])

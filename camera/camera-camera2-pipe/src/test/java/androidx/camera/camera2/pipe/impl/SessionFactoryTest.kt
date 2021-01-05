@@ -46,16 +46,16 @@ import javax.inject.Singleton
         FakeCameras.FakeCameraPipeModule::class
     ]
 )
-interface CameraSessionTestComponent {
+internal interface CameraSessionTestComponent {
     fun graphConfig(): CameraGraph.Config
     fun sessionFactory(): SessionFactory
-    fun streamMap(): StreamMap
+    fun streamMap(): StreamGraphImpl
 }
 
 @RunWith(CameraPipeRobolectricTestRunner::class)
 @Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 @OptIn(ExperimentalCoroutinesApi::class)
-class SessionFactoryTest {
+internal class SessionFactoryTest {
     private val context = ApplicationProvider.getApplicationContext() as Context
     private val mainLooper = Shadows.shadowOf(Looper.getMainLooper())
     private val cameraId = FakeCameras.create()
@@ -89,13 +89,14 @@ class SessionFactoryTest {
 
         val sessionFactory = component.sessionFactory()
         val streamMap = component.streamMap()
-        val streamConfig = component.graphConfig().streams.first()
-        val stream1 = streamMap.streamConfigMap[streamConfig]!!
+        val cameraStreamConfig = component.graphConfig().streams.first()
+        val stream1 = streamMap[cameraStreamConfig]!!
+        val stream1Output = stream1.outputs.first()
 
         val surfaceTexture = SurfaceTexture(0)
         surfaceTexture.setDefaultBufferSize(
-            stream1.size.width,
-            stream1.size.height
+            stream1Output.size.width,
+            stream1Output.size.height
         )
         val surface = Surface(surfaceTexture)
 

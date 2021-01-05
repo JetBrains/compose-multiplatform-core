@@ -22,7 +22,7 @@ import android.os.Handler
 import android.os.HandlerThread
 import android.os.Process
 import androidx.camera.camera2.pipe.CameraPipe
-import androidx.camera.camera2.pipe.Cameras
+import androidx.camera.camera2.pipe.CameraDevices
 import dagger.Binds
 import dagger.Component
 import dagger.Module
@@ -37,7 +37,7 @@ import javax.inject.Qualifier
 import javax.inject.Singleton
 
 @Qualifier
-annotation class ForCameraPipe
+internal annotation class ForCameraPipe
 
 @Singleton
 @Component(
@@ -46,23 +46,23 @@ annotation class ForCameraPipe
         CameraPipeConfigModule::class
     ]
 )
-interface CameraPipeComponent {
+internal interface CameraPipeComponent {
     fun cameraGraphComponentBuilder(): CameraGraphComponent.Builder
-    fun cameras(): Cameras
+    fun cameras(): CameraDevices
 }
 
 @Module(
     subcomponents = [CameraGraphComponent::class]
 )
-class CameraPipeConfigModule(private val config: CameraPipe.Config) {
+internal class CameraPipeConfigModule(private val config: CameraPipe.Config) {
     @Provides
     fun provideCameraPipeConfig(): CameraPipe.Config = config
 }
 
 @Module
-abstract class CameraPipeModules {
+internal abstract class CameraPipeModules {
     @Binds
-    abstract fun bindCameras(impl: CamerasImpl): Cameras
+    abstract fun bindCameras(impl: CameraDevicesImpl): CameraDevices
 
     companion object {
         @Provides

@@ -89,11 +89,6 @@ public final class CarAppServiceTest {
                         CarAppServiceController.of(mCarContext, testSession, mCarAppService);
                         return testSession;
                     }
-
-                    @Override
-                    public void onNewIntent(@NonNull Intent intent) {
-                        mIntentSet = intent;
-                    }
                 };
 
         mCarAppService.onCreate();
@@ -115,7 +110,28 @@ public final class CarAppServiceTest {
                     }
                 };
             }
+
+            @Override
+            public void onNewIntent(@NonNull Intent intent) {
+                mIntentSet = intent;
+            }
         };
+    }
+
+    @Test
+    public void onAppCreate_updatesCarApiLevel() throws RemoteException, BundlerException {
+        String hostPackageName = "com.google.projection.gearhead";
+        ICarApp carApp = (ICarApp) mCarAppService.onBind(null);
+        int hostApiLevel = CarAppApiLevels.LEVEL_1;
+        HandshakeInfo handshakeInfo = new HandshakeInfo(hostPackageName, hostApiLevel);
+
+        mCarAppService.setCurrentSession(null);
+        carApp.onHandshakeCompleted(Bundleable.create(handshakeInfo), mock(IOnDoneCallback.class));
+        carApp.onAppCreate(mMockCarHost, null, new Configuration(), mock(IOnDoneCallback.class));
+
+        assertThat(
+                mCarAppService.getCurrentSession().getCarContext().getCarAppApiLevel()).isEqualTo(
+                hostApiLevel);
     }
 
     @Test
@@ -242,17 +258,19 @@ public final class CarAppServiceTest {
     }
 
     @Test
-    public void onHandshakeCompleted_updatesCarApiLevel() throws RemoteException, BundlerException {
+    public void onHandshakeCompleted_updatesHandshakeInfo() throws RemoteException,
+            BundlerException {
         String hostPackageName = "com.google.projection.gearhead";
         ICarApp carApp = (ICarApp) mCarAppService.onBind(null);
-        int hostApiLevel = CarAppApiLevels.LEVEL_1;
-        HandshakeInfo handshakeInfo = new HandshakeInfo(hostPackageName, hostApiLevel);
+        assertThat(mCarAppService.getHandshakeInfo()).isNull();
 
+        HandshakeInfo handshakeInfo = new HandshakeInfo(hostPackageName, CarAppApiLevels.LEVEL_1);
         carApp.onHandshakeCompleted(Bundleable.create(handshakeInfo), mock(IOnDoneCallback.class));
-
-        assertThat(
-                mCarAppService.getCurrentSession().getCarContext().getCarAppApiLevel()).isEqualTo(
-                hostApiLevel);
+        assertThat(mCarAppService.getHandshakeInfo()).isNotNull();
+        assertThat(mCarAppService.getHandshakeInfo().getHostCarAppApiLevel()).isEqualTo(
+                handshakeInfo.getHostCarAppApiLevel());
+        assertThat(mCarAppService.getHandshakeInfo().getHostPackageName()).isEqualTo(
+                handshakeInfo.getHostPackageName());
     }
 
     @Test
@@ -299,8 +317,9 @@ public final class CarAppServiceTest {
     }
 
     @Test
-    public void onUnbind_rebind_callsOnCreateScreen() throws RemoteException {
+    public void onUnbind_rebind_callsOnCreateScreen() throws RemoteException, BundlerException {
         ICarApp carApp = (ICarApp) mCarAppService.onBind(null);
+
         carApp.onAppCreate(mMockCarHost, null, new Configuration(), mock(IOnDoneCallback.class));
         carApp.onAppStart(mock(IOnDoneCallback.class));
 
@@ -313,6 +332,10 @@ public final class CarAppServiceTest {
         assertThat(currentSession.getCarContext().getCarService(
                 ScreenManager.class).getScreenStack()).isEmpty();
 
+        String hostPackageName = "com.google.projection.gearhead";
+        int hostApiLevel = CarAppApiLevels.LEVEL_1;
+        HandshakeInfo handshakeInfo = new HandshakeInfo(hostPackageName, hostApiLevel);
+        carApp.onHandshakeCompleted(Bundleable.create(handshakeInfo), mock(IOnDoneCallback.class));
         carApp.onAppCreate(mMockCarHost, null, new Configuration(), mock(IOnDoneCallback.class));
         assertThat(currentSession.getCarContext().getCarService(
                 ScreenManager.class).getScreenStack()).hasSize(1);
@@ -345,5 +368,19 @@ public final class CarAppServiceTest {
         mCarAppService.getCurrentSession().getCarContext().finishCarApp();
 
         assertThat(mCarContext.hasCalledFinishCarApp()).isTrue();
+    }
+
+    @Test
+    public void onNewIntent_callsSessionIntent() throws
+            RemoteException {
+        assertThat(mIntentSet).isNull();
+
+        IOnDoneCallback callback = mock(IOnDoneCallback.class);
+        ICarApp carApp = (ICarApp) mCarAppService.onBind(null);
+        Intent intent = new Intent("Foo");
+        carApp.onNewIntent(intent, callback);
+
+        assertThat(mIntentSet).isEqualTo(intent);
+        verify(callback).onSuccess(any());
     }
 }

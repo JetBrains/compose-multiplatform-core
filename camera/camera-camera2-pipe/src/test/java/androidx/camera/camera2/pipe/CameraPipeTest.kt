@@ -28,7 +28,7 @@ import org.robolectric.annotation.Config
 
 @RunWith(CameraPipeRobolectricTestRunner::class)
 @Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
-class CameraPipeTest {
+internal class CameraPipeTest {
 
     @Test
     fun createCameraPipe() {
@@ -48,7 +48,7 @@ class CameraPipeTest {
             CameraGraph.Config(
                 camera = fakeCameraId,
                 streams = listOf(),
-                template = RequestTemplate(0)
+                defaultTemplate = RequestTemplate(0)
             )
         )
         assertThat(cameraGraph).isNotNull()

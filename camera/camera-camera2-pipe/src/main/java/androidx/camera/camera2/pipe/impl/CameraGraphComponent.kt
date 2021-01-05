@@ -29,10 +29,10 @@ import javax.inject.Qualifier
 import javax.inject.Scope
 
 @Scope
-annotation class CameraGraphScope
+internal annotation class CameraGraphScope
 
 @Qualifier
-annotation class ForCameraGraph
+internal annotation class ForCameraGraph
 
 @CameraGraphScope
 @Subcomponent(
@@ -41,7 +41,7 @@ annotation class ForCameraGraph
         CameraGraphConfigModule::class
     ]
 )
-interface CameraGraphComponent {
+internal interface CameraGraphComponent {
     fun cameraGraph(): CameraGraph
 
     @Subcomponent.Builder
@@ -52,7 +52,7 @@ interface CameraGraphComponent {
 }
 
 @Module
-class CameraGraphConfigModule(private val config: CameraGraph.Config) {
+internal class CameraGraphConfigModule(private val config: CameraGraph.Config) {
     @Provides
     fun provideCameraGraphConfig(): CameraGraph.Config = config
 }
@@ -62,7 +62,7 @@ class CameraGraphConfigModule(private val config: CameraGraph.Config) {
         SessionFactoryModule::class
     ]
 )
-abstract class CameraGraphModules {
+internal abstract class CameraGraphModules {
     @Binds
     abstract fun bindCameraGraph(cameraGraph: CameraGraphImpl): CameraGraph
 
@@ -72,7 +72,7 @@ abstract class CameraGraphModules {
     @Binds
     abstract fun bindRequestProcessorFactory(
         factory: StandardRequestProcessorFactory
-    ): RequestProcessor.Factory
+    ): RequestProcessorFactory
 
     @Binds
     abstract fun bindGraphState(graphState: GraphStateImpl): GraphState
@@ -107,7 +107,7 @@ abstract class CameraGraphModules {
             // Listeners in CameraGraph.Config can de defined outside of the CameraPipe library,
             // and since we iterate thought the listeners in order and invoke them, it appears
             // beneficial to add the internal listeners first and then the graph config listeners.
-            listeners.addAll(graphConfig.listeners)
+            listeners.addAll(graphConfig.defaultListeners)
             return listeners
         }
     }

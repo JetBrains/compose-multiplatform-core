@@ -17,6 +17,7 @@
 package androidx.room.compiler.processing
 
 import androidx.room.compiler.processing.util.Source
+import androidx.room.compiler.processing.util.runJavaProcessorTest
 import androidx.room.compiler.processing.util.runProcessorTest
 import com.google.common.truth.Truth.assertThat
 import com.squareup.javapoet.ClassName
@@ -116,7 +117,7 @@ class XProcessingEnvTest {
             val element = it.processingEnv.requireTypeElement("foo.bar.Baz")
             assertThat(element.packageName).isEqualTo("foo.bar")
             assertThat(element.name).isEqualTo("Baz")
-            assertThat(element.asDeclaredType().typeName)
+            assertThat(element.className)
                 .isEqualTo(ClassName.get("foo.bar", "Baz"))
             assertThat(element.findPrimaryConstructor()).isNull()
             assertThat(element.getConstructors()).hasSize(1)
@@ -174,7 +175,8 @@ class XProcessingEnvTest {
 
     @Test
     fun findGeneratedAnnotation() {
-        runProcessorTest { invocation ->
+        // TODO: enable KSP once https://github.com/google/ksp/issues/198 is fixed.
+        runJavaProcessorTest(sources = emptyList(), classpath = emptyList()) { invocation ->
             val generatedAnnotation = invocation.processingEnv.findGeneratedAnnotation()
             assertThat(generatedAnnotation?.name).isEqualTo("Generated")
         }

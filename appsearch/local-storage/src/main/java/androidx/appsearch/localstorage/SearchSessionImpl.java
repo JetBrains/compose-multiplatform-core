@@ -20,7 +20,6 @@ import static androidx.appsearch.app.AppSearchResult.throwableToFailedResult;
 
 import androidx.annotation.NonNull;
 import androidx.appsearch.app.AppSearchBatchResult;
-import androidx.appsearch.app.AppSearchResult;
 import androidx.appsearch.app.AppSearchSchema;
 import androidx.appsearch.app.AppSearchSession;
 import androidx.appsearch.app.GenericDocument;
@@ -54,6 +53,8 @@ class SearchSessionImpl implements AppSearchSession {
     private final ExecutorService mExecutorService;
     private final String mPackageName;
     private final String mDatabaseName;
+    private boolean mIsMutated = false;
+    private boolean mIsClosed = false;
 
     SearchSessionImpl(
             @NonNull AppSearchImpl appSearchImpl,
@@ -68,34 +69,28 @@ class SearchSessionImpl implements AppSearchSession {
 
     @Override
     @NonNull
-    public ListenableFuture<AppSearchResult<Void>> setSchema(@NonNull SetSchemaRequest request) {
+    public ListenableFuture<Void> setSchema(@NonNull SetSchemaRequest request) {
         Preconditions.checkNotNull(request);
+        Preconditions.checkState(!mIsClosed, "AppSearchSession has already been closed");
         return execute(() -> {
-            try {
-                mAppSearchImpl.setSchema(
-                        mPackageName,
-                        mDatabaseName,
-                        new ArrayList<>(request.getSchemas()),
-                        new ArrayList<>(request.getSchemasNotPlatformSurfaceable()),
-                        request.isForceOverride());
-                return AppSearchResult.newSuccessfulResult(/*value=*/ null);
-            } catch (Throwable t) {
-                return throwableToFailedResult(t);
-            }
+            mAppSearchImpl.setSchema(
+                    mPackageName,
+                    mDatabaseName,
+                    new ArrayList<>(request.getSchemas()),
+                    new ArrayList<>(request.getSchemasNotVisibleToSystemUi()),
+                    request.isForceOverride());
+            mIsMutated = true;
+            return null;
         });
     }
 
     @Override
     @NonNull
-    public ListenableFuture<AppSearchResult<Set<AppSearchSchema>>> getSchema() {
+    public ListenableFuture<Set<AppSearchSchema>> getSchema() {
+        Preconditions.checkState(!mIsClosed, "AppSearchSession has already been closed");
         return execute(() -> {
-            try {
-                List<AppSearchSchema> schemas = mAppSearchImpl.getSchema(mPackageName,
-                        mDatabaseName);
-                return AppSearchResult.newSuccessfulResult(new ArraySet<>(schemas));
-            } catch (Throwable t) {
-                return throwableToFailedResult(t);
-            }
+            List<AppSearchSchema> schemas = mAppSearchImpl.getSchema(mPackageName, mDatabaseName);
+            return new ArraySet<>(schemas);
         });
     }
 
@@ -104,6 +99,7 @@ class SearchSessionImpl implements AppSearchSession {
     public ListenableFuture<AppSearchBatchResult<String, Void>> putDocuments(
             @NonNull PutDocumentsRequest request) {
         Preconditions.checkNotNull(request);
+        Preconditions.checkState(!mIsClosed, "AppSearchSession has already been closed");
         return execute(() -> {
             AppSearchBatchResult.Builder<String, Void> resultBuilder =
                     new AppSearchBatchResult.Builder<>();
@@ -116,6 +112,7 @@ class SearchSessionImpl implements AppSearchSession {
                     resultBuilder.setResult(document.getUri(), throwableToFailedResult(t));
                 }
             }
+            mIsMutated = true;
             return resultBuilder.build();
         });
     }
@@ -125,6 +122,7 @@ class SearchSessionImpl implements AppSearchSession {
     public ListenableFuture<AppSearchBatchResult<String, GenericDocument>> getByUri(
             @NonNull GetByUriRequest request) {
         Preconditions.checkNotNull(request);
+        Preconditions.checkState(!mIsClosed, "AppSearchSession has already been closed");
         return execute(() -> {
             AppSearchBatchResult.Builder<String, GenericDocument> resultBuilder =
                     new AppSearchBatchResult.Builder<>();
@@ -150,6 +148,7 @@ class SearchSessionImpl implements AppSearchSession {
             @NonNull SearchSpec searchSpec) {
         Preconditions.checkNotNull(queryExpression);
         Preconditions.checkNotNull(searchSpec);
+        Preconditions.checkState(!mIsClosed, "AppSearchSession has already been closed");
         return new SearchResultsImpl(
                 mAppSearchImpl,
                 mExecutorService,
@@ -164,6 +163,7 @@ class SearchSessionImpl implements AppSearchSession {
     public ListenableFuture<AppSearchBatchResult<String, Void>> removeByUri(
             @NonNull RemoveByUriRequest request) {
         Preconditions.checkNotNull(request);
+        Preconditions.checkState(!mIsClosed, "AppSearchSession has already been closed");
         return execute(() -> {
             AppSearchBatchResult.Builder<String, Void> resultBuilder =
                     new AppSearchBatchResult.Builder<>();
@@ -175,25 +175,36 @@ class SearchSessionImpl implements AppSearchSession {
                     resultBuilder.setResult(uri, throwableToFailedResult(t));
                 }
             }
+            mIsMutated = true;
             return resultBuilder.build();
         });
     }
 
     @Override
     @NonNull
-    public ListenableFuture<AppSearchResult<Void>> removeByQuery(
+    public ListenableFuture<Void> removeByQuery(
             @NonNull String queryExpression, @NonNull SearchSpec searchSpec) {
         Preconditions.checkNotNull(queryExpression);
         Preconditions.checkNotNull(searchSpec);
+        Preconditions.checkState(!mIsClosed, "AppSearchSession has already been closed");
         return execute(() -> {
-            try {
-                mAppSearchImpl.removeByQuery(mPackageName, mDatabaseName, queryExpression,
-                        searchSpec);
-                return AppSearchResult.newSuccessfulResult(null);
-            } catch (Throwable t) {
-                return throwableToFailedResult(t);
-            }
+            mAppSearchImpl.removeByQuery(mPackageName, mDatabaseName, queryExpression, searchSpec);
+            mIsMutated = true;
+            return null;
         });
+    }
+
+    @Override
+    @SuppressWarnings("FutureReturnValueIgnored")
+    public void close() {
+        if (mIsMutated && !mIsClosed) {
+            // No future is needed here since the method is void.
+            FutureUtil.execute(mExecutorService, () -> {
+                mAppSearchImpl.persistToDisk();
+                mIsClosed = true;
+                return null;
+            });
+        }
     }
 
     private <T> ListenableFuture<T> execute(Callable<T> callable) {
