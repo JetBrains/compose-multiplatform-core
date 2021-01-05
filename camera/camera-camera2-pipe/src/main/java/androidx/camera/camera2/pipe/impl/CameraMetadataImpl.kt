@@ -16,6 +16,7 @@
 
 package androidx.camera.camera2.pipe.impl
 
+import android.annotation.SuppressLint
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CaptureRequest
 import android.hardware.camera2.CaptureResult
@@ -24,14 +25,18 @@ import android.os.Build
 import androidx.camera.camera2.pipe.CameraId
 import androidx.camera.camera2.pipe.CameraMetadata
 import androidx.camera.camera2.pipe.Metadata
-import androidx.camera.camera2.pipe.impl.Timestamps.formatMs
+import androidx.camera.camera2.pipe.core.Debug
+import androidx.camera.camera2.pipe.core.Log
+import androidx.camera.camera2.pipe.core.Timestamps
+import androidx.camera.camera2.pipe.core.Timestamps.formatMs
+import androidx.camera.camera2.pipe.wrapper.Api28Compat
 
 /**
  * This implementation provides access to CameraCharacteristics and lazy caching of properties
  * that are either expensive to create and access, or that only exist on newer versions of the
  * OS.
  */
-class CameraMetadataImpl constructor(
+internal class CameraMetadataImpl constructor(
     override val camera: CameraId,
     override val isRedacted: Boolean,
     private val characteristics: CameraCharacteristics,
@@ -69,7 +74,7 @@ class CameraMetadataImpl constructor(
                     characteristics.keys.orEmpty().toSet()
                 }
             } catch (ignored: AssertionError) {
-                emptySet<CameraCharacteristics.Key<*>>()
+                emptySet()
             }
         }
 
@@ -81,7 +86,7 @@ class CameraMetadataImpl constructor(
                     characteristics.availableCaptureRequestKeys.orEmpty().toSet()
                 }
             } catch (ignored: AssertionError) {
-                emptySet<CaptureRequest.Key<*>>()
+                emptySet()
             }
         }
 
@@ -93,10 +98,11 @@ class CameraMetadataImpl constructor(
                     characteristics.availableCaptureResultKeys.orEmpty().toSet()
                 }
             } catch (ignored: AssertionError) {
-                emptySet<CaptureResult.Key<*>>()
+                emptySet()
             }
         }
 
+    @SuppressLint("UnsafeNewApiCall")
     private val _physicalCameraIds: Lazy<Set<CameraId>> =
         lazy(LazyThreadSafetyMode.PUBLICATION) {
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
@@ -108,7 +114,7 @@ class CameraMetadataImpl constructor(
                         characteristics.physicalCameraIds.orEmpty().map { CameraId(it) }.toSet()
                     }
                 } catch (ignored: AssertionError) {
-                    emptySet<CameraId>()
+                    emptySet()
                 }
             }
         }
@@ -120,11 +126,12 @@ class CameraMetadataImpl constructor(
             } else {
                 try {
                     Debug.trace("Camera-${camera.value}#availablePhysicalCameraRequestKeys") {
-                        @Suppress("UselessCallOnNotNull")
-                        characteristics.availablePhysicalCameraRequestKeys.orEmpty().toSet()
+                        Api28Compat.getAvailablePhysicalCameraRequestKeys(characteristics)
+                            .orEmpty()
+                            .toSet()
                     }
                 } catch (ignored: AssertionError) {
-                    emptySet<CaptureRequest.Key<*>>()
+                    emptySet()
                 }
             }
         }
@@ -136,11 +143,10 @@ class CameraMetadataImpl constructor(
             } else {
                 try {
                     Debug.trace("Camera-${camera.value}#availableSessionKeys") {
-                        @Suppress("UselessCallOnNotNull")
-                        characteristics.availableSessionKeys.orEmpty().toSet()
+                        Api28Compat.getAvailableSessionKeys(characteristics).orEmpty().toSet()
                     }
                 } catch (ignored: AssertionError) {
-                    emptySet<CaptureRequest.Key<*>>()
+                    emptySet()
                 }
             }
         }

@@ -16,7 +16,6 @@
 
 package androidx.camera.camera2.pipe.testing
 
-import android.hardware.camera2.CaptureRequest
 import androidx.camera.camera2.pipe.Request
 import androidx.camera.camera2.pipe.impl.GraphProcessor
 import androidx.camera.camera2.pipe.impl.RequestProcessor
@@ -24,7 +23,7 @@ import androidx.camera.camera2.pipe.impl.RequestProcessor
 /**
  * Fake implementation of a [GraphProcessor] for tests.
  */
-class FakeGraphProcessor : GraphProcessor {
+internal class FakeGraphProcessor : GraphProcessor {
     var active = true
         private set
     var closed = false
@@ -36,6 +35,7 @@ class FakeGraphProcessor : GraphProcessor {
 
     private val _requestQueue = mutableListOf<List<Request>>()
     private var processor: RequestProcessor? = null
+    private val defaultParameters = mapOf<Any, Any>()
 
     override fun setRepeating(request: Request) {
         repeatingRequest = request
@@ -49,7 +49,7 @@ class FakeGraphProcessor : GraphProcessor {
         _requestQueue.add(requests)
     }
 
-    override suspend fun submit(parameters: Map<CaptureRequest.Key<*>, Any>): Boolean {
+    override suspend fun submit(parameters: Map<*, Any>): Boolean {
         if (closed) {
             return false
         }
@@ -59,8 +59,8 @@ class FakeGraphProcessor : GraphProcessor {
             currProcessor == null || currRepeatingRequest == null -> false
             else -> currProcessor.submit(
                 currRepeatingRequest,
-                parameters,
-                requireSurfacesForAllStreams = false
+                defaultParameters = defaultParameters,
+                requiredParameters = parameters
             )
         }
     }
@@ -93,6 +93,6 @@ class FakeGraphProcessor : GraphProcessor {
     }
 
     override fun invalidate() {
-        processor!!.setRepeating(repeatingRequest!!, mapOf(), false)
+        processor!!.setRepeating(repeatingRequest!!, defaultParameters, mapOf<Any, Any>())
     }
 }

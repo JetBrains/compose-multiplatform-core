@@ -50,6 +50,10 @@ final class AutoCloser {
     private final Handler mHandler = new Handler(Looper.getMainLooper());
 
     // Package private for access from mAutoCloser
+    @Nullable
+    Runnable mOnAutoCloseCallback = null;
+
+    // Package private for access from mAutoCloser
     @NonNull
     final Object mLock = new Object();
 
@@ -73,6 +77,8 @@ final class AutoCloser {
     @GuardedBy("mLock")
     @Nullable
     SupportSQLiteDatabase mDelegateDatabase;
+
+    private boolean mManuallyClosed = false;
 
     private final Runnable mExecuteAutoCloser = new Runnable() {
         @Override
@@ -102,7 +108,16 @@ final class AutoCloser {
                     return;
                 }
 
-                if (mDelegateDatabase != null) {
+                if (mOnAutoCloseCallback != null) {
+                    mOnAutoCloseCallback.run();
+                } else {
+                    throw new IllegalStateException("mOnAutoCloseCallback is null but it should"
+                            + " have been set before use. Please file a bug "
+                            + "against Room at: https://issuetracker.google"
+                            + ".com/issues/new?component=413107&template=1096568");
+                }
+
+                if (mDelegateDatabase != null && mDelegateDatabase.isOpen()) {
                     try {
                         mDelegateDatabase.close();
                     } catch (IOException e) {
@@ -138,8 +153,9 @@ final class AutoCloser {
      */
     public void init(@NonNull SupportSQLiteOpenHelper delegateOpenHelper) {
         if (mDelegateOpenHelper != null) {
-            Log.e(Room.LOG_TAG, "AutoCloser initialized multiple times. This is probably a bug in"
-                    + " the room code.");
+            Log.e(Room.LOG_TAG, "AutoCloser initialized multiple times. Please file a bug against"
+                    + " room at: https://issuetracker.google"
+                    + ".com/issues/new?component=413107&template=1096568");
             return;
         }
         this.mDelegateOpenHelper = delegateOpenHelper;
@@ -182,11 +198,12 @@ final class AutoCloser {
 
             mRefCount++;
 
+            if (mManuallyClosed) {
+                throw new IllegalStateException("Attempting to open already closed database.");
+            }
+
             if (mDelegateDatabase != null && mDelegateDatabase.isOpen()) {
                 return mDelegateDatabase;
-            } else if (mDelegateDatabase != null) {
-                // This shouldn't happen
-                throw new IllegalStateException("mDelegateDatabase is closed but non-null");
             }
 
             // Get the database while holding `mLock` so no other threads try to create it or
@@ -194,8 +211,9 @@ final class AutoCloser {
             if (mDelegateOpenHelper != null) {
                 mDelegateDatabase = mDelegateOpenHelper.getWritableDatabase();
             } else {
-                throw new IllegalStateException("AutoCloser has not beeninitialized. This "
-                        + "shouldn't happen, but if it does it means there's a bug in our code");
+                throw new IllegalStateException("AutoCloser has not been initialized. Please file "
+                        + "a bug against Room at: "
+                        + "https://issuetracker.google.com/issues/new?component=413107&template=1096568");
             }
 
             return mDelegateDatabase;
@@ -243,6 +261,33 @@ final class AutoCloser {
     }
 
     /**
+     * Close the database if it is still active.
+     *
+     * @throws IOException if an exception is encountered when closing the underlying db.
+     */
+    public void closeDatabaseIfOpen() throws IOException {
+        synchronized (mLock) {
+            mManuallyClosed = true;
+
+            if (mDelegateDatabase != null) {
+                mDelegateDatabase.close();
+            }
+            mDelegateDatabase = null;
+        }
+    }
+
+    /**
+     * The auto closer is still active if the database has not been closed. This means that
+     * whether or not the underlying database is closed, when active we will re-open it on the
+     * next access.
+     *
+     * @return a boolean indicating whether the auto closer is still active
+     */
+    public boolean isActive() {
+        return !mManuallyClosed;
+    }
+
+    /**
      * Returns the current ref count for this auto closer. This is only visible for testing.
      *
      * @return current ref count
@@ -252,5 +297,15 @@ final class AutoCloser {
         synchronized (mLock) {
             return mRefCount;
         }
+    }
+
+    /**
+     * Sets a callback that will be run every time the database is auto-closed. This callback
+     * needs to be lightweight since it is run while holding a lock.
+     *
+     * @param onAutoClose the callback to run
+     */
+    public void setAutoCloseCallback(Runnable onAutoClose) {
+        mOnAutoCloseCallback = onAutoClose;
     }
 }

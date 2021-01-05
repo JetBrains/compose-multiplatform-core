@@ -21,7 +21,6 @@ import android.hardware.camera2.CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LE
 import android.os.Build
 import androidx.camera.camera2.pipe.CameraGraph
 import androidx.camera.camera2.pipe.Request
-import androidx.camera.camera2.pipe.RequestTemplate
 import androidx.camera.camera2.pipe.testing.CameraPipeRobolectricTestRunner
 import androidx.camera.camera2.pipe.testing.FakeCameraMetadata
 import androidx.camera.camera2.pipe.testing.FakeCameras
@@ -38,7 +37,7 @@ import org.robolectric.annotation.internal.DoNotInstrument
 @RunWith(CameraPipeRobolectricTestRunner::class)
 @DoNotInstrument
 @Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
-class CameraGraphImplTest {
+internal class CameraGraphImplTest {
     private val fakeCameraId = FakeCameras.create()
     private val fakeMetadata = FakeCameraMetadata(
         mapOf(INFO_SUPPORTED_HARDWARE_LEVEL to INFO_SUPPORTED_HARDWARE_LEVEL_FULL),
@@ -53,13 +52,12 @@ class CameraGraphImplTest {
         val config = CameraGraph.Config(
             camera = fakeCameraId,
             streams = listOf(),
-            template = RequestTemplate(0)
         )
         impl = CameraGraphImpl(
             config,
             fakeMetadata,
             fakeGraphProcessor,
-            StreamMap(
+            StreamGraphImpl(
                 fakeMetadata,
                 config
             ),

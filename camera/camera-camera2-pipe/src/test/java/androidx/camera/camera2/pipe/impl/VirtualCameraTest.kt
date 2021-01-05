@@ -18,6 +18,7 @@ package androidx.camera.camera2.pipe.impl
 
 import android.os.Build
 import android.os.Looper.getMainLooper
+import androidx.camera.camera2.pipe.core.Timestamps
 import androidx.camera.camera2.pipe.testing.CameraPipeRobolectricTestRunner
 import androidx.camera.camera2.pipe.testing.FakeCameras
 import com.google.common.truth.Truth.assertThat
@@ -40,7 +41,7 @@ import java.util.concurrent.TimeUnit
 @RunWith(CameraPipeRobolectricTestRunner::class)
 @Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 @OptIn(ExperimentalCoroutinesApi::class)
-class VirtualCameraStateTest {
+internal class VirtualCameraStateTest {
     private val mainLooper = shadowOf(getMainLooper())
     private val cameraId = FakeCameras.create()
     private val testCamera = FakeCameras.open(cameraId)
@@ -144,7 +145,7 @@ class VirtualCameraStateTest {
 @RunWith(CameraPipeRobolectricTestRunner::class)
 @Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 @OptIn(ExperimentalCoroutinesApi::class)
-class AndroidCameraDeviceTest {
+internal class AndroidCameraDeviceTest {
     private val mainLooper = shadowOf(getMainLooper())
     private val cameraId = FakeCameras.create()
     private val testCamera = FakeCameras.open(cameraId)

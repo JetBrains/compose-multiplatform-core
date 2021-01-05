@@ -22,7 +22,7 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-interface GraphState {
+internal interface GraphState {
     fun start()
     fun stop()
     fun reconfigure()
@@ -38,14 +38,14 @@ interface GraphState {
  * TODO: Reorganize these constructor parameters.
  */
 @CameraGraphScope
-class GraphStateImpl @Inject constructor(
+internal class GraphStateImpl @Inject constructor(
     @ForCameraGraph private val scope: CoroutineScope,
     private val config: CameraGraph.Config,
     private val graphProcessor: GraphProcessor,
     private val sessionFactory: SessionFactory,
-    private val requestProcessorFactory: RequestProcessor.Factory,
+    private val requestProcessorFactory: RequestProcessorFactory,
     private val virtualCameraManager: VirtualCameraManager,
-    private val streamMap: StreamMap
+    private val streamGraph: StreamGraphImpl
 ) : GraphState {
     private var currentCamera: VirtualCamera? = null
     private var currentSession: VirtualSessionState? = null
@@ -120,7 +120,7 @@ class GraphStateImpl @Inject constructor(
         }
 
         if (camera != null && session != null) {
-            streamMap.listener = session
+            streamGraph.listener = session
             camera.state.collect {
                 if (it is CameraStateOpen) {
                     session.cameraDevice = it.cameraDevice

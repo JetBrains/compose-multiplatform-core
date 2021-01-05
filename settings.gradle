@@ -167,6 +167,7 @@ if (startParameter.projectProperties.containsKey('useMaxDepVersions')) {
 includeProject(":camera:camera-camera2", "camera/camera-camera2", [BuildType.MAIN])
 includeProject(":camera:camera-camera2-pipe", "camera/camera-camera2-pipe", [BuildType.MAIN])
 includeProject(":camera:camera-camera2-pipe-integration", "camera/camera-camera2-pipe-integration", [BuildType.MAIN])
+includeProject(":camera:camera-camera2-pipe-testing", "camera/camera-camera2-pipe-testing", [BuildType.MAIN])
 includeProject(":camera:camera-core", "camera/camera-core", [BuildType.MAIN])
 includeProject(":camera:camera-extensions", "camera/camera-extensions", [BuildType.MAIN])
 includeProject(":camera:camera-extensions-stub", "camera/camera-extensions-stub", [BuildType.MAIN])
@@ -284,8 +285,13 @@ includeProject(":datastore:datastore-preferences-core", "datastore/datastore-pre
         [BuildType.MAIN])
 includeProject(":datastore:datastore-preferences-core:datastore-preferences-proto",
         "datastore/datastore-preferences-core/datastore-preferences-proto", [BuildType.MAIN])
+includeProject(":datastore:datastore-preferences-rxjava2",
+        "datastore/datastore-preferences-rxjava2", [BuildType.MAIN])
+includeProject(":datastore:datastore-preferences-rxjava3",
+        "datastore/datastore-preferences-rxjava3", [BuildType.MAIN])
 includeProject(":datastore:datastore-proto", "datastore/datastore-proto", [BuildType.MAIN])
 includeProject(":datastore:datastore-rxjava2", "datastore/datastore-rxjava2", [BuildType.MAIN])
+includeProject(":datastore:datastore-rxjava3", "datastore/datastore-rxjava3", [BuildType.MAIN])
 includeProject(":datastore:datastore-sampleapp", "datastore/datastore-sampleapp", [BuildType.MAIN])
 includeProject(":documentfile:documentfile", "documentfile/documentfile", [BuildType.MAIN])
 includeProject(":drawerlayout:drawerlayout", "drawerlayout/drawerlayout", [BuildType.MAIN])
