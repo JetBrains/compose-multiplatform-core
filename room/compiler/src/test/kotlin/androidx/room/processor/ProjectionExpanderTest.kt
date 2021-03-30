@@ -17,7 +17,6 @@
 package androidx.room.processor
 
 import androidx.room.compiler.processing.isTypeElement
-import androidx.room.ext.getTypeElementsAnnotatedWith
 import androidx.room.parser.SqlParser
 import androidx.room.parser.expansion.ProjectionExpander
 import androidx.room.testing.TestInvocation
@@ -521,7 +520,7 @@ class ProjectionExpanderTest {
             options = listOf("-Aroom.expandProjection=true")
         ) { invocation ->
             val entities = invocation.roundEnv
-                .getTypeElementsAnnotatedWith(androidx.room.Entity::class.java)
+                .getTypeElementsAnnotatedWith(androidx.room.Entity::class.qualifiedName!!)
                 .map { element ->
                     TableEntityProcessor(
                         invocation.context,
@@ -624,7 +623,7 @@ class ProjectionExpanderTest {
             options = listOf("-Aroom.expandProjection=true")
         ) { invocation ->
             val entities = invocation.roundEnv
-                .getTypeElementsAnnotatedWith(androidx.room.Entity::class.java)
+                .getTypeElementsAnnotatedWith(androidx.room.Entity::class.qualifiedName!!)
                 .map { element ->
                     TableEntityProcessor(
                         invocation.context,

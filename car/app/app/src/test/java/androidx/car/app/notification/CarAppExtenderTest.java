@@ -66,14 +66,13 @@ public final class CarAppExtenderTest {
                                             @NonNull NotificationCompat.Builder builder) {
                                         Bundle carExtensions = new Bundle();
 
-                                        builder.getExtras().putBundle("android.car.EXTENSIONS",
+                                        builder.getExtras().putBundle("androidx.car.app.EXTENSIONS",
                                                 carExtensions);
                                         return builder;
                                     }
                                 });
 
         CarAppExtender carAppExtender = new CarAppExtender(builder.build());
-        assertThat(carAppExtender.isExtended()).isFalse();
         assertThat(carAppExtender.getContentTitle()).isNull();
         assertThat(carAppExtender.getContentText()).isNull();
         assertThat(carAppExtender.getSmallIcon()).isEqualTo(0);
@@ -89,7 +88,7 @@ public final class CarAppExtenderTest {
     public void notification_extended() {
         NotificationCompat.Builder builder =
                 new NotificationCompat.Builder(mContext, NOTIFICATION_CHANNEL_ID)
-                        .extend(CarAppExtender.builder().build());
+                        .extend(new CarAppExtender.Builder().build());
 
         assertThat(CarAppExtender.isExtended(builder.build())).isTrue();
     }
@@ -107,7 +106,7 @@ public final class CarAppExtenderTest {
         CharSequence title = "TestTitle";
         NotificationCompat.Builder builder =
                 new NotificationCompat.Builder(mContext, NOTIFICATION_CHANNEL_ID)
-                        .extend(CarAppExtender.builder().setContentTitle(title).build());
+                        .extend(new CarAppExtender.Builder().setContentTitle(title).build());
 
         assertThat(
                 title.toString().contentEquals(
@@ -120,7 +119,7 @@ public final class CarAppExtenderTest {
         CharSequence text = "TestText";
         NotificationCompat.Builder builder =
                 new NotificationCompat.Builder(mContext, NOTIFICATION_CHANNEL_ID)
-                        .extend(CarAppExtender.builder().setContentText(text).build());
+                        .extend(new CarAppExtender.Builder().setContentText(text).build());
 
         assertThat(
                 text.toString().contentEquals(new CarAppExtender(builder.build()).getContentText()))
@@ -132,7 +131,7 @@ public final class CarAppExtenderTest {
         int resId = TestUtils.getTestDrawableResId(mContext, "ic_test_1");
         NotificationCompat.Builder builder =
                 new NotificationCompat.Builder(mContext, NOTIFICATION_CHANNEL_ID)
-                        .extend(CarAppExtender.builder().setSmallIcon(resId).build());
+                        .extend(new CarAppExtender.Builder().setSmallIcon(resId).build());
 
         assertThat(new CarAppExtender(builder.build()).getSmallIcon()).isEqualTo(resId);
     }
@@ -143,7 +142,7 @@ public final class CarAppExtenderTest {
                 TestUtils.getTestDrawableResId(mContext, "ic_test_2"));
         NotificationCompat.Builder builder =
                 new NotificationCompat.Builder(mContext, NOTIFICATION_CHANNEL_ID)
-                        .extend(CarAppExtender.builder().setLargeIcon(bitmap).build());
+                        .extend(new CarAppExtender.Builder().setLargeIcon(bitmap).build());
 
         assertThat(new CarAppExtender(builder.build()).getLargeIcon()).isEqualTo(bitmap);
     }
@@ -154,7 +153,8 @@ public final class CarAppExtenderTest {
         PendingIntent contentIntent = PendingIntent.getBroadcast(mContext, 0, intent, 0);
         NotificationCompat.Builder builder =
                 new NotificationCompat.Builder(mContext, NOTIFICATION_CHANNEL_ID)
-                        .extend(CarAppExtender.builder().setContentIntent(contentIntent).build());
+                        .extend(new CarAppExtender.Builder().setContentIntent(
+                                contentIntent).build());
 
         assertThat(new CarAppExtender(builder.build()).getContentIntent()).isEqualTo(contentIntent);
     }
@@ -165,7 +165,7 @@ public final class CarAppExtenderTest {
         PendingIntent deleteIntent = PendingIntent.getBroadcast(mContext, 0, intent, 0);
         NotificationCompat.Builder builder =
                 new NotificationCompat.Builder(mContext, NOTIFICATION_CHANNEL_ID)
-                        .extend(CarAppExtender.builder().setDeleteIntent(deleteIntent).build());
+                        .extend(new CarAppExtender.Builder().setDeleteIntent(deleteIntent).build());
 
         assertThat(new CarAppExtender(builder.build()).getDeleteIntent()).isEqualTo(deleteIntent);
     }
@@ -174,7 +174,7 @@ public final class CarAppExtenderTest {
     public void notification_extended_noActions() {
         NotificationCompat.Builder builder =
                 new NotificationCompat.Builder(mContext, NOTIFICATION_CHANNEL_ID)
-                        .extend(CarAppExtender.builder().build());
+                        .extend(new CarAppExtender.Builder().build());
 
         assertThat(new CarAppExtender(builder.build()).getActions()).isEmpty();
     }
@@ -194,7 +194,7 @@ public final class CarAppExtenderTest {
         NotificationCompat.Builder builder =
                 new NotificationCompat.Builder(mContext, NOTIFICATION_CHANNEL_ID)
                         .extend(
-                                CarAppExtender.builder()
+                                new CarAppExtender.Builder()
                                         .addAction(icon1, title1, actionIntent1)
                                         .addAction(icon2, title2, actionIntent2)
                                         .build());
@@ -214,7 +214,7 @@ public final class CarAppExtenderTest {
         NotificationCompat.Builder builder =
                 new NotificationCompat.Builder(mContext, NOTIFICATION_CHANNEL_ID)
                         .extend(
-                                CarAppExtender.builder()
+                                new CarAppExtender.Builder()
                                         .setImportance(NotificationManagerCompat.IMPORTANCE_HIGH)
                                         .build());
 
@@ -227,7 +227,7 @@ public final class CarAppExtenderTest {
         NotificationCompat.Builder builder =
                 new NotificationCompat.Builder(mContext, NOTIFICATION_CHANNEL_ID)
                         .extend(
-                                CarAppExtender.builder()
+                                new CarAppExtender.Builder()
                                         .setColor(CarColor.BLUE)
                                         .build());
 

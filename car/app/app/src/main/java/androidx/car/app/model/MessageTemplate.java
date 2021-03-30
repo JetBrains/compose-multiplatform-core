@@ -18,16 +18,19 @@ package androidx.car.app.model;
 
 import static androidx.car.app.model.constraints.ActionsConstraints.ACTIONS_CONSTRAINTS_HEADER;
 
+import static java.util.Objects.hash;
 import static java.util.Objects.requireNonNull;
 
-import android.annotation.SuppressLint;
 import android.util.Log;
 
 import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.car.app.annotations.ExperimentalCarApi;
 import androidx.car.app.model.constraints.CarIconConstraints;
+import androidx.car.app.utils.CollectionUtils;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -58,43 +61,69 @@ public final class MessageTemplate implements Template {
     @Nullable
     private final Action mHeaderAction;
     @Keep
-    @Nullable
-    private final ActionList mActionList;
+    private final List<Action> mActionList;
 
-    /** Constructs a new builder of {@link MessageTemplate}. */
-    @NonNull
-    public static Builder builder(@NonNull CharSequence message) {
-        return new Builder(requireNonNull(message));
-    }
-
+    /**
+     * Returns the title of the template or {@code null} if not set.
+     *
+     * @see Builder#setTitle(CharSequence)
+     */
     @Nullable
     public CarText getTitle() {
         return mTitle;
     }
 
+    /**
+     * Returns the {@link Action} that is set to be displayed in the header of the template, or
+     * {@code null} if not set.
+     *
+     * @see Builder#setHeaderAction(Action)
+     */
     @Nullable
     public Action getHeaderAction() {
         return mHeaderAction;
     }
 
+    /**
+     * Returns the message to display in the template.
+     *
+     * @see Builder#Builder(CharSequence)
+     */
     @NonNull
     public CarText getMessage() {
-        return Objects.requireNonNull(mMessage);
+        return requireNonNull(mMessage);
     }
 
+
+    /**
+     * Returns a debug message to display in the template or {@code null} if not set.
+     *
+     * @see Builder#setDebugMessage(Throwable)
+     * @see Builder#setDebugMessage(String)
+     */
     @Nullable
     public CarText getDebugMessage() {
         return mDebugMessage;
     }
 
+    /**
+     * Returns the icon to display in the template or {@code null} if not set.
+     *
+     * @see Builder#setIcon(CarIcon)
+     */
     @Nullable
     public CarIcon getIcon() {
         return mIcon;
     }
 
-    @Nullable
-    public ActionList getActions() {
-        return mActionList;
+    /**
+     * Returns the list of actions to display in the template.
+     *
+     * @see Builder#addAction(Action)
+     */
+    @NonNull
+    public List<Action> getActions() {
+        return CollectionUtils.emptyIfNull(mActionList);
     }
 
     @NonNull
@@ -105,7 +134,7 @@ public final class MessageTemplate implements Template {
 
     @Override
     public int hashCode() {
-        return Objects.hash(mTitle, mMessage, mDebugMessage, mHeaderAction, mActionList, mIcon);
+        return hash(mTitle, mMessage, mDebugMessage, mHeaderAction, mActionList, mIcon);
     }
 
     @Override
@@ -132,7 +161,7 @@ public final class MessageTemplate implements Template {
         mDebugMessage = builder.mDebugMessage;
         mIcon = builder.mIcon;
         mHeaderAction = builder.mHeaderAction;
-        mActionList = builder.mActionList;
+        mActionList = CollectionUtils.unmodifiableCopy(builder.mActionList);
     }
 
     /** Constructs an empty instance, used by serialization code. */
@@ -142,7 +171,7 @@ public final class MessageTemplate implements Template {
         mDebugMessage = null;
         mIcon = null;
         mHeaderAction = null;
-        mActionList = null;
+        mActionList = Collections.emptyList();
     }
 
     /** A builder of {@link MessageTemplate}. */
@@ -156,125 +185,120 @@ public final class MessageTemplate implements Template {
         CarIcon mIcon;
         @Nullable
         Action mHeaderAction;
-        @Nullable
-        ActionList mActionList;
+        List<Action> mActionList = new ArrayList<>();
         @Nullable
         Throwable mDebugCause;
         @Nullable
         String mDebugString;
 
         /**
-         * Sets the {@link CharSequence} to show as the template's title, or {@code null} to not
-         * show a
-         * title.
+         * Sets the title of the template.
+         *
+         * <p>Unless set with this method, the template will not have a title.
+         *
+         * <p>Spans are not supported in the input string.
+         *
+         * @throws NullPointerException if {@code title} is {@code null}
+         * @see CarText
          */
         @NonNull
-        public Builder setTitle(@Nullable CharSequence title) {
-            this.mTitle = title == null ? null : CarText.create(title);
+        public Builder setTitle(@NonNull CharSequence title) {
+            mTitle = CarText.create(requireNonNull(title));
             return this;
         }
 
         /**
-         * Sets the {@link CharSequence} to display as the message in the template.
+         * Sets a {@link Throwable} for debugging purposes.
          *
-         * @throws NullPointerException if {@code message} is null.
-         */
-        @NonNull
-        public Builder setMessage(@NonNull CharSequence message) {
-            this.mMessage = CarText.create(requireNonNull(message));
-            return this;
-        }
-
-        /**
-         * Sets a {@link Throwable} for debugging purposes, or {@code null} to not show it.
-         *
-         * <p>The cause will be displayed along with the message set in {@link #setDebugMessage}.
+         * <p>The cause will be displayed along with the message set in
+         * {@link #setDebugMessage(String)}.
          *
          * <p>The host may choose to not display this debugging information if it doesn't deem it
          * appropriate, for example, when running on a production environment rather than in a
-         * simulator
-         * such as the Desktop Head Unit.
+         * simulator such as the Desktop Head Unit.
+         *
+         * @throws NullPointerException if {@code icon} is {@code null}
          */
         @NonNull
-        // Suppress as the cause is transformed into a message before transport.
-        @SuppressLint("MissingGetterMatchingBuilder")
-        public Builder setDebugCause(@Nullable Throwable cause) {
-            this.mDebugCause = cause;
+        public Builder setDebugMessage(@NonNull Throwable cause) {
+            mDebugCause = requireNonNull(cause);
             return this;
         }
 
         /**
-         * Sets a debug message for debugging purposes, or {@code null} to not show a debug message.
+         * Sets a debug message for debugging purposes.
          *
          * <p>The debug message will be displayed along with the cause set in
-         * {@link #setDebugCause}.
+         * {@link #setDebugMessage}.
          *
          * <p>The host may choose to not display this debugging information if it doesn't deem it
          * appropriate, for example, when running on a production environment rather than in a
-         * simulator
-         * such as the Desktop Head Unit.
+         * simulator such as the Desktop Head Unit.
+         *
+         * @throws NullPointerException if {@code icon} is {@code null}
          */
         @NonNull
-        public Builder setDebugMessage(@Nullable String debugMessage) {
-            this.mDebugString = debugMessage;
+        public Builder setDebugMessage(@NonNull String debugMessage) {
+            mDebugString = requireNonNull(debugMessage);
             return this;
         }
 
         /**
-         * Sets the icon to be displayed along with the message, or {@code null} to not display any
-         * icons.
+         * Sets the icon to be displayed along with the message.
+         *
+         * <p>Unless set with this method, an icon will not be displayed.
          *
          * <h4>Icon Sizing Guidance</h4>
          *
          * The provided icon should have a maximum size of 64 x 64 dp. If the icon exceeds this
-         * maximum
-         * size in either one of the dimensions, it will be scaled down and centered inside the
-         * bounding
-         * box while preserving the aspect ratio.
+         * maximum size in either one of the dimensions, it will be scaled down and centered
+         * inside the bounding box while preserving the aspect ratio.
          *
          * <p>See {@link CarIcon} for more details related to providing icon and image resources
-         * that
-         * work with different car screen pixel densities.
+         * that work with different car screen pixel densities.
+         *
+         * @throws NullPointerException if {@code icon} is {@code null}
          */
         @NonNull
-        public Builder setIcon(@Nullable CarIcon icon) {
-            CarIconConstraints.DEFAULT.validateOrThrow(icon);
-            this.mIcon = icon;
+        public Builder setIcon(@NonNull CarIcon icon) {
+            CarIconConstraints.DEFAULT.validateOrThrow(requireNonNull(icon));
+            mIcon = icon;
             return this;
         }
 
         /**
-         * Sets the {@link Action} that will be displayed in the header of the template, or
-         * {@code null}
-         * to not display an action.
+         * Sets the {@link Action} that will be displayed in the header of the template.
+         *
+         * <p>Unless set with this method, the template will not have a header action.
          *
          * <h4>Requirements</h4>
          *
-         * This template only supports either either one of {@link Action#APP_ICON} and {@link
-         * Action#BACK} as a header {@link Action}.
+         * This template only supports either one of {@link Action#APP_ICON} and
+         * {@link Action#BACK} as a header {@link Action}.
          *
          * @throws IllegalArgumentException if {@code headerAction} does not meet the template's
-         *                                  requirements.
+         *                                  requirements
+         * @throws NullPointerException     if {@code headerAction} is {@code null}
          */
         @NonNull
-        public Builder setHeaderAction(@Nullable Action headerAction) {
+        public Builder setHeaderAction(@NonNull Action headerAction) {
             ACTIONS_CONSTRAINTS_HEADER.validateOrThrow(
-                    headerAction == null ? Collections.emptyList()
-                            : Collections.singletonList(headerAction));
-            this.mHeaderAction = headerAction;
+                    Collections.singletonList(requireNonNull(headerAction)));
+            mHeaderAction = headerAction;
             return this;
         }
 
         /**
-         * Sets a list of {@link Action}s to display along with the message.
+         * Adds an {@link Action} to display along with the message.
          *
          * <p>Any actions above the maximum limit of 2 will be ignored.
          *
-         * @throws NullPointerException if {@code actions} is {@code null}.
+         * @throws NullPointerException if {@code action} is {@code null}
          */
         @NonNull
-        public Builder setActions(@NonNull List<Action> actions) {
-            mActionList = ActionList.create(requireNonNull(actions));
+        public Builder addAction(@NonNull Action action) {
+            requireNonNull(action);
+            mActionList.add(action);
             return this;
         }
 
@@ -283,15 +307,12 @@ public final class MessageTemplate implements Template {
          *
          * <h4>Requirements</h4>
          *
-         * A non-empty message must be set on the template with {@link
-         * Builder#setMessage(CharSequence)}.
+         * A non-empty message must be set on the template.
          *
          * <p>Either a header {@link Action} or title must be set on the template.
          *
-         * @throws IllegalStateException if the message is empty.
-         * @throws IllegalStateException if the template does not have either a title or header
-         *                               {@link
-         *                               Action} set.
+         * @throws IllegalStateException if the message is empty, or if the template does not have
+         *                               either a title or header {@link Action} set
          */
         @NonNull
         public MessageTemplate build() {
@@ -299,7 +320,7 @@ public final class MessageTemplate implements Template {
                 throw new IllegalStateException("Message cannot be empty");
             }
 
-            String debugString = this.mDebugString == null ? "" : this.mDebugString;
+            String debugString = mDebugString == null ? "" : mDebugString;
             if (!debugString.isEmpty() && mDebugCause != null) {
                 debugString += "\n";
             }
@@ -315,8 +336,25 @@ public final class MessageTemplate implements Template {
             return new MessageTemplate(this);
         }
 
-        Builder(CharSequence message) {
-            this.mMessage = CarText.create(message);
+        /**
+         * Returns a {@link Builder} instance.
+         *
+         * @param message the text message to display in the template
+         * @throws NullPointerException if the {@code message} is {@code null}
+         */
+        public Builder(@NonNull CharSequence message) {
+            mMessage = CarText.create(requireNonNull(message));
+        }
+
+        /**
+         * Returns a {@link Builder} instance.
+         *
+         * @param message the text message to display in the template
+         * @throws NullPointerException if the {@code message} is {@code null}
+         */
+        @ExperimentalCarApi
+        public Builder(@NonNull CarText message) {
+            mMessage = requireNonNull(message);
         }
     }
 }

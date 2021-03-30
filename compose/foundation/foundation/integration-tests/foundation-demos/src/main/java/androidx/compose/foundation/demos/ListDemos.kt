@@ -16,59 +16,66 @@
 
 package androidx.compose.foundation.demos
 
+import androidx.compose.animation.core.AnimationConstants
+import androidx.compose.animation.core.AnimationState
+import androidx.compose.animation.core.animateTo
+import androidx.compose.animation.core.calculateTargetValue
+import androidx.compose.animation.defaultDecayAnimationSpec
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.Interaction
-import androidx.compose.foundation.InteractionState
-import androidx.compose.foundation.ScrollableColumn
-import androidx.compose.foundation.animation.smoothScrollBy
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.FlingBehavior
+import androidx.compose.foundation.gestures.ScrollScope
+import androidx.compose.foundation.gestures.animateScrollBy
+import androidx.compose.foundation.interaction.collectIsDraggedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayout
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.preferredWidth
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.requiredHeight
+import androidx.compose.foundation.layout.requiredSize
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyVerticalGrid
 import androidx.compose.foundation.lazy.GridCells
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.LazyVerticalGrid
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.samples.StickyHeaderSample
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.integration.demos.common.ComposableDemo
-import androidx.compose.material.AmbientContentColor
-import androidx.compose.material.AmbientTextStyle
+import androidx.compose.material.Button
+import androidx.compose.material.LocalTextStyle
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.Providers
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.savedinstancestate.savedInstanceState
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.AmbientDensity
-import androidx.compose.ui.platform.AmbientLayoutDirection
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.paging.compose.demos.PagingDemos
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
+import kotlin.math.abs
+import kotlin.math.max
+import kotlin.math.min
 import kotlin.random.Random
 
 val LazyListDemos = listOf(
@@ -86,6 +93,8 @@ val LazyListDemos = listOf(
     ComposableDemo("Reverse scroll direction") { ReverseLayout() },
     ComposableDemo("Nested lazy lists") { NestedLazyDemo() },
     ComposableDemo("LazyGrid") { LazyGridDemo() },
+    ComposableDemo("Custom keys") { ReorderWithCustomKeys() },
+    ComposableDemo("Fling Config") { LazyWithFlingConfig() },
     PagingDemos
 )
 
@@ -97,13 +106,16 @@ private fun LazyColumnDemo() {
                 "Hello,", "World:", "It works!", "",
                 "this one is really long and spans a few lines for scrolling purposes",
                 "these", "are", "offscreen"
-            ) + (1..100).map { "$it" }
+            )
         ) {
             Text(text = it, fontSize = 80.sp)
 
             if (it.contains("works")) {
                 Text("You can even emit multiple components per item.")
             }
+        }
+        items(100) {
+            Text(text = "$it", fontSize = 80.sp)
         }
     }
 }
@@ -120,30 +132,28 @@ private fun ListAddRemoveItemsDemo() {
             Button(modifier = buttonModifier, onClick = { offset++ }) { Text("Offset") }
         }
         LazyColumn(Modifier.fillMaxWidth()) {
-            items((1..numItems).map { it + offset }.toList()) {
-                Text("$it", style = AmbientTextStyle.current.copy(fontSize = 40.sp))
+            items((1..numItems).map { it + offset }) {
+                Text("$it", style = LocalTextStyle.current.copy(fontSize = 40.sp))
             }
         }
     }
 }
 
-@OptIn(ExperimentalLayout::class)
 @Composable
 private fun ListHoistedStateDemo() {
-    val interactionState = remember { InteractionState() }
-    val state = rememberLazyListState(interactionState = interactionState)
+    val state = rememberLazyListState()
     var lastScrollDescription: String by remember { mutableStateOf("") }
     Column {
-        @Suppress("DEPRECATION")
-        FlowRow {
+        val numItems = 10000
+        Row {
             val buttonModifier = Modifier.padding(8.dp)
-            val density = AmbientDensity.current
+            val density = LocalDensity.current
             val coroutineScope = rememberCoroutineScope()
             Button(
                 modifier = buttonModifier,
                 onClick = {
                     coroutineScope.launch {
-                        state.snapToItemIndex(state.firstVisibleItemIndex - 1)
+                        state.scrollToItem(state.firstVisibleItemIndex - 1)
                     }
                 }
             ) {
@@ -153,7 +163,7 @@ private fun ListHoistedStateDemo() {
                 modifier = buttonModifier,
                 onClick = {
                     coroutineScope.launch {
-                        state.snapToItemIndex(state.firstVisibleItemIndex + 1)
+                        state.scrollToItem(state.firstVisibleItemIndex + 1)
                     }
                 }
             ) {
@@ -162,11 +172,46 @@ private fun ListHoistedStateDemo() {
             Button(
                 modifier = buttonModifier,
                 onClick = {
+                    coroutineScope.launch {
+                        val index = min(state.firstVisibleItemIndex + 500, numItems - 1)
+                        state.animateScrollToItem(index)
+                    }
+                }
+            ) {
+                Text("+500")
+            }
+            Button(
+                modifier = buttonModifier,
+                onClick = {
+                    coroutineScope.launch {
+                        val index = max(state.firstVisibleItemIndex - 500, 0)
+                        state.animateScrollToItem(index)
+                    }
+                }
+            ) {
+                Text("-500")
+            }
+            Button(
+                modifier = buttonModifier,
+                onClick = {
+                    coroutineScope.launch {
+                        state.animateScrollToItem(
+                            state.firstVisibleItemIndex,
+                            500
+                        )
+                    }
+                }
+            ) {
+                Text("Offset")
+            }
+            Button(
+                modifier = buttonModifier,
+                onClick = {
                     with(density) {
                         coroutineScope.launch {
-                            val requestedScroll = 3000.dp.toPx()
+                            val requestedScroll = 10000.dp.toPx()
                             lastScrollDescription = try {
-                                val actualScroll = state.smoothScrollBy(requestedScroll)
+                                val actualScroll = state.animateScrollBy(requestedScroll)
                                 "$actualScroll/$requestedScroll px"
                             } catch (_: CancellationException) {
                                 "Interrupted!"
@@ -184,8 +229,8 @@ private fun ListHoistedStateDemo() {
                 fontSize = 20.sp
             )
             Text(
-                "Dragging: ${interactionState.contains(Interaction.Dragged)}, " +
-                    "Flinging: ${state.isAnimationRunning}",
+                "Dragging: ${state.interactionSource.collectIsDraggedAsState().value}, " +
+                    "Flinging: ${state.isScrollInProgress}",
                 fontSize = 20.sp
             )
         }
@@ -193,29 +238,17 @@ private fun ListHoistedStateDemo() {
             Modifier.fillMaxWidth(),
             state = state
         ) {
-            items((0..1000).toList()) {
-                Text("$it", style = AmbientTextStyle.current.copy(fontSize = 40.sp))
+            items(numItems) {
+                Text("$it", style = LocalTextStyle.current.copy(fontSize = 40.sp))
             }
         }
     }
 }
 
 @Composable
-fun Button(modifier: Modifier = Modifier, onClick: () -> Unit, content: @Composable () -> Unit) {
-    Box(
-        modifier
-            .clickable(onClick = onClick)
-            .background(Color(0xFF6200EE), RoundedCornerShape(4.dp))
-            .padding(horizontal = 16.dp, vertical = 8.dp)
-    ) {
-        Providers(AmbientContentColor provides Color.White, content = content)
-    }
-}
-
-@Composable
 private fun LazyRowItemsDemo() {
     LazyRow {
-        items((1..1000).toList()) {
+        items(1000) {
             Square(it)
         }
     }
@@ -225,7 +258,7 @@ private fun LazyRowItemsDemo() {
 private fun Square(index: Int) {
     val width = remember { Random.nextInt(50, 150).dp }
     Box(
-        Modifier.preferredWidth(width).fillMaxHeight().background(colors[index % colors.size]),
+        Modifier.width(width).fillMaxHeight().background(colors[index % colors.size]),
         contentAlignment = Alignment.Center
     ) {
         Text(index.toString())
@@ -251,14 +284,14 @@ private fun ListWithIndexSample() {
 
 @Composable
 private fun RtlListDemo() {
-    Providers(AmbientLayoutDirection provides LayoutDirection.Rtl) {
+    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
         LazyRow(Modifier.fillMaxWidth()) {
-            itemsIndexed((0..100).toList()) { index, item ->
+            items(100) {
                 Text(
-                    "$item",
+                    "$it",
                     Modifier
-                        .size(100.dp)
-                        .background(if (index % 2 == 0) Color.LightGray else Color.Transparent)
+                        .requiredSize(100.dp)
+                        .background(if (it % 2 == 0) Color.LightGray else Color.Transparent)
                         .padding(16.dp)
                 )
             }
@@ -287,7 +320,7 @@ private val colors = listOf(
 @Composable
 private fun LazyColumnScope() {
     LazyColumn {
-        items((1..10).toList()) {
+        items(10) {
             Text("$it", fontSize = 40.sp)
         }
 
@@ -305,7 +338,7 @@ private fun LazyColumnScope() {
 @Composable
 private fun LazyRowScope() {
     LazyRow {
-        items((1..10).toList()) {
+        items(10) {
             Text("$it", fontSize = 40.sp)
         }
 
@@ -316,7 +349,7 @@ private fun LazyRowScope() {
         val items = listOf(Color.Cyan, Color.Blue, Color.Magenta)
         itemsIndexed(items) { index, item ->
             Box(
-                modifier = Modifier.background(item).size(40.dp),
+                modifier = Modifier.background(item).requiredSize(40.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Text("$index", fontSize = 30.sp)
@@ -353,17 +386,20 @@ private fun LazyListArrangements() {
             val item = @Composable {
                 Box(
                     Modifier
-                        .height(200.dp)
+                        .requiredHeight(200.dp)
                         .fillMaxWidth()
                         .background(Color.Red)
                         .border(1.dp, Color.Cyan)
                 )
             }
-            ScrollableColumn(
+            Column(
                 verticalArrangement = Arrangements[arrangement],
-                modifier = Modifier.weight(1f).fillMaxHeight()
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight()
+                    .verticalScroll(rememberScrollState())
             ) {
-                (1..count).forEach {
+                repeat(count) {
                     item()
                 }
             }
@@ -371,7 +407,7 @@ private fun LazyListArrangements() {
                 verticalArrangement = Arrangements[arrangement],
                 modifier = Modifier.weight(1f).fillMaxHeight()
             ) {
-                items((1..count).toList()) {
+                items(count) {
                     item()
                 }
             }
@@ -418,7 +454,7 @@ fun ReverseLayout() {
                 Text(
                     "$index",
                     Modifier
-                        .height(200.dp)
+                        .requiredHeight(200.dp)
                         .fillMaxWidth()
                         .background(Color.Red)
                         .border(1.dp, Color.Cyan)
@@ -427,19 +463,20 @@ fun ReverseLayout() {
             val item2 = @Composable { index: Int ->
                 Text("After $index")
             }
-            ScrollableColumn(
-                reverseScrollDirection = reverse,
+            Column(
                 verticalArrangement = if (reverse) Arrangement.Bottom else Arrangement.Top,
-                scrollState = scrollState,
-                modifier = Modifier.weight(1f).fillMaxHeight()
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight()
+                    .verticalScroll(scrollState, reverseScrolling = reverse)
             ) {
                 if (reverse) {
-                    (count downTo 1).forEach {
+                    (count - 1 downTo 0).forEach {
                         item2(it)
                         item1(it)
                     }
                 } else {
-                    (1..count).forEach {
+                    (0 until count).forEach {
                         item1(it)
                         item2(it)
                     }
@@ -450,7 +487,7 @@ fun ReverseLayout() {
                 state = lazyState,
                 modifier = Modifier.weight(1f).fillMaxHeight()
             ) {
-                items((1..count).toList()) {
+                items(count) {
                     item1(it)
                     item2(it)
                 }
@@ -463,10 +500,10 @@ fun ReverseLayout() {
 private fun NestedLazyDemo() {
     val item = @Composable { index: Int ->
         Box(
-            Modifier.padding(16.dp).size(200.dp).background(Color.LightGray),
+            Modifier.padding(16.dp).requiredSize(200.dp).background(Color.LightGray),
             contentAlignment = Alignment.Center
         ) {
-            var state by savedInstanceState { 0 }
+            var state by rememberSaveable { mutableStateOf(0) }
             Button(onClick = { state++ }) {
                 Text("Index=$index State=$state")
             }
@@ -475,17 +512,18 @@ private fun NestedLazyDemo() {
     LazyColumn {
         item {
             LazyRow {
-                items(List(100) { it }) {
+                items(100) {
                     item(it)
                 }
             }
         }
-        items(List(100) { it }) {
+        items(100) {
             item(it)
         }
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun LazyGridDemo() {
     val columnModes = listOf(
@@ -512,9 +550,7 @@ private fun LazyGridForMode(mode: GridCells) {
     LazyVerticalGrid(
         cells = mode
     ) {
-        items(
-            items = (1..100).toList()
-        ) {
+        items(100) {
             Text(
                 text = "$it",
                 fontSize = 20.sp,
@@ -522,6 +558,88 @@ private fun LazyGridForMode(mode: GridCells) {
                     .background(Color.Gray.copy(alpha = (it % 10) / 10f))
                     .padding(8.dp)
             )
+        }
+    }
+}
+
+@Composable
+private fun ReorderWithCustomKeys() {
+    var names by remember { mutableStateOf(listOf("John", "Sara", "Dan")) }
+    Column {
+        Button(onClick = { names = names.shuffled() }) {
+            Text("Shuffle")
+        }
+        LazyColumn {
+            item {
+                var counter by rememberSaveable { mutableStateOf(0) }
+                Button(onClick = { counter++ }) {
+                    Text("Header has $counter")
+                }
+            }
+            items(
+                items = names,
+                key = { it }
+            ) {
+                var counter by rememberSaveable { mutableStateOf(0) }
+                Button(onClick = { counter++ }) {
+                    Text("$it has $counter")
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun LazyWithFlingConfig() {
+    Column {
+        Text(
+            "Custom fling config will dance back and forth when you fling",
+            modifier = Modifier.padding(16.dp)
+        )
+        val defaultDecay = defaultDecayAnimationSpec()
+        val flingConfig = remember {
+            object : FlingBehavior {
+                override suspend fun ScrollScope.performFling(initialVelocity: Float): Float {
+                    val unspecifiedFrame = AnimationConstants.UnspecifiedTime
+                    val target = defaultDecay.calculateTargetValue(0f, initialVelocity)
+                    val perDance = target / 3
+                    var velocityLeft = initialVelocity
+                    var lastLeft = 0f
+                    var lastFrameTime = unspecifiedFrame
+                    while (abs(lastLeft) < 1f) {
+                        listOf(perDance * 3 / 4, -perDance * 1 / 4).forEach { toGo ->
+                            if (abs(lastLeft) > 1f) return@forEach
+                            var lastValue = 0f
+                            AnimationState(
+                                initialValue = 0f,
+                                lastFrameTimeNanos = lastFrameTime
+                            ).animateTo(
+                                targetValue = toGo,
+                                sequentialAnimation = lastFrameTime != unspecifiedFrame
+                            ) {
+                                val delta = value - lastValue
+                                lastLeft = scrollBy(delta)
+                                lastValue = value
+                                velocityLeft = this.velocity
+                                lastFrameTime = this.lastFrameTimeNanos
+                                if (abs(lastLeft) > 0.5f) this.cancelAnimation()
+                            }
+                        }
+                    }
+                    return velocityLeft
+                }
+            }
+        }
+        LazyColumn(flingBehavior = flingConfig) {
+            items(100) {
+                Text(
+                    text = "$it",
+                    fontSize = 20.sp,
+                    modifier = Modifier
+                        .background(Color.Gray.copy(alpha = it / 100f))
+                        .padding(16.dp)
+                )
+            }
         }
     }
 }

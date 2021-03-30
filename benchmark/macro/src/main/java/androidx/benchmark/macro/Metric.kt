@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Android Open Source Project
+ * Copyright 2021 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,82 +16,36 @@
 
 package androidx.benchmark.macro
 
+import androidx.annotation.RequiresApi
+import androidx.benchmark.macro.perfetto.PerfettoResultsParser.parseResult
+import androidx.benchmark.macro.perfetto.PerfettoTraceProcessor
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.UiDevice
-import com.android.helpers.CpuUsageHelper
-import com.android.helpers.JankCollectionHelper
-import com.android.helpers.TotalPssHelper
 
 /**
  * Metric interface.
  */
 sealed class Metric {
-    abstract fun configure(config: MacrobenchmarkConfig)
+    abstract fun configure(packageName: String)
 
     abstract fun start()
 
     abstract fun stop()
-
     /**
      * After stopping, collect metrics
      *
      * TODO: takes package for package level filtering, but probably want a
      *  general config object coming into [start].
      */
-    abstract fun getMetrics(packageName: String): Map<String, Long>
+    abstract fun getMetrics(packageName: String, tracePath: String): Map<String, Long>
 }
 
-class StartupTimingMetric : Metric() {
-    private val helper = AppStartupHelper()
-
-    override fun configure(config: MacrobenchmarkConfig) {
-        // does nothing
-    }
-
-    override fun start() {
-        helper.startCollecting()
-    }
-
-    override fun stop() {
-        helper.stopCollecting()
-    }
-
-    override fun getMetrics(packageName: String): Map<String, Long> {
-        return helper.getMetrics(packageName)
-    }
-}
-
-/**
- * Not public, as this needs clarified metric names, and fix zeros (b/173056421)
- */
-internal class CpuUsageMetric : Metric() {
-    private val helper = CpuUsageHelper().also {
-        it.setEnableCpuUtilization()
-    }
-
-    override fun configure(config: MacrobenchmarkConfig) {
-        // does nothing
-    }
-
-    override fun start() {
-        helper.startCollecting()
-    }
-
-    override fun stop() {
-        helper.stopCollecting()
-    }
-
-    override fun getMetrics(packageName: String): Map<String, Long> {
-        return helper.metrics
-    }
-}
-
-class JankMetric : Metric() {
+class FrameTimingMetric : Metric() {
     private lateinit var packageName: String
     private val helper = JankCollectionHelper()
 
-    override fun configure(config: MacrobenchmarkConfig) {
-        packageName = config.packageName
+    override fun configure(packageName: String) {
+        this.packageName = packageName
         helper.addTrackedPackages(packageName)
     }
 
@@ -146,7 +100,7 @@ class JankMetric : Metric() {
         "slow_bmp_upload" to "slowBitmapUploadFrameCount",
         "slow_issue_draw_cmds" to "slowIssueDrawCommandsFrameCount",
         "total_frames" to "totalFrameCount",
-        "janky_frames_percent" to "jankyFramePercent",
+        "janky_frames_percent" to "jankyFramePercent"
     )
 
     /**
@@ -157,10 +111,10 @@ class JankMetric : Metric() {
         "frameTime90thPercentileMs",
         "frameTime95thPercentileMs",
         "frameTime99thPercentileMs",
-        "totalFrameCount",
+        "totalFrameCount"
     )
 
-    override fun getMetrics(packageName: String): Map<String, Long> {
+    override fun getMetrics(packageName: String, tracePath: String): Map<String, Long> {
         return helper.metrics
             .map {
                 val prefix = "gfxinfo_${packageName}_"
@@ -181,24 +135,22 @@ class JankMetric : Metric() {
 }
 
 /**
- * Not public, as this needs clarified metric names
+ * Captures app startup timing metrics.
  */
-internal class TotalPssMetric : Metric() {
-    private val helper = TotalPssHelper()
-
-    override fun configure(config: MacrobenchmarkConfig) {
-        helper.setUp(config.packageName)
+@Suppress("CanSealedSubClassBeObject")
+@RequiresApi(29)
+class StartupTimingMetric : Metric() {
+    override fun configure(packageName: String) {
     }
 
     override fun start() {
-        helper.startCollecting()
     }
 
     override fun stop() {
-        helper.stopCollecting()
     }
 
-    override fun getMetrics(packageName: String): Map<String, Long> {
-        return helper.metrics
+    override fun getMetrics(packageName: String, tracePath: String): Map<String, Long> {
+        val json = PerfettoTraceProcessor.getJsonMetrics(tracePath, "android_startup")
+        return parseResult(json, packageName)
     }
 }

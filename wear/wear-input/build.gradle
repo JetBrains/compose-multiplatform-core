@@ -22,10 +22,12 @@ import androidx.build.Publish
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
+    id("kotlin-android")
 }
 
 dependencies {
     api("androidx.annotation:annotation:1.1.0")
+    api(KOTLIN_STDLIB)
 
     testImplementation(ANDROIDX_TEST_EXT_JUNIT)
     testImplementation(ANDROIDX_TEST_CORE)
@@ -35,7 +37,7 @@ dependencies {
     testImplementation(MOCKITO_CORE)
     testImplementation(project(":wear:wear-input-testing"))
 
-    compileOnly fileTree(dir: '../wear_stubs', include: ['com.google.android.wearable-stubs.jar'])
+    compileOnly(fileTree(dir: "../wear_stubs", include: ["com.google.android.wearable-stubs.jar"]))
 }
 
 android {

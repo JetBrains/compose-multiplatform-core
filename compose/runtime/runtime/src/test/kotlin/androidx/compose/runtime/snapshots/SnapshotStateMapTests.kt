@@ -16,7 +16,6 @@
 
 package androidx.compose.runtime.snapshots
 
-import androidx.compose.runtime.ExperimentalComposeApi
 import androidx.compose.runtime.mutableStateMapOf
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -449,11 +448,10 @@ class SnapshotStateMapTests {
         }
     }
 
-    @OptIn(ExperimentalComposeApi::class)
     @Test
     fun validateMapsCanBeSnapshot() {
         val map = defaultMap()
-        val snapshot = takeSnapshot()
+        val snapshot = Snapshot.takeSnapshot()
         try {
             map[100] = 100f
             assertTrue(map.contains(100))

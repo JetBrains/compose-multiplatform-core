@@ -27,7 +27,7 @@ import java.util.Objects;
 /**
  * Represents an {@link ItemList} that is contained inside a section, for internal use only.
  */
-public class SectionedItemList {
+public final class SectionedItemList {
     @Keep
     @Nullable
     private final ItemList mItemList;
@@ -41,8 +41,9 @@ public class SectionedItemList {
      */
     @NonNull
     public static SectionedItemList create(
-            @NonNull ItemList itemList, @NonNull CarText sectionHeader) {
-        return new SectionedItemList(requireNonNull(itemList), requireNonNull(sectionHeader));
+            @NonNull ItemList itemList, @NonNull CharSequence sectionHeader) {
+        return new SectionedItemList(requireNonNull(itemList),
+                CarText.create(requireNonNull(sectionHeader)));
     }
 
     /** Returns the {@link ItemList} for the section. */
@@ -83,13 +84,12 @@ public class SectionedItemList {
     }
 
     private SectionedItemList(@Nullable ItemList itemList, @Nullable CarText header) {
-        this.mItemList = itemList;
-        this.mHeader = header;
+        mItemList = itemList;
+        mHeader = header;
     }
 
-    /** For serialization. */
     private SectionedItemList() {
-        this.mItemList = null;
-        this.mHeader = null;
+        mItemList = null;
+        mHeader = null;
     }
 }

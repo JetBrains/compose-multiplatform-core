@@ -16,9 +16,18 @@
 
 package androidx.compose.ui.demos
 
+import androidx.compose.foundation.demos.text.SoftwareKeyboardControllerDemo
+import androidx.compose.integration.demos.common.ComposableDemo
+import androidx.compose.integration.demos.common.DemoCategory
 import androidx.compose.ui.demos.autofill.ExplicitAutofillTypesDemo
+import androidx.compose.ui.demos.focus.CustomFocusOrderDemo
+import androidx.compose.ui.demos.focus.FocusInDialogDemo
+import androidx.compose.ui.demos.focus.FocusInPopupDemo
+import androidx.compose.ui.demos.focus.FocusManagerMoveFocusDemo
+import androidx.compose.ui.demos.focus.FocusSearchDemo
 import androidx.compose.ui.demos.focus.FocusableDemo
-import androidx.compose.ui.demos.focus.ReuseFocusReference
+import androidx.compose.ui.demos.focus.ReuseFocusRequesterDemo
+import androidx.compose.ui.demos.gestures.DetectTapGesturesDemo
 import androidx.compose.ui.demos.gestures.DoubleTapGestureFilterDemo
 import androidx.compose.ui.demos.gestures.DoubleTapInTapDemo
 import androidx.compose.ui.demos.gestures.DragAndScaleGestureFilterDemo
@@ -29,7 +38,7 @@ import androidx.compose.ui.demos.gestures.LongPressDragGestureFilterDemo
 import androidx.compose.ui.demos.gestures.LongPressGestureDetectorDemo
 import androidx.compose.ui.demos.gestures.NestedLongPressDemo
 import androidx.compose.ui.demos.gestures.NestedPressingDemo
-import androidx.compose.ui.demos.gestures.NestedScalingDemo
+import androidx.compose.ui.demos.gestures.NestedScrollDispatchDemo
 import androidx.compose.ui.demos.gestures.NestedScrollingDemo
 import androidx.compose.ui.demos.gestures.PointerInputDuringSubComp
 import androidx.compose.ui.demos.gestures.PopupDragDemo
@@ -37,15 +46,10 @@ import androidx.compose.ui.demos.gestures.PressIndicatorGestureFilterDemo
 import androidx.compose.ui.demos.gestures.RawDragGestureFilterDemo
 import androidx.compose.ui.demos.gestures.ScaleGestureFilterDemo
 import androidx.compose.ui.demos.gestures.ScrollGestureFilterDemo
-import androidx.compose.ui.demos.gestures.TapGestureFilterDemo
 import androidx.compose.ui.demos.gestures.VerticalScrollerInDrawerDemo
 import androidx.compose.ui.demos.keyinput.KeyInputDemo
 import androidx.compose.ui.demos.viewinterop.ViewInteropDemo
-import androidx.compose.integration.demos.common.ComposableDemo
-import androidx.compose.integration.demos.common.DemoCategory
-import androidx.compose.ui.demos.focus.FocusInDialog
-import androidx.compose.ui.demos.focus.FocusInPopup
-import androidx.compose.ui.samples.NestedScrollSample
+import androidx.compose.ui.samples.NestedScrollConnectionSample
 
 private val GestureDemos = DemoCategory(
     "Gestures",
@@ -54,7 +58,7 @@ private val GestureDemos = DemoCategory(
             "Common Gestures",
             listOf(
                 ComposableDemo("Press Indication") { PressIndicatorGestureFilterDemo() },
-                ComposableDemo("Tap") { TapGestureFilterDemo() },
+                ComposableDemo("Tap") { DetectTapGesturesDemo() },
                 ComposableDemo("Double Tap") { DoubleTapGestureFilterDemo() },
                 ComposableDemo("Long Press") { LongPressGestureDetectorDemo() },
                 ComposableDemo("Scroll") { ScrollGestureFilterDemo() },
@@ -81,7 +85,6 @@ private val GestureDemos = DemoCategory(
                     VerticalScrollerInDrawerDemo()
                 },
                 ComposableDemo("Nested Scrolling") { NestedScrollingDemo() },
-                ComposableDemo("Nested Scaling") { NestedScalingDemo() },
                 ComposableDemo("Drag and Scale") { DragAndScaleGestureFilterDemo() },
                 ComposableDemo("Popup Drag") { PopupDragDemo() },
                 ComposableDemo("Double Tap in Tap") { DoubleTapInTapDemo() },
@@ -89,7 +92,13 @@ private val GestureDemos = DemoCategory(
                 ComposableDemo("Pointer Input During Sub Comp") { PointerInputDuringSubComp() }
             )
         ),
-        ComposableDemo("New nested scroll") { NestedScrollSample() }
+        DemoCategory(
+            "New nested scroll",
+            listOf(
+                ComposableDemo("Nested scroll connection") { NestedScrollConnectionSample() },
+                ComposableDemo("Nested scroll dispatch") { NestedScrollDispatchDemo() }
+            )
+        )
     )
 )
 
@@ -97,9 +106,12 @@ private val FocusDemos = DemoCategory(
     "Focus",
     listOf(
         ComposableDemo("Focusable Siblings") { FocusableDemo() },
-        ComposableDemo("Focus Within Dialog") { FocusInDialog() },
-        ComposableDemo("Focus Within Popup") { FocusInPopup() },
-        ComposableDemo("Reuse Focus Reference") { ReuseFocusReference() }
+        ComposableDemo("Focus Within Dialog") { FocusInDialogDemo() },
+        ComposableDemo("Focus Within Popup") { FocusInPopupDemo() },
+        ComposableDemo("Reuse Focus Requester") { ReuseFocusRequesterDemo() },
+        ComposableDemo("Focus Search") { FocusSearchDemo() },
+        ComposableDemo("Custom Focus Order") { CustomFocusOrderDemo() },
+        ComposableDemo("FocusManager.moveFocus()") { FocusManagerMoveFocusDemo() }
     )
 )
 
@@ -107,6 +119,7 @@ private val GraphicsDemos = DemoCategory(
     "Graphics",
     listOf(
         ComposableDemo("VectorGraphicsDemo") { VectorGraphicsDemo() },
+        ComposableDemo("AnimatedVectorGraphicsDemo") { AnimatedVectorGraphicsDemo() },
         ComposableDemo("DeclarativeGraphicsDemo") { DeclarativeGraphicsDemo() }
     )
 )
@@ -123,6 +136,6 @@ val CoreDemos = DemoCategory(
         GraphicsDemos,
         GestureDemos,
         ComposableDemo("Views interoperability") { ViewInteropDemo() },
-        ComposableDemo("ViewModel") { ViewModelDemo() }
+        ComposableDemo("Software Keyboard Controller") { SoftwareKeyboardControllerDemo() }
     )
 )

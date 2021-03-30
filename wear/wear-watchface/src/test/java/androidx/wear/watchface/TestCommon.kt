@@ -18,6 +18,7 @@ package androidx.wear.watchface
 
 import android.app.PendingIntent
 import android.content.ComponentName
+import android.content.Context
 import android.content.Intent
 import android.graphics.Canvas
 import android.graphics.Rect
@@ -30,9 +31,10 @@ import android.support.wearable.watchface.WatchFaceStyle
 import android.support.wearable.watchface.accessibility.ContentDescriptionLabel
 import android.view.SurfaceHolder
 import androidx.test.core.app.ApplicationProvider
-import androidx.wear.complications.data.IdAndComplicationData
+import androidx.wear.complications.data.toApiComplicationData
+import androidx.wear.watchface.control.data.WallpaperInteractiveWatchFaceInstanceParams
 import androidx.wear.watchface.style.UserStyle
-import androidx.wear.watchface.style.UserStyleRepository
+import androidx.wear.watchface.style.CurrentUserStyleRepository
 import org.junit.runners.model.FrameworkMethod
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.internal.bytecode.InstrumentationConfiguration
@@ -41,20 +43,22 @@ internal class TestWatchFaceService(
     @WatchFaceType private val watchFaceType: Int,
     private val complicationsManager: ComplicationsManager,
     private val renderer: TestRenderer,
-    private val userStyleRepository: UserStyleRepository,
+    private val currentUserStyleRepository: CurrentUserStyleRepository,
     private val watchState: MutableWatchState,
     private val handler: Handler,
-    private val tapListener: WatchFace.TapListener?
+    private val tapListener: WatchFace.TapListener?,
+    private val preAndroidR: Boolean,
+    private val directBootParams: WallpaperInteractiveWatchFaceInstanceParams?
 ) : WatchFaceService() {
+    var singleTapCount = 0
     var complicationSingleTapped: Int? = null
-    var complicationDoubleTapped: Int? = null
     var complicationSelected: Int? = null
     var mockSystemTimeMillis = 0L
     var lastUserStyle: UserStyle? = null
 
     init {
-        userStyleRepository.addUserStyleListener(
-            object : UserStyleRepository.UserStyleListener {
+        currentUserStyleRepository.addUserStyleChangeListener(
+            object : CurrentUserStyleRepository.UserStyleChangeListener {
                 override fun onUserStyleChanged(userStyle: UserStyle) {
                     lastUserStyle = userStyle
                 }
@@ -63,12 +67,9 @@ internal class TestWatchFaceService(
 
         complicationsManager.addTapListener(
             object : ComplicationsManager.TapCallback {
-                override fun onComplicationSingleTapped(complicationId: Int) {
+                override fun onComplicationTapped(complicationId: Int) {
                     complicationSingleTapped = complicationId
-                }
-
-                override fun onComplicationDoubleTapped(complicationId: Int) {
-                    complicationDoubleTapped = complicationId
+                    singleTapCount++
                 }
             })
     }
@@ -82,21 +83,20 @@ internal class TestWatchFaceService(
 
     fun clearTappedState() {
         complicationSingleTapped = null
-        complicationDoubleTapped = null
     }
 
     init {
         attachBaseContext(ApplicationProvider.getApplicationContext())
     }
 
-    override fun createWatchFace(
+    override suspend fun createWatchFace(
         surfaceHolder: SurfaceHolder,
         watchState: WatchState
     ) = WatchFace(
         watchFaceType,
-        userStyleRepository,
-        complicationsManager,
-        renderer
+        currentUserStyleRepository,
+        renderer,
+        complicationsManager
     ).setSystemTimeProvider(object : WatchFace.SystemTimeProvider {
         override fun getSystemTimeMillis(): Long {
             return mockSystemTimeMillis
@@ -110,6 +110,19 @@ internal class TestWatchFaceService(
     fun setIsVisible(isVisible: Boolean) {
         watchState.isVisible.value = isVisible
     }
+
+    override fun readDirectBootPrefs(
+        context: Context,
+        fileName: String
+    ) = directBootParams
+
+    override fun writeDirectBootPrefs(
+        context: Context,
+        fileName: String,
+        prefs: WallpaperInteractiveWatchFaceInstanceParams
+    ) {}
+
+    override fun expectPreRInitFlow() = preAndroidR
 }
 
 /**
@@ -166,16 +179,20 @@ class WatchFaceServiceStub(private val iWatchFaceService: IWatchFaceService) :
             watchFaceComplicationId, providers, fallbackSystemProvider, type
         )
     }
+
+    override fun reserved8() {
+        iWatchFaceService.reserved8()
+    }
 }
 
 open class TestRenderer(
     surfaceHolder: SurfaceHolder,
-    userStyleRepository: UserStyleRepository,
+    currentUserStyleRepository: CurrentUserStyleRepository,
     watchState: WatchState,
     interactiveFrameRateMs: Long
 ) : Renderer.CanvasRenderer(
     surfaceHolder,
-    userStyleRepository,
+    currentUserStyleRepository,
     watchState,
     CanvasType.HARDWARE,
     interactiveFrameRateMs
@@ -193,18 +210,15 @@ open class TestRenderer(
     }
 }
 
-fun createIdAndComplicationData(id: Int) =
-    IdAndComplicationData(
-        id,
-        ComplicationData.Builder(ComplicationData.TYPE_SHORT_TEXT)
-            .setShortText(ComplicationText.plainText("Test Text"))
-            .setTapAction(
-                PendingIntent.getActivity(
-                    ApplicationProvider.getApplicationContext(), 0,
-                    Intent("Fake intent"), 0
-                )
-            ).build()
-    )
+fun createComplicationData() =
+    ComplicationData.Builder(ComplicationData.TYPE_SHORT_TEXT)
+        .setShortText(ComplicationText.plainText("Test Text"))
+        .setTapAction(
+            PendingIntent.getActivity(
+                ApplicationProvider.getApplicationContext(), 0,
+                Intent("Fake intent"), 0
+            )
+        ).build().toApiComplicationData()
 
 /**
  * We need to prevent roboloetric from instrumenting our classes or things break...
@@ -214,6 +228,7 @@ class WatchFaceTestRunner(testClass: Class<*>) : RobolectricTestRunner(testClass
         InstrumentationConfiguration.Builder(super.createClassLoaderConfig(method))
             .doNotInstrumentPackage("android.support.wearable.watchface")
             .doNotInstrumentPackage("androidx.wear.complications")
+            .doNotInstrumentPackage("androidx.wear.utility")
             .doNotInstrumentPackage("androidx.wear.watchface")
             .doNotInstrumentPackage("androidx.wear.watchface.ui")
             .doNotInstrumentPackage("androidx.wear.watchfacestyle")

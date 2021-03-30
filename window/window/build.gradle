@@ -35,18 +35,24 @@ plugins {
 }
 
 android {
-    defaultConfig {
-        minSdkVersion 16
-    }
     buildTypes.all {
-        consumerProguardFiles 'proguard-rules.pro'
+        consumerProguardFiles "proguard-rules.pro"
+    }
+    sourceSets {
+        String testUtilDir = 'src/testUtil/java'
+        test {
+            java.srcDir testUtilDir
+        }
+        androidTest {
+            java.srcDir testUtilDir
+        }
     }
 }
 
 dependencies {
     implementation("androidx.annotation:annotation:1.1.0")
     implementation("androidx.collection:collection:1.1.0")
-    implementation "androidx.core:core:1.3.2"
+    implementation("androidx.core:core:1.3.2")
 
     compileOnly(project(":window:window-extensions"))
     compileOnly(project(":window:window-sidecar"))

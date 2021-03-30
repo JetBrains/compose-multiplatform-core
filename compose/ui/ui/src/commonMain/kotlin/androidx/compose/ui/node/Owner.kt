@@ -18,32 +18,35 @@ package androidx.compose.ui.node
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.autofill.Autofill
 import androidx.compose.ui.autofill.AutofillTree
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusManager
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.input.key.KeyEvent
+import androidx.compose.ui.platform.AccessibilityManager
 import androidx.compose.ui.platform.ClipboardManager
 import androidx.compose.ui.platform.TextToolbar
 import androidx.compose.ui.platform.ViewConfiguration
-import androidx.compose.ui.semantics.SemanticsOwner
+import androidx.compose.ui.platform.WindowInfo
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.input.TextInputService
 import androidx.compose.ui.unit.Density
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.LayoutDirection
-import androidx.compose.ui.platform.WindowManager
 
 /**
  * Owner implements the connection to the underlying view system. On Android, this connects
  * to Android [views][android.view.View] and all layout, draw, input, and accessibility is hooked
  * through them.
  */
-interface Owner {
+internal interface Owner {
 
     /**
      * The root layout node in the component tree.
      */
     val root: LayoutNode
+
+    val rootForTest: RootForTest
 
     /**
      * Provide haptic feedback to the user. Use the Android version of haptic feedback.
@@ -56,6 +59,11 @@ interface Owner {
     val clipboardManager: ClipboardManager
 
     /**
+     * Provide accessibility manager to the user. Use the Android version of accessibility manager.
+     */
+    val accessibilityManager: AccessibilityManager
+
+    /**
      * Provide toolbar for text-related actions, such as copy, paste, cut etc.
      */
     val textToolbar: TextToolbar
@@ -66,18 +74,19 @@ interface Owner {
      *  TODO(ralu): Replace with SemanticsTree. This is a temporary hack until we have a semantics
      *  tree implemented.
      */
+    @get:ExperimentalComposeUiApi
     @ExperimentalComposeUiApi
     val autofillTree: AutofillTree
 
     /**
-     * The [Autofill] class can be used to perform autofill operations. It is used as an ambient.
+     * The [Autofill] class can be used to perform autofill operations. It is used as a
+     * CompositionLocal.
      */
+    @get:ExperimentalComposeUiApi
     @ExperimentalComposeUiApi
     val autofill: Autofill?
 
     val density: Density
-
-    val semanticsOwner: SemanticsOwner
 
     val textInputService: TextInputService
 
@@ -89,7 +98,7 @@ interface Owner {
     /**
      * Provide information about the window that hosts this [Owner].
      */
-    val windowManager: WindowManager
+    val windowInfo: WindowInfo
 
     val fontLoader: Font.ResourceLoader
 
@@ -128,10 +137,18 @@ interface Owner {
     fun onDetach(node: LayoutNode)
 
     /**
-     * Returns the most global position of the owner that Compose can access (such as the device
-     * screen).
+     * Returns the position relative to the containing window of the [localPosition],
+     * the position relative to the [Owner]. If the [Owner] is rotated, scaled, or otherwise
+     * transformed relative to the window, this will not be a simple translation.
      */
-    fun calculatePosition(): IntOffset
+    fun calculatePositionInWindow(localPosition: Offset): Offset
+
+    /**
+     * Returns the position relative to the [Owner] of the [positionInWindow],
+     * the position relative to the window. If the [Owner] is rotated, scaled, or otherwise
+     * transformed relative to the window, this will not be a simple translation.
+     */
+    fun calculateLocalPosition(positionInWindow: Offset): Offset
 
     /**
      * Ask the system to provide focus to this owner.
@@ -139,13 +156,6 @@ interface Owner {
      * @return true if the system granted focus to this owner. False otherwise.
      */
     fun requestFocus(): Boolean
-
-    /**
-     * Send this [KeyEvent] to the focused component in this [Owner].
-     *
-     * @return true if the event was consumed. False otherwise.
-     */
-    fun sendKeyEvent(keyEvent: KeyEvent): Boolean
 
     /**
      * Iterates through all LayoutNodes that have requested layout and measures and lays them out
@@ -168,6 +178,11 @@ interface Owner {
      * The position and/or size of the [layoutNode] changed.
      */
     fun onLayoutChange(layoutNode: LayoutNode)
+
+    /**
+     * The [FocusDirection] represented by the specified keyEvent.
+     */
+    fun getFocusDirection(keyEvent: KeyEvent): FocusDirection?
 
     val measureIteration: Long
 

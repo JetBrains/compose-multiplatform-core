@@ -21,7 +21,6 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.Box
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.setContent
 import androidx.test.espresso.Espresso
 import androidx.test.filters.MediumTest
 import org.junit.Rule

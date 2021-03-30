@@ -23,13 +23,14 @@ import android.os.Handler;
 import android.os.Looper;
 import android.view.Display;
 
+import androidx.annotation.FloatRange;
 import androidx.annotation.IntDef;
 import androidx.annotation.MainThread;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.OptIn;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
-import androidx.annotation.experimental.UseExperimental;
 import androidx.camera.core.Camera;
 import androidx.camera.core.CameraControl;
 import androidx.camera.core.CameraInfo;
@@ -112,7 +113,7 @@ public abstract class CameraController {
      *
      * @hide
      */
-    @UseExperimental(markerClass = ExperimentalVideo.class)
+    @OptIn(markerClass = ExperimentalVideo.class)
     @Retention(RetentionPolicy.SOURCE)
     @RestrictTo(RestrictTo.Scope.LIBRARY)
     @IntDef(flag = true, value = {IMAGE_CAPTURE, IMAGE_ANALYSIS, VIDEO_CAPTURE})
@@ -329,7 +330,7 @@ public abstract class CameraController {
      * @see ImageAnalysis
      */
     @MainThread
-    @UseExperimental(markerClass = ExperimentalVideo.class)
+    @OptIn(markerClass = ExperimentalVideo.class)
     public void setEnabledUseCases(@UseCases int enabledUseCases) {
         Threads.checkMainThread();
         if (enabledUseCases == mEnabledUseCases) {
@@ -358,9 +359,9 @@ public abstract class CameraController {
      * Same as {@link #isVideoCaptureEnabled()}.
      *
      * <p> This wrapper method is to workaround the limitation that currently only one
-     * {@link UseExperimental} mark class is allowed per method.
+     * UseExperimental mark class is allowed per method.
      */
-    @UseExperimental(markerClass = ExperimentalVideo.class)
+    @OptIn(markerClass = ExperimentalVideo.class)
     private boolean isVideoCaptureEnabledInternal() {
         return isVideoCaptureEnabled();
     }
@@ -374,7 +375,7 @@ public abstract class CameraController {
      */
     @SuppressLint({"MissingPermission", "WrongConstant"})
     @MainThread
-    @UseExperimental(markerClass = ExperimentalUseCaseGroup.class)
+    @OptIn(markerClass = ExperimentalUseCaseGroup.class)
     void attachPreviewSurface(@NonNull Preview.SurfaceProvider surfaceProvider,
             @NonNull ViewPort viewPort, @NonNull Display display) {
         Threads.checkMainThread();
@@ -763,7 +764,9 @@ public abstract class CameraController {
      * Sets the {@link CameraSelector}.
      *
      * <p> Calling this method with a {@link CameraSelector} that resolves to a different camera
-     * will change the camera being used by the controller.
+     * will change the camera being used by the controller. If camera initialization is complete,
+     * the controller will immediately rebind use cases with the new {@link CameraSelector};
+     * otherwise, the new {@link CameraSelector} will be used when the camera becomes ready.
      *
      * <p>The default value is {@link CameraSelector#DEFAULT_BACK_CAMERA}.
      *
@@ -778,13 +781,13 @@ public abstract class CameraController {
             return;
         }
 
+        CameraSelector oldCameraSelector = mCameraSelector;
+        mCameraSelector = cameraSelector;
+
         if (mCameraProvider == null) {
             return;
         }
         mCameraProvider.unbindAll();
-
-        CameraSelector oldCameraSelector = mCameraSelector;
-        mCameraSelector = cameraSelector;
         startCameraAndTrackStates(() -> mCameraSelector = oldCameraSelector);
     }
 
@@ -971,6 +974,19 @@ public abstract class CameraController {
     }
 
     /**
+     * Gets the {@link CameraInfo} of the currently attached camera.
+     *
+     * @return the {@link CameraInfo} of the current camera. Returns null if camera is not ready.
+     * @see Camera#getCameraInfo()
+     */
+    @Nullable
+    @MainThread
+    public CameraInfo getCameraInfo() {
+        Threads.checkMainThread();
+        return mCamera == null ? null : mCamera.getCameraInfo();
+    }
+
+    /**
      * Sets current zoom by ratio.
      *
      * <p>Valid zoom values range from {@link ZoomState#getMinZoomRatio()} to
@@ -1017,7 +1033,7 @@ public abstract class CameraController {
      */
     @NonNull
     @MainThread
-    public ListenableFuture<Void> setLinearZoom(float linearZoom) {
+    public ListenableFuture<Void> setLinearZoom(@FloatRange(from = 0f, to = 1f) float linearZoom) {
         Threads.checkMainThread();
         if (!isCameraAttached()) {
             Logger.w(TAG, CAMERA_NOT_ATTACHED);
@@ -1109,7 +1125,7 @@ public abstract class CameraController {
      */
     @Nullable
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    @UseExperimental(markerClass = ExperimentalUseCaseGroup.class)
+    @OptIn(markerClass = ExperimentalUseCaseGroup.class)
     protected UseCaseGroup createUseCaseGroup() {
         if (!isCameraInitialized()) {
             Logger.d(TAG, CAMERA_NOT_INITIALIZED);
@@ -1166,7 +1182,7 @@ public abstract class CameraController {
 
         @SuppressLint("WrongConstant")
         @Override
-        @UseExperimental(markerClass = ExperimentalUseCaseGroup.class)
+        @OptIn(markerClass = ExperimentalUseCaseGroup.class)
         public void onDisplayChanged(int displayId) {
             if (mPreviewDisplay != null && mPreviewDisplay.getDisplayId() == displayId) {
                 mPreview.setTargetRotation(mPreviewDisplay.getRotation());

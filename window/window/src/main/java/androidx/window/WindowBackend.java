@@ -41,14 +41,4 @@ public interface WindowBackend {
      */
     void unregisterLayoutChangeCallback(@NonNull Consumer<WindowLayoutInfo> callback);
 
-    /**
-     * Registers a callback for device state changes.
-     */
-    void registerDeviceStateChangeCallback(@NonNull Executor executor,
-            @NonNull Consumer<DeviceState> callback);
-
-    /**
-     * Unregisters a callback for device state changes.
-     */
-    void unregisterDeviceStateChangeCallback(@NonNull Consumer<DeviceState> callback);
 }

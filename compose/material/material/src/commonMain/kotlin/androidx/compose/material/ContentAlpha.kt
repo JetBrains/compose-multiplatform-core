@@ -17,14 +17,13 @@
 package androidx.compose.material
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.ambientOf
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.graphics.luminance
-import androidx.compose.ui.util.annotation.FloatRange
 
 /**
  * Default alpha levels used by Material components.
  *
- * See [AmbientContentAlpha].
+ * See [LocalContentAlpha].
  */
 object ContentAlpha {
     /**
@@ -70,10 +69,12 @@ object ContentAlpha {
      */
     @Composable
     private fun contentAlpha(
-        @FloatRange(from = 0.0, to = 1.0) highContrastAlpha: Float,
-        @FloatRange(from = 0.0, to = 1.0) lowContrastAlpha: Float
+        /*@FloatRange(from = 0.0, to = 1.0)*/
+        highContrastAlpha: Float,
+        /*@FloatRange(from = 0.0, to = 1.0)*/
+        lowContrastAlpha: Float
     ): Float {
-        val contentColor = AmbientContentColor.current
+        val contentColor = LocalContentColor.current
         val lightTheme = MaterialTheme.colors.isLight
         return if (lightTheme) {
             if (contentColor.luminance() > 0.5) highContrastAlpha else lowContrastAlpha
@@ -84,8 +85,8 @@ object ContentAlpha {
 }
 
 /**
- * Ambient containing the preferred content alpha for a given position in the hierarchy. This
- * alpha is used for text and iconography ([Text] and [Icon]) to emphasize / de-emphasize
+ * CompositionLocal containing the preferred content alpha for a given position in the hierarchy.
+ * This alpha is used for text and iconography ([Text] and [Icon]) to emphasize / de-emphasize
  * different parts of a component. See the Material guide on
  * [Text Legibility](https://material.io/design/color/text-legibility.html) for more information on
  * alpha levels used by text and iconography.
@@ -97,7 +98,7 @@ object ContentAlpha {
  *
  * @sample androidx.compose.material.samples.ContentAlphaSample
  */
-val AmbientContentAlpha = ambientOf { 1f }
+val LocalContentAlpha = compositionLocalOf { 1f }
 
 /**
  * Alpha levels for high luminance content in light theme, or low luminance content in dark theme.

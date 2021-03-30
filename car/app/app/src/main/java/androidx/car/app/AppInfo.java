@@ -16,7 +16,7 @@
 
 package androidx.car.app;
 
-import static androidx.car.app.utils.CommonUtils.TAG;
+import static androidx.car.app.utils.LogTags.TAG;
 
 import static java.util.Objects.requireNonNull;
 
@@ -25,6 +25,7 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.util.Log;
 
+import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
@@ -35,39 +36,42 @@ import androidx.car.app.versioning.CarAppApiLevels;
 
 /**
  * Container class for information about the app the host is connected to.
- * <p>
- * Hosts will use this information to provide the right level of compatibility, based on the
+ *
+ * <p>Hosts will use this information to provide the right level of compatibility, based on the
  * application's minimum and maximum API level and its own set of supported API levels.
- * <p>
- * The application minimum API level is defined in the application's manifest using the
+ *
+ * <p>The application minimum API level is defined in the application's manifest using the
  * following declaration.
+ *
  * <pre>{@code
  * <manifest ...>
  *   <application ...>
  *     <meta-data
  *         android:name="androidx.car.app.min-api-level"
- *         android:value="2" />
+ *         android:value="1" />
  *     ...
  *   </application>
  * </manifest>
  * }</pre>
- * <p>
  *
  * @see CarContext#getCarAppApiLevel()
  */
 public final class AppInfo {
     // TODO(b/174803562): Automatically update the this version using Gradle
-    private static final String LIBRARY_VERSION = "1.0.0-alpha01";
+    private static final String LIBRARY_VERSION = "1.1.0-alpha01";
 
     /** @hide */
     @RestrictTo(Scope.LIBRARY)
     @VisibleForTesting
     public static final String MIN_API_LEVEL_MANIFEST_KEY = "androidx.car.app.min-api-level";
 
+    @Keep
     @Nullable
     private final String mLibraryVersion;
+    @Keep
     @CarAppApiLevel
     private final int mMinCarAppApiLevel;
+    @Keep
     @CarAppApiLevel
     private final int mLatestCarAppApiLevel;
 
@@ -95,9 +99,9 @@ public final class AppInfo {
      * Creates an instance of {@link AppInfo} with the provided version information.
      *
      * @param minCarAppApiLevel    the minimal API level that can work with an app built with
-     *                             the library.
-     * @param latestCarAppApiLevel the latest API level the library supports.
-     * @param libraryVersion       the library artifact version.
+     *                             the library
+     * @param latestCarAppApiLevel the latest API level the library supports
+     * @param libraryVersion       the library artifact version
      */
     @VisibleForTesting
     public AppInfo(@CarAppApiLevel int minCarAppApiLevel, @CarAppApiLevel int latestCarAppApiLevel,
@@ -154,5 +158,12 @@ public final class AppInfo {
     @CarAppApiLevel
     public int getLatestCarAppApiLevel() {
         return mLatestCarAppApiLevel;
+    }
+
+    @Override
+    public String toString() {
+        return "Library version: [" + getLibraryDisplayVersion() + "] Min Car Api Level: ["
+                + getMinCarAppApiLevel() + "] Latest Car App Api Level: ["
+                + getLatestCarAppApiLevel() + "]";
     }
 }

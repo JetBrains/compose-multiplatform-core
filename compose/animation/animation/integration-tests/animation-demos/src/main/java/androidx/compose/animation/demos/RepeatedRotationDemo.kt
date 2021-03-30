@@ -27,8 +27,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.preferredSize
+import androidx.compose.foundation.layout.requiredHeight
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.material.Button
 import androidx.compose.material.Text
@@ -56,17 +56,18 @@ fun RepeatedRotationDemo() {
         ) {
             Text(text = "Rotate 10 times")
         }
-        Spacer(Modifier.height(10.dp))
+        Spacer(Modifier.requiredHeight(10.dp))
         Button(
             { state.value = RotationStates.Original }
         ) {
             Text(text = "Reset")
         }
-        Spacer(Modifier.height(10.dp))
+        Spacer(Modifier.requiredHeight(10.dp))
         val transition = updateTransition(state.value)
+        @Suppress("UnusedTransitionTargetStateParameter")
         val rotation by transition.animateFloat(
-            {
-                if (it.initialState == RotationStates.Original) {
+            transitionSpec = {
+                if (initialState == RotationStates.Original) {
                     repeatable(
                         iterations = 10,
                         animation = keyframes {
@@ -82,7 +83,7 @@ fun RepeatedRotationDemo() {
         ) {
             0f
         }
-        Canvas(Modifier.preferredSize(100.dp)) {
+        Canvas(Modifier.size(100.dp)) {
             rotate(rotation, Offset.Zero) {
                 drawRect(Color(0xFF00FF00))
             }

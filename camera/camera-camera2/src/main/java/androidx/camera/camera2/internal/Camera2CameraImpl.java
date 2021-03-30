@@ -233,7 +233,8 @@ final class Camera2CameraImpl implements CameraInternal {
     private void openInternal() {
         switch (mState) {
             case INITIALIZED:
-                openCameraDevice(/*fromScheduledCameraReopen=*/false);
+            case PENDING_OPEN:
+                tryForceOpenCameraDevice();
                 break;
             case CLOSING:
                 setState(InternalState.REOPENING);
@@ -656,7 +657,7 @@ final class Camera2CameraImpl implements CameraInternal {
         }
     }
 
-    // Attempts to make use attach if they are not already attached.
+    /** Attempts to attach use cases if they are not already attached. */
     @ExecutedBy("mExecutor")
     private void tryAttachUseCases(@NonNull Collection<UseCase> toAdd) {
         final boolean attachUseCaseFromEmpty =
@@ -875,28 +876,70 @@ final class Camera2CameraImpl implements CameraInternal {
         return mCameraInfoInternal;
     }
 
-    /** Opens the camera device */
-    // TODO(b/124268878): Handle SecurityException and require permission in manifest.
-    @SuppressLint("MissingPermission")
+    /** @hide */
+    @RestrictTo(RestrictTo.Scope.TESTS)
+    public CameraAvailability getCameraAvailability() {
+        return mCameraAvailability;
+    }
+
+    /**
+     * Attempts to force open the camera device, which may result in stealing it from a lower
+     * priority client. This should only happen if another client doesn't close the camera when
+     * it should, e.g. when its process is moved to the background.
+     */
     @SuppressWarnings("WeakerAccess") /* synthetic accessor */
     @ExecutedBy("mExecutor")
-    void openCameraDevice(boolean fromScheduledCameraReopen) {
+    void tryForceOpenCameraDevice() {
+        debugLog("Attempting to force open the camera.");
+        final boolean shouldTryOpenCamera = mCameraStateRegistry.tryOpenCamera(this);
+        if (!shouldTryOpenCamera) {
+            debugLog("No cameras available. Waiting for available camera before opening camera.");
+            setState(InternalState.PENDING_OPEN);
+            return;
+        }
+        openCameraDevice(false);
+    }
+
+    /**
+     * Attempts to open the camera device. Unlike {@link #tryForceOpenCameraDevice()}, this method
+     * does not steal the camera away from other clients.
+     *
+     * @param fromScheduledCameraReopen True if the attempt to open the camera originated from a
+     *                                  {@linkplain StateCallback.ScheduledReopen scheduled
+     *                                  reopen of the camera}. False otherwise.
+     */
+    @SuppressWarnings("WeakerAccess") /* synthetic accessor */
+    @ExecutedBy("mExecutor")
+    void tryOpenCameraDevice(boolean fromScheduledCameraReopen) {
+        debugLog("Attempting to open the camera.");
+        final boolean shouldTryOpenCamera =
+                mCameraAvailability.isCameraAvailable() && mCameraStateRegistry.tryOpenCamera(this);
+        if (!shouldTryOpenCamera) {
+            debugLog("No cameras available. Waiting for available camera before opening camera.");
+            setState(InternalState.PENDING_OPEN);
+            return;
+        }
+        openCameraDevice(fromScheduledCameraReopen);
+    }
+
+    /**
+     * Opens the camera device.
+     *
+     * @param fromScheduledCameraReopen True if the attempt to open the camera originated from a
+     *                                  {@linkplain StateCallback.ScheduledReopen scheduled
+     *                                  reopen of the camera}. False otherwise.
+     */
+    // TODO(b/124268878): Handle SecurityException and require permission in manifest.
+    @SuppressLint("MissingPermission")
+    @ExecutedBy("mExecutor")
+    private void openCameraDevice(boolean fromScheduledCameraReopen) {
         if (!fromScheduledCameraReopen) {
             mStateCallback.resetReopenMonitor();
         }
         mStateCallback.cancelScheduledReopen();
 
-        // Check that we have an available camera to open here before attempting
-        // to open the camera again.
-        if (!mCameraAvailability.isCameraAvailable() || !mCameraStateRegistry.tryOpenCamera(this)) {
-            debugLog("No cameras available. Waiting for available camera before opening camera.");
-            setState(InternalState.PENDING_OPEN);
-            return;
-        } else {
-            setState(InternalState.OPENING);
-        }
-
         debugLog("Opening camera.");
+        setState(InternalState.OPENING);
 
         try {
             mCameraManager.openCamera(mCameraInfoInternal.getCameraId(), mExecutor,
@@ -1224,6 +1267,20 @@ final class Camera2CameraImpl implements CameraInternal {
     @SuppressWarnings("WeakerAccess") /* synthetic accessor */
     @ExecutedBy("mExecutor")
     void setState(@NonNull InternalState state) {
+        setState(state, /*notifyImmediately=*/true);
+    }
+
+    /**
+     * Moves the camera to a new state.
+     *
+     * @param state             New camera state
+     * @param notifyImmediately {@code true} if {@link CameraStateRegistry} should immediately
+     *                          notify this camera while updating its state if a camera slot
+     *                          becomes available for opening, {@code false} otherwise.
+     */
+    @SuppressWarnings("WeakerAccess") /* synthetic accessor */
+    @ExecutedBy("mExecutor")
+    void setState(@NonNull InternalState state, boolean notifyImmediately) {
         debugLog("Transitioning camera internal state: " + mState + " --> " + state);
         mState = state;
         // Convert the internal state to the publicly visible state
@@ -1254,7 +1311,7 @@ final class Camera2CameraImpl implements CameraInternal {
             default:
                 throw new IllegalStateException("Unknown state: " + state);
         }
-        mCameraStateRegistry.markCameraState(this, publicState);
+        mCameraStateRegistry.markCameraState(this, publicState, notifyImmediately);
         mObservableState.postValue(publicState);
     }
 
@@ -1346,7 +1403,7 @@ final class Camera2CameraImpl implements CameraInternal {
                                 mCameraDeviceError));
                         scheduleCameraReopen();
                     } else {
-                        openCameraDevice(/*fromScheduledCameraReopen=*/false);
+                        tryOpenCameraDevice(/*fromScheduledCameraReopen=*/false);
                     }
                     break;
                 default:
@@ -1457,7 +1514,11 @@ final class Camera2CameraImpl implements CameraInternal {
                         "Camera reopening attempted for "
                                 + CameraReopenMonitor.REOPEN_LIMIT_MS
                                 + "ms without success.");
-                setState(InternalState.INITIALIZED);
+
+                // Set the state to PENDING_OPEN, so that an attempt to reopen the camera is made if
+                // it later becomes available to open, but ignore immediate reopen attempt from
+                // CameraStateRegistry.OnOpenAvailableListener.
+                setState(InternalState.PENDING_OPEN, /*notifyImmediately=*/false);
             }
         }
 
@@ -1524,7 +1585,7 @@ final class Camera2CameraImpl implements CameraInternal {
                     // this is still the scheduled reopen.
                     if (!mCancelled) {
                         Preconditions.checkState(mState == InternalState.REOPENING);
-                        openCameraDevice(/*fromScheduledCameraReopen=*/true);
+                        tryOpenCameraDevice(/*fromScheduledCameraReopen=*/true);
                     }
                 });
             }
@@ -1608,7 +1669,7 @@ final class Camera2CameraImpl implements CameraInternal {
             mCameraAvailable = true;
 
             if (mState == InternalState.PENDING_OPEN) {
-                openCameraDevice(/*fromScheduledCameraReopen=*/false);
+                tryOpenCameraDevice(/*fromScheduledCameraReopen=*/false);
             }
         }
 
@@ -1627,7 +1688,7 @@ final class Camera2CameraImpl implements CameraInternal {
         @ExecutedBy("mExecutor")
         public void onOpenAvailable() {
             if (mState == InternalState.PENDING_OPEN) {
-                openCameraDevice(/*fromScheduledCameraReopen=*/false);
+                tryOpenCameraDevice(/*fromScheduledCameraReopen=*/false);
             }
         }
 

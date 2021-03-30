@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.os.Parcelable;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.lifecycle.SavedStateHandle;
 import androidx.navigation.NavArgs;
 import java.io.Serializable;
 import java.lang.IllegalArgumentException;
@@ -22,6 +23,7 @@ public class MainFragmentArgs implements NavArgs {
     private MainFragmentArgs() {
     }
 
+    @SuppressWarnings("unchecked")
     private MainFragmentArgs(HashMap argumentsMap) {
         this.arguments.putAll(argumentsMap);
     }
@@ -120,6 +122,95 @@ public class MainFragmentArgs implements NavArgs {
             } else {
                 throw new UnsupportedOperationException(AccessMode.class.getName() + " must implement Parcelable or Serializable or must be an Enum.");
             }
+            if (enumArg == null) {
+                throw new IllegalArgumentException("Argument \"enumArg\" is marked as non-null but was passed a null value.");
+            }
+            __result.arguments.put("enumArg", enumArg);
+        } else {
+            __result.arguments.put("enumArg", AccessMode.READ);
+        }
+        return __result;
+    }
+
+    @NonNull
+    @SuppressWarnings("unchecked")
+    public static MainFragmentArgs fromSavedStateHandle(@NonNull SavedStateHandle savedStateHandle) {
+        MainFragmentArgs __result = new MainFragmentArgs();
+        if (savedStateHandle.contains("main")) {
+            String main;
+            main = savedStateHandle.get("main");
+            if (main == null) {
+                throw new IllegalArgumentException("Argument \"main\" is marked as non-null but was passed a null value.");
+            }
+            __result.arguments.put("main", main);
+        } else {
+            throw new IllegalArgumentException("Required argument \"main\" is missing and does not have an android:defaultValue");
+        }
+        if (savedStateHandle.contains("optional")) {
+            int optional;
+            optional = savedStateHandle.get("optional");
+            __result.arguments.put("optional", optional);
+        } else {
+            __result.arguments.put("optional", -1);
+        }
+        if (savedStateHandle.contains("reference")) {
+            int reference;
+            reference = savedStateHandle.get("reference");
+            __result.arguments.put("reference", reference);
+        } else {
+            __result.arguments.put("reference", R.drawable.background);
+        }
+        if (savedStateHandle.contains("referenceZeroDefaultValue")) {
+            int referenceZeroDefaultValue;
+            referenceZeroDefaultValue = savedStateHandle.get("referenceZeroDefaultValue");
+            __result.arguments.put("referenceZeroDefaultValue", referenceZeroDefaultValue);
+        } else {
+            __result.arguments.put("referenceZeroDefaultValue", 0);
+        }
+        if (savedStateHandle.contains("floatArg")) {
+            float floatArg;
+            floatArg = savedStateHandle.get("floatArg");
+            __result.arguments.put("floatArg", floatArg);
+        } else {
+            __result.arguments.put("floatArg", 1F);
+        }
+        if (savedStateHandle.contains("floatArrayArg")) {
+            float[] floatArrayArg;
+            floatArrayArg = savedStateHandle.get("floatArrayArg");
+            if (floatArrayArg == null) {
+                throw new IllegalArgumentException("Argument \"floatArrayArg\" is marked as non-null but was passed a null value.");
+            }
+            __result.arguments.put("floatArrayArg", floatArrayArg);
+        } else {
+            throw new IllegalArgumentException("Required argument \"floatArrayArg\" is missing and does not have an android:defaultValue");
+        }
+        if (savedStateHandle.contains("objectArrayArg")) {
+            ActivityInfo[] objectArrayArg;
+            objectArrayArg = savedStateHandle.get("objectArrayArg");
+            if (objectArrayArg == null) {
+                throw new IllegalArgumentException("Argument \"objectArrayArg\" is marked as non-null but was passed a null value.");
+            }
+            __result.arguments.put("objectArrayArg", objectArrayArg);
+        } else {
+            throw new IllegalArgumentException("Required argument \"objectArrayArg\" is missing and does not have an android:defaultValue");
+        }
+        if (savedStateHandle.contains("boolArg")) {
+            boolean boolArg;
+            boolArg = savedStateHandle.get("boolArg");
+            __result.arguments.put("boolArg", boolArg);
+        } else {
+            __result.arguments.put("boolArg", true);
+        }
+        if (savedStateHandle.contains("optionalParcelable")) {
+            ActivityInfo optionalParcelable;
+            optionalParcelable = savedStateHandle.get("optionalParcelable");
+            __result.arguments.put("optionalParcelable", optionalParcelable);
+        } else {
+            __result.arguments.put("optionalParcelable", null);
+        }
+        if (savedStateHandle.contains("enumArg")) {
+            AccessMode enumArg;
+            enumArg = savedStateHandle.get("enumArg");
             if (enumArg == null) {
                 throw new IllegalArgumentException("Argument \"enumArg\" is marked as non-null but was passed a null value.");
             }
@@ -365,10 +456,12 @@ public class MainFragmentArgs implements NavArgs {
     public static class Builder {
         private final HashMap arguments = new HashMap();
 
+        @SuppressWarnings("unchecked")
         public Builder(MainFragmentArgs original) {
             this.arguments.putAll(original.arguments);
         }
 
+        @SuppressWarnings("unchecked")
         public Builder(@NonNull String main, @NonNull float[] floatArrayArg,
                 @NonNull ActivityInfo[] objectArrayArg) {
             if (main == null) {
@@ -392,6 +485,7 @@ public class MainFragmentArgs implements NavArgs {
         }
 
         @NonNull
+        @SuppressWarnings("unchecked")
         public Builder setMain(@NonNull String main) {
             if (main == null) {
                 throw new IllegalArgumentException("Argument \"main\" is marked as non-null but was passed a null value.");
@@ -401,30 +495,35 @@ public class MainFragmentArgs implements NavArgs {
         }
 
         @NonNull
+        @SuppressWarnings("unchecked")
         public Builder setOptional(int optional) {
             this.arguments.put("optional", optional);
             return this;
         }
 
         @NonNull
+        @SuppressWarnings("unchecked")
         public Builder setReference(int reference) {
             this.arguments.put("reference", reference);
             return this;
         }
 
         @NonNull
+        @SuppressWarnings("unchecked")
         public Builder setReferenceZeroDefaultValue(int referenceZeroDefaultValue) {
             this.arguments.put("referenceZeroDefaultValue", referenceZeroDefaultValue);
             return this;
         }
 
         @NonNull
+        @SuppressWarnings("unchecked")
         public Builder setFloatArg(float floatArg) {
             this.arguments.put("floatArg", floatArg);
             return this;
         }
 
         @NonNull
+        @SuppressWarnings("unchecked")
         public Builder setFloatArrayArg(@NonNull float[] floatArrayArg) {
             if (floatArrayArg == null) {
                 throw new IllegalArgumentException("Argument \"floatArrayArg\" is marked as non-null but was passed a null value.");
@@ -434,6 +533,7 @@ public class MainFragmentArgs implements NavArgs {
         }
 
         @NonNull
+        @SuppressWarnings("unchecked")
         public Builder setObjectArrayArg(@NonNull ActivityInfo[] objectArrayArg) {
             if (objectArrayArg == null) {
                 throw new IllegalArgumentException("Argument \"objectArrayArg\" is marked as non-null but was passed a null value.");
@@ -443,18 +543,21 @@ public class MainFragmentArgs implements NavArgs {
         }
 
         @NonNull
+        @SuppressWarnings("unchecked")
         public Builder setBoolArg(boolean boolArg) {
             this.arguments.put("boolArg", boolArg);
             return this;
         }
 
         @NonNull
+        @SuppressWarnings("unchecked")
         public Builder setOptionalParcelable(@Nullable ActivityInfo optionalParcelable) {
             this.arguments.put("optionalParcelable", optionalParcelable);
             return this;
         }
 
         @NonNull
+        @SuppressWarnings("unchecked")
         public Builder setEnumArg(@NonNull AccessMode enumArg) {
             if (enumArg == null) {
                 throw new IllegalArgumentException("Argument \"enumArg\" is marked as non-null but was passed a null value.");

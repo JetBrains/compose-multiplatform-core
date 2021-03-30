@@ -17,25 +17,27 @@
 package androidx.compose.material
 
 import android.os.Build
+import androidx.compose.foundation.interaction.DragInteraction
 import androidx.compose.foundation.Indication
-import androidx.compose.foundation.Interaction
-import androidx.compose.foundation.InteractionState
+import androidx.compose.foundation.interaction.Interaction
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.indication
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.preferredHeight
-import androidx.compose.foundation.layout.preferredWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.ripple.AmbientRippleTheme
-import androidx.compose.material.ripple.ExperimentalRippleApi
+import androidx.compose.material.ripple.LocalRippleTheme
 import androidx.compose.material.ripple.RippleAlpha
 import androidx.compose.material.ripple.RippleTheme
 import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.Providers
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.testutils.assertAgainstGolden
 import androidx.compose.ui.Alignment
@@ -46,9 +48,8 @@ import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.test.ExperimentalTesting
 import androidx.compose.ui.test.captureToImage
-import androidx.compose.ui.test.junit4.ComposeTestRule
+import androidx.compose.ui.test.junit4.ComposeContentTestRule
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.unit.dp
@@ -57,6 +58,8 @@ import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
 import com.google.common.truth.Truth
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -68,7 +71,6 @@ import org.junit.runner.RunWith
 @LargeTest
 @RunWith(AndroidJUnit4::class)
 @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
-@OptIn(ExperimentalMaterialApi::class, ExperimentalTesting::class, ExperimentalRippleApi::class)
 class MaterialRippleThemeTest {
 
     @get:Rule
@@ -79,20 +81,21 @@ class MaterialRippleThemeTest {
 
     @Test
     fun bounded_lightTheme_highLuminance_pressed() {
-        val interactionState = InteractionState()
+        val interactionSource = MutableInteractionSource()
 
         val contentColor = Color.White
 
-        rule.setRippleContent(
-            interactionState = interactionState,
+        val scope = rule.setRippleContent(
+            interactionSource = interactionSource,
             bounded = true,
             lightTheme = true,
             contentColor = contentColor
         )
 
         assertRippleMatches(
-            interactionState,
-            Interaction.Pressed,
+            scope,
+            interactionSource,
+            PressInteraction.Press(Offset(10f, 10f)),
             "ripple_bounded_light_highluminance_pressed",
             calculateResultingRippleColor(contentColor, rippleOpacity = 0.24f)
         )
@@ -100,20 +103,21 @@ class MaterialRippleThemeTest {
 
     @Test
     fun bounded_lightTheme_highLuminance_dragged() {
-        val interactionState = InteractionState()
+        val interactionSource = MutableInteractionSource()
 
         val contentColor = Color.White
 
-        rule.setRippleContent(
-            interactionState = interactionState,
+        val scope = rule.setRippleContent(
+            interactionSource = interactionSource,
             bounded = true,
             lightTheme = true,
             contentColor = contentColor
         )
 
         assertRippleMatches(
-            interactionState,
-            Interaction.Dragged,
+            scope,
+            interactionSource,
+            DragInteraction.Start(),
             "ripple_bounded_light_highluminance_dragged",
             calculateResultingRippleColor(contentColor, rippleOpacity = 0.16f)
         )
@@ -121,20 +125,21 @@ class MaterialRippleThemeTest {
 
     @Test
     fun bounded_lightTheme_lowLuminance_pressed() {
-        val interactionState = InteractionState()
+        val interactionSource = MutableInteractionSource()
 
         val contentColor = Color.Black
 
-        rule.setRippleContent(
-            interactionState = interactionState,
+        val scope = rule.setRippleContent(
+            interactionSource = interactionSource,
             bounded = true,
             lightTheme = true,
             contentColor = contentColor
         )
 
         assertRippleMatches(
-            interactionState,
-            Interaction.Pressed,
+            scope,
+            interactionSource,
+            PressInteraction.Press(Offset(10f, 10f)),
             "ripple_bounded_light_lowluminance_pressed",
             calculateResultingRippleColor(contentColor, rippleOpacity = 0.12f)
         )
@@ -142,20 +147,21 @@ class MaterialRippleThemeTest {
 
     @Test
     fun bounded_lightTheme_lowLuminance_dragged() {
-        val interactionState = InteractionState()
+        val interactionSource = MutableInteractionSource()
 
         val contentColor = Color.Black
 
-        rule.setRippleContent(
-            interactionState = interactionState,
+        val scope = rule.setRippleContent(
+            interactionSource = interactionSource,
             bounded = true,
             lightTheme = true,
             contentColor = contentColor
         )
 
         assertRippleMatches(
-            interactionState,
-            Interaction.Dragged,
+            scope,
+            interactionSource,
+            DragInteraction.Start(),
             "ripple_bounded_light_lowluminance_dragged",
             calculateResultingRippleColor(contentColor, rippleOpacity = 0.08f)
         )
@@ -163,20 +169,21 @@ class MaterialRippleThemeTest {
 
     @Test
     fun bounded_darkTheme_highLuminance_pressed() {
-        val interactionState = InteractionState()
+        val interactionSource = MutableInteractionSource()
 
         val contentColor = Color.White
 
-        rule.setRippleContent(
-            interactionState = interactionState,
+        val scope = rule.setRippleContent(
+            interactionSource = interactionSource,
             bounded = true,
             lightTheme = false,
             contentColor = contentColor
         )
 
         assertRippleMatches(
-            interactionState,
-            Interaction.Pressed,
+            scope,
+            interactionSource,
+            PressInteraction.Press(Offset(10f, 10f)),
             "ripple_bounded_dark_highluminance_pressed",
             calculateResultingRippleColor(contentColor, rippleOpacity = 0.10f)
         )
@@ -184,20 +191,21 @@ class MaterialRippleThemeTest {
 
     @Test
     fun bounded_darkTheme_highLuminance_dragged() {
-        val interactionState = InteractionState()
+        val interactionSource = MutableInteractionSource()
 
         val contentColor = Color.White
 
-        rule.setRippleContent(
-            interactionState = interactionState,
+        val scope = rule.setRippleContent(
+            interactionSource = interactionSource,
             bounded = true,
             lightTheme = false,
             contentColor = contentColor
         )
 
         assertRippleMatches(
-            interactionState,
-            Interaction.Dragged,
+            scope,
+            interactionSource,
+            DragInteraction.Start(),
             "ripple_bounded_dark_highluminance_dragged",
             calculateResultingRippleColor(contentColor, rippleOpacity = 0.08f)
         )
@@ -205,20 +213,21 @@ class MaterialRippleThemeTest {
 
     @Test
     fun bounded_darkTheme_lowLuminance_pressed() {
-        val interactionState = InteractionState()
+        val interactionSource = MutableInteractionSource()
 
         val contentColor = Color.Black
 
-        rule.setRippleContent(
-            interactionState = interactionState,
+        val scope = rule.setRippleContent(
+            interactionSource = interactionSource,
             bounded = true,
             lightTheme = false,
             contentColor = contentColor
         )
 
         assertRippleMatches(
-            interactionState,
-            Interaction.Pressed,
+            scope,
+            interactionSource,
+            PressInteraction.Press(Offset(10f, 10f)),
             "ripple_bounded_dark_lowluminance_pressed",
             // Low luminance content in dark theme should use a white ripple by default
             calculateResultingRippleColor(Color.White, rippleOpacity = 0.10f)
@@ -227,20 +236,21 @@ class MaterialRippleThemeTest {
 
     @Test
     fun bounded_darkTheme_lowLuminance_dragged() {
-        val interactionState = InteractionState()
+        val interactionSource = MutableInteractionSource()
 
         val contentColor = Color.Black
 
-        rule.setRippleContent(
-            interactionState = interactionState,
+        val scope = rule.setRippleContent(
+            interactionSource = interactionSource,
             bounded = true,
             lightTheme = false,
             contentColor = contentColor
         )
 
         assertRippleMatches(
-            interactionState,
-            Interaction.Dragged,
+            scope,
+            interactionSource,
+            DragInteraction.Start(),
             "ripple_bounded_dark_lowluminance_dragged",
             // Low luminance content in dark theme should use a white ripple by default
             calculateResultingRippleColor(Color.White, rippleOpacity = 0.08f)
@@ -249,20 +259,21 @@ class MaterialRippleThemeTest {
 
     @Test
     fun unbounded_lightTheme_highLuminance_pressed() {
-        val interactionState = InteractionState()
+        val interactionSource = MutableInteractionSource()
 
         val contentColor = Color.White
 
-        rule.setRippleContent(
-            interactionState = interactionState,
+        val scope = rule.setRippleContent(
+            interactionSource = interactionSource,
             bounded = false,
             lightTheme = true,
             contentColor = contentColor
         )
 
         assertRippleMatches(
-            interactionState,
-            Interaction.Pressed,
+            scope,
+            interactionSource,
+            PressInteraction.Press(Offset(10f, 10f)),
             "ripple_unbounded_light_highluminance_pressed",
             calculateResultingRippleColor(contentColor, rippleOpacity = 0.24f)
         )
@@ -270,20 +281,21 @@ class MaterialRippleThemeTest {
 
     @Test
     fun unbounded_lightTheme_highLuminance_dragged() {
-        val interactionState = InteractionState()
+        val interactionSource = MutableInteractionSource()
 
         val contentColor = Color.White
 
-        rule.setRippleContent(
-            interactionState = interactionState,
+        val scope = rule.setRippleContent(
+            interactionSource = interactionSource,
             bounded = false,
             lightTheme = true,
             contentColor = contentColor
         )
 
         assertRippleMatches(
-            interactionState,
-            Interaction.Dragged,
+            scope,
+            interactionSource,
+            DragInteraction.Start(),
             "ripple_unbounded_light_highluminance_dragged",
             calculateResultingRippleColor(contentColor, rippleOpacity = 0.16f)
         )
@@ -291,20 +303,21 @@ class MaterialRippleThemeTest {
 
     @Test
     fun unbounded_lightTheme_lowLuminance_pressed() {
-        val interactionState = InteractionState()
+        val interactionSource = MutableInteractionSource()
 
         val contentColor = Color.Black
 
-        rule.setRippleContent(
-            interactionState = interactionState,
+        val scope = rule.setRippleContent(
+            interactionSource = interactionSource,
             bounded = false,
             lightTheme = true,
             contentColor = contentColor
         )
 
         assertRippleMatches(
-            interactionState,
-            Interaction.Pressed,
+            scope,
+            interactionSource,
+            PressInteraction.Press(Offset(10f, 10f)),
             "ripple_unbounded_light_lowluminance_pressed",
             calculateResultingRippleColor(contentColor, rippleOpacity = 0.12f)
         )
@@ -312,20 +325,21 @@ class MaterialRippleThemeTest {
 
     @Test
     fun unbounded_lightTheme_lowLuminance_dragged() {
-        val interactionState = InteractionState()
+        val interactionSource = MutableInteractionSource()
 
         val contentColor = Color.Black
 
-        rule.setRippleContent(
-            interactionState = interactionState,
+        val scope = rule.setRippleContent(
+            interactionSource = interactionSource,
             bounded = false,
             lightTheme = true,
             contentColor = contentColor
         )
 
         assertRippleMatches(
-            interactionState,
-            Interaction.Dragged,
+            scope,
+            interactionSource,
+            DragInteraction.Start(),
             "ripple_unbounded_light_lowluminance_dragged",
             calculateResultingRippleColor(contentColor, rippleOpacity = 0.08f)
         )
@@ -333,20 +347,21 @@ class MaterialRippleThemeTest {
 
     @Test
     fun unbounded_darkTheme_highLuminance_pressed() {
-        val interactionState = InteractionState()
+        val interactionSource = MutableInteractionSource()
 
         val contentColor = Color.White
 
-        rule.setRippleContent(
-            interactionState = interactionState,
+        val scope = rule.setRippleContent(
+            interactionSource = interactionSource,
             bounded = false,
             lightTheme = false,
             contentColor = contentColor
         )
 
         assertRippleMatches(
-            interactionState,
-            Interaction.Pressed,
+            scope,
+            interactionSource,
+            PressInteraction.Press(Offset(10f, 10f)),
             "ripple_unbounded_dark_highluminance_pressed",
             calculateResultingRippleColor(contentColor, rippleOpacity = 0.10f)
         )
@@ -354,20 +369,21 @@ class MaterialRippleThemeTest {
 
     @Test
     fun unbounded_darkTheme_highLuminance_dragged() {
-        val interactionState = InteractionState()
+        val interactionSource = MutableInteractionSource()
 
         val contentColor = Color.White
 
-        rule.setRippleContent(
-            interactionState = interactionState,
+        val scope = rule.setRippleContent(
+            interactionSource = interactionSource,
             bounded = false,
             lightTheme = false,
             contentColor = contentColor
         )
 
         assertRippleMatches(
-            interactionState,
-            Interaction.Dragged,
+            scope,
+            interactionSource,
+            DragInteraction.Start(),
             "ripple_unbounded_dark_highluminance_dragged",
             calculateResultingRippleColor(contentColor, rippleOpacity = 0.08f)
         )
@@ -375,20 +391,21 @@ class MaterialRippleThemeTest {
 
     @Test
     fun unbounded_darkTheme_lowLuminance_pressed() {
-        val interactionState = InteractionState()
+        val interactionSource = MutableInteractionSource()
 
         val contentColor = Color.Black
 
-        rule.setRippleContent(
-            interactionState = interactionState,
+        val scope = rule.setRippleContent(
+            interactionSource = interactionSource,
             bounded = false,
             lightTheme = false,
             contentColor = contentColor
         )
 
         assertRippleMatches(
-            interactionState,
-            Interaction.Pressed,
+            scope,
+            interactionSource,
+            PressInteraction.Press(Offset(10f, 10f)),
             "ripple_unbounded_dark_lowluminance_pressed",
             // Low luminance content in dark theme should use a white ripple by default
             calculateResultingRippleColor(Color.White, rippleOpacity = 0.10f)
@@ -397,20 +414,21 @@ class MaterialRippleThemeTest {
 
     @Test
     fun unbounded_darkTheme_lowLuminance_dragged() {
-        val interactionState = InteractionState()
+        val interactionSource = MutableInteractionSource()
 
         val contentColor = Color.Black
 
-        rule.setRippleContent(
-            interactionState = interactionState,
+        val scope = rule.setRippleContent(
+            interactionSource = interactionSource,
             bounded = false,
             lightTheme = false,
             contentColor = contentColor
         )
 
         assertRippleMatches(
-            interactionState,
-            Interaction.Dragged,
+            scope,
+            interactionSource,
+            DragInteraction.Start(),
             "ripple_unbounded_dark_lowluminance_dragged",
             // Low luminance content in dark theme should use a white ripple by default
             calculateResultingRippleColor(Color.White, rippleOpacity = 0.08f)
@@ -419,38 +437,46 @@ class MaterialRippleThemeTest {
 
     @Test
     fun customRippleTheme_pressed() {
-        val interactionState = InteractionState()
+        val interactionSource = MutableInteractionSource()
 
         val contentColor = Color.Black
 
         val rippleColor = Color.Red
-        val rippleAlpha = 0.5f
+        val expectedAlpha = 0.5f
+        val rippleAlpha = RippleAlpha(expectedAlpha, expectedAlpha, expectedAlpha, expectedAlpha)
 
         val rippleTheme = object : RippleTheme {
             @Composable
             override fun defaultColor() = rippleColor
 
             @Composable
-            override fun rippleAlpha() = RippleAlpha { rippleAlpha }
+            override fun rippleAlpha() = rippleAlpha
         }
 
+        var scope: CoroutineScope? = null
+
         rule.setContent {
+            scope = rememberCoroutineScope()
             MaterialTheme {
-                Providers(AmbientRippleTheme provides rippleTheme) {
+                CompositionLocalProvider(LocalRippleTheme provides rippleTheme) {
                     Surface(contentColor = contentColor) {
                         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            RippleBox(interactionState, rememberRipple())
+                            RippleBox(interactionSource, rememberRipple())
                         }
                     }
                 }
             }
         }
 
-        val expectedColor = calculateResultingRippleColor(rippleColor, rippleOpacity = rippleAlpha)
+        val expectedColor = calculateResultingRippleColor(
+            rippleColor,
+            rippleOpacity = expectedAlpha
+        )
 
         assertRippleMatches(
-            interactionState,
-            Interaction.Pressed,
+            scope!!,
+            interactionSource,
+            PressInteraction.Press(Offset(10f, 10f)),
             "ripple_customtheme_pressed",
             expectedColor
         )
@@ -458,53 +484,61 @@ class MaterialRippleThemeTest {
 
     @Test
     fun customRippleTheme_dragged() {
-        val interactionState = InteractionState()
+        val interactionSource = MutableInteractionSource()
 
         val contentColor = Color.Black
 
         val rippleColor = Color.Red
-        val rippleAlpha = 0.5f
+        val expectedAlpha = 0.5f
+        val rippleAlpha = RippleAlpha(expectedAlpha, expectedAlpha, expectedAlpha, expectedAlpha)
 
         val rippleTheme = object : RippleTheme {
             @Composable
             override fun defaultColor() = rippleColor
-
             @Composable
-            override fun rippleAlpha() = RippleAlpha { rippleAlpha }
+            override fun rippleAlpha() = rippleAlpha
         }
 
+        var scope: CoroutineScope? = null
+
         rule.setContent {
+            scope = rememberCoroutineScope()
             MaterialTheme {
-                Providers(AmbientRippleTheme provides rippleTheme) {
+                CompositionLocalProvider(LocalRippleTheme provides rippleTheme) {
                     Surface(contentColor = contentColor) {
                         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            RippleBox(interactionState, rememberRipple())
+                            RippleBox(interactionSource, rememberRipple())
                         }
                     }
                 }
             }
         }
 
-        val expectedColor = calculateResultingRippleColor(rippleColor, rippleOpacity = rippleAlpha)
+        val expectedColor = calculateResultingRippleColor(
+            rippleColor,
+            rippleOpacity = expectedAlpha
+        )
 
         assertRippleMatches(
-            interactionState,
-            Interaction.Dragged,
+            scope!!,
+            interactionSource,
+            DragInteraction.Start(),
             "ripple_customtheme_dragged",
             expectedColor
         )
     }
 
     @Test
-    fun themeChangeDuringRipple() {
-        val interactionState = InteractionState()
+    fun themeChangeDuringRipple_dragged() {
+        val interactionSource = MutableInteractionSource()
 
         fun createRippleTheme(color: Color, alpha: Float) = object : RippleTheme {
+            val rippleAlpha = RippleAlpha(alpha, alpha, alpha, alpha)
             @Composable
             override fun defaultColor() = color
 
             @Composable
-            override fun rippleAlpha() = RippleAlpha { alpha }
+            override fun rippleAlpha() = rippleAlpha
         }
 
         val initialColor = Color.Red
@@ -512,21 +546,100 @@ class MaterialRippleThemeTest {
 
         var rippleTheme by mutableStateOf(createRippleTheme(initialColor, initialAlpha))
 
+        var scope: CoroutineScope? = null
+
         rule.setContent {
+            scope = rememberCoroutineScope()
             MaterialTheme {
-                Providers(AmbientRippleTheme provides rippleTheme) {
+                CompositionLocalProvider(LocalRippleTheme provides rippleTheme) {
                     Surface(contentColor = Color.Black) {
                         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            RippleBox(interactionState, rememberRipple())
+                            RippleBox(interactionSource, rememberRipple())
                         }
                     }
                 }
             }
         }
 
-        rule.runOnUiThread {
-            interactionState.addInteraction(Interaction.Pressed, Offset(10f, 10f))
+        rule.runOnIdle {
+            scope!!.launch {
+                interactionSource.emit(DragInteraction.Start())
+            }
         }
+        rule.waitForIdle()
+
+        with(rule.onNodeWithTag(Tag)) {
+            val centerPixel = captureToImage().asAndroidBitmap()
+                .run {
+                    getPixel(width / 2, height / 2)
+                }
+
+            val expectedColor =
+                calculateResultingRippleColor(initialColor, rippleOpacity = initialAlpha)
+
+            Truth.assertThat(Color(centerPixel)).isEqualTo(expectedColor)
+        }
+
+        val newColor = Color.Green
+        // TODO: changing alpha for existing state layers is not currently supported
+        val newAlpha = 0.5f
+
+        rule.runOnUiThread {
+            rippleTheme = createRippleTheme(newColor, newAlpha)
+        }
+
+        with(rule.onNodeWithTag(Tag)) {
+            val centerPixel = captureToImage().asAndroidBitmap()
+                .run {
+                    getPixel(width / 2, height / 2)
+                }
+
+            val expectedColor =
+                calculateResultingRippleColor(newColor, rippleOpacity = newAlpha)
+
+            Truth.assertThat(Color(centerPixel)).isEqualTo(expectedColor)
+        }
+    }
+
+    @Test
+    fun themeChangeDuringRipple_pressed() {
+        val interactionSource = MutableInteractionSource()
+
+        fun createRippleTheme(color: Color, alpha: Float) = object : RippleTheme {
+            val rippleAlpha = RippleAlpha(alpha, alpha, alpha, alpha)
+            @Composable
+            override fun defaultColor() = color
+
+            @Composable
+            override fun rippleAlpha() = rippleAlpha
+        }
+
+        val initialColor = Color.Red
+        val initialAlpha = 0.5f
+
+        var rippleTheme by mutableStateOf(createRippleTheme(initialColor, initialAlpha))
+
+        var scope: CoroutineScope? = null
+
+        rule.setContent {
+            scope = rememberCoroutineScope()
+            MaterialTheme {
+                CompositionLocalProvider(LocalRippleTheme provides rippleTheme) {
+                    Surface(contentColor = Color.Black) {
+                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            RippleBox(interactionSource, rememberRipple())
+                        }
+                    }
+                }
+            }
+        }
+
+        rule.runOnIdle {
+            scope!!.launch {
+                interactionSource.emit(PressInteraction.Press(Offset.Zero))
+            }
+        }
+        rule.waitForIdle()
 
         with(rule.onNodeWithTag(Tag)) {
             val centerPixel = captureToImage().asAndroidBitmap()
@@ -560,37 +673,90 @@ class MaterialRippleThemeTest {
         }
     }
 
+    @Test
+    fun contentColorProvidedAfterRememberRipple() {
+        val interactionSource = MutableInteractionSource()
+
+        val alpha = 0.5f
+        val rippleAlpha = RippleAlpha(alpha, alpha, alpha, alpha)
+        val expectedRippleColor = Color.Red
+
+        val theme = object : RippleTheme {
+            @Composable
+            override fun defaultColor() = LocalContentColor.current
+
+            @Composable
+            override fun rippleAlpha() = rippleAlpha
+        }
+
+        var scope: CoroutineScope? = null
+
+        rule.setContent {
+            scope = rememberCoroutineScope()
+            MaterialTheme {
+                CompositionLocalProvider(LocalRippleTheme provides theme) {
+                    Surface(contentColor = Color.Black) {
+                        // Create ripple where contentColor is black
+                        val ripple = rememberRipple()
+                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            Surface(contentColor = expectedRippleColor) {
+                                // Ripple is used where contentColor is red, so the instance
+                                // should get the red color when it is created
+                                RippleBox(interactionSource, ripple)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        rule.runOnUiThread {
+            scope!!.launch {
+                interactionSource.emit(PressInteraction.Press(Offset(10f, 10f)))
+            }
+        }
+
+        with(rule.onNodeWithTag(Tag)) {
+            val centerPixel = captureToImage().asAndroidBitmap()
+                .run {
+                    getPixel(width / 2, height / 2)
+                }
+
+            val expectedColor =
+                calculateResultingRippleColor(expectedRippleColor, rippleOpacity = alpha)
+
+            Truth.assertThat(Color(centerPixel)).isEqualTo(expectedColor)
+        }
+    }
+
     /**
      * Asserts that the ripple matches the screenshot with identifier [goldenIdentifier], and
      * that the resultant color of the ripple on screen matches [expectedCenterPixelColor].
      *
-     * @param interactionState the [InteractionState] driving the ripple
+     * @param interactionSource the [MutableInteractionSource] driving the ripple
      * @param interaction the [Interaction] to assert for
      * @param goldenIdentifier the identifier for the corresponding screenshot
      * @param expectedCenterPixelColor the expected color for the pixel at the center of the
      * [RippleBox]
      */
     private fun assertRippleMatches(
-        interactionState: InteractionState,
+        scope: CoroutineScope,
+        interactionSource: MutableInteractionSource,
         interaction: Interaction,
         goldenIdentifier: String,
         expectedCenterPixelColor: Color
     ) {
-        rule.clockTestRule.pauseClock()
+        rule.mainClock.autoAdvance = false
 
         // Start ripple
-        rule.runOnUiThread {
-            if (interaction is Interaction.Pressed) {
-                interactionState.addInteraction(interaction, Offset(10f, 10f))
-            } else {
-                interactionState.addInteraction(interaction)
-            }
+        scope.launch {
+            interactionSource.emit(interaction)
         }
 
         // Advance to somewhere in the middle of the animation for a ripple, or at the end of a
         // state layer transition
         rule.waitForIdle()
-        rule.clockTestRule.advanceClock(50)
+        rule.mainClock.advanceTimeBy(milliseconds = 50)
 
         // Capture and compare screenshots
         rule.onNodeWithTag(Tag)
@@ -599,8 +765,7 @@ class MaterialRippleThemeTest {
 
         // Advance until after the end of the ripple animation, so we have a stable final opacity
         rule.waitForIdle()
-        rule.clockTestRule.advanceClock(50)
-        rule.waitForIdle()
+        rule.mainClock.advanceTimeBy(milliseconds = 50)
 
         // Compare expected and actual pixel color
         val centerPixel = rule.onNodeWithTag(Tag)
@@ -617,19 +782,19 @@ class MaterialRippleThemeTest {
  * Generic Button like component that allows injecting an [Indication] and also includes
  * padding around the rippled surface, so screenshots will include some dead space for clarity.
  *
- * @param interactionState the [InteractionState] that is used to drive the ripple state
+ * @param interactionSource the [MutableInteractionSource] that is used to drive the ripple state
  * @param ripple ripple [Indication] placed inside the surface
  */
 @Composable
-private fun RippleBox(interactionState: InteractionState, ripple: Indication) {
+private fun RippleBox(interactionSource: MutableInteractionSource, ripple: Indication) {
     Box(Modifier.semantics(mergeDescendants = true) {}.testTag(Tag)) {
         Surface(
             Modifier.padding(25.dp),
             color = RippleBoxBackgroundColor, shape = RoundedCornerShape(20)
         ) {
             Box(
-                Modifier.preferredWidth(80.dp).preferredHeight(50.dp).indication(
-                    interactionState = interactionState,
+                Modifier.width(80.dp).height(50.dp).indication(
+                    interactionSource = interactionSource,
                     indication = ripple
                 )
             )
@@ -640,28 +805,33 @@ private fun RippleBox(interactionState: InteractionState, ripple: Indication) {
 /**
  * Sets the content to a [RippleBox] with a [MaterialTheme] and surrounding [Surface]
  *
- * @param interactionState [InteractionState] used to drive the ripple inside the [RippleBox]
+ * @param interactionSource [MutableInteractionSource] used to drive the ripple inside the [RippleBox]
  * @param bounded whether the ripple inside the [RippleBox] is bounded
  * @param lightTheme whether the theme is light or dark
  * @param contentColor the contentColor that will be used for the ripple color
  */
-private fun ComposeTestRule.setRippleContent(
-    interactionState: InteractionState,
+private fun ComposeContentTestRule.setRippleContent(
+    interactionSource: MutableInteractionSource,
     bounded: Boolean,
     lightTheme: Boolean,
     contentColor: Color
-) {
+): CoroutineScope {
+    var scope: CoroutineScope? = null
+
     setContent {
+        scope = rememberCoroutineScope()
         val colors = if (lightTheme) lightColors() else darkColors()
 
         MaterialTheme(colors) {
             Surface(contentColor = contentColor) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    RippleBox(interactionState, rememberRipple(bounded))
+                    RippleBox(interactionSource, rememberRipple(bounded))
                 }
             }
         }
     }
+    waitForIdle()
+    return scope!!
 }
 
 /**

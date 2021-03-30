@@ -28,13 +28,11 @@ import androidx.activity.OnBackPressedDispatcher
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.onCommit
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.preference.PreferenceManager
-import androidx.compose.ui.platform.setContent
 import androidx.compose.integration.demos.common.ActivityDemo
 import androidx.compose.integration.demos.common.Demo
 import androidx.compose.integration.demos.common.DemoCategory
@@ -43,10 +41,12 @@ import androidx.compose.material.Colors
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.darkColors
 import androidx.compose.material.lightColors
-import androidx.compose.runtime.savedinstancestate.Saver
-import androidx.compose.runtime.savedinstancestate.listSaver
-import androidx.compose.runtime.savedinstancestate.rememberSavedInstanceState
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.saveable.Saver
+import androidx.compose.runtime.saveable.listSaver
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.ComposeView
 
 /**
  * Main [Activity] containing all Compose related demos.
@@ -55,11 +55,14 @@ class DemoActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent {
+
+        ComposeView(this).also {
+            setContentView(it)
+        }.setContent {
             val activityStarter = fun(demo: ActivityDemo<*>) {
                 startActivity(Intent(this, demo.activityClass.java))
             }
-            val navigator = rememberSavedInstanceState(
+            val navigator = rememberSaveable(
                 saver = Navigator.Saver(AllDemosCategory, onBackPressedDispatcher, activityStarter)
             ) {
                 Navigator(AllDemosCategory, onBackPressedDispatcher, activityStarter)
@@ -76,7 +79,7 @@ class DemoActivity : ComponentActivity() {
                 }
             }
             DemoTheme(demoColors, window) {
-                val filteringMode = rememberSavedInstanceState(
+                val filteringMode = rememberSaveable(
                     saver = FilterMode.Saver(onBackPressedDispatcher)
                 ) {
                     FilterMode(onBackPressedDispatcher)
@@ -119,7 +122,7 @@ private fun DemoTheme(
         val statusBarColor = with(MaterialTheme.colors) {
             (if (isLight) primaryVariant else Color.Black).toArgb()
         }
-        onCommit(statusBarColor) {
+        SideEffect {
             window.statusBarColor = statusBarColor
         }
         content()

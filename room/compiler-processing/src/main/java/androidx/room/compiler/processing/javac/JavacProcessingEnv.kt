@@ -42,16 +42,23 @@ internal class JavacProcessingEnv(
     val typeUtils: Types = delegate.typeUtils
 
     private val typeElementStore =
-        XTypeElementStore { qName ->
-            val result = delegate.elementUtils.getTypeElement(qName)
-            result?.let(this::wrapTypeElement)
-        }
+        XTypeElementStore(
+            findElement = { qName ->
+                delegate.elementUtils.getTypeElement(qName)
+            },
+            wrap = { typeElement ->
+                JavacTypeElement.create(this, typeElement)
+            },
+            getQName = {
+                it.qualifiedName.toString()
+            }
+        )
 
     override val messager: XMessager by lazy {
         JavacProcessingEnvMessager(delegate)
     }
 
-    override val filer = JavacFiler(delegate.filer)
+    override val filer = JavacFiler(delegate)
 
     override val options: Map<String, String>
         get() = delegate.options
@@ -113,7 +120,7 @@ internal class JavacProcessingEnv(
     }
 
     // maybe cache here ?
-    fun wrapTypeElement(element: TypeElement) = JavacTypeElement(this, element)
+    fun wrapTypeElement(element: TypeElement) = typeElementStore[element]
 
     /**
      * Wraps the given java processing type into an XType.

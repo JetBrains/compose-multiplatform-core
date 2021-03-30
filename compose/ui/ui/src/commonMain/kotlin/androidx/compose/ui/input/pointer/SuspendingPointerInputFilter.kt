@@ -21,8 +21,9 @@ import androidx.compose.runtime.collection.mutableVectorOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
-import androidx.compose.ui.platform.AmbientDensity
-import androidx.compose.ui.platform.AmbientViewConfiguration
+import androidx.compose.ui.fastMapNotNull
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.platform.debugInspectorInfo
 import androidx.compose.ui.unit.Density
@@ -37,9 +38,6 @@ import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.coroutines.RestrictsSuspension
 import kotlin.coroutines.createCoroutine
 import kotlin.coroutines.resume
-
-@Deprecated("Use AwaitPointerEventScope", ReplaceWith("AwaitPointerEventScope"))
-typealias HandlePointerInputScope = AwaitPointerEventScope
 
 /**
  * Receiver scope for awaiting pointer events in a call to [PointerInputScope.awaitPointerEventScope].
@@ -118,11 +116,51 @@ interface PointerInputScope : Density {
     suspend fun <R> awaitPointerEventScope(
         block: suspend AwaitPointerEventScope.() -> R
     ): R
+}
 
-    @Deprecated("Use awaitPointerEventScope", ReplaceWith("awaitPointerEventScope(handler)"))
-    suspend fun <R> handlePointerInput(
-        handler: suspend AwaitPointerEventScope.() -> R
-    ): R = awaitPointerEventScope(handler)
+private const val PointerInputModifierNoParamError =
+    "Modifier.pointerInput must provide one or more 'key' parameters that define the identity of " +
+        "the modifier and determine when its previous input processing coroutine should be " +
+        "cancelled and a new effect launched for the new key."
+
+/**
+ * Create a modifier for processing pointer input within the region of the modified element.
+ *
+ * It is an error to call [pointerInput] without at least one `key` parameter.
+ */
+// This deprecated-error function shadows the varargs overload so that the varargs version
+// is not used without key parameters.
+@Suppress("DeprecatedCallableAddReplaceWith", "UNUSED_PARAMETER", "unused")
+@Deprecated(PointerInputModifierNoParamError, level = DeprecationLevel.ERROR)
+fun Modifier.pointerInput(
+    block: suspend PointerInputScope.() -> Unit
+): Modifier = error(PointerInputModifierNoParamError)
+
+/**
+ * Create a modifier for processing pointer input within the region of the modified element.
+ *
+ * [pointerInput] [block]s may call [PointerInputScope.awaitPointerEventScope] to install a pointer
+ * input handler that can [AwaitPointerEventScope.awaitPointerEvent] to receive and consume
+ * pointer input events. Extension functions on [PointerInputScope] or [AwaitPointerEventScope]
+ * may be defined to perform higher-level gesture detection.
+ */
+fun Modifier.pointerInput(
+    key1: Any?,
+    block: suspend PointerInputScope.() -> Unit
+): Modifier = composed(
+    inspectorInfo = debugInspectorInfo {
+        name = "pointerInput"
+        properties["key1"] = key1
+        properties["block"] = block
+    }
+) {
+    val density = LocalDensity.current
+    val viewConfiguration = LocalViewConfiguration.current
+    remember(density) { SuspendingPointerInputFilter(viewConfiguration, density) }.apply {
+        LaunchedEffect(this, key1) {
+            block()
+        }
+    }
 }
 
 /**
@@ -134,17 +172,48 @@ interface PointerInputScope : Density {
  * may be defined to perform higher-level gesture detection.
  */
 fun Modifier.pointerInput(
+    key1: Any?,
+    key2: Any?,
     block: suspend PointerInputScope.() -> Unit
 ): Modifier = composed(
     inspectorInfo = debugInspectorInfo {
         name = "pointerInput"
-        this.properties["block"] = block
+        properties["key1"] = key1
+        properties["key2"] = key2
+        properties["block"] = block
     }
 ) {
-    val density = AmbientDensity.current
-    val viewConfiguration = AmbientViewConfiguration.current
+    val density = LocalDensity.current
+    val viewConfiguration = LocalViewConfiguration.current
     remember(density) { SuspendingPointerInputFilter(viewConfiguration, density) }.apply {
-        LaunchedEffect(this) {
+        LaunchedEffect(this, key1, key2) {
+            block()
+        }
+    }
+}
+
+/**
+ * Create a modifier for processing pointer input within the region of the modified element.
+ *
+ * [pointerInput] [block]s may call [PointerInputScope.awaitPointerEventScope] to install a pointer
+ * input handler that can [AwaitPointerEventScope.awaitPointerEvent] to receive and consume
+ * pointer input events. Extension functions on [PointerInputScope] or [AwaitPointerEventScope]
+ * may be defined to perform higher-level gesture detection.
+ */
+fun Modifier.pointerInput(
+    vararg keys: Any?,
+    block: suspend PointerInputScope.() -> Unit
+): Modifier = composed(
+    inspectorInfo = debugInspectorInfo {
+        name = "pointerInput"
+        properties["keys"] = keys
+        properties["block"] = block
+    }
+) {
+    val density = LocalDensity.current
+    val viewConfiguration = LocalViewConfiguration.current
+    remember(density) { SuspendingPointerInputFilter(viewConfiguration, density) }.apply {
+        LaunchedEffect(this, *keys) {
             block()
         }
     }
@@ -160,7 +229,7 @@ private val DownChangeConsumed = ConsumedData(downChange = true)
  * a LayoutNode.
  *
  * [SuspendingPointerInputFilter] implements the [PointerInputScope] used to offer the
- * [Modifier.pointerInput] DSL and carries the [Density] from [AmbientDensity] at the point of
+ * [Modifier.pointerInput] DSL and carries the [Density] from [LocalDensity] at the point of
  * the modifier's materialization. Even if this value were returned to the [PointerInputFilter]
  * callbacks, we would still need the value at composition time in order for [Modifier.pointerInput]
  * to begin its internal [LaunchedEffect] for the provided code block.
@@ -179,9 +248,6 @@ internal class SuspendingPointerInputFilter(
         get() = this
 
     private var currentEvent: PointerEvent? = null
-
-    override fun onInit(customEventDispatcher: CustomEventDispatcher) {
-    }
 
     /**
      * Actively registered input handlers from currently ongoing calls to [awaitPointerEventScope].
@@ -276,12 +342,13 @@ internal class SuspendingPointerInputFilter(
         // down-ness is consumed, and we omit any pointers that previously went up entirely.
         val lastEvent = lastPointerEvent ?: return
 
-        val newChanges = lastEvent.changes.mapNotNull { old ->
-            if (old.current.down) {
-                PointerInputChange(
-                    old.id,
-                    current = old.current.copy(down = false),
-                    previous = old.current,
+        val newChanges = lastEvent.changes.fastMapNotNull { old ->
+            if (old.pressed) {
+                old.copy(
+                    currentPressed = false,
+                    previousPosition = old.position,
+                    previousTime = old.uptimeMillis,
+                    previousPressed = old.pressed,
                     consumed = DownChangeConsumed
                 )
             } else null
@@ -295,9 +362,6 @@ internal class SuspendingPointerInputFilter(
         dispatchPointerEvent(cancelEvent, PointerEventPass.Final)
 
         lastPointerEvent = null
-    }
-
-    override fun onCustomEvent(customEvent: CustomEvent, pass: PointerEventPass) {
     }
 
     override suspend fun <R> awaitPointerEventScope(

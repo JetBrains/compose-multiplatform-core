@@ -20,30 +20,30 @@
 
 package androidx.compose.integration.docs.layout
 
-import androidx.compose.foundation.ScrollableColumn
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ConstraintLayout
-import androidx.compose.foundation.layout.ConstraintSet
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material.Button
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.integration.docs.layout.LayoutSnippet12.firstBaselineToTop
+import androidx.compose.material.Card
 import androidx.compose.material.Scaffold
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.integration.docs.layout.LayoutSnippet12.firstBaselineToTop
 import androidx.compose.ui.layout.AlignmentLine
 import androidx.compose.ui.layout.FirstBaseline
 import androidx.compose.ui.layout.Layout
-import androidx.compose.ui.layout.WithConstraints
 import androidx.compose.ui.layout.layout
-import androidx.compose.ui.layout.layoutId
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -77,11 +77,31 @@ private object LayoutSnippet3 {
     @Composable
     fun ArtistCard(artist: Artist) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Image( /*...*/)
+            Image(/*...*/)
             Column {
                 Text(artist.name)
                 Text(artist.lastSeenOnline)
             }
+        }
+    }
+}
+
+private object LayoutSnippet3bis {
+    @Composable
+    fun ArtistCard(
+        artist: Artist,
+        onClick: () -> Unit
+    ) {
+        val padding = 16.dp
+        Column(
+            Modifier
+                .clickable(onClick = onClick)
+                .padding(padding)
+                .fillMaxWidth()
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) { /*...*/ }
+            Spacer(Modifier.size(padding))
+            Card(elevation = 4.dp) { /*...*/ }
         }
     }
 }
@@ -103,7 +123,7 @@ private object LayoutSnippet4 {
 
 private object LayoutSnippet5 {
     @Composable
-    fun ArtistCard( /* ... */) {
+    fun ArtistCard(/*...*/) {
         val padding = 16.dp
         Column(
             Modifier
@@ -122,7 +142,7 @@ private object LayoutSnippet6 {
         feedItems: List<Artist>,
         onSelected: (Artist) -> Unit
     ) {
-        ScrollableColumn(Modifier.fillMaxSize()) {
+        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
             feedItems.forEach {
                 ArtistCard(it, onSelected)
             }
@@ -148,16 +168,19 @@ private object LayoutSnippet7 {
 
 private object LayoutSnippet8 {
     @Composable
-    fun HomeScreen( /*...*/) {
+    fun HomeScreen(/*...*/) {
         Scaffold(
             drawerContent = { /*...*/ },
             topBar = { /*...*/ },
-            bodyContent = { /*...*/ }
+            content = { /*...*/ }
         )
     }
 }
 
-/* ktlint-disable indent */
+// TODO: uncomment when constraint layout for compose releases, and add that dependency
+/* ktlint-disable indent *//*
+
+@Suppress("Deprecation")
 private object LayoutSnippet9 {
     @Composable
     fun ConstraintLayoutContent() {
@@ -166,7 +189,9 @@ private object LayoutSnippet9 {
             val (button, text) = createRefs()
 
             Button(
-                onClick = { /* Do something */ },
+                onClick = { */
+/* Do something *//*
+ },
                 // Assign reference "button" to the Button composable
                 // and constrain it to the top of the ConstraintLayout
                 modifier = Modifier.constrainAs(button) {
@@ -184,15 +209,20 @@ private object LayoutSnippet9 {
         }
     }
 }
-/* ktlint-enable indent */
+*/
+/* ktlint-enable indent *//*
 
+
+*/
 /**
  * Decoupled API
- */
+ *//*
+
+@Suppress("Deprecation")
 private object LayoutSnippet10 {
     @Composable
     fun DecoupledConstraintLayout() {
-        WithConstraints {
+        BoxWithConstraints {
             val constraints = if (minWidth < 600.dp) {
                 decoupledConstraints(margin = 16.dp) // Portrait constraints
             } else {
@@ -201,7 +231,9 @@ private object LayoutSnippet10 {
 
             ConstraintLayout(constraints) {
                 Button(
-                    onClick = { /* Do something */ },
+                    onClick = { */
+/* Do something *//*
+ },
                     modifier = Modifier.layoutId("button")
                 ) {
                     Text("Button")
@@ -226,11 +258,13 @@ private object LayoutSnippet10 {
         }
     }
 }
+*/
+
 private object LayoutSnippet11 {
     /* Can't be compiled without returning layout() from Modifier.layout. See next snippet for
     possible changes.
 
-    fun Modifier.customLayoutModifier( /*...*/ ) =
+    fun Modifier.customLayoutModifier(/*...*/) =
         Modifier.layout { measurable, constraints ->
             // ...
         }
@@ -249,7 +283,7 @@ private object LayoutSnippet12 {
         val firstBaseline = placeable[FirstBaseline]
 
         // Height of the composable with padding - first baseline
-        val placeableY = firstBaselineToTop.toIntPx() - firstBaseline
+        val placeableY = firstBaselineToTop.roundToPx() - firstBaseline
         val height = placeable.height + placeableY
         layout(placeable.width, height) {
             // Where the composable gets placed

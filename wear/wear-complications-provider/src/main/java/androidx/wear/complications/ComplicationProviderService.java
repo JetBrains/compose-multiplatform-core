@@ -116,6 +116,9 @@ import androidx.wear.complications.data.ComplicationType;
  * android:permission="com.google.android.wearable.permission.BIND_COMPLICATION_PROVIDER"} to ensure
  * that only the system can bind to it.</il>
  * </ul>
+ *
+ * <p> Multiple providers in the same APK are supported but in android R there's a soft limit of
+ * 100 providers per APK. Above that the companion watchface editor won't support this provider app.
  */
 public abstract class ComplicationProviderService extends Service {
 
@@ -214,7 +217,7 @@ public abstract class ComplicationProviderService extends Service {
      *
      * <p>The configuration activity must reside in the same package as the provider, and must
      * register an intent filter for the action specified here, including {@link
-     * #CATEGORY_PROVIDER_CONFIG_ACTION} as well as {@link Intent#CATEGORY_DEFAULT} as categories.
+     * #CATEGORY_PROVIDER_CONFIG} as well as {@link Intent#CATEGORY_DEFAULT} as categories.
      *
      * <p>The complication id being configured will be included in the intent that starts the config
      * activity using the extra key {@link #EXTRA_CONFIG_COMPLICATION_ID}.
@@ -241,7 +244,7 @@ public abstract class ComplicationProviderService extends Service {
      * @see #METADATA_KEY_PROVIDER_CONFIG_ACTION
      */
     @SuppressLint("IntentName")
-    public static final String CATEGORY_PROVIDER_CONFIG_ACTION =
+    public static final String CATEGORY_PROVIDER_CONFIG =
             "android.support.wearable.complications.category.PROVIDER_CONFIG";
 
     /** Extra used to supply the complication id to a provider configuration activity. */
@@ -311,7 +314,7 @@ public abstract class ComplicationProviderService extends Service {
     public abstract void onComplicationUpdate(
             int complicationId,
             @NonNull ComplicationType type,
-            @NonNull ComplicationUpdateCallback resultCallback);
+            @NonNull ComplicationUpdateListener resultCallback);
 
     /**
      * A request for representative preview data for the complication, for use in the editor UI.
@@ -328,7 +331,7 @@ public abstract class ComplicationProviderService extends Service {
     public abstract ComplicationData getPreviewData(@NonNull ComplicationType type);
 
     /** Callback for {@link #onComplicationUpdate}. */
-    public interface ComplicationUpdateCallback {
+    public interface ComplicationUpdateListener {
         /**
          * Sends the complicationData to the system. If null is passed then any
          * previous complication data will not be overwritten. Can be called on any thread. Should
@@ -408,7 +411,12 @@ public abstract class ComplicationProviderService extends Service {
         @SuppressLint("SyntheticAccessor")
         public android.support.wearable.complications.ComplicationData getComplicationPreviewData(
                 final int type) {
-            return getPreviewData(ComplicationType.fromWireType(type)).asWireComplicationData();
+            ComplicationData wireComplicationData =
+                    getPreviewData(ComplicationType.fromWireType(type));
+            if (wireComplicationData == null) {
+                return null;
+            }
+            return wireComplicationData.asWireComplicationData();
         }
     }
 }

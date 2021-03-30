@@ -33,7 +33,9 @@ dependencies {
 
     annotationProcessor(AUTO_VALUE)
 
-    testImplementation 'junit:junit:4.12'
+    // TODO(leohuang): We need this for assertThrows. Point back to the AndroidX shared version if
+    //  it is ever upgraded.
+    testImplementation("junit:junit:4.13")
     testImplementation(KOTLIN_STDLIB)
     testImplementation(ANDROIDX_TEST_CORE)
     testImplementation(ANDROIDX_TEST_RUNNER)
@@ -41,11 +43,11 @@ dependencies {
     testImplementation(TRUTH)
     testImplementation(ROBOLECTRIC)
     testImplementation(MOCKITO_CORE)
-    testImplementation project(":camera:camera-testing"), {
+    testImplementation(project(":camera:camera-testing"), {
         exclude group: "androidx.camera", module: "camera-core"
-    }
+    })
 
-    androidTestImplementation project(path: ':camera:camera-camera2')
+    androidTestImplementation(project(path: ":camera:camera-camera2"))
     androidTestImplementation(ANDROIDX_TEST_EXT_JUNIT)
     androidTestImplementation(ANDROIDX_TEST_CORE)
     androidTestImplementation(ANDROIDX_TEST_RUNNER)
@@ -58,6 +60,9 @@ dependencies {
     androidTestImplementation(KOTLIN_COROUTINES_ANDROID)
     androidTestImplementation(project(":concurrent:concurrent-futures-ktx"))
     androidTestImplementation(project(":internal-testutils-truth"))
+    androidTestImplementation MOCKITO_KOTLIN, {
+        exclude group: 'org.mockito' // to keep control on the mockito version
+    }
 }
 
 android {

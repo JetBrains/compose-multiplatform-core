@@ -40,11 +40,11 @@ public final class WindowManager {
      * from the {@link androidx.window.sidecar.SidecarInterface} or is passed directly to the
      * {@link ExtensionInterface}.
      */
-    private Activity mActivity;
+    private final Activity mActivity;
     /**
      * The backend that supplies the information through this class.
      */
-    private WindowBackend mWindowBackend;
+    private final WindowBackend mWindowBackend;
 
     /**
      * Gets an instance of the class initialized with and connected to the provided {@link Context}.
@@ -77,7 +77,8 @@ public final class WindowManager {
                     + "instead.");
         }
         mActivity = activity;
-        mWindowBackend = windowBackend;
+        mWindowBackend = windowBackend == null ? ExtensionWindowBackend.getInstance(context)
+                : windowBackend;
     }
 
     /**
@@ -96,25 +97,6 @@ public final class WindowManager {
      */
     public void unregisterLayoutChangeCallback(@NonNull Consumer<WindowLayoutInfo> callback) {
         mWindowBackend.unregisterLayoutChangeCallback(callback);
-    }
-
-    /**
-     * @deprecated {@link DeviceState} information has been merged into {@link WindowLayoutInfo}
-     * Registers a callback for device state changes.
-     */
-    @Deprecated
-    public void registerDeviceStateChangeCallback(@NonNull Executor executor,
-            @NonNull Consumer<DeviceState> callback) {
-        mWindowBackend.registerDeviceStateChangeCallback(executor, callback);
-    }
-
-    /**
-     * @deprecated {@link DeviceState} information has been merged into {@link WindowLayoutInfo}
-     * Unregisters a callback for device state changes.
-     */
-    @Deprecated
-    public void unregisterDeviceStateChangeCallback(@NonNull Consumer<DeviceState> callback) {
-        mWindowBackend.unregisterDeviceStateChangeCallback(callback);
     }
 
     /**

@@ -17,8 +17,6 @@
 package androidx.compose.foundation.layout
 
 import androidx.compose.runtime.Stable
-import androidx.compose.runtime.State
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.LayoutModifier
 import androidx.compose.ui.layout.Measurable
@@ -32,13 +30,15 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import kotlin.math.roundToInt
 
 /**
  * Offset the content by ([x] dp, [y] dp). The offsets can be positive as well as non-positive.
  * Applying an offset only changes the position of the content, without interfering with
  * its size measurement.
- * This modifier will automatically adjust the horizontal offset according to the layout direction.
+ *
+ * This modifier will automatically adjust the horizontal offset according to the layout direction:
+ * when the layout direction is LTR, positive [x] offsets will move the content to the right and
+ * when the layout direction is RTL, positive [x] offsets will move the content to the left.
  * For a modifier that offsets without considering layout direction, see [absoluteOffset].
  *
  * @see absoluteOffset
@@ -64,8 +64,10 @@ fun Modifier.offset(x: Dp = 0.dp, y: Dp = 0.dp) = this.then(
  * Offset the content by ([x] dp, [y] dp). The offsets can be positive as well as non-positive.
  * Applying an offset only changes the position of the content, without interfering with
  * its size measurement.
- * This modifier will not consider layout direction when calculating the position of the content.
- * For a modifier that does this, see [offset].
+ *
+ * This modifier will not consider layout direction when calculating the position of the content:
+ * a positive [x] offset will always move the content to the right.
+ * For a modifier that considers the layout direction when applying the offset, see [offset].
  *
  * @see offset
  *
@@ -90,11 +92,13 @@ fun Modifier.absoluteOffset(x: Dp = 0.dp, y: Dp = 0.dp) = this.then(
  * Offset the content by [offset] px. The offsets can be positive as well as non-positive.
  * Applying an offset only changes the position of the content, without interfering with
  * its size measurement.
+ *
  * This modifier is designed to be used for offsets that change, possibly due to user interactions,
  * the advantage being that it avoids recomposition when the offset is changing.
- * Note that, even if for convenience the API is accepting [Float] values, these will be rounded
- * to the closest integer value before applying the offset.
- * This modifier will automatically adjust the horizontal offset according to the layout direction.
+ *
+ * This modifier will automatically adjust the horizontal offset according to the layout direction:
+ * when the LD is LTR, positive horizontal offsets will move the content to the right and
+ * when the LD is RTL, positive horizontal offsets will move the content to the left.
  * For a modifier that offsets without considering layout direction, see [absoluteOffset].
  *
  * @see [absoluteOffset]
@@ -113,30 +117,17 @@ fun Modifier.offset(offset: Density.() -> IntOffset) = this.then(
     )
 )
 
-@Deprecated(
-    "offsetPx was deprecated. Please use offset with lambda parameters instead.",
-    ReplaceWith(
-        "offset({x.value}, {y.value})",
-        "androidx.compose.foundation.layout.offset",
-        "kotlin.math.roundToInt()"
-    )
-)
-@Suppress("ModifierInspectorInfo")
-fun Modifier.offsetPx(
-    x: State<Float> = mutableStateOf(0f),
-    y: State<Float> = mutableStateOf(0f)
-) = this.offset { IntOffset(x.value.roundToInt(), y.value.roundToInt()) }
-
 /**
  * Offset the content by [offset] px. The offsets can be positive as well as non-positive.
  * Applying an offset only changes the position of the content, without interfering with
  * its size measurement.
+ *
  * This modifier is designed to be used for offsets that change, possibly due to user interactions,
  * the advantage being that it avoids recomposition when the offset is changing.
- * Note that, even if for convenience the API is accepting [Float] values, these will be rounded
- * to the closest integer value before applying the offset.
- * This modifier will not consider layout direction when calculating the position of the content.
- * For a modifier that does this, see [offset].
+ *
+ * This modifier will not consider layout direction when calculating the position of the content:
+ * a positive horizontal offset will always move the content to the right.
+ * For a modifier that considers layout direction when applying the offset, see [offset].
  *
  * @see offset
  *
@@ -156,20 +147,6 @@ fun Modifier.absoluteOffset(
     )
 )
 
-@Deprecated(
-    "absoluteOffsetPx was deprecated. Please use absoluteOffset with lambda parameters instead.",
-    ReplaceWith(
-        "absoluteOffset({x.value.roundToInt()}, {y.value.roundToInt()})",
-        "androidx.compose.foundation.layout.absoluteOffset",
-        "kotlin.math.roundToInt"
-    )
-)
-@Suppress("ModifierInspectorInfo")
-fun Modifier.absoluteOffsetPx(
-    x: State<Float> = mutableStateOf(0f),
-    y: State<Float> = mutableStateOf(0f)
-) = this.absoluteOffset { IntOffset(x.value.roundToInt(), y.value.roundToInt()) }
-
 private class OffsetModifier(
     val x: Dp,
     val y: Dp,
@@ -183,9 +160,9 @@ private class OffsetModifier(
         val placeable = measurable.measure(constraints)
         return layout(placeable.width, placeable.height) {
             if (rtlAware) {
-                placeable.placeRelative(x.toIntPx(), y.toIntPx())
+                placeable.placeRelative(x.roundToPx(), y.roundToPx())
             } else {
-                placeable.place(x.toIntPx(), y.toIntPx())
+                placeable.place(x.roundToPx(), y.roundToPx())
             }
         }
     }

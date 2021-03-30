@@ -17,7 +17,6 @@
 package androidx.room.compiler.processing
 
 import androidx.room.compiler.processing.util.Source
-import androidx.room.compiler.processing.util.runJavaProcessorTest
 import androidx.room.compiler.processing.util.runProcessorTest
 import com.google.common.truth.Truth.assertThat
 import com.squareup.javapoet.ClassName
@@ -175,8 +174,7 @@ class XProcessingEnvTest {
 
     @Test
     fun findGeneratedAnnotation() {
-        // TODO: enable KSP once https://github.com/google/ksp/issues/198 is fixed.
-        runJavaProcessorTest(sources = emptyList(), classpath = emptyList()) { invocation ->
+        runProcessorTest(sources = emptyList(), classpath = emptyList()) { invocation ->
             val generatedAnnotation = invocation.processingEnv.findGeneratedAnnotation()
             assertThat(generatedAnnotation?.name).isEqualTo("Generated")
         }
@@ -236,6 +234,28 @@ class XProcessingEnvTest {
                     .and()
                     .hasError("intentional failure")
             }
+        }
+    }
+
+    @Test
+    fun typeElementsAreCached() {
+        val src = Source.java(
+            "JavaSubject",
+            """
+            class JavaSubject {
+                NestedClass nestedClass;
+                class NestedClass {
+                    int x;
+                }
+            }
+            """.trimIndent()
+        )
+        runProcessorTest(
+            sources = listOf(src)
+        ) { invocation ->
+            val parent = invocation.processingEnv.requireTypeElement("JavaSubject")
+            val nested = invocation.processingEnv.requireTypeElement("JavaSubject.NestedClass")
+            assertThat(nested.enclosingTypeElement).isSameInstanceAs(parent)
         }
     }
 

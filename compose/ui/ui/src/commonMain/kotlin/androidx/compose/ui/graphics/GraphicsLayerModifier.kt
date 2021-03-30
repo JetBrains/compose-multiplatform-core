@@ -25,6 +25,7 @@ import androidx.compose.ui.layout.MeasureScope
 import androidx.compose.ui.platform.InspectorInfo
 import androidx.compose.ui.platform.InspectorValueInfo
 import androidx.compose.ui.platform.debugInspectorInfo
+import androidx.compose.ui.platform.isDebugInspectorInfoEnabled
 import androidx.compose.ui.unit.Constraints
 
 /**
@@ -35,6 +36,9 @@ import androidx.compose.ui.unit.Constraints
  * [graphicsLayer] can also be used to apply effects to content, such as scaling ([scaleX], [scaleY]),
  * rotation ([rotationX], [rotationY], [rotationZ]), opacity ([alpha]), shadow
  * ([shadowElevation], [shape]), and clipping ([clip], [shape]).
+ *
+ * Note that if you provide a non-zero [shadowElevation] and if the passed [shape] is convex the
+ * shadow will not be drawn on Android versions less than 10.
  *
  * If the layer parameters are backed by a [androidx.compose.runtime.State] or an animated value
  * prefer an overload with a lambda block on [GraphicsLayerScope] as reading a state inside the block
@@ -131,6 +135,14 @@ fun Modifier.graphicsLayer(block: GraphicsLayerScope.() -> Unit): Modifier =
             }
         )
     )
+
+/**
+ * A [Modifier.Element] that adds a draw layer such that tooling can identify an element
+ * in the drawn image.
+ */
+@Stable
+fun Modifier.toolingGraphicsLayer() =
+    if (isDebugInspectorInfoEnabled) this.then(Modifier.graphicsLayer()) else this
 
 private class BlockGraphicsLayerModifier(
     private val layerBlock: GraphicsLayerScope.() -> Unit,

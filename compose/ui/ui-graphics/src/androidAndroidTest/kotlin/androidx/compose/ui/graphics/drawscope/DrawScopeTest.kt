@@ -26,7 +26,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.LinearGradientShader
 import androidx.compose.ui.graphics.Paint
+import androidx.compose.ui.graphics.PaintingStyle
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.PointMode
 import androidx.compose.ui.graphics.RadialGradientShader
 import androidx.compose.ui.graphics.SolidColor
@@ -99,6 +101,69 @@ class DrawScopeTest {
                 assertEquals(Color.Red, pixelMap[i, j])
             }
         }
+    }
+
+    @Test
+    fun testDrawOvalBrush() {
+        val width = 200
+        val height = 200
+
+        // Test that colors are rendered with the correct stroke parameters
+        testDrawScopeAndCanvasAreEquivalent(
+            width,
+            height,
+            {
+                drawOval(
+                    brush = Brush.linearGradient(listOf(Color.Red, Color.Blue)),
+                    topLeft = Offset(10f, 10f),
+                    size = Size(width - 20f, height - 20f)
+                )
+            },
+            { canvas ->
+                canvas.drawOval(
+                    10f,
+                    10f,
+                    width - 10f,
+                    height - 10f,
+                    Paint().apply {
+                        shader =
+                            LinearGradientShader(
+                                Offset.Zero,
+                                Offset(width.toFloat(), height.toFloat()),
+                                listOf(Color.Red, Color.Blue)
+                            )
+                    }
+                )
+            }
+        )
+    }
+
+    @Test
+    fun testDrawOvalColor() {
+        val width = 200
+        val height = 200
+
+        // Test that colors are rendered with the correct stroke parameters
+        testDrawScopeAndCanvasAreEquivalent(
+            width,
+            height,
+            {
+                drawOval(
+                    color = Color.Cyan,
+                    topLeft = Offset(10f, 10f),
+                    size = Size(width - 20f, height - 20f)
+                )
+            },
+            { canvas ->
+                canvas.drawOval(
+                    10f,
+                    10f,
+                    width - 10f,
+                    height - 10f,
+                    Paint().apply { color = Color.Cyan }
+                )
+            }
+        )
     }
 
     @Test
@@ -1512,6 +1577,58 @@ class DrawScopeTest {
                     )
                 }
                 canvas.drawRect(0f, 0f, 100f, 100f, paint)
+            }
+        )
+    }
+
+    @Test
+    fun testDrawScopeWithAlternatingPathEffectParameters() {
+        val strokeWidth = 2f
+        val strokeColor = Color.Red
+        val pathEffect = PathEffect.dashPathEffect(floatArrayOf(6f, 3f), 1f)
+        val width = 100f
+        val height = 100f
+        // Verify that DrawScope is correctly updating internal Paint parameters
+        // across draw commands with a stroke
+        testDrawScopeAndCanvasAreEquivalent(
+            width.toInt(),
+            height.toInt(),
+            {
+                drawCircle(
+                    strokeColor,
+                    style = Stroke(
+                        width = strokeWidth,
+                        pathEffect = pathEffect
+                    )
+                )
+                drawLine(
+                    color = strokeColor,
+                    start = Offset(size.width / 2, size.height / 2),
+                    end = Offset(size.width, size.height / 2),
+                    strokeWidth = strokeWidth
+                )
+            },
+            { canvas ->
+                canvas.drawCircle(
+                    Offset(width / 2f, height / 2f),
+                    radius = 50f,
+                    Paint().apply {
+                        this.color = strokeColor
+                        this.style = PaintingStyle.Stroke
+                        this.strokeWidth = strokeWidth
+                        this.pathEffect = pathEffect
+                    }
+                )
+
+                canvas.drawLine(
+                    Offset(width / 2, height / 2),
+                    Offset(width, height / 2),
+                    Paint().apply {
+                        this.color = strokeColor
+                        this.style = PaintingStyle.Stroke
+                        this.strokeWidth = strokeWidth
+                    }
+                )
             }
         )
     }

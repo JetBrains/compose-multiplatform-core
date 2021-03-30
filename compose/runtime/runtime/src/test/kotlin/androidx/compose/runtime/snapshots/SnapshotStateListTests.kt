@@ -16,7 +16,6 @@
 
 package androidx.compose.runtime.snapshots
 
-import androidx.compose.runtime.ExperimentalComposeApi
 import androidx.compose.runtime.mutableStateListOf
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -510,13 +509,12 @@ class SnapshotStateListTests {
         expected(normalList, list)
     }
 
-    @OptIn(ExperimentalComposeApi::class)
     @Test
     fun stateListsCanBeSnapshot() {
         val original = listOf(0, 1, 2, 3, 4, 5, 6)
         val mutableList = original.toMutableList()
         val list = mutableStateListOf(0, 1, 2, 3, 4, 5, 6)
-        val snapshot = takeSnapshot()
+        val snapshot = Snapshot.takeSnapshot()
         try {
             list[1] = 100
             mutableList[1] = 100

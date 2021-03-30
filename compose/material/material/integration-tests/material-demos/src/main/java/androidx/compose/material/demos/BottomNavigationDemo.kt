@@ -22,9 +22,10 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.preferredHeight
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material.RadioButton
 import androidx.compose.material.Text
 import androidx.compose.material.samples.BottomNavigationSample
@@ -41,11 +42,14 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun BottomNavigationDemo() {
     var alwaysShowLabels by remember { mutableStateOf(false) }
-    Column(Modifier.fillMaxHeight(), verticalArrangement = Arrangement.Bottom) {
+    Column(
+        modifier = Modifier.fillMaxHeight().selectableGroup(),
+        verticalArrangement = Arrangement.Bottom
+    ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .preferredHeight(56.dp)
+                .height(56.dp)
                 .selectable(
                     selected = !alwaysShowLabels,
                     onClick = { alwaysShowLabels = false }
@@ -54,15 +58,15 @@ fun BottomNavigationDemo() {
         ) {
             RadioButton(
                 selected = !alwaysShowLabels,
-                onClick = { alwaysShowLabels = false }
+                onClick = null
             )
-            Spacer(Modifier.width(16.dp))
+            Spacer(Modifier.requiredWidth(16.dp))
             Text("Only show labels when selected")
         }
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .preferredHeight(56.dp)
+                .height(56.dp)
                 .selectable(
                     selected = alwaysShowLabels,
                     onClick = { alwaysShowLabels = true }
@@ -71,13 +75,13 @@ fun BottomNavigationDemo() {
         ) {
             RadioButton(
                 selected = alwaysShowLabels,
-                onClick = { alwaysShowLabels = true }
+                onClick = null
             )
-            Spacer(Modifier.width(16.dp))
+            Spacer(Modifier.requiredWidth(16.dp))
             Text("Always show labels")
         }
 
-        Spacer(Modifier.preferredHeight(50.dp))
+        Spacer(Modifier.height(50.dp))
 
         if (alwaysShowLabels) {
             BottomNavigationSample()

@@ -18,10 +18,12 @@ package androidx.wear.watchface.control
 
 import android.os.Handler
 import androidx.annotation.RequiresApi
+import androidx.annotation.UiThread
+import androidx.wear.watchface.IndentingPrintWriter
 import androidx.wear.watchface.WatchFaceService
-import androidx.wear.watchface.control.data.ComplicationScreenshotParams
-import androidx.wear.watchface.control.data.WatchfaceScreenshotParams
-import androidx.wear.watchface.runOnHandler
+import androidx.wear.watchface.control.data.ComplicationRenderParams
+import androidx.wear.watchface.control.data.WatchFaceRenderParams
+import androidx.wear.watchface.runOnHandlerWithTracing
 
 /**
  * A headless watch face instance. This doesn't render asynchronously and the exposed API makes it
@@ -33,24 +35,61 @@ internal class HeadlessWatchFaceImpl(
     private val uiThreadHandler: Handler
 ) : IHeadlessWatchFace.Stub() {
 
+    internal companion object {
+        @UiThread
+        fun dump(indentingPrintWriter: IndentingPrintWriter) {
+            indentingPrintWriter.println("HeadlessWatchFace instances:")
+            indentingPrintWriter.increaseIndent()
+            for (instance in headlessInstances) {
+                require(instance.uiThreadHandler.looper.isCurrentThread) {
+                    "dump must be called from the UIThread"
+                }
+                indentingPrintWriter.println("HeadlessWatchFaceImpl:")
+                indentingPrintWriter.increaseIndent()
+                instance.engine?.dump(indentingPrintWriter)
+                indentingPrintWriter.decreaseIndent()
+            }
+            indentingPrintWriter.decreaseIndent()
+        }
+
+        private val headlessInstances = HashSet<HeadlessWatchFaceImpl>()
+    }
+
+    init {
+        uiThreadHandler.runOnHandlerWithTracing("HeadlessWatchFaceImpl.init") {
+            headlessInstances.add(this)
+        }
+    }
+
     override fun getApiVersion() = IHeadlessWatchFace.API_VERSION
 
-    override fun takeWatchFaceScreenshot(params: WatchfaceScreenshotParams) =
-        uiThreadHandler.runOnHandler { engine!!.takeWatchFaceScreenshot(params) }
+    override fun renderWatchFaceToBitmap(params: WatchFaceRenderParams) =
+        uiThreadHandler.runOnHandlerWithTracing("HeadlessWatchFaceImpl.renderWatchFaceToBitmap") {
+            engine!!.renderWatchFaceToBitmap(params)
+        }
 
     override fun getPreviewReferenceTimeMillis() = engine!!.watchFaceImpl.previewReferenceTimeMillis
 
     override fun getComplicationState() =
-        uiThreadHandler.runOnHandler { engine!!.getComplicationState() }
+        uiThreadHandler.runOnHandlerWithTracing("HeadlessWatchFaceImpl.getComplicationState") {
+            engine!!.getComplicationState()
+        }
 
-    override fun takeComplicationScreenshot(params: ComplicationScreenshotParams) =
-        uiThreadHandler.runOnHandler { engine!!.takeComplicationScreenshot(params) }
+    override fun renderComplicationToBitmap(params: ComplicationRenderParams) =
+        uiThreadHandler.runOnHandlerWithTracing(
+            "HeadlessWatchFaceImpl.renderComplicationToBitmap"
+        ) {
+            engine!!.renderComplicationToBitmap(params)
+        }
 
     override fun getUserStyleSchema() =
         engine!!.watchFaceImpl.userStyleRepository.schema.toWireFormat()
 
     override fun release() {
-        engine?.onDestroy()
-        engine = null
+        uiThreadHandler.runOnHandlerWithTracing("HeadlessWatchFaceImpl.release") {
+            headlessInstances.remove(this)
+            engine?.onDestroy()
+            engine = null
+        }
     }
 }

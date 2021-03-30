@@ -18,7 +18,7 @@ package androidx.navigation.compose
 
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.ui.platform.AmbientContext
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavController
@@ -35,6 +35,7 @@ import com.google.common.truth.Truth.assertWithMessage
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.lang.IllegalArgumentException
 
 @LargeTest
 @RunWith(AndroidJUnit4::class)
@@ -46,7 +47,7 @@ class NavHostControllerTest {
     fun testCurrentBackStackEntrySetGraph() {
         var currentBackStackEntry: State<NavBackStackEntry?> = mutableStateOf(null)
         composeTestRule.setContent {
-            val navController = TestNavHostController(AmbientContext.current)
+            val navController = TestNavHostController(LocalContext.current)
 
             navController.graph = navController.createGraph(startDestination = FIRST_DESTINATION) {
                 test(FIRST_DESTINATION)
@@ -65,7 +66,7 @@ class NavHostControllerTest {
         var currentBackStackEntry: State<NavBackStackEntry?> = mutableStateOf(null)
         lateinit var navController: NavController
         composeTestRule.setContent {
-            navController = TestNavHostController(AmbientContext.current)
+            navController = TestNavHostController(LocalContext.current)
 
             navController.graph = navController.createGraph(startDestination = FIRST_DESTINATION) {
                 test(FIRST_DESTINATION)
@@ -93,7 +94,7 @@ class NavHostControllerTest {
         var currentBackStackEntry: State<NavBackStackEntry?> = mutableStateOf(null)
         lateinit var navController: TestNavHostController
         composeTestRule.setContent {
-            navController = TestNavHostController(AmbientContext.current)
+            navController = TestNavHostController(LocalContext.current)
 
             navController.graph = navController.createGraph(startDestination = FIRST_DESTINATION) {
                 test(FIRST_DESTINATION)
@@ -119,7 +120,7 @@ class NavHostControllerTest {
         lateinit var navController: NavController
         val navigator = TestNavigator()
         composeTestRule.setContent {
-            navController = TestNavHostController(AmbientContext.current)
+            navController = TestNavHostController(LocalContext.current)
             navController.navigatorProvider.addNavigator(navigator)
 
             navController.graph = navController.createGraph(startDestination = FIRST_DESTINATION) {
@@ -155,7 +156,7 @@ class NavHostControllerTest {
         lateinit var navController: NavController
         val navigator = TestNavigator()
         composeTestRule.setContent {
-            navController = TestNavHostController(AmbientContext.current)
+            navController = TestNavHostController(LocalContext.current)
             navController.navigatorProvider.addNavigator(navigator)
 
             navController.graph = navController.createGraph(startDestination = FIRST_DESTINATION) {
@@ -188,6 +189,63 @@ class NavHostControllerTest {
         assertWithMessage("there should be 2 destination on back stack when using singleTop")
             .that(navigator.backStack.size)
             .isEqualTo(2)
+    }
+
+    @Test
+    fun testGetBackStackEntry() {
+        lateinit var navController: NavController
+        composeTestRule.setContent {
+            navController = TestNavHostController(LocalContext.current)
+
+            navController.graph = navController.createGraph(startDestination = FIRST_DESTINATION) {
+                test(FIRST_DESTINATION)
+                test(SECOND_DESTINATION)
+            }
+        }
+
+        composeTestRule.runOnUiThread {
+            navController.navigate(SECOND_DESTINATION)
+        }
+
+        assertWithMessage("first destination should be on back stack")
+            .that(
+                navController.getBackStackEntry(FIRST_DESTINATION).arguments?.getString(KEY_ROUTE)
+            )
+            .isEqualTo(FIRST_DESTINATION)
+
+        assertWithMessage("second destination should be on back stack")
+            .that(
+                navController.getBackStackEntry(SECOND_DESTINATION).arguments?.getString(KEY_ROUTE)
+            )
+            .isEqualTo(SECOND_DESTINATION)
+    }
+
+    @Test
+    fun testGetBackStackEntryNoEntryFound() {
+        lateinit var navController: NavController
+        composeTestRule.setContent {
+            navController = TestNavHostController(LocalContext.current)
+
+            navController.graph = navController.createGraph(startDestination = FIRST_DESTINATION) {
+                test(FIRST_DESTINATION)
+                test(SECOND_DESTINATION)
+            }
+        }
+
+        composeTestRule.runOnUiThread {
+            navController.navigate(SECOND_DESTINATION)
+        }
+
+        try {
+            navController.getBackStackEntry(SECOND_DESTINATION)
+        } catch (e: IllegalArgumentException) {
+            assertThat(e)
+                .hasMessageThat().contains(
+                    "No destination with route $SECOND_DESTINATION is on the NavController's " +
+                        "back stack. The current destination is " +
+                        navController.currentBackStackEntry?.destination
+                )
+        }
     }
 }
 

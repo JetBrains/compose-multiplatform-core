@@ -72,6 +72,7 @@ import androidx.arch.core.util.Function;
 import androidx.core.app.ActivityOptionsCompat;
 import androidx.core.app.SharedElementCallback;
 import androidx.core.view.LayoutInflaterCompat;
+import androidx.fragment.app.strictmode.FragmentStrictMode;
 import androidx.lifecycle.HasDefaultViewModelProviderFactory;
 import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.LifecycleEventObserver;
@@ -165,6 +166,8 @@ public class Fragment implements ComponentCallbacks, OnCreateContextMenuListener
 
     // If set this fragment is being removed from its activity.
     boolean mRemoving;
+
+    boolean mBeingSaved;
 
     // Set to true if this fragment was instantiated from a layout file.
     boolean mFromLayout;
@@ -281,6 +284,10 @@ public class Fragment implements ComponentCallbacks, OnCreateContextMenuListener
     // fragments can have mRetaining set to true without going through creation, so we must
     // track it separately.
     boolean mIsCreated;
+
+    // True if the fragment was already added to a FragmentManager, but has since been removed
+    // again.
+    boolean mRemoved;
 
     // Max Lifecycle state this Fragment can achieve.
     Lifecycle.State mMaxState = Lifecycle.State.RESUMED;
@@ -567,6 +574,9 @@ public class Fragment implements ComponentCallbacks, OnCreateContextMenuListener
     private void initLifecycle() {
         mLifecycleRegistry = new LifecycleRegistry(this);
         mSavedStateRegistryController = SavedStateRegistryController.create(this);
+        // The default factory depends on the SavedStateRegistry so it
+        // needs to be reset when the SavedStateRegistry is reset
+        mDefaultFactory = null;
     }
 
     /**
@@ -680,16 +690,15 @@ public class Fragment implements ComponentCallbacks, OnCreateContextMenuListener
         sb.append("}");
         sb.append(" (");
         sb.append(mWho);
-        sb.append(")");
         if (mFragmentId != 0) {
             sb.append(" id=0x");
             sb.append(Integer.toHexString(mFragmentId));
         }
         if (mTag != null) {
-            sb.append(" ");
+            sb.append(" tag=");
             sb.append(mTag);
         }
-        sb.append('}');
+        sb.append(")");
         return sb.toString();
     }
 
@@ -803,6 +812,7 @@ public class Fragment implements ComponentCallbacks, OnCreateContextMenuListener
     @SuppressWarnings("ReferenceEquality, deprecation")
     @Deprecated
     public void setTargetFragment(@Nullable Fragment fragment, int requestCode) {
+        FragmentStrictMode.onTargetFragmentUsage(this);
         // Don't allow a caller to set a target fragment in another FragmentManager,
         // but there's a snag: people do set target fragments before fragments get added.
         // We'll have the FragmentManager check that for validity when we move
@@ -850,6 +860,7 @@ public class Fragment implements ComponentCallbacks, OnCreateContextMenuListener
     @Nullable
     @Deprecated
     final public Fragment getTargetFragment() {
+        FragmentStrictMode.onTargetFragmentUsage(this);
         if (mTarget != null) {
             // Ensure that any Fragment set with setTargetFragment is immediately
             // available here
@@ -872,6 +883,7 @@ public class Fragment implements ComponentCallbacks, OnCreateContextMenuListener
      */
     @Deprecated
     final public int getTargetRequestCode() {
+        FragmentStrictMode.onTargetFragmentUsage(this);
         return mTargetRequestCode;
     }
 
@@ -1230,6 +1242,7 @@ public class Fragment implements ComponentCallbacks, OnCreateContextMenuListener
      */
     @Deprecated
     public void setRetainInstance(boolean retain) {
+        FragmentStrictMode.onRetainInstanceUsage(this);
         mRetainInstance = retain;
         if (mFragmentManager != null) {
             if (retain) {
@@ -1256,6 +1269,7 @@ public class Fragment implements ComponentCallbacks, OnCreateContextMenuListener
      */
     @Deprecated
     final public boolean getRetainInstance() {
+        FragmentStrictMode.onRetainInstanceUsage(this);
         return mRetainInstance;
     }
 
@@ -1317,6 +1331,7 @@ public class Fragment implements ComponentCallbacks, OnCreateContextMenuListener
      */
     @Deprecated
     public void setUserVisibleHint(boolean isVisibleToUser) {
+        FragmentStrictMode.onSetUserVisibleHint(this);
         if (!mUserVisibleHint && isVisibleToUser && mState < STARTED
                 && mFragmentManager != null && isAdded() && mIsCreated) {
             mFragmentManager.performPendingDeferredStart(
@@ -2175,6 +2190,7 @@ public class Fragment implements ComponentCallbacks, OnCreateContextMenuListener
         mTag = null;
         mHidden = false;
         mDetached = false;
+        mRemoved = true;
     }
 
     /**
@@ -2848,8 +2864,19 @@ public class Fragment implements ComponentCallbacks, OnCreateContextMenuListener
                     writer.print(" mTargetRequestCode=");
                     writer.println(mTargetRequestCode);
         }
-        if (getNextAnim() != 0) {
-            writer.print(prefix); writer.print("mNextAnim="); writer.println(getNextAnim());
+        writer.print(prefix); writer.print("mPopDirection="); writer.println(getPopDirection());
+        if (getEnterAnim() != 0) {
+            writer.print(prefix); writer.print("getEnterAnim="); writer.println(getEnterAnim());
+        }
+        if (getExitAnim() != 0) {
+            writer.print(prefix); writer.print("getExitAnim="); writer.println(getExitAnim());
+        }
+        if (getPopEnterAnim() != 0) {
+            writer.print(prefix); writer.print("getPopEnterAnim=");
+            writer.println(getPopEnterAnim());
+        }
+        if (getPopExitAnim() != 0) {
+            writer.print(prefix); writer.print("getPopExitAnim="); writer.println(getPopExitAnim());
         }
         if (mContainer != null) {
             writer.print(prefix); writer.print("mContainer="); writer.println(mContainer);
@@ -2946,7 +2973,7 @@ public class Fragment implements ComponentCallbacks, OnCreateContextMenuListener
             @Nullable Bundle savedInstanceState) {
         mChildFragmentManager.noteStateNotSaved();
         mPerformedCreateView = true;
-        mViewLifecycleOwner = new FragmentViewLifecycleOwner();
+        mViewLifecycleOwner = new FragmentViewLifecycleOwner(getViewModelStore());
         mView = onCreateView(inflater, container, savedInstanceState);
         if (mView != null) {
             // Initialize the view lifecycle
@@ -2955,7 +2982,7 @@ public class Fragment implements ComponentCallbacks, OnCreateContextMenuListener
             // to mViewLifecycleOwnerLiveData and before onViewCreated, so that calls to
             // ViewTree get() methods return something meaningful
             ViewTreeLifecycleOwner.set(mView, mViewLifecycleOwner);
-            ViewTreeViewModelStoreOwner.set(mView, this);
+            ViewTreeViewModelStoreOwner.set(mView, mViewLifecycleOwner);
             ViewTreeSavedStateRegistryOwner.set(mView, mViewLifecycleOwner);
             // Then inform any Observers of the new LifecycleOwner
             mViewLifecycleOwnerLiveData.setValue(mViewLifecycleOwner);
@@ -3178,7 +3205,8 @@ public class Fragment implements ComponentCallbacks, OnCreateContextMenuListener
     @SuppressWarnings("ConstantConditions")
     void performDestroyView() {
         mChildFragmentManager.dispatchDestroyView();
-        if (mView != null) {
+        if (mView != null && mViewLifecycleOwner.getLifecycle().getCurrentState()
+                        .isAtLeast(Lifecycle.State.CREATED)) {
             mViewLifecycleOwner.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY);
         }
         mState = CREATED;
@@ -3252,18 +3280,56 @@ public class Fragment implements ComponentCallbacks, OnCreateContextMenuListener
         return mAnimationInfo;
     }
 
-    int getNextAnim() {
+    void setAnimations(int enter, int exit, int popEnter, int popExit) {
+        if (mAnimationInfo == null && enter == 0 && exit == 0 && popEnter == 0 && popExit == 0) {
+            return; // no change!
+        }
+        ensureAnimationInfo().mEnterAnim = enter;
+        ensureAnimationInfo().mExitAnim = exit;
+        ensureAnimationInfo().mPopEnterAnim = popEnter;
+        ensureAnimationInfo().mPopExitAnim = popExit;
+    }
+
+    int getEnterAnim() {
         if (mAnimationInfo == null) {
             return 0;
         }
-        return mAnimationInfo.mNextAnim;
+        return mAnimationInfo.mEnterAnim;
     }
 
-    void setNextAnim(int animResourceId) {
-        if (mAnimationInfo == null && animResourceId == 0) {
+    int getExitAnim() {
+        if (mAnimationInfo == null) {
+            return 0;
+        }
+        return mAnimationInfo.mExitAnim;
+    }
+
+    int getPopEnterAnim() {
+        if (mAnimationInfo == null) {
+            return 0;
+        }
+        return mAnimationInfo.mPopEnterAnim;
+    }
+
+    int getPopExitAnim() {
+        if (mAnimationInfo == null) {
+            return 0;
+        }
+        return mAnimationInfo.mPopExitAnim;
+    }
+
+    boolean getPopDirection() {
+        if (mAnimationInfo == null) {
+            return false;
+        }
+        return mAnimationInfo.mIsPop;
+    }
+
+    void setPopDirection(boolean isPop) {
+        if (mAnimationInfo == null) {
             return; // no change!
         }
-        ensureAnimationInfo().mNextAnim = animResourceId;
+        ensureAnimationInfo().mIsPop = isPop;
     }
 
     int getNextTransition() {
@@ -3513,8 +3579,14 @@ public class Fragment implements ComponentCallbacks, OnCreateContextMenuListener
         // animator instead of an animation.
         Animator mAnimator;
 
-        // If app has requested a specific animation, this is the one to use.
-        int mNextAnim;
+        // If app requests the animation direction, this is what to use
+        boolean mIsPop;
+
+        // All possible animations
+        int mEnterAnim;
+        int mExitAnim;
+        int mPopEnterAnim;
+        int mPopExitAnim;
 
         // If app has requested a specific transition, this is the one to use.
         int mNextTransition;

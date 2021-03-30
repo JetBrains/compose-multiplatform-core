@@ -1,6 +1,8 @@
 # This file is a list of regexes of innocuous messages that might appear in stdout/stderr
 # Messages that are expected to appear in a build should be exempted in messages.ignore instead, because that file is subject to garbage collection whereas this one is not
 # Before adding a suppression to this file, please attempt to suppress the output inside the generating tool instead.
+# If the developer is using remote build cache, we mention it in the output
+Using AndroidX remote build cache
 # > Task :sqlite:integration-tests:inspection-room-testapp:kaptDebugAndroidTestKotlin
 ZipFile closed
 # > Task :room:integration-tests:room-testapp:runErrorProne
@@ -16,3 +18,63 @@ Stream closed
 # > Task :compose:compiler:compiler-hosted:integration-tests:testDebugUnitTest
 # If a test fails, we don't want the build to fail, we want to pass the test output to the tests server and for the tests server to report the failure
 [0-9]+ test.*failed.*
+# Some status messages
+Starting a Gradle Daemon, [0-9]+ busy and [0-9]+ incompatible Daemons could not be reused, use \-\-status for details
+Starting a Gradle Daemon, [0-9]+ busy and [0-9]+ incompatible and [0-9]+ stopped Daemons could not be reused, use \-\-status for details
+Remote build cache is disabled when running with \-\-offline\.
+[0-9]+ actionable tasks: [0-9]+ up\-to\-date
+[0-9]+ actionable tasks: [0-9]+ executed
+[0-9]+ actionable tasks: [0-9]+ executed, [0-9]+ from cache, [0-9]+ up\-to\-date
+# Some messages that encode the number of a certain type of other error
+[0-9]+ errors, [0-9]+ warnings \([0-9]+ warnings filtered by baseline lint\-baseline\.xml\)
+[0-9]+ errors, [0-9]+ warnings \([0-9]+ warning filtered by baseline lint\-baseline\.xml\)
+# > Task :webkit:integration-tests:testapp:compileReleaseJavaWithJavac
+\[ant\:jacocoReport\] Note\: Some input files use or override a deprecated API\.
+\[ant\:jacocoReport\] Note\: Recompile with \-Xlint\:deprecation for details\.
+\[ant\:jacocoReport\] Note\: Some input files use unchecked or unsafe operations\.
+\[ant\:jacocoReport\] Note\: Recompile with \-Xlint\:unchecked for details\.
+# b/179833331 , https://youtrack.jetbrains.com/issue/KT-35156
+# b/181258249 , https://youtrack.jetbrains.com/issue/KT-43881
+# > Task :jetifier-core:compileKotlin
+Could not perform incremental compilation\: Could not connect to Kotlin compile daemon
+Could not connect to kotlin daemon\. Using fallback strategy\.
+at org\.gradle\.workers\.internal\.AbstractWorker\.executeWrappedInBuildOperation\(AbstractWorker\.java\:[0-9]+\)
+at org\.gradle\.workers\.internal\.NoIsolationWorkerFactory\$[0-9]+\.execute\(NoIsolationWorkerFactory\.java\:[0-9]+\)
+at org\.gradle\.workers\.internal\.DefaultWorkerExecutor\.lambda\$submitWork\$[0-9]+\(DefaultWorkerExecutor\.java\:[0-9]+\)
+\.\.\. [0-9]+ more
+at java\.rmi\/sun\.rmi\.transport\.StreamRemoteCall\.exceptionReceivedFromServer\(StreamRemoteCall\.java\:[0-9]+\)
+at java\.rmi\/sun\.rmi\.transport\.StreamRemoteCall\.executeCall\(StreamRemoteCall\.java\:[0-9]+\)
+at java\.rmi\/sun\.rmi\.server\.UnicastRef\.invoke\(UnicastRef\.java\:[0-9]+\)
+at java\.rmi\/java\.rmi\.server\.RemoteObjectInvocationHandler\.invokeRemoteMethod\(RemoteObjectInvocationHandler\.java\:[0-9]+\)
+at java\.rmi\/java\.rmi\.server\.RemoteObjectInvocationHandler\.invoke\(RemoteObjectInvocationHandler\.java\:[0-9]+\)
+at com\.sun\.proxy\.\$Proxy[0-9]+\.compile\(Unknown Source\)
+at org\.jetbrains\.kotlin\.compilerRunner\.GradleKotlinCompilerWork\.incrementalCompilationWithDaemon\(GradleKotlinCompilerWork\.kt\:[0-9]+\)
+at org\.jetbrains\.kotlin\.compilerRunner\.GradleKotlinCompilerWork\.compileWithDaemon\(GradleKotlinCompilerWork\.kt\:[0-9]+\)
+at org\.jetbrains\.kotlin\.compilerRunner\.GradleKotlinCompilerWork\.compileWithDaemonOrFallbackImpl\(GradleKotlinCompilerWork\.kt\:[0-9]+\)
+at org\.jetbrains\.kotlin\.compilerRunner\.GradleKotlinCompilerWork\.run\(GradleKotlinCompilerWork\.kt\:[0-9]+\)
+at org\.gradle\.workers\.internal\.AdapterWorkAction\.execute\(AdapterWorkAction\.java\:[0-9]+\)
+at org\.gradle\.workers\.internal\.DefaultWorkerServer\.execute\(DefaultWorkerServer\.java\:[0-9]+\)
+at org\.gradle\.workers\.internal\.NoIsolationWorkerFactory\$[0-9]+\$[0-9]+\.create\(NoIsolationWorkerFactory\.java\:[0-9]+\)
+at org\.gradle\.internal\.classloader\.ClassLoaderUtils\.executeInClassloader\(ClassLoaderUtils\.java\:[0-9]+\)
+at org\.gradle\.workers\.internal\.NoIsolationWorkerFactory\$[0-9]+\.lambda\$execute\$[0-9]+\(NoIsolationWorkerFactory\.java\:[0-9]+\)
+at org\.gradle\.workers\.internal\.AbstractWorker\$[0-9]+\.call\(AbstractWorker\.java\:[0-9]+\)
+Caused by\: java\.lang\.AssertionError\: Incremental compilation is not enabled
+at org\.jetbrains\.kotlin\.incremental\.IncrementalCompilerRunner\.compileImpl\(IncrementalCompilerRunner\.kt\:[0-9]+\)
+at org\.jetbrains\.kotlin\.incremental\.IncrementalCompilerRunner\.compile\(IncrementalCompilerRunner\.kt\:[0-9]+\)
+at org\.jetbrains\.kotlin\.daemon\.CompileServiceImplBase\.execIncrementalCompiler\(CompileServiceImpl\.kt\:[0-9]+\)
+at org\.jetbrains\.kotlin\.daemon\.CompileServiceImplBase\.access\$execIncrementalCompiler\(CompileServiceImpl\.kt\:[0-9]+\)
+at org\.jetbrains\.kotlin\.daemon\.CompileServiceImpl\.compile\(CompileServiceImpl\.kt\:[0-9]+\)
+at java\.rmi\/sun\.rmi\.transport\.Transport\.serviceCall\(Transport\.java\:[0-9]+\)
+at java\.rmi\/sun\.rmi\.transport\.tcp\.TCPTransport\.handleMessages\(TCPTransport\.java\:[0-9]+\)
+at java\.rmi\/sun\.rmi\.transport\.tcp\.TCPTransport\$ConnectionHandler\.run[0-9]+\(TCPTransport\.java\:[0-9]+\)
+at java\.rmi\/sun\.rmi\.transport\.tcp\.TCPTransport\$ConnectionHandler\.lambda\$run\$[0-9]+\(TCPTransport\.java\:[0-9]+\)
+at java\.rmi\/sun\.rmi\.transport\.tcp\.TCPTransport\$ConnectionHandler\.run\(TCPTransport\.java\:[0-9]+\)
+at org\.gradle\.internal\.work\.DefaultConditionalExecutionQueue\$ExecutionRunner\.runExecution\(DefaultConditionalExecutionQueue\.java\:[0-9]+\)
+at org\.gradle\.internal\.work\.DefaultConditionalExecutionQueue\$ExecutionRunner\.runBatch\(DefaultConditionalExecutionQueue\.java\:[0-9]+\)
+at org\.gradle\.internal\.work\.DefaultConditionalExecutionQueue\$ExecutionRunner\.run\(DefaultConditionalExecutionQueue\.java\:[0-9]+\)
+Compilation with Kotlin compile daemon was not successful
+java\.rmi\.ServerError\: Error occurred in server thread\; nested exception is\:
+java\.lang\.AssertionError\: Incremental compilation is not enabled
+at java\.rmi\/sun\.rmi\.server\.UnicastServerRef\.dispatch\(UnicastServerRef\.java\:[0-9]+\)
+at java\.rmi\/sun\.rmi\.transport\.Transport\$[0-9]+\.run\(Transport\.java\:[0-9]+\)
+at org.gradle.*

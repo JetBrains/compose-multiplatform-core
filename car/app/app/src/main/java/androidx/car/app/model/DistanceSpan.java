@@ -18,9 +18,6 @@ package androidx.car.app.model;
 
 import static java.util.Objects.requireNonNull;
 
-import android.text.TextPaint;
-import android.text.style.CharacterStyle;
-
 import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -60,7 +57,7 @@ import java.util.Objects;
  * string.setSpan(ForegroundCarColorSpan.create(CarColor.BLUE), 0, 1, SPAN_EXCLUSIVE_EXCLUSIVE);
  * }</pre>
  */
-public class DistanceSpan extends CharacterStyle {
+public final class DistanceSpan extends CarSpan {
     @Nullable
     @Keep
     private final Distance mDistance;
@@ -71,24 +68,15 @@ public class DistanceSpan extends CharacterStyle {
         return new DistanceSpan(requireNonNull(distance));
     }
 
-    private DistanceSpan(Distance distance) {
-        this.mDistance = distance;
-    }
-
-    private DistanceSpan() {
-        mDistance = null;
-    }
-
+    /**
+     * Returns the {@link Distance} instance associated with this span.
+     */
     @NonNull
     public Distance getDistance() {
         return requireNonNull(mDistance);
     }
 
-    @Override
-    public void updateDrawState(@Nullable TextPaint paint) {
-        // Not relevant.
-    }
-
+    @NonNull
     @Override
     public String toString() {
         return "[distance: " + mDistance + "]";
@@ -110,5 +98,13 @@ public class DistanceSpan extends CharacterStyle {
         DistanceSpan otherSpan = (DistanceSpan) other;
 
         return Objects.equals(mDistance, otherSpan.mDistance);
+    }
+
+    private DistanceSpan(Distance distance) {
+        mDistance = distance;
+    }
+
+    private DistanceSpan() {
+        mDistance = null;
     }
 }

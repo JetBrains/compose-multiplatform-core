@@ -198,8 +198,7 @@ class JavaNavWriter(private val useAndroidX: Boolean = true) : NavWriter<JavaCod
             ?: throw IllegalStateException("Destination with arguments must have name")
         val className = ClassName.get(destName.packageName(), "${destName.simpleName()}Args")
         val args = destination.args
-        val specs =
-            ClassWithArgsSpecs(args, annotations)
+        val specs = ClassWithArgsSpecs(args, annotations)
 
         val fromBundleMethod = MethodSpec.methodBuilder("fromBundle").apply {
             addAnnotation(annotations.NONNULL_CLASSNAME)
@@ -216,34 +215,30 @@ class JavaNavWriter(private val useAndroidX: Boolean = true) : NavWriter<JavaCod
             addStatement("$T $N = new $T()", className, result, className)
             addStatement("$N.setClassLoader($T.class.getClassLoader())", bundle, className)
             args.forEach { arg ->
-                beginControlFlow("if ($N.containsKey($S))", bundle, arg.name).apply {
-                    addStatement("$T $N", arg.type.typeName(), arg.sanitizedName)
+                addReadSingleArgBlock("containsKey", bundle, result, arg, specs) {
                     arg.type.addBundleGetStatement(this, arg, arg.sanitizedName, bundle)
-                    addNullCheck(arg, arg.sanitizedName)
-                    addStatement(
-                        "$result.$N.put($S, $N)",
-                        specs.hashMapFieldSpec,
-                        arg.name,
-                        arg.sanitizedName
-                    )
                 }
-                if (arg.defaultValue == null) {
-                    nextControlFlow("else")
-                    addStatement(
-                        "throw new $T($S)", IllegalArgumentException::class.java,
-                        "Required argument \"${arg.name}\" is missing and does " +
-                            "not have an android:defaultValue"
-                    )
-                } else {
-                    nextControlFlow("else")
-                    addStatement(
-                        "$result.$N.put($S, $L)",
-                        specs.hashMapFieldSpec,
-                        arg.name,
-                        arg.defaultValue.write()
-                    )
+            }
+            addStatement("return $N", result)
+        }.build()
+
+        val fromSavedStateHandleMethod = MethodSpec.methodBuilder("fromSavedStateHandle").apply {
+            addAnnotation(annotations.NONNULL_CLASSNAME)
+            addModifiers(Modifier.PUBLIC, Modifier.STATIC)
+            addAnnotation(specs.suppressAnnotationSpec)
+            val savedStateHandle = "savedStateHandle"
+            addParameter(
+                ParameterSpec.builder(SAVED_STATE_HANDLE_CLASSNAME, savedStateHandle)
+                    .addAnnotation(specs.androidAnnotations.NONNULL_CLASSNAME)
+                    .build()
+            )
+            returns(className)
+            val result = "__result"
+            addStatement("$T $N = new $T()", className, result, className)
+            args.forEach { arg ->
+                addReadSingleArgBlock("contains", savedStateHandle, result, arg, specs) {
+                    addStatement("$N = $N.get($S)", arg.sanitizedName, savedStateHandle, arg.name)
                 }
-                endControlFlow()
             }
             addStatement("return $N", result)
         }.build()
@@ -251,12 +246,14 @@ class JavaNavWriter(private val useAndroidX: Boolean = true) : NavWriter<JavaCod
         val constructor = MethodSpec.constructorBuilder().addModifiers(Modifier.PRIVATE).build()
 
         val copyConstructor = MethodSpec.constructorBuilder()
+            .addAnnotation(specs.suppressAnnotationSpec)
             .addModifiers(Modifier.PUBLIC)
             .addParameter(className, "original")
             .addCode(specs.copyMapContents("this", "original"))
             .build()
 
         val fromMapConstructor = MethodSpec.constructorBuilder()
+            .addAnnotation(specs.suppressAnnotationSpec)
             .addModifiers(Modifier.PRIVATE)
             .addParameter(HASHMAP_CLASSNAME, "argumentsMap")
             .addStatement(
@@ -298,6 +295,7 @@ class JavaNavWriter(private val useAndroidX: Boolean = true) : NavWriter<JavaCod
             .addMethod(constructor)
             .addMethod(fromMapConstructor)
             .addMethod(fromBundleMethod)
+            .addMethod(fromSavedStateHandleMethod)
             .addMethods(specs.getters())
             .addMethod(specs.toBundleMethod("toBundle"))
             .addMethod(specs.equalsMethod(className))
@@ -307,6 +305,42 @@ class JavaNavWriter(private val useAndroidX: Boolean = true) : NavWriter<JavaCod
             .build()
 
         return JavaFile.builder(className.packageName(), typeSpec).build().toCodeFile()
+    }
+
+    private fun MethodSpec.Builder.addReadSingleArgBlock(
+        containsMethodName: String,
+        sourceVariableName: String,
+        targetVariableName: String,
+        arg: Argument,
+        specs: ClassWithArgsSpecs,
+        addGetStatement: MethodSpec.Builder.() -> Unit
+    ) {
+        beginControlFlow("if ($N.$containsMethodName($S))", sourceVariableName, arg.name)
+        addStatement("$T $N", arg.type.typeName(), arg.sanitizedName)
+        addGetStatement()
+        addNullCheck(arg, arg.sanitizedName)
+        addStatement(
+            "$targetVariableName.$N.put($S, $N)",
+            specs.hashMapFieldSpec,
+            arg.name,
+            arg.sanitizedName
+        )
+        nextControlFlow("else")
+        if (arg.defaultValue == null) {
+            addStatement(
+                "throw new $T($S)", IllegalArgumentException::class.java,
+                "Required argument \"${arg.name}\" is missing and does not have an " +
+                    "android:defaultValue"
+            )
+        } else {
+            addStatement(
+                "$targetVariableName.$N.put($S, $L)",
+                specs.hashMapFieldSpec,
+                arg.name,
+                arg.defaultValue.write()
+            )
+        }
+        endControlFlow()
     }
 }
 
@@ -330,6 +364,7 @@ private class ClassWithArgsSpecs(
     fun setters(thisClassName: ClassName) = args.map { arg ->
         MethodSpec.methodBuilder("set${arg.sanitizedName.capitalize()}").apply {
             addAnnotation(androidAnnotations.NONNULL_CLASSNAME)
+            addAnnotation(suppressAnnotationSpec)
             addModifiers(Modifier.PUBLIC)
             addParameter(generateParameterSpec(arg))
             addNullCheck(arg, arg.sanitizedName)
@@ -345,6 +380,9 @@ private class ClassWithArgsSpecs(
     }
 
     fun constructor() = MethodSpec.constructorBuilder().apply {
+        if (args.filterNot(Argument::isOptional).isNotEmpty()) {
+            addAnnotation(suppressAnnotationSpec)
+        }
         addModifiers(if (privateConstructor) Modifier.PRIVATE else Modifier.PUBLIC)
         args.filterNot(Argument::isOptional).forEach { arg ->
             addParameter(generateParameterSpec(arg))

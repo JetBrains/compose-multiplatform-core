@@ -66,7 +66,7 @@ sealed class KspHasModifiers(
     }
 
     override fun isTransient(): Boolean {
-        return declaration.modifiers.contains(Modifier.JAVA_TRANSIENT)
+        return declaration.isTransient()
     }
 
     override fun isFinal(): Boolean {
@@ -74,6 +74,24 @@ sealed class KspHasModifiers(
     }
 
     private class Declaration(declaration: KSDeclaration) : KspHasModifiers(declaration)
+
+    private class ClassDeclaration(declaration: KSDeclaration) : KspHasModifiers(declaration) {
+        override fun isStatic(): Boolean {
+            if (declaration.isStatic()) {
+                return true
+            }
+            // inner classes in kotlin are static by default unless they have inner modifier.
+            // for .class files, there is currently a bug:
+            // https://github.com/google/ksp/pull/232 and once it is fixed, inner modifier will
+            // be reported for .class files as well.
+            if (declaration.origin != Origin.JAVA &&
+                declaration.parentDeclaration is KSClassDeclaration // nested class
+            ) {
+                return !declaration.modifiers.contains(Modifier.INNER)
+            }
+            return false
+        }
+    }
 
     private class PropertyField(
         declaration: KSPropertyDeclaration
@@ -158,7 +176,7 @@ sealed class KspHasModifiers(
         }
 
         fun create(owner: KSClassDeclaration): XHasModifiers {
-            return Declaration(owner)
+            return ClassDeclaration(owner)
         }
     }
 }

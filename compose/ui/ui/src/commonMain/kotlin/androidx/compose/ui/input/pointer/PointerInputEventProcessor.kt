@@ -16,9 +16,15 @@
 
 package androidx.compose.ui.input.pointer
 
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.node.InternalCoreApi
 import androidx.compose.ui.node.LayoutNode
 import androidx.compose.ui.util.fastForEach
+
+internal interface PositionCalculator {
+    fun screenToLocal(positionOnScreen: Offset): Offset
+    fun localToScreen(localPosition: Offset): Offset
+}
 
 /**
  * The core element that receives [PointerInputEvent]s and process them in Compose UI.
@@ -39,11 +45,14 @@ internal class PointerInputEventProcessor(val root: LayoutNode) {
      * @see ProcessResult
      * @see PointerInputEvent
      */
-    fun process(pointerEvent: PointerInputEvent): ProcessResult {
+    fun process(
+        pointerEvent: PointerInputEvent,
+        positionCalculator: PositionCalculator
+    ): ProcessResult {
 
         // Gets a new PointerInputChangeEvent with the PointerInputEvent.
         val internalPointerEvent =
-            pointerInputChangeEventProducer.produce(pointerEvent)
+            pointerInputChangeEventProducer.produce(pointerEvent, positionCalculator)
 
         // TODO(shepshapard): Create fast forEach for maps?
 
@@ -54,7 +63,7 @@ internal class PointerInputEventProcessor(val root: LayoutNode) {
             .forEach { (_, pointerInputChange) ->
                 val hitResult: MutableList<PointerInputFilter> = mutableListOf()
                 root.hitTest(
-                    pointerInputChange.current.position,
+                    pointerInputChange.position,
                     hitResult
                 )
                 if (hitResult.isNotEmpty()) {
@@ -81,7 +90,7 @@ internal class PointerInputEventProcessor(val root: LayoutNode) {
         // TODO(shepshapard): Don't allocate on every call.
         return ProcessResult(
             dispatchedToSomething,
-            resultingChanges.changes.any { (_, value) -> value.anyPositionChangeConsumed() }
+            resultingChanges.changes.any { (_, value) -> value.positionChangeConsumed() }
         )
     }
 
@@ -109,19 +118,45 @@ private class PointerInputChangeEventProducer {
     /**
      * Produces [InternalPointerEvent]s by tracking changes between [PointerInputEvent]s
      */
-    internal fun produce(pointerInputEvent: PointerInputEvent):
+    fun produce(pointerInputEvent: PointerInputEvent, positionCalculator: PositionCalculator):
         InternalPointerEvent {
             val changes: MutableMap<PointerId, PointerInputChange> = mutableMapOf()
             pointerInputEvent.pointers.fastForEach {
+                val previousTime: Long
+                val previousPosition: Offset
+                val previousDown: Boolean
+
+                val previousData = previousPointerInputData[it.id]
+                if (previousData == null) {
+                    previousTime = it.uptime
+                    previousPosition = it.position
+                    previousDown = false
+                } else {
+                    previousTime = previousData.uptime
+                    previousDown = previousData.down
+                    previousPosition =
+                        positionCalculator.screenToLocal(previousData.positionOnScreen)
+                }
+
                 changes[it.id] =
                     PointerInputChange(
                         it.id,
-                        it.pointerInputData,
-                        previousPointerInputData[it.id] ?: it.pointerInputData.copy(down = false),
-                        ConsumedData()
+                        it.uptime,
+                        it.position,
+                        it.down,
+                        previousTime,
+                        previousPosition,
+                        previousDown,
+                        ConsumedData(),
+                        it.type
                     )
-                if (it.pointerInputData.down) {
-                    previousPointerInputData[it.id] = it.pointerInputData
+                if (it.down) {
+                    previousPointerInputData[it.id] = PointerInputData(
+                        it.uptime,
+                        it.positionOnScreen,
+                        it.down,
+                        it.type
+                    )
                 } else {
                     previousPointerInputData.remove(it.id)
                 }
@@ -135,6 +170,13 @@ private class PointerInputChangeEventProducer {
     internal fun clear() {
         previousPointerInputData.clear()
     }
+
+    private class PointerInputData(
+        val uptime: Long,
+        val positionOnScreen: Offset,
+        val down: Boolean,
+        val type: PointerType
+    )
 }
 
 /**

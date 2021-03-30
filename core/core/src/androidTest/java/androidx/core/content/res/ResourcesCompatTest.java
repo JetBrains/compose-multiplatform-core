@@ -358,7 +358,7 @@ public class ResourcesCompatTest {
     public void testGetFont_fontFile_async() throws InterruptedException {
         final CountDownLatch latch = new CountDownLatch(1);
         final FontCallback callback = new FontCallback(latch);
-        FontsContractCompat.resetCache();
+        FontsContractCompat.resetTypefaceCache();
 
         ResourcesCompat.getFont(mContext, R.font.samplefont, callback, null);
 
@@ -452,6 +452,13 @@ public class ResourcesCompatTest {
         Typeface font2 = ResourcesCompat.getFont(mContext, R.font.samplexmlfont);
 
         assertSame(font, font2);
+    }
+
+    @Test
+    public void testSystemFontFamilyReturnsSystemFont() {
+        Typeface typeface = ResourcesCompat.getFont(mContext, R.font.samplexmldownloadedfont);
+        assertNotNull(typeface);
+        assertEquals(typeface,  Typeface.create("serif", Typeface.NORMAL));
     }
 
     @Test

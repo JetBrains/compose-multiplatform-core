@@ -20,13 +20,13 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.AlignmentLine
 import androidx.compose.ui.layout.boundsInRoot
-import androidx.compose.ui.layout.globalBounds
-import androidx.compose.ui.layout.globalPosition
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.layout.LayoutInfo
+import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.node.LayoutNode
 import androidx.compose.ui.node.LayoutNodeWrapper
-import androidx.compose.ui.node.Owner
+import androidx.compose.ui.node.RootForTest
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.util.fastForEach
 
@@ -51,7 +51,7 @@ class SemanticsNode internal constructor(
     /*
      * This is expected to be the outermost semantics modifier on a layout node.
      */
-    internal val layoutNodeWrapper: SemanticsWrapper,
+    internal val outerSemanticsNodeWrapper: SemanticsWrapper,
     /**
      * mergingEnabled specifies whether mergeDescendants config has any effect.
      *
@@ -64,77 +64,73 @@ class SemanticsNode internal constructor(
      */
     val mergingEnabled: Boolean
 ) {
-    internal val unmergedConfig = layoutNodeWrapper.collapsedSemanticsConfiguration()
-    val id: Int = layoutNodeWrapper.modifier.id
+    internal val unmergedConfig = outerSemanticsNodeWrapper.collapsedSemanticsConfiguration()
+    val id: Int = outerSemanticsNodeWrapper.modifier.id
 
     /**
      * The [LayoutInfo] that this is associated with.
      */
-    val layoutInfo: LayoutInfo = layoutNodeWrapper.layoutNode
+    val layoutInfo: LayoutInfo get() = layoutNode
 
     /**
-     * The [Owner] this node is attached to.
+     * The [root][RootForTest] this node is attached to.
      */
-    // TODO(b/174747742) Stop using Owner in tests and use RootForTest instead
-    val owner: Owner? get() = layoutNode.owner
+    val root: RootForTest? get() = layoutNode.owner?.rootForTest
 
     /**
      * The [LayoutNode] that this is associated with.
      */
-    internal val layoutNode: LayoutNode = layoutNodeWrapper.layoutNode
+    internal val layoutNode: LayoutNode = outerSemanticsNodeWrapper.layoutNode
 
     // GEOMETRY
 
     /**
      * The size of the bounding box for this node, with no clipping applied
      */
-    val size: IntSize
-        get() {
-            return this.layoutNode.coordinates.size
-        }
+    val size: IntSize get() = findWrapperToGetBounds().size
 
     /**
      * The bounding box for this node relative to the root of this Compose hierarchy, with
      * clipping applied. To get the bounds with no clipping applied, use
      * Rect([positionInRoot], [size].toSize())
      */
-    val boundsInRoot: Rect
-        get() {
-            return this.layoutNode.coordinates.boundsInRoot
-        }
+    val boundsInRoot: Rect get() {
+        if (!layoutNode.isAttached) return Rect.Zero
+        return this.findWrapperToGetBounds().boundsInRoot()
+    }
 
     /**
      * The position of this node relative to the root of this Compose hierarchy, with no clipping
      * applied
      */
-    val positionInRoot: Offset
-        get() {
-            return this.layoutNode.coordinates.positionInRoot
-        }
+    val positionInRoot: Offset get() {
+        if (!layoutNode.isAttached) return Offset.Zero
+        return findWrapperToGetBounds().positionInRoot()
+    }
 
     /**
      * The bounding box for this node relative to the screen, with clipping applied. To get the
-     * bounds with no clipping applied, use PxBounds([globalPosition], [size].toSize())
+     * bounds with no clipping applied, use PxBounds([positionInWindow], [size].toSize())
      */
-    val globalBounds: Rect
-        get() {
-            return this.layoutNode.coordinates.globalBounds
-        }
+    val boundsInWindow: Rect get() {
+        if (!layoutNode.isAttached) return Rect.Zero
+        return findWrapperToGetBounds().boundsInWindow()
+    }
 
     /**
      * The position of this node relative to the screen, with no clipping applied
      */
-    val globalPosition: Offset
-        get() {
-            return this.layoutNode.coordinates.globalPosition
-        }
+    val positionInWindow: Offset get() {
+        if (!layoutNode.isAttached) return Offset.Zero
+        return findWrapperToGetBounds().positionInWindow()
+    }
 
     /**
      * Returns the position of an [alignment line][AlignmentLine], or [AlignmentLine.Unspecified]
      * if the line is not provided.
      */
-    fun getAlignmentLinePosition(line: AlignmentLine): Int {
-        return this.layoutNode.coordinates[line]
+    fun getAlignmentLinePosition(alignmentLine: AlignmentLine): Int {
+        return findWrapperToGetBounds()[alignmentLine]
     }
 
     // CHILDREN
@@ -164,12 +160,10 @@ class SemanticsNode internal constructor(
             unmergedChildren().fastForEach { child ->
                 // Don't merge children that themselves merge all their descendants (because that
                 // indicates they're independently screen-reader-focusable).
-                if (child.isMergingSemanticsOfDescendants) {
-                    return
+                if (!child.isMergingSemanticsOfDescendants) {
+                    mergedConfig.mergeChild(child.unmergedConfig)
+                    child.mergeConfig(mergedConfig)
                 }
-
-                mergedConfig.mergeChild(child.unmergedConfig)
-                child.mergeConfig(mergedConfig)
             }
         }
     }
@@ -283,28 +277,46 @@ class SemanticsNode internal constructor(
         }
         return list
     }
+
+    /**
+     * If the node is merging the descendants, we'll use the outermost semantics modifier that has
+     * mergeDescendants == true to report the bounds, size and position of the node. For majority
+     * of use cases it means that accessibility bounds will be equal to the clickable area.
+     * Otherwise the outermost semantics will be used to report bounds, size and position.
+     */
+    private fun findWrapperToGetBounds(): LayoutNodeWrapper {
+        return if (isMergingSemanticsOfDescendants) {
+            layoutNode.outerMergingSemantics ?: outerSemanticsNodeWrapper
+        } else {
+            outerSemanticsNodeWrapper
+        }
+    }
 }
 
 /**
  * Returns the outermost semantics node on a LayoutNode.
  */
 internal val LayoutNode.outerSemantics: SemanticsWrapper?
-    get() {
-        return outerLayoutNodeWrapper.nearestSemantics
+    get() = outerLayoutNodeWrapper.nearestSemantics { true }
+
+internal val LayoutNode.outerMergingSemantics
+    get() = outerLayoutNodeWrapper.nearestSemantics {
+        it.modifier.semanticsConfiguration.isMergingSemanticsOfDescendants
     }
 
 /**
  * Returns the nearest semantics wrapper starting from a LayoutNodeWrapper.
  */
-internal val LayoutNodeWrapper.nearestSemantics: SemanticsWrapper?
-    get() {
-        var wrapper: LayoutNodeWrapper? = this
-        while (wrapper != null) {
-            if (wrapper is SemanticsWrapper) return wrapper
-            wrapper = wrapper.wrapped
-        }
-        return null
+internal inline fun LayoutNodeWrapper.nearestSemantics(
+    predicate: (SemanticsWrapper) -> Boolean
+): SemanticsWrapper? {
+    var wrapper: LayoutNodeWrapper? = this
+    while (wrapper != null) {
+        if (wrapper is SemanticsWrapper && predicate(wrapper)) return wrapper
+        wrapper = wrapper.wrapped
     }
+    return null
+}
 
 internal fun SemanticsNode.findChildById(id: Int): SemanticsNode? {
     if (this.id == id) return this
@@ -318,7 +330,7 @@ internal fun SemanticsNode.findChildById(id: Int): SemanticsNode? {
 private fun LayoutNode.findOneLayerOfSemanticsWrappers(
     list: MutableList<SemanticsWrapper> = mutableListOf<SemanticsWrapper>()
 ): List<SemanticsWrapper> {
-    children.fastForEach { child ->
+    zSortedChildren.forEach { child ->
         val outerSemantics = child.outerSemantics
         if (outerSemantics != null) {
             list.add(outerSemantics)

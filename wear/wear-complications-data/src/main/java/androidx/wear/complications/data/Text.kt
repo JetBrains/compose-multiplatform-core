@@ -30,6 +30,8 @@ private typealias WireComplicationTextTimeDifferenceBuilder =
 private typealias WireComplicationTextTimeFormatBuilder =
     android.support.wearable.complications.ComplicationText.TimeFormatBuilder
 
+private typealias WireTimeDependentText = android.support.wearable.complications.TimeDependentText
+
 /**
  * The text within a complication.
  *
@@ -69,36 +71,21 @@ public interface ComplicationText {
      * @hide
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public fun asWireComplicationText(): WireComplicationText
+    public fun toWireComplicationText(): WireComplicationText
+}
 
-    public companion object {
-        /** Returns a [ComplicationText] that represent a plain [CharSequence]. */
-        @JvmStatic
-        public fun plain(text: CharSequence): ComplicationText =
-            WireComplicationText.plainText(text).asApiComplicationText()
-
-        /**
-         * Returns a builder for a [ComplicationText] representing a time difference, which can
-         * be either a count up or a count down.
-         *
-         * @param[style] the style of the time difference to be displayed.
-         */
-        @JvmStatic
-        public fun timeDifferenceBuilder(
-            style: TimeDifferenceStyle,
-            reference: TimeReference
-        ): TimeDifferenceComplicationText.Builder =
-            TimeDifferenceComplicationText.Builder(style, reference)
-
-        /**
-         * Returns a builder for a [ComplicationText] representing the current time.
-         *
-         * @param[format] the format in which the time should be displayed. This should be a pattern
-         * as used by [java.text.SimpleDateFormat].
-         */
-        @JvmStatic
-        public fun timeFormatBuilder(format: String): TimeFormatComplicationText.Builder =
-            TimeFormatComplicationText.Builder(format)
+/** A [ComplicationText] that contains plain text. */
+public class PlainComplicationText internal constructor(
+    delegate: WireComplicationText
+) : ComplicationText by DelegatingComplicationText(delegate) {
+    /**
+     * A builder for [PlainComplicationText].
+     *
+     * @param[text] the text to be displayed.
+     */
+    public class Builder(private var text: CharSequence) {
+        public fun build(): PlainComplicationText =
+            PlainComplicationText(WireComplicationText.plainText(text))
     }
 }
 
@@ -206,13 +193,24 @@ public class TimeDifferenceComplicationText internal constructor(
      *
      * Requires setting a [TimeDifferenceStyle].
      */
-    public class Builder(
+    public class Builder private constructor(
         private val style: TimeDifferenceStyle,
-        private val reference: TimeReference
+        private val startDateTimeMillis: Long?,
+        private val endDateTimeMillis: Long?
     ) {
         private var text: CharSequence? = null
         private var displayAsNow: Boolean? = null
         private var minimumUnit: TimeUnit? = null
+
+        public constructor(
+            style: TimeDifferenceStyle,
+            countUpTimeReference: CountUpTimeReference
+        ) : this(style, null, countUpTimeReference.dateTimeMillis)
+
+        public constructor(
+            style: TimeDifferenceStyle,
+            countDownTimeReference: CountDownTimeReference
+        ) : this(style, countDownTimeReference.dateTimeMillis, null)
 
         /**
          * Sets the text within which the time difference will be displayed.
@@ -262,11 +260,11 @@ public class TimeDifferenceComplicationText internal constructor(
             WireComplicationTextTimeDifferenceBuilder().apply {
                 setStyle(style.wireStyle)
                 setSurroundingText(text)
-                if (reference.hasStartDateTimeMillis()) {
-                    setReferencePeriodStartMillis(reference.startDateTimeMillis)
+                startDateTimeMillis?.let {
+                    setReferencePeriodStartMillis(it)
                 }
-                if (reference.hasEndDateTimeMillis()) {
-                    setReferencePeriodEndMillis(reference.endDateTimeMillis)
+                endDateTimeMillis?.let {
+                    setReferencePeriodEndMillis(it)
                 }
                 displayAsNow?.let { setShowNowText(it) }
                 setMinimumUnit(minimumUnit)
@@ -355,13 +353,42 @@ private class DelegatingComplicationText(
 
     /** @hide */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    override fun asWireComplicationText() = delegate
+    override fun toWireComplicationText() = delegate
 }
 
 /** Converts a [WireComplicationText] into an equivalent [ComplicationText] instead. */
-internal fun WireComplicationText.asApiComplicationText(): ComplicationText =
+internal fun WireComplicationText.toApiComplicationText(): ComplicationText =
     DelegatingComplicationText(this)
 
 /** Converts a [TimeZone] into an equivalent [java.util.TimeZone]. */
 internal fun TimeZone.asJavaTimeZone(): java.util.TimeZone =
     java.util.TimeZone.getTimeZone(this.id)
+
+/** [ComplicationText] implementation that delegates to a [WireTimeDependentText] instance. */
+private class DelegatingTimeDependentText(
+    private val delegate: WireTimeDependentText
+) : ComplicationText {
+    override fun getTextAt(resources: Resources, dateTimeMillis: Long) =
+        delegate.getTextAt(resources, dateTimeMillis)
+
+    override fun returnsSameText(firstDateTimeMillis: Long, secondDateTimeMillis: Long) =
+        delegate.returnsSameText(firstDateTimeMillis, secondDateTimeMillis)
+
+    override fun getNextChangeTime(fromDateTimeMillis: Long) =
+        delegate.getNextChangeTime(fromDateTimeMillis)
+
+    override fun isAlwaysEmpty() = false
+
+    /** @hide */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    override fun toWireComplicationText(): WireComplicationText {
+        throw UnsupportedOperationException(
+            "DelegatingTimeDependentText doesn't support asWireComplicationText"
+        )
+    }
+}
+
+/** @hide */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public fun WireTimeDependentText.toApiComplicationText(): ComplicationText =
+    DelegatingTimeDependentText(this)

@@ -18,6 +18,7 @@ package a.b;
 
 import android.os.Bundle;
 import androidx.annotation.NonNull;
+import androidx.lifecycle.SavedStateHandle;
 import androidx.navigation.NavArgs;
 import java.lang.IllegalArgumentException;
 import java.lang.Object;
@@ -32,6 +33,7 @@ public class SanitizedMainFragmentArgs implements NavArgs {
     private SanitizedMainFragmentArgs() {
     }
 
+    @SuppressWarnings("unchecked")
     private SanitizedMainFragmentArgs(HashMap argumentsMap) {
         this.arguments.putAll(argumentsMap);
     }
@@ -58,6 +60,35 @@ public class SanitizedMainFragmentArgs implements NavArgs {
         if (bundle.containsKey("name with spaces")) {
             int nameWithSpaces;
             nameWithSpaces = bundle.getInt("name with spaces");
+            __result.arguments.put("name with spaces", nameWithSpaces);
+        } else {
+            throw new IllegalArgumentException("Required argument \"name with spaces\" is missing and does not have an android:defaultValue");
+        }
+        return __result;
+    }
+
+    @NonNull
+    @SuppressWarnings("unchecked")
+    public static SanitizedMainFragmentArgs fromSavedStateHandle(
+            @NonNull SavedStateHandle savedStateHandle) {
+        SanitizedMainFragmentArgs __result = new SanitizedMainFragmentArgs();
+        if (savedStateHandle.contains("name.with.dot")) {
+            int nameWithDot;
+            nameWithDot = savedStateHandle.get("name.with.dot");
+            __result.arguments.put("name.with.dot", nameWithDot);
+        } else {
+            throw new IllegalArgumentException("Required argument \"name.with.dot\" is missing and does not have an android:defaultValue");
+        }
+        if (savedStateHandle.contains("name_with_underscore")) {
+            int nameWithUnderscore;
+            nameWithUnderscore = savedStateHandle.get("name_with_underscore");
+            __result.arguments.put("name_with_underscore", nameWithUnderscore);
+        } else {
+            throw new IllegalArgumentException("Required argument \"name_with_underscore\" is missing and does not have an android:defaultValue");
+        }
+        if (savedStateHandle.contains("name with spaces")) {
+            int nameWithSpaces;
+            nameWithSpaces = savedStateHandle.get("name with spaces");
             __result.arguments.put("name with spaces", nameWithSpaces);
         } else {
             throw new IllegalArgumentException("Required argument \"name with spaces\" is missing and does not have an android:defaultValue");
@@ -150,10 +181,12 @@ public class SanitizedMainFragmentArgs implements NavArgs {
     public static class Builder {
         private final HashMap arguments = new HashMap();
 
+        @SuppressWarnings("unchecked")
         public Builder(SanitizedMainFragmentArgs original) {
             this.arguments.putAll(original.arguments);
         }
 
+        @SuppressWarnings("unchecked")
         public Builder(int nameWithDot, int nameWithUnderscore, int nameWithSpaces) {
             this.arguments.put("name.with.dot", nameWithDot);
             this.arguments.put("name_with_underscore", nameWithUnderscore);
@@ -167,18 +200,21 @@ public class SanitizedMainFragmentArgs implements NavArgs {
         }
 
         @NonNull
+        @SuppressWarnings("unchecked")
         public Builder setNameWithDot(int nameWithDot) {
             this.arguments.put("name.with.dot", nameWithDot);
             return this;
         }
 
         @NonNull
+        @SuppressWarnings("unchecked")
         public Builder setNameWithUnderscore(int nameWithUnderscore) {
             this.arguments.put("name_with_underscore", nameWithUnderscore);
             return this;
         }
 
         @NonNull
+        @SuppressWarnings("unchecked")
         public Builder setNameWithSpaces(int nameWithSpaces) {
             this.arguments.put("name with spaces", nameWithSpaces);
             return this;

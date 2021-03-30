@@ -26,7 +26,6 @@ import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.Measured
 import androidx.compose.ui.layout.VerticalAlignmentLine
 import androidx.compose.ui.platform.debugInspectorInfo
-import androidx.compose.ui.util.annotation.FloatRange
 
 /**
  * A layout composable that places its children in a vertical sequence. For a layout composable
@@ -41,10 +40,10 @@ import androidx.compose.ui.util.annotation.FloatRange
  *
  * When none of its children have weights, a [Column] will be as small as possible to fit its
  * children one on top of the other. In order to change the height of the [Column], use the
- * [Modifier.height] modifiers; e.g. to make it fill the available height [Modifier.fillMaxHeight]
+ * [Modifier.requiredHeight] modifiers; e.g. to make it fill the available height [Modifier.fillMaxHeight]
  * can be used. If at least one child of a [Column] has a [weight][ColumnScope.weight],
  * the [Column] will fill the available height, so there is no need for [Modifier.fillMaxHeight].
- * However, if [Column]'s size should be limited, the [Modifier.height] or [Modifier.size] layout
+ * However, if [Column]'s size should be limited, the [Modifier.requiredHeight] or [Modifier.requiredSize] layout
  * modifiers should be applied.
  *
  * When the size of the [Column] is larger than the sum of its children sizes, a
@@ -61,31 +60,28 @@ import androidx.compose.ui.util.annotation.FloatRange
  * @param horizontalAlignment The horizontal alignment of the layout's children.
  *
  * @see Row
- * @see [androidx.compose.foundation.ScrollableColumn]
  * @see [androidx.compose.foundation.lazy.LazyColumn]
  */
 @Composable
-@OptIn(InternalLayoutApi::class)
 inline fun Column(
     modifier: Modifier = Modifier,
     verticalArrangement: Arrangement.Vertical = Arrangement.Top,
     horizontalAlignment: Alignment.Horizontal = Alignment.Start,
     content: @Composable ColumnScope.() -> Unit
 ) {
-    val measureBlocks = columnMeasureBlocks(verticalArrangement, horizontalAlignment)
+    val measurePolicy = columnMeasurePolicy(verticalArrangement, horizontalAlignment)
     Layout(
-        content = { ColumnScope.content() },
-        measureBlocks = measureBlocks,
+        content = { ColumnScopeInstance.content() },
+        measurePolicy = measurePolicy,
         modifier = modifier
     )
 }
 
 @PublishedApi
-@OptIn(InternalLayoutApi::class)
-internal val DefaultColumnMeasureBlocks = rowColumnMeasureBlocks(
+internal val DefaultColumnMeasurePolicy = rowColumnMeasurePolicy(
     orientation = LayoutOrientation.Vertical,
     arrangement = { totalSize, size, _, density, outPosition ->
-        Arrangement.Top.arrange(totalSize, size, density, outPosition)
+        with(Arrangement.Top) { density.arrange(totalSize, size, outPosition) }
     },
     arrangementSpacing = Arrangement.Top.spacing,
     crossAxisAlignment = CrossAxisAlignment.horizontal(Alignment.Start),
@@ -94,18 +90,17 @@ internal val DefaultColumnMeasureBlocks = rowColumnMeasureBlocks(
 
 @PublishedApi
 @Composable
-@OptIn(InternalLayoutApi::class)
-internal fun columnMeasureBlocks(
+internal fun columnMeasurePolicy(
     verticalArrangement: Arrangement.Vertical,
     horizontalAlignment: Alignment.Horizontal
 ) = remember(verticalArrangement, horizontalAlignment) {
     if (verticalArrangement == Arrangement.Top && horizontalAlignment == Alignment.Start) {
-        DefaultColumnMeasureBlocks
+        DefaultColumnMeasurePolicy
     } else {
-        rowColumnMeasureBlocks(
+        rowColumnMeasurePolicy(
             orientation = LayoutOrientation.Vertical,
             arrangement = { totalSize, size, _, density, outPosition ->
-                verticalArrangement.arrange(totalSize, size, density, outPosition)
+                with(verticalArrangement) { density.arrange(totalSize, size, outPosition) }
             },
             arrangementSpacing = verticalArrangement.spacing,
             crossAxisAlignment = CrossAxisAlignment.horizontal(horizontalAlignment),
@@ -121,6 +116,27 @@ internal fun columnMeasureBlocks(
 @Immutable
 interface ColumnScope {
     /**
+     * Size the element's height proportional to its [weight] relative to other weighted sibling
+     * elements in the [Column]. The parent will divide the vertical space remaining after measuring
+     * unweighted child elements and distribute it according to this weight.
+     * When [fill] is true, the element will be forced to occupy the whole height allocated to it.
+     * Otherwise, the element is allowed to be smaller - this will result in [Column] being smaller,
+     * as the unused allocated height will not be redistributed to other siblings.
+     *
+     * @param weight The proportional height to give to this element, as related to the total of
+     * all weighted siblings. Must be positive.
+     * @param fill When `true`, the element will occupy the whole height allocated.
+     *
+     * @sample androidx.compose.foundation.layout.samples.SimpleColumn
+     */
+    @Stable
+    fun Modifier.weight(
+        /*@FloatRange(from = 0.0, fromInclusive = false)*/
+        weight: Float,
+        fill: Boolean = true
+    ): Modifier
+
+    /**
      * Align the element horizontally within the [Column]. This alignment will have priority over
      * the [Column]'s `horizontalAlignment` parameter.
      *
@@ -128,15 +144,7 @@ interface ColumnScope {
      * @sample androidx.compose.foundation.layout.samples.SimpleAlignInColumn
      */
     @Stable
-    fun Modifier.align(alignment: Alignment.Horizontal) = this.then(
-        HorizontalAlignModifier(
-            horizontal = alignment,
-            inspectorInfo = debugInspectorInfo {
-                name = "align"
-                value = alignment
-            }
-        )
-    )
+    fun Modifier.align(alignment: Alignment.Horizontal): Modifier
 
     /**
      * Position the element horizontally such that its [alignmentLine] aligns with sibling elements
@@ -155,52 +163,7 @@ interface ColumnScope {
      * @sample androidx.compose.foundation.layout.samples.SimpleRelativeToSiblingsInColumn
      */
     @Stable
-    fun Modifier.alignBy(alignmentLine: VerticalAlignmentLine) = this.then(
-        SiblingsAlignedModifier.WithAlignmentLine(
-            line = alignmentLine,
-            inspectorInfo = debugInspectorInfo {
-                name = "alignBy"
-                value = alignmentLine
-            }
-        )
-    )
-
-    @Deprecated(
-        "alignWithSiblings was renamed to alignBy.",
-        ReplaceWith("alignBy(alignmentLine)")
-    )
-    fun Modifier.alignWithSiblings(alignmentLine: VerticalAlignmentLine) = alignBy(alignmentLine)
-
-    /**
-     * Size the element's height proportional to its [weight] relative to other weighted sibling
-     * elements in the [Column]. The parent will divide the vertical space remaining after measuring
-     * unweighted child elements and distribute it according to this weight.
-     * When [fill] is true, the element will be forced to occupy the whole height allocated to it.
-     * Otherwise, the element is allowed to be smaller - this will result in [Column] being smaller,
-     * as the unused allocated height will not be redistributed to other siblings.
-     *
-     * @sample androidx.compose.foundation.layout.samples.SimpleColumn
-     */
-    @Stable
-    fun Modifier.weight(
-        @FloatRange(from = 0.0, to = 3.4e38 /* POSITIVE_INFINITY */, fromInclusive = false)
-        weight: Float,
-        fill: Boolean = true
-    ): Modifier {
-        require(weight > 0.0) { "invalid weight $weight; must be greater than zero" }
-        return this.then(
-            LayoutWeightImpl(
-                weight = weight,
-                fill = fill,
-                inspectorInfo = debugInspectorInfo {
-                    name = "weight"
-                    value = weight
-                    properties["weight"] = weight
-                    properties["fill"] = fill
-                }
-            )
-        )
-    }
+    fun Modifier.alignBy(alignmentLine: VerticalAlignmentLine): Modifier
 
     /**
      * Position the element horizontally such that the alignment line for the content as
@@ -220,7 +183,51 @@ interface ColumnScope {
      * @sample androidx.compose.foundation.layout.samples.SimpleRelativeToSiblings
      */
     @Stable
-    fun Modifier.alignBy(alignmentLineBlock: (Measured) -> Int) = this.then(
+    fun Modifier.alignBy(alignmentLineBlock: (Measured) -> Int): Modifier
+}
+
+internal object ColumnScopeInstance : ColumnScope {
+    @Stable
+    override fun Modifier.weight(weight: Float, fill: Boolean): Modifier {
+        require(weight > 0.0) { "invalid weight $weight; must be greater than zero" }
+        return this.then(
+            LayoutWeightImpl(
+                weight = weight,
+                fill = fill,
+                inspectorInfo = debugInspectorInfo {
+                    name = "weight"
+                    value = weight
+                    properties["weight"] = weight
+                    properties["fill"] = fill
+                }
+            )
+        )
+    }
+
+    @Stable
+    override fun Modifier.align(alignment: Alignment.Horizontal) = this.then(
+        HorizontalAlignModifier(
+            horizontal = alignment,
+            inspectorInfo = debugInspectorInfo {
+                name = "align"
+                value = alignment
+            }
+        )
+    )
+
+    @Stable
+    override fun Modifier.alignBy(alignmentLine: VerticalAlignmentLine) = this.then(
+        SiblingsAlignedModifier.WithAlignmentLine(
+            alignmentLine = alignmentLine,
+            inspectorInfo = debugInspectorInfo {
+                name = "alignBy"
+                value = alignmentLine
+            }
+        )
+    )
+
+    @Stable
+    override fun Modifier.alignBy(alignmentLineBlock: (Measured) -> Int) = this.then(
         SiblingsAlignedModifier.WithAlignmentLineBlock(
             block = alignmentLineBlock,
             inspectorInfo = debugInspectorInfo {
@@ -229,13 +236,4 @@ interface ColumnScope {
             }
         )
     )
-
-    @Deprecated(
-        "alignWithSiblings was renamed to alignBy.",
-        ReplaceWith("alignBy(alignmentLineBlock)")
-    )
-    fun Modifier.alignWithSiblings(alignmentLineBlock: (Measured) -> Int) =
-        alignBy(alignmentLineBlock)
-
-    companion object : ColumnScope
 }

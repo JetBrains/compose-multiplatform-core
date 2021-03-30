@@ -21,7 +21,6 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.os.Build
 import android.os.Bundle
-import androidx.core.os.BuildCompat
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.screenshot.matchers.BitmapMatcher
 import androidx.test.screenshot.matchers.MSSIMMatcher
@@ -122,7 +121,7 @@ open class ScreenshotTestRule(
             Assume.assumeTrue("Requires Cuttlefish", Build.MODEL.contains("Cuttlefish"))
             Assume.assumeTrue(
                 "Requires SDK 29.",
-                Build.VERSION.SDK_INT == 29 && !BuildCompat.isAtLeastR()
+                Build.VERSION.SDK_INT == 29
             )
             base.evaluate()
         }
@@ -334,7 +333,7 @@ open class ScreenshotTestRule(
 
     private fun getDeviceModel(): String {
         var model = android.os.Build.MODEL.toLowerCase()
-        arrayOf("phone", "x86", "x64").forEach {
+        arrayOf("phone", "x86", "x64", "gms").forEach {
             model = model.replace(it, "")
         }
         return model.trim().replace(" ", "_")

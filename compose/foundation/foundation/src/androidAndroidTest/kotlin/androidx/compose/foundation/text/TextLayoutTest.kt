@@ -17,24 +17,29 @@
 package androidx.compose.foundation.text
 
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.FirstBaseline
+import androidx.compose.ui.layout.IntrinsicMeasurable
+import androidx.compose.ui.layout.IntrinsicMeasureScope
 import androidx.compose.ui.layout.LastBaseline
 import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.layout.Measurable
+import androidx.compose.ui.layout.MeasurePolicy
+import androidx.compose.ui.layout.MeasureResult
+import androidx.compose.ui.layout.MeasureScope
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.node.Ref
-import androidx.compose.ui.platform.setContent
 import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.InternalTextApi
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.font.asFontFamily
-import androidx.compose.ui.text.font.font
 import androidx.compose.ui.text.font.test.R
+import androidx.compose.ui.text.font.toFontFamily
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
@@ -131,33 +136,62 @@ class TextLayoutTest {
             val text = @Composable {
                 TestingText("aa aa ")
             }
-            Layout(
-                text,
-                minIntrinsicWidthMeasureBlock = { _, _ -> 0 },
-                minIntrinsicHeightMeasureBlock = { _, _ -> 0 },
-                maxIntrinsicWidthMeasureBlock = { _, _ -> 0 },
-                maxIntrinsicHeightMeasureBlock = { _, _ -> 0 }
-            ) { measurables, _ ->
-                val textMeasurable = measurables.first()
-                // Min width.
-                assertThat(textWidth).isEqualTo(textMeasurable.minIntrinsicWidth(0))
-                // Min height.
-                assertThat(textMeasurable.minIntrinsicHeight(textWidth)).isGreaterThan(textHeight)
-                assertThat(textHeight).isEqualTo(textMeasurable.minIntrinsicHeight(doubleTextWidth))
-                assertThat(textHeight)
-                    .isEqualTo(textMeasurable.minIntrinsicHeight(Constraints.Infinity))
-                // Max width.
-                assertThat(doubleTextWidth).isEqualTo(textMeasurable.maxIntrinsicWidth(0))
-                // Max height.
-                assertThat(textMeasurable.maxIntrinsicHeight(textWidth)).isGreaterThan(textHeight)
-                assertThat(textHeight).isEqualTo(textMeasurable.maxIntrinsicHeight(doubleTextWidth))
-                assertThat(textHeight)
-                    .isEqualTo(textMeasurable.maxIntrinsicHeight(Constraints.Infinity))
+            val measurePolicy = remember {
+                object : MeasurePolicy {
+                    override fun MeasureScope.measure(
+                        measurables: List<Measurable>,
+                        constraints: Constraints
+                    ): MeasureResult {
+                        val textMeasurable = measurables.first()
+                        // Min width.
+                        assertThat(textWidth).isEqualTo(textMeasurable.minIntrinsicWidth(0))
+                        // Min height.
+                        assertThat(textMeasurable.minIntrinsicHeight(textWidth))
+                            .isGreaterThan(textHeight)
+                        assertThat(textHeight)
+                            .isEqualTo(textMeasurable.minIntrinsicHeight(doubleTextWidth))
+                        assertThat(textHeight)
+                            .isEqualTo(textMeasurable.minIntrinsicHeight(Constraints.Infinity))
+                        // Max width.
+                        assertThat(doubleTextWidth).isEqualTo(textMeasurable.maxIntrinsicWidth(0))
+                        // Max height.
+                        assertThat(textMeasurable.maxIntrinsicHeight(textWidth))
+                            .isGreaterThan(textHeight)
+                        assertThat(textHeight)
+                            .isEqualTo(textMeasurable.maxIntrinsicHeight(doubleTextWidth))
+                        assertThat(textHeight)
+                            .isEqualTo(textMeasurable.maxIntrinsicHeight(Constraints.Infinity))
 
-                intrinsicsLatch.countDown()
+                        intrinsicsLatch.countDown()
 
-                layout(0, 0) {}
+                        return layout(0, 0) {}
+                    }
+
+                    override fun IntrinsicMeasureScope.minIntrinsicWidth(
+                        measurables: List<IntrinsicMeasurable>,
+                        height: Int
+                    ) = 0
+
+                    override fun IntrinsicMeasureScope.minIntrinsicHeight(
+                        measurables: List<IntrinsicMeasurable>,
+                        width: Int
+                    ) = 0
+
+                    override fun IntrinsicMeasureScope.maxIntrinsicWidth(
+                        measurables: List<IntrinsicMeasurable>,
+                        height: Int
+                    ) = 0
+
+                    override fun IntrinsicMeasureScope.maxIntrinsicHeight(
+                        measurables: List<IntrinsicMeasurable>,
+                        width: Int
+                    ) = 0
+                }
             }
+            Layout(
+                content = text,
+                measurePolicy = measurePolicy
+            )
         }
         assertThat(intrinsicsLatch.await(1, TimeUnit.SECONDS)).isTrue()
     }
@@ -231,7 +265,6 @@ class TextLayoutTest {
     }
 }
 
-@OptIn(InternalTextApi::class)
 @Composable
 private fun TestingText(
     text: String,
@@ -240,11 +273,11 @@ private fun TestingText(
 ) {
     val textStyle = remember {
         TextStyle(
-            fontFamily = font(
-                resId = R.font.sample_font,
-                weight = FontWeight.Normal,
-                style = FontStyle.Normal
-            ).asFontFamily()
+            fontFamily = Font(
+                R.font.sample_font,
+                FontWeight.Normal,
+                FontStyle.Normal
+            ).toFontFamily()
         )
     }
     CoreText(

@@ -42,13 +42,17 @@ class DataSourceQueryResultBinderProvider(val context: Context) : QueryResultBin
         }
         val typeArg = declared.typeArguments.last()
         val listAdapter = context.typeAdapterStore.findRowAdapter(typeArg, query)?.let {
-            ListQueryResultAdapter(it)
+            ListQueryResultAdapter(typeArg, it)
         }
         val tableNames = (
             (listAdapter?.accessedTableNames() ?: emptyList()) +
                 query.tables.map { it.name }
             ).toSet()
-        return PositionalDataSourceQueryResultBinder(listAdapter, tableNames)
+        return PositionalDataSourceQueryResultBinder(
+            listAdapter = listAdapter,
+            tableNames = tableNames,
+            forPaging3 = false
+        )
     }
 
     override fun matches(declared: XType): Boolean {

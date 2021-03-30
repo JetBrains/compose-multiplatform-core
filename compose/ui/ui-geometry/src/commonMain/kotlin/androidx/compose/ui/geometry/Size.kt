@@ -39,7 +39,7 @@ fun Size(width: Float, height: Float) = Size(packFloats(width, height))
  */
 @Suppress("EXPERIMENTAL_FEATURE_WARNING")
 @Immutable
-inline class Size(@PublishedApi internal val packedValue: Long) {
+inline class Size internal constructor(@PublishedApi internal val packedValue: Long) {
 
     @Stable
     val width: Float
@@ -134,7 +134,12 @@ inline class Size(@PublishedApi internal val packedValue: Long) {
     val maxDimension: Float
         get() = max(width.absoluteValue, height.absoluteValue)
 
-    override fun toString() = "Size(${width.toStringAsFixed(1)}, ${height.toStringAsFixed(1)})"
+    override fun toString() =
+        if (isSpecified) {
+            "Size(${width.toStringAsFixed(1)}, ${height.toStringAsFixed(1)})"
+        } else {
+            "Size(UNSPECIFIED)"
+        }
 }
 
 /**
@@ -209,3 +214,10 @@ fun Size.toRect(): Rect {
 @Suppress("NOTHING_TO_INLINE")
 @Stable
 inline operator fun Float.times(size: Size) = size * this
+
+/**
+ * Returns the [Offset] of the center of the rect from the point of [0, 0]
+ * with this [Size].
+ */
+@Stable
+val Size.center: Offset get() = Offset(width / 2f, height / 2f)

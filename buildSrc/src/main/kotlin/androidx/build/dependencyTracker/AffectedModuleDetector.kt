@@ -70,11 +70,25 @@ enum class ProjectSubset { DEPENDENT_PROJECTS, CHANGED_PROJECTS, ALL_AFFECTED_PR
  * Since this needs to check project dependency graph to work, it cannot be accessed before
  * all projects are loaded. Doing so will throw an exception.
  */
-abstract class AffectedModuleDetector {
+abstract class AffectedModuleDetector(
+    protected val logger: Logger?
+) {
     /**
-     * Returns whether this project was affected by current changes..
+     * Returns whether this project was affected by current changes.
      */
     abstract fun shouldInclude(project: Project): Boolean
+
+    /**
+     * Returns whether this task was affected by current changes.
+     */
+    fun shouldInclude(task: Task): Boolean {
+        val include = shouldInclude(task.project)
+        val inclusionVerb = if (include) "Including" else "Excluding"
+        logger?.info(
+            "$inclusionVerb task ${task.path}"
+        )
+        return include
+    }
 
     /**
      * Returns the set that the project belongs to. The set is one of the ProjectSubset above.
@@ -91,7 +105,8 @@ abstract class AffectedModuleDetector {
         const val BASE_COMMIT_ARG = "androidx.affectedModuleDetector.baseCommit"
         @JvmStatic
         fun configure(gradle: Gradle, rootProject: Project) {
-            val enabled = rootProject.hasProperty(ENABLE_ARG)
+            val enabled = rootProject.hasProperty(ENABLE_ARG) &&
+                rootProject.findProperty(ENABLE_ARG) != "false"
             val subset = when {
                 rootProject.hasProperty(DEPENDENT_PROJECTS_ARG) -> ProjectSubset.DEPENDENT_PROJECTS
                 rootProject.hasProperty(CHANGED_PROJECTS_ARG) -> ProjectSubset.CHANGED_PROJECTS
@@ -167,9 +182,9 @@ abstract class AffectedModuleDetector {
          */
         @Throws(GradleException::class)
         @JvmStatic
-        internal fun configureTaskGuard(task: Task) {
+        fun configureTaskGuard(task: Task) {
             task.onlyIf {
-                getOrThrow(task.project).shouldInclude(task.project)
+                getOrThrow(task.project).shouldInclude(task)
             }
         }
 
@@ -193,8 +208,8 @@ abstract class AffectedModuleDetector {
  */
 private class AcceptAll(
     private val wrapped: AffectedModuleDetector? = null,
-    private val logger: Logger? = null
-) : AffectedModuleDetector() {
+    logger: Logger? = null
+) : AffectedModuleDetector(logger) {
     override fun shouldInclude(project: Project): Boolean {
         val wrappedResult = wrapped?.shouldInclude(project)
         logger?.info("[AcceptAll] wrapper returned $wrappedResult but I'll return true")
@@ -216,14 +231,15 @@ private class AcceptAll(
  */
 class AffectedModuleDetectorImpl constructor(
     private val rootProject: Project,
-    private val logger: Logger?,
+    logger: Logger?,
     // used for debugging purposes when we want to ignore non module files
     private val ignoreUnknownProjects: Boolean = false,
     private val projectSubset: ProjectSubset = ProjectSubset.ALL_AFFECTED_PROJECTS,
     private val cobuiltTestPaths: Set<Set<String>> = COBUILT_TEST_PATHS,
+    private val alwaysBuildIfExistsPaths: Set<String> = ALWAYS_BUILD_IF_EXISTS,
     private val injectedGitClient: GitClient? = null,
     private val baseCommitOverride: String? = null
-) : AffectedModuleDetector() {
+) : AffectedModuleDetector(logger) {
     private val git by lazy {
         injectedGitClient ?: GitClientImpl(rootProject.projectDir, logger)
     }
@@ -259,7 +275,10 @@ class AffectedModuleDetectorImpl constructor(
     }
 
     private val alwaysBuild by lazy {
-        ALWAYS_BUILD.map { path -> rootProject.project(path) }
+        // For each path in alwaysBuildIfExistsPaths, if that path doesn't exist, then the developer
+        // must have disabled a project that they weren't interested in using during this run.
+        // Otherwise, we must always build the corresponding project during full builds.
+        alwaysBuildIfExistsPaths.map { path -> rootProject.findProject(path) }.filterNotNull()
     }
 
     /**
@@ -275,11 +294,7 @@ class AffectedModuleDetectorImpl constructor(
     private var isPresubmit: Boolean = false
 
     override fun shouldInclude(project: Project): Boolean {
-        return (project.isRoot || affectedProjects.contains(project)).also {
-            logger?.info(
-                "checking whether I should include ${project.path} and my answer is $it"
-            )
-        }
+        return (project.isRoot || affectedProjects.contains(project))
     }
 
     override fun getSubset(project: Project): ProjectSubset {
@@ -462,9 +477,13 @@ class AffectedModuleDetectorImpl constructor(
     }
 
     companion object {
-        // dummy test to ensure no failure due to "no instrumentation. We can eventually remove
-        // if we resolve b/127819369
-        private val ALWAYS_BUILD = setOf(":placeholder-tests")
+        // Project paths that we always build if they exist
+        private val ALWAYS_BUILD_IF_EXISTS = setOf(
+            // placeholder test project to ensure no failure due to no instrumentation.
+            // We can eventually remove if we resolve b/127819369
+            ":placeholder-tests",
+            ":buildSrc-tests:project-subsets"
+        )
 
         // Some tests are codependent even if their modules are not. Enable manual bundling of tests
         private val COBUILT_TEST_PATHS = setOf(
@@ -490,6 +509,10 @@ class AffectedModuleDetectorImpl constructor(
             ), // Link graphics and material to always run @Large in presubmit per b/160624022
             setOf(
                 ":compose:ui:ui-graphics",
+                ":compose:material:material"
+            ), // Link material and material-ripple
+            setOf(
+                ":compose:material:material-ripple",
                 ":compose:material:material"
             ),
             setOf(

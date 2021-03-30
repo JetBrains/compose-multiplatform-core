@@ -17,39 +17,55 @@
 package androidx.compose.ui.tooling.inspector
 
 import android.view.View
-import androidx.compose.runtime.CompositionData
+import androidx.compose.runtime.tooling.CompositionData
 import androidx.compose.runtime.InternalComposeApi
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.layout.GraphicLayerInfo
 import androidx.compose.ui.layout.LayoutInfo
-import androidx.compose.ui.node.LayoutNode
-import androidx.compose.ui.node.OwnedLayer
-import androidx.compose.ui.tooling.Group
-import androidx.compose.ui.tooling.NodeGroup
-import androidx.compose.ui.tooling.ParameterInformation
 import androidx.compose.ui.tooling.R
-import androidx.compose.ui.tooling.asTree
+import androidx.compose.ui.tooling.data.Group
+import androidx.compose.ui.tooling.data.NodeGroup
+import androidx.compose.ui.tooling.data.ParameterInformation
+import androidx.compose.ui.tooling.data.UiToolingDataApi
+import androidx.compose.ui.tooling.data.asTree
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.toSize
 import java.util.ArrayDeque
 import java.util.Collections
 import java.util.IdentityHashMap
 import kotlin.math.absoluteValue
+import kotlin.math.roundToInt
 
-private val unwantedPackages = setOf(
+private val systemPackages = setOf(
     -1,
-    packageNameHash("androidx.compose.ui"),
+    packageNameHash("androidx.compose.animation"),
+    packageNameHash("androidx.compose.animation.core"),
+    packageNameHash("androidx.compose.desktop"),
+    packageNameHash("androidx.compose.foundation"),
+    packageNameHash("androidx.compose.foundation.layout"),
+    packageNameHash("androidx.compose.foundation.text"),
+    packageNameHash("androidx.compose.material"),
+    packageNameHash("androidx.compose.material.ripple"),
     packageNameHash("androidx.compose.runtime"),
+    packageNameHash("androidx.compose.ui"),
+    packageNameHash("androidx.compose.ui.layout"),
+    packageNameHash("androidx.compose.ui.platform"),
     packageNameHash("androidx.compose.ui.tooling"),
     packageNameHash("androidx.compose.ui.selection"),
-    packageNameHash("androidx.compose.ui.semantics")
+    packageNameHash("androidx.compose.ui.semantics"),
+    packageNameHash("androidx.compose.ui.viewinterop"),
+    packageNameHash("androidx.compose.ui.window"),
 )
 
 private val unwantedCalls = setOf(
     "emit",
     "remember",
+    "CompositionLocalProvider",
+    "Content",
     "Inspectable",
-    "Layout",
-    "Providers",
-    "SelectionContainer",
-    "SelectionLayout"
+    "ProvideAndroidCompositionLocals",
+    "ProvideCommonCompositionLocals",
 )
 
 private fun packageNameHash(packageName: String) =
@@ -59,6 +75,8 @@ private fun packageNameHash(packageName: String) =
  * Generator of a tree for the Layout Inspector.
  */
 class LayoutInspectorTree {
+    @Suppress("MemberVisibilityCanBePrivate")
+    var hideSystemNodes = true
     private val inlineClassConverter = InlineClassConverter()
     private val parameterFactory = ParameterFactory(inlineClassConverter)
     private val cache = ArrayDeque<MutableInspectorNode>()
@@ -98,6 +116,7 @@ class LayoutInspectorTree {
     /**
      * Reset the generated id. Nodes are assigned an id if there isn't a layout node id present.
      */
+    @Suppress("unused")
     fun resetGeneratedId() {
         generatedId = -1L
     }
@@ -116,22 +135,22 @@ class LayoutInspectorTree {
         val trees = tables.map { convert(it) }
         return when (trees.size) {
             0 -> listOf()
-            1 -> trees.first().children
-            else -> stitchTreesByLayoutNode(trees)
+            1 -> addTree(mutableListOf(), trees.single())
+            else -> stitchTreesByLayoutInfo(trees)
         }
     }
 
     /**
-     * Stitch separate trees together using the [LayoutNode]s found in the [CompositionData]s.
+     * Stitch separate trees together using the [LayoutInfo]s found in the [CompositionData]s.
      *
-     * Some constructs in Compose (e.g. ModalDrawerLayout) will result is multiple
+     * Some constructs in Compose (e.g. ModalDrawer) will result is multiple
      * [CompositionData]s. This code will attempt to stitch the resulting [InspectorNode] trees
-     * together by looking at the parent of each [LayoutNode].
+     * together by looking at the parent of each [LayoutInfo].
      *
      * If this algorithm is successful the result of this function will be a list with a single
      * tree.
      */
-    private fun stitchTreesByLayoutNode(trees: List<MutableInspectorNode>): List<InspectorNode> {
+    private fun stitchTreesByLayoutInfo(trees: List<MutableInspectorNode>): List<InspectorNode> {
         val layoutToTreeMap = IdentityHashMap<LayoutInfo, MutableInspectorNode>()
         trees.forEach { tree -> tree.layoutNodes.forEach { layoutToTreeMap[it] = tree } }
         trees.forEach { tree ->
@@ -155,7 +174,9 @@ class LayoutInspectorTree {
             treeMap.remove(parentTree)
             parentTree = findDeepParentTree()
         }
-        return trees.asSequence().filter { !stitched.contains(it) }.flatMap { it.children }.toList()
+        val result = mutableListOf<InspectorNode>()
+        trees.asSequence().filter { !stitched.contains(it) }.forEach { addTree(result, it) }
+        return result
     }
 
     /**
@@ -194,19 +215,38 @@ class LayoutInspectorTree {
         }
         val newCopy = newNode ?: newNode(node)
         if (trees != null) {
-            trees.flatMapTo(newCopy.children) { it.children }
+            trees.forEach { addTree(newCopy.children, it) }
             stitched.addAll(trees)
         }
         return buildAndRelease(newCopy)
     }
 
-    @OptIn(InternalComposeApi::class)
+    /**
+     * Add [tree] to the end of the [out] list.
+     * The root nodes of [tree] may be a fake node that hold a list of [LayoutInfo].
+     */
+    private fun addTree(
+        out: MutableList<InspectorNode>,
+        tree: MutableInspectorNode
+    ): List<InspectorNode> {
+        tree.children.forEach {
+            if (it.name.isNotEmpty()) {
+                out.add(it)
+            } else {
+                out.addAll(it.children)
+            }
+        }
+        return out
+    }
+
+    @OptIn(InternalComposeApi::class, UiToolingDataApi::class)
     private fun convert(table: CompositionData): MutableInspectorNode {
         val fakeParent = newNode()
-        addToParent(fakeParent, listOf(convert(table.asTree())))
+        addToParent(fakeParent, listOf(convert(table.asTree())), buildFakeChildNodes = true)
         return fakeParent
     }
 
+    @OptIn(UiToolingDataApi::class)
     private fun convert(group: Group): MutableInspectorNode {
         val children = convertChildren(group)
         val parent = parse(group)
@@ -214,6 +254,7 @@ class LayoutInspectorTree {
         return parent
     }
 
+    @OptIn(UiToolingDataApi::class)
     private fun convertChildren(group: Group): List<MutableInspectorNode> {
         if (group.children.isEmpty()) {
             return emptyList()
@@ -234,13 +275,17 @@ class LayoutInspectorTree {
 
     /**
      * Adds the nodes in [input] to the children of [parentNode].
-     * Nodes without a reference to a Composable are skipped.
+     * Nodes without a reference to a wanted Composable are skipped unless [buildFakeChildNodes].
      * A single skipped render id and layoutNode will be added to [parentNode].
      */
-    private fun addToParent(parentNode: MutableInspectorNode, input: List<MutableInspectorNode>) {
+    private fun addToParent(
+        parentNode: MutableInspectorNode,
+        input: List<MutableInspectorNode>,
+        buildFakeChildNodes: Boolean = false
+    ) {
         var id: Long? = null
         input.forEach { node ->
-            if (node.name.isEmpty()) {
+            if (node.name.isEmpty() && !(buildFakeChildNodes && node.layoutNodes.isNotEmpty())) {
                 parentNode.children.addAll(node.children)
                 if (node.id != 0L) {
                     // If multiple siblings with a render ids are dropped:
@@ -254,6 +299,9 @@ class LayoutInspectorTree {
                 node.layoutNodes.forEach { claimedNodes.getOrPut(it) { resultNode } }
                 parentNode.children.add(resultNode)
             }
+            if (node.bounds.isNotEmpty() && sameBoundingRectangle(parentNode, node)) {
+                parentNode.bounds = node.bounds
+            }
             parentNode.layoutNodes.addAll(node.layoutNodes)
             release(node)
         }
@@ -261,10 +309,15 @@ class LayoutInspectorTree {
         parentNode.id = if (parentNode.id == 0L && nodeId != null) nodeId else parentNode.id
     }
 
+    @OptIn(UiToolingDataApi::class)
     private fun parse(group: Group): MutableInspectorNode {
         val node = newNode()
         node.id = getRenderNode(group)
-        ((group as? NodeGroup)?.node as? LayoutInfo)?.let { node.layoutNodes.add(it) }
+        parsePosition(group, node)
+        parseLayoutInfo(group, node)
+        if (node.height <= 0 && node.width <= 0) {
+            return markUnwanted(node)
+        }
         if (!parseCallLocation(group, node) && group.name.isNullOrEmpty()) {
             return markUnwanted(node)
         }
@@ -272,23 +325,53 @@ class LayoutInspectorTree {
         if (unwantedGroup(node)) {
             return markUnwanted(node)
         }
+        addParameters(group.parameters, node)
+        return node
+    }
+
+    @OptIn(UiToolingDataApi::class)
+    private fun parsePosition(group: Group, node: MutableInspectorNode) {
         val box = group.box
         node.top = box.top
         node.left = box.left
         node.height = box.bottom - box.top
         node.width = box.right - box.left
-        if (node.height <= 0 && node.width <= 0) {
-            return markUnwanted(node)
+    }
+
+    @OptIn(UiToolingDataApi::class)
+    private fun parseLayoutInfo(group: Group, node: MutableInspectorNode) {
+        val layoutInfo = (group as? NodeGroup)?.node as? LayoutInfo ?: return
+        node.layoutNodes.add(layoutInfo)
+        val box = group.box
+        val size = box.size.toSize()
+        val coordinates = layoutInfo.coordinates
+        val topLeft = toIntOffset(coordinates.localToWindow(Offset.Zero))
+        val topRight = toIntOffset(coordinates.localToWindow(Offset(size.width, 0f)))
+        val bottomRight = toIntOffset(coordinates.localToWindow(Offset(size.width, size.height)))
+        val bottomLeft = toIntOffset(coordinates.localToWindow(Offset(0f, size.height)))
+        if (
+            topLeft.x == box.left && topLeft.y == box.top &&
+            topRight.x == box.right && topRight.y == box.top &&
+            bottomRight.x == box.right && bottomRight.y == box.bottom &&
+            bottomLeft.x == box.left && bottomLeft.y == box.bottom
+        ) {
+            return
         }
-        addParameters(group.parameters, node)
-        return node
+        node.bounds = intArrayOf(
+            topLeft.x, topLeft.y,
+            topRight.x, topRight.y,
+            bottomRight.x, bottomRight.y,
+            bottomLeft.x, bottomLeft.y
+        )
     }
 
-    private fun markUnwanted(node: MutableInspectorNode): MutableInspectorNode {
-        node.resetExceptIdLayoutNodesAndChildren()
-        return node
-    }
+    private fun toIntOffset(offset: Offset): IntOffset =
+        IntOffset(offset.x.roundToInt(), offset.y.roundToInt())
 
+    private fun markUnwanted(node: MutableInspectorNode): MutableInspectorNode =
+        node.apply { markUnwanted() }
+
+    @OptIn(UiToolingDataApi::class)
     private fun parseCallLocation(group: Group, node: MutableInspectorNode): Boolean {
         val location = group.location ?: return false
         val fileName = location.sourceFile ?: return false
@@ -300,21 +383,25 @@ class LayoutInspectorTree {
         return true
     }
 
+    @OptIn(UiToolingDataApi::class)
     private fun getRenderNode(group: Group): Long =
         group.modifierInfo.asSequence()
             .map { it.extra }
-            .filterIsInstance<OwnedLayer>()
+            .filterIsInstance<GraphicLayerInfo>()
             .map { it.layerId }
             .firstOrNull() ?: 0
 
+    @OptIn(UiToolingDataApi::class)
     private fun addParameters(parameters: List<ParameterInformation>, node: MutableInspectorNode) =
         parameters.forEach { addParameter(it, node) }
 
+    @OptIn(UiToolingDataApi::class)
     private fun addParameter(parameter: ParameterInformation, node: MutableInspectorNode) {
         val castedValue = castValue(parameter)
         node.parameters.add(RawParameter(parameter.name, castedValue))
     }
 
+    @OptIn(UiToolingDataApi::class)
     private fun castValue(parameter: ParameterInformation): Any? {
         val value = parameter.value ?: return null
         if (parameter.inlineClass == null) return value
@@ -322,7 +409,7 @@ class LayoutInspectorTree {
     }
 
     private fun unwantedGroup(node: MutableInspectorNode): Boolean =
-        (node.packageHash in unwantedPackages && node.name in unwantedCalls)
+        node.packageHash in systemPackages && (hideSystemNodes || node.name in unwantedCalls)
 
     private fun newNode(): MutableInspectorNode =
         if (cache.isNotEmpty()) cache.pop() else MutableInspectorNode()
@@ -340,4 +427,13 @@ class LayoutInspectorTree {
         release(node)
         return result
     }
+
+    private fun sameBoundingRectangle(
+        node1: MutableInspectorNode,
+        node2: MutableInspectorNode
+    ): Boolean =
+        node1.left == node2.left &&
+            node1.top == node2.top &&
+            node1.width == node2.width &&
+            node1.height == node2.height
 }

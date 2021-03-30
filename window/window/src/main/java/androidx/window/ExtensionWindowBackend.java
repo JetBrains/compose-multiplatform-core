@@ -32,8 +32,6 @@ import androidx.window.extensions.ExtensionInterface;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.WeakHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executor;
 
@@ -70,11 +68,6 @@ final class ExtensionWindowBackend implements WindowBackend {
     @VisibleForTesting
     DeviceState mLastReportedDeviceState;
 
-    /** Window layouts that were last reported through callbacks, used to filter out duplicates. */
-    @GuardedBy("sLock")
-    @VisibleForTesting
-    final Map<Activity, WindowLayoutInfo> mLastReportedWindowLayouts = new WeakHashMap<>();
-
     private static final String TAG = "WindowServer";
 
     @VisibleForTesting
@@ -109,6 +102,7 @@ final class ExtensionWindowBackend implements WindowBackend {
                 if (DEBUG) {
                     Log.v(TAG, "Extension not loaded, skipping callback registration.");
                 }
+                callback.accept(new WindowLayoutInfo(new ArrayList<>()));
                 return;
             }
 
@@ -119,14 +113,8 @@ final class ExtensionWindowBackend implements WindowBackend {
             WindowLayoutChangeCallbackWrapper callbackWrapper =
                     new WindowLayoutChangeCallbackWrapper(activity, executor, callback);
             mWindowLayoutChangeCallbacks.add(callbackWrapper);
-            // Read value before registering in case the extension updates synchronously.
-            // A synchronous update would result in two values emitted.
-            WindowLayoutInfo lastReportedValue = mLastReportedWindowLayouts.get(activity);
             if (!isActivityRegistered) {
                 mWindowExtension.onWindowLayoutChangeListenerAdded(activity);
-            }
-            if (lastReportedValue != null) {
-                callbackWrapper.accept(lastReportedValue);
             }
         }
     }
@@ -183,55 +171,6 @@ final class ExtensionWindowBackend implements WindowBackend {
         mWindowExtension.onWindowLayoutChangeListenerRemoved(activity);
     }
 
-    @Override
-    public void registerDeviceStateChangeCallback(@NonNull Executor executor,
-            @NonNull Consumer<DeviceState> callback) {
-        synchronized (sLock) {
-            final DeviceStateChangeCallbackWrapper callbackWrapper =
-                    new DeviceStateChangeCallbackWrapper(executor, callback);
-            if (mWindowExtension == null) {
-                if (DEBUG) {
-                    Log.d(TAG, "Extension not loaded, skipping callback registration.");
-                }
-                callback.accept(new DeviceState(DeviceState.POSTURE_UNKNOWN));
-                return;
-            }
-
-            if (mDeviceStateChangeCallbacks.isEmpty()) {
-                mWindowExtension.onDeviceStateListenersChanged(false /* isEmpty */);
-            }
-
-            mDeviceStateChangeCallbacks.add(callbackWrapper);
-            if (mLastReportedDeviceState != null) {
-                callbackWrapper.accept(mLastReportedDeviceState);
-            }
-        }
-    }
-
-    @Override
-    public void unregisterDeviceStateChangeCallback(@NonNull Consumer<DeviceState> callback) {
-        synchronized (sLock) {
-            if (mWindowExtension == null) {
-                if (DEBUG) {
-                    Log.d(TAG, "Extension not loaded, skipping callback un-registration.");
-                }
-                return;
-            }
-
-            for (DeviceStateChangeCallbackWrapper callbackWrapper : mDeviceStateChangeCallbacks) {
-                if (callbackWrapper.mCallback.equals(callback)) {
-                    mDeviceStateChangeCallbacks.remove(callbackWrapper);
-                    if (mDeviceStateChangeCallbacks.isEmpty()) {
-                        mWindowExtension.onDeviceStateListenersChanged(true /* isEmpty */);
-                        // Clear device state so we do not replay stale data.
-                        mLastReportedDeviceState = null;
-                    }
-                    return;
-                }
-            }
-        }
-    }
-
     @VisibleForTesting
     class ExtensionListenerImpl implements ExtensionInterfaceCompat.ExtensionCallbackInterface {
         @Override
@@ -257,18 +196,6 @@ final class ExtensionWindowBackend implements WindowBackend {
         @SuppressLint("SyntheticAccessor")
         public void onWindowLayoutChanged(@NonNull Activity activity,
                 @NonNull WindowLayoutInfo newLayout) {
-            synchronized (sLock) {
-                WindowLayoutInfo lastReportedValue = mLastReportedWindowLayouts.get(activity);
-                if (newLayout.equals(lastReportedValue)) {
-                    // Skipping, value already reported
-                    if (DEBUG) {
-                        Log.w(TAG, "Extension reported an old layout value");
-                    }
-                    return;
-                }
-                mLastReportedWindowLayouts.put(activity, newLayout);
-            }
-
             for (WindowLayoutChangeCallbackWrapper callbackWrapper : mWindowLayoutChangeCallbacks) {
                 if (!callbackWrapper.mActivity.equals(activity)) {
                     continue;

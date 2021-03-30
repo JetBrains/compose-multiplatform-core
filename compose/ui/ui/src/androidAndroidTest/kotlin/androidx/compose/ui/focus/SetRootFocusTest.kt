@@ -25,14 +25,13 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.filters.FlakyTest
-import androidx.test.filters.MediumTest
-import com.google.common.truth.Truth.assertThat
+import androidx.test.filters.LargeTest
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-@MediumTest
+@LargeTest
 @RunWith(AndroidJUnit4::class)
 class SetRootFocusTest {
     @get:Rule
@@ -41,7 +40,7 @@ class SetRootFocusTest {
     private val focusable = "Focusable"
     private val nonFocusable = "NotFocusable"
 
-    @FlakyTest // b/171959479
+    @Ignore("Flaky test. b/178470869")
     @Test
     fun clearFocus_byClickingOutsideFocusableComponent() {
         // Arrange.
@@ -49,13 +48,13 @@ class SetRootFocusTest {
         rule.setContent {
             Column {
                 // TODO(b/163725615): Remove this after clickable is made focusable.
-                val focusReference = FocusReference()
+                val focusRequester = FocusRequester()
                 BasicText(
                     text = "ClickableText",
                     modifier = Modifier
                         .testTag(focusable)
-                        .clickable { focusReference.requestFocus() }
-                        .focusReference(focusReference)
+                        .clickable { focusRequester.requestFocus() }
+                        .focusRequester(focusRequester)
                         .onFocusChanged { isFocused = it.isFocused }
                         .focusModifier()
                 )
@@ -66,12 +65,12 @@ class SetRootFocusTest {
             }
         }
         rule.onNodeWithTag(focusable).performClick()
-        rule.runOnIdle { assertThat(isFocused).isTrue() }
+        rule.waitUntil(5_000) { isFocused == true }
 
         // Act.
         rule.onNodeWithTag(nonFocusable).performClick()
 
         // Assert.
-        rule.runOnIdle { assertThat(isFocused).isFalse() }
+        rule.waitUntil(5_000) { isFocused == false }
     }
 }

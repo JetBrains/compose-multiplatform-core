@@ -16,12 +16,16 @@
 
 package androidx.compose.foundation
 
+import androidx.compose.foundation.interaction.Interaction
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.InspectableValue
@@ -44,6 +48,9 @@ import androidx.compose.ui.test.up
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.launch
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -86,12 +93,12 @@ class SelectableTest {
     @Test
     fun selectable_defaultClicks() {
         rule.setContent {
-            val (selected, onSelected) = remember { mutableStateOf(false) }
+            val state = remember { mutableStateOf(false) }
             BasicText(
                 "Text in item",
                 modifier = Modifier.selectable(
-                    selected = selected,
-                    onClick = { onSelected(!selected) }
+                    selected = state.value,
+                    onClick = { state.value = !state.value }
                 )
             )
         }
@@ -124,15 +131,19 @@ class SelectableTest {
     }
 
     @Test
-    fun selectableTest_interactionState() {
-        val interactionState = InteractionState()
+    fun selectableTest_interactionSource() {
+        val interactionSource = MutableInteractionSource()
+
+        var scope: CoroutineScope? = null
 
         rule.setContent {
+            scope = rememberCoroutineScope()
             Box {
                 Box(
                     Modifier.selectable(
                         selected = true,
-                        interactionState = interactionState,
+                        interactionSource = interactionSource,
+                        indication = null,
                         onClick = {}
                     )
                 ) {
@@ -141,37 +152,52 @@ class SelectableTest {
             }
         }
 
+        val interactions = mutableListOf<Interaction>()
+
+        scope!!.launch {
+            interactionSource.interactions.collect { interactions.add(it) }
+        }
+
         rule.runOnIdle {
-            assertThat(interactionState.value).doesNotContain(Interaction.Pressed)
+            assertThat(interactions).isEmpty()
         }
 
         rule.onNodeWithText("SelectableText")
             .performGesture { down(center) }
 
         rule.runOnIdle {
-            assertThat(interactionState.value).contains(Interaction.Pressed)
+            assertThat(interactions).hasSize(1)
+            assertThat(interactions.first()).isInstanceOf(PressInteraction.Press::class.java)
         }
 
         rule.onNodeWithText("SelectableText")
             .performGesture { up() }
 
         rule.runOnIdle {
-            assertThat(interactionState.value).doesNotContain(Interaction.Pressed)
+            assertThat(interactions).hasSize(2)
+            assertThat(interactions.first()).isInstanceOf(PressInteraction.Press::class.java)
+            assertThat(interactions[1]).isInstanceOf(PressInteraction.Release::class.java)
+            assertThat((interactions[1] as PressInteraction.Release).press)
+                .isEqualTo(interactions[0])
         }
     }
 
     @Test
-    fun selectableTest_interactionState_resetWhenDisposed() {
-        val interactionState = InteractionState()
+    fun selectableTest_interactionSource_resetWhenDisposed() {
+        val interactionSource = MutableInteractionSource()
         var emitSelectableText by mutableStateOf(true)
 
+        var scope: CoroutineScope? = null
+
         rule.setContent {
+            scope = rememberCoroutineScope()
             Box {
                 if (emitSelectableText) {
                     Box(
                         Modifier.selectable(
                             selected = true,
-                            interactionState = interactionState,
+                            interactionSource = interactionSource,
+                            indication = null,
                             onClick = {}
                         )
                     ) {
@@ -181,15 +207,22 @@ class SelectableTest {
             }
         }
 
+        val interactions = mutableListOf<Interaction>()
+
+        scope!!.launch {
+            interactionSource.interactions.collect { interactions.add(it) }
+        }
+
         rule.runOnIdle {
-            assertThat(interactionState.value).doesNotContain(Interaction.Pressed)
+            assertThat(interactions).isEmpty()
         }
 
         rule.onNodeWithText("SelectableText")
             .performGesture { down(center) }
 
         rule.runOnIdle {
-            assertThat(interactionState.value).contains(Interaction.Pressed)
+            assertThat(interactions).hasSize(1)
+            assertThat(interactions.first()).isInstanceOf(PressInteraction.Press::class.java)
         }
 
         // Dispose selectable
@@ -198,12 +231,16 @@ class SelectableTest {
         }
 
         rule.runOnIdle {
-            assertThat(interactionState.value).doesNotContain(Interaction.Pressed)
+            assertThat(interactions).hasSize(2)
+            assertThat(interactions.first()).isInstanceOf(PressInteraction.Press::class.java)
+            assertThat(interactions[1]).isInstanceOf(PressInteraction.Cancel::class.java)
+            assertThat((interactions[1] as PressInteraction.Cancel).press)
+                .isEqualTo(interactions[0])
         }
     }
 
     @Test
-    fun testInspectorValue() {
+    fun selectableTest_testInspectorValue_noIndication() {
         rule.setContent {
             val modifier = Modifier.selectable(false) {} as InspectableValue
             assertThat(modifier.nameFallback).isEqualTo("selectable")
@@ -212,7 +249,26 @@ class SelectableTest {
                 "selected",
                 "enabled",
                 "role",
-                "interactionState",
+                "onClick"
+            )
+        }
+    }
+
+    @Test
+    fun selectableTest_testInspectorValue_fullParams() {
+        rule.setContent {
+            val modifier = Modifier.selectable(
+                false,
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null
+            ) {} as InspectableValue
+            assertThat(modifier.nameFallback).isEqualTo("selectable")
+            assertThat(modifier.valueOverride).isNull()
+            assertThat(modifier.inspectableElements.map { it.name }.asIterable()).containsExactly(
+                "selected",
+                "enabled",
+                "role",
+                "interactionSource",
                 "indication",
                 "onClick"
             )

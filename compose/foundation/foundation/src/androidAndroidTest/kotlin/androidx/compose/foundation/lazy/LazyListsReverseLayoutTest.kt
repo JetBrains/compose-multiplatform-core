@@ -17,11 +17,10 @@
 package androidx.compose.foundation.lazy
 
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.InternalLayoutApi
-import androidx.compose.foundation.layout.size
-import androidx.compose.runtime.Providers
+import androidx.compose.foundation.layout.requiredSize
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.AmbientLayoutDirection
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertLeftPositionInRootIsEqualTo
 import androidx.compose.ui.test.assertTopPositionInRootIsEqualTo
@@ -35,7 +34,6 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 
-@OptIn(InternalLayoutApi::class)
 class LazyListsReverseLayoutTest {
 
     private val ContainerTag = "ContainerTag"
@@ -54,13 +52,13 @@ class LazyListsReverseLayoutTest {
 
     @Test
     fun column_emitTwoElementsAsOneItem_positionedReversed() {
-        rule.setContent {
+        rule.setContentWithTestViewConfiguration {
             LazyColumn(
                 reverseLayout = true
             ) {
                 item {
-                    Box(Modifier.size(itemSize).testTag("0"))
-                    Box(Modifier.size(itemSize).testTag("1"))
+                    Box(Modifier.requiredSize(itemSize).testTag("0"))
+                    Box(Modifier.requiredSize(itemSize).testTag("1"))
                 }
             }
         }
@@ -73,15 +71,15 @@ class LazyListsReverseLayoutTest {
 
     @Test
     fun column_emitTwoItems_positionedReversed() {
-        rule.setContent {
+        rule.setContentWithTestViewConfiguration {
             LazyColumn(
                 reverseLayout = true
             ) {
                 item {
-                    Box(Modifier.size(itemSize).testTag("0"))
+                    Box(Modifier.requiredSize(itemSize).testTag("0"))
                 }
                 item {
-                    Box(Modifier.size(itemSize).testTag("1"))
+                    Box(Modifier.requiredSize(itemSize).testTag("1"))
                 }
             }
         }
@@ -95,14 +93,14 @@ class LazyListsReverseLayoutTest {
     @Test
     fun column_initialScrollPositionIs0() {
         lateinit var state: LazyListState
-        rule.setContent {
+        rule.setContentWithTestViewConfiguration {
             LazyColumn(
                 reverseLayout = true,
                 state = rememberLazyListState().also { state = it },
-                modifier = Modifier.size(itemSize * 2).testTag(ContainerTag)
+                modifier = Modifier.requiredSize(itemSize * 2).testTag(ContainerTag)
             ) {
                 items((0..2).toList()) {
-                    Box(Modifier.size(itemSize).testTag("$it"))
+                    Box(Modifier.requiredSize(itemSize).testTag("$it"))
                 }
             }
         }
@@ -116,14 +114,14 @@ class LazyListsReverseLayoutTest {
     @Test
     fun column_scrollInWrongDirectionDoesNothing() {
         lateinit var state: LazyListState
-        rule.setContent {
+        rule.setContentWithTestViewConfiguration {
             LazyColumn(
                 reverseLayout = true,
                 state = rememberLazyListState().also { state = it },
-                modifier = Modifier.size(itemSize * 2).testTag(ContainerTag)
+                modifier = Modifier.requiredSize(itemSize * 2).testTag(ContainerTag)
             ) {
                 items((0..2).toList()) {
-                    Box(Modifier.size(itemSize).testTag("$it"))
+                    Box(Modifier.requiredSize(itemSize).testTag("$it"))
                 }
             }
         }
@@ -146,14 +144,14 @@ class LazyListsReverseLayoutTest {
     @Test
     fun column_scrollForwardHalfWay() {
         lateinit var state: LazyListState
-        rule.setContent {
+        rule.setContentWithTestViewConfiguration {
             LazyColumn(
                 reverseLayout = true,
                 state = rememberLazyListState().also { state = it },
-                modifier = Modifier.size(itemSize * 2).testTag(ContainerTag)
+                modifier = Modifier.requiredSize(itemSize * 2).testTag(ContainerTag)
             ) {
                 items((0..2).toList()) {
-                    Box(Modifier.size(itemSize).testTag("$it"))
+                    Box(Modifier.requiredSize(itemSize).testTag("$it"))
                 }
             }
         }
@@ -178,14 +176,14 @@ class LazyListsReverseLayoutTest {
     @Test
     fun column_scrollForwardTillTheEnd() {
         lateinit var state: LazyListState
-        rule.setContent {
+        rule.setContentWithTestViewConfiguration {
             LazyColumn(
                 reverseLayout = true,
                 state = rememberLazyListState().also { state = it },
-                modifier = Modifier.size(itemSize * 2).testTag(ContainerTag)
+                modifier = Modifier.requiredSize(itemSize * 2).testTag(ContainerTag)
             ) {
                 items((0..3).toList()) {
-                    Box(Modifier.size(itemSize).testTag("$it"))
+                    Box(Modifier.requiredSize(itemSize).testTag("$it"))
                 }
             }
         }
@@ -210,13 +208,13 @@ class LazyListsReverseLayoutTest {
 
     @Test
     fun row_emitTwoElementsAsOneItem_positionedReversed() {
-        rule.setContent {
+        rule.setContentWithTestViewConfiguration {
             LazyRow(
                 reverseLayout = true
             ) {
                 item {
-                    Box(Modifier.size(itemSize).testTag("0"))
-                    Box(Modifier.size(itemSize).testTag("1"))
+                    Box(Modifier.requiredSize(itemSize).testTag("0"))
+                    Box(Modifier.requiredSize(itemSize).testTag("1"))
                 }
             }
         }
@@ -229,15 +227,15 @@ class LazyListsReverseLayoutTest {
 
     @Test
     fun row_emitTwoItems_positionedReversed() {
-        rule.setContent {
+        rule.setContentWithTestViewConfiguration {
             LazyRow(
                 reverseLayout = true
             ) {
                 item {
-                    Box(Modifier.size(itemSize).testTag("0"))
+                    Box(Modifier.requiredSize(itemSize).testTag("0"))
                 }
                 item {
-                    Box(Modifier.size(itemSize).testTag("1"))
+                    Box(Modifier.requiredSize(itemSize).testTag("1"))
                 }
             }
         }
@@ -251,14 +249,14 @@ class LazyListsReverseLayoutTest {
     @Test
     fun row_initialScrollPositionIs0() {
         lateinit var state: LazyListState
-        rule.setContent {
+        rule.setContentWithTestViewConfiguration {
             LazyRow(
                 reverseLayout = true,
                 state = rememberLazyListState().also { state = it },
-                modifier = Modifier.size(itemSize * 2).testTag(ContainerTag)
+                modifier = Modifier.requiredSize(itemSize * 2).testTag(ContainerTag)
             ) {
                 items((0..2).toList()) {
-                    Box(Modifier.size(itemSize).testTag("$it"))
+                    Box(Modifier.requiredSize(itemSize).testTag("$it"))
                 }
             }
         }
@@ -272,14 +270,14 @@ class LazyListsReverseLayoutTest {
     @Test
     fun row_scrollInWrongDirectionDoesNothing() {
         lateinit var state: LazyListState
-        rule.setContent {
+        rule.setContentWithTestViewConfiguration {
             LazyRow(
                 reverseLayout = true,
                 state = rememberLazyListState().also { state = it },
-                modifier = Modifier.size(itemSize * 2).testTag(ContainerTag)
+                modifier = Modifier.requiredSize(itemSize * 2).testTag(ContainerTag)
             ) {
                 items((0..2).toList()) {
-                    Box(Modifier.size(itemSize).testTag("$it"))
+                    Box(Modifier.requiredSize(itemSize).testTag("$it"))
                 }
             }
         }
@@ -302,14 +300,14 @@ class LazyListsReverseLayoutTest {
     @Test
     fun row_scrollForwardHalfWay() {
         lateinit var state: LazyListState
-        rule.setContent {
+        rule.setContentWithTestViewConfiguration {
             LazyRow(
                 reverseLayout = true,
                 state = rememberLazyListState().also { state = it },
-                modifier = Modifier.size(itemSize * 2).testTag(ContainerTag)
+                modifier = Modifier.requiredSize(itemSize * 2).testTag(ContainerTag)
             ) {
                 items((0..2).toList()) {
-                    Box(Modifier.size(itemSize).testTag("$it"))
+                    Box(Modifier.requiredSize(itemSize).testTag("$it"))
                 }
             }
         }
@@ -334,14 +332,14 @@ class LazyListsReverseLayoutTest {
     @Test
     fun row_scrollForwardTillTheEnd() {
         lateinit var state: LazyListState
-        rule.setContent {
+        rule.setContentWithTestViewConfiguration {
             LazyRow(
                 reverseLayout = true,
                 state = rememberLazyListState().also { state = it },
-                modifier = Modifier.size(itemSize * 2).testTag(ContainerTag)
+                modifier = Modifier.requiredSize(itemSize * 2).testTag(ContainerTag)
             ) {
                 items((0..3).toList()) {
-                    Box(Modifier.size(itemSize).testTag("$it"))
+                    Box(Modifier.requiredSize(itemSize).testTag("$it"))
                 }
             }
         }
@@ -366,14 +364,14 @@ class LazyListsReverseLayoutTest {
 
     @Test
     fun row_rtl_emitTwoElementsAsOneItem_positionedReversed() {
-        rule.setContent {
-            Providers(AmbientLayoutDirection provides LayoutDirection.Rtl) {
+        rule.setContentWithTestViewConfiguration {
+            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
                 LazyRow(
                     reverseLayout = true
                 ) {
                     item {
-                        Box(Modifier.size(itemSize).testTag("0"))
-                        Box(Modifier.size(itemSize).testTag("1"))
+                        Box(Modifier.requiredSize(itemSize).testTag("0"))
+                        Box(Modifier.requiredSize(itemSize).testTag("1"))
                     }
                 }
             }
@@ -387,16 +385,16 @@ class LazyListsReverseLayoutTest {
 
     @Test
     fun row_rtl_emitTwoItems_positionedReversed() {
-        rule.setContent {
-            Providers(AmbientLayoutDirection provides LayoutDirection.Rtl) {
+        rule.setContentWithTestViewConfiguration {
+            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
                 LazyRow(
                     reverseLayout = true
                 ) {
                     item {
-                        Box(Modifier.size(itemSize).testTag("0"))
+                        Box(Modifier.requiredSize(itemSize).testTag("0"))
                     }
                     item {
-                        Box(Modifier.size(itemSize).testTag("1"))
+                        Box(Modifier.requiredSize(itemSize).testTag("1"))
                     }
                 }
             }
@@ -411,15 +409,15 @@ class LazyListsReverseLayoutTest {
     @Test
     fun row_rtl_scrollForwardHalfWay() {
         lateinit var state: LazyListState
-        rule.setContent {
-            Providers(AmbientLayoutDirection provides LayoutDirection.Rtl) {
+        rule.setContentWithTestViewConfiguration {
+            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
                 LazyRow(
                     reverseLayout = true,
                     state = rememberLazyListState().also { state = it },
-                    modifier = Modifier.size(itemSize * 2).testTag(ContainerTag)
+                    modifier = Modifier.requiredSize(itemSize * 2).testTag(ContainerTag)
                 ) {
                     items((0..2).toList()) {
-                        Box(Modifier.size(itemSize).testTag("$it"))
+                        Box(Modifier.requiredSize(itemSize).testTag("$it"))
                     }
                 }
             }

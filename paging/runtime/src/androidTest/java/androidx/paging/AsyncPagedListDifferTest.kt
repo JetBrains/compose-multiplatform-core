@@ -14,9 +14,12 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION")
+
 package androidx.paging
 
 import androidx.arch.core.executor.ArchTaskExecutor
+import androidx.paging.DiffingChangePayload.PLACEHOLDER_POSITION_CHANGE
 import androidx.paging.ListUpdateCallbackFake.OnChangedEvent
 import androidx.paging.ListUpdateCallbackFake.OnInsertedEvent
 import androidx.paging.ListUpdateCallbackFake.OnRemovedEvent
@@ -27,6 +30,7 @@ import androidx.recyclerview.widget.ListUpdateCallback
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
 import androidx.testutils.TestExecutor
+import com.google.common.truth.Truth.assertThat
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
@@ -43,7 +47,6 @@ class AsyncPagedListDifferTest {
     private val diffThread = TestExecutor()
     private val pageLoadingThread = TestExecutor()
 
-    @Suppress("DEPRECATION")
     private fun createDiffer(
         listUpdateCallback: ListUpdateCallback = IGNORE_CALLBACK
     ): AsyncPagedListDiffer<String> {
@@ -59,7 +62,6 @@ class AsyncPagedListDifferTest {
         return differ
     }
 
-    @Suppress("DEPRECATION")
     private fun <V : Any> createPagedListFromListAndPos(
         config: PagedList.Config,
         data: List<V>,
@@ -84,6 +86,7 @@ class AsyncPagedListDifferTest {
         assertEquals(null, differ.currentList)
         assertEquals(0, differ.itemCount)
         assertEquals(0, callback.interactions)
+        assertThat(differ.itemCount).isEqualTo(callback.itemCountFromEvents())
     }
 
     @Test
@@ -100,6 +103,7 @@ class AsyncPagedListDifferTest {
         assertEquals(1, callback.interactions)
         drain()
         assertEquals(1, callback.interactions)
+        assertThat(differ.itemCount).isEqualTo(callback.itemCountFromEvents())
     }
 
     @Test(expected = IndexOutOfBoundsException::class)
@@ -141,6 +145,117 @@ class AsyncPagedListDifferTest {
         assertEquals("b", differ.getItem(3))
         assertNull(differ.getItem(4))
         assertNull(differ.getItem(5))
+        assertThat(differ.itemCount).isEqualTo(callback.itemCountFromEvents())
+    }
+
+    @Test
+    fun nullpadded() {
+        val callback = ListUpdateCallbackFake()
+        val differ = createDiffer(callback)
+
+        assertEquals(0, differ.itemCount)
+
+        differ.submitList(
+            StringPagedList(
+                leadingNulls = 0,
+                trailingNulls = 0, "a", "b"
+            )
+        )
+
+        fun submitAndAssert(
+            stringPagedList: PagedList<String>,
+            vararg expected: Any?
+        ) {
+            val prevEventsSize = callback.allEvents.size
+            differ.submitList(stringPagedList)
+            drain()
+            assertThat(
+                callback.allEvents.subList(prevEventsSize, callback.allEvents.size)
+            ).containsExactlyElementsIn(
+                expected
+            ).inOrder()
+        }
+        // prepend nulls
+        submitAndAssert(
+            StringPagedList(
+                leadingNulls = 4,
+                trailingNulls = 0,
+                items = arrayOf("a", "b")
+            ),
+            OnInsertedEvent(0, 4)
+        )
+        // remove leading nulls
+        submitAndAssert(
+            StringPagedList(
+                leadingNulls = 0,
+                trailingNulls = 0,
+                items = arrayOf("a", "b")
+            ),
+            OnRemovedEvent(0, 4)
+        )
+        // append nulls
+        submitAndAssert(
+            StringPagedList(
+                leadingNulls = 0,
+                trailingNulls = 3,
+                items = arrayOf("a", "b")
+            ),
+            OnInsertedEvent(2, 3)
+        )
+        // remove trailing nulls
+        submitAndAssert(
+            StringPagedList(
+                leadingNulls = 0,
+                trailingNulls = 0,
+                items = arrayOf("a", "b")
+            ),
+            OnRemovedEvent(2, 3)
+        )
+        // add nulls on both ends
+        submitAndAssert(
+            StringPagedList(
+                leadingNulls = 3,
+                trailingNulls = 2,
+                items = arrayOf("a", "b")
+            ),
+            OnInsertedEvent(0, 3),
+            OnInsertedEvent(5, 2)
+        )
+        // remove some nulls from both ends
+        submitAndAssert(
+            StringPagedList(
+                leadingNulls = 1,
+                trailingNulls = 1,
+                items = arrayOf("a", "b")
+            ),
+            OnRemovedEvent(0, 2),
+            OnChangedEvent(0, 1, PLACEHOLDER_POSITION_CHANGE),
+            OnRemovedEvent(4, 1),
+            OnChangedEvent(3, 1, PLACEHOLDER_POSITION_CHANGE),
+        )
+        // add to leading, remove from trailing
+        submitAndAssert(
+            StringPagedList(
+                leadingNulls = 5,
+                trailingNulls = 0,
+                items = arrayOf("a", "b")
+            ),
+            OnChangedEvent(0, 1, PLACEHOLDER_POSITION_CHANGE),
+            OnInsertedEvent(0, 4),
+            OnRemovedEvent(7, 1)
+        )
+        // add trailing, remove from leading
+        submitAndAssert(
+            StringPagedList(
+                leadingNulls = 1,
+                trailingNulls = 3,
+                items = arrayOf("a", "b")
+            ),
+            OnRemovedEvent(0, 4),
+            OnChangedEvent(0, 1, PLACEHOLDER_POSITION_CHANGE),
+            OnInsertedEvent(3, 3)
+        )
+        assertThat(differ.itemCount).isEqualTo(callback.itemCountFromEvents())
     }
 
     @Test
@@ -165,11 +280,11 @@ class AsyncPagedListDifferTest {
         differ.submitList(origList)
         drain()
         assertEquals(origList, differ.currentList)
+        assertThat(differ.itemCount).isEqualTo(callback.itemCountFromEvents())
     }
 
     @Test
     fun pagingInContent() {
-        @Suppress("DEPRECATION")
         val config = PagedList.Config.Builder()
             .setInitialLoadSizeHint(4)
             .setPageSize(2)
@@ -214,12 +329,12 @@ class AsyncPagedListDifferTest {
         assertEquals(OnRemovedEvent(0, 26), callback.onRemovedEvents[0])
         drain()
         assertEquals(8, callback.interactions)
+        assertThat(differ.itemCount).isEqualTo(callback.itemCountFromEvents())
     }
 
     @Test
     fun simpleSwap() {
         // Page size large enough to load
-        @Suppress("DEPRECATION")
         val config = PagedList.Config.Builder()
             .setPageSize(50)
             .build()
@@ -249,11 +364,11 @@ class AsyncPagedListDifferTest {
         assertEquals(3, callback.interactions)
         drain()
         assertEquals(3, callback.interactions)
+        assertThat(differ.itemCount).isEqualTo(callback.itemCountFromEvents())
     }
 
     @Test
     fun oldListUpdateIgnoredWhileDiffing() {
-        @Suppress("DEPRECATION")
         val config = PagedList.Config.Builder()
             .setInitialLoadSizeHint(4)
             .setPageSize(2)
@@ -292,6 +407,7 @@ class AsyncPagedListDifferTest {
         // finally, a full flush will complete the swap-triggered load within the new list
         drain()
         assertEquals(OnChangedEvent(6, 2, null), callback.onChangedEvents[0])
+        assertThat(differ.itemCount).isEqualTo(callback.itemCountFromEvents())
     }
 
     @Test
@@ -307,9 +423,9 @@ class AsyncPagedListDifferTest {
 
         differ.submitList(createPagedListFromListAndPos(config, ALPHABET_LIST, 2))
         assertEquals(OnInsertedEvent(0, ALPHABET_LIST.size), callback.onInsertedEvents[0])
-        assertEquals(1, callback.interactions)
+        assertEquals(callback.toString(), 1, callback.interactions)
         drain()
-        assertEquals(1, callback.interactions)
+        assertEquals(callback.toString(), 1, callback.interactions)
         assertNotNull(differ.currentList)
         assertFalse(differ.currentList!!.isImmutable)
 
@@ -317,11 +433,11 @@ class AsyncPagedListDifferTest {
         val newList = createPagedListFromListAndPos(config, ALPHABET_LIST, 2)
         differ.submitList(newList)
         newList.loadAround(4)
-        assertEquals(1, callback.interactions)
+        assertEquals(callback.toString(), 1, callback.interactions)
 
         // drain page fetching, but list became immutable, page changes aren't dispatched yet
         drainExceptDiffThread()
-        assertEquals(1, callback.interactions)
+        assertEquals(callback.toString(), 1, callback.interactions)
         assertNotNull(differ.currentList)
         assertTrue(differ.currentList!!.isImmutable)
 
@@ -330,9 +446,10 @@ class AsyncPagedListDifferTest {
         mainThread.executeAll()
         assertEquals(OnChangedEvent(4, 2, null), callback.onChangedEvents[0])
         assertEquals(OnChangedEvent(6, 2, null), callback.onChangedEvents[1])
-        assertEquals(3, callback.interactions)
+        assertEquals(callback.toString(), 3, callback.interactions)
         assertNotNull(differ.currentList)
         assertFalse(differ.currentList!!.isImmutable)
+        assertThat(differ.itemCount).isEqualTo(callback.itemCountFromEvents())
     }
 
     @Test
@@ -341,7 +458,6 @@ class AsyncPagedListDifferTest {
 
         val expectedCount = intArrayOf(0)
         // provides access to differ, which must be constructed after callback
-        @Suppress("DEPRECATION")
         val differAccessor = arrayOf<AsyncPagedListDiffer<*>?>(null)
 
         val callback = object : ListUpdateCallback {
@@ -365,7 +481,6 @@ class AsyncPagedListDifferTest {
         val differ = createDiffer(callback)
         differAccessor[0] = differ
 
-        @Suppress("DEPRECATION")
         val config = PagedList.Config.Builder()
             .setPageSize(20)
             .build()
@@ -394,7 +509,6 @@ class AsyncPagedListDifferTest {
     fun loadAroundHandlePrepend() {
         val differ = createDiffer()
 
-        @Suppress("DEPRECATION")
         val config = PagedList.Config.Builder()
             .setPageSize(5)
             .setEnablePlaceholders(false)
@@ -415,7 +529,6 @@ class AsyncPagedListDifferTest {
     @Test
     fun submitSubset() {
         // Page size large enough to load
-        @Suppress("DEPRECATION")
         val config = PagedList.Config.Builder()
             .setInitialLoadSizeHint(4)
             .setPageSize(2)
@@ -530,11 +643,9 @@ class AsyncPagedListDifferTest {
     fun addRemovePagedListCallback() {
         val differ = createDiffer()
 
-        @Suppress("DEPRECATION")
         val noopCallback = { _: PagedList<String>?, _: PagedList<String>? -> }
         differ.addPagedListListener(noopCallback)
         assert(differ.listeners.size == 1)
-        @Suppress("DEPRECATION")
         differ.removePagedListListener { _: PagedList<String>?, _: PagedList<String>? -> }
         assert(differ.listeners.size == 1)
         differ.removePagedListListener(noopCallback)

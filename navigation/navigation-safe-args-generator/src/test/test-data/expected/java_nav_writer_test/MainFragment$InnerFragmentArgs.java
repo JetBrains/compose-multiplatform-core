@@ -18,6 +18,7 @@ package a.b;
 
 import android.os.Bundle;
 import androidx.annotation.NonNull;
+import androidx.lifecycle.SavedStateHandle;
 import androidx.navigation.NavArgs;
 import java.lang.IllegalArgumentException;
 import java.lang.Object;
@@ -32,6 +33,7 @@ public class MainFragment$InnerFragmentArgs implements NavArgs {
     private MainFragment$InnerFragmentArgs() {
     }
 
+    @SuppressWarnings("unchecked")
     private MainFragment$InnerFragmentArgs(HashMap argumentsMap) {
         this.arguments.putAll(argumentsMap);
     }
@@ -44,6 +46,24 @@ public class MainFragment$InnerFragmentArgs implements NavArgs {
         if (bundle.containsKey("mainArg")) {
             String mainArg;
             mainArg = bundle.getString("mainArg");
+            if (mainArg == null) {
+                throw new IllegalArgumentException("Argument \"mainArg\" is marked as non-null but was passed a null value.");
+            }
+            __result.arguments.put("mainArg", mainArg);
+        } else {
+            throw new IllegalArgumentException("Required argument \"mainArg\" is missing and does not have an android:defaultValue");
+        }
+        return __result;
+    }
+
+    @NonNull
+    @SuppressWarnings("unchecked")
+    public static MainFragment$InnerFragmentArgs fromSavedStateHandle(
+            @NonNull SavedStateHandle savedStateHandle) {
+        MainFragment$InnerFragmentArgs __result = new MainFragment$InnerFragmentArgs();
+        if (savedStateHandle.contains("mainArg")) {
+            String mainArg;
+            mainArg = savedStateHandle.get("mainArg");
             if (mainArg == null) {
                 throw new IllegalArgumentException("Argument \"mainArg\" is marked as non-null but was passed a null value.");
             }
@@ -106,10 +126,12 @@ public class MainFragment$InnerFragmentArgs implements NavArgs {
     public static class Builder {
         private final HashMap arguments = new HashMap();
 
+        @SuppressWarnings("unchecked")
         public Builder(MainFragment$InnerFragmentArgs original) {
             this.arguments.putAll(original.arguments);
         }
 
+        @SuppressWarnings("unchecked")
         public Builder(@NonNull String mainArg) {
             if (mainArg == null) {
                 throw new IllegalArgumentException("Argument \"mainArg\" is marked as non-null but was passed a null value.");
@@ -124,6 +146,7 @@ public class MainFragment$InnerFragmentArgs implements NavArgs {
         }
 
         @NonNull
+        @SuppressWarnings("unchecked")
         public Builder setMainArg(@NonNull String mainArg) {
             if (mainArg == null) {
                 throw new IllegalArgumentException("Argument \"mainArg\" is marked as non-null but was passed a null value.");

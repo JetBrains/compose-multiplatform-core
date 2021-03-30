@@ -23,7 +23,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.preferredWidth
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.shape.CutCornerShape
@@ -52,11 +52,10 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.isDebugInspectorInfoEnabled
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontListFontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.font.ResourceFont
 import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.text.intl.LocaleList
 import androidx.compose.ui.text.style.BaselineShift
@@ -71,7 +70,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.filters.LargeTest
+import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
 import kotlinx.coroutines.runBlocking
@@ -80,7 +79,10 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 
-@LargeTest
+@Suppress("unused")
+private fun topLevelFunction() {}
+
+@MediumTest
 @RunWith(AndroidJUnit4::class)
 class ParameterFactoryTest {
     private val factory = ParameterFactory(InlineClassConverter())
@@ -237,10 +239,14 @@ class ParameterFactoryTest {
 
     @Test
     fun testComposableLambda() = runBlocking {
-        val c: @Composable () -> Unit = { Text(text = "Hello World") }
+        // capture here to force the lambda to not be created as a singleton.
+        val capture = "Hello World"
+        val c: @Composable () -> Unit = { Text(text = capture) }
         val result = lookup(c as Any) ?: error("Lookup of ComposableLambda failed")
+        val array = result.second as Array<*>
         assertThat(result.first).isEqualTo(ParameterType.Lambda)
-        assertThat(result.second!!.javaClass.name).isEqualTo(
+        assertThat(array).hasLength(1)
+        assertThat(array[0]?.javaClass?.name).isEqualTo(
             "${ParameterFactoryTest::class.java.name}\$testComposableLambda\$1\$c\$1"
         )
     }
@@ -254,26 +260,26 @@ class ParameterFactoryTest {
             )!!
         ) {
             parameter("corner", ParameterType.String, RoundedCornerShape::class.java.simpleName) {
-                parameter("bottomLeft", ParameterType.DimensionDp, 0.7f)
-                parameter("bottomRight", ParameterType.DimensionDp, 2.5f)
-                parameter("topLeft", ParameterType.DimensionDp, 2.0f)
-                parameter("topRight", ParameterType.DimensionDp, 0.5f)
+                parameter("bottomEnd", ParameterType.DimensionDp, 2.5f)
+                parameter("bottomStart", ParameterType.DimensionDp, 0.7f)
+                parameter("topEnd", ParameterType.DimensionDp, 0.5f)
+                parameter("topStart", ParameterType.DimensionDp, 2.0f)
             }
         }
         validate(factory.create(node, "corner", CutCornerShape(2))!!) {
             parameter("corner", ParameterType.String, CutCornerShape::class.java.simpleName) {
-                parameter("bottomLeft", ParameterType.DimensionDp, 5.0f)
-                parameter("bottomRight", ParameterType.DimensionDp, 5.0f)
-                parameter("topLeft", ParameterType.DimensionDp, 5.0f)
-                parameter("topRight", ParameterType.DimensionDp, 5.0f)
+                parameter("bottomEnd", ParameterType.DimensionDp, 5.0f)
+                parameter("bottomStart", ParameterType.DimensionDp, 5.0f)
+                parameter("topEnd", ParameterType.DimensionDp, 5.0f)
+                parameter("topStart", ParameterType.DimensionDp, 5.0f)
             }
         }
         validate(factory.create(node, "corner", RoundedCornerShape(1.0f, 10.0f, 2.0f, 3.5f))!!) {
             parameter("corner", ParameterType.String, RoundedCornerShape::class.java.simpleName) {
-                parameter("bottomLeft", ParameterType.DimensionDp, 1.75f)
-                parameter("bottomRight", ParameterType.DimensionDp, 1.0f)
-                parameter("topLeft", ParameterType.DimensionDp, 0.5f)
-                parameter("topRight", ParameterType.DimensionDp, 5.0f)
+                parameter("bottomEnd", ParameterType.DimensionDp, 1.0f)
+                parameter("bottomStart", ParameterType.DimensionDp, 1.75f)
+                parameter("topEnd", ParameterType.DimensionDp, 5.0f)
+                parameter("topStart", ParameterType.DimensionDp, 0.5f)
             }
         }
     }
@@ -323,12 +329,12 @@ class ParameterFactoryTest {
 
     @Test
     fun testFontListFontFamily() {
-        val family = FontListFontFamily(
+        val family = FontFamily(
             listOf(
-                ResourceFont(1234, FontWeight.Normal, FontStyle.Italic),
-                ResourceFont(1235, FontWeight.Normal, FontStyle.Normal),
-                ResourceFont(1236, FontWeight.Bold, FontStyle.Italic),
-                ResourceFont(1237, FontWeight.Bold, FontStyle.Normal)
+                Font(1234, FontWeight.Normal, FontStyle.Italic),
+                Font(1235, FontWeight.Normal, FontStyle.Normal),
+                Font(1236, FontWeight.Bold, FontStyle.Italic),
+                Font(1237, FontWeight.Bold, FontStyle.Normal)
             )
         )
         assertThat(lookup(family)).isEqualTo(ParameterType.Resource to 1235)
@@ -357,9 +363,27 @@ class ParameterFactoryTest {
     }
 
     @Test
+    fun testFunctionReference() {
+        val ref1 = ::testInt
+        val map1 = lookup(ref1)!!
+        val array1 = map1.second as Array<*>
+        assertThat(map1.first).isEqualTo(ParameterType.FunctionReference)
+        assertThat(array1.contentEquals(arrayOf(ref1, "testInt"))).isTrue()
+        val ref2 = ::topLevelFunction
+        val map2 = lookup(ref2)!!
+        val array2 = map2.second as Array<*>
+        assertThat(map2.first).isEqualTo(ParameterType.FunctionReference)
+        assertThat(array2.contentEquals(arrayOf(ref2, "topLevelFunction"))).isTrue()
+    }
+
+    @Test
     fun testPaddingValues() {
         validate(factory.create(node, "padding", PaddingValues(2.0.dp, 0.5.dp, 2.5.dp, 0.7.dp))!!) {
-            parameter("padding", ParameterType.String, PaddingValues::class.java.simpleName) {
+            parameter(
+                "padding",
+                ParameterType.String,
+                "PaddingValuesImpl"
+            ) {
                 parameter("bottom", ParameterType.DimensionDp, 0.7f)
                 parameter("end", ParameterType.DimensionDp, 2.5f)
                 parameter("start", ParameterType.DimensionDp, 2.0f)
@@ -376,7 +400,10 @@ class ParameterFactoryTest {
     @Test
     fun testLambda() {
         val a: (Int) -> Int = { it }
-        assertThat(lookup(a)).isEqualTo(ParameterType.Lambda to a)
+        val map = lookup(a)!!
+        val array = map.second as Array<*>
+        assertThat(map.first).isEqualTo(ParameterType.Lambda)
+        assertThat(array.contentEquals(arrayOf<Any>(a))).isTrue()
     }
 
     @Test
@@ -411,7 +438,7 @@ class ParameterFactoryTest {
                     .padding(2.0.dp)
                     .fillMaxWidth()
                     .wrapContentHeight(Alignment.Bottom)
-                    .preferredWidth(30.0.dp)
+                    .width(30.0.dp)
                     .paint(TestPainter(10f, 20f))
             )!!
         ) {
@@ -433,7 +460,7 @@ class ParameterFactoryTest {
                     parameter("align", ParameterType.String, "Bottom")
                     parameter("unbounded", ParameterType.Boolean, false)
                 }
-                parameter("preferredWidth", ParameterType.DimensionDp, 30.0f)
+                parameter("width", ParameterType.DimensionDp, 30.0f)
                 parameter("paint", ParameterType.String, "") {
                     parameter("alignment", ParameterType.String, "Center")
                     parameter("alpha", ParameterType.Float, 1.0f)
@@ -527,6 +554,14 @@ class ParameterFactoryTest {
     }
 
     @Test
+    fun testDoNotRecurseIntoAndroidAndJavaPackages() {
+        runBlocking {
+            assertThat(factory.create(node, "v1", java.net.URL("http://domain.com"))).isNull()
+            assertThat(factory.create(node, "v1", android.app.Notification())).isNull()
+        }
+    }
+
+    @Test
     fun testShadow() {
         assertThat(lookup(Shadow.None)).isEqualTo(ParameterType.String to "None")
         validate(factory.create(node, "shadow", Shadow(Color.Cyan, Offset.Zero, 2.5f))!!) {
@@ -614,17 +649,15 @@ class ParameterFactoryTest {
 
     @Test
     fun testTextUnit() {
-        @Suppress("DEPRECATION")
-        assertThat(lookup(TextUnit.Inherit)).isEqualTo(ParameterType.String to "Unspecified")
         assertThat(lookup(TextUnit.Unspecified)).isEqualTo(ParameterType.String to "Unspecified")
         assertThat(lookup(12.0.sp)).isEqualTo(ParameterType.DimensionSp to 12.0f)
         assertThat(lookup(2.0.em)).isEqualTo(ParameterType.DimensionEm to 2.0f)
-        assertThat(lookup(TextUnit.Sp(9.0f))).isEqualTo(ParameterType.DimensionSp to 9.0f)
-        assertThat(lookup(TextUnit.Sp(10))).isEqualTo(ParameterType.DimensionSp to 10.0f)
-        assertThat(lookup(TextUnit.Sp(26.0))).isEqualTo(ParameterType.DimensionSp to 26.0f)
-        assertThat(lookup(TextUnit.Em(2.0f))).isEqualTo(ParameterType.DimensionEm to 2.0f)
-        assertThat(lookup(TextUnit.Em(1))).isEqualTo(ParameterType.DimensionEm to 1.0f)
-        assertThat(lookup(TextUnit.Em(3.0))).isEqualTo(ParameterType.DimensionEm to 3.0f)
+        assertThat(lookup(9.0f.sp)).isEqualTo(ParameterType.DimensionSp to 9.0f)
+        assertThat(lookup(10.sp)).isEqualTo(ParameterType.DimensionSp to 10.0f)
+        assertThat(lookup(26.0.sp)).isEqualTo(ParameterType.DimensionSp to 26.0f)
+        assertThat(lookup(2.0f.em)).isEqualTo(ParameterType.DimensionEm to 2.0f)
+        assertThat(lookup(1.em)).isEqualTo(ParameterType.DimensionEm to 1.0f)
+        assertThat(lookup(3.0.em)).isEqualTo(ParameterType.DimensionEm to 3.0f)
     }
 
     @Test

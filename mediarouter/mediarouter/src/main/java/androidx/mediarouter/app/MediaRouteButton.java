@@ -32,6 +32,7 @@ import android.graphics.Canvas;
 import android.graphics.drawable.AnimationDrawable;
 import android.graphics.drawable.Drawable;
 import android.net.ConnectivityManager;
+import android.os.Build;
 import android.text.TextUtils;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -44,6 +45,7 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.content.res.AppCompatResources;
 import androidx.appcompat.widget.TooltipCompat;
 import androidx.core.graphics.drawable.DrawableCompat;
+import androidx.core.os.BuildCompat;
 import androidx.core.view.ViewCompat;
 import androidx.fragment.app.FragmentActivity;
 import androidx.fragment.app.FragmentManager;
@@ -111,6 +113,9 @@ public class MediaRouteButton extends View {
     private boolean mAttachedToWindow;
 
     private int mVisibility = VISIBLE;
+
+    @SuppressWarnings("WeakerAccess") /* synthetic access */
+    boolean mIsFixedIcon;
 
     static final SparseArray<Drawable.ConstantState> sRemoteIndicatorCache =
             new SparseArray<>(2);
@@ -391,13 +396,28 @@ public class MediaRouteButton extends View {
      * Returns {@code false} if there was no output switcher.
      */
     private boolean showOutputSwitcher() {
+        boolean result = false;
+        if (BuildCompat.isAtLeastS()) {
+            result = showOutputSwitcherForAndroidSAndAbove();
+            if (!result) {
+                // The intent action and related string constants are changed in S,
+                // however they are not public API yet. Try opening the output switcher with the
+                // old constants for devices that have prior version of the constants.
+                result = showOutputSwitcherForAndroidR();
+            }
+        } else if (Build.VERSION.SDK_INT == Build.VERSION_CODES.R) {
+            result = showOutputSwitcherForAndroidR();
+        }
+        return result;
+    }
+
+    private boolean showOutputSwitcherForAndroidR() {
         Context context = getContext();
 
         Intent intent = new Intent()
-                .setAction(OutputSwitcherConstants.ACTION_MEDIA_OUTPUT)
-                .putExtra(OutputSwitcherConstants.EXTRA_PACKAGE_NAME, context.getPackageName())
-                .putExtra(OutputSwitcherConstants.KEY_MEDIA_SESSION_TOKEN,
-                        mRouter.getMediaSessionToken());
+                .setAction("com.android.settings.panel.action.MEDIA_OUTPUT")
+                .putExtra("com.android.settings.panel.extra.PACKAGE_NAME", context.getPackageName())
+                .putExtra("key_media_session_token", mRouter.getMediaSessionToken());
 
         PackageManager packageManager = context.getPackageManager();
         List<ResolveInfo> resolveInfos = packageManager.queryIntentActivities(intent, 0);
@@ -413,7 +433,33 @@ public class MediaRouteButton extends View {
                 return true;
             }
         }
-        // There was no output switcher.
+        return false;
+    }
+
+    private boolean showOutputSwitcherForAndroidSAndAbove() {
+        Context context = getContext();
+
+        Intent intent = new Intent()
+                .setAction("com.android.systemui.action.LAUNCH_MEDIA_OUTPUT_DIALOG")
+                .setPackage("com.android.systemui")
+                .putExtra("package_name", context.getPackageName())
+                .putExtra("key_media_session_token", mRouter.getMediaSessionToken());
+
+        PackageManager packageManager = context.getPackageManager();
+        List<ResolveInfo> resolveInfos = packageManager.queryBroadcastReceivers(intent, 0);
+        for (ResolveInfo resolveInfo : resolveInfos) {
+            ActivityInfo activityInfo = resolveInfo.activityInfo;
+            if (activityInfo == null || activityInfo.applicationInfo == null) {
+                continue;
+            }
+            ApplicationInfo appInfo = activityInfo.applicationInfo;
+            if (((ApplicationInfo.FLAG_SYSTEM | ApplicationInfo.FLAG_UPDATED_SYSTEM_APP)
+                    & appInfo.flags) != 0) {
+                context.sendBroadcast(intent);
+                return true;
+            }
+        }
+
         return false;
     }
 
@@ -468,6 +514,13 @@ public class MediaRouteButton extends View {
         // are implementation details here. Checkable is used to express the connecting
         // drawable state and it's mutually exclusive with check for the purposes
         // of state selection here.
+        if (mRouter == null) {
+            return drawableState;
+        }
+        if (mIsFixedIcon) {
+            return drawableState;
+        }
+
         switch (mConnectionState) {
             case CONNECTION_STATE_CONNECTING:
                 mergeDrawableStates(drawableState, CHECKABLE_STATE_SET);
@@ -798,6 +851,19 @@ public class MediaRouteButton extends View {
         @Override
         public void onProviderChanged(MediaRouter router, MediaRouter.ProviderInfo provider) {
             refreshRoute();
+        }
+
+        @Override
+        public void onRouterParamsChanged(MediaRouter router, MediaRouterParams params) {
+            boolean fixedIcon = false;
+            if (params != null) {
+                fixedIcon = params.getExtras()
+                        .getBoolean(MediaRouterParams.EXTRAS_KEY_FIXED_CAST_ICON);
+            }
+            if (MediaRouteButton.this.mIsFixedIcon != fixedIcon) {
+                MediaRouteButton.this.mIsFixedIcon = fixedIcon;
+                refreshDrawableState();
+            }
         }
     }
 

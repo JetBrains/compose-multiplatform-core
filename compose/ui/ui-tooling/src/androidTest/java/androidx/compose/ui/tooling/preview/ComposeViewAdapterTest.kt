@@ -19,10 +19,12 @@ package androidx.compose.ui.tooling.preview
 import android.app.Activity
 import android.os.Bundle
 import androidx.compose.animation.core.InternalAnimationApi
-import androidx.compose.animation.core.TransitionAnimation
 import androidx.compose.ui.tooling.compositionCount
+import androidx.compose.ui.tooling.data.UiToolingDataApi
 import androidx.compose.ui.tooling.preview.animation.PreviewAnimationClock
 import androidx.compose.ui.tooling.test.R
+import androidx.test.filters.LargeTest
+import androidx.test.filters.MediumTest
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -35,6 +37,8 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 
+@MediumTest
+@OptIn(UiToolingDataApi::class)
 class ComposeViewAdapterTest {
     @Suppress("DEPRECATION")
     @get:Rule
@@ -53,11 +57,31 @@ class ComposeViewAdapterTest {
      * Asserts that the given Composable method executes correct and outputs some [ViewInfo]s.
      */
     private fun assertRendersCorrectly(className: String, methodName: String): List<ViewInfo> {
+        initAndWaitForDraw(className, methodName)
+        activityTestRule.runOnUiThread {
+            assertTrue(composeViewAdapter.viewInfos.isNotEmpty())
+        }
+
+        return composeViewAdapter.viewInfos
+    }
+
+    /**
+     * Initiates the given Composable method and waits for the [ComposeViewAdapter.onDraw] callback.
+     */
+    private fun initAndWaitForDraw(
+        className: String,
+        methodName: String,
+        designInfoProvidersArgument: String? = null
+    ) {
         val committedAndDrawn = CountDownLatch(1)
         val committed = AtomicBoolean(false)
         activityTestRule.runOnUiThread {
             composeViewAdapter.init(
-                className, methodName, debugViewInfos = true,
+                className,
+                methodName,
+                debugViewInfos = true,
+                lookForDesignInfoProviders = true,
+                designInfoProvidersArgument = designInfoProvidersArgument,
                 onCommit = {
                     committed.set(true)
                 },
@@ -77,11 +101,6 @@ class ComposeViewAdapterTest {
 
         // Wait for the first draw after the Composable has been committed.
         committedAndDrawn.await()
-        activityTestRule.runOnUiThread {
-            assertTrue(composeViewAdapter.viewInfos.isNotEmpty())
-        }
-
-        return composeViewAdapter.viewInfos
     }
 
     @Test
@@ -123,7 +142,7 @@ class ComposeViewAdapterTest {
             )
             composeViewAdapter.clock = clock
             assertFalse(composeViewAdapter.hasAnimations())
-            assertTrue(clock.observersToAnimations.isEmpty())
+            assertTrue(clock.trackedTransitions.isEmpty())
         }
 
         waitFor("Composable to have animations", 1, TimeUnit.SECONDS) {
@@ -134,10 +153,8 @@ class ComposeViewAdapterTest {
         }
 
         activityTestRule.runOnUiThread {
-            val observer = clock.observersToAnimations.keys.single()
-            val transitionAnimation =
-                (observer as TransitionAnimation<*>.TransitionAnimationClockObserver).animation
-            assertEquals("checkBoxAnim", transitionAnimation.label)
+            val animation = clock.trackedTransitions.keys.single()
+            assertEquals("checkBoxAnim", animation.label)
         }
     }
 
@@ -163,7 +180,7 @@ class ComposeViewAdapterTest {
         }
     }
 
-    @Test
+    //    @Test
     fun lineNumberLocationMapping() {
         val viewInfos = assertRendersCorrectly(
             "androidx.compose.ui.tooling.LineNumberPreviewKt",
@@ -241,16 +258,17 @@ class ComposeViewAdapterTest {
     }
 
     @Test
-    fun uiSavedStateRegistryUsedInsidePreview() {
+    fun saveableStateRegistryUsedInsidePreview() {
         assertRendersCorrectly(
             "androidx.compose.ui.tooling.SimpleComposablePreviewKt",
-            "UiSavedStateRegistryPreview"
+            "SaveableStateRegistryPreview"
         )
     }
 
     /**
      * Check that no re-composition happens without forcing it.
      */
+    @LargeTest
     @Test
     fun testNoInvalidation() {
         compositionCount.set(0)
@@ -292,6 +310,39 @@ class ComposeViewAdapterTest {
         }
         // Draw will keep happening so, eventually this will hit 0
         assertTrue(drawCountDownLatch.await(10, TimeUnit.SECONDS))
+    }
+
+    @Test
+    fun simpleDesignInfoProviderTest() {
+        checkDesignInfoList("DesignInfoProviderA", "A", "ObjectA, x=0, y=0")
+        checkDesignInfoList("DesignInfoProviderA", "B", "Invalid, x=0, y=0")
+
+        checkDesignInfoList("DesignInfoProviderB", "A", "Invalid, x=0, y=0")
+        checkDesignInfoList("DesignInfoProviderB", "B", "ObjectB, x=0, y=0")
+    }
+
+    @Test
+    fun subcompositionDesignInfoProviderTest() {
+        checkDesignInfoList("ScaffoldDesignInfoProvider", "A", "ObjectA, x=0, y=0")
+    }
+
+    private fun checkDesignInfoList(
+        methodName: String,
+        customArgument: String,
+        expectedResult: String
+    ) {
+        initAndWaitForDraw(
+            "androidx.compose.ui.tooling.preview.DesignInfoProviderComposableKt",
+            methodName,
+            customArgument
+        )
+
+        activityTestRule.runOnUiThread {
+            assertTrue(composeViewAdapter.designInfoList.isNotEmpty())
+        }
+
+        assertEquals(1, composeViewAdapter.designInfoList.size)
+        assertEquals(expectedResult, composeViewAdapter.designInfoList[0])
     }
 
     /**

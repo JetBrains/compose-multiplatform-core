@@ -26,8 +26,8 @@ import android.util.Size;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.OptIn;
 import androidx.annotation.RequiresPermission;
-import androidx.annotation.experimental.UseExperimental;
 import androidx.camera.core.AspectRatio;
 import androidx.camera.core.Camera;
 import androidx.camera.core.CameraInfoUnavailableException;
@@ -47,7 +47,6 @@ import androidx.camera.core.impl.utils.executor.CameraXExecutors;
 import androidx.camera.core.impl.utils.futures.FutureCallback;
 import androidx.camera.core.impl.utils.futures.Futures;
 import androidx.camera.lifecycle.ProcessCameraProvider;
-import androidx.camera.view.CameraView.CaptureMode;
 import androidx.camera.view.video.ExperimentalVideo;
 import androidx.core.util.Preconditions;
 import androidx.lifecycle.Lifecycle;
@@ -66,7 +65,14 @@ import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-/** CameraX use case operation built on @{link androidx.camera.core}. */
+/**
+ * CameraX use case operation built on @{link androidx.camera.core}.
+ *
+ * @deprecated Use {@link LifecycleCameraController}. See
+ * <a href="https://medium.com/androiddevelopers/camerax-learn-how-to-use-cameracontroller
+ * -e3ed10fffecf">migration guide</a>.
+ */
+@Deprecated
 final class CameraXModule {
     public static final String TAG = "CameraXModule";
 
@@ -82,7 +88,7 @@ final class CameraXModule {
     private final ImageCapture.Builder mImageCaptureBuilder;
     private final CameraView mCameraView;
     final AtomicBoolean mVideoIsRecording = new AtomicBoolean(false);
-    private CameraView.CaptureMode mCaptureMode = CaptureMode.IMAGE;
+    private CameraView.CaptureMode mCaptureMode = CameraView.CaptureMode.IMAGE;
     private long mMaxVideoDuration = CameraView.INDEFINITE_VIDEO_DURATION;
     private long mMaxVideoSize = CameraView.INDEFINITE_VIDEO_SIZE;
     @ImageCapture.FlashMode
@@ -156,7 +162,7 @@ final class CameraXModule {
         }
     }
 
-    @UseExperimental(markerClass = ExperimentalVideo.class)
+    @OptIn(markerClass = ExperimentalVideo.class)
     @RequiresPermission(permission.CAMERA)
     void bindToLifecycleAfterViewMeasured() {
         if (mNewLifecycle == null) {
@@ -211,7 +217,7 @@ final class CameraXModule {
                 || getDisplayRotationDegrees() == 180;
 
         Rational targetAspectRatio;
-        if (getCaptureMode() == CaptureMode.IMAGE) {
+        if (getCaptureMode() == CameraView.CaptureMode.IMAGE) {
             targetAspectRatio = isDisplayPortrait ? ASPECT_RATIO_3_4 : ASPECT_RATIO_4_3;
         } else {
             mImageCaptureBuilder.setTargetAspectRatio(AspectRatio.RATIO_16_9);
@@ -234,11 +240,11 @@ final class CameraXModule {
 
         CameraSelector cameraSelector =
                 new CameraSelector.Builder().requireLensFacing(mCameraLensFacing).build();
-        if (getCaptureMode() == CaptureMode.IMAGE) {
+        if (getCaptureMode() == CameraView.CaptureMode.IMAGE) {
             mCamera = mCameraProvider.bindToLifecycle(mCurrentLifecycle, cameraSelector,
                     mImageCapture,
                     mPreview);
-        } else if (getCaptureMode() == CaptureMode.VIDEO) {
+        } else if (getCaptureMode() == CameraView.CaptureMode.VIDEO) {
             mCamera = mCameraProvider.bindToLifecycle(mCurrentLifecycle, cameraSelector,
                     mVideoCapture,
                     mPreview);
@@ -264,13 +270,13 @@ final class CameraXModule {
                 "Explicit open/close of camera not yet supported. Use bindtoLifecycle() instead.");
     }
 
-    @UseExperimental(markerClass = ExperimentalVideo.class)
+    @OptIn(markerClass = ExperimentalVideo.class)
     public void takePicture(Executor executor, OnImageCapturedCallback callback) {
         if (mImageCapture == null) {
             return;
         }
 
-        if (getCaptureMode() == CaptureMode.VIDEO) {
+        if (getCaptureMode() == CameraView.CaptureMode.VIDEO) {
             throw new IllegalStateException("Can not take picture under VIDEO capture mode.");
         }
 
@@ -281,14 +287,14 @@ final class CameraXModule {
         mImageCapture.takePicture(executor, callback);
     }
 
-    @UseExperimental(markerClass = ExperimentalVideo.class)
+    @OptIn(markerClass = ExperimentalVideo.class)
     public void takePicture(@NonNull ImageCapture.OutputFileOptions outputFileOptions,
             @NonNull Executor executor, OnImageSavedCallback callback) {
         if (mImageCapture == null) {
             return;
         }
 
-        if (getCaptureMode() == CaptureMode.VIDEO) {
+        if (getCaptureMode() == CameraView.CaptureMode.VIDEO) {
             throw new IllegalStateException("Can not take picture under VIDEO capture mode.");
         }
 
@@ -307,7 +313,7 @@ final class CameraXModule {
             return;
         }
 
-        if (getCaptureMode() == CaptureMode.IMAGE) {
+        if (getCaptureMode() == CameraView.CaptureMode.IMAGE) {
             throw new IllegalStateException("Can not record video under IMAGE capture mode.");
         }
 

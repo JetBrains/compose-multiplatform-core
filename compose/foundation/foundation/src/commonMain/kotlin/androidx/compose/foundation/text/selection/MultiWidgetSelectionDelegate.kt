@@ -19,20 +19,16 @@ package androidx.compose.foundation.text.selection
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.LayoutCoordinates
-import androidx.compose.ui.selection.Selectable
-import androidx.compose.ui.selection.Selection
 import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.TextLayoutResult
-import androidx.compose.ui.text.TextRange
 import kotlin.math.max
 
-@OptIn(ExperimentalTextApi::class)
 internal class MultiWidgetSelectionDelegate(
-    private val selectionRangeUpdate: (TextRange?) -> Unit,
+    override val selectableId: Long,
     private val coordinatesCallback: () -> LayoutCoordinates?,
     private val layoutResultCallback: () -> TextLayoutResult?
 ) : Selectable {
+
     override fun getSelection(
         startPosition: Offset,
         endPosition: Offset,
@@ -44,13 +40,13 @@ internal class MultiWidgetSelectionDelegate(
         val layoutCoordinates = getLayoutCoordinates() ?: return null
         val textLayoutResult = layoutResultCallback() ?: return null
 
-        val relativePosition = containerLayoutCoordinates.childToLocal(
+        val relativePosition = containerLayoutCoordinates.localPositionOf(
             layoutCoordinates, Offset.Zero
         )
         val startPx = startPosition - relativePosition
         val endPx = endPosition - relativePosition
 
-        val selection = getTextSelectionInfo(
+        return getTextSelectionInfo(
             textLayoutResult = textLayoutResult,
             selectionCoordinates = Pair(startPx, endPx),
             selectable = this,
@@ -58,20 +54,12 @@ internal class MultiWidgetSelectionDelegate(
             previousSelection = previousSelection,
             isStartHandle = isStartHandle
         )
-
-        return if (selection == null) {
-            selectionRangeUpdate(null)
-            null
-        } else {
-            selectionRangeUpdate(selection.toTextRange())
-            return selection
-        }
     }
 
     override fun getHandlePosition(selection: Selection, isStartHandle: Boolean): Offset {
         // Check if the selection handles's selectable is the current selectable.
-        if (isStartHandle && selection.start.selectable != this ||
-            !isStartHandle && selection.end.selectable != this
+        if (isStartHandle && selection.start.selectableId != this.selectableId ||
+            !isStartHandle && selection.end.selectableId != this.selectableId
         ) {
             return Offset.Zero
         }
@@ -125,7 +113,6 @@ internal class MultiWidgetSelectionDelegate(
  *
  * @return [Selection] of the current composable, or null if the composable is not selected.
  */
-@OptIn(ExperimentalTextApi::class)
 internal fun getTextSelectionInfo(
     textLayoutResult: TextLayoutResult,
     selectionCoordinates: Pair<Offset, Offset>,
@@ -209,7 +196,6 @@ internal fun getTextSelectionInfo(
  *
  * @return [Selection] of the current composable, or null if the composable is not selected.
  */
-@OptIn(ExperimentalTextApi::class)
 private fun getRefinedSelectionInfo(
     rawStartOffset: Int,
     rawEndOffset: Int,
@@ -269,7 +255,7 @@ private fun getRefinedSelectionInfo(
         startOffset = startOffset,
         endOffset = endOffset,
         handlesCrossed = handlesCrossed,
-        selectable = selectable,
+        selectableId = selectable.selectableId,
         textLayoutResult = textLayoutResult
     )
 }
@@ -281,29 +267,29 @@ private fun getRefinedSelectionInfo(
  * @param startOffset the final start offset to be returned.
  * @param endOffset the final end offset to be returned.
  * @param handlesCrossed true if the selection handles are crossed
- * @param selectable current [Selectable] for which the [Selection] is being calculated
+ * @param selectableId the id of the current [Selectable] for which the [Selection] is being
+ * calculated
  * @param textLayoutResult a result of the text layout.
  *
  * @return an assembled object of [Selection] using the offered selection info.
  */
-@OptIn(ExperimentalTextApi::class)
 private fun getAssembledSelectionInfo(
     startOffset: Int,
     endOffset: Int,
     handlesCrossed: Boolean,
-    selectable: Selectable,
+    selectableId: Long,
     textLayoutResult: TextLayoutResult
 ): Selection {
     return Selection(
         start = Selection.AnchorInfo(
             direction = textLayoutResult.getBidiRunDirection(startOffset),
             offset = startOffset,
-            selectable = selectable
+            selectableId = selectableId
         ),
         end = Selection.AnchorInfo(
             direction = textLayoutResult.getBidiRunDirection(max(endOffset - 1, 0)),
             offset = endOffset,
-            selectable = selectable
+            selectableId = selectableId
         ),
         handlesCrossed = handlesCrossed
     )

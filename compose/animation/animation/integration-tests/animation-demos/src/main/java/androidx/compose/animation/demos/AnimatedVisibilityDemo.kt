@@ -38,7 +38,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.material.Button
@@ -72,14 +72,6 @@ fun AnimatedItems(animateContentSize: Boolean) {
     Box(
         Modifier.padding(bottom = 20.dp)
     ) {
-        Button(
-            modifier = Modifier.align(Alignment.TopEnd).padding(10.dp),
-            onClick = {
-                counter = (counter + 1) % 12
-            }
-        ) {
-            Text("Click Me")
-        }
 
         val modifier = if (animateContentSize) Modifier.animateContentSize() else Modifier
         Column(
@@ -122,12 +114,21 @@ fun AnimatedItems(animateContentSize: Boolean) {
                 )
             }
         }
+
+        Button(
+            modifier = Modifier.align(Alignment.TopEnd).padding(10.dp),
+            onClick = {
+                counter = (counter + 1) % 12
+            }
+        ) {
+            Text("Click Me")
+        }
     }
 }
 
 @Composable
 fun Item(color: Color, text: String = "") {
-    Box(Modifier.height(80.dp).fillMaxWidth().background(color)) {
+    Box(Modifier.requiredHeight(80.dp).fillMaxWidth().background(color)) {
         Text(
             text,
             modifier = Modifier.align(Alignment.CenterStart).padding(start = 10.dp)
@@ -162,11 +163,10 @@ fun HorizontalTransition(visible: Boolean, content: @Composable () -> Unit) {
             // Set the end width for the shrink animation to a quarter of the full width.
             targetWidth = { fullWidth -> fullWidth / 10 },
             // Overwrites the default animation with tween for this shrink animation.
-            animSpec = tween(durationMillis = 400)
-        ) + fadeOut()
-    ) {
-        content()
-    }
+            animationSpec = tween(durationMillis = 400)
+        ) + fadeOut(),
+        content = content
+    )
 }
 
 @OptIn(ExperimentalAnimationApi::class)
@@ -178,19 +178,18 @@ fun SlideTransition(visible: Boolean, content: @Composable () -> Unit) {
             // Offsets the content by 1/3 of its width to the left, and slide towards right
             initialOffsetX = { fullWidth -> -fullWidth / 3 },
             // Overwrites the default animation with tween for this slide animation.
-            animSpec = tween(durationMillis = 200)
+            animationSpec = tween(durationMillis = 200)
         ) + fadeIn(
             // Overwrites the default animation with tween
-            animSpec = tween(durationMillis = 200)
+            animationSpec = tween(durationMillis = 200)
         ),
         exit = slideOutHorizontally(
             // Overwrites the ending position of the slide-out to 200 (pixels) to the right
             targetOffsetX = { 200 },
-            animSpec = spring(stiffness = Spring.StiffnessHigh)
-        ) + fadeOut()
-    ) {
-        content()
-    }
+            animationSpec = spring(stiffness = Spring.StiffnessHigh)
+        ) + fadeOut(),
+        content = content
+    )
 }
 
 @OptIn(ExperimentalAnimationApi::class)
@@ -204,11 +203,10 @@ fun FadeTransition(visible: Boolean, content: @Composable () -> Unit) {
         ),
         exit = fadeOut(
             // Overwrites the default animation with tween
-            animSpec = tween(durationMillis = 250)
-        )
-    ) {
-        content()
-    }
+            animationSpec = tween(durationMillis = 250)
+        ),
+        content = content
+    )
 }
 
 @OptIn(ExperimentalAnimationApi::class)
@@ -223,8 +221,7 @@ fun FullyLoadedTransition(visible: Boolean, content: @Composable () -> Unit) {
         ) + expandVertically(
             expandFrom = Alignment.Top
         ) + fadeIn(initialAlpha = 0.3f),
-        exit = slideOutVertically() + shrinkVertically() + fadeOut()
-    ) {
-        content()
-    }
+        exit = slideOutVertically() + shrinkVertically() + fadeOut(),
+        content = content
+    )
 }

@@ -18,6 +18,8 @@ package androidx.wear.watchface.control
 
 import android.annotation.SuppressLint
 import androidx.annotation.RequiresApi
+import androidx.annotation.UiThread
+import androidx.wear.watchface.IndentingPrintWriter
 import androidx.wear.watchface.control.data.WallpaperInteractiveWatchFaceInstanceParams
 
 /** Keeps track of [InteractiveWatchFaceImpl]s. */
@@ -27,11 +29,21 @@ internal class InteractiveInstanceManager {
     private class RefCountedInteractiveWatchFaceInstance(
         val impl: InteractiveWatchFaceImpl,
         var refcount: Int
-    )
+    ) {
+        @UiThread
+        fun dump(writer: IndentingPrintWriter) {
+            writer.println("InteractiveInstanceManager:")
+            writer.increaseIndent()
+            writer.println("impl.instanceId=${impl.instanceId}")
+            writer.println("refcount=$refcount")
+            impl.engine.dump(writer)
+            writer.decreaseIndent()
+        }
+    }
 
     class PendingWallpaperInteractiveWatchFaceInstance(
         val params: WallpaperInteractiveWatchFaceInstanceParams,
-        val callback: IPendingInteractiveWatchFaceWCS
+        val callback: IPendingInteractiveWatchFace
     )
 
     companion object {
@@ -43,7 +55,9 @@ internal class InteractiveInstanceManager {
         @SuppressLint("SyntheticAccessor")
         fun addInstance(impl: InteractiveWatchFaceImpl) {
             synchronized(pendingWallpaperInteractiveWatchFaceInstanceLock) {
-                require(!instances.containsKey(impl.instanceId))
+                require(!instances.containsKey(impl.instanceId)) {
+                    "Already have an InteractiveWatchFaceImpl with id ${impl.instanceId}"
+                }
                 instances[impl.instanceId] = RefCountedInteractiveWatchFaceInstance(impl, 1)
             }
         }
@@ -75,16 +89,30 @@ internal class InteractiveInstanceManager {
             }
         }
 
+        @SuppressLint("SyntheticAccessor")
+        fun renameInstance(oldInstanceId: String, newInstanceId: String) {
+            synchronized(pendingWallpaperInteractiveWatchFaceInstanceLock) {
+                val instance = instances.remove(oldInstanceId)
+                require(instance != null) {
+                    "Expected an InteractiveWatchFaceImpl with id $oldInstanceId"
+                }
+                require(!instances.containsKey(newInstanceId)) {
+                    "Already have an InteractiveWatchFaceImpl with id $newInstanceId"
+                }
+                instances.put(newInstanceId, instance)
+            }
+        }
+
         /** Can be called on any thread. */
         @SuppressLint("SyntheticAccessor")
         @RequiresApi(27)
         fun getExistingInstanceOrSetPendingWallpaperInteractiveWatchFaceInstance(
             value: PendingWallpaperInteractiveWatchFaceInstance
-        ): IInteractiveWatchFaceWCS? {
+        ): IInteractiveWatchFace? {
             synchronized(pendingWallpaperInteractiveWatchFaceInstanceLock) {
                 val instance = instances[value.params.instanceId]
                 return if (instance != null) {
-                    instance.impl.createWCSApi()
+                    instance.impl
                 } else {
                     pendingWallpaperInteractiveWatchFaceInstance = value
                     null
@@ -102,5 +130,22 @@ internal class InteractiveInstanceManager {
                     return returnValue
                 }
             }
+
+        @UiThread
+        fun dump(writer: IndentingPrintWriter) {
+            writer.println("InteractiveInstanceManager instances:")
+            writer.increaseIndent()
+            pendingWallpaperInteractiveWatchFaceInstance?.let {
+                writer.println(
+                    "Pending WallpaperInteractiveWatchFaceInstance id ${it.params.instanceId}"
+                )
+            }
+            synchronized(pendingWallpaperInteractiveWatchFaceInstanceLock) {
+                for ((_, value) in instances) {
+                    value.dump(writer)
+                }
+            }
+            writer.decreaseIndent()
+        }
     }
 }

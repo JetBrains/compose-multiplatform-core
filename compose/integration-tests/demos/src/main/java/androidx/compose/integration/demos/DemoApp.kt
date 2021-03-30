@@ -17,17 +17,20 @@
 package androidx.compose.integration.demos
 
 import androidx.compose.animation.Crossfade
-import androidx.compose.foundation.ScrollableColumn
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.preferredHeight
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.integration.demos.common.ActivityDemo
 import androidx.compose.integration.demos.common.ComposableDemo
 import androidx.compose.integration.demos.common.Demo
 import androidx.compose.integration.demos.common.DemoCategory
 import androidx.compose.integration.demos.common.allLaunchableDemos
+import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
 import androidx.compose.material.ListItem
@@ -43,11 +46,12 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.savedinstancestate.savedInstanceState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.AmbientLayoutDirection
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
@@ -66,7 +70,7 @@ fun DemoApp(
 ) {
     val navigationIcon = (@Composable { AppBarIcons.Back(onNavigateUp) }).takeIf { canNavigateUp }
 
-    var filterText by savedInstanceState { "" }
+    var filterText by rememberSaveable { mutableStateOf("") }
 
     Scaffold(
         topBar = {
@@ -122,13 +126,15 @@ private fun DisplayDemo(demo: Demo, onNavigate: (Demo) -> Unit) {
 }
 
 @Composable
+@OptIn(ExperimentalMaterialApi::class)
 private fun DisplayDemoCategory(category: DemoCategory, onNavigate: (Demo) -> Unit) {
-    ScrollableColumn {
+    // TODO: migrate to LazyColumn after b/175671850
+    Column(Modifier.verticalScroll(rememberScrollState())) {
         category.demos.forEach { demo ->
             ListItem(
                 text = {
                     Text(
-                        modifier = Modifier.preferredHeight(56.dp)
+                        modifier = Modifier.height(56.dp)
                             .wrapContentSize(Alignment.Center),
                         text = demo.title
                     )
@@ -174,26 +180,26 @@ private fun DemoAppBar(
 private object AppBarIcons {
     @Composable
     fun Back(onClick: () -> Unit) {
-        val icon = when (AmbientLayoutDirection.current) {
+        val icon = when (LocalLayoutDirection.current) {
             LayoutDirection.Ltr -> Icons.Filled.ArrowBack
             LayoutDirection.Rtl -> Icons.Filled.ArrowForward
         }
         IconButton(onClick = onClick) {
-            Icon(icon)
+            Icon(icon, null)
         }
     }
 
     @Composable
     fun Filter(onClick: () -> Unit) {
         IconButton(modifier = Modifier.testTag(Tags.FilterButton), onClick = onClick) {
-            Icon(Icons.Filled.Search)
+            Icon(Icons.Filled.Search, null)
         }
     }
 
     @Composable
     fun Settings(onClick: () -> Unit) {
         IconButton(onClick = onClick) {
-            Icon(Icons.Filled.Settings)
+            Icon(Icons.Filled.Settings, null)
         }
     }
 }

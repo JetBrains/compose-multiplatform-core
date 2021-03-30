@@ -127,20 +127,6 @@ fun Modifier.paddingFrom(
     )
 )
 
-@Stable
-@Deprecated(
-    "relativePaddingFrom was renamed to paddingFrom.",
-    ReplaceWith(
-        "paddingFrom(alignmentLine, before, after)",
-        "androidx.compose.foundation.layout.paddingFrom"
-    )
-)
-fun Modifier.relativePaddingFrom(
-    alignmentLine: AlignmentLine,
-    before: Dp = Dp.Unspecified,
-    after: Dp = Dp.Unspecified
-): Modifier = paddingFrom(alignmentLine, before, after)
-
 /**
  * A [Modifier] that positions the content in a layout such that the distance from the top
  * of the layout to the [baseline of the first line of text in the content][FirstBaseline]
@@ -280,10 +266,10 @@ private fun MeasureScope.alignmentLineOffsetMeasure(
     val axisMax = if (alignmentLine.horizontal) constraints.maxHeight else constraints.maxWidth
     // Compute padding required to satisfy the total before and after offsets.
     val paddingBefore =
-        ((if (before != Dp.Unspecified) before.toIntPx() else 0) - linePosition)
+        ((if (before != Dp.Unspecified) before.roundToPx() else 0) - linePosition)
             .coerceIn(0, axisMax - axis)
     val paddingAfter =
-        ((if (after != Dp.Unspecified) after.toIntPx() else 0) - axis + linePosition)
+        ((if (after != Dp.Unspecified) after.roundToPx() else 0) - axis + linePosition)
             .coerceIn(0, axisMax - axis - paddingBefore)
 
     val width = if (alignmentLine.horizontal) {

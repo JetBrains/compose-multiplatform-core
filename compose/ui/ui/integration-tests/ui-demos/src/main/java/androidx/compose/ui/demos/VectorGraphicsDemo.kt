@@ -20,7 +20,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.preferredSize
+import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -36,7 +36,7 @@ import androidx.compose.ui.graphics.vector.PathBuilder
 import androidx.compose.ui.graphics.vector.PathData
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.loadVectorResource
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
@@ -47,27 +47,26 @@ fun VectorGraphicsDemo() {
         verticalArrangement = Arrangement.SpaceEvenly,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        val imageVector = loadVectorResource(R.drawable.ic_crane)
-        imageVector.resource.resource?.let {
-            Image(
-                imageVector = it,
-                modifier = Modifier.preferredSize(200.dp, 200.dp),
-                contentScale = ContentScale.Inside
-            )
-        }
+        val imageVector = painterResource(R.drawable.ic_crane)
+        Image(
+            painter = imageVector,
+            contentDescription = "Crane",
+            modifier = Modifier.size(200.dp, 200.dp),
+            contentScale = ContentScale.Inside
+        )
 
-        val complexImageVector = loadVectorResource(R.drawable.ic_hourglass)
-        complexImageVector.resource.resource?.let {
-            Image(
-                imageVector = it,
-                modifier = Modifier.preferredSize(64.dp, 64.dp),
-                contentScale = ContentScale.Fit
-            )
-        }
+        val complexImageVector = painterResource(R.drawable.ic_hourglass)
+        Image(
+            painter = complexImageVector,
+            contentDescription = "Hourglass",
+            modifier = Modifier.size(64.dp, 64.dp),
+            contentScale = ContentScale.Fit
+        )
 
         Image(
             painter = vectorShape(120.dp, 120.dp),
-            modifier = Modifier.preferredSize(200.dp, 150.dp)
+            contentDescription = null,
+            modifier = Modifier.size(200.dp, 150.dp)
         )
     }
 }

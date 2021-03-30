@@ -19,7 +19,8 @@ package androidx.compose.animation.core
 import androidx.compose.animation.core.AnimationConstants.DefaultDurationMillis
 import androidx.compose.animation.core.KeyframesSpec.KeyframesSpecConfig
 import androidx.compose.runtime.Immutable
-import androidx.compose.ui.util.annotation.IntRange
+import androidx.compose.runtime.Stable
+import androidx.compose.ui.unit.IntOffset
 
 object AnimationConstants {
     /**
@@ -28,25 +29,20 @@ object AnimationConstants {
     const val DefaultDurationMillis: Int = 300
 
     /**
-     * Used as a iterations count for [VectorizedRepeatableSpec] to create an infinity repeating
-     * animation.
+     * The value that is used when the animation time is not yet set.
      */
-    @Deprecated(
-        "Using Infinite to specify repeatable animation iterations has been " +
-            "deprecated. Please use [InfiniteRepeatableSpec] or [infiniteRepeatable] instead."
-    )
-    const val Infinite: Int = Int.MAX_VALUE
+    const val UnspecifiedTime: Long = Long.MIN_VALUE
 }
 
 /**
  * [AnimationSpec] stores the specification of an animation, including 1) the data type to be
  * animated, and 2) the animation configuration (i.e. [VectorizedAnimationSpec]) that will be used
- * to once the data (of type [T]) has been converted to [AnimationVector].
+ * once the data (of type [T]) has been converted to [AnimationVector].
  *
  * Any type [T] can be animated by the system as long as a [TwoWayConverter] is supplied to convert
  * the data type [T] from and to an [AnimationVector]. There are a number of converters
  * available out of the box. For example, to animate [androidx.compose.ui.unit.IntOffset] the system
- * uses [androidx.compose.animation.IntOffset.VectorConverter] to convert the object to
+ * uses [IntOffset.VectorConverter][IntOffset.Companion.VectorConverter] to convert the object to
  * [AnimationVector2D], so that both x and y dimensions are animated independently with separate
  * velocity tracking. This enables multidimensional objects to be animated in a true
  * multi-dimensional way. It is particularly useful for smoothly handling animation interruptions
@@ -232,7 +228,7 @@ class InfiniteRepeatableSpec<T>(
     }
 
     override fun equals(other: Any?): Boolean =
-        if (other is RepeatableSpec<*>) {
+        if (other is InfiniteRepeatableSpec<*>) {
             other.animation == this.animation && other.repeatMode == this.repeatMode
         } else {
             false
@@ -305,20 +301,22 @@ class KeyframesSpec<T>(val config: KeyframesSpecConfig<T>) : DurationBasedAnimat
      * at a particular time. Once the key frames are fully configured, the [KeyframesSpecConfig]
      * can be used to create a [KeyframesSpec].
      *
-     * @sample androidx.compose.animation.core.samples.FloatKeyframesBuilder
+     * @sample androidx.compose.animation.core.samples.KeyframesBuilderForPosition
      * @see keyframes
      */
     class KeyframesSpecConfig<T> {
         /**
-         * Duration of the animation in milliseconds. Defaults to [DefaultDurationMillis]
+         * Duration of the animation in milliseconds. The minimum is `0` and defaults to
+         * [DefaultDurationMillis]
          */
-        @IntRange(from = 0)
+        /*@IntRange(from = 0)*/
         var durationMillis: Int = DefaultDurationMillis
 
         /**
-         * The amount of time that the animation should be delayed. Defaults to 0.
+         * The amount of time that the animation should be delayed. The minimum is `0` and defaults
+         * to 0.
          */
-        @IntRange(from = 0)
+        /*@IntRange(from = 0)*/
         var delayMillis: Int = 0
 
         internal val keyframes = mutableMapOf<Int, KeyframeEntity<T>>()
@@ -327,11 +325,12 @@ class KeyframesSpec<T>(val config: KeyframesSpecConfig<T>) : DurationBasedAnimat
          * Adds a keyframe so that animation value will be [this] at time: [timeStamp]. For example:
          *     0.8f at 150 // ms
          *
-         * @param timeStamp The time in the during when animation should reach value: [this]
+         * @param timeStamp The time in the during when animation should reach value: [this], with
+         * a minimum value of `0`.
          * @return an [KeyframeEntity] so a custom [Easing] can be added by [with] method.
          */
         // TODO: Need a IntRange equivalent annotation
-        infix fun T.at(@IntRange(from = 0) timeStamp: Int): KeyframeEntity<T> {
+        infix fun T.at(/*@IntRange(from = 0)*/ timeStamp: Int): KeyframeEntity<T> {
             return KeyframeEntity(this).also {
                 keyframes[timeStamp] = it
             }
@@ -397,3 +396,96 @@ class KeyframesSpec<T>(val config: KeyframesSpecConfig<T>) : DurationBasedAnimat
         }
     }
 }
+
+/**
+ * Creates a [TweenSpec] configured with the given duration, delay and easing curve.
+ *
+ * @param durationMillis duration of the animation spec
+ * @param delayMillis the amount of time in milliseconds that animation waits before starting
+ * @param easing the easing curve that will be used to interpolate between start and end
+ */
+@Stable
+fun <T> tween(
+    durationMillis: Int = DefaultDurationMillis,
+    delayMillis: Int = 0,
+    easing: Easing = FastOutSlowInEasing
+): TweenSpec<T> = TweenSpec(durationMillis, delayMillis, easing)
+
+/**
+ * Creates a [SpringSpec] that uses the given spring constants (i.e. [dampingRatio] and
+ * [stiffness]. The optional [visibilityThreshold] defines when the animation
+ * should be considered to be visually close enough to round off to its target.
+ *
+ * @param dampingRatio damping ratio of the spring. [Spring.DampingRatioNoBouncy] by default.
+ * @param stiffness stiffness of the spring. [Spring.StiffnessMedium] by default.
+ * @param visibilityThreshold optionally specifies the visibility threshold.
+ */
+@Stable
+fun <T> spring(
+    dampingRatio: Float = Spring.DampingRatioNoBouncy,
+    stiffness: Float = Spring.StiffnessMedium,
+    visibilityThreshold: T? = null
+): SpringSpec<T> =
+    SpringSpec(dampingRatio, stiffness, visibilityThreshold)
+
+/**
+ * Creates a [KeyframesSpec] animation, initialized with [init]. For example:
+ *
+ * @param init Initialization function for the [KeyframesSpec] animation
+ * @See KeyframesSpec.KeyframesSpecConfig
+ */
+@Stable
+fun <T> keyframes(
+    init: KeyframesSpec.KeyframesSpecConfig<T>.() -> Unit
+): KeyframesSpec<T> {
+    return KeyframesSpec(KeyframesSpec.KeyframesSpecConfig<T>().apply(init))
+}
+
+/**
+ * Creates a [RepeatableSpec] that plays a [DurationBasedAnimationSpec] (e.g.
+ * [TweenSpec], [KeyframesSpec]) the amount of iterations specified by [iterations].
+ *
+ * The iteration count describes the amount of times the animation will run.
+ * 1 means no repeat. Recommend [infiniteRepeatable] for creating an infinity repeating animation.
+ *
+ * __Note__: When repeating in the [RepeatMode.Reverse] mode, it's highly recommended to have an
+ * __odd__ number of iterations. Otherwise, the animation may jump to the end value when it finishes
+ * the last iteration.
+ *
+ * @param iterations the total count of iterations, should be greater than 1 to repeat.
+ * @param animation animation that will be repeated
+ * @param repeatMode whether animation should repeat by starting from the beginning (i.e.
+ *                  [RepeatMode.Restart]) or from the end (i.e. [RepeatMode.Reverse])
+ */
+@Stable
+fun <T> repeatable(
+    iterations: Int,
+    animation: DurationBasedAnimationSpec<T>,
+    repeatMode: RepeatMode = RepeatMode.Restart
+): RepeatableSpec<T> =
+    RepeatableSpec(iterations, animation, repeatMode)
+
+/**
+ * Creates a [InfiniteRepeatableSpec] that plays a [DurationBasedAnimationSpec] (e.g.
+ * [TweenSpec], [KeyframesSpec]) infinite amount of iterations.
+ *
+ * For non-infinitely repeating animations, consider [repeatable].
+ *
+ * @param animation animation that will be repeated
+ * @param repeatMode whether animation should repeat by starting from the beginning (i.e.
+ *                  [RepeatMode.Restart]) or from the end (i.e. [RepeatMode.Reverse])
+ */
+@Stable
+fun <T> infiniteRepeatable(
+    animation: DurationBasedAnimationSpec<T>,
+    repeatMode: RepeatMode = RepeatMode.Restart
+): InfiniteRepeatableSpec<T> =
+    InfiniteRepeatableSpec(animation, repeatMode)
+
+/**
+ * Creates a Snap animation for immediately switching the animating value to the end value.
+ *
+ * @param delayMillis the number of milliseconds to wait before the animation runs. 0 by default.
+ */
+@Stable
+fun <T> snap(delayMillis: Int = 0) = SnapSpec<T>(delayMillis)

@@ -24,6 +24,7 @@ import android.os.RemoteException;
 import android.util.Log;
 
 import androidx.annotation.IntDef;
+import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
@@ -37,9 +38,9 @@ import java.util.Objects;
 /**
  * Denotes a failure in the client to a host request.
  *
- * <p>This is used for the failure response for a IOnDoneCallback.
+ * <p>This is used for the failure response for an {@link androidx.car.app.IOnDoneCallback}
  */
-public class FailureResponse {
+public final class FailureResponse {
     /**
      * The exception type of the failure.
      *
@@ -68,18 +69,20 @@ public class FailureResponse {
     public static final int RUNTIME_EXCEPTION = 5;
     public static final int REMOTE_EXCEPTION = 6;
 
+    @Keep
     @Nullable
     private final String mStackTrace;
+    @Keep
     @ErrorType
     private final int mErrorType;
 
     /**
      * Creates an instance of {@link FailureResponse}.
      *
-     * @param exception the originating cause of the failure.
+     * @param exception the originating cause of the failure
      */
     public FailureResponse(@NonNull Throwable exception) {
-        this.mStackTrace = Log.getStackTraceString(requireNonNull(exception));
+        mStackTrace = Log.getStackTraceString(requireNonNull(exception));
         if (exception instanceof BundlerException) {
             mErrorType = BUNDLER_EXCEPTION;
         } else if (exception instanceof IllegalStateException) {

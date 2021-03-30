@@ -16,20 +16,20 @@
 
 package androidx.compose.ui.input.key
 
-import android.view.KeyEvent.ACTION_DOWN
-import android.view.KeyEvent.ACTION_UP
-import android.view.KeyEvent.KEYCODE_A
+import android.view.KeyEvent.ACTION_DOWN as ActionDown
+import android.view.KeyEvent.ACTION_UP as ActionUp
+import android.view.KeyEvent.KEYCODE_A as KeyCodeA
 import android.view.View
 import androidx.compose.foundation.layout.Box
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusReference
+import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusModifier
-import androidx.compose.ui.focus.focusReference
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.setFocusableContent
 import androidx.compose.ui.input.key.Key.Companion.A
 import androidx.compose.ui.input.key.KeyEventType.KeyDown
 import androidx.compose.ui.input.key.KeyEventType.KeyUp
-import androidx.compose.ui.platform.AmbientView
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.filters.SmallTest
 import com.google.common.truth.Truth.assertThat
@@ -45,27 +45,27 @@ import android.view.KeyEvent as AndroidKeyEvent
  */
 @SmallTest
 @RunWith(Parameterized::class)
-class AndroidProcessKeyInputTest(val keyEventAction: Int) {
+class AndroidProcessKeyInputTest(private val keyEventAction: Int) {
     @get:Rule
     val rule = createComposeRule()
 
     companion object {
         @JvmStatic
         @Parameterized.Parameters(name = "keyEventAction = {0}")
-        fun initParameters() = listOf(ACTION_UP, ACTION_DOWN)
+        fun initParameters() = listOf(ActionUp, ActionDown)
     }
 
     @Test
     fun onKeyEvent_triggered() {
         // Arrange.
         lateinit var ownerView: View
-        lateinit var receivedKeyEvent: KeyEvent
-        val focusReference = FocusReference()
+        var receivedKeyEvent: KeyEvent? = null
+        val focusRequester = FocusRequester()
         rule.setFocusableContent {
-            ownerView = AmbientView.current
+            ownerView = LocalView.current
             Box(
                 modifier = Modifier
-                    .focusReference(focusReference)
+                    .focusRequester(focusRequester)
                     .focusModifier()
                     .onKeyEvent {
                         receivedKeyEvent = it
@@ -74,22 +74,25 @@ class AndroidProcessKeyInputTest(val keyEventAction: Int) {
             )
         }
         rule.runOnIdle {
-            focusReference.requestFocus()
+            focusRequester.requestFocus()
         }
 
         // Act.
         val keyConsumed = rule.runOnIdle {
-            ownerView.dispatchKeyEvent(AndroidKeyEvent(keyEventAction, KEYCODE_A))
+            ownerView.dispatchKeyEvent(AndroidKeyEvent(keyEventAction, KeyCodeA))
         }
 
         // Assert.
         rule.runOnIdle {
-            val keyEventType = when (keyEventAction) {
-                ACTION_UP -> KeyUp
-                ACTION_DOWN -> KeyDown
-                else -> error("No tests for this key action.")
-            }
-            receivedKeyEvent.assertEqualTo(keyEvent(A, keyEventType))
+            val keyEvent = checkNotNull(receivedKeyEvent)
+            assertThat(keyEvent.type).isEqualTo(
+                when (keyEventAction) {
+                    ActionUp -> KeyUp
+                    ActionDown -> KeyDown
+                    else -> error("No tests for this key action.")
+                }
+            )
+            assertThat(keyEvent.key).isEqualTo(A)
             assertThat(keyConsumed).isTrue()
         }
     }

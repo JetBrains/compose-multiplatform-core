@@ -16,17 +16,14 @@
 
 package androidx.compose.ui.node
 
-import androidx.compose.runtime.ExperimentalComposeApi
 import androidx.compose.runtime.snapshots.SnapshotStateObserver
 
 /**
  * Performs snapshot observation for blocks like draw and layout which should be re-invoked
  * automatically when the snapshot value has been changed.
  */
-// TODO make it internal once Owner is internal
-@OptIn(ExperimentalComposeApi::class)
 @Suppress("CallbackName") // TODO rename this and SnapshotStateObserver. b/173401548
-class OwnerSnapshotObserver(onChangedExecutor: (callback: () -> Unit) -> Unit) {
+internal class OwnerSnapshotObserver(onChangedExecutor: (callback: () -> Unit) -> Unit) {
 
     private val observer = SnapshotStateObserver(onChangedExecutor)
 
@@ -48,8 +45,8 @@ class OwnerSnapshotObserver(onChangedExecutor: (callback: () -> Unit) -> Unit) {
      * be skipped from the observing we disable if before calling the block, execute block and
      * then enable it again.
      */
-    internal fun pauseSnapshotReadObservation(block: () -> Unit) {
-        observer.pauseObservingReads(block)
+    internal fun withNoSnapshotReadObservation(block: () -> Unit) {
+        observer.withNoObservations(block)
     }
 
     /**
@@ -79,7 +76,7 @@ class OwnerSnapshotObserver(onChangedExecutor: (callback: () -> Unit) -> Unit) {
     }
 
     internal fun clearInvalidObservations() {
-        observer.removeObservationsFor { !(it as OwnerScope).isValid }
+        observer.clearIf { !(it as OwnerScope).isValid }
     }
 
     internal fun clear(target: Any) {
@@ -87,11 +84,11 @@ class OwnerSnapshotObserver(onChangedExecutor: (callback: () -> Unit) -> Unit) {
     }
 
     internal fun startObserving() {
-        observer.enableStateUpdatesObserving(true)
+        observer.start()
     }
 
     internal fun stopObserving() {
-        observer.enableStateUpdatesObserving(false)
+        observer.stop()
         observer.clear()
     }
 }

@@ -22,15 +22,13 @@ import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.InternalTextApi
-import androidx.compose.ui.text.TextDelegate
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextPainter
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.ResourceFont
-import androidx.compose.ui.text.input.OffsetMap
+import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
@@ -43,7 +41,7 @@ import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith
 
-@OptIn(InternalTextApi::class)
+@OptIn(InternalFoundationTextApi::class)
 @RunWith(AndroidJUnit4::class)
 @SmallTest
 class TextFieldDelegateIntegrationTest {
@@ -91,7 +89,7 @@ class TextFieldDelegateIntegrationTest {
             canvas = actualCanvas,
             value = TextFieldValue(text = "Hello, World", selection = selection),
             selectionPaint = Paint().apply { color = selectionColor },
-            offsetMap = OffsetMap.identityOffsetMap,
+            offsetMapping = OffsetMapping.Identity,
             textLayoutResult = layoutResult
         )
 

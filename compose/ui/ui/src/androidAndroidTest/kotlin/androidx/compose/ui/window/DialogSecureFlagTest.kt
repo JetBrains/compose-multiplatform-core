@@ -19,9 +19,8 @@ package androidx.compose.ui.window
 import android.view.View
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
-import androidx.compose.foundation.layout.preferredSize
+import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.emptyContent
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -58,7 +57,7 @@ class DialogSecureFlagTest(private val setSecureFlagOnActivity: Boolean) {
     @Test
     fun noFlagSetOnDialog() {
         rule.setContent {
-            TestDialog(null)
+            TestDialog(DialogProperties())
         }
 
         if (setSecureFlagOnActivity) {
@@ -73,7 +72,7 @@ class DialogSecureFlagTest(private val setSecureFlagOnActivity: Boolean) {
     @Test
     fun forcedFlagOnDialogToDisabled() {
         rule.setContent {
-            TestDialog(AndroidDialogProperties(securePolicy = SecureFlagPolicy.SecureOff))
+            TestDialog(DialogProperties(securePolicy = SecureFlagPolicy.SecureOff))
         }
 
         // This tests that we also override the flag from the Activity
@@ -83,7 +82,7 @@ class DialogSecureFlagTest(private val setSecureFlagOnActivity: Boolean) {
     @Test
     fun forcedFlagOnDialogToEnabled() {
         rule.setContent {
-            TestDialog(AndroidDialogProperties(securePolicy = SecureFlagPolicy.SecureOn))
+            TestDialog(DialogProperties(securePolicy = SecureFlagPolicy.SecureOn))
         }
 
         assertThat(isSecureFlagEnabledForDialog()).isTrue()
@@ -91,8 +90,8 @@ class DialogSecureFlagTest(private val setSecureFlagOnActivity: Boolean) {
 
     @Test
     fun toggleFlagOnDialog() {
-        var properties: AndroidDialogProperties?
-        by mutableStateOf(AndroidDialogProperties(securePolicy = SecureFlagPolicy.SecureOff))
+        var properties: DialogProperties
+        by mutableStateOf(DialogProperties(securePolicy = SecureFlagPolicy.SecureOff))
 
         rule.setContent {
             TestDialog(properties)
@@ -101,22 +100,22 @@ class DialogSecureFlagTest(private val setSecureFlagOnActivity: Boolean) {
         assertThat(isSecureFlagEnabledForDialog()).isFalse()
 
         // Toggle flag
-        properties = AndroidDialogProperties(securePolicy = SecureFlagPolicy.SecureOn)
+        properties = DialogProperties(securePolicy = SecureFlagPolicy.SecureOn)
         assertThat(isSecureFlagEnabledForDialog()).isTrue()
 
         // Set to inherit
-        properties = AndroidDialogProperties(securePolicy = SecureFlagPolicy.Inherit)
+        properties = DialogProperties(securePolicy = SecureFlagPolicy.Inherit)
         assertThat(isSecureFlagEnabledForDialog()).isEqualTo(setSecureFlagOnActivity)
     }
 
     @Composable
-    fun TestDialog(dialogProperties: AndroidDialogProperties?) {
+    fun TestDialog(dialogProperties: DialogProperties) {
         SimpleContainer {
             Dialog(
                 onDismissRequest = { },
                 properties = dialogProperties
             ) {
-                SimpleContainer(Modifier.preferredSize(50.dp), content = emptyContent())
+                SimpleContainer(Modifier.size(50.dp), content = {})
             }
         }
     }
@@ -124,7 +123,7 @@ class DialogSecureFlagTest(private val setSecureFlagOnActivity: Boolean) {
     private fun isSecureFlagEnabledForDialog(): Boolean {
         val owner = rule
             .onNode(isDialog())
-            .fetchSemanticsNode("").owner as View
+            .fetchSemanticsNode("").root as View
         return (owner.rootView.layoutParams as WindowManager.LayoutParams).flags and
             WindowManager.LayoutParams.FLAG_SECURE != 0
     }

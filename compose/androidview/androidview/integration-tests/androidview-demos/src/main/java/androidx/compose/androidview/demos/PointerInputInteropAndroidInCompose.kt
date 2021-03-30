@@ -21,17 +21,19 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.compose.androidview.adapters.setOnClick
-import androidx.compose.foundation.ScrollableColumn
-import androidx.compose.foundation.ScrollableRow
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.preferredHeight
-import androidx.compose.foundation.layout.preferredSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.integration.demos.common.ComposableDemo
 import androidx.compose.integration.demos.common.DemoCategory
 import androidx.compose.material.Text
@@ -42,7 +44,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.gesture.tapGestureFilter
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -80,7 +82,7 @@ private fun FourAndroidTapInCompose() {
             Modifier
                 .fillMaxSize()
                 .wrapContentSize(Alignment.Center)
-                .preferredSize(240.dp)
+                .size(240.dp)
         ) {
             AndroidView({ context ->
                 LayoutInflater.from(context)
@@ -129,8 +131,10 @@ private fun AndroidTapInComposeTap() {
             Modifier
                 .fillMaxSize()
                 .wrapContentSize(Alignment.Center)
-                .preferredSize(240.dp)
-                .tapGestureFilter(onTap)
+                .size(240.dp)
+                .pointerInput(Unit) {
+                    detectTapGestures(onTap = onTap)
+                }
         ) {
             AndroidView({ context ->
                 LayoutInflater.from(context)
@@ -161,7 +165,7 @@ private fun AndroidTapInComposeScroll() {
                 ". If a pointer starts on a button and then drags horizontally, the button " +
                 "will not be clicked when released."
         )
-        ScrollableRow {
+        Row(Modifier.horizontalScroll(rememberScrollState())) {
             AndroidView({ context ->
                 LayoutInflater.from(context)
                     .inflate(R.layout.android_tap_in_compose_scroll, null).let { view ->
@@ -205,7 +209,10 @@ private fun AndroidScrollInComposeScrollDifferentOrientation() {
                 "Android is nested inside something scrollable in Compose."
         )
         Text("You should only be able to scroll in one orientation at a time.")
-        ScrollableRow(modifier = Modifier.background(androidx.compose.ui.graphics.Color.Blue)) {
+        Row(
+            Modifier.background(androidx.compose.ui.graphics.Color.Blue)
+                .horizontalScroll(rememberScrollState())
+        ) {
             Box(
                 modifier = Modifier.padding(96.dp)
                     .background(androidx.compose.ui.graphics.Color.Red)
@@ -236,12 +243,16 @@ private fun AndroidScrollInComposeScrollSameOrientation() {
                 "that for Compose, and thus the child scrolls and prevents the parent from " +
                 "intercepting. "
         )
-        ScrollableColumn(modifier = Modifier.background(androidx.compose.ui.graphics.Color.Blue)) {
+        Column(
+            Modifier
+                .background(androidx.compose.ui.graphics.Color.Blue)
+                .verticalScroll(rememberScrollState())
+        ) {
             Box(
                 modifier = Modifier
                     .padding(96.dp)
                     .background(color = androidx.compose.ui.graphics.Color.Red)
-                    .preferredHeight(750.dp)
+                    .height(750.dp)
             ) {
                 AndroidView({ context ->
                     LayoutInflater.from(context)

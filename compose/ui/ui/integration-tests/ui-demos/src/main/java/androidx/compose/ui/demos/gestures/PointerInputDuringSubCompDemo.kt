@@ -21,7 +21,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.Text
@@ -39,8 +39,8 @@ import androidx.compose.ui.input.pointer.PointerInputModifier
 import androidx.compose.ui.input.pointer.changedToDownIgnoreConsumed
 import androidx.compose.ui.input.pointer.changedToUpIgnoreConsumed
 import androidx.compose.ui.unit.IntSize
-import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
 
 /**
  * Demonstration of how various press/tap gesture interact together in a nested fashion.
@@ -64,10 +64,10 @@ fun PointerInputDuringSubComp() {
             Modifier
                 .fillMaxSize()
                 .wrapContentSize(Alignment.Center)
-                .size(200.dp)
+                .requiredSize(200.dp)
                 .background(color = Color.White)
         ) {
-            items(List(100) { index -> index }) {
+            items(100) {
                 val pointerCount = remember { mutableStateOf(0) }
 
                 Box(
@@ -78,7 +78,7 @@ fun PointerInputDuringSubComp() {
                 ) {
                     Text(
                         "${pointerCount.value}",
-                        fontSize = TextUnit.Em(16),
+                        fontSize = 16.em,
                         color = Color.Black
                     )
                 }
@@ -115,7 +115,7 @@ internal class PointerCounterGestureFilter : PointerInputFilter() {
                 it.changedToDownIgnoreConsumed() || it.changedToUpIgnoreConsumed()
             }
             ) {
-                onPointerCountChanged.invoke(changes.count { it.current.down })
+                onPointerCountChanged.invoke(changes.count { it.pressed })
             }
         }
     }

@@ -19,24 +19,25 @@ import androidx.compose.runtime.collection.MutableVector
 import androidx.compose.runtime.collection.mutableVectorOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.DrawModifier
-import androidx.compose.ui.focus.FocusModifier
-import androidx.compose.ui.focus.FocusReferenceModifier
 import androidx.compose.ui.focus.FocusEventModifier
+import androidx.compose.ui.focus.FocusModifier
+import androidx.compose.ui.focus.FocusOrderModifier
+import androidx.compose.ui.focus.FocusRequesterModifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.gesture.nestedscroll.NestedScrollDelegatingWrapper
-import androidx.compose.ui.gesture.nestedscroll.NestedScrollModifier
 import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.input.key.KeyInputModifier
+import androidx.compose.ui.input.nestedscroll.NestedScrollDelegatingWrapper
+import androidx.compose.ui.input.nestedscroll.NestedScrollModifier
 import androidx.compose.ui.input.pointer.PointerInputFilter
 import androidx.compose.ui.input.pointer.PointerInputModifier
 import androidx.compose.ui.layout.AlignmentLine
-import androidx.compose.ui.layout.HorizontalAlignmentLine
 import androidx.compose.ui.layout.IntrinsicMeasurable
 import androidx.compose.ui.layout.IntrinsicMeasureScope
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.LayoutInfo
 import androidx.compose.ui.layout.LayoutModifier
 import androidx.compose.ui.layout.Measurable
+import androidx.compose.ui.layout.MeasurePolicy
 import androidx.compose.ui.layout.MeasureResult
 import androidx.compose.ui.layout.MeasureScope
 import androidx.compose.ui.layout.ModifierInfo
@@ -46,7 +47,6 @@ import androidx.compose.ui.layout.ParentDataModifier
 import androidx.compose.ui.layout.Placeable
 import androidx.compose.ui.layout.Remeasurement
 import androidx.compose.ui.layout.RemeasurementModifier
-import androidx.compose.ui.layout.merge
 import androidx.compose.ui.node.LayoutNode.LayoutState.LayingOut
 import androidx.compose.ui.node.LayoutNode.LayoutState.Measuring
 import androidx.compose.ui.node.LayoutNode.LayoutState.NeedsRelayout
@@ -59,10 +59,7 @@ import androidx.compose.ui.semantics.SemanticsWrapper
 import androidx.compose.ui.semantics.outerSemantics
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
-import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
-import androidx.compose.ui.util.deleteAt
-import kotlin.math.roundToInt
 
 /**
  * Enable to log changes to the LayoutNode tree.  This logging is quite chatty.
@@ -76,7 +73,7 @@ internal val sharedDrawScope = LayoutNodeDrawScope()
 /**
  * An element in the layout hierarchy, built with compose UI.
  */
-class LayoutNode : Measurable, Remeasurement, OwnerScope, LayoutInfo {
+internal class LayoutNode : Measurable, Remeasurement, OwnerScope, LayoutInfo, ComposeUiNode {
 
     internal constructor() : this(false)
 
@@ -102,17 +99,20 @@ class LayoutNode : Measurable, Remeasurement, OwnerScope, LayoutInfo {
 
     // the list of nodes where the virtual children are unfolded (their children are represented
     // as our direct children)
-    private val _unfoldedChildren = mutableVectorOf<LayoutNode>()
+    private var _unfoldedChildren: MutableVector<LayoutNode>? = null
 
     private fun recreateUnfoldedChildrenIfDirty() {
         if (unfoldedVirtualChildrenListDirty) {
             unfoldedVirtualChildrenListDirty = false
-            _unfoldedChildren.clear()
+            val unfoldedChildren = _unfoldedChildren ?: mutableVectorOf<LayoutNode>().also {
+                _unfoldedChildren = it
+            }
+            unfoldedChildren.clear()
             _foldedChildren.forEach {
                 if (it.isVirtual) {
-                    _unfoldedChildren.addAll(it._children)
+                    unfoldedChildren.addAll(it._children)
                 } else {
-                    _unfoldedChildren.add(it)
+                    unfoldedChildren.add(it)
                 }
             }
         }
@@ -135,7 +135,7 @@ class LayoutNode : Measurable, Remeasurement, OwnerScope, LayoutInfo {
             _foldedChildren
         } else {
             recreateUnfoldedChildrenIfDirty()
-            _unfoldedChildren
+            _unfoldedChildren!!
         }
 
     /**
@@ -390,7 +390,7 @@ class LayoutNode : Measurable, Remeasurement, OwnerScope, LayoutInfo {
 
     override fun toString(): String {
         return "${simpleIdentityToString(this, null)} children: ${children.size} " +
-            "measureBlocks: $measureBlocks"
+            "measurePolicy: $measurePolicy"
     }
 
     /**
@@ -410,43 +410,41 @@ class LayoutNode : Measurable, Remeasurement, OwnerScope, LayoutInfo {
             tree.append(child.debugTreeToString(depth + 1))
         }
 
+        var treeString = tree.toString()
         if (depth == 0) {
             // Delete trailing newline
-            tree.deleteAt(tree.length - 1)
+            treeString = treeString.substring(0, treeString.length - 1)
         }
-        return tree.toString()
+
+        return treeString
     }
 
-    internal abstract class NoIntrinsicsMeasureBlocks(private val error: String) : MeasureBlocks {
-        override fun minIntrinsicWidth(
-            intrinsicMeasureScope: IntrinsicMeasureScope,
+    internal abstract class NoIntrinsicsMeasurePolicy(private val error: String) : MeasurePolicy {
+        override fun IntrinsicMeasureScope.minIntrinsicWidth(
             measurables: List<IntrinsicMeasurable>,
-            h: Int
+            height: Int
         ) = error(error)
 
-        override fun minIntrinsicHeight(
-            intrinsicMeasureScope: IntrinsicMeasureScope,
+        override fun IntrinsicMeasureScope.minIntrinsicHeight(
             measurables: List<IntrinsicMeasurable>,
-            w: Int
+            width: Int
         ) = error(error)
 
-        override fun maxIntrinsicWidth(
-            intrinsicMeasureScope: IntrinsicMeasureScope,
+        override fun IntrinsicMeasureScope.maxIntrinsicWidth(
             measurables: List<IntrinsicMeasurable>,
-            h: Int
+            height: Int
         ) = error(error)
 
-        override fun maxIntrinsicHeight(
-            intrinsicMeasureScope: IntrinsicMeasureScope,
+        override fun IntrinsicMeasureScope.maxIntrinsicHeight(
             measurables: List<IntrinsicMeasurable>,
-            w: Int
+            width: Int
         ) = error(error)
     }
 
     /**
      * Blocks that define the measurement and intrinsic measurement of the layout.
      */
-    internal var measureBlocks: MeasureBlocks = ErrorMeasureBlocks
+    override var measurePolicy: MeasurePolicy = ErrorMeasurePolicy
         set(value) {
             if (field != value) {
                 field = value
@@ -457,11 +455,10 @@ class LayoutNode : Measurable, Remeasurement, OwnerScope, LayoutInfo {
     /**
      * The screen density to be used by this layout.
      */
-    internal var density: Density = Density(1f)
+    override var density: Density = Density(1f)
 
     /**
-     * The scope used to run the [MeasureBlocks.measure]
-     * [MeasureBlock][androidx.compose.ui.layout.MeasureBlock].
+     * The scope used to [measure][MeasurePolicy.measure] children.
      */
     internal val measureScope: MeasureScope = object : MeasureScope, Density {
         override val density: Float get() = this@LayoutNode.density.density
@@ -472,11 +469,12 @@ class LayoutNode : Measurable, Remeasurement, OwnerScope, LayoutInfo {
     /**
      * The layout direction of the layout node.
      */
-    internal var layoutDirection: LayoutDirection = LayoutDirection.Ltr
+    override var layoutDirection: LayoutDirection = LayoutDirection.Ltr
         set(value) {
             if (field != value) {
                 field = value
                 requestRemeasure()
+                invalidateLayer()
             }
         }
 
@@ -493,12 +491,13 @@ class LayoutNode : Measurable, Remeasurement, OwnerScope, LayoutInfo {
     /**
      * The alignment lines of this layout, inherited + intrinsic
      */
-    internal val alignmentLines: MutableMap<AlignmentLine, Int> = hashMapOf()
+    internal var alignmentLines: LayoutNodeAlignmentLines? = null
+        private set
 
     /**
      * The alignment lines provided by this layout at the last measurement
      */
-    internal val providedAlignmentLines: MutableMap<AlignmentLine, Int> = hashMapOf()
+    internal var providedAlignmentLines: Map<AlignmentLine, Int> = emptyMap()
 
     internal val mDrawScope: LayoutNodeDrawScope = sharedDrawScope
 
@@ -560,8 +559,6 @@ class LayoutNode : Measurable, Remeasurement, OwnerScope, LayoutInfo {
 
     internal var alignmentUsageByParent = UsageByParent.NotUsed
 
-    private val previousAlignmentLines = mutableMapOf<AlignmentLine, Int>()
-
     @Deprecated("Temporary API to support ConstraintLayout prototyping.")
     internal var canMultiMeasure: Boolean = false
 
@@ -621,7 +618,7 @@ class LayoutNode : Measurable, Remeasurement, OwnerScope, LayoutInfo {
     /**
      * The [Modifier] currently applied to this node.
      */
-    internal var modifier: Modifier = Modifier
+    override var modifier: Modifier = Modifier
         set(value) {
             if (value == field) return
             if (modifier != Modifier) {
@@ -640,18 +637,18 @@ class LayoutNode : Measurable, Remeasurement, OwnerScope, LayoutInfo {
                 owner!!.onSemanticsChange()
             }
             val addedCallback = hasNewPositioningCallback()
-            onPositionedCallbacks.clear()
-            onRemeasuredCallbacks.clear()
+            onPositionedCallbacks?.clear()
 
             // Create a new chain of LayoutNodeWrappers, reusing existing ones from wrappers
             // when possible.
             val outerWrapper = modifier.foldOut(innerLayoutNodeWrapper) { mod, toWrap ->
                 var wrapper = toWrap
                 if (mod is OnGloballyPositionedModifier) {
+                    val onPositionedCallbacks = onPositionedCallbacks
+                        ?: mutableVectorOf<OnGloballyPositionedModifier>().also {
+                            onPositionedCallbacks = it
+                        }
                     onPositionedCallbacks += mod
-                }
-                if (mod is OnRemeasuredModifier) {
-                    onRemeasuredCallbacks += mod
                 }
                 if (mod is RemeasurementModifier) {
                     mod.onRemeasurementAvailable(this)
@@ -674,8 +671,11 @@ class LayoutNode : Measurable, Remeasurement, OwnerScope, LayoutInfo {
                     if (mod is FocusEventModifier) {
                         wrapper = ModifiedFocusEventNode(wrapper, mod).assignChained(toWrap)
                     }
-                    if (mod is FocusReferenceModifier) {
-                        wrapper = ModifiedFocusReferenceNode(wrapper, mod).assignChained(toWrap)
+                    if (mod is FocusRequesterModifier) {
+                        wrapper = ModifiedFocusRequesterNode(wrapper, mod).assignChained(toWrap)
+                    }
+                    if (mod is FocusOrderModifier) {
+                        wrapper = ModifiedFocusOrderNode(wrapper, mod).assignChained(toWrap)
                     }
                     if (mod is KeyInputModifier) {
                         wrapper = ModifiedKeyInputNode(wrapper, mod).assignChained(toWrap)
@@ -694,6 +694,9 @@ class LayoutNode : Measurable, Remeasurement, OwnerScope, LayoutInfo {
                     }
                     if (mod is SemanticsModifier) {
                         wrapper = SemanticsWrapper(wrapper, mod).assignChained(toWrap)
+                    }
+                    if (mod is OnRemeasuredModifier) {
+                        wrapper = RemeasureModifierWrapper(wrapper, mod).assignChained(toWrap)
                     }
                 }
                 wrapper
@@ -763,12 +766,7 @@ class LayoutNode : Measurable, Remeasurement, OwnerScope, LayoutInfo {
     /**
      * List of all OnPositioned callbacks in the modifier chain.
      */
-    private val onPositionedCallbacks = mutableVectorOf<OnGloballyPositionedModifier>()
-
-    /**
-     * List of all OnSizeChangedModifiers in the modifier chain.
-     */
-    private val onRemeasuredCallbacks = mutableVectorOf<OnRemeasuredModifier>()
+    private var onPositionedCallbacks: MutableVector<OnGloballyPositionedModifier>? = null
 
     /**
      * Flag used by [OnPositionedDispatcher] to identify LayoutNodes that have already
@@ -799,47 +797,29 @@ class LayoutNode : Measurable, Remeasurement, OwnerScope, LayoutInfo {
      * Carries out a hit test on the [PointerInputModifier]s associated with this [LayoutNode] and
      * all [PointerInputModifier]s on all descendant [LayoutNode]s.
      *
-     * If [pointerPositionRelativeToScreen] is within the bounds of any tested
+     * If [pointerPosition] is within the bounds of any tested
      * [PointerInputModifier]s, the [PointerInputModifier] is added to [hitPointerInputFilters]
      * and true is returned.
      *
-     * @param pointerPositionRelativeToScreen The tested pointer position, which is relative to
-     * the device screen.
+     * @param pointerPosition The tested pointer position, which is relative to
+     * the LayoutNode.
      * @param hitPointerInputFilters The collection that the hit [PointerInputFilter]s will be
      * added to if hit.
      */
     internal fun hitTest(
-        pointerPositionRelativeToScreen: Offset,
+        pointerPosition: Offset,
         hitPointerInputFilters: MutableList<PointerInputFilter>
     ) {
-        outerLayoutNodeWrapper.hitTest(pointerPositionRelativeToScreen, hitPointerInputFilters)
-    }
-
-    /**
-     * Returns the alignment line value for a given alignment line without affecting whether
-     * the flag for whether the alignment line was read.
-     */
-    internal fun getAlignmentLine(line: AlignmentLine): Int? {
-        val linePos = alignmentLines[line] ?: return null
-        var pos = Offset(linePos.toFloat(), linePos.toFloat())
-        var wrapper = innerLayoutNodeWrapper
-        while (wrapper != outerLayoutNodeWrapper) {
-            pos = wrapper.toParentPosition(pos)
-            wrapper = wrapper.wrappedBy!!
-        }
-        pos = wrapper.toParentPosition(pos)
-        return if (line is HorizontalAlignmentLine) {
-            pos.y.roundToInt()
-        } else {
-            pos.x.roundToInt()
-        }
+        val positionInWrapped = outerLayoutNodeWrapper.fromParentPosition(pointerPosition)
+        outerLayoutNodeWrapper.hitTest(positionInWrapped, hitPointerInputFilters)
     }
 
     /**
      * Return true if there is a new [OnGloballyPositionedModifier] assigned to this Layout.
      */
     private fun hasNewPositioningCallback(): Boolean {
-        return modifier.foldOut(false) { mod, hasNewCallback ->
+        val onPositionedCallbacks = onPositionedCallbacks
+        return onPositionedCallbacks != null && modifier.foldOut(false) { mod, hasNewCallback ->
             hasNewCallback ||
                 (mod is OnGloballyPositionedModifier && mod !in onPositionedCallbacks)
         }
@@ -934,28 +914,10 @@ class LayoutNode : Measurable, Remeasurement, OwnerScope, LayoutInfo {
             alignmentLinesCalculatedDuringLastLayout = false
             if (alignmentLinesRequired) {
                 alignmentLinesCalculatedDuringLastLayout = true
-                previousAlignmentLines.clear()
-                previousAlignmentLines.putAll(alignmentLines)
-                alignmentLines.clear()
-                _children.forEach { child ->
-                    if (!child.isPlaced) return@forEach
-                    child.alignmentLines.keys.forEach { childLine ->
-                        val linePositionInContainer = child.getAlignmentLine(childLine)!!
-                        // If the line was already provided by a previous child, merge the values.
-                        alignmentLines[childLine] = if (childLine in alignmentLines) {
-                            childLine.merge(
-                                alignmentLines.getValue(childLine),
-                                linePositionInContainer
-                            )
-                        } else {
-                            linePositionInContainer
-                        }
-                    }
+                val alignments = alignmentLines ?: LayoutNodeAlignmentLines(this).also {
+                    alignmentLines = it
                 }
-                alignmentLines += providedAlignmentLines
-                if (previousAlignmentLines != alignmentLines) {
-                    onAlignmentsChanged()
-                }
+                alignments.recalculate()
             }
             layoutState = Ready
         }
@@ -1059,23 +1021,12 @@ class LayoutNode : Measurable, Remeasurement, OwnerScope, LayoutInfo {
             layoutState = endState
         }
         isCalculatingAlignmentLines = false
-        return alignmentLines
+        return alignmentLines?.getLastCalculation() ?: emptyMap()
     }
 
     internal fun handleMeasureResult(measureResult: MeasureResult) {
         innerLayoutNodeWrapper.measureResult = measureResult
-        this.providedAlignmentLines.clear()
-        this.providedAlignmentLines += measureResult.alignmentLines
-
-        if (onRemeasuredCallbacks.isNotEmpty()) {
-            val invokeRemeasureCallbacks = {
-                val content = innerLayoutNodeWrapper
-                val size = IntSize(content.measuredWidth, content.measuredHeight)
-                onRemeasuredCallbacks.forEach { it.onRemeasured(size) }
-            }
-            owner?.snapshotObserver?.pauseSnapshotReadObservation(invokeRemeasureCallbacks)
-                ?: invokeRemeasureCallbacks.invoke()
-        }
+        providedAlignmentLines = measureResult.alignmentLines
     }
 
     /**
@@ -1096,8 +1047,8 @@ class LayoutNode : Measurable, Remeasurement, OwnerScope, LayoutInfo {
      * Execute your code within the [block] if you want some code to not be observed for the
      * model reads even if you are currently inside some observed scope like measuring.
      */
-    internal fun ignoreModelReads(block: () -> Unit) {
-        requireOwner().snapshotObserver.pauseSnapshotReadObservation(block)
+    internal fun withNoSnapshotReadObservation(block: () -> Unit) {
+        requireOwner().snapshotObserver.withNoSnapshotReadObservation(block)
     }
 
     internal fun dispatchOnPositionedCallbacks() {
@@ -1107,7 +1058,7 @@ class LayoutNode : Measurable, Remeasurement, OwnerScope, LayoutInfo {
         if (!isPlaced) {
             return // it hasn't been placed, so don't make a call
         }
-        onPositionedCallbacks.forEach { it.onGloballyPositioned(coordinates) }
+        onPositionedCallbacks?.forEach { it.onGloballyPositioned(coordinates) }
     }
 
     /**
@@ -1132,6 +1083,7 @@ class LayoutNode : Measurable, Remeasurement, OwnerScope, LayoutInfo {
         forEachDelegate { wrapper ->
             wrapper.layer?.invalidate()
         }
+        innerLayoutNodeWrapper.layer?.invalidate()
     }
 
     /**
@@ -1198,8 +1150,17 @@ class LayoutNode : Measurable, Remeasurement, OwnerScope, LayoutInfo {
         }
 
         modifier.foldIn(Unit) { _, mod ->
-            val wrapper = wrapperCache.firstOrNull { it.modifier === mod }
-            wrapper?.toBeReusedForSameModifier = true
+            var wrapper = wrapperCache.lastOrNull {
+                it.modifier === mod && !it.toBeReusedForSameModifier
+            }
+            // we want to walk up the chain up all LayoutNodeWrappers for the same modifier
+            while (wrapper != null) {
+                wrapper.toBeReusedForSameModifier = true
+                wrapper = if (wrapper.isChained)
+                    wrapper.wrappedBy as? DelegatingLayoutNodeWrapper<*>
+                else
+                    null
+            }
         }
     }
 
@@ -1211,7 +1172,7 @@ class LayoutNode : Measurable, Remeasurement, OwnerScope, LayoutInfo {
      * Return true if the measured size has been changed
      */
     internal fun remeasure(
-        constraints: Constraints = outerMeasurablePlaceable.lastConstraints!!
+        constraints: Constraints = outerMeasurablePlaceable.lastConstraints
     ) = outerMeasurablePlaceable.remeasure(constraints)
 
     override val parentData: Any? get() = outerMeasurablePlaceable.parentData
@@ -1284,12 +1245,11 @@ class LayoutNode : Measurable, Remeasurement, OwnerScope, LayoutInfo {
         get() = parent
 
     internal companion object {
-        private val ErrorMeasureBlocks: NoIntrinsicsMeasureBlocks =
-            object : NoIntrinsicsMeasureBlocks(
+        private val ErrorMeasurePolicy: NoIntrinsicsMeasurePolicy =
+            object : NoIntrinsicsMeasurePolicy(
                 error = "Undefined intrinsics block and it is required"
             ) {
-                override fun measure(
-                    measureScope: MeasureScope,
+                override fun MeasureScope.measure(
                     measurables: List<Measurable>,
                     constraints: Constraints
                 ) = error("Undefined measure and it is required")
@@ -1299,6 +1259,11 @@ class LayoutNode : Measurable, Remeasurement, OwnerScope, LayoutInfo {
          * Constant used by [placeOrder].
          */
         private const val NotPlacedPlaceOrder = Int.MAX_VALUE
+
+        /**
+         * Pre-allocated constructor to be used with ComposeNode
+         */
+        internal val Constructor: () -> LayoutNode = { LayoutNode() }
     }
 
     /**
@@ -1333,20 +1298,6 @@ class LayoutNode : Measurable, Remeasurement, OwnerScope, LayoutInfo {
         InLayoutBlock,
         NotUsed,
     }
-}
-
-/**
- * Object of pre-allocated lambdas used to make emits to LayoutNodes allocation-less.
- */
-@PublishedApi
-internal object LayoutEmitHelper {
-    val constructor: () -> LayoutNode = { LayoutNode() }
-    val setModifier: LayoutNode.(Modifier) -> Unit = { this.modifier = it }
-    val setDensity: LayoutNode.(Density) -> Unit = { this.density = it }
-    val setMeasureBlocks: LayoutNode.(MeasureBlocks) -> Unit =
-        { this.measureBlocks = it }
-    val setRef: LayoutNode.(Ref<LayoutNode>) -> Unit = { it.value = this }
-    val setLayoutDirection: LayoutNode.(LayoutDirection) -> Unit = { this.layoutDirection = it }
 }
 
 /**

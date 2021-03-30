@@ -86,6 +86,11 @@ interface ImageBitmap {
      * be used as a signal to upload textures to the GPU to eventually be rendered
      */
     fun prepareToDraw()
+
+    /**
+     * Provide an empty companion object to hang platform-specific companion extensions onto.
+     */
+    companion object { } // ktlint-disable no-empty-class-body
 }
 
 /**
@@ -226,27 +231,6 @@ internal expect fun ActualImageBitmap(
 ): ImageBitmap
 
 fun ImageBitmap(
-    width: Int,
-    height: Int,
-    config: ImageBitmapConfig = ImageBitmapConfig.Argb8888,
-    hasAlpha: Boolean = true,
-    colorSpace: ColorSpace = ColorSpaces.Srgb
-): ImageBitmap = ActualImageBitmap(
-    width,
-    height,
-    config,
-    hasAlpha,
-    colorSpace
-)
-
-@Deprecated(
-    "Use ImageBitmap instead",
-    ReplaceWith(
-        "ImageBitmap(width, height, config, hasAlpha, colorSpace)",
-        "androidx.compose.ui.graphics"
-    )
-)
-fun ImageAsset(
     width: Int,
     height: Int,
     config: ImageBitmapConfig = ImageBitmapConfig.Argb8888,

@@ -18,12 +18,10 @@ package androidx.compose.foundation
 
 import androidx.compose.runtime.Stable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.semantics.AccessibilityRangeInfo
+import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.stateDescription
-import androidx.compose.ui.semantics.stateDescriptionRange
+import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.util.annotation.IntRange
-import androidx.compose.ui.util.format
 import kotlin.math.roundToInt
 
 /**
@@ -39,12 +37,14 @@ import kotlin.math.roundToInt
  * range
  * @param steps if greater than 0, specifies the amounts of discrete values, evenly distributed
  * between across the whole value range. If 0, any value from the range specified is allowed.
+ * Must not be negative.
  */
 @Stable
 fun Modifier.progressSemantics(
     value: Float,
     valueRange: ClosedFloatingPointRange<Float> = 0f..1f,
-    @IntRange(from = 0) steps: Int = 0
+    /*@IntRange(from = 0)*/
+    steps: Int = 0
 ): Modifier {
     val progress = (
         if (valueRange.endInclusive - valueRange.start == 0f) 0f
@@ -59,9 +59,9 @@ fun Modifier.progressSemantics(
     }
 
     return semantics {
-        stateDescription = Strings.TemplatePercent.format(percent)
-        stateDescriptionRange =
-            AccessibilityRangeInfo(value.coerceIn(valueRange), valueRange, steps)
+        stateDescription = "$percent percent"
+        progressBarRangeInfo =
+            ProgressBarRangeInfo(value.coerceIn(valueRange), valueRange, steps)
     }
 }
 
@@ -77,5 +77,8 @@ fun Modifier.progressSemantics(
  */
 @Stable
 fun Modifier.progressSemantics(): Modifier {
-    return semantics { stateDescription = Strings.InProgress }
+    return semantics {
+        stateDescription = Strings.InProgress
+        progressBarRangeInfo = ProgressBarRangeInfo.Indeterminate
+    }
 }

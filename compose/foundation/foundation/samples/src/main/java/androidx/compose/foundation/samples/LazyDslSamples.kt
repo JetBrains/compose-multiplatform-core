@@ -19,10 +19,13 @@ package androidx.compose.foundation.samples
 import androidx.annotation.Sampled
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -77,7 +80,7 @@ fun LazyRowSample() {
 fun StickyHeaderSample() {
     val sections = listOf("A", "B", "C", "D", "E", "F", "G")
 
-    LazyColumn {
+    LazyColumn(reverseLayout = true, contentPadding = PaddingValues(6.dp)) {
         sections.forEach { section ->
             stickyHeader {
                 Text(
@@ -85,7 +88,7 @@ fun StickyHeaderSample() {
                     Modifier.fillMaxWidth().background(Color.LightGray).padding(8.dp)
                 )
             }
-            items((0..9).toList()) {
+            items(10) {
                 Text("Item $it from the section $section")
             }
         }

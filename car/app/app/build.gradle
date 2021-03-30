@@ -16,6 +16,7 @@
 
 import androidx.build.LibraryGroups
 import androidx.build.LibraryType
+import androidx.build.LibraryVersions
 
 import static androidx.build.dependencies.DependenciesKt.*
 
@@ -25,11 +26,16 @@ plugins {
 }
 
 dependencies {
-    implementation "androidx.activity:activity:1.1.0"
-    implementation "androidx.annotation:annotation:1.1.0"
-    implementation "androidx.core:core:1.3.0"
-    implementation "androidx.lifecycle:lifecycle-viewmodel:2.2.0"
-    implementation "androidx.lifecycle:lifecycle-common-java8:2.2.0"
+    implementation("androidx.activity:activity:1.1.0")
+    implementation("androidx.annotation:annotation:1.2.0-rc01")
+    implementation("androidx.core:core:1.3.0")
+    implementation("androidx.lifecycle:lifecycle-viewmodel:2.2.0")
+    // Session and Screen both implement LifeCycleOwner so this needs to be exposed.
+    api("androidx.lifecycle:lifecycle-common-java8:2.2.0")
+    implementation("androidx.annotation:annotation-experimental:1.1.0-rc01")
+    compileOnly KOTLIN_STDLIB // Due to :annotation-experimental
+
+    annotationProcessor(NULLAWAY)
 
     // TODO(shiufai): We need this for assertThrows. Point back to the AndroidX shared version if
     // it is ever upgraded.
@@ -40,11 +46,12 @@ dependencies {
     testImplementation(MOCKITO_CORE)
     testImplementation(ROBOLECTRIC)
     testImplementation(TRUTH)
+    testImplementation project(path: ':car:app:app-testing')
 }
 
 android {
     defaultConfig {
-        minSdkVersion 21
+        minSdkVersion 23
         multiDexEnabled = true
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -56,7 +63,7 @@ android {
         aidl = true
     }
     buildTypes.all {
-        consumerProguardFiles 'proguard-rules.pro'
+        consumerProguardFiles "proguard-rules.pro"
     }
 
     testOptions.unitTests.includeAndroidResources = true

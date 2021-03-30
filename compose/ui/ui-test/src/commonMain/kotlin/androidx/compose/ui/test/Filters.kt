@@ -16,7 +16,7 @@
 
 package androidx.compose.ui.test
 
-import androidx.compose.ui.semantics.AccessibilityRangeInfo
+import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.semantics.SemanticsProperties
@@ -159,53 +159,69 @@ fun hasNoScrollAction(): SemanticsMatcher =
  * Returns whether the node's label matches exactly to the given text.
  *
  * @param label Text to match.
+ * @param substring Whether to use substring matching.
  * @param ignoreCase Whether case should be ignored.
  *
  * @see SemanticsProperties.ContentDescription
  */
-fun hasContentDescription(label: String, ignoreCase: Boolean = false): SemanticsMatcher {
-    return SemanticsMatcher(
-        "${SemanticsProperties.ContentDescription.name} = '$label' (ignoreCase: $ignoreCase)"
-    ) {
-        it.config.getOrNull(SemanticsProperties.ContentDescription).equals(label, ignoreCase)
+fun hasContentDescription(
+    label: String,
+    substring: Boolean = false,
+    ignoreCase: Boolean = false
+): SemanticsMatcher {
+    return if (substring) {
+        SemanticsMatcher(
+            "${SemanticsProperties.ContentDescription.name} contains '$label' " +
+                "(ignoreCase: $ignoreCase)"
+        ) {
+            it.config.getOrNull(SemanticsProperties.ContentDescription)?.contains(label, ignoreCase)
+                ?: false
+        }
+    } else {
+        SemanticsMatcher(
+            "${SemanticsProperties.ContentDescription.name} = '$label' (ignoreCase: $ignoreCase)"
+        ) {
+            it.config.getOrNull(SemanticsProperties.ContentDescription).equals(label, ignoreCase)
+        }
     }
 }
 
 /**
  * Returns whether the node's text matches exactly to the given text.
  *
+ * In case of text field it will compare the given [text] with the input text and other texts like
+ * label or placeholder.
+ *
  * @param text Text to match.
+ * @param substring Whether to use substring matching.
  * @param ignoreCase Whether case should be ignored.
  *
- * @see hasSubstring
  * @see SemanticsProperties.Text
+ * @see SemanticsProperties.EditableText
  */
-fun hasText(text: String, ignoreCase: Boolean = false): SemanticsMatcher {
-    return SemanticsMatcher(
-        "${SemanticsProperties.Text.name} = '$text' (ignoreCase: $ignoreCase)"
-    ) {
-        it.config.getOrNull(SemanticsProperties.Text)?.text.equals(text, ignoreCase)
-    }
-}
-
-/**
- * Returns whether the node's text contains the given substring.
- *
- * @param substring Substring to check.
- * @param ignoreCase Whether case should be ignored.
- *
- * @see hasText
- * @see SemanticsProperties.Text
- */
-fun hasSubstring(substring: String, ignoreCase: Boolean = false):
-    SemanticsMatcher {
-        return SemanticsMatcher(
-            "${SemanticsProperties.Text.name}.contains($substring, $ignoreCase)"
+fun hasText(
+    text: String,
+    substring: Boolean = false,
+    ignoreCase: Boolean = false
+): SemanticsMatcher {
+    return if (substring) {
+        SemanticsMatcher(
+            "${SemanticsProperties.Text.name} contains '$text' (ignoreCase: $ignoreCase)"
         ) {
-            it.config.getOrNull(SemanticsProperties.Text)?.text?.contains(substring, ignoreCase)
-                ?: false
+            val editableTextValue = it.config.getOrNull(SemanticsProperties.EditableText)?.text
+            val textValue = it.config.getOrNull(SemanticsProperties.Text)?.text
+            (editableTextValue?.contains(text, ignoreCase) == true) or
+                (textValue?.contains(text, ignoreCase) == true)
+        }
+    } else {
+        SemanticsMatcher(
+            "${SemanticsProperties.Text.name} = '$text' (ignoreCase: $ignoreCase)"
+        ) {
+            it.config.getOrNull(SemanticsProperties.EditableText)?.text.equals(text, ignoreCase) or
+                it.config.getOrNull(SemanticsProperties.Text)?.text.equals(text, ignoreCase)
         }
     }
+}
 
 /**
  * Returns whether the node's value matches exactly to the given accessibility value.
@@ -214,19 +230,27 @@ fun hasSubstring(substring: String, ignoreCase: Boolean = false):
  *
  * @see SemanticsProperties.StateDescription
  */
-fun hasValue(value: String): SemanticsMatcher = SemanticsMatcher.expectValue(
+fun hasStateDescription(value: String): SemanticsMatcher = SemanticsMatcher.expectValue(
     SemanticsProperties.StateDescription, value
 )
+
+/**
+ * Returns whether the node is marked as an accessibility header.
+ *
+ * @see SemanticsProperties.Heading
+ */
+fun isHeading(): SemanticsMatcher =
+    SemanticsMatcher.keyIsDefined(SemanticsProperties.Heading)
 
 /**
  * Returns whether the node's range info matches exactly to the given accessibility range info.
  *
  * @param rangeInfo range info to match.
  *
- * @see SemanticsProperties.AccessibilityRangeInfo
+ * @see SemanticsProperties.ProgressBarRangeInfo
  */
-fun hasRangeInfo(rangeInfo: AccessibilityRangeInfo): SemanticsMatcher = SemanticsMatcher
-    .expectValue(SemanticsProperties.AccessibilityRangeInfo, rangeInfo)
+fun hasProgressBarRangeInfo(rangeInfo: ProgressBarRangeInfo): SemanticsMatcher = SemanticsMatcher
+    .expectValue(SemanticsProperties.ProgressBarRangeInfo, rangeInfo)
 
 /**
  * Returns whether the node is annotated by the given test tag.
@@ -237,39 +261,6 @@ fun hasRangeInfo(rangeInfo: AccessibilityRangeInfo): SemanticsMatcher = Semantic
  */
 fun hasTestTag(testTag: String): SemanticsMatcher =
     SemanticsMatcher.expectValue(SemanticsProperties.TestTag, testTag)
-
-/**
- * Verifies that the node is in a mutually exclusive group.
- *
- * @Deprecated Replaced with androidx.compose.ui.test.isSelectable
- */
-@Deprecated(
-    "Replaced with androidx.compose.ui.test.isSelectable",
-    ReplaceWith("isSelectable()", "androidx.compose.ui.test")
-)
-fun isInMutuallyExclusiveGroup(): SemanticsMatcher = isSelectable()
-
-/**
- * Returns whether the node is hidden. A hidden node is a node that is not visible for
- * accessibility. It will still be shown, but it will be skipped by accessibility services.
- *
- * This checks only the property of the node itself. Ignoring parents visibility.
- *
- * @see SemanticsProperties.Hidden
- */
-fun isHidden(): SemanticsMatcher =
-    SemanticsMatcher.keyIsDefined(SemanticsProperties.Hidden)
-
-/**
- * Returns whether the node is not hidden. A hidden node is a node that is not visible for
- * accessibility. It will still be shown, but it will be skipped by accessibility services.
- *
- * This checks only the property of the node itself. Ignoring parents visibility.
- *
- * @see SemanticsProperties.Hidden
- */
-fun isNotHidden(): SemanticsMatcher =
-    !SemanticsMatcher.keyIsDefined(SemanticsProperties.Hidden)
 
 /**
  * Returns whether the node is a dialog.
@@ -299,22 +290,6 @@ fun isPopup(): SemanticsMatcher =
  */
 fun hasImeAction(actionType: ImeAction) =
     SemanticsMatcher.expectValue(SemanticsProperties.ImeAction, actionType)
-
-/**
- * Return whether the node supports input methods.
- *
- * Supporting input methods means that the node provides a connection to IME (keyboard) and is
- * able to accept input from it. This is however not enforced and relies on the nodes to
- * properly add this to semantics when they provide input. Note that this is not related to
- * gestures input but only to IME. This can be used to for instance filter out all text fields.
- *
- * @Deprecated Replaced with androidx.compose.ui.test.hasSetTextAction
- */
-@Deprecated(
-    "Replaced with androidx.compose.ui.test.hasSetTextAction",
-    ReplaceWith("hasSetTextAction()", "androidx.compose.ui.test")
-)
-fun hasInputMethodsSupport() = hasSetTextAction()
 
 /**
  * Returns whether the node defines semantics action to set text to it.
@@ -429,6 +404,7 @@ internal val SemanticsNode.ancestors: Iterable<SemanticsNode>
                 override fun hasNext(): Boolean {
                     return next != null
                 }
+
                 override fun next(): SemanticsNode {
                     return next!!.also { next = it.parent }
                 }

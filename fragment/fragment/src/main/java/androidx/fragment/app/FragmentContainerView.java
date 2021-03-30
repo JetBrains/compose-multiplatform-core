@@ -175,6 +175,7 @@ public final class FragmentContainerView extends FrameLayout {
                     .add(this, containerFragment, tag)
                     .commitNowAllowingStateLoss();
         }
+        fm.onContainerAvailable(this);
     }
 
     /**
@@ -369,8 +370,7 @@ public final class FragmentContainerView extends FrameLayout {
      * @param v {@link View} that might be added to list of disappearing views
      */
     private void addDisappearingFragmentView(@NonNull View v) {
-        if (v.getAnimation() != null && (mTransitioningFragmentViews != null
-                && mTransitioningFragmentViews.contains(v))) {
+        if (mTransitioningFragmentViews != null && mTransitioningFragmentViews.contains(v)) {
             if (mDisappearingFragmentChildren == null) {
                 mDisappearingFragmentChildren = new ArrayList<>();
             }

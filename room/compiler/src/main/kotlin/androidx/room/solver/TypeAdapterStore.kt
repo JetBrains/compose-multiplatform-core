@@ -18,10 +18,14 @@ package androidx.room.solver
 
 import androidx.room.compiler.processing.XType
 import androidx.room.compiler.processing.isArray
+import androidx.room.compiler.processing.isEnum
 import androidx.room.ext.CommonTypeNames
 import androidx.room.ext.GuavaBaseTypeNames
 import androidx.room.ext.isEntityElement
 import androidx.room.ext.isNotByte
+import androidx.room.ext.isNotKotlinUnit
+import androidx.room.ext.isNotVoid
+import androidx.room.ext.isNotVoidObject
 import androidx.room.parser.ParsedQuery
 import androidx.room.parser.SQLTypeAffinity
 import androidx.room.processor.Context
@@ -346,8 +350,9 @@ class TypeAdapterStore private constructor(
     }
 
     private fun createEnumTypeAdapter(type: XType): ColumnTypeAdapter? {
-        if (type.isEnum()) {
-            return EnumColumnTypeAdapter(type)
+        val typeElement = type.typeElement ?: return null
+        if (typeElement.isEnum()) {
+            return EnumColumnTypeAdapter(typeElement)
         }
         return null
     }
@@ -425,21 +430,37 @@ class TypeAdapterStore private constructor(
                 // Handle Guava Optional by unpacking its generic type argument and adapting that.
                 // The Optional adapter will reappend the Optional type.
                 val typeArg = typeMirror.typeArguments.first()
-                val rowAdapter = findRowAdapter(typeArg, query) ?: return null
-                return GuavaOptionalQueryResultAdapter(SingleEntityQueryResultAdapter(rowAdapter))
+                // use nullable when finding row adapter as non-null adapters might return
+                // default values
+                val rowAdapter = findRowAdapter(typeArg.makeNullable(), query) ?: return null
+                return GuavaOptionalQueryResultAdapter(
+                    typeArg = typeArg,
+                    resultAdapter = SingleEntityQueryResultAdapter(rowAdapter)
+                )
             } else if (typeMirror.rawType.typeName == CommonTypeNames.OPTIONAL) {
                 // Handle java.util.Optional similarly.
                 val typeArg = typeMirror.typeArguments.first()
-                val rowAdapter = findRowAdapter(typeArg, query) ?: return null
-                return OptionalQueryResultAdapter(SingleEntityQueryResultAdapter(rowAdapter))
+                // use nullable when finding row adapter as non-null adapters might return
+                // default values
+                val rowAdapter = findRowAdapter(typeArg.makeNullable(), query) ?: return null
+                return OptionalQueryResultAdapter(
+                    typeArg = typeArg,
+                    resultAdapter = SingleEntityQueryResultAdapter(rowAdapter)
+                )
             } else if (typeMirror.isTypeOf(ImmutableList::class)) {
                 val typeArg = typeMirror.typeArguments.first().extendsBoundOrSelf()
                 val rowAdapter = findRowAdapter(typeArg, query) ?: return null
-                return ImmutableListQueryResultAdapter(rowAdapter)
+                return ImmutableListQueryResultAdapter(
+                    typeArg = typeArg,
+                    rowAdapter = rowAdapter
+                )
             } else if (typeMirror.isTypeOf(java.util.List::class)) {
                 val typeArg = typeMirror.typeArguments.first().extendsBoundOrSelf()
                 val rowAdapter = findRowAdapter(typeArg, query) ?: return null
-                return ListQueryResultAdapter(rowAdapter)
+                return ListQueryResultAdapter(
+                    typeArg = typeArg,
+                    rowAdapter = rowAdapter
+                )
             }
             return null
         }
@@ -514,9 +535,14 @@ class TypeAdapterStore private constructor(
                 rowAdapterLogs?.writeTo(context)
                 return rowAdapter
             }
-            if (query.runtimeQueryPlaceholder) {
-                // just go w/ pojo and hope for the best. this happens for @RawQuery where we
-                // try to guess user's intention and hope that their query fits the result.
+
+            // use pojo adapter as a last resort.
+            // this happens when @RawQuery or @SkipVerification is used.
+            if (query.resultInfo == null &&
+                typeMirror.isNotVoid() &&
+                typeMirror.isNotVoidObject() &&
+                typeMirror.isNotKotlinUnit()
+            ) {
                 val pojo = PojoProcessor.createFor(
                     context = context,
                     element = typeElement,

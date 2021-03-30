@@ -19,15 +19,14 @@ import androidx.compose.ui.input.pointer.AwaitPointerEventScope
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.PointerInputScope
 import androidx.compose.ui.util.fastAny
-import kotlinx.coroutines.InternalCoroutinesApi
-import kotlinx.coroutines.NonCancellable.isActive
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.isActive
 import kotlin.coroutines.cancellation.CancellationException
 
 /**
  * A gesture was canceled and cannot continue, likely because another gesture has taken
  * over the pointer input stream.
  */
-@OptIn(ExperimentalStdlibApi::class)
 class GestureCancellationException(message: String? = null) : CancellationException(message)
 
 /**
@@ -35,9 +34,9 @@ class GestureCancellationException(message: String? = null) : CancellationExcept
  * it will wait until all pointers are raised before another gesture is detected, or it
  * exits if [isActive] is `false`.
  */
-@OptIn(InternalCoroutinesApi::class, ExperimentalStdlibApi::class)
 suspend fun PointerInputScope.forEachGesture(block: suspend PointerInputScope.() -> Unit) {
-    while (isActive) {
+    val currentContext = currentCoroutineContext()
+    while (currentContext.isActive) {
         try {
             block()
 
@@ -45,7 +44,7 @@ suspend fun PointerInputScope.forEachGesture(block: suspend PointerInputScope.()
             awaitAllPointersUp()
         } catch (e: CancellationException) {
             // The gesture was canceled. Wait for all fingers to be "up" before looping again.
-            if (isActive) {
+            if (currentContext.isActive) {
                 awaitAllPointersUp()
                 throw e
             }
@@ -58,7 +57,7 @@ suspend fun PointerInputScope.forEachGesture(block: suspend PointerInputScope.()
  * if any of the pointers are down.
  */
 internal fun AwaitPointerEventScope.allPointersUp(): Boolean =
-    !currentEvent.changes.fastAny { it.current.down }
+    !currentEvent.changes.fastAny { it.pressed }
 
 /**
  * Waits for all pointers to be up before returning.
@@ -74,6 +73,6 @@ internal suspend fun AwaitPointerEventScope.awaitAllPointersUp() {
     if (!allPointersUp()) {
         do {
             val events = awaitPointerEvent(PointerEventPass.Final)
-        } while (events.changes.fastAny { it.current.down })
+        } while (events.changes.fastAny { it.pressed })
     }
 }

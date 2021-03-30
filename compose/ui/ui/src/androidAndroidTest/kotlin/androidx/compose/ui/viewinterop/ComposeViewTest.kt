@@ -17,6 +17,7 @@
 package androidx.compose.ui.viewinterop
 
 import android.content.Context
+import android.view.ContextThemeWrapper
 import android.view.View
 import android.view.ViewGroup
 import android.view.ViewTreeObserver
@@ -27,12 +28,13 @@ import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.layout.globalBounds
+import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.AbstractComposeView
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.test.R
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -228,7 +230,7 @@ class ComposeViewTest {
                     Modifier.testTag("box").fillMaxSize().onGloballyPositioned {
                         val position = IntArray(2)
                         composeView.getLocationOnScreen(position)
-                        globalBounds = it.globalBounds.translate(
+                        globalBounds = it.boundsInWindow().translate(
                             -position[0].toFloat(), -position[1].toFloat()
                         )
                         latch.countDown()
@@ -299,6 +301,30 @@ class ComposeViewTest {
                 }
             }
         }
+    }
+
+    /**
+     * Regression test for https://issuetracker.google.com/issues/181463117
+     * Ensures that [ComposeView] can be constructed and attached a window even if View calls
+     * [View.onRtlPropertiesChanged] in its constructor before subclass constructors run.
+     * (AndroidComposeView is sensitive to this.)
+     */
+    @Test
+    @SmallTest
+    fun onRtlPropertiesChangedCalledByViewConstructor() {
+        var result: Result<Unit>? = null
+        rule.activityRule.scenario.onActivity { activity ->
+            result = runCatching {
+                activity.setContentView(
+                    ComposeView(
+                        ContextThemeWrapper(activity, R.style.Theme_WithScrollbarAttrSet)
+                    ).apply {
+                        setContent {}
+                    }
+                )
+            }
+        }
+        assertNotNull("test did not run", result?.getOrThrow())
     }
 }
 

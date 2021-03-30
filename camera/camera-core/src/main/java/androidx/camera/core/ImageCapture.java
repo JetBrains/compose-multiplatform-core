@@ -39,6 +39,7 @@ import static androidx.camera.core.impl.ImageCaptureConfig.OPTION_TARGET_ROTATIO
 import static androidx.camera.core.impl.ImageCaptureConfig.OPTION_USE_CASE_EVENT_CALLBACK;
 import static androidx.camera.core.impl.ImageCaptureConfig.OPTION_USE_SOFTWARE_JPEG_ENCODER;
 import static androidx.camera.core.impl.ImageInputConfig.OPTION_INPUT_FORMAT;
+import static androidx.camera.core.impl.UseCaseConfig.OPTION_ATTACHED_USE_CASES_UPDATE_LISTENER;
 import static androidx.camera.core.impl.UseCaseConfig.OPTION_CAMERA_SELECTOR;
 import static androidx.camera.core.internal.utils.ImageUtil.min;
 import static androidx.camera.core.internal.utils.ImageUtil.sizeToVertexes;
@@ -116,6 +117,7 @@ import androidx.camera.core.internal.compat.quirk.SoftwareJpegEncodingPreferredQ
 import androidx.camera.core.internal.compat.workaround.ExifRotationAvailability;
 import androidx.camera.core.internal.utils.ImageUtil;
 import androidx.concurrent.futures.CallbackToFutureAdapter;
+import androidx.core.util.Consumer;
 import androidx.core.util.Preconditions;
 
 import com.google.common.util.concurrent.ListenableFuture;
@@ -129,6 +131,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.nio.ByteBuffer;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Deque;
 import java.util.HashSet;
 import java.util.List;
@@ -369,17 +372,26 @@ public final class ImageCapture extends UseCase {
         } else if (mCaptureProcessor != null || mUseSoftwareJpeg) {
             // Capture processor set from configuration takes precedence over software JPEG.
             YuvToJpegProcessor softwareJpegProcessor = null;
+            CaptureProcessorPipeline captureProcessorPipeline = null;
             CaptureProcessor captureProcessor = mCaptureProcessor;
             int inputFormat = getImageFormat();
             int outputFormat = getImageFormat();
             if (mUseSoftwareJpeg) {
-                Preconditions.checkState(mCaptureProcessor == null, "CaptureProcessor should not "
-                        + "be set if software JPEG is to be used.");
                 // API check to satisfy linter
                 if (Build.VERSION.SDK_INT >= 26) {
                     Logger.i(TAG, "Using software JPEG encoder.");
-                    captureProcessor = softwareJpegProcessor =
-                            new YuvToJpegProcessor(getJpegQuality(), mMaxCaptureStages);
+
+                    if (mCaptureProcessor != null) {
+                        softwareJpegProcessor = new YuvToJpegProcessor(getJpegQuality(),
+                                mMaxCaptureStages);
+                        captureProcessor = captureProcessorPipeline = new CaptureProcessorPipeline(
+                                mCaptureProcessor, mMaxCaptureStages, softwareJpegProcessor,
+                                mExecutor);
+                    } else {
+                        captureProcessor = softwareJpegProcessor =
+                                new YuvToJpegProcessor(getJpegQuality(), mMaxCaptureStages);
+                    }
+
                     outputFormat = ImageFormat.JPEG;
                 } else {
                     // Note: This should never be hit due to SDK_INT check before setting
@@ -405,10 +417,12 @@ public final class ImageCapture extends UseCase {
                 // Close the JPEG processor once ProcessingImageReader is done.
                 // Processor is assigned to an effectively final variable here for the lambda.
                 YuvToJpegProcessor processorToClose = softwareJpegProcessor;
+                CaptureProcessorPipeline captureProcessorPipelineToClose = captureProcessorPipeline;
                 mProcessingImageReader.getCloseFuture().addListener(() -> {
                     // API check to satisfy linter
                     if (Build.VERSION.SDK_INT >= 26) {
                         processorToClose.close();
+                        captureProcessorPipelineToClose.close();
                     }
                 }, CameraXExecutors.directExecutor());
             }
@@ -509,9 +523,16 @@ public final class ImageCapture extends UseCase {
     @Override
     UseCaseConfig<?> onMergeConfig(@NonNull CameraInfoInternal cameraInfo,
             @NonNull UseCaseConfig.Builder<?, ?, ?> builder) {
-        // Request software JPEG encoder if quirk exists on this device and the software JPEG
-        // option has not already been explicitly set.
-        if (cameraInfo.getCameraQuirks().contains(SoftwareJpegEncodingPreferredQuirk.class)) {
+        if (builder.getUseCaseConfig().retrieveOption(OPTION_CAPTURE_PROCESSOR, null)
+                != null && Build.VERSION.SDK_INT >= 29) {
+            // TODO: The API level check can be removed if the ImageWriterCompat issue on API
+            //  level 28 devices (b182363220/) can be resolved.
+            Logger.i(TAG, "Requesting software JPEG due to a CaptureProcessor is set.");
+            builder.getMutableConfig().insertOption(OPTION_USE_SOFTWARE_JPEG_ENCODER, true);
+        } else if (cameraInfo.getCameraQuirks().contains(
+                SoftwareJpegEncodingPreferredQuirk.class)) {
+            // Request software JPEG encoder if quirk exists on this device and the software JPEG
+            // option has not already been explicitly set.
             if (!builder.getMutableConfig().retrieveOption(OPTION_USE_SOFTWARE_JPEG_ENCODER,
                     true)) {
                 Logger.w(TAG, "Device quirk suggests software JPEG encoder, but it has been "
@@ -767,22 +788,6 @@ public final class ImageCapture extends UseCase {
      * set, or {@link #setCropAspectRatio} is used, the image may be cropped before saving to
      * disk which causes an additional latency.
      *
-     * <p> Before triggering the image capture pipeline, if the save location is a {@link File} or
-     * {@link MediaStore}, it is first verified to ensure it's valid and writable. A {@link File}
-     * is verified by attempting to open a {@link java.io.FileOutputStream} to it, whereas a
-     * location in {@link MediaStore} is validated by
-     * {@linkplain ContentResolver#insert(Uri, ContentValues) creating a new row} in the user
-     * defined table, retrieving a {@link Uri} pointing to it, then attempting to open an
-     * {@link OutputStream} to it. The newly created row is
-     * {@linkplain ContentResolver#delete(Uri, String, String[]) deleted}
-     * at the end of the verification. On Huawei devices, this deletion results in the system
-     * displaying a notification informing the user that a photo has been deleted. In order to
-     * avoid this, validating the image capture save location in
-     * {@link android.provider.MediaStore} is skipped on Huawei devices.
-     *
-     * <p> If the validation of the save location fails, {@link OnImageSavedCallback}'s error
-     * callback is invoked with an {@link ImageCaptureException}.
-     *
      * @param outputFileOptions  Options to store the newly captured image.
      * @param executor           The executor in which the callback methods will be run.
      * @param imageSavedCallback Callback to be called for the newly captured image.
@@ -792,30 +797,11 @@ public final class ImageCapture extends UseCase {
             final @NonNull OutputFileOptions outputFileOptions,
             final @NonNull Executor executor,
             final @NonNull OnImageSavedCallback imageSavedCallback) {
-        mSequentialIoExecutor.execute(() -> {
-            if (!ImageSaveLocationValidator.isValid(outputFileOptions)) {
-                // Check whether the captured image can be saved. If it cannot, fail fast and
-                // notify user.
-                executor.execute(() -> imageSavedCallback.onError(
-                        new ImageCaptureException(ERROR_FILE_IO,
-                                "Cannot save capture result to specified location", null)));
-            } else {
-                CameraXExecutors.mainThreadExecutor().execute(
-                        () -> takePictureAfterValidation(outputFileOptions, executor,
-                                imageSavedCallback));
-            }
-        });
-    }
-
-    /**
-     * Takes picture after the output file options is validated.
-     */
-    @UiThread
-    private void takePictureAfterValidation(
-            final @NonNull OutputFileOptions outputFileOptions,
-            final @NonNull Executor executor,
-            final @NonNull OnImageSavedCallback imageSavedCallback) {
-        Threads.checkMainThread();
+        if (Looper.getMainLooper() != Looper.myLooper()) {
+            CameraXExecutors.mainThreadExecutor().execute(
+                    () -> takePicture(outputFileOptions, executor, imageSavedCallback));
+            return;
+        }
         /*
          * We need to chain the following callbacks to save the image to disk:
          *
@@ -1240,11 +1226,6 @@ public final class ImageCapture extends UseCase {
                 supported = false;
             }
 
-            if (mutableConfig.retrieveOption(OPTION_CAPTURE_PROCESSOR, null) != null) {
-                Logger.w(TAG, "CaptureProcessor is set, unable to use software JPEG.");
-                supported = false;
-            }
-
             if (!supported) {
                 Logger.w(TAG, "Unable to support software JPEG. Disabling.");
                 mutableConfig.insertOption(OPTION_USE_SOFTWARE_JPEG_ENCODER, false);
@@ -1523,19 +1504,17 @@ public final class ImageCapture extends UseCase {
         if (mProcessingImageReader != null) {
             // If the Processor is provided, check if we have valid CaptureBundle and update
             // ProcessingImageReader before actually issuing a take picture request.
-            if (mUseSoftwareJpeg) {
-                captureBundle = getCaptureBundle(CaptureBundles.singleDefaultCaptureBundle());
-                if (captureBundle.getCaptureStages().size() > 1) {
-                    return Futures.immediateFailedFuture(new IllegalArgumentException(
-                            "Software JPEG not supported with CaptureBundle size > 1."));
-                }
-            } else {
-                captureBundle = getCaptureBundle(null);
-            }
+            captureBundle = getCaptureBundle(CaptureBundles.singleDefaultCaptureBundle());
 
             if (captureBundle == null) {
                 return Futures.immediateFailedFuture(new IllegalArgumentException(
                         "ImageCapture cannot set empty CaptureBundle."));
+            }
+
+            if (mCaptureProcessor == null && captureBundle.getCaptureStages().size() > 1) {
+                return Futures.immediateFailedFuture(new IllegalArgumentException(
+                        "No CaptureProcessor can be found to process the images captured for "
+                                + "multiple CaptureStages."));
             }
 
             if (captureBundle.getCaptureStages().size() > mMaxCaptureStages) {
@@ -2404,6 +2383,7 @@ public final class ImageCapture extends UseCase {
     }
 
     /** Builder for an {@link ImageCapture}. */
+    @SuppressWarnings("ObjectToString")
     public static final class Builder implements
             UseCaseConfig.Builder<ImageCapture, ImageCaptureConfig, Builder>,
             ImageOutputConfig.Builder<Builder>,
@@ -2929,6 +2909,17 @@ public final class ImageCapture extends UseCase {
         public Builder setUseCaseEventCallback(
                 @NonNull UseCase.EventCallback useCaseEventCallback) {
             getMutableConfig().insertOption(OPTION_USE_CASE_EVENT_CALLBACK, useCaseEventCallback);
+            return this;
+        }
+
+        /** @hide */
+        @RestrictTo(Scope.LIBRARY_GROUP)
+        @Override
+        @NonNull
+        public Builder setAttachedUseCasesUpdateListener(
+                @NonNull Consumer<Collection<UseCase>> attachedUseCasesUpdateListener) {
+            getMutableConfig().insertOption(OPTION_ATTACHED_USE_CASES_UPDATE_LISTENER,
+                    attachedUseCasesUpdateListener);
             return this;
         }
     }

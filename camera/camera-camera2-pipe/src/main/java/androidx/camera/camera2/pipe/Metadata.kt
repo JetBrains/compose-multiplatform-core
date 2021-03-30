@@ -16,11 +16,9 @@
 
 package androidx.camera.camera2.pipe
 
-import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CaptureRequest
 import android.hardware.camera2.CaptureResult
 import android.hardware.camera2.TotalCaptureResult
-import android.hardware.camera2.params.StreamConfigurationMap
 import android.view.Surface
 
 /**
@@ -59,29 +57,6 @@ public interface Metadata {
             return name
         }
     }
-}
-
-/**
- * CameraMetadata is a wrapper around [CameraCharacteristics].
- *
- * In some cases the properties on this interface will provide faster or more backwards compatible
- * access to features that are only available on newer versions of the OS.
- */
-public interface CameraMetadata : Metadata, UnsafeWrapper<CameraCharacteristics> {
-    public operator fun <T> get(key: CameraCharacteristics.Key<T>): T?
-    public fun <T> getOrDefault(key: CameraCharacteristics.Key<T>, default: T): T
-
-    public val camera: CameraId
-    public val isRedacted: Boolean
-
-    public val keys: Set<CameraCharacteristics.Key<*>>
-    public val requestKeys: Set<CaptureRequest.Key<*>>
-    public val resultKeys: Set<CaptureResult.Key<*>>
-    public val sessionKeys: Set<CaptureRequest.Key<*>>
-    public val physicalCameraIds: Set<CameraId>
-    public val physicalRequestKeys: Set<CaptureRequest.Key<*>>
-
-    public val streamMap: StreamConfigurationMap
 }
 
 /**
@@ -234,7 +209,7 @@ public inline class CameraTimestamp(public val value: Long)
 /**
  * Utility function to help deal with the unsafe nature of the typed Key/Value pairs.
  */
-public fun CaptureRequest.Builder.writeParameters(parameters: Map<*, Any>) {
+public fun CaptureRequest.Builder.writeParameters(parameters: Map<*, Any?>) {
     for ((key, value) in parameters) {
         writeParameter(key, value)
     }
@@ -243,7 +218,7 @@ public fun CaptureRequest.Builder.writeParameters(parameters: Map<*, Any>) {
 /**
  * Utility function to help deal with the unsafe nature of the typed Key/Value pairs.
  */
-public fun CaptureRequest.Builder.writeParameter(key: Any?, value: Any) {
+public fun CaptureRequest.Builder.writeParameter(key: Any?, value: Any?) {
     if (key != null && key is CaptureRequest.Key<*>) {
         @Suppress("UNCHECKED_CAST")
         this.set(key as CaptureRequest.Key<Any>, value)

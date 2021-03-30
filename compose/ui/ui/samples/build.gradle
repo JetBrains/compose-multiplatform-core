@@ -15,9 +15,7 @@
  */
 
 import androidx.build.LibraryGroups
-import androidx.build.LibraryVersions
 import androidx.build.LibraryType
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 import static androidx.build.dependencies.DependenciesKt.*
 
@@ -29,24 +27,16 @@ plugins {
 }
 
 dependencies {
-    kotlinPlugin project(":compose:compiler:compiler")
+    kotlinPlugin(project(":compose:compiler:compiler"))
 
     implementation(KOTLIN_STDLIB)
 
-    compileOnly project(":annotation:annotation-sampled")
+    compileOnly(project(":annotation:annotation-sampled"))
 
-    implementation project(":compose:foundation:foundation-layout")
-    implementation project(":compose:material:material")
-    implementation project(":compose:runtime:runtime")
-    implementation project(":compose:ui:ui")
-}
-
-android {
-    tasks.withType(KotlinCompile).configureEach {
-        kotlinOptions {
-            useIR = true
-        }
-    }
+    implementation(project(":compose:foundation:foundation-layout"))
+    implementation(project(":compose:material:material"))
+    implementation(project(":compose:runtime:runtime"))
+    implementation(project(":compose:ui:ui"))
 }
 
 androidx {

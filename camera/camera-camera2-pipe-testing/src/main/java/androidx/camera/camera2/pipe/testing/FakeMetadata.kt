@@ -22,7 +22,6 @@ import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CaptureRequest
 import android.hardware.camera2.CaptureResult
 import android.hardware.camera2.TotalCaptureResult
-import android.hardware.camera2.params.StreamConfigurationMap
 import android.view.Surface
 import androidx.camera.camera2.pipe.CameraId
 import androidx.camera.camera2.pipe.CameraMetadata
@@ -35,6 +34,17 @@ import androidx.camera.camera2.pipe.RequestNumber
 import androidx.camera.camera2.pipe.RequestTemplate
 import androidx.camera.camera2.pipe.FrameMetadata
 import androidx.camera.camera2.pipe.StreamId
+import kotlinx.atomicfu.atomic
+
+private val fakeCameraIds = atomic(0)
+internal fun nextCameraId(): CameraId = CameraId("FakeCamera-${fakeCameraIds.incrementAndGet()}")
+
+private val fakeRequestNumbers = atomic(0L)
+internal fun nextRequestNumber(): RequestNumber =
+    RequestNumber(fakeRequestNumbers.incrementAndGet())
+
+private val fakeFrameNumbers = atomic(0L)
+internal fun nextFrameNumber(): FrameNumber = FrameNumber(fakeFrameNumbers.incrementAndGet())
 
 /**
  * Utility class for interacting with objects that require pre-populated Metadata.
@@ -43,6 +53,7 @@ public open class FakeMetadata(metadata: Map<Metadata.Key<*>, Any?> = emptyMap()
     public companion object {
         @JvmField
         public val TEST_KEY: Metadata.Key<Int> = Metadata.Key.create("test.key")
+
         @JvmField
         public val TEST_KEY_ABSENT: Metadata.Key<Int> = Metadata.Key.create("test.key.absent")
     }
@@ -62,7 +73,7 @@ public open class FakeMetadata(metadata: Map<Metadata.Key<*>, Any?> = emptyMap()
 public class FakeCameraMetadata(
     characteristics: Map<CameraCharacteristics.Key<*>, Any?> = emptyMap(),
     metadata: Map<Metadata.Key<*>, Any?> = emptyMap(),
-    cameraId: CameraId = CameraId("Fake")
+    cameraId: CameraId = nextCameraId()
 ) : FakeMetadata(metadata), CameraMetadata {
 
     private val values = characteristics.toMap()
@@ -79,10 +90,6 @@ public class FakeCameraMetadata(
     override val sessionKeys: Set<CaptureRequest.Key<*>> = emptySet()
     override val physicalCameraIds: Set<CameraId> = emptySet()
     override val physicalRequestKeys: Set<CaptureRequest.Key<*>> = emptySet()
-
-    override val streamMap: StreamConfigurationMap
-        /** @throws UnsupportedOperationException */
-        get() = throw UnsupportedOperationException("StreamConfigurationMap is not available.")
 
     /** @throws UnsupportedOperationException */
     override fun unwrap(): CameraCharacteristics? {
@@ -102,7 +109,7 @@ public class FakeRequestMetadata(
     override val streams: Map<StreamId, Surface> = mapOf(),
     override val repeating: Boolean = false,
     override val request: Request = Request(listOf()),
-    override val requestNumber: RequestNumber = RequestNumber(4321)
+    override val requestNumber: RequestNumber = nextRequestNumber()
 ) : FakeMetadata(request.extras.plus(metadata)), RequestMetadata {
 
     override fun <T> get(key: CaptureRequest.Key<T>): T? = requestParameters[key] as T?
@@ -122,8 +129,8 @@ public class FakeRequestMetadata(
 public class FakeFrameMetadata(
     private val resultMetadata: Map<CaptureResult.Key<*>, Any?> = emptyMap(),
     extraResultMetadata: Map<Metadata.Key<*>, Any?> = emptyMap(),
-    override val camera: CameraId = CameraId("Fake"),
-    override val frameNumber: FrameNumber = FrameNumber(21),
+    override val camera: CameraId = nextCameraId(),
+    override val frameNumber: FrameNumber = nextFrameNumber(),
     override val extraMetadata: Map<*, Any?> = emptyMap<Any, Any>()
 ) : FakeMetadata(extraResultMetadata), FrameMetadata {
 
@@ -143,7 +150,6 @@ public class FakeFrameMetadata(
 /**
  * Utility class for interacting with objects require specific [TotalCaptureResult] metadata
  */
-
 @Suppress("SyntheticAccessor") // Using an inline class generates a synthetic constructor
 public class FakeFrameInfo(
     override val metadata: FrameMetadata = FakeFrameMetadata(),
@@ -161,7 +167,7 @@ public class FakeFrameInfo(
     /** @throws UnsupportedOperationException */
     override fun unwrap(): TotalCaptureResult? {
         throw UnsupportedOperationException(
-            "FakeFrameInfo does not wrap a real TotalCaptureResult object"
+            "FakeFrameInfo does not wrap a real TotalCaptureResult object!"
         )
     }
 }

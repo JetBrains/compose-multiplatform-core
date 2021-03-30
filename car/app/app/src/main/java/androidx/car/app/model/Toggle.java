@@ -26,7 +26,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 /** Represents a toggle that can have either a checked or unchecked state. */
-public class Toggle {
+public final class Toggle {
     /** A listener for handling checked state change events. */
     public interface OnCheckedChangeListener {
         /** Notifies that the checked state has changed. */
@@ -35,23 +35,9 @@ public class Toggle {
 
     @Keep
     @Nullable
-    private final OnCheckedChangeListenerWrapper mOnCheckedChangeListener;
+    private final OnCheckedChangeDelegate mOnCheckedChangeDelegate;
     @Keep
     private final boolean mIsChecked;
-
-    /**
-     * Constructs a new builder of {@link Toggle} with the given {@link OnCheckedChangeListener}.
-     *
-     * <p>Note that the listener relates to UI events and will be executed on the main thread
-     * using {@link Looper#getMainLooper()}.z
-     *
-     * @throws NullPointerException if {@code onCheckedChangeListener} is {@code null}.
-     */
-    @NonNull
-    @SuppressLint("ExecutorRegistration")
-    public static Builder builder(@NonNull OnCheckedChangeListener onCheckedChangeListener) {
-        return new Builder(requireNonNull(onCheckedChangeListener));
-    }
 
     /**
      * Returns {@code true} if the toggle is checked.
@@ -61,12 +47,12 @@ public class Toggle {
     }
 
     /**
-     * Returns the {@link OnCheckedChangeListenerWrapper} that is called when the checked state of
+     * Returns the {@link OnCheckedChangeDelegate} that is called when the checked state of
      * the {@link Toggle} is changed.
      */
     @NonNull
-    public OnCheckedChangeListenerWrapper getOnCheckedChangeListener() {
-        return requireNonNull(mOnCheckedChangeListener);
+    public OnCheckedChangeDelegate getOnCheckedChangeDelegate() {
+        return requireNonNull(mOnCheckedChangeDelegate);
     }
 
     @Override
@@ -96,18 +82,18 @@ public class Toggle {
 
     Toggle(Builder builder) {
         mIsChecked = builder.mIsChecked;
-        mOnCheckedChangeListener = builder.mOnCheckedChangeListener;
+        mOnCheckedChangeDelegate = builder.mOnCheckedChangeDelegate;
     }
 
     /** Constructs an empty instance, used by serialization code. */
     private Toggle() {
-        mOnCheckedChangeListener = null;
+        mOnCheckedChangeDelegate = null;
         mIsChecked = false;
     }
 
     /** A builder of {@link Toggle}. */
     public static final class Builder {
-        OnCheckedChangeListenerWrapper mOnCheckedChangeListener;
+        OnCheckedChangeDelegate mOnCheckedChangeDelegate;
         boolean mIsChecked;
 
         /**
@@ -117,37 +103,28 @@ public class Toggle {
          */
         @NonNull
         public Builder setChecked(boolean checked) {
-            this.mIsChecked = checked;
+            mIsChecked = checked;
             return this;
-        }
-
-        /**
-         * Sets the {@link OnCheckedChangeListener} to call when the checked state of the
-         * {@link Toggle} is changed.
-         *
-         * <p>Note that the listener relates to UI events and will be executed on the main thread
-         * using {@link Looper#getMainLooper()}.
-         *
-         * @throws NullPointerException if {@code onCheckedChangeListener} is {@code null}.
-         */
-        @NonNull
-        @SuppressLint({"ExecutorRegistration"})
-        public Builder setOnCheckedChangeListener(
-                @NonNull OnCheckedChangeListener onCheckedChangeListener) {
-            this.mOnCheckedChangeListener =
-                    OnCheckedChangeListenerWrapperImpl.create(onCheckedChangeListener);
-            return this;
-        }
-
-        Builder(@NonNull OnCheckedChangeListener onCheckedChangeListener) {
-            this.mOnCheckedChangeListener =
-                    OnCheckedChangeListenerWrapperImpl.create(onCheckedChangeListener);
         }
 
         /** Constructs the {@link Toggle} defined by this builder. */
         @NonNull
         public Toggle build() {
             return new Toggle(this);
+        }
+
+        /**
+         * Returns a new instance of a {@link Builder} with the given
+         * {@link OnCheckedChangeListener}.
+         *
+         * <p>Note that the listener relates to UI events and will be executed on the main thread
+         * using {@link Looper#getMainLooper()}.
+         *
+         * @throws NullPointerException if {@code onCheckedChangeListener} is {@code null}
+         */
+        @SuppressLint("ExecutorRegistration")
+        public Builder(@NonNull OnCheckedChangeListener onCheckedChangeListener) {
+            mOnCheckedChangeDelegate = OnCheckedChangeDelegateImpl.create(onCheckedChangeListener);
         }
     }
 }

@@ -47,7 +47,10 @@ class PresentationActivity : BaseSampleActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_foldin)
 
-        windowManager = getTestBackend()?.let { backend -> WindowManager(this, backend) }
+        windowManager = getTestBackend()?.let { backend ->
+            @Suppress("DEPRECATION") // TODO(b/173739071) remove when updating WindowManager
+            WindowManager(this, backend)
+        }
             ?: WindowManager(this)
         windowManager.registerLayoutChangeCallback(
             mainThreadExecutor,
@@ -159,7 +162,6 @@ class PresentationActivity : BaseSampleActivity() {
     private fun FoldingFeature.stateString(): String {
         return when (state) {
             FoldingFeature.STATE_FLAT -> "FLAT"
-            FoldingFeature.STATE_FLIPPED -> "FLIPPED"
             FoldingFeature.STATE_HALF_OPENED -> "HALF_OPENED"
             else -> "Unknown feature state ($state)"
         }

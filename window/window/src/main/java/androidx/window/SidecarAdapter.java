@@ -215,6 +215,8 @@ final class SidecarAdapter {
      * with the value passed from extension.
      */
     @Nullable
+    // TODO(b/175507310): Remove after fix.
+    @SuppressWarnings({"UnusedVariable", "ObjectToString"})
     private static DisplayFeature translate(SidecarDisplayFeature feature,
             SidecarDeviceState deviceState, Rect windowBounds) {
         Rect bounds = feature.getRect();
@@ -238,8 +240,9 @@ final class SidecarAdapter {
         }
         if (feature.getType() == SidecarDisplayFeature.TYPE_HINGE
                 || feature.getType() == SidecarDisplayFeature.TYPE_FOLD) {
-            if (!((bounds.left == 0 && bounds.right == windowBounds.width())
-                    || (bounds.top == 0 && bounds.bottom == windowBounds.height()))) {
+            // TODO(b/175507310): Reinstate after fix on the OEM side.
+            if (!((bounds.left == 0/* && bounds.right == windowBounds.width()*/)
+                    || (bounds.top == 0/* && bounds.bottom == windowBounds.height()*/))) {
                 // Bounds for fold and hinge types are expected to span the entire window space.
                 // See DisplayFeature#getBounds().
                 if (DEBUG) {
@@ -251,10 +254,19 @@ final class SidecarAdapter {
         }
 
         final int type;
-        if (feature.getType() == SidecarDisplayFeature.TYPE_HINGE) {
-            type = FoldingFeature.TYPE_HINGE;
-        } else {
-            type = FoldingFeature.TYPE_FOLD;
+        switch (feature.getType()) {
+            case SidecarDisplayFeature.TYPE_FOLD:
+                type = FoldingFeature.TYPE_FOLD;
+                break;
+            case SidecarDisplayFeature.TYPE_HINGE:
+                type = FoldingFeature.TYPE_HINGE;
+                break;
+            default:
+                if (DEBUG) {
+                    Log.d(TAG, "Unknown feature type: " + feature.getType()
+                            + ", skipping feature.");
+                }
+                return null;
         }
 
         final int state;
@@ -262,10 +274,8 @@ final class SidecarAdapter {
         switch (devicePosture) {
             case SidecarDeviceState.POSTURE_CLOSED:
             case SidecarDeviceState.POSTURE_UNKNOWN:
-                return null;
             case SidecarDeviceState.POSTURE_FLIPPED:
-                state = FoldingFeature.STATE_FLIPPED;
-                break;
+                return null;
             case SidecarDeviceState.POSTURE_HALF_OPENED:
                 state = FoldingFeature.STATE_HALF_OPENED;
                 break;
@@ -276,5 +286,82 @@ final class SidecarAdapter {
         }
 
         return new FoldingFeature(feature.getRect(), type, state);
+    }
+
+    boolean isEqualSidecarDeviceState(@Nullable SidecarDeviceState first,
+            @Nullable SidecarDeviceState second) {
+        if (first == second) {
+            return true;
+        }
+        if (first == null) {
+            return false;
+        }
+        if (second == null) {
+            return false;
+        }
+        int firstPosture = getSidecarDevicePosture(first);
+        int secondPosture = getSidecarDevicePosture(second);
+
+        return firstPosture == secondPosture;
+    }
+
+    boolean isEqualSidecarWindowLayoutInfo(@Nullable SidecarWindowLayoutInfo first,
+            @Nullable SidecarWindowLayoutInfo second) {
+        if (first == second) {
+            return true;
+        }
+        if (first == null) {
+            return false;
+        }
+        if (second == null) {
+            return false;
+        }
+        List<SidecarDisplayFeature> firstDisplayFeatures = getSidecarDisplayFeatures(first);
+        List<SidecarDisplayFeature> secondDisplayFeatures = getSidecarDisplayFeatures(second);
+        return isEqualSidecarDisplayFeatures(firstDisplayFeatures, secondDisplayFeatures);
+    }
+
+    private boolean isEqualSidecarDisplayFeatures(@Nullable List<SidecarDisplayFeature> first,
+            @Nullable List<SidecarDisplayFeature> second) {
+        if (first == second) {
+            return true;
+        }
+        if (first == null) {
+            return false;
+        }
+        if (second == null) {
+            return false;
+        }
+        if (first.size() != second.size()) {
+            return false;
+        }
+        for (int i = 0; i < first.size(); i++) {
+            SidecarDisplayFeature firstFeature = first.get(i);
+            SidecarDisplayFeature secondFeature = second.get(i);
+            if (!isEqualSidecarDisplayFeature(firstFeature, secondFeature)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean isEqualSidecarDisplayFeature(@Nullable SidecarDisplayFeature first,
+            @Nullable SidecarDisplayFeature second) {
+        if (first == second) {
+            return true;
+        }
+        if (first == null) {
+            return false;
+        }
+        if (second == null) {
+            return false;
+        }
+        if (first.getType() != second.getType()) {
+            return false;
+        }
+        if (!first.getRect().equals(second.getRect())) {
+            return false;
+        }
+        return true;
     }
 }

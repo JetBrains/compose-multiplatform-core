@@ -17,7 +17,7 @@
 package androidx.car.app;
 
 import static androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP;
-import static androidx.car.app.utils.CommonUtils.TAG;
+import static androidx.car.app.utils.LogTags.TAG;
 import static androidx.car.app.utils.ThreadUtils.checkMainThread;
 
 import static java.util.Objects.requireNonNull;
@@ -54,11 +54,11 @@ public class ScreenManager {
     /**
      * Returns the {@link Screen} that is at the top of the stack.
      *
-     * @throws NullPointerException if the method is called before a {@link Screen} has been
-     *                              pushed to the stack via {@link #push}, or
-     *                              {@link #pushForResult}, or returning a {@link Screen} from
-     *                              {@link Session#onCreateScreen}.
-     * @throws IllegalStateException if the current thread is not the main thread.
+     * @throws NullPointerException  if the method is called before a {@link Screen} has been
+     *                               pushed to the stack via {@link #push}, or
+     *                               {@link #pushForResult}, or returning a {@link Screen} from
+     *                               {@link Session#onCreateScreen}
+     * @throws IllegalStateException if the current thread is not the main thread
      */
     @NonNull
     public Screen getTop() {
@@ -72,8 +72,8 @@ public class ScreenManager {
      * <p>If the {@code screen} pushed is already in the stack it will be moved to the top of the
      * stack.
      *
-     * @throws NullPointerException if {@code screen} is {@code null}.
-     * @throws IllegalStateException if the current thread is not the main thread.
+     * @throws NullPointerException  if {@code screen} is {@code null}
+     * @throws IllegalStateException if the current thread is not the main thread
      */
     public void push(@NonNull Screen screen) {
         checkMainThread();
@@ -87,13 +87,13 @@ public class ScreenManager {
      * callback to {@link OnScreenResultListener#onScreenResult} with the result that the pushed
      * {@code screen} set via {@link Screen#setResult}.
      *
-     * @param screen the {@link Screen} to push on top of the stack.
+     * @param screen                 the {@link Screen} to push on top of the stack
      * @param onScreenResultListener the listener that will be executed with the result pushed by
      *                               the {@code screen} through {@link Screen#setResult}. This
-     *                               callback will be executed on the main thread.
-     * @throws NullPointerException if either the {@code screen} or the {@code
-     *                              onScreenResultCallback} are {@code null}.
-     * @throws IllegalStateException if the current thread is not the main thread.
+     *                               callback will be executed on the main thread
+     * @throws NullPointerException  if either the {@code screen} or the {@code
+     *                               onScreenResultCallback} are {@code null}
+     * @throws IllegalStateException if the current thread is not the main thread
      */
     @SuppressLint("ExecutorRegistration")
     public void pushForResult(
@@ -108,7 +108,7 @@ public class ScreenManager {
      *
      * <p>If the top {@link Screen} is the only {@link Screen} in the stack, it will not be removed.
      *
-     * @throws IllegalStateException if the current thread is not the main thread.
+     * @throws IllegalStateException if the current thread is not the main thread
      */
     public void pop() {
         checkMainThread();
@@ -123,9 +123,8 @@ public class ScreenManager {
      *
      * <p>The root {@link Screen} will not be popped.
      *
-     * @throws NullPointerException if {@code marker} is {@code null}.
-     * @throws IllegalStateException if the current thread is not the main thread.
-     *
+     * @throws NullPointerException  if {@code marker} is {@code null}
+     * @throws IllegalStateException if the current thread is not the main thread
      * @see Screen#setMarker
      */
     public void popTo(@NonNull String marker) {
@@ -149,7 +148,7 @@ public class ScreenManager {
     /**
      * Removes all screens from the stack until the root has been reached.
      *
-     * @throws IllegalStateException if the current thread is not the main thread.
+     * @throws IllegalStateException if the current thread is not the main thread
      */
     public void popToRoot() {
         checkMainThread();
@@ -172,8 +171,8 @@ public class ScreenManager {
      *
      * <p>If the {@code screen} is the only {@link Screen} in the stack, it will not be removed.
      *
-     * @throws NullPointerException if {@code screen} is {@code null}.
-     * @throws IllegalStateException if the current thread is not the main thread.
+     * @throws NullPointerException  if {@code screen} is {@code null}
+     * @throws IllegalStateException if the current thread is not the main thread
      */
     public void remove(@NonNull Screen screen) {
         checkMainThread();
@@ -208,7 +207,9 @@ public class ScreenManager {
         checkMainThread();
 
         Screen screen = getTop();
-        Log.d(TAG, "Requesting template from Screen " + screen);
+        if (Log.isLoggable(TAG, Log.DEBUG)) {
+            Log.d(TAG, "Requesting template from Screen " + screen);
+        }
 
         TemplateWrapper templateWrapper = screen.getTemplateWrapper();
 
@@ -240,7 +241,9 @@ public class ScreenManager {
     }
 
     private void pushInternal(Screen screen) {
-        Log.d(TAG, "Pushing screen " + screen + " to the top of the screen stack");
+        if (Log.isLoggable(TAG, Log.DEBUG)) {
+            Log.d(TAG, "Pushing screen " + screen + " to the top of the screen stack");
+        }
 
         if (mScreenStack.contains(screen)) {
             moveToTop(screen, false);
@@ -278,13 +281,22 @@ public class ScreenManager {
 
         // Stop and destroy all screens popped.
         for (Screen screen : poppedScreens) {
-            Log.d(TAG, "Popping screen " + screen + " off the screen stack");
+            if (Log.isLoggable(TAG, Log.DEBUG)) {
+                Log.d(TAG, "Popping screen " + screen + " off the screen stack");
+            }
             stop(screen, true);
         }
 
-        Log.d(TAG, "Screen " + newTop + " is at the top of the screen stack");
+        if (Log.isLoggable(TAG, Log.DEBUG)) {
+            Log.d(TAG, "Screen " + newTop + " is at the top of the screen stack");
+        }
         if (mAppLifecycle.getCurrentState().isAtLeast(State.RESUMED)) {
-            newTop.dispatchLifecycleEvent(Event.ON_RESUME);
+            if (mScreenStack.contains(newTop)) {
+                // During the Screen teardown it can send the result to any screen that called
+                // startScreenForResult.  If this receiver pops from the stack, it is possible
+                // that the newTop is no longer in the stack.
+                newTop.dispatchLifecycleEvent(Event.ON_RESUME);
+            }
         }
     }
 
@@ -340,8 +352,8 @@ public class ScreenManager {
     /** @hide */
     @RestrictTo(LIBRARY_GROUP) // Restrict to testing library
     protected ScreenManager(@NonNull CarContext carContext, @NonNull Lifecycle lifecycle) {
-        this.mCarContext = carContext;
-        this.mAppLifecycle = lifecycle;
+        mCarContext = carContext;
+        mAppLifecycle = lifecycle;
         mAppLifecycle.addObserver(new LifecycleObserverImpl());
     }
 
@@ -394,6 +406,7 @@ public class ScreenManager {
         @Override
         public void onDestroy(@NonNull LifecycleOwner lifecycleOwner) {
             destroyAndClearScreenStack();
+            lifecycleOwner.getLifecycle().removeObserver(this);
         }
     }
 }

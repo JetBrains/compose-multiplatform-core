@@ -25,7 +25,11 @@ import android.os.Parcel
 import android.os.Parcelable
 import android.view.View
 import androidx.activity.ComponentActivity
+import androidx.activity.OnBackPressedDispatcher
+import androidx.activity.addCallback
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.ViewModelStore
+import androidx.lifecycle.testing.TestLifecycleOwner
 import androidx.navigation.test.R
 import androidx.test.annotation.UiThreadTest
 import androidx.test.core.app.ActivityScenario
@@ -39,6 +43,7 @@ import androidx.test.espresso.intent.matcher.IntentMatchers.hasData
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra
 import androidx.test.espresso.intent.matcher.IntentMatchers.toPackage
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.ext.truth.os.BundleSubject.assertThat
 import androidx.test.filters.LargeTest
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
@@ -56,14 +61,7 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.fail
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.ArgumentMatchers.any
 import org.mockito.ArgumentMatchers.anyString
-import org.mockito.ArgumentMatchers.argThat
-import org.mockito.ArgumentMatchers.eq
-import org.mockito.Mockito.mock
-import org.mockito.Mockito.times
-import org.mockito.Mockito.verify
-import org.mockito.Mockito.verifyNoMoreInteractions
 
 @MediumTest
 @RunWith(AndroidJUnit4::class)
@@ -231,6 +229,58 @@ class NavControllerTest {
 
     @UiThreadTest
     @Test
+    fun testSetViewModelStoreOwnerAfterGraphSet() {
+        val navController = createNavController()
+        navController.setViewModelStore(ViewModelStore())
+        val navGraph = navController.navigatorProvider.navigation(
+            id = 1,
+            startDestination = R.id.start_test
+        ) {
+            test(R.id.start_test)
+        }
+        navController.setGraph(navGraph, null)
+
+        try {
+            navController.setViewModelStore(ViewModelStore())
+        } catch (e: IllegalStateException) {
+            assertThat(e).hasMessageThat().contains(
+                "ViewModelStore should be set before setGraph call"
+            )
+        }
+    }
+
+    @UiThreadTest
+    @Test
+    fun testSetSameViewModelStoreOwnerAfterGraphSet() {
+        val navController = createNavController()
+        val viewModelStore = ViewModelStore()
+        navController.setViewModelStore(viewModelStore)
+        val navGraph = navController.navigatorProvider.navigation(
+            id = 1,
+            startDestination = R.id.start_test
+        ) {
+            test(R.id.start_test)
+        }
+        navController.setGraph(navGraph, null)
+
+        navController.setViewModelStore(viewModelStore)
+    }
+
+    @UiThreadTest
+    @Test
+    fun testSetSameLifecycleOwner() {
+        val navController = createNavController()
+        val lifecycleOwner = TestLifecycleOwner(Lifecycle.State.RESUMED)
+
+        navController.setLifecycleOwner(lifecycleOwner)
+        assertThat(lifecycleOwner.observerCount).isEqualTo(1)
+
+        navController.setLifecycleOwner(lifecycleOwner)
+        assertThat(lifecycleOwner.observerCount).isEqualTo(1)
+    }
+
+    @UiThreadTest
+    @Test
     fun testNavigate() {
         val navController = createNavController()
         navController.setGraph(R.navigation.nav_simple)
@@ -275,6 +325,10 @@ class NavControllerTest {
         navController.navigate(deepLink)
         assertThat(navController.currentDestination?.id ?: 0).isEqualTo(R.id.second_test)
         assertThat(navigator.backStack.size).isEqualTo(2)
+        val intent = navigator.current.second?.getParcelable<Intent>(
+            NavController.KEY_DEEP_LINK_INTENT
+        )
+        assertThat(intent?.data).isEqualTo(deepLink)
     }
 
     @UiThreadTest
@@ -300,11 +354,16 @@ class NavControllerTest {
         val navController = createNavController()
         navController.setGraph(R.navigation.nav_simple)
         val navigator = navController.navigatorProvider.getNavigator(TestNavigator::class.java)
-        val deepLink = NavDeepLinkRequest(null, "test.action", null)
+        val action = "test.action"
+        val deepLink = NavDeepLinkRequest(null, action, null)
 
         navController.navigate(deepLink)
         assertThat(navController.currentDestination?.id ?: 0).isEqualTo(R.id.second_test)
         assertThat(navigator.backStack.size).isEqualTo(2)
+        val intent = navigator.current.second?.getParcelable<Intent>(
+            NavController.KEY_DEEP_LINK_INTENT
+        )
+        assertThat(intent?.action).isEqualTo(action)
     }
 
     @UiThreadTest
@@ -339,11 +398,16 @@ class NavControllerTest {
         val navController = createNavController()
         navController.setGraph(R.navigation.nav_deeplink)
         val navigator = navController.navigatorProvider.getNavigator(TestNavigator::class.java)
-        val deepLink = NavDeepLinkRequest(null, null, "type/test")
+        val mimeType = "type/test"
+        val deepLink = NavDeepLinkRequest(null, null, mimeType)
 
         navController.navigate(deepLink)
         assertThat(navController.currentDestination?.id ?: 0).isEqualTo(R.id.forth_test)
         assertThat(navigator.backStack.size).isEqualTo(2)
+        val intent = navigator.current.second?.getParcelable<Intent>(
+            NavController.KEY_DEEP_LINK_INTENT
+        )
+        assertThat(intent?.type).isEqualTo(mimeType)
     }
 
     @UiThreadTest
@@ -1336,14 +1400,10 @@ class NavControllerTest {
     fun testHandleDeepLinkValid() {
         val navController = createNavController()
         navController.setGraph(R.navigation.nav_simple)
-        val onDestinationChangedListener =
-            mock(NavController.OnDestinationChangedListener::class.java)
-        navController.addOnDestinationChangedListener(onDestinationChangedListener)
-        verify(onDestinationChangedListener).onDestinationChanged(
-            eq(navController),
-            eq(navController.findDestination(R.id.start_test)),
-            any()
-        )
+        val collectedDestinationIds = mutableListOf<Int>()
+        navController.addOnDestinationChangedListener { _, destination, _ ->
+            collectedDestinationIds.add(destination.id)
+        }
 
         val taskStackBuilder = navController.createDeepLink()
             .setDestination(R.id.second_test)
@@ -1354,19 +1414,10 @@ class NavControllerTest {
         assertWithMessage("NavController should handle deep links to its own graph")
             .that(navController.handleDeepLink(intent))
             .isTrue()
-
         // Verify that we navigated down to the deep link
-        verify(onDestinationChangedListener, times(2)).onDestinationChanged(
-            eq(navController),
-            eq(navController.findDestination(R.id.start_test)),
-            any()
-        )
-        verify(onDestinationChangedListener).onDestinationChanged(
-            eq(navController),
-            eq(navController.findDestination(R.id.second_test)),
-            any()
-        )
-        verifyNoMoreInteractions(onDestinationChangedListener)
+        assertThat(collectedDestinationIds)
+            .containsExactly(R.id.start_test, R.id.start_test, R.id.second_test)
+            .inOrder()
     }
 
     @UiThreadTest
@@ -1374,15 +1425,10 @@ class NavControllerTest {
     fun testHandleDeepLinkNestedStartDestination() {
         val navController = createNavController()
         navController.setGraph(R.navigation.nav_nested_start_destination)
-        val onDestinationChangedListener =
-            mock(NavController.OnDestinationChangedListener::class.java)
-        navController.addOnDestinationChangedListener(onDestinationChangedListener)
-        val startDestination = navController.findDestination(R.id.nested_test)
-        verify(onDestinationChangedListener).onDestinationChanged(
-            eq(navController),
-            eq(startDestination),
-            any()
-        )
+        val collectedDestinationIds = mutableListOf<Int>()
+        navController.addOnDestinationChangedListener { _, destination, _ ->
+            collectedDestinationIds.add(destination.id)
+        }
 
         val taskStackBuilder = navController.createDeepLink()
             .setDestination(R.id.second_test)
@@ -1395,17 +1441,9 @@ class NavControllerTest {
             .isTrue()
 
         // Verify that we navigated down to the deep link
-        verify(onDestinationChangedListener, times(2)).onDestinationChanged(
-            eq(navController),
-            eq(startDestination),
-            any()
-        )
-        verify(onDestinationChangedListener).onDestinationChanged(
-            eq(navController),
-            eq(navController.findDestination(R.id.second_test)),
-            any()
-        )
-        verifyNoMoreInteractions(onDestinationChangedListener)
+        assertThat(collectedDestinationIds)
+            .containsExactly(R.id.nested_test, R.id.nested_test, R.id.second_test)
+            .inOrder()
     }
 
     @UiThreadTest
@@ -1413,16 +1451,10 @@ class NavControllerTest {
     fun testHandleDeepLinkMultipleDestinations() {
         val navController = createNavController()
         navController.setGraph(R.navigation.nav_multiple_navigation)
-        val onDestinationChangedListener =
-            mock(NavController.OnDestinationChangedListener::class.java)
-        navController.addOnDestinationChangedListener(onDestinationChangedListener)
-        val startDestination = navController.findDestination(R.id.simple_child_start_test)
-        verify(onDestinationChangedListener).onDestinationChanged(
-            eq(navController),
-            eq(startDestination),
-            any()
-        )
-        val childDestination = navController.findDestination(R.id.simple_child_second_test)
+        val collectedDestinationIds = mutableListOf<Int>()
+        navController.addOnDestinationChangedListener { _, destination, _ ->
+            collectedDestinationIds.add(destination.id)
+        }
 
         val taskStackBuilder = navController.createDeepLink()
             .setDestination(R.id.simple_child_second_test)
@@ -1436,29 +1468,15 @@ class NavControllerTest {
             .isTrue()
 
         // Verify that we navigated down to the deep link
-        // First to the destination added via setDestination()
-        verify(onDestinationChangedListener, times(2)).onDestinationChanged(
-            eq(navController),
-            eq(startDestination),
-            any()
-        )
-        verify(onDestinationChangedListener).onDestinationChanged(
-            eq(navController),
-            eq(childDestination),
-            any()
-        )
-        // Then to the second destination added via addDestination()
-        verify(onDestinationChangedListener).onDestinationChanged(
-            eq(navController),
-            eq(navController.findDestination(R.id.deep_link_child_start_test)),
-            any()
-        )
-        verify(onDestinationChangedListener).onDestinationChanged(
-            eq(navController),
-            eq(navController.findDestination(R.id.deep_link_child_second_test)),
-            any()
-        )
-        verifyNoMoreInteractions(onDestinationChangedListener)
+        assertThat(collectedDestinationIds)
+            .containsExactly(
+                // First to the destination added via setDestination()
+                R.id.simple_child_start_test, R.id.simple_child_start_test,
+                R.id.simple_child_second_test,
+                // Then to the second destination added via addDestination()
+                R.id.deep_link_child_start_test, R.id.deep_link_child_second_test
+            )
+            .inOrder()
     }
 
     @UiThreadTest
@@ -1466,16 +1484,10 @@ class NavControllerTest {
     fun testHandleDeepLinkMultipleDestinationsWithArgs() {
         val navController = createNavController()
         navController.setGraph(R.navigation.nav_multiple_navigation)
-        val onDestinationChangedListener =
-            mock(NavController.OnDestinationChangedListener::class.java)
-        navController.addOnDestinationChangedListener(onDestinationChangedListener)
-        val startDestination = navController.findDestination(R.id.simple_child_start_test)
-        verify(onDestinationChangedListener).onDestinationChanged(
-            eq(navController),
-            eq(startDestination),
-            any()
-        )
-        val childDestination = navController.findDestination(R.id.simple_child_second_test)
+        val collectedDestinations = mutableListOf<Pair<Int, Bundle?>>()
+        navController.addOnDestinationChangedListener { _, destination, arguments ->
+            collectedDestinations.add(destination.id to arguments)
+        }
 
         val globalBundle = Bundle().apply {
             putString("global", "global")
@@ -1501,40 +1513,33 @@ class NavControllerTest {
 
         // Verify that we navigated down to the deep link
         // First to the destination added via setDestination()
-        verify(onDestinationChangedListener).onDestinationChanged(
-            eq(navController),
-            eq(startDestination),
-            argThat { args ->
-                args?.getString("global").equals("global") &&
-                    args?.getString("test").equals("first")
-            }
-        )
-        verify(onDestinationChangedListener).onDestinationChanged(
-            eq(navController),
-            eq(childDestination),
-            argThat { args ->
-                args?.getString("global").equals("global") &&
-                    args?.getString("test").equals("first")
-            }
-        )
+        val (destinationId, bundle) = collectedDestinations[0]
+        assertThat(destinationId).isEqualTo(R.id.simple_child_start_test)
+        assertThat(bundle).isEqualTo(null)
+
+        val (destinationId1, bundle1) = collectedDestinations[1]
+        assertThat(destinationId1).isEqualTo(R.id.simple_child_start_test)
+        assertThat(bundle1).string("global").isEqualTo("global")
+        assertThat(bundle1).string("test").isEqualTo("first")
+
+        val (destinationId2, bundle2) = collectedDestinations[2]
+        assertThat(destinationId2).isEqualTo(R.id.simple_child_second_test)
+        assertThat(bundle2).string("global").isEqualTo("global")
+        assertThat(bundle2).string("test").isEqualTo("first")
+
         // Then to the second destination added via addDestination()
-        verify(onDestinationChangedListener).onDestinationChanged(
-            eq(navController),
-            eq(navController.findDestination(R.id.deep_link_child_start_test)),
-            argThat { args ->
-                args?.getString("global").equals("overridden") &&
-                    args?.getString("test").equals("second")
-            }
-        )
-        verify(onDestinationChangedListener).onDestinationChanged(
-            eq(navController),
-            eq(navController.findDestination(R.id.deep_link_child_second_test)),
-            argThat { args ->
-                args?.getString("global").equals("overridden") &&
-                    args?.getString("test").equals("second")
-            }
-        )
-        verifyNoMoreInteractions(onDestinationChangedListener)
+        val (destinationId3, bundle3) = collectedDestinations[3]
+        assertThat(destinationId3).isEqualTo(R.id.deep_link_child_start_test)
+        assertThat(bundle3).string("global").isEqualTo("overridden")
+        assertThat(bundle3).string("test").isEqualTo("second")
+
+        val (destinationId4, bundle4) = collectedDestinations[4]
+        assertThat(destinationId4).isEqualTo(R.id.deep_link_child_second_test)
+        assertThat(bundle4).string("global").isEqualTo("overridden")
+        assertThat(bundle4).string("test").isEqualTo("second")
+
+        assertWithMessage("$collectedDestinations should have 5 destinations")
+            .that(collectedDestinations).hasSize(5)
     }
 
     @UiThreadTest
@@ -1542,14 +1547,12 @@ class NavControllerTest {
     fun testHandleDeepLinkInvalid() {
         val navController = createNavController()
         navController.setGraph(R.navigation.nav_simple)
-        val onDestinationChangedListener =
-            mock(NavController.OnDestinationChangedListener::class.java)
-        navController.addOnDestinationChangedListener(onDestinationChangedListener)
-        verify(onDestinationChangedListener).onDestinationChanged(
-            eq(navController),
-            eq(navController.findDestination(R.id.start_test)),
-            any()
-        )
+        val collectedDestinationIds = mutableListOf<Int>()
+        navController.addOnDestinationChangedListener { _, destination, _ ->
+            collectedDestinationIds.add(destination.id)
+        }
+
+        assertThat(collectedDestinationIds).containsExactly(R.id.start_test)
 
         val taskStackBuilder = navController.createDeepLink()
             .setGraph(R.navigation.nav_nested_start_destination)
@@ -1562,7 +1565,8 @@ class NavControllerTest {
             .that(navController.handleDeepLink(intent))
             .isFalse()
 
-        verifyNoMoreInteractions(onDestinationChangedListener)
+        assertWithMessage("$collectedDestinationIds should have 1 destination id")
+            .that(collectedDestinationIds).hasSize(1)
     }
 
     @UiThreadTest
@@ -1570,14 +1574,12 @@ class NavControllerTest {
     fun testHandleDeepLinkToRootInvalid() {
         val navController = createNavController()
         navController.setGraph(R.navigation.nav_simple)
-        val onDestinationChangedListener =
-            mock(NavController.OnDestinationChangedListener::class.java)
-        navController.addOnDestinationChangedListener(onDestinationChangedListener)
-        verify(onDestinationChangedListener).onDestinationChanged(
-            eq(navController),
-            eq(navController.findDestination(R.id.start_test)),
-            any()
-        )
+        val collectedDestinationIds = mutableListOf<Int>()
+        navController.addOnDestinationChangedListener { _, destination, _ ->
+            collectedDestinationIds.add(destination.id)
+        }
+
+        assertThat(collectedDestinationIds).containsExactly(R.id.start_test)
 
         val taskStackBuilder = navController.createDeepLink()
             .setGraph(R.navigation.nav_nested_start_destination)
@@ -1590,7 +1592,37 @@ class NavControllerTest {
             .that(navController.handleDeepLink(intent))
             .isFalse()
 
-        verifyNoMoreInteractions(onDestinationChangedListener)
+        assertWithMessage("$collectedDestinationIds should have 1 destination id")
+            .that(collectedDestinationIds).hasSize(1)
+    }
+
+    @UiThreadTest
+    @Test
+    fun testSetOnBackPressedDispatcherOnNavBackStackEntry() {
+        var backPressedIntercepted = false
+        val navController = createNavController()
+        val lifecycleOwner = TestLifecycleOwner()
+        val dispatcher = OnBackPressedDispatcher()
+
+        navController.setLifecycleOwner(lifecycleOwner)
+        navController.setOnBackPressedDispatcher(dispatcher)
+
+        navController.setGraph(R.navigation.nav_simple)
+        navController.navigate(R.id.second_test)
+        assertEquals(R.id.start_test, navController.previousBackStackEntry?.destination?.id ?: 0)
+
+        dispatcher.addCallback(navController.currentBackStackEntry!!) {
+            backPressedIntercepted = true
+        }
+
+        // Move to STOPPED
+        lifecycleOwner.currentState = Lifecycle.State.CREATED
+        // Move back up to RESUMED
+        lifecycleOwner.currentState = Lifecycle.State.RESUMED
+
+        dispatcher.onBackPressed()
+
+        assertThat(backPressedIntercepted).isTrue()
     }
 
     private fun createNavController(): NavController {

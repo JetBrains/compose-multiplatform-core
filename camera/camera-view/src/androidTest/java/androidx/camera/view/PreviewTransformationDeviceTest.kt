@@ -23,6 +23,7 @@ import android.view.Surface
 import android.view.View
 import androidx.camera.core.SurfaceRequest
 import androidx.camera.core.impl.ImageOutputConfig.RotationValue
+import androidx.camera.view.TransformUtils.sizeToVertices
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
@@ -30,6 +31,7 @@ import com.google.common.truth.Truth.assertThat
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import kotlin.math.roundToInt
 
 /**
  * Instrument tests for [PreviewTransformation].
@@ -83,7 +85,7 @@ public class PreviewTransformationDeviceTest {
                 Rect(
                     0,
                     0,
-                    PREVIEW_VIEW_SIZE.height,
+                    PREVIEW_VIEW_SIZE.height + 1,
                     PREVIEW_VIEW_SIZE.width - 1
                 )
             )
@@ -97,7 +99,7 @@ public class PreviewTransformationDeviceTest {
                 Rect(
                     0,
                     0,
-                    PREVIEW_VIEW_SIZE.height,
+                    PREVIEW_VIEW_SIZE.height + 2,
                     PREVIEW_VIEW_SIZE.width - 2
                 )
             )
@@ -111,21 +113,21 @@ public class PreviewTransformationDeviceTest {
             SURFACE_SIZE,
             BACK_CAMERA
         )
-        return mPreviewTransform.isCropRectAspectRatioMatchPreviewView(PREVIEW_VIEW_SIZE)
+        return mPreviewTransform.isViewportAspectRatioMatchPreviewView(PREVIEW_VIEW_SIZE)
     }
 
     @Test
     public fun correctTextureViewWith0Rotation() {
         assertThat(getTextureViewCorrection(Surface.ROTATION_0)).isEqualTo(
-            floatArrayOf(
-                0f,
-                0f,
-                SURFACE_SIZE.width.toFloat(),
-                0f,
-                SURFACE_SIZE.width.toFloat(),
-                SURFACE_SIZE.height.toFloat(),
-                0f,
-                SURFACE_SIZE.height.toFloat()
+            intArrayOf(
+                0,
+                0,
+                SURFACE_SIZE.width,
+                0,
+                SURFACE_SIZE.width,
+                SURFACE_SIZE.height,
+                0,
+                SURFACE_SIZE.height
             )
         )
     }
@@ -133,15 +135,15 @@ public class PreviewTransformationDeviceTest {
     @Test
     public fun correctTextureViewWith90Rotation() {
         assertThat(getTextureViewCorrection(Surface.ROTATION_90)).isEqualTo(
-            floatArrayOf(
-                0f,
-                SURFACE_SIZE.height.toFloat(),
-                0f,
-                0f,
-                SURFACE_SIZE.width.toFloat(),
-                0f,
-                SURFACE_SIZE.width.toFloat(),
-                SURFACE_SIZE.height.toFloat()
+            intArrayOf(
+                0,
+                SURFACE_SIZE.height,
+                0,
+                0,
+                SURFACE_SIZE.width,
+                0,
+                SURFACE_SIZE.width,
+                SURFACE_SIZE.height
             )
         )
     }
@@ -149,15 +151,15 @@ public class PreviewTransformationDeviceTest {
     @Test
     public fun correctTextureViewWith180Rotation() {
         assertThat(getTextureViewCorrection(Surface.ROTATION_180)).isEqualTo(
-            floatArrayOf(
-                SURFACE_SIZE.width.toFloat(),
-                SURFACE_SIZE.height.toFloat(),
-                0f,
-                SURFACE_SIZE.height.toFloat(),
-                0f,
-                0f,
-                SURFACE_SIZE.width.toFloat(),
-                0f
+            intArrayOf(
+                SURFACE_SIZE.width,
+                SURFACE_SIZE.height,
+                0,
+                SURFACE_SIZE.height,
+                0,
+                0,
+                SURFACE_SIZE.width,
+                0
             )
         )
     }
@@ -165,15 +167,15 @@ public class PreviewTransformationDeviceTest {
     @Test
     public fun correctTextureViewWith270Rotation() {
         assertThat(getTextureViewCorrection(Surface.ROTATION_270)).isEqualTo(
-            floatArrayOf(
-                SURFACE_SIZE.width.toFloat(),
-                0f,
-                SURFACE_SIZE.width.toFloat(),
-                SURFACE_SIZE.height.toFloat(),
-                0f,
-                SURFACE_SIZE.height.toFloat(),
-                0f,
-                0f
+            intArrayOf(
+                SURFACE_SIZE.width,
+                0,
+                SURFACE_SIZE.width,
+                SURFACE_SIZE.height,
+                0,
+                SURFACE_SIZE.height,
+                0,
+                0
             )
         )
     }
@@ -181,7 +183,7 @@ public class PreviewTransformationDeviceTest {
     /**
      * Corrects TextureView based on target rotation and return the corrected vertices.
      */
-    private fun getTextureViewCorrection(@RotationValue rotation: Int): FloatArray {
+    private fun getTextureViewCorrection(@RotationValue rotation: Int): IntArray {
         // Arrange.
         mPreviewTransform.setTransformationInfo(
             SurfaceRequest.TransformationInfo.of(CROP_RECT, 90, rotation),
@@ -190,9 +192,21 @@ public class PreviewTransformationDeviceTest {
         )
 
         // Act.
-        val surfaceVertexes = PreviewTransformation.sizeToVertices(SURFACE_SIZE)
+        val surfaceVertexes = sizeToVertices(SURFACE_SIZE)
         mPreviewTransform.textureViewCorrectionMatrix.mapPoints(surfaceVertexes)
-        return surfaceVertexes
+        return convertToIntArray(surfaceVertexes)
+    }
+
+    private fun convertToIntArray(elements: FloatArray): IntArray {
+        var result = IntArray(elements.size)
+        var index = 0
+
+        for (element in elements) {
+            result.set(index, element.roundToInt())
+            index++
+        }
+
+        return result
     }
 
     @Test
@@ -379,6 +393,19 @@ public class PreviewTransformationDeviceTest {
         assertThat(mView.scaleY).isWithin(FLOAT_ERROR).of(15F)
         assertThat(mView.translationX).isWithin(FLOAT_ERROR).of(0F)
         assertThat(mView.translationY).isWithin(FLOAT_ERROR).of(-100F)
+    }
+
+    @Test
+    public fun previewViewSizeIs0_noOps() {
+        testOffCenterCropRectMirroring(
+            FRONT_CAMERA, CROP_RECT_90, Size(0, 0), 90
+        )
+
+        // Assert: no transform applied.
+        assertThat(mView.scaleX).isWithin(FLOAT_ERROR).of(1F)
+        assertThat(mView.scaleY).isWithin(FLOAT_ERROR).of(1F)
+        assertThat(mView.translationX).isWithin(FLOAT_ERROR).of(0F)
+        assertThat(mView.translationY).isWithin(FLOAT_ERROR).of(0F)
     }
 
     @Test

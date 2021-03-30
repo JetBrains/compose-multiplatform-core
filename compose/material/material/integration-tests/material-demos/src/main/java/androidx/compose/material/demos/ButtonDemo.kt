@@ -16,17 +16,17 @@
 
 package androidx.compose.material.demos
 
-import androidx.compose.animation.animateAsState
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.ScrollableColumn
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.preferredHeight
-import androidx.compose.foundation.layout.preferredSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.GenericShape
 import androidx.compose.material.Button
 import androidx.compose.material.ButtonDefaults
@@ -61,28 +61,36 @@ private val DefaultSpace = 20.dp
 
 @Composable
 fun ButtonDemo() {
-    ScrollableColumn(contentPadding = PaddingValues(10.dp)) {
-        Buttons()
-        Spacer(Modifier.preferredHeight(DefaultSpace))
-        Fabs()
-        Spacer(Modifier.preferredHeight(DefaultSpace))
-        IconButtons()
-        Spacer(Modifier.preferredHeight(DefaultSpace))
-        CustomShapeButton()
+    LazyColumn(
+        contentPadding = PaddingValues(10.dp),
+        verticalArrangement = Arrangement.spacedBy(DefaultSpace)
+    ) {
+        item {
+            Buttons()
+        }
+        item {
+            Fabs()
+        }
+        item {
+            IconButtons()
+        }
+        item {
+            CustomShapeButton()
+        }
     }
 }
 
 @Composable
 private fun Buttons() {
     Text("Buttons")
-    Spacer(Modifier.preferredHeight(DefaultSpace))
+    Spacer(Modifier.height(DefaultSpace))
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
         ButtonSample()
         OutlinedButtonSample()
         TextButtonSample()
     }
 
-    Spacer(Modifier.preferredHeight(DefaultSpace))
+    Spacer(Modifier.height(DefaultSpace))
 
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
         Button(
@@ -96,7 +104,7 @@ private fun Buttons() {
         ButtonWithIconSample()
     }
 
-    Spacer(Modifier.preferredHeight(DefaultSpace))
+    Spacer(Modifier.height(DefaultSpace))
 
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
         Button(onClick = {}, enabled = false) {
@@ -114,21 +122,21 @@ private fun Buttons() {
 @Composable
 private fun Fabs() {
     Text("Floating action buttons")
-    Spacer(Modifier.preferredHeight(DefaultSpace))
+    Spacer(Modifier.height(DefaultSpace))
 
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
         SimpleFab()
         SimpleExtendedFabNoIcon()
         SimpleExtendedFabWithIcon()
     }
-    Spacer(Modifier.preferredHeight(DefaultSpace))
+    Spacer(Modifier.height(DefaultSpace))
     FluidExtendedFab()
 }
 
 @Composable
 private fun IconButtons() {
     Text("Icon buttons")
-    Spacer(Modifier.preferredHeight(DefaultSpace))
+    Spacer(Modifier.height(DefaultSpace))
 
     Row {
         IconButtonSample()
@@ -140,10 +148,10 @@ private fun IconButtons() {
 @Composable
 private fun CustomShapeButton() {
     Text("Custom shape button")
-    Spacer(Modifier.preferredHeight(DefaultSpace))
+    Spacer(Modifier.height(DefaultSpace))
     OutlinedButton(
         onClick = {},
-        modifier = Modifier.preferredSize(110.dp),
+        modifier = Modifier.size(110.dp),
         shape = TriangleShape,
         colors = ButtonDefaults.outlinedButtonColors(
             backgroundColor = Color.Yellow
@@ -162,12 +170,12 @@ private fun IconToggleButtonDisabled() {
     var checked by remember { mutableStateOf(false) }
 
     IconToggleButton(checked = checked, enabled = false, onCheckedChange = { checked = it }) {
-        val tint by animateAsState(if (checked) Color(0xFFEC407A) else Color(0xFFB0BEC5))
-        Icon(Icons.Filled.Favorite, tint = tint)
+        val tint by animateColorAsState(if (checked) Color(0xFFEC407A) else Color(0xFFB0BEC5))
+        Icon(Icons.Filled.Favorite, contentDescription = "Favorite", tint = tint)
     }
 }
 
-private val TriangleShape = GenericShape { size ->
+private val TriangleShape = GenericShape { size, _ ->
     moveTo(size.width / 2f, 0f)
     lineTo(size.width, size.height)
     lineTo(0f, size.height)

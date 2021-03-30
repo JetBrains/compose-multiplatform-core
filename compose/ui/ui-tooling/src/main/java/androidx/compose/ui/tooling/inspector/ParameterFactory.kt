@@ -26,6 +26,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.toArgb
@@ -46,6 +47,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.TextUnitType
 import java.lang.reflect.Field
+import kotlin.jvm.internal.FunctionReference
 import kotlin.jvm.internal.Lambda
 import kotlin.math.abs
 import kotlin.reflect.KClass
@@ -59,10 +61,6 @@ import java.lang.reflect.Modifier as JavaModifier
 
 private const val MAX_RECURSIONS = 10
 private const val MAX_ITERABLE = 25
-
-@OptIn(ComposeCompilerApi::class)
-private typealias CLambda =
-    ComposableLambda<*, *, *, *, *, *, *, *, *, *, *, *, *, *, *, *, *, *, *>
 
 /**
  * Factory of [NodeParameter]s.
@@ -94,9 +92,15 @@ internal class ParameterFactory(private val inlineClassConverter: InlineClassCon
     }
 
     /**
-     * Do not decompose instances from these package prefixes.
+     * Do not decompose instances or lookup constants from these package prefixes
+     *
+     * The following instances are known to contain self recursion:
+     * - kotlinx.coroutines.flow.StateFlowImpl
+     * - androidx.compose.ui.node.LayoutNode
      */
-    private val ignoredPackagePrefixes = listOf("android.graphics.")
+    private val ignoredPackagePrefixes = listOf(
+        "android.", "java.", "javax.", "kotlinx.", "androidx.compose.ui.node."
+    )
 
     var density = Density(1.0f)
 
@@ -106,6 +110,7 @@ internal class ParameterFactory(private val inlineClassConverter: InlineClassCon
         )
         valueLookup[textDecorationCombination] = "LineThrough+Underline"
         valueLookup[Color.Unspecified] = "Unspecified"
+        valueLookup[RectangleShape] = "RectangleShape"
         valuesLoaded.add(Enum::class.java)
         valuesLoaded.add(Any::class.java)
 
@@ -130,7 +135,9 @@ internal class ParameterFactory(private val inlineClassConverter: InlineClassCon
     }
 
     private fun loadConstantsFrom(javaClass: Class<*>) {
-        if (valuesLoaded.contains(javaClass)) {
+        if (valuesLoaded.contains(javaClass) ||
+            ignoredPackagePrefixes.any { javaClass.name.startsWith(it) }
+        ) {
             return
         }
         val related = generateSequence(javaClass) { it.superclass }.plus(javaClass.interfaces)
@@ -266,17 +273,21 @@ internal class ParameterFactory(private val inlineClassConverter: InlineClassCon
             try {
                 recursions++
                 createFromConstant(name, value)?.let { return it }
+                @OptIn(ComposeCompilerApi::class)
                 return when (value) {
                     is AnnotatedString -> NodeParameter(name, ParameterType.String, value.text)
                     is BaselineShift -> createFromBaselineShift(name, value)
                     is Boolean -> NodeParameter(name, ParameterType.Boolean, value)
-                    is CLambda -> createFromCLambda(name, value)
+                    is ComposableLambda -> createFromCLambda(name, value)
                     is Color -> NodeParameter(name, ParameterType.Color, value.toArgb())
                     is CornerSize -> createFromCornerSize(name, value)
                     is Double -> NodeParameter(name, ParameterType.Double, value)
                     is Dp -> NodeParameter(name, DimensionDp, value.value)
                     is Enum<*> -> NodeParameter(name, ParameterType.String, value.toString())
                     is Float -> NodeParameter(name, ParameterType.Float, value)
+                    is FunctionReference -> NodeParameter(
+                        name, ParameterType.FunctionReference, arrayOf<Any>(value, value.name)
+                    )
                     is FontListFontFamily -> createFromFontListFamily(name, value)
                     is FontWeight -> NodeParameter(name, ParameterType.Int32, value.weight)
                     is Modifier -> createFromModifier(name, value)
@@ -312,11 +323,12 @@ internal class ParameterFactory(private val inlineClassConverter: InlineClassCon
             return NodeParameter(name, ParameterType.String, converted)
         }
 
-        private fun createFromCLambda(name: String, value: CLambda): NodeParameter? = try {
+        @OptIn(ComposeCompilerApi::class)
+        private fun createFromCLambda(name: String, value: ComposableLambda): NodeParameter? = try {
             val lambda = value.javaClass.getDeclaredField("_block")
                 .apply { isAccessible = true }
                 .get(value)
-            NodeParameter(name, ParameterType.Lambda, lambda)
+            NodeParameter(name, ParameterType.Lambda, arrayOf<Any?>(lambda))
         } catch (_: Throwable) {
             null
         }
@@ -400,7 +412,7 @@ internal class ParameterFactory(private val inlineClassConverter: InlineClassCon
             return parameter
         }
 
-        private fun createFromIterable(name: String, value: Iterable<*>): NodeParameter? {
+        private fun createFromIterable(name: String, value: Iterable<*>): NodeParameter {
             val parameter = NodeParameter(name, ParameterType.String, "")
             val elements = parameter.elements
             value.asSequence()
@@ -411,7 +423,7 @@ internal class ParameterFactory(private val inlineClassConverter: InlineClassCon
         }
 
         private fun createFromLambda(name: String, value: Lambda<*>): NodeParameter =
-            NodeParameter(name, ParameterType.Lambda, value)
+            NodeParameter(name, ParameterType.Lambda, arrayOf<Any>(value))
 
         private fun createFromModifier(name: String, value: Modifier): NodeParameter? =
             when {
@@ -448,15 +460,15 @@ internal class ParameterFactory(private val inlineClassConverter: InlineClassCon
         }
 
         @Suppress("DEPRECATION")
-        private fun createFromTextUnit(name: String, value: TextUnit): NodeParameter? =
+        private fun createFromTextUnit(name: String, value: TextUnit): NodeParameter =
             when (value.type) {
                 TextUnitType.Sp -> NodeParameter(name, ParameterType.DimensionSp, value.value)
                 TextUnitType.Em -> NodeParameter(name, ParameterType.DimensionEm, value.value)
-                TextUnitType.Inherit, TextUnitType.Unspecified ->
+                TextUnitType.Unspecified ->
                     NodeParameter(name, ParameterType.String, "Unspecified")
             }
 
-        private fun createFromImageVector(name: String, value: ImageVector): NodeParameter? =
+        private fun createFromImageVector(name: String, value: ImageVector): NodeParameter =
             NodeParameter(name, ParameterType.String, value.name)
 
         /**
