@@ -23,14 +23,22 @@ plugins {
     id("kotlin")
 }
 
-dependencies {
-    compileOnly LINT_API_LATEST
-    compileOnly LINT_CHECKS_LATEST
-    compileOnly KOTLIN_STDLIB
+sourceSets {
+    // Pull integration test source code in for use by lint testing framework.
+    test.resources.srcDirs(
+            project(":lint-checks:integration-tests")
+                    .projectDir.absolutePath + "/src/main"
+    )
+}
 
-    testImplementation KOTLIN_STDLIB
-    testImplementation LINT_CORE
-    testImplementation LINT_TESTS
+dependencies {
+    compileOnly(LINT_API_LATEST)
+    compileOnly(LINT_CHECKS_LATEST)
+    compileOnly(KOTLIN_STDLIB)
+
+    testImplementation(KOTLIN_STDLIB)
+    testImplementation(LINT_CORE)
+    testImplementation(LINT_TESTS)
 }
 
 androidx {

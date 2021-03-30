@@ -17,39 +17,45 @@
 package androidx.camera.camera2.pipe
 
 import android.hardware.camera2.CaptureRequest
+import android.hardware.camera2.CameraDevice
+import android.hardware.camera2.CameraCaptureSession
+import android.hardware.camera2.CameraConstrainedHighSpeedCaptureSession
+import android.hardware.camera2.params.SessionConfiguration
 import android.hardware.camera2.params.MeteringRectangle
 import android.view.Surface
+import androidx.camera.camera2.pipe.CameraGraph.Constants3A.DEFAULT_FRAME_LIMIT
+import androidx.camera.camera2.pipe.CameraGraph.Constants3A.DEFAULT_TIME_LIMIT_NS
 import kotlinx.coroutines.Deferred
 import java.io.Closeable
 
 /**
- * A CameraGraph represents the combined configuration and state of a camera.
+ * A [CameraGraph] represents the combined configuration and state of a camera.
  */
 public interface CameraGraph : Closeable {
     public val streams: StreamGraph
 
     /**
-     * This will cause the CameraGraph to start opening the camera and configuring the Camera2
-     * CaptureSession. While the CameraGraph is started it will attempt to keep the camera alive,
-     * active, and in a configured running state.
+     * This will cause the [CameraGraph] to start opening the [CameraDevice] and configuring a
+     * [CameraCaptureSession]. While the CameraGraph is alive it will attempt to keep the camera
+     * open, active, and in a configured running state.
      */
     public fun start()
 
     /**
-     * This will cause the CameraGraph to stop executing requests and close the current Camera2
-     * CaptureSession (if one is active). The current repeating request is preserved, and any
-     * call to submit a request to a session will be enqueued. To prevent requests from being
-     * enqueued, close the CameraGraph.
+     * This will cause the [CameraGraph] to stop executing requests and close the current Camera2
+     * [CameraCaptureSession] (if one is active). The most recent repeating request will be
+     * preserved, and any calls to submit a request to a session will be enqueued. To stop
+     * requests from being enqueued, close the [CameraGraph].
      */
     public fun stop()
 
     /**
-     * Acquire and exclusive access to the CameraGraph in a suspending fashion.
+     * Acquire and exclusive access to the [CameraGraph] in a suspending fashion.
      */
     public suspend fun acquireSession(): Session
 
     /**
-     * Try acquiring an exclusive access the CameraGraph. Returns null if it can't be acquired
+     * Try acquiring an exclusive access the [CameraGraph]. Returns null if it can't be acquired
      * immediately.
      */
     public fun acquireSessionOrNull(): Session?
@@ -62,7 +68,25 @@ public interface CameraGraph : Closeable {
     public fun setSurface(stream: StreamId, surface: Surface?)
 
     /**
-     * This defines the configuration, flags, and pre-defined structure of a CameraGraph instance.
+     * This defines the configuration, flags, and pre-defined structure of a [CameraGraph] instance.
+     *
+     * @param camera The Camera2 [CameraId] that this [CameraGraph] represents.
+     * @param streams A list of [CameraStream]s to use when building the configuration.
+     * @param streamSharingGroups A list of [CameraStream]s to apply buffer sharing to.
+     * @param input An input configuration to support Camera2 Reprocessing.
+     * @param sessionTemplate The template id to use when creating the [CaptureRequest] to supply
+     *   the default parameters for a [SessionConfiguration] object.
+     * @param sessionParameters the extra parameters to apply to the [CaptureRequest] used to supply
+     *   the default parameters for a [SessionConfiguration] object. These parameters are *only*
+     *   used to create the [CaptureRequest] for session configuration. Use [defaultParameters] or
+     *   [requiredParameters] to enforce that the key is set for every request.
+     * @param sessionMode defines the [OperatingMode] of the session. May be used to configure a
+     *   [CameraConstrainedHighSpeedCaptureSession] for slow motion capture (If available)
+     * @param defaultTemplate The default template to be used if a [Request] does not specify one.
+     * @param defaultParameters The default parameters to be used for a [Request].
+     * @param defaultListeners A default set of listeners that will be added to every [Request].
+     * @param requiredParameters Will override any other configured parameter, and can be used
+     *   to enforce that specific keys are always set to specific value for every [CaptureRequest].
      */
     public data class Config(
         val camera: CameraId,
@@ -75,9 +99,10 @@ public interface CameraGraph : Closeable {
         val defaultTemplate: RequestTemplate = RequestTemplate(1),
         val defaultParameters: Map<*, Any> = emptyMap<Any, Any>(),
         val defaultListeners: List<Request.Listener> = listOf(),
+        val requiredParameters: Map<Any, Any?> = emptyMap(),
+
         val metadataTransform: MetadataTransform = MetadataTransform(),
         val flags: Flags = Flags()
-
         // TODO: Internal error handling. May be better at the CameraPipe level.
     )
 
@@ -97,7 +122,7 @@ public interface CameraGraph : Closeable {
         HIGH_SPEED,
     }
 
-    public companion object Constants3A {
+    public object Constants3A {
         // Constants related to controlling the time or frame budget a 3A operation should get.
         public const val DEFAULT_FRAME_LIMIT: Int = 60
         public const val DEFAULT_TIME_LIMIT_MS: Int = 3_000
@@ -121,18 +146,45 @@ public interface CameraGraph : Closeable {
     }
 
     /**
-     * A lock on CameraGraph. It facilitates an exclusive access to the managed camera device. Once
-     * this is acquired, a well ordered set of requests can be sent to the camera device without the
-     * possibility of being intermixed with any other request to the camera from non lock holders.
+     * A [Session] is an interactive lock for [CameraGraph] and allows state to be changed.
+     *
+     * Holding this object prevents other systems from acquiring a [Session] until the currently
+     * held session is released. Because of it's exclusive nature, [Session]s are intended for
+     * fast, short-lived state updates, or for interactive capture sequences that must not be
+     * altered. (Flash photo sequences, for example).
+     *
+     * While this object is thread-safe, it should not shared or held for long periods of time.
+     * Example: A [Session] should *not* be held during video recording.
      */
     public interface Session : Closeable {
+        /**
+         * Causes the CameraGraph to start or update the current repeating request with the
+         * provided [Request] object. The [Request] object may be cached, and may be used for
+         * other interactions with the camera (such as updating 3A, or issuing 3A triggers).
+         */
+        public fun startRepeating(request: Request)
+
+        /**
+         * Stop the current repeating request.
+         */
+        public fun stopRepeating()
+
+        /**
+         * Add the [Request] into an in-flight request queue. Requests will be issued to the
+         * Camera exactly once.
+         */
         public fun submit(request: Request)
+
+        /**
+         * Add the [Request] into an in-flight request queue. Requests will be issued to the
+         * Camera exactly once. The list of [Request]s is guaranteed to be submitted together.
+         */
         public fun submit(requests: List<Request>)
-        public fun setRepeating(request: Request)
 
         /**
          * Abort in-flight requests. This will abort *all* requests in the current
-         * CameraCaptureSession as well as any requests that are currently enqueued.
+         * CameraCaptureSession as well as any requests that are enqueued, but that have not yet
+         * been submitted to the camera.
          */
         public fun abort()
 
@@ -182,7 +234,15 @@ public interface CameraGraph : Closeable {
 
         /**
          * Locks the auto-exposure, auto-focus and auto-whitebalance as per the given desired
-         * behaviors.
+         * behaviors. This given 3A parameters are applied before the lock is obtained. If 'null'
+         * value is passed for a parameter, that parameter is ignored, and the current value for
+         * that parameter continues to be applied.
+         *
+         * TODO(sushilnath@): Add support for specifying the AE, AF and AWB modes as well. The
+         * update of modes require special care if the desired lock behavior is immediate. In
+         * that case we have to submit a combination of repeating and single requests so that the
+         * AF skips the initial state of the new mode's state machine and stays locks in the new
+         * mode as well.
          *
          * @param frameLimit the maximum number of frames to wait before we give up waiting for
          * this operation to complete.
@@ -194,28 +254,6 @@ public interface CameraGraph : Closeable {
          * or time limit was reached.
          */
         public suspend fun lock3A(
-            aeLockBehavior: Lock3ABehavior? = null,
-            afLockBehavior: Lock3ABehavior? = null,
-            awbLockBehavior: Lock3ABehavior? = null,
-            frameLimit: Int = DEFAULT_FRAME_LIMIT,
-            timeLimitNs: Long = DEFAULT_TIME_LIMIT_NS
-        ): Deferred<Result3A>
-
-        /**
-         * Locks the auto-exposure, auto-focus and auto-whitebalance as per the given desired
-         * behaviors. This method is similar to the earlier [lock3A] method with additional
-         * capability of applying the given 3A parameters before the lock is obtained.
-         *
-         * @param frameLimit the maximum number of frames to wait before we give up waiting for
-         * this operation to complete.
-         * @param timeLimitMs the maximum time limit in ms we wait before we give up waiting for
-         * this operation to complete.
-         *
-         * @return [Result3A], which will contain the latest frame number at which the locks were
-         * applied or the frame number at which the method returned early because either frame limit
-         * or time limit was reached.
-         */
-        public fun lock3A(
             aeMode: AeMode? = null,
             afMode: AfMode? = null,
             awbMode: AwbMode? = null,
@@ -226,7 +264,7 @@ public interface CameraGraph : Closeable {
             afLockBehavior: Lock3ABehavior? = null,
             awbLockBehavior: Lock3ABehavior? = null,
             frameLimit: Int = DEFAULT_FRAME_LIMIT,
-            timeLimitMs: Int = DEFAULT_TIME_LIMIT_MS
+            timeLimitNs: Long = DEFAULT_TIME_LIMIT_NS
         ): Deferred<Result3A>
 
         /**

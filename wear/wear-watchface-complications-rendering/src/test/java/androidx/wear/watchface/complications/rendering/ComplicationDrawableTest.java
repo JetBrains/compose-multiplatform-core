@@ -51,16 +51,15 @@ import androidx.annotation.NonNull;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.wear.complications.ComplicationHelperActivity;
 import androidx.wear.watchface.CanvasType;
-import androidx.wear.watchface.ComplicationsManager;
 import androidx.wear.watchface.Renderer;
 import androidx.wear.watchface.WatchFace;
 import androidx.wear.watchface.WatchFaceService;
 import androidx.wear.watchface.WatchFaceType;
 import androidx.wear.watchface.WatchState;
-import androidx.wear.watchface.style.UserStyleRepository;
+import androidx.wear.watchface.style.CurrentUserStyleRepository;
 import androidx.wear.watchface.style.UserStyleSchema;
 
-import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -72,6 +71,8 @@ import org.robolectric.annotation.internal.DoNotInstrument;
 
 import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
+
+import kotlin.coroutines.Continuation;
 
 /** Tests for {@link ComplicationDrawable}. */
 @RunWith(ComplicationsTestRunner.class)
@@ -714,20 +715,19 @@ public class ComplicationDrawableTest {
             ApplicationProvider.getApplicationContext().startActivity(intent);
         }
 
-        @NonNull
+        @Nullable
         @Override
-        protected WatchFace createWatchFace(
-                @NotNull SurfaceHolder surfaceHolder,
-                @NotNull WatchState watchState) {
-            UserStyleRepository userStyleRepository =
-                    new UserStyleRepository(new UserStyleSchema(new ArrayList<>()));
+        protected Object createWatchFace(@NonNull SurfaceHolder surfaceHolder,
+                @NonNull WatchState watchState,
+                @NonNull Continuation<? super WatchFace> completion) {
+            CurrentUserStyleRepository currentUserStyleRepository =
+                    new CurrentUserStyleRepository(new UserStyleSchema(new ArrayList<>()));
             return new WatchFace(
                     WatchFaceType.ANALOG,
-                    userStyleRepository,
-                    new ComplicationsManager(new ArrayList<>(), userStyleRepository),
+                    currentUserStyleRepository,
                     new Renderer.CanvasRenderer(
-                            surfaceHolder, userStyleRepository, watchState, CanvasType.SOFTWARE,
-                            16L) {
+                            surfaceHolder, currentUserStyleRepository, watchState,
+                            CanvasType.SOFTWARE, 16L) {
                         @Override
                         public void render(@NonNull Canvas canvas, @NonNull Rect bounds,
                                 @NonNull Calendar calendar) {

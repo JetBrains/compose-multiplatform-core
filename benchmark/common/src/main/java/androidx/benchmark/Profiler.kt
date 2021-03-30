@@ -16,13 +16,13 @@
 
 package androidx.benchmark
 
+import android.annotation.SuppressLint
 import android.os.Build
 import android.os.Debug
 import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.benchmark.simpleperf.ProfileSession
 import androidx.benchmark.simpleperf.RecordOptions
-import java.io.File
 
 /**
  * Profiler abstraction used for the timing stage.
@@ -86,8 +86,9 @@ internal sealed class Profiler {
     }
 }
 
+@SuppressLint("UnsafeNewApiCall")
 internal fun startRuntimeMethodTracing(traceFileName: String, sampled: Boolean) {
-    val path = File(Arguments.testOutputDir, traceFileName).absolutePath
+    val path = Outputs.testOutputFile(traceFileName).absolutePath
 
     Log.d(BenchmarkState.TAG, "Profiling output file: $path")
     InstrumentationResults.reportAdditionalFileToCopy("profiling_trace", path)

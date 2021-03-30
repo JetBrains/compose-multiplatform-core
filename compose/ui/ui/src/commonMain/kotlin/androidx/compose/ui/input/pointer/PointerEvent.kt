@@ -19,7 +19,6 @@
 package androidx.compose.ui.input.pointer
 
 import androidx.compose.runtime.Immutable
-import androidx.compose.runtime.Stable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.PointerEventPass.Final
@@ -27,10 +26,7 @@ import androidx.compose.ui.input.pointer.PointerEventPass.Initial
 import androidx.compose.ui.input.pointer.PointerEventPass.Main
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.node.InternalCoreApi
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
-import androidx.compose.ui.unit.Uptime
-import androidx.compose.ui.unit.round
 
 /**
  * A [Modifier.Element] that can interact with pointer input.
@@ -73,29 +69,6 @@ abstract class PointerInputFilter {
      */
     abstract fun onCancel()
 
-    /**
-     * Invoked right after this [PointerInputFilter] is hit by a pointer during hit testing.
-     *
-     * @param customEventDispatcher The [CustomEventDispatcher] that can be used to dispatch
-     * [CustomEvent] across the tree of hit [PointerInputFilter]s.
-     *
-     * @See CustomEventDispatcher
-     */
-    open fun onInit(customEventDispatcher: CustomEventDispatcher) {}
-
-    /**
-     * Invoked when a [CustomEvent] is dispatched by a [PointerInputFilter].
-     *
-     * Dispatch occurs over all passes of [PointerEventPass].
-     *
-     * @param customEvent The [CustomEvent] is the event being dispatched.
-     * @param pass The [PointerEventPass] in which this function is being called.
-     *
-     * @see CustomEvent
-     * @see PointerEventPass
-     */
-    open fun onCustomEvent(customEvent: CustomEvent, pass: PointerEventPass) {}
-
     internal var layoutCoordinates: LayoutCoordinates? = null
 
     /**
@@ -103,8 +76,6 @@ abstract class PointerInputFilter {
      */
     val size: IntSize
         get() = layoutCoordinates?.size ?: IntSize.Zero
-    internal val position: IntOffset
-        get() = layoutCoordinates?.run { localToGlobal(Offset.Zero).round() } ?: IntOffset.Zero
     internal val isAttached: Boolean
         get() = layoutCoordinates?.isAttached == true
 }
@@ -128,35 +99,105 @@ expect class PointerEvent @OptIn(InternalCoreApi::class) internal constructor(
 }
 
 /**
+ * The device type that produces a [PointerInputChange], such as a mouse or stylus.
+ */
+enum class PointerType {
+    /**
+     * An unknown device type or the device type isn't relevant.
+     */
+    Unknown,
+
+    /**
+     * Touch (finger) input.
+     */
+    Touch,
+
+    /**
+     * A mouse pointer.
+     */
+    Mouse,
+
+    /**
+     * A stylus.
+     */
+    Stylus,
+
+    /**
+     * An eraser or an inverted stylus.
+     */
+    Eraser
+}
+
+/**
  * Describes a change that has occurred for a particular pointer, as well as how much of the change
  * has been consumed (meaning, used by a node in the UI).
  *
- * The [current] data always represents the position of the pointer relative to the element that
+ * The [position] represents the position of the pointer relative to the element that
  * this [PointerInputChange] is being dispatched to.
  *
- * The [previous] data, however, represents the position of the pointer offset to the current
+ * The [previousPosition] represents the position of the pointer offset to the current
  * position of the pointer relative to the screen.
  *
- * This means that [current] and [previous] can always be used to understand how much a pointer
- * has moved relative to an element, even if that element is moving along with the changes to the
- * pointer.  For example, if a pointer touches a 1x1 pixel box in the middle, [current] will
- * report a position of (0, 0) when dispatched to it.  If the next event moves x position 5
- * pixels, [current] will report (5, 0) and [previous] will report (0, 0).  If the box moves all 5
- * pixels, and the next event represents the pointer moving along the x axis for 5 more pixels,
- * [current] will again report (5, 0) and [previous] will report (0, 0).
+ * This means that [position] and [previousPosition] can always be used to understand how
+ * much a pointer has moved relative to an element, even if that element is moving along with the
+ * changes to the pointer.  For example, if a pointer touches a 1x1 pixel box in the middle,
+ * [position] will report a position of (0, 0) when dispatched to it.  If the next event
+ * moves x position 5 pixels, [position] will report (5, 0) and [previousPosition] will
+ * report (0, 0). If the box moves all 5 pixels, and the next event represents the pointer moving
+ * along the x axis for 5 more pixels, [position] will again report (5, 0) and
+ * [previousPosition] will report (0, 0).
  *
  * @param id The unique id of the pointer associated with this [PointerInputChange].
- * @param current The [PointerInputData] that represents the current state of this pointer.
- * @param previous The [PointerInputData] that represents the previous state of this pointer.
+ * @param uptimeMillis The time of the current pointer event, in milliseconds. The start (`0`) time
+ * is platform-dependent
+ * @param position The [Offset] of the current pointer event, relative to the containing
+ * element
+ * @param pressed `true` if the pointer event is considered "pressed." For example, finger
+ * touching the screen or a mouse button is pressed [pressed] would be `true`.
+ * @param previousUptimeMillis The [uptimeMillis] of the previous pointer event
+ * @param previousPosition The [Offset] of the previous pointer event, offset to the
+ * [position] and relative to the containing element.
+ * @param previousPressed `true` if the pointer event was considered "pressed." For example , if
+ * a finger was touching the screen or a mouse button was pressed, [previousPressed] would be
+ * `true`.
  * @param consumed Which aspects of this change have been consumed.
+ * @param type The device type that produced the event, such as [mouse][PointerType.Mouse],
+ * or [touch][PointerType.Touch].git
  */
 @Immutable
-data class PointerInputChange(
+class PointerInputChange(
     val id: PointerId,
-    val current: PointerInputData,
-    val previous: PointerInputData,
-    val consumed: ConsumedData
-)
+    val uptimeMillis: Long,
+    val position: Offset,
+    val pressed: Boolean,
+    val previousUptimeMillis: Long,
+    val previousPosition: Offset,
+    val previousPressed: Boolean,
+    val consumed: ConsumedData,
+    val type: PointerType = PointerType.Touch
+) {
+    fun copy(
+        id: PointerId = this.id,
+        currentTime: Long = this.uptimeMillis,
+        currentPosition: Offset = this.position,
+        currentPressed: Boolean = this.pressed,
+        previousTime: Long = this.previousUptimeMillis,
+        previousPosition: Offset = this.previousPosition,
+        previousPressed: Boolean = this.previousPressed,
+        consumed: ConsumedData = this.consumed,
+        type: PointerType = this.type
+    ): PointerInputChange = PointerInputChange(
+        id,
+        currentTime,
+        currentPosition,
+        currentPressed,
+        previousTime,
+        previousPosition,
+        previousPressed,
+        consumed,
+        type
+    )
+}
 
 /**
  * An ID for a given pointer.
@@ -166,31 +207,13 @@ data class PointerInputChange(
 inline class PointerId(val value: Long)
 
 /**
- * Data associated with a pointer.
+ * Describes what aspects of a change has been consumed.
  *
- * @param uptime The time associated with this particular [PointerInputData]
- * @param position The position of the pointer at [uptime] relative to element that
- * the owning [PointerInputChange] is being dispatched to.
- * @param down True if the at [uptime] the pointer was contacting the screen.
- */
-@Immutable
-data class PointerInputData(
-    @Stable
-    val uptime: Uptime,
-    @Stable
-    val position: Offset,
-    @Stable
-    val down: Boolean
-)
-
-/**
- * Describes what aspects of, and how much of, a change has been consumed.
- *
- * @param positionChange The amount of change to the position that has been consumed.
+ * @param positionChange True if a position change in this event has been consumed.
  * @param downChange True if a change to down or up has been consumed.
  */
 class ConsumedData(
-    var positionChange: Offset = Offset.Companion.Zero,
+    var positionChange: Boolean = false,
     var downChange: Boolean = false
 )
 
@@ -222,73 +245,28 @@ enum class PointerEventPass {
 }
 
 /**
- * The base type for all custom events.
- */
-interface CustomEvent
-
-/**
- * Defines the interface that is used to dispatch CustomEvents to pointer input nodes across the
- * compose tree.
- */
-interface CustomEventDispatcher {
-
-    /**
-     * Dispatches the [event] to all other pointer input nodes that share associated [PointerId]s
-     * with the pointer input node doing the dispatching.
-     *
-     * @param event The [CustomEvent] to dispatch.
-     */
-    // TODO(shepshapard): Come back and consider any issues with: This effectively allows
-    //  individual pointer input nodes to gain a reference back to the internal HitPathTracker.
-    //  But I think that is ok since pointer input nodes should  never be able to live for longer
-    //  than the HitPathTracker that would be responsible for tracking them.
-    fun dispatchCustomEvent(event: CustomEvent)
-
-    /**
-     * Arranges to retain the hit paths associated with the provided [pointerIds] such that if
-     * they are requested to be removed for any reason, they are retained.
-     *
-     * For example, this is useful when a pointer input filter wants to be able to send future
-     * custom messages to a another after the pointer has actually be released from the screen
-     * (such as in the case where a Double Tap gesture detector may want to delay a Single Tap
-     * gesture detector from firing but later may allow it to do so even after the pointer
-     * associated with the Single Tap Gesture detector no longer exists.
-     */
-    fun retainHitPaths(pointerIds: Set<PointerId>)
-
-    /**
-     * Arranges to release any hit paths associated with the provided [pointerIds] such that if
-     * they will be requested to be removed in the future, they will be removed upon request.
-     *
-     * If they were already requested to be removed while they were retained, they will be
-     * removed immediately upon release.
-     */
-    fun releaseHitPaths(pointerIds: Set<PointerId>)
-}
-
-/**
  * True if this [PointerInputChange] represents a pointer coming in contact with the screen and
  * that change has not been consumed.
  */
-fun PointerInputChange.changedToDown() = !consumed.downChange && !previous.down && current.down
+fun PointerInputChange.changedToDown() = !consumed.downChange && !previousPressed && pressed
 
 /**
  * True if this [PointerInputChange] represents a pointer coming in contact with the screen, whether
  * or not that change has been consumed.
  */
-fun PointerInputChange.changedToDownIgnoreConsumed() = !previous.down && current.down
+fun PointerInputChange.changedToDownIgnoreConsumed() = !previousPressed && pressed
 
 /**
  * True if this [PointerInputChange] represents a pointer breaking contact with the screen and
  * that change has not been consumed.
  */
-fun PointerInputChange.changedToUp() = !consumed.downChange && previous.down && !current.down
+fun PointerInputChange.changedToUp() = !consumed.downChange && previousPressed && !pressed
 
 /**
  * True if this [PointerInputChange] represents a pointer breaking contact with the screen, whether
  * or not that change has been consumed.
  */
-fun PointerInputChange.changedToUpIgnoreConsumed() = previous.down && !current.down
+fun PointerInputChange.changedToUpIgnoreConsumed() = previousPressed && !pressed
 
 /**
  * True if this [PointerInputChange] represents a pointer moving on the screen and some of that
@@ -310,66 +288,55 @@ fun PointerInputChange.positionChangedIgnoreConsumed() =
 fun PointerInputChange.positionChange() = this.positionChangeInternal(false)
 
 /**
- * The distance that the pointer has moved on the screen, ignoring any distance that may have been
- * consumed.
+ * The distance that the pointer has moved on the screen, ignoring the fact that it might have
+ * been consumed.
  */
 fun PointerInputChange.positionChangeIgnoreConsumed() = this.positionChangeInternal(true)
+
 private fun PointerInputChange.positionChangeInternal(ignoreConsumed: Boolean = false): Offset {
-    val previousPosition = previous.position
-    val currentPosition = current.position
+    val previousPosition = previousPosition
+    val currentPosition = position
 
     val offset = currentPosition - previousPosition
 
-    return if (!ignoreConsumed) {
-        offset - consumed.positionChange
-    } else {
-        offset
-    }
+    return if (!ignoreConsumed && consumed.positionChange) Offset.Zero else offset
 }
 
 /**
- * True if any of this [PointerInputChange]'s movement has been consumed.
+ * True if this [PointerInputChange]'s movement has been consumed.
  */
-fun PointerInputChange.anyPositionChangeConsumed() =
-    consumed.positionChange.x != 0f || consumed.positionChange.y != 0f
+fun PointerInputChange.positionChangeConsumed() = consumed.positionChange
 
 /**
  * True if any aspect of this [PointerInputChange] has been consumed.
  */
-fun PointerInputChange.anyChangeConsumed() = anyPositionChangeConsumed() || consumed.downChange
+fun PointerInputChange.anyChangeConsumed() = positionChangeConsumed() || consumed.downChange
 
 /**
  * Consume the up or down change of this [PointerInputChange] if there is an up or down change to
  * consume.
  */
 fun PointerInputChange.consumeDownChange() {
-    if (current.down != previous.down) {
+    if (pressed != previousPressed) {
         consumed.downChange = true
     }
 }
 
 /**
- * Consumes some portion of the position change of this [PointerInputChange].
- *
- * @param consumedDx The amount of position change on the x axis to consume.
- * @param consumedDy The amount of position change on the y axis to consume.
+ * Consume position change if there is any
  */
-fun PointerInputChange.consumePositionChange(
-    consumedDx: Float,
-    consumedDy: Float
-) {
-    // TODO(shepshapard): Handle case where consumption would make the consumption total to be
-    //  less than the total change.
-    consumed.positionChange += Offset(consumedDx, consumedDy)
+fun PointerInputChange.consumePositionChange() {
+    if (positionChange() != Offset.Zero) {
+        consumed.positionChange = true
+    }
 }
 
 /**
  * Consumes all changes associated with the [PointerInputChange]
  */
 fun PointerInputChange.consumeAllChanges() {
-    val remainingPositionChange = this.positionChange()
     this.consumeDownChange()
-    this.consumePositionChange(remainingPositionChange.x, remainingPositionChange.y)
+    this.consumePositionChange()
 }
 
 /**
@@ -378,7 +345,7 @@ fun PointerInputChange.consumeAllChanges() {
  * given bounds.
  */
 fun PointerInputChange.isOutOfBounds(size: IntSize): Boolean {
-    val position = current.position
+    val position = position
     val x = position.x
     val y = position.y
     val width = size.width

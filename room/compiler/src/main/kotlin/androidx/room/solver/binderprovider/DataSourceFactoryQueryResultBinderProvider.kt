@@ -39,14 +39,18 @@ class DataSourceFactoryQueryResultBinderProvider(val context: Context) : QueryRe
         }
         val typeArg = declared.typeArguments[1]
         val adapter = context.typeAdapterStore.findRowAdapter(typeArg, query)?.let {
-            ListQueryResultAdapter(it)
+            ListQueryResultAdapter(typeArg, it)
         }
 
         val tableNames = (
             (adapter?.accessedTableNames() ?: emptyList()) +
                 query.tables.map { it.name }
             ).toSet()
-        val countedBinder = PositionalDataSourceQueryResultBinder(adapter, tableNames)
+        val countedBinder = PositionalDataSourceQueryResultBinder(
+            listAdapter = adapter,
+            tableNames = tableNames,
+            forPaging3 = false
+        )
         return DataSourceFactoryQueryResultBinder(countedBinder)
     }
 

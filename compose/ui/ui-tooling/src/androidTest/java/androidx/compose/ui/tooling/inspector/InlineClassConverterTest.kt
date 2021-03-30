@@ -19,13 +19,15 @@ package androidx.compose.ui.tooling.inspector
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.tooling.Group
-import androidx.compose.ui.tooling.Inspectable
 import androidx.compose.ui.tooling.CompositionDataRecord
+import androidx.compose.ui.tooling.Inspectable
 import androidx.compose.ui.tooling.ToolingTest
-import androidx.compose.ui.tooling.asTree
+import androidx.compose.ui.tooling.data.Group
+import androidx.compose.ui.tooling.data.UiToolingDataApi
+import androidx.compose.ui.tooling.data.asTree
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
+import androidx.compose.ui.unit.sp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
@@ -34,6 +36,7 @@ import org.junit.runner.RunWith
 
 @MediumTest
 @RunWith(AndroidJUnit4::class)
+@OptIn(UiToolingDataApi::class)
 class InlineClassConverterTest : ToolingTest() {
 
     @Test
@@ -42,7 +45,7 @@ class InlineClassConverterTest : ToolingTest() {
         show {
             Inspectable(slotTableRecord) {
                 Surface {
-                    Text(text = "OK", fontSize = TextUnit.Sp(12))
+                    Text(text = "OK", fontSize = 12.sp)
                 }
             }
         }

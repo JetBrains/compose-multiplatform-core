@@ -18,8 +18,11 @@ package androidx.build
 
 import androidx.build.dependencies.AGP_LATEST
 import androidx.build.dependencies.KOTLIN_STDLIB
+import androidx.build.dependencies.KOTLIN_VERSION
+import androidx.build.dependencies.KSP_VERSION
 import org.gradle.api.DefaultTask
 import org.gradle.api.Project
+import org.gradle.api.artifacts.repositories.MavenArtifactRepository
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.plugins.JavaPluginConvention
 import org.gradle.api.tasks.Input
@@ -53,10 +56,19 @@ abstract class SdkResourceGenerator : DefaultTask() {
     val agpDependency: String = AGP_LATEST
 
     @get:Input
-    val navigationCommon: String = "androidx.navigation:navigation-common:2.0.0"
+    val navigationRuntime: String = "androidx.navigation:navigation-runtime:2.2.0"
 
     @get:Input
     val kotlinStdlib: String = KOTLIN_STDLIB
+
+    @get:Input
+    val kotlinVersion: String = KOTLIN_VERSION
+
+    @get:Input
+    val kspVersion: String = KSP_VERSION
+
+    @get:Input
+    lateinit var repositoryUrls: List<String>
 
     @get:Input
     val rootProjectPath: String = project.rootProject.rootDir.absolutePath
@@ -77,10 +89,14 @@ abstract class SdkResourceGenerator : DefaultTask() {
         writer.write("minSdkVersion=$minSdkVersion\n")
         writer.write("debugKeystore=${debugKeystore.get().asFile.canonicalPath}\n")
         writer.write("agpDependency=$agpDependency\n")
-        writer.write("navigationCommon=$navigationCommon\n")
+        writer.write("navigationRuntime=$navigationRuntime\n")
         writer.write("kotlinStdlib=$kotlinStdlib\n")
         writer.write("gradleVersion=$gradleVersion\n")
+        writer.write("kotlinVersion=$kotlinVersion\n")
+        writer.write("kspVersion=$kspVersion\n")
         writer.write("rootProjectPath=$rootProjectPath\n")
+        val encodedRepositoryUrls = repositoryUrls.joinToString(",")
+        writer.write("repositoryUrls=$encodedRepositoryUrls\n")
         writer.close()
     }
 
@@ -97,6 +113,12 @@ abstract class SdkResourceGenerator : DefaultTask() {
                 it.localSupportRepo = project.getRepositoryDirectory().canonicalPath
                 it.gradleVersion = project.gradle.gradleVersion
                 it.outputFile.set(File(generatedDirectory, "sdk.prop"))
+                // Copy repositories used for the library project so that it can replicate the same
+                // maven structure in test.
+                it.repositoryUrls = project.repositories.filterIsInstance<MavenArtifactRepository>()
+                    .map {
+                        it.url.toString()
+                    }
             }
             project.tasks.named("compileTestJava").configure { it.dependsOn(provider) }
 

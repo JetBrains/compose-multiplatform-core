@@ -47,18 +47,17 @@ public class RenderParametersWireFormat implements VersionedParcelable, Parcelab
     int mDrawMode;
 
     /**
-     * Optional parameter which specifies that a particular complication rather than all
-     * complications should be highlighted when Layer.COMPLICATIONS is
-     * LayerMode.DRAW_HIGHLIGHTED. NO_COMPLICATION_ID represents null.
+     * Optional parameter which if non null specifies that a particular complication, should be
+     * drawn with a special highlight to indicate it's been selected.
      */
     @ParcelField(2)
-    int mHighlightedComplicationId;
+    int mSelectedComplicationId;
 
     /**
-     * Specifies the tint for any highlight.
+     * Specifies the tint for any outlined element.
      */
     @ParcelField(3)
-    int mHighlightTint;
+    int mOutlineTint;
 
     /**
      * Wire format for Map<{@link androidx.wear.watchface.style.Layer},
@@ -78,13 +77,13 @@ public class RenderParametersWireFormat implements VersionedParcelable, Parcelab
     public RenderParametersWireFormat(
             int drawMode,
             @NonNull List<LayerParameterWireFormat> layerParameters,
-            @Nullable Integer highlightedComplicationId,
-            @ColorInt int highlightTint) {
+            @Nullable Integer selectedComplicationId,
+            @ColorInt int outlineTint) {
         mDrawMode = drawMode;
         mLayerParameters = layerParameters;
-        mHighlightedComplicationId = (highlightedComplicationId != null)
-                ? highlightedComplicationId : NO_COMPLICATION_ID;
-        mHighlightTint = highlightTint;
+        mSelectedComplicationId = (selectedComplicationId != null)
+                ? selectedComplicationId : NO_COMPLICATION_ID;
+        mOutlineTint = outlineTint;
     }
 
     public int getDrawMode() {
@@ -92,14 +91,14 @@ public class RenderParametersWireFormat implements VersionedParcelable, Parcelab
     }
 
     @Nullable
-    public Integer getHighlightedComplicationId() {
-        return (mHighlightedComplicationId == NO_COMPLICATION_ID) ? null :
-                mHighlightedComplicationId;
+    public Integer getSelectedComplicationId() {
+        return (mSelectedComplicationId == NO_COMPLICATION_ID) ? null :
+                mSelectedComplicationId;
     }
 
     @ColorInt
-    public int getHighlightTint() {
-        return mHighlightTint;
+    public int getOutlineTint() {
+        return mOutlineTint;
     }
 
     @NonNull
@@ -133,66 +132,4 @@ public class RenderParametersWireFormat implements VersionedParcelable, Parcelab
                 }
             };
 
-    /**
-     * Wire format for Map<{@link androidx.wear.watchface.style.Layer},
-     * {@link androidx.wear.watchface.LayerMode}>
-     *
-     * Unfortunately we can't ever add new members to this because we use it in lists and
-     * VersionedParcelable isn't fully backwards compatible when new members are added to lists.
-     *
-     * @hide
-     */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-    @VersionedParcelize
-    @SuppressLint("BanParcelableUsage") // TODO(b/169214666): Remove Parcelable
-    public static class LayerParameterWireFormat implements VersionedParcelable, Parcelable {
-        /** Wire format for Map<{@link androidx.wear.watchface.style.Layer> */
-        @ParcelField(1)
-        int mLayer;
-
-        /** Wire format for Map<{@link androidx.wear.watchface.LayerMode> */
-        @ParcelField(2)
-        int mLayerMode;
-
-        LayerParameterWireFormat() {
-        }
-
-        public LayerParameterWireFormat(int layer, int layerMode) {
-            mLayer = layer;
-            mLayerMode = layerMode;
-        }
-
-        public int getLayer() {
-            return mLayer;
-        }
-
-        public int getLayerMode() {
-            return mLayerMode;
-        }
-
-        /** Serializes this IndicatorState to the specified {@link Parcel}. */
-        @Override
-        public void writeToParcel(@NonNull Parcel parcel, int flags) {
-            parcel.writeParcelable(ParcelUtils.toParcelable(this), flags);
-        }
-
-        @Override
-        public int describeContents() {
-            return 0;
-        }
-
-        public static final Creator<LayerParameterWireFormat> CREATOR =
-                new Creator<LayerParameterWireFormat>() {
-                    @Override
-                    public LayerParameterWireFormat createFromParcel(Parcel source) {
-                        return ParcelUtils.fromParcelable(
-                                source.readParcelable(getClass().getClassLoader()));
-                    }
-
-                    @Override
-                    public LayerParameterWireFormat[] newArray(int size) {
-                        return new LayerParameterWireFormat[size];
-                    }
-                };
-    }
 }

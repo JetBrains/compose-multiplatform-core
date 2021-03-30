@@ -16,11 +16,15 @@
 
 package androidx.room.compiler.processing.util.runner
 
+import androidx.room.compiler.processing.ExperimentalProcessingApi
 import androidx.room.compiler.processing.SyntheticJavacProcessor
 import androidx.room.compiler.processing.util.CompilationResult
+import androidx.room.compiler.processing.util.KotlinCompilationUtil
 import androidx.room.compiler.processing.util.KotlinCompileTestingCompilationResult
 import com.tschuchort.compiletesting.KotlinCompilation
+import java.io.ByteArrayOutputStream
 
+@ExperimentalProcessingApi
 internal object KaptCompilationTestRunner : CompilationTestRunner {
 
     override val name: String = "kapt"
@@ -30,30 +34,24 @@ internal object KaptCompilationTestRunner : CompilationTestRunner {
     }
 
     override fun compile(params: TestCompilationParameters): CompilationResult {
-        val syntheticJavacProcessor = SyntheticJavacProcessor(params.handler)
-        val compilation = KotlinCompilation()
-        params.sources.forEach {
-            compilation.workingDir.resolve("sources")
-                .resolve(it.relativePath())
-                .parentFile
-                .mkdirs()
-        }
-        compilation.sources = params.sources.map {
-            it.toKotlinSourceFile()
-        }
-        compilation.jvmDefault = "enable"
-        compilation.jvmTarget = "1.8"
+        val syntheticJavacProcessor = SyntheticJavacProcessor(params.handlers)
+        val outputStream = ByteArrayOutputStream()
+        val compilation = KotlinCompilationUtil.prepareCompilation(
+            sources = params.sources,
+            outputStream = outputStream,
+            classpaths = params.classpath
+        )
         compilation.annotationProcessors = listOf(syntheticJavacProcessor)
-        compilation.inheritClassPath = true
-        compilation.verbose = false
-        compilation.classpaths += params.classpath
-
         val result = compilation.compile()
         return KotlinCompileTestingCompilationResult(
             testRunner = this,
             delegate = result,
             processor = syntheticJavacProcessor,
-            successfulCompilation = result.exitCode == KotlinCompilation.ExitCode.OK
+            successfulCompilation = result.exitCode == KotlinCompilation.ExitCode.OK,
+            outputSourceDirs = listOf(
+                compilation.kaptSourceDir, compilation.kaptKotlinGeneratedDir
+            ),
+            rawOutput = outputStream.toString(Charsets.UTF_8),
         )
     }
 }

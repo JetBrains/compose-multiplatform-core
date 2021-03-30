@@ -153,7 +153,7 @@ class AppBarTest {
                 TopAppBar(
                     title = {
                         Text("App Bar Title")
-                        textStyle = AmbientTextStyle.current
+                        textStyle = LocalTextStyle.current
                         h6Style = MaterialTheme.typography.h6
                     }
                 )
@@ -198,7 +198,7 @@ class AppBarTest {
      */
     private val FakeIcon = @Composable { modifier: Modifier ->
         IconButton(onClick = {}, modifier = modifier) {
-            Icon(ColorPainter(Color.Red))
+            Icon(ColorPainter(Color.Red), null)
         }
     }
 

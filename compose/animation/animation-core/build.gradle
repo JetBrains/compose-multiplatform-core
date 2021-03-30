@@ -17,7 +17,7 @@
 
 import androidx.build.AndroidXUiPlugin
 import androidx.build.LibraryGroups
-import androidx.build.Publish
+import androidx.build.LibraryType
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 import static androidx.build.dependencies.DependenciesKt.*
@@ -31,21 +31,21 @@ plugins {
 AndroidXUiPlugin.applyAndConfigureKotlinPlugin(project)
 
 dependencies {
-    kotlinPlugin project(":compose:compiler:compiler")
+    kotlinPlugin(project(":compose:compiler:compiler"))
 
-    if(!AndroidXUiPlugin.isMultiplatformEnabled(project)) {
+    if (!AndroidXUiPlugin.isMultiplatformEnabled(project)) {
         /*
          * When updating dependencies, make sure to make the an an analogous update in the
          * corresponding block below
          */
 
-        api "androidx.annotation:annotation:1.1.0"
+        api("androidx.annotation:annotation:1.1.0")
 
-        implementation project(":compose:runtime:runtime")
-        implementation project(":compose:runtime:runtime-dispatch")
-        implementation project(":compose:ui:ui-unit")
-        implementation project(":compose:ui:ui-util")
-        implementation (KOTLIN_STDLIB)
+        implementation(project(":compose:runtime:runtime"))
+        implementation(project(":compose:ui:ui-unit"))
+        implementation(project(":compose:ui:ui-util"))
+        implementation(KOTLIN_STDLIB)
+        api(KOTLIN_COROUTINES_CORE)
 
         testImplementation(ANDROIDX_TEST_RULES)
         testImplementation(ANDROIDX_TEST_RUNNER)
@@ -59,10 +59,12 @@ dependencies {
         androidTestImplementation(JUNIT)
         androidTestImplementation(project(":compose:animation:animation"))
         androidTestImplementation(project(":compose:ui:ui-test-junit4"))
+
+        lintPublish project(":compose:animation:animation-core-lint")
     }
 }
 
-if(AndroidXUiPlugin.isMultiplatformEnabled(project)) {
+if (AndroidXUiPlugin.isMultiplatformEnabled(project)) {
     kotlin {
         android()
         jvm("desktop")
@@ -73,14 +75,14 @@ if(AndroidXUiPlugin.isMultiplatformEnabled(project)) {
          */
         sourceSets {
             commonMain.dependencies {
-                implementation project(":compose:runtime:runtime")
-                implementation project(":compose:runtime:runtime-dispatch")
-                implementation project(":compose:ui:ui-unit")
-                implementation project(":compose:ui:ui-util")
+                implementation(project(":compose:runtime:runtime"))
+                implementation(project(":compose:ui:ui-unit"))
+                implementation(project(":compose:ui:ui-util"))
                 implementation(KOTLIN_STDLIB_COMMON)
+                api(KOTLIN_COROUTINES_CORE)
             }
             androidMain.dependencies {
-                api "androidx.annotation:annotation:1.1.0"
+                api("androidx.annotation:annotation:1.1.0")
                 implementation(KOTLIN_STDLIB)
             }
             desktopMain.dependencies {
@@ -100,8 +102,8 @@ if(AndroidXUiPlugin.isMultiplatformEnabled(project)) {
                 implementation(ANDROIDX_TEST_RUNNER)
                 implementation(ANDROIDX_TEST_CORE)
                 implementation(JUNIT)
-                implementation project(":compose:animation:animation")
-                implementation project(":compose:ui:ui-test-junit4")
+                implementation(project(":compose:animation:animation"))
+                implementation(project(":compose:ui:ui-test-junit4"))
             }
         }
     }
@@ -109,7 +111,7 @@ if(AndroidXUiPlugin.isMultiplatformEnabled(project)) {
 
 androidx {
     name = "Compose Animation Core"
-    publish = Publish.SNAPSHOT_AND_RELEASE
+    type = LibraryType.PUBLISHED_LIBRARY
     mavenGroup = LibraryGroups.Compose.ANIMATION
     inceptionYear = "2019"
     description = "Animation engine and animation primitives that are the building blocks of the Compose animation library"
@@ -119,19 +121,7 @@ androidx {
 tasks.withType(KotlinCompile).configureEach {
     kotlinOptions {
         freeCompilerArgs += [
-            "-Xuse-experimental=kotlin.Experimental",
-            "-Xallow-jvm-ir-dependencies"
+                "-Xuse-experimental=kotlin.Experimental",
         ]
-    }
-}
-
-android {
-    defaultConfig {
-        minSdkVersion 21
-    }
-    tasks.withType(KotlinCompile).configureEach {
-        kotlinOptions {
-            useIR = true
-        }
     }
 }

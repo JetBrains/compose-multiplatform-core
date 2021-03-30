@@ -20,7 +20,6 @@ import androidx.room.Dao
 import androidx.room.Query
 import androidx.room.ext.RoomTypeNames.ROOM_SQL_QUERY
 import androidx.room.ext.RoomTypeNames.STRING_UTIL
-import androidx.room.ext.getTypeElementsAnnotatedWith
 import androidx.room.processor.QueryMethodProcessor
 import androidx.room.testing.TestProcessor
 import androidx.room.writer.QueryWriter
@@ -355,7 +354,7 @@ class QueryWriterTest {
                     .forAnnotations(Query::class, Dao::class)
                     .nextRunHandler { invocation ->
                         val (owner, methods) = invocation.roundEnv
-                            .getTypeElementsAnnotatedWith(Dao::class.java)
+                            .getTypeElementsAnnotatedWith(Dao::class.qualifiedName!!)
                             .map {
                                 Pair(
                                     it,

@@ -16,6 +16,7 @@
 
 package androidx.room.compiler.processing
 
+import androidx.room.compiler.processing.util.CompilationTestCapabilities
 import androidx.room.compiler.processing.util.Source
 import androidx.room.compiler.processing.util.runKaptTest
 import androidx.room.compiler.processing.util.runKspTest
@@ -26,6 +27,7 @@ class InternalModifierTest {
     @OptIn(ExperimentalStdlibApi::class)
     @Test
     fun testInternalsAndInlines() {
+        CompilationTestCapabilities.assumeKspIsEnabled()
         /**
          * parse same file w/ kapt and KSP and ensure results are the same.
          */
@@ -35,9 +37,10 @@ class InternalModifierTest {
             package mainPackage;
             internal class InternalClass(val value: String)
             inline class InlineClass(val value:String)
-            class Subject {
+            abstract class Subject {
                 var normalProp: String = TODO()
                 var inlineProp: InlineClass = TODO()
+                internal abstract var internalAbstractProp: String
                 internal var internalProp: String = TODO()
                 internal var internalInlineProp: InlineClass = TODO()
                 private var internalTypeProp : InternalClass = TODO()

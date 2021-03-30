@@ -63,6 +63,7 @@ import androidx.annotation.StringRes;
 import androidx.collection.ArraySet;
 import androidx.core.os.CancellationSignal;
 import androidx.fragment.R;
+import androidx.fragment.app.strictmode.FragmentStrictMode;
 import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.LifecycleEventObserver;
 import androidx.lifecycle.LifecycleOwner;
@@ -439,6 +440,9 @@ public abstract class FragmentManager implements FragmentResultOwner {
 
     private final AtomicInteger mBackStackIndex = new AtomicInteger();
 
+    private final Map<String, BackStackState> mBackStackStates =
+            Collections.synchronizedMap(new HashMap<String, BackStackState>());
+
     private final Map<String, Bundle> mResults =
             Collections.synchronizedMap(new HashMap<String, Bundle>());
     private final Map<String, LifecycleAwareResultListener> mResultListeners =
@@ -517,6 +521,8 @@ public abstract class FragmentManager implements FragmentResultOwner {
     private ArrayList<StartEnterTransitionListener> mPostponedTransactions;
 
     private FragmentManagerViewModel mNonConfig;
+
+    private FragmentStrictMode.Policy mStrictModePolicy;
 
     private Runnable mExecCommit = new Runnable() {
         @Override
@@ -671,6 +677,23 @@ public abstract class FragmentManager implements FragmentResultOwner {
             // enabled callback
             mOnBackPressedDispatcher.onBackPressed();
         }
+    }
+
+    /**
+     * Save the back stack. While this functions similarly to
+     * {@link #popBackStack(String, int)}, it <strong>does not</strong> throw away the
+     * state of any fragments that were added through those transactions. Instead, the
+     * back stack that is saved by this method can later be restored with its state
+     * in tact.
+     * <p>
+     * This function is asynchronous -- it enqueues the
+     * request to pop, but the action will not be performed until the application
+     * returns to its event loop.
+     *
+     * @param name The name set by {@link FragmentTransaction#addToBackStack(String)}.
+     */
+    public void saveBackStack(@NonNull String name) {
+        enqueueAction(new SaveBackStackState(name), false);
     }
 
     /**
@@ -1015,6 +1038,19 @@ public abstract class FragmentManager implements FragmentResultOwner {
             return (Fragment) tag;
         }
         return null;
+    }
+
+    void onContainerAvailable(@NonNull FragmentContainerView container) {
+        for (FragmentStateManager fragmentStateManager:
+                mFragmentStore.getActiveFragmentStateManagers()) {
+            Fragment fragment = fragmentStateManager.getFragment();
+            if (fragment.mContainerId == container.getId() && fragment.mView != null
+                    && fragment.mView.getParent() == null
+            ) {
+                fragment.mContainer = container;
+                fragmentStateManager.addViewToContainer();
+            }
+        }
     }
 
     /**
@@ -1406,7 +1442,7 @@ public abstract class FragmentManager implements FragmentResultOwner {
                                         && f.mView.getVisibility() == View.VISIBLE
                                         && f.mPostponedAlpha >= 0) {
                                     anim = FragmentAnim.loadAnimation(mHost.getContext(),
-                                            f, false);
+                                            f, false, f.getPopDirection());
                                 }
                                 f.mPostponedAlpha = 0;
                                 // Robolectric tests do not post the animation like a real device
@@ -1522,7 +1558,7 @@ public abstract class FragmentManager implements FragmentResultOwner {
     private void completeShowHideFragment(@NonNull final Fragment fragment) {
         if (fragment.mView != null) {
             FragmentAnim.AnimationOrAnimator anim = FragmentAnim.loadAnimation(
-                    mHost.getContext(), fragment, !fragment.mHidden);
+                    mHost.getContext(), fragment, !fragment.mHidden, fragment.getPopDirection());
             if (anim != null && anim.animator != null) {
                 anim.animator.setTarget(fragment.mView);
                 if (fragment.mHidden) {
@@ -1563,9 +1599,7 @@ public abstract class FragmentManager implements FragmentResultOwner {
                 }
             }
         }
-        if (fragment.mAdded && isMenuAvailable(fragment)) {
-            mNeedMenuInvalidate = true;
-        }
+        invalidateMenuForFragment(fragment);
         fragment.mHiddenChanged = false;
         fragment.onHiddenChanged(fragment.mHidden);
     }
@@ -1596,7 +1630,7 @@ public abstract class FragmentManager implements FragmentResultOwner {
                 f.mIsNewlyAdded = false;
                 // run animations:
                 FragmentAnim.AnimationOrAnimator anim = FragmentAnim.loadAnimation(
-                        mHost.getContext(), f, true);
+                        mHost.getContext(), f, true, f.getPopDirection());
                 if (anim != null) {
                     if (anim.animation != null) {
                         f.mView.startAnimation(anim.animation);
@@ -1693,7 +1727,10 @@ public abstract class FragmentManager implements FragmentResultOwner {
         return fragmentStateManager;
     }
 
-    void addFragment(@NonNull Fragment fragment) {
+    FragmentStateManager addFragment(@NonNull Fragment fragment) {
+        if (fragment.mRemoved) {
+            FragmentStrictMode.onFragmentReuse(fragment);
+        }
         if (isLoggingEnabled(Log.VERBOSE)) Log.v(TAG, "add: " + fragment);
         FragmentStateManager fragmentStateManager = createOrGetFragmentStateManager(fragment);
         fragment.mFragmentManager = this;
@@ -1708,6 +1745,7 @@ public abstract class FragmentManager implements FragmentResultOwner {
                 mNeedMenuInvalidate = true;
             }
         }
+        return fragmentStateManager;
     }
 
     void removeFragment(@NonNull Fragment fragment) {
@@ -2402,12 +2440,14 @@ public abstract class FragmentManager implements FragmentResultOwner {
      */
     private void setVisibleRemovingFragment(@NonNull Fragment f) {
         ViewGroup container = getFragmentContainer(f);
-        if (container != null && f.getNextAnim() > 0) {
+        if (container != null
+                && f.getEnterAnim() + f.getExitAnim() + f.getPopEnterAnim() + f.getPopExitAnim() > 0
+        ) {
             if (container.getTag(R.id.visible_removing_fragment_view_tag) == null) {
                 container.setTag(R.id.visible_removing_fragment_view_tag, f);
             }
             ((Fragment) container.getTag(R.id.visible_removing_fragment_view_tag))
-                    .setNextAnim(f.getNextAnim());
+                    .setPopDirection(f.getPopDirection());
         }
     }
 
@@ -2525,12 +2565,17 @@ public abstract class FragmentManager implements FragmentResultOwner {
                 return false;
             }
 
-            final int numActions = mPendingActions.size();
-            for (int i = 0; i < numActions; i++) {
-                didSomething |= mPendingActions.get(i).generateOps(records, isPop);
+            try {
+                final int numActions = mPendingActions.size();
+                for (int i = 0; i < numActions; i++) {
+                    didSomething |= mPendingActions.get(i).generateOps(records, isPop);
+                }
+            } finally {
+                // Whether generateOps succeeds or not, we clear the pending actions
+                // to avoid re-processing the same set of actions a second time
+                mPendingActions.clear();
+                mHost.getHandler().removeCallbacks(mExecCommit);
             }
-            mPendingActions.clear();
-            mHost.getHandler().removeCallbacks(mExecCommit);
         }
         return didSomething;
     }
@@ -2557,61 +2602,197 @@ public abstract class FragmentManager implements FragmentResultOwner {
         mBackStack.add(state);
     }
 
+    boolean saveBackStackState(@NonNull ArrayList<BackStackRecord> records,
+            @NonNull ArrayList<Boolean> isRecordPop, @NonNull String name) {
+        final int index = findBackStackIndex(name, -1, true);
+        if (index < 0) {
+            return false;
+        }
+
+        // Assert that all of the transactions use setReorderingAllowed(true)
+        // to ensure that when they are restored, they are restored as a single
+        // atomic operation and intermediate fragments aren't moved all the way
+        // up to the RESUMED state
+        for (int i = index; i < mBackStack.size(); i++) {
+            BackStackRecord record = mBackStack.get(index);
+            if (!record.mReorderingAllowed) {
+                throwException(new IllegalArgumentException("saveBackStack(\"" + name + "\") "
+                        + "included FragmentTransactions must use setReorderingAllowed(true) "
+                        + "to ensure that the back stack can be restored as an atomic operation. "
+                        + "Found " + record + " that did not use setReorderingAllowed(true)."));
+            }
+        }
+
+        // Assert that the set of affected fragments are entirely self contained within
+        // the set of transactions being saved by ensuring that the first transaction including
+        // that fragment includes an OP_ADD
+        HashSet<Fragment> allFragments = new HashSet<>();
+        for (int i = index; i < mBackStack.size(); i++) {
+            BackStackRecord record = mBackStack.get(index);
+            HashSet<Fragment> affectedFragments = new HashSet<>();
+            HashSet<Fragment> addedFragments = new HashSet<>();
+            for (FragmentTransaction.Op op : record.mOps) {
+                Fragment f = op.mFragment;
+                if (f == null) {
+                    continue;
+                }
+                if (!op.mFromExpandedOp || op.mCmd == FragmentTransaction.OP_ADD
+                        || op.mCmd == FragmentTransaction.OP_SET_PRIMARY_NAV) {
+                    allFragments.add(f);
+                    affectedFragments.add(f);
+                }
+                if (op.mCmd == FragmentTransaction.OP_ADD) {
+                    addedFragments.add(f);
+                }
+            }
+            affectedFragments.removeAll(addedFragments);
+            if (!affectedFragments.isEmpty()) {
+                throwException(new IllegalArgumentException("saveBackStack(\"" + name + "\") "
+                        + "must be self contained and not reference fragments from "
+                        + "non-saved FragmentTransactions. Found reference to fragment"
+                        + (affectedFragments.size() == 1
+                        ? " " + affectedFragments.iterator().next()
+                        : "s " + affectedFragments)
+                        + " in " + record + " that were previously "
+                        + "added to the FragmentManager through a separate FragmentTransaction."));
+            }
+        }
+
+        // Ensure that there are no retained fragments in the affected fragments or
+        // their transitive set of child fragments
+        ArrayDeque<Fragment> fragmentsToSearch = new ArrayDeque<>(allFragments);
+        while (!fragmentsToSearch.isEmpty()) {
+            Fragment currentFragment = fragmentsToSearch.removeFirst();
+            if (currentFragment.mRetainInstance) {
+                throwException(new IllegalArgumentException("saveBackStack(\"" + name + "\") "
+                        + "must not contain retained fragments. Found "
+                        + (allFragments.contains(currentFragment)
+                        ? "direct reference to retained "
+                        : "retained child ")
+                        + "fragment " + currentFragment));
+            }
+            // Then recursively check the child fragments for retained fragments
+            for (Fragment f : currentFragment.mChildFragmentManager.getActiveFragments()) {
+                if (f != null) {
+                    fragmentsToSearch.addLast(f);
+                }
+            }
+        }
+
+        // Now actually record each save
+        final ArrayList<String> fragments = new ArrayList<>();
+        for (Fragment f : allFragments) {
+            fragments.add(f.mWho);
+        }
+        final ArrayList<BackStackRecordState> backStackRecordStates =
+                new ArrayList<>(mBackStack.size() - index);
+        // Add placeholders for each BackStackRecordState
+        for (int i = index; i < mBackStack.size(); i++) {
+            backStackRecordStates.add(null);
+        }
+        final BackStackState backStackState = new BackStackState(
+                fragments, backStackRecordStates);
+        for (int i = mBackStack.size() - 1; i >= index; i--) {
+            final BackStackRecord record = mBackStack.remove(i);
+            record.mBeingSaved = true;
+            // Get a callback when the BackStackRecord is actually finished
+            final int currentIndex = i;
+            record.addOnCommitRunnable(new Runnable() {
+                @Override
+                public void run() {
+                    // First collapse the record to remove expanded ops and get it ready to save
+                    record.collapseOps();
+                    // Then save the state
+                    BackStackRecordState state = new BackStackRecordState(record);
+                    backStackRecordStates.set(currentIndex - index, state);
+                }
+            });
+            records.add(record);
+            isRecordPop.add(true);
+        }
+        mBackStackStates.put(name, backStackState);
+        return true;
+    }
+
     @SuppressWarnings({"unused", "WeakerAccess"}) /* synthetic access */
     boolean popBackStackState(@NonNull ArrayList<BackStackRecord> records,
             @NonNull ArrayList<Boolean> isRecordPop, @Nullable String name, int id, int flags) {
-        if (mBackStack == null) {
+        int index = findBackStackIndex(name, id, (flags & POP_BACK_STACK_INCLUSIVE) != 0);
+        if (index < 0) {
             return false;
         }
-        if (name == null && id < 0 && (flags & POP_BACK_STACK_INCLUSIVE) == 0) {
-            int last = mBackStack.size() - 1;
-            if (last < 0) {
-                return false;
-            }
-            records.add(mBackStack.remove(last));
+        for (int i = mBackStack.size() - 1; i >= index; i--) {
+            records.add(mBackStack.remove(i));
             isRecordPop.add(true);
-        } else {
-            int index = -1;
-            if (name != null || id >= 0) {
-                // If a name or ID is specified, look for that place in
-                // the stack.
-                index = mBackStack.size() - 1;
-                while (index >= 0) {
-                    BackStackRecord bss = mBackStack.get(index);
-                    if (name != null && name.equals(bss.getName())) {
-                        break;
-                    }
-                    if (id >= 0 && id == bss.mIndex) {
-                        break;
-                    }
-                    index--;
-                }
-                if (index < 0) {
-                    return false;
-                }
-                if ((flags & POP_BACK_STACK_INCLUSIVE) != 0) {
-                    index--;
-                    // Consume all following entries that match.
-                    while (index >= 0) {
-                        BackStackRecord bss = mBackStack.get(index);
-                        if ((name != null && name.equals(bss.getName()))
-                                || (id >= 0 && id == bss.mIndex)) {
-                            index--;
-                            continue;
-                        }
-                        break;
-                    }
-                }
-            }
-            if (index == mBackStack.size() - 1) {
-                return false;
-            }
-            for (int i = mBackStack.size() - 1; i > index; i--) {
-                records.add(mBackStack.remove(i));
-                isRecordPop.add(true);
-            }
         }
         return true;
+    }
+
+    /**
+     * Find the index in the back stack associated with the given name / id.
+     * <p>
+     * When <code>inclusive</code> is <code>true</code>, the index of the matching record
+     * will be returned. When it is <code>false</code>, the index of the record directly
+     * after it will be returned. In cases where you are doing an inclusive search and
+     * multiple records have the same name / id, the index returned includes all
+     * consecutive matches following the first match.
+     *
+     * @param name The name set via {@link FragmentTransaction#addToBackStack(String)}. Use
+     *             <code>null</code> if you do not want to search by name.
+     * @param id The id returned by {@link FragmentTransaction#commit()}. Use
+     *           <code>-1</code> if you do not want to search by id.
+     * @param inclusive Whether to include the record specified by name or id.
+     * @return
+     */
+    private int findBackStackIndex(@Nullable String name, int id, boolean inclusive) {
+        if (mBackStack == null || mBackStack.isEmpty()) {
+            return -1;
+        }
+        if (name == null && id < 0) {
+            if (inclusive) {
+                return 0;
+            } else {
+                return mBackStack.size() - 1;
+            }
+        } else {
+            // If a name or ID is specified, look for that place in
+            // the stack.
+            int index = mBackStack.size() - 1;
+            while (index >= 0) {
+                BackStackRecord bss = mBackStack.get(index);
+                if (name != null && name.equals(bss.getName())) {
+                    break;
+                }
+                if (id >= 0 && id == bss.mIndex) {
+                    break;
+                }
+                index--;
+            }
+            if (index < 0) {
+                return index;
+            }
+            if (inclusive) {
+                // Consume all following entries that match.
+                while (index > 0) {
+                    BackStackRecord bss = mBackStack.get(index - 1);
+                    if ((name != null && name.equals(bss.getName()))
+                            || (id >= 0 && id == bss.mIndex)) {
+                        index--;
+                        continue;
+                    }
+                    break;
+                }
+            } else if (index == mBackStack.size() - 1) {
+                // For a non-inclusive search, finding the last record
+                // is the same as finding nothing at all since the
+                // matching record itself is not included
+                return -1;
+            } else {
+                // Non-inclusive, so skip the actual matching record
+                index++;
+            }
+            return index;
+        }
     }
 
     /**
@@ -2637,10 +2818,13 @@ public abstract class FragmentManager implements FragmentResultOwner {
         mStateSaved = true;
         mNonConfig.setIsStateSaved(true);
 
-        // First collect all active fragments.
-        ArrayList<FragmentState> active = mFragmentStore.saveActiveFragments();
+        // First save all active fragments.
+        ArrayList<String> active = mFragmentStore.saveActiveFragments();
 
-        if (active.isEmpty()) {
+        // And grab all FragmentState objects
+        ArrayList<FragmentState> savedState = mFragmentStore.getAllSavedState();
+
+        if (savedState.isEmpty()) {
             if (isLoggingEnabled(Log.VERBOSE)) Log.v(TAG, "saveAllState: no fragments!");
             return null;
         }
@@ -2649,13 +2833,13 @@ public abstract class FragmentManager implements FragmentResultOwner {
         ArrayList<String> added = mFragmentStore.saveAddedFragments();
 
         // Now save back stack.
-        BackStackState[] backStack = null;
+        BackStackRecordState[] backStack = null;
         if (mBackStack != null) {
             int size = mBackStack.size();
             if (size > 0) {
-                backStack = new BackStackState[size];
+                backStack = new BackStackRecordState[size];
                 for (int i = 0; i < size; i++) {
-                    backStack[i] = new BackStackState(mBackStack.get(i));
+                    backStack[i] = new BackStackRecordState(mBackStack.get(i));
                     if (isLoggingEnabled(Log.VERBOSE)) {
                         Log.v(TAG, "saveAllState: adding back stack #" + i
                                 + ": " + mBackStack.get(i));
@@ -2665,6 +2849,7 @@ public abstract class FragmentManager implements FragmentResultOwner {
         }
 
         FragmentManagerState fms = new FragmentManagerState();
+        fms.mSavedState = savedState;
         fms.mActive = active;
         fms.mAdded = added;
         fms.mBackStack = backStack;
@@ -2672,6 +2857,8 @@ public abstract class FragmentManager implements FragmentResultOwner {
         if (mPrimaryNav != null) {
             fms.mPrimaryNavActiveWho = mPrimaryNav.mWho;
         }
+        fms.mBackStackStateKeys.addAll(mBackStackStates.keySet());
+        fms.mBackStackStates.addAll(mBackStackStates.values());
         fms.mResultKeys.addAll(mResults.keySet());
         fms.mResults.addAll(mResults.values());
         fms.mLaunchedFragments = new ArrayList<>(mLaunchedFragments);
@@ -2692,12 +2879,17 @@ public abstract class FragmentManager implements FragmentResultOwner {
         // If there is no saved state at all, then there's nothing else to do
         if (state == null) return;
         FragmentManagerState fms = (FragmentManagerState) state;
-        if (fms.mActive == null) return;
+        if (fms.mSavedState == null) return;
+
+        // Restore the saved state of all fragments
+        mFragmentStore.restoreSaveState(fms.mSavedState);
 
         // Build the full list of active fragments, instantiating them from
         // their saved state.
         mFragmentStore.resetActiveFragments();
-        for (FragmentState fs : fms.mActive) {
+        for (String who : fms.mActive) {
+            // Retrieve any saved state, clearing it out for future calls
+            FragmentState fs = mFragmentStore.setSavedState(who, null);
             if (fs != null) {
                 FragmentStateManager fragmentStateManager;
                 Fragment retainedFragment = mNonConfig.findRetainedFragmentByWho(fs.mWho);
@@ -2777,6 +2969,13 @@ public abstract class FragmentManager implements FragmentResultOwner {
             dispatchParentPrimaryNavigationFragmentChanged(mPrimaryNav);
         }
 
+        ArrayList<String> savedBackStackStateKeys = fms.mBackStackStateKeys;
+        if (savedBackStackStateKeys != null) {
+            for (int i = 0; i < savedBackStackStateKeys.size(); i++) {
+                mBackStackStates.put(savedBackStackStateKeys.get(i), fms.mBackStackStates.get(i));
+            }
+        }
+
         ArrayList<String> savedResultKeys = fms.mResultKeys;
         if (savedResultKeys != null) {
             for (int i = 0; i < savedResultKeys.size(); i++) {
@@ -2786,8 +2985,10 @@ public abstract class FragmentManager implements FragmentResultOwner {
         mLaunchedFragments = new ArrayDeque<>(fms.mLaunchedFragments);
     }
 
+    /** @hide */
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
     @NonNull
-    FragmentHostCallback<?> getHost() {
+    public FragmentHostCallback<?> getHost() {
         return mHost;
     }
 
@@ -3443,6 +3644,12 @@ public abstract class FragmentManager implements FragmentResultOwner {
         return (f.mHasMenu && f.mMenuVisible) || f.mChildFragmentManager.checkForMenus();
     }
 
+    void invalidateMenuForFragment(@NonNull Fragment f) {
+        if (f.mAdded && isMenuAvailable(f)) {
+            mNeedMenuInvalidate = true;
+        }
+    }
+
     static int reverseTransit(int transit) {
         int rev = 0;
         switch (transit) {
@@ -3455,6 +3662,12 @@ public abstract class FragmentManager implements FragmentResultOwner {
             case FragmentTransaction.TRANSIT_FRAGMENT_FADE:
                 rev = FragmentTransaction.TRANSIT_FRAGMENT_FADE;
                 break;
+            case FragmentTransaction.TRANSIT_FRAGMENT_MATCH_ACTIVITY_OPEN:
+                rev = FragmentTransaction.TRANSIT_FRAGMENT_MATCH_ACTIVITY_CLOSE;
+                break;
+            case FragmentTransaction.TRANSIT_FRAGMENT_MATCH_ACTIVITY_CLOSE:
+                rev = FragmentTransaction.TRANSIT_FRAGMENT_MATCH_ACTIVITY_OPEN;
+                break;
         }
         return rev;
 
@@ -3463,6 +3676,26 @@ public abstract class FragmentManager implements FragmentResultOwner {
     @NonNull
     LayoutInflater.Factory2 getLayoutInflaterFactory() {
         return mLayoutInflaterFactory;
+    }
+
+    /** Returns the current policy for this FragmentManager. If no policy is set, returns null. */
+    @Nullable
+    @RestrictTo(RestrictTo.Scope.LIBRARY) // TODO: Make API public as soon as we have a few checks
+    public FragmentStrictMode.Policy getStrictModePolicy() {
+        return mStrictModePolicy;
+    }
+
+    /**
+     * Sets the policy for what actions should be detected, as well as the penalty if such actions
+     * occur. The {@link Fragment#getChildFragmentManager() child FragmentManager} of all Fragments
+     * in this FragmentManager will also use this policy if one is not explicitly set. Pass null to
+     * clear the policy.
+     *
+     * @param policy the policy to put into place
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY) // TODO: Make API public as soon as we have a few checks
+    public void setStrictModePolicy(@Nullable FragmentStrictMode.Policy policy) {
+        mStrictModePolicy = policy;
     }
 
     /**
@@ -3514,6 +3747,21 @@ public abstract class FragmentManager implements FragmentResultOwner {
                 }
             }
             return popBackStackState(records, isRecordPop, mName, mId, mFlags);
+        }
+    }
+
+    private class SaveBackStackState implements OpGenerator {
+
+        private final String mName;
+
+        SaveBackStackState(@NonNull String name) {
+            mName = name;
+        }
+
+        @Override
+        public boolean generateOps(@NonNull ArrayList<BackStackRecord> records,
+                @NonNull ArrayList<Boolean> isRecordPop) {
+            return saveBackStackState(records, isRecordPop, mName);
         }
     }
 

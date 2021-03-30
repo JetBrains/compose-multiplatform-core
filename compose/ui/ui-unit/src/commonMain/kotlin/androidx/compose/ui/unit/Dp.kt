@@ -248,11 +248,11 @@ fun lerp(start: Dp, stop: Dp, fraction: Float): Dp {
 // Structures using Dp
 // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
-@Deprecated(
-    "Use DpOffset",
-    ReplaceWith("DpOffset", "androidx.compose.ui.unit.DpOffset")
-)
-typealias Position = DpOffset
+/**
+ * Constructs a [DpOffset] from [x] and [y] position [Dp] values.
+ */
+@Stable
+fun DpOffset(x: Dp, y: Dp): DpOffset = DpOffset(packFloats(x.value, y.value))
 
 /**
  * A two-dimensional offset using [Dp] for units
@@ -260,7 +260,8 @@ typealias Position = DpOffset
 @OptIn(ExperimentalUnsignedTypes::class)
 @Suppress("EXPERIMENTAL_FEATURE_WARNING")
 @Immutable
-inline class DpOffset(@PublishedApi internal val packedValue: Long) {
+inline class DpOffset internal constructor(@PublishedApi internal val packedValue: Long) {
+
     /**
      * The horizontal aspect of the offset in [Dp]
      */
@@ -307,21 +308,6 @@ inline class DpOffset(@PublishedApi internal val packedValue: Long) {
 }
 
 /**
- * Constructs a [DpOffset] from [x] and [y] position [Dp] values.
- */
-@OptIn(ExperimentalUnsignedTypes::class)
-@Stable
-inline fun DpOffset(x: Dp, y: Dp): DpOffset = DpOffset(packFloats(x.value, y.value))
-
-@Deprecated(
-    "Use DpOffset",
-    ReplaceWith("DpOffset(x, y)", "androidx.compose.ui.unit.DpOffset")
-)
-@OptIn(ExperimentalUnsignedTypes::class)
-@Stable
-inline fun Position(x: Dp, y: Dp): DpOffset = DpOffset(packFloats(x.value, y.value))
-
-/**
  * Linearly interpolate between two [DpOffset]s.
  *
  * The [fraction] argument represents position on the timeline, with 0.0 meaning
@@ -340,7 +326,7 @@ fun lerp(start: DpOffset, stop: DpOffset, fraction: Float): DpOffset =
  * A four dimensional bounds using [Dp] for units
  */
 @Immutable
-data class Bounds(
+data class DpRect(
     @Stable
     val left: Dp,
     @Stable
@@ -357,10 +343,10 @@ data class Bounds(
  * A width of this Bounds in [Dp].
  */
 @Stable
-inline val Bounds.width: Dp get() = right - left
+inline val DpRect.width: Dp get() = right - left
 
 /**
  * A height of this Bounds in [Dp].
  */
 @Stable
-inline val Bounds.height: Dp get() = bottom - top
+inline val DpRect.height: Dp get() = bottom - top

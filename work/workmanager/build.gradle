@@ -34,7 +34,7 @@ android {
         aidl = true
     }
     buildTypes.all {
-        consumerProguardFiles 'proguard-rules.pro'
+        consumerProguardFiles "proguard-rules.pro"
     }
     buildTypes {
         debug {
@@ -65,6 +65,7 @@ dependencies {
     implementation("androidx.sqlite:sqlite-framework:2.1.0")
     api(GUAVA_LISTENABLE_FUTURE)
     api("androidx.lifecycle:lifecycle-livedata:2.1.0")
+    api("androidx.startup:startup-runtime:1.0.0")
     implementation("androidx.core:core:1.1.0")
     implementation("androidx.lifecycle:lifecycle-service:2.1.0")
     androidTestImplementation(KOTLIN_STDLIB)
@@ -76,9 +77,9 @@ dependencies {
     androidTestImplementation(ESPRESSO_CORE)
     androidTestImplementation(MOCKITO_CORE, libs.exclude_bytebuddy) // DexMaker has its own MockMaker
     androidTestImplementation(DEXMAKER_MOCKITO, libs.exclude_bytebuddy) // DexMaker has its own MockMaker
-    androidTestImplementation project(':internal-testutils-runtime')
+    androidTestImplementation(project(":internal-testutils-runtime"))
     testImplementation(JUNIT)
-    lintPublish(project(':work:work-runtime-lint'))
+    lintPublish(project(":work:work-runtime-lint"))
 }
 
 packageInspector(project, project(":work:work-inspection"))

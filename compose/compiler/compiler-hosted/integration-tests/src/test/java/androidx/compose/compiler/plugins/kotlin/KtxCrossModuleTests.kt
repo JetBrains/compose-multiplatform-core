@@ -39,7 +39,6 @@ import java.net.URLClassLoader
 class KtxCrossModuleTests : AbstractCodegenTest() {
 
     @Test
-    @Ignore("b/165674304")
     fun testInlineFunctionDefaultArgument(): Unit = ensureSetup {
         compile(
             mapOf(
@@ -75,7 +74,6 @@ class KtxCrossModuleTests : AbstractCodegenTest() {
     }
 
     @Test
-    @Ignore("b/165674304")
     fun testInlineFunctionDefaultArgument2(): Unit = ensureSetup {
         compile(
             mapOf(
@@ -226,17 +224,48 @@ class KtxCrossModuleTests : AbstractCodegenTest() {
             // Check that the composable functions were properly mangled
             assert(
                 it.contains(
-                    "public final static foo-s0xCT_s(ILandroidx/compose/runtime/Composer;I)V"
+                    "public final static foo-4e73Vzs(ILandroidx/compose/runtime/Composer;I)V"
                 )
             )
             assert(
                 it.contains(
-                    "public final static foo-N8p8aEo(ILandroidx/compose/runtime/Composer;I)V"
+                    "public final static foo-YK1ovzU(ILandroidx/compose/runtime/Composer;I)V"
                 )
             )
             // Check that we didn't leave any references to the original name, which probably
             // leads to a compile error.
             assert(!it.contains("foo("))
+        }
+    }
+
+    @Test
+    fun testFunInterfaceWithInlineClass(): Unit = ensureSetup {
+        compile(
+            mapOf(
+                "library module" to mapOf(
+                    "x/A.kt" to """
+                        package x
+
+                        inline class A(val value: Int)
+                        fun interface B {
+                          fun method(a: A)
+                        }
+                    """.trimIndent()
+                ),
+                "Main" to mapOf(
+                    "y/B.kt" to """
+                        package y
+
+                        import x.*
+
+                        val b = B { }
+                    """
+                )
+            )
+        ) {
+            assert(it.contains("public abstract method-C8LvVsQ(I)V"))
+            assert(it.contains("public final method-C8LvVsQ(I)V"))
+            assert(!it.contains("public final method(I)V"))
         }
     }
 
@@ -824,18 +853,18 @@ class KtxCrossModuleTests : AbstractCodegenTest() {
                    import my.test.lib.*
 
                    var bar = 0
-                   var doRecompose: () -> Unit = {}
+                   var scope: RecomposeScope? = null
 
                    class TestF {
                        @Composable
                        fun compose() {
-                         doRecompose = invalidate
+                         scope = currentRecomposeScope
                          Foo(bar)
                        }
 
                        fun advance() {
                          bar++
-                         doRecompose()
+                         scope?.invalidate()
                        }
                    }
 

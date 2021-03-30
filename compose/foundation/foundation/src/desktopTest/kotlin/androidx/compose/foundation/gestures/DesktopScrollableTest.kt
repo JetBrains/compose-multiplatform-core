@@ -16,21 +16,18 @@
 
 package androidx.compose.foundation.gestures
 
-import androidx.compose.animation.core.AnimationClockObservable
-import androidx.compose.animation.core.AnimationClockObserver
-import androidx.compose.foundation.animation.defaultFlingConfig
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.gesture.scrollorientationlocking.Orientation
 import androidx.compose.ui.input.mouse.MouseScrollEvent
 import androidx.compose.ui.input.mouse.MouseScrollUnit
+import androidx.compose.ui.input.mouse.MouseScrollOrientation
 import androidx.compose.ui.platform.DesktopPlatform
+import androidx.compose.ui.platform.TestComposeWindow
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.test.TestComposeWindow
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -40,7 +37,15 @@ import kotlin.math.sqrt
 @RunWith(JUnit4::class)
 class DesktopScrollableTest {
     private val density = 2f
-    private val window = TestComposeWindow(width = 100, height = 100, density = Density(density))
+
+    private fun window(
+        platform: DesktopPlatform
+    ) = TestComposeWindow(
+        width = 100,
+        height = 100,
+        density = Density(density),
+        desktopPlatform = platform
+    )
 
     private fun scrollLineLinux(bounds: Dp) = sqrt(bounds.value * density)
     private fun scrollLineWindows(bounds: Dp) = bounds.value * density / 20f
@@ -49,8 +54,7 @@ class DesktopScrollableTest {
 
     @Test
     fun `linux, scroll vertical`() {
-        window.desktopPlatform = DesktopPlatform.Linux
-
+        val window = window(platform = DesktopPlatform.Linux)
         val context = TestColumn()
 
         window.setContent {
@@ -58,24 +62,24 @@ class DesktopScrollableTest {
                 Modifier
                     .scrollable(
                         orientation = Orientation.Vertical,
-                        controller = context.controller()
+                        state = context.controller()
                     )
                     .size(10.dp, 20.dp)
             )
         }
 
-        window.owners.onMouseScroll(
+        window.onMouseScroll(
             x = 0,
             y = 0,
-            event = MouseScrollEvent(MouseScrollUnit.Line(3f), Orientation.Vertical)
+            event = MouseScrollEvent(MouseScrollUnit.Line(3f), MouseScrollOrientation.Vertical)
         )
 
         assertThat(context.offset).isWithin(0.1f).of(-3 * scrollLineLinux(20.dp))
 
-        window.owners.onMouseScroll(
+        window.onMouseScroll(
             x = 0,
             y = 0,
-            event = MouseScrollEvent(MouseScrollUnit.Line(3f), Orientation.Vertical)
+            event = MouseScrollEvent(MouseScrollUnit.Line(3f), MouseScrollOrientation.Vertical)
         )
 
         assertThat(context.offset).isWithin(0.1f).of(-6 * scrollLineLinux(20.dp))
@@ -83,8 +87,7 @@ class DesktopScrollableTest {
 
     @Test
     fun `windows, scroll vertical`() {
-        window.desktopPlatform = DesktopPlatform.Windows
-
+        val window = window(platform = DesktopPlatform.Windows)
         val context = TestColumn()
 
         window.setContent {
@@ -92,24 +95,24 @@ class DesktopScrollableTest {
                 Modifier
                     .scrollable(
                         orientation = Orientation.Vertical,
-                        controller = context.controller()
+                        state = context.controller()
                     )
                     .size(10.dp, 20.dp)
             )
         }
 
-        window.owners.onMouseScroll(
+        window.onMouseScroll(
             x = 0,
             y = 0,
-            event = MouseScrollEvent(MouseScrollUnit.Line(-2f), Orientation.Vertical)
+            event = MouseScrollEvent(MouseScrollUnit.Line(-2f), MouseScrollOrientation.Vertical)
         )
 
         assertThat(context.offset).isWithin(0.1f).of(2 * scrollLineWindows(20.dp))
 
-        window.owners.onMouseScroll(
+        window.onMouseScroll(
             x = 0,
             y = 0,
-            event = MouseScrollEvent(MouseScrollUnit.Line(4f), Orientation.Vertical)
+            event = MouseScrollEvent(MouseScrollUnit.Line(4f), MouseScrollOrientation.Vertical)
         )
 
         assertThat(context.offset).isWithin(0.1f).of(-2 * scrollLineWindows(20.dp))
@@ -117,8 +120,7 @@ class DesktopScrollableTest {
 
     @Test
     fun `windows, scroll one page vertical`() {
-        window.desktopPlatform = DesktopPlatform.Windows
-
+        val window = window(platform = DesktopPlatform.Windows)
         val context = TestColumn()
 
         window.setContent {
@@ -126,16 +128,16 @@ class DesktopScrollableTest {
                 Modifier
                     .scrollable(
                         orientation = Orientation.Vertical,
-                        controller = context.controller()
+                        state = context.controller()
                     )
                     .size(10.dp, 20.dp)
             )
         }
 
-        window.owners.onMouseScroll(
+        window.onMouseScroll(
             x = 0,
             y = 0,
-            event = MouseScrollEvent(MouseScrollUnit.Page(1f), Orientation.Vertical)
+            event = MouseScrollEvent(MouseScrollUnit.Page(1f), MouseScrollOrientation.Vertical)
         )
 
         assertThat(context.offset).isWithin(0.1f).of(-scrollPage(20.dp))
@@ -143,8 +145,7 @@ class DesktopScrollableTest {
 
     @Test
     fun `macOS, scroll vertical`() {
-        window.desktopPlatform = DesktopPlatform.MacOS
-
+        val window = window(platform = DesktopPlatform.MacOS)
         val context = TestColumn()
 
         window.setContent {
@@ -152,16 +153,16 @@ class DesktopScrollableTest {
                 Modifier
                     .scrollable(
                         orientation = Orientation.Vertical,
-                        controller = context.controller()
+                        state = context.controller()
                     )
                     .size(10.dp, 20.dp)
             )
         }
 
-        window.owners.onMouseScroll(
+        window.onMouseScroll(
             x = 0,
             y = 0,
-            event = MouseScrollEvent(MouseScrollUnit.Line(-5.5f), Orientation.Vertical)
+            event = MouseScrollEvent(MouseScrollUnit.Line(-5.5f), MouseScrollOrientation.Vertical)
         )
 
         assertThat(context.offset).isWithin(0.1f).of(5.5f * scrollLineMacOs())
@@ -169,8 +170,7 @@ class DesktopScrollableTest {
 
     @Test
     fun `scroll with different orientation`() {
-        window.desktopPlatform = DesktopPlatform.Linux
-
+        val window = window(platform = DesktopPlatform.Linux)
         val column = TestColumn()
 
         window.setContent {
@@ -178,16 +178,16 @@ class DesktopScrollableTest {
                 Modifier
                     .scrollable(
                         orientation = Orientation.Vertical,
-                        controller = column.controller()
+                        state = column.controller()
                     )
                     .size(10.dp, 20.dp)
             )
         }
 
-        window.owners.onMouseScroll(
+        window.onMouseScroll(
             x = 0,
             y = 0,
-            event = MouseScrollEvent(MouseScrollUnit.Line(3f), Orientation.Horizontal)
+            event = MouseScrollEvent(MouseScrollUnit.Line(3f), MouseScrollOrientation.Horizontal)
         )
 
         assertThat(column.offset).isEqualTo(0f)
@@ -198,20 +198,11 @@ class DesktopScrollableTest {
             private set
 
         @Composable
-        fun controller() = ScrollableController(
-            ::consumeScrollDelta,
-            defaultFlingConfig(),
-            TestAnimationClock()
-        )
+        fun controller() = ScrollableState(::consumeScrollDelta)
 
         private fun consumeScrollDelta(delta: Float): Float {
             offset += delta
             return delta
         }
-    }
-
-    private class TestAnimationClock : AnimationClockObservable {
-        override fun subscribe(observer: AnimationClockObserver) = Unit
-        override fun unsubscribe(observer: AnimationClockObserver) = Unit
     }
 }

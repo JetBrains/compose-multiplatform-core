@@ -14,18 +14,15 @@
  * limitations under the License.
  */
 
-@file:OptIn(ExperimentalComposeApi::class)
-
 package androidx.compose.runtime.snapshots
 
-import androidx.compose.runtime.ExperimentalComposeApi
 import androidx.compose.runtime.Stable
 import kotlinx.collections.immutable.PersistentMap
 import kotlinx.collections.immutable.persistentHashMapOf
 
 /**
  * An implementation of [MutableMap] that can be observed and snapshot. This is the result type
- * created by [androidx.compose.mutableStateMapOf].
+ * created by [androidx.compose.runtime.mutableStateMapOf].
  *
  * This class closely implements the same semantics as [HashMap].
  *
@@ -33,7 +30,7 @@ import kotlinx.collections.immutable.persistentHashMapOf
  */
 @Stable
 class SnapshotStateMap<K, V> : MutableMap<K, V>, StateObject {
-    override var firstStateRecord: StateMapStateRecord<K, V> =
+    override var firstStateRecord: StateRecord =
         StateMapStateRecord<K, V>(persistentHashMapOf())
         private set
 
@@ -63,7 +60,7 @@ class SnapshotStateMap<K, V> : MutableMap<K, V>, StateObject {
 
     @Suppress("UNCHECKED_CAST")
     internal val readable: StateMapStateRecord<K, V>
-        get() = firstStateRecord.readable(this)
+        get() = (firstStateRecord as StateMapStateRecord<K, V>).readable(this)
 
     internal inline fun removeIf(predicate: (MutableMap.MutableEntry<K, V>) -> Boolean): Boolean {
         var removed = false
@@ -94,12 +91,11 @@ class SnapshotStateMap<K, V> : MutableMap<K, V>, StateObject {
 
     private inline fun <R> withCurrent(block: StateMapStateRecord<K, V>.() -> R): R =
         @Suppress("UNCHECKED_CAST")
-        @OptIn(ExperimentalComposeApi::class)
-        firstStateRecord.withCurrent(block)
+        (firstStateRecord as StateMapStateRecord<K, V>).withCurrent(block)
 
     private inline fun <R> writable(block: StateMapStateRecord<K, V>.() -> R): R =
         @Suppress("UNCHECKED_CAST")
-        firstStateRecord.writable(this, block)
+        (firstStateRecord as StateMapStateRecord<K, V>).writable(this, block)
 
     private inline fun <R> mutate(block: (MutableMap<K, V>) -> R): R =
         withCurrent {
@@ -124,7 +120,7 @@ class SnapshotStateMap<K, V> : MutableMap<K, V>, StateObject {
     /**
      * Implementation class of [SnapshotStateMap]. Do not use.
      */
-    class StateMapStateRecord<K, V> internal constructor(
+    internal class StateMapStateRecord<K, V> internal constructor(
         internal var map: PersistentMap<K, V>
     ) : StateRecord() {
         internal var modification = 0
@@ -164,7 +160,7 @@ private class SnapshotMapEntrySet<K, V>(
         return removed
     }
     override fun retainAll(elements: Collection<MutableMap.MutableEntry<K, V>>): Boolean {
-        val entries = elements.map { it.key to it.value }.toMap()
+        val entries = elements.associate { it.key to it.value }
         return map.removeIf { !entries.containsKey(it.key) || entries[it.key] != it.value }
     }
     override fun contains(element: MutableMap.MutableEntry<K, V>): Boolean {

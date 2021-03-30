@@ -18,25 +18,32 @@ package androidx.compose.foundation
 
 import android.os.Build
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.preferredSize
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.GenericShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.testutils.assertShape
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.platform.AmbientDensity
 import androidx.compose.ui.graphics.toPixelMap
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
@@ -51,13 +58,18 @@ import kotlin.math.floor
 @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
 @RunWith(Parameterized::class)
 class BorderTest(val shape: Shape) {
-
     companion object {
         @JvmStatic
         @Parameterized.Parameters(name = "{0}")
         fun initShapes(): Array<Any> = arrayOf(
-            RectangleShape, CircleShape, RoundedCornerShape(5.0f)
+            namedShape("Rectangle", RectangleShape),
+            namedShape("Circle", CircleShape),
+            namedShape("Rounded", RoundedCornerShape(5.0f))
         )
+
+        private fun namedShape(name: String, shape: Shape): Shape = object : Shape by shape {
+            override fun toString(): String = name
+        }
     }
 
     @get:Rule
@@ -65,12 +77,24 @@ class BorderTest(val shape: Shape) {
 
     val testTag = "BorderParent"
 
+    private val rtlAwareShape = object : Shape {
+        override fun createOutline(
+            size: Size,
+            layoutDirection: LayoutDirection,
+            density: Density
+        ) = if (layoutDirection == LayoutDirection.Ltr) {
+            Outline.Rectangle(Rect(0f, 1f, 0f, 1f))
+        } else {
+            shape.createOutline(size, layoutDirection, density)
+        }
+    }
+
     @Test
     fun border_color() {
         rule.setContent {
             SemanticParent {
                 Box(
-                    Modifier.preferredSize(40.0f.toDp(), 40.0f.toDp())
+                    Modifier.size(40.0f.toDp(), 40.0f.toDp())
                         .background(color = Color.Blue)
                         .border(BorderStroke(10.0f.toDp(), Color.Red), shape)
 
@@ -95,7 +119,7 @@ class BorderTest(val shape: Shape) {
         rule.setContent {
             SemanticParent {
                 Box(
-                    Modifier.preferredSize(40.0f.toDp(), 40.0f.toDp())
+                    Modifier.size(40.0f.toDp(), 40.0f.toDp())
                         .background(color = Color.Blue)
                         .border(
                             BorderStroke(10.0f.toDp(), SolidColor(Color.Red)),
@@ -122,7 +146,7 @@ class BorderTest(val shape: Shape) {
         rule.setContent {
             SemanticParent {
                 Box(
-                    Modifier.preferredSize(40.0f.toDp(), 40.0f.toDp())
+                    Modifier.size(40.0f.toDp(), 40.0f.toDp())
                         .background(color = Color.Blue)
                         .border(BorderStroke(1500.0f.toDp(), Color.Red), shape)
                 ) {}
@@ -144,7 +168,7 @@ class BorderTest(val shape: Shape) {
         rule.setContent {
             SemanticParent {
                 Box(
-                    Modifier.preferredSize(40.0f.toDp(), 40.0f.toDp())
+                    Modifier.size(40.0f.toDp(), 40.0f.toDp())
                         .background(color = Color.Blue)
                         .border(BorderStroke(-5.0f.toDp(), Color.Red), shape)
                 ) {}
@@ -166,10 +190,10 @@ class BorderTest(val shape: Shape) {
         rule.setContent {
             SemanticParent {
                 Box(
-                    Modifier.preferredSize(40.0f.toDp(), 40.0f.toDp()).background(Color.White)
+                    Modifier.size(40.0f.toDp(), 40.0f.toDp()).background(Color.White)
                 ) {
                     Box(
-                        Modifier.preferredSize(0.0f.toDp(), 40.0f.toDp())
+                        Modifier.size(0.0f.toDp(), 40.0f.toDp())
                             .border(BorderStroke(4.0f.toDp(), Color.Red), shape)
                     ) {}
                 }
@@ -188,7 +212,7 @@ class BorderTest(val shape: Shape) {
     @Test
     fun border_triangle_shape() {
         val testTag = "testTag"
-        val triangle = GenericShape() { size ->
+        val triangle = GenericShape { size, _ ->
             lineTo(size.width, 0f)
             lineTo(size.width, size.height)
             close()
@@ -196,7 +220,7 @@ class BorderTest(val shape: Shape) {
         rule.setContent {
             Box(
                 Modifier.testTag(testTag)
-                    .size(100.dp, 100.dp)
+                    .requiredSize(100.dp, 100.dp)
                     .background(Color.White)
                     .border(BorderStroke(10.dp, Color.Red), triangle)
             )
@@ -217,11 +241,64 @@ class BorderTest(val shape: Shape) {
         }
     }
 
+    @Test
+    fun border_rtl_initially() {
+        rule.setContent {
+            SemanticParent {
+                Box(
+                    Modifier.size(40.0f.toDp(), 40.0f.toDp())
+                        .background(color = Color.Blue)
+                        .border(BorderStroke(10.0f.toDp(), Color.Red), rtlAwareShape)
+                ) {}
+            }
+        }
+        rule.onNodeWithTag(testTag).captureToImage().assertShape(
+            density = rule.density,
+            backgroundColor = Color.Red,
+            shape = shape,
+            backgroundShape = shape,
+            shapeSizeX = 20.0f,
+            shapeSizeY = 20.0f,
+            shapeColor = Color.Blue,
+            shapeOverlapPixelCount = 3.0f
+        )
+    }
+
+    @Test
+    fun border_rtl_after_switch() {
+        val direction = mutableStateOf(LayoutDirection.Ltr)
+        rule.setContent {
+            SemanticParent {
+                CompositionLocalProvider(LocalLayoutDirection provides direction.value) {
+                    Box(
+                        Modifier.size(40.0f.toDp(), 40.0f.toDp())
+                            .background(color = Color.Blue)
+                            .border(BorderStroke(10.0f.toDp(), Color.Red), rtlAwareShape)
+                    ) {}
+                }
+            }
+        }
+
+        rule.runOnIdle {
+            direction.value = LayoutDirection.Rtl
+        }
+        rule.onNodeWithTag(testTag).captureToImage().assertShape(
+            density = rule.density,
+            backgroundColor = Color.Red,
+            shape = shape,
+            backgroundShape = shape,
+            shapeSizeX = 20.0f,
+            shapeSizeY = 20.0f,
+            shapeColor = Color.Blue,
+            shapeOverlapPixelCount = 3.0f
+        )
+    }
+
     @Composable
     fun SemanticParent(content: @Composable Density.() -> Unit) {
         Box {
             Box(modifier = Modifier.testTag(testTag)) {
-                AmbientDensity.current.content()
+                LocalDensity.current.content()
             }
         }
     }

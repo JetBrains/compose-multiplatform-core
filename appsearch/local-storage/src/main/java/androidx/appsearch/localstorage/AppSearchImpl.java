@@ -38,11 +38,13 @@ import androidx.collection.ArraySet;
 import androidx.core.util.Preconditions;
 
 import com.google.android.icing.IcingSearchEngine;
+import com.google.android.icing.proto.DeleteByQueryResultProto;
 import com.google.android.icing.proto.DeleteResultProto;
 import com.google.android.icing.proto.DocumentProto;
 import com.google.android.icing.proto.GetAllNamespacesResultProto;
 import com.google.android.icing.proto.GetOptimizeInfoResultProto;
 import com.google.android.icing.proto.GetResultProto;
+import com.google.android.icing.proto.GetResultSpecProto;
 import com.google.android.icing.proto.GetSchemaResultProto;
 import com.google.android.icing.proto.IcingSearchEngineOptions;
 import com.google.android.icing.proto.InitializeResultProto;
@@ -60,6 +62,7 @@ import com.google.android.icing.proto.SearchResultProto;
 import com.google.android.icing.proto.SearchSpecProto;
 import com.google.android.icing.proto.SetSchemaResultProto;
 import com.google.android.icing.proto.StatusProto;
+import com.google.android.icing.proto.TypePropertyMask;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -418,7 +421,8 @@ public final class AppSearchImpl {
         mReadWriteLock.readLock().lock();
         try {
             getResultProto = mIcingSearchEngineLocked.get(
-                    createPrefix(packageName, databaseName) + namespace, uri);
+                    createPrefix(packageName, databaseName) + namespace, uri,
+                    GetResultSpecProto.getDefaultInstance());
         } finally {
             mReadWriteLock.readLock().unlock();
         }
@@ -498,23 +502,29 @@ public final class AppSearchImpl {
             @NonNull Set<String> prefixes, @NonNull String queryExpression,
             @NonNull SearchSpec searchSpec)
             throws AppSearchException {
-        SearchSpecProto searchSpecProto =
-                SearchSpecToProtoConverter.toSearchSpecProto(searchSpec);
-        SearchSpecProto.Builder searchSpecBuilder = searchSpecProto.toBuilder()
-                .setQuery(queryExpression);
-
-        ResultSpecProto resultSpec = SearchSpecToProtoConverter.toResultSpecProto(searchSpec);
-        ScoringSpecProto scoringSpec = SearchSpecToProtoConverter.toScoringSpecProto(searchSpec);
-        SearchResultProto searchResultProto;
-
+        SearchSpecProto.Builder searchSpecBuilder =
+                SearchSpecToProtoConverter.toSearchSpecProto(searchSpec).toBuilder().setQuery(
+                        queryExpression);
         // rewriteSearchSpecForPrefixesLocked will return false if none of the prefixes that the
         // client is trying to search on exist, so we can return an empty SearchResult and skip
         // sending request to Icing.
         if (!rewriteSearchSpecForPrefixesLocked(searchSpecBuilder, prefixes)) {
             return new SearchResultPage(Bundle.EMPTY);
         }
-        searchResultProto = mIcingSearchEngineLocked.search(
-                searchSpecBuilder.build(), scoringSpec, resultSpec);
+
+        ResultSpecProto.Builder resultSpecBuilder =
+                SearchSpecToProtoConverter.toResultSpecProto(searchSpec).toBuilder();
+
+        // rewriteResultSpecForPrefixesLocked will return false if none of the prefixes that the
+        // client is trying to search on exist, so we can return an empty SearchResult and skip
+        // sending request to Icing.
+        if (!rewriteResultSpecForPrefixesLocked(resultSpecBuilder, prefixes)) {
+            return new SearchResultPage(Bundle.EMPTY);
+        }
+
+        ScoringSpecProto scoringSpec = SearchSpecToProtoConverter.toScoringSpecProto(searchSpec);
+        SearchResultProto searchResultProto = mIcingSearchEngineLocked.search(
+                searchSpecBuilder.build(), scoringSpec, resultSpecBuilder.build());
         checkSuccess(searchResultProto.getStatus());
 
         return rewriteSearchResultProto(searchResultProto);
@@ -606,7 +616,7 @@ public final class AppSearchImpl {
                 SearchSpecToProtoConverter.toSearchSpecProto(searchSpec);
         SearchSpecProto.Builder searchSpecBuilder = searchSpecProto.toBuilder()
                 .setQuery(queryExpression);
-        DeleteResultProto deleteResultProto;
+        DeleteByQueryResultProto deleteResultProto;
         mReadWriteLock.writeLock().lock();
         try {
             // Only rewrite SearchSpec for non empty prefixes.
@@ -637,8 +647,6 @@ public final class AppSearchImpl {
      * <p>If the app crashes before a call to PersistToDisk(), Icing would trigger a costly
      * recovery process in next initialization. After that, Icing would still be able to recover
      * all written data.
-     *
-     * @throws AppSearchException
      */
     public void persistToDisk() throws AppSearchException {
         PersistToDiskResultProto persistToDiskResultProto =
@@ -797,11 +805,23 @@ public final class AppSearchImpl {
      * {@code documentBuilder}.
      *
      * @param documentBuilder The document to mutate
+     * @return Prefix name that was removed from the document.
+     * @throws AppSearchException if there are unexpected database prefixing errors.
      */
+    @NonNull
     @VisibleForTesting
-    static void removePrefixesFromDocument(@NonNull DocumentProto.Builder documentBuilder)
+    static String removePrefixesFromDocument(@NonNull DocumentProto.Builder documentBuilder)
             throws AppSearchException {
         // Rewrite the type name and namespace to remove the prefix.
+        String schemaPrefix = getPrefix(documentBuilder.getSchema());
+        String namespacePrefix = getPrefix(documentBuilder.getNamespace());
+
+        if (!schemaPrefix.equals(namespacePrefix)) {
+            throw new AppSearchException(AppSearchResult.RESULT_INTERNAL_ERROR, "Found unexpected"
+                    + " multiple prefix names in document: " + schemaPrefix + ", "
+                    + namespacePrefix);
+        }
+
         documentBuilder.setSchema(removePrefix(documentBuilder.getSchema()));
         documentBuilder.setNamespace(removePrefix(documentBuilder.getNamespace()));
 
@@ -816,12 +836,19 @@ public final class AppSearchImpl {
                 for (int documentIdx = 0; documentIdx < documentCount; documentIdx++) {
                     DocumentProto.Builder derivedDocumentBuilder =
                             propertyBuilder.getDocumentValues(documentIdx).toBuilder();
-                    removePrefixesFromDocument(derivedDocumentBuilder);
+                    String nestedPrefix = removePrefixesFromDocument(derivedDocumentBuilder);
+                    if (!nestedPrefix.equals(schemaPrefix)) {
+                        throw new AppSearchException(AppSearchResult.RESULT_INTERNAL_ERROR,
+                                "Found unexpected multiple prefix names in document: "
+                                        + schemaPrefix + ", " + nestedPrefix);
+                    }
                     propertyBuilder.setDocumentValues(documentIdx, derivedDocumentBuilder);
                 }
                 documentBuilder.setProperties(propertyIdx, propertyBuilder);
             }
         }
+
+        return schemaPrefix;
     }
 
     /**
@@ -888,6 +915,50 @@ public final class AppSearchImpl {
         return true;
     }
 
+    /**
+     * Rewrites the typePropertyMasks that exist in {@code prefixes}.
+     *
+     * <p>This method should be only called in query methods and get the READ lock to keep thread
+     * safety.
+     *
+     * @return false if none of the requested prefixes exist.
+     */
+    @VisibleForTesting
+    @GuardedBy("mReadWriteLock")
+    boolean rewriteResultSpecForPrefixesLocked(
+            @NonNull ResultSpecProto.Builder resultSpecBuilder,
+            @NonNull Set<String> prefixes) {
+        // Create a copy since retainAll() modifies the original set.
+        Set<String> existingPrefixes = new ArraySet<>(mNamespaceMapLocked.keySet());
+        existingPrefixes.retainAll(prefixes);
+
+        if (existingPrefixes.isEmpty()) {
+            // None of the prefixes exist, empty query.
+            return false;
+        }
+
+        List<TypePropertyMask> prefixedTypePropertyMasks = new ArrayList<>();
+        // Rewrite filters to include a database prefix.
+        for (String prefix : existingPrefixes) {
+            Set<String> existingSchemaTypes = mSchemaMapLocked.get(prefix);
+            // Qualify the given schema types
+            for (TypePropertyMask typePropertyMask :
+                    resultSpecBuilder.getTypePropertyMasksList()) {
+                String unprefixedType = typePropertyMask.getSchemaType();
+                boolean isWildcard =
+                        unprefixedType.equals(SearchSpec.PROJECTION_SCHEMA_TYPE_WILDCARD);
+                String prefixedType = isWildcard ? unprefixedType : prefix + unprefixedType;
+                if (isWildcard || existingSchemaTypes.contains(prefixedType)) {
+                    prefixedTypePropertyMasks.add(
+                            typePropertyMask.toBuilder().setSchemaType(prefixedType).build());
+                }
+            }
+        }
+        resultSpecBuilder.clearTypePropertyMasks().addAllTypePropertyMasks(
+                prefixedTypePropertyMasks);
+        return true;
+    }
+
     @VisibleForTesting
     @GuardedBy("mReadWriteLock")
     SchemaProto getSchemaProtoLocked() throws AppSearchException {
@@ -930,6 +1001,25 @@ public final class AppSearchImpl {
         return packageName + PACKAGE_DELIMITER + databaseName + DATABASE_DELIMITER;
     }
 
+    /**
+     * Returns the package name that's contained within the {@code prefix}.
+     *
+     * @param prefix Prefix string that contains the package name inside of it. The package name
+     *               must be in the front of the string, and separated from the rest of the
+     *               string by the {@link #PACKAGE_DELIMITER}.
+     * @return Valid package name.
+     */
+    @NonNull
+    private static String getPackageName(@NonNull String prefix) {
+        int delimiterIndex = prefix.indexOf(PACKAGE_DELIMITER);
+        if (delimiterIndex == -1) {
+            // This should never happen if we construct our prefixes properly
+            Log.wtf(TAG, "Malformed prefix doesn't contain package name: " + prefix);
+            return "";
+        }
+        return prefix.substring(0, delimiterIndex);
+    }
+
     @NonNull
     private static String removePrefix(@NonNull String prefixedString)
             throws AppSearchException {
@@ -949,7 +1039,7 @@ public final class AppSearchImpl {
         int databaseDelimiterIndex = prefixedString.indexOf(DATABASE_DELIMITER);
         if (databaseDelimiterIndex == -1) {
             throw new AppSearchException(AppSearchResult.RESULT_UNKNOWN_ERROR,
-                    "The databaseName prefixed value doesn't contains a valid database name.");
+                    "The databaseName prefixed value doesn't contain a valid database name.");
         }
 
         // Add 1 to include the char size of the DATABASE_DELIMITER
@@ -1033,20 +1123,24 @@ public final class AppSearchImpl {
     }
 
     /** Remove the rewritten schema types from any result documents. */
-    private static SearchResultPage rewriteSearchResultProto(
+    @NonNull
+    @VisibleForTesting
+    static SearchResultPage rewriteSearchResultProto(
             @NonNull SearchResultProto searchResultProto) throws AppSearchException {
+        // Parallel array of package names for each document search result.
+        List<String> packageNames = new ArrayList<>(searchResultProto.getResultsCount());
+
         SearchResultProto.Builder resultsBuilder = searchResultProto.toBuilder();
         for (int i = 0; i < searchResultProto.getResultsCount(); i++) {
-            if (searchResultProto.getResults(i).hasDocument()) {
-                SearchResultProto.ResultProto.Builder resultBuilder =
-                        searchResultProto.getResults(i).toBuilder();
-                DocumentProto.Builder documentBuilder = resultBuilder.getDocument().toBuilder();
-                removePrefixesFromDocument(documentBuilder);
-                resultBuilder.setDocument(documentBuilder);
-                resultsBuilder.setResults(i, resultBuilder);
-            }
+            SearchResultProto.ResultProto.Builder resultBuilder =
+                    searchResultProto.getResults(i).toBuilder();
+            DocumentProto.Builder documentBuilder = resultBuilder.getDocument().toBuilder();
+            String prefix = removePrefixesFromDocument(documentBuilder);
+            packageNames.add(getPackageName(prefix));
+            resultBuilder.setDocument(documentBuilder);
+            resultsBuilder.setResults(i, resultBuilder);
         }
-        return SearchResultToProtoConverter.toSearchResultPage(resultsBuilder);
+        return SearchResultToProtoConverter.toSearchResultPage(resultsBuilder, packageNames);
     }
 
     @GuardedBy("mReadWriteLock")

@@ -16,30 +16,28 @@
 
 package androidx.room.compiler.processing
 
-import androidx.room.compiler.processing.util.RecordingXMessager
 import androidx.room.compiler.processing.util.XTestInvocation
 import javax.lang.model.SourceVersion
 
-class SyntheticJavacProcessor(
-    val handler: (XTestInvocation) -> Unit,
-) : JavacTestProcessor(), SyntheticProcessor {
-    override val invocationInstances = mutableListOf<XTestInvocation>()
-    private var result: Result<Unit>? = null
-    override val messageWatcher = RecordingXMessager()
-
+@Suppress("VisibleForTests")
+@ExperimentalProcessingApi
+class SyntheticJavacProcessor private constructor(
+    private val impl: SyntheticProcessorImpl
+) : JavacTestProcessor(), SyntheticProcessor by impl {
+    constructor(handlers: List<(XTestInvocation) -> Unit>) : this(
+        SyntheticProcessorImpl(handlers)
+    )
     override fun doProcess(annotations: Set<XTypeElement>, roundEnv: XRoundEnv): Boolean {
-        val xEnv = XProcessingEnv.create(processingEnv)
-        xEnv.messager.addMessageWatcher(messageWatcher)
-        result = kotlin.runCatching {
-            handler(
-                XTestInvocation(
-                    processingEnv = xEnv
-                ).also {
-                    invocationInstances.add(it)
-                }
-            )
+        if (!impl.canRunAnotherRound()) {
+            return true
         }
-        return true
+        val xEnv = XProcessingEnv.create(processingEnv)
+        val testInvocation = XTestInvocation(
+            processingEnv = xEnv,
+            roundEnv = roundEnv
+        )
+        impl.runNextRound(testInvocation)
+        return impl.expectsAnotherRound()
     }
 
     override fun getSupportedSourceVersion(): SourceVersion {
@@ -47,15 +45,4 @@ class SyntheticJavacProcessor(
     }
 
     override fun getSupportedAnnotationTypes() = setOf("*")
-
-    override fun getProcessingException(): Throwable? {
-        val result = this.result ?: return AssertionError("processor didn't run")
-        result.exceptionOrNull()?.let {
-            return it
-        }
-        if (result.isFailure) {
-            return AssertionError("processor failed but no exception is reported")
-        }
-        return null
-    }
 }

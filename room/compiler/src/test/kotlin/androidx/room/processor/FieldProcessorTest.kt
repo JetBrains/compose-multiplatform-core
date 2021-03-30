@@ -18,7 +18,6 @@ package androidx.room.processor
 
 import androidx.room.Entity
 import androidx.room.compiler.processing.XFieldElement
-import androidx.room.ext.getTypeElementsAnnotatedWith
 import androidx.room.parser.Collate
 import androidx.room.parser.SQLTypeAffinity
 import androidx.room.solver.types.ColumnTypeAdapter
@@ -603,7 +602,7 @@ class FieldProcessorTest {
                         .forAnnotations(androidx.room.Entity::class)
                         .nextRunHandler { invocation ->
                             val (owner, fieldElement) = invocation.roundEnv
-                                .getTypeElementsAnnotatedWith(Entity::class.java)
+                                .getTypeElementsAnnotatedWith(Entity::class.qualifiedName!!)
                                 .map {
                                     Pair(
                                         it,

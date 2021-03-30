@@ -19,6 +19,7 @@ package androidx.compose.ui.graphics.drawscope
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.geometry.center
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Canvas
@@ -38,7 +39,6 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.center
-import androidx.compose.ui.util.annotation.FloatRange
 
 /**
  * Simultaneously translate the [DrawScope] coordinate space by [left] and [top] as well as modify
@@ -293,7 +293,7 @@ interface DrawScope : Density {
      * Center of the current bounds of the drawing environment
      */
     val center: Offset
-        get() = drawContext.size.center()
+        get() = drawContext.size.center
 
     /**
      * Provides the dimensions of the current drawing environment
@@ -328,7 +328,8 @@ interface DrawScope : Density {
         strokeWidth: Float = Stroke.HairlineWidth,
         cap: StrokeCap = Stroke.DefaultCap,
         pathEffect: PathEffect? = null,
-        @FloatRange(from = 0.0, to = 1.0) alpha: Float = 1.0f,
+        /*FloatRange(from = 0.0, to = 1.0)*/
+        alpha: Float = 1.0f,
         colorFilter: ColorFilter? = null,
         blendMode: BlendMode = DefaultBlendMode
     )
@@ -355,7 +356,8 @@ interface DrawScope : Density {
         strokeWidth: Float = Stroke.HairlineWidth,
         cap: StrokeCap = Stroke.DefaultCap,
         pathEffect: PathEffect? = null,
-        @FloatRange(from = 0.0, to = 1.0) alpha: Float = 1.0f,
+        /*FloatRange(from = 0.0, to = 1.0)*/
+        alpha: Float = 1.0f,
         colorFilter: ColorFilter? = null,
         blendMode: BlendMode = DefaultBlendMode
     )
@@ -378,7 +380,8 @@ interface DrawScope : Density {
         brush: Brush,
         topLeft: Offset = Offset.Zero,
         size: Size = this.size.offsetSize(topLeft),
-        @FloatRange(from = 0.0, to = 1.0) alpha: Float = 1.0f,
+        /*FloatRange(from = 0.0, to = 1.0)*/
+        alpha: Float = 1.0f,
         style: DrawStyle = Fill,
         colorFilter: ColorFilter? = null,
         blendMode: BlendMode = DefaultBlendMode
@@ -402,7 +405,8 @@ interface DrawScope : Density {
         color: Color,
         topLeft: Offset = Offset.Zero,
         size: Size = this.size.offsetSize(topLeft),
-        @FloatRange(from = 0.0, to = 1.0) alpha: Float = 1.0f,
+        /*@FloatRange(from = 0.0, to = 1.0)*/
+        alpha: Float = 1.0f,
         style: DrawStyle = Fill,
         colorFilter: ColorFilter? = null,
         blendMode: BlendMode = DefaultBlendMode
@@ -423,7 +427,8 @@ interface DrawScope : Density {
     fun drawImage(
         image: ImageBitmap,
         topLeft: Offset = Offset.Zero,
-        @FloatRange(from = 0.0, to = 1.0) alpha: Float = 1.0f,
+        /*@FloatRange(from = 0.0, to = 1.0)*/
+        alpha: Float = 1.0f,
         style: DrawStyle = Fill,
         colorFilter: ColorFilter? = null,
         blendMode: BlendMode = DefaultBlendMode
@@ -457,7 +462,8 @@ interface DrawScope : Density {
         srcSize: IntSize = IntSize(image.width, image.height),
         dstOffset: IntOffset = IntOffset.Zero,
         dstSize: IntSize = srcSize,
-        @FloatRange(from = 0.0, to = 1.0) alpha: Float = 1.0f,
+        /*@FloatRange(from = 0.0, to = 1.0)*/
+        alpha: Float = 1.0f,
         style: DrawStyle = Fill,
         colorFilter: ColorFilter? = null,
         blendMode: BlendMode = DefaultBlendMode
@@ -483,7 +489,8 @@ interface DrawScope : Density {
         topLeft: Offset = Offset.Zero,
         size: Size = this.size.offsetSize(topLeft),
         cornerRadius: CornerRadius = CornerRadius.Zero,
-        @FloatRange(from = 0.0, to = 1.0) alpha: Float = 1.0f,
+        /*@FloatRange(from = 0.0, to = 1.0)*/
+        alpha: Float = 1.0f,
         style: DrawStyle = Fill,
         colorFilter: ColorFilter? = null,
         blendMode: BlendMode = DefaultBlendMode
@@ -509,7 +516,8 @@ interface DrawScope : Density {
         size: Size = this.size.offsetSize(topLeft),
         cornerRadius: CornerRadius = CornerRadius.Zero,
         style: DrawStyle = Fill,
-        @FloatRange(from = 0.0, to = 1.0) alpha: Float = 1.0f,
+        /*@FloatRange(from = 0.0, to = 1.0)*/
+        alpha: Float = 1.0f,
         colorFilter: ColorFilter? = null,
         blendMode: BlendMode = DefaultBlendMode
     )
@@ -531,7 +539,8 @@ interface DrawScope : Density {
         brush: Brush,
         radius: Float = size.minDimension / 2.0f,
         center: Offset = this.center,
-        @FloatRange(from = 0.0, to = 1.0) alpha: Float = 1.0f,
+        /*@FloatRange(from = 0.0, to = 1.0)*/
+        alpha: Float = 1.0f,
         style: DrawStyle = Fill,
         colorFilter: ColorFilter? = null,
         blendMode: BlendMode = DefaultBlendMode
@@ -554,7 +563,8 @@ interface DrawScope : Density {
         color: Color,
         radius: Float = size.minDimension / 2.0f,
         center: Offset = this.center,
-        @FloatRange(from = 0.0, to = 1.0) alpha: Float = 1.0f,
+        /*@FloatRange(from = 0.0, to = 1.0)*/
+        alpha: Float = 1.0f,
         style: DrawStyle = Fill,
         colorFilter: ColorFilter? = null,
         blendMode: BlendMode = DefaultBlendMode
@@ -573,12 +583,15 @@ interface DrawScope : Density {
      * @param style Whether or not the oval is stroked or filled in
      * @param colorFilter ColorFilter to apply to the [brush] when drawn into the destination
      * @param blendMode Blending algorithm to be applied to the brush
+     *
+     * @sample androidx.compose.ui.graphics.samples.DrawScopeOvalBrushSample
      */
     fun drawOval(
         brush: Brush,
         topLeft: Offset = Offset.Zero,
         size: Size = this.size.offsetSize(topLeft),
-        @FloatRange(from = 0.0, to = 1.0) alpha: Float = 1.0f,
+        /*@FloatRange(from = 0.0, to = 1.0)*/
+        alpha: Float = 1.0f,
         style: DrawStyle = Fill,
         colorFilter: ColorFilter? = null,
         blendMode: BlendMode = DefaultBlendMode
@@ -597,12 +610,15 @@ interface DrawScope : Density {
      * @param style Whether or not the oval is stroked or filled in
      * @param colorFilter ColorFilter to apply to the [color] when drawn into the destination
      * @param blendMode Blending algorithm to be applied to the brush
+     *
+     * @sample androidx.compose.ui.graphics.samples.DrawScopeOvalColorSample
      */
     fun drawOval(
         color: Color,
         topLeft: Offset = Offset.Zero,
         size: Size = this.size.offsetSize(topLeft),
-        @FloatRange(from = 0.0, to = 1.0) alpha: Float = 1.0f,
+        /*@FloatRange(from = 0.0, to = 1.0)*/
+        alpha: Float = 1.0f,
         style: DrawStyle = Fill,
         colorFilter: ColorFilter? = null,
         blendMode: BlendMode = DefaultBlendMode
@@ -637,7 +653,8 @@ interface DrawScope : Density {
         useCenter: Boolean,
         topLeft: Offset = Offset.Zero,
         size: Size = this.size.offsetSize(topLeft),
-        @FloatRange(from = 0.0, to = 1.0) alpha: Float = 1.0f,
+        /*@FloatRange(from = 0.0, to = 1.0)*/
+        alpha: Float = 1.0f,
         style: DrawStyle = Fill,
         colorFilter: ColorFilter? = null,
         blendMode: BlendMode = DefaultBlendMode
@@ -672,7 +689,8 @@ interface DrawScope : Density {
         useCenter: Boolean,
         topLeft: Offset = Offset.Zero,
         size: Size = this.size.offsetSize(topLeft),
-        @FloatRange(from = 0.0, to = 1.0) alpha: Float = 1.0f,
+        /*@FloatRange(from = 0.0, to = 1.0)*/
+        alpha: Float = 1.0f,
         style: DrawStyle = Fill,
         colorFilter: ColorFilter? = null,
         blendMode: BlendMode = DefaultBlendMode
@@ -695,7 +713,8 @@ interface DrawScope : Density {
     fun drawPath(
         path: Path,
         color: Color,
-        @FloatRange(from = 0.0, to = 1.0) alpha: Float = 1.0f,
+        /*@FloatRange(from = 0.0, to = 1.0)*/
+        alpha: Float = 1.0f,
         style: DrawStyle = Fill,
         colorFilter: ColorFilter? = null,
         blendMode: BlendMode = DefaultBlendMode
@@ -717,7 +736,8 @@ interface DrawScope : Density {
     fun drawPath(
         path: Path,
         brush: Brush,
-        @FloatRange(from = 0.0, to = 1.0) alpha: Float = 1.0f,
+        /*@FloatRange(from = 0.0, to = 1.0)*/
+        alpha: Float = 1.0f,
         style: DrawStyle = Fill,
         colorFilter: ColorFilter? = null,
         blendMode: BlendMode = DefaultBlendMode
@@ -746,7 +766,8 @@ interface DrawScope : Density {
         strokeWidth: Float = Stroke.HairlineWidth,
         cap: StrokeCap = StrokeCap.Butt,
         pathEffect: PathEffect? = null,
-        @FloatRange(from = 0.0, to = 1.0) alpha: Float = 1.0f,
+        /*@FloatRange(from = 0.0, to = 1.0)*/
+        alpha: Float = 1.0f,
         colorFilter: ColorFilter? = null,
         blendMode: BlendMode = DefaultBlendMode
     )
@@ -763,7 +784,7 @@ interface DrawScope : Density {
      * @param cap Treatment applied to the ends of the line segment
      * @param pathEffect optional effect or pattern to apply to the points
      * @param alpha Opacity to be applied to the path from 0.0f to 1.0f representing
-     * fully transparent to fully opaque respectively
+     * fully transparent to fully opaque respectively.
      * @param colorFilter ColorFilter to apply to the [brush] when drawn into the destination
      * @param blendMode Blending algorithm to be applied to the path when it is drawn
      */
@@ -774,7 +795,8 @@ interface DrawScope : Density {
         strokeWidth: Float = Stroke.HairlineWidth,
         cap: StrokeCap = StrokeCap.Butt,
         pathEffect: PathEffect? = null,
-        @FloatRange(from = 0.0, to = 1.0) alpha: Float = 1.0f,
+        /*@FloatRange(from = 0.0, to = 1.0)*/
+        alpha: Float = 1.0f,
         colorFilter: ColorFilter? = null,
         blendMode: BlendMode = DefaultBlendMode
     )
@@ -810,7 +832,7 @@ object Fill : DrawStyle()
 /**
  * [DrawStyle] that provides information for drawing content with a stroke
  */
-data class Stroke(
+class Stroke(
     /**
      * Configure the width of the stroke in pixels
      */
@@ -860,5 +882,31 @@ data class Stroke(
          * Default join style used for connections between line and curve segments
          */
         val DefaultJoin = StrokeJoin.Miter
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is Stroke) return false
+
+        if (width != other.width) return false
+        if (miter != other.miter) return false
+        if (cap != other.cap) return false
+        if (join != other.join) return false
+        if (pathEffect != other.pathEffect) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = width.hashCode()
+        result = 31 * result + miter.hashCode()
+        result = 31 * result + cap.hashCode()
+        result = 31 * result + join.hashCode()
+        result = 31 * result + (pathEffect?.hashCode() ?: 0)
+        return result
+    }
+
+    override fun toString(): String {
+        return "Stroke(width=$width, miter=$miter, cap=$cap, join=$join, pathEffect=$pathEffect)"
     }
 }

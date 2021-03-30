@@ -18,7 +18,10 @@ package androidx.car.app.navigation.model;
 
 import static androidx.annotation.RestrictTo.Scope.LIBRARY;
 
+import static java.util.Objects.requireNonNull;
+
 import androidx.annotation.IntDef;
+import androidx.annotation.IntRange;
 import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -31,7 +34,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.util.Objects;
 
 /** Information about a maneuver that the driver will be required to perform. */
-// TODO(rasekh): Update when host(s) updates or a scheme for auto sync is established.
+// TODO(b/154671667): Update when host(s) updates or a scheme for auto sync is established.
 public final class Maneuver {
     /**
      * Possible maneuver types.
@@ -69,8 +72,6 @@ public final class Maneuver {
             TYPE_MERGE_LEFT,
             TYPE_MERGE_RIGHT,
             TYPE_MERGE_SIDE_UNSPECIFIED,
-            TYPE_ROUNDABOUT_ENTER,
-            TYPE_ROUNDABOUT_EXIT,
             TYPE_ROUNDABOUT_ENTER_AND_EXIT_CW,
             TYPE_ROUNDABOUT_ENTER_AND_EXIT_CW_WITH_ANGLE,
             TYPE_ROUNDABOUT_ENTER_AND_EXIT_CCW,
@@ -99,7 +100,7 @@ public final class Maneuver {
     /**
      * Maneuver type is unknown, no maneuver information should be displayed.
      *
-     * <p>{@link #TYPE_UNKNOWN} may be interpreted differently depending on the consumer. In some
+     * <p>This type may be interpreted differently depending on the consumer. In some
      * cases the previous maneuver will continue to be shown while in others no maneuver will be
      * shown at all.
      */
@@ -290,30 +291,6 @@ public final class Maneuver {
     public static final int TYPE_MERGE_SIDE_UNSPECIFIED = 29;
 
     /**
-     * Roundabout entrance on which the current road ends.
-     *
-     * <p>For example, this is used to indicate "Enter the roundabout".
-     *
-     * @deprecated Use {@link #TYPE_ROUNDABOUT_ENTER_CW} or {@link #TYPE_ROUNDABOUT_ENTER_CCW}
-     * instead.
-     */
-    @Deprecated
-    @Type
-    public static final int TYPE_ROUNDABOUT_ENTER = 30;
-
-    /**
-     * Used when leaving a roundabout when the step starts in it.
-     *
-     * <p>For example, this is used to indicate "Exit the roundabout".
-     *
-     * @deprecated Use {@link #TYPE_ROUNDABOUT_EXIT_CW} or {@link #TYPE_ROUNDABOUT_EXIT_CCW}
-     * instead.
-     */
-    @Deprecated
-    @Type
-    public static final int TYPE_ROUNDABOUT_EXIT = 31;
-
-    /**
      * Enter a clockwise roundabout and take the Nth exit.
      *
      * <p>The exit number must be passed when created the maneuver.
@@ -466,25 +443,6 @@ public final class Maneuver {
     private final CarIcon mIcon;
 
     /**
-     * Constructs a new builder of {@link Maneuver}.
-     *
-     * <p>The type should be chosen to reflect the closest semantic meaning of the maneuver. In some
-     * cases, an exact type match is not possible, but choosing a similar or slightly more general
-     * type is preferred. Using {@link #TYPE_UNKNOWN} is allowed, but some head units will not
-     * display any information in that case.
-     *
-     * @param type one of the {@code TYPE_*} static constants defined in this class.
-     * @throws IllegalArgumentException if {@code type} is not a valid maneuver type.
-     */
-    @NonNull
-    public static Builder builder(@Type int type) {
-        if (!isValidType(type)) {
-            throw new IllegalArgumentException("Maneuver must have a valid type");
-        }
-        return new Builder(type);
-    }
-
-    /**
      * Returns the maneuver type.
      *
      * <p>Required to be set at all times.
@@ -578,11 +536,11 @@ public final class Maneuver {
 
     Maneuver(@Type int type, int roundaboutExitNumber, int roundaboutExitAngle,
             @Nullable CarIcon icon) {
-        this.mType = type;
-        this.mRoundaboutExitNumber = roundaboutExitNumber;
-        this.mRoundaboutExitAngle = roundaboutExitAngle;
+        mType = type;
+        mRoundaboutExitNumber = roundaboutExitNumber;
+        mRoundaboutExitAngle = roundaboutExitAngle;
         CarIconConstraints.DEFAULT.validateOrThrow(icon);
-        this.mIcon = icon;
+        mIcon = icon;
     }
 
     /** Constructs an empty instance, used by serialization code. */
@@ -593,7 +551,7 @@ public final class Maneuver {
         mIcon = null;
     }
 
-    private static boolean isValidType(@Type int type) {
+    static boolean isValidType(@Type int type) {
         return (type >= TYPE_UNKNOWN && type <= TYPE_FERRY_TRAIN_RIGHT);
     }
 
@@ -620,13 +578,26 @@ public final class Maneuver {
         @Nullable
         private CarIcon mIcon;
 
-        Builder(@Type int type) {
-            this.mType = type;
+        /**
+         * Constructs a new instance of a {@link Builder}.
+         *
+         * <p>The type should be chosen to reflect the closest semantic meaning of the maneuver.
+         * In some cases, an exact type match is not possible, but choosing a similar or slightly
+         * more general type is preferred. Using {@link #TYPE_UNKNOWN} is allowed, but some head
+         * units will not display any information in that case.
+         *
+         * @param type one of the {@code TYPE_*} static constants defined in this class
+         * @throws IllegalArgumentException if {@code type} is not a valid maneuver type
+         */
+        public Builder(@Type int type) {
+            if (!isValidType(type)) {
+                throw new IllegalArgumentException("Maneuver must have a valid type");
+            }
+            mType = type;
         }
 
         /**
-         * Sets an image representing the maneuver, or {@code null} to not set an image for the
-         * maneuver.
+         * Sets an image representing the maneuver.
          *
          * <h4>Image Sizing Guidance</h4>
          *
@@ -636,10 +607,12 @@ public final class Maneuver {
          *
          * <p>See {@link CarIcon} for more details related to providing icon and image resources
          * that work with different car screen pixel densities.
+         *
+         * @throws NullPointerException if {@code icon} is {@code null}
          */
         @NonNull
-        public Builder setIcon(@Nullable CarIcon icon) {
-            this.mIcon = icon;
+        public Builder setIcon(@NonNull CarIcon icon) {
+            mIcon = requireNonNull(icon);
             return this;
         }
 
@@ -658,12 +631,12 @@ public final class Maneuver {
          * the one to the left would be exit #3 and the one used by the driver to join the
          * roundabout would be exit #4.
          *
-         * @throws IllegalArgumentException if {@code type} does not include a exit number.
-         * @throws IllegalArgumentException if {@code roundaboutExitNumber} is not greater than
-         *                                  zero.
+         * @throws IllegalArgumentException if {@code type} does not include a exit number, or
+         *                                  if {@code roundaboutExitNumber} is not greater than
+         *                                  zero
          */
         @NonNull
-        public Builder setRoundaboutExitNumber(int roundaboutExitNumber) {
+        public Builder setRoundaboutExitNumber(@IntRange(from = 1) int roundaboutExitNumber) {
             if (!isValidTypeWithExitNumber(mType)) {
                 throw new IllegalArgumentException(
                         "Maneuver does not include roundaboutExitNumber");
@@ -671,8 +644,8 @@ public final class Maneuver {
             if (roundaboutExitNumber < 1) {
                 throw new IllegalArgumentException("Maneuver must include a valid exit number");
             }
-            this.mIsRoundaboutExitNumberSet = true;
-            this.mRoundaboutExitNumber = roundaboutExitNumber;
+            mIsRoundaboutExitNumberSet = true;
+            mRoundaboutExitNumber = roundaboutExitNumber;
             return this;
         }
 
@@ -687,20 +660,21 @@ public final class Maneuver {
          * would be at 90 degrees, exit 2 at 180, exit 3 at 270 and exit 4 at 360. However if the
          * exits are irregular then a different angle could be provided.
          *
-         * @throws IllegalArgumentException if {@code type} does not include a exit angle.
-         * @throws IllegalArgumentException if {@code roundaboutExitAngle} is not greater than
-         *                                  zero and less than or equal to 360 degrees.
+         * @throws IllegalArgumentException if {@code type} does not include a exit angle or if
+         *                                  {@code roundaboutExitAngle} is not greater than zero
+         *                                  and less than or equal to 360 degrees
          */
         @NonNull
-        public Builder setRoundaboutExitAngle(int roundaboutExitAngle) {
+        public Builder setRoundaboutExitAngle(
+                @IntRange(from = 1, to = 360) int roundaboutExitAngle) {
             if (!isValidTypeWithExitAngle(mType)) {
                 throw new IllegalArgumentException("Maneuver does not include roundaboutExitAngle");
             }
             if (roundaboutExitAngle < 1 || roundaboutExitAngle > 360) {
                 throw new IllegalArgumentException("Maneuver must include a valid exit angle");
             }
-            this.mIsRoundaboutExitAngleSet = true;
-            this.mRoundaboutExitAngle = roundaboutExitAngle;
+            mIsRoundaboutExitAngleSet = true;
+            mRoundaboutExitAngle = roundaboutExitAngle;
             return this;
         }
 
@@ -708,9 +682,8 @@ public final class Maneuver {
          * Constructs the {@link Maneuver} defined by this builder.
          *
          * @throws IllegalArgumentException if {@code type} includes an exit number and one has
-         *                                  not been set.
-         * @throws IllegalArgumentException if {@code type} includes an exit angle and one has
-         *                                  not been set.
+         *                                  not been set, or if it includes an exit angle and one
+         *                                  has not been set
          */
         @NonNull
         public Maneuver build() {

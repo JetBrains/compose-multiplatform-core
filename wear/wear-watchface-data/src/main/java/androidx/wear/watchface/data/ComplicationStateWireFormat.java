@@ -19,6 +19,7 @@ package androidx.wear.watchface.data;
 import android.annotation.SuppressLint;
 import android.content.ComponentName;
 import android.graphics.Rect;
+import android.os.Bundle;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.support.wearable.complications.ComplicationData;
@@ -70,8 +71,18 @@ public final class ComplicationStateWireFormat implements VersionedParcelable, P
     boolean mIsEnabled;
 
     @ParcelField(8)
+    boolean mIsInitiallyEnabled;
+
+    @ParcelField(9)
     @ComplicationData.ComplicationType
     int mCurrentType;
+
+    @ParcelField(10)
+    boolean mFixedComplicationProvider;
+
+    @ParcelField(11)
+    @NonNull
+    Bundle mComplicationConfigExtras;
 
     /** Used by VersionedParcelable. */
     ComplicationStateWireFormat() {
@@ -85,7 +96,10 @@ public final class ComplicationStateWireFormat implements VersionedParcelable, P
             int fallbackSystemProvider,
             @ComplicationData.ComplicationType int defaultProviderType,
             boolean isEnabled,
-            @ComplicationData.ComplicationType int currentType) {
+            boolean isInitiallyEnabled,
+            @ComplicationData.ComplicationType int currentType,
+            boolean fixedComplicationProvider,
+            @NonNull Bundle complicationConfigExtras) {
         mBounds = bounds;
         mBoundsType = boundsType;
         mSupportedTypes = supportedTypes;
@@ -93,7 +107,10 @@ public final class ComplicationStateWireFormat implements VersionedParcelable, P
         mFallbackSystemProvider = fallbackSystemProvider;
         mDefaultProviderType = defaultProviderType;
         mIsEnabled = isEnabled;
+        mIsInitiallyEnabled = isInitiallyEnabled;
         mCurrentType = currentType;
+        mFixedComplicationProvider = fixedComplicationProvider;
+        mComplicationConfigExtras = complicationConfigExtras;
     }
 
     @NonNull
@@ -138,10 +155,23 @@ public final class ComplicationStateWireFormat implements VersionedParcelable, P
         return mIsEnabled;
     }
 
+    public boolean isInitiallyEnabled() {
+        return mIsInitiallyEnabled;
+    }
+
+    public boolean isFixedComplicationProvider() {
+        return mFixedComplicationProvider;
+    }
+
     @NonNull
     @ComplicationData.ComplicationType
     public int getCurrentType() {
         return mCurrentType;
+    }
+
+    @NonNull
+    public Bundle getComplicationConfigExtras() {
+        return mComplicationConfigExtras;
     }
 
     /** Serializes this ComplicationDetails to the specified {@link Parcel}. */

@@ -96,6 +96,15 @@ abstract class GenerateMediaTestConfigurationTask : DefaultTask() {
     @get:OutputFile
     abstract val clientToTServiceToT: RegularFileProperty
 
+    @get:OutputFile
+    abstract val constrainedClientPreviousServiceToT: RegularFileProperty
+
+    @get:OutputFile
+    abstract val constrainedClientToTServicePrevious: RegularFileProperty
+
+    @get:OutputFile
+    abstract val constrainedClientToTServiceToT: RegularFileProperty
+
     @TaskAction
     fun generateAndroidTestZip() {
         val clientToTApk = resolveApk(clientToTFolder, clientToTLoader)
@@ -115,6 +124,19 @@ abstract class GenerateMediaTestConfigurationTask : DefaultTask() {
         writeConfigFileContent(
             clientPreviousApk, serviceToTApk, clientPreviousPath.get(),
             serviceToTPath.get(), clientPreviousServiceToT, true, false
+        )
+        // write constrained configs as well
+        writeConfigFileContent(
+            clientToTApk, serviceToTApk, clientToTPath.get(),
+            serviceToTPath.get(), constrainedClientToTServiceToT, false, false, true
+        )
+        writeConfigFileContent(
+            clientToTApk, servicePreviousApk, clientToTPath.get(),
+            servicePreviousPath.get(), constrainedClientToTServicePrevious, false, true, true
+        )
+        writeConfigFileContent(
+            clientPreviousApk, serviceToTApk, clientPreviousPath.get(),
+            serviceToTPath.get(), constrainedClientPreviousServiceToT, true, false, true
         )
     }
 
@@ -138,7 +160,8 @@ abstract class GenerateMediaTestConfigurationTask : DefaultTask() {
         servicePath: String,
         outputFile: RegularFileProperty,
         isClientPrevious: Boolean,
-        isServicePrevious: Boolean
+        isServicePrevious: Boolean,
+        isConstrained: Boolean = false
     ) {
         val configBuilder = MediaConfigBuilder()
         configBuilder.clientApkName(resolveName(clientApk, clientPath))
@@ -149,12 +172,24 @@ abstract class GenerateMediaTestConfigurationTask : DefaultTask() {
             .testRunner(testRunner.get())
             .isClientPrevious(isClientPrevious)
             .isServicePrevious(isServicePrevious)
+            .tag("androidx_unit_tests")
+            .tag("media_compat")
         when (affectedModuleDetectorSubset.get()) {
-            ProjectSubset.CHANGED_PROJECTS, ProjectSubset.ALL_AFFECTED_PROJECTS -> {
+            ProjectSubset.CHANGED_PROJECTS -> {
+                configBuilder.isPostsubmit(false)
+                configBuilder.runAllTests(true)
+            }
+            ProjectSubset.ALL_AFFECTED_PROJECTS -> {
                 configBuilder.isPostsubmit(true)
+                configBuilder.runAllTests(true)
             }
             ProjectSubset.DEPENDENT_PROJECTS -> {
                 configBuilder.isPostsubmit(false)
+                if (isConstrained) {
+                    configBuilder.runAllTests(false)
+                } else {
+                    configBuilder.runAllTests(false)
+                }
             }
             else -> {
                 throw IllegalStateException(
@@ -168,7 +203,7 @@ abstract class GenerateMediaTestConfigurationTask : DefaultTask() {
         if (!resolvedOutputFile.exists()) {
             if (!resolvedOutputFile.createNewFile()) {
                 throw RuntimeException(
-                    "Failed to create test configuration file: $outputFile"
+                    "Failed to create test configuration file: $resolvedOutputFile"
                 )
             }
         }

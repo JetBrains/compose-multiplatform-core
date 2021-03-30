@@ -16,23 +16,45 @@
 
 package androidx.room.compiler.processing.util
 
+import androidx.room.compiler.processing.ExperimentalProcessingApi
 import androidx.room.compiler.processing.XProcessingEnv
+import androidx.room.compiler.processing.XRoundEnv
+import com.google.common.truth.Truth
 import kotlin.reflect.KClass
 
 /**
  * Data holder for XProcessing tests to access the processing environment.
  */
+@ExperimentalProcessingApi
 class XTestInvocation(
-    val processingEnv: XProcessingEnv,
+    processingEnv: XProcessingEnv,
+    roundEnv: XRoundEnv
 ) {
+    val processingEnv: XProcessingEnv = processingEnv
+        get() {
+            assertNotDisposed()
+            return field
+        }
+    val roundEnv: XRoundEnv = roundEnv
+        get() {
+            assertNotDisposed()
+            return field
+        }
+
+    /**
+     * Set to true after callback is called to ensure the test does not re-use an invocation that
+     * is no longer usable (no longer in the process method of the processor)
+     */
+    private var disposed = false
+
     /**
      * Extension mechanism to allow putting objects into invocation that can be retrieved later.
      */
     private val userData = mutableMapOf<KClass<*>, Any>()
 
     private val postCompilationAssertions = mutableListOf<CompilationResultSubject.() -> Unit>()
-    val isKsp: Boolean
-        get() = processingEnv.backend == XProcessingEnv.Backend.KSP
+
+    val isKsp: Boolean = processingEnv.backend == XProcessingEnv.Backend.KSP
 
     /**
      * Registers a block that will be called with a [CompilationResultSubject] when compilation
@@ -41,6 +63,7 @@ class XTestInvocation(
      * Note that it is not safe to access the environment in this block.
      */
     fun assertCompilationResult(block: CompilationResultSubject.() -> Unit) {
+        assertNotDisposed()
         postCompilationAssertions.add(block)
     }
 
@@ -53,11 +76,13 @@ class XTestInvocation(
     }
 
     fun <T : Any> getUserData(key: KClass<T>): T? {
+        assertNotDisposed()
         @Suppress("UNCHECKED_CAST")
         return userData[key] as T?
     }
 
     fun <T : Any> putUserData(key: KClass<T>, value: T) {
+        assertNotDisposed()
         userData[key] = value
     }
 
@@ -68,5 +93,15 @@ class XTestInvocation(
         return create().also {
             putUserData(key, it)
         }
+    }
+
+    fun dispose() {
+        disposed = true
+    }
+
+    private fun assertNotDisposed() {
+        Truth.assertWithMessage("Cannot use a test invocation after it is disposed.")
+            .that(disposed)
+            .isFalse()
     }
 }

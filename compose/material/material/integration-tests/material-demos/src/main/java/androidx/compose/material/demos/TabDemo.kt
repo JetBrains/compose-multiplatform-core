@@ -16,10 +16,12 @@
 
 package androidx.compose.material.demos
 
-import androidx.compose.foundation.ScrollableColumn
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.preferredHeight
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Button
 import androidx.compose.material.ButtonDefaults
 import androidx.compose.material.Text
@@ -30,6 +32,7 @@ import androidx.compose.material.samples.IconTabs
 import androidx.compose.material.samples.ScrollingFancyIndicatorContainerTabs
 import androidx.compose.material.samples.ScrollingTextTabs
 import androidx.compose.material.samples.TextAndIconTabs
+import androidx.compose.material.samples.LeadingIconTabs
 import androidx.compose.material.samples.TextTabs
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
@@ -41,29 +44,31 @@ import androidx.compose.ui.unit.dp
 
 @Composable
 fun TabDemo() {
-    ScrollableColumn {
+    Column(Modifier.verticalScroll(rememberScrollState())) {
         val showingSimple = remember { mutableStateOf(true) }
         val buttonText = "Show ${if (showingSimple.value) "custom" else "simple"} tabs"
 
-        Spacer(Modifier.height(24.dp))
+        Spacer(Modifier.requiredHeight(24.dp))
         if (showingSimple.value) {
             TextTabs()
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.requiredHeight(24.dp))
             IconTabs()
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.requiredHeight(24.dp))
             TextAndIconTabs()
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.requiredHeight(24.dp))
+            LeadingIconTabs()
+            Spacer(Modifier.requiredHeight(24.dp))
             ScrollingTextTabs()
         } else {
             FancyTabs()
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.requiredHeight(24.dp))
             FancyIndicatorTabs()
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.requiredHeight(24.dp))
             FancyIndicatorContainerTabs()
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.requiredHeight(24.dp))
             ScrollingFancyIndicatorContainerTabs()
         }
-        Spacer(Modifier.height(24.dp))
+        Spacer(Modifier.requiredHeight(24.dp))
         Button(
             modifier = Modifier.align(Alignment.CenterHorizontally),
             onClick = {
@@ -73,6 +78,6 @@ fun TabDemo() {
         ) {
             Text(buttonText)
         }
-        Spacer(Modifier.preferredHeight(50.dp))
+        Spacer(Modifier.height(50.dp))
     }
 }

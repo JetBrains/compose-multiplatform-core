@@ -17,10 +17,9 @@
 package androidx.benchmark.integration.macrobenchmark
 
 import androidx.benchmark.macro.CompilationMode
-import androidx.benchmark.macro.MacrobenchmarkConfig
-import androidx.benchmark.macro.MacrobenchmarkRule
 import androidx.benchmark.macro.StartupMode
 import androidx.benchmark.macro.StartupTimingMetric
+import androidx.benchmark.macro.junit4.MacrobenchmarkRule
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
 import org.junit.Rule
@@ -39,17 +38,15 @@ class ProcessSpeedProfileValidation(
     val benchmarkRule = MacrobenchmarkRule()
 
     @Test
-    fun start() = benchmarkRule.measureStartupRepeated(
-        MacrobenchmarkConfig(
-            packageName = PACKAGE_NAME,
-            metrics = listOf(StartupTimingMetric()),
-            compilationMode = compilationMode,
-            iterations = 3
-        ),
-        startupMode
+    fun start() = benchmarkRule.measureRepeated(
+        packageName = PACKAGE_NAME,
+        metrics = listOf(StartupTimingMetric()),
+        compilationMode = compilationMode,
+        iterations = 3,
+        startupMode = startupMode
     ) {
         pressHome()
-        launchPackageAndWait()
+        startActivityAndWait()
     }
 
     companion object {

@@ -22,7 +22,6 @@ import android.app.Activity
 import android.graphics.Point
 import android.graphics.Rect
 import androidx.core.util.Consumer
-import androidx.window.DeviceState
 import androidx.window.DisplayFeature
 import androidx.window.FoldingFeature
 import androidx.window.WindowBackend
@@ -55,6 +54,11 @@ class MidScreenFoldBackend(private val foldAxis: FoldAxis) : WindowBackend {
         SHORT_DIMENSION
     }
 
+    /**
+     * @param activity Currently running {@link Activity}.
+     * @return A fake {@link WindowLayoutInfo} with a fold in the middle matching the {@link
+     * FoldAxis}.
+     */
     private fun getWindowLayoutInfo(activity: Activity): WindowLayoutInfo {
         val windowSize = activity.calculateWindowSizeExt()
         val featureRect = foldRect(windowSize)
@@ -91,14 +95,6 @@ class MidScreenFoldBackend(private val foldAxis: FoldAxis) : WindowBackend {
         } else { // Portrait
             Rect(windowSize.x / 2, 0, windowSize.x / 2, windowSize.y)
         }
-    }
-
-    override fun registerDeviceStateChangeCallback(
-        executor: Executor,
-        callback: Consumer<DeviceState>
-    ) {}
-
-    override fun unregisterDeviceStateChangeCallback(callback: Consumer<DeviceState>) {
     }
 
     override fun registerLayoutChangeCallback(

@@ -16,13 +16,14 @@
 
 package androidx.compose.material
 
-import androidx.compose.runtime.Providers
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.platform.AmbientLayoutDirection
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.semantics.AccessibilityRangeInfo
+import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
@@ -103,8 +104,8 @@ class SliderTest {
             .assertValueEquals("0 percent")
             .assert(
                 SemanticsMatcher.expectValue(
-                    SemanticsProperties.AccessibilityRangeInfo,
-                    AccessibilityRangeInfo(0f, 0f..1f, 0)
+                    SemanticsProperties.ProgressBarRangeInfo,
+                    ProgressBarRangeInfo(0f, 0f..1f, 0)
                 )
             )
             .assert(SemanticsMatcher.keyIsDefined(SemanticsActions.SetProgress))
@@ -138,8 +139,8 @@ class SliderTest {
             .assertValueEquals("0 percent")
             .assert(
                 SemanticsMatcher.expectValue(
-                    SemanticsProperties.AccessibilityRangeInfo,
-                    AccessibilityRangeInfo(0f, 0f..1f, 4)
+                    SemanticsProperties.ProgressBarRangeInfo,
+                    ProgressBarRangeInfo(0f, 0f..1f, 4)
                 )
             )
             .assert(SemanticsMatcher.keyIsDefined(SemanticsActions.SetProgress))
@@ -169,10 +170,27 @@ class SliderTest {
     }
 
     @Test
+    fun slider_semantics_disabled() {
+        rule.setMaterialContent {
+            Slider(
+                value = 0f,
+                onValueChange = {},
+                modifier = Modifier.testTag(tag),
+                enabled = false
+            )
+        }
+
+        rule.onNodeWithTag(tag)
+            .assert(SemanticsMatcher.keyIsDefined(SemanticsProperties.Disabled))
+    }
+
+    @Test
     fun slider_drag() {
         val state = mutableStateOf(0f)
+        var slop = 0f
 
         rule.setMaterialContent {
+            slop = LocalViewConfiguration.current.touchSlop
             Slider(
                 modifier = Modifier.testTag(tag),
                 value = state.value,
@@ -191,7 +209,7 @@ class SliderTest {
                 down(center)
                 moveBy(Offset(100f, 0f))
                 up()
-                expected = calculateFraction(left, right, centerX + 100)
+                expected = calculateFraction(left, right, centerX + 100 - slop)
             }
         rule.runOnIdle {
             Truth.assertThat(abs(state.value - expected)).isLessThan(0.001f)
@@ -228,11 +246,45 @@ class SliderTest {
     }
 
     @Test
-    fun slider_drag_rtl() {
+    fun slider_tap_rangeChange() {
         val state = mutableStateOf(0f)
+        val rangeEnd = mutableStateOf(0.25f)
 
         rule.setMaterialContent {
-            Providers(AmbientLayoutDirection provides LayoutDirection.Rtl) {
+            Slider(
+                modifier = Modifier.testTag(tag),
+                value = state.value,
+                onValueChange = { state.value = it },
+                valueRange = 0f..rangeEnd.value
+            )
+        }
+        // change to 1 since [calculateFraction] coerces between 0..1
+        rule.runOnUiThread {
+            rangeEnd.value = 1f
+        }
+
+        var expected = 0f
+
+        rule.onNodeWithTag(tag)
+            .performGesture {
+                down(Offset(centerX + 50, centerY))
+                up()
+                expected = calculateFraction(left, right, centerX + 50)
+            }
+
+        rule.runOnIdle {
+            Truth.assertThat(abs(state.value - expected)).isLessThan(0.001f)
+        }
+    }
+
+    @Test
+    fun slider_drag_rtl() {
+        val state = mutableStateOf(0f)
+        var slop = 0f
+
+        rule.setMaterialContent {
+            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                slop = LocalViewConfiguration.current.touchSlop
                 Slider(
                     modifier = Modifier.testTag(tag),
                     value = state.value,
@@ -253,7 +305,7 @@ class SliderTest {
                 moveBy(Offset(100f, 0f))
                 up()
                 // subtract here as we're in rtl and going in the opposite direction
-                expected = calculateFraction(left, right, centerX - 100)
+                expected = calculateFraction(left, right, centerX - 100 + slop)
             }
         rule.runOnIdle {
             Truth.assertThat(abs(state.value - expected)).isLessThan(0.001f)
@@ -265,7 +317,7 @@ class SliderTest {
         val state = mutableStateOf(0f)
 
         rule.setMaterialContent {
-            Providers(AmbientLayoutDirection provides LayoutDirection.Rtl) {
+            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
                 Slider(
                     modifier = Modifier.testTag(tag),
                     value = state.value,

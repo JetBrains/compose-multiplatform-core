@@ -52,12 +52,12 @@ internal fun processAsSingleComposable(
     var endOffset = rawEndOffset
     if (startOffset == endOffset) {
 
+        if (previousSelection == null) return Triple(rawStartOffset, rawStartOffset, false)
         // If the start and end offset are at the same character, and it's not the initial
         // selection, then bound to at least one character.
         val textRange = ensureAtLeastOneChar(
             offset = rawStartOffset,
             lastOffset = lastOffset,
-            previousSelection = previousSelection,
             isStartHandle = isStartHandle,
             handlesCrossed = handlesCrossed
         )
@@ -168,7 +168,6 @@ internal fun updateWordBasedSelection(
  * @param offset unprocessed start and end offset calculated directly from input position, in
  * this case start and offset equals to each other.
  * @param lastOffset last offset of the text. It's actually the length of the text.
- * @param previousSelection previous selected text range.
  * @param isStartHandle true if the start handle is being dragged
  * @param handlesCrossed true if the selection handles are crossed
  *
@@ -177,49 +176,50 @@ internal fun updateWordBasedSelection(
 private fun ensureAtLeastOneChar(
     offset: Int,
     lastOffset: Int,
-    previousSelection: TextRange?,
     isStartHandle: Boolean,
     handlesCrossed: Boolean
 ): TextRange {
-    var newStartOffset = offset
-    var newEndOffset = offset
+    // When lastOffset is 0, it can only return an empty TextRange.
+    // When previousSelection is null, it won't start a selection and return an empty TextRange.
+    if (lastOffset == 0) return TextRange(offset, offset)
 
-    previousSelection?.let {
-        if (isStartHandle) {
-            newStartOffset =
-                if (handlesCrossed) {
-                    if (newEndOffset == 0 || it.start == newEndOffset + 1) {
-                        newEndOffset + 1
-                    } else {
-                        newEndOffset - 1
-                    }
-                } else {
-                    if (newEndOffset == lastOffset || it.start == newEndOffset - 1) {
-                        newEndOffset - 1
-                    } else {
-                        newEndOffset + 1
-                    }
-                }
+    // When offset is at the boundary, the handle that is not dragged should be at [offset]. Here
+    // the other handle's position is computed accordingly.
+    if (offset == 0) {
+        return if (isStartHandle) {
+            TextRange(1, 0)
         } else {
-            newEndOffset =
-                if (handlesCrossed) {
-                    if (
-                        newStartOffset == lastOffset || it.end == newStartOffset - 1
-                    ) {
-                        newStartOffset - 1
-                    } else {
-                        newStartOffset + 1
-                    }
-                } else {
-                    if (newStartOffset == 0 || it.end == newStartOffset + 1) {
-                        newStartOffset + 1
-                    } else {
-                        newStartOffset - 1
-                    }
-                }
+            TextRange(0, 1)
         }
     }
-    return TextRange(newStartOffset, newEndOffset)
+
+    if (offset == lastOffset) {
+        return if (isStartHandle) {
+            TextRange(lastOffset - 1, lastOffset)
+        } else {
+            TextRange(lastOffset, lastOffset - 1)
+        }
+    }
+
+    // In other cases, this function will try to maintain the current cross handle states.
+    // Only in this way the selection can be stable.
+    return if (isStartHandle) {
+        if (!handlesCrossed) {
+            // Handle is NOT crossed, and the start handle is dragged.
+            TextRange(offset - 1, offset)
+        } else {
+            // Handle is crossed, and the start handle is dragged.
+            TextRange(offset + 1, offset)
+        }
+    } else {
+        if (!handlesCrossed) {
+            // Handle is NOT crossed, and the end handle is dragged.
+            TextRange(offset, offset + 1)
+        } else {
+            // Handle is crossed, and the end handle is dragged.
+            TextRange(offset, offset - 1)
+        }
+    }
 }
 
 /**

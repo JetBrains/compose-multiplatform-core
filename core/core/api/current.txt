@@ -630,7 +630,7 @@ package androidx.core.app {
     method public android.os.Bundle getExtras();
     method public androidx.core.app.Person? getPerson();
     method @Deprecated public CharSequence? getSender();
-    method public CharSequence getText();
+    method public CharSequence? getText();
     method public long getTimestamp();
     method public androidx.core.app.NotificationCompat.MessagingStyle.Message setData(String?, android.net.Uri?);
   }
@@ -955,6 +955,7 @@ package androidx.core.content {
     ctor protected ContextCompat();
     method public static int checkSelfPermission(android.content.Context, String);
     method public static android.content.Context? createDeviceProtectedStorageContext(android.content.Context);
+    method public static String? getAttributionTag(android.content.Context);
     method public static java.io.File! getCodeCacheDir(android.content.Context);
     method @ColorInt public static int getColor(android.content.Context, @ColorRes int);
     method public static android.content.res.ColorStateList? getColorStateList(android.content.Context, @ColorRes int);
@@ -1074,6 +1075,7 @@ package androidx.core.content.pm {
 
   public static class ShortcutInfoCompat.Builder {
     ctor public ShortcutInfoCompat.Builder(android.content.Context, String);
+    method public androidx.core.content.pm.ShortcutInfoCompat.Builder addCapabilityBinding(String, java.util.Map<java.lang.String!,java.util.List<java.lang.String!>!>?);
     method public androidx.core.content.pm.ShortcutInfoCompat build();
     method public androidx.core.content.pm.ShortcutInfoCompat.Builder setActivity(android.content.ComponentName);
     method public androidx.core.content.pm.ShortcutInfoCompat.Builder setAlwaysBadged();
@@ -1092,6 +1094,7 @@ package androidx.core.content.pm {
     method public androidx.core.content.pm.ShortcutInfoCompat.Builder setPersons(androidx.core.app.Person![]);
     method public androidx.core.content.pm.ShortcutInfoCompat.Builder setRank(int);
     method public androidx.core.content.pm.ShortcutInfoCompat.Builder setShortLabel(CharSequence);
+    method public androidx.core.content.pm.ShortcutInfoCompat.Builder setSliceUri(android.net.Uri);
   }
 
   public class ShortcutManagerCompat {
@@ -1552,15 +1555,15 @@ package androidx.core.os {
     field public static final String MEDIA_UNKNOWN = "unknown";
   }
 
+  public final class ExecutorCompat {
+    method public static java.util.concurrent.Executor create(android.os.Handler);
+  }
+
   public final class HandlerCompat {
     method public static android.os.Handler createAsync(android.os.Looper);
     method public static android.os.Handler createAsync(android.os.Looper, android.os.Handler.Callback);
+    method @RequiresApi(16) public static boolean hasCallbacks(android.os.Handler, Runnable);
     method public static boolean postDelayed(android.os.Handler, Runnable, Object?, long);
-  }
-
-  public class HandlerExecutor implements java.util.concurrent.Executor {
-    ctor public HandlerExecutor(android.os.Handler);
-    method public void execute(Runnable);
   }
 
   public final class LocaleListCompat {
@@ -1615,6 +1618,10 @@ package androidx.core.os {
     method @Deprecated public static void endSection();
     method @Deprecated public static boolean isEnabled();
     method @Deprecated public static void setCounter(String, int);
+  }
+
+  @RequiresApi(17) public class UserHandleCompat {
+    method public static android.os.UserHandle getUserHandleForUid(int);
   }
 
   public class UserManagerCompat {
@@ -2634,13 +2641,13 @@ package androidx.core.view {
     method public void setFraction(@FloatRange(from=0.0f, to=1.0f) float);
   }
 
-  public static final class WindowInsetsAnimationCompat.Bounds {
-    ctor public WindowInsetsAnimationCompat.Bounds(androidx.core.graphics.Insets, androidx.core.graphics.Insets);
-    ctor @RequiresApi(30) public WindowInsetsAnimationCompat.Bounds(android.view.WindowInsetsAnimation.Bounds);
+  public static final class WindowInsetsAnimationCompat.BoundsCompat {
+    ctor public WindowInsetsAnimationCompat.BoundsCompat(androidx.core.graphics.Insets, androidx.core.graphics.Insets);
     method public androidx.core.graphics.Insets getLowerBound();
     method public androidx.core.graphics.Insets getUpperBound();
-    method public androidx.core.view.WindowInsetsAnimationCompat.Bounds inset(androidx.core.graphics.Insets);
-    method @RequiresApi(30) public android.view.WindowInsetsAnimation.Bounds toPlatformBounds();
+    method public androidx.core.view.WindowInsetsAnimationCompat.BoundsCompat inset(androidx.core.graphics.Insets);
+    method @RequiresApi(30) public android.view.WindowInsetsAnimation.Bounds toBounds();
+    method @RequiresApi(30) public static androidx.core.view.WindowInsetsAnimationCompat.BoundsCompat toBoundsCompat(android.view.WindowInsetsAnimation.Bounds);
   }
 
   public abstract static class WindowInsetsAnimationCompat.Callback {
@@ -2649,7 +2656,7 @@ package androidx.core.view {
     method public void onEnd(androidx.core.view.WindowInsetsAnimationCompat);
     method public void onPrepare(androidx.core.view.WindowInsetsAnimationCompat);
     method public abstract androidx.core.view.WindowInsetsCompat onProgress(androidx.core.view.WindowInsetsCompat, java.util.List<androidx.core.view.WindowInsetsAnimationCompat!>);
-    method public androidx.core.view.WindowInsetsAnimationCompat.Bounds onStart(androidx.core.view.WindowInsetsAnimationCompat, androidx.core.view.WindowInsetsAnimationCompat.Bounds);
+    method public androidx.core.view.WindowInsetsAnimationCompat.BoundsCompat onStart(androidx.core.view.WindowInsetsAnimationCompat, androidx.core.view.WindowInsetsAnimationCompat.BoundsCompat);
     field public static final int DISPATCH_MODE_CONTINUE_ON_SUBTREE = 1; // 0x1
     field public static final int DISPATCH_MODE_STOP = 0; // 0x0
   }

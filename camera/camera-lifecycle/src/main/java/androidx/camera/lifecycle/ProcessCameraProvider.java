@@ -23,10 +23,12 @@ import android.os.Handler;
 import androidx.annotation.MainThread;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.OptIn;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 import androidx.camera.core.Camera;
 import androidx.camera.core.CameraFilter;
+import androidx.camera.core.CameraInfo;
 import androidx.camera.core.CameraInfoUnavailableException;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.CameraX;
@@ -51,10 +53,12 @@ import androidx.lifecycle.LifecycleOwner;
 
 import com.google.common.util.concurrent.ListenableFuture;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.Executor;
 
 /**
@@ -135,7 +139,7 @@ public final class ProcessCameraProvider implements LifecycleCameraProvider {
      *
      * @return A future which will contain the {@link ProcessCameraProvider}. Cancellation of
      * this future is a no-op. This future may fail with an {@link InitializationException} and
-     * associated cause that can be retrieved by {@link Throwable#getCause()). The cause will be
+     * associated cause that can be retrieved by {@link Throwable#getCause()}. The cause will be
      * a {@link androidx.camera.core.CameraUnavailableException} if it fails to access any camera
      * during initialization.
      * @throws IllegalStateException if CameraX fails to initialize via a default provider or a
@@ -168,7 +172,9 @@ public final class ProcessCameraProvider implements LifecycleCameraProvider {
      *
      * <p>Configuration can only occur once. Once the ProcessCameraProvider has been configured with
      * {@code configureInstance()} or {@link #getInstance(Context)}, this method will throw
-     * an {@link IllegalStateException}.
+     * an {@link IllegalStateException}. Because configuration can only occur once, <b>usage of this
+     * method from library code is not recommended</b> as the application owner should ultimately
+     * be in control of singleton configuration.
      *
      * @param cameraXConfig configuration options for the singleton process camera provider
      *                      instance.
@@ -267,7 +273,7 @@ public final class ProcessCameraProvider implements LifecycleCameraProvider {
     @SuppressWarnings({"lambdaLast", "deprecation"})
     @MainThread
     @NonNull
-    @androidx.annotation.experimental.UseExperimental(markerClass = ExperimentalUseCaseGroup.class)
+    @OptIn(markerClass = ExperimentalUseCaseGroup.class)
     public Camera bindToLifecycle(@NonNull LifecycleOwner lifecycleOwner,
             @NonNull CameraSelector cameraSelector,
             @NonNull UseCase... useCases) {
@@ -290,7 +296,7 @@ public final class ProcessCameraProvider implements LifecycleCameraProvider {
     @SuppressWarnings({"lambdaLast", "deprecation"})
     @MainThread
     @NonNull
-    @androidx.annotation.experimental.UseExperimental(markerClass = ExperimentalUseCaseGroup.class)
+    @OptIn(markerClass = ExperimentalUseCaseGroup.class)
     public Camera bindToLifecycle(@NonNull LifecycleOwner lifecycleOwner,
             @NonNull CameraSelector cameraSelector,
             @NonNull UseCaseGroup useCaseGroup) {
@@ -359,7 +365,7 @@ public final class ProcessCameraProvider implements LifecycleCameraProvider {
     @SuppressWarnings({"lambdaLast", "unused", "deprecation"})
     @RestrictTo(Scope.LIBRARY_GROUP)
     @ExperimentalUseCaseGroup
-    @androidx.annotation.experimental.UseExperimental(markerClass = ExperimentalCameraFilter.class)
+    @OptIn(markerClass = ExperimentalCameraFilter.class)
     @NonNull
     public Camera bindToLifecycle(
             @NonNull LifecycleOwner lifecycleOwner,
@@ -480,6 +486,7 @@ public final class ProcessCameraProvider implements LifecycleCameraProvider {
         mLifecycleCameraRepository.unbindAll();
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean hasCamera(@NonNull CameraSelector cameraSelector)
             throws CameraInfoUnavailableException {
@@ -490,6 +497,18 @@ public final class ProcessCameraProvider implements LifecycleCameraProvider {
         }
 
         return true;
+    }
+
+    /** {@inheritDoc} */
+    @NonNull
+    @Override
+    public List<CameraInfo> getAvailableCameraInfos() {
+        final List<CameraInfo> availableCameraInfos = new ArrayList<>();
+        final Set<CameraInternal> cameras = mCameraX.getCameraRepository().getCameras();
+        for (final CameraInternal camera : cameras) {
+            availableCameraInfos.add(camera.getCameraInfo());
+        }
+        return availableCameraInfos;
     }
 
     private ProcessCameraProvider() {

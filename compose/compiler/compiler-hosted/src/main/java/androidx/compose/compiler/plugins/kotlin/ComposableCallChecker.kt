@@ -65,10 +65,9 @@ import org.jetbrains.kotlin.types.KotlinType
 import org.jetbrains.kotlin.types.TypeUtils
 import org.jetbrains.kotlin.types.lowerIfFlexible
 import org.jetbrains.kotlin.types.typeUtil.builtIns
+import org.jetbrains.kotlin.types.typeUtil.isAnyOrNullableAny
 import org.jetbrains.kotlin.types.upperIfFlexible
 import org.jetbrains.kotlin.util.OperatorNameConventions
-
-internal const val COMPOSABLE_PROPERTIES = true
 
 open class ComposableCallChecker :
     CallChecker,
@@ -83,12 +82,60 @@ open class ComposableCallChecker :
         container.useInstance(this)
     }
 
+    fun checkInlineLambdaCall(
+        resolvedCall: ResolvedCall<*>,
+        reportOn: PsiElement,
+        context: CallCheckerContext
+    ) {
+        if (resolvedCall !is VariableAsFunctionResolvedCall) return
+        val descriptor = resolvedCall.variableCall.resultingDescriptor
+        if (descriptor !is ValueParameterDescriptor) return
+        if (descriptor.type.hasDisallowComposableCallsAnnotation()) return
+        val function = descriptor.containingDeclaration
+        if (
+            function is FunctionDescriptor &&
+            function.isInline &&
+            function.isMarkedAsComposable()
+        ) {
+            val bindingContext = context.trace.bindingContext
+            var node: PsiElement? = reportOn
+            loop@while (node != null) {
+                when (node) {
+                    is KtLambdaExpression -> {
+                        val arg = getArgumentDescriptor(node.functionLiteral, bindingContext)
+                        if (arg?.type?.hasDisallowComposableCallsAnnotation() == true) {
+                            val parameterSrc = descriptor.findPsi()
+                            if (parameterSrc != null) {
+                                missingDisallowedComposableCallPropagation(
+                                    context,
+                                    parameterSrc,
+                                    descriptor,
+                                    arg
+                                )
+                            }
+                        }
+                    }
+                    is KtFunction -> {
+                        val fn = bindingContext[BindingContext.FUNCTION, node]
+                        if (fn == function) {
+                            return
+                        }
+                    }
+                }
+                node = node.parent as? KtElement
+            }
+        }
+    }
+
     override fun check(
         resolvedCall: ResolvedCall<*>,
         reportOn: PsiElement,
         context: CallCheckerContext
     ) {
-        if (!resolvedCall.isComposableInvocation()) return
+        if (!resolvedCall.isComposableInvocation()) {
+            checkInlineLambdaCall(resolvedCall, reportOn, context)
+            return
+        }
         val bindingContext = context.trace.bindingContext
         var node: PsiElement? = reportOn
         loop@while (node != null) {
@@ -106,7 +153,7 @@ open class ComposableCallChecker :
                     val composable = descriptor.isComposableCallable(bindingContext)
                     if (composable) return
                     val arg = getArgumentDescriptor(node.functionLiteral, bindingContext)
-                    if (arg?.type?.composablePreventCaptureContract() == true) {
+                    if (arg?.type?.hasDisallowComposableCallsAnnotation() == true) {
                         context.trace.record(
                             ComposeWritableSlices.LAMBDA_CAPABLE_OF_COMPOSER_CAPTURE,
                             descriptor,
@@ -171,6 +218,15 @@ open class ComposableCallChecker :
                     if (!composable) {
                         illegalCall(context, reportOn, node.nameIdentifier ?: node)
                     }
+                    if (descriptor.hasReadonlyComposableAnnotation()) {
+                        // enforce that the original call was readonly
+                        if (!resolvedCall.isReadOnlyComposableInvocation()) {
+                            illegalCallMustBeReadonly(
+                                context,
+                                reportOn
+                            )
+                        }
+                    }
                     return
                 }
                 is KtProperty -> {
@@ -191,10 +247,19 @@ open class ComposableCallChecker :
                     val property = node.property
                     val isComposable = node
                         .annotationEntries.hasComposableAnnotation(bindingContext)
-                    val propertyIsComposable = property
-                        .annotationEntries.hasComposableAnnotation(bindingContext)
-                    if (!(isComposable || COMPOSABLE_PROPERTIES && propertyIsComposable)) {
+                    if (!isComposable) {
                         illegalCall(context, reportOn, property.nameIdentifier ?: property)
+                    }
+                    val descriptor = bindingContext[BindingContext.PROPERTY_ACCESSOR, node]
+                        ?: return
+                    if (descriptor.hasReadonlyComposableAnnotation()) {
+                        // enforce that the original call was readonly
+                        if (!resolvedCall.isReadOnlyComposableInvocation()) {
+                            illegalCallMustBeReadonly(
+                                context,
+                                reportOn
+                            )
+                        }
                     }
                     return
                 }
@@ -217,6 +282,22 @@ open class ComposableCallChecker :
         }
     }
 
+    private fun missingDisallowedComposableCallPropagation(
+        context: CallCheckerContext,
+        unmarkedParamEl: PsiElement,
+        unmarkedParamDescriptor: ValueParameterDescriptor,
+        markedParamDescriptor: ValueParameterDescriptor
+    ) {
+        context.trace.report(
+            ComposeErrors.MISSING_DISALLOW_COMPOSABLE_CALLS_ANNOTATION.on(
+                unmarkedParamEl,
+                unmarkedParamDescriptor,
+                markedParamDescriptor,
+                markedParamDescriptor.containingDeclaration
+            )
+        )
+    }
+
     private fun illegalCall(
         context: CallCheckerContext,
         callEl: PsiElement,
@@ -226,6 +307,13 @@ open class ComposableCallChecker :
         if (functionEl != null) {
             context.trace.report(ComposeErrors.COMPOSABLE_EXPECTED.on(functionEl))
         }
+    }
+
+    private fun illegalCallMustBeReadonly(
+        context: CallCheckerContext,
+        callEl: PsiElement
+    ) {
+        context.trace.report(ComposeErrors.NONREADONLY_CALL_IN_READONLY_COMPOSABLE.on(callEl))
     }
 
     private fun illegalComposableFunctionReference(
@@ -245,6 +333,7 @@ open class ComposableCallChecker :
         val expectedType = c.expectedType
         if (expectedType === TypeUtils.NO_EXPECTED_TYPE) return
         if (expectedType === TypeUtils.UNIT_EXPECTED_TYPE) return
+        if (expectedType.isAnyOrNullableAny()) return
         val expectedComposable = expectedType.hasComposableAnnotation()
         if (expression is KtLambdaExpression) {
             val descriptor = bindingContext[BindingContext.FUNCTION, expression.functionLiteral]
@@ -315,6 +404,28 @@ open class ComposableCallChecker :
     }
 }
 
+fun ResolvedCall<*>.isReadOnlyComposableInvocation(): Boolean {
+    if (this is VariableAsFunctionResolvedCall) {
+        return false
+    }
+    val candidateDescriptor = candidateDescriptor
+    return when (candidateDescriptor) {
+        is ValueParameterDescriptor -> false
+        is LocalVariableDescriptor -> false
+        is PropertyDescriptor -> {
+            val isGetter = valueArguments.isEmpty()
+            val getter = candidateDescriptor.getter
+            if (isGetter && getter != null) {
+                getter.hasReadonlyComposableAnnotation()
+            } else {
+                false
+            }
+        }
+        is PropertyGetterDescriptor -> candidateDescriptor.hasReadonlyComposableAnnotation()
+        else -> candidateDescriptor.hasReadonlyComposableAnnotation()
+    }
+}
+
 fun ResolvedCall<*>.isComposableInvocation(): Boolean {
     if (this is VariableAsFunctionResolvedCall) {
         if (variableCall.candidateDescriptor.type.hasComposableAnnotation())
@@ -339,28 +450,22 @@ fun ResolvedCall<*>.isComposableInvocation(): Boolean {
             val isGetter = valueArguments.isEmpty()
             val getter = candidateDescriptor.getter
             if (isGetter && getter != null) {
-                getter.hasComposableAnnotation() ||
-                    (COMPOSABLE_PROPERTIES && candidateDescriptor.hasComposableAnnotation())
+                getter.hasComposableAnnotation()
             } else {
                 false
             }
         }
-        is PropertyGetterDescriptor -> candidateDescriptor.hasComposableAnnotation() || (
-            COMPOSABLE_PROPERTIES && candidateDescriptor.correspondingProperty
-                .hasComposableAnnotation()
-            )
+        is PropertyGetterDescriptor -> candidateDescriptor.hasComposableAnnotation()
         else -> candidateDescriptor.hasComposableAnnotation()
     }
 }
 
 internal fun CallableDescriptor.isMarkedAsComposable(): Boolean {
     return when (this) {
-        is PropertyGetterDescriptor -> hasComposableAnnotation() || (
-            COMPOSABLE_PROPERTIES && correspondingProperty.hasComposableAnnotation()
-            )
+        is PropertyGetterDescriptor -> hasComposableAnnotation()
         is ValueParameterDescriptor -> type.hasComposableAnnotation()
         is LocalVariableDescriptor -> type.hasComposableAnnotation()
-        is PropertyDescriptor -> COMPOSABLE_PROPERTIES && hasComposableAnnotation()
+        is PropertyDescriptor -> false
         else -> hasComposableAnnotation()
     }
 }

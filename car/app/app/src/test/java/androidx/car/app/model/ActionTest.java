@@ -54,11 +54,11 @@ public class ActionTest {
     @Test
     public void create_throws_noTitleOrIcon() {
         assertThrows(
-                IllegalStateException.class, () -> Action.builder().setOnClickListener(() -> {
+                IllegalStateException.class, () -> new Action.Builder().setOnClickListener(() -> {
                 }).build());
         assertThrows(
                 IllegalStateException.class,
-                () -> Action.builder().setOnClickListener(() -> {
+                () -> new Action.Builder().setOnClickListener(() -> {
                 }).setTitle("").build());
     }
 
@@ -68,27 +68,15 @@ public class ActionTest {
         builder.scheme(ContentResolver.SCHEME_CONTENT);
         builder.appendPath("foo/bar");
         Uri iconUri = builder.build();
-        CarIcon carIcon = CarIcon.of(IconCompat.createWithContentUri(iconUri));
+        CarIcon carIcon = new CarIcon.Builder(IconCompat.createWithContentUri(iconUri)).build();
 
-        assertThrows(IllegalArgumentException.class, () -> Action.builder().setIcon(carIcon));
-    }
-
-    @Test
-    public void create_throws_customBackgroundColor() {
-        OnClickListener onClickListener = mock(OnClickListener.class);
-        assertThrows(
-                IllegalArgumentException.class,
-                () -> Action.builder()
-                        .setTitle("foo")
-                        .setOnClickListener(onClickListener)
-                        .setBackgroundColor(CarColor.createCustom(0xdead, 0xbeef))
-                        .build());
+        assertThrows(IllegalArgumentException.class, () -> new Action.Builder().setIcon(carIcon));
     }
 
     @Test
     public void create_noTitleDefault() {
         OnClickListener onClickListener = mock(OnClickListener.class);
-        Action action = Action.builder()
+        Action action = new Action.Builder()
                 .setIcon(TestUtils.getTestCarIcon(ApplicationProvider.getApplicationContext(),
                         "ic_test_1"))
                 .setOnClickListener(onClickListener)
@@ -99,15 +87,26 @@ public class ActionTest {
     @Test
     public void create_noIconDefault() {
         OnClickListener onClickListener = mock(OnClickListener.class);
-        Action action = Action.builder().setTitle("foo").setOnClickListener(
+        Action action = new Action.Builder().setTitle("foo").setOnClickListener(
                 onClickListener).build();
         assertThat(action.getIcon()).isNull();
     }
 
     @Test
+    public void create_titleHasTextVariants() {
+        CarText title = new CarText.Builder("foo long text").addVariant("foo").build();
+        OnClickListener onClickListener = mock(OnClickListener.class);
+        Action action = new Action.Builder().setTitle(title).setOnClickListener(
+                onClickListener).build();
+        assertThat(action.getTitle()).isNotNull();
+        assertThat(action.getTitle().toCharSequence().toString()).isEqualTo("foo long text");
+        assertThat(action.getTitle().getVariants().get(0).toString()).isEqualTo("foo");
+    }
+
+    @Test
     public void create_noBackgroundColorDefault() {
         OnClickListener onClickListener = mock(OnClickListener.class);
-        Action action = Action.builder().setTitle("foo").setOnClickListener(
+        Action action = new Action.Builder().setTitle("foo").setOnClickListener(
                 onClickListener).build();
         assertThat(action.getBackgroundColor()).isEqualTo(CarColor.DEFAULT);
     }
@@ -119,9 +118,9 @@ public class ActionTest {
         IconCompat icon = IconCompat.createWithResource(
                 context, TestUtils.getTestDrawableResId(context, "ic_test_1"));
         String title = "foo";
-        Action action = Action.builder()
+        Action action = new Action.Builder()
                 .setTitle(title)
-                .setIcon(CarIcon.of(icon))
+                .setIcon(new CarIcon.Builder(icon).build())
                 .setBackgroundColor(CarColor.BLUE)
                 .setOnClickListener(onClickListener)
                 .build();
@@ -129,37 +128,9 @@ public class ActionTest {
         assertThat(CarText.create(title)).isEqualTo(action.getTitle());
         assertThat(CarColor.BLUE).isEqualTo(action.getBackgroundColor());
         OnDoneCallback onDoneCallback = mock(OnDoneCallback.class);
-        action.getOnClickListener().onClick(onDoneCallback);
+        action.getOnClickDelegate().sendClick(onDoneCallback);
         verify(onClickListener).onClick();
         verify(onDoneCallback).onSuccess(null);
-    }
-
-    @Test
-    public void create_invalidSetOnBackThrows() {
-        assertThrows(
-                IllegalStateException.class,
-                () -> Action.BACK.newBuilder().setOnClickListener(() -> {
-                }).build());
-        assertThrows(
-                IllegalStateException.class,
-                () -> Action.BACK.newBuilder().setTitle("BACK").build());
-        assertThrows(
-                IllegalStateException.class,
-                () -> Action.BACK.newBuilder().setIcon(CarIcon.ALERT).build());
-    }
-
-    @Test
-    public void create_invalidSetOnAppIconThrows() {
-        assertThrows(
-                IllegalStateException.class,
-                () -> Action.APP_ICON.newBuilder().setOnClickListener(() -> {
-                }).build());
-        assertThrows(
-                IllegalStateException.class,
-                () -> Action.APP_ICON.newBuilder().setTitle("APP").build());
-        assertThrows(
-                IllegalStateException.class,
-                () -> Action.APP_ICON.newBuilder().setIcon(CarIcon.ALERT).build());
     }
 
     @Test
@@ -168,10 +139,10 @@ public class ActionTest {
         CarIcon icon = CarIcon.ALERT;
 
         Action action1 =
-                Action.builder().setOnClickListener(() -> {
+                new Action.Builder().setOnClickListener(() -> {
                 }).setTitle(title).setIcon(icon).build();
         Action action2 =
-                Action.builder().setOnClickListener(() -> {
+                new Action.Builder().setOnClickListener(() -> {
                 }).setTitle(title).setIcon(icon).build();
 
         assertThat(action2).isEqualTo(action1);
@@ -180,9 +151,9 @@ public class ActionTest {
     @Test
     public void notEquals_nonMatchingTitle() {
         String title = "foo";
-        Action action1 = Action.builder().setOnClickListener(() -> {
+        Action action1 = new Action.Builder().setOnClickListener(() -> {
         }).setTitle(title).build();
-        Action action2 = Action.builder().setOnClickListener(() -> {
+        Action action2 = new Action.Builder().setOnClickListener(() -> {
         }).setTitle("not foo").build();
 
         assertThat(action2).isNotEqualTo(action1);
@@ -194,9 +165,9 @@ public class ActionTest {
         CarIcon icon1 = CarIcon.ALERT;
         CarIcon icon2 = CarIcon.APP_ICON;
 
-        Action action1 = Action.builder().setOnClickListener(() -> {
+        Action action1 = new Action.Builder().setOnClickListener(() -> {
         }).setTitle(title).setIcon(icon1).build();
-        Action action2 = Action.builder().setOnClickListener(() -> {
+        Action action2 = new Action.Builder().setOnClickListener(() -> {
         }).setTitle(title).setIcon(icon2).build();
 
         assertThat(action2).isNotEqualTo(action1);

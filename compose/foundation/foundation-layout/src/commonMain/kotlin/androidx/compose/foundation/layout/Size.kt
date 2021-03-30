@@ -34,10 +34,9 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.constrain
 import androidx.compose.ui.unit.constrainHeight
 import androidx.compose.ui.unit.constrainWidth
-import androidx.compose.ui.unit.enforce
-import androidx.compose.ui.util.annotation.FloatRange
 import kotlin.math.roundToInt
 
 /**
@@ -45,20 +44,20 @@ import kotlin.math.roundToInt
  * [Constraints] may override this value, forcing the content to be either smaller or larger.
  *
  * For a modifier that sets the width of the content regardless of the incoming constraints see
- * [Modifier.width]. See [preferredHeight] or [preferredSize] to set other preferred dimensions.
- * See [preferredWidthIn], [preferredHeightIn] or [preferredSizeIn] to set a preferred size range.
+ * [Modifier.requiredWidth]. See [height] or [size] to set other preferred dimensions.
+ * See [widthIn], [heightIn] or [sizeIn] to set a preferred size range.
  *
  * Example usage:
- * @sample androidx.compose.foundation.layout.samples.SimplePreferredWidthModifier
+ * @sample androidx.compose.foundation.layout.samples.SimpleWidthModifier
  */
 @Stable
-fun Modifier.preferredWidth(width: Dp) = this.then(
+fun Modifier.width(width: Dp) = this.then(
     SizeModifier(
         minWidth = width,
         maxWidth = width,
         enforceIncoming = true,
         inspectorInfo = debugInspectorInfo {
-            name = "preferredWidth"
+            name = "width"
             value = width
         }
     )
@@ -69,20 +68,20 @@ fun Modifier.preferredWidth(width: Dp) = this.then(
  * [Constraints] may override this value, forcing the content to be either smaller or larger.
  *
  * For a modifier that sets the height of the content regardless of the incoming constraints see
- * [Modifier.height]. See [preferredWidth] or [preferredSize] to set other preferred dimensions.
- * See [preferredWidthIn], [preferredHeightIn] or [preferredSizeIn] to set a preferred size range.
+ * [Modifier.requiredHeight]. See [width] or [size] to set other preferred dimensions.
+ * See [widthIn], [heightIn] or [sizeIn] to set a preferred size range.
  *
  * Example usage:
- * @sample androidx.compose.foundation.layout.samples.SimplePreferredHeightModifier
+ * @sample androidx.compose.foundation.layout.samples.SimpleHeightModifier
  */
 @Stable
-fun Modifier.preferredHeight(height: Dp) = this.then(
+fun Modifier.height(height: Dp) = this.then(
     SizeModifier(
         minHeight = height,
         maxHeight = height,
         enforceIncoming = true,
         inspectorInfo = debugInspectorInfo {
-            name = "preferredHeight"
+            name = "height"
             value = height
         }
     )
@@ -93,14 +92,14 @@ fun Modifier.preferredHeight(height: Dp) = this.then(
  * [Constraints] may override this value, forcing the content to be either smaller or larger.
  *
  * For a modifier that sets the size of the content regardless of the incoming constraints, see
- * [Modifier.size]. See [preferredWidth] or [preferredHeight] to set width or height alone.
- * See [preferredWidthIn], [preferredHeightIn] or [preferredSizeIn] to set a preferred size range.
+ * [Modifier.requiredSize]. See [width] or [height] to set width or height alone.
+ * See [widthIn], [heightIn] or [sizeIn] to set a preferred size range.
  *
  * Example usage:
- * @sample androidx.compose.foundation.layout.samples.SimplePreferredSizeModifier
+ * @sample androidx.compose.foundation.layout.samples.SimpleSizeModifier
  */
 @Stable
-fun Modifier.preferredSize(size: Dp) = this.then(
+fun Modifier.size(size: Dp) = this.then(
     SizeModifier(
         minWidth = size,
         maxWidth = size,
@@ -108,7 +107,7 @@ fun Modifier.preferredSize(size: Dp) = this.then(
         maxHeight = size,
         enforceIncoming = true,
         inspectorInfo = debugInspectorInfo {
-            name = "preferredSize"
+            name = "size"
             value = size
         }
     )
@@ -120,14 +119,14 @@ fun Modifier.preferredSize(size: Dp) = this.then(
  * larger.
  *
  * For a modifier that sets the size of the content regardless of the incoming constraints, see
- * [Modifier.size]. See [preferredWidth] or [preferredHeight] to set width or height alone.
- * See [preferredWidthIn], [preferredHeightIn] or [preferredSizeIn] to set a preferred size range.
+ * [Modifier.requiredSize]. See [width] or [height] to set width or height alone.
+ * See [widthIn], [heightIn] or [sizeIn] to set a preferred size range.
  *
  * Example usage:
- * @sample androidx.compose.foundation.layout.samples.SimplePreferredSizeModifier
+ * @sample androidx.compose.foundation.layout.samples.SimpleSizeModifier
  */
 @Stable
-fun Modifier.preferredSize(width: Dp, height: Dp) = this.then(
+fun Modifier.size(width: Dp, height: Dp) = this.then(
     SizeModifier(
         minWidth = width,
         maxWidth = width,
@@ -135,7 +134,7 @@ fun Modifier.preferredSize(width: Dp, height: Dp) = this.then(
         maxHeight = height,
         enforceIncoming = true,
         inspectorInfo = debugInspectorInfo {
-            name = "preferredSize"
+            name = "size"
             properties["width"] = width
             properties["height"] = height
         }
@@ -149,7 +148,7 @@ fun Modifier.preferredSize(width: Dp, height: Dp) = this.then(
  * to the preferred size.
  */
 @Stable
-fun Modifier.preferredWidthIn(
+fun Modifier.widthIn(
     min: Dp = Dp.Unspecified,
     max: Dp = Dp.Unspecified
 ) = this.then(
@@ -158,7 +157,7 @@ fun Modifier.preferredWidthIn(
         maxWidth = max,
         enforceIncoming = true,
         inspectorInfo = debugInspectorInfo {
-            name = "preferredWidthIn"
+            name = "widthIn"
             properties["min"] = min
             properties["max"] = max
         }
@@ -172,7 +171,7 @@ fun Modifier.preferredWidthIn(
  * to the preferred size.
  */
 @Stable
-fun Modifier.preferredHeightIn(
+fun Modifier.heightIn(
     min: Dp = Dp.Unspecified,
     max: Dp = Dp.Unspecified
 ) = this.then(
@@ -181,7 +180,7 @@ fun Modifier.preferredHeightIn(
         maxHeight = max,
         enforceIncoming = true,
         inspectorInfo = debugInspectorInfo {
-            name = "preferredHeightIn"
+            name = "heightIn"
             properties["min"] = min
             properties["max"] = max
         }
@@ -190,12 +189,12 @@ fun Modifier.preferredHeightIn(
 
 /**
  * Constrain the width of the content to be between [minWidth]dp and [maxWidth]dp and the height
- * of the content to be between [minHeight] and [maxHeight] as permitted by the incoming
+ * of the content to be between [minHeight]dp and [maxHeight]dp as permitted by the incoming
  * measurement [Constraints]. If the incoming constraints are more restrictive the requested size
  * will obey the incoming constraints and attempt to be as close as possible to the preferred size.
  */
 @Stable
-fun Modifier.preferredSizeIn(
+fun Modifier.sizeIn(
     minWidth: Dp = Dp.Unspecified,
     minHeight: Dp = Dp.Unspecified,
     maxWidth: Dp = Dp.Unspecified,
@@ -208,7 +207,7 @@ fun Modifier.preferredSizeIn(
         maxHeight = maxHeight,
         enforceIncoming = true,
         inspectorInfo = debugInspectorInfo {
-            name = "preferredSizeIn"
+            name = "sizeIn"
             properties["minWidth"] = minWidth
             properties["minHeight"] = minHeight
             properties["maxWidth"] = maxWidth
@@ -225,21 +224,21 @@ fun Modifier.preferredSizeIn(
  * centered on the space assigned to the child by the parent layout under the assumption that
  * [Constraints] were respected.
  *
- * See [widthIn] and [sizeIn] to set a size range.
- * See [preferredWidth] to set a preferred width, which is only respected when the incoming
+ * See [requiredWidthIn] and [requiredSizeIn] to set a size range.
+ * See [width] to set a preferred width, which is only respected when the incoming
  * constraints allow it.
  *
  * Example usage:
- * @sample androidx.compose.foundation.layout.samples.SimpleWidthModifier
+ * @sample androidx.compose.foundation.layout.samples.SimpleRequiredWidthModifier
  */
 @Stable
-fun Modifier.width(width: Dp) = this.then(
+fun Modifier.requiredWidth(width: Dp) = this.then(
     SizeModifier(
         minWidth = width,
         maxWidth = width,
         enforceIncoming = false,
         inspectorInfo = debugInspectorInfo {
-            name = "width"
+            name = "requiredWidth"
             value = width
         }
     )
@@ -253,21 +252,21 @@ fun Modifier.width(width: Dp) = this.then(
  * centered on the space assigned to the child by the parent layout under the assumption that
  * [Constraints] were respected.
  *
- * See [heightIn] and [sizeIn] to set a size range.
- * See [preferredHeight] to set a preferred height, which is only respected when the incoming
+ * See [requiredHeightIn] and [requiredSizeIn] to set a size range.
+ * See [height] to set a preferred height, which is only respected when the incoming
  * constraints allow it.
  *
  * Example usage:
- * @sample androidx.compose.foundation.layout.samples.SimpleHeightModifier
+ * @sample androidx.compose.foundation.layout.samples.SimpleRequiredHeightModifier
  */
 @Stable
-fun Modifier.height(height: Dp) = this.then(
+fun Modifier.requiredHeight(height: Dp) = this.then(
     SizeModifier(
         minHeight = height,
         maxHeight = height,
         enforceIncoming = false,
         inspectorInfo = debugInspectorInfo {
-            name = "height"
+            name = "requiredHeight"
             value = height
         }
     )
@@ -281,15 +280,15 @@ fun Modifier.height(height: Dp) = this.then(
  * centered on the space assigned to the child by the parent layout under the assumption that
  * [Constraints] were respected.
  *
- * See [sizeIn] to set a size range.
- * See [preferredSize] to set a preferred size, which is only respected when the incoming
+ * See [requiredSizeIn] to set a size range.
+ * See [size] to set a preferred size, which is only respected when the incoming
  * constraints allow it.
  *
  * Example usage:
- * @sample androidx.compose.foundation.layout.samples.SimpleSizeModifier
+ * @sample androidx.compose.foundation.layout.samples.SimpleRequiredSizeModifier
  */
 @Stable
-fun Modifier.size(size: Dp) = this.then(
+fun Modifier.requiredSize(size: Dp) = this.then(
     SizeModifier(
         minWidth = size,
         maxWidth = size,
@@ -297,7 +296,7 @@ fun Modifier.size(size: Dp) = this.then(
         maxHeight = size,
         enforceIncoming = false,
         inspectorInfo = debugInspectorInfo {
-            name = "size"
+            name = "requiredSize"
             value = size
         }
     )
@@ -311,15 +310,12 @@ fun Modifier.size(size: Dp) = this.then(
  * centered on the space assigned to the child by the parent layout under the assumption that
  * [Constraints] were respected.
  *
- * See [sizeIn] to set a size range.
- * See [preferredSize] to set a preferred size, which is only respected when the incoming
+ * See [requiredSizeIn] to set a size range.
+ * See [size] to set a preferred size, which is only respected when the incoming
  * constraints allow it.
- *
- * Example usage:
- * @sample androidx.compose.foundation.layout.samples.SimpleWidthModifier
  */
 @Stable
-fun Modifier.size(width: Dp, height: Dp) = this.then(
+fun Modifier.requiredSize(width: Dp, height: Dp) = this.then(
     SizeModifier(
         minWidth = width,
         maxWidth = width,
@@ -327,7 +323,7 @@ fun Modifier.size(width: Dp, height: Dp) = this.then(
         maxHeight = height,
         enforceIncoming = false,
         inspectorInfo = debugInspectorInfo {
-            name = "size"
+            name = "requiredSize"
             properties["width"] = width
             properties["height"] = height
         }
@@ -342,7 +338,7 @@ fun Modifier.size(width: Dp, height: Dp) = this.then(
  * the child by the parent layout under the assumption that [Constraints] were respected.
  */
 @Stable
-fun Modifier.widthIn(
+fun Modifier.requiredWidthIn(
     min: Dp = Dp.Unspecified,
     max: Dp = Dp.Unspecified
 ) = this.then(
@@ -351,7 +347,7 @@ fun Modifier.widthIn(
         maxWidth = max,
         enforceIncoming = false,
         inspectorInfo = debugInspectorInfo {
-            name = "widthIn"
+            name = "requiredWidthIn"
             properties["min"] = min
             properties["max"] = max
         }
@@ -366,7 +362,7 @@ fun Modifier.widthIn(
  * the child by the parent layout under the assumption that [Constraints] were respected.
  */
 @Stable
-fun Modifier.heightIn(
+fun Modifier.requiredHeightIn(
     min: Dp = Dp.Unspecified,
     max: Dp = Dp.Unspecified
 ) = this.then(
@@ -375,7 +371,7 @@ fun Modifier.heightIn(
         maxHeight = max,
         enforceIncoming = false,
         inspectorInfo = debugInspectorInfo {
-            name = "heightIn"
+            name = "requiredHeightIn"
             properties["min"] = min
             properties["max"] = max
         }
@@ -391,7 +387,7 @@ fun Modifier.heightIn(
  * the child by the parent layout under the assumption that [Constraints] were respected.
  */
 @Stable
-fun Modifier.sizeIn(
+fun Modifier.requiredSizeIn(
     minWidth: Dp = Dp.Unspecified,
     minHeight: Dp = Dp.Unspecified,
     maxWidth: Dp = Dp.Unspecified,
@@ -404,7 +400,7 @@ fun Modifier.sizeIn(
         maxHeight = maxHeight,
         enforceIncoming = false,
         inspectorInfo = debugInspectorInfo {
-            name = "sizeIn"
+            name = "requiredSizeIn"
             properties["minWidth"] = minWidth
             properties["minHeight"] = minHeight
             properties["maxWidth"] = maxWidth
@@ -421,12 +417,14 @@ fun Modifier.sizeIn(
  * make the content fill the whole available width. If the incoming maximum width is
  * [Constraints.Infinity] this modifier will have no effect.
  *
+ * @param fraction The fraction of the maximum width to use, between `0` and `1`, inclusive.
+ *
  * Example usage:
  * @sample androidx.compose.foundation.layout.samples.SimpleFillWidthModifier
  * @sample androidx.compose.foundation.layout.samples.FillHalfWidthModifier
  */
 @Stable
-fun Modifier.fillMaxWidth(@FloatRange(from = 0.0, to = 1.0) fraction: Float = 1f) =
+fun Modifier.fillMaxWidth(/*@FloatRange(from = 0.0, to = 1.0)*/ fraction: Float = 1f) =
     this.then(
         FillModifier(
             direction = Direction.Horizontal,
@@ -446,12 +444,14 @@ fun Modifier.fillMaxWidth(@FloatRange(from = 0.0, to = 1.0) fraction: Float = 1f
  * the [fraction] is 1, so the modifier will make the content fill the whole available height.
  * If the incoming maximum height is [Constraints.Infinity] this modifier will have no effect.
  *
+ * @param fraction The fraction of the maximum height to use, between `0` and `1`, inclusive.
+ *
  * Example usage:
  * @sample androidx.compose.foundation.layout.samples.SimpleFillHeightModifier
  * @sample androidx.compose.foundation.layout.samples.FillHalfHeightModifier
  */
 @Stable
-fun Modifier.fillMaxHeight(@FloatRange(from = 0.0, to = 1.0) fraction: Float = 1f) =
+fun Modifier.fillMaxHeight(/*@FloatRange(from = 0.0, to = 1.0)*/ fraction: Float = 1f) =
     this.then(
         FillModifier(
             direction = Direction.Vertical,
@@ -475,12 +475,14 @@ fun Modifier.fillMaxHeight(@FloatRange(from = 0.0, to = 1.0) fraction: Float = 1
  * If the incoming maximum width or height is [Constraints.Infinity] this modifier will have no
  * effect in that dimension.
  *
+ * @param fraction The fraction of the maximum size to use, between `0` and `1`, inclusive.
+ *
  * Example usage:
  * @sample androidx.compose.foundation.layout.samples.SimpleFillModifier
  * @sample androidx.compose.foundation.layout.samples.FillHalfSizeModifier
  */
 @Stable
-fun Modifier.fillMaxSize(@FloatRange(from = 0.0, to = 1.0) fraction: Float = 1f) =
+fun Modifier.fillMaxSize(/*@FloatRange(from = 0.0, to = 1.0)*/ fraction: Float = 1f) =
     this.then(
         FillModifier(
             direction = Direction.Both,
@@ -516,6 +518,7 @@ fun Modifier.wrapContentWidth(
         alignmentCallback = { size, layoutDirection ->
             IntOffset(align.align(0, size.width, layoutDirection), 0)
         },
+        align,
         inspectorInfo = debugInspectorInfo {
             name = "wrapContentWidth"
             properties["align"] = align
@@ -547,6 +550,7 @@ fun Modifier.wrapContentHeight(
         alignmentCallback = { size, _ ->
             IntOffset(0, align.align(0, size.height))
         },
+        align,
         inspectorInfo = debugInspectorInfo {
             name = "wrapContentHeight"
             properties["align"] = align
@@ -577,6 +581,7 @@ fun Modifier.wrapContentSize(
         alignmentCallback = { size, layoutDirection ->
             align.align(IntSize.Zero, size, layoutDirection)
         },
+        align,
         inspectorInfo = debugInspectorInfo {
             name = "wrapContentSize"
             properties["align"] = align
@@ -593,10 +598,10 @@ fun Modifier.wrapContentSize(
  * while still allowing it to be overidden with smaller min sizes across usages.
  *
  * Example usage:
- * @sample androidx.compose.foundation.layout.samples.DefaultMinSizeConstraintsSample
+ * @sample androidx.compose.foundation.layout.samples.DefaultMinSizeSample
  */
 @Stable
-fun Modifier.defaultMinSizeConstraints(
+fun Modifier.defaultMinSize(
     minWidth: Dp = Dp.Unspecified,
     minHeight: Dp = Dp.Unspecified
 ) = this.then(
@@ -604,7 +609,7 @@ fun Modifier.defaultMinSizeConstraints(
         minWidth = minWidth,
         minHeight = minHeight,
         inspectorInfo = debugInspectorInfo {
-            name = "defaultMinSizeConstraints"
+            name = "defaultMinSize"
             properties["minWidth"] = minWidth
             properties["minHeight"] = minHeight
         }
@@ -650,6 +655,11 @@ private class FillModifier(
             placeable.placeRelative(0, 0)
         }
     }
+
+    override fun equals(other: Any?) =
+        other is FillModifier && direction == other.direction && scale == other.scale
+
+    override fun hashCode() = direction.hashCode() * 31 + scale.hashCode()
 }
 
 private class SizeModifier(
@@ -662,11 +672,12 @@ private class SizeModifier(
 ) : LayoutModifier, InspectorValueInfo(inspectorInfo) {
     private val Density.targetConstraints
         get() = Constraints(
-            minWidth = if (minWidth != Dp.Unspecified) minWidth.toIntPx() else 0,
-            minHeight = if (minHeight != Dp.Unspecified) minHeight.toIntPx() else 0,
-            maxWidth = if (maxWidth != Dp.Unspecified) maxWidth.toIntPx() else Constraints.Infinity,
+            minWidth = if (minWidth != Dp.Unspecified) minWidth.roundToPx() else 0,
+            minHeight = if (minHeight != Dp.Unspecified) minHeight.roundToPx() else 0,
+            maxWidth =
+                if (maxWidth != Dp.Unspecified) maxWidth.roundToPx() else Constraints.Infinity,
             maxHeight = if (maxHeight != Dp.Unspecified) {
-                maxHeight.toIntPx()
+                maxHeight.roundToPx()
             } else {
                 Constraints.Infinity
             }
@@ -678,7 +689,7 @@ private class SizeModifier(
     ): MeasureResult {
         val wrappedConstraints = targetConstraints.let { targetConstraints ->
             if (enforceIncoming) {
-                targetConstraints.enforce(constraints)
+                constraints.constrain(targetConstraints)
             } else {
                 val resolvedMinWidth = if (minWidth != Dp.Unspecified) {
                     targetConstraints.minWidth
@@ -717,40 +728,74 @@ private class SizeModifier(
     override fun IntrinsicMeasureScope.minIntrinsicWidth(
         measurable: IntrinsicMeasurable,
         height: Int
-    ) = measurable.minIntrinsicWidth(height).let {
+    ): Int {
         val constraints = targetConstraints
-        constraints.constrainWidth(it)
-    }
-
-    override fun IntrinsicMeasureScope.maxIntrinsicWidth(
-        measurable: IntrinsicMeasurable,
-        height: Int
-    ) = measurable.maxIntrinsicWidth(height).let {
-        val constraints = targetConstraints
-        constraints.constrainWidth(it)
+        return if (constraints.hasFixedWidth) {
+            constraints.maxWidth
+        } else {
+            constraints.constrainWidth(measurable.minIntrinsicWidth(height))
+        }
     }
 
     override fun IntrinsicMeasureScope.minIntrinsicHeight(
         measurable: IntrinsicMeasurable,
         width: Int
-    ) = measurable.minIntrinsicHeight(width).let {
+    ): Int {
         val constraints = targetConstraints
-        constraints.constrainHeight(it)
+        return if (constraints.hasFixedHeight) {
+            constraints.maxHeight
+        } else {
+            constraints.constrainHeight(measurable.minIntrinsicHeight(width))
+        }
+    }
+
+    override fun IntrinsicMeasureScope.maxIntrinsicWidth(
+        measurable: IntrinsicMeasurable,
+        height: Int
+    ): Int {
+        val constraints = targetConstraints
+        return if (constraints.hasFixedWidth) {
+            constraints.maxWidth
+        } else {
+            constraints.constrainWidth(measurable.maxIntrinsicWidth(height))
+        }
     }
 
     override fun IntrinsicMeasureScope.maxIntrinsicHeight(
         measurable: IntrinsicMeasurable,
         width: Int
-    ) = measurable.maxIntrinsicHeight(width).let {
+    ): Int {
         val constraints = targetConstraints
-        constraints.constrainHeight(it)
+        return if (constraints.hasFixedHeight) {
+            constraints.maxHeight
+        } else {
+            constraints.constrainHeight(measurable.maxIntrinsicHeight(width))
+        }
     }
+
+    override fun equals(other: Any?): Boolean {
+        if (other !is SizeModifier) return false
+        return minWidth == other.minWidth &&
+            minHeight == other.minHeight &&
+            maxWidth == other.maxWidth &&
+            maxHeight == other.maxHeight &&
+            enforceIncoming == other.enforceIncoming
+    }
+
+    override fun hashCode() =
+        (
+            (
+                (((minWidth.hashCode() * 31 + minHeight.hashCode()) * 31) + maxWidth.hashCode()) *
+                    31
+                ) + maxHeight.hashCode()
+            ) * 31
 }
 
 private class WrapContentModifier(
     private val direction: Direction,
     private val unbounded: Boolean,
     private val alignmentCallback: (IntSize, LayoutDirection) -> IntOffset,
+    private val align: Any, // only used for equals and hashcode
     inspectorInfo: InspectorInfo.() -> Unit
 ) : LayoutModifier, InspectorValueInfo(inspectorInfo) {
     override fun MeasureScope.measure(
@@ -785,6 +830,14 @@ private class WrapContentModifier(
             placeable.place(position)
         }
     }
+
+    override fun equals(other: Any?): Boolean {
+        if (other !is WrapContentModifier) return false
+        return direction == other.direction && unbounded == other.unbounded && align == other.align
+    }
+
+    override fun hashCode() =
+        (direction.hashCode() * 31 + unbounded.hashCode()) * 31 + align.hashCode()
 }
 
 private class UnspecifiedConstraintsModifier(
@@ -798,13 +851,13 @@ private class UnspecifiedConstraintsModifier(
     ): MeasureResult {
         val wrappedConstraints = Constraints(
             if (minWidth != Dp.Unspecified && constraints.minWidth == 0) {
-                minWidth.toIntPx().coerceAtMost(constraints.maxWidth)
+                minWidth.roundToPx().coerceAtMost(constraints.maxWidth)
             } else {
                 constraints.minWidth
             },
             constraints.maxWidth,
             if (minHeight != Dp.Unspecified && constraints.minHeight == 0) {
-                minHeight.toIntPx().coerceAtMost(constraints.maxHeight)
+                minHeight.roundToPx().coerceAtMost(constraints.maxHeight)
             } else {
                 constraints.minHeight
             },
@@ -820,29 +873,36 @@ private class UnspecifiedConstraintsModifier(
         measurable: IntrinsicMeasurable,
         height: Int
     ) = measurable.minIntrinsicWidth(height).coerceAtLeast(
-        if (minWidth != Dp.Unspecified) minWidth.toIntPx() else 0
+        if (minWidth != Dp.Unspecified) minWidth.roundToPx() else 0
     )
 
     override fun IntrinsicMeasureScope.maxIntrinsicWidth(
         measurable: IntrinsicMeasurable,
         height: Int
     ) = measurable.maxIntrinsicWidth(height).coerceAtLeast(
-        if (minWidth != Dp.Unspecified) minWidth.toIntPx() else 0
+        if (minWidth != Dp.Unspecified) minWidth.roundToPx() else 0
     )
 
     override fun IntrinsicMeasureScope.minIntrinsicHeight(
         measurable: IntrinsicMeasurable,
         width: Int
     ) = measurable.minIntrinsicHeight(width).coerceAtLeast(
-        if (minHeight != Dp.Unspecified) minHeight.toIntPx() else 0
+        if (minHeight != Dp.Unspecified) minHeight.roundToPx() else 0
     )
 
     override fun IntrinsicMeasureScope.maxIntrinsicHeight(
         measurable: IntrinsicMeasurable,
         width: Int
     ) = measurable.maxIntrinsicHeight(width).coerceAtLeast(
-        if (minHeight != Dp.Unspecified) minHeight.toIntPx() else 0
+        if (minHeight != Dp.Unspecified) minHeight.roundToPx() else 0
     )
+
+    override fun equals(other: Any?): Boolean {
+        if (other !is UnspecifiedConstraintsModifier) return false
+        return minWidth == other.minWidth && minHeight == other.minHeight
+    }
+
+    override fun hashCode() = minWidth.hashCode() * 31 + minHeight.hashCode()
 }
 
 internal enum class Direction {

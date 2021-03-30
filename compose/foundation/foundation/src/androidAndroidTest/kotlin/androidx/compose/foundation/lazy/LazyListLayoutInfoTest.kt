@@ -19,8 +19,9 @@ package androidx.compose.foundation.lazy
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -28,18 +29,26 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
+import com.google.common.truth.Truth.assertWithMessage
 import kotlinx.coroutines.runBlocking
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
 
 @MediumTest
-@RunWith(AndroidJUnit4::class)
-class LazyListLayoutInfoTest {
+@RunWith(Parameterized::class)
+class LazyListLayoutInfoTest(
+    private val reverseLayout: Boolean
+) {
+    companion object {
+        @JvmStatic
+        @Parameterized.Parameters(name = "reverseLayout={0}")
+        fun initParameters(): Array<Any> = arrayOf(false, true)
+    }
 
     @get:Rule
     val rule = createComposeRule()
@@ -60,10 +69,11 @@ class LazyListLayoutInfoTest {
         rule.setContent {
             LazyColumn(
                 state = rememberLazyListState().also { state = it },
-                modifier = Modifier.size(itemSizeDp * 3.5f)
+                reverseLayout = reverseLayout,
+                modifier = Modifier.requiredSize(itemSizeDp * 3.5f)
             ) {
                 items((0..5).toList()) {
-                    Box(Modifier.size(itemSizeDp))
+                    Box(Modifier.requiredSize(itemSizeDp))
                 }
             }
         }
@@ -79,17 +89,18 @@ class LazyListLayoutInfoTest {
         rule.setContent {
             LazyColumn(
                 state = rememberLazyListState().also { state = it },
-                modifier = Modifier.size(itemSizeDp * 3.5f)
+                reverseLayout = reverseLayout,
+                modifier = Modifier.requiredSize(itemSizeDp * 3.5f)
             ) {
                 items((0..5).toList()) {
-                    Box(Modifier.size(itemSizeDp))
+                    Box(Modifier.requiredSize(itemSizeDp))
                 }
             }
         }
 
         rule.runOnIdle {
             runBlocking {
-                state.snapToItemIndex(1, 10)
+                state.scrollToItem(1, 10)
             }
             state.layoutInfo.assertVisibleItems(count = 4, startIndex = 1, startOffset = -10)
         }
@@ -101,11 +112,12 @@ class LazyListLayoutInfoTest {
         rule.setContent {
             LazyColumn(
                 state = rememberLazyListState().also { state = it },
+                reverseLayout = reverseLayout,
                 verticalArrangement = Arrangement.spacedBy(itemSizeDp),
-                modifier = Modifier.size(itemSizeDp * 3.5f)
+                modifier = Modifier.requiredSize(itemSizeDp * 3.5f)
             ) {
                 items((0..5).toList()) {
-                    Box(Modifier.size(itemSizeDp))
+                    Box(Modifier.requiredSize(itemSizeDp))
                 }
             }
         }
@@ -115,37 +127,38 @@ class LazyListLayoutInfoTest {
         }
     }
 
+    @Composable
+    fun ObservingFun(state: LazyListState, currentInfo: StableRef<LazyListLayoutInfo?>) {
+        currentInfo.value = state.layoutInfo
+    }
     @Test
     fun visibleItemsAreObservableWhenWeScroll() {
         lateinit var state: LazyListState
-        var currentInfo: LazyListLayoutInfo? = null
-        @Composable
-        fun observingFun() {
-            currentInfo = state.layoutInfo
-        }
+        val currentInfo = StableRef<LazyListLayoutInfo?>(null)
         rule.setContent {
             LazyColumn(
                 state = rememberLazyListState().also { state = it },
-                modifier = Modifier.size(itemSizeDp * 3.5f)
+                reverseLayout = reverseLayout,
+                modifier = Modifier.requiredSize(itemSizeDp * 3.5f)
             ) {
                 items((0..5).toList()) {
-                    Box(Modifier.size(itemSizeDp))
+                    Box(Modifier.requiredSize(itemSizeDp))
                 }
             }
-            observingFun()
+            ObservingFun(state, currentInfo)
         }
 
         rule.runOnIdle {
             // empty it here and scrolling should invoke observingFun again
-            currentInfo = null
+            currentInfo.value = null
             runBlocking {
-                state.snapToItemIndex(1, 0)
+                state.scrollToItem(1, 0)
             }
         }
 
         rule.runOnIdle {
-            assertThat(currentInfo).isNotNull()
-            currentInfo!!.assertVisibleItems(count = 4, startIndex = 1)
+            assertThat(currentInfo.value).isNotNull()
+            currentInfo.value!!.assertVisibleItems(count = 4, startIndex = 1)
         }
     }
 
@@ -160,10 +173,11 @@ class LazyListLayoutInfoTest {
         }
         rule.setContent {
             LazyColumn(
+                reverseLayout = reverseLayout,
                 state = rememberLazyListState().also { state = it }
             ) {
                 item {
-                    Box(Modifier.size(size))
+                    Box(Modifier.requiredSize(size))
                 }
             }
             observingFun()
@@ -188,10 +202,11 @@ class LazyListLayoutInfoTest {
         lateinit var state: LazyListState
         rule.setContent {
             LazyColumn(
+                reverseLayout = reverseLayout,
                 state = rememberLazyListState().also { state = it }
             ) {
                 items((0 until count).toList()) {
-                    Box(Modifier.size(10.dp))
+                    Box(Modifier.requiredSize(10.dp))
                 }
             }
         }
@@ -213,11 +228,12 @@ class LazyListLayoutInfoTest {
         lateinit var state: LazyListState
         rule.setContent {
             LazyColumn(
-                Modifier.size(sizeDp),
+                Modifier.requiredSize(sizeDp),
+                reverseLayout = reverseLayout,
                 state = rememberLazyListState().also { state = it }
             ) {
                 items((0..3).toList()) {
-                    Box(Modifier.size(sizeDp))
+                    Box(Modifier.requiredSize(sizeDp))
                 }
             }
         }
@@ -239,12 +255,13 @@ class LazyListLayoutInfoTest {
         lateinit var state: LazyListState
         rule.setContent {
             LazyColumn(
-                Modifier.size(sizeDp),
+                Modifier.requiredSize(sizeDp),
                 contentPadding = PaddingValues(top = topPaddingDp, bottom = bottomPaddingDp),
+                reverseLayout = reverseLayout,
                 state = rememberLazyListState().also { state = it }
             ) {
                 items((0..3).toList()) {
-                    Box(Modifier.size(sizeDp))
+                    Box(Modifier.requiredSize(sizeDp))
                 }
             }
         }
@@ -267,10 +284,14 @@ class LazyListLayoutInfoTest {
         var currentOffset = startOffset
         visibleItemsInfo.forEach {
             assertThat(it.index).isEqualTo(currentIndex)
-            assertThat(it.offset).isEqualTo(currentOffset)
+            assertWithMessage("Offset of item $currentIndex").that(it.offset)
+                .isEqualTo(currentOffset)
             assertThat(it.size).isEqualTo(expectedSize)
             currentIndex++
             currentOffset += it.size + spacing
         }
     }
 }
+
+@Stable
+class StableRef<T>(var value: T)

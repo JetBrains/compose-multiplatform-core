@@ -43,22 +43,27 @@ internal class KspProcessingEnv(
     override val backend: XProcessingEnv.Backend = XProcessingEnv.Backend.KSP
 
     private val typeElementStore =
-        XTypeElementStore { qName ->
-            resolver.getClassDeclarationByName(
-                KspTypeMapper.swapWithKotlinType(qName)
-            )?.let {
-                KspTypeElement(
-                    env = this,
-                    declaration = it
+        XTypeElementStore(
+            findElement = {
+                resolver.getClassDeclarationByName(
+                    KspTypeMapper.swapWithKotlinType(it)
                 )
+            },
+            getQName = {
+                // for error types or local types, qualified name is null.
+                // it is best to just not cache them
+                it.qualifiedName?.asString()
+            },
+            wrap = { classDeclaration ->
+                KspTypeElement.create(this, classDeclaration)
             }
-        }
+        )
 
     override val messager: XMessager = KspMessager(logger)
 
     private val arrayTypeFactory = KspArrayType.Factory(this)
 
-    override val filer: XFiler = KspFiler(codeGenerator)
+    override val filer: XFiler = KspFiler(codeGenerator, messager)
 
     val commonTypes = CommonTypes(resolver)
 
@@ -85,11 +90,8 @@ internal class KspProcessingEnv(
     }
 
     override fun findGeneratedAnnotation(): XTypeElement? {
-        // this almost replicates what GeneratedAnnotations does except it doesn't check source
-        // version because we don't have that property here yet. Instead, it tries the new one
-        // first and falls back to the old one.
-        // implement when https://github.com/google/ksp/issues/198 is fixed
-        return null
+        return findTypeElement("javax.annotation.processing.Generated")
+            ?: findTypeElement("javax.annotation.Generated")
     }
 
     override fun getDeclaredType(type: XTypeElement, vararg types: XType): KspType {
@@ -194,10 +196,7 @@ internal class KspProcessingEnv(
     }
 
     fun wrapClassDeclaration(declaration: KSClassDeclaration): KspTypeElement {
-        return KspTypeElement(
-            env = this,
-            declaration = declaration
-        )
+        return typeElementStore[declaration]
     }
 
     class CommonTypes(resolver: Resolver) {

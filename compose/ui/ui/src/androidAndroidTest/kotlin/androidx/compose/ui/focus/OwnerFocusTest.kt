@@ -18,12 +18,14 @@ package androidx.compose.ui.focus
 
 import android.view.View
 import androidx.compose.foundation.layout.Box
-import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusState.Active
 import androidx.compose.ui.focus.FocusState.Inactive
-import androidx.compose.ui.platform.AmbientView
+import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
@@ -42,19 +44,19 @@ class OwnerFocusTest {
     fun requestFocus_bringsViewInFocus() {
         // Arrange.
         lateinit var ownerView: View
-        val focusReference = FocusReference()
+        val focusRequester = FocusRequester()
         rule.setFocusableContent {
-            ownerView = getOwner()
+            ownerView = LocalView.current
             Box(
                 modifier = Modifier
-                    .focusReference(focusReference)
+                    .focusRequester(focusRequester)
                     .focusModifier()
             )
         }
 
         // Act.
         rule.runOnIdle {
-            focusReference.requestFocus()
+            focusRequester.requestFocus()
         }
 
         // Assert.
@@ -69,13 +71,13 @@ class OwnerFocusTest {
         // Arrange.
         lateinit var ownerView: View
         var focusState = Inactive
-        val focusReference = FocusReference()
+        val focusRequester = FocusRequester()
         rule.setFocusableContent {
-            ownerView = getOwner()
+            ownerView = LocalView.current
             Box(
                 modifier = Modifier
                     .onFocusChanged { focusState = it }
-                    .focusReference(focusReference)
+                    .focusRequester(focusRequester)
                     .focusModifier()
             )
         }
@@ -97,13 +99,13 @@ class OwnerFocusTest {
         // Arrange.
         lateinit var ownerView: View
         var focusState = Inactive
-        val focusReference = FocusReference()
+        val focusRequester = FocusRequester()
         rule.setFocusableContent {
-            ownerView = getOwner()
+            ownerView = LocalView.current
             Box(
                 modifier = Modifier
                     .onFocusChanged { focusState = it }
-                    .focusReference(focusReference)
+                    .focusRequester(focusRequester)
                     .focusModifier()
             )
         }
@@ -124,18 +126,18 @@ class OwnerFocusTest {
         // Arrange.
         lateinit var ownerView: View
         var focusState = Inactive
-        val focusReference = FocusReference()
+        val focusRequester = FocusRequester()
         rule.setFocusableContent {
-            ownerView = getOwner()
+            ownerView = LocalView.current
             Box(
                 modifier = Modifier
                     .onFocusChanged { focusState = it }
-                    .focusReference(focusReference)
+                    .focusRequester(focusRequester)
                     .focusModifier()
             )
         }
         rule.runOnIdle {
-            focusReference.requestFocus()
+            focusRequester.requestFocus()
         }
 
         // Act.
@@ -154,18 +156,18 @@ class OwnerFocusTest {
         // Arrange.
         lateinit var ownerView: View
         var focusState = Inactive
-        val focusReference = FocusReference()
+        val focusRequester = FocusRequester()
         rule.setFocusableContent {
-            ownerView = getOwner()
+            ownerView = LocalView.current
             Box(
                 modifier = Modifier
                     .onFocusChanged { focusState = it }
-                    .focusReference(focusReference)
+                    .focusRequester(focusRequester)
                     .focusModifier()
             )
         }
         rule.runOnIdle {
-            focusReference.requestFocus()
+            focusRequester.requestFocus()
         }
 
         // Act.
@@ -179,6 +181,60 @@ class OwnerFocusTest {
         }
     }
 
-    @Composable
-    private fun getOwner() = AmbientView.current
+    @Test
+    fun clickingOnNonClickableSpaceInAppWhenViewIsFocused_doesNotChangeViewFocus() {
+        // Arrange.
+        val nonClickable = "notClickable"
+        var didViewFocusChange = false
+        lateinit var ownerView: View
+        rule.setFocusableContent {
+            ownerView = LocalView.current
+            Box(Modifier.testTag(nonClickable))
+        }
+        rule.runOnIdle {
+            ownerView.requestFocus()
+            assertThat(ownerView.isFocused).isTrue()
+        }
+        ownerView.setOnFocusChangeListener { _, hasFocus ->
+            if (hasFocus) {
+                didViewFocusChange = true
+            }
+        }
+
+        // Act.
+        rule.onNodeWithTag(nonClickable).performClick()
+
+        // Assert.
+        rule.runOnIdle {
+            assertThat(didViewFocusChange).isFalse()
+            assertThat(ownerView.isFocused).isTrue()
+        }
+    }
+
+    @Test
+    fun clickingOnNonClickableSpaceInAppWhenViewIsNotFocused_doesNotChangeViewFocus() {
+        // Arrange.
+        val nonClickable = "notClickable"
+        var didViewFocusChange = false
+        lateinit var ownerView: View
+        rule.setFocusableContent {
+            ownerView = LocalView.current
+            Box(Modifier.testTag(nonClickable))
+        }
+        rule.runOnIdle { assertThat(ownerView.isFocused).isFalse() }
+        ownerView.setOnFocusChangeListener { _, hasFocus ->
+            if (hasFocus) {
+                didViewFocusChange = true
+            }
+        }
+
+        // Act.
+        rule.onNodeWithTag(nonClickable).performClick()
+
+        // Assert.
+        rule.runOnIdle {
+            assertThat(didViewFocusChange).isFalse()
+            assertThat(ownerView.isFocused).isFalse()
+        }
+    }
 }

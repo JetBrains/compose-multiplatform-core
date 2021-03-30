@@ -16,12 +16,11 @@
 
 package androidx.compose.ui.demos.autofill
 
-import android.graphics.Rect
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.preferredHeight
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.MaterialTheme
@@ -35,12 +34,10 @@ import androidx.compose.ui.autofill.AutofillNode
 import androidx.compose.ui.autofill.AutofillType
 import androidx.compose.ui.focus.isFocused
 import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.toComposeRect
-import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.platform.AmbientAutofill
-import androidx.compose.ui.platform.AmbientAutofillTree
+import androidx.compose.ui.platform.LocalAutofill
+import androidx.compose.ui.platform.LocalAutofillTree
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -51,7 +48,7 @@ fun ExplicitAutofillTypesDemo() {
     Column {
         val nameState = remember { mutableStateOf("Enter name here") }
         val emailState = remember { mutableStateOf("Enter email here") }
-        val autofill = AmbientAutofill.current
+        val autofill = LocalAutofill.current
         val labelStyle = MaterialTheme.typography.subtitle1
         val textStyle = MaterialTheme.typography.h6
 
@@ -73,14 +70,14 @@ fun ExplicitAutofillTypesDemo() {
                 value = nameState.value,
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Text,
-                    imeAction = ImeAction.Unspecified
+                    imeAction = ImeAction.Default
                 ),
                 onValueChange = { nameState.value = it },
                 textStyle = textStyle
             )
         }
 
-        Spacer(Modifier.preferredHeight(40.dp))
+        Spacer(Modifier.height(40.dp))
 
         Text("Email", style = labelStyle)
         Autofill(
@@ -100,7 +97,7 @@ fun ExplicitAutofillTypesDemo() {
                 value = emailState.value,
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Text,
-                    imeAction = ImeAction.Unspecified
+                    imeAction = ImeAction.Default
                 ),
                 onValueChange = { emailState.value = it },
                 textStyle = textStyle
@@ -118,23 +115,14 @@ private fun Autofill(
 ) {
     val autofillNode = AutofillNode(onFill = onFill, autofillTypes = autofillTypes)
 
-    val autofillTree = AmbientAutofillTree.current
+    val autofillTree = LocalAutofillTree.current
     autofillTree += autofillNode
 
     Box(
         Modifier.onGloballyPositioned {
-            autofillNode.boundingBox = it.boundingBox().toComposeRect()
+            autofillNode.boundingBox = it.boundsInWindow()
         }
     ) {
         content(autofillNode)
     }
-}
-
-private fun LayoutCoordinates.boundingBox() = localToGlobal(Offset.Zero).run {
-    Rect(
-        x.toInt(),
-        y.toInt(),
-        x.toInt() + size.width,
-        y.toInt() + size.height
-    )
 }

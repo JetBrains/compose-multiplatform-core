@@ -19,6 +19,7 @@ package androidx.compose.ui.focus
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
+import androidx.compose.ui.focus.FocusState.Inactive
 import androidx.compose.ui.node.ModifiedFocusNode
 import androidx.compose.ui.platform.InspectorInfo
 import androidx.compose.ui.platform.InspectorValueInfo
@@ -38,10 +39,6 @@ internal class FocusModifier(
 ) : Modifier.Element, InspectorValueInfo(inspectorInfo) {
 
     var focusState: FocusState = initialFocus
-        set(value) {
-            field = value
-            focusNode.wrappedBy?.propagateFocusEvent(value)
-        }
 
     var focusedChild: ModifiedFocusNode? = null
 
@@ -52,5 +49,5 @@ internal class FocusModifier(
  * Add this modifier to a component to make it focusable.
  */
 fun Modifier.focusModifier(): Modifier = composed(debugInspectorInfo { name = "focusModifier" }) {
-    remember { FocusModifier(FocusState.Inactive) }
+    remember { FocusModifier(Inactive) }
 }

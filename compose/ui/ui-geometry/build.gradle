@@ -17,8 +17,7 @@
 
 import androidx.build.AndroidXUiPlugin
 import androidx.build.LibraryGroups
-import androidx.build.LibraryVersions
-import androidx.build.Publish
+import androidx.build.LibraryType
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 import static androidx.build.dependencies.DependenciesKt.*
@@ -38,10 +37,10 @@ if(!AndroidXUiPlugin.isMultiplatformEnabled(project)) {
          * corresponding block below
          */
 
-        api "androidx.annotation:annotation:1.1.0"
+        api("androidx.annotation:annotation:1.1.0")
 
-        implementation project(":compose:runtime:runtime")
-        implementation project(":compose:ui:ui-util")
+        implementation(project(":compose:runtime:runtime"))
+        implementation(project(":compose:ui:ui-util"))
         implementation(KOTLIN_STDLIB)
 
         testImplementation(JUNIT)
@@ -63,18 +62,18 @@ if(AndroidXUiPlugin.isMultiplatformEnabled(project)) {
             commonMain.dependencies {
                 implementation(KOTLIN_STDLIB_COMMON)
 
-                implementation project(":compose:runtime:runtime")
-                implementation project(":compose:ui:ui-util")
+                implementation(project(":compose:runtime:runtime"))
+                implementation(project(":compose:ui:ui-util"))
             }
             jvmMain.dependencies {
                 implementation(KOTLIN_STDLIB)
             }
             androidMain.dependencies {
-                api "androidx.annotation:annotation:1.1.0"
+                api("androidx.annotation:annotation:1.1.0")
             }
 
             commonTest.dependencies {
-                implementation kotlin("test-junit")
+                implementation(kotlin("test-junit"))
             }
         }
     }
@@ -82,7 +81,7 @@ if(AndroidXUiPlugin.isMultiplatformEnabled(project)) {
 
 androidx {
     name = "Compose Geometry"
-    publish = Publish.SNAPSHOT_AND_RELEASE
+    type = LibraryType.PUBLISHED_LIBRARY
     mavenGroup = LibraryGroups.Compose.UI
     inceptionYear = "2020"
     description = "Compose classes related to dimensions without units"
@@ -92,6 +91,5 @@ androidx {
 tasks.withType(KotlinCompile).configureEach {
     kotlinOptions {
         freeCompilerArgs += ["-XXLanguage:+InlineClasses"]
-        useIR = true
     }
 }

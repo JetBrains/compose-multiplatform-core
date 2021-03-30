@@ -24,6 +24,7 @@ import static androidx.camera.core.impl.ImageOutputConfig.OPTION_SUPPORTED_RESOL
 import static androidx.camera.core.impl.ImageOutputConfig.OPTION_TARGET_ASPECT_RATIO;
 import static androidx.camera.core.impl.ImageOutputConfig.OPTION_TARGET_RESOLUTION;
 import static androidx.camera.core.impl.ImageOutputConfig.OPTION_TARGET_ROTATION;
+import static androidx.camera.core.impl.UseCaseConfig.OPTION_ATTACHED_USE_CASES_UPDATE_LISTENER;
 import static androidx.camera.core.impl.UseCaseConfig.OPTION_CAMERA_SELECTOR;
 import static androidx.camera.core.impl.UseCaseConfig.OPTION_CAPTURE_CONFIG_UNPACKER;
 import static androidx.camera.core.impl.UseCaseConfig.OPTION_DEFAULT_CAPTURE_CONFIG;
@@ -66,10 +67,12 @@ import androidx.camera.core.impl.utils.Threads;
 import androidx.camera.core.impl.utils.executor.CameraXExecutors;
 import androidx.camera.core.internal.TargetConfig;
 import androidx.camera.core.internal.ThreadConfig;
+import androidx.core.util.Consumer;
 import androidx.core.util.Preconditions;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.Executor;
@@ -215,7 +218,6 @@ public final class ImageAnalysis extends UseCase {
 
         tryUpdateRelativeRotation();
 
-        mImageAnalysisAbstractAnalyzer.open();
         imageReaderProxy.setOnImageAvailableListener(mImageAnalysisAbstractAnalyzer,
                 backgroundExecutor);
 
@@ -233,7 +235,8 @@ public final class ImageAnalysis extends UseCase {
 
         sessionConfigBuilder.addErrorListener((sessionConfig, error) -> {
             clearPipeline();
-
+            // Clear cache so app won't get a outdated image.
+            mImageAnalysisAbstractAnalyzer.clearCache();
             // Ensure the attached camera has not changed before resetting.
             // TODO(b/143915543): Ensure this never gets called by a camera that is not attached
             //  to this use case so we don't need to do this check.
@@ -256,8 +259,6 @@ public final class ImageAnalysis extends UseCase {
     @SuppressWarnings("WeakerAccess") /* synthetic accessor */
     void clearPipeline() {
         Threads.checkMainThread();
-        mImageAnalysisAbstractAnalyzer.close();
-
         if (mDeferrableSurface != null) {
             mDeferrableSurface.close();
             mDeferrableSurface = null;
@@ -272,7 +273,6 @@ public final class ImageAnalysis extends UseCase {
     public void clearAnalyzer() {
         synchronized (mAnalysisLock) {
             mImageAnalysisAbstractAnalyzer.setAnalyzer(null, null);
-            mImageAnalysisAbstractAnalyzer.close();
             if (mSubscribedAnalyzer != null) {
                 notifyInactive();
             }
@@ -363,7 +363,6 @@ public final class ImageAnalysis extends UseCase {
      */
     public void setAnalyzer(@NonNull Executor executor, @NonNull Analyzer analyzer) {
         synchronized (mAnalysisLock) {
-            mImageAnalysisAbstractAnalyzer.open();
             mImageAnalysisAbstractAnalyzer.setAnalyzer(executor, image -> {
                 if (getViewPortCropRect() != null) {
                     image.setCropRect(getViewPortCropRect());
@@ -430,6 +429,7 @@ public final class ImageAnalysis extends UseCase {
     @Override
     public void onDetached() {
         clearPipeline();
+        mImageAnalysisAbstractAnalyzer.detach();
     }
 
     /**
@@ -460,14 +460,7 @@ public final class ImageAnalysis extends UseCase {
     @Override
     @RestrictTo(Scope.LIBRARY_GROUP)
     public void onAttached() {
-        synchronized (mAnalysisLock) {
-            // The use case should be reused so that mSubscribedAnalyzer is not null but
-            // mImageAnalysisAbstractAnalyzer is closed. Re-open mImageAnalysisAbstractAnalyzer
-            // after the use case is attached to make it work again.
-            if (mSubscribedAnalyzer != null && mImageAnalysisAbstractAnalyzer.isClosed()) {
-                mImageAnalysisAbstractAnalyzer.open();
-            }
-        }
+        mImageAnalysisAbstractAnalyzer.attach();
     }
 
     /**
@@ -611,6 +604,7 @@ public final class ImageAnalysis extends UseCase {
     }
 
     /** Builder for a {@link ImageAnalysis}. */
+    @SuppressWarnings("ObjectToString")
     public static final class Builder
             implements ImageOutputConfig.Builder<Builder>,
             ThreadConfig.Builder<Builder>,
@@ -1022,6 +1016,17 @@ public final class ImageAnalysis extends UseCase {
                 @NonNull ImageReaderProxyProvider imageReaderProxyProvider) {
             getMutableConfig().insertOption(OPTION_IMAGE_READER_PROXY_PROVIDER,
                     imageReaderProxyProvider);
+            return this;
+        }
+
+        /** @hide */
+        @RestrictTo(Scope.LIBRARY_GROUP)
+        @Override
+        @NonNull
+        public Builder setAttachedUseCasesUpdateListener(
+                @NonNull Consumer<Collection<UseCase>> attachedUseCasesUpdateListener) {
+            getMutableConfig().insertOption(OPTION_ATTACHED_USE_CASES_UPDATE_LISTENER,
+                    attachedUseCasesUpdateListener);
             return this;
         }
     }

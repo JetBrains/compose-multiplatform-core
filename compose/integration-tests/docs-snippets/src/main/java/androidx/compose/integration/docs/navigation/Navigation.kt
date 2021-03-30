@@ -32,7 +32,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.platform.AmbientContext
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.core.app.TaskStackBuilder
 import androidx.core.net.toUri
@@ -56,11 +56,13 @@ import androidx.navigation.navDeepLink
  * No action required if it's modified.
  */
 
-@Composable private fun NavigationSnippet1() {
+@Composable
+private fun NavigationSnippet1() {
     val navController = rememberNavController()
 }
 
-@Composable private fun NavigationSnippet2(navController: NavHostController) {
+@Composable
+private fun NavigationSnippet2(navController: NavHostController) {
     NavHost(navController = navController, startDestination = "profile") {
         composable("profile") { Profile(/*...*/) }
         composable("friendslist") { FriendsList(/*...*/) }
@@ -69,7 +71,8 @@ import androidx.navigation.navDeepLink
 }
 
 private object NavigationSnippet3 {
-    @Composable fun Profile(navController: NavController) {
+    @Composable
+    fun Profile(navController: NavController) {
         /*...*/
         Button(onClick = { navController.navigate("friends") }) {
             Text(text = "Navigate next")
@@ -78,14 +81,16 @@ private object NavigationSnippet3 {
     }
 }
 
-@Composable private fun NavigationSnippet4(navController: NavHostController) {
+@Composable
+private fun NavigationSnippet4(navController: NavHostController) {
     NavHost(navController = navController, startDestination = "profile/{userId}") {
         /*...*/
         composable("profile/{userId}") { /*...*/ }
     }
 }
 
-@Composable private fun NavigationSnippet5(navController: NavHostController) {
+@Composable
+private fun NavigationSnippet5(navController: NavHostController) {
     NavHost(navController = navController, startDestination = "profile/{userId}") {
         /*...*/
         composable(
@@ -95,17 +100,20 @@ private object NavigationSnippet3 {
     }
 }
 
-@Composable private fun NavGraphBuilder.NavigationSnippet6(navController: NavHostController) {
+@Composable
+private fun NavGraphBuilder.NavigationSnippet6(navController: NavHostController) {
     composable("profile/{userId}") { backStackEntry ->
         Profile(navController, backStackEntry.arguments?.getString("userId"))
     }
 }
 
-@Composable private fun NavigationSnippet7(navController: NavHostController) {
+@Composable
+private fun NavigationSnippet7(navController: NavHostController) {
     navController.navigate("profile/user1234")
 }
 
-@Composable private fun NavGraphBuilder.NavigationSnippet8(navController: NavHostController) {
+@Composable
+private fun NavGraphBuilder.NavigationSnippet8(navController: NavHostController) {
     composable(
         "profile?userId={userId}",
         arguments = listOf(navArgument("userId") { defaultValue = "me" })
@@ -116,7 +124,8 @@ private object NavigationSnippet3 {
 
 /* Deep links */
 
-@Composable private fun NavGraphBuilder.NavigationSnippet9(navController: NavHostController) {
+@Composable
+private fun NavGraphBuilder.NavigationSnippet9(navController: NavHostController) {
     val uri = "https://example.com"
 
     composable(
@@ -127,9 +136,10 @@ private object NavigationSnippet3 {
     }
 }
 
-@Composable private fun NavigationSnippet10() {
+@Composable
+private fun NavigationSnippet10() {
     val id = "exampleId"
-    val context = AmbientContext.current
+    val context = LocalContext.current
     val deepLinkIntent = Intent(
         Intent.ACTION_VIEW,
         "https://example.com/$id".toUri(),
@@ -143,7 +153,8 @@ private object NavigationSnippet3 {
     }
 }
 
-@Composable private fun NavigationSnippet11(items: List<Screen>) {
+@Composable
+private fun NavigationSnippet11(items: List<Screen>) {
     val navController = rememberNavController()
     Scaffold(
         bottomBar = {
@@ -152,7 +163,7 @@ private object NavigationSnippet3 {
                 val currentRoute = navBackStackEntry?.arguments?.getString(KEY_ROUTE)
                 items.forEach { screen ->
                     BottomNavigationItem(
-                        icon = { Icon(Icons.Filled.Favorite) },
+                        icon = { Icon(Icons.Filled.Favorite, contentDescription = null) },
                         label = { Text(stringResource(screen.resourceId)) },
                         selected = currentRoute == screen.route,
                         onClick = {
@@ -178,7 +189,8 @@ private object NavigationSnippet3 {
     }
 }
 
-@Composable private fun NavGraphBuilder.NavigationSnippet12(navController: NavHostController) {
+@Composable
+private fun NavGraphBuilder.NavigationSnippet12(navController: NavHostController) {
     composable(
         "profile?userId={userId}",
         arguments = listOf(navArgument("userId") { defaultValue = "me" })
@@ -200,12 +212,31 @@ private object R {
     }
 }
 
-@Composable private fun Profile() { }
-@Composable private fun Profile(userId: String?, content: @Composable (String) -> Unit) { }
-@Composable private fun Profile(navController: NavHostController) { }
-@Composable private fun FriendsList() { }
-@Composable private fun FriendsList(navController: NavHostController) { }
-@Composable private fun Profile(navController: NavHostController, arg: String?) { TODO() }
+@Composable
+private fun Profile() {
+}
+
+@Composable
+private fun Profile(userId: String?, content: @Composable (String) -> Unit) {
+}
+
+@Composable
+private fun Profile(navController: NavHostController) {
+}
+
+@Composable
+private fun FriendsList() {
+}
+
+@Composable
+private fun FriendsList(navController: NavHostController) {
+}
+
+@Composable
+private fun Profile(navController: NavHostController, arg: String?) {
+    TODO()
+}
+
 private class MyActivity
 private sealed class Screen(val route: String, @StringRes val resourceId: Int) {
     object Profile : Screen("profile", R.string.profile)

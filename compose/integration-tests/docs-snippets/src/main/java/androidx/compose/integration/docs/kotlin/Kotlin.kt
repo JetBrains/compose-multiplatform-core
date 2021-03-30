@@ -20,9 +20,9 @@
 
 package androidx.compose.integration.docs.kotlin
 
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ConstraintLayout
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.Button
@@ -31,6 +31,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -39,6 +40,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.launch
 
 /**
  * This file lets DevRel track changes to snippets present in
@@ -71,7 +73,8 @@ import androidx.compose.ui.unit.dp
 
 @Composable private fun KotlinSnippet4() {
     Column(
-        modifier = Modifier.padding(16.dp), content = {
+        modifier = Modifier.padding(16.dp),
+        content = {
             Text("Some text")
             Text("Some more text")
             Text("Last text")
@@ -114,7 +117,7 @@ import androidx.compose.ui.unit.dp
             // This method accepts a lambda of type DrawScope.() -> Unit
             // therefore in this lambda we can access properties and functions
             // available from DrawScope, such as the `drawRectangle` function.
-            drawRect( /*...*/)
+            drawRect(/*...*/)
         }
     )
 }
@@ -127,6 +130,9 @@ import androidx.compose.ui.unit.dp
     showDialog = true
 }
 
+// TODO: uncomment when constraint layout for compose releases, and add that dependency
+/*
+@Suppress("Deprecation")
 @Composable private fun KotlinSnippet10() {
     ConstraintLayout {
 
@@ -138,6 +144,21 @@ import androidx.compose.ui.unit.dp
 
         // ...
     }
+}*/
+
+@Composable private fun KotlinSnippet11() {
+    // Create a CoroutineScope that follows this composable's lifecycle
+    val composableScope = rememberCoroutineScope()
+    Button( // ...
+        onClick = {
+            // Create a new coroutine that scrolls to the top of the list
+            // and call the ViewModel to load data
+            composableScope.launch {
+                scrollState.animateScrollTo(0) // This is a suspend function
+                viewModel.loadData()
+            }
+        }
+    ) { /* ... */ }
 }
 
 /*
@@ -153,3 +174,7 @@ private object R {
 }
 
 private fun drawRect() {}
+
+private val scrollState = ScrollState(0)
+private class MyViewModel { fun loadData() {} }
+private val viewModel = MyViewModel()

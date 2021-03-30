@@ -27,6 +27,7 @@ dependencies {
     api("androidx.media:media:1.2.0")
     api(GUAVA_LISTENABLE_FUTURE)
 
+    implementation(project(":core:core"))
     implementation("androidx.appcompat:appcompat:1.1.0")
     implementation("androidx.palette:palette:1.0.0")
     implementation("androidx.recyclerview:recyclerview:1.1.0")
@@ -37,21 +38,21 @@ dependencies {
     androidTestImplementation(ANDROIDX_TEST_RUNNER)
     androidTestImplementation(ANDROIDX_TEST_RULES)
     androidTestImplementation(ESPRESSO_CORE, libs.exclude_for_espresso)
-    androidTestImplementation project(':media:version-compat-tests:lib')
+    androidTestImplementation(project(":media:version-compat-tests:lib"))
 }
 
 android {
     sourceSets {
         main.java.srcDirs += [
-                'jellybean',
-                'jellybean-mr1',
-                'jellybean-mr2',
-                'api24'
+                "jellybean",
+                "jellybean-mr1",
+                "jellybean-mr2",
+                "api24"
         ]
     }
 
     buildTypes.all {
-        consumerProguardFiles 'proguard-rules.pro'
+        consumerProguardFiles "proguard-rules.pro"
     }
 }
 

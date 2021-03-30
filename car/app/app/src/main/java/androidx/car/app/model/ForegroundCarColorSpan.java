@@ -18,8 +18,6 @@ package androidx.car.app.model;
 
 import static java.util.Objects.requireNonNull;
 
-import android.text.TextPaint;
-import android.text.style.CharacterStyle;
 import android.text.style.ForegroundColorSpan;
 
 import androidx.annotation.Keep;
@@ -48,22 +46,17 @@ import java.util.Objects;
  * @see CarColor
  * @see ForegroundColorSpan
  */
-public class ForegroundCarColorSpan extends CharacterStyle {
+public final class ForegroundCarColorSpan extends CarSpan {
     @Keep
     private final CarColor mCarColor;
-
-    @NonNull
-    public CarColor getColor() {
-        return mCarColor;
-    }
 
     /**
      * Creates a {@link ForegroundColorSpan} from a {@link CarColor}.
      *
      * <p>Custom colors created with {@link CarColor#createCustom} are not supported in text spans.
      *
-     * @throws IllegalArgumentException if {@code carColor} contains a custom color.
-     * @throws NullPointerException     if {@code carColor} is {@code null}.
+     * @throws IllegalArgumentException if {@code carColor} contains a custom color
+     * @throws NullPointerException     if {@code carColor} is {@code null}
      */
     @NonNull
     public static ForegroundCarColorSpan create(@NonNull CarColor carColor) {
@@ -71,9 +64,10 @@ public class ForegroundCarColorSpan extends CharacterStyle {
         return new ForegroundCarColorSpan(requireNonNull(carColor));
     }
 
-    @Override
-    public void updateDrawState(@NonNull TextPaint paint) {
-        // Not relevant.
+    /** Returns the {@link CarColor} associated with this span. */
+    @NonNull
+    public CarColor getColor() {
+        return mCarColor;
     }
 
     @Override
@@ -101,7 +95,7 @@ public class ForegroundCarColorSpan extends CharacterStyle {
     }
 
     private ForegroundCarColorSpan(CarColor carColor) {
-        this.mCarColor = carColor;
+        mCarColor = carColor;
     }
 
     private ForegroundCarColorSpan() {

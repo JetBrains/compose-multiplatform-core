@@ -22,14 +22,12 @@ import static androidx.car.app.model.constraints.RowListConstraints.ROW_LIST_CON
 
 import static java.util.Objects.requireNonNull;
 
-import android.content.Context;
-
 import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.car.app.CarAppPermission;
 import androidx.car.app.Screen;
 import androidx.car.app.SurfaceCallback;
+import androidx.car.app.annotations.ExperimentalCarApi;
 import androidx.car.app.model.Action;
 import androidx.car.app.model.ActionStrip;
 import androidx.car.app.model.CarText;
@@ -72,6 +70,9 @@ import java.util.Objects;
  *       between the previous and new {@link ItemList}s have not changed.
  * </ul>
  *
+ * <p>Note that specifically, this means the app can't use this template to continuously refresh
+ * the routes as the car moves without hitting the template limit.
+ *
  * <p>In order to use this template your car app <b>MUST</b> declare that it uses the {@code
  * androidx.car.app.NAVIGATION_TEMPLATES} permission in the manifest.
  */
@@ -94,47 +95,66 @@ public final class RoutePreviewNavigationTemplate implements Template {
     @Nullable
     private final ActionStrip mActionStrip;
 
-    /** Constructs a new builder of {@link RoutePreviewNavigationTemplate}. */
-    @NonNull
-    public static Builder builder() {
-        return new Builder();
-    }
-
     /**
-     * Returns the {@link CarText} that should be used as the title in the template.
+     * Returns the title of the template or {@code null} if not set.
+     *
+     * @see Builder#setTitle(CharSequence)
      */
     @Nullable
     public CarText getTitle() {
         return mTitle;
     }
 
-    public boolean isLoading() {
-        return mIsLoading;
-    }
-
-    @Nullable
-    public Action getNavigateAction() {
-        return mNavigateAction;
-    }
-
-    @Nullable
-    public ItemList getItemList() {
-        return mItemList;
-    }
-
+    /**
+     * Returns the {@link Action} that is set to be displayed in the header of the template or
+     * {@code null} if not set.
+     *
+     * @see Builder#setHeaderAction(Action)
+     */
     @Nullable
     public Action getHeaderAction() {
         return mHeaderAction;
     }
 
+    /**
+     * Returns the {@link ActionStrip} for this template or {@code null} if not set.
+     *
+     * @see Builder#setActionStrip(ActionStrip)
+     */
     @Nullable
     public ActionStrip getActionStrip() {
         return mActionStrip;
     }
 
-    @Override
-    public void checkPermissions(@NonNull Context context) {
-        CarAppPermission.checkHasLibraryPermission(context, CarAppPermission.NAVIGATION_TEMPLATES);
+    /**
+     * Returns whether the template is loading.
+     *
+     * @see Builder#setLoading(boolean)
+     */
+    public boolean isLoading() {
+        return mIsLoading;
+    }
+
+    /**
+     * Returns the {@link Action} to allow users to request navigation using the currently selected
+     * route or {@code null} if not set.
+     *
+     * @see Builder#setNavigateAction(Action)
+     */
+    @Nullable
+    public Action getNavigateAction() {
+        return mNavigateAction;
+    }
+
+    /**
+     * Returns the {@link ItemList} to show route options in a list view along with the map or
+     * {@code null} if not set.
+     *
+     * @see Builder#setItemList(ItemList)
+     */
+    @Nullable
+    public ItemList getItemList() {
+        return mItemList;
     }
 
     @NonNull
@@ -200,10 +220,32 @@ public final class RoutePreviewNavigationTemplate implements Template {
         @Nullable
         ActionStrip mActionStrip;
 
-        /** Sets the {@link CharSequence} to show as title, or {@code null} to not show a title. */
+        /**
+         * Sets the title of the template.
+         *
+         * <p>Spans are not supported in the input string.
+         *
+         * @throws NullPointerException if {@code title} is null
+         * @see CarText
+         */
         @NonNull
-        public Builder setTitle(@Nullable CharSequence title) {
-            this.mTitle = title == null ? null : CarText.create(title);
+        public Builder setTitle(@NonNull CharSequence title) {
+            mTitle = CarText.create(requireNonNull(title));
+            return this;
+        }
+
+        /**
+         * Sets the title of the template.
+         *
+         * <p>Spans are not supported in the input string.
+         *
+         * @throws NullPointerException if {@code title} is null
+         * @see CarText
+         */
+        @ExperimentalCarApi
+        @NonNull
+        public Builder setTitle(@NonNull CarText title) {
+            mTitle = requireNonNull(title);
             return this;
         }
 
@@ -213,34 +255,34 @@ public final class RoutePreviewNavigationTemplate implements Template {
          * <p>If set to {@code true}, the UI will show a loading indicator where the list content
          * would be otherwise. The caller is expected to call
          * {@link androidx.car.app.Screen#invalidate()} and send the new template content to the
-         * host
-         * once the data is ready. If set to {@code false}, the UI shows the {@link ItemList}
-         * contents added via {@link #setItemList}.
+         * host once the data is ready.
          */
         @NonNull
         public Builder setLoading(boolean isLoading) {
-            this.mIsLoading = isLoading;
+            mIsLoading = isLoading;
             return this;
         }
 
         /**
          * Sets the {@link Action} that will be displayed in the header of the template, or
-         * {@code null} to now display an action.
+         * {@code null} to not display an action.
+         *
+         * <p>Unless set with this method, the template will not have a header action.
          *
          * <h4>Requirements</h4>
          *
-         * This template only supports either either one of {@link Action#APP_ICON} and {@link
-         * Action#BACK} as a header {@link Action}.
+         * This template only supports either one of {@link Action#APP_ICON} and
+         * {@link Action#BACK} as a header {@link Action}.
          *
          * @throws IllegalArgumentException if {@code headerAction} does not meet the template's
-         *                                  requirements.
+         *                                  requirements
+         * @throws NullPointerException     if {@code headerAction} is {@code null}
          */
         @NonNull
-        public Builder setHeaderAction(@Nullable Action headerAction) {
+        public Builder setHeaderAction(@NonNull Action headerAction) {
             ACTIONS_CONSTRAINTS_HEADER.validateOrThrow(
-                    headerAction == null ? Collections.emptyList()
-                            : Collections.singletonList(headerAction));
-            this.mHeaderAction = headerAction;
+                    Collections.singletonList(requireNonNull(headerAction)));
+            mHeaderAction = headerAction;
             return this;
         }
 
@@ -251,9 +293,11 @@ public final class RoutePreviewNavigationTemplate implements Template {
          * <p>This should not be {@code null} if the template is not in a loading state (see
          * #setIsLoading}), and the {@link Action}'s title must be set.
          *
-         * @throws NullPointerException     if {@code navigateAction} is {@code null}.
+         * <p>Any background colors or spans set on the action will be ignored.
+         *
+         * @throws NullPointerException     if {@code navigateAction} is {@code null}
          * @throws IllegalArgumentException if {@code navigateAction}'s title is {@code null} or
-         *                                  empty.
+         *                                  empty
          */
         @NonNull
         public Builder setNavigateAction(@NonNull Action navigateAction) {
@@ -261,7 +305,7 @@ public final class RoutePreviewNavigationTemplate implements Template {
                 throw new IllegalArgumentException("The Action's title cannot be null or empty");
             }
 
-            this.mNavigateAction = requireNonNull(navigateAction);
+            mNavigateAction = requireNonNull(navigateAction);
 
             return this;
         }
@@ -278,50 +322,48 @@ public final class RoutePreviewNavigationTemplate implements Template {
          *
          * <p>Images of type {@link Row#IMAGE_TYPE_LARGE} are not allowed in this template.
          *
-         * <p>All rows must have either a {@link
-         * androidx.car.app.model.DistanceSpan} or a {@link
+         * <p>All rows must have either a {@link androidx.car.app.model.DistanceSpan} or a {@link
          * androidx.car.app.model.DurationSpan} attached to either its title or texts, to
          * indicate an estimate trip distance or duration for the route it represents. Where in
          * the title or text these spans are attached to is up to the app.
          *
          * @throws IllegalArgumentException if {@code itemList} does not meet the template's
-         *                                  requirements.
+         *                                  requirements
+         * @throws NullPointerException     if {@code itemList} is {@code null}
          */
         @NonNull
-        public Builder setItemList(@Nullable ItemList itemList) {
-            if (itemList != null) {
-                ROW_LIST_CONSTRAINTS_ROUTE_PREVIEW.validateOrThrow(itemList);
-                ModelUtils.validateAllRowsHaveDistanceOrDuration(itemList.getItems());
-                ModelUtils.validateAllRowsHaveOnlySmallImages(itemList.getItems());
+        public Builder setItemList(@NonNull ItemList itemList) {
+            ROW_LIST_CONSTRAINTS_ROUTE_PREVIEW.validateOrThrow(requireNonNull(itemList));
+            ModelUtils.validateAllRowsHaveDistanceOrDuration(itemList.getItems());
+            ModelUtils.validateAllRowsHaveOnlySmallImages(itemList.getItems());
 
-                if (!itemList.getItems().isEmpty() && itemList.getOnSelectedListener() == null) {
-                    throw new IllegalArgumentException(
-                            "The OnSelectedListener must be set for the route list");
-                }
+            if (!itemList.getItems().isEmpty() && itemList.getOnSelectedDelegate() == null) {
+                throw new IllegalArgumentException(
+                        "The OnSelectedListener must be set for the route list");
             }
-            this.mItemList = itemList;
-
+            mItemList = itemList;
             return this;
         }
 
         /**
-         * Sets the {@link ActionStrip} for this template, or {@code null} to not show an {@link
+         * Sets the {@link ActionStrip} for this template, or {@code null} to not display an {@link
          * ActionStrip}.
+         *
+         * <p>Unless set with this method, the template will not have an action strip.
          *
          * <h4>Requirements</h4>
          *
-         * This template allows up to 2 {@link Action}s in its {@link ActionStrip}. Of the 2
-         * allowed {@link Action}s, one of them can contain a title as set via
+         * This template allows up to 2 {@link Action}s in its {@link ActionStrip}. Of the 2 allowed
+         * {@link Action}s, one of them can contain a title as set via
          * {@link Action.Builder#setTitle}. Otherwise, only {@link Action}s with icons are allowed.
          *
-         * @throws IllegalArgumentException if {@code actionStrip} does not meet the template's
-         *                                  requirements.
+         * @throws IllegalArgumentException if {@code actionStrip} does not meet the requirements
+         * @throws NullPointerException     if {@code actionStrip} is {@code null}
          */
         @NonNull
-        public Builder setActionStrip(@Nullable ActionStrip actionStrip) {
-            ACTIONS_CONSTRAINTS_SIMPLE.validateOrThrow(
-                    actionStrip == null ? Collections.emptyList() : actionStrip.getActions());
-            this.mActionStrip = actionStrip;
+        public Builder setActionStrip(@NonNull ActionStrip actionStrip) {
+            ACTIONS_CONSTRAINTS_SIMPLE.validateOrThrow(requireNonNull(actionStrip).getActions());
+            mActionStrip = actionStrip;
             return this;
         }
 
@@ -333,18 +375,16 @@ public final class RoutePreviewNavigationTemplate implements Template {
          * Either a header {@link Action} or title must be set on the template.
          *
          * @throws IllegalStateException if the template is in a loading state but the list is
-         *                               set, or vice-versa.
-         * @throws IllegalStateException if the template is not loading and the navigation action
-         *                               is not set.
-         * @throws IllegalStateException if the template does not have either a title or header
-         *                               {@link Action} set.
+         *                               set or vice versa, if the template is not loading and
+         *                               the navigation action is not set, or if the template
+         *                               does not have either a title or header {@link Action} set
          */
         @NonNull
         public RoutePreviewNavigationTemplate build() {
             boolean hasList = mItemList != null;
             if (mIsLoading == hasList) {
                 throw new IllegalStateException(
-                        "Template is in a loading state but a list is set, or vice versa.");
+                        "Template is in a loading state but a list is set, or vice versa");
             }
 
             if (!mIsLoading) {
@@ -360,6 +400,10 @@ public final class RoutePreviewNavigationTemplate implements Template {
             }
 
             return new RoutePreviewNavigationTemplate(this);
+        }
+
+        /** Constructs an empty {@link Builder} instance. */
+        public Builder() {
         }
     }
 }

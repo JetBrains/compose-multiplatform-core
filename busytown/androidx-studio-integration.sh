@@ -48,7 +48,8 @@ function buildAndroidx() {
   LOG_PROCESSOR="$SCRIPT_DIR/../development/build_log_processor.sh"
   properties="-Pandroidx.summarizeStderr --no-daemon -Pandroidx.allWarningsAsErrors"
   "$LOG_PROCESSOR"                   $gw $properties -p frameworks/support    listTaskOutputs && \
-  "$LOG_PROCESSOR"                   $gw $properties -p frameworks/support    bOS -x lintDebug -x lint --stacktrace -PverifyUpToDate
+  "$LOG_PROCESSOR"                   $gw $properties -p frameworks/support    bOS -x lintDebug -x lint -x validateLint -x verifyDependencyVersions --stacktrace -PverifyUpToDate --profile
+  $SCRIPT_DIR/impl/parse_profile_htmls.sh
 }
 
 function exportTransformsDir() {
@@ -58,11 +59,11 @@ function exportTransformsDir() {
   zip -r "$DIST_DIR/transforms.zip" "$OUT_DIR/.gradle/caches/transforms-2/files-2.1"
 }
 
-if buildAndroidx; then
-  echo build succeeded
-else
-  # b/162260809 export transforms directory to help identify cause of corrupt/missing files
-  exportTransformsDir
-  exit 1
-fi
+#if buildAndroidx; then
+#  echo build succeeded
+#else
+#  # b/162260809 export transforms directory to help identify cause of corrupt/missing files
+#  exportTransformsDir
+#  exit 1
+#fi
 echo "Completing $0 at $(date)"

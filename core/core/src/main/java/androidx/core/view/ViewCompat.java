@@ -24,6 +24,7 @@ import android.app.Activity;
 import android.content.ClipData;
 import android.content.ClipDescription;
 import android.content.Context;
+import android.content.ContextWrapper;
 import android.content.res.ColorStateList;
 import android.content.res.TypedArray;
 import android.graphics.Matrix;
@@ -802,7 +803,7 @@ public class ViewCompat {
      *       be {@link View#IMPORTANT_FOR_AUTOFILL_YES_EXCLUDE_DESCENDANTS}.
      * </ol>
      *
-     * <p><b>NOTE:</strong> setting the mode as does {@link View#IMPORTANT_FOR_AUTOFILL_NO} or
+     * <p><strong>NOTE:</strong> setting the mode as does {@link View#IMPORTANT_FOR_AUTOFILL_NO} or
      * {@link View#IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS} does not guarantee the view (and
      * its children) will be always be considered not important; for example, when the user
      * explicitly makes an autofill request, all views are considered important. See
@@ -2613,6 +2614,8 @@ public class ViewCompat {
     public static WindowInsetsCompat getRootWindowInsets(@NonNull View view) {
         if (Build.VERSION.SDK_INT >= 23) {
             return Api23Impl.getRootWindowInsets(view);
+        } else if (Build.VERSION.SDK_INT >= 21) {
+            return Api21Impl.getRootWindowInsets(view);
         } else {
             return null;
         }
@@ -2650,9 +2653,12 @@ public class ViewCompat {
             return Api30Impl.getWindowInsetsController(view);
         } else {
             Context context = view.getContext();
-            if (context instanceof Activity) {
-                Window window = ((Activity) context).getWindow();
-                return window != null ? WindowCompat.getInsetsController(window, view) : null;
+            while (context instanceof ContextWrapper) {
+                if (context instanceof Activity) {
+                    Window window = ((Activity) context).getWindow();
+                    return window != null ? WindowCompat.getInsetsController(window, view) : null;
+                }
+                context = ((ContextWrapper) context).getBaseContext();
             }
             return null;
         }
@@ -2783,6 +2789,10 @@ public class ViewCompat {
     @Nullable
     public static ContentInfoCompat performReceiveContent(@NonNull View view,
             @NonNull ContentInfoCompat payload) {
+        if (Log.isLoggable(TAG, Log.DEBUG)) {
+            Log.d(TAG, "performReceiveContent: " + payload
+                    + ", view=" + view.getClass().getSimpleName() + "[" + view.getId() + "]");
+        }
         OnReceiveContentListener listener =
                 (OnReceiveContentListener) view.getTag(R.id.tag_on_receive_content_listener);
         if (listener != null) {
@@ -4713,6 +4723,11 @@ public class ViewCompat {
             // private
         }
 
+        @Nullable
+        public static WindowInsetsCompat getRootWindowInsets(@NonNull View v) {
+            return WindowInsetsCompat.Api21ReflectionHolder.getRootWindowInsets(v);
+        }
+
         static WindowInsetsCompat computeSystemWindowInsets(@NonNull View v,
                 @NonNull WindowInsetsCompat insets, @NonNull Rect outLocalInsets) {
             WindowInsets platformInsets = insets.toWindowInsets();
@@ -4745,7 +4760,6 @@ public class ViewCompat {
 
             v.setOnApplyWindowInsetsListener(new View.OnApplyWindowInsetsListener() {
                 WindowInsetsCompat mLastInsets = null;
-                WindowInsets mReturnedInsets = null;
 
                 @Override
                 public WindowInsets onApplyWindowInsets(final View view,
@@ -4757,10 +4771,11 @@ public class ViewCompat {
 
                         if (compatInsets.equals(mLastInsets)) {
                             // We got the same insets we just return the previously computed insets.
-                            return mReturnedInsets;
+                            return listener.onApplyWindowInsets(view, compatInsets)
+                                    .toWindowInsets();
                         }
-                        mLastInsets = compatInsets;
                     }
+                    mLastInsets = compatInsets;
                     compatInsets = listener.onApplyWindowInsets(view, compatInsets);
 
                     if (Build.VERSION.SDK_INT >= 30) {
@@ -4774,8 +4789,8 @@ public class ViewCompat {
                     requestApplyInsets(view);
                     // Keep a copy in case the insets haven't changed on the next call so we don't
                     // need to call the listener again.
-                    mReturnedInsets = compatInsets.toWindowInsets();
-                    return mReturnedInsets;
+
+                    return compatInsets.toWindowInsets();
                 }
             });
         }

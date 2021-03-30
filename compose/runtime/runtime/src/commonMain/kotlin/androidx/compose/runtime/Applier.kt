@@ -18,7 +18,7 @@ package androidx.compose.runtime
 
 /**
  * An Applier is responsible for applying the tree-based operations that get emitted during a
- * composition. Every [Composer] has an [Applier] which it uses to [emit].
+ * composition. Every [Composer] has an [Applier] which it uses to emit a [ComposeNode].
  *
  * A custom [Applier] implementation will be needed in order to utilize Compose to build and
  * maintain a tree of a novel type.
@@ -26,9 +26,9 @@ package androidx.compose.runtime
  * @sample androidx.compose.runtime.samples.CustomTreeComposition
  *
  * @see AbstractApplier
- * @see compositionFor
+ * @see Composition
  * @see Composer
- * @see emit
+ * @see ComposeNode
  */
 interface Applier<N> {
     /**
@@ -185,9 +185,9 @@ interface Applier<N> {
  * @sample androidx.compose.runtime.samples.CustomTreeComposition
  *
  * @see Applier
- * @see compositionFor
+ * @see Composition
  * @see Composer
- * @see emit
+ * @see ComposeNode
  */
 abstract class AbstractApplier<T>(val root: T) : Applier<T> {
     private val stack = mutableListOf<T>()

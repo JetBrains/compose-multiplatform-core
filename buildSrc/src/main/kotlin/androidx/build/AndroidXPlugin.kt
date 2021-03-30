@@ -32,8 +32,10 @@ import androidx.build.gradle.getByType
 import androidx.build.gradle.isRoot
 import androidx.build.jacoco.Jacoco
 import androidx.build.license.configureExternalDependencyLicenseCheck
+import androidx.build.resources.configurePublicResourcesStub
 import androidx.build.studio.StudioTask
 import androidx.build.testConfiguration.addAppApkToTestConfigGeneration
+import androidx.build.testConfiguration.addToTestZips
 import androidx.build.testConfiguration.configureTestConfigGeneration
 import com.android.build.api.extension.LibraryAndroidComponentsExtension
 import com.android.build.gradle.AppExtension
@@ -42,6 +44,7 @@ import com.android.build.gradle.LibraryExtension
 import com.android.build.gradle.LibraryPlugin
 import com.android.build.gradle.TestedExtension
 import com.android.build.gradle.api.ApkVariant
+import org.gradle.api.GradleException
 import org.gradle.api.JavaVersion.VERSION_1_8
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -266,7 +269,8 @@ class AndroidXPlugin : Plugin<Project> {
         }
 
         project.extensions.getByType<LibraryAndroidComponentsExtension>().apply {
-            beforeUnitTest(selector().withBuildType("release")) { unitTest ->
+            @Suppress("deprecation")
+            beforeUnitTests(selector().withBuildType("release")) { unitTest ->
                 unitTest.enabled = false
             }
         }
@@ -286,6 +290,7 @@ class AndroidXPlugin : Plugin<Project> {
             check(!excludes.contains("/META-INF/*.kotlin_module"))
         }
 
+        project.configurePublicResourcesStub(libraryExtension)
         project.configureSourceJarForAndroid(libraryExtension)
         project.configureVersionFileWriter(libraryExtension, androidXExtension)
         project.addCreateLibraryBuildInfoFileTask(androidXExtension)
@@ -383,6 +388,7 @@ class AndroidXPlugin : Plugin<Project> {
         }
 
         // Force AGP to use our version of JaCoCo
+        @Suppress("deprecation")
         jacoco.version = Jacoco.VERSION
         compileSdkVersion(COMPILE_SDK_VERSION)
         buildToolsVersion = BUILD_TOOLS_VERSION
@@ -408,7 +414,12 @@ class AndroidXPlugin : Plugin<Project> {
                     val target = dep.target
                     val version = target.version
                     // Enforce the ban on declaring dependencies with version ranges.
-                    if (version != null && Version.isDependencyRange(version)) {
+                    // Note: In playground, this ban is exempted to allow unresolvable prebuilts
+                    // to automatically get bumped to snapshot versions via version range
+                    // substitution.
+                    if (version != null && Version.isDependencyRange(version) &&
+                        project.rootProject.rootDir == project.getSupportRootFolder()
+                    ) {
                         throw IllegalArgumentException(
                             "Dependency ${dep.target} declares its version as " +
                                 "version range ${dep.target.version} however the use of " +
@@ -463,6 +474,12 @@ class AndroidXPlugin : Plugin<Project> {
             }
             variant.configureApkCopy(project, true)
         }
+
+        // AGP warns if we use project.buildDir (or subdirs) for CMake's generated
+        // build files (ninja build files, CMakeCache.txt, etc.). Use a staging directory that
+        // lives alongside the project's buildDir.
+        externalNativeBuild.cmake.buildStagingDirectory =
+            File(project.buildDir, "../nativeBuildStaging")
     }
 
     private fun ApkVariant.configureApkCopy(
@@ -476,18 +493,7 @@ class AndroidXPlugin : Plugin<Project> {
                 return
             }
 
-            project.rootProject.tasks.named(ZIP_TEST_CONFIGS_WITH_APKS_TASK)
-                .configure { task ->
-                    task as Zip
-                    task.from(packageTask.outputDirectory) {
-                        it.include("*.apk")
-                        it.duplicatesStrategy = DuplicatesStrategy.FAIL
-                        it.rename { fileName ->
-                            fileName.renameApkForTesting(project.path, project.hasBenchmarkPlugin())
-                        }
-                    }
-                    task.dependsOn(packageTask)
-                }
+            addToTestZips(project, packageTask)
 
             packageTask.doLast {
                 project.copy {
@@ -570,10 +576,10 @@ class AndroidXPlugin : Plugin<Project> {
     private fun Project.createVerifyDependencyVersionsTask():
         TaskProvider<VerifyDependencyVersionsTask>? {
             /**
-             * Ignore -PuseMaxDepVersions when verifying dependency versions because it is a
+             * Ignore -Pandroidx.useMaxDepVersions when verifying dependency versions because it is a
              * hypothetical build which is only intended to check for forward compatibility.
              */
-            if (hasProperty(USE_MAX_DEP_VERSIONS)) {
+            if (project.usingMaxDepVersions()) {
                 return null
             }
 
@@ -631,7 +637,6 @@ class AndroidXPlugin : Plugin<Project> {
         val zipEcFilesTask = Jacoco.getZipEcFilesTask(this)
 
         tasks.withType(JacocoReport::class.java).configureEach { task ->
-            zipEcFilesTask.get().dependsOn(task) // zip follows every jacocoReport task being run
             task.reports {
                 it.xml.isEnabled = true
                 it.html.isEnabled = false
@@ -642,6 +647,10 @@ class AndroidXPlugin : Plugin<Project> {
                     "${project.path.asFilenamePrefix()}.xml"
                 )
             }
+        }
+        // zip follows every jacocoReport task being run
+        zipEcFilesTask.configure { zipTask ->
+            zipTask.dependsOn(tasks.withType(JacocoReport::class.java))
         }
     }
 
@@ -654,6 +663,7 @@ class AndroidXPlugin : Plugin<Project> {
         const val GENERATE_TEST_CONFIGURATION_TASK = "GenerateTestConfiguration"
         const val REPORT_LIBRARY_METRICS_TASK = "reportLibraryMetrics"
         const val ZIP_TEST_CONFIGS_WITH_APKS_TASK = "zipTestConfigsWithApks"
+        const val ZIP_CONSTRAINED_TEST_CONFIGS_WITH_APKS_TASK = "zipConstrainedTestConfigsWithApks"
 
         const val TASK_GROUP_API = "API"
 
@@ -663,15 +673,11 @@ class AndroidXPlugin : Plugin<Project> {
          * Fail the build if a non-Studio task runs for more than 30 minutes.
          */
         const val TASK_TIMEOUT_MINUTES = 30L
-
-        /**
-         * Setting this property indicates that a build is being performed to check for forward
-         * compatibility.
-         */
-        // TODO(alanv): This property should be prefixed with `androidx.`.
-        const val USE_MAX_DEP_VERSIONS = "useMaxDepVersions"
     }
 }
+
+private const val PROJECTS_MAP_KEY = "projects"
+private const val ACCESSED_PROJECTS_MAP_KEY = "accessedProjectsMap"
 
 /**
  * Hides a project's Javadoc tasks from the output of `./gradlew tasks` by setting their group to
@@ -696,8 +702,15 @@ private fun Project.addToProjectMap(extension: AndroidXExtension) {
             if (group != null) {
                 val module = "$group:$name"
 
+                if (project.rootProject.extra.has(ACCESSED_PROJECTS_MAP_KEY)) {
+                    throw GradleException(
+                        "Attempted to add $project to project map after " +
+                            "the contents of the map were accessed"
+                    )
+                }
                 @Suppress("UNCHECKED_CAST")
-                val projectModules = getProjectsMap()
+                val projectModules = project.rootProject.extra.get(PROJECTS_MAP_KEY)
+                    as ConcurrentHashMap<String, String>
                 projectModules[module] = path
             }
         }
@@ -721,7 +734,8 @@ private fun Project.createCheckReleaseReadyTask(taskProviderList: List<TaskProvi
 
 @Suppress("UNCHECKED_CAST")
 fun Project.getProjectsMap(): ConcurrentHashMap<String, String> {
-    return rootProject.extra.get("projects") as ConcurrentHashMap<String, String>
+    project.rootProject.extra.set(ACCESSED_PROJECTS_MAP_KEY, true)
+    return rootProject.extra.get(PROJECTS_MAP_KEY) as ConcurrentHashMap<String, String>
 }
 
 /**
@@ -742,12 +756,14 @@ private fun Project.configureJavaCompilationWarnings(androidXExtension: AndroidX
     afterEvaluate {
         project.tasks.withType(JavaCompile::class.java).configureEach { task ->
             if (hasProperty(ALL_WARNINGS_AS_ERRORS)) {
-                task.options.compilerArgs.add("-Werror")
-                task.options.compilerArgs.add("-Xlint:unchecked")
-                if (androidXExtension.failOnDeprecationWarnings &&
-                    !hasProperty(AndroidXPlugin.USE_MAX_DEP_VERSIONS)
-                ) {
-                    task.options.compilerArgs.add("-Xlint:deprecation")
+                // If we're running a hypothetical test build confirming that tip-of-tree versions
+                // are compatible, then we're not concerned about warnings
+                if (!project.usingMaxDepVersions()) {
+                    task.options.compilerArgs.add("-Werror")
+                    task.options.compilerArgs.add("-Xlint:unchecked")
+                    if (androidXExtension.failOnDeprecationWarnings) {
+                        task.options.compilerArgs.add("-Xlint:deprecation")
+                    }
                 }
             }
         }
@@ -755,7 +771,9 @@ private fun Project.configureJavaCompilationWarnings(androidXExtension: AndroidX
 }
 
 private fun Project.configureJavaCompilationWarnings(task: KotlinCompile) {
-    if (hasProperty(ALL_WARNINGS_AS_ERRORS)) {
+    if (hasProperty(ALL_WARNINGS_AS_ERRORS) &&
+        !project.usingMaxDepVersions()
+    ) {
         task.kotlinOptions.allWarningsAsErrors = true
     }
     task.kotlinOptions.freeCompilerArgs += listOf(

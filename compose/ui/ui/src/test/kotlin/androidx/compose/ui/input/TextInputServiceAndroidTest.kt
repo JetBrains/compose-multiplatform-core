@@ -21,7 +21,6 @@ import android.text.InputType
 import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
-import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.ImeOptions
@@ -40,7 +39,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 
-@OptIn(ExperimentalTextApi::class)
 @RunWith(JUnit4::class)
 class TextInputServiceAndroidTest {
 
@@ -63,7 +61,7 @@ class TextInputServiceAndroidTest {
             value = TextFieldValue(""),
             imeOptions = ImeOptions(
                 keyboardType = KeyboardType.Text,
-                imeAction = ImeAction.Unspecified
+                imeAction = ImeAction.Default
             ),
             onEditCommand = {},
             onImeActionPerformed = {}
@@ -85,7 +83,7 @@ class TextInputServiceAndroidTest {
             value = TextFieldValue(""),
             imeOptions = ImeOptions(
                 keyboardType = KeyboardType.Ascii,
-                imeAction = ImeAction.Unspecified
+                imeAction = ImeAction.Default
             ),
             onEditCommand = {},
             onImeActionPerformed = {}
@@ -108,7 +106,7 @@ class TextInputServiceAndroidTest {
             value = TextFieldValue(""),
             imeOptions = ImeOptions(
                 keyboardType = KeyboardType.Number,
-                imeAction = ImeAction.Unspecified
+                imeAction = ImeAction.Default
             ),
             onEditCommand = {},
             onImeActionPerformed = {}
@@ -130,7 +128,7 @@ class TextInputServiceAndroidTest {
             value = TextFieldValue(""),
             imeOptions = ImeOptions(
                 keyboardType = KeyboardType.Phone,
-                imeAction = ImeAction.Unspecified
+                imeAction = ImeAction.Default
             ),
             onEditCommand = {},
             onImeActionPerformed = {}
@@ -152,7 +150,7 @@ class TextInputServiceAndroidTest {
             value = TextFieldValue(""),
             imeOptions = ImeOptions(
                 keyboardType = KeyboardType.Uri,
-                imeAction = ImeAction.Unspecified
+                imeAction = ImeAction.Default
             ),
             onEditCommand = {},
             onImeActionPerformed = {}
@@ -175,7 +173,7 @@ class TextInputServiceAndroidTest {
             value = TextFieldValue(""),
             imeOptions = ImeOptions(
                 keyboardType = KeyboardType.Email,
-                imeAction = ImeAction.Unspecified
+                imeAction = ImeAction.Default
             ),
             onEditCommand = {},
             onImeActionPerformed = {}
@@ -198,7 +196,7 @@ class TextInputServiceAndroidTest {
             value = TextFieldValue(""),
             imeOptions = ImeOptions(
                 keyboardType = KeyboardType.Password,
-                imeAction = ImeAction.Unspecified
+                imeAction = ImeAction.Default
             ),
             onEditCommand = {},
             onImeActionPerformed = {}
@@ -221,7 +219,7 @@ class TextInputServiceAndroidTest {
             value = TextFieldValue(""),
             imeOptions = ImeOptions(
                 keyboardType = KeyboardType.NumberPassword,
-                imeAction = ImeAction.Unspecified
+                imeAction = ImeAction.Default
             ),
             onEditCommand = {},
             onImeActionPerformed = {}
@@ -244,7 +242,7 @@ class TextInputServiceAndroidTest {
             value = TextFieldValue(""),
             imeOptions = ImeOptions(
                 keyboardType = KeyboardType.Ascii,
-                imeAction = ImeAction.NoAction
+                imeAction = ImeAction.None
             ),
             onEditCommand = {},
             onImeActionPerformed = {}
@@ -446,7 +444,7 @@ class TextInputServiceAndroidTest {
             imeOptions = ImeOptions(
                 singleLine = true,
                 keyboardType = KeyboardType.Text,
-                imeAction = ImeAction.Unspecified,
+                imeAction = ImeAction.Default
             ),
             onEditCommand = {},
             onImeActionPerformed = {}

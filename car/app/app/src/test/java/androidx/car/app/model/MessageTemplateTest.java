@@ -28,12 +28,13 @@ import android.util.Log;
 
 import androidx.core.graphics.drawable.IconCompat;
 
-import com.google.common.collect.ImmutableList;
-
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.internal.DoNotInstrument;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /** Tests for {@link MessageTemplate}. */
 @RunWith(RobolectricTestRunner.class)
@@ -50,7 +51,7 @@ public class MessageTemplateTest {
     @Test
     public void emptyMessage_throws() {
         assertThrows(
-                IllegalStateException.class, () -> MessageTemplate.builder("").setTitle(
+                IllegalStateException.class, () -> new MessageTemplate.Builder("").setTitle(
                         mTitle).build());
     }
 
@@ -60,29 +61,30 @@ public class MessageTemplateTest {
         builder.scheme(ContentResolver.SCHEME_CONTENT);
         builder.appendPath("foo/bar");
         Uri iconUri = builder.build();
-        CarIcon carIcon = CarIcon.of(IconCompat.createWithContentUri(iconUri));
+        CarIcon carIcon = new CarIcon.Builder(IconCompat.createWithContentUri(iconUri)).build();
         assertThrows(
                 IllegalArgumentException.class,
-                () -> MessageTemplate.builder("hello").setTitle(mTitle).setIcon(carIcon));
+                () -> new MessageTemplate.Builder("hello").setTitle(mTitle).setIcon(carIcon));
     }
 
     @Test
     public void noHeaderTitleOrAction_throws() {
-        assertThrows(IllegalStateException.class, () -> MessageTemplate.builder(mMessage).build());
+        assertThrows(IllegalStateException.class,
+                () -> new MessageTemplate.Builder(mMessage).build());
 
         // Positive cases.
-        MessageTemplate.builder(mMessage).setTitle(mTitle).build();
-        MessageTemplate.builder(mMessage).setHeaderAction(mAction).build();
+        new MessageTemplate.Builder(mMessage).setTitle(mTitle).build();
+        new MessageTemplate.Builder(mMessage).setHeaderAction(mAction).build();
     }
 
     @Test
     public void createDefault_valuesAreNull() {
-        MessageTemplate template = MessageTemplate.builder(mMessage).setTitle(mTitle).build();
+        MessageTemplate template = new MessageTemplate.Builder(mMessage).setTitle(mTitle).build();
         assertThat(template.getMessage().toString()).isEqualTo(mMessage);
-        assertThat(template.getTitle().getText()).isEqualTo("header");
+        assertThat(template.getTitle().toString()).isEqualTo("header");
         assertThat(template.getIcon()).isNull();
         assertThat(template.getHeaderAction()).isNull();
-        assertThat(template.getActions()).isNull();
+        assertThat(template.getActions()).isEmpty();
         assertThat(template.getDebugMessage()).isNull();
     }
 
@@ -91,9 +93,9 @@ public class MessageTemplateTest {
         assertThrows(
                 IllegalArgumentException.class,
                 () ->
-                        MessageTemplate.builder(mMessage)
+                        new MessageTemplate.Builder(mMessage)
                                 .setHeaderAction(
-                                        Action.builder().setTitle("Action").setOnClickListener(
+                                        new Action.Builder().setTitle("Action").setOnClickListener(
                                                 () -> {
                                                 }).build())
                                 .build());
@@ -103,16 +105,16 @@ public class MessageTemplateTest {
     public void createWithContents_hasProperValuesSet() {
         Throwable exception = new IllegalStateException();
         CarIcon icon = BACK;
-        Action action = Action.builder().setOnClickListener(() -> {
+        Action action = new Action.Builder().setOnClickListener(() -> {
         }).setTitle("foo").build();
 
         MessageTemplate template =
-                MessageTemplate.builder(mMessage)
+                new MessageTemplate.Builder(mMessage)
                         .setTitle(mTitle)
                         .setHeaderAction(Action.BACK)
-                        .setDebugCause(exception)
+                        .setDebugMessage(exception)
                         .setIcon(icon)
-                        .setActions(ImmutableList.of(action))
+                        .addAction(action)
                         .build();
 
         assertThat(template.getMessage().toString()).isEqualTo(mMessage);
@@ -121,27 +123,46 @@ public class MessageTemplateTest {
                 Log.getStackTraceString(exception));
         assertThat(template.getIcon()).isEqualTo(icon);
         assertThat(template.getHeaderAction()).isEqualTo(Action.BACK);
-        assertThat(template.getActions().getList()).containsExactly(action);
+        assertThat(template.getActions()).containsExactly(action);
+    }
+
+    @Test
+    public void create_messageHasTextVariants() {
+        List<CharSequence> variants = new ArrayList<>();
+        variants.add("This is a long message that only fits in a large screen");
+        variants.add("This is a short message");
+        CarText message =
+                new CarText.Builder(variants.get(0)).addVariant(variants.get(1)).build();
+
+        MessageTemplate template =
+                new MessageTemplate.Builder(message)
+                        .setTitle(mTitle)
+                        .build();
+
+        assertThat(template.getMessage().toCharSequence().toString()).isEqualTo(variants.get(0));
+        assertThat(template.getMessage().getVariants().size()).isEqualTo(1);
+        assertThat(template.getMessage().getVariants().get(0).toString()).isEqualTo(
+                variants.get(1));
     }
 
     @Test
     public void equals() {
         MessageTemplate template1 =
-                MessageTemplate.builder(mMessage)
+                new MessageTemplate.Builder(mMessage)
                         .setTitle(mTitle)
                         .setDebugMessage(mDebugMessage)
-                        .setDebugCause(mCause)
+                        .setDebugMessage(mCause)
                         .setHeaderAction(Action.BACK)
-                        .setActions(ImmutableList.of(mAction))
+                        .addAction(mAction)
                         .setIcon(mIcon)
                         .build();
         MessageTemplate template2 =
-                MessageTemplate.builder(mMessage)
+                new MessageTemplate.Builder(mMessage)
                         .setTitle(mTitle)
                         .setDebugMessage(mDebugMessage)
-                        .setDebugCause(mCause)
+                        .setDebugMessage(mCause)
                         .setHeaderAction(Action.BACK)
-                        .setActions(ImmutableList.of(mAction))
+                        .addAction(mAction)
                         .setIcon(mIcon)
                         .build();
 
@@ -151,19 +172,19 @@ public class MessageTemplateTest {
     @Test
     public void notEquals_differentDebugMessage() {
         MessageTemplate template1 =
-                MessageTemplate.builder(mMessage)
+                new MessageTemplate.Builder(mMessage)
                         .setTitle(mTitle)
                         .setDebugMessage(mDebugMessage)
-                        .setDebugCause(mCause)
-                        .setActions(ImmutableList.of(mAction))
+                        .setDebugMessage(mCause)
+                        .addAction(mAction)
                         .setIcon(mIcon)
                         .build();
         MessageTemplate template2 =
-                MessageTemplate.builder(mMessage)
+                new MessageTemplate.Builder(mMessage)
                         .setTitle(mTitle)
                         .setDebugMessage("yo")
-                        .setDebugCause(mCause)
-                        .setActions(ImmutableList.of(mAction))
+                        .setDebugMessage(mCause)
+                        .addAction(mAction)
                         .setIcon(mIcon)
                         .build();
 
@@ -173,19 +194,19 @@ public class MessageTemplateTest {
     @Test
     public void notEquals_differentCause() {
         MessageTemplate template1 =
-                MessageTemplate.builder(mMessage)
+                new MessageTemplate.Builder(mMessage)
                         .setTitle(mTitle)
                         .setDebugMessage(mDebugMessage)
-                        .setDebugCause(mCause)
-                        .setActions(ImmutableList.of(mAction))
+                        .setDebugMessage(mCause)
+                        .addAction(mAction)
                         .setIcon(mIcon)
                         .build();
         MessageTemplate template2 =
-                MessageTemplate.builder(mMessage)
+                new MessageTemplate.Builder(mMessage)
                         .setTitle(mTitle)
                         .setDebugMessage(mDebugMessage)
-                        .setDebugCause(new IllegalStateException("something else bad"))
-                        .setActions(ImmutableList.of(mAction))
+                        .setDebugMessage(new IllegalStateException("something else bad"))
+                        .addAction(mAction)
                         .setIcon(mIcon)
                         .build();
 
@@ -195,20 +216,19 @@ public class MessageTemplateTest {
     @Test
     public void notEquals_differentMessage() {
         MessageTemplate template1 =
-                MessageTemplate.builder(mMessage)
+                new MessageTemplate.Builder(mMessage)
                         .setTitle(mTitle)
                         .setDebugMessage(mDebugMessage)
-                        .setDebugCause(mCause)
-                        .setMessage(mMessage)
-                        .setActions(ImmutableList.of(mAction))
+                        .setDebugMessage(mCause)
+                        .addAction(mAction)
                         .setIcon(mIcon)
                         .build();
         MessageTemplate template2 =
-                MessageTemplate.builder("bar")
+                new MessageTemplate.Builder("bar")
                         .setTitle(mTitle)
                         .setDebugMessage(mDebugMessage)
-                        .setDebugCause(mCause)
-                        .setActions(ImmutableList.of(mAction))
+                        .setDebugMessage(mCause)
+                        .addAction(mAction)
                         .setIcon(mIcon)
                         .build();
 
@@ -218,21 +238,21 @@ public class MessageTemplateTest {
     @Test
     public void notEquals_differentHeaderAction() {
         MessageTemplate template1 =
-                MessageTemplate.builder(mMessage)
+                new MessageTemplate.Builder(mMessage)
                         .setTitle(mTitle)
                         .setDebugMessage(mDebugMessage)
-                        .setDebugCause(mCause)
+                        .setDebugMessage(mCause)
                         .setHeaderAction(Action.BACK)
-                        .setActions(ImmutableList.of(mAction))
+                        .addAction(mAction)
                         .setIcon(mIcon)
                         .build();
         MessageTemplate template2 =
-                MessageTemplate.builder(mMessage)
+                new MessageTemplate.Builder(mMessage)
                         .setTitle(mTitle)
                         .setDebugMessage(mDebugMessage)
-                        .setDebugCause(mCause)
+                        .setDebugMessage(mCause)
                         .setHeaderAction(Action.APP_ICON)
-                        .setActions(ImmutableList.of(mAction))
+                        .addAction(mAction)
                         .setIcon(mIcon)
                         .build();
 
@@ -242,19 +262,20 @@ public class MessageTemplateTest {
     @Test
     public void notEquals_differentActions() {
         MessageTemplate template1 =
-                MessageTemplate.builder(mMessage)
+                new MessageTemplate.Builder(mMessage)
                         .setTitle(mTitle)
                         .setDebugMessage(mDebugMessage)
-                        .setDebugCause(mCause)
-                        .setActions(ImmutableList.of(mAction))
+                        .setDebugMessage(mCause)
+                        .addAction(mAction)
                         .setIcon(mIcon)
                         .build();
         MessageTemplate template2 =
-                MessageTemplate.builder(mMessage)
+                new MessageTemplate.Builder(mMessage)
                         .setTitle(mTitle)
                         .setDebugMessage(mDebugMessage)
-                        .setDebugCause(mCause)
-                        .setActions(ImmutableList.of(mAction, mAction))
+                        .setDebugMessage(mCause)
+                        .addAction(mAction)
+                        .addAction(mAction)
                         .setIcon(mIcon)
                         .build();
 
@@ -264,19 +285,19 @@ public class MessageTemplateTest {
     @Test
     public void notEquals_differentIcon() {
         MessageTemplate template1 =
-                MessageTemplate.builder(mMessage)
+                new MessageTemplate.Builder(mMessage)
                         .setTitle(mTitle)
                         .setDebugMessage(mDebugMessage)
-                        .setDebugCause(mCause)
-                        .setActions(ImmutableList.of(mAction))
+                        .setDebugMessage(mCause)
+                        .addAction(mAction)
                         .setIcon(mIcon)
                         .build();
         MessageTemplate template2 =
-                MessageTemplate.builder(mMessage)
+                new MessageTemplate.Builder(mMessage)
                         .setTitle(mTitle)
                         .setDebugMessage(mDebugMessage)
-                        .setDebugCause(mCause)
-                        .setActions(ImmutableList.of(mAction))
+                        .setDebugMessage(mCause)
+                        .addAction(mAction)
                         .setIcon(CarIcon.ERROR)
                         .build();
 
@@ -286,19 +307,19 @@ public class MessageTemplateTest {
     @Test
     public void notEquals_differentTitle() {
         MessageTemplate template1 =
-                MessageTemplate.builder(mMessage)
+                new MessageTemplate.Builder(mMessage)
                         .setTitle(mTitle)
                         .setDebugMessage(mDebugMessage)
-                        .setDebugCause(mCause)
-                        .setActions(ImmutableList.of(mAction))
+                        .setDebugMessage(mCause)
+                        .addAction(mAction)
                         .setIcon(mIcon)
                         .build();
         MessageTemplate template2 =
-                MessageTemplate.builder(mMessage)
+                new MessageTemplate.Builder(mMessage)
                         .setTitle("Header2")
                         .setDebugMessage(mDebugMessage)
-                        .setDebugCause(mCause)
-                        .setActions(ImmutableList.of(mAction))
+                        .setDebugMessage(mCause)
+                        .addAction(mAction)
                         .setIcon(mIcon)
                         .build();
 

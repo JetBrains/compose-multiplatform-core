@@ -32,6 +32,7 @@ import androidx.annotation.RestrictTo;
 import androidx.annotation.StringRes;
 import androidx.annotation.StyleRes;
 import androidx.core.view.ViewCompat;
+import androidx.fragment.app.strictmode.FragmentStrictMode;
 import androidx.lifecycle.Lifecycle;
 
 import java.lang.annotation.Retention;
@@ -63,6 +64,7 @@ public abstract class FragmentTransaction {
     static final class Op {
         int mCmd;
         Fragment mFragment;
+        boolean mFromExpandedOp;
         int mEnterAnim;
         int mExitAnim;
         int mPopEnterAnim;
@@ -76,6 +78,15 @@ public abstract class FragmentTransaction {
         Op(int cmd, Fragment fragment) {
             this.mCmd = cmd;
             this.mFragment = fragment;
+            this.mFromExpandedOp = false;
+            this.mOldMaxState = Lifecycle.State.RESUMED;
+            this.mCurrentMaxState = Lifecycle.State.RESUMED;
+        }
+
+        Op(int cmd, Fragment fragment, boolean fromExpandedOp) {
+            this.mCmd = cmd;
+            this.mFragment = fragment;
+            this.mFromExpandedOp = fromExpandedOp;
             this.mOldMaxState = Lifecycle.State.RESUMED;
             this.mCurrentMaxState = Lifecycle.State.RESUMED;
         }
@@ -83,6 +94,7 @@ public abstract class FragmentTransaction {
         Op(int cmd, @NonNull Fragment fragment, Lifecycle.State state) {
             this.mCmd = cmd;
             this.mFragment = fragment;
+            this.mFromExpandedOp = false;
             this.mOldMaxState = fragment.mMaxState;
             this.mCurrentMaxState = state;
         }
@@ -242,6 +254,9 @@ public abstract class FragmentTransaction {
     }
 
     void doAddOp(int containerViewId, Fragment fragment, @Nullable String tag, int opcmd) {
+        if (fragment.mRemoved) {
+            FragmentStrictMode.onFragmentReuse(fragment);
+        }
         final Class<?> fragmentClass = fragment.getClass();
         final int modifiers = fragmentClass.getModifiers();
         if (fragmentClass.isAnonymousClass() || !Modifier.isPublic(modifiers)
@@ -493,7 +508,8 @@ public abstract class FragmentTransaction {
 
     /** @hide */
     @RestrictTo(LIBRARY_GROUP_PREFIX)
-    @IntDef({TRANSIT_NONE, TRANSIT_FRAGMENT_OPEN, TRANSIT_FRAGMENT_CLOSE, TRANSIT_FRAGMENT_FADE})
+    @IntDef({TRANSIT_NONE, TRANSIT_FRAGMENT_OPEN, TRANSIT_FRAGMENT_CLOSE, TRANSIT_FRAGMENT_FADE,
+            TRANSIT_FRAGMENT_MATCH_ACTIVITY_OPEN, TRANSIT_FRAGMENT_MATCH_ACTIVITY_CLOSE})
     @Retention(RetentionPolicy.SOURCE)
     private @interface Transit {}
 
@@ -508,6 +524,22 @@ public abstract class FragmentTransaction {
     /** Fragment should simply fade in or out; that is, no strong navigation associated
      * with it except that it is appearing or disappearing for some reason. */
     public static final int TRANSIT_FRAGMENT_FADE = 3 | TRANSIT_ENTER_MASK;
+
+    /**
+     * Fragment is being added onto the stack with Activity open transition.
+     *
+     * @see android.R.attr#activityOpenEnterAnimation
+     * @see android.R.attr#activityOpenExitAnimation
+     */
+    public static final int TRANSIT_FRAGMENT_MATCH_ACTIVITY_OPEN = 4 | TRANSIT_ENTER_MASK;
+
+    /**
+     * Fragment is being removed from the stack with Activity close transition.
+     *
+     * @see android.R.attr#activityCloseEnterAnimation
+     * @see android.R.attr#activityCloseExitAnimation
+     */
+    public static final int TRANSIT_FRAGMENT_MATCH_ACTIVITY_CLOSE = 5 | TRANSIT_EXIT_MASK;
 
     /**
      * Set specific animation resources to run for the fragments that are
@@ -816,11 +848,15 @@ public abstract class FragmentTransaction {
     @NonNull
     public FragmentTransaction runOnCommit(@NonNull Runnable runnable) {
         disallowAddToBackStack();
+        addOnCommitRunnable(runnable);
+        return this;
+    }
+
+    void addOnCommitRunnable(@NonNull Runnable runnable) {
         if (mCommitRunnables == null) {
             mCommitRunnables = new ArrayList<>();
         }
         mCommitRunnables.add(runnable);
-        return this;
     }
 
     /**

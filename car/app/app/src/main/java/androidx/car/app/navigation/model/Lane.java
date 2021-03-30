@@ -21,6 +21,7 @@ import static java.util.Objects.requireNonNull;
 import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.car.app.utils.CollectionUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -37,15 +38,14 @@ public final class Lane {
     @Keep
     private final List<LaneDirection> mDirections;
 
-    /** Constructs a new builder of {@link Lane}. */
-    @NonNull
-    public static Builder builder() {
-        return new Builder();
-    }
-
+    /**
+     * Returns the list of directions a driver can take from this {@link Lane}.
+     *
+     * @see Builder#addDirection(LaneDirection)
+     */
     @NonNull
     public List<LaneDirection> getDirections() {
-        return mDirections;
+        return CollectionUtils.emptyIfNull(mDirections);
     }
 
     @Override
@@ -73,7 +73,7 @@ public final class Lane {
     }
 
     Lane(List<LaneDirection> directions) {
-        this.mDirections = new ArrayList<>(directions);
+        mDirections = CollectionUtils.unmodifiableCopy(directions);
     }
 
     /** Constructs an empty instance, used by serialization code. */
@@ -88,7 +88,7 @@ public final class Lane {
         /**
          * Adds a direction a driver can take from this lane.
          *
-         * @throws NullPointerException if {@code direction} is {@code null}.
+         * @throws NullPointerException if {@code direction} is {@code null}
          */
         @NonNull
         public Builder addDirection(@NonNull LaneDirection direction) {
@@ -96,20 +96,14 @@ public final class Lane {
             return this;
         }
 
-        /**
-         * Clears any directions that may have been added with
-         * {@link #addDirection(LaneDirection)} up to this point.
-         */
-        @NonNull
-        public Builder clearDirections() {
-            mDirections.clear();
-            return this;
-        }
-
         /** Constructs the {@link Lane} defined by this builder. */
         @NonNull
         public Lane build() {
             return new Lane(mDirections);
+        }
+
+        /** Returns an empty {@link Builder} instance. */
+        public Builder() {
         }
     }
 }

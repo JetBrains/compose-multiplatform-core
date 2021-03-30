@@ -29,9 +29,9 @@ import androidx.annotation.GuardedBy;
 import androidx.annotation.MainThread;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.OptIn;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
-import androidx.annotation.experimental.UseExperimental;
 import androidx.camera.core.impl.CameraDeviceSurfaceManager;
 import androidx.camera.core.impl.CameraFactory;
 import androidx.camera.core.impl.CameraInternal;
@@ -266,7 +266,7 @@ public final class CameraX {
         // Do not use FutureChain to chain the initFuture, because FutureChain.transformAsync()
         // will not propagate if the input initFuture is failed. We want to always
         // shutdown the CameraX instance to ensure that resources are freed.
-        sShutdownFuture = CallbackToFutureAdapter.getFuture(
+        sShutdownFuture = Futures.nonCancellationPropagating(CallbackToFutureAdapter.getFuture(
                 completer -> {
                     synchronized (INSTANCE_LOCK) {
                         // Wait initialize complete
@@ -276,7 +276,7 @@ public final class CameraX {
                         }, CameraXExecutors.directExecutor());
                         return "CameraX shutdown";
                     }
-                });
+                }));
         return sShutdownFuture;
     }
 
@@ -539,7 +539,7 @@ public final class CameraX {
     /**
      * Initializes camera stack on the given thread and retry recursively until timeout.
      */
-    @UseExperimental(markerClass = ExperimentalAvailableCamerasLimiter.class)
+    @OptIn(markerClass = ExperimentalAvailableCamerasLimiter.class)
     private void initAndRetryRecursively(
             @NonNull Executor cameraExecutor,
             long startMs,
@@ -598,7 +598,8 @@ public final class CameraX {
                 // Only verify the devices might have the b/167201193
                 if (DeviceQuirks.get(IncompleteCameraListQuirk.class) != null) {
                     // Please ensure only validate the camera at the last of the initialization.
-                    CameraValidator.validateCameras(mAppContext, mCameraRepository);
+                    CameraValidator.validateCameras(mAppContext, mCameraRepository,
+                            availableCamerasLimiter);
                 }
 
                 // Set completer to null if the init was successful.

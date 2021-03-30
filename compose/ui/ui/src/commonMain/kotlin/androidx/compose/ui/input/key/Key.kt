@@ -19,9 +19,10 @@ package androidx.compose.ui.input.key
 /**
  * Represents keys on a keyboard.
  *
- * @param keyCode an integer code representing the key pressed.
+ * @param keyCode a Long value representing the key pressed. Note: This keycode can be used to
+ * uniquely identify a hardware key. It is different from the native keycode.
  */
-expect inline class Key(val keyCode: Int) {
+expect inline class Key(val keyCode: Long) {
     companion object {
         /** Unknown key. */
         val Unknown: Key
@@ -106,51 +107,51 @@ expect inline class Key(val keyCode: Int) {
         val EndCall: Key
 
         /**
-         * Directional Pad Up key.
+         * Up Arrow Key / Directional Pad Up key.
          *
          * May also be synthesized from trackball motions.
          */
-        val DPadUp: Key
+        val DirectionUp: Key
 
         /**
-         * Directional Pad Down key.
+         * Down Arrow Key / Directional Pad Down key.
          *
          * May also be synthesized from trackball motions.
          */
-        val DPadDown: Key
+        val DirectionDown: Key
 
         /**
-         * Directional Pad Left key.
+         * Left Arrow Key / Directional Pad Left key.
          *
          * May also be synthesized from trackball motions.
          */
-        val DPadLeft: Key
+        val DirectionLeft: Key
 
         /**
-         * Directional Pad Right key.
+         * Right Arrow Key / Directional Pad Right key.
          *
          * May also be synthesized from trackball motions.
          */
-        val DPadRight: Key
+        val DirectionRight: Key
 
         /**
-         * Directional Pad Center key.
+         * Center Arrow Key / Directional Pad Center key.
          *
          * May also be synthesized from trackball motions.
          */
-        val DPadCenter: Key
+        val DirectionCenter: Key
 
         /** Directional Pad Up-Left. */
-        val DPadUpLeft: Key
+        val DirectionUpLeft: Key
 
         /** Directional Pad Down-Left. */
-        val DPadDownLeft: Key
+        val DirectionDownLeft: Key
 
         /** Directional Pad Up-Right. */
-        val DPadUpRight: Key
+        val DirectionUpRight: Key
 
         /** Directional Pad Down-Right. */
-        val DPadDownRight: Key
+        val DirectionDownRight: Key
 
         /**
          * Volume Up key.
@@ -180,45 +181,39 @@ expect inline class Key(val keyCode: Int) {
         val Clear: Key
 
         /** '0' key. */
-        val Number0: Key
+        val Zero: Key
 
         /** '1' key. */
-        val Number1: Key
+        val One: Key
 
         /** '2' key. */
-        val Number2: Key
+        val Two: Key
 
         /** '3' key. */
-        val Number3: Key
+        val Three: Key
 
         /** '4' key. */
-        val Number4: Key
+        val Four: Key
 
         /** '5' key. */
-        val Number5: Key
+        val Five: Key
 
         /** '6' key. */
-        val Number6: Key
+        val Six: Key
 
         /** '7' key. */
-        val Number7: Key
+        val Seven: Key
 
         /** '8' key. */
-        val Number8: Key
+        val Eight: Key
 
         /** '9' key. */
-        val Number9: Key
-
-        /** '11' key. */
-        val Number11: Key
-
-        /** '12' key. */
-        val Number12: Key
+        val Nine: Key
 
         /** '+' key. */
         val Plus: Key
 
-        /** '-'. */
+        /** '-' key. */
         val Minus: Key
 
         /** '*' key. */
@@ -850,6 +845,7 @@ expect inline class Key(val keyCode: Int) {
          * Steps media forward, one frame at a time.
          */
         val MediaStepForward: Key
+
         /**
          * Step backward media key.
          *
@@ -1370,19 +1366,19 @@ expect inline class Key(val keyCode: Int) {
         val TvTimerProgramming: Key
 
         /**
-         * Primary stem key for Wear
+         * Primary stem key for Wearables.
          *
-         * Main power/reset button on watch.
+         * Main power/reset button.
          */
         val StemPrimary: Key
 
-        /** Generic stem key 1 for Wear. */
+        /** Generic stem key 1 for Wearables. */
         val Stem1: Key
 
-        /** Generic stem key 2 for Wear. */
+        /** Generic stem key 2 for Wearables. */
         val Stem2: Key
 
-        /** Generic stem key 3 for Wear. */
+        /** Generic stem key 3 for Wearables. */
         val Stem3: Key
 
         /** Show all apps. */

@@ -83,6 +83,12 @@ repositories {
     val allowBintray: String? = findProperty("allowBintray") as String?
     if (allowBintray != null) {
         maven {
+            url = uri("https://maven.pkg.jetbrains.space/kotlin/p/dokka/dev/")
+            metadataSources {
+                artifact()
+            }
+        }
+        maven {
             url = uri("https://dl.bintray.com/kotlin/kotlin-dev/")
             metadataSources {
                 artifact()
@@ -96,6 +102,16 @@ repositories {
         }
         maven {
             url = uri("https://dl.bintray.com/kotlin/kotlinx/")
+            metadataSources {
+                artifact()
+            }
+        }
+    }
+
+    val allowJetbrainsDev: String? = findProperty("allowJetbrainsDev") as String?
+    if (allowJetbrainsDev != null) {
+        maven {
+            url = uri("https://maven.pkg.jetbrains.space/kotlin/p/kotlin/dev")
             metadataSources {
                 artifact()
             }
@@ -253,8 +269,8 @@ fun licenseFor(pomFile: File): File? {
 /**
  * Transforms POM files so we automatically comment out nodes with <type>aar</type>.
  *
- * We are doing this for all internal libraries to account for -PuseMaxDepVersions which swaps out
- * the dependencies of all androidx libraries with their respective ToT versions.
+ * We are doing this for all internal libraries to account for -Pandroidx.useMaxDepVersions
+ * which swaps out the dependencies of all androidx libraries with their respective ToT versions.
  * For more information look at b/127495641.
  */
 fun transformInternalPomFile(file: File): File {
@@ -430,7 +446,11 @@ open class DirectMetadataAccessVariantRule : ComponentMetadataRule {
             }
         }
         val variantNames = listOf(
-            "runtimeElements", "releaseRuntimePublication", "metadata-api", "runtime"
+            "runtimeElements",
+            "releaseRuntimePublication",
+            "metadata-api",
+            "metadataApiElements-published",
+            "runtime"
         )
         variantNames.forEach { name ->
             ctx.details.maybeAddVariant("allFilesWithDependencies${name.capitalize()}", name) {

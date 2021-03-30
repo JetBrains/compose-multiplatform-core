@@ -16,6 +16,7 @@
 
 package androidx.compose.compiler.plugins.kotlin
 
+import org.intellij.lang.annotations.Language
 import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.declarations.IrSimpleFunction
 import org.jetbrains.kotlin.ir.declarations.IrValueParameter
@@ -25,6 +26,7 @@ import org.junit.Test
 
 class ComposerParamTransformTests : ComposeIrTransformTest() {
     private fun composerParam(
+        @Language("kotlin")
         source: String,
         expectedTransformed: String,
         validator: (element: IrElement) -> Unit = { },
@@ -32,22 +34,23 @@ class ComposerParamTransformTests : ComposeIrTransformTest() {
     ) = verifyComposeIrTransform(
         """
             @file:OptIn(
-              ExperimentalComposeApi::class,
               InternalComposeApi::class,
               ComposeCompilerApi::class
             )
             package test
 
-            import androidx.compose.runtime.ExperimentalComposeApi
             import androidx.compose.runtime.InternalComposeApi
             import androidx.compose.runtime.ComposeCompilerApi
             import androidx.compose.runtime.Composable
-            import androidx.compose.runtime.ComposableContract
+            import androidx.compose.runtime.NonRestartableComposable
 
             $source
         """.trimIndent(),
         expectedTransformed,
-        "",
+        """
+            package test
+            fun used(x: Any?) {}
+        """,
         validator,
         dumpTree
     )
@@ -57,7 +60,7 @@ class ComposerParamTransformTests : ComposeIrTransformTest() {
         """
             val bar: Int @Composable get() { return 123 }
 
-            @ComposableContract(restartable = false) @Composable fun Example() {
+            @NonRestartableComposable @Composable fun Example() {
                 bar
             }
         """,
@@ -69,9 +72,9 @@ class ComposerParamTransformTests : ComposeIrTransformTest() {
                 %composer.endReplaceableGroup()
                 return tmp0
               }
-            @ComposableContract(restartable = false)
+            @NonRestartableComposable
             @Composable
-            fun Example(%composer: Composer<*>?, %changed: Int) {
+            fun Example(%composer: Composer?, %changed: Int) {
               %composer.startReplaceableGroup(<>, "C(Example)<bar>:Test.kt#2487m")
               bar
               %composer.endReplaceableGroup()
@@ -83,13 +86,13 @@ class ComposerParamTransformTests : ComposeIrTransformTest() {
     fun testAbstractComposable(): Unit = composerParam(
         """
             abstract class BaseFoo {
-                @ComposableContract(restartable = false)
+                @NonRestartableComposable
                 @Composable
                 abstract fun bar()
             }
 
             class FooImpl : BaseFoo() {
-                @ComposableContract(restartable = false)
+                @NonRestartableComposable
                 @Composable
                 override fun bar() {}
             }
@@ -97,16 +100,16 @@ class ComposerParamTransformTests : ComposeIrTransformTest() {
         """
             @StabilityInferred(parameters = 0)
             abstract class BaseFoo {
-              @ComposableContract(restartable = false)
+              @NonRestartableComposable
               @Composable
-              abstract fun bar(%composer: Composer<*>?, %changed: Int)
+              abstract fun bar(%composer: Composer?, %changed: Int)
               static val %stable: Int = 0
             }
             @StabilityInferred(parameters = 0)
             class FooImpl : BaseFoo {
-              @ComposableContract(restartable = false)
+              @NonRestartableComposable
               @Composable
-              override fun bar(%composer: Composer<*>?, %changed: Int) {
+              override fun bar(%composer: Composer?, %changed: Int) {
                 %composer.startReplaceableGroup(<>, "C(bar):Test.kt#2487m")
                 %composer.endReplaceableGroup()
               }
@@ -118,18 +121,18 @@ class ComposerParamTransformTests : ComposeIrTransformTest() {
     @Test
     fun testLocalClassAndObjectLiterals(): Unit = composerParam(
         """
-            @ComposableContract(restartable = false)
+            @NonRestartableComposable
             @Composable
             fun Wat() {}
 
-            @ComposableContract(restartable = false)
+            @NonRestartableComposable
             @Composable
             fun Foo(x: Int) {
                 Wat()
-                @ComposableContract(restartable = false)
+                @NonRestartableComposable
                 @Composable fun goo() { Wat() }
                 class Bar {
-                    @ComposableContract(restartable = false)
+                    @NonRestartableComposable
                     @Composable fun baz() { Wat() }
                 }
                 goo()
@@ -137,28 +140,28 @@ class ComposerParamTransformTests : ComposeIrTransformTest() {
             }
         """,
         """
-            @ComposableContract(restartable = false)
+            @NonRestartableComposable
             @Composable
-            fun Wat(%composer: Composer<*>?, %changed: Int) {
+            fun Wat(%composer: Composer?, %changed: Int) {
               %composer.startReplaceableGroup(<>, "C(Wat):Test.kt#2487m")
               %composer.endReplaceableGroup()
             }
-            @ComposableContract(restartable = false)
+            @NonRestartableComposable
             @Composable
-            fun Foo(x: Int, %composer: Composer<*>?, %changed: Int) {
+            fun Foo(x: Int, %composer: Composer?, %changed: Int) {
               %composer.startReplaceableGroup(<>, "C(Foo)<Wat()>,<goo()>,<baz()>:Test.kt#2487m")
               Wat(%composer, 0)
-              @ComposableContract(restartable = false)
+              @NonRestartableComposable
               @Composable
-              fun goo(%composer: Composer<*>?, %changed: Int) {
+              fun goo(%composer: Composer?, %changed: Int) {
                 %composer.startReplaceableGroup(<>, "C(goo)<Wat()>:Test.kt#2487m")
                 Wat(%composer, 0)
                 %composer.endReplaceableGroup()
               }
               class Bar {
-                @ComposableContract(restartable = false)
+                @NonRestartableComposable
                 @Composable
-                fun baz(%composer: Composer<*>?, %changed: Int) {
+                fun baz(%composer: Composer?, %changed: Int) {
                   %composer.startReplaceableGroup(<>, "C(baz)<Wat()>:Test.kt#2487m")
                   Wat(%composer, 0)
                   %composer.endReplaceableGroup()
@@ -233,15 +236,15 @@ class ComposerParamTransformTests : ComposeIrTransformTest() {
     @Test
     fun testCircularCall(): Unit = composerParam(
         """
-            @ComposableContract(restartable = false)
+            @NonRestartableComposable
             @Composable fun Example() {
                 Example()
             }
         """,
         """
-            @ComposableContract(restartable = false)
+            @NonRestartableComposable
             @Composable
-            fun Example(%composer: Composer<*>?, %changed: Int) {
+            fun Example(%composer: Composer?, %changed: Int) {
               %composer.startReplaceableGroup(<>, "C(Example)<Exampl...>:Test.kt#2487m")
               Example(%composer, 0)
               %composer.endReplaceableGroup()
@@ -256,23 +259,23 @@ class ComposerParamTransformTests : ComposeIrTransformTest() {
                 content()
             }
 
-            @ComposableContract(restartable = false)
+            @NonRestartableComposable
             @Composable fun Test() {
                 Example {}
             }
         """,
         """
             @Composable
-            fun Example(content: Function2<Composer<*>, Int, Unit>, %composer: Composer<*>?, %changed: Int) {
+            fun Example(content: Function2<Composer, Int, Unit>, %composer: Composer?, %changed: Int) {
               %composer.startReplaceableGroup(<>, "C(Example)<conten...>:Test.kt#2487m")
               content(%composer, 0b1110 and %changed)
               %composer.endReplaceableGroup()
             }
-            @ComposableContract(restartable = false)
+            @NonRestartableComposable
             @Composable
-            fun Test(%composer: Composer<*>?, %changed: Int) {
+            fun Test(%composer: Composer?, %changed: Int) {
               %composer.startReplaceableGroup(<>, "C(Test)<Exampl...>:Test.kt#2487m")
-              Example({ %composer: Composer<*>?, %changed: Int ->
+              Example({ %composer: Composer?, %changed: Int ->
                 %composer.startReplaceableGroup(<>, "C:Test.kt#2487m")
                 if (%changed and 0b1011 xor 0b0010 !== 0 || !%composer.skipping) {
                   Unit
@@ -349,7 +352,9 @@ class ComposerParamTransformTests : ComposeIrTransformTest() {
                 }
 
                 @Composable
-                fun Leaf(text: String) { }
+                fun Leaf(text: String) {
+                    used(text)
+                }
 
                 @Composable
                 fun Test(value: Int) {
@@ -362,8 +367,8 @@ class ComposerParamTransformTests : ComposeIrTransformTest() {
             """,
             """
                 @Composable
-                fun Wrapper(block: Function2<Composer<*>, Int, Unit>, %composer: Composer<*>?, %changed: Int) {
-                  %composer.startRestartGroup(<>, "C(Wrapper)<block(...>:Test.kt#2487m")
+                fun Wrapper(block: Function2<Composer, Int, Unit>, %composer: Composer?, %changed: Int) {
+                  %composer = %composer.startRestartGroup(<>, "C(Wrapper)<block(...>:Test.kt#2487m")
                   val %dirty = %changed
                   if (%changed and 0b1110 === 0) {
                     %dirty = %dirty or if (%composer.changed(block)) 0b0100 else 0b0010
@@ -373,35 +378,36 @@ class ComposerParamTransformTests : ComposeIrTransformTest() {
                   } else {
                     %composer.skipToGroupEnd()
                   }
-                  %composer.endRestartGroup()?.updateScope { %composer: Composer<*>?, %force: Int ->
+                  %composer.endRestartGroup()?.updateScope { %composer: Composer?, %force: Int ->
                     Wrapper(block, %composer, %changed or 0b0001)
                   }
                 }
                 @Composable
-                fun Leaf(text: String, %composer: Composer<*>?, %changed: Int) {
-                  %composer.startRestartGroup(<>, "C(Leaf):Test.kt#2487m")
+                fun Leaf(text: String, %composer: Composer?, %changed: Int) {
+                  %composer = %composer.startRestartGroup(<>, "C(Leaf):Test.kt#2487m")
                   val %dirty = %changed
                   if (%changed and 0b1110 === 0) {
                     %dirty = %dirty or if (%composer.changed(text)) 0b0100 else 0b0010
                   }
                   if (%dirty and 0b1011 xor 0b0010 !== 0 || !%composer.skipping) {
+                    used(text)
                   } else {
                     %composer.skipToGroupEnd()
                   }
-                  %composer.endRestartGroup()?.updateScope { %composer: Composer<*>?, %force: Int ->
+                  %composer.endRestartGroup()?.updateScope { %composer: Composer?, %force: Int ->
                     Leaf(text, %composer, %changed or 0b0001)
                   }
                 }
                 @Composable
-                fun Test(value: Int, %composer: Composer<*>?, %changed: Int) {
-                  %composer.startRestartGroup(<>, "C(Test):Test.kt#2487m")
+                fun Test(value: Int, %composer: Composer?, %changed: Int) {
+                  %composer = %composer.startRestartGroup(<>, "C(Test):Test.kt#2487m")
                   val %dirty = %changed
                   if (%changed and 0b1110 === 0) {
                     %dirty = %dirty or if (%composer.changed(value)) 0b0100 else 0b0010
                   }
                   if (%dirty and 0b1011 xor 0b0010 !== 0 || !%composer.skipping) {
                     %composer.startMovableGroup(<>, value, "<Wrappe...>")
-                    Wrapper(composableLambda(%composer, <>, true, "C<Leaf("...>:Test.kt#2487m") { %composer: Composer<*>?, %changed: Int ->
+                    Wrapper(composableLambda(%composer, <>, true, "C<Leaf("...>:Test.kt#2487m") { %composer: Composer?, %changed: Int ->
                       if (%changed and 0b1011 xor 0b0010 !== 0 || !%composer.skipping) {
                         Leaf("Value %value", %composer, 0)
                       } else {
@@ -412,7 +418,7 @@ class ComposerParamTransformTests : ComposeIrTransformTest() {
                   } else {
                     %composer.skipToGroupEnd()
                   }
-                  %composer.endRestartGroup()?.updateScope { %composer: Composer<*>?, %force: Int ->
+                  %composer.endRestartGroup()?.updateScope { %composer: Composer?, %force: Int ->
                     Test(value, %composer, %changed or 0b0001)
                   }
                 }
@@ -478,17 +484,17 @@ class ComposerParamTransformTests : ComposeIrTransformTest() {
             """,
             """
                 @Composable
-                fun composeVector(composable: Function2<Composer<*>, Int, Unit>, %composer: Composer<*>?, %changed: Int) {
-                  %composer.startRestartGroup(<>, "C(composeVector)<emit>:Test.kt#2487m")
+                fun composeVector(composable: Function2<Composer, Int, Unit>, %composer: Composer?, %changed: Int) {
+                  %composer = %composer.startRestartGroup(<>, "C(composeVector)<emit>:Test.kt#2487m")
                   val %dirty = %changed
                   if (%changed and 0b1110 === 0) {
                     %dirty = %dirty or if (%composer.changed(composable)) 0b0100 else 0b0010
                   }
                   if (%dirty and 0b1011 xor 0b0010 !== 0 || !%composer.skipping) {
-                    emit({ %composer: Composer<*>?, %changed: Int ->
+                    emit({ %composer: Composer?, %changed: Int ->
                       %composer.startReplaceableGroup(<>, "C<emit>:Test.kt#2487m")
                       if (%changed and 0b1011 xor 0b0010 !== 0 || !%composer.skipping) {
-                        emit({ %composer: Composer<*>?, %changed: Int ->
+                        emit({ %composer: Composer?, %changed: Int ->
                           %composer.startReplaceableGroup(<>, "C<compos...>:Test.kt#2487m")
                           if (%changed and 0b1011 xor 0b0010 !== 0 || !%composer.skipping) {
                             composable(%composer, 0b1110 and %dirty)
@@ -505,12 +511,12 @@ class ComposerParamTransformTests : ComposeIrTransformTest() {
                   } else {
                     %composer.skipToGroupEnd()
                   }
-                  %composer.endRestartGroup()?.updateScope { %composer: Composer<*>?, %force: Int ->
+                  %composer.endRestartGroup()?.updateScope { %composer: Composer?, %force: Int ->
                     composeVector(composable, %composer, %changed or 0b0001)
                   }
                 }
                 @Composable
-                fun emit(composable: Function2<Composer<*>, Int, Unit>, %composer: Composer<*>?, %changed: Int) {
+                fun emit(composable: Function2<Composer, Int, Unit>, %composer: Composer?, %changed: Int) {
                   %composer.startReplaceableGroup(<>, "C(emit)<compos...>:Test.kt#2487m")
                   composable(%composer, 0b1110 and %changed)
                   %composer.endReplaceableGroup()

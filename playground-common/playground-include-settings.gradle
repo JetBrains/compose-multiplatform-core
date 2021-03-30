@@ -65,15 +65,13 @@ def setupPlayground(settings, String relativePathToRoot) {
     }
     settings.includeBuild(new File(supportRoot, "androidx-plugin"))
     settings.includeProject(":lint-checks", new File(supportRoot, "lint-checks"))
+    settings.includeProject(":lint-checks:integration-tests",
+            new File(supportRoot, "lint-checks/integration-tests"))
     settings.includeProject(":fakeannotations", new File(supportRoot,"fakeannotations"))
     settings.includeProject(":internal-testutils-common",
             new File(supportRoot, "testutils/testutils-common"))
     settings.includeProject(":internal-testutils-gradle-plugin",
             new File(supportRoot, "testutils/testutils-gradle-plugin"))
-
-    // AndroidXUiPlugin dependencies
-    settings.includeProject(":compose:internal-lint-checks",
-            new File(supportRoot, "compose/internal-lint-checks"))
 }
 
 /**
@@ -110,7 +108,7 @@ ext.setupPlayground = this.&setupPlayground
 def jvmVersion = System.getProperty("java.vm.specification.version")
 if (jvmVersion != "11") {
     def guidance;
-    if (startParameter.projectProperties.containsKey('android.injected.invoked.from.ide')) {
+    if (startParameter.projectProperties.containsKey("android.injected.invoked.from.ide")) {
         guidance = "Make sure to set the gradle JDK to JDK 11 in the project settings." +
                    "(File -> Other Settings -> Default Project Structure)"
     } else {

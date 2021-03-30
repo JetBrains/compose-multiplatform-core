@@ -106,14 +106,18 @@ val taskNamesKnownToDuplicateOutputs = setOf(
     "jarRelease",
     "jarDebug",
     "kotlinSourcesJar",
+    "releaseSourcesJar",
+    "sourceJarRelease",
     "lint",
     "lintFix",
     "lintVital",
     "sourceJar",
     // MPP plugin has issues with modules using withJava() clause, see b/158747039.
     "processTestResources",
+    "jvmTestProcessResources",
     "desktopTestProcessResources",
     "processResources",
+    "jvmProcessResources",
     "desktopProcessResources"
 )
 

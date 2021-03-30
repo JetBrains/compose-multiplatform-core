@@ -92,6 +92,11 @@ object RoomTypeNames {
         ClassName.get("$ROOM_PACKAGE.util", "DBUtil")
     val CURSOR_UTIL: ClassName =
         ClassName.get("$ROOM_PACKAGE.util", "CursorUtil")
+    val MIGRATION: ClassName = ClassName.get("$ROOM_PACKAGE.migration", "Migration")
+    val AUTO_MIGRATION_CALLBACK: ClassName = ClassName.get(
+        "$ROOM_PACKAGE.migration",
+        "AutoMigrationCallback"
+    )
 }
 
 object PagingTypeNames {
@@ -125,6 +130,7 @@ object CollectionTypeNames {
 }
 
 object CommonTypeNames {
+    val ARRAYS = ClassName.get("java.util", "Arrays")
     val LIST = ClassName.get("java.util", "List")
     val MAP = ClassName.get("java.util", "Map")
     val SET = ClassName.get("java.util", "Set")

@@ -25,20 +25,22 @@ import android.widget.Button
 import android.widget.TextView
 import androidx.activity.ComponentActivity
 import androidx.compose.androidview.adapters.setOnClick
-import androidx.compose.foundation.ScrollableColumn
-import androidx.compose.foundation.ScrollableRow
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.preferredHeight
-import androidx.compose.foundation.layout.preferredSize
-import androidx.compose.foundation.layout.preferredWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.integration.demos.common.ActivityDemo
 import androidx.compose.integration.demos.common.DemoCategory
 import androidx.compose.material.Button
@@ -46,10 +48,10 @@ import androidx.compose.material.Text
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.gesture.tapGestureFilter
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.unit.dp
 import androidx.fragment.app.DialogFragment
@@ -153,9 +155,11 @@ open class ComposeTapInAndroidTap : ComponentActivity() {
             val currentColor = remember { mutableStateOf(Color.LightGray) }
 
             val tap =
-                Modifier.tapGestureFilter {
-                    currentColor.value =
-                        if (currentColor.value == Color.Blue) Color.Yellow else Color.Blue
+                Modifier.pointerInput(Unit) {
+                    detectTapGestures {
+                        currentColor.value =
+                            if (currentColor.value == Color.Blue) Color.Yellow else Color.Blue
+                    }
                 }
 
             Column {
@@ -196,7 +200,7 @@ open class ComposeTapInAndroidScroll : ComponentActivity() {
                         Modifier
                             .background(color = Color.Gray)
                             .fillMaxWidth()
-                            .preferredHeight(456.dp)
+                            .height(456.dp)
                             .wrapContentSize()
                             .clickable {
                                 currentColor.value = if (currentColor.value == Color.Blue) {
@@ -206,7 +210,7 @@ open class ComposeTapInAndroidScroll : ComponentActivity() {
                                 }
                             }
                             .background(currentColor.value, RectangleShape)
-                            .preferredSize(192.dp)
+                            .size(192.dp)
                     )
                 }
             },
@@ -240,19 +244,20 @@ open class ComposeScrollInAndroidScrollSameOrientation : ComponentActivity() {
         container.addView(
             ComposeView(this).apply {
                 setContent {
-                    ScrollableColumn(
+                    Column(
                         modifier = Modifier
                             .padding(48.dp)
                             .background(color = Color.Gray)
                             .fillMaxWidth()
-                            .preferredHeight(456.dp)
+                            .height(456.dp)
+                            .verticalScroll(rememberScrollState())
                     ) {
                         Box(
                             Modifier
                                 .padding(48.dp)
                                 .background(color = Color.LightGray)
                                 .fillMaxWidth()
-                                .preferredHeight(456.dp)
+                                .height(456.dp)
                         )
                     }
                 }
@@ -285,18 +290,19 @@ open class ComposeScrollInAndroidScrollDifferentOrientation : ComponentActivity(
         container.addView(
             ComposeView(this).apply {
                 setContent {
-                    ScrollableRow(
+                    Row(
                         modifier = Modifier
                             .padding(48.dp)
                             .background(color = Color.Gray)
                             .fillMaxWidth()
-                            .preferredHeight(456.dp)
+                            .height(456.dp)
+                            .verticalScroll(rememberScrollState())
                     ) {
                         Box(
                             Modifier
                                 .padding(48.dp)
                                 .background(color = Color.LightGray)
-                                .preferredWidth(360.dp)
+                                .width(360.dp)
                                 .fillMaxHeight()
                         )
                     }

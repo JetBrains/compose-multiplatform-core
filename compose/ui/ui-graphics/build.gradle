@@ -16,8 +16,7 @@
 
 import androidx.build.AndroidXUiPlugin
 import androidx.build.LibraryGroups
-import androidx.build.LibraryVersions
-import androidx.build.Publish
+import androidx.build.LibraryType
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 import static androidx.build.dependencies.DependenciesKt.*
@@ -37,11 +36,11 @@ if(!AndroidXUiPlugin.isMultiplatformEnabled(project)) {
          * corresponding block below
          */
 
-        api "androidx.annotation:annotation:1.1.0"
-        api project(":compose:ui:ui-unit")
+        api("androidx.annotation:annotation:1.2.0-beta01")
+        api(project(":compose:ui:ui-unit"))
 
-        implementation project(":compose:runtime:runtime")
-        implementation project(":compose:ui:ui-util")
+        implementation(project(":compose:runtime:runtime"))
+        implementation(project(":compose:ui:ui-util"))
         implementation(KOTLIN_STDLIB_COMMON)
 
         testImplementation(ANDROIDX_TEST_RULES)
@@ -49,8 +48,9 @@ if(!AndroidXUiPlugin.isMultiplatformEnabled(project)) {
         testImplementation(JUNIT)
         testImplementation(TRUTH)
 
-        androidTestImplementation project(":compose:ui:ui-graphics:ui-graphics-samples")
-        androidTestImplementation project(":compose:ui:ui-test-junit4")
+        androidTestImplementation(project(":compose:ui:ui-graphics:ui-graphics-samples"))
+        androidTestImplementation(project(":compose:ui:ui-test-junit4"))
+        androidTestImplementation(project(":compose:test-utils"))
         androidTestImplementation(ANDROIDX_TEST_RULES)
         androidTestImplementation(ANDROIDX_TEST_RUNNER)
         androidTestImplementation(ESPRESSO_CORE)
@@ -73,13 +73,13 @@ if(AndroidXUiPlugin.isMultiplatformEnabled(project)) {
             commonMain.dependencies {
                 implementation(KOTLIN_STDLIB_COMMON)
 
-                api project(":compose:ui:ui-unit")
-                implementation project(":compose:runtime:runtime")
-                implementation project(":compose:ui:ui-util")
+                api(project(":compose:ui:ui-unit"))
+                implementation(project(":compose:runtime:runtime"))
+                implementation(project(":compose:ui:ui-util"))
             }
 
             androidMain.dependencies {
-                api "androidx.annotation:annotation:1.1.0"
+                api("androidx.annotation:annotation:1.2.0-beta01")
             }
 
             desktopMain.dependencies {
@@ -95,8 +95,9 @@ if(AndroidXUiPlugin.isMultiplatformEnabled(project)) {
             }
 
             androidAndroidTest.dependencies {
-                implementation project(":compose:ui:ui-graphics:ui-graphics-samples")
-                implementation project(":compose:ui:ui-test-junit4")
+                implementation(project(":compose:ui:ui-graphics:ui-graphics-samples"))
+                implementation(project(":compose:ui:ui-test-junit4"))
+                implementation(project(":compose:test-utils"))
                 implementation(ANDROIDX_TEST_RULES)
                 implementation(ANDROIDX_TEST_RUNNER)
                 implementation(ESPRESSO_CORE)
@@ -106,7 +107,7 @@ if(AndroidXUiPlugin.isMultiplatformEnabled(project)) {
             desktopTest {
                 resources.srcDirs += "src/desktopTest/res"
                 dependencies {
-                    implementation project(":compose:ui:ui-test-junit4")
+                    implementation(project(":compose:ui:ui-test-junit4"))
                     implementation(JUNIT)
                     implementation(TRUTH)
                     implementation(SKIKO_CURRENT_OS)
@@ -118,7 +119,7 @@ if(AndroidXUiPlugin.isMultiplatformEnabled(project)) {
 
 androidx {
     name = "Compose Graphics"
-    publish = Publish.SNAPSHOT_AND_RELEASE
+    type = LibraryType.PUBLISHED_LIBRARY
     mavenGroup = LibraryGroups.Compose.UI
     inceptionYear = "2020"
     description = "Compose graphics"
@@ -127,15 +128,14 @@ androidx {
 
 if(AndroidXUiPlugin.isMultiplatformEnabled(project)) {
     tasks.findByName("desktopTest").configure {
-        systemProperties['GOLDEN_PATH'] = project.rootDir.absolutePath + "/../../golden"
+        systemProperties["GOLDEN_PATH"] = project.rootDir.absolutePath + "/../../golden"
     }
 }
 
 tasks.withType(KotlinCompile).configureEach {
     kotlinOptions {
         freeCompilerArgs += [
-            "-XXLanguage:+InlineClasses",
-            "-Xallow-jvm-ir-dependencies"
+            "-XXLanguage:+InlineClasses"
         ]
     }
 }

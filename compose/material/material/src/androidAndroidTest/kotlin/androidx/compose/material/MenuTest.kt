@@ -19,16 +19,16 @@ package androidx.compose.material
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.preferredSize
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.AmbientDensity
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.test.ExperimentalTesting
+import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.hasAnyDescendant
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.isPopup
@@ -36,7 +36,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.Density
-import androidx.compose.ui.unit.IntBounds
+import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
@@ -51,7 +51,7 @@ import org.junit.runner.RunWith
 
 @MediumTest
 @RunWith(AndroidJUnit4::class)
-@OptIn(ExperimentalTesting::class)
+@OptIn(ExperimentalTestApi::class)
 class MenuTest {
     @get:Rule
     val rule = createComposeRule()
@@ -60,51 +60,56 @@ class MenuTest {
     fun menu_canBeTriggered() {
         var expanded by mutableStateOf(false)
 
-        rule.clockTestRule.pauseClock()
         rule.setContent {
-            DropdownMenu(
-                expanded = expanded,
-                toggle = {
-                    Box(Modifier.size(20.dp).background(color = Color.Blue))
-                },
-                onDismissRequest = {}
-            ) {
-                DropdownMenuItem(modifier = Modifier.testTag("MenuContent"), onClick = {}) {
-                    Text("Option 1")
+            Box(Modifier.requiredSize(20.dp).background(color = Color.Blue)) {
+                DropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = {}
+                ) {
+                    DropdownMenuItem(modifier = Modifier.testTag("MenuContent"), onClick = {}) {
+                        Text("Option 1")
+                    }
                 }
             }
         }
-        rule.onNodeWithTag("MenuContent").assertDoesNotExist()
 
-        rule.runOnIdle { expanded = true }
+        rule.onNodeWithTag("MenuContent").assertDoesNotExist()
+        rule.mainClock.autoAdvance = false
+
+        rule.runOnUiThread { expanded = true }
+        rule.mainClock.advanceTimeByFrame() // Trigger the popup
         rule.waitForIdle()
-        rule.clockTestRule.advanceClock(InTransitionDuration.toLong())
+        rule.mainClock.advanceTimeByFrame() // Kick off the animation
+        rule.mainClock.advanceTimeBy(InTransitionDuration.toLong())
         rule.onNodeWithTag("MenuContent").assertExists()
 
-        rule.runOnIdle { expanded = false }
-        rule.waitForIdle()
-        rule.clockTestRule.advanceClock(OutTransitionDuration.toLong())
+        rule.runOnUiThread { expanded = false }
+        rule.mainClock.advanceTimeByFrame() // Trigger the popup
+        rule.mainClock.advanceTimeByFrame() // Kick off the animation
+        rule.mainClock.advanceTimeBy(OutTransitionDuration.toLong())
+        rule.mainClock.advanceTimeByFrame()
         rule.onNodeWithTag("MenuContent").assertDoesNotExist()
 
-        rule.runOnIdle { expanded = true }
+        rule.runOnUiThread { expanded = true }
+        rule.mainClock.advanceTimeByFrame() // Trigger the popup
         rule.waitForIdle()
-        rule.clockTestRule.advanceClock(InTransitionDuration.toLong())
+        rule.mainClock.advanceTimeByFrame() // Kick off the animation
+        rule.mainClock.advanceTimeBy(InTransitionDuration.toLong())
         rule.onNodeWithTag("MenuContent").assertExists()
     }
 
     @Test
     fun menu_hasExpectedSize() {
         rule.setContent {
-            with(AmbientDensity.current) {
-                DropdownMenu(
-                    expanded = true,
-                    toggle = {
-                        Box(Modifier.size(20.toDp()).background(color = Color.Blue))
-                    },
-                    onDismissRequest = {}
-                ) {
-                    Box(Modifier.testTag("MenuContent1").preferredSize(70.toDp()))
-                    Box(Modifier.testTag("MenuContent2").preferredSize(130.toDp()))
+            with(LocalDensity.current) {
+                Box(Modifier.requiredSize(20.toDp()).background(color = Color.Blue)) {
+                    DropdownMenu(
+                        expanded = true,
+                        onDismissRequest = {}
+                    ) {
+                        Box(Modifier.testTag("MenuContent1").size(70.toDp()))
+                        Box(Modifier.testTag("MenuContent2").size(130.toDp()))
+                    }
                 }
             }
         }
@@ -117,7 +122,8 @@ class MenuTest {
         ).assertExists().fetchSemanticsNode()
         with(rule.density) {
             assertThat(node.size.width).isEqualTo(130)
-            assertThat(node.size.height).isEqualTo(DropdownMenuVerticalPadding.toIntPx() * 2 + 200)
+            assertThat(node.size.height)
+                .isEqualTo(DropdownMenuVerticalPadding.roundToPx() * 2 + 200)
         }
     }
 
@@ -126,7 +132,7 @@ class MenuTest {
         val screenWidth = 500
         val screenHeight = 1000
         val density = Density(1f)
-        val windowBounds = IntBounds(0, 0, screenWidth, screenHeight)
+        val windowSize = IntSize(screenWidth, screenHeight)
         val anchorPosition = IntOffset(100, 200)
         val anchorSize = IntSize(10, 20)
         val offsetX = 20
@@ -137,8 +143,8 @@ class MenuTest {
             DpOffset(offsetX.dp, offsetY.dp),
             density
         ).calculatePosition(
-            IntBounds(anchorPosition, anchorSize),
-            windowBounds,
+            IntRect(anchorPosition, anchorSize),
+            windowSize,
             LayoutDirection.Ltr,
             popupSize
         )
@@ -154,8 +160,8 @@ class MenuTest {
             DpOffset(offsetX.dp, offsetY.dp),
             density
         ).calculatePosition(
-            IntBounds(anchorPosition, anchorSize),
-            windowBounds,
+            IntRect(anchorPosition, anchorSize),
+            windowSize,
             LayoutDirection.Rtl,
             popupSize
         )
@@ -173,7 +179,7 @@ class MenuTest {
         val screenWidth = 500
         val screenHeight = 1000
         val density = Density(1f)
-        val windowBounds = IntBounds(0, 0, screenWidth, screenHeight)
+        val windowSize = IntSize(screenWidth, screenHeight)
         val anchorPosition = IntOffset(450, 950)
         val anchorPositionRtl = IntOffset(50, 950)
         val anchorSize = IntSize(10, 20)
@@ -185,8 +191,8 @@ class MenuTest {
             DpOffset(offsetX.dp, offsetY.dp),
             density
         ).calculatePosition(
-            IntBounds(anchorPosition, anchorSize),
-            windowBounds,
+            IntRect(anchorPosition, anchorSize),
+            windowSize,
             LayoutDirection.Ltr,
             popupSize
         )
@@ -202,8 +208,8 @@ class MenuTest {
             DpOffset(offsetX.dp, offsetY.dp),
             density
         ).calculatePosition(
-            IntBounds(anchorPositionRtl, anchorSize),
-            windowBounds,
+            IntRect(anchorPositionRtl, anchorSize),
+            windowSize,
             LayoutDirection.Rtl,
             popupSize
         )
@@ -221,21 +227,21 @@ class MenuTest {
         val screenWidth = 500
         val screenHeight = 1000
         val density = Density(1f)
-        val windowBounds = IntBounds(0, 0, screenWidth, screenHeight)
+        val windowSize = IntSize(screenWidth, screenHeight)
         val anchorPosition = IntOffset(0, 0)
         val anchorSize = IntSize(50, 20)
         val popupSize = IntSize(150, 500)
 
         // The min margin above and below the menu, relative to the screen.
         val MenuVerticalMargin = 32.dp
-        val verticalMargin = with(density) { MenuVerticalMargin.toIntPx() }
+        val verticalMargin = with(density) { MenuVerticalMargin.roundToPx() }
 
         val position = DropdownMenuPositionProvider(
             DpOffset(0.dp, 0.dp),
             density
         ).calculatePosition(
-            IntBounds(anchorPosition, anchorSize),
-            windowBounds,
+            IntRect(anchorPosition, anchorSize),
+            windowSize,
             LayoutDirection.Ltr,
             popupSize
         )
@@ -250,15 +256,15 @@ class MenuTest {
         val screenWidth = 500
         val screenHeight = 1000
         val density = Density(1f)
-        val windowBounds = IntBounds(0, 0, screenWidth, screenHeight)
+        val windowSize = IntSize(screenWidth, screenHeight)
         val anchorPosition = IntOffset(100, 200)
         val anchorSize = IntSize(10, 20)
         val offsetX = 20
         val offsetY = 40
         val popupSize = IntSize(50, 80)
 
-        var obtainedParentBounds = IntBounds(0, 0, 0, 0)
-        var obtainedMenuBounds = IntBounds(0, 0, 0, 0)
+        var obtainedParentBounds = IntRect(0, 0, 0, 0)
+        var obtainedMenuBounds = IntRect(0, 0, 0, 0)
         DropdownMenuPositionProvider(
             DpOffset(offsetX.dp, offsetY.dp),
             density
@@ -266,15 +272,15 @@ class MenuTest {
             obtainedParentBounds = parentBounds
             obtainedMenuBounds = menuBounds
         }.calculatePosition(
-            IntBounds(anchorPosition, anchorSize),
-            windowBounds,
+            IntRect(anchorPosition, anchorSize),
+            windowSize,
             LayoutDirection.Ltr,
             popupSize
         )
 
-        assertThat(obtainedParentBounds).isEqualTo(IntBounds(anchorPosition, anchorSize))
+        assertThat(obtainedParentBounds).isEqualTo(IntRect(anchorPosition, anchorSize))
         assertThat(obtainedMenuBounds).isEqualTo(
-            IntBounds(
+            IntRect(
                 anchorPosition.x + offsetX,
                 anchorPosition.y + anchorSize.height + offsetY,
                 anchorPosition.x + offsetX + popupSize.width,
@@ -295,18 +301,19 @@ class MenuTest {
             onSurface = MaterialTheme.colors.onSurface
             enabledContentAlpha = ContentAlpha.high
             disabledContentAlpha = ContentAlpha.disabled
-            DropdownMenu(
-                toggle = { Box(Modifier.size(20.dp)) },
-                onDismissRequest = {},
-                expanded = true
-            ) {
-                DropdownMenuItem(onClick = {}) {
-                    enabledContentColor = AmbientContentColor.current
-                        .copy(alpha = AmbientContentAlpha.current)
-                }
-                DropdownMenuItem(enabled = false, onClick = {}) {
-                    disabledContentColor = AmbientContentColor.current
-                        .copy(alpha = AmbientContentAlpha.current)
+            Box(Modifier.requiredSize(20.dp)) {
+                DropdownMenu(
+                    onDismissRequest = {},
+                    expanded = true
+                ) {
+                    DropdownMenuItem(onClick = {}) {
+                        enabledContentColor = LocalContentColor.current
+                            .copy(alpha = LocalContentAlpha.current)
+                    }
+                    DropdownMenuItem(enabled = false, onClick = {}) {
+                        disabledContentColor = LocalContentColor.current
+                            .copy(alpha = LocalContentAlpha.current)
+                    }
                 }
             }
         }
@@ -325,7 +332,7 @@ class MenuTest {
                 onClick,
                 modifier = Modifier.testTag("MenuItem").clickable(onClick = onClick)
             ) {
-                Box(Modifier.size(40.dp))
+                Box(Modifier.requiredSize(40.dp))
             }
         }
 

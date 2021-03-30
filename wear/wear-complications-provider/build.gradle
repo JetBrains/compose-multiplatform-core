@@ -30,7 +30,6 @@ dependencies {
     api("androidx.annotation:annotation:1.1.0")
     api(project(":wear:wear-complications-data"))
 
-    implementation("androidx.concurrent:concurrent-futures:1.0.0")
     implementation("androidx.core:core:1.1.0")
     implementation("androidx.preference:preference:1.1.0")
     testImplementation(ANDROIDX_TEST_CORE)
@@ -47,7 +46,7 @@ android {
         aidl = true
     }
     defaultConfig {
-        minSdkVersion 24
+        minSdkVersion 25
     }
 
     // Use Robolectric 4.+
@@ -58,7 +57,7 @@ androidx {
     name = "Android Wear Complications"
     publish = Publish.SNAPSHOT_AND_RELEASE
     mavenGroup = LibraryGroups.WEAR
-    mavenVersion = LibraryVersions.WEAR_COMPLICATIONS
+    mavenVersion = LibraryVersions.WEAR_COMPLICATIONS_PROVIDER
     inceptionYear = "2020"
     description = "Android Wear Complications"
 }

@@ -31,7 +31,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.view.ViewCompat;
 import androidx.fragment.R;
-import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.ViewModelStoreOwner;
 
 class FragmentStateManager {
@@ -82,30 +81,7 @@ class FragmentStateManager {
             @NonNull FragmentState fs) {
         mDispatcher = dispatcher;
         mFragmentStore = fragmentStore;
-        mFragment = fragmentFactory.instantiate(classLoader, fs.mClassName);
-        if (fs.mArguments != null) {
-            fs.mArguments.setClassLoader(classLoader);
-        }
-        mFragment.setArguments(fs.mArguments);
-        mFragment.mWho = fs.mWho;
-        mFragment.mFromLayout = fs.mFromLayout;
-        mFragment.mRestored = true;
-        mFragment.mFragmentId = fs.mFragmentId;
-        mFragment.mContainerId = fs.mContainerId;
-        mFragment.mTag = fs.mTag;
-        mFragment.mRetainInstance = fs.mRetainInstance;
-        mFragment.mRemoving = fs.mRemoving;
-        mFragment.mDetached = fs.mDetached;
-        mFragment.mHidden = fs.mHidden;
-        mFragment.mMaxState = Lifecycle.State.values()[fs.mMaxLifecycleState];
-        if (fs.mSavedFragmentState != null) {
-            mFragment.mSavedFragmentState = fs.mSavedFragmentState;
-        } else {
-            // When restoring a Fragment, always ensure we have a
-            // non-null Bundle so that developers have a signal for
-            // when the Fragment is being restored
-            mFragment.mSavedFragmentState = new Bundle();
-        }
+        mFragment = fs.instantiate(fragmentFactory, classLoader);
         if (FragmentManager.isLoggingEnabled(Log.VERBOSE)) {
             Log.v(TAG, "Instantiated fragment " + mFragment);
         }
@@ -323,7 +299,9 @@ class FragmentStateManager {
                             if (FragmentManager.isLoggingEnabled(Log.DEBUG)) {
                                 Log.d(TAG, "movefrom ACTIVITY_CREATED: " + mFragment);
                             }
-                            if (mFragment.mView != null) {
+                            if (mFragment.mBeingSaved) {
+                                saveState();
+                            } else if (mFragment.mView != null) {
                                 // Need to save the current view state if not done already
                                 // by saveInstanceState()
                                 if (mFragment.mSavedViewState == null) {
@@ -347,6 +325,10 @@ class FragmentStateManager {
                             mFragment.mState = Fragment.CREATED;
                             break;
                         case Fragment.ATTACHED:
+                            if (mFragment.mBeingSaved
+                                    && mFragmentStore.getSavedState(mFragment.mWho) == null) {
+                                saveState();
+                            }
                             destroy();
                             break;
                         case Fragment.INITIALIZING:
@@ -366,6 +348,9 @@ class FragmentStateManager {
                     } else {
                         controller.enqueueShow(this);
                     }
+                }
+                if (mFragment.mFragmentManager != null) {
+                    mFragment.mFragmentManager.invalidateMenuForFragment(mFragment);
                 }
                 mFragment.mHiddenChanged = false;
                 mFragment.onHiddenChanged(mFragment.mHidden);
@@ -638,8 +623,7 @@ class FragmentStateManager {
         mDispatcher.dispatchOnFragmentStopped(mFragment, false);
     }
 
-    @NonNull
-    FragmentState saveState() {
+    void saveState() {
         FragmentState fs = new FragmentState(mFragment);
 
         if (mFragment.mState > Fragment.INITIALIZING && fs.mSavedFragmentState == null) {
@@ -662,7 +646,7 @@ class FragmentStateManager {
         } else {
             fs.mSavedFragmentState = mFragment.mSavedFragmentState;
         }
-        return fs;
+        mFragmentStore.setSavedState(mFragment.mWho, fs);
     }
 
     @Nullable

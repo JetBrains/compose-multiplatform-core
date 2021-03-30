@@ -15,11 +15,10 @@
  */
 
 import androidx.build.LibraryGroups
+import androidx.build.LibraryType
 import androidx.build.LibraryVersions
-import androidx.build.Publish
 import androidx.build.RunApiTasks
 import androidx.build.SupportConfigKt
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 import static androidx.build.AndroidXPlugin.BUILD_ON_SERVER_TASK
 import static androidx.build.dependencies.DependenciesKt.*
@@ -31,7 +30,7 @@ plugins {
 }
 
 dependencies {
-    kotlinPlugin project(":compose:compiler:compiler")
+    kotlinPlugin(project(":compose:compiler:compiler"))
 }
 
 kotlin {
@@ -42,10 +41,11 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             implementation(KOTLIN_STDLIB_COMMON)
-            api project(":compose:foundation:foundation")
-            api project(":compose:material:material")
-            api project(":compose:runtime:runtime")
-            api project(":compose:ui:ui")
+            implementation(project(":compose:ui:ui-util"))
+            api(project(":compose:foundation:foundation"))
+            api(project(":compose:material:material"))
+            api(project(":compose:runtime:runtime"))
+            api(project(":compose:ui:ui"))
         }
 
         jvmMain.dependencies {
@@ -60,7 +60,7 @@ kotlin {
             dependencies {
                 implementation(KOTLIN_COROUTINES_TEST)
                 implementation(SKIKO_CURRENT_OS)
-                implementation project(":compose:ui:ui-test-junit4")
+                implementation(project(":compose:ui:ui-test-junit4"))
                 implementation(JUNIT)
                 implementation(TRUTH)
             }
@@ -69,18 +69,12 @@ kotlin {
 }
 
 tasks.findByName("jvmTest").configure {
-    systemProperties['GOLDEN_PATH'] = project.rootDir.absolutePath + "/../../golden"
-}
-
-tasks.withType(KotlinCompile).configureEach {
-    kotlinOptions {
-        useIR = true
-    }
+    systemProperties["GOLDEN_PATH"] = project.rootDir.absolutePath + "/../../golden"
 }
 
 androidx {
     name = "Jetpack Compose desktop implementation"
-    publish = Publish.SNAPSHOT_AND_RELEASE
+    type = LibraryType.PUBLISHED_LIBRARY
     mavenGroup = LibraryGroups.Compose.DESKTOP
     inceptionYear = "2020"
     legacyDisableKotlinStrictApiMode = true

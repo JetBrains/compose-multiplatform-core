@@ -20,12 +20,14 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.font.fontFamily
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.platform.FontLoader
-import androidx.compose.ui.text.platform.font
+import androidx.compose.ui.text.platform.Font
+import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.sp
 import com.google.common.truth.Truth
+import org.junit.Assume.assumeTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -39,9 +41,8 @@ class DesktopParagraphTest {
     private val fontLoader = FontLoader()
     private val defaultDensity = Density(density = 1f)
     private val fontFamilyMeasureFont =
-        fontFamily(
-            font(
-                "MeasureFont",
+        FontFamily(
+            Font(
                 "font/sample_font.ttf",
                 weight = FontWeight.Normal,
                 style = FontStyle.Normal
@@ -71,6 +72,7 @@ class DesktopParagraphTest {
 
     @Test
     fun getBoundingBox_multicodepoints() {
+        assumeLinux()
         with(defaultDensity) {
             val text = "h\uD83E\uDDD1\uD83C\uDFFF\u200D\uD83E\uDDB0"
             val fontSize = 50.sp
@@ -81,13 +83,113 @@ class DesktopParagraphTest {
             )
 
             Truth.assertThat(paragraph.getBoundingBox(0))
-                .isEqualTo(Rect(0f, 0.37f, fontSizeInPx, 60.37f))
+                .isEqualTo(Rect(0f, 0f, fontSizeInPx, 60f))
 
             Truth.assertThat(paragraph.getBoundingBox(1))
-                .isEqualTo(Rect(fontSizeInPx, 0.37f, fontSizeInPx * 2, 66f))
+                .isEqualTo(Rect(fontSizeInPx, 0f, fontSizeInPx * 2.5f, 60f))
 
             Truth.assertThat(paragraph.getBoundingBox(5))
-                .isEqualTo(Rect(fontSizeInPx, 0.37f, fontSizeInPx * 2, 66f))
+                .isEqualTo(Rect(fontSizeInPx, 0f, fontSizeInPx * 2.5f, 60f))
+        }
+    }
+
+    @Test
+    fun getLineEnd() {
+        with(defaultDensity) {
+            val text = ""
+            val paragraph = simpleParagraph(
+                text = text,
+                style = TextStyle(fontSize = 50.sp)
+            )
+
+            Truth.assertThat(paragraph.getLineEnd(0, true))
+                .isEqualTo(0)
+        }
+        with(defaultDensity) {
+            val text = "ab\n\nc"
+            val paragraph = simpleParagraph(
+                text = text,
+                style = TextStyle(fontSize = 50.sp)
+            )
+
+            Truth.assertThat(paragraph.getLineEnd(0, true))
+                .isEqualTo(2)
+            Truth.assertThat(paragraph.getLineEnd(1, true))
+                .isEqualTo(3)
+            Truth.assertThat(paragraph.getLineEnd(2, true))
+                .isEqualTo(5)
+        }
+        with(defaultDensity) {
+            val text = "ab\n"
+            val paragraph = simpleParagraph(
+                text = text,
+                style = TextStyle(fontSize = 50.sp)
+            )
+
+            Truth.assertThat(paragraph.getLineEnd(0, true))
+                .isEqualTo(2)
+            Truth.assertThat(paragraph.getLineEnd(1, true))
+                .isEqualTo(3)
+        }
+    }
+
+    @Test
+    fun getHorizontalPositionForOffset_primary_Bidi_singleLine_textDirectionDefault() {
+        with(defaultDensity) {
+            val ltrText = "abc"
+            val rtlText = "\u05D0\u05D1\u05D2"
+            val text = ltrText + rtlText
+            val fontSize = 50.sp
+            val fontSizeInPx = fontSize.toPx()
+            val width = text.length * fontSizeInPx
+            val paragraph = simpleParagraph(
+                text = text,
+                style = TextStyle(fontSize = fontSize),
+                width = width
+            )
+
+            for (i in 0..ltrText.length) {
+                Truth.assertThat(paragraph.getHorizontalPosition(i, true))
+                    .isEqualTo(fontSizeInPx * i)
+            }
+
+            for (i in 1 until rtlText.length) {
+                Truth.assertThat(paragraph.getHorizontalPosition(i + ltrText.length, true))
+                    .isEqualTo(width - fontSizeInPx * i)
+            }
+        }
+    }
+
+    @Test
+    fun getHorizontalPositionForOffset_notPrimary_Bidi_singleLine_textDirectionLtr() {
+        with(defaultDensity) {
+            val ltrText = "abc"
+            val rtlText = "\u05D0\u05D1\u05D2"
+            val text = ltrText + rtlText
+            val fontSize = 50.sp
+            val fontSizeInPx = fontSize.toPx()
+            val width = text.length * fontSizeInPx
+            val paragraph = simpleParagraph(
+                text = text,
+                style = TextStyle(
+                    fontSize = fontSize,
+                    textDirection = TextDirection.Ltr
+                ),
+                width = width
+            )
+
+            for (i in ltrText.indices) {
+                Truth.assertThat(paragraph.getHorizontalPosition(i, false))
+                    .isEqualTo(fontSizeInPx * i)
+            }
+
+            for (i in rtlText.indices) {
+                Truth.assertThat(paragraph.getHorizontalPosition(i + ltrText.length, false))
+                    .isEqualTo(width - fontSizeInPx * i)
+            }
+
+            Truth.assertThat(paragraph.getHorizontalPosition(text.length, false))
+                .isEqualTo(width - rtlText.length * fontSizeInPx)
         }
     }
 
@@ -112,5 +214,9 @@ class DesktopParagraphTest {
             density = density ?: defaultDensity,
             resourceLoader = fontLoader
         )
+    }
+
+    private fun assumeLinux() {
+        assumeTrue(System.getProperty("os.name").startsWith("Linux"))
     }
 }

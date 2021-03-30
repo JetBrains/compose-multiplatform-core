@@ -17,29 +17,31 @@
 package androidx.compose.foundation.lazy
 
 import androidx.compose.animation.core.snap
-import androidx.compose.foundation.animation.smoothScrollBy
+import androidx.compose.foundation.AutoTestFrameClock
+import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.preferredSize
-import androidx.compose.foundation.layout.preferredWidth
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.requiredHeight
+import androidx.compose.foundation.layout.requiredSize
+import androidx.compose.foundation.layout.requiredSizeIn
+import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.width
-import androidx.compose.runtime.Providers
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.testutils.assertIsEqualTo
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.platform.AmbientLayoutDirection
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.assertHeightIsEqualTo
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.assertIsEqualTo
 import androidx.compose.ui.test.assertLeftPositionInRootIsEqualTo
 import androidx.compose.ui.test.assertPositionInRootIsEqualTo
 import androidx.compose.ui.test.assertWidthIsEqualTo
@@ -54,6 +56,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import org.junit.Rule
 import org.junit.Test
@@ -73,19 +76,19 @@ class LazyRowTest {
         val items = listOf(1, 2).map { it.toString() }
         val indexedItems = listOf(3, 4, 5)
 
-        rule.setContent {
-            LazyRow(Modifier.preferredWidth(200.dp)) {
+        rule.setContentWithTestViewConfiguration {
+            LazyRow(Modifier.width(200.dp)) {
                 item {
                     Spacer(
-                        Modifier.preferredWidth(40.dp).fillParentMaxHeight().testTag(itemTestTag)
+                        Modifier.width(40.dp).fillParentMaxHeight().testTag(itemTestTag)
                     )
                 }
                 items(items) {
-                    Spacer(Modifier.preferredWidth(40.dp).fillParentMaxHeight().testTag(it))
+                    Spacer(Modifier.width(40.dp).fillParentMaxHeight().testTag(it))
                 }
                 itemsIndexed(indexedItems) { index, item ->
                     Spacer(
-                        Modifier.preferredWidth(41.dp).fillParentMaxHeight()
+                        Modifier.width(41.dp).fillParentMaxHeight()
                             .testTag("$index-$item")
                     )
                 }
@@ -115,11 +118,11 @@ class LazyRowTest {
     fun lazyRowAllowEmptyListItems() {
         val itemTag = "itemTag"
 
-        rule.setContent {
+        rule.setContentWithTestViewConfiguration {
             LazyRow {
                 items(emptyList<Any>()) { }
                 item {
-                    Spacer(Modifier.preferredSize(10.dp).testTag(itemTag))
+                    Spacer(Modifier.size(10.dp).testTag(itemTag))
                 }
             }
         }
@@ -133,14 +136,14 @@ class LazyRowTest {
         val items = listOf("1", null, "3")
         val nullTestTag = "nullTestTag"
 
-        rule.setContent {
-            LazyRow(Modifier.preferredWidth(200.dp)) {
+        rule.setContentWithTestViewConfiguration {
+            LazyRow(Modifier.width(200.dp)) {
                 items(items) {
                     if (it != null) {
-                        Spacer(Modifier.preferredWidth(101.dp).fillParentMaxHeight().testTag(it))
+                        Spacer(Modifier.width(101.dp).fillParentMaxHeight().testTag(it))
                     } else {
                         Spacer(
-                            Modifier.preferredWidth(101.dp).fillParentMaxHeight()
+                            Modifier.width(101.dp).fillParentMaxHeight()
                                 .testTag(nullTestTag)
                         )
                     }
@@ -162,11 +165,11 @@ class LazyRowTest {
     fun lazyRowOnlyVisibleItemsAdded() {
         val items = (1..4).map { it.toString() }
 
-        rule.setContent {
-            Box(Modifier.preferredWidth(200.dp)) {
+        rule.setContentWithTestViewConfiguration {
+            Box(Modifier.width(200.dp)) {
                 LazyRow {
                     items(items) {
-                        Spacer(Modifier.preferredWidth(101.dp).fillParentMaxHeight().testTag(it))
+                        Spacer(Modifier.width(101.dp).fillParentMaxHeight().testTag(it))
                     }
                 }
             }
@@ -189,11 +192,11 @@ class LazyRowTest {
     fun lazyRowScrollToShowItems123() {
         val items = (1..4).map { it.toString() }
 
-        rule.setContent {
-            Box(Modifier.preferredWidth(200.dp)) {
+        rule.setContentWithTestViewConfiguration {
+            Box(Modifier.width(200.dp)) {
                 LazyRow(Modifier.testTag(LazyListTag)) {
                     items(items) {
-                        Spacer(Modifier.preferredWidth(101.dp).fillParentMaxHeight().testTag(it))
+                        Spacer(Modifier.width(101.dp).fillParentMaxHeight().testTag(it))
                     }
                 }
             }
@@ -219,11 +222,11 @@ class LazyRowTest {
     fun lazyRowScrollToHideFirstItem() {
         val items = (1..4).map { it.toString() }
 
-        rule.setContent {
-            Box(Modifier.preferredWidth(200.dp)) {
+        rule.setContentWithTestViewConfiguration {
+            Box(Modifier.width(200.dp)) {
                 LazyRow(Modifier.testTag(LazyListTag)) {
                     items(items) {
-                        Spacer(Modifier.preferredWidth(101.dp).fillParentMaxHeight().testTag(it))
+                        Spacer(Modifier.width(101.dp).fillParentMaxHeight().testTag(it))
                     }
                 }
             }
@@ -246,11 +249,11 @@ class LazyRowTest {
     fun lazyRowScrollToShowItems234() {
         val items = (1..4).map { it.toString() }
 
-        rule.setContent {
-            Box(Modifier.preferredWidth(200.dp)) {
+        rule.setContentWithTestViewConfiguration {
+            Box(Modifier.width(200.dp)) {
                 LazyRow(Modifier.testTag(LazyListTag)) {
                     items(items) {
-                        Spacer(Modifier.preferredWidth(101.dp).fillParentMaxHeight().testTag(it))
+                        Spacer(Modifier.width(101.dp).fillParentMaxHeight().testTag(it))
                     }
                 }
             }
@@ -278,18 +281,18 @@ class LazyRowTest {
         val itemOutsideLazyRow = "itemOutsideLazyRow"
         var sameSizeItems by mutableStateOf(true)
 
-        rule.setContent {
+        rule.setContentWithTestViewConfiguration {
             Column {
                 LazyRow(Modifier.testTag(LazyListTag)) {
                     items(listOf(1, 2)) {
                         if (it == 1) {
-                            Spacer(Modifier.preferredSize(50.dp).testTag(itemInsideLazyRow))
+                            Spacer(Modifier.size(50.dp).testTag(itemInsideLazyRow))
                         } else {
-                            Spacer(Modifier.preferredSize(if (sameSizeItems) 50.dp else 70.dp))
+                            Spacer(Modifier.size(if (sameSizeItems) 50.dp else 70.dp))
                         }
                     }
                 }
-                Spacer(Modifier.preferredSize(50.dp).testTag(itemOutsideLazyRow))
+                Spacer(Modifier.size(50.dp).testTag(itemOutsideLazyRow))
             }
         }
 
@@ -302,10 +305,10 @@ class LazyRowTest {
         var lazyRowBounds = rule.onNodeWithTag(LazyListTag)
             .getUnclippedBoundsInRoot()
 
-        assertThat(lazyRowBounds.left.toIntPx()).isWithin1PixelFrom(0.dp.toIntPx())
-        assertThat(lazyRowBounds.right.toIntPx()).isWithin1PixelFrom(100.dp.toIntPx())
-        assertThat(lazyRowBounds.top.toIntPx()).isWithin1PixelFrom(0.dp.toIntPx())
-        assertThat(lazyRowBounds.bottom.toIntPx()).isWithin1PixelFrom(50.dp.toIntPx())
+        assertThat(lazyRowBounds.left.roundToPx()).isWithin1PixelFrom(0.dp.roundToPx())
+        assertThat(lazyRowBounds.right.roundToPx()).isWithin1PixelFrom(100.dp.roundToPx())
+        assertThat(lazyRowBounds.top.roundToPx()).isWithin1PixelFrom(0.dp.roundToPx())
+        assertThat(lazyRowBounds.bottom.roundToPx()).isWithin1PixelFrom(50.dp.roundToPx())
 
         rule.runOnIdle {
             sameSizeItems = false
@@ -322,26 +325,26 @@ class LazyRowTest {
         lazyRowBounds = rule.onNodeWithTag(LazyListTag)
             .getUnclippedBoundsInRoot()
 
-        assertThat(lazyRowBounds.left.toIntPx()).isWithin1PixelFrom(0.dp.toIntPx())
-        assertThat(lazyRowBounds.right.toIntPx()).isWithin1PixelFrom(120.dp.toIntPx())
-        assertThat(lazyRowBounds.top.toIntPx()).isWithin1PixelFrom(0.dp.toIntPx())
-        assertThat(lazyRowBounds.bottom.toIntPx()).isWithin1PixelFrom(70.dp.toIntPx())
+        assertThat(lazyRowBounds.left.roundToPx()).isWithin1PixelFrom(0.dp.roundToPx())
+        assertThat(lazyRowBounds.right.roundToPx()).isWithin1PixelFrom(120.dp.roundToPx())
+        assertThat(lazyRowBounds.top.roundToPx()).isWithin1PixelFrom(0.dp.roundToPx())
+        assertThat(lazyRowBounds.bottom.roundToPx()).isWithin1PixelFrom(70.dp.roundToPx())
     }
 
     private val firstItemTag = "firstItemTag"
     private val secondItemTag = "secondItemTag"
 
     private fun prepareLazyRowForAlignment(verticalGravity: Alignment.Vertical) {
-        rule.setContent {
+        rule.setContentWithTestViewConfiguration {
             LazyRow(
-                Modifier.testTag(LazyListTag).height(100.dp),
+                Modifier.testTag(LazyListTag).requiredHeight(100.dp),
                 verticalAlignment = verticalGravity
             ) {
                 items(listOf(1, 2)) {
                     if (it == 1) {
-                        Spacer(Modifier.preferredSize(50.dp).testTag(firstItemTag))
+                        Spacer(Modifier.size(50.dp).testTag(firstItemTag))
                     } else {
-                        Spacer(Modifier.preferredSize(70.dp).testTag(secondItemTag))
+                        Spacer(Modifier.size(70.dp).testTag(secondItemTag))
                     }
                 }
             }
@@ -358,8 +361,8 @@ class LazyRowTest {
 
         with(rule.density) {
             // Verify the height of the row
-            assertThat(lazyRowBounds.top.toIntPx()).isWithin1PixelFrom(0.dp.toIntPx())
-            assertThat(lazyRowBounds.bottom.toIntPx()).isWithin1PixelFrom(100.dp.toIntPx())
+            assertThat(lazyRowBounds.top.roundToPx()).isWithin1PixelFrom(0.dp.roundToPx())
+            assertThat(lazyRowBounds.bottom.roundToPx()).isWithin1PixelFrom(100.dp.roundToPx())
         }
     }
 
@@ -398,10 +401,12 @@ class LazyRowTest {
 
     @Test
     fun itemFillingParentWidth() {
-        rule.setContent {
-            LazyRow(Modifier.size(width = 100.dp, height = 150.dp)) {
+        rule.setContentWithTestViewConfiguration {
+            LazyRow(Modifier.requiredSize(width = 100.dp, height = 150.dp)) {
                 items(listOf(0)) {
-                    Spacer(Modifier.fillParentMaxWidth().height(50.dp).testTag(firstItemTag))
+                    Spacer(
+                        Modifier.fillParentMaxWidth().requiredHeight(50.dp).testTag(firstItemTag)
+                    )
                 }
             }
         }
@@ -413,10 +418,12 @@ class LazyRowTest {
 
     @Test
     fun itemFillingParentHeight() {
-        rule.setContent {
-            LazyRow(Modifier.size(width = 100.dp, height = 150.dp)) {
+        rule.setContentWithTestViewConfiguration {
+            LazyRow(Modifier.requiredSize(width = 100.dp, height = 150.dp)) {
                 items(listOf(0)) {
-                    Spacer(Modifier.width(50.dp).fillParentMaxHeight().testTag(firstItemTag))
+                    Spacer(
+                        Modifier.requiredWidth(50.dp).fillParentMaxHeight().testTag(firstItemTag)
+                    )
                 }
             }
         }
@@ -428,8 +435,8 @@ class LazyRowTest {
 
     @Test
     fun itemFillingParentSize() {
-        rule.setContent {
-            LazyRow(Modifier.size(width = 100.dp, height = 150.dp)) {
+        rule.setContentWithTestViewConfiguration {
+            LazyRow(Modifier.requiredSize(width = 100.dp, height = 150.dp)) {
                 items(listOf(0)) {
                     Spacer(Modifier.fillParentMaxSize().testTag(firstItemTag))
                 }
@@ -443,10 +450,14 @@ class LazyRowTest {
 
     @Test
     fun itemFillingParentWidthFraction() {
-        rule.setContent {
-            LazyRow(Modifier.size(width = 100.dp, height = 150.dp)) {
+        rule.setContentWithTestViewConfiguration {
+            LazyRow(Modifier.requiredSize(width = 100.dp, height = 150.dp)) {
                 items(listOf(0)) {
-                    Spacer(Modifier.fillParentMaxWidth(0.7f).height(50.dp).testTag(firstItemTag))
+                    Spacer(
+                        Modifier.fillParentMaxWidth(0.7f)
+                            .requiredHeight(50.dp)
+                            .testTag(firstItemTag)
+                    )
                 }
             }
         }
@@ -458,10 +469,14 @@ class LazyRowTest {
 
     @Test
     fun itemFillingParentHeightFraction() {
-        rule.setContent {
-            LazyRow(Modifier.size(width = 100.dp, height = 150.dp)) {
+        rule.setContentWithTestViewConfiguration {
+            LazyRow(Modifier.requiredSize(width = 100.dp, height = 150.dp)) {
                 items(listOf(0)) {
-                    Spacer(Modifier.width(50.dp).fillParentMaxHeight(0.3f).testTag(firstItemTag))
+                    Spacer(
+                        Modifier.requiredWidth(50.dp)
+                            .fillParentMaxHeight(0.3f)
+                            .testTag(firstItemTag)
+                    )
                 }
             }
         }
@@ -473,8 +488,8 @@ class LazyRowTest {
 
     @Test
     fun itemFillingParentSizeFraction() {
-        rule.setContent {
-            LazyRow(Modifier.size(width = 100.dp, height = 150.dp)) {
+        rule.setContentWithTestViewConfiguration {
+            LazyRow(Modifier.requiredSize(width = 100.dp, height = 150.dp)) {
                 items(listOf(0)) {
                     Spacer(Modifier.fillParentMaxSize(0.5f).testTag(firstItemTag))
                 }
@@ -489,8 +504,8 @@ class LazyRowTest {
     @Test
     fun itemFillingParentSizeParentResized() {
         var parentSize by mutableStateOf(100.dp)
-        rule.setContent {
-            LazyRow(Modifier.size(parentSize)) {
+        rule.setContentWithTestViewConfiguration {
+            LazyRow(Modifier.requiredSize(parentSize)) {
                 items(listOf(0)) {
                     Spacer(Modifier.fillParentMaxSize().testTag(firstItemTag))
                 }
@@ -508,15 +523,13 @@ class LazyRowTest {
 
     @Test
     fun scrollsLeftInRtl() {
-        val items = (1..4).map { it.toString() }
-
-        rule.setContent {
-            Providers(AmbientLayoutDirection provides LayoutDirection.Rtl) {
-                Box(Modifier.preferredWidth(100.dp)) {
+        rule.setContentWithTestViewConfiguration {
+            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                Box(Modifier.width(100.dp)) {
                     LazyRow(Modifier.testTag(LazyListTag)) {
-                        items(items) {
+                        items(4) {
                             Spacer(
-                                Modifier.preferredWidth(101.dp).fillParentMaxHeight().testTag(it)
+                                Modifier.width(101.dp).fillParentMaxHeight().testTag("$it")
                             )
                         }
                     }
@@ -527,20 +540,20 @@ class LazyRowTest {
         rule.onNodeWithTag(LazyListTag)
             .scrollBy(x = (-150).dp, density = rule.density)
 
-        rule.onNodeWithTag("1")
+        rule.onNodeWithTag("0")
             .assertDoesNotExist()
 
-        rule.onNodeWithTag("2")
+        rule.onNodeWithTag("1")
             .assertIsDisplayed()
     }
 
     @Test
     fun whenNotAnymoreAvailableItemWasDisplayed() {
         var items by mutableStateOf((1..30).toList())
-        rule.setContent {
-            LazyRow(Modifier.size(100.dp).testTag(LazyListTag)) {
+        rule.setContentWithTestViewConfiguration {
+            LazyRow(Modifier.requiredSize(100.dp).testTag(LazyListTag)) {
                 items(items) {
-                    Spacer(Modifier.size(20.dp).testTag("$it"))
+                    Spacer(Modifier.requiredSize(20.dp).testTag("$it"))
                 }
             }
         }
@@ -561,10 +574,10 @@ class LazyRowTest {
     @Test
     fun whenFewDisplayedItemsWereRemoved() {
         var items by mutableStateOf((1..10).toList())
-        rule.setContent {
-            LazyRow(Modifier.size(100.dp).testTag(LazyListTag)) {
+        rule.setContentWithTestViewConfiguration {
+            LazyRow(Modifier.requiredSize(100.dp).testTag(LazyListTag)) {
                 items(items) {
-                    Spacer(Modifier.size(20.dp).testTag("$it"))
+                    Spacer(Modifier.requiredSize(20.dp).testTag("$it"))
                 }
             }
         }
@@ -585,10 +598,10 @@ class LazyRowTest {
     @Test
     fun whenItemsBecameEmpty() {
         var items by mutableStateOf((1..10).toList())
-        rule.setContent {
-            LazyRow(Modifier.sizeIn(maxHeight = 100.dp).testTag(LazyListTag)) {
+        rule.setContentWithTestViewConfiguration {
+            LazyRow(Modifier.requiredSizeIn(maxHeight = 100.dp).testTag(LazyListTag)) {
                 items(items) {
-                    Spacer(Modifier.size(20.dp).testTag("$it"))
+                    Spacer(Modifier.requiredSize(20.dp).testTag("$it"))
                 }
             }
         }
@@ -616,10 +629,10 @@ class LazyRowTest {
     @Test
     fun scrollBackAndForth() {
         val items by mutableStateOf((1..20).toList())
-        rule.setContent {
-            LazyRow(Modifier.size(100.dp).testTag(LazyListTag)) {
+        rule.setContentWithTestViewConfiguration {
+            LazyRow(Modifier.requiredSize(100.dp).testTag(LazyListTag)) {
                 items(items) {
-                    Spacer(Modifier.size(20.dp).testTag("$it"))
+                    Spacer(Modifier.requiredSize(20.dp).testTag("$it"))
                 }
             }
         }
@@ -639,10 +652,10 @@ class LazyRowTest {
     @Test
     fun tryToScrollBackwardWhenAlreadyOnTop() {
         val items by mutableStateOf((1..20).toList())
-        rule.setContent {
-            LazyRow(Modifier.size(100.dp).testTag(LazyListTag)) {
+        rule.setContentWithTestViewConfiguration {
+            LazyRow(Modifier.requiredSize(100.dp).testTag(LazyListTag)) {
                 items(items) {
-                    Spacer(Modifier.size(20.dp).testTag("$it"))
+                    Spacer(Modifier.requiredSize(20.dp).testTag("$it"))
                 }
             }
         }
@@ -666,15 +679,15 @@ class LazyRowTest {
         val items = listOf(NotStable(1), NotStable(2))
         var firstItemRecomposed = 0
         var secondItemRecomposed = 0
-        rule.setContent {
-            LazyRow(Modifier.size(100.dp).testTag(LazyListTag)) {
+        rule.setContentWithTestViewConfiguration {
+            LazyRow(Modifier.requiredSize(100.dp).testTag(LazyListTag)) {
                 items(items) {
                     if (it.count == 1) {
                         firstItemRecomposed++
                     } else {
                         secondItemRecomposed++
                     }
-                    Spacer(Modifier.size(75.dp))
+                    Spacer(Modifier.requiredSize(75.dp))
                 }
             }
         }
@@ -697,11 +710,11 @@ class LazyRowTest {
     fun onlyOneMeasurePassForScrollEvent() {
         val items by mutableStateOf((1..20).toList())
         lateinit var state: LazyListState
-        rule.setContent {
+        rule.setContentWithTestViewConfiguration {
             state = rememberLazyListState()
-            LazyRow(Modifier.size(100.dp), state = state) {
+            LazyRow(Modifier.requiredSize(100.dp), state = state) {
                 items(items) {
-                    Spacer(Modifier.size(20.dp).testTag("$it"))
+                    Spacer(Modifier.requiredSize(20.dp).testTag("$it"))
                 }
             }
         }
@@ -721,16 +734,15 @@ class LazyRowTest {
 
     @Test
     fun stateUpdatedAfterScroll() {
-        val items by mutableStateOf((1..20).toList())
         lateinit var state: LazyListState
-        rule.setContent {
+        rule.setContentWithTestViewConfiguration {
             state = rememberLazyListState()
             LazyRow(
-                Modifier.size(100.dp).testTag(LazyListTag),
+                Modifier.requiredSize(100.dp).testTag(LazyListTag),
                 state = state
             ) {
-                items(items) {
-                    Spacer(Modifier.size(20.dp).testTag("$it"))
+                items(20) {
+                    Spacer(Modifier.requiredSize(20.dp).testTag("$it"))
                 }
             }
         }
@@ -749,8 +761,8 @@ class LazyRowTest {
             with(rule.density) {
                 // TODO(b/169232491): test scrolling doesn't appear to be scrolling exactly the right
                 //  number of pixels
-                val expectedOffset = 10.dp.toIntPx()
-                val tolerance = 2.dp.toIntPx()
+                val expectedOffset = 10.dp.roundToPx()
+                val tolerance = 2.dp.roundToPx()
                 assertThat(state.firstVisibleItemScrollOffset).isEqualTo(expectedOffset, tolerance)
             }
         }
@@ -758,16 +770,15 @@ class LazyRowTest {
 
     @Test
     fun stateUpdatedAfterScrollWithinTheSameItem() {
-        val items by mutableStateOf((1..20).toList())
         lateinit var state: LazyListState
-        rule.setContent {
+        rule.setContentWithTestViewConfiguration {
             state = rememberLazyListState()
             LazyRow(
-                Modifier.size(100.dp).testTag(LazyListTag),
+                Modifier.requiredSize(100.dp).testTag(LazyListTag),
                 state = state
             ) {
-                items(items) {
-                    Spacer(Modifier.size(20.dp).testTag("$it"))
+                items(20) {
+                    Spacer(Modifier.requiredSize(20.dp).testTag("$it"))
                 }
             }
         }
@@ -778,8 +789,8 @@ class LazyRowTest {
         rule.runOnIdle {
             assertThat(state.firstVisibleItemIndex).isEqualTo(0)
             with(rule.density) {
-                val expectedOffset = 10.dp.toIntPx()
-                val tolerance = 2.dp.toIntPx()
+                val expectedOffset = 10.dp.roundToPx()
+                val tolerance = 2.dp.roundToPx()
                 assertThat(state.firstVisibleItemScrollOffset)
                     .isEqualTo(expectedOffset, tolerance)
             }
@@ -788,14 +799,13 @@ class LazyRowTest {
 
     @Test
     fun initialScrollIsApplied() {
-        val items by mutableStateOf((0..20).toList())
         lateinit var state: LazyListState
-        val expectedOffset = with(rule.density) { 10.dp.toIntPx() }
-        rule.setContent {
+        val expectedOffset = with(rule.density) { 10.dp.roundToPx() }
+        rule.setContentWithTestViewConfiguration {
             state = rememberLazyListState(2, expectedOffset)
-            LazyRow(Modifier.size(100.dp).testTag(LazyListTag), state = state) {
-                items(items) {
-                    Spacer(Modifier.size(20.dp).testTag("$it"))
+            LazyRow(Modifier.requiredSize(100.dp).testTag(LazyListTag), state = state) {
+                items(20) {
+                    Spacer(Modifier.requiredSize(20.dp).testTag("$it"))
                 }
             }
         }
@@ -812,16 +822,15 @@ class LazyRowTest {
     @Test
     fun stateIsRestored() {
         val restorationTester = StateRestorationTester(rule)
-        val items by mutableStateOf((1..20).toList())
         var state: LazyListState? = null
         restorationTester.setContent {
             state = rememberLazyListState()
             LazyRow(
-                Modifier.size(100.dp).testTag(LazyListTag),
+                Modifier.requiredSize(100.dp).testTag(LazyListTag),
                 state = state!!
             ) {
-                items(items) {
-                    Spacer(Modifier.size(20.dp).testTag("$it"))
+                items(20) {
+                    Spacer(Modifier.requiredSize(20.dp).testTag("$it"))
                 }
             }
         }
@@ -845,23 +854,22 @@ class LazyRowTest {
 
     @Test
     fun snapToItemIndex() {
-        val items by mutableStateOf((1..20).toList())
         lateinit var state: LazyListState
-        rule.setContent {
+        rule.setContentWithTestViewConfiguration {
             state = rememberLazyListState()
             LazyRow(
-                Modifier.size(100.dp).testTag(LazyListTag),
+                Modifier.requiredSize(100.dp).testTag(LazyListTag),
                 state = state
             ) {
-                items(items) {
-                    Spacer(Modifier.size(20.dp).testTag("$it"))
+                items(20) {
+                    Spacer(Modifier.requiredSize(20.dp).testTag("$it"))
                 }
             }
         }
 
         rule.runOnIdle {
             runBlocking {
-                state.snapToItemIndex(3, 10)
+                state.scrollToItem(3, 10)
             }
             assertThat(state.firstVisibleItemIndex).isEqualTo(3)
             assertThat(state.firstVisibleItemScrollOffset).isEqualTo(10)
@@ -870,13 +878,12 @@ class LazyRowTest {
 
     @Test
     fun itemsAreNotRedrawnDuringScroll() {
-        val items = (0..20).toList()
         val redrawCount = Array(6) { 0 }
-        rule.setContent {
-            LazyRow(Modifier.size(100.dp).testTag(LazyListTag)) {
-                items(items) {
+        rule.setContentWithTestViewConfiguration {
+            LazyRow(Modifier.requiredSize(100.dp).testTag(LazyListTag)) {
+                items(21) {
                     Spacer(
-                        Modifier.size(20.dp)
+                        Modifier.requiredSize(20.dp)
                             .drawBehind { redrawCount[it]++ }
                     )
                 }
@@ -896,14 +903,13 @@ class LazyRowTest {
 
     @Test
     fun itemInvalidationIsNotCausingAnotherItemToRedraw() {
-        val items = (0..1).toList()
         val redrawCount = Array(2) { 0 }
         var stateUsedInDrawScope by mutableStateOf(false)
-        rule.setContent {
-            LazyRow(Modifier.size(100.dp).testTag(LazyListTag)) {
-                items(items) {
+        rule.setContentWithTestViewConfiguration {
+            LazyRow(Modifier.requiredSize(100.dp).testTag(LazyListTag)) {
+                items(2) {
                     Spacer(
-                        Modifier.size(50.dp)
+                        Modifier.requiredSize(50.dp)
                             .drawBehind {
                                 redrawCount[it]++
                                 if (it == 1) {
@@ -933,17 +939,17 @@ class LazyRowTest {
         val itemSize = with(rule.density) { 30.toDp() }
         val itemSizeMinusOne = with(rule.density) { 29.toDp() }
         lateinit var state: LazyListState
-        rule.setContent {
+        rule.setContentWithTestViewConfiguration {
             LazyRow(
-                Modifier.width(itemSizeMinusOne).testTag(LazyListTag),
+                Modifier.requiredWidth(itemSizeMinusOne).testTag(LazyListTag),
                 state = rememberLazyListState().also { state = it }
             ) {
                 items(items) {
                     Spacer(
                         if (it == 0) {
-                            Modifier.height(30.dp).width(itemSizeMinusOne)
+                            Modifier.requiredHeight(30.dp).requiredWidth(itemSizeMinusOne)
                         } else {
-                            Modifier.height(20.dp).width(itemSize)
+                            Modifier.requiredHeight(20.dp).requiredWidth(itemSize)
                         }
                     )
                 }
@@ -961,19 +967,19 @@ class LazyRowTest {
         val items = (0..2).toList()
         val itemSize = with(rule.density) { 30.toDp() }
         lateinit var state: LazyListState
-        rule.setContent {
+        rule.setContentWithTestViewConfiguration {
             LazyRow(
-                Modifier.width(itemSize * 1.75f).testTag(LazyListTag),
+                Modifier.requiredWidth(itemSize * 1.75f).testTag(LazyListTag),
                 state = rememberLazyListState().also { state = it }
             ) {
                 items(items) {
                     Spacer(
                         if (it == 0) {
-                            Modifier.height(30.dp).width(itemSize / 2)
+                            Modifier.requiredHeight(30.dp).requiredWidth(itemSize / 2)
                         } else if (it == 1) {
-                            Modifier.height(20.dp).width(itemSize / 2)
+                            Modifier.requiredHeight(20.dp).requiredWidth(itemSize / 2)
                         } else {
-                            Modifier.height(20.dp).width(itemSize)
+                            Modifier.requiredHeight(20.dp).requiredWidth(itemSize)
                         }
                     )
                 }
@@ -986,9 +992,85 @@ class LazyRowTest {
             .assertHeightIsEqualTo(30.dp)
     }
 
+    @Test
+    fun usedWithArray() {
+        val items = arrayOf("1", "2", "3")
+
+        val itemSize = with(rule.density) { 15.toDp() }
+
+        rule.setContentWithTestViewConfiguration {
+            LazyRow {
+                items(items) {
+                    Spacer(Modifier.requiredSize(itemSize).testTag(it))
+                }
+            }
+        }
+
+        rule.onNodeWithTag("1")
+            .assertLeftPositionInRootIsEqualTo(0.dp)
+
+        rule.onNodeWithTag("2")
+            .assertLeftPositionInRootIsEqualTo(itemSize)
+
+        rule.onNodeWithTag("3")
+            .assertLeftPositionInRootIsEqualTo(itemSize * 2)
+    }
+
+    @Test
+    fun usedWithArrayIndexed() {
+        val items = arrayOf("1", "2", "3")
+
+        val itemSize = with(rule.density) { 15.toDp() }
+
+        rule.setContentWithTestViewConfiguration {
+            LazyRow {
+                itemsIndexed(items) { index, item ->
+                    Spacer(Modifier.requiredSize(itemSize).testTag("$index*$item"))
+                }
+            }
+        }
+
+        rule.onNodeWithTag("0*1")
+            .assertLeftPositionInRootIsEqualTo(0.dp)
+
+        rule.onNodeWithTag("1*2")
+            .assertLeftPositionInRootIsEqualTo(itemSize)
+
+        rule.onNodeWithTag("2*3")
+            .assertLeftPositionInRootIsEqualTo(itemSize * 2)
+    }
+
+    @Test
+    fun changeItemsCountAndScrollImmediately() {
+        lateinit var state: LazyListState
+        var count by mutableStateOf(100)
+        val composedIndexes = mutableListOf<Int>()
+        rule.setContent {
+            state = rememberLazyListState()
+            LazyRow(Modifier.fillMaxHeight().width(10.dp), state) {
+                items(count) { index ->
+                    composedIndexes.add(index)
+                    Box(Modifier.size(20.dp))
+                }
+            }
+        }
+
+        rule.runOnIdle {
+            composedIndexes.clear()
+            count = 10
+            runBlocking(AutoTestFrameClock()) {
+                state.scrollToItem(50)
+            }
+            composedIndexes.forEach {
+                assertThat(it).isLessThan(count)
+            }
+            assertThat(state.firstVisibleItemIndex).isEqualTo(9)
+        }
+    }
+
     private fun LazyListState.scrollBy(offset: Dp) {
-        runBlocking {
-            smoothScrollBy(with(rule.density) { offset.toIntPx().toFloat() }, snap())
+        runBlocking(Dispatchers.Main + AutoTestFrameClock()) {
+            animateScrollBy(with(rule.density) { offset.roundToPx().toFloat() }, snap())
         }
     }
 }

@@ -41,8 +41,8 @@ class JavacTestProcessorTest {
         val testProcessor = object : JavacTestProcessor() {
             override fun doProcess(annotations: Set<XTypeElement>, roundEnv: XRoundEnv): Boolean {
                 invoked.set(true)
-                val annotatedElements = roundEnv.getElementsAnnotatedWith(
-                    OtherAnnotation::class.java
+                val annotatedElements = roundEnv.getTypeElementsAnnotatedWith(
+                    OtherAnnotation::class.qualifiedName!!
                 )
                 val targetElement = xProcessingEnv.requireTypeElement("foo.bar.Baz")
                 assertThat(

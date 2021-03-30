@@ -24,7 +24,6 @@ import androidx.room.ext.RxJava2TypeNames
 import androidx.room.ext.RxJava3TypeNames
 import androidx.room.compiler.processing.XMethodElement
 import androidx.room.compiler.processing.XType
-import androidx.room.ext.getTypeElementsAnnotatedWith
 import androidx.room.testing.TestInvocation
 import androidx.room.testing.TestProcessor
 import androidx.room.vo.ShortcutMethod
@@ -537,7 +536,7 @@ abstract class ShortcutMethodProcessorTest<out T : ShortcutMethod>(
                         .forAnnotations(annotation, Dao::class)
                         .nextRunHandler { invocation ->
                             val (owner, methods) = invocation.roundEnv
-                                .getTypeElementsAnnotatedWith(Dao::class.java)
+                                .getTypeElementsAnnotatedWith(Dao::class.qualifiedName!!)
                                 .map {
                                     Pair(
                                         it,

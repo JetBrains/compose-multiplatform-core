@@ -18,18 +18,18 @@ package androidx.compose.material.textfield
 
 import android.os.Build
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.width
-import androidx.compose.material.AmbientContentColor
+import androidx.compose.foundation.layout.requiredHeight
+import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.material.GOLDEN_MATERIAL
+import androidx.compose.material.LocalContentColor
 import androidx.compose.material.Text
 import androidx.compose.material.TextField
 import androidx.compose.material.setMaterialContent
-import androidx.compose.runtime.Providers
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.testutils.assertAgainstGolden
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.AmbientLayoutDirection
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.test.SemanticsNodeInteraction
@@ -46,6 +46,7 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.FlakyTest
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
@@ -79,7 +80,8 @@ class TextFieldScreenshotTest {
                 TextField(
                     value = "Text",
                     onValueChange = {},
-                    label = { Text("Label") }
+                    label = { Text("Label") },
+                    modifier = Modifier.requiredWidth(280.dp)
                 )
             }
         }
@@ -94,7 +96,8 @@ class TextFieldScreenshotTest {
                 TextField(
                     value = "",
                     onValueChange = {},
-                    label = { Text("Label") }
+                    label = { Text("Label") },
+                    modifier = Modifier.requiredWidth(280.dp)
                 )
             }
         }
@@ -109,7 +112,8 @@ class TextFieldScreenshotTest {
                 TextField(
                     value = "",
                     onValueChange = {},
-                    label = { Text("Label") }
+                    label = { Text("Label") },
+                    modifier = Modifier.requiredWidth(280.dp)
                 )
             }
         }
@@ -122,12 +126,13 @@ class TextFieldScreenshotTest {
     @Test
     fun textField_focused_rtl() {
         rule.setMaterialContent {
-            Providers(AmbientLayoutDirection provides LayoutDirection.Rtl) {
+            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
                 Box(Modifier.semantics(mergeDescendants = true) {}.testTag(TextFieldTag)) {
                     TextField(
                         value = "",
                         onValueChange = {},
-                        label = { Text("Label") }
+                        label = { Text("Label") },
+                        modifier = Modifier.requiredWidth(280.dp)
                     )
                 }
             }
@@ -145,8 +150,8 @@ class TextFieldScreenshotTest {
                 value = "Input",
                 onValueChange = {},
                 label = { Text("Label") },
-                isErrorValue = true,
-                modifier = Modifier.testTag(TextFieldTag)
+                isError = true,
+                modifier = Modifier.requiredWidth(280.dp).testTag(TextFieldTag)
             )
         }
 
@@ -162,8 +167,8 @@ class TextFieldScreenshotTest {
                 value = "",
                 onValueChange = {},
                 label = { Text("Label") },
-                isErrorValue = true,
-                modifier = Modifier.testTag(TextFieldTag)
+                isError = true,
+                modifier = Modifier.requiredWidth(280.dp).testTag(TextFieldTag)
             )
         }
 
@@ -173,11 +178,11 @@ class TextFieldScreenshotTest {
     @Test
     fun textField_textColor_fallbackToContentColor() {
         rule.setMaterialContent {
-            Providers(AmbientContentColor provides Color.Green) {
+            CompositionLocalProvider(LocalContentColor provides Color.Green) {
                 TextField(
                     value = "Hello, world!",
                     onValueChange = {},
-                    modifier = Modifier.testTag(TextFieldTag)
+                    modifier = Modifier.requiredWidth(280.dp).testTag(TextFieldTag)
                 )
             }
         }
@@ -192,7 +197,9 @@ class TextFieldScreenshotTest {
                 value = "Text",
                 onValueChange = {},
                 label = { Text("Label") },
-                modifier = Modifier.height(300.dp).testTag(TextFieldTag)
+                modifier = Modifier.requiredHeight(300.dp)
+                    .requiredWidth(280.dp)
+                    .testTag(TextFieldTag)
             )
         }
 
@@ -205,7 +212,9 @@ class TextFieldScreenshotTest {
             TextField(
                 value = "Text",
                 onValueChange = {},
-                modifier = Modifier.height(300.dp).testTag(TextFieldTag)
+                modifier = Modifier.requiredHeight(300.dp)
+                    .requiredWidth(280.dp)
+                    .testTag(TextFieldTag)
             )
         }
 
@@ -220,7 +229,9 @@ class TextFieldScreenshotTest {
                 onValueChange = {},
                 label = { Text("Label") },
                 placeholder = { Text("placeholder") },
-                modifier = Modifier.height(300.dp).testTag(TextFieldTag)
+                modifier = Modifier.requiredHeight(300.dp)
+                    .requiredWidth(280.dp)
+                    .testTag(TextFieldTag)
             )
         }
 
@@ -236,7 +247,9 @@ class TextFieldScreenshotTest {
                 value = "",
                 onValueChange = {},
                 placeholder = { Text("placeholder") },
-                modifier = Modifier.height(300.dp).testTag(TextFieldTag)
+                modifier = Modifier.requiredHeight(300.dp)
+                    .requiredWidth(280.dp)
+                    .testTag(TextFieldTag)
             )
         }
 
@@ -252,7 +265,9 @@ class TextFieldScreenshotTest {
                 value = "",
                 onValueChange = {},
                 label = { Text("Label") },
-                modifier = Modifier.height(300.dp).testTag(TextFieldTag)
+                modifier = Modifier.requiredHeight(300.dp)
+                    .requiredWidth(280.dp)
+                    .testTag(TextFieldTag)
             )
         }
 
@@ -267,7 +282,7 @@ class TextFieldScreenshotTest {
                 onValueChange = {},
                 singleLine = true,
                 label = { Text("Label") },
-                modifier = Modifier.testTag(TextFieldTag)
+                modifier = Modifier.requiredWidth(280.dp).testTag(TextFieldTag)
             )
         }
 
@@ -281,7 +296,7 @@ class TextFieldScreenshotTest {
                 value = "Text",
                 onValueChange = {},
                 singleLine = true,
-                modifier = Modifier.testTag(TextFieldTag)
+                modifier = Modifier.requiredWidth(280.dp).testTag(TextFieldTag)
             )
         }
 
@@ -297,7 +312,7 @@ class TextFieldScreenshotTest {
                 placeholder = { Text("placeholder") },
                 label = { Text("Label") },
                 singleLine = true,
-                modifier = Modifier.testTag(TextFieldTag)
+                modifier = Modifier.requiredWidth(280.dp).testTag(TextFieldTag)
             )
         }
 
@@ -314,7 +329,7 @@ class TextFieldScreenshotTest {
                 onValueChange = {},
                 placeholder = { Text("placeholder") },
                 singleLine = true,
-                modifier = Modifier.testTag(TextFieldTag)
+                modifier = Modifier.requiredWidth(280.dp).testTag(TextFieldTag)
             )
         }
 
@@ -332,7 +347,7 @@ class TextFieldScreenshotTest {
                 value = "",
                 onValueChange = {},
                 label = { Text("Label") },
-                modifier = Modifier.testTag(TextFieldTag)
+                modifier = Modifier.requiredWidth(280.dp).testTag(TextFieldTag)
             )
         }
 
@@ -345,7 +360,7 @@ class TextFieldScreenshotTest {
             TextField(
                 value = TextFieldValue("Text"),
                 onValueChange = {},
-                modifier = Modifier.testTag(TextFieldTag),
+                modifier = Modifier.requiredWidth(280.dp).testTag(TextFieldTag),
                 singleLine = true,
                 enabled = false
             )
@@ -361,7 +376,7 @@ class TextFieldScreenshotTest {
                 value = TextFieldValue("Text"),
                 onValueChange = {},
                 singleLine = true,
-                modifier = Modifier.testTag(TextFieldTag),
+                modifier = Modifier.requiredWidth(280.dp).testTag(TextFieldTag),
                 enabled = false
             )
         }
@@ -378,12 +393,18 @@ class TextFieldScreenshotTest {
                 value = longText,
                 onValueChange = { },
                 singleLine = true,
-                modifier = Modifier.testTag(TextFieldTag).width(300.dp),
+                modifier = Modifier.testTag(TextFieldTag).requiredWidth(300.dp),
                 enabled = false
             )
         }
 
+        rule.mainClock.autoAdvance = false
+
         rule.onNodeWithTag(TextFieldTag).performGesture { swipeLeft() }
+
+        // wait for swipe to finish
+        rule.waitForIdle()
+        rule.mainClock.advanceTimeBy(250)
 
         assertAgainstGolden("textField_disabled_notScrolled")
     }
@@ -394,7 +415,7 @@ class TextFieldScreenshotTest {
             TextField(
                 value = TextFieldValue("Text"),
                 onValueChange = {},
-                modifier = Modifier.testTag(TextFieldTag),
+                modifier = Modifier.requiredWidth(280.dp).testTag(TextFieldTag),
                 enabled = true,
                 readOnly = true
             )
@@ -409,7 +430,7 @@ class TextFieldScreenshotTest {
             TextField(
                 value = TextFieldValue("Text"),
                 onValueChange = {},
-                modifier = Modifier.testTag(TextFieldTag),
+                modifier = Modifier.requiredWidth(280.dp).testTag(TextFieldTag),
                 enabled = true,
                 readOnly = true
             )
@@ -420,20 +441,26 @@ class TextFieldScreenshotTest {
         assertAgainstGolden("textField_readOnly_focused")
     }
 
+    @FlakyTest(bugId = 178510985)
     @Test
     fun textField_readOnly_scrolled() {
         rule.setContent {
             TextField(
                 value = longText,
                 onValueChange = { },
-                modifier = Modifier.testTag(TextFieldTag).width(300.dp),
+                modifier = Modifier.testTag(TextFieldTag).requiredWidth(300.dp),
                 singleLine = true,
                 enabled = true,
                 readOnly = true
             )
         }
+        rule.mainClock.autoAdvance = false
 
         rule.onNodeWithTag(TextFieldTag).performGesture { swipeLeft() }
+
+        // wait for swipe to finish
+        rule.waitForIdle()
+        rule.mainClock.advanceTimeBy(250)
 
         assertAgainstGolden("textField_readOnly_scrolled")
     }

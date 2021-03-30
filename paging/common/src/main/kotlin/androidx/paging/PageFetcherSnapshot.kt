@@ -29,7 +29,6 @@ import androidx.paging.PagingSource.LoadResult
 import androidx.paging.PagingSource.LoadResult.Page
 import androidx.paging.PagingSource.LoadResult.Page.Companion.COUNT_UNDEFINED
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.BUFFERED
@@ -42,10 +41,8 @@ import kotlinx.coroutines.flow.conflate
 import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.runningReduce
 import kotlinx.coroutines.launch
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -61,7 +58,8 @@ internal class PageFetcherSnapshot<Key : Any, Value : Any>(
     private val retryFlow: Flow<Unit>,
     private val triggerRemoteRefresh: Boolean = false,
     val remoteMediatorConnection: RemoteMediatorConnection<Key, Value>? = null,
-    private val invalidate: () -> Unit = {}
+    private val previousPagingState: PagingState<Key, Value>? = null,
+    private val invalidate: () -> Unit = {},
 ) {
     init {
         require(config.jumpThreshold == COUNT_UNDEFINED || pagingSource.jumpingSupported) {
@@ -92,7 +90,6 @@ internal class PageFetcherSnapshot<Key : Any, Value : Any>(
                 // Protect against races where a subsequent call to submitData invoked close(),
                 // but a pageEvent arrives after closing causing ClosedSendChannelException.
                 try {
-                    @OptIn(ExperimentalCoroutinesApi::class)
                     send(it)
                 } catch (e: ClosedSendChannelException) {
                     // Safe to drop PageEvent here, since collection has been cancelled.
@@ -152,7 +149,9 @@ internal class PageFetcherSnapshot<Key : Any, Value : Any>(
 
         if (triggerRemoteRefresh) {
             remoteMediatorConnection?.let {
-                val pagingState = stateHolder.withLock { state -> state.currentPagingState(null) }
+                val pagingState = previousPagingState ?: stateHolder.withLock { state ->
+                    state.currentPagingState(null)
+                }
                 it.requestLoad(REFRESH, pagingState)
             }
         }
@@ -197,17 +196,8 @@ internal class PageFetcherSnapshot<Key : Any, Value : Any>(
         pageEventChannelFlowJob.cancel()
     }
 
-    suspend fun refreshKeyInfo(): PagingState<Key, Value>? {
-        return stateHolder.withLock { state ->
-            lastHint?.let { lastHint ->
-                if (state.pages.isEmpty()) {
-                    // Default to initialKey if no pages loaded.
-                    null
-                } else {
-                    state.currentPagingState(lastHint)
-                }
-            }
-        }
+    suspend fun currentPagingState(): PagingState<Key, Value> {
+        return stateHolder.withLock { state -> state.currentPagingState(lastHint) }
     }
 
     private fun CoroutineScope.startConsumingHints() {
@@ -241,10 +231,9 @@ internal class PageFetcherSnapshot<Key : Any, Value : Any>(
      *
      * @param loadType [PREPEND] or [APPEND]
      */
-    @OptIn(ExperimentalCoroutinesApi::class)
     private suspend fun Flow<Int>.collectAsGenerationalViewportHints(
         loadType: LoadType
-    ) = flatMapLatest { generationId ->
+    ) = simpleFlatMapLatest { generationId ->
         // Reset state to Idle and setup a new flow for consuming incoming load hints.
         // Subsequent generationIds are normally triggered by cancellation.
         stateHolder.withLock { state ->
@@ -252,7 +241,7 @@ internal class PageFetcherSnapshot<Key : Any, Value : Any>(
             // direction. In the case of the terminal page getting dropped, a new
             // generationId will be sent after load state is updated to Idle.
             if (state.sourceLoadStates.get(loadType) == NotLoading.Complete) {
-                return@flatMapLatest flowOf()
+                return@simpleFlatMapLatest flowOf()
             } else if (state.sourceLoadStates.get(loadType) !is Error) {
                 state.setSourceLoadState(loadType, NotLoading.Incomplete)
             }
@@ -264,7 +253,7 @@ internal class PageFetcherSnapshot<Key : Any, Value : Any>(
             .map { hint -> GenerationalViewportHint(generationId, hint) }
     }
         // Prioritize new hints that would load the maximum number of items.
-        .runningReduce { previous, next ->
+        .simpleRunningReduce { previous, next ->
             if (next.shouldPrioritizeOver(previous, loadType)) next else previous
         }
         .conflate()
@@ -356,15 +345,31 @@ internal class PageFetcherSnapshot<Key : Any, Value : Any>(
         stateHolder.withLock { state ->
             when (loadType) {
                 PREPEND -> {
-                    val firstPageIndex =
+                    var firstPageIndex =
                         state.initialPageIndex + generationalHint.hint.originalPageOffsetFirst - 1
+
+                    // If the pages before the first page in presenter have been dropped in
+                    // fetcher, then we cannot count them towards loadedItems.
+                    if (firstPageIndex > state.pages.lastIndex) {
+                        itemsLoaded += config.pageSize * (firstPageIndex - state.pages.lastIndex)
+                        firstPageIndex = state.pages.lastIndex
+                    }
+
                     for (pageIndex in 0..firstPageIndex) {
                         itemsLoaded += state.pages[pageIndex].data.size
                     }
                 }
                 APPEND -> {
-                    val lastPageIndex =
+                    var lastPageIndex =
                         state.initialPageIndex + generationalHint.hint.originalPageOffsetLast + 1
+
+                    // If the pages after the last page in presenter have been dropped in
+                    // fetcher, then we cannot count them towards loadedItems.
+                    if (lastPageIndex < 0) {
+                        itemsLoaded += config.pageSize * -lastPageIndex
+                        lastPageIndex = 0
+                    }
+
                     for (pageIndex in lastPageIndex..state.pages.lastIndex) {
                         itemsLoaded += state.pages[pageIndex].data.size
                     }

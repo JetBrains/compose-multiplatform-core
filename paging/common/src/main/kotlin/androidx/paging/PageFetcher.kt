@@ -20,14 +20,10 @@ import androidx.paging.LoadType.APPEND
 import androidx.paging.LoadType.PREPEND
 import androidx.paging.LoadType.REFRESH
 import androidx.paging.RemoteMediator.InitializeAction.LAUNCH_INITIAL_REFRESH
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.filterNotNull
-import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.onStart
-import kotlinx.coroutines.flow.scan
 import kotlinx.coroutines.launch
 
 internal class PageFetcher<Key : Any, Value : Any>(
@@ -51,8 +47,7 @@ internal class PageFetcher<Key : Any, Value : Any>(
 
     // The object built by paging builder can maintain the scope so that on rotation we don't stop
     // the paging.
-    @OptIn(ExperimentalCoroutinesApi::class)
-    val flow: Flow<PagingData<Value>> = channelFlow {
+    val flow: Flow<PagingData<Value>> = simpleChannelFlow {
         val remoteMediatorAccessor = remoteMediator?.let {
             RemoteMediatorAccessor(this, it)
         }
@@ -62,24 +57,30 @@ internal class PageFetcher<Key : Any, Value : Any>(
                 @OptIn(ExperimentalPagingApi::class)
                 emit(remoteMediatorAccessor?.initialize() == LAUNCH_INITIAL_REFRESH)
             }
-            .scan(null) { previousGeneration: GenerationInfo<Key, Value>?,
+            .simpleScan(null) { previousGeneration: GenerationInfo<Key, Value>?,
                 triggerRemoteRefresh: Boolean ->
                 var pagingSource = generateNewPagingSource(
-                    previousGeneration?.snapshot?.pagingSource
+                    previousPagingSource = previousGeneration?.snapshot?.pagingSource
                 )
                 while (pagingSource.invalid) {
-                    pagingSource = generateNewPagingSource(
-                        previousGeneration?.snapshot?.pagingSource
-                    )
+                    pagingSource = generateNewPagingSource(previousPagingSource = pagingSource)
                 }
 
-                var previousPagingState = previousGeneration?.snapshot?.refreshKeyInfo()
+                var previousPagingState = previousGeneration?.snapshot?.currentPagingState()
+
+                // If cached PagingState had pages loaded, but previous generation didn't, use
+                // the cached PagingState to handle cases where invalidation happens too quickly,
+                // so that getRefreshKey and remote refresh at least have some data to work with.
+                if (previousPagingState?.pages.isNullOrEmpty() &&
+                    previousGeneration?.state?.pages?.isNotEmpty() == true
+                ) {
+                    previousPagingState = previousGeneration.state
+                }
+
                 // If previous generation was invalidated before anchorPosition was established,
                 // re-use last PagingState that successfully loaded pages and has an anchorPosition.
                 // This prevents rapid invalidation from deleting the anchorPosition if the
-                // previous generation didn't have time to load before getting invalidated. We
-                // check for anchorPosition before overriding to prevent empty PagingState from
-                // overriding a PagingState with pages loaded, but no anchorPosition.
+                // previous generation didn't have time to load before getting invalidated.
                 if (previousPagingState?.anchorPosition == null &&
                     previousGeneration?.state?.anchorPosition != null
                 ) {
@@ -101,13 +102,14 @@ internal class PageFetcher<Key : Any, Value : Any>(
                         // initialization or PagingSource invalidation.
                         triggerRemoteRefresh = triggerRemoteRefresh,
                         remoteMediatorConnection = remoteMediatorAccessor,
-                        invalidate = this@PageFetcher::refresh
+                        invalidate = this@PageFetcher::refresh,
+                        previousPagingState = previousPagingState,
                     ),
                     state = previousPagingState,
                 )
             }
             .filterNotNull()
-            .mapLatest { generation ->
+            .simpleMapLatest { generation ->
                 val downstreamFlow = generation.snapshot
                     .injectRemoteEvents(remoteMediatorAccessor)
 
@@ -124,8 +126,7 @@ internal class PageFetcher<Key : Any, Value : Any>(
     ): Flow<PageEvent<Value>> {
         if (accessor == null) return pageEventFlow
 
-        @OptIn(ExperimentalCoroutinesApi::class)
-        return channelFlow {
+        return simpleChannelFlow {
             val loadStates = MutableLoadStateCollection()
 
             suspend fun dispatchIfValid(type: LoadType, state: LoadState) {
@@ -166,7 +167,6 @@ internal class PageFetcher<Key : Any, Value : Any>(
                     prev = it
                 }
             }
-
             this@injectRemoteEvents.pageEventFlow.collect { event ->
                 when (event) {
                     is PageEvent.Insert -> {

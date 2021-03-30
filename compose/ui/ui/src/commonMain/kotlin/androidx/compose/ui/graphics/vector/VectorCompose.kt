@@ -13,16 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@file:OptIn(ExperimentalComposeApi::class)
+
 package androidx.compose.ui.graphics.vector
 
 import androidx.compose.runtime.AbstractApplier
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.Composition
-import androidx.compose.runtime.CompositionReference
-import androidx.compose.runtime.ExperimentalComposeApi
-import androidx.compose.runtime.compositionFor
-import androidx.compose.runtime.emit
+import androidx.compose.runtime.ComposeNode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.PathFillType
 import androidx.compose.ui.graphics.StrokeCap
@@ -41,8 +37,8 @@ fun Group(
     clipPathData: List<PathNode> = EmptyPath,
     content: @Composable () -> Unit
 ) {
-    emit<GroupComponent, VectorApplier>(
-        ctor = { GroupComponent() },
+    ComposeNode<GroupComponent, VectorApplier>(
+        factory = { GroupComponent() },
         update = {
             set(name) { this.name = it }
             set(rotation) { this.rotation = it }
@@ -76,8 +72,8 @@ fun Path(
     trimPathEnd: Float = DefaultTrimPathEnd,
     trimPathOffset: Float = DefaultTrimPathOffset
 ) {
-    emit<PathComponent, VectorApplier>(
-        ctor = { PathComponent() },
+    ComposeNode<PathComponent, VectorApplier>(
+        factory = { PathComponent() },
         update = {
             set(name) { this.name = it }
             set(pathData) { this.pathData = it }
@@ -95,21 +91,6 @@ fun Path(
             set(trimPathOffset) { this.trimPathOffset = it }
         }
     )
-}
-
-@Suppress("NAME_SHADOWING")
-internal fun composeVector(
-    container: VectorComponent,
-    parent: CompositionReference,
-    composable: @Composable (viewportWidth: Float, viewportHeight: Float) -> Unit
-): Composition = compositionFor(
-    container,
-    VectorApplier(container.root),
-    parent
-).apply {
-    setContent {
-        composable(container.viewportWidth, container.viewportHeight)
-    }
 }
 
 class VectorApplier(root: VNode) : AbstractApplier<VNode>(root) {

@@ -25,11 +25,11 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.unit.Bounds
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.launch
 
 private val defaultAnimation = spring<Float>()
 
@@ -37,15 +37,14 @@ private val defaultAnimation = spring<Float>()
  * Fire-and-forget animation function for [Float]. This Composable function is overloaded for
  * different parameter types such as [Dp], [Color][androidx.compose.ui.graphics.Color], [Offset],
  * etc. When the provided [targetValue] is changed, the animation will run automatically. If there
- * is already an animation in-flight whe [targetValue] changes, the on-going animation will adjust
+ * is already an animation in-flight when [targetValue] changes, the on-going animation will adjust
  * course to animate towards the new target value.
  *
- * [animateAsState] returns a [State] object. The value of the state object will continuously be
- * updated by the animation until the animation finishes.
+ * [animateFloatAsState] returns a [State] object. The value of the state object will continuously
+ * be updated by the animation until the animation finishes.
  *
- * Note, [animateAsState] cannot be canceled/stopped without removing this composable function
- * from the tree. See [animatedFloat][androidx.compose.animation.animatedFloat] for cancelable
- * animations.
+ * Note, [animateFloatAsState] cannot be canceled/stopped without removing this composable function
+ * from the tree. See [Animatable] for cancelable animations.
  *
  * @sample androidx.compose.animation.core.samples.AlphaAnimationSample
  *
@@ -58,7 +57,7 @@ private val defaultAnimation = spring<Float>()
  * @return A [State] object, the value of which is updated by animation.
  */
 @Composable
-fun animateAsState(
+fun animateFloatAsState(
     targetValue: Float,
     animationSpec: AnimationSpec<Float> = defaultAnimation,
     visibilityThreshold: Float = 0.01f,
@@ -70,36 +69,27 @@ fun animateAsState(
         } else {
             animationSpec
         }
-    val animationState: AnimationState<Float, AnimationVector1D> = remember {
-        AnimationState(targetValue)
-    }
-
-    val currentEndListener by rememberUpdatedState(finishedListener)
-    LaunchedEffect(targetValue, animationSpec) {
-        animationState.animateTo(
-            targetValue,
-            resolvedAnimSpec,
-            // If the previous animation was interrupted (i.e. not finished), make it sequential.
-            !animationState.isFinished
-        )
-        currentEndListener?.invoke(animationState.value)
-    }
-    return animationState
+    return animateValueAsState(
+        targetValue,
+        Float.VectorConverter,
+        resolvedAnimSpec,
+        visibilityThreshold,
+        finishedListener
+    )
 }
 
 /**
  * Fire-and-forget animation function for [Dp]. This Composable function is overloaded for
  * different parameter types such as [Float], [Color][androidx.compose.ui.graphics.Color], [Offset],
  * etc. When the provided [targetValue] is changed, the animation will run automatically. If there
- * is already an animation in-flight whe [targetValue] changes, the on-going animation will adjust
+ * is already an animation in-flight when [targetValue] changes, the on-going animation will adjust
  * course to animate towards the new target value.
  *
- * [animateAsState] returns a [State] object. The value of the state object will continuously be
+ * [animateDpAsState] returns a [State] object. The value of the state object will continuously be
  * updated by the animation until the animation finishes.
  *
- * Note, [animateAsState] cannot be canceled/stopped without removing this composable function
- * from the tree. See [animatedValue][androidx.compose.animation.animatedValue] for cancelable
- * animations.
+ * Note, [animateDpAsState] cannot be canceled/stopped without removing this composable function
+ * from the tree. See [Animatable] for cancelable animations.
  *
  * @sample androidx.compose.animation.core.samples.DpAnimationSample
  *
@@ -110,14 +100,12 @@ fun animateAsState(
  * @return A [State] object, the value of which is updated by animation.
  */
 @Composable
-fun animateAsState(
+fun animateDpAsState(
     targetValue: Dp,
-    animationSpec: AnimationSpec<Dp> = remember {
-        spring(visibilityThreshold = Dp.VisibilityThreshold)
-    },
+    animationSpec: AnimationSpec<Dp> = dpDefaultSpring,
     finishedListener: ((Dp) -> Unit)? = null
 ): State<Dp> {
-    return animateAsState(
+    return animateValueAsState(
         targetValue,
         Dp.VectorConverter,
         animationSpec,
@@ -125,57 +113,22 @@ fun animateAsState(
     )
 }
 
-/**
- * Fire-and-forget animation function for [DpOffset]. This Composable function is overloaded for
- * different parameter types such as [Dp], [Color][androidx.compose.ui.graphics.Color], [Offset],
- * etc. When the provided [targetValue] is changed, the animation will run automatically. If there
- * is already an animation in-flight whe [targetValue] changes, the on-going animation will adjust
- * course to animate towards the new target value.
- *
- * [animateAsState] returns a [State] object. The value of the state object will continuously be
- * updated by the animation until the animation finishes.
- *
- * Note, [animateAsState] cannot be canceled/stopped without removing this composable function
- * from the tree. See [animatedValue][androidx.compose.animation.animatedValue] for cancelable
- * animations.
- *
- *     val position: DpOffset by animateAsState(
- *         if (selected) DpOffset(0.dp, 0.dp) else DpOffset(20.dp, 20.dp))
- *
- * @param targetValue Target value of the animation
- * @param animationSpec The animation that will be used to change the value through time. Physics
- *                    animation will be used by default.
- * @param finishedListener An optional end listener to get notified when the animation is finished.
- * @return A [State] object, the value of which is updated by animation.
- */
-@Composable
-fun animateAsState(
-    targetValue: DpOffset,
-    animationSpec: AnimationSpec<DpOffset> = remember {
-        spring(visibilityThreshold = DpOffset.VisibilityThreshold)
-    },
-    finishedListener: ((DpOffset) -> Unit)? = null
-): State<DpOffset> {
-    return animateAsState(
-        targetValue, DpOffset.VectorConverter, animationSpec, finishedListener = finishedListener
-    )
-}
+private val dpDefaultSpring = spring<Dp>(visibilityThreshold = Dp.VisibilityThreshold)
 
 /**
  * Fire-and-forget animation function for [Size]. This Composable function is overloaded for
  * different parameter types such as [Dp], [Color][androidx.compose.ui.graphics.Color], [Offset],
  * etc. When the provided [targetValue] is changed, the animation will run automatically. If there
- * is already an animation in-flight whe [targetValue] changes, the on-going animation will adjust
+ * is already an animation in-flight when [targetValue] changes, the on-going animation will adjust
  * course to animate towards the new target value.
  *
- * [animateAsState] returns a [State] object. The value of the state object will continuously be
+ * [animateSizeAsState] returns a [State] object. The value of the state object will continuously be
  * updated by the animation until the animation finishes.
  *
- * Note, [animateAsState] cannot be canceled/stopped without removing this composable function
- * from the tree. See [animatedValue][androidx.compose.animation.animatedValue] for cancelable
- * animations.
+ * Note, [animateSizeAsState] cannot be canceled/stopped without removing this composable function
+ * from the tree. See [Animatable] for cancelable animations.
  *
- *     val size: Size by animateAsState(
+ *     val size: Size by animateSizeAsState(
  *         if (selected) Size(20f, 20f) else Size(10f, 10f))
  *
  * @param targetValue Target value of the animation
@@ -185,14 +138,12 @@ fun animateAsState(
  * @return A [State] object, the value of which is updated by animation.
  */
 @Composable
-fun animateAsState(
+fun animateSizeAsState(
     targetValue: Size,
-    animationSpec: AnimationSpec<Size> = remember {
-        spring(visibilityThreshold = Size.VisibilityThreshold)
-    },
+    animationSpec: AnimationSpec<Size> = sizeDefaultSpring,
     finishedListener: ((Size) -> Unit)? = null
 ): State<Size> {
-    return animateAsState(
+    return animateValueAsState(
         targetValue,
         Size.VectorConverter,
         animationSpec,
@@ -200,58 +151,20 @@ fun animateAsState(
     )
 }
 
-/**
- * Fire-and-forget animation function for [Bounds]. This Composable function is overloaded for
- * different parameter types such as [Dp], [Color][androidx.compose.ui.graphics.Color], [Offset],
- * etc. When the provided [targetValue] is changed, the animation will run automatically. If there
- * is already an animation in-flight whe [targetValue] changes, the on-going animation will adjust
- * course to animate towards the new target value.
- *
- * [animateAsState] returns a [State] object. The value of the state object will continuously be
- * updated by the animation until the animation finishes.
- *
- * Note, [animateAsState] cannot be canceled/stopped without removing this composable function
- * from the tree. See [animatedValue][androidx.compose.animation.animatedValue] for cancelable
- * animations.
- *
- *    val bounds: Bounds by animateAsState(
- *        if (collapsed) Bounds(0.dp, 0.dp, 10.dp, 20.dp) else Bounds(0.dp, 0.dp, 100.dp, 200.dp))
- *
- * @param targetValue Target value of the animation
- * @param animationSpec The animation that will be used to change the value through time. Physics
- *                    animation will be used by default.
- * @param finishedListener An optional end listener to get notified when the animation is finished.
- * @return A [State] object, the value of which is updated by animation.
- */
-@Composable
-fun animateAsState(
-    targetValue: Bounds,
-    animationSpec: AnimationSpec<Bounds> = remember {
-        spring(visibilityThreshold = Bounds.VisibilityThreshold)
-    },
-    finishedListener: ((Bounds) -> Unit)? = null
-): State<Bounds> {
-    return animateAsState(
-        targetValue,
-        Bounds.VectorConverter,
-        animationSpec,
-        finishedListener = finishedListener
-    )
-}
+private val sizeDefaultSpring = spring(visibilityThreshold = Size.VisibilityThreshold)
 
 /**
  * Fire-and-forget animation function for [Offset]. This Composable function is overloaded for
  * different parameter types such as [Dp], [Color][androidx.compose.ui.graphics.Color], [Float],
  * etc. When the provided [targetValue] is changed, the animation will run automatically. If there
- * is already an animation in-flight whe [targetValue] changes, the on-going animation will adjust
+ * is already an animation in-flight when [targetValue] changes, the on-going animation will adjust
  * course to animate towards the new target value.
  *
- * [animateAsState] returns a [State] object. The value of the state object will continuously be
- * updated by the animation until the animation finishes.
+ * [animateOffsetAsState] returns a [State] object. The value of the state object will
+ * continuously be updated by the animation until the animation finishes.
  *
- * Note, [animateAsState] cannot be canceled/stopped without removing this composable function
- * from the tree. See [animatedValue][androidx.compose.animation.animatedValue] for cancelable
- * animations.
+ * Note, [animateOffsetAsState] cannot be canceled/stopped without removing this composable function
+ * from the tree. See [Animatable] for cancelable animations.
  *
  * @sample androidx.compose.animation.core.samples.AnimateOffsetSample
  *
@@ -262,33 +175,32 @@ fun animateAsState(
  * @return A [State] object, the value of which is updated by animation.
  */
 @Composable
-fun animateAsState(
+fun animateOffsetAsState(
     targetValue: Offset,
-    animationSpec: AnimationSpec<Offset> = remember {
-        spring(visibilityThreshold = Offset.VisibilityThreshold)
-    },
+    animationSpec: AnimationSpec<Offset> = offsetDefaultSpring,
     finishedListener: ((Offset) -> Unit)? = null
 ): State<Offset> {
-    return animateAsState(
+    return animateValueAsState(
         targetValue, Offset.VectorConverter, animationSpec, finishedListener = finishedListener
     )
 }
+
+private val offsetDefaultSpring = spring(visibilityThreshold = Offset.VisibilityThreshold)
 
 /**
  * Fire-and-forget animation function for [Rect]. This Composable function is overloaded for
  * different parameter types such as [Dp], [Color][androidx.compose.ui.graphics.Color], [Offset],
  * etc. When the provided [targetValue] is changed, the animation will run automatically. If there
- * is already an animation in-flight whe [targetValue] changes, the on-going animation will adjust
+ * is already an animation in-flight when [targetValue] changes, the on-going animation will adjust
  * course to animate towards the new target value.
  *
- * [animateAsState] returns a [State] object. The value of the state object will continuously be
+ * [animateRectAsState] returns a [State] object. The value of the state object will continuously be
  * updated by the animation until the animation finishes.
  *
- * Note, [animateAsState] cannot be canceled/stopped without removing this composable function
- * from the tree. See [animatedValue][androidx.compose.animation.animatedValue] for cancelable
- * animations.
+ * Note, [animateRectAsState] cannot be canceled/stopped without removing this composable function
+ * from the tree. See [Animatable] for cancelable animations.
  *
- *    val bounds: Rect by animateAsState(
+ *    val bounds: Rect by animateRectAsState(
  *        if (enabled) Rect(0f, 0f, 100f, 100f) else Rect(8f, 8f, 80f, 80f))
  *
  * @param targetValue Target value of the animation
@@ -298,31 +210,30 @@ fun animateAsState(
  * @return A [State] object, the value of which is updated by animation.
  */
 @Composable
-fun animateAsState(
+fun animateRectAsState(
     targetValue: Rect,
-    animationSpec: AnimationSpec<Rect> = remember {
-        spring(visibilityThreshold = Rect.VisibilityThreshold)
-    },
+    animationSpec: AnimationSpec<Rect> = rectDefaultSpring,
     finishedListener: ((Rect) -> Unit)? = null
 ): State<Rect> {
-    return animateAsState(
+    return animateValueAsState(
         targetValue, Rect.VectorConverter, animationSpec, finishedListener = finishedListener
     )
 }
+
+private val rectDefaultSpring = spring(visibilityThreshold = Rect.VisibilityThreshold)
 
 /**
  * Fire-and-forget animation function for [Int]. This Composable function is overloaded for
  * different parameter types such as [Dp], [Color][androidx.compose.ui.graphics.Color], [Offset],
  * etc. When the provided [targetValue] is changed, the animation will run automatically. If there
- * is already an animation in-flight whe [targetValue] changes, the on-going animation will adjust
+ * is already an animation in-flight when [targetValue] changes, the on-going animation will adjust
  * course to animate towards the new target value.
  *
- * [animateAsState] returns a [State] object. The value of the state object will continuously be
+ * [animateIntAsState] returns a [State] object. The value of the state object will continuously be
  * updated by the animation until the animation finishes.
  *
- * Note, [animateAsState] cannot be canceled/stopped without removing this composable function
- * from the tree. See [animatedValue][androidx.compose.animation.animatedValue] for cancelable
- * animations.
+ * Note, [animateIntAsState] cannot be canceled/stopped without removing this composable function
+ * from the tree. See [Animatable] for cancelable animations.
  *
  * @param targetValue Target value of the animation
  * @param animationSpec The animation that will be used to change the value through time. Physics
@@ -331,29 +242,30 @@ fun animateAsState(
  * @return A [State] object, the value of which is updated by animation.
  */
 @Composable
-fun animateAsState(
+fun animateIntAsState(
     targetValue: Int,
-    animationSpec: AnimationSpec<Int> = remember { spring(visibilityThreshold = 1) },
+    animationSpec: AnimationSpec<Int> = intDefaultSpring,
     finishedListener: ((Int) -> Unit)? = null
 ): State<Int> {
-    return animateAsState(
+    return animateValueAsState(
         targetValue, Int.VectorConverter, animationSpec, finishedListener = finishedListener
     )
 }
+
+private val intDefaultSpring = spring(visibilityThreshold = Int.VisibilityThreshold)
 
 /**
  * Fire-and-forget animation function for [IntOffset]. This Composable function is overloaded for
  * different parameter types such as [Dp], [Color][androidx.compose.ui.graphics.Color], [Offset],
  * etc. When the provided [targetValue] is changed, the animation will run automatically. If there
- * is already an animation in-flight whe [targetValue] changes, the on-going animation will adjust
+ * is already an animation in-flight when [targetValue] changes, the on-going animation will adjust
  * course to animate towards the new target value.
  *
- * [animateAsState] returns a [State] object. The value of the state object will continuously be
- * updated by the animation until the animation finishes.
+ * [animateIntOffsetAsState] returns a [State] object. The value of the state object will
+ * continuously be updated by the animation until the animation finishes.
  *
- * Note, [animateAsState] cannot be canceled/stopped without removing this composable function
- * from the tree. See [animatedValue][androidx.compose.animation.animatedValue] for cancelable
- * animations.
+ * Note, [animateIntOffsetAsState] cannot be canceled/stopped without removing this composable
+ * function from the tree. See [Animatable] for cancelable animations.
  *
  * @sample androidx.compose.animation.core.samples.AnimateOffsetSample
  *
@@ -364,31 +276,30 @@ fun animateAsState(
  * @return A [State] object, the value of which is updated by animation.
  */
 @Composable
-fun animateAsState(
+fun animateIntOffsetAsState(
     targetValue: IntOffset,
-    animationSpec: AnimationSpec<IntOffset> = remember {
-        spring(visibilityThreshold = IntOffset.VisibilityThreshold)
-    },
+    animationSpec: AnimationSpec<IntOffset> = intOffsetDefaultSpring,
     finishedListener: ((IntOffset) -> Unit)? = null
 ): State<IntOffset> {
-    return animateAsState(
+    return animateValueAsState(
         targetValue, IntOffset.VectorConverter, animationSpec, finishedListener = finishedListener
     )
 }
+
+private val intOffsetDefaultSpring = spring(visibilityThreshold = IntOffset.VisibilityThreshold)
 
 /**
  * Fire-and-forget animation function for [IntSize]. This Composable function is overloaded for
  * different parameter types such as [Dp], [Color][androidx.compose.ui.graphics.Color], [Offset],
  * etc. When the provided [targetValue] is changed, the animation will run automatically. If there
- * is already an animation in-flight whe [targetValue] changes, the on-going animation will adjust
+ * is already an animation in-flight when [targetValue] changes, the on-going animation will adjust
  * course to animate towards the new target value.
  *
- * [animateAsState] returns a [State] object. The value of the state object will continuously be
- * updated by the animation until the animation finishes.
+ * [animateIntSizeAsState] returns a [State] object. The value of the state object will continuously
+ * be updated by the animation until the animation finishes.
  *
- * Note, [animateAsState] cannot be canceled/stopped without removing this composable function
- * from the tree. See [animatedValue][androidx.compose.animation.animatedValue] for cancelable
- * animations.
+ * Note, [animateIntSizeAsState] cannot be canceled/stopped without removing this composable function
+ * from the tree. See [Animatable] for cancelable animations.
  *
  * @param targetValue Target value of the animation
  * @param animationSpec The animation that will be used to change the value through time. Physics
@@ -397,70 +308,30 @@ fun animateAsState(
  * @return A [State] object, the value of which is updated by animation.
  */
 @Composable
-fun animateAsState(
+fun animateIntSizeAsState(
     targetValue: IntSize,
-    animationSpec: AnimationSpec<IntSize> = remember {
-        spring(visibilityThreshold = IntSize.VisibilityThreshold)
-    },
+    animationSpec: AnimationSpec<IntSize> = intSizeDefaultSpring,
     finishedListener: ((IntSize) -> Unit)? = null
 ): State<IntSize> {
-    return animateAsState(
+    return animateValueAsState(
         targetValue, IntSize.VectorConverter, animationSpec, finishedListener = finishedListener
     )
 }
 
-/**
- * Fire-and-forget animation function for [AnimationVector]. This Composable function is overloaded
- * for different parameter types such as [Dp], [Color][androidx.compose.ui.graphics.Color], [Offset]
- * etc. When the provided [targetValue] is changed, the animation will run automatically. If there
- * is already an animation in-flight whe [targetValue] changes, the on-going animation will adjust
- * course to animate towards the new target value.
- *
- * [animateAsState] returns a [State] object. The value of the state object will continuously be
- * updated by the animation until the animation finishes.
- *
- * Note, [animateAsState] cannot be canceled/stopped without removing this composable function
- * from the tree. See [animatedValue][androidx.compose.animation.animatedValue] for cancelable
- * animations.
- *
- * @param targetValue Target value of the animation
- * @param animationSpec The animation that will be used to change the value through time. Physics
- *                    animation will be used by default.
- * @param visibilityThreshold An optional threshold to define when the animation value can be
- *                            considered close enough to the targetValue to end the animation.
- * @param finishedListener An optional end listener to get notified when the animation is finished.
- * @return A [State] object, the value of which is updated by animation.
- */
-@Composable
-fun <T : AnimationVector> animateAsState(
-    targetValue: T,
-    animationSpec: AnimationSpec<T> = remember {
-        spring(visibilityThreshold = visibilityThreshold)
-    },
-    visibilityThreshold: T? = null,
-    finishedListener: ((T) -> Unit)? = null
-): State<T> {
-    return animateAsState(
-        targetValue,
-        remember { TwoWayConverter<T, T>({ it }, { it }) },
-        animationSpec,
-        finishedListener = finishedListener
-    )
-}
+private val intSizeDefaultSpring = spring(visibilityThreshold = IntSize.VisibilityThreshold)
 
 /**
  * Fire-and-forget animation function for any value. This Composable function is overloaded for
  * different parameter types such as [Dp], [Color][androidx.compose.ui.graphics.Color], [Offset],
  * etc. When the provided [targetValue] is changed, the animation will run automatically. If there
- * is already an animation in-flight whe [targetValue] changes, the on-going animation will adjust
+ * is already an animation in-flight when [targetValue] changes, the on-going animation will adjust
  * course to animate towards the new target value.
  *
- * [animateAsState] returns a [State] object. The value of the state object will continuously be
+ * [animateValueAsState] returns a [State] object. The value of the state object will continuously be
  * updated by the animation until the animation finishes.
  *
- * Note, [animateAsState] cannot be canceled/stopped without removing this composable function
- * from the tree. See [animatedValue][androidx.compose.animation.animatedValue] for cancelable
- * animations.
+ * Note, [animateValueAsState] cannot be canceled/stopped without removing this composable function
+ * from the tree. See [Animatable] for cancelable animations.
  *
  * @sample androidx.compose.animation.core.samples.ArbitraryValueTypeTransitionSample
  *
@@ -475,7 +346,7 @@ fun <T : AnimationVector> animateAsState(
  * @return A [State] object, the value of which is updated by animation.
  */
 @Composable
-fun <T, V : AnimationVector> animateAsState(
+fun <T, V : AnimationVector> animateValueAsState(
     targetValue: T,
     typeConverter: TwoWayConverter<T, V>,
     animationSpec: AnimationSpec<T> = remember {
@@ -484,19 +355,26 @@ fun <T, V : AnimationVector> animateAsState(
     visibilityThreshold: T? = null,
     finishedListener: ((T) -> Unit)? = null
 ): State<T> {
-    val animationState: AnimationState<T, V> = remember(typeConverter) {
-        AnimationState(targetValue, typeConverter = typeConverter)
-    }
 
+    val animatable = remember { Animatable(targetValue, typeConverter) }
     val listener by rememberUpdatedState(finishedListener)
-    LaunchedEffect(targetValue, animationSpec) {
-        animationState.animateTo(
-            targetValue,
-            animationSpec,
-            // If the previous animation was interrupted (i.e. not finished), make it sequential.
-            !animationState.isFinished
-        )
-        listener?.invoke(animationState.value)
+    val channel = remember { Channel<T>(Channel.CONFLATED) }
+    channel.offer(targetValue)
+    LaunchedEffect(channel) {
+        for (target in channel) {
+            // This additional poll is needed because when the channel suspends on receive and
+            // two values are produced before consumers' dispatcher resumes, only the first value
+            // will be received.
+            // It may not be an issue elsewhere, but in animation we want to avoid being one
+            // frame late.
+            val newTarget = channel.poll() ?: target
+            launch {
+                if (newTarget != animatable.targetValue) {
+                    animatable.animateTo(newTarget, animationSpec)
+                    listener?.invoke(animatable.value)
+                }
+            }
+        }
     }
-    return animationState
+    return animatable.asState()
 }

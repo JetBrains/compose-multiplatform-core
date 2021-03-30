@@ -74,18 +74,24 @@ fun Project.configureLint(lintOptions: LintOptions, extension: AndroidXExtension
         project.rootProject.project(":lint-checks")
     )
 
+    // The purpose of this specific project is to test that lint is running, so
+    // it contains expected violations that we do not want to trigger a build failure
+    val isTestingLintItself = (project.path == ":lint-checks:integration-tests")
+
     // If -PupdateLintBaseline was set we should update the baseline if it exists
-    val updateLintBaseline = hasProperty(UPDATE_LINT_BASELINE)
+    val updateLintBaseline = hasProperty(UPDATE_LINT_BASELINE) && !isTestingLintItself
 
     // Lint is configured entirely in afterEvaluate so that individual projects cannot easily
-    // disable individual checks in the DSL for any reason. That being said, when rolling out a new
-    // check as fatal, it can be beneficial to set it to fatal above this comment. This allows you
-    // to override it in a build script rather than messing with the baseline files. This is
-    // especially relevant for checks which cause hundreds or more failures.
+    // disable individual checks in the DSL for any reason.
     afterEvaluate {
         lintOptions.apply {
-            isAbortOnError = true
+            if (!isTestingLintItself) {
+                isAbortOnError = true
+            }
             isIgnoreWarnings = true
+
+            // Workaround for b/177359055 where 27.2.0-beta04 incorrectly computes severity.
+            isCheckAllWarnings = true
 
             // Skip lintVital tasks on assemble. We explicitly run lintRelease for libraries.
             isCheckReleaseBuilds = false
@@ -117,6 +123,12 @@ fun Project.configureLint(lintOptions: LintOptions, extension: AndroidXExtension
             // Disable until it works for our projects, b/171986505
             disable("JavaPluginLanguageLevel")
 
+            // Disable the TODO check until we have a policy that requires it.
+            disable("StopShip")
+
+            // Disable a check that conflicts with our workaround for b/177359055
+            disable("LintBaseline")
+
             // Provide stricter enforcement for project types intended to run on a device.
             if (extension.type.compilationTarget == CompilationTarget.DEVICE) {
                 fatal("Assert")
@@ -143,6 +155,13 @@ fun Project.configureLint(lintOptions: LintOptions, extension: AndroidXExtension
                 } else {
                     disable("MissingTranslation")
                 }
+            } else {
+                disable("BanUncheckedReflection")
+            }
+
+            // Only run certain checks where API tracking is important.
+            if (extension.type.checkApi is RunApiTasks.No) {
+                disable("IllegalExperimentalApiUsage")
             }
 
             // If the project has not overridden the lint config, set the default one.
@@ -152,33 +171,34 @@ fun Project.configureLint(lintOptions: LintOptions, extension: AndroidXExtension
                 lintConfig = project.rootProject.file("buildSrc/lint.xml")
             }
 
-            // Teams shouldn't be able to generate new baseline files or add new violations to
-            // existing files; they should only be able to burn down existing violations. That's
-            // hard to enforce, though, so we'll just prevent them from creating new ones.
-            //
-            // If you are working on enabling a new check -- and ONLY if you are working on a new
-            // check, then you may need to comment out this line  so that you can suppress all
-            // the new failures.
-            if (lintBaseline.exists()) {
-                if (updateLintBaseline) {
-                    // Continue generating baselines regardless of errors
-                    isAbortOnError = false
-                    // Avoid printing every single lint error to the terminal
-                    textReport = false
-                    val lintDebugTask = tasks.named("lintDebug")
-                    lintDebugTask.configure {
-                        it.doFirst {
-                            lintBaseline.delete()
-                        }
+            // Ideally, teams aren't able to add new violations to a baseline file; they should only
+            // be able to burn down existing violations. That's hard to enforce, though, so we'll
+            // generally allow teams to update their baseline files with a publicly-known flag.
+            if (updateLintBaseline) {
+                // Continue generating baselines regardless of errors
+                isAbortOnError = false
+                // Avoid printing every single lint error to the terminal
+                textReport = false
+                val lintDebugTask = tasks.named("lintDebug")
+                lintDebugTask.configure {
+                    it.doFirst {
+                        lintBaseline.delete()
                     }
-                    val lintTask = tasks.named("lint")
-                    lintTask.configure {
-                        it.doFirst {
-                            lintBaseline.delete()
-                        }
-                    }
-                    System.setProperty(LINT_BASELINE_CONTINUE, "true")
                 }
+                val lintTask = tasks.named("lint")
+                lintTask.configure {
+                    it.doFirst {
+                        lintBaseline.delete()
+                    }
+                }
+                // Continue running after errors or after creating a new, blank baseline file.
+                System.setProperty(LINT_BASELINE_CONTINUE, "true")
+            }
+
+            // Lint complains when it generates a new, blank baseline file so we'll just avoid
+            // telling it about the baseline if one doesn't already exist OR we're explicitly
+            // updating (and creating) baseline files.
+            if (updateLintBaseline or lintBaseline.exists()) {
                 baseline(lintBaseline)
             }
         }

@@ -42,58 +42,33 @@ private const val UNIT_TYPE_EM = 0x02L shl 32 // 0x2_0000_0000
 /**
  * An enum class defining for type of [TextUnit].
  */
-enum class TextUnitType(val value: Int) {
-    @Deprecated(
-        "Renamed to TextUnitType.Unspecified",
-        replaceWith = ReplaceWith("TextUnitType.Unspecified", "androidx.compose.ui.unit")
-    )
-    Inherit(0),
-    Unspecified(0),
-    Sp(1),
-    Em(2)
+enum class TextUnitType {
+    Unspecified,
+    Sp,
+    Em
 }
 
 /**
  * The unit used for text related dimension value.
  *
- * This unit can hold either scaled pixels (SP), relative font size (em) and special unit for
- * indicating inheriting from other style.
+ * This unit can hold either scaled pixels (SP), relative font size (EM) and special unit
+ * Unspecified for indicating inheriting from other style or using the default value. It can be
+ * created with [sp] or [em]. (e.g. 15.sp or 18.em) which can be applied to [Int], [Double],
+ * and [Float].
  *
  * Note that do not store this value in your persistent storage or send to another process since
  * the internal representation may be changed in future.
  */
 @Suppress("EXPERIMENTAL_FEATURE_WARNING")
 @Immutable
-inline class TextUnit(val packedValue: Long) {
-    /**
-     * Add two [TextUnit]s together.
-     *
-     * This operation works only if all the operands are the same unit type and not they are not
-     * equal to [TextUnit.Unspecified].
-     * The result of this operation is the same unit type of the given one.
-     */
-    inline operator fun plus(other: TextUnit): TextUnit {
-        checkArithmetic(this, other)
-        return pack(rawType, value + other.value)
-    }
-
-    /**
-     * Subtract a [TextUnit] from another one.
-
-     * This operation works only if all the operands are the same unit type and not they are not
-     * equal to [TextUnit.Unspecified].
-     * The result of this operation is the same unit type of the given one.
-     */
-    inline operator fun minus(other: TextUnit): TextUnit {
-        checkArithmetic(this, other)
-        return pack(rawType, value - other.value)
-    }
-
+inline class TextUnit internal constructor(internal val packedValue: Long) {
     /**
      * This is the same as multiplying the [TextUnit] by -1.0.
      *
      * This operation works only if the operand is not equal to [TextUnit.Unspecified].
      * The result of this operation is the same unit type of the given one.
+     *
+     * @throws IllegalArgumentException if this [TextUnit]'s type is [TextUnitType.Unspecified].
      */
     inline operator fun unaryMinus(): TextUnit {
         checkArithmetic(this)
@@ -105,6 +80,8 @@ inline class TextUnit(val packedValue: Long) {
      *
      * This operation works only if the left operand is not equal to [TextUnit.Unspecified].
      * The result of this operation is the same unit type of the given one.
+     *
+     * @throws IllegalArgumentException if this [TextUnit]'s type is [TextUnitType.Unspecified].
      */
     inline operator fun div(other: Float): TextUnit {
         checkArithmetic(this)
@@ -116,6 +93,8 @@ inline class TextUnit(val packedValue: Long) {
      *
      * This operation works only if the left operand is not equal to [TextUnit.Unspecified].
      * The result of this operation is the same unit type of the given one.
+     *
+     * @throws IllegalArgumentException if this [TextUnit]'s type is [TextUnitType.Unspecified].
      */
     inline operator fun div(other: Double): TextUnit {
         checkArithmetic(this)
@@ -127,6 +106,8 @@ inline class TextUnit(val packedValue: Long) {
      *
      * This operation works only if the left operand is not equal to [TextUnit.Unspecified].
      * The result of this operation is the same unit type of the given one.
+     *
+     * @throws IllegalArgumentException if this [TextUnit]'s type is [TextUnitType.Unspecified].
      */
     inline operator fun div(other: Int): TextUnit {
         checkArithmetic(this)
@@ -134,21 +115,12 @@ inline class TextUnit(val packedValue: Long) {
     }
 
     /**
-     * Divide by another [TextUnit] to get a scalar.
-     *
-     * This operation works only if all the operands are the same unit type and they are not
-     * equal to [TextUnit.Unspecified].
-     */
-    inline operator fun div(other: TextUnit): Float {
-        checkArithmetic(this, other)
-        return value / other.value
-    }
-
-    /**
      * Multiply a [TextUnit] by a scalar.
      *
      * This operation works only if the left operand is not equal to [TextUnit.Unspecified].
      * The result of this operation is the same unit type of the given one.
+     *
+     * @throws IllegalArgumentException if this [TextUnit]'s type is [TextUnitType.Unspecified].
      */
     inline operator fun times(other: Float): TextUnit {
         checkArithmetic(this)
@@ -160,6 +132,8 @@ inline class TextUnit(val packedValue: Long) {
      *
      * This operation works only if the left operand is not equal to [TextUnit.Unspecified].
      * The result of this operation is the same unit type of the given one.
+     *
+     * @throws IllegalArgumentException if this [TextUnit]'s type is [TextUnitType.Unspecified].
      */
     inline operator fun times(other: Double): TextUnit {
         checkArithmetic(this)
@@ -171,6 +145,8 @@ inline class TextUnit(val packedValue: Long) {
      *
      * This operation works only if the left operand is not equal to [TextUnit.Unspecified].
      * The result of this operation is the same unit type of the given one.
+     *
+     * @throws IllegalArgumentException if this [TextUnit]'s type is [TextUnitType.Unspecified].
      */
     inline operator fun times(other: Int): TextUnit {
         checkArithmetic(this)
@@ -179,17 +155,21 @@ inline class TextUnit(val packedValue: Long) {
 
     /**
      * Support comparing Dimensions with comparison operators.
+     *
+     * @return 0 if this [TextUnit] equals to the [other], a negative number if it's less than the
+     * [other], or a positive number if it's greater than the [other].
+     * @throws IllegalArgumentException if this [TextUnit] and the [other] has different
+     * [TextUnitType]s or either of the two has the [TextUnitType] equals to
+     * [TextUnitType.Unspecified].
      */
     inline operator fun compareTo(other: TextUnit): Int {
         checkArithmetic(this, other)
         return value.compareTo(other.value)
     }
 
-    @Suppress("DEPRECATION")
     override fun toString(): String {
         return when (type) {
             TextUnitType.Unspecified -> "Unspecified"
-            TextUnitType.Inherit -> "Inherit"
             TextUnitType.Sp -> "$value.sp"
             TextUnitType.Em -> "$value.em"
         }
@@ -200,50 +180,13 @@ inline class TextUnit(val packedValue: Long) {
             arrayOf(TextUnitType.Unspecified, TextUnitType.Sp, TextUnitType.Em)
 
         /**
-         * Creates a SP unit [TextUnit].
-         */
-        fun Sp(value: Int) = pack(UNIT_TYPE_SP, value.toFloat())
-
-        /**
-         * Creates a SP unit [TextUnit].
-         */
-        fun Sp(value: Float) = pack(UNIT_TYPE_SP, value)
-
-        /**
-         * Creates a SP unit [TextUnit].
-         */
-        fun Sp(value: Double) = pack(UNIT_TYPE_SP, value.toFloat())
-
-        /**
-         * Creates an EM unit [TextUnit].
-         */
-        fun Em(value: Int) = pack(UNIT_TYPE_EM, value.toFloat())
-
-        /**
-         * Creates an EM unit [TextUnit].
-         */
-        fun Em(value: Float) = pack(UNIT_TYPE_EM, value)
-
-        /**
-         * Creates an EM unit [TextUnit].
-         */
-        fun Em(value: Double) = pack(UNIT_TYPE_EM, value.toFloat())
-
-        /**
          * A special [TextUnit] instance for representing inheriting from parent value.
+         *
+         * Notice that performing arithmetic operations on [Unspecified] may result in an
+         * [IllegalArgumentException].
          */
         @Stable
         val Unspecified = pack(UNIT_TYPE_UNSPECIFIED, Float.NaN)
-
-        /**
-         * A special [TextUnit] instance for representing inheriting from parent value.
-         */
-        @Stable
-        @Deprecated(
-            "Renamed to TextUnit.Unspecified",
-            replaceWith = ReplaceWith("TextUnit.Unspecified", "androidx.compose.ui.unit")
-        )
-        val Inherit = Unspecified
     }
 
     /**
@@ -256,19 +199,8 @@ inline class TextUnit(val packedValue: Long) {
 
     /**
      * A type information of this TextUnit.
-     *
-     * @throws RuntimeException if unknown unknown unit type is appeared.
      */
     val type: TextUnitType get() = TextUnitTypes[(rawType ushr 32).toInt()]
-
-    /**
-     * True if this is [TextUnit.Unspecified], otherwise false.
-     */
-    @Deprecated(
-        "Renamed to TextUnit.isUnspecified",
-        replaceWith = ReplaceWith("isUnspecified", "androidx.compose.ui.unit")
-    )
-    val isInherit get() = isUnspecified
 
     /**
      * True if this is a SP unit type.
@@ -281,7 +213,10 @@ inline class TextUnit(val packedValue: Long) {
     val isEm get() = rawType == UNIT_TYPE_EM
 
     /**
-     * Returns the value
+     * Returns the value of this [TextUnit].
+     *
+     * For example, the value of 3.sp equals to 3, and value of 5.em equals to 5. The value of
+     * [TextUnit]s whose [TextUnitType] is [TextUnitType.Unspecified] is undefined.
      */
     val value get() = Float.fromBits((packedValue and 0xFFFF_FFFFL).toInt())
 }
@@ -379,75 +314,8 @@ inline operator fun Int.times(other: TextUnit): TextUnit {
     return pack(other.rawType, this * other.value)
 }
 
-/**
- * Returns the smaller value from the given values.
- *
- * This operation works only if all the operands are the same unit type and they are not
- * equal to [TextUnit.Unspecified].
- * The result of this operation is the same unit type of the given one.
- */
-@Stable
-inline fun min(a: TextUnit, b: TextUnit): TextUnit {
-    checkArithmetic(a, b)
-    return if (a.value < b.value) a else b
-}
-
-/**
- * Returns the smaller value from the given values.
- *
- * This operation works only if all the operands are the same unit type and they are not
- * equal to [TextUnit.Unspecified].
- * The result of this operation is the same unit type of the given one.
- */
-@Stable
-inline fun max(a: TextUnit, b: TextUnit): TextUnit {
-    checkArithmetic(a, b)
-    return if (a.value < b.value) b else a
-}
-
-/**
- * Ensures that the value of [TextUnit] lies in the specified range [minimumValue]..[maximumValue].
- *
- *
- * This operation works only if all the operands are the same unit type and they are not
- * equal to [TextUnit.Unspecified].
- * The result of this operation is the same unit type of the given one.
- *
- * @return this value if it's in the range, or [minimumValue] if this value is less than
- * [minimumValue], or [maximumValue] if this value is greater than [maximumValue].
- */
-@Stable
-inline fun TextUnit.coerceIn(minimumValue: TextUnit, maximumValue: TextUnit): TextUnit {
-    checkArithmetic(this, minimumValue, maximumValue)
-    return pack(rawType, value.coerceIn(minimumValue.value, maximumValue.value))
-}
-
-/**
- * Ensures that the value of [TextUnit] is not less than the specified [minimumValue].
- *
- * @return this value if it's greater than or equal to the [minimumValue] or the
- * [minimumValue] otherwise.
- */
-@Stable
-inline fun TextUnit.coerceAtLeast(minimumValue: TextUnit): TextUnit {
-    checkArithmetic(this, minimumValue)
-    return pack(rawType, value.coerceAtLeast(minimumValue.value))
-}
-
-/**
- * Ensures that the value of [TextUnit] is not greater than the specified [maximumValue].
- *
- * @return this value if it's less than or equal to the [maximumValue] or the
- * [maximumValue] otherwise.
- */
-@Stable
-inline fun TextUnit.coerceAtMost(maximumValue: TextUnit): TextUnit {
-    checkArithmetic(this, maximumValue)
-    return pack(rawType, value.coerceAtMost(maximumValue.value))
-}
-
 @PublishedApi
-internal inline fun pack(unitType: Long, v: Float): TextUnit =
+internal fun pack(unitType: Long, v: Float): TextUnit =
     TextUnit(unitType or (v.toBits().toLong() and 0xFFFF_FFFFL))
 
 @PublishedApi
@@ -477,8 +345,22 @@ internal fun checkArithmetic(a: TextUnit, b: TextUnit, c: TextUnit) {
     }
 }
 
+/**
+ * Linearly interpolate between two [TextUnit]s.
+ *
+ * The [fraction] argument represents position on the timeline, with 0.0 meaning
+ * that the interpolation has not started, returning [start] (or something
+ * equivalent to [start]), 1.0 meaning that the interpolation has finished,
+ * returning [stop] (or something equivalent to [stop]), and values in between
+ * meaning that the interpolation is at the relevant point on the timeline
+ * between [start] and [stop]. The interpolation can be extrapolated beyond 0.0 and
+ * 1.0, so negative values and values greater than 1.0 are valid.
+ *
+ * @throws IllegalArgumentException if [start] and [stop] have different [TextUnitType]s, or
+ * either of the two has its [TextUnitType] equal to [TextUnitType.Unspecified].
+ */
 @Stable
-fun lerp(a: TextUnit, b: TextUnit, t: Float): TextUnit {
-    checkArithmetic(a, b)
-    return pack(a.rawType, lerp(a.value, b.value, t))
+fun lerp(start: TextUnit, stop: TextUnit, fraction: Float): TextUnit {
+    checkArithmetic(start, stop)
+    return pack(start.rawType, lerp(start.value, stop.value, fraction))
 }

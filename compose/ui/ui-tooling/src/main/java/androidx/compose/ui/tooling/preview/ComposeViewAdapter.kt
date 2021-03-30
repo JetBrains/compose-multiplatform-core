@@ -16,40 +16,39 @@
 
 package androidx.compose.ui.tooling.preview
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.DashPathEffect
 import android.graphics.Paint
+import android.os.Build
 import android.os.Bundle
 import android.util.AttributeSet
 import android.util.Log
 import android.widget.FrameLayout
 import androidx.annotation.VisibleForTesting
-import androidx.compose.animation.TransitionModel
-import androidx.compose.animation.core.AnimationClockObserver
 import androidx.compose.animation.core.InternalAnimationApi
-import androidx.compose.runtime.AtomicReference
+import androidx.compose.animation.core.Transition
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Composition
-import androidx.compose.runtime.Providers
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.currentComposer
-import androidx.compose.runtime.emptyContent
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.onCommit
+import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.platform.AmbientAnimationClock
-import androidx.compose.ui.platform.AmbientFontLoader
-import androidx.compose.ui.platform.AnimationClockAmbient
 import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.LocalFontLoader
 import androidx.compose.ui.platform.ViewRootForTest
-import androidx.compose.ui.tooling.Group
-import androidx.compose.ui.tooling.Inspectable
 import androidx.compose.ui.tooling.CompositionDataRecord
-import androidx.compose.ui.tooling.SourceLocation
-import androidx.compose.ui.tooling.asTree
+import androidx.compose.ui.tooling.Inspectable
+import androidx.compose.ui.tooling.data.Group
+import androidx.compose.ui.tooling.data.SourceLocation
+import androidx.compose.ui.tooling.data.UiToolingDataApi
+import androidx.compose.ui.tooling.data.asTree
 import androidx.compose.ui.tooling.preview.animation.PreviewAnimationClock
-import androidx.compose.ui.unit.IntBounds
+import androidx.compose.ui.unit.IntRect
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleRegistry
 import androidx.lifecycle.ViewModelStoreOwner
@@ -59,8 +58,12 @@ import androidx.savedstate.SavedStateRegistry
 import androidx.savedstate.SavedStateRegistryController
 import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.ViewTreeSavedStateRegistryOwner
+import java.lang.reflect.Method
 
 const val TOOLS_NS_URI = "http://schemas.android.com/tools"
+private const val DESIGN_INFO_METHOD = "getDesignInfo"
+
+private val emptyContent: @Composable () -> Unit = @Composable {}
 
 /**
  * Class containing the minimum information needed by the Preview to map components to the
@@ -68,10 +71,11 @@ const val TOOLS_NS_URI = "http://schemas.android.com/tools"
  *
  * @suppress
  */
+@OptIn(UiToolingDataApi::class)
 data class ViewInfo(
     val fileName: String,
     val lineNumber: Int,
-    val bounds: IntBounds,
+    val bounds: IntRect,
     val location: SourceLocation?,
     val children: List<ViewInfo>
 ) {
@@ -100,13 +104,13 @@ data class ViewInfo(
  *  for debugging purposes.
  *  - `tools:printViewInfos`: If true, the [ComposeViewAdapter] will log the tree of [ViewInfo]
  *  to logcat for debugging.
- *  - `tools:animationClockStartTime`: When set, the [AnimationClockAmbient] will provide a
- *  [PreviewAnimationClock] using this value as start time. The clock will control the animations
- *  in the [ComposeViewAdapter] context.
+ *  - `tools:animationClockStartTime`: When set, a [PreviewAnimationClock] will control the
+ *  animations in the [ComposeViewAdapter] context.
  *
  * @suppress
  */
 @Suppress("unused")
+@OptIn(UiToolingDataApi::class)
 internal class ComposeViewAdapter : FrameLayout {
     private val TAG = "ComposeViewAdapter"
 
@@ -126,6 +130,7 @@ internal class ComposeViewAdapter : FrameLayout {
      */
     private var debugPaintBounds = false
     internal var viewInfos: List<ViewInfo> = emptyList()
+    internal var designInfoList: List<String> = emptyList()
     private val slotTableRecord = CompositionDataRecord.create()
 
     /**
@@ -143,20 +148,25 @@ internal class ComposeViewAdapter : FrameLayout {
      * composition, we save it and throw it during onLayout, this allows Studio to catch it and
      * display it to the user.
      */
-    private val delayedException = AtomicReference<Throwable?>(null)
+    private var delayedException: Throwable? = null
+
+    /**
+     * A lock to take to access delayedException.
+     */
+    private val delayExceptionLock = Any()
 
     /**
      * The [Composable] to be rendered in the preview. It is initialized when this adapter
      * is initialized.
      */
-    private var previewComposition: @Composable () -> Unit = emptyContent()
+    private var previewComposition: @Composable () -> Unit = {}
 
-    // Note: the call to emptyContent() below instead of a literal {} works around
+    // Note: the constant emptyContent below instead of a literal {} works around
     // https://youtrack.jetbrains.com/issue/KT-17467, which causes the compiler to emit classes
     // named `content` and `Content` (from the Content method's composable update scope)
     // which causes compilation problems on case-insensitive filesystems.
     @Suppress("RemoveExplicitTypeArguments")
-    private val content = mutableStateOf<@Composable () -> Unit>(emptyContent())
+    private val content = mutableStateOf<@Composable () -> Unit>(emptyContent)
 
     /**
      * When true, the composition will be immediately invalidated after being drawn. This will
@@ -164,6 +174,20 @@ internal class ComposeViewAdapter : FrameLayout {
      * whole composition happens again on the next render.
      */
     private var forceCompositionInvalidation = false
+
+    /**
+     * When true, the adapter will try to look objects that support the call
+     * [DESIGN_INFO_METHOD] within the slot table and populate [designInfoList]. Used to
+     * support rendering in Studio.
+     */
+    private var lookForDesignInfoProviders = false
+
+    /**
+     * An additional [String] argument that will be passed to objects that support the
+     * [DESIGN_INFO_METHOD] call. Meant to be used by studio to as a way to request additional
+     * information from the Preview.
+     */
+    private var designInfoProvidersArgument: String = ""
 
     /**
      * Callback invoked when onDraw has been called.
@@ -249,17 +273,27 @@ internal class ComposeViewAdapter : FrameLayout {
     override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
         super.onLayout(changed, left, top, right, bottom)
 
-        delayedException.getAndSet(null)?.let { exception ->
-            // There was a pending exception. Throw it here since Studio will catch it and show
-            // it to the user.
-            throw exception
+        synchronized(delayExceptionLock) {
+            delayedException?.let { exception ->
+                // There was a pending exception. Throw it here since Studio will catch it and show
+                // it to the user.
+                throw exception
+            }
         }
 
         processViewInfos()
         if (composableName.isNotEmpty()) {
             // TODO(b/160126628): support other APIs, e.g. animate
-            findAndSubscribeTransitions()
+            findAndTrackTransitions()
+            if (lookForDesignInfoProviders) {
+                findDesignInfoProviders()
+            }
         }
+    }
+
+    override fun onAttachedToWindow() {
+        ViewTreeLifecycleOwner.set(composeView.rootView, FakeSavedStateRegistryOwner)
+        super.onAttachedToWindow()
     }
 
     /**
@@ -267,32 +301,101 @@ internal class ComposeViewAdapter : FrameLayout {
      * `@Composable` being previewed. We only return animations defined in the user code, i.e.
      * the ones we've got source information for.
      */
+    @Suppress("UNCHECKED_CAST")
     @OptIn(InternalAnimationApi::class)
-    private fun findAndSubscribeTransitions() {
+    private fun findAndTrackTransitions() {
         val slotTrees = slotTableRecord.store.map { it.asTree() }
-        val observers = mutableSetOf<AnimationClockObserver>()
+        val transitions = mutableSetOf<Transition<Any>>()
         // Check all the slot tables, since some animations might not be present in the same
         // table as the one containing the `@Composable` being previewed, e.g. when they're
         // defined using sub-composition.
         slotTrees.forEach { tree ->
-            observers.addAll(
+            transitions.addAll(
                 tree.findAll {
-                    // Find `transition` calls in the user code, i.e. when source location is known
-                    it.name == "transition" && it.location != null
+                    // Find `updateTransition` calls in the user code, i.e. when source location is
+                    // known.
+                    it.name == "updateTransition" && it.location != null
                 }.mapNotNull {
                     val rememberCall =
                         it.firstOrNull { it.name == "remember" } ?: return@mapNotNull null
-                    val transitionModel = rememberCall.data.firstOrNull { data ->
-                        data is TransitionModel<*>
-                    } as? TransitionModel<*>
-                    transitionModel?.anim?.animationClockObserver
+                    rememberCall.data.firstOrNull { data ->
+                        data is Transition<*>
+                    } as? Transition<Any>
                 }
             )
         }
-        hasAnimations = observers.isNotEmpty()
-        // Subscribe all the observers found to the `PreviewAnimationClock`
+        hasAnimations = transitions.isNotEmpty()
+        // Make the `PreviewAnimationClock` track all the transitions found.
         if (::clock.isInitialized) {
-            observers.forEach { clock.subscribe(it) }
+            transitions.forEach { clock.trackTransition(it) }
+        }
+    }
+
+    /**
+     * Find all data objects within the slotTree that can invoke '[DESIGN_INFO_METHOD]', and store
+     * their result in [designInfoList].
+     */
+    private fun findDesignInfoProviders() {
+        val slotTrees = slotTableRecord.store.map { it.asTree() }
+
+        designInfoList = slotTrees.flatMap { rootGroup ->
+            rootGroup.findAll { group ->
+                group.children.any { child ->
+                    child.name == "remember" && child.data.any {
+                        it?.getDesignInfoMethodOrNull() != null
+                    }
+                }
+            }.mapNotNull { group ->
+                // Get the DesignInfoProviders from the children, the parent group is needed to
+                // know the location on screen of the layout
+                group.children.forEach { child ->
+                    child.data.forEach {
+                        if (it?.getDesignInfoMethodOrNull() != null) {
+                            return@mapNotNull it.invokeGetDesignInfo(group.box.left, group.box.top)
+                        }
+                    }
+                }
+                return@mapNotNull null
+            }
+        }
+    }
+
+    /**
+     * Check if the object supports the method call for [DESIGN_INFO_METHOD], which is expected
+     * to take two Integer arguments for coordinates and a String for additional encoded
+     * arguments that may be provided from Studio.
+     */
+    private fun Any.getDesignInfoMethodOrNull(): Method? {
+        return try {
+            javaClass.getDeclaredMethod(
+                DESIGN_INFO_METHOD,
+                Integer.TYPE,
+                Integer.TYPE,
+                String::class.java
+            )
+        } catch (e: NoSuchMethodException) {
+            null
+        }
+    }
+
+    private fun Any.invokeGetDesignInfo(x: Int, y: Int): String? {
+        return this.getDesignInfoMethodOrNull()?.let { designInfoMethod ->
+            try {
+                // Workaround for unchecked Method.invoke
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                    val result = designInfoMethod.invoke(
+                        this,
+                        x,
+                        y,
+                        designInfoProvidersArgument
+                    )
+                    (result as String).ifEmpty { null }
+                } else {
+                    null
+                }
+            } catch (e: Exception) {
+                null
+            }
         }
     }
 
@@ -331,7 +434,7 @@ internal class ComposeViewAdapter : FrameLayout {
 
     private fun invalidateComposition() {
         // Invalidate the full composition by setting it to empty and back to the actual value
-        content.value = emptyContent()
+        content.value = {}
         content.value = previewComposition
         // Invalidate the state of the view so it gets redrawn
         invalidate()
@@ -380,7 +483,7 @@ internal class ComposeViewAdapter : FrameLayout {
         // We need to replace the FontResourceLoader to avoid using ResourcesCompat.
         // ResourcesCompat can not load fonts within Layoutlib and, since Layoutlib always runs
         // the latest version, we do not need it.
-        Providers(AmbientFontLoader provides LayoutlibFontResourceLoader(context)) {
+        CompositionLocalProvider(LocalFontLoader provides LayoutlibFontResourceLoader(context)) {
             Inspectable(slotTableRecord, content)
         }
     }
@@ -396,10 +499,13 @@ internal class ComposeViewAdapter : FrameLayout {
      * @param debugPaintBounds if true, the view will paint the boundaries around the layout
      * elements.
      * @param debugViewInfos if true, it will generate the [ViewInfo] structures and will log it.
-     * @param animationClockStartTime if positive, the [AnimationClockAmbient] will provide
-     * [clock] instead of the default clock, setting this value as the clock's initial time.
+     * @param animationClockStartTime if positive, [clock] will be defined and will control the
+     * animations defined in the context of the `@Composable` being previewed.
      * @param forceCompositionInvalidation if true, the composition will be invalidated on every
      * draw, forcing it to recompose on next render.
+     * @param lookForDesignInfoProviders if true, it will try to populate [designInfoList].
+     * @param designInfoProvidersArgument String to use as an argument when populating
+     * [designInfoList].
      * @param onCommit callback invoked after every commit of the preview composable.
      * @param onDraw callback invoked after every draw of the adapter. Only for test use.
      */
@@ -413,6 +519,8 @@ internal class ComposeViewAdapter : FrameLayout {
         debugViewInfos: Boolean = false,
         animationClockStartTime: Long = -1,
         forceCompositionInvalidation: Boolean = false,
+        lookForDesignInfoProviders: Boolean = false,
+        designInfoProvidersArgument: String? = null,
         onCommit: () -> Unit = {},
         onDraw: () -> Unit = {}
     ) {
@@ -420,12 +528,12 @@ internal class ComposeViewAdapter : FrameLayout {
         this.debugViewInfos = debugViewInfos
         this.composableName = methodName
         this.forceCompositionInvalidation = forceCompositionInvalidation
+        this.lookForDesignInfoProviders = lookForDesignInfoProviders
+        this.designInfoProvidersArgument = designInfoProvidersArgument ?: ""
         this.onDraw = onDraw
 
         previewComposition = @Composable {
-            onCommit {
-                onCommit()
-            }
+            SideEffect(onCommit)
 
             WrapPreview {
                 val composer = currentComposer
@@ -448,28 +556,30 @@ internal class ComposeViewAdapter : FrameLayout {
                         while (exception is ReflectiveOperationException) {
                             exception = exception.cause ?: break
                         }
-                        delayedException.set(exception)
+                        synchronized(delayExceptionLock) {
+                            delayedException = exception
+                        }
                         throw t
                     }
                 }
                 if (animationClockStartTime >= 0) {
-                    // Provide a custom clock when animation inspection is enabled, i.e. when a
-                    // valid `animationClockStartTime` is passed. This clock will control the
-                    // animations defined in this `ComposeViewAdapter` from Android Studio.
-                    clock = PreviewAnimationClock(animationClockStartTime) {
+                    // When animation inspection is enabled, i.e. when a valid (non-negative)
+                    // `animationClockStartTime` is passed, set the Preview Animation Clock. This
+                    // clock will control the animations defined in this `ComposeViewAdapter`
+                    // from Android Studio.
+                    clock = PreviewAnimationClock {
                         // Invalidate the descendants of this ComposeViewAdapter's only grandchild
                         // (an AndroidOwner) when setting the clock time to make sure the Compose
                         // Preview will animate when the states are read inside the draw scope.
                         val composeView = getChildAt(0) as ComposeView
                         (composeView.getChildAt(0) as? ViewRootForTest)
                             ?.invalidateDescendants()
+                        // Send pending apply notifications to ensure the animation duration will
+                        // be read in the correct frame.
+                        Snapshot.sendApplyNotifications()
                     }
-                    Providers(AmbientAnimationClock provides clock) {
-                        composable()
-                    }
-                } else {
-                    composable()
                 }
+                composable()
             }
         }
         composeView.setContent(previewComposition)
@@ -499,8 +609,8 @@ internal class ComposeViewAdapter : FrameLayout {
 
     private fun init(attrs: AttributeSet) {
         // ComposeView and lifecycle initialization
-        ViewTreeLifecycleOwner.set(this, FakeSavedStateRegistryOwnerOwner)
-        ViewTreeSavedStateRegistryOwner.set(this, FakeSavedStateRegistryOwnerOwner)
+        ViewTreeLifecycleOwner.set(this, FakeSavedStateRegistryOwner)
+        ViewTreeSavedStateRegistryOwner.set(this, FakeSavedStateRegistryOwner)
         ViewTreeViewModelStoreOwner.set(this, FakeViewModelStoreOwner)
         addView(composeView)
 
@@ -541,12 +651,22 @@ internal class ComposeViewAdapter : FrameLayout {
                 debugViewInfos
             ),
             animationClockStartTime = animationClockStartTime,
-            forceCompositionInvalidation = forceCompositionInvalidation
+            forceCompositionInvalidation = forceCompositionInvalidation,
+            lookForDesignInfoProviders = attrs.getAttributeBooleanValue(
+                TOOLS_NS_URI,
+                "findDesignInfoProviders",
+                lookForDesignInfoProviders
+            ),
+            designInfoProvidersArgument = attrs.getAttributeValue(
+                TOOLS_NS_URI,
+                "designInfoProvidersArgument"
+            )
         )
     }
 
-    private val FakeSavedStateRegistryOwnerOwner = object : SavedStateRegistryOwner {
-        private val lifecycle = LifecycleRegistry(this)
+    @SuppressLint("VisibleForTests")
+    private val FakeSavedStateRegistryOwner = object : SavedStateRegistryOwner {
+        private val lifecycle = LifecycleRegistry.createUnsafe(this)
         private val controller = SavedStateRegistryController.create(this).apply {
             performRestore(Bundle())
         }

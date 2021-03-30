@@ -26,6 +26,7 @@ import android.os.Looper;
 import android.util.Log;
 
 import androidx.annotation.CallSuper;
+import androidx.annotation.IntRange;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
@@ -44,6 +45,7 @@ import androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory;
 import java.io.File;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Collections;
 import java.util.HashMap;
@@ -183,6 +185,10 @@ public abstract class RoomDatabase {
     @CallSuper
     public void init(@NonNull DatabaseConfiguration configuration) {
         mOpenHelper = createOpenHelper(configuration);
+        List<Migration> autoMigrations = getAutoMigrations();
+        if (autoMigrations.size() > 0) {
+            configuration.migrationContainer.addMigrations(autoMigrations);
+        }
 
         // Configure SqliteCopyOpenHelper if it is available:
         SQLiteCopyOpenHelper copyOpenHelper = unwrapOpenHelper(SQLiteCopyOpenHelper.class,
@@ -253,6 +259,17 @@ public abstract class RoomDatabase {
                         + "or remove this converter from the builder.");
             }
         }
+    }
+
+    @NonNull
+    /**
+     * Returns a list of {@link Migration} of a database that have been generated using
+     * {@link AutoMigration}.
+     *
+     * @return A list of migration instances each of which is a generated autoMigration
+     */
+    protected List<Migration> getAutoMigrations() {
+        return Arrays.asList();
     }
 
     /**
@@ -1211,31 +1228,31 @@ public abstract class RoomDatabase {
          * <p>
          * Also, temp tables and temp triggers will be cleared each time the database is
          * auto-closed. If you need to use them, please include them in your
-         * {@link RoomDatabase.Callback.OnOpen callback}.
+         * {@link RoomDatabase.Callback#onOpen callback}.
          * <p>
-         * All configuration should happen in your {@link RoomDatabase.Callback.onOpen}
+         * All configuration should happen in your {@link RoomDatabase.Callback#onOpen}
          * callback so it is re-applied every time the database is re-opened. Note that the
-         * {@link RoomDatabase.Callback.onOpen} will be called every time the database is re-opened.
+         * {@link RoomDatabase.Callback#onOpen} will be called every time the database is re-opened.
          * <p>
          * The auto-closing database operation runs on the query executor.
          * <p>
          * The database will not be reopened if the RoomDatabase or the
          * SupportSqliteOpenHelper is closed manually (by calling
-         * {@link RoomDatabase.close()} or {@link SupportSQLiteOpenHelper.close()}. If the
+         * {@link RoomDatabase#close()} or {@link SupportSQLiteOpenHelper#close()}. If the
          * database is closed manually, you must create a new database using
-         * {@link RoomDatabase.Builder.build()}.
+         * {@link RoomDatabase.Builder#build()}.
          *
          * @param autoCloseTimeout  the amount of time after the last usage before closing the
-         *                          database
+         *                          database. Must greater or equal to zero.
          * @param autoCloseTimeUnit the timeunit for autoCloseTimeout.
          * @return This {@link Builder} instance
-         *
-         * @hide until it's ready for use
          */
         @NonNull
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-        public Builder<T> setAutoCloseTimeout(long autoCloseTimeout,
-                @NonNull TimeUnit autoCloseTimeUnit) {
+        @SuppressWarnings("MissingGetterMatchingBuilder")
+        @ExperimentalRoomApi // When experimental is removed, add these parameters to
+        // DatabaseConfiguration
+        public Builder<T> setAutoCloseTimeout(
+                @IntRange(from = 0) long autoCloseTimeout, @NonNull TimeUnit autoCloseTimeUnit) {
             if (autoCloseTimeout < 0) {
                 throw new IllegalArgumentException("autoCloseTimeout must be >= 0");
             }
@@ -1379,6 +1396,12 @@ public abstract class RoomDatabase {
             }
         }
 
+        public void addMigrations(@NonNull List<Migration> migrations) {
+            for (Migration migration : migrations) {
+                addMigration(migration);
+            }
+        }
+
         private void addMigration(Migration migration) {
             final int start = migration.startVersion;
             final int end = migration.endVersion;
@@ -1389,6 +1412,7 @@ public abstract class RoomDatabase {
             }
             Migration existing = targetMap.get(end);
             if (existing != null) {
+                // TODO: (b/182251019) Favor user specified migration over generated automigrations
                 Log.w(Room.LOG_TAG, "Overriding migration " + existing + " with " + migration);
             }
             targetMap.put(end, migration);

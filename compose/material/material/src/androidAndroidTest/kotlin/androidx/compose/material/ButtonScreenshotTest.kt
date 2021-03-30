@@ -17,11 +17,11 @@ package androidx.compose.material
 
 import android.os.Build
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.testutils.assertAgainstGolden
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.test.ExperimentalTesting
+import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.center
 import androidx.compose.ui.test.down
@@ -42,7 +42,7 @@ import org.junit.runner.RunWith
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
-@OptIn(ExperimentalTesting::class)
+@OptIn(ExperimentalTestApi::class)
 class ButtonScreenshotTest {
 
     @get:Rule
@@ -80,12 +80,12 @@ class ButtonScreenshotTest {
     @Test
     fun ripple() {
         rule.setMaterialContent {
-            Box(Modifier.size(200.dp, 100.dp).wrapContentSize()) {
+            Box(Modifier.requiredSize(200.dp, 100.dp).wrapContentSize()) {
                 Button(onClick = { }) { }
             }
         }
 
-        rule.clockTestRule.pauseClock()
+        rule.mainClock.autoAdvance = false
 
         // Start ripple
         rule.onNode(hasClickAction())
@@ -93,7 +93,7 @@ class ButtonScreenshotTest {
 
         // Let ripple propagate
         rule.waitForIdle()
-        rule.clockTestRule.advanceClock(50)
+        rule.mainClock.advanceTimeBy(milliseconds = 50)
 
         rule.onRoot()
             .captureToImage()

@@ -12,7 +12,7 @@ plugins {
 }
 
 ext {
-    fontDir = project(':noto-emoji-compat').projectDir
+    fontDir = project(":noto-emoji-compat-font").projectDir
 }
 
 BundleInsideHelper.forInsideAar(
@@ -22,7 +22,7 @@ BundleInsideHelper.forInsideAar(
 )
 
 dependencies {
-    bundleInside(project(":noto-emoji-compat"))
+    bundleInside(project(":noto-emoji-compat-flatbuffers"))
 
     api("androidx.core:core:1.3.0-rc01")
     implementation("androidx.collection:collection:1.1.0")
@@ -34,15 +34,15 @@ dependencies {
     androidTestImplementation(ESPRESSO_CORE, libs.exclude_for_espresso)
     androidTestImplementation(MOCKITO_CORE, libs.exclude_bytebuddy) // DexMaker has it"s own MockMaker
     androidTestImplementation(DEXMAKER_MOCKITO, libs.exclude_bytebuddy) // DexMaker has it"s own MockMaker
-    androidTestImplementation project(':internal-testutils-runtime')
+    androidTestImplementation(project(":internal-testutils-runtime"))
 }
 
 android {
     sourceSets {
         main {
             // We use a non-standard manifest path.
-            manifest.srcFile 'AndroidManifest.xml'
-            res.srcDirs += 'src/main/res-public'
+            manifest.srcFile "AndroidManifest.xml"
+            res.srcDirs += "src/main/res-public"
             resources {
                 srcDirs += [fontDir.getAbsolutePath()]
                 includes += ["LICENSE_UNICODE", "LICENSE_OFL"]

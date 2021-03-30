@@ -21,11 +21,15 @@ import static androidx.car.app.model.constraints.RowConstraints.ROW_CONSTRAINTS_
 import static androidx.car.app.model.constraints.RowConstraints.ROW_CONSTRAINTS_PANE;
 import static androidx.car.app.model.constraints.RowConstraints.ROW_CONSTRAINTS_SIMPLE;
 
+import static java.util.Objects.requireNonNull;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
-import androidx.car.app.model.ActionList;
+import androidx.car.app.model.Action;
+import androidx.car.app.model.Item;
 import androidx.car.app.model.ItemList;
 import androidx.car.app.model.Pane;
+import androidx.car.app.model.Row;
 import androidx.car.app.model.SectionedItemList;
 
 import java.util.ArrayList;
@@ -37,11 +41,11 @@ import java.util.List;
  * @hide
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY)
-public class RowListConstraints {
+public final class RowListConstraints {
     /** Conservative constraints for all types lists. */
     @NonNull
     public static final RowListConstraints ROW_LIST_CONSTRAINTS_CONSERVATIVE =
-            RowListConstraints.builder()
+            new RowListConstraints.Builder()
                     .setMaxActions(0)
                     .setRowConstraints(ROW_CONSTRAINTS_CONSERVATIVE)
                     .setAllowSelectableLists(false)
@@ -50,8 +54,7 @@ public class RowListConstraints {
     /** Default constraints for heterogeneous pane of items, full width. */
     @NonNull
     public static final RowListConstraints ROW_LIST_CONSTRAINTS_PANE =
-            ROW_LIST_CONSTRAINTS_CONSERVATIVE
-                    .newBuilder()
+            new RowListConstraints.Builder(ROW_LIST_CONSTRAINTS_CONSERVATIVE)
                     .setMaxActions(2)
                     .setRowConstraints(ROW_CONSTRAINTS_PANE)
                     .setAllowSelectableLists(false)
@@ -60,16 +63,14 @@ public class RowListConstraints {
     /** Default constraints for uniform lists of items, no toggles. */
     @NonNull
     public static final RowListConstraints ROW_LIST_CONSTRAINTS_SIMPLE =
-            ROW_LIST_CONSTRAINTS_CONSERVATIVE
-                    .newBuilder()
+            new RowListConstraints.Builder(ROW_LIST_CONSTRAINTS_CONSERVATIVE)
                     .setRowConstraints(ROW_CONSTRAINTS_SIMPLE)
                     .build();
 
     /** Default constraints for the route preview card. */
     @NonNull
     public static final RowListConstraints ROW_LIST_CONSTRAINTS_ROUTE_PREVIEW =
-            ROW_LIST_CONSTRAINTS_CONSERVATIVE
-                    .newBuilder()
+            new RowListConstraints.Builder(ROW_LIST_CONSTRAINTS_CONSERVATIVE)
                     .setRowConstraints(ROW_CONSTRAINTS_SIMPLE)
                     .setAllowSelectableLists(true)
                     .build();
@@ -77,8 +78,7 @@ public class RowListConstraints {
     /** Default constraints for uniform lists of items, full width (simple + toggle support). */
     @NonNull
     public static final RowListConstraints ROW_LIST_CONSTRAINTS_FULL_LIST =
-            ROW_LIST_CONSTRAINTS_CONSERVATIVE
-                    .newBuilder()
+            new RowListConstraints.Builder(ROW_LIST_CONSTRAINTS_CONSERVATIVE)
                     .setRowConstraints(ROW_CONSTRAINTS_FULL_LIST)
                     .setAllowSelectableLists(true)
                     .build();
@@ -86,18 +86,6 @@ public class RowListConstraints {
     private final int mMaxActions;
     private final RowConstraints mRowConstraints;
     private final boolean mAllowSelectableLists;
-
-    /** A builder of {@link RowListConstraints}. */
-    @NonNull
-    public static RowListConstraints.Builder builder() {
-        return new Builder();
-    }
-
-    /** Return a a new builder for this {@link RowListConstraints} instance. */
-    @NonNull
-    public Builder newBuilder() {
-        return new Builder(this);
-    }
 
     /** Returns the maximum number of actions allowed to be added alongside the list. */
     public int getMaxActions() {
@@ -118,10 +106,11 @@ public class RowListConstraints {
     /**
      * Validates that the {@link ItemList} satisfies this {@link RowListConstraints} instance.
      *
-     * @throws IllegalArgumentException if the constraints are not met.
+     * @throws IllegalArgumentException if the constraints are not met, or if the list contains
+     *                                  non-row instances
      */
     public void validateOrThrow(@NonNull ItemList itemList) {
-        if (itemList.getOnSelectedListener() != null && !mAllowSelectableLists) {
+        if (itemList.getOnSelectedDelegate() != null && !mAllowSelectableLists) {
             throw new IllegalArgumentException("Selectable lists are not allowed");
         }
 
@@ -130,17 +119,17 @@ public class RowListConstraints {
 
     /**
      * Validates that the list of {@link SectionedItemList}s satisfies this
-     * {@link RowListConstraints}
-     * instance.
+     * {@link RowListConstraints} instance.
      *
-     * @throws IllegalArgumentException if the constraints are not met.
+     * @throws IllegalArgumentException if the constraints are not met or if the lists contain
+     *                                  any non-row instances
      */
     public void validateOrThrow(@NonNull List<SectionedItemList> sections) {
-        List<Object> combinedLists = new ArrayList<>();
+        List<Item> combinedLists = new ArrayList<>();
 
         for (SectionedItemList section : sections) {
             ItemList sectionList = section.getItemList();
-            if (sectionList.getOnSelectedListener() != null && !mAllowSelectableLists) {
+            if (sectionList.getOnSelectedDelegate() != null && !mAllowSelectableLists) {
                 throw new IllegalArgumentException("Selectable lists are not allowed");
             }
 
@@ -153,11 +142,11 @@ public class RowListConstraints {
     /**
      * Validates that the {@link Pane} satisfies this {@link RowListConstraints} instance.
      *
-     * @throws IllegalArgumentException if the constraints are not met.
+     * @throws IllegalArgumentException if the constraints are not met
      */
     public void validateOrThrow(@NonNull Pane pane) {
-        ActionList actions = pane.getActions();
-        if (actions != null && actions.getList().size() > mMaxActions) {
+        List<Action> actions = pane.getActions();
+        if (actions.size() > mMaxActions) {
             throw new IllegalArgumentException(
                     "The number of actions on the pane exceeded the supported max of "
                             + mMaxActions);
@@ -166,9 +155,12 @@ public class RowListConstraints {
         validateRows(pane.getRows());
     }
 
-    private void validateRows(List<Object> rows) {
-        for (Object rowObj : rows) {
-            mRowConstraints.validateOrThrow(rowObj);
+    private void validateRows(List<? extends Item> rows) {
+        for (Item rowObj : rows) {
+            if (!(rowObj instanceof Row)) {
+                throw new IllegalArgumentException("Only Row instances are supported in the list");
+            }
+            mRowConstraints.validateOrThrow((Row) rowObj);
         }
     }
 
@@ -189,21 +181,21 @@ public class RowListConstraints {
         /** Sets the maximum number of actions allowed to be added alongside the list. */
         @NonNull
         public Builder setMaxActions(int maxActions) {
-            this.mMaxActions = maxActions;
+            mMaxActions = maxActions;
             return this;
         }
 
         /** Sets the constraints to apply on individual rows. */
         @NonNull
         public Builder setRowConstraints(@NonNull RowConstraints rowConstraints) {
-            this.mRowConstraints = rowConstraints;
+            mRowConstraints = rowConstraints;
             return this;
         }
 
         /** Sets whether selectable lists are allowed. */
         @NonNull
         public Builder setAllowSelectableLists(boolean allowSelectableLists) {
-            this.mAllowSelectableLists = allowSelectableLists;
+            mAllowSelectableLists = allowSelectableLists;
             return this;
         }
 
@@ -215,13 +207,20 @@ public class RowListConstraints {
             return new RowListConstraints(this);
         }
 
-        Builder() {
+        /** Returns an empty {@link Builder} instance. */
+        public Builder() {
         }
 
-        Builder(RowListConstraints constraints) {
-            this.mMaxActions = constraints.getMaxActions();
-            this.mRowConstraints = constraints.getRowConstraints();
-            this.mAllowSelectableLists = constraints.isAllowSelectableLists();
+        /**
+         * Return a a new builder for the given {@link RowListConstraints} instance.
+         *
+         * @throws NullPointerException if {@code latLng} is {@code null}
+         */
+        public Builder(@NonNull RowListConstraints constraints) {
+            requireNonNull(constraints);
+            mMaxActions = constraints.getMaxActions();
+            mRowConstraints = constraints.getRowConstraints();
+            mAllowSelectableLists = constraints.isAllowSelectableLists();
         }
     }
 }

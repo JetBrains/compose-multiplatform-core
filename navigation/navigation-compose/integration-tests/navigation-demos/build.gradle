@@ -16,7 +16,6 @@
 
 
 import androidx.build.Publish
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 import static androidx.build.dependencies.DependenciesKt.getKOTLIN_STDLIB
 
@@ -28,22 +27,14 @@ plugins {
 }
 
 dependencies {
-    kotlinPlugin projectOrArtifact(":compose:compiler:compiler")
+    kotlinPlugin(projectOrArtifact(":compose:compiler:compiler"))
     implementation(KOTLIN_STDLIB)
 
-    implementation projectOrArtifact(":compose:integration-tests:demos:common")
-    implementation projectOrArtifact(":compose:foundation:foundation")
-    implementation projectOrArtifact(":compose:material:material")
-    implementation projectOrArtifact(":navigation:navigation-compose")
-    implementation projectOrArtifact(":navigation:navigation-compose:navigation-compose-samples")
-}
-
-android {
-    tasks.withType(KotlinCompile).configureEach {
-        kotlinOptions {
-            useIR = true
-        }
-    }
+    implementation(projectOrArtifact(":compose:integration-tests:demos:common"))
+    implementation(projectOrArtifact(":compose:foundation:foundation"))
+    implementation(projectOrArtifact(":compose:material:material"))
+    implementation(projectOrArtifact(":navigation:navigation-compose"))
+    implementation(projectOrArtifact(":navigation:navigation-compose:navigation-compose-samples"))
 }
 
 androidx {

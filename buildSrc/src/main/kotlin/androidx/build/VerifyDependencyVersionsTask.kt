@@ -117,7 +117,9 @@ fun shouldVerifyConfiguration(configuration: Configuration): Boolean {
     // Don't check any Android-specific variants of Java plugin configurations -- releaseApi for
     // api, debugImplementation for implementation, etc. -- or test configurations.
     if (name.startsWith("androidTest")) return false
+    if (name.startsWith("androidAndroidTest")) return false
     if (name.startsWith("debug")) return false
+    if (name.startsWith("androidDebug")) return false
     if (name.startsWith("release")) return false
     if (name.startsWith("test")) return false
 
@@ -128,6 +130,12 @@ fun shouldVerifyConfiguration(configuration: Configuration): Boolean {
     if (name.startsWith("lint")) return false
     if (name == "metalava") return false
 
+    // Don't check any configurations that directly bundle the dependencies with the output
+    if (name == "bundleInside") return false
+
+    // Don't check any compile-only configurations
+    if (name.startsWith("compile")) return false
+
     return true
 }
 
@@ -135,6 +143,7 @@ fun shouldVerifyDependency(dependency: Dependency): Boolean {
     // Only verify dependencies within the scope of our versioning policies.
     if (dependency.group == null) return false
     if (!dependency.group.toString().startsWith("androidx.")) return false
+    if (dependency.name == "annotation-sampled") return false
     if (dependency.version == AndroidXPlaygroundRootPlugin.SNAPSHOT_MARKER) {
         // This only happens in playground builds where this magic version gets replaced with
         // the version from the snapshotBuildId defined in playground-common/playground.properties.

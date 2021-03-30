@@ -46,7 +46,7 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.FloatingActionButton
 import androidx.compose.material.Icon
@@ -83,11 +83,11 @@ fun HorizontalTransitionSample() {
             // Set the end width for the shrink animation to a quarter of the full width.
             targetWidth = { fullWidth -> fullWidth / 4 },
             // Overwrites the default animation with tween for this shrink animation.
-            animSpec = tween()
+            animationSpec = tween()
         )
     ) {
         // Content that needs to appear/disappear goes here:
-        Box(Modifier.fillMaxWidth().height(200.dp))
+        Box(Modifier.fillMaxWidth().requiredHeight(200.dp))
     }
 }
 
@@ -102,19 +102,19 @@ fun SlideTransition() {
             // Offsets the content by 1/3 of its width to the left, and slide towards right
             initialOffsetX = { fullWidth -> -fullWidth / 3 },
             // Overwrites the default animation with tween for this slide animation.
-            animSpec = tween(durationMillis = 200)
+            animationSpec = tween(durationMillis = 200)
         ) + fadeIn(
             // Overwrites the default animation with tween
-            animSpec = tween(durationMillis = 200)
+            animationSpec = tween(durationMillis = 200)
         ),
         exit = slideOutHorizontally(
             // Overwrites the ending position of the slide-out to 200 (pixels) to the right
             targetOffsetX = { 200 },
-            animSpec = spring(stiffness = Spring.StiffnessHigh)
+            animationSpec = spring(stiffness = Spring.StiffnessHigh)
         ) + fadeOut()
     ) {
         // Content that needs to appear/disappear goes here:
-        Box(Modifier.fillMaxWidth().height(200.dp)) {}
+        Box(Modifier.fillMaxWidth().requiredHeight(200.dp)) {}
     }
 }
 
@@ -131,11 +131,11 @@ fun FadeTransition() {
         ),
         exit = fadeOut(
             // Overwrites the default animation with tween
-            animSpec = tween(durationMillis = 250)
+            animationSpec = tween(durationMillis = 250)
         )
     ) {
         // Content that needs to appear/disappear goes here:
-        Text("Content to appear/disappear", Modifier.fillMaxWidth().height(200.dp))
+        Text("Content to appear/disappear", Modifier.fillMaxWidth().requiredHeight(200.dp))
     }
 }
 
@@ -156,21 +156,25 @@ fun FullyLoadedTransition() {
         exit = slideOutVertically() + shrinkVertically() + fadeOut()
     ) {
         // Content that needs to appear/disappear goes here:
-        Text("Content to appear/disappear", Modifier.fillMaxWidth().height(200.dp))
+        Text("Content to appear/disappear", Modifier.fillMaxWidth().requiredHeight(200.dp))
     }
 }
 
 @OptIn(ExperimentalAnimationApi::class)
 @Sampled
 @Composable
-fun AnimatedFloatingActionButton() {
+fun ColumnScope.AnimatedFloatingActionButton() {
     var expanded by remember { mutableStateOf(true) }
     FloatingActionButton(
         onClick = { expanded = !expanded },
-        modifier = with(ColumnScope) { Modifier.align(Alignment.CenterHorizontally) }
+        modifier = Modifier.align(Alignment.CenterHorizontally)
     ) {
         Row(Modifier.padding(start = 12.dp, end = 12.dp)) {
-            Icon(Icons.Default.Favorite, Modifier.align(Alignment.CenterVertically))
+            Icon(
+                Icons.Default.Favorite,
+                contentDescription = "Favorite",
+                modifier = Modifier.align(Alignment.CenterVertically)
+            )
             AnimatedVisibility(
                 expanded,
                 modifier = Modifier.align(Alignment.CenterVertically)
@@ -179,7 +183,7 @@ fun AnimatedFloatingActionButton() {
             }
         }
     }
-    Spacer(Modifier.height(20.dp))
+    Spacer(Modifier.requiredHeight(20.dp))
 }
 
 @OptIn(ExperimentalAnimationApi::class)
@@ -205,7 +209,7 @@ fun SlideInOutSample() {
         )
     ) {
         // Content that needs to appear/disappear goes here:
-        Text("Content to appear/disappear", Modifier.fillMaxWidth().height(200.dp))
+        Text("Content to appear/disappear", Modifier.fillMaxWidth().requiredHeight(200.dp))
     }
 }
 
@@ -226,11 +230,11 @@ fun ExpandShrinkVerticallySample() {
         // Shrinks the content to half of its full height via an animation.
         exit = shrinkVertically(
             targetHeight = { fullHeight -> fullHeight / 2 },
-            animSpec = tween()
+            animationSpec = tween()
         )
     ) {
         // Content that needs to appear/disappear goes here:
-        Text("Content to appear/disappear", Modifier.fillMaxWidth().height(200.dp))
+        Text("Content to appear/disappear", Modifier.fillMaxWidth().requiredHeight(200.dp))
     }
 }
 
@@ -248,7 +252,7 @@ fun ExpandInShrinkOutSample() {
             // Overwrites the initial size to 50 pixels by 50 pixels
             initialSize = { IntSize(50, 50) },
             // Overwrites the default spring animation with tween
-            animSpec = tween(100, easing = LinearOutSlowInEasing)
+            animationSpec = tween(100, easing = LinearOutSlowInEasing)
         ),
         exit = shrinkOut(
             // Overwrites the area of the content that the shrink animation will end on. The
@@ -258,11 +262,11 @@ fun ExpandInShrinkOutSample() {
             shrinkTowards = Alignment.CenterStart,
             // Overwrites the target size of the shrinking animation.
             targetSize = { fullSize -> IntSize(fullSize.width / 10, fullSize.height / 5) },
-            animSpec = tween(100, easing = FastOutSlowInEasing)
+            animationSpec = tween(100, easing = FastOutSlowInEasing)
         )
     ) {
         // Content that needs to appear/disappear goes here:
-        Text("Content to appear/disappear", Modifier.fillMaxWidth().height(200.dp))
+        Text("Content to appear/disappear", Modifier.fillMaxWidth().requiredHeight(200.dp))
     }
 }
 
@@ -281,7 +285,7 @@ fun ColumnAnimatedVisibilitySample() {
             // By default ColumnScope.AnimatedVisibility expands and shrinks new content while
             // fading.
             AnimatedVisibility(i <= itemIndex) {
-                Box(Modifier.height(40.dp).fillMaxWidth().background(color))
+                Box(Modifier.requiredHeight(40.dp).fillMaxWidth().background(color))
             }
         }
     }

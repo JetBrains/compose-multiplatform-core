@@ -19,9 +19,8 @@ package androidx.window;
 import static androidx.window.SidecarAdapter.getSidecarDisplayFeatures;
 import static androidx.window.SidecarAdapter.setSidecarDevicePosture;
 import static androidx.window.SidecarAdapter.setSidecarDisplayFeatures;
-import static androidx.window.TestBoundsUtil.invalidFoldBounds;
-import static androidx.window.TestBoundsUtil.invalidHingeBounds;
-import static androidx.window.TestBoundsUtil.validFoldBound;
+import static androidx.window.TestFoldingFeatureUtil.invalidFoldBounds;
+import static androidx.window.TestFoldingFeatureUtil.validFoldBound;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -34,7 +33,6 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
@@ -292,7 +290,7 @@ public final class SidecarCompatTest extends WindowTestBase
                 sidecarWindowLayoutInfo);
         ArgumentCaptor<WindowLayoutInfo> windowLayoutInfoCaptor =
                 ArgumentCaptor.forClass(WindowLayoutInfo.class);
-        verify(callback, times(2)).onWindowLayoutChanged(eq(mActivity),
+        verify(callback).onWindowLayoutChanged(eq(mActivity),
                 windowLayoutInfoCaptor.capture());
 
         WindowLayoutInfo capturedLayout = windowLayoutInfoCaptor.getValue();
@@ -300,7 +298,6 @@ public final class SidecarCompatTest extends WindowTestBase
         DisplayFeature capturedDisplayFeature = capturedLayout.getDisplayFeatures().get(0);
         FoldingFeature foldingFeature = (FoldingFeature) capturedDisplayFeature;
         assertNotNull(foldingFeature);
-        assertEquals(FoldingFeature.TYPE_HINGE, foldingFeature.getType());
         assertEquals(bounds, capturedDisplayFeature.getBounds());
     }
 
@@ -364,12 +361,13 @@ public final class SidecarCompatTest extends WindowTestBase
         mSidecarCompat.setExtensionCallback(listener);
         when(mSidecarCompat.mSidecar.getWindowLayoutInfo(any())).thenReturn(layoutInfo);
         View fakeView = mock(View.class);
+        Window fakeWindow = new TestWindow(mActivity, fakeView);
         doAnswer(invocation -> {
             View.OnAttachStateChangeListener stateChangeListener = invocation.getArgument(0);
+            fakeWindow.getAttributes().token = mock(IBinder.class);
             stateChangeListener.onViewAttachedToWindow(fakeView);
             return null;
         }).when(fakeView).addOnAttachStateChangeListener(any());
-        Window fakeWindow = new TestWindow(mActivity, fakeView);
         when(mActivity.getWindow()).thenReturn(fakeWindow);
 
         mSidecarCompat.onWindowLayoutChangeListenerAdded(mActivity);
@@ -433,16 +431,10 @@ public final class SidecarCompatTest extends WindowTestBase
                 .get(0);
         assertEquals(FoldingFeature.STATE_HALF_OPENED, capturedFoldingFeature.getState());
 
-        reset(mockCallback);
-        fakeSidecarImp.triggerDeviceState(newDeviceState(SidecarDeviceState.POSTURE_FLIPPED));
-        verify(mockCallback).onWindowLayoutChanged(eq(mActivity), windowLayoutCaptor.capture());
-        capturedFoldingFeature = (FoldingFeature) windowLayoutCaptor.getValue().getDisplayFeatures()
-                .get(0);
-        assertEquals(FoldingFeature.STATE_FLIPPED, capturedFoldingFeature.getState());
-
-        // No display features must be reported in closed state
+        // No display features must be reported in closed state or flipped state.
         reset(mockCallback);
         fakeSidecarImp.triggerDeviceState(newDeviceState(SidecarDeviceState.POSTURE_CLOSED));
+        fakeSidecarImp.triggerDeviceState(newDeviceState(SidecarDeviceState.POSTURE_FLIPPED));
         verify(mockCallback).onWindowLayoutChanged(eq(mActivity), windowLayoutCaptor.capture());
         assertTrue(windowLayoutCaptor.getValue().getDisplayFeatures().isEmpty());
     }
@@ -561,7 +553,7 @@ public final class SidecarCompatTest extends WindowTestBase
                         SidecarDisplayFeature.TYPE_FOLD));
             }
 
-            for (Rect malformedBound : invalidHingeBounds(WINDOW_BOUNDS)) {
+            for (Rect malformedBound : invalidFoldBounds(WINDOW_BOUNDS)) {
                 malformedFeatures.add(newDisplayFeature(malformedBound,
                         SidecarDisplayFeature.TYPE_HINGE));
             }

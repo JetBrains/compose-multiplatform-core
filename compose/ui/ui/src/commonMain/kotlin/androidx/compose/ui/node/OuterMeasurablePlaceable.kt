@@ -31,11 +31,14 @@ internal class OuterMeasurablePlaceable(
 ) : Measurable, Placeable() {
 
     private var measuredOnce = false
-    val lastConstraints: Constraints? get() = if (measuredOnce) measurementConstraints else null
-    var lastPosition: IntOffset? = null
-        private set
+    private var placedOnce = false
+    val lastConstraints: Constraints get() {
+        check(measuredOnce)
+        return measurementConstraints
+    }
+    private var lastPosition: IntOffset = IntOffset.Zero
     private var lastLayerBlock: (GraphicsLayerScope.() -> Unit)? = null
-    private val lastProvidedAlignmentLines = mutableMapOf<AlignmentLine, Int>()
+    private var lastProvidedAlignmentLines: MutableMap<AlignmentLine, Int>? = null
     private var lastZIndex: Float = 0f
 
     /**
@@ -87,35 +90,57 @@ internal class OuterMeasurablePlaceable(
             measuredOnce = true
             layoutNode.layoutState = LayoutState.Measuring
             measurementConstraints = constraints
-            lastProvidedAlignmentLines.clear()
-            lastProvidedAlignmentLines.putAll(layoutNode.providedAlignmentLines)
+            val outerWrapperPreviousMeasuredSize = outerWrapper.size
             owner.snapshotObserver.observeMeasureSnapshotReads(layoutNode) {
                 outerWrapper.measure(constraints)
             }
             layoutNode.layoutState = LayoutState.NeedsRelayout
-            if (layoutNode.providedAlignmentLines != lastProvidedAlignmentLines) {
-                layoutNode.onAlignmentsChanged()
-            }
-            val previousSize = measuredSize
-            val newWidth = outerWrapper.width
-            val newHeight = outerWrapper.height
-            if (newWidth != previousSize.width ||
-                newHeight != previousSize.height
-            ) {
-                measuredSize = IntSize(newWidth, newHeight)
-                return true
-            }
+            notifyAlignmentChanges()
+            val sizeChanged = outerWrapper.size != outerWrapperPreviousMeasuredSize ||
+                outerWrapper.width != width ||
+                outerWrapper.height != height
+            // We are using the coerced wrapper size here to avoid double offset in layout coop.
+            measuredSize = IntSize(outerWrapper.width, outerWrapper.height)
+            return sizeChanged
         }
         return false
     }
 
-    override fun get(line: AlignmentLine): Int = outerWrapper[line]
+    private fun notifyAlignmentChanges() {
+        // optimized to only create a lastProvidedAlignmentLines when we do have non empty map
+        if (layoutNode.providedAlignmentLines.isNotEmpty()) {
+            val previous = lastProvidedAlignmentLines ?: mutableMapOf<AlignmentLine, Int>().also {
+                lastProvidedAlignmentLines = it
+            }
+            if (layoutNode.providedAlignmentLines != previous) {
+                previous.clear()
+                previous.putAll(layoutNode.providedAlignmentLines)
+                layoutNode.onAlignmentsChanged()
+            }
+        } else {
+            val previous = lastProvidedAlignmentLines
+            if (previous != null && previous.isNotEmpty()) {
+                previous.clear()
+                layoutNode.onAlignmentsChanged()
+            }
+        }
+    }
+
+    // We are setting our measuredSize to match the coerced outerWrapper size, to prevent
+    // double offseting for layout cooperation. However, this means that here we need
+    // to override these getters to make the measured values correct in Measured.
+    // TODO(popam): clean this up
+    override val measuredWidth: Int get() = outerWrapper.measuredWidth
+    override val measuredHeight: Int get() = outerWrapper.measuredHeight
+
+    override fun get(alignmentLine: AlignmentLine): Int = outerWrapper[alignmentLine]
 
     override fun placeAt(
         position: IntOffset,
         zIndex: Float,
         layerBlock: (GraphicsLayerScope.() -> Unit)?
     ) {
+        placedOnce = true
         lastPosition = position
         lastZIndex = zIndex
         lastLayerBlock = layerBlock
@@ -132,7 +157,8 @@ internal class OuterMeasurablePlaceable(
      * Calls [placeAt] with the same position used during the last [placeAt] call
      */
     fun replace() {
-        placeAt(checkNotNull(lastPosition), lastZIndex, lastLayerBlock)
+        check(placedOnce)
+        placeAt(lastPosition, lastZIndex, lastLayerBlock)
     }
 
     override fun minIntrinsicWidth(height: Int): Int = outerWrapper.minIntrinsicWidth(height)

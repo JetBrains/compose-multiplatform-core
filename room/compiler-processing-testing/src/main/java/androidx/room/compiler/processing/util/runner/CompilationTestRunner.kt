@@ -16,6 +16,7 @@
 
 package androidx.room.compiler.processing.util.runner
 
+import androidx.room.compiler.processing.ExperimentalProcessingApi
 import androidx.room.compiler.processing.util.CompilationResult
 import androidx.room.compiler.processing.util.Source
 import androidx.room.compiler.processing.util.XTestInvocation
@@ -24,6 +25,7 @@ import java.io.File
 /**
  * Common interface for compilation tests
  */
+@ExperimentalProcessingApi
 internal interface CompilationTestRunner {
     // user visible name that we can print in assertions
     val name: String
@@ -33,8 +35,9 @@ internal interface CompilationTestRunner {
     fun compile(params: TestCompilationParameters): CompilationResult
 }
 
+@ExperimentalProcessingApi
 internal data class TestCompilationParameters(
     val sources: List<Source> = emptyList(),
     val classpath: List<File> = emptyList(),
-    val handler: (XTestInvocation) -> Unit
+    val handlers: List<(XTestInvocation) -> Unit>
 )

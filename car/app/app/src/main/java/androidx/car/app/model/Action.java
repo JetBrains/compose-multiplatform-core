@@ -18,7 +18,7 @@ package androidx.car.app.model;
 
 import static androidx.annotation.RestrictTo.Scope.LIBRARY;
 import static androidx.car.app.model.CarColor.DEFAULT;
-import static androidx.car.app.model.constraints.CarColorConstraints.STANDARD_ONLY;
+import static androidx.car.app.model.constraints.CarColorConstraints.UNCONSTRAINED;
 
 import static java.util.Objects.requireNonNull;
 
@@ -34,6 +34,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.car.app.CarContext;
+import androidx.car.app.annotations.ExperimentalCarApi;
 import androidx.car.app.model.constraints.CarIconConstraints;
 import androidx.lifecycle.LifecycleOwner;
 
@@ -65,11 +66,9 @@ public final class Action {
      *
      * @hide
      */
-    // TODO(shiufai): investigate how to expose IntDefs if needed.
     @RestrictTo(LIBRARY)
     @IntDef(
             value = {
-                    TYPE_UNKNOWN,
                     TYPE_CUSTOM,
                     TYPE_APP_ICON,
                     TYPE_BACK,
@@ -79,11 +78,6 @@ public final class Action {
     }
 
     static final int FLAG_STANDARD = 1 << 16;
-
-    /**
-     * An unknown action type.
-     */
-    public static final int TYPE_UNKNOWN = 0;
 
     /**
      * An app-defined custom action type.
@@ -135,29 +129,16 @@ public final class Action {
     private final CarColor mBackgroundColor;
     @Keep
     @Nullable
-    private final OnClickListenerWrapper mListener;
+    private final OnClickDelegate mOnClickDelegate;
     @Keep
     @ActionType
     private final int mType;
 
-    /** Constructs a new builder of {@link Action}. */
-    @NonNull
-    public static Builder builder() {
-        return new Builder();
-    }
-
     /**
-     * Returns a {@link Builder} instance configured with the same data as this {@link Action}
-     * instance.
-     */
-    @NonNull
-    public Builder newBuilder() {
-        return new Builder(this);
-    }
-
-    /**
-     * Returns the title displayed in the action, or {@code null} if the action does not have a
+     * Returns the title displayed in the action or {@code null} if the action does not have a
      * title.
+     *
+     * @see Builder#setTitle(CharSequence)
      */
     @Nullable
     public CarText getTitle() {
@@ -165,9 +146,10 @@ public final class Action {
     }
 
     /**
-     * Returns the {@link CarIcon} to displayed in the action, or {@code null} if the action does
-     * not
-     * have an icon.
+     * Returns the {@link CarIcon} to display in the action or {@code null} if the action does
+     * not have an icon.
+     *
+     * @see Builder#setIcon(CarIcon)
      */
     @Nullable
     public CarIcon getIcon() {
@@ -176,27 +158,31 @@ public final class Action {
 
     /**
      * Returns the {@link CarColor} used for the background color of the action.
+     *
+     * @see Builder#setBackgroundColor(CarColor)
      */
-    @NonNull
+    @Nullable
     public CarColor getBackgroundColor() {
         return mBackgroundColor;
     }
 
-
+    /** Returns the type of the action. */
     @ActionType
     public int getType() {
         return mType;
     }
 
-
+    /** Returns whether the action is a standard action such as {@link #BACK}. */
     public boolean isStandard() {
         return isStandardActionType(mType);
     }
 
-
+    /**
+     * Returns the {@link OnClickDelegate} that should be used for this action.
+     */
     @Nullable
-    public OnClickListenerWrapper getOnClickListener() {
-        return mListener;
+    public OnClickDelegate getOnClickDelegate() {
+        return mOnClickDelegate;
     }
 
     @Override
@@ -233,24 +219,16 @@ public final class Action {
         mTitle = null;
         mIcon = null;
         mBackgroundColor = DEFAULT;
-
-        // The listeners can be set, for actions that support it, by copying the standard action
-        // instance with the newBuilder and setting it.
-        mListener = null;
-        this.mType = type;
+        mOnClickDelegate = null;
+        mType = type;
     }
 
-    Action(
-            @Nullable CarText title,
-            @Nullable CarIcon icon,
-            CarColor backgroundColor,
-            @Nullable OnClickListenerWrapper listener,
-            @ActionType int type) {
-        this.mTitle = title;
-        this.mIcon = icon;
-        this.mBackgroundColor = backgroundColor;
-        this.mListener = listener;
-        this.mType = type;
+    Action(Builder builder) {
+        mTitle = builder.mTitle;
+        mIcon = builder.mIcon;
+        mBackgroundColor = builder.mBackgroundColor;
+        mOnClickDelegate = builder.mOnClickDelegate;
+        mType = builder.mType;
     }
 
     /** Constructs an empty instance, used by serialization code. */
@@ -258,13 +236,13 @@ public final class Action {
         mTitle = null;
         mIcon = null;
         mBackgroundColor = DEFAULT;
-        mListener = null;
-        mType = TYPE_UNKNOWN;
+        mOnClickDelegate = null;
+        mType = TYPE_CUSTOM;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(mTitle, mType, mListener == null, mIcon == null);
+        return Objects.hash(mTitle, mType, mOnClickDelegate == null, mIcon == null);
     }
 
     @Override
@@ -282,7 +260,7 @@ public final class Action {
         return Objects.equals(mTitle, otherAction.mTitle)
                 && mType == otherAction.mType
                 && Objects.equals(mIcon, otherAction.mIcon)
-                && Objects.equals(mListener == null, otherAction.mListener == null);
+                && Objects.equals(mOnClickDelegate == null, otherAction.mOnClickDelegate == null);
     }
 
     static boolean isStandardActionType(@ActionType int type) {
@@ -296,57 +274,81 @@ public final class Action {
         @Nullable
         CarIcon mIcon;
         @Nullable
-        OnClickListenerWrapper mListener;
+        OnClickDelegate mOnClickDelegate;
         CarColor mBackgroundColor = DEFAULT;
         @ActionType
         int mType = TYPE_CUSTOM;
 
         /**
-         * Sets the title to display in the action, or {@code null} to not display a title.
+         * Sets the title to display in the action.
          *
-         * <p>The title of a standard action can be set with this method. Actions, including
-         * standard
-         * actions, don't have a title by default.
+         * <p>{@link ForegroundCarColorSpan}s are supported in the input string. See the
+         * documentation on where the {@link Action} is added for more details on any
+         * other restriction(s) that might apply.
+         *
+         * @throws NullPointerException if {@code title} is {@code null}
+         * @see CarText
          */
         @NonNull
-        public Builder setTitle(@Nullable CharSequence title) {
-            this.mTitle = title == null ? null : CarText.create(title);
+        public Builder setTitle(@NonNull CharSequence title) {
+            mTitle = CarText.create(requireNonNull(title));
             return this;
         }
 
         /**
-         * Sets the icon to display in the action, or {@code null} to not display an icon.
+         * Sets the title to display in the action.
          *
-         * <p>Icons can't be set in standard actions.
+         * <p>{@link ForegroundCarColorSpan}s are supported in the input string. See the
+         * documentation on where the {@link Action} is added for more details on any
+         * other restriction(s) that might apply.
+         *
+         * @throws NullPointerException if {@code title} is {@code null}
+         * @see CarText
+         */
+        @ExperimentalCarApi
+        @NonNull
+        public Builder setTitle(@NonNull CarText title) {
+            mTitle = requireNonNull(title);
+            return this;
+        }
+
+        /**
+         * Sets the icon to display in the action.
+         *
+         * <p>Unless set with this method, the action will not have an icon.
          *
          * <h4>Icon Sizing Guidance</h4>
          *
          * The provided icon should have a maximum size of 36 x 36 dp. If the icon exceeds this
-         * maximum
-         * size in either one of the dimensions, it will be scaled down to be centered inside the
-         * bounding box while preserving the aspect ratio.
+         * maximum size in either one of the dimensions, it will be scaled down to be centered
+         * inside the bounding box while preserving the aspect ratio.
          *
          * <p>See {@link CarIcon} for more details related to providing icon and image resources
-         * that
-         * work with different car screen pixel densities.
+         * that work with different car screen pixel densities.
+         *
+         * @throws NullPointerException if {@code icon} is {@code null}
          */
         @NonNull
-        public Builder setIcon(@Nullable CarIcon icon) {
-            CarIconConstraints.DEFAULT.validateOrThrow(icon);
-            this.mIcon = icon;
+        public Builder setIcon(@NonNull CarIcon icon) {
+            CarIconConstraints.DEFAULT.validateOrThrow(requireNonNull(icon));
+            mIcon = icon;
             return this;
         }
 
         /**
          * Sets the {@link OnClickListener} to call when the action is clicked.
          *
+         * <p>Unless set with this method, the action will not have a click listener.
+         *
          * <p>Note that the listener relates to UI events and will be executed on the main thread
          * using {@link Looper#getMainLooper()}.
+         *
+         * @throws NullPointerException if {@code listener} is {@code null}
          */
         @NonNull
-        @SuppressLint("ExecutorRegistration")
-        public Builder setOnClickListener(@Nullable OnClickListener listener) {
-            this.mListener = listener == null ? null : OnClickListenerWrapperImpl.create(listener);
+        @SuppressLint({"MissingGetterMatchingBuilder", "ExecutorRegistration"})
+        public Builder setOnClickListener(@NonNull OnClickListener listener) {
+            mOnClickDelegate = OnClickDelegateImpl.create(listener);
             return this;
         }
 
@@ -356,18 +358,17 @@ public final class Action {
          * <h4>Requirements</h4>
          *
          * <p>The host may ignore this color and use the default instead if the color does not
-         * pass the
-         * contrast requirements.
+         * pass the contrast requirements. See the documentation on where the {@link Action} is
+         * added for more details on any other restriction(s) that might apply.
          *
          * @param backgroundColor the {@link CarColor} to set as background. Use {@link
-         *                        CarColor#DEFAULT} to let the host pick a default.
-         * @throws IllegalArgumentException if {@code backgroundColor} is not a standard color.
-         * @throws NullPointerException     if {@code backgroundColor} is {@code null}.
+         *                        CarColor#DEFAULT} to let the host pick a default
+         * @throws NullPointerException     if {@code backgroundColor} is {@code null}
          */
         @NonNull
         public Builder setBackgroundColor(@NonNull CarColor backgroundColor) {
-            STANDARD_ONLY.validateOrThrow(requireNonNull(backgroundColor));
-            this.mBackgroundColor = backgroundColor;
+            UNCONSTRAINED.validateOrThrow(requireNonNull(backgroundColor));
+            mBackgroundColor = backgroundColor;
             return this;
         }
 
@@ -375,49 +376,37 @@ public final class Action {
          * Constructs the {@link Action} defined by this builder.
          *
          * @throws IllegalStateException if the action is not a standard action and does not have an
-         *                               icon or a title.
-         * @throws IllegalStateException if a listener is set on either {@link #APP_ICON} or {@link
-         *                               #BACK}.
-         * @throws IllegalStateException if an icon or title is set on either {@link #APP_ICON} or
-         *                               {@link #BACK}.
+         *                               icon or a title, if a listener is set on either
+         *                               {@link #APP_ICON} or {@link #BACK}, or if an icon or
+         *                               title is set on either {@link #APP_ICON} or {@link #BACK}
          */
         @NonNull
         public Action build() {
-            if (mType == TYPE_UNKNOWN) {
-                throw new IllegalStateException("Missing action type");
-            }
             boolean isStandard = isStandardActionType(mType);
             if (!isStandard && mIcon == null && (mTitle == null || TextUtils.isEmpty(
-                    mTitle.getText()))) {
+                    mTitle.toString()))) {
                 throw new IllegalStateException("An action must have either an icon or a title");
             }
 
             if ((mType == TYPE_APP_ICON || mType == TYPE_BACK)) {
-                if (mListener != null) {
+                if (mOnClickDelegate != null) {
                     throw new IllegalStateException(
                             "An on-click listener can't be set on the standard back or app-icon "
                                     + "action");
                 }
 
-                if (mIcon != null || (mTitle != null && !TextUtils.isEmpty(mTitle.getText()))) {
+                if (mIcon != null || (mTitle != null && !TextUtils.isEmpty(mTitle.toString()))) {
                     throw new IllegalStateException(
                             "An icon or title can't be set on the standard back or app-icon "
                                     + "action");
                 }
             }
 
-            return new Action(mTitle, mIcon, mBackgroundColor, mListener, mType);
+            return new Action(this);
         }
 
-        Builder() {
-        }
-
-        Builder(Action action) {
-            mTitle = action.getTitle();
-            mIcon = action.getIcon();
-            mBackgroundColor = action.getBackgroundColor();
-            mListener = action.getOnClickListener();
-            mType = action.getType();
+        /** Creates an empty {@link Builder} instance. */
+        public Builder() {
         }
     }
 }
