@@ -281,6 +281,15 @@ final class BackStackRecord extends FragmentTransaction implements
         }
     }
 
+    void runOnExecuteRunnables() {
+        if (mExecuteRunnables != null) {
+            for (int i = 0; i < mExecuteRunnables.size(); i++) {
+                mExecuteRunnables.get(i).run();
+            }
+            mExecuteRunnables = null;
+        }
+    }
+
     public void runOnCommitRunnables() {
         if (mCommitRunnables != null) {
             for (int i = 0; i < mCommitRunnables.size(); i++) {
@@ -407,29 +416,34 @@ final class BackStackRecord extends FragmentTransaction implements
             if (f != null) {
                 f.mBeingSaved = mBeingSaved;
                 f.setPopDirection(false);
-                f.setAnimations(op.mEnterAnim, op.mExitAnim, op.mPopEnterAnim, op.mPopExitAnim);
                 f.setNextTransition(mTransition);
                 f.setSharedElementNames(mSharedElementSourceNames, mSharedElementTargetNames);
             }
             switch (op.mCmd) {
                 case OP_ADD:
+                    f.setAnimations(op.mEnterAnim, op.mExitAnim, op.mPopEnterAnim, op.mPopExitAnim);
                     mManager.setExitAnimationOrder(f, false);
                     mManager.addFragment(f);
                     break;
                 case OP_REMOVE:
+                    f.setAnimations(op.mEnterAnim, op.mExitAnim, op.mPopEnterAnim, op.mPopExitAnim);
                     mManager.removeFragment(f);
                     break;
                 case OP_HIDE:
+                    f.setAnimations(op.mEnterAnim, op.mExitAnim, op.mPopEnterAnim, op.mPopExitAnim);
                     mManager.hideFragment(f);
                     break;
                 case OP_SHOW:
+                    f.setAnimations(op.mEnterAnim, op.mExitAnim, op.mPopEnterAnim, op.mPopExitAnim);
                     mManager.setExitAnimationOrder(f, false);
                     mManager.showFragment(f);
                     break;
                 case OP_DETACH:
+                    f.setAnimations(op.mEnterAnim, op.mExitAnim, op.mPopEnterAnim, op.mPopExitAnim);
                     mManager.detachFragment(f);
                     break;
                 case OP_ATTACH:
+                    f.setAnimations(op.mEnterAnim, op.mExitAnim, op.mPopEnterAnim, op.mPopExitAnim);
                     mManager.setExitAnimationOrder(f, false);
                     mManager.attachFragment(f);
                     break;
@@ -471,30 +485,35 @@ final class BackStackRecord extends FragmentTransaction implements
             if (f != null) {
                 f.mBeingSaved = mBeingSaved;
                 f.setPopDirection(true);
-                f.setAnimations(op.mEnterAnim, op.mExitAnim, op.mPopEnterAnim, op.mPopExitAnim);
                 f.setNextTransition(FragmentManager.reverseTransit(mTransition));
                 // Reverse the target and source names for pop operations
                 f.setSharedElementNames(mSharedElementTargetNames, mSharedElementSourceNames);
             }
             switch (op.mCmd) {
                 case OP_ADD:
+                    f.setAnimations(op.mEnterAnim, op.mExitAnim, op.mPopEnterAnim, op.mPopExitAnim);
                     mManager.setExitAnimationOrder(f, true);
                     mManager.removeFragment(f);
                     break;
                 case OP_REMOVE:
+                    f.setAnimations(op.mEnterAnim, op.mExitAnim, op.mPopEnterAnim, op.mPopExitAnim);
                     mManager.addFragment(f);
                     break;
                 case OP_HIDE:
+                    f.setAnimations(op.mEnterAnim, op.mExitAnim, op.mPopEnterAnim, op.mPopExitAnim);
                     mManager.showFragment(f);
                     break;
                 case OP_SHOW:
+                    f.setAnimations(op.mEnterAnim, op.mExitAnim, op.mPopEnterAnim, op.mPopExitAnim);
                     mManager.setExitAnimationOrder(f, true);
                     mManager.hideFragment(f);
                     break;
                 case OP_DETACH:
+                    f.setAnimations(op.mEnterAnim, op.mExitAnim, op.mPopEnterAnim, op.mPopExitAnim);
                     mManager.attachFragment(f);
                     break;
                 case OP_ATTACH:
+                    f.setAnimations(op.mEnterAnim, op.mExitAnim, op.mPopEnterAnim, op.mPopExitAnim);
                     mManager.setExitAnimationOrder(f, true);
                     mManager.detachFragment(f);
                     break;

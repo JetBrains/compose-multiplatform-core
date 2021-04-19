@@ -24,6 +24,7 @@ import static androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.content.Context;
 import android.content.ContextWrapper;
 import android.content.Intent;
@@ -680,6 +681,22 @@ public abstract class FragmentManager implements FragmentResultOwner {
     }
 
     /**
+     * Restores the back stack previously saved via {@link #saveBackStack(String)}. This
+     * will result in all of the transactions that made up that back stack to be re-executed,
+     * thus re-adding any fragments that were added through those transactions. All state of
+     * those fragments will be restored as part of this process.
+     * <p>
+     * This function is asynchronous -- it enqueues the
+     * request to restore, but the action will not be performed until the application
+     * returns to its event loop.
+     *
+     * @param name The name of the back stack previously saved by {@link #saveBackStack(String)}.
+     */
+    public void restoreBackStack(@NonNull String name) {
+        enqueueAction(new RestoreBackStackState(name), false);
+    }
+
+    /**
      * Save the back stack. While this functions similarly to
      * {@link #popBackStack(String, int)}, it <strong>does not</strong> throw away the
      * state of any fragments that were added through those transactions. Instead, the
@@ -1182,6 +1199,25 @@ public abstract class FragmentManager implements FragmentResultOwner {
                     + " is not currently in the FragmentManager"));
         }
         return fragmentStateManager.saveInstanceState();
+    }
+
+    private void clearBackStackStateViewModels() {
+        boolean shouldClear;
+        if (mHost instanceof ViewModelStoreOwner) {
+            shouldClear = mFragmentStore.getNonConfig().isCleared();
+        } else if (mHost.getContext() instanceof Activity) {
+            Activity activity = (Activity) mHost.getContext();
+            shouldClear = !activity.isChangingConfigurations();
+        } else {
+            shouldClear = true;
+        }
+        if (shouldClear) {
+            for (BackStackState backStackState : mBackStackStates.values()) {
+                for (String who : backStackState.mFragments) {
+                    mFragmentStore.getNonConfig().clearNonConfigState(who);
+                }
+            }
+        }
     }
 
     /**
@@ -2187,6 +2223,11 @@ public abstract class FragmentManager implements FragmentResultOwner {
         }
         executeOps(records, isRecordPop, startIndex, endIndex);
 
+        for (int recordNum = startIndex; recordNum < endIndex; recordNum++) {
+            final BackStackRecord record = records.get(recordNum);
+            record.runOnExecuteRunnables();
+        }
+
         if (USE_STATE_MANAGER) {
             // The last operation determines the overall direction, this ensures that operations
             // such as push, push, pop, push are correctly considered a push
@@ -2602,6 +2643,21 @@ public abstract class FragmentManager implements FragmentResultOwner {
         mBackStack.add(state);
     }
 
+    boolean restoreBackStackState(@NonNull ArrayList<BackStackRecord> records,
+            @NonNull ArrayList<Boolean> isRecordPop, @NonNull String name) {
+        BackStackState backStackState = mBackStackStates.get(name);
+        if (backStackState == null) {
+            return false;
+        }
+
+        List<BackStackRecord> backStackRecords = backStackState.instantiate(this);
+        for (BackStackRecord record : backStackRecords) {
+            records.add(record);
+            isRecordPop.add(false);
+        }
+        return true;
+    }
+
     boolean saveBackStackState(@NonNull ArrayList<BackStackRecord> records,
             @NonNull ArrayList<Boolean> isRecordPop, @NonNull String name) {
         final int index = findBackStackIndex(name, -1, true);
@@ -2697,7 +2753,7 @@ public abstract class FragmentManager implements FragmentResultOwner {
             record.mBeingSaved = true;
             // Get a callback when the BackStackRecord is actually finished
             final int currentIndex = i;
-            record.addOnCommitRunnable(new Runnable() {
+            record.addOnExecuteRunnable(new Runnable() {
                 @Override
                 public void run() {
                     // First collapse the record to remove expanded ops and get it ready to save
@@ -3289,6 +3345,7 @@ public abstract class FragmentManager implements FragmentResultOwner {
         mDestroyed = true;
         execPendingActions(true);
         endAnimatingAwayFragments();
+        clearBackStackStateViewModels();
         dispatchStateChange(Fragment.INITIALIZING);
         mHost = null;
         mContainer = null;
@@ -3680,7 +3737,6 @@ public abstract class FragmentManager implements FragmentResultOwner {
 
     /** Returns the current policy for this FragmentManager. If no policy is set, returns null. */
     @Nullable
-    @RestrictTo(RestrictTo.Scope.LIBRARY) // TODO: Make API public as soon as we have a few checks
     public FragmentStrictMode.Policy getStrictModePolicy() {
         return mStrictModePolicy;
     }
@@ -3693,7 +3749,6 @@ public abstract class FragmentManager implements FragmentResultOwner {
      *
      * @param policy the policy to put into place
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY) // TODO: Make API public as soon as we have a few checks
     public void setStrictModePolicy(@Nullable FragmentStrictMode.Policy policy) {
         mStrictModePolicy = policy;
     }
@@ -3747,6 +3802,21 @@ public abstract class FragmentManager implements FragmentResultOwner {
                 }
             }
             return popBackStackState(records, isRecordPop, mName, mId, mFlags);
+        }
+    }
+
+    private class RestoreBackStackState implements OpGenerator {
+
+        private final String mName;
+
+        RestoreBackStackState(@NonNull String name) {
+            mName = name;
+        }
+
+        @Override
+        public boolean generateOps(@NonNull ArrayList<BackStackRecord> records,
+                @NonNull ArrayList<Boolean> isRecordPop) {
+            return restoreBackStackState(records, isRecordPop, mName);
         }
     }
 

@@ -26,6 +26,7 @@ import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentContainerView;
 import androidx.fragment.app.FragmentManager;
 
 import java.util.Collections;
@@ -42,7 +43,6 @@ import java.util.Set;
  * use your application to see the violations as they happen.
  */
 @SuppressLint("SyntheticAccessor")
-@RestrictTo(RestrictTo.Scope.LIBRARY) // TODO: Make API public as soon as we have a few checks
 public final class FragmentStrictMode {
     private static final String TAG = "FragmentStrictMode";
     private static Policy defaultPolicy = Policy.LAX;
@@ -56,6 +56,7 @@ public final class FragmentStrictMode {
         DETECT_RETAIN_INSTANCE_USAGE,
         DETECT_SET_USER_VISIBLE_HINT,
         DETECT_TARGET_FRAGMENT_USAGE,
+        DETECT_WRONG_FRAGMENT_CONTAINER,
     }
 
     private FragmentStrictMode() {}
@@ -64,10 +65,9 @@ public final class FragmentStrictMode {
      * When #{@link Policy.Builder#penaltyListener} is enabled, the listener is called when a
      * violation occurs.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY) // TODO: Make API public as soon as we have a few checks
     public interface OnViolationListener {
 
-        /** Called on a VM policy violation. */
+        /** Called on a policy violation. */
         void onViolation(@NonNull Violation violation);
     }
 
@@ -83,7 +83,6 @@ public final class FragmentStrictMode {
      * severe (logging before process death, for example). There's currently no mechanism to choose
      * different penalties for different detected actions.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY) // TODO: Make API public as soon as we have a few checks
     public static final class Policy {
         private final Set<Flag> flags;
         private final OnViolationListener listener;
@@ -105,7 +104,6 @@ public final class FragmentStrictMode {
          * <p>You can call as many {@code detect} and {@code penalty} methods as you like. Currently
          * order is insignificant: all penalties apply to all detected problems.
          */
-        @RestrictTo(RestrictTo.Scope.LIBRARY) // TODO: Make API public as soon as we have a few checks
         public static final class Builder {
             private final Set<Flag> flags;
             private OnViolationListener listener;
@@ -196,6 +194,17 @@ public final class FragmentStrictMode {
             }
 
             /**
+             * Detects cases where a #{@link Fragment} is added to a container other than a
+             * #{@link FragmentContainerView}.
+             */
+            @NonNull
+            @SuppressLint("BuilderSetStyle")
+            public Builder detectWrongFragmentContainer() {
+                flags.add(Flag.DETECT_WRONG_FRAGMENT_CONTAINER);
+                return this;
+            }
+
+            /**
              * Construct the Policy instance.
              *
              * <p>Note: if no penalties are enabled before calling <code>build</code>, {@link
@@ -277,6 +286,14 @@ public final class FragmentStrictMode {
         Policy policy = getNearestPolicy(fragment);
         if (policy.flags.contains(Flag.DETECT_TARGET_FRAGMENT_USAGE)) {
             handlePolicyViolation(fragment, policy, new TargetFragmentUsageViolation());
+        }
+    }
+
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    public static void onWrongFragmentContainer(@NonNull Fragment fragment) {
+        Policy policy = getNearestPolicy(fragment);
+        if (policy.flags.contains(Flag.DETECT_WRONG_FRAGMENT_CONTAINER)) {
+            handlePolicyViolation(fragment, policy, new WrongFragmentContainerViolation());
         }
     }
 

@@ -38,13 +38,13 @@ public object LocalActivityResultRegistryOwner {
     private val LocalComposition = compositionLocalOf<ActivityResultRegistryOwner?> { null }
 
     /**
-     * Returns current composition local value for the owner.
+     * Returns current composition local value for the owner or `null` if one has not
+     * been provided nor is one available by looking at the [LocalContext].
      */
-    public val current: ActivityResultRegistryOwner
+    public val current: ActivityResultRegistryOwner?
         @Composable
         get() = LocalComposition.current
             ?: findOwner<ActivityResultRegistryOwner>(LocalContext.current)
-            ?: error("No ActivityResultRegisterOwner has been provided")
 
     /**
      * Associates a [LocalActivityResultRegistryOwner] key to a value in a call to
@@ -65,40 +65,78 @@ public object LocalActivityResultRegistryOwner {
  *
  * This *must* be called unconditionally, as part of initialization path.
  *
- * @sample androidx.activity.compose.samples.RegisterForActivityResult
+ * You should *not* call [ActivityResultLauncher.unregister] on the returned
+ * [ActivityResultLauncher]. Attempting to do so will result in an [IllegalStateException].
+ *
+ * @sample androidx.activity.compose.samples.RememberLauncherForActivityResult
  *
  * @param contract the contract, specifying conversions to/from [Intent]s
  * @param onResult the callback to be called on the main thread when activity result
  *                 is available
  *
- * @return the launcher that can be used to start the activity or unregister the callback.
+ * @return the launcher that can be used to start the activity.
  */
+@Deprecated(
+    "This method has been renamed to rememberLauncherForActivityResult().",
+    ReplaceWith("rememberLauncherForActivityResult(contract, onResult)")
+)
 @Composable
 public fun <I, O> registerForActivityResult(
     contract: ActivityResultContract<I, O>,
     onResult: (O) -> Unit
 ): ActivityResultLauncher<I> {
-    // Keep track of the current onResult listener
+    return rememberLauncherForActivityResult(contract, onResult)
+}
+
+/**
+ * Register a request to [Activity#startActivityForResult][start an activity for result],
+ * designated by the given [ActivityResultContract][contract].
+ *
+ * This creates a record in the [ActivityResultRegistry][registry] associated with this
+ * caller, managing request code, as well as conversions to/from [Intent] under the hood.
+ *
+ * This *must* be called unconditionally, as part of initialization path.
+ *
+ * You should *not* call [ActivityResultLauncher.unregister] on the returned
+ * [ActivityResultLauncher]. Attempting to do so will result in an [IllegalStateException].
+ *
+ * @sample androidx.activity.compose.samples.RememberLauncherForActivityResult
+ *
+ * @param contract the contract, specifying conversions to/from [Intent]s
+ * @param onResult the callback to be called on the main thread when activity result
+ *                 is available
+ *
+ * @return the launcher that can be used to start the activity.
+ */
+@Composable
+public fun <I, O> rememberLauncherForActivityResult(
+    contract: ActivityResultContract<I, O>,
+    onResult: (O) -> Unit
+): ActivityResultLauncher<I> {
+    // Keep track of the current contract and onResult listener
+    val currentContract = rememberUpdatedState(contract)
     val currentOnResult = rememberUpdatedState(onResult)
 
     // It doesn't really matter what the key is, just that it is unique
     // and consistent across configuration changes
     val key = rememberSaveable { UUID.randomUUID().toString() }
 
-    val activityResultRegistry = LocalActivityResultRegistryOwner.current.activityResultRegistry
-    val realLauncher = remember(contract) { ActivityResultLauncherHolder<I>() }
-    val returnedLauncher = remember(contract) {
+    val activityResultRegistry = checkNotNull(LocalActivityResultRegistryOwner.current) {
+        "No ActivityResultRegistryOwner was provided via LocalActivityResultRegistryOwner"
+    }.activityResultRegistry
+    val realLauncher = remember { ActivityResultLauncherHolder<I>() }
+    val returnedLauncher = remember {
         object : ActivityResultLauncher<I>() {
             override fun launch(input: I, options: ActivityOptionsCompat?) {
                 realLauncher.launch(input, options)
             }
 
             override fun unregister() {
-                realLauncher.unregister()
+                error("Registration is automatically handled by rememberLauncherForActivityResult")
             }
 
             @Suppress("UNCHECKED_CAST")
-            override fun getContract() = contract as ActivityResultContract<I, *>
+            override fun getContract() = currentContract.value as ActivityResultContract<I, *>
         }
     }
 
@@ -109,7 +147,7 @@ public fun <I, O> registerForActivityResult(
             currentOnResult.value(it)
         }
         onDispose {
-            returnedLauncher.unregister()
+            realLauncher.unregister()
         }
     }
     return returnedLauncher

@@ -40,7 +40,7 @@ import androidx.wear.watchface.data.WatchUiState
 import androidx.wear.watchface.style.UserStyle
 import androidx.wear.watchface.style.UserStyleSchema
 import androidx.wear.watchface.style.UserStyleSetting.ComplicationsUserStyleSetting
-import androidx.wear.watchface.style.data.UserStyleWireFormat
+import androidx.wear.watchface.style.UserStyleData
 import java.util.Objects
 import java.util.concurrent.Executor
 
@@ -65,9 +65,9 @@ public interface InteractiveWatchFaceClient : AutoCloseable {
      * @param calendarTimeMillis The UTC time in milliseconds since the epoch to render with.
      * @param userStyle Optional [UserStyle] to render with, if null the current style is used.
      * @param idAndComplicationData Map of complication ids to [ComplicationData] to render with, or
-     *     if null then the existing complication data if any is used.
+     * if null then the existing complication data if any is used.
      * @return A shared memory backed [Bitmap] containing a screenshot of the watch  face with the
-     *     given settings.
+     * given settings.
      */
     @RequiresApi(27)
     public fun renderWatchFaceToBitmap(
@@ -91,11 +91,11 @@ public interface InteractiveWatchFaceClient : AutoCloseable {
     /**
      * Renames this instance to [newInstanceId] (must be unique, usually this would be different
      * from the old ID but that's not a requirement). Sets the current [UserStyle] represented as a
-     * Map<String, String> and clears any complication data. Setting the new UserStyle may have
-     * a side effect of enabling or disabling complications, which will be visible via
+     * [UserStyleData> and clears any complication data. Setting the new UserStyle may have a
+     * side effect of enabling or disabling complications, which will be visible via
      * [ComplicationState.isEnabled].
      */
-    public fun updateWatchFaceInstance(newInstanceId: String, userStyle: Map<String, String>)
+    public fun updateWatchFaceInstance(newInstanceId: String, userStyle: UserStyleData)
 
     /** Returns the ID of this watch face instance. */
     public val instanceId: String
@@ -157,7 +157,7 @@ public interface InteractiveWatchFaceClient : AutoCloseable {
      * @param text [ComplicationText] associated with the region, to be read by the screen reader.
      * @param bounds [Rect] describing the area of the feature on screen.
      * @param tapAction [PendingIntent] to be used if the screen reader's user triggers a tap
-     *     action.
+     * action.
      */
     public class ContentDescriptionLabel(
         private val text: ComplicationText,
@@ -297,13 +297,13 @@ internal class InteractiveWatchFaceClientImpl internal constructor(
 
     override fun updateWatchFaceInstance(
         newInstanceId: String,
-        userStyle: Map<String, String>
+        userStyle: UserStyleData
     ) = TraceEvent(
         "InteractiveWatchFaceClientImpl.updateInstance"
     ).use {
         iInteractiveWatchFace.updateWatchfaceInstance(
             newInstanceId,
-            UserStyleWireFormat(userStyle)
+            userStyle.toWireFormat()
         )
     }
 

@@ -25,17 +25,19 @@ import androidx.room.compiler.processing.XMethodType
 import androidx.room.compiler.processing.XType
 import androidx.room.compiler.processing.XTypeElement
 import androidx.room.compiler.processing.ksp.KspAnnotated
-import androidx.room.compiler.processing.ksp.KspAnnotated.UseSiteFilter.Companion.NO_USE_SITE
 import androidx.room.compiler.processing.ksp.KspAnnotated.UseSiteFilter.Companion.NO_USE_SITE_OR_GETTER
 import androidx.room.compiler.processing.ksp.KspAnnotated.UseSiteFilter.Companion.NO_USE_SITE_OR_SETTER
-import androidx.room.compiler.processing.ksp.KspAnnotated.UseSiteFilter.Companion.PROPERTY_SETTER_PARAMETER
+import androidx.room.compiler.processing.ksp.KspAnnotated.UseSiteFilter.Companion.NO_USE_SITE_OR_SET_PARAM
 import androidx.room.compiler.processing.ksp.KspFieldElement
 import androidx.room.compiler.processing.ksp.KspHasModifiers
 import androidx.room.compiler.processing.ksp.KspProcessingEnv
 import androidx.room.compiler.processing.ksp.KspTypeElement
+import androidx.room.compiler.processing.ksp.findEnclosingTypeElement
 import androidx.room.compiler.processing.ksp.overrides
 import com.google.devtools.ksp.KspExperimental
 import com.google.devtools.ksp.symbol.KSPropertyAccessor
+import com.google.devtools.ksp.symbol.KSPropertyGetter
+import com.google.devtools.ksp.symbol.KSPropertySetter
 import java.util.Locale
 
 /**
@@ -206,12 +208,8 @@ internal sealed class KspSyntheticPropertyMethodElement(
         ) : XExecutableParameterElement,
             XAnnotated by KspAnnotated.create(
                 env = env,
-                delegate = origin.field.declaration,
-                filter = PROPERTY_SETTER_PARAMETER
-            ) + KspAnnotated.create(
-                env = env,
                 delegate = origin.field.declaration.setter?.parameter,
-                filter = NO_USE_SITE
+                filter = NO_USE_SITE_OR_SET_PARAM
             ) {
 
             override val name: String by lazy {
@@ -240,6 +238,37 @@ internal sealed class KspSyntheticPropertyMethodElement(
                 } else {
                     "set${propName.capitalize(Locale.US)}"
                 }
+            }
+        }
+    }
+
+    companion object {
+
+        fun create(
+            env: KspProcessingEnv,
+            propertyAccessor: KSPropertyAccessor
+        ): KspSyntheticPropertyMethodElement {
+            val enclosingType = propertyAccessor.receiver.findEnclosingTypeElement(env)
+
+            checkNotNull(enclosingType) {
+                "XProcessing does not currently support annotations on top level " +
+                    "properties with KSP. Cannot process $propertyAccessor."
+            }
+
+            val field = KspFieldElement(
+                env,
+                propertyAccessor.receiver,
+                enclosingType
+            )
+
+            return when (propertyAccessor) {
+                is KSPropertyGetter -> {
+                    Getter(env, field)
+                }
+                is KSPropertySetter -> {
+                    Setter(env, field)
+                }
+                else -> error("Unsupported property accessor $propertyAccessor")
             }
         }
     }
