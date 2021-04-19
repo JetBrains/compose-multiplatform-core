@@ -46,6 +46,24 @@ object Stubs {
             fun Color(color: Long): Color {
                 return Color(value = (color.toULong() and 0xffffffffUL) shl 32)
             }
+
+            fun Color(color: Int): Color {
+                return Color(value = color.toULong() shl 32)
+            }
+
+            fun Color(
+                red: Float,
+                green: Float,
+                blue: Float,
+                alpha: Float = 1f,
+            ): Color = Color.Black
+
+            fun Color(
+                red: Int,
+                green: Int,
+                blue: Int,
+                alpha: Int = 0xFF
+            ): Color = Color.Black
         """
     )
 
@@ -68,9 +86,6 @@ object Stubs {
     val Modifier = stub(
         """
         package androidx.compose.ui
-
-        import androidx.compose.ui.platform.InspectorInfo
-        import androidx.compose.ui.platform.InspectorValueInfo
 
         @Suppress("ModifierFactoryExtensionFunction")
         interface Modifier {

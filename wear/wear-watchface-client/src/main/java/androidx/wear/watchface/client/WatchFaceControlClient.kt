@@ -35,6 +35,7 @@ import androidx.wear.watchface.control.data.WallpaperInteractiveWatchFaceInstanc
 import androidx.wear.watchface.data.IdAndComplicationDataWireFormat
 import androidx.wear.watchface.data.WatchUiState
 import androidx.wear.watchface.style.UserStyle
+import androidx.wear.watchface.style.UserStyleData
 import androidx.wear.watchface.style.data.UserStyleWireFormat
 import kotlinx.coroutines.CompletableDeferred
 import kotlin.coroutines.resume
@@ -54,7 +55,7 @@ public interface WatchFaceControlClient : AutoCloseable {
          *
          * @param context Calling application's [Context].
          * @param watchFacePackageName The name of the package containing the watch face control
-         *     service to bind to.
+         * service to bind to.
          * @return The [WatchFaceControlClient] if there is one.
          * @throws [ServiceNotBoundException] if the watch face control service can not be bound or
          * a [ServiceStartFailureException] if the watch face dies during startup.
@@ -113,8 +114,8 @@ public interface WatchFaceControlClient : AutoCloseable {
      * When finished call [InteractiveWatchFaceClient.close] to release resources.
      *
      * @param instanceId The name of the interactive watch face instance to retrieve
-     * @return The [InteractiveWatchFaceClient] or `null` if [instanceId] is unrecognized,
-     *    or [ServiceNotBoundException] if the WatchFaceControlService is not bound.
+     * @return The [InteractiveWatchFaceClient] or `null` if [instanceId] is unrecognized, or
+     * [ServiceNotBoundException] if the WatchFaceControlService is not bound.
      */
     public fun getInteractiveWatchFaceClientInstance(
         instanceId: String
@@ -128,8 +129,8 @@ public interface WatchFaceControlClient : AutoCloseable {
      * When finished call [HeadlessWatchFaceClient.close] to release resources.
      *
      * @param watchFaceName The [ComponentName] of the watch face to create a headless instance for
-     *    must be in the same APK the WatchFaceControlClient is connected to. NB a single apk can
-     *    contain multiple watch faces.
+     * must be in the same APK the WatchFaceControlClient is connected to. NB a single apk can
+     * contain multiple watch faces.
      * @param deviceConfig The hardware [DeviceConfig]
      * @param surfaceWidth The width of screen shots taken by the [HeadlessWatchFaceClient]
      * @param surfaceHeight The height of screen shots taken by the [HeadlessWatchFaceClient]
@@ -152,8 +153,8 @@ public interface WatchFaceControlClient : AutoCloseable {
      * @param id The ID for the requested [InteractiveWatchFaceClient].
      * @param deviceConfig The [DeviceConfig] for the wearable.
      * @param watchUiState The initial [WatchUiState] for the wearable.
-     * @param userStyle The initial style map (see [UserStyle]), or null if the default should be
-     *     used.
+     * @param userStyle The initial style map encoded as [UserStyleData] (see [UserStyle]), or
+     * `null` if the default should be used.
      * @param idToComplicationData The initial complication data, or null if unavailable.
      * @return The [InteractiveWatchFaceClient], this should be closed when finished.
      * @throws [ServiceStartFailureException] if the watchface dies during startup.
@@ -162,7 +163,7 @@ public interface WatchFaceControlClient : AutoCloseable {
         id: String,
         deviceConfig: DeviceConfig,
         watchUiState: androidx.wear.watchface.client.WatchUiState,
-        userStyle: Map<String, String>?,
+        userStyle: UserStyleData?,
         idToComplicationData: Map<Int, ComplicationData>?
     ): InteractiveWatchFaceClient
 
@@ -212,7 +213,7 @@ internal class WatchFaceControlClientImpl internal constructor(
         id: String,
         deviceConfig: DeviceConfig,
         watchUiState: androidx.wear.watchface.client.WatchUiState,
-        userStyle: Map<String, String>?,
+        userStyle: UserStyleData?,
         idToComplicationData: Map<Int, ComplicationData>?
     ): InteractiveWatchFaceClient {
         requireNotClosed()
@@ -245,7 +246,7 @@ internal class WatchFaceControlClientImpl internal constructor(
                         watchUiState.inAmbientMode,
                         watchUiState.interruptionFilter
                     ),
-                    UserStyleWireFormat(userStyle ?: emptyMap()),
+                    userStyle?.toWireFormat() ?: UserStyleWireFormat(emptyMap()),
                     idToComplicationData?.map {
                         IdAndComplicationDataWireFormat(
                             it.key,

@@ -203,7 +203,7 @@ public abstract class CarAppService extends Service {
      *     if ((getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0) {
      *         return HostValidator.ALLOW_ALL_HOSTS_VALIDATOR;
      *     } else {
-     *         return new HostValidator.Builder()
+     *         return new HostValidator.Builder(context)
      *             .addAllowedHosts(androidx.car.app.R.array.hosts_allowlist_sample)
      *             .build();
      *     }
@@ -327,7 +327,7 @@ public abstract class CarAppService extends Service {
     @Nullable
     LifecycleRegistry getLifecycleIfValid() {
         Session session = getCurrentSession();
-        return session == null ? null : (LifecycleRegistry) session.getLifecycle();
+        return session == null ? null : (LifecycleRegistry) session.getLifecycleInternal();
     }
 
     @NonNull

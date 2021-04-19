@@ -31,11 +31,11 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 @SmallTest
-class EditorServiceClientTest {
+public class EditorServiceClientTest {
     private val editorServiceClient = EditorServiceClientImpl(EditorService.globalEditorService)
 
     @Test
-    fun registerObserver() {
+    public fun registerObserver() {
         lateinit var observedEditorState: EditorState
         val observer = object : EditorListener {
             override fun onEditorStateChanged(editorState: EditorState) {
@@ -48,7 +48,12 @@ class EditorServiceClientTest {
         EditorService.globalEditorService.broadcastEditorState(
             EditorStateWireFormat(
                 watchFaceInstanceId,
-                UserStyleWireFormat(mapOf("color" to "red", "size" to "small")),
+                UserStyleWireFormat(
+                    mapOf(
+                        "color" to "red".encodeToByteArray(),
+                        "size" to "small".encodeToByteArray()
+                    )
+                ),
                 emptyList(),
                 true
             )

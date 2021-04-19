@@ -18,8 +18,6 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 import static androidx.build.dependencies.DependenciesKt.*
-import androidx.build.LibraryGroups
-import androidx.build.LibraryVersions
 import androidx.build.Publish
 
 plugins {
@@ -33,7 +31,8 @@ dependencies {
     testImplementation(JUNIT)
     testImplementation(ROBOLECTRIC)
 
-    testImplementation(
+    testCompileOnly("org.jetbrains.kotlin:kotlin-compiler:$KOTLIN_VERSION")
+    testRuntimeOnly(
         project(
            ":compose:compiler:compiler-hosted:integration-tests:kotlin-compiler-repackaged"
         )
