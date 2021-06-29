@@ -31,7 +31,7 @@ import androidx.car.app.CarContext;
 import androidx.car.app.HostDispatcher;
 import androidx.car.app.ICarHost;
 import androidx.car.app.IStartCarApp;
-import androidx.car.app.OnRequestPermissionsCallback;
+import androidx.car.app.OnRequestPermissionsListener;
 import androidx.car.app.testing.navigation.TestNavigationManager;
 import androidx.car.app.utils.CollectionUtils;
 
@@ -70,7 +70,7 @@ public class TestCarContext extends CarContext {
 
     final List<Intent> mStartCarAppIntents = new ArrayList<>();
     @Nullable
-    private PermissionRequest mLastPermissionRequest = null;
+    private PermissionRequestInfo mLastPermissionRequestInfo = null;
     private boolean mHasCalledFinishCarApp;
 
     /** Resets the values tracked by this {@link TestCarContext}. */
@@ -128,11 +128,11 @@ public class TestCarContext extends CarContext {
     }
 
     @Override
-    public void requestPermissions(@NonNull Executor executor, @NonNull List<String> permissions,
-            @NonNull OnRequestPermissionsCallback callback) {
-        mLastPermissionRequest = new PermissionRequest(requireNonNull(permissions),
-                requireNonNull(callback));
-        super.requestPermissions(executor, permissions, callback);
+    public void requestPermissions(@NonNull List<String> permissions, @NonNull Executor executor,
+            @NonNull OnRequestPermissionsListener listener) {
+        mLastPermissionRequestInfo = new PermissionRequestInfo(requireNonNull(permissions),
+                requireNonNull(listener));
+        super.requestPermissions(permissions, executor, listener);
     }
 
     /**
@@ -174,12 +174,12 @@ public class TestCarContext extends CarContext {
     }
 
     /**
-     * Returns a {@link PermissionRequest} including the information with the last call made to
+     * Returns a {@link PermissionRequestInfo} including the information with the last call made to
      * {@link CarContext#requestPermissions}, or {@code null} if no call was made.
      */
     @Nullable
-    public PermissionRequest getLastPermissionRequest() {
-        return mLastPermissionRequest;
+    public PermissionRequestInfo getLastPermissionRequestInfo() {
+        return mLastPermissionRequestInfo;
     }
 
     /** Verifies if {@link CarContext#finishCarApp} has been called. */
@@ -253,23 +253,23 @@ public class TestCarContext extends CarContext {
      * A representation of a permission request including the permissions that were requested as
      * well as the callback provided.
      */
-    public static class PermissionRequest {
+    public static class PermissionRequestInfo {
         private final List<String> mPermissionsRequested;
-        private final OnRequestPermissionsCallback mCallback;
+        private final OnRequestPermissionsListener mListener;
 
         @SuppressWarnings("ExecutorRegistration")
-        PermissionRequest(List<String> permissionsRequested,
-                OnRequestPermissionsCallback callback) {
+        PermissionRequestInfo(List<String> permissionsRequested,
+                OnRequestPermissionsListener callback) {
             mPermissionsRequested = requireNonNull(permissionsRequested);
-            mCallback = requireNonNull(callback);
+            mListener = requireNonNull(callback);
         }
 
         /**
-         * Returns the callback that was provided in the permission request.
+         * Returns the listener that was provided in the permission request.
          */
         @NonNull
-        public OnRequestPermissionsCallback getCallback() {
-            return mCallback;
+        public OnRequestPermissionsListener getListener() {
+            return mListener;
         }
 
         /**

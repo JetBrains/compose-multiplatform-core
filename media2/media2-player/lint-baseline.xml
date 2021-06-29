@@ -1,5 +1,115 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<issues format="5" by="lint 4.2.0-beta06" client="gradle" variant="debug" version="4.2.0-beta06">
+<issues format="6" by="lint 7.1.0-dev" type="baseline" client="gradle" name="AGP (7.1.0-dev)" variant="all" version="7.1.0-dev">
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 27 (current min is 16): `android.app.Activity#setTurnScreenOn`"
+        errorLine1="                mActivity.setTurnScreenOn(true);"
+        errorLine2="                          ~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidTest/java/androidx/media2/player/MediaPlayer2DrmTestBase.java"
+            line="111"
+            column="27"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 27 (current min is 16): `android.app.Activity#setShowWhenLocked`"
+        errorLine1="                mActivity.setShowWhenLocked(true);"
+        errorLine2="                          ~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidTest/java/androidx/media2/player/MediaPlayer2DrmTestBase.java"
+            line="112"
+            column="27"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 26 (current min is 16): `android.app.KeyguardManager#requestDismissKeyguard`"
+        errorLine1="                mKeyguardManager.requestDismissKeyguard(mActivity, null);"
+        errorLine2="                                 ~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidTest/java/androidx/media2/player/MediaPlayer2DrmTestBase.java"
+            line="113"
+            column="34"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 18 (current min is 16): `android.media.MediaDrm.KeyRequest#getData`"
+        errorLine1="        if (0 == getKeyIds(keyRequest.getData(), keyIds)) {"
+        errorLine2="                                      ~~~~~~~">
+        <location
+            file="src/androidTest/java/androidx/media2/player/MediaPlayer2DrmTestBase.java"
+            line="874"
+            column="39"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 27 (current min is 16): `android.app.Activity#setTurnScreenOn`"
+        errorLine1="                mActivity.setTurnScreenOn(true);"
+        errorLine2="                          ~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidTest/java/androidx/media2/player/MediaPlayerDrmTest.java"
+            line="129"
+            column="27"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 27 (current min is 16): `android.app.Activity#setShowWhenLocked`"
+        errorLine1="                mActivity.setShowWhenLocked(true);"
+        errorLine2="                          ~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidTest/java/androidx/media2/player/MediaPlayerDrmTest.java"
+            line="130"
+            column="27"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 26 (current min is 16): `android.app.KeyguardManager#requestDismissKeyguard`"
+        errorLine1="                mKeyguardManager.requestDismissKeyguard(mActivity, null);"
+        errorLine2="                                 ~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidTest/java/androidx/media2/player/MediaPlayerDrmTest.java"
+            line="131"
+            column="34"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 18 (current min is 16): `android.media.MediaDrm.KeyRequest#getData`"
+        errorLine1="        if (0 == getKeyIds(keyRequest.getData(), keyIds)) {"
+        errorLine2="                                      ~~~~~~~">
+        <location
+            file="src/androidTest/java/androidx/media2/player/MediaPlayerDrmTest.java"
+            line="955"
+            column="39"/>
+    </issue>
+
+    <issue
+        id="WrongConstant"
+        message="Must be one of: BaseResult.RESULT_SUCCESS, DrmResult.RESULT_ERROR_PROVISIONING_NETWORK_ERROR, DrmResult.RESULT_ERROR_PROVISIONING_SERVER_ERROR, DrmResult.RESULT_ERROR_PREPARATION_ERROR, DrmResult.RESULT_ERROR_UNSUPPORTED_SCHEME, DrmResult.RESULT_ERROR_RESOURCE_BUSY"
+        errorLine1="            return super.getResultCode();"
+        errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/media2/player/MediaPlayer.java"
+            line="3859"
+            column="20"/>
+    </issue>
+
+    <issue
+        id="WrongConstant"
+        message="Must be one of: PlaybackParams.AUDIO_FALLBACK_MODE_DEFAULT, PlaybackParams.AUDIO_FALLBACK_MODE_MUTE, PlaybackParams.AUDIO_FALLBACK_MODE_FAIL"
+        errorLine1="                return mPlaybackParams.getAudioFallbackMode();"
+        errorLine2="                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/media2/player/PlaybackParams.java"
+            line="115"
+            column="24"/>
+    </issue>
 
     <issue
         id="BanSynchronizedMethods"
@@ -47,7 +157,7 @@
 
     <issue
         id="BanUncheckedReflection"
-        message="Calling Method.invoke without an SDK check"
+        message="Calling `Method.invoke` without an SDK check"
         errorLine1="            return (FileDescriptor) method.invoke(object, fileDescriptor);"
         errorLine2="                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
@@ -58,7 +168,7 @@
 
     <issue
         id="BanUncheckedReflection"
-        message="Calling Method.invoke without an SDK check"
+        message="Calling `Method.invoke` without an SDK check"
         errorLine1="            method.invoke(object, fileDescriptor, position, /* whence= */ SEEK_SET);"
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
@@ -69,7 +179,7 @@
 
     <issue
         id="BanUncheckedReflection"
-        message="Calling Method.invoke without an SDK check"
+        message="Calling `Method.invoke` without an SDK check"
         errorLine1="            return (FileDescriptor) method.invoke(object, fileDescriptor);"
         errorLine2="                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location

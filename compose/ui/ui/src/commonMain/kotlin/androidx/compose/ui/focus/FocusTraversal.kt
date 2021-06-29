@@ -26,11 +26,11 @@ import androidx.compose.ui.focus.FocusDirection.Companion.Previous
 import androidx.compose.ui.focus.FocusDirection.Companion.Right
 import androidx.compose.ui.focus.FocusDirection.Companion.Up
 import androidx.compose.ui.focus.FocusRequester.Companion.Default
-import androidx.compose.ui.focus.FocusState.Active
-import androidx.compose.ui.focus.FocusState.ActiveParent
-import androidx.compose.ui.focus.FocusState.Captured
-import androidx.compose.ui.focus.FocusState.Disabled
-import androidx.compose.ui.focus.FocusState.Inactive
+import androidx.compose.ui.focus.FocusStateImpl.Active
+import androidx.compose.ui.focus.FocusStateImpl.ActiveParent
+import androidx.compose.ui.focus.FocusStateImpl.Captured
+import androidx.compose.ui.focus.FocusStateImpl.Disabled
+import androidx.compose.ui.focus.FocusStateImpl.Inactive
 import androidx.compose.ui.node.ModifiedFocusNode
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.LayoutDirection.Ltr
@@ -39,12 +39,13 @@ import androidx.compose.ui.unit.LayoutDirection.Rtl
 private const val invalidFocusDirection = "Invalid FocusDirection"
 
 /**
- * The [FocusDirection] is used to specify direction when a focus change request is made via
- * [moveFocus].
+ * The [FocusDirection] is used to specify the direction for a [FocusManager.moveFocus]
+ * request.
  *
  * @sample androidx.compose.ui.samples.MoveFocusSample
  */
-inline class FocusDirection(val value: Int) {
+@Suppress("INLINE_CLASS_DEPRECATED", "EXPERIMENTAL_FEATURE_WARNING")
+inline class FocusDirection internal constructor(@Suppress("unused") private val value: Int) {
 
     override fun toString(): String {
         return when (this) {
@@ -66,36 +67,48 @@ inline class FocusDirection(val value: Int) {
         /**
          *  Direction used in [moveFocus] to indicate that you are searching for the next
          *  focusable item.
+         *
+         *  @sample androidx.compose.ui.samples.MoveFocusSample
          */
         val Next: FocusDirection = FocusDirection(1)
 
         /**
          *  Direction used in [moveFocus] to indicate that you are searching for the previous
          *  focusable item.
+         *
+         *  @sample androidx.compose.ui.samples.MoveFocusSample
          */
         val Previous: FocusDirection = FocusDirection(2)
 
         /**
          *  Direction used in [moveFocus] to indicate that you are searching for the next
          *  focusable item to the left of the currently focused item.
+         *
+         *  @sample androidx.compose.ui.samples.MoveFocusSample
          */
         val Left: FocusDirection = FocusDirection(3)
 
         /**
          *  Direction used in [moveFocus] to indicate that you are searching for the next
          *  focusable item to the right of the currently focused item.
+         *
+         *  @sample androidx.compose.ui.samples.MoveFocusSample
          */
         val Right: FocusDirection = FocusDirection(4)
 
         /**
          *  Direction used in [moveFocus] to indicate that you are searching for the next
          *  focusable item that is above the currently focused item.
+         *
+         *  @sample androidx.compose.ui.samples.MoveFocusSample
          */
         val Up: FocusDirection = FocusDirection(5)
 
         /**
          *  Direction used in [moveFocus] to indicate that you are searching for the next
          *  focusable item that is below the currently focused item.
+         *
+         *  @sample androidx.compose.ui.samples.MoveFocusSample
          */
         val Down: FocusDirection = FocusDirection(6)
 

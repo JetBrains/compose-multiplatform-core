@@ -28,12 +28,16 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollDispatcher
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource.Companion.Drag
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource.Companion.Fling
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource.Companion.Relocate
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.pointer.PointerType
 import androidx.compose.ui.platform.debugInspectorInfo
@@ -143,7 +147,7 @@ private fun Modifier.touchScrollImplementation(
     val draggableState = remember { ScrollDraggableState(scrollLogic) }
 
     return draggable(
-        draggableState,
+        { draggableState },
         orientation = orientation,
         enabled = enabled,
         interactionSource = interactionSource,
@@ -195,7 +199,7 @@ private class ScrollingLogic(
             leftForParent.toOffset(),
             source
         )
-        return leftForParent
+        return if (source == Drag) consumed else leftForParent
     }
 
     fun performRawScroll(scroll: Offset): Offset {
@@ -205,6 +209,13 @@ private class ScrollingLogic(
             scrollableState.dispatchRawDelta(scroll.toFloat().reverseIfNeeded())
                 .reverseIfNeeded().toOffset()
         }
+    }
+
+    fun performRelocationScroll(scroll: Offset): Offset {
+        nestedScrollDispatcher.value.coroutineScope.launch {
+            scrollableState.animateScrollBy(scroll.toFloat().reverseIfNeeded())
+        }
+        return scroll
     }
 
     suspend fun onDragStopped(axisVelocity: Float) {
@@ -219,8 +230,7 @@ private class ScrollingLogic(
         var result: Velocity = available
         scrollableState.scroll {
             val outerScopeScroll: (Float) -> Float = { delta ->
-                delta - this.dispatchScroll(delta.reverseIfNeeded(), NestedScrollSource.Fling)
-                    .reverseIfNeeded()
+                delta - this.dispatchScroll(delta.reverseIfNeeded(), Fling).reverseIfNeeded()
             }
             val scope = object : ScrollScope {
                 override fun scrollBy(pixels: Float): Float {
@@ -240,20 +250,20 @@ private class ScrollingLogic(
 
 private class ScrollDraggableState(
     val scrollLogic: State<ScrollingLogic>
-) : DraggableState, DragScope {
+) : ConsumptionBasedDraggableState, ConsumptionBasedDragScope {
     var latestScrollScope: ScrollScope = NoOpScrollScope
 
-    override fun dragBy(pixels: Float) {
+    override fun dragBy(pixels: Float): Float {
         with(scrollLogic.value) {
             with(latestScrollScope) {
-                dispatchScroll(pixels, NestedScrollSource.Drag)
+                return dispatchScroll(pixels, Drag)
             }
         }
     }
 
     override suspend fun drag(
         dragPriority: MutatePriority,
-        block: suspend DragScope.() -> Unit
+        block: suspend ConsumptionBasedDragScope.() -> Unit
     ) {
         scrollLogic.value.scrollableState.scroll(dragPriority) {
             latestScrollScope = this
@@ -279,7 +289,13 @@ private fun scrollableNestedScrollConnection(
         available: Offset,
         source: NestedScrollSource
     ): Offset = if (enabled) {
-        scrollLogic.value.performRawScroll(available)
+        @Suppress("DEPRECATION")
+        when (source) {
+            Drag, Fling -> scrollLogic.value.performRawScroll(available)
+            @OptIn(ExperimentalComposeUiApi::class)
+            Relocate -> scrollLogic.value.performRelocationScroll(available)
+            else -> error("$source scroll not supported.")
+        }
     } else {
         Offset.Zero
     }

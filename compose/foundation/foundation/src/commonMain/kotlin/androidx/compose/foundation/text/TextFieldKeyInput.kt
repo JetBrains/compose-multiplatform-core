@@ -29,6 +29,7 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.key.utf16CodePoint
 import androidx.compose.ui.text.input.CommitTextCommand
 import androidx.compose.ui.text.input.EditCommand
+import androidx.compose.ui.text.input.FinishComposingTextCommand
 import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.input.TextFieldValue
 
@@ -52,10 +53,11 @@ internal class TextFieldKeyInput(
     val singleLine: Boolean = false,
     val preparedSelectionState: TextPreparedSelectionState,
     val offsetMapping: OffsetMapping = OffsetMapping.Identity,
+    val undoManager: UndoManager? = null,
     private val keyMapping: KeyMapping = platformDefaultKeyMapping,
 ) {
     private fun EditCommand.apply() {
-        state.onValueChange(state.processor.apply(listOf(this)))
+        state.onValueChange(state.processor.apply(listOf(FinishComposingTextCommand(), this)))
     }
 
     private fun typedCommand(event: KeyEvent): CommitTextCommand? =
@@ -161,8 +163,16 @@ internal class TextFieldKeyInput(
                 KeyCommand.SELECT_HOME -> moveCursorToHome().selectMovement()
                 KeyCommand.SELECT_END -> moveCursorToEnd().selectMovement()
                 KeyCommand.DESELECT -> deselect()
+                KeyCommand.UNDO -> {
+                    undoManager?.makeSnapshot(value)
+                    undoManager?.undo()?.let { this@TextFieldKeyInput.state.onValueChange(it) }
+                }
+                KeyCommand.REDO -> {
+                    undoManager?.redo()?.let { this@TextFieldKeyInput.state.onValueChange(it) }
+                }
             }
         }
+        undoManager?.forceNextSnapshot()
         return consumed
     }
 
@@ -189,7 +199,8 @@ internal fun Modifier.textFieldKeyInput(
     value: TextFieldValue,
     editable: Boolean,
     singleLine: Boolean,
-    offsetMapping: OffsetMapping
+    offsetMapping: OffsetMapping,
+    undoManager: UndoManager
 ) = composed {
     val preparedSelectionState = remember { TextPreparedSelectionState() }
     val processor = TextFieldKeyInput(
@@ -199,7 +210,8 @@ internal fun Modifier.textFieldKeyInput(
         editable = editable,
         singleLine = singleLine,
         offsetMapping = offsetMapping,
-        preparedSelectionState = preparedSelectionState
+        preparedSelectionState = preparedSelectionState,
+        undoManager = undoManager
     )
     Modifier.onKeyEvent(processor::process)
 }

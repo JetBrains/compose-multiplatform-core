@@ -16,17 +16,36 @@
 
 package androidx.appcompat.widget;
 
+import static com.google.common.truth.Truth.assertThat;
+
+import androidx.test.annotation.UiThreadTest;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.SmallTest;
 
+import org.junit.Test;
 import org.junit.runner.RunWith;
 
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class AppCompatEditTextEmojiTest
-        extends AppCompatBaseTextViewEmojiTest<AppCompatEditTextEmojiActivity, AppCompatTextView> {
+        extends AppCompatBaseEditTextEmojiTest<AppCompatEditTextEmojiActivity, AppCompatTextView> {
 
     public AppCompatEditTextEmojiTest() {
         super(AppCompatEditTextEmojiActivity.class);
+    }
+
+    /**
+     * setKeyListener can clear tho focusable attribute, which we call during initialization,
+     * ensure we don't clobber the focusable from attributes.
+     */
+    @Test
+    @UiThreadTest
+    public void respectsFocusableAndEditableAttribute() {
+        AppCompatEditText notFocusable =
+                mActivityTestRule.getActivity()
+                        .findViewById(androidx.appcompat.test.R.id.not_focusable);
+
+        assertThat(notFocusable.isEnabled()).isFalse();
+        assertThat(notFocusable.isFocusable()).isFalse();
     }
 }

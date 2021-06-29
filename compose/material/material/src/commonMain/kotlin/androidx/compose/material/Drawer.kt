@@ -32,9 +32,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.State
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.Saver
@@ -43,6 +43,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.isSpecified
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -338,10 +339,12 @@ fun rememberBottomDrawerState(
 }
 
 /**
- * Navigation drawers provide access to destinations in your app.
+ * <a href="https://material.io/components/navigation-drawer#modal-drawer" class="external" target="_blank">Material Design modal navigation drawer</a>.
  *
  * Modal navigation drawers block interaction with the rest of an app’s content with a scrim.
  * They are elevated above most of the app’s UI and don’t affect the screen’s layout grid.
+ *
+ * ![Modal drawer image](https://developer.android.com/images/reference/androidx/compose/material/modal-drawer.png)
  *
  * See [BottomDrawer] for a layout that introduces a bottom drawer, suitable when
  * using bottom navigation.
@@ -391,11 +394,6 @@ fun ModalDrawer(
 
         val anchors = mapOf(minValue to DrawerValue.Closed, maxValue to DrawerValue.Open)
         val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
-        val blockClicks = if (drawerState.isOpen) {
-            Modifier.pointerInput(Unit) { detectTapGestures {} }
-        } else {
-            Modifier
-        }
         Box(
             Modifier.swipeable(
                 state = drawerState.swipeableState,
@@ -413,12 +411,20 @@ fun ModalDrawer(
             }
             Scrim(
                 open = drawerState.isOpen,
-                onClose = { scope.launch { drawerState.close() } },
+                onClose = {
+                    if (
+                        gesturesEnabled &&
+                        drawerState.swipeableState.confirmStateChange(DrawerValue.Closed)
+                    ) {
+                        scope.launch { drawerState.close() }
+                    }
+                },
                 fraction = {
                     calculateFraction(minValue, maxValue, drawerState.offset.value)
                 },
                 color = scrimColor
             )
+            val navigationMenu = getString(Strings.NavigationMenu)
             Surface(
                 modifier = with(LocalDensity.current) {
                     Modifier
@@ -432,9 +438,16 @@ fun ModalDrawer(
                     .offset { IntOffset(drawerState.offset.value.roundToInt(), 0) }
                     .padding(end = EndDrawerPadding)
                     .semantics {
-                        paneTitle = Strings.NavigationMenu
+                        paneTitle = navigationMenu
                         if (drawerState.isOpen) {
-                            dismiss(action = { scope.launch { drawerState.close() }; true })
+                            dismiss {
+                                if (
+                                    drawerState.swipeableState
+                                        .confirmStateChange(DrawerValue.Closed)
+                                ) {
+                                    scope.launch { drawerState.close() }
+                                }; true
+                            }
                         }
                     },
                 shape = drawerShape,
@@ -442,21 +455,19 @@ fun ModalDrawer(
                 contentColor = drawerContentColor,
                 elevation = drawerElevation
             ) {
-                Column(Modifier.fillMaxSize().then(blockClicks), content = drawerContent)
+                Column(Modifier.fillMaxSize(), content = drawerContent)
             }
         }
     }
 }
 
 /**
- * Navigation drawers provide access to destinations in your app.
+ * <a href="https://material.io/components/navigation-drawer#bottom-drawer" class="external" target="_blank">Material Design bottom navigation drawer</a>.
  *
- * Bottom navigation drawers are modal drawers that are anchored
- * to the bottom of the screen instead of the left or right edge.
- * They are only used with bottom app bars.
+ * Bottom navigation drawers are modal drawers that are anchored to the bottom of the screen instead
+ * of the left or right edge. They are only used with bottom app bars.
  *
- * These drawers open upon tapping the navigation menu icon in the bottom app bar.
- * They are only for use on mobile.
+ * ![Bottom drawer image](https://developer.android.com/images/reference/androidx/compose/material/bottom-drawer.png)
  *
  * See [ModalDrawer] for a layout that introduces a classic from-the-side drawer.
  *
@@ -473,7 +484,9 @@ fun ModalDrawer(
  * @param drawerContentColor color of the content to use inside the drawer sheet. Defaults to
  * either the matching content color for [drawerBackgroundColor], or, if it is not a color from
  * the theme, this will keep the same value set above this Surface.
- * @param scrimColor color of the scrim that obscures content when the drawer is open
+ * @param scrimColor color of the scrim that obscures content when the drawer is open. If the
+ * color passed is [Color.Unspecified], then a scrim will no longer be applied and the bottom
+ * drawer will not block interaction with the rest of the screen when visible.
  * @param content content of the rest of the UI
  *
  */
@@ -514,12 +527,6 @@ fun BottomDrawer(
                 expandedHeight to BottomDrawerValue.Expanded
             )
         }
-
-        val blockClicks = if (drawerState.isClosed) {
-            Modifier
-        } else {
-            Modifier.pointerInput(Unit) { detectTapGestures {} }
-        }
         val drawerConstraints = with(LocalDensity.current) {
             Modifier
                 .sizeIn(
@@ -527,8 +534,13 @@ fun BottomDrawer(
                     maxHeight = constraints.maxHeight.toDp()
                 )
         }
+        val nestedScroll = if (gesturesEnabled) {
+            Modifier.nestedScroll(drawerState.nestedScrollConnection)
+        } else {
+            Modifier
+        }
         val swipeable = Modifier
-            .nestedScroll(drawerState.nestedScrollConnection)
+            .then(nestedScroll)
             .swipeable(
                 state = drawerState,
                 anchors = anchors,
@@ -541,20 +553,31 @@ fun BottomDrawer(
             content()
             BottomDrawerScrim(
                 color = scrimColor,
-                onDismiss = { scope.launch { drawerState.close() } },
+                onDismiss = {
+                    if (
+                        gesturesEnabled && drawerState.confirmStateChange(BottomDrawerValue.Closed)
+                    ) {
+                        scope.launch { drawerState.close() }
+                    }
+                },
                 visible = drawerState.targetValue != BottomDrawerValue.Closed
             )
+            val navigationMenu = getString(Strings.NavigationMenu)
             Surface(
                 drawerConstraints
+                    .offset { IntOffset(x = 0, y = drawerState.offset.value.roundToInt()) }
                     .onGloballyPositioned { position ->
                         drawerHeight = position.size.height.toFloat()
                     }
-                    .offset { IntOffset(x = 0, y = drawerState.offset.value.roundToInt()) }
                     .semantics {
-                        paneTitle = Strings.NavigationMenu
+                        paneTitle = navigationMenu
                         if (drawerState.isOpen) {
                             // TODO(b/180101663) The action currently doesn't return the correct results
-                            dismiss(action = { scope.launch { drawerState.close() }; true })
+                            dismiss {
+                                if (drawerState.confirmStateChange(BottomDrawerValue.Closed)) {
+                                    scope.launch { drawerState.close() }
+                                }; true
+                            }
                         }
                     },
                 shape = drawerShape,
@@ -562,7 +585,7 @@ fun BottomDrawer(
                 contentColor = drawerContentColor,
                 elevation = drawerElevation
             ) {
-                Column(blockClicks, content = drawerContent)
+                Column(content = drawerContent)
             }
         }
     }
@@ -597,18 +620,19 @@ private fun BottomDrawerScrim(
     onDismiss: () -> Unit,
     visible: Boolean
 ) {
-    if (color != Color.Transparent) {
+    if (color.isSpecified) {
         val alpha by animateFloatAsState(
             targetValue = if (visible) 1f else 0f,
             animationSpec = TweenSpec()
         )
+        val closeDrawer = getString(Strings.CloseDrawer)
         val dismissModifier = if (visible) {
             Modifier
                 .pointerInput(onDismiss) {
                     detectTapGestures { onDismiss() }
                 }
                 .semantics(mergeDescendants = true) {
-                    contentDescription = Strings.CloseDrawer
+                    contentDescription = closeDrawer
                     onClick { onDismiss(); true }
                 }
         } else {
@@ -632,11 +656,12 @@ private fun Scrim(
     fraction: () -> Float,
     color: Color
 ) {
+    val closeDrawer = getString(Strings.CloseDrawer)
     val dismissDrawer = if (open) {
         Modifier
             .pointerInput(onClose) { detectTapGestures { onClose() } }
             .semantics(mergeDescendants = true) {
-                contentDescription = Strings.CloseDrawer
+                contentDescription = closeDrawer
                 onClick { onClose(); true }
             }
     } else {

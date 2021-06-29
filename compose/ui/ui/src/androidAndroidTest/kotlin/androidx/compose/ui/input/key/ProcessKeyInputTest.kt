@@ -19,13 +19,14 @@ package androidx.compose.ui.input.key
 import androidx.compose.foundation.layout.Box
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusModifier
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.setFocusableContent
 import android.view.KeyEvent.KEYCODE_A as KeyCodeA
 import android.view.KeyEvent as AndroidKeyEvent
 import android.view.KeyEvent.ACTION_DOWN
 import android.view.KeyEvent.ACTION_UP
+import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.focus.focusTarget
 import androidx.compose.ui.input.key.Key.Companion.A
 import androidx.compose.ui.input.key.KeyEventType.Companion.KeyDown
 import androidx.compose.ui.input.key.KeyEventType.Companion.KeyUp
@@ -42,12 +43,13 @@ import org.junit.runner.RunWith
 @Suppress("DEPRECATION")
 @MediumTest
 @RunWith(AndroidJUnit4::class)
+@OptIn(ExperimentalComposeUiApi::class)
 class ProcessKeyInputTest {
     @get:Rule
     val rule = createComposeRule()
 
     @Test(expected = IllegalStateException::class)
-    fun noRootFocusModifier_throwsException() {
+    fun noRootFocusTarget_throwsException() {
         // Arrange.
         rule.setContent {
             Box(modifier = KeyInputModifier(null, null))
@@ -58,7 +60,7 @@ class ProcessKeyInputTest {
     }
 
     @Test(expected = IllegalStateException::class)
-    fun noFocusModifier_throwsException() {
+    fun noFocusTarget_throwsException() {
         // Arrange.
         rule.setFocusableContent {
             Box(modifier = Modifier.onKeyEvent { true })
@@ -69,11 +71,11 @@ class ProcessKeyInputTest {
     }
 
     @Test(expected = IllegalStateException::class)
-    fun focusModifierNotFocused_throwsException() {
+    fun focusTargetNotFocused_throwsException() {
 
         // Arrange.
         rule.setFocusableContent {
-            Box(modifier = Modifier.focusModifier().onKeyEvent { true })
+            Box(modifier = Modifier.focusTarget().onKeyEvent { true })
         }
 
         // Act.
@@ -89,7 +91,7 @@ class ProcessKeyInputTest {
             Box(
                 modifier = Modifier
                     .focusRequester(focusRequester)
-                    .focusModifier()
+                    .focusTarget()
                     .onKeyEvent {
                         receivedKeyEvent = it
                         true
@@ -121,7 +123,7 @@ class ProcessKeyInputTest {
             Box(
                 modifier = Modifier
                     .focusRequester(focusRequester)
-                    .focusModifier()
+                    .focusTarget()
                     .onPreviewKeyEvent {
                         receivedKeyEvent = it
                         true
@@ -154,7 +156,7 @@ class ProcessKeyInputTest {
             Box(
                 modifier = Modifier
                     .focusRequester(focusRequester)
-                    .focusModifier()
+                    .focusTarget()
                     .onKeyEvent {
                         receivedKeyEvent = it
                         true
@@ -191,7 +193,7 @@ class ProcessKeyInputTest {
             Box(
                 modifier = Modifier
                     .focusRequester(focusRequester)
-                    .focusModifier()
+                    .focusTarget()
                     .onKeyEvent {
                         onKeyEventTrigger = triggerIndex++
                         true
@@ -228,7 +230,7 @@ class ProcessKeyInputTest {
         rule.setFocusableContent {
             Box(
                 modifier = Modifier
-                    .focusModifier()
+                    .focusTarget()
                     .onKeyEvent {
                         parentOnKeyEventTrigger = triggerIndex++
                         false
@@ -241,7 +243,7 @@ class ProcessKeyInputTest {
                 Box(
                     modifier = Modifier
                         .focusRequester(focusRequester)
-                        .focusModifier()
+                        .focusTarget()
                         .onKeyEvent {
                             childOnKeyEventTrigger = triggerIndex++
                             false
@@ -293,7 +295,7 @@ class ProcessKeyInputTest {
                 Box(
                     modifier = Modifier
                         .focusRequester(focusRequester)
-                        .focusModifier()
+                        .focusTarget()
                         .onKeyEvent {
                             childOnKeyEventTrigger = triggerIndex++
                             false
@@ -335,7 +337,7 @@ class ProcessKeyInputTest {
         rule.setFocusableContent {
             Box(
                 modifier = Modifier
-                    .focusModifier()
+                    .focusTarget()
                     .onKeyEvent {
                         grandParentOnKeyEventTrigger = triggerIndex++
                         false
@@ -347,7 +349,7 @@ class ProcessKeyInputTest {
             ) {
                 Box(
                     modifier = Modifier
-                        .focusModifier()
+                        .focusTarget()
                         .onKeyEvent {
                             parentOnKeyEventTrigger = triggerIndex++
                             false
@@ -360,7 +362,7 @@ class ProcessKeyInputTest {
                     Box(
                         modifier = Modifier
                             .focusRequester(focusRequester)
-                            .focusModifier()
+                            .focusTarget()
                             .onKeyEvent {
                                 childOnKeyEventTrigger = triggerIndex++
                                 false

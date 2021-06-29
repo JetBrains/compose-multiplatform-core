@@ -141,6 +141,28 @@ public abstract class VideoRecordEvent {
     public static final int ERROR_CAMERA_CLOSED = 4;
 
     /**
+     * The recording failed due to the output options are invalid.
+     */
+    public static final int ERROR_INVALID_OUTPUT_OPTIONS = 5;
+
+    /**
+     * The recording failed while encoding.
+     */
+    public static final int ERROR_ENCODING_FAILED = 6;
+
+    /**
+     * The recording failed due to the recorder encountered errors.
+     *
+     * <p>Usually it can only be recovered by recreating a recorder and recordings with it.
+     */
+    public static final int ERROR_RECORDER_ERROR = 7;
+
+    /**
+     * The recording failed due to the recorder has not been initialized.
+     */
+    public static final int ERROR_RECORDER_UNINITIALIZED = 8;
+
+    /**
      * Describes the error that occurred during a video recording.
      *
      * <p>This is the error code returning from {@link Finalize#getError()}.
@@ -150,7 +172,8 @@ public abstract class VideoRecordEvent {
     @RestrictTo(RestrictTo.Scope.LIBRARY)
     @Retention(RetentionPolicy.SOURCE)
     @IntDef(value = {ERROR_NONE, ERROR_UNKNOWN, ERROR_FILE_SIZE_LIMIT_REACHED,
-            ERROR_INSUFFICIENT_DISK, ERROR_CAMERA_CLOSED})
+            ERROR_INSUFFICIENT_DISK, ERROR_CAMERA_CLOSED, ERROR_INVALID_OUTPUT_OPTIONS,
+            ERROR_ENCODING_FAILED, ERROR_RECORDER_ERROR, ERROR_RECORDER_UNINITIALIZED})
     public @interface VideoRecordError {
     }
 
@@ -215,17 +238,19 @@ public abstract class VideoRecordEvent {
 
     @NonNull
     static Finalize finalize(@NonNull OutputOptions outputOptions,
-            @NonNull RecordingStats recordingStats) {
-        return new Finalize(outputOptions, recordingStats, ERROR_NONE, null);
+            @NonNull RecordingStats recordingStats,
+            @NonNull OutputResults outputResults) {
+        return new Finalize(outputOptions, recordingStats, outputResults, ERROR_NONE, null);
     }
 
     @NonNull
     static Finalize finalizeWithError(@NonNull OutputOptions outputOptions,
             @NonNull RecordingStats recordingStats,
+            @NonNull OutputResults outputResults,
             @VideoRecordError int error,
             @Nullable Throwable cause) {
         Preconditions.checkArgument(error != ERROR_NONE, "An error type is required.");
-        return new Finalize(outputOptions, recordingStats, error, cause);
+        return new Finalize(outputOptions, recordingStats, outputResults, error, cause);
     }
 
     /**
@@ -241,6 +266,7 @@ public abstract class VideoRecordEvent {
      * file.
      */
     public static final class Finalize extends VideoRecordEvent {
+        private final OutputResults mOutputResults;
         @VideoRecordError
         private final int mError;
         private final Throwable mCause;
@@ -248,9 +274,11 @@ public abstract class VideoRecordEvent {
         @SuppressWarnings("WeakerAccess") /* synthetic accessor */
         Finalize(@NonNull OutputOptions outputOptions,
                 @NonNull RecordingStats recordingStats,
+                @NonNull OutputResults outputResults,
                 @VideoRecordError int error,
                 @Nullable Throwable cause) {
             super(outputOptions, recordingStats);
+            mOutputResults = outputResults;
             mError = error;
             mCause = cause;
         }
@@ -260,6 +288,14 @@ public abstract class VideoRecordEvent {
         @Override
         public EventType getEventType() {
             return EventType.FINALIZE;
+        }
+
+        /**
+         * Gets the {@link OutputResults}.
+         */
+        @NonNull
+        public OutputResults getOutputResults() {
+            return mOutputResults;
         }
 
         /**

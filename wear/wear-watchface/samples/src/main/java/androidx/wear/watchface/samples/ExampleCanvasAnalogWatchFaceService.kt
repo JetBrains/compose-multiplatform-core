@@ -26,13 +26,14 @@ import android.graphics.RectF
 import android.graphics.drawable.Icon
 import android.icu.util.Calendar
 import android.view.SurfaceHolder
-import androidx.wear.complications.ComplicationBounds
+import androidx.wear.complications.ComplicationSlotBounds
 import androidx.wear.complications.DefaultComplicationProviderPolicy
 import androidx.wear.complications.SystemProviders
 import androidx.wear.complications.data.ComplicationType
+import androidx.wear.watchface.CanvasComplicationFactory
 import androidx.wear.watchface.CanvasType
-import androidx.wear.watchface.Complication
-import androidx.wear.watchface.ComplicationsManager
+import androidx.wear.watchface.ComplicationSlot
+import androidx.wear.watchface.ComplicationSlotsManager
 import androidx.wear.watchface.DrawMode
 import androidx.wear.watchface.Renderer
 import androidx.wear.watchface.WatchFace
@@ -46,8 +47,8 @@ import androidx.wear.watchface.style.UserStyleSchema
 import androidx.wear.watchface.style.UserStyleSetting
 import androidx.wear.watchface.style.UserStyleSetting.BooleanUserStyleSetting
 import androidx.wear.watchface.style.UserStyleSetting.BooleanUserStyleSetting.BooleanOption
-import androidx.wear.watchface.style.UserStyleSetting.ComplicationsUserStyleSetting
-import androidx.wear.watchface.style.UserStyleSetting.ComplicationsUserStyleSetting.ComplicationOverlay
+import androidx.wear.watchface.style.UserStyleSetting.ComplicationSlotsUserStyleSetting
+import androidx.wear.watchface.style.UserStyleSetting.ComplicationSlotsUserStyleSetting.ComplicationSlotOverlay
 import androidx.wear.watchface.style.UserStyleSetting.DoubleRangeUserStyleSetting
 import androidx.wear.watchface.style.UserStyleSetting.DoubleRangeUserStyleSetting.DoubleRangeOption
 import androidx.wear.watchface.style.UserStyleSetting.ListUserStyleSetting
@@ -88,187 +89,200 @@ const val LEFT_AND_RIGHT_COMPLICATIONS = "LEFT_AND_RIGHT_COMPLICATIONS"
 /** How long each frame is displayed at expected frame rate.  */
 private const val FRAME_PERIOD_MS: Long = 16L
 
-/** A simple example canvas based analog watch face. */
-open class ExampleCanvasAnalogWatchFaceService : WatchFaceService() {
-    override suspend fun createWatchFace(
-        surfaceHolder: SurfaceHolder,
-        watchState: WatchState
-    ) = createExampleCanvasAnalogWatchFaceBuilder(
-        this,
-        surfaceHolder,
-        watchState
-    )
-}
-
 const val EXAMPLE_CANVAS_WATCHFACE_LEFT_COMPLICATION_ID = 101
 const val EXAMPLE_CANVAS_WATCHFACE_RIGHT_COMPLICATION_ID = 102
 
-fun createExampleCanvasAnalogWatchFaceBuilder(
-    context: Context,
-    surfaceHolder: SurfaceHolder,
-    watchState: WatchState
-): WatchFace {
-    val watchFaceStyle = WatchFaceColorStyle.create(context, RED_STYLE)
-    val colorStyleSetting = ListUserStyleSetting(
-        UserStyleSetting.Id(COLOR_STYLE_SETTING),
-        context.getString(R.string.colors_style_setting),
-        context.getString(R.string.colors_style_setting_description),
-        icon = null,
-        options = listOf(
-            ListUserStyleSetting.ListOption(
-                Option.Id(RED_STYLE),
-                context.getString(R.string.colors_style_red),
-                Icon.createWithResource(context, R.drawable.red_style)
-            ),
-            ListUserStyleSetting.ListOption(
-                Option.Id(GREEN_STYLE),
-                context.getString(R.string.colors_style_green),
-                Icon.createWithResource(context, R.drawable.green_style)
-            ),
-            ListUserStyleSetting.ListOption(
-                Option.Id(BLUE_STYLE),
-                context.getString(R.string.colors_style_blue),
-                Icon.createWithResource(context, R.drawable.blue_style)
-            )
-        ),
-        listOf(
-            WatchFaceLayer.BASE,
-            WatchFaceLayer.COMPLICATIONS,
-            WatchFaceLayer.COMPLICATIONS_OVERLAY
-        )
-    )
-    val drawHourPipsStyleSetting = BooleanUserStyleSetting(
-        UserStyleSetting.Id(DRAW_HOUR_PIPS_STYLE_SETTING),
-        context.getString(R.string.watchface_pips_setting),
-        context.getString(R.string.watchface_pips_setting_description),
-        null,
-        listOf(WatchFaceLayer.BASE),
-        true
-    )
-    val watchHandLengthStyleSetting = DoubleRangeUserStyleSetting(
-        UserStyleSetting.Id(WATCH_HAND_LENGTH_STYLE_SETTING),
-        context.getString(R.string.watchface_hand_length_setting),
-        context.getString(R.string.watchface_hand_length_setting_description),
-        null,
-        0.25,
-        1.0,
-        listOf(WatchFaceLayer.COMPLICATIONS_OVERLAY),
-        0.75
-    )
-    // These are style overrides applied on top of the complications passed into
-    // complicationsManager below.
-    val complicationsStyleSetting = ComplicationsUserStyleSetting(
-        UserStyleSetting.Id(COMPLICATIONS_STYLE_SETTING),
-        context.getString(R.string.watchface_complications_setting),
-        context.getString(R.string.watchface_complications_setting_description),
-        icon = null,
-        complicationConfig = listOf(
-            ComplicationsUserStyleSetting.ComplicationsOption(
-                Option.Id(LEFT_AND_RIGHT_COMPLICATIONS),
-                context.getString(R.string.watchface_complications_setting_both),
-                null,
-                // NB this list is empty because each [ComplicationOverlay] is applied on top of
-                // the initial config.
-                listOf()
-            ),
-            ComplicationsUserStyleSetting.ComplicationsOption(
-                Option.Id(NO_COMPLICATIONS),
-                context.getString(R.string.watchface_complications_setting_none),
-                null,
-                listOf(
-                    ComplicationOverlay(
-                        EXAMPLE_CANVAS_WATCHFACE_LEFT_COMPLICATION_ID,
-                        enabled = false
-                    ),
-                    ComplicationOverlay(
-                        EXAMPLE_CANVAS_WATCHFACE_RIGHT_COMPLICATION_ID,
-                        enabled = false
-                    )
+/** A simple example canvas based analog watch face. NB this is open for testing. */
+open class ExampleCanvasAnalogWatchFaceService : WatchFaceService() {
+    // Lazy because the context isn't initialized til later.
+    private val watchFaceStyle by lazy { WatchFaceColorStyle.create(this, RED_STYLE) }
+
+    private val colorStyleSetting by lazy {
+        ListUserStyleSetting(
+            UserStyleSetting.Id(COLOR_STYLE_SETTING),
+            getString(R.string.colors_style_setting),
+            getString(R.string.colors_style_setting_description),
+            icon = null,
+            options = listOf(
+                ListUserStyleSetting.ListOption(
+                    Option.Id(RED_STYLE),
+                    getString(R.string.colors_style_red),
+                    Icon.createWithResource(this, R.drawable.red_style)
+                ),
+                ListUserStyleSetting.ListOption(
+                    Option.Id(GREEN_STYLE),
+                    getString(R.string.colors_style_green),
+                    Icon.createWithResource(this, R.drawable.green_style)
+                ),
+                ListUserStyleSetting.ListOption(
+                    Option.Id(BLUE_STYLE),
+                    getString(R.string.colors_style_blue),
+                    Icon.createWithResource(this, R.drawable.blue_style)
                 )
             ),
-            ComplicationsUserStyleSetting.ComplicationsOption(
-                Option.Id(LEFT_COMPLICATION),
-                context.getString(R.string.watchface_complications_setting_left),
-                null,
-                listOf(
-                    ComplicationOverlay(
-                        EXAMPLE_CANVAS_WATCHFACE_RIGHT_COMPLICATION_ID,
-                        enabled = false
-                    )
-                )
-            ),
-            ComplicationsUserStyleSetting.ComplicationsOption(
-                Option.Id(RIGHT_COMPLICATION),
-                context.getString(R.string.watchface_complications_setting_right),
-                null,
-                listOf(
-                    ComplicationOverlay(
-                        EXAMPLE_CANVAS_WATCHFACE_LEFT_COMPLICATION_ID,
-                        enabled = false
-                    )
-                )
-            )
-        ),
-        listOf(WatchFaceLayer.COMPLICATIONS)
-    )
-    val userStyleRepository = CurrentUserStyleRepository(
-        UserStyleSchema(
             listOf(
-                colorStyleSetting,
-                drawHourPipsStyleSetting,
-                watchHandLengthStyleSetting,
-                complicationsStyleSetting
+                WatchFaceLayer.BASE,
+                WatchFaceLayer.COMPLICATIONS,
+                WatchFaceLayer.COMPLICATIONS_OVERLAY
             )
         )
-    )
-    val leftComplication = Complication.createRoundRectComplicationBuilder(
-        EXAMPLE_CANVAS_WATCHFACE_LEFT_COMPLICATION_ID,
-        CanvasComplicationDrawable(watchFaceStyle.getDrawable(context)!!, watchState),
+    }
+
+    private val drawHourPipsStyleSetting by lazy {
+        BooleanUserStyleSetting(
+            UserStyleSetting.Id(DRAW_HOUR_PIPS_STYLE_SETTING),
+            getString(R.string.watchface_pips_setting),
+            getString(R.string.watchface_pips_setting_description),
+            null,
+            listOf(WatchFaceLayer.BASE),
+            true
+        )
+    }
+
+    private val watchHandLengthStyleSetting by lazy {
+        DoubleRangeUserStyleSetting(
+            UserStyleSetting.Id(WATCH_HAND_LENGTH_STYLE_SETTING),
+            getString(R.string.watchface_hand_length_setting),
+            getString(R.string.watchface_hand_length_setting_description),
+            null,
+            0.25,
+            1.0,
+            listOf(WatchFaceLayer.COMPLICATIONS_OVERLAY),
+            0.75
+        )
+    }
+
+    // These are style overrides applied on top of the complicationSlots passed into
+    // complicationSlotsManager below.
+    private val complicationsStyleSetting by lazy {
+        ComplicationSlotsUserStyleSetting(
+            UserStyleSetting.Id(COMPLICATIONS_STYLE_SETTING),
+            getString(R.string.watchface_complications_setting),
+            getString(R.string.watchface_complications_setting_description),
+            icon = null,
+            complicationConfig = listOf(
+                ComplicationSlotsUserStyleSetting.ComplicationSlotsOption(
+                    Option.Id(LEFT_AND_RIGHT_COMPLICATIONS),
+                    getString(R.string.watchface_complications_setting_both),
+                    null,
+                    // NB this list is empty because each [ComplicationSlotOverlay] is applied on
+                    // top of the initial config.
+                    listOf()
+                ),
+                ComplicationSlotsUserStyleSetting.ComplicationSlotsOption(
+                    Option.Id(NO_COMPLICATIONS),
+                    getString(R.string.watchface_complications_setting_none),
+                    null,
+                    listOf(
+                        ComplicationSlotOverlay(
+                            EXAMPLE_CANVAS_WATCHFACE_LEFT_COMPLICATION_ID,
+                            enabled = false
+                        ),
+                        ComplicationSlotOverlay(
+                            EXAMPLE_CANVAS_WATCHFACE_RIGHT_COMPLICATION_ID,
+                            enabled = false
+                        )
+                    )
+                ),
+                ComplicationSlotsUserStyleSetting.ComplicationSlotsOption(
+                    Option.Id(LEFT_COMPLICATION),
+                    getString(R.string.watchface_complications_setting_left),
+                    null,
+                    listOf(
+                        ComplicationSlotOverlay(
+                            EXAMPLE_CANVAS_WATCHFACE_RIGHT_COMPLICATION_ID,
+                            enabled = false
+                        )
+                    )
+                ),
+                ComplicationSlotsUserStyleSetting.ComplicationSlotsOption(
+                    Option.Id(RIGHT_COMPLICATION),
+                    getString(R.string.watchface_complications_setting_right),
+                    null,
+                    listOf(
+                        ComplicationSlotOverlay(
+                            EXAMPLE_CANVAS_WATCHFACE_LEFT_COMPLICATION_ID,
+                            enabled = false
+                        )
+                    )
+                )
+            ),
+            listOf(WatchFaceLayer.COMPLICATIONS)
+        )
+    }
+
+    public override fun createUserStyleSchema() = UserStyleSchema(
         listOf(
-            ComplicationType.RANGED_VALUE,
-            ComplicationType.LONG_TEXT,
-            ComplicationType.SHORT_TEXT,
-            ComplicationType.MONOCHROMATIC_IMAGE,
-            ComplicationType.SMALL_IMAGE
-        ),
-        DefaultComplicationProviderPolicy(SystemProviders.PROVIDER_DAY_OF_WEEK),
-        ComplicationBounds(RectF(0.2f, 0.4f, 0.4f, 0.6f))
-    ).setDefaultProviderType(ComplicationType.SHORT_TEXT)
-        .build()
-    val rightComplication = Complication.createRoundRectComplicationBuilder(
-        EXAMPLE_CANVAS_WATCHFACE_RIGHT_COMPLICATION_ID,
-        CanvasComplicationDrawable(watchFaceStyle.getDrawable(context)!!, watchState),
-        listOf(
-            ComplicationType.RANGED_VALUE,
-            ComplicationType.LONG_TEXT,
-            ComplicationType.SHORT_TEXT,
-            ComplicationType.MONOCHROMATIC_IMAGE,
-            ComplicationType.SMALL_IMAGE
-        ),
-        DefaultComplicationProviderPolicy(SystemProviders.PROVIDER_STEP_COUNT),
-        ComplicationBounds(RectF(0.6f, 0.4f, 0.8f, 0.6f))
-    ).setDefaultProviderType(ComplicationType.SHORT_TEXT)
-        .build()
-    val complicationsManager = ComplicationsManager(
-        listOf(leftComplication, rightComplication),
-        userStyleRepository
+            colorStyleSetting,
+            drawHourPipsStyleSetting,
+            watchHandLengthStyleSetting,
+            complicationsStyleSetting
+        )
     )
-    val renderer = ExampleAnalogWatchCanvasRenderer(
-        surfaceHolder,
-        context,
-        watchFaceStyle,
-        userStyleRepository,
-        watchState,
-        colorStyleSetting,
-        drawHourPipsStyleSetting,
-        watchHandLengthStyleSetting,
-        complicationsManager
-    )
-    return WatchFace(
+
+    public override fun createComplicationSlotsManager(
+        currentUserStyleRepository: CurrentUserStyleRepository
+    ): ComplicationSlotsManager {
+        val canvasComplicationFactory =
+            CanvasComplicationFactory { watchState, listener ->
+                CanvasComplicationDrawable(
+                    watchFaceStyle.getDrawable(this@ExampleCanvasAnalogWatchFaceService)!!,
+                    watchState,
+                    listener
+                )
+            }
+        val leftComplication = ComplicationSlot.createRoundRectComplicationSlotBuilder(
+            EXAMPLE_CANVAS_WATCHFACE_LEFT_COMPLICATION_ID,
+            canvasComplicationFactory,
+            listOf(
+                ComplicationType.RANGED_VALUE,
+                ComplicationType.LONG_TEXT,
+                ComplicationType.SHORT_TEXT,
+                ComplicationType.MONOCHROMATIC_IMAGE,
+                ComplicationType.SMALL_IMAGE
+            ),
+            DefaultComplicationProviderPolicy(SystemProviders.PROVIDER_DAY_OF_WEEK),
+            ComplicationSlotBounds(RectF(0.2f, 0.4f, 0.4f, 0.6f))
+        ).setDefaultProviderType(ComplicationType.SHORT_TEXT)
+            .build()
+        val rightComplication = ComplicationSlot.createRoundRectComplicationSlotBuilder(
+            EXAMPLE_CANVAS_WATCHFACE_RIGHT_COMPLICATION_ID,
+            canvasComplicationFactory,
+            listOf(
+                ComplicationType.RANGED_VALUE,
+                ComplicationType.LONG_TEXT,
+                ComplicationType.SHORT_TEXT,
+                ComplicationType.MONOCHROMATIC_IMAGE,
+                ComplicationType.SMALL_IMAGE
+            ),
+            DefaultComplicationProviderPolicy(SystemProviders.PROVIDER_STEP_COUNT),
+            ComplicationSlotBounds(RectF(0.6f, 0.4f, 0.8f, 0.6f))
+        ).setDefaultProviderType(ComplicationType.SHORT_TEXT)
+            .build()
+        return ComplicationSlotsManager(
+            listOf(leftComplication, rightComplication),
+            currentUserStyleRepository
+        )
+    }
+
+    public override suspend fun createWatchFace(
+        surfaceHolder: SurfaceHolder,
+        watchState: WatchState,
+        complicationSlotsManager: ComplicationSlotsManager,
+        currentUserStyleRepository: CurrentUserStyleRepository
+    ) = WatchFace(
         WatchFaceType.ANALOG,
-        userStyleRepository,
-        renderer,
-        complicationsManager
+        ExampleAnalogWatchCanvasRenderer(
+            surfaceHolder,
+            this,
+            watchFaceStyle,
+            currentUserStyleRepository,
+            watchState,
+            colorStyleSetting,
+            drawHourPipsStyleSetting,
+            watchHandLengthStyleSetting,
+            complicationSlotsManager
+        )
     )
 }
 
@@ -281,7 +295,7 @@ class ExampleAnalogWatchCanvasRenderer(
     private val colorStyleSetting: ListUserStyleSetting,
     private val drawPipsStyleSetting: BooleanUserStyleSetting,
     private val watchHandLengthStyleSettingDouble: DoubleRangeUserStyleSetting,
-    private val complicationsManager: ComplicationsManager
+    private val complicationSlotsManager: ComplicationSlotsManager
 ) : Renderer.CanvasRenderer(
     surfaceHolder,
     currentUserStyleRepository,
@@ -329,10 +343,10 @@ class ExampleAnalogWatchCanvasRenderer(
                             userStyle[colorStyleSetting]!!.toString()
                         )
 
-                    // Apply the userStyle to the complications. ComplicationDrawables for each of
-                    // the styles are defined in XML so we need to replace the complication's
+                    // Apply the userStyle to the complicationSlots. ComplicationDrawables for each
+                    // of the styles are defined in XML so we need to replace the complication's
                     // drawables.
-                    for ((_, complication) in complicationsManager.complications) {
+                    for ((_, complication) in complicationSlotsManager.complicationSlots) {
                         (complication.renderer as CanvasComplicationDrawable).drawable =
                             watchFaceColorStyle.getDrawable(context)!!
                     }
@@ -357,7 +371,7 @@ class ExampleAnalogWatchCanvasRenderer(
 
         // We don't need to check renderParameters.watchFaceWatchFaceLayers because
         // CanvasComplicationDrawable does that for us.
-        for ((_, complication) in complicationsManager.complications) {
+        for ((_, complication) in complicationSlotsManager.complicationSlots) {
             if (complication.enabled) {
                 complication.render(canvas, calendar, renderParameters)
             }
@@ -378,7 +392,7 @@ class ExampleAnalogWatchCanvasRenderer(
     override fun renderHighlightLayer(canvas: Canvas, bounds: Rect, calendar: Calendar) {
         canvas.drawColor(renderParameters.highlightLayer!!.backgroundTint)
 
-        for ((_, complication) in complicationsManager.complications) {
+        for ((_, complication) in complicationSlotsManager.complicationSlots) {
             if (complication.enabled) {
                 complication.renderHighlightLayer(canvas, calendar, renderParameters)
             }

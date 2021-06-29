@@ -17,7 +17,6 @@
 package androidx.car.app.sample.showcase.common.templates;
 
 import static androidx.car.app.CarToast.LENGTH_LONG;
-import static androidx.car.app.CarToast.LENGTH_SHORT;
 
 import android.graphics.Color;
 
@@ -30,8 +29,8 @@ import androidx.car.app.model.Action;
 import androidx.car.app.model.ActionStrip;
 import androidx.car.app.model.CarColor;
 import androidx.car.app.model.CarIcon;
+import androidx.car.app.model.InputCallback;
 import androidx.car.app.model.MessageTemplate;
-import androidx.car.app.model.OnInputCompletedListener;
 import androidx.car.app.model.ParkedOnlyOnClickListener;
 import androidx.car.app.model.Template;
 import androidx.car.app.model.signin.InputSignInMethod;
@@ -55,14 +54,15 @@ public class SignInTemplateDemoScreen extends Screen {
 
     private static final String EMAIL_REGEXP = "^(.+)@(.+)$";
     private static final String EXPECTED_PASSWORD = "password";
+    private static final int MAX_USERNAME_LENGTH = 5;
 
     // package private to avoid synthetic accessor
     State mState = State.USERNAME;
-    private String mUsername = null;
-    private String mErrorMessage;
+    String mErrorMessage = "";
+    String mUsername = null;
 
     private final CharSequence mAdditionalText = Utils.clickable("Please review our terms of "
-            + "service", 18, 16,
+                    + "service", 18, 16,
             () -> getScreenManager().push(new LongMessageTemplateDemoScreen(getCarContext())));
 
     private final Action mProviderSignInAction = new Action.Builder()
@@ -89,6 +89,7 @@ public class SignInTemplateDemoScreen extends Screen {
         OnBackPressedCallback callback = new OnBackPressedCallback(true) {
             @Override
             public void handleOnBackPressed() {
+                mErrorMessage = "";
                 if (mState == State.USERNAME || mState == State.SIGNED_IN) {
                     getScreenManager().pop();
                 } else {
@@ -125,16 +126,42 @@ public class SignInTemplateDemoScreen extends Screen {
     }
 
     private Template getUsernameSignInTemplate() {
-        OnInputCompletedListener listener = text -> {
-            // Mocked username validation
-            if (!text.matches(EMAIL_REGEXP)) {
-                mErrorMessage = "Invalid username";
-            } else {
-                mErrorMessage = "";
-                mUsername = text;
-                mState = State.PASSWORD;
+        InputCallback listener = new InputCallback() {
+            @Override
+            public void onInputSubmitted(@NonNull String text) {
+                // Mocked username validation
+                if (!text.matches(EMAIL_REGEXP)) {
+                    mErrorMessage = "Invalid user name";
+                    mUsername = text;
+                } else {
+                    mErrorMessage = "";
+                    mUsername = text;
+                    mState = State.PASSWORD;
+                }
+                invalidate();
             }
-            invalidate();
+
+            @Override
+            public void onInputTextChanged(@NonNull String text) {
+                // This callback demonstrates how to use handle the text changed event.
+                // In this case, we check that the user name doesn't exceed a certain length.
+                if (mState == State.USERNAME) {
+                    String previousErrorMessage = mErrorMessage;
+                    if (text.length() > MAX_USERNAME_LENGTH) {
+                        mErrorMessage = "User name is too long";
+                    } else {
+                        mErrorMessage = "";
+                    }
+
+                    // If the error message changed, invalidatee the template.
+                    if (!mErrorMessage.equals(previousErrorMessage)) {
+                        // Make sure to keep the user name so that the template preserves it
+                        // after invalidation.
+                        mUsername = text;
+                        invalidate();
+                    }
+                }
+            }
         };
         InputSignInMethod.Builder builder = new InputSignInMethod.Builder(listener)
                 .setHint("Email")
@@ -172,17 +199,20 @@ public class SignInTemplateDemoScreen extends Screen {
     }
 
     private Template getPasswordSignInTemplate() {
-        OnInputCompletedListener listener = text -> {
-            // Mocked password validation
-            if (!EXPECTED_PASSWORD.equals(text)) {
-                mErrorMessage = "Invalid password";
-            } else {
-                mErrorMessage = "";
-                mState = State.SIGNED_IN;
+        InputCallback callback = new InputCallback() {
+            @Override
+            public void onInputSubmitted(@NonNull String text) {
+                // Mocked password validation
+                if (!EXPECTED_PASSWORD.equals(text)) {
+                    mErrorMessage = "Invalid password";
+                } else {
+                    mErrorMessage = "";
+                    mState = State.SIGNED_IN;
+                }
+                invalidate();
             }
-            invalidate();
         };
-        InputSignInMethod.Builder builder = new InputSignInMethod.Builder(listener)
+        InputSignInMethod.Builder builder = new InputSignInMethod.Builder(callback)
                 .setHint("Password")
                 .setInputType(InputSignInMethod.INPUT_TYPE_PASSWORD);
         if (mErrorMessage != null) {
@@ -227,12 +257,7 @@ public class SignInTemplateDemoScreen extends Screen {
                                 .setTint(noTint)
                                 .build())
                         .setOnClickListener(ParkedOnlyOnClickListener.create(
-                                () -> CarToast.makeText(
-                                        getCarContext(),
-                                        "Sign-in with Google starts here",
-                                        LENGTH_SHORT)
-                                        .show()))
-                        .build()
+                                this::performSignInWithGoogleFlow)).build()
         ).build();
 
         return new SignInTemplate.Builder(providerSignInMethod)
@@ -241,6 +266,33 @@ public class SignInTemplateDemoScreen extends Screen {
                 .setHeaderAction(Action.BACK)
                 .setAdditionalText(mAdditionalText)
                 .build();
+    }
+
+    private void performSignInWithGoogleFlow() {
+        // This is here for demonstration purposes, if the APK is not signed with a signature
+        // that has been registered for sign in with Google flow, the sign in will fail at runtime.
+
+//        Bundle extras = new Bundle(1);
+//        extras.putBinder(BINDER_KEY, new SignInWithGoogleActivity.OnSignInComplete() {
+//            @Override
+//            public void onSignInComplete(@Nullable GoogleSignInAccount account) {
+//                if (account == null) {
+//                    CarToast.makeText(getCarContext(), "Error signing in", LENGTH_LONG).show();
+//                    return;
+//                }
+//
+//                // Use the account
+//                CarToast.makeText(getCarContext(),
+//                        account.getGivenName() + " signed in", LENGTH_LONG).show();
+//            }
+//        });
+//        getCarContext().startActivity(
+//                new Intent()
+//                        .setClass(getCarContext(), SignInWithGoogleActivity.class)
+//                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+//                        .putExtras(extras));
+        CarToast.makeText(getCarContext(), "Sign-in with Google starts here", LENGTH_LONG)
+                .show();
     }
 
     private MessageTemplate getSignInCompletedMessageTemplate() {
@@ -256,4 +308,5 @@ public class SignInTemplateDemoScreen extends Screen {
                         .build())
                 .build();
     }
+
 }

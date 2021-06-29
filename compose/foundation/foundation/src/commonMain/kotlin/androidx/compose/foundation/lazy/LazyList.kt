@@ -17,6 +17,7 @@
 package androidx.compose.foundation.lazy
 
 import androidx.compose.foundation.assertNotNestingScrollableContainers
+import androidx.compose.foundation.clipScrollableContainer
 import androidx.compose.foundation.gestures.FlingBehavior
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.scrollable
@@ -31,7 +32,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.layout.SubcomposeLayoutState
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -89,13 +89,14 @@ internal fun LazyList(
                 flingBehavior = flingBehavior,
                 state = state
             )
-            .clipToBounds()
+            .clipScrollableContainer(isVertical)
             .padding(contentPadding)
             .then(state.remeasurementModifier)
     ) { constraints ->
         constraints.assertNotNestingScrollableContainers(isVertical)
 
         val itemsProvider = stateOfItemsProvider.value
+        state.updateScrollPositionIfTheFirstItemWasMoved(itemsProvider)
 
         // Update the state's cached Density
         state.density = Density(density, fontScale)
@@ -149,37 +150,34 @@ internal fun LazyList(
         }
 
         val measureResult = measureLazyList(
-            itemsCount,
-            itemProvider,
-            mainAxisMaxSize,
-            startContentPadding,
-            endContentPadding,
-            state.firstVisibleItemIndexNonObservable,
-            state.firstVisibleItemScrollOffsetNonObservable,
-            state.scrollToBeConsumed
+            itemsCount = itemsCount,
+            itemProvider = itemProvider,
+            mainAxisMaxSize = mainAxisMaxSize,
+            startContentPadding = if (reverseLayout) endContentPadding else startContentPadding,
+            endContentPadding = if (reverseLayout) startContentPadding else endContentPadding,
+            firstVisibleItemIndex = state.firstVisibleItemIndexNonObservable,
+            firstVisibleItemScrollOffset = state.firstVisibleItemScrollOffsetNonObservable,
+            scrollToBeConsumed = state.scrollToBeConsumed,
+            constraints = constraints,
+            isVertical = isVertical,
+            headerIndexes = itemsProvider.headerIndexes,
+            verticalArrangement = verticalArrangement,
+            horizontalArrangement = horizontalArrangement,
+            reverseLayout = reverseLayout,
+            density = this,
+            layoutDirection = layoutDirection
         )
 
         state.applyMeasureResult(measureResult)
 
-        val headers = if (itemsProvider.headerIndexes.isNotEmpty()) {
-            LazyListHeaders(
-                itemProvider,
-                itemsProvider.headerIndexes,
-                measureResult,
-                startContentPadding
-            )
-        } else {
-            null
+        state.onPostMeasureListener?.apply {
+            onPostMeasure(itemProvider.childConstraints, measureResult)
         }
 
-        layoutLazyList(
-            constraints,
-            isVertical,
-            verticalArrangement,
-            horizontalArrangement,
-            measureResult,
-            reverseLayout,
-            headers
+        layout(
+            width = measureResult.layoutWidth,
+            height = measureResult.layoutHeight,
+            placementBlock = measureResult.placementBlock
         )
     }
 }

@@ -26,10 +26,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.input.pointer.PointerEventPass
-import androidx.compose.ui.input.pointer.PointerInputScope
-import androidx.compose.ui.input.pointer.changedToDown
-import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.DesktopOwner
@@ -40,7 +37,6 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.round
-import java.awt.Point
 
 /**
  * Opens a popup with the given content.
@@ -56,6 +52,14 @@ import java.awt.Point
  * will be subtracted from it.
  * @param focusable Indicates if the popup can grab the focus.
  * @param onDismissRequest Executes when the user clicks outside of the popup.
+ * @param onPreviewKeyEvent This callback is invoked when the user interacts with the hardware
+ * keyboard. It gives ancestors of a focused component the chance to intercept a [KeyEvent].
+ * Return true to stop propagation of this event. If you return false, the key event will be
+ * sent to this [onPreviewKeyEvent]'s child. If none of the children consume the event,
+ * it will be sent back up to the root using the onKeyEvent callback.
+ * @param onKeyEvent This callback is invoked when the user interacts with the hardware
+ * keyboard. While implementing this callback, return true to stop propagation of this event.
+ * If you return false, the key event will be sent to this [onKeyEvent]'s parent.
  * @param content The content to be displayed inside the popup.
  */
 @Composable
@@ -64,6 +68,8 @@ fun Popup(
     offset: IntOffset = IntOffset(0, 0),
     focusable: Boolean = false,
     onDismissRequest: (() -> Unit)? = null,
+    onPreviewKeyEvent: ((KeyEvent) -> Boolean) = { false },
+    onKeyEvent: ((KeyEvent) -> Boolean) = { false },
     content: @Composable () -> Unit
 ) {
     val popupPositioner = remember(alignment, offset) {
@@ -76,6 +82,8 @@ fun Popup(
     Popup(
         popupPositionProvider = popupPositioner,
         onDismissRequest = onDismissRequest,
+        onKeyEvent = onKeyEvent,
+        onPreviewKeyEvent = onPreviewKeyEvent,
         focusable = focusable,
         content = content
     )
@@ -93,36 +101,54 @@ fun Popup(
  * @param focusable Indicates if the popup can grab the focus.
  * @property contextMenu Places the popup window below the lower-right rectangle of the mouse
  * cursor image (basic context menu behaviour).
+ * @param onPreviewKeyEvent This callback is invoked when the user interacts with the hardware
+ * keyboard. It gives ancestors of a focused component the chance to intercept a [KeyEvent].
+ * Return true to stop propagation of this event. If you return false, the key event will be
+ * sent to this [onPreviewKeyEvent]'s child. If none of the children consume the event,
+ * it will be sent back up to the root using the onKeyEvent callback.
+ * @param onKeyEvent This callback is invoked when the user interacts with the hardware
+ * keyboard. While implementing this callback, return true to stop propagation of this event.
+ * If you return false, the key event will be sent to this [onKeyEvent]'s parent.
  * @param content The content to be displayed inside the popup.
  */
 @Composable
 fun Popup(
     popupPositionProvider: PopupPositionProvider,
-    offset: IntOffset = IntOffset.Zero,
     onDismissRequest: (() -> Unit)? = null,
+    onPreviewKeyEvent: ((KeyEvent) -> Boolean) = { false },
+    onKeyEvent: ((KeyEvent) -> Boolean) = { false },
     focusable: Boolean = false,
     contextMenu: Boolean = false,
     content: @Composable () -> Unit
 ) {
-    PopupLayout(popupPositionProvider, offset, focusable, contextMenu, onDismissRequest, content)
+    PopupLayout(
+        popupPositionProvider,
+        focusable,
+        contextMenu,
+        onDismissRequest,
+        onPreviewKeyEvent,
+        onKeyEvent,
+        content
+    )
 }
 
 @Composable
 private fun PopupLayout(
     popupPositionProvider: PopupPositionProvider,
-    offset: IntOffset,
     focusable: Boolean,
     contextMenu: Boolean,
     onDismissRequest: (() -> Unit)?,
+    onPreviewKeyEvent: ((KeyEvent) -> Boolean) = { false },
+    onKeyEvent: ((KeyEvent) -> Boolean) = { false },
     content: @Composable () -> Unit
 ) {
     val owners = LocalDesktopOwners.current
     val density = LocalDensity.current
-    val container = LocalLayerContainer.current
+    val component = if (contextMenu) LocalLayerContainer.current else null
 
     var parentBounds by remember { mutableStateOf(IntRect.Zero) }
     var popupBounds by remember { mutableStateOf(IntRect.Zero) }
-    val pointClick = remember { container.getMousePosition() }
+    val pointClick = remember { component?.getMousePosition() }
 
     // getting parent bounds
     Layout(
@@ -141,19 +167,18 @@ private fun PopupLayout(
 
     val parentComposition = rememberCompositionContext()
     val (owner, composition) = remember {
-        val owner = DesktopOwner(owners, density)
+        val owner = DesktopOwner(
+            container = owners,
+            density = density,
+            isPopup = true,
+            isFocusable = focusable,
+            onDismissRequest = onDismissRequest,
+            onPreviewKeyEvent = onPreviewKeyEvent,
+            onKeyEvent = onKeyEvent
+        )
         val composition = owner.setContent(parent = parentComposition) {
             Layout(
                 content = content,
-                modifier = Modifier.pointerInput(focusable, onDismissRequest) {
-                    detectDown(
-                        onDown = { point ->
-                            if (focusable && isOutsideRectTap(popupBounds, point)) {
-                                onDismissRequest?.invoke()
-                            }
-                        }
-                    )
-                },
                 measurePolicy = { measurables, constraints ->
                     val width = constraints.maxWidth
                     val height = constraints.maxHeight
@@ -168,11 +193,9 @@ private fun PopupLayout(
                             val placeable = it.measure(constraints)
                             var position: IntOffset
                             if (contextMenu) {
-                                position = calculateContextMenuPosition(
-                                    pointClick,
-                                    offset,
-                                    parentBounds,
-                                    density.density
+                                position = IntOffset(
+                                    (pointClick!!.x * density.density).toInt(),
+                                    (pointClick.y * density.density).toInt()
                                 )
                             } else {
                                 position = popupPositionProvider.calculatePosition(
@@ -186,6 +209,7 @@ private fun PopupLayout(
                                 position,
                                 IntSize(placeable.width, placeable.height)
                             )
+                            owner.bounds = popupBounds
                             placeable.place(position.x, position.y)
                         }
                     }
@@ -205,28 +229,4 @@ private fun PopupLayout(
 
 private fun isOutsideRectTap(rect: IntRect, point: Offset): Boolean {
     return !rect.contains(IntOffset(point.x.toInt(), point.y.toInt()))
-}
-
-private suspend fun PointerInputScope.detectDown(onDown: (Offset) -> Unit) {
-    while (true) {
-        awaitPointerEventScope {
-            val event = awaitPointerEvent(PointerEventPass.Initial)
-            val down = event.changes.find { it.changedToDown() }
-            if (down != null) {
-                onDown(down.position)
-            }
-        }
-    }
-}
-
-private fun calculateContextMenuPosition(
-    point: Point,
-    dropdownMenuPadding: IntOffset,
-    parentRect: IntRect,
-    density: Float
-): IntOffset {
-    return IntOffset(
-        (point.x * density).toInt(),
-        ((point.y + dropdownMenuPadding.y) * density).toInt() - parentRect.height
-    )
 }

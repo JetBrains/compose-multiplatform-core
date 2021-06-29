@@ -2071,7 +2071,7 @@ class CompositionTests {
             }
         }
 
-        fun MockViewValidator.numbers(numbers: List<Int>) {
+        fun MockViewValidator.validateNumbers(numbers: List<Int>) {
             Linear {
                 Linear {
                     for (number in numbers) {
@@ -2081,17 +2081,17 @@ class CompositionTests {
             }
         }
 
-        fun MockViewValidator.item(number: Int, numbers: List<Int>) {
+        fun MockViewValidator.validateItem(number: Int, numbers: List<Int>) {
             Linear {
                 Text("$number")
-                numbers(numbers)
+                validateNumbers(numbers)
             }
         }
 
         fun MockViewValidator.Test() {
             Linear {
                 for ((number, numbers) in items) {
-                    item(number, numbers)
+                    validateItem(number, numbers)
                 }
             }
         }
@@ -2899,6 +2899,170 @@ class CompositionTests {
             assertTrue(composition.isDisposed)
         }
     }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun testSubcomposeSingleComposition() = compositionTest {
+        var flag by mutableStateOf(true)
+        var flagCopy by mutableStateOf(true)
+        var copyValue = true
+        var rememberedValue = true
+        compose {
+            Text("Parent $flag")
+            flagCopy = flag
+            TestSubcomposition {
+                copyValue = flagCopy
+                rememberedValue = remember(flagCopy) { copyValue }
+            }
+        }
+
+        flag = false
+        val count = advanceCount()
+        assertFalse(copyValue)
+        assertFalse(rememberedValue)
+        assertEquals(1, count)
+    }
+
+    @Test
+    fun enumCompositeKeyShouldBeStable() = compositionTest {
+        var parentHash: Int = 0
+        var compositeHash: Int = 0
+        compose {
+            parentHash = currentCompositeKeyHash
+            key(MyEnum.First) {
+                compositeHash = currentCompositeKeyHash
+            }
+        }
+
+        val effectiveHash = compositeHash xor (parentHash rol 3)
+        assertEquals(0, effectiveHash)
+    }
+
+    @Test
+    fun enumCompositeKeysShouldBeStable() = compositionTest {
+        var parentHash: Int = 0
+        var compositeHash: Int = 0
+        compose {
+            parentHash = currentCompositeKeyHash
+            key(MyEnum.First, MyEnum.Second) {
+                compositeHash = currentCompositeKeyHash
+            }
+        }
+
+        val effectiveHash = compositeHash xor (parentHash rol 3)
+        assertEquals(1, effectiveHash)
+    }
+
+    @Test // regression test for b/188015757
+    fun testRestartOfDefaultFunctions() = compositionTest {
+
+        @Composable
+        fun Test() {
+            Defaults()
+            use(stateB)
+        }
+
+        compose {
+            Test()
+        }
+
+        // Force Defaults to skip
+        stateB++
+        advance()
+
+        // Force Defaults to recompose
+        stateA++
+        advance()
+    }
+
+    enum class MyEnum {
+        First,
+        Second
+    }
+
+    /**
+     * set should set the value every time, update should only set after initial composition.
+     */
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun composeNodeSetVsUpdate() = runBlockingTest {
+        localRecomposerTest { recomposer ->
+            class SetUpdateNode(property: String) {
+                var changeCount = 0
+                var property: String = property
+                    set(value) {
+                        field = value
+                        changeCount++
+                    }
+            }
+            class SetUpdateNodeApplier : AbstractApplier<SetUpdateNode>(SetUpdateNode("root")) {
+                override fun insertTopDown(index: Int, instance: SetUpdateNode) {}
+                override fun insertBottomUp(index: Int, instance: SetUpdateNode) {}
+                override fun remove(index: Int, count: Int) {}
+                override fun move(from: Int, to: Int, count: Int) {}
+                override fun onClear() {}
+            }
+            val composition = Composition(SetUpdateNodeApplier(), recomposer)
+            val nodes = mutableListOf<SetUpdateNode>()
+            fun makeNode(property: String) = SetUpdateNode(property).also { nodes += it }
+
+            var value by mutableStateOf("initial")
+
+            composition.setContent {
+                ComposeNode<SetUpdateNode, SetUpdateNodeApplier>(
+                    factory = { makeNode(value) },
+                    update = {
+                        set(value) { property = value }
+                    }
+                )
+                ComposeNode<SetUpdateNode, SetUpdateNodeApplier>(
+                    factory = { makeNode(value) },
+                    update = {
+                        update(value) { property = value }
+                    }
+                )
+            }
+
+            assertEquals("initial", nodes[0].property, "node 0 initial composition value")
+            assertEquals("initial", nodes[1].property, "node 1 initial composition value")
+            assertEquals(1, nodes[0].changeCount, "node 0 initial composition changeCount")
+            assertEquals(0, nodes[1].changeCount, "node 1 initial composition changeCount")
+
+            value = "changed"
+            Snapshot.sendApplyNotifications()
+            advanceUntilIdle()
+
+            assertEquals("changed", nodes[0].property, "node 0 recomposition value")
+            assertEquals("changed", nodes[1].property, "node 1 recomposition value")
+            assertEquals(2, nodes[0].changeCount, "node 0 recomposition changeCount")
+            assertEquals(1, nodes[1].changeCount, "node 1 recomposition changeCount")
+        }
+    }
+
+    @Test
+    fun internalErrorsAreReportedAsInternal() = compositionTest {
+        expectError("internal") {
+            compose {
+                currentComposer.createNode { null }
+            }
+        }
+    }
+}
+
+var stateA by mutableStateOf(1000)
+var stateB by mutableStateOf(2000)
+
+fun use(@Suppress("UNUSED_PARAMETER") v: Int) {}
+
+fun calculateSomething() = 4
+
+@Composable // used in testRestartOfDefaultFunctions
+fun Defaults(a: Int = 1, b: Int = 2, c: Int = 3, d: Int = calculateSomething()) {
+    assertEquals(1, a)
+    assertEquals(2, b)
+    assertEquals(3, c)
+    assertEquals(4, d)
+    use(stateA)
 }
 
 @OptIn(InternalComposeApi::class)

@@ -20,6 +20,7 @@ import android.content.Context;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
+import android.view.Choreographer;
 
 import androidx.annotation.DoNotInline;
 import androidx.annotation.NonNull;
@@ -28,6 +29,7 @@ import androidx.startup.Initializer;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.Executor;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -39,7 +41,7 @@ import java.util.concurrent.TimeUnit;
  * During application startup this will schedule background profile installation several seconds
  * later. At the scheduled time, a background thread will be created to install the profile.
  *
- * You can disable this initializer and call {@link ProfileInstaller#tryInstallSync(Context)}
+ * You can disable this initializer and call {@link ProfileInstaller#writeProfile(Context)}
  * yourself to control the threading behavior.
  *
  * To disable this initializer add the following to your manifest:
@@ -55,9 +57,10 @@ import java.util.concurrent.TimeUnit;
  *     </provider>
  * </pre>
  *
- * If you disable the initializer, ensure that {@link ProfileInstaller#tryInstallSync(Context)}
+ * If you disable the initializer, ensure that {@link ProfileInstaller#writeProfile(Context)}
  * is called within a few (5-10) seconds of your app starting up.
  */
+
 public class ProfileInstallerInitializer
         implements Initializer<ProfileInstallerInitializer.Result> {
     private static final int DELAY_MS = 5_000;
@@ -74,9 +77,33 @@ public class ProfileInstallerInitializer
             // If we are below the supported SDK, there is nothing for us to do, so return early.
             return new Result();
         }
+        // If we made it this far, we are going to try and install the profile in the background,
+        // but delay a bit to avoid interfering with app startup work.
+        delayAfterFirstFrame(context.getApplicationContext());
+        return new Result();
+    }
 
-        // If we made it this far, we are going to try and install the profile in the background.
-        Context appContext = context.getApplicationContext();
+    /**
+     * Wait until the first frame of the application to do anything.
+     *
+     * This allows startup code to run before the delay is scheduled.
+     */
+    @RequiresApi(16)
+    void delayAfterFirstFrame(@NonNull Context appContext) {
+        // schedule delay after first frame callback
+        Choreographer16Impl.postFrameCallback(() -> installAfterDelay(appContext));
+    }
+
+    /**
+     * Attempt to write profile after a delay.
+     *
+     * This is several seconds after the first frame of the application, which allows early setup
+     * work in the application to complete prior to thread creation.
+     *
+     * Delay has a small amount of jitter to avoid potential situations where system write is
+     * delayed the same amount causing conflicts every launch.
+     */
+    void installAfterDelay(@NonNull Context appContext) {
         Handler handler;
         if (Build.VERSION.SDK_INT >= 28) {
             // avoid aligning with vsync when available using createAsync API
@@ -84,9 +111,10 @@ public class ProfileInstallerInitializer
         } else {
             handler = new Handler(Looper.getMainLooper());
         }
+        Random random = new Random();
+        int extra = random.nextInt(Math.max(DELAY_MS / 5, 1));
 
-        handler.postDelayed(() -> ProfileInstaller.tryInstallInBackground(appContext), DELAY_MS);
-        return new Result();
+        handler.postDelayed(() -> writeInBackground(appContext), DELAY_MS + extra);
     }
 
     /**
@@ -99,9 +127,40 @@ public class ProfileInstallerInitializer
     }
 
     /**
+     * Creates a new thread and calls {@link ProfileInstaller#writeProfile(Context)} on it.
+     *
+     * Thread will be destroyed after the call completes.
+     *
+     * Warning: *Never* call this during app initialization as it will create a thread and
+     * start disk read/write immediately.
+     */
+    private static void writeInBackground(@NonNull Context context) {
+        Executor executor = new ThreadPoolExecutor(
+                /* corePoolSize = */0,
+                /* maximumPoolSize = */1,
+                /* keepAliveTime = */0,
+                /* unit = */TimeUnit.MILLISECONDS,
+                /* workQueue = */new LinkedBlockingQueue<>()
+        );
+        executor.execute(() -> ProfileInstaller.writeProfile(context));
+    }
+
+    /**
      * Empty result class for ProfileInstaller.
      */
     public static class Result { }
+
+    @RequiresApi(16)
+    private static class Choreographer16Impl {
+        private Choreographer16Impl() {
+            // Non-instantiable.
+        }
+
+        @DoNotInline
+        public static void postFrameCallback(Runnable r) {
+            Choreographer.getInstance().postFrameCallback(frameTimeNanos -> r.run());
+        }
+    }
 
     @RequiresApi(28)
     private static class Handler28Impl {

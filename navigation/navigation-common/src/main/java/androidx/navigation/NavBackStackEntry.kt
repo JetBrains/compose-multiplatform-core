@@ -45,12 +45,12 @@ import java.util.UUID
 public class NavBackStackEntry private constructor(
     private val context: Context?,
     /**
-     * Gets the destination associated with this entry
+     * The destination associated with this entry
      * @return The destination that is currently visible to users
      */
     public val destination: NavDestination,
     /**
-     * Gets the arguments used for this entry
+     * The arguments used for this entry
      * @return The arguments used when this entry was created
      */
     @set:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
@@ -58,7 +58,7 @@ public class NavBackStackEntry private constructor(
     navControllerLifecycleOwner: LifecycleOwner? = null,
     private val viewModelStoreProvider: NavViewModelStoreProvider? = null,
     /**
-     * Gets the unique ID that serves as the identity of this entry
+     * The unique ID that serves as the identity of this entry
      * @return the unique ID of this entry
      */
     public val id: String = UUID.randomUUID().toString(),
@@ -99,9 +99,7 @@ public class NavBackStackEntry private constructor(
     }
 
     /**
-     * Gets the [SavedStateHandle] for this entry.
-     *
-     * @return the SavedStateHandle for this entry
+     * The [SavedStateHandle] for this entry.
      */
     public val savedStateHandle: SavedStateHandle by lazy {
         check(lifecycle.currentState.isAtLeast(Lifecycle.State.CREATED)) {
@@ -114,6 +112,7 @@ public class NavBackStackEntry private constructor(
         ).get(SavedStateViewModel::class.java).handle
     }
 
+    /** @suppress */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public fun replaceArguments(newArgs: Bundle?) {
         arguments = newArgs
@@ -130,6 +129,7 @@ public class NavBackStackEntry private constructor(
         return lifecycle
     }
 
+    /** @suppress */
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     @set:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public var maxLifecycle: Lifecycle.State = Lifecycle.State.INITIALIZED
@@ -142,6 +142,7 @@ public class NavBackStackEntry private constructor(
             updateState()
         }
 
+    /** @suppress */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public fun handleLifecycleEvent(event: Lifecycle.Event) {
         hostLifecycleState = event.targetState
@@ -150,6 +151,7 @@ public class NavBackStackEntry private constructor(
 
     /**
      * Update the state to be the lower of the two constraints:
+     * @suppress
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public fun updateState() {
@@ -188,6 +190,7 @@ public class NavBackStackEntry private constructor(
         return savedStateRegistryController.savedStateRegistry
     }
 
+    /** @suppress */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public fun saveState(outBundle: Bundle) {
         savedStateRegistryController.performSave(outBundle)

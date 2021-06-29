@@ -39,16 +39,16 @@ private const val REFERENCE_PREVIEW_TIME = 123456L
 private class TestListenableWatchFaceService : ListenableWatchFaceService() {
     override fun createWatchFaceFuture(
         surfaceHolder: SurfaceHolder,
-        watchState: WatchState
+        watchState: WatchState,
+        complicationSlotsManager: ComplicationSlotsManager,
+        currentUserStyleRepository: CurrentUserStyleRepository
     ): ListenableFuture<WatchFace> {
-        val userStyleRepository =
-            CurrentUserStyleRepository(UserStyleSchema(emptyList()))
         return Futures.immediateFuture(
             WatchFace(
-                WatchFaceType.DIGITAL, userStyleRepository,
+                WatchFaceType.DIGITAL,
                 object : Renderer.CanvasRenderer(
                     surfaceHolder,
-                    userStyleRepository,
+                    currentUserStyleRepository,
                     watchState,
                     CanvasType.SOFTWARE,
                     16
@@ -67,8 +67,15 @@ private class TestListenableWatchFaceService : ListenableWatchFaceService() {
 
     suspend fun createWatchFaceForTest(
         surfaceHolder: SurfaceHolder,
-        watchState: WatchState
-    ): WatchFace = createWatchFace(surfaceHolder, watchState)
+        watchState: WatchState,
+        complicationSlotsManager: ComplicationSlotsManager,
+        currentUserStyleRepository: CurrentUserStyleRepository
+    ): WatchFace = createWatchFace(
+        surfaceHolder,
+        watchState,
+        complicationSlotsManager,
+        currentUserStyleRepository
+    )
 }
 
 @RunWith(ListenableWatchFaceServiceTestRunner::class)
@@ -79,10 +86,17 @@ public class ListenableWatchFaceServiceTest {
         val mockSurfaceHolder = Mockito.mock(SurfaceHolder::class.java)
         `when`(mockSurfaceHolder.surfaceFrame).thenReturn(Rect(0, 0, 100, 100))
         runBlocking {
+            val currentUserStyleRepository =
+                CurrentUserStyleRepository(UserStyleSchema(emptyList()))
+            val complicationsSlotManager =
+                ComplicationSlotsManager(emptyList(), currentUserStyleRepository)
+
             // Make sure the ListenableFuture<> to kotlin coroutine bridge works.
             val watchFace = service.createWatchFaceForTest(
                 mockSurfaceHolder,
-                MutableWatchState().asWatchState()
+                MutableWatchState().asWatchState(),
+                complicationsSlotManager,
+                currentUserStyleRepository
             )
 
             // Simple check that [watchFace] looks sensible.

@@ -23,6 +23,7 @@ import androidx.compose.ui.graphics.Matrix
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.layout.GraphicLayerInfo
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
@@ -49,8 +50,15 @@ internal interface OwnedLayer : GraphicLayerInfo {
         transformOrigin: TransformOrigin,
         shape: Shape,
         clip: Boolean,
-        layoutDirection: LayoutDirection
+        layoutDirection: LayoutDirection,
+        density: Density
     )
+
+    /**
+     * Returns `false` if [position] is outside the clipped region or `true` if clipping
+     * is disabled or it is within the clipped region.
+     */
+    fun isInLayer(position: Offset): Boolean
 
     /**
      * Changes the position of the layer contents.

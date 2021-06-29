@@ -28,6 +28,8 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.window.ExtensionInterfaceCompat.ExtensionCallbackInterface
+import androidx.window.FoldingFeature.State.Companion.FLAT
+import androidx.window.FoldingFeature.State.Companion.HALF_OPENED
 import androidx.window.TestFoldingFeatureUtil.invalidFoldBounds
 import androidx.window.TestFoldingFeatureUtil.validFoldBound
 import androidx.window.sidecar.SidecarDeviceState
@@ -47,7 +49,6 @@ import com.nhaarman.mockitokotlin2.spy
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.verifyZeroInteractions
 import com.nhaarman.mockitokotlin2.whenever
-import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
@@ -78,9 +79,6 @@ public class SidecarCompatTest : WindowTestBase(), CompatTestInterface {
         val window: Window = spy(TestWindow(activity))
         window.attributes.token = mock()
         whenever(activity.getWindow()).thenReturn(window)
-        val mWindowBoundsHelper = TestWindowBoundsHelper()
-        mWindowBoundsHelper.setCurrentBounds(WINDOW_BOUNDS)
-        WindowBoundsHelper.setForTesting(mWindowBoundsHelper)
 
         // Setup mocked sidecar responses
         val defaultDeviceState = SidecarDeviceState()
@@ -97,11 +95,6 @@ public class SidecarCompatTest : WindowTestBase(), CompatTestInterface {
         SidecarAdapter.setSidecarDisplayFeatures(sidecarWindowLayoutInfo, displayFeatures)
         whenever(sidecarCompat.sidecar!!.getWindowLayoutInfo(any()))
             .thenReturn(sidecarWindowLayoutInfo)
-    }
-
-    @After
-    public fun tearDown() {
-        WindowBoundsHelper.setForTesting(null)
     }
 
     @Test
@@ -397,19 +390,13 @@ public class SidecarCompatTest : WindowTestBase(), CompatTestInterface {
         verify(mockCallback).onWindowLayoutChanged(eq(activity), windowLayoutCaptor.capture())
         var capturedFoldingFeature = windowLayoutCaptor.firstValue
             .displayFeatures[0] as FoldingFeature
-        assertEquals(
-            FoldingFeature.STATE_FLAT.toLong(),
-            capturedFoldingFeature.state.toLong()
-        )
+        assertEquals(FLAT, capturedFoldingFeature.state)
         reset(mockCallback)
         fakeSidecarImp.triggerDeviceState(newDeviceState(SidecarDeviceState.POSTURE_HALF_OPENED))
         verify(mockCallback)
             .onWindowLayoutChanged(eq(activity), windowLayoutCaptor.capture())
         capturedFoldingFeature = windowLayoutCaptor.secondValue.displayFeatures[0] as FoldingFeature
-        assertEquals(
-            FoldingFeature.STATE_HALF_OPENED.toLong(),
-            capturedFoldingFeature.state.toLong()
-        )
+        assertEquals(HALF_OPENED, capturedFoldingFeature.state)
 
         // No display features must be reported in closed state or flipped state.
         reset(mockCallback)

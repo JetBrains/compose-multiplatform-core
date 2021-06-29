@@ -69,6 +69,7 @@ import static android.content.Context.WIFI_SERVICE;
 import static android.content.Context.WINDOW_SERVICE;
 
 import android.accounts.AccountManager;
+import android.annotation.SuppressLint;
 import android.app.ActivityManager;
 import android.app.AlarmManager;
 import android.app.AppOpsManager;
@@ -145,6 +146,7 @@ import androidx.core.app.ActivityOptionsCompat;
 import androidx.core.content.res.ResourcesCompat;
 import androidx.core.os.EnvironmentCompat;
 import androidx.core.os.ExecutorCompat;
+import androidx.core.util.ObjectsCompat;
 
 import java.io.File;
 import java.util.HashMap;
@@ -153,10 +155,14 @@ import java.util.concurrent.Executor;
 /**
  * Helper for accessing features in {@link Context}.
  */
+@SuppressLint("PrivateConstructorForUtilityClass") // Already launched with public constructor
 public class ContextCompat {
     private static final String TAG = "ContextCompat";
 
     private static final Object sLock = new Object();
+
+    // Lock that provides similar functionality to ContextImpl.mSync.
+    private static final Object sSync = new Object();
 
     private static TypedValue sTempValue;
 
@@ -545,10 +551,7 @@ public class ContextCompat {
      * @see PackageManager#checkPermission(String, String)
      */
     public static int checkSelfPermission(@NonNull Context context, @NonNull String permission) {
-        if (permission == null) {
-            throw new IllegalArgumentException("permission is null");
-        }
-
+        ObjectsCompat.requireNonNull(permission, "permission must be non-null");
         return context.checkPermission(permission, Process.myPid(), Process.myUid());
     }
 
@@ -590,6 +593,7 @@ public class ContextCompat {
      *
      * @return The path of the directory holding application code cache files.
      */
+    @NonNull
     public static File getCodeCacheDir(@NonNull Context context) {
         if (Build.VERSION.SDK_INT >= 21) {
             return Api21Impl.getCodeCacheDir(context);
@@ -599,18 +603,23 @@ public class ContextCompat {
         }
     }
 
-    private synchronized static File createFilesDir(File file) {
-        if (!file.exists()) {
-            if (!file.mkdirs()) {
-                if (file.exists()) {
-                    // spurious failure; probably racing with another process for this app
+    private static File createFilesDir(File file) {
+        // In the platform, all operations on Context that involve creating files (codeCacheDir,
+        // noBackupFilesDir, etc.) are synchronized on a single lock owned by the Context. So, if
+        // we lock on a single static lock owned by ContextCompat then we're a bit too broad but
+        // at least we'll provide similar guarantees.
+        synchronized (sSync) {
+            if (!file.exists()) {
+                if (file.mkdirs()) {
                     return file;
+                } else {
+                    // There used to be another check for file.exists() here, but that was a
+                    // side-effect of improper synchronization.
+                    Log.w(TAG, "Unable to create files subdir " + file.getPath());
                 }
-                Log.w(TAG, "Unable to create files subdir " + file.getPath());
-                return null;
             }
+            return file;
         }
-        return file;
     }
 
     /**
@@ -672,7 +681,8 @@ public class ContextCompat {
      * thread associated with this context. This is the thread used to dispatch
      * calls to application components (activities, services, etc).
      */
-    public static Executor getMainExecutor(Context context) {
+    @NonNull
+    public static Executor getMainExecutor(@NonNull Context context) {
         if (Build.VERSION.SDK_INT >= 28) {
             return Api28Impl.getMainExecutor(context);
         }
@@ -872,11 +882,6 @@ public class ContextCompat {
         }
 
         @DoNotInline
-        static ColorStateList getColorStateList(Context obj, int id) {
-            return obj.getColorStateList(id);
-        }
-
-        @DoNotInline
         static int getColor(Context obj, int id) {
             return obj.getColor(id);
         }
@@ -920,6 +925,7 @@ public class ContextCompat {
             // This class is not instantiable.
         }
 
+        @SuppressWarnings("UnusedReturnValue")
         @DoNotInline
         static ComponentName startForegroundService(Context obj, Intent service) {
             return obj.startForegroundService(service);

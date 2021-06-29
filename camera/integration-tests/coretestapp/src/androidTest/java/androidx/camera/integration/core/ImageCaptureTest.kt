@@ -628,6 +628,8 @@ class ImageCaptureTest(private val implName: String, private val cameraXConfig: 
 
     @Test
     fun takePicture_withBufferFormatRaw10() = runBlocking {
+        // RAW10 does not work in redmi 8
+        assumeFalse(Build.DEVICE.equals("olive", ignoreCase = true)) // Redmi 8
         skipTestOnCameraPipeConfig()
 
         val cameraCharacteristics = CameraUtil.getCameraCharacteristics(BACK_LENS_FACING)
@@ -836,6 +838,8 @@ class ImageCaptureTest(private val implName: String, private val cameraXConfig: 
 
     @Test
     fun defaultAspectRatioWillBeSet_whenTargetResolutionIsNotSet() {
+        skipTestOnCameraPipeConfig()
+
         val useCase = ImageCapture.Builder().build()
         camera = CameraUtil.createCameraAndAttachUseCase(context, BACK_SELECTOR, useCase)
 
@@ -845,6 +849,8 @@ class ImageCaptureTest(private val implName: String, private val cameraXConfig: 
 
     @Test
     fun defaultAspectRatioWontBeSet_whenTargetResolutionIsSet() {
+        skipTestOnCameraPipeConfig()
+
         val useCase = ImageCapture.Builder()
             .setTargetResolution(DEFAULT_RESOLUTION)
             .build()
@@ -875,6 +881,8 @@ class ImageCaptureTest(private val implName: String, private val cameraXConfig: 
 
     @Test
     fun targetResolutionIsUpdatedAfterTargetRotationIsUpdated() {
+        skipTestOnCameraPipeConfig()
+
         val imageCapture = ImageCapture.Builder()
             .setTargetResolution(DEFAULT_RESOLUTION)
             .setTargetRotation(Surface.ROTATION_0)
@@ -1039,6 +1047,8 @@ class ImageCaptureTest(private val implName: String, private val cameraXConfig: 
 
     @Test
     fun useCaseConfigCanBeReset_afterUnbind() = runBlocking {
+        skipTestOnCameraPipeConfig()
+
         val useCase = defaultBuilder.build()
         val initialConfig = useCase.currentConfig
         camera = CameraUtil.createCameraAndAttachUseCase(context, BACK_SELECTOR, useCase)
@@ -1053,6 +1063,8 @@ class ImageCaptureTest(private val implName: String, private val cameraXConfig: 
 
     @Test
     fun targetRotationIsRetained_whenUseCaseIsReused() = runBlocking {
+        skipTestOnCameraPipeConfig()
+
         val useCase = defaultBuilder.build()
         camera = CameraUtil.createCameraAndAttachUseCase(context, BACK_SELECTOR, useCase)
 
@@ -1206,6 +1218,8 @@ class ImageCaptureTest(private val implName: String, private val cameraXConfig: 
 
     @Test
     fun returnCorrectTargetRotation_afterUseCaseIsAttached() {
+        skipTestOnCameraPipeConfig()
+
         val imageCapture = ImageCapture.Builder()
             .setTargetRotation(Surface.ROTATION_180)
             .build()
@@ -1221,6 +1235,8 @@ class ImageCaptureTest(private val implName: String, private val cameraXConfig: 
 
     @Test
     fun returnCorrectFlashMode_afterUseCaseIsAttached() {
+        skipTestOnCameraPipeConfig()
+
         val imageCapture = ImageCapture.Builder()
             .setFlashMode(ImageCapture.FLASH_MODE_ON)
             .build()

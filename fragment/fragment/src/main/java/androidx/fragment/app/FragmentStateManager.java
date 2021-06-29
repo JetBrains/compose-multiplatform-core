@@ -482,19 +482,22 @@ class FragmentStateManager {
             }
             FragmentContainer fragmentContainer = mFragment.mFragmentManager.getContainer();
             container = (ViewGroup) fragmentContainer.onFindViewById(mFragment.mContainerId);
-            if (!(container instanceof FragmentContainerView)) {
-                FragmentStrictMode.onWrongFragmentContainer(mFragment);
-            }
-            if (container == null && !mFragment.mRestored) {
-                String resName;
-                try {
-                    resName = mFragment.getResources().getResourceName(mFragment.mContainerId);
-                } catch (Resources.NotFoundException e) {
-                    resName = "unknown";
+            if (container == null) {
+                if (!mFragment.mRestored) {
+                    String resName;
+                    try {
+                        resName = mFragment.getResources().getResourceName(mFragment.mContainerId);
+                    } catch (Resources.NotFoundException e) {
+                        resName = "unknown";
+                    }
+                    throw new IllegalArgumentException("No view found for id 0x"
+                            + Integer.toHexString(mFragment.mContainerId) + " ("
+                            + resName + ") for fragment " + mFragment);
                 }
-                throw new IllegalArgumentException("No view found for id 0x"
-                        + Integer.toHexString(mFragment.mContainerId) + " ("
-                        + resName + ") for fragment " + mFragment);
+            } else {
+                if (!(container instanceof FragmentContainerView)) {
+                    FragmentStrictMode.onWrongFragmentContainer(mFragment, container);
+                }
             }
         }
         mFragment.mContainer = container;
@@ -730,6 +733,10 @@ class FragmentStateManager {
             Log.d(TAG, "movefrom CREATED: " + mFragment);
         }
         boolean beingRemoved = mFragment.mRemoving && !mFragment.isInBackStack();
+        // Clear any previous saved state
+        if (beingRemoved && !mFragment.mBeingSaved) {
+            mFragmentStore.setSavedState(mFragment.mWho, null);
+        }
         boolean shouldDestroy = beingRemoved
                 || mFragmentStore.getNonConfig().shouldDestroy(mFragment);
         if (shouldDestroy) {

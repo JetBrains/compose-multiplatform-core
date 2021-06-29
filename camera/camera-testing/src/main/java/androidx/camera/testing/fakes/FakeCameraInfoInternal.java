@@ -24,8 +24,8 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.CameraState;
-import androidx.camera.core.ExperimentalExposureCompensation;
 import androidx.camera.core.ExposureState;
+import androidx.camera.core.FocusMeteringAction;
 import androidx.camera.core.TorchState;
 import androidx.camera.core.ZoomState;
 import androidx.camera.core.impl.CamcorderProfileProvider;
@@ -138,7 +138,6 @@ public final class FakeCameraInfoInternal implements CameraInfoInternal {
 
     @NonNull
     @Override
-    @ExperimentalExposureCompensation
     public ExposureState getExposureState() {
         return new ExposureState() {
             @Override
@@ -203,6 +202,11 @@ public final class FakeCameraInfoInternal implements CameraInfoInternal {
     @Override
     public Quirks getCameraQuirks() {
         return new Quirks(mCameraQuirks);
+    }
+
+    @Override
+    public boolean isFocusMeteringSupported(@NonNull FocusMeteringAction action) {
+        return false;
     }
 
     /** Adds a quirk to the list of this camera's quirks. */

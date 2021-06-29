@@ -20,6 +20,8 @@ package androidx.compose.foundation.text.selection
 
 import androidx.compose.foundation.fastFold
 import androidx.compose.foundation.focusable
+import androidx.compose.foundation.gestures.forEachGesture
+import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -28,7 +30,6 @@ import androidx.compose.runtime.structuralEqualityPolicy
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.focus.isFocused
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
@@ -37,6 +38,8 @@ import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.pointer.PointerInputScope
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -45,6 +48,7 @@ import androidx.compose.ui.platform.ClipboardManager
 import androidx.compose.ui.platform.TextToolbar
 import androidx.compose.ui.platform.TextToolbarStatus
 import androidx.compose.ui.text.AnnotatedString
+import kotlinx.coroutines.coroutineScope
 import kotlin.math.max
 import kotlin.math.min
 
@@ -104,6 +108,7 @@ internal class SelectionManager(private val selectionRegistrar: SelectionRegistr
      * Modifier for selection container.
      */
     val modifier get() = Modifier
+        .onClearSelectionRequested { onRelease() }
         .onGloballyPositioned { containerLayoutCoordinates = it }
         .focusRequester(focusRequester)
         .onFocusChanged { focusState ->
@@ -199,6 +204,21 @@ internal class SelectionManager(private val selectionRegistrar: SelectionRegistr
                     isStartHandle = true,
                     adjustment = selectionMode
                 )
+
+                focusRequester.requestFocus()
+                hideSelectionToolbar()
+            }
+
+        selectionRegistrar.onSelectionUpdateSelectAll =
+            { selectableId ->
+                val (newSelection, newSubselection) = mergeSelections(
+                    selectableId = selectableId,
+                    previousSelection = selection,
+                )
+                if (newSelection != selection) {
+                    selectionRegistrar.subselections = newSubselection
+                    onSelectionChange(newSelection)
+                }
 
                 focusRequester.requestFocus()
                 hideSelectionToolbar()
@@ -348,6 +368,24 @@ internal class SelectionManager(private val selectionRegistrar: SelectionRegistr
                     isStartHandle = isStartHandle,
                     adjustment = adjustment
                 )
+                selection?.let { subselections[selectable.selectableId] = it }
+                merge(mergedSelection, selection)
+            }
+        if (previousSelection != newSelection) hapticFeedBack?.performHapticFeedback(
+            HapticFeedbackType.TextHandleMove
+        )
+        return Pair(newSelection, subselections)
+    }
+
+    internal fun mergeSelections(
+        previousSelection: Selection? = null,
+        selectableId: Long
+    ): Pair<Selection?, Map<Long, Selection>> {
+        val subselections = mutableMapOf<Long, Selection>()
+        val newSelection = selectionRegistrar.sort(requireContainerCoordinates())
+            .fastFold(null) { mergedSelection: Selection?, selectable: Selectable ->
+                val selection = if (selectable.selectableId == selectableId)
+                    selectable.getSelectAllSelection() else null
                 selection?.let { subselections[selectable.selectableId] = it }
                 merge(mergedSelection, selection)
             }
@@ -591,6 +629,25 @@ internal class SelectionManager(private val selectionRegistrar: SelectionRegistr
                 showSelectionToolbar()
             }
         }
+    }
+
+    /**
+     * Detect tap without consuming the up event.
+     */
+    private suspend fun PointerInputScope.detectNonConsumingTap(onTap: (Offset) -> Unit) {
+        forEachGesture {
+            coroutineScope {
+                awaitPointerEventScope {
+                    waitForUpOrCancellation()?.let {
+                        onTap(it.position)
+                    }
+                }
+            }
+        }
+    }
+
+    private fun Modifier.onClearSelectionRequested(block: () -> Unit): Modifier {
+        return if (hasFocus) pointerInput(Unit) { detectNonConsumingTap { block() } } else this
     }
 
     private fun convertToContainerCoordinates(

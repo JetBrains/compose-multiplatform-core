@@ -27,8 +27,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 import androidx.car.app.OnDoneCallback;
-import androidx.car.app.model.OnInputCompletedDelegate;
-import androidx.car.app.model.OnInputCompletedListener;
+import androidx.car.app.model.InputCallback;
+import androidx.car.app.model.InputCallbackDelegate;
 
 import org.junit.Rule;
 import org.junit.Test;
@@ -47,29 +47,46 @@ public class InputSignInMethodTest {
     public final MockitoRule mockito = MockitoJUnit.rule();
 
     @Mock
-    OnInputCompletedListener mListener;
+    InputCallback mCallback;
 
     @Test
     public void create_defaultValues() {
-        InputSignInMethod signIn = new InputSignInMethod.Builder(mListener).build();
+        InputSignInMethod signIn = new InputSignInMethod.Builder(mCallback).build();
 
         assertThat(signIn.getInputType()).isEqualTo(INPUT_TYPE_DEFAULT);
         assertThat(signIn.getKeyboardType()).isEqualTo(KEYBOARD_DEFAULT);
         assertThat(signIn.getHint()).isNull();
         assertThat(signIn.getErrorMessage()).isNull();
         assertThat(signIn.isShowKeyboardByDefault()).isFalse();
+    }
 
-        OnInputCompletedDelegate delegate = signIn.getOnInputCompletedDelegate();
+    @Test
+    public void inputSubmittedCallback() {
+        InputSignInMethod signIn = new InputSignInMethod.Builder(mCallback).build();
+
+        InputCallbackDelegate delegate = signIn.getInputCallbackDelegate();
         OnDoneCallback onDoneCallback = mock(OnDoneCallback.class);
-        delegate.sendInputCompleted("ABC", onDoneCallback);
+        delegate.sendInputSubmitted("ABC", onDoneCallback);
 
-        verify(mListener).onInputCompleted("ABC");
+        verify(mCallback).onInputSubmitted("ABC");
+        verify(onDoneCallback).onSuccess(null);
+    }
+
+    @Test
+    public void inputTextChangedCallback() {
+        InputSignInMethod signIn = new InputSignInMethod.Builder(mCallback).build();
+
+        InputCallbackDelegate delegate = signIn.getInputCallbackDelegate();
+        OnDoneCallback onDoneCallback = mock(OnDoneCallback.class);
+        delegate.sendInputTextChanged("ABC", onDoneCallback);
+
+        verify(mCallback).onInputTextChanged("ABC");
         verify(onDoneCallback).onSuccess(null);
     }
 
     @Test
     public void create_withInputType() {
-        InputSignInMethod signIn = new InputSignInMethod.Builder(mListener)
+        InputSignInMethod signIn = new InputSignInMethod.Builder(mCallback)
                 .setInputType(INPUT_TYPE_PASSWORD)
                 .build();
 
@@ -78,7 +95,7 @@ public class InputSignInMethodTest {
 
     @Test
     public void create_withKeyboardType() {
-        InputSignInMethod signIn = new InputSignInMethod.Builder(mListener)
+        InputSignInMethod signIn = new InputSignInMethod.Builder(mCallback)
                 .setKeyboardType(KEYBOARD_EMAIL)
                 .build();
 
@@ -87,7 +104,7 @@ public class InputSignInMethodTest {
 
     @Test
     public void create_wtihPrompt() {
-        InputSignInMethod signIn = new InputSignInMethod.Builder(mListener)
+        InputSignInMethod signIn = new InputSignInMethod.Builder(mCallback)
                 .setHint("Signin")
                 .build();
 
@@ -96,7 +113,7 @@ public class InputSignInMethodTest {
 
     @Test
     public void create_withMessage() {
-        InputSignInMethod signIn = new InputSignInMethod.Builder(mListener)
+        InputSignInMethod signIn = new InputSignInMethod.Builder(mCallback)
                 .setErrorMessage("error")
                 .build();
 
@@ -105,7 +122,7 @@ public class InputSignInMethodTest {
 
     @Test
     public void create_showKeyboard() {
-        InputSignInMethod signIn = new InputSignInMethod.Builder(mListener)
+        InputSignInMethod signIn = new InputSignInMethod.Builder(mCallback)
                 .setShowKeyboardByDefault(true)
                 .build();
 
@@ -119,7 +136,7 @@ public class InputSignInMethodTest {
         String message = "error";
         String instructions = "sign";
 
-        InputSignInMethod signIn = new InputSignInMethod.Builder(mListener)
+        InputSignInMethod signIn = new InputSignInMethod.Builder(mCallback)
                 .setInputType(inputType)
                 .setKeyboardType(keyboardType)
                 .setHint(instructions)
@@ -128,7 +145,7 @@ public class InputSignInMethodTest {
                 .build();
 
         assertThat(signIn)
-                .isEqualTo(new InputSignInMethod.Builder(mListener)
+                .isEqualTo(new InputSignInMethod.Builder(mCallback)
                         .setInputType(inputType)
                         .setKeyboardType(keyboardType)
                         .setHint(instructions)
@@ -143,7 +160,7 @@ public class InputSignInMethodTest {
         String message = "error";
         String instructions = "sign";
 
-        InputSignInMethod signIn = new InputSignInMethod.Builder(mListener)
+        InputSignInMethod signIn = new InputSignInMethod.Builder(mCallback)
                 .setInputType(INPUT_TYPE_PASSWORD)
                 .setKeyboardType(keyboardType)
                 .setHint(instructions)
@@ -152,7 +169,7 @@ public class InputSignInMethodTest {
                 .build();
 
         assertThat(signIn)
-                .isNotEqualTo(new InputSignInMethod.Builder(mListener)
+                .isNotEqualTo(new InputSignInMethod.Builder(mCallback)
                         .setInputType(INPUT_TYPE_DEFAULT)
                         .setKeyboardType(keyboardType)
                         .setHint(instructions)
@@ -167,7 +184,7 @@ public class InputSignInMethodTest {
         String message = "error";
         String instructions = "sign";
 
-        InputSignInMethod signIn = new InputSignInMethod.Builder(mListener)
+        InputSignInMethod signIn = new InputSignInMethod.Builder(mCallback)
                 .setInputType(inputType)
                 .setKeyboardType(KEYBOARD_EMAIL)
                 .setHint(instructions)
@@ -176,7 +193,7 @@ public class InputSignInMethodTest {
                 .build();
 
         assertThat(signIn)
-                .isNotEqualTo(new InputSignInMethod.Builder(mListener)
+                .isNotEqualTo(new InputSignInMethod.Builder(mCallback)
                         .setInputType(inputType)
                         .setKeyboardType(KEYBOARD_DEFAULT)
                         .setHint(instructions)
@@ -191,7 +208,7 @@ public class InputSignInMethodTest {
         int keyboardType = KEYBOARD_EMAIL;
         String message = "error";
 
-        InputSignInMethod signIn = new InputSignInMethod.Builder(mListener)
+        InputSignInMethod signIn = new InputSignInMethod.Builder(mCallback)
                 .setInputType(inputType)
                 .setKeyboardType(keyboardType)
                 .setHint("signin")
@@ -200,7 +217,7 @@ public class InputSignInMethodTest {
                 .build();
 
         assertThat(signIn)
-                .isNotEqualTo(new InputSignInMethod.Builder(mListener)
+                .isNotEqualTo(new InputSignInMethod.Builder(mCallback)
                         .setInputType(inputType)
                         .setKeyboardType(keyboardType)
                         .setHint("sign2")
@@ -215,7 +232,7 @@ public class InputSignInMethodTest {
         int keyboardType = KEYBOARD_EMAIL;
         String instructions = "sign";
 
-        InputSignInMethod signIn = new InputSignInMethod.Builder(mListener)
+        InputSignInMethod signIn = new InputSignInMethod.Builder(mCallback)
                 .setInputType(inputType)
                 .setKeyboardType(keyboardType)
                 .setHint(instructions)
@@ -224,7 +241,7 @@ public class InputSignInMethodTest {
                 .build();
 
         assertThat(signIn)
-                .isNotEqualTo(new InputSignInMethod.Builder(mListener)
+                .isNotEqualTo(new InputSignInMethod.Builder(mCallback)
                         .setInputType(inputType)
                         .setKeyboardType(keyboardType)
                         .setHint(instructions)
@@ -240,7 +257,7 @@ public class InputSignInMethodTest {
         String message = "error";
         String instructions = "sign";
 
-        InputSignInMethod signIn = new InputSignInMethod.Builder(mListener)
+        InputSignInMethod signIn = new InputSignInMethod.Builder(mCallback)
                 .setInputType(inputType)
                 .setKeyboardType(keyboardType)
                 .setHint(instructions)
@@ -249,7 +266,7 @@ public class InputSignInMethodTest {
                 .build();
 
         assertThat(signIn)
-                .isNotEqualTo(new InputSignInMethod.Builder(mListener)
+                .isNotEqualTo(new InputSignInMethod.Builder(mCallback)
                         .setInputType(inputType)
                         .setKeyboardType(keyboardType)
                         .setHint(instructions)

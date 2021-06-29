@@ -29,24 +29,21 @@ import java.util.regex.Pattern
  */
 public class NavDeepLink internal constructor(
     /**
-     * Get the uri pattern from the NavDeepLink.
+     * The uri pattern from the NavDeepLink.
      *
-     * @return the uri pattern for the deep link.
-     * @see NavDeepLinkRequest.getUri
+     * @see NavDeepLinkRequest.uri
      */
     public val uriPattern: String?,
     /**
-     * Get the action from the NavDeepLink.
+     * The action from the NavDeepLink.
      *
-     * @return the action for the deep link.
-     * @see NavDeepLinkRequest.getAction
+     * @see NavDeepLinkRequest.action
      */
     public val action: String?,
     /**
-     * Get the mimeType from the NavDeepLink.
+     * The mimeType from the NavDeepLink.
      *
-     * @return the mimeType of the deep link.
-     * @see NavDeepLinkRequest.getMimeType
+     * @see NavDeepLinkRequest.mimeType
      */
     public val mimeType: String?
 ) {
@@ -58,10 +55,12 @@ public class NavDeepLink internal constructor(
     private var mimeTypePattern: Pattern? = null
 
     public var isExactDeepLink: Boolean = false
+        /** @suppress */
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         get
         internal set
 
+    /** @suppress */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public constructor(uri: String) : this(uri, null, null)
 
@@ -133,6 +132,7 @@ public class NavDeepLink internal constructor(
         // If both are null return true, otherwise see if they match
     }
 
+    /** @suppress */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public fun getMimeTypeMatchRating(mimeType: String): Int {
         return if (this.mimeType == null || !mimeTypePattern!!.matcher(mimeType).matches()) {
@@ -142,7 +142,9 @@ public class NavDeepLink internal constructor(
     }
 
     @Suppress("NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS", "NullableCollection")
-    // Pattern.compile has no nullability for the regex parameter
+    /** Pattern.compile has no nullability for the regex parameter
+     * @suppress
+     */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public fun getMatchingArguments(
         deepLink: Uri,
@@ -263,7 +265,11 @@ public class NavDeepLink internal constructor(
     /**
      * A builder for constructing [NavDeepLink] instances.
      */
-    public class Builder @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public constructor() {
+    public class Builder {
+
+        /** @suppress */
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public constructor()
+
         private var uriPattern: String? = null
         private var action: String? = null
         private var mimeType: String? = null
@@ -380,13 +386,12 @@ public class NavDeepLink internal constructor(
             if (isParameterizedQuery) {
                 var matcher = Pattern.compile("(\\?)").matcher(uriPattern)
                 if (matcher.find()) {
-                    buildPathRegex(
+                    isExactDeepLink = buildPathRegex(
                         uriPattern.substring(0, matcher.start()),
                         uriRegex,
                         fillInPattern
                     )
                 }
-                isExactDeepLink = false
                 for (paramName in parameterizedUri.queryParameterNames) {
                     val argRegex = StringBuilder()
                     val queryParam = parameterizedUri.getQueryParameter(paramName) as String

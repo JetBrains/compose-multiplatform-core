@@ -25,7 +25,7 @@ import android.content.ComponentName;
 import android.content.Intent;
 
 import androidx.car.app.AppManager;
-import androidx.car.app.OnRequestPermissionsCallback;
+import androidx.car.app.OnRequestPermissionsListener;
 import androidx.car.app.ScreenManager;
 import androidx.car.app.navigation.NavigationManager;
 import androidx.car.app.notification.CarPendingIntent;
@@ -66,7 +66,6 @@ public class TestCarContextTest {
     }
 
     @Test
-    @SuppressWarnings("PendingIntentMutability")
     public void getStartCarAppIntents() {
         Intent startApp = new Intent(Intent.ACTION_VIEW);
 
@@ -76,12 +75,18 @@ public class TestCarContextTest {
 
         Intent broadcast =
                 new Intent("foo").setComponent(new ComponentName(mCarContext.getPackageName(),
-                        "bar"));
+                        "androidx.car.app.CarAppService"));
         PendingIntent pendingIntent = CarPendingIntent.getCarApp(mCarContext, 1, broadcast, 0);
 
         mCarContext.getFakeHost().performNotificationActionClick(pendingIntent);
 
-        assertThat(mCarContext.getStartCarAppIntents()).containsExactly(startApp, broadcast);
+        List<Intent> startCarAppIntents = mCarContext.getStartCarAppIntents();
+        assertThat(startCarAppIntents).hasSize(2);
+        assertThat(startCarAppIntents.get(0)).isEqualTo(startApp);
+        assertThat(startCarAppIntents.get(1).getComponent()).isEqualTo(
+                new ComponentName(mCarContext.getPackageName(),
+                        "androidx.car.app.CarAppService"));
+        assertThat(startCarAppIntents.get(1).getAction()).isEqualTo("foo");
     }
 
     @Test
@@ -95,18 +100,18 @@ public class TestCarContextTest {
 
     @Test
     public void getLastPermissionRequest() {
-        assertThat(mCarContext.getLastPermissionRequest()).isNull();
+        assertThat(mCarContext.getLastPermissionRequestInfo()).isNull();
 
         List<String> permissions = new ArrayList<>();
         permissions.add("foo");
 
-        OnRequestPermissionsCallback callback = mock(OnRequestPermissionsCallback.class);
+        OnRequestPermissionsListener listener = mock(OnRequestPermissionsListener.class);
 
-        mCarContext.requestPermissions(permissions, callback);
+        mCarContext.requestPermissions(permissions, listener);
 
-        TestCarContext.PermissionRequest request = mCarContext.getLastPermissionRequest();
+        TestCarContext.PermissionRequestInfo request = mCarContext.getLastPermissionRequestInfo();
 
         assertThat(request.getPermissionsRequested()).containsExactlyElementsIn(permissions);
-        assertThat(request.getCallback()).isEqualTo(callback);
+        assertThat(request.getListener()).isEqualTo(listener);
     }
 }
