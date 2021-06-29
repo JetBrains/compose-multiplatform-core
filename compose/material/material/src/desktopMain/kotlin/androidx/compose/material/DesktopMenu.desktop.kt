@@ -29,7 +29,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.DpOffset
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 
@@ -69,6 +68,7 @@ import androidx.compose.ui.window.Popup
 fun DropdownMenu(
     expanded: Boolean,
     onDismissRequest: () -> Unit,
+    focusable: Boolean = true,
     modifier: Modifier = Modifier,
     offset: DpOffset = DpOffset(0.dp, 0.dp),
     content: @Composable ColumnScope.() -> Unit
@@ -87,7 +87,7 @@ fun DropdownMenu(
         }
 
         Popup(
-            focusable = true,
+            focusable = focusable,
             onDismissRequest = onDismissRequest,
             popupPositionProvider = popupPositionProvider
         ) {
@@ -155,12 +155,10 @@ fun DropdownMenuItem(
 fun ContextMenu(
     expanded: Boolean,
     onDismissRequest: () -> Unit,
+    focusable: Boolean = true,
     modifier: Modifier = Modifier,
-    offset: DpOffset = DpOffset(0.dp, 0.dp),
     content: @Composable ColumnScope.() -> Unit
 ) {
-    val contextMenuPaddingOffset = IntOffset(0, DropdownMenuVerticalPadding.value.toInt())
-
     val expandedStates = remember { MutableTransitionState(false) }
     expandedStates.targetState = expanded
 
@@ -168,16 +166,15 @@ fun ContextMenu(
         val transformOriginState = remember { mutableStateOf(TransformOrigin.Center) }
         val density = LocalDensity.current
         val popupPositionProvider = DropdownMenuPositionProvider(
-            offset,
+            DpOffset(0.dp, 0.dp),
             density
         ) { parentBounds, menuBounds ->
             transformOriginState.value = calculateTransformOrigin(parentBounds, menuBounds)
         }
 
         Popup(
-            focusable = true,
+            focusable = focusable,
             contextMenu = true,
-            offset = contextMenuPaddingOffset,
             onDismissRequest = onDismissRequest,
             popupPositionProvider = popupPositionProvider
         ) {

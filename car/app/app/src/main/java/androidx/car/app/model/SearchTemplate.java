@@ -49,7 +49,7 @@ public final class SearchTemplate implements Template {
     /** A listener for search updates. */
     public interface SearchCallback {
         /**
-         * Notifies the current {@code searchText}.
+         * Notifies the current {@code searchText} has changed.
          *
          * <p>The host may invoke this callback as the user types a search text. The frequency of
          * these updates is not guaranteed to be after every individual keystroke. The host may
@@ -57,7 +57,8 @@ public final class SearchTemplate implements Template {
          *
          * @param searchText the current search text that the user has typed
          */
-        void onSearchTextChanged(@NonNull String searchText);
+        default void onSearchTextChanged(@NonNull String searchText) {
+        }
 
         /**
          * Notifies that the user has submitted the search and the given {@code searchText} is
@@ -65,7 +66,8 @@ public final class SearchTemplate implements Template {
          *
          * @param searchText the search text that the user typed
          */
-        void onSearchSubmitted(@NonNull String searchText);
+        default void onSearchSubmitted(@NonNull String searchText) {
+        }
     }
 
     @Keep

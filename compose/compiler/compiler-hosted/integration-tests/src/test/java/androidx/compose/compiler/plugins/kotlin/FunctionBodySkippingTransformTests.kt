@@ -198,7 +198,7 @@ class FunctionBodySkippingTransformTests : FunctionBodySkippingTransfomrTestsBas
                 %dirty = %dirty or if (%composer.changed(colors)) 0b0100 else 0b0010
               }
               if (%dirty and 0b1011 xor 0b0010 !== 0 || !%composer.skipping) {
-                Text("hello world", null, colors.getColor(%composer, 0b1110 and %dirty), TextUnit(0L), null, null, null, TextUnit(0L), null, null, TextUnit(0L), null, false, 0, null, null, %composer, 0b0110, 0, 0b1111111111111010)
+                Text("hello world", null, colors.getColor(%composer, 0b1110 and %dirty), <unsafe-coerce>(0L), null, null, null, <unsafe-coerce>(0L), null, null, <unsafe-coerce>(0L), <unsafe-coerce>(0), false, 0, null, null, %composer, 0b0110, 0b01000000, 0b1111111111111010)
               } else {
                 %composer.skipToGroupEnd()
               }
@@ -1505,7 +1505,7 @@ class FunctionBodySkippingTransformTests : FunctionBodySkippingTransfomrTestsBas
                 %dirty = %dirty or if (%composer.changed(text)) 0b0100 else 0b0010
               }
               if (%dirty and 0b1011 xor 0b0010 !== 0 || !%composer.skipping) {
-                B(text, Color(0), %composer, 0b1110 and %dirty, 0b0010)
+                B(text, <unsafe-coerce>(0), %composer, 0b1110 and %dirty, 0b0010)
               } else {
                 %composer.skipToGroupEnd()
               }
@@ -3009,29 +3009,20 @@ class FunctionBodySkippingTransformTests : FunctionBodySkippingTransfomrTestsBas
             @Composable
             fun Test(cond: Boolean, %composer: Composer?, %changed: Int) {
               %composer = %composer.startRestartGroup(<>)
-              sourceInformation(%composer, "C(Test):Test.kt")
+              sourceInformation(%composer, "C(Test)<B()>:Test.kt")
               val %dirty = %changed
               if (%changed and 0b1110 === 0) {
                 %dirty = %dirty or if (%composer.changed(cond)) 0b0100 else 0b0010
               }
               if (%dirty and 0b1011 xor 0b0010 !== 0 || !%composer.skipping) {
+                %composer.startReplaceableGroup(<>)
+                sourceInformation(%composer, "<A()>")
                 if (cond) {
-                  %composer.startReplaceableGroup(<>)
-                  sourceInformation(%composer, "<A()>")
                   A(%composer, 0)
-                  %composer.endReplaceableGroup()
-                } else {
-                  %composer.startReplaceableGroup(<>)
-                  %composer.endReplaceableGroup()
                 }
+                %composer.endReplaceableGroup()
                 if (cond) {
-                  %composer.startReplaceableGroup(<>)
-                  sourceInformation(%composer, "<B()>")
                   B(%composer, 0)
-                  %composer.endReplaceableGroup()
-                } else {
-                  %composer.startReplaceableGroup(<>)
-                  %composer.endReplaceableGroup()
                 }
               } else {
                 %composer.skipToGroupEnd()

@@ -17,8 +17,6 @@
 package androidx.inspection.gradle
 
 import com.android.build.gradle.BaseExtension
-import com.android.build.gradle.api.BaseVariant
-import com.android.build.gradle.api.LibraryVariant
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.Project
@@ -106,14 +104,19 @@ abstract class DexInspectorTask : DefaultTask() {
         d8Executable.set(File(sdkDir, "build-tools/$toolsVersion/d8"))
     }
 
-    fun setAndroidJar(sdkDir: File, version: Int) {
-        androidJar.set(File(sdkDir, "platforms/android-$version/android.jar"))
+    fun setAndroidJar(sdkDir: File, compileSdk: String) {
+        // Preview SDK compileSdkVersions are prefixed with "android-", e.g. "android-S".
+        val platform = if (compileSdk.startsWith("android")) compileSdk else "android-$compileSdk"
+        androidJar.set(File(sdkDir, "platforms/$platform/android.jar"))
     }
 }
 
 // variant.taskName relies on @ExperimentalStdlibApi api
 @ExperimentalStdlibApi
-fun Project.registerUnzipTask(variant: LibraryVariant): TaskProvider<Copy> {
+@Suppress("DEPRECATION") // LibraryVariant
+fun Project.registerUnzipTask(
+    variant: com.android.build.gradle.api.LibraryVariant
+): TaskProvider<Copy> {
     return tasks.register(variant.taskName("unpackInspectorAAR"), Copy::class.java) {
         it.from(zipTree(variant.packageLibraryProvider!!.get().archiveFile))
         it.into(taskWorkingDir(variant, "unpackedInspectorAAR"))
@@ -123,8 +126,9 @@ fun Project.registerUnzipTask(variant: LibraryVariant): TaskProvider<Copy> {
 
 // variant.taskName relies on @ExperimentalStdlibApi api
 @ExperimentalStdlibApi
+@Suppress("DEPRECATION") // BaseVariant
 fun Project.registerBundleInspectorTask(
-    variant: BaseVariant,
+    variant: com.android.build.gradle.api.BaseVariant,
     extension: BaseExtension,
     jarName: String?,
     jar: TaskProvider<out Jar>
@@ -135,7 +139,7 @@ fun Project.registerBundleInspectorTask(
     val dex = tasks.register(variant.taskName("dexInspector"), DexInspectorTask::class.java) {
         it.minSdkVersion = extension.defaultConfig.minSdk!!
         it.setD8(extension.sdkDirectory, extension.buildToolsVersion)
-        it.setAndroidJar(extension.sdkDirectory, extension.defaultConfig.targetSdk!!)
+        it.setAndroidJar(extension.sdkDirectory, extension.compileSdkVersion!!)
         it.jars.from(jar.get().archiveFile)
         it.outputFile.set(out)
         it.compileClasspath.from(

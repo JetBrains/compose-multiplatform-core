@@ -28,11 +28,16 @@ import androidx.car.app.validation.HostValidator;
 /**
  * Entry point for the hello world app.
  *
- * <p>{@link CarAppService} is the main interface between the app and Android Auto. For more
+ * <p>{@link CarAppService} is the main interface between the app and the car host. For more
  * details, see the <a href="https://developer.android.com/training/cars/navigation">Android for
  * Cars Library developer guide</a>.
  */
 public final class HelloWorldService extends CarAppService {
+
+    public HelloWorldService() {
+        // Exported services must have an empty public constructor.
+    }
+
     @Override
     @NonNull
     public Session onCreateSession() {

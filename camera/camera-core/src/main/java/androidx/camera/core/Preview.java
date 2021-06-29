@@ -54,7 +54,6 @@ import android.view.TextureView;
 import androidx.annotation.MainThread;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.OptIn;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 import androidx.annotation.UiThread;
@@ -85,6 +84,7 @@ import androidx.camera.core.internal.CameraCaptureResultImageInfo;
 import androidx.camera.core.internal.TargetConfig;
 import androidx.camera.core.internal.ThreadConfig;
 import androidx.core.util.Consumer;
+import androidx.lifecycle.LifecycleOwner;
 
 import java.util.Collection;
 import java.util.List;
@@ -192,7 +192,6 @@ public final class Preview extends UseCase {
     }
 
     @SuppressWarnings("WeakerAccess") /* synthetic accessor */
-    @OptIn(markerClass = ExperimentalUseCaseGroup.class)
     SessionConfig.Builder createPipeline(@NonNull String cameraId, @NonNull PreviewConfig config,
             @NonNull Size resolution) {
         Threads.checkMainThread();
@@ -300,14 +299,12 @@ public final class Preview extends UseCase {
      *                       {@link Surface#ROTATION_180}, or {@link Surface#ROTATION_270}.
      * @see Preview.Builder#setTargetRotation(int)
      */
-    @ExperimentalUseCaseGroup
     public void setTargetRotation(@ImageOutputConfig.RotationValue int targetRotation) {
         if (setTargetRotationInternal(targetRotation)) {
             sendTransformationInfoIfReady();
         }
     }
 
-    @ExperimentalUseCaseGroup
     private void sendTransformationInfoIfReady() {
         // TODO(b/159659392): only send transformation after CameraCaptureCallback
         //  .onCaptureCompleted is called.
@@ -351,7 +348,6 @@ public final class Preview extends UseCase {
      *                        {@link #setSurfaceProvider(SurfaceProvider)}.
      */
     @UiThread
-    @OptIn(markerClass = ExperimentalUseCaseGroup.class)
     public void setSurfaceProvider(@NonNull Executor executor,
             @Nullable SurfaceProvider surfaceProvider) {
         Threads.checkMainThread();
@@ -432,6 +428,28 @@ public final class Preview extends UseCase {
     @ImageOutputConfig.RotationValue
     public int getTargetRotation() {
         return getTargetRotationInternal();
+    }
+
+    /**
+     * Gets selected resolution information of the {@link Preview}.
+     *
+     * <p>The returned {@link ResolutionInfo} will be expressed in the coordinates of the camera
+     * sensor. It will be the same as the resolution inside a {@link SurfaceRequest} to request a
+     * surface for {@link Preview}.
+     *
+     * <p>The resolution information might change if the use case is unbound and then rebound or
+     * {@link #setTargetRotation(int)} is called to change the target rotation setting. The
+     * application needs to call {@link #getResolutionInfo()} again to get the latest
+     * {@link ResolutionInfo} for the changes.
+     *
+     * @return the resolution information if the use case has been bound by the
+     * {@link androidx.camera.lifecycle.ProcessCameraProvider#bindToLifecycle(LifecycleOwner
+     * , CameraSelector, UseCase...)} API, or null if the use case is not bound yet.
+     */
+    @Nullable
+    @Override
+    public ResolutionInfo getResolutionInfo() {
+        return super.getResolutionInfo();
     }
 
     @NonNull
@@ -528,7 +546,6 @@ public final class Preview extends UseCase {
      * @hide
      */
     @Override
-    @OptIn(markerClass = ExperimentalUseCaseGroup.class)
     @RestrictTo(Scope.LIBRARY)
     public void setViewPortCropRect(@NonNull Rect viewPortCropRect) {
         super.setViewPortCropRect(viewPortCropRect);

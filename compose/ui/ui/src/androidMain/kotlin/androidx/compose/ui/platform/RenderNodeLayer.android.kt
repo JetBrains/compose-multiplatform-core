@@ -22,16 +22,17 @@ import androidx.annotation.RequiresApi
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.geometry.MutableRect
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.graphics.CanvasHolder
 import androidx.compose.ui.graphics.Matrix
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.setFrom
 import androidx.compose.ui.node.OwnedLayer
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
@@ -49,6 +50,12 @@ internal class RenderNodeLayer(
      * True when the RenderNodeLayer has been invalidated and not yet drawn.
      */
     private var isDirty = false
+        set(value) {
+            if (value != field) {
+                field = value
+                ownerView.notifyLayerIsDirty(this, value)
+            }
+        }
     private val outlineResolver = OutlineResolver(ownerView.density)
     private var isDestroyed = false
     private var drawnWithZ = false
@@ -104,7 +111,8 @@ internal class RenderNodeLayer(
         transformOrigin: TransformOrigin,
         shape: Shape,
         clip: Boolean,
-        layoutDirection: LayoutDirection
+        layoutDirection: LayoutDirection,
+        density: Density
     ) {
         this.transformOrigin = transformOrigin
         val wasClippingManually = renderNode.clipToOutline && outlineResolver.clipPath != null
@@ -127,7 +135,8 @@ internal class RenderNodeLayer(
             renderNode.alpha,
             renderNode.clipToOutline,
             renderNode.elevation,
-            layoutDirection
+            layoutDirection,
+            density
         )
         renderNode.setOutline(outlineResolver.outline)
         val isClippingManually = renderNode.clipToOutline && outlineResolver.clipPath != null
@@ -140,6 +149,20 @@ internal class RenderNodeLayer(
             invalidateParentLayer()
         }
         matrixCache.invalidate()
+    }
+
+    override fun isInLayer(position: Offset): Boolean {
+        val x = position.x
+        val y = position.y
+        if (renderNode.clipToBounds) {
+            return 0f <= x && x < renderNode.width && 0f <= y && y < renderNode.height
+        }
+
+        if (renderNode.clipToOutline) {
+            return outlineResolver.isInOutline(position)
+        }
+
+        return true
     }
 
     override fun resize(size: IntSize) {
@@ -177,7 +200,6 @@ internal class RenderNodeLayer(
     override fun invalidate() {
         if (!isDirty && !isDestroyed) {
             ownerView.invalidate()
-            ownerView.dirtyLayers += this
             isDirty = true
         }
     }
@@ -210,23 +232,21 @@ internal class RenderNodeLayer(
             }
         } else {
             drawBlock(canvas)
+            isDirty = false
         }
-        isDirty = false
     }
 
     override fun updateDisplayList() {
         if (isDirty || !renderNode.hasDisplayList) {
-            val clipPath = if (renderNode.clipToOutline) outlineResolver.clipPath else null
-
-            renderNode.record(canvasHolder, clipPath, drawBlock)
-
             isDirty = false
+            val clipPath = if (renderNode.clipToOutline) outlineResolver.clipPath else null
+            renderNode.record(canvasHolder, clipPath, drawBlock)
         }
     }
 
     override fun destroy() {
         isDestroyed = true
-        ownerView.dirtyLayers -= this
+        isDirty = false
         ownerView.requestClearInvalidObservations()
     }
 

@@ -17,9 +17,9 @@
 package androidx.build
 
 import androidx.build.AndroidXRootPlugin.Companion.PROJECT_OR_ARTIFACT_EXT_NAME
-import androidx.build.ftl.FirebaseTestLabHelper
 import androidx.build.gradle.getByType
 import androidx.build.gradle.isRoot
+import androidx.build.playground.FindAffectedModulesTask
 import com.android.build.gradle.LibraryExtension
 import com.android.build.gradle.LibraryPlugin
 import groovy.xml.DOMBuilder
@@ -71,9 +71,8 @@ class AndroidXPlaygroundRootPlugin : Plugin<Project> {
         config = PlaygroundProperties.load(rootProject)
         repos = PlaygroundRepositories(config)
         rootProject.repositories.addPlaygroundRepositories()
-        val ftlUtilities = FirebaseTestLabHelper(target)
         rootProject.subprojects {
-            configureSubProject(it, ftlUtilities)
+            configureSubProject(it)
         }
 
         // TODO(b/185539993): Re-enable InvalidFragmentVersionForActivityResult which was
@@ -82,6 +81,8 @@ class AndroidXPlaygroundRootPlugin : Plugin<Project> {
         //  Fragment 1.4.x.
         target.findProject(":navigation:navigation-dynamic-features-fragment")
             ?.disableInvalidFragmentVersionForActivityResultLint()
+
+        rootProject.tasks.register("findAffectedModules", FindAffectedModulesTask::class.java)
     }
 
     private fun Project.disableInvalidFragmentVersionForActivityResultLint() {
@@ -99,10 +100,7 @@ class AndroidXPlaygroundRootPlugin : Plugin<Project> {
         }
     }
 
-    private fun configureSubProject(
-        project: Project,
-        firebaseTestLabHelper: FirebaseTestLabHelper
-    ) {
+    private fun configureSubProject(project: Project) {
         project.repositories.addPlaygroundRepositories()
         project.extra.set(PROJECT_OR_ARTIFACT_EXT_NAME, projectOrArtifactClosure)
         project.configurations.all { configuration ->
@@ -110,7 +108,6 @@ class AndroidXPlaygroundRootPlugin : Plugin<Project> {
                 substitution.replaceIfSnapshot()
             }
         }
-        firebaseTestLabHelper.setupFTL(project)
     }
 
     /**

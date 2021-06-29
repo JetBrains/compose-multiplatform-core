@@ -22,16 +22,16 @@ import androidx.build.RunApiTasks
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("AndroidXUiPlugin")
+    id("AndroidXComposePlugin")
     id("org.jetbrains.kotlin.android")
     id("kotlin-android")
 }
 
 dependencies {
-    kotlinPlugin(projectOrArtifact(":compose:compiler:compiler"))
+    kotlinPlugin("androidx.compose.compiler:compiler:1.0.0-rc01")
 
     implementation(libs.kotlinStdlib)
-    api(projectOrArtifact(":compose:foundation:foundation"))
+    api("androidx.compose.foundation:foundation:1.0.0-rc01")
     api("androidx.paging:paging-common:3.0.0")
 
     androidTestImplementation(projectOrArtifact(":compose:ui:ui-test-junit4"))

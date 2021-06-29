@@ -16,12 +16,12 @@
 
 package androidx.compose.ui.semantics
 
+import androidx.compose.runtime.Immutable
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextRange
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.input.ImeAction
 import kotlin.reflect.KProperty
 
@@ -36,9 +36,11 @@ object SemanticsProperties {
     /**
      * @see SemanticsPropertyReceiver.contentDescription
      */
-    val ContentDescription = SemanticsPropertyKey<String>(
+    val ContentDescription = SemanticsPropertyKey<List<String>>(
         name = "ContentDescription",
-        mergePolicy = { parentValue, _ -> parentValue }
+        mergePolicy = { parentValue, childValue ->
+            parentValue?.toMutableList()?.also { it.addAll(childValue) } ?: childValue
+        }
     )
 
     /**
@@ -167,18 +169,10 @@ object SemanticsProperties {
     /**
      * @see SemanticsPropertyReceiver.text
      */
-    val Text = SemanticsPropertyKey<AnnotatedString>(
+    val Text = SemanticsPropertyKey<List<AnnotatedString>>(
         name = "Text",
         mergePolicy = { parentValue, childValue ->
-            if (parentValue == null) {
-                childValue
-            } else {
-                buildAnnotatedString {
-                    append(parentValue)
-                    append(", ")
-                    append(childValue)
-                }
-            }
+            parentValue?.toMutableList()?.also { it.addAll(childValue) } ?: childValue
         }
     )
 
@@ -345,10 +339,7 @@ class SemanticsPropertyKey<T>(
     // TODO(KT-6519): Remove this getter
     // TODO(KT-32770): Cannot deprecate this either as the getter is considered called by "by"
     final operator fun getValue(thisRef: SemanticsPropertyReceiver, property: KProperty<*>): T {
-        throw UnsupportedOperationException(
-            "You cannot retrieve a semantics property directly - " +
-                "use one of the SemanticsConfiguration.getOr* methods instead"
-        )
+        return throwSemanticsGetNotSupported()
     }
 
     final operator fun setValue(
@@ -362,6 +353,13 @@ class SemanticsPropertyKey<T>(
     override fun toString(): String {
         return "SemanticsPropertyKey: $name"
     }
+}
+
+private fun <T> throwSemanticsGetNotSupported(): T {
+    throw UnsupportedOperationException(
+        "You cannot retrieve a semantics property directly - " +
+            "use one of the SemanticsConfiguration.getOr* methods instead"
+    )
 }
 
 /**
@@ -541,44 +539,58 @@ class ScrollAxisRange(
  * exact role is not listed, [SemanticsPropertyReceiver.role] should not be set and the framework
  * will automatically resolve it.
  */
-enum class Role {
-    /**
-     * This element is a button control. Associated semantics properties for accessibility:
-     * [SemanticsProperties.Disabled], [SemanticsActions.OnClick]
-     */
-    Button,
-    /**
-     * This element is a Checkbox which is a component that represents two states (checked /
-     * unchecked). Associated semantics properties for accessibility:
-     * [SemanticsProperties.Disabled], [SemanticsProperties.StateDescription],
-     * [SemanticsActions.OnClick]
-     */
-    Checkbox,
-    /**
-     * This element is a Switch which is a two state toggleable component that provides on/off
-     * like options. Associated semantics properties for accessibility:
-     * [SemanticsProperties.Disabled], [SemanticsProperties.StateDescription],
-     * [SemanticsActions.OnClick]
-     */
-    Switch,
-    /**
-     * This element is a RadioButton which is a component to represent two states, selected and not
-     * selected. Associated semantics properties for accessibility: [SemanticsProperties.Disabled],
-     * [SemanticsProperties.StateDescription], [SemanticsActions.OnClick]
-     */
-    RadioButton,
-    /**
-     * This element is a Tab which represents a single page of content using a text label and/or
-     * icon. A Tab also has two states: selected and not selected. Associated semantics properties
-     * for accessibility: [SemanticsProperties.Disabled], [SemanticsProperties.StateDescription],
-     * [SemanticsActions.OnClick]
-     */
-    Tab,
-    /**
-     * This element is an image. Associated semantics properties for accessibility:
-     * [SemanticsProperties.ContentDescription]
-     */
-    Image
+@Suppress("INLINE_CLASS_DEPRECATED")
+@Immutable
+inline class Role private constructor(@Suppress("unused") private val value: Int) {
+    companion object {
+        /**
+         * This element is a button control. Associated semantics properties for accessibility:
+         * [SemanticsProperties.Disabled], [SemanticsActions.OnClick]
+         */
+        val Button = Role(0)
+        /**
+         * This element is a Checkbox which is a component that represents two states (checked /
+         * unchecked). Associated semantics properties for accessibility:
+         * [SemanticsProperties.Disabled], [SemanticsProperties.StateDescription],
+         * [SemanticsActions.OnClick]
+         */
+        val Checkbox = Role(1)
+        /**
+         * This element is a Switch which is a two state toggleable component that provides on/off
+         * like options. Associated semantics properties for accessibility:
+         * [SemanticsProperties.Disabled], [SemanticsProperties.StateDescription],
+         * [SemanticsActions.OnClick]
+         */
+        val Switch = Role(2)
+        /**
+         * This element is a RadioButton which is a component to represent two states, selected and not
+         * selected. Associated semantics properties for accessibility: [SemanticsProperties.Disabled],
+         * [SemanticsProperties.StateDescription], [SemanticsActions.OnClick]
+         */
+        val RadioButton = Role(3)
+        /**
+         * This element is a Tab which represents a single page of content using a text label and/or
+         * icon. A Tab also has two states: selected and not selected. Associated semantics properties
+         * for accessibility: [SemanticsProperties.Disabled], [SemanticsProperties.StateDescription],
+         * [SemanticsActions.OnClick]
+         */
+        val Tab = Role(4)
+        /**
+         * This element is an image. Associated semantics properties for accessibility:
+         * [SemanticsProperties.ContentDescription]
+         */
+        val Image = Role(5)
+    }
+
+    override fun toString() = when (this) {
+        Button -> "Button"
+        Checkbox -> "Checkbox"
+        Switch -> "Switch"
+        RadioButton -> "RadioButton"
+        Tab -> "Tab"
+        Image -> "Image"
+        else -> "Unknown"
+    }
 }
 
 /**
@@ -586,17 +598,27 @@ enum class Role {
  * automatically notify the user about changes to the node's content description or text, or to
  * the content descriptions or text of the node's children (where applicable).
  */
-enum class LiveRegionMode {
-    /**
-     * Live region mode specifying that accessibility services should announce
-     * changes to this node.
-     */
-    Polite,
-    /**
-     * Live region mode specifying that accessibility services should interrupt
-     * ongoing speech to immediately announce changes to this node.
-     */
-    Assertive
+@Suppress("INLINE_CLASS_DEPRECATED")
+@Immutable
+inline class LiveRegionMode private constructor(@Suppress("unused") private val value: Int) {
+    companion object {
+        /**
+         * Live region mode specifying that accessibility services should announce
+         * changes to this node.
+         */
+        val Polite = LiveRegionMode(0)
+        /**
+         * Live region mode specifying that accessibility services should interrupt
+         * ongoing speech to immediately announce changes to this node.
+         */
+        val Assertive = LiveRegionMode(1)
+    }
+
+    override fun toString() = when (this) {
+        Polite -> "Polite"
+        Assertive -> "Assertive"
+        else -> "Unknown"
+    }
 }
 
 /**
@@ -610,10 +632,17 @@ interface SemanticsPropertyReceiver {
 /**
  * Developer-set content description of the semantics node.
  *
- * If this is not set, accessibility services will present the text of this node as the content
- * description.
+ * If this is not set, accessibility services will present the [text][SemanticsProperties.Text] of
+ * this node as the content.
+ *
+ * This typically should not be set directly by applications, because some screen readers will
+ * cease presenting other relevant information when this property is present. This is intended
+ * to be used via Foundation components which are inherently intractable to automatically
+ * describe, such as Image, Icon, and Canvas.
  */
-var SemanticsPropertyReceiver.contentDescription by SemanticsProperties.ContentDescription
+var SemanticsPropertyReceiver.contentDescription: String
+    get() = throwSemanticsGetNotSupported()
+    set(value) { set(SemanticsProperties.ContentDescription, listOf(value)) }
 
 /**
  * Developer-set state description of the semantics node.
@@ -746,7 +775,9 @@ var SemanticsPropertyReceiver.testTag by SemanticsProperties.TestTag
  *
  * @see SemanticsPropertyReceiver.editableText
  */
-var SemanticsPropertyReceiver.text by SemanticsProperties.Text
+var SemanticsPropertyReceiver.text: AnnotatedString
+    get() = throwSemanticsGetNotSupported()
+    set(value) { set(SemanticsProperties.Text, listOf(value)) }
 
 /**
  * Input text of the text field. It must be real text entered by the user instead of

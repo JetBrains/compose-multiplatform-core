@@ -19,30 +19,16 @@
 package androidx.window
 
 import android.graphics.Rect
+import androidx.window.FoldingFeature.State.Companion.FLAT
+import androidx.window.FoldingFeature.Type.Companion.FOLD
 import androidx.window.sidecar.SidecarDeviceState
 import androidx.window.sidecar.SidecarDisplayFeature
 import androidx.window.sidecar.SidecarWindowLayoutInfo
-import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
-import org.junit.Before
 import org.junit.Test
 
 public class SidecarAdapterTest : TranslatorTestInterface {
-
-    private lateinit var windowBoundsHelper: TestWindowBoundsHelper
-
-    @Before
-    public fun setUp() {
-        windowBoundsHelper = TestWindowBoundsHelper()
-        windowBoundsHelper.setCurrentBounds(WINDOW_BOUNDS)
-        WindowBoundsHelper.setForTesting(windowBoundsHelper)
-    }
-
-    @After
-    public fun tearDown() {
-        WindowBoundsHelper.setForTesting(null)
-    }
 
     @Test
     override fun testTranslate_validFeature() {
@@ -54,12 +40,7 @@ public class SidecarAdapterTest : TranslatorTestInterface {
         val sidecarDisplayFeatures = listOf(foldFeature)
         val windowLayoutInfo = sidecarWindowLayoutInfo(sidecarDisplayFeatures)
         val state = sidecarDeviceState(SidecarDeviceState.POSTURE_OPENED)
-        val expectedFeatures = listOf(
-            FoldingFeature(
-                foldFeature.rect, FoldingFeature.TYPE_FOLD,
-                FoldingFeature.STATE_FLAT
-            )
-        )
+        val expectedFeatures = listOf(FoldingFeature(Bounds(foldFeature.rect), FOLD, FLAT))
         val expected = WindowLayoutInfo(expectedFeatures)
         val sidecarAdapter = SidecarAdapter()
         val actual = sidecarAdapter.translate(windowLayoutInfo, state)

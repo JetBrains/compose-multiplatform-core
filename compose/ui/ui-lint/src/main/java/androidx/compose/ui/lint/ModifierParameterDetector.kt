@@ -165,4 +165,8 @@ class ModifierParameterDetector : Detector(), SourceCodeScanner {
     }
 }
 
-private val ModifierParameterName = Names.Ui.Modifier.shortName.decapitalize(Locale.ROOT)
+private val ModifierParameterName = Names.Ui.Modifier.shortName.replaceFirstChar {
+    it.lowercase(
+        Locale.ROOT
+    )
+}

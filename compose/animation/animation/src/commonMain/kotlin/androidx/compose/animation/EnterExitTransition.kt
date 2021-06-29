@@ -18,22 +18,21 @@
 
 package androidx.compose.animation
 
-import android.annotation.SuppressLint
 import androidx.compose.animation.core.AnimationVector2D
 import androidx.compose.animation.core.FiniteAnimationSpec
 import androidx.compose.animation.core.InternalAnimationApi
 import androidx.compose.animation.core.Transition
 import androidx.compose.animation.core.VectorConverter
+import androidx.compose.animation.core.VisibilityThreshold
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.createDeferredAnimation
 import androidx.compose.animation.core.spring
-import androidx.compose.animation.core.VisibilityThreshold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.State
-import androidx.compose.runtime.key
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -254,7 +253,8 @@ fun fadeOut(
 @ExperimentalAnimationApi
 fun slideIn(
     initialOffset: (fullSize: IntSize) -> IntOffset,
-    animationSpec: FiniteAnimationSpec<IntOffset> = spring()
+    animationSpec: FiniteAnimationSpec<IntOffset> =
+        spring(visibilityThreshold = IntOffset.VisibilityThreshold)
 ): EnterTransition {
     return EnterTransitionImpl(TransitionData(slide = Slide(initialOffset, animationSpec)))
 }
@@ -282,7 +282,8 @@ fun slideIn(
 @ExperimentalAnimationApi
 fun slideOut(
     targetOffset: (fullSize: IntSize) -> IntOffset,
-    animationSpec: FiniteAnimationSpec<IntOffset> = spring()
+    animationSpec: FiniteAnimationSpec<IntOffset> =
+        spring(visibilityThreshold = IntOffset.VisibilityThreshold)
 ): ExitTransition {
     return ExitTransitionImpl(TransitionData(slide = Slide(targetOffset, animationSpec)))
 }
@@ -318,7 +319,8 @@ fun slideOut(
 fun expandIn(
     expandFrom: Alignment = Alignment.BottomEnd,
     initialSize: (fullSize: IntSize) -> IntSize = { IntSize(0, 0) },
-    animationSpec: FiniteAnimationSpec<IntSize> = spring(),
+    animationSpec: FiniteAnimationSpec<IntSize> =
+        spring(visibilityThreshold = IntSize.VisibilityThreshold),
     clip: Boolean = true
 ): EnterTransition {
     return EnterTransitionImpl(
@@ -358,7 +360,8 @@ fun expandIn(
 fun shrinkOut(
     shrinkTowards: Alignment = Alignment.BottomEnd,
     targetSize: (fullSize: IntSize) -> IntSize = { IntSize(0, 0) },
-    animationSpec: FiniteAnimationSpec<IntSize> = spring(),
+    animationSpec: FiniteAnimationSpec<IntSize> =
+        spring(visibilityThreshold = IntSize.VisibilityThreshold),
     clip: Boolean = true
 ): ExitTransition {
     return ExitTransitionImpl(
@@ -396,7 +399,8 @@ fun shrinkOut(
 fun expandHorizontally(
     expandFrom: Alignment.Horizontal = Alignment.End,
     initialWidth: (fullWidth: Int) -> Int = { 0 },
-    animationSpec: FiniteAnimationSpec<IntSize> = spring(),
+    animationSpec: FiniteAnimationSpec<IntSize> =
+        spring(visibilityThreshold = IntSize.VisibilityThreshold),
     clip: Boolean = true
 ): EnterTransition {
     // TODO: Support different animation types
@@ -436,7 +440,8 @@ fun expandHorizontally(
 fun expandVertically(
     expandFrom: Alignment.Vertical = Alignment.Bottom,
     initialHeight: (fullHeight: Int) -> Int = { 0 },
-    animationSpec: FiniteAnimationSpec<IntSize> = spring(),
+    animationSpec: FiniteAnimationSpec<IntSize> =
+        spring(visibilityThreshold = IntSize.VisibilityThreshold),
     clip: Boolean = true
 ): EnterTransition {
     return expandIn(
@@ -475,7 +480,8 @@ fun expandVertically(
 fun shrinkHorizontally(
     shrinkTowards: Alignment.Horizontal = Alignment.End,
     targetWidth: (fullWidth: Int) -> Int = { 0 },
-    animationSpec: FiniteAnimationSpec<IntSize> = spring(),
+    animationSpec: FiniteAnimationSpec<IntSize> =
+        spring(visibilityThreshold = IntSize.VisibilityThreshold),
     clip: Boolean = true
 ): ExitTransition {
     // TODO: Support different animation types
@@ -515,7 +521,8 @@ fun shrinkHorizontally(
 fun shrinkVertically(
     shrinkTowards: Alignment.Vertical = Alignment.Bottom,
     targetHeight: (fullHeight: Int) -> Int = { 0 },
-    animationSpec: FiniteAnimationSpec<IntSize> = spring(),
+    animationSpec: FiniteAnimationSpec<IntSize> =
+        spring(visibilityThreshold = IntSize.VisibilityThreshold),
     clip: Boolean = true
 ): ExitTransition {
     // TODO: Support different animation types
@@ -548,7 +555,8 @@ fun shrinkVertically(
 @ExperimentalAnimationApi
 fun slideInHorizontally(
     initialOffsetX: (fullWidth: Int) -> Int = { -it / 2 },
-    animationSpec: FiniteAnimationSpec<IntOffset> = spring()
+    animationSpec: FiniteAnimationSpec<IntOffset> =
+        spring(visibilityThreshold = IntOffset.VisibilityThreshold),
 ): EnterTransition =
     slideIn(
         initialOffset = { IntOffset(initialOffsetX(it.width), 0) },
@@ -576,7 +584,8 @@ fun slideInHorizontally(
 @ExperimentalAnimationApi
 fun slideInVertically(
     initialOffsetY: (fullHeight: Int) -> Int = { -it / 2 },
-    animationSpec: FiniteAnimationSpec<IntOffset> = spring()
+    animationSpec: FiniteAnimationSpec<IntOffset> =
+        spring(visibilityThreshold = IntOffset.VisibilityThreshold),
 ): EnterTransition =
     slideIn(
         initialOffset = { IntOffset(0, initialOffsetY(it.height)) },
@@ -604,7 +613,8 @@ fun slideInVertically(
 @ExperimentalAnimationApi
 fun slideOutHorizontally(
     targetOffsetX: (fullWidth: Int) -> Int = { -it / 2 },
-    animationSpec: FiniteAnimationSpec<IntOffset> = spring()
+    animationSpec: FiniteAnimationSpec<IntOffset> =
+        spring(visibilityThreshold = IntOffset.VisibilityThreshold),
 ): ExitTransition =
     slideOut(
         targetOffset = { IntOffset(targetOffsetX(it.width), 0) },
@@ -630,7 +640,8 @@ fun slideOutHorizontally(
 @ExperimentalAnimationApi
 fun slideOutVertically(
     targetOffsetY: (fullHeight: Int) -> Int = { -it / 2 },
-    animationSpec: FiniteAnimationSpec<IntOffset> = spring()
+    animationSpec: FiniteAnimationSpec<IntOffset> =
+        spring(visibilityThreshold = IntOffset.VisibilityThreshold),
 ): ExitTransition =
     slideOut(
         targetOffset = { IntOffset(0, targetOffsetY(it.height)) },
@@ -651,7 +662,8 @@ internal data class Slide(
 internal data class ChangeSize(
     val alignment: Alignment,
     val size: (fullSize: IntSize) -> IntSize = { IntSize(0, 0) },
-    val animationSpec: FiniteAnimationSpec<IntSize> = spring(),
+    val animationSpec: FiniteAnimationSpec<IntSize> =
+        spring(visibilityThreshold = IntSize.VisibilityThreshold),
     val clip: Boolean = true
 )
 
@@ -686,7 +698,7 @@ internal data class TransitionData(
     val changeSize: ChangeSize? = null
 )
 
-@SuppressLint("ModifierFactoryExtensionFunction", "ComposableModifierFactory")
+@Suppress("ModifierFactoryExtensionFunction", "ComposableModifierFactory")
 @Composable
 internal fun Transition<EnterExitState>.createModifier(
     enter: EnterTransition,
@@ -745,7 +757,7 @@ internal fun Transition<EnterExitState>.createModifier(
     return modifier
 }
 
-@SuppressLint("ModifierInspectorInfo")
+@Suppress("ModifierInspectorInfo")
 private fun Modifier.slideInOut(
     transition: Transition<EnterExitState>,
     slideIn: State<Slide?>,
@@ -821,7 +833,7 @@ private class SlideModifier(
     }
 }
 
-@SuppressLint("ModifierInspectorInfo")
+@Suppress("ModifierInspectorInfo")
 private fun Modifier.shrinkExpand(
     transition: Transition<EnterExitState>,
     expand: State<ChangeSize?>,
@@ -877,7 +889,8 @@ private fun Modifier.shrinkExpand(
         } else if (expandShrinkModifier.currentAlignment == null) {
             expandShrinkModifier.currentAlignment = alignment.value ?: Alignment.TopStart
         }
-        this.clipToBounds().then(expandShrinkModifier)
+        val disableClip = expand.value?.clip == false || shrink.value?.clip == false
+        this.then(if (disableClip) Modifier else Modifier.clipToBounds()).then(expandShrinkModifier)
     } else {
         this
     }

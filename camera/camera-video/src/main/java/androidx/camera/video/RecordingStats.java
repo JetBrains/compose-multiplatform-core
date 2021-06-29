@@ -28,6 +28,8 @@ import com.google.auto.value.AutoValue;
 @AutoValue
 public abstract class RecordingStats {
 
+    public static final RecordingStats EMPTY_STATS = of(0, 0);
+
     @NonNull
     static RecordingStats of(long duration, long bytes) {
         Preconditions.checkArgument(duration >= 0, "duration must be positive value.");
@@ -36,7 +38,7 @@ public abstract class RecordingStats {
     }
 
     /** Returns current recorded duration in nano seconds. */
-    public abstract long getRecordedDurationNs();
+    public abstract long getRecordedDurationNanos();
 
     /** Returns current recorded bytes. */
     public abstract long getNumBytesRecorded();

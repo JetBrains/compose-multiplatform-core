@@ -17,6 +17,7 @@
 package androidx.wear.watchface
 
 import android.content.Context
+import android.graphics.Rect
 import android.os.Handler
 import android.os.Looper
 import android.view.SurfaceHolder
@@ -59,18 +60,41 @@ internal class TestAsyncWatchFaceService(
     }
 
     abstract class AsyncWatchFaceFactory {
+        abstract fun createUserStyleSchema(): UserStyleSchema
+
+        abstract fun createComplicationsManager(
+            currentUserStyleRepository: CurrentUserStyleRepository
+        ): ComplicationSlotsManager
+
         abstract fun createWatchFaceAsync(
             surfaceHolder: SurfaceHolder,
-            watchState: WatchState
+            watchState: WatchState,
+            complicationSlotsManager: ComplicationSlotsManager,
+            currentUserStyleRepository: CurrentUserStyleRepository
         ): Deferred<WatchFace>
     }
 
+    override fun createUserStyleSchema() = factory.createUserStyleSchema()
+
+    override fun createComplicationSlotsManager(
+        currentUserStyleRepository: CurrentUserStyleRepository
+    ) = factory.createComplicationsManager(currentUserStyleRepository)
+
     override suspend fun createWatchFace(
         surfaceHolder: SurfaceHolder,
-        watchState: WatchState
-    ) = factory.createWatchFaceAsync(surfaceHolder, watchState).await()
+        watchState: WatchState,
+        complicationSlotsManager: ComplicationSlotsManager,
+        currentUserStyleRepository: CurrentUserStyleRepository
+    ) = factory.createWatchFaceAsync(
+        surfaceHolder,
+        watchState,
+        complicationSlotsManager,
+        currentUserStyleRepository
+    ).await()
 
-    override fun getHandler() = handler
+    override fun getUiThreadHandlerImpl() = handler
+
+    override fun getBackgroundThreadHandlerImpl() = handler
 
     override fun getMutableWatchState() = watchState
 
@@ -96,7 +120,6 @@ public class AsyncWatchFaceInitTest {
     private val surfaceHolder = mock<SurfaceHolder>()
     private var looperTimeMillis = 0L
     private val pendingTasks = PriorityQueue<Task>()
-    private val userStyleRepository = CurrentUserStyleRepository(UserStyleSchema(emptyList()))
     private val initParams = WallpaperInteractiveWatchFaceInstanceParams(
         "instanceId",
         DeviceConfig(
@@ -169,9 +192,17 @@ public class AsyncWatchFaceInitTest {
         val service = TestAsyncWatchFaceService(
             handler,
             object : TestAsyncWatchFaceService.AsyncWatchFaceFactory() {
+                override fun createUserStyleSchema() = UserStyleSchema(emptyList())
+
+                override fun createComplicationsManager(
+                    currentUserStyleRepository: CurrentUserStyleRepository
+                ) = ComplicationSlotsManager(emptyList(), currentUserStyleRepository)
+
                 override fun createWatchFaceAsync(
                     surfaceHolder: SurfaceHolder,
-                    watchState: WatchState
+                    watchState: WatchState,
+                    complicationSlotsManager: ComplicationSlotsManager,
+                    currentUserStyleRepository: CurrentUserStyleRepository
                 ) = completableWatchFace
             },
             MutableWatchState(),
@@ -179,12 +210,11 @@ public class AsyncWatchFaceInitTest {
         )
 
         val engineWrapper = service.onCreateEngine() as WatchFaceService.EngineWrapper
-        engineWrapper.onSurfaceChanged(surfaceHolder, 0, 100, 100)
 
         runPostedTasksFor(0)
 
         lateinit var pendingException: Exception
-        engineWrapper.coroutineScope.launch {
+        engineWrapper.backgroundThreadCoroutineScope.launch {
             try {
                 // This should fail because the direct boot instance is being constructed.
                 engineWrapper.createInteractiveInstance(initParams, "test")
@@ -201,31 +231,12 @@ public class AsyncWatchFaceInitTest {
     @Test
     public fun directBootAndGetExistingInstanceOrSetPendingWallpaperInteractiveWatchFaceInstance() {
         val completableDirectBootWatchFace = CompletableDeferred<WatchFace>()
+        lateinit var pendingCurrentUserStyleRepository: CurrentUserStyleRepository
         lateinit var pendingSurfaceHolder: SurfaceHolder
         lateinit var pendingWatchState: WatchState
-        val service = TestAsyncWatchFaceService(
-            handler,
-            object : TestAsyncWatchFaceService.AsyncWatchFaceFactory() {
-                override fun createWatchFaceAsync(
-                    surfaceHolder: SurfaceHolder,
-                    watchState: WatchState
-                ): Deferred<WatchFace> {
-                    pendingSurfaceHolder = surfaceHolder
-                    pendingWatchState = watchState
-                    return completableDirectBootWatchFace
-                }
-            },
-            MutableWatchState(),
-            initParams
-        )
-
-        val engineWrapper = service.onCreateEngine() as WatchFaceService.EngineWrapper
-        engineWrapper.onSurfaceChanged(surfaceHolder, 0, 100, 100)
-        runPostedTasksFor(0)
-
-        var pendingInteractiveWatchFaceWcs: IInteractiveWatchFace? = null
 
         // There shouldn't be an existing instance, so we expect null.
+        var pendingInteractiveWatchFaceWcs: IInteractiveWatchFace? = null
         assertNull(
             InteractiveInstanceManager
                 .getExistingInstanceOrSetPendingWallpaperInteractiveWatchFaceInstance(
@@ -251,6 +262,34 @@ public class AsyncWatchFaceInitTest {
                 )
         )
 
+        val service = TestAsyncWatchFaceService(
+            handler,
+            object : TestAsyncWatchFaceService.AsyncWatchFaceFactory() {
+                override fun createUserStyleSchema() = UserStyleSchema(emptyList())
+
+                override fun createComplicationsManager(
+                    currentUserStyleRepository: CurrentUserStyleRepository
+                ) = ComplicationSlotsManager(emptyList(), currentUserStyleRepository)
+
+                override fun createWatchFaceAsync(
+                    surfaceHolder: SurfaceHolder,
+                    watchState: WatchState,
+                    complicationSlotsManager: ComplicationSlotsManager,
+                    currentUserStyleRepository: CurrentUserStyleRepository
+                ): Deferred<WatchFace> {
+                    pendingSurfaceHolder = surfaceHolder
+                    pendingWatchState = watchState
+                    pendingCurrentUserStyleRepository = currentUserStyleRepository
+                    return completableDirectBootWatchFace
+                }
+            },
+            MutableWatchState(),
+            initParams
+        )
+
+        val engineWrapper = service.onCreateEngine() as WatchFaceService.EngineWrapper
+        Mockito.`when`(surfaceHolder.surfaceFrame).thenReturn(Rect(0, 0, 100, 100))
+        engineWrapper.onSurfaceChanged(surfaceHolder, 0, 100, 100)
         runPostedTasksFor(0)
 
         // Complete the direct boot watch face which should trigger the callback which sets
@@ -258,8 +297,12 @@ public class AsyncWatchFaceInitTest {
         completableDirectBootWatchFace.complete(
             WatchFace(
                 WatchFaceType.ANALOG,
-                userStyleRepository,
-                TestRenderer(pendingSurfaceHolder, userStyleRepository, pendingWatchState, 16L)
+                TestRenderer(
+                    pendingSurfaceHolder,
+                    pendingCurrentUserStyleRepository,
+                    pendingWatchState,
+                    16L
+                )
             )
         )
 

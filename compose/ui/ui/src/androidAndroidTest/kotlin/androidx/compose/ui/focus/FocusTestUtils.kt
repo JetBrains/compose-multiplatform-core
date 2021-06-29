@@ -57,9 +57,9 @@ internal fun FocusableBox(
         content = content,
         modifier = Modifier
             .offset { IntOffset(x, y) }
-            .focusRequester(focusRequester ?: FocusRequester())
+            .focusRequester(focusRequester ?: remember { FocusRequester() })
             .onFocusChanged { isFocused.value = it.isFocused }
-            .focusModifier(),
+            .focusTarget(),
         measurePolicy = remember(width, height) {
             MeasurePolicy { measurables, constraint ->
                 layout(width, height) {

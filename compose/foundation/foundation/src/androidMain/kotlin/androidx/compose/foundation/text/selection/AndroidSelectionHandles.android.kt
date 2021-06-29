@@ -18,7 +18,6 @@ package androidx.compose.foundation.text.selection
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
@@ -38,7 +37,6 @@ import androidx.compose.ui.window.PopupPositionProvider
 import androidx.compose.ui.window.PopupProperties
 import kotlin.math.roundToInt
 
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 internal actual fun SelectionHandle(
     startHandlePosition: Offset?,
@@ -47,7 +45,7 @@ internal actual fun SelectionHandle(
     directions: Pair<ResolvedTextDirection, ResolvedTextDirection>,
     handlesCrossed: Boolean,
     modifier: Modifier,
-    handle: (@Composable () -> Unit)?
+    content: @Composable (() -> Unit)?
 ) {
     SelectionHandlePopup(
         startHandlePosition = startHandlePosition,
@@ -56,14 +54,14 @@ internal actual fun SelectionHandle(
         directions = directions,
         handlesCrossed = handlesCrossed
     ) {
-        if (handle == null) {
+        if (content == null) {
             DefaultSelectionHandle(
                 modifier = modifier,
                 isStartHandle = isStartHandle,
                 directions = directions,
                 handlesCrossed = handlesCrossed
             )
-        } else handle()
+        } else content()
     }
 }
 
@@ -160,7 +158,6 @@ private fun HandleDrawLayout(
     }
 }
 
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 private fun SelectionHandlePopup(
     startHandlePosition: Offset?,

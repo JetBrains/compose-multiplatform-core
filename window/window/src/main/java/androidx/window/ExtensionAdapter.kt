@@ -18,7 +18,6 @@ package androidx.window
 import android.app.Activity
 import android.graphics.Rect
 import android.util.Log
-import androidx.window.WindowBoundsHelper.Companion.instance
 import androidx.window.extensions.ExtensionDisplayFeature
 import androidx.window.extensions.ExtensionFoldingFeature
 import androidx.window.extensions.ExtensionWindowLayoutInfo
@@ -26,7 +25,7 @@ import androidx.window.extensions.ExtensionWindowLayoutInfo
 /**
  * A class for translating Extension data classes
  */
-internal class ExtensionAdapter {
+internal class ExtensionAdapter(private val windowMetricsCalculator: WindowMetricsCalculator) {
     /**
      * Perform the translation from [ExtensionWindowLayoutInfo] to [WindowLayoutInfo].
      * Translates a valid [ExtensionDisplayFeature] into a valid [DisplayFeature]. If
@@ -48,8 +47,8 @@ internal class ExtensionAdapter {
         if (displayFeature !is ExtensionFoldingFeature) {
             return null
         }
-        val windowBounds = instance.computeCurrentWindowBounds(activity)
-        return translateFoldFeature(windowBounds, displayFeature)
+        val windowMetrics = windowMetricsCalculator.computeCurrentWindowMetrics(activity)
+        return translateFoldFeature(windowMetrics.bounds, displayFeature)
     }
 
     companion object {
@@ -62,8 +61,8 @@ internal class ExtensionAdapter {
                 return null
             }
             val type = when (feature.type) {
-                ExtensionFoldingFeature.TYPE_FOLD -> FoldingFeature.TYPE_FOLD
-                ExtensionFoldingFeature.TYPE_HINGE -> FoldingFeature.TYPE_HINGE
+                ExtensionFoldingFeature.TYPE_FOLD -> FoldingFeature.Type.FOLD
+                ExtensionFoldingFeature.TYPE_HINGE -> FoldingFeature.Type.HINGE
                 else -> {
                     if (ExtensionCompat.DEBUG) {
                         Log.d(TAG, "Unknown feature type: ${feature.type}, skipping feature.")
@@ -72,8 +71,8 @@ internal class ExtensionAdapter {
                 }
             }
             val state = when (feature.state) {
-                ExtensionFoldingFeature.STATE_FLAT -> FoldingFeature.STATE_FLAT
-                ExtensionFoldingFeature.STATE_HALF_OPENED -> FoldingFeature.STATE_HALF_OPENED
+                ExtensionFoldingFeature.STATE_FLAT -> FoldingFeature.State.FLAT
+                ExtensionFoldingFeature.STATE_HALF_OPENED -> FoldingFeature.State.HALF_OPENED
                 else -> {
                     if (ExtensionCompat.DEBUG) {
                         Log.d(TAG, "Unknown feature state: ${feature.state}, skipping feature.")
@@ -81,7 +80,7 @@ internal class ExtensionAdapter {
                     return null
                 }
             }
-            return FoldingFeature(feature.bounds, type, state)
+            return FoldingFeature(Bounds(feature.bounds), type, state)
         }
 
         private fun isValid(windowBounds: Rect, feature: ExtensionFoldingFeature): Boolean {

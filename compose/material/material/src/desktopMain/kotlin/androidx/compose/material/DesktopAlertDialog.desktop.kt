@@ -24,8 +24,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
+import androidx.compose.ui.window.v1.Dialog
+import androidx.compose.ui.window.v1.DialogProperties
 
 /**
  * Alert dialog is a [Dialog] which interrupts the user with urgent information, details or actions.
@@ -48,9 +48,9 @@ import androidx.compose.ui.window.DialogProperties
  * any events for this button so they need to be set up by the caller.
  * @param title The title of the Dialog which should specify the purpose of the Dialog. The title
  * is not mandatory, because there may be sufficient information inside the [text]. Provided text
- * style will be [Typography.h6].
+ * style will be [Typography.subtitle1].
  * @param text The text which presents the details regarding the Dialog's purpose. Provided text
- * style will be [Typography.body1].
+ * style will be [Typography.body2].
  * @param shape Defines the Dialog's shape
  * @param backgroundColor The background color of the dialog.
  * @param contentColor The preferred content color provided by this dialog to its children.
@@ -106,9 +106,9 @@ fun AlertDialog(
  * @param modifier Modifier to be applied to the layout of the dialog.
  * @param title The title of the Dialog which should specify the purpose of the Dialog. The title
  * is not mandatory, because there may be sufficient information inside the [text]. Provided text
- * style will be [Typography.h6].
+ * style will be [Typography.subtitle1].
  * @param text The text which presents the details regarding the Dialog's purpose. Provided text
- * style will be [Typography.body1].
+ * style will be [Typography.body2].
  * @param shape Defines the Dialog's shape.
  * @param backgroundColor The background color of the dialog.
  * @param contentColor The preferred content color provided by this dialog to its children.

@@ -13,27 +13,63 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 import androidx.build.LibraryGroups
 import androidx.build.LibraryType
 import androidx.build.LibraryVersions
-import androidx.build.RunApiTasks
-import androidx.build.AndroidXUiPlugin
-import static androidx.build.dependencies.DependenciesKt.*
+import androidx.build.AndroidXComposePlugin
 
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("AndroidXUiPlugin")
-    id("org.jetbrains.kotlin.android")
+    id("AndroidXComposePlugin")
 }
 
-AndroidXUiPlugin.applyAndConfigureKotlinPlugin(project, false)
+AndroidXComposePlugin.applyAndConfigureKotlinPlugin(project)
 
 dependencies {
-    kotlinPlugin(project(":compose:compiler:compiler"))
+    kotlinPlugin("androidx.compose.compiler:compiler:1.0.0-rc01")
 
-    implementation(KOTLIN_STDLIB)
+    implementation(libs.kotlinStdlib)
 }
+
+
+if(AndroidXComposePlugin.isMultiplatformEnabled(project)) {
+    kotlin {
+        android()
+        jvm("desktop")
+
+        /*
+         * When updating dependencies, make sure to make the an an analogous update in the
+         * corresponding block above
+         */
+        sourceSets {
+            commonMain.dependencies {
+                implementation(libs.kotlinStdlibCommon)
+            }
+            jvmMain.dependencies {
+                implementation(libs.kotlinStdlib)
+            }
+            androidMain {
+                dependsOn(jvmMain)
+            }
+            desktopMain {
+                dependsOn(jvmMain)
+            }
+
+            commonTest.dependencies {
+                implementation(kotlin("test-junit"))
+            }
+            androidAndroidTest.dependencies {
+                implementation(libs.testExtJunit)
+                implementation(libs.testRules)
+                implementation(libs.testRunner)
+                implementation(libs.truth)
+            }
+        }
+    }
+}
+
 
 android {
     defaultConfig {
@@ -57,5 +93,4 @@ androidx {
             "functionality to support wearable specific devices sizes, shapes and navigation " +
             "gestures. It builds upon the Jetpack Compose libraries."
     targetsJavaConsumers = false
-    runApiTasks = new RunApiTasks.No("API tracking disabled while the package is empty")
 }

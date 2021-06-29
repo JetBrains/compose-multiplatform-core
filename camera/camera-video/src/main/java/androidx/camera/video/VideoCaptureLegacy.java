@@ -43,7 +43,6 @@ import static androidx.camera.video.impl.VideoCaptureLegacyConfig.OPTION_INTRA_F
 import static androidx.camera.video.impl.VideoCaptureLegacyConfig.OPTION_VIDEO_FRAME_RATE;
 
 import android.Manifest;
-import android.annotation.SuppressLint;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.location.Location;
@@ -100,6 +99,7 @@ import androidx.camera.core.impl.utils.executor.CameraXExecutors;
 import androidx.camera.core.internal.ThreadConfig;
 import androidx.camera.core.internal.utils.VideoUtil;
 import androidx.camera.video.impl.VideoCaptureLegacyConfig;
+import androidx.camera.video.internal.compat.Api26Impl;
 import androidx.concurrent.futures.CallbackToFutureAdapter;
 import androidx.concurrent.futures.CallbackToFutureAdapter.Completer;
 import androidx.core.util.Consumer;
@@ -1023,7 +1023,6 @@ public final class VideoCaptureLegacy extends UseCase {
         }
     }
 
-    @SuppressLint("UnsafeNewApiCall")
     @NonNull
     private MediaMuxer initMediaMuxer(@NonNull OutputFileOptions outputFileOptions)
             throws IOException {
@@ -1041,7 +1040,7 @@ public final class VideoCaptureLegacy extends UseCase {
                         + "only supported for Android 8.0 or above.");
             }
 
-            mediaMuxer = new MediaMuxer(outputFileOptions.getFileDescriptor(),
+            mediaMuxer = Api26Impl.createMediaMuxer(outputFileOptions.getFileDescriptor(),
                     MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
         } else if (outputFileOptions.isSavingToMediaStore()) {
             ContentValues values = outputFileOptions.getContentValues() != null
@@ -1068,7 +1067,8 @@ public final class VideoCaptureLegacy extends UseCase {
                     mParcelFileDescriptor =
                             outputFileOptions.getContentResolver().openFileDescriptor(
                                     mSavedVideoUri, "rw");
-                    mediaMuxer = new MediaMuxer(mParcelFileDescriptor.getFileDescriptor(),
+                    mediaMuxer = Api26Impl.createMediaMuxer(
+                            mParcelFileDescriptor.getFileDescriptor(),
                             MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
                 }
             } catch (IOException e) {

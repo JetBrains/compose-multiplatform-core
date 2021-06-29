@@ -27,8 +27,6 @@ BuilderSetStyle: androidx.navigation.NavDeepLinkRequest.Builder#fromMimeType(Str
     Builder methods names should use setFoo() / addFoo() / clearFoo() style: method androidx.navigation.NavDeepLinkRequest.Builder.fromMimeType(String)
 BuilderSetStyle: androidx.navigation.NavDeepLinkRequest.Builder#fromUri(android.net.Uri):
     Builder methods names should use setFoo() / addFoo() / clearFoo() style: method androidx.navigation.NavDeepLinkRequest.Builder.fromUri(android.net.Uri)
-BuilderSetStyle: androidx.navigation.NavDestinationBuilder#action(int, kotlin.jvm.functions.Function1<? super androidx.navigation.NavActionBuilder,kotlin.Unit>):
-    Builder methods names should use setFoo() / addFoo() / clearFoo() style: method androidx.navigation.NavDestinationBuilder.action(int,kotlin.jvm.functions.Function1<? super androidx.navigation.NavActionBuilder,kotlin.Unit>)
 BuilderSetStyle: androidx.navigation.NavDestinationBuilder#argument(String, kotlin.jvm.functions.Function1<? super androidx.navigation.NavArgumentBuilder,kotlin.Unit>):
     Builder methods names should use setFoo() / addFoo() / clearFoo() style: method androidx.navigation.NavDestinationBuilder.argument(String,kotlin.jvm.functions.Function1<? super androidx.navigation.NavArgumentBuilder,kotlin.Unit>)
 BuilderSetStyle: androidx.navigation.NavDestinationBuilder#deepLink(String):
@@ -119,6 +117,8 @@ MissingGetterMatchingBuilder: androidx.navigation.NavOptions.Builder#setLaunchSi
     androidx.navigation.NavOptions does not declare a `isLaunchSingleTop()` method matching method androidx.navigation.NavOptions.Builder.setLaunchSingleTop(boolean)
 
 
+MissingJvmstatic: androidx.navigation.NavDestination#hierarchy:
+    Companion object constants like hierarchy should be using @JvmField, not @JvmStatic; see https://developer.android.com/kotlin/interop#companion_constants
 MissingJvmstatic: androidx.navigation.NavOptionsBuilder#popUpTo(String, kotlin.jvm.functions.Function1<? super androidx.navigation.PopUpToBuilder,kotlin.Unit>):
     A Kotlin method with default parameter values should be annotated with @JvmOverloads for better Java interoperability; see https://android.github.io/kotlin-guides/interop.html#function-overloads-for-defaults
 MissingJvmstatic: androidx.navigation.NavOptionsBuilder#popUpTo(int, kotlin.jvm.functions.Function1<? super androidx.navigation.PopUpToBuilder,kotlin.Unit>):

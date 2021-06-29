@@ -66,11 +66,16 @@ import java.util.List;
                 AutoMigrationDb.Entity22.class,
                 AutoMigrationDb.Entity23.class,
                 AutoMigrationDb.Entity24.class,
-                AutoMigrationDb.Entity25.class
+                AutoMigrationDb.Entity25.class,
+                AutoMigrationDb.Entity26.class,
+                AutoMigrationDb.Entity27.class
         },
         autoMigrations = {
                 @AutoMigration(
                         from = 1, to = 2, spec = AutoMigrationDb.SimpleAutoMigration1.class
+                ),
+                @AutoMigration(
+                        from = 2, to = 3
                 )
         },
         views = {
@@ -79,7 +84,7 @@ import java.util.List;
         exportSchema = true
 )
 public abstract class AutoMigrationDb extends RoomDatabase {
-    static final int LATEST_VERSION = 2;
+    static final int LATEST_VERSION = 3;
     abstract AutoMigrationDb.AutoMigrationDao dao();
 
     /**
@@ -191,10 +196,9 @@ public abstract class AutoMigrationDb extends RoomDatabase {
      * Add a foreign key to Entity 9.
      */
     @Entity(foreignKeys = {
-            @ForeignKey(entity = Entity12.class,
-                    parentColumns = "id",
-                    childColumns = "id",
-                    deferred = true)})
+            @ForeignKey(entity = Entity27.class,
+                    parentColumns = "id27",
+                    childColumns = "id")})
     static class Entity9 {
         public static final String TABLE_NAME = "Entity9";
         @PrimaryKey
@@ -419,6 +423,32 @@ public abstract class AutoMigrationDb extends RoomDatabase {
         @ColumnInfo(defaultValue = "1")
         public int entity1Id;
     }
+
+    /**
+     * Added a new table that has an index.
+     */
+    @Entity(indices = {@Index(value = {"addedInV2"}, unique = true)})
+    static class Entity26 {
+        public static final String TABLE_NAME = "Entity26";
+        @PrimaryKey
+        public int id;
+        public String name;
+        @ColumnInfo(defaultValue = "1")
+        public int addedInV2;
+    }
+
+    /**
+     * No change between versions.
+     */
+    @Entity
+    static class Entity27 {
+        public static final String TABLE_NAME = "Entity27";
+        @PrimaryKey
+        public int id27;
+        @ColumnInfo(defaultValue = "1")
+        public int addedInV1;
+    }
+
 
     @Dao
     interface AutoMigrationDao {

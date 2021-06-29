@@ -18,7 +18,6 @@ package androidx.build
 
 import androidx.build.checkapi.jvmCompileInputsFromKmpProject
 import androidx.build.java.JavaCompileInputs
-import com.android.build.gradle.api.BaseVariant
 import com.android.builder.core.BuilderConstants
 import org.gradle.api.DomainObjectSet
 import org.gradle.api.Project
@@ -61,15 +60,17 @@ fun Project.configureErrorProneForJava() {
     }
 }
 
-fun Project.configureErrorProneForAndroid(variants: DomainObjectSet<out BaseVariant>) {
+@Suppress("DEPRECATION") // BaseVariant
+fun Project.configureErrorProneForAndroid(
+    variants: DomainObjectSet<out com.android.build.gradle.api.BaseVariant>
+) {
     val errorProneConfiguration = createErrorProneConfiguration()
     variants.all { variant ->
         // Using getName() instead of name due to b/150427408
         if (variant.buildType.getName() == BuilderConstants.RELEASE) {
             val task = variant.javaCompileProvider
-            (variant as BaseVariant).annotationProcessorConfiguration.extendsFrom(
-                errorProneConfiguration
-            )
+            (variant as com.android.build.gradle.api.BaseVariant)
+                .annotationProcessorConfiguration.extendsFrom(errorProneConfiguration)
 
             log.info("Configuring error-prone for ${variant.name}'s java compile")
             makeErrorProneTask(task)
@@ -129,6 +130,9 @@ private fun JavaCompile.configureWithErrorProne() {
             "-Xep:InjectScopeAnnotationOnInterfaceOrAbstractClass:OFF",
             "-Xep:InvalidThrows:OFF",
 
+            // Disable checks which are already enforced by lint.
+            "-Xep:PrivateConstructorForUtilityClass:OFF",
+
             // Enforce the following checks.
             "-Xep:JavaTimeDefaultTimeZone:ERROR",
             "-Xep:ParameterNotNullable:ERROR",
@@ -142,7 +146,6 @@ private fun JavaCompile.configureWithErrorProne() {
             "-Xep:IntLongMath:ERROR",
             "-Xep:MissingFail:ERROR",
             "-Xep:JavaLangClash:ERROR",
-            "-Xep:PrivateConstructorForUtilityClass:ERROR",
             "-Xep:TypeParameterUnusedInFormals:ERROR",
             "-Xep:StringSplitter:ERROR",
             "-Xep:ReferenceEquality:ERROR",
@@ -235,7 +238,7 @@ private fun Project.makeErrorProneTask(
             val compileTask = compileTaskProvider.get()
             it.classpath = compileTask.classpath
             it.source = compileTask.source
-            it.destinationDir = file(buildDir.resolve("errorProne"))
+            it.destinationDirectory.set(file(buildDir.resolve("errorProne")))
             it.options.compilerArgs = compileTask.options.compilerArgs.toMutableList()
             it.options.annotationProcessorPath = compileTask.options.annotationProcessorPath
             it.options.bootstrapClasspath = compileTask.options.bootstrapClasspath

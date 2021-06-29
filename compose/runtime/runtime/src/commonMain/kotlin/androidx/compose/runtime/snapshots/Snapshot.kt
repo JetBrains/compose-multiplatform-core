@@ -678,6 +678,7 @@ open class MutableSnapshot internal constructor(
     }
 
     override fun notifyObjectsInitialized() {
+        if (applied || disposed) return
         advance()
     }
 
@@ -1175,7 +1176,7 @@ internal class GlobalSnapshot(id: Int, invalid: SnapshotIdSet) :
     override fun dispose() {
         // Disposing the global snapshot is a no-op.
 
-        // The dispose behavior is preformed by advancing the global snapshot. This method is
+        // The dispose behavior is performed by advancing the global snapshot. This method is
         // squelched so  calling it from `currentSnapshot` doesn't cause incorrect behavior
     }
 }

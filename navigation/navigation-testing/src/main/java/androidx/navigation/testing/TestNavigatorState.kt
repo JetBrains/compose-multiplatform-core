@@ -27,6 +27,7 @@ import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavDestination
 import androidx.navigation.NavViewModelStoreProvider
 import androidx.navigation.NavigatorState
+import androidx.navigation.NavigatorState.OnTransitionCompleteListener
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
@@ -90,9 +91,22 @@ public class TestNavigatorState @JvmOverloads constructor(
         )
     }
 
-    override fun add(backStackEntry: NavBackStackEntry) {
-        super.add(backStackEntry)
+    override fun push(backStackEntry: NavBackStackEntry) {
+        super.push(backStackEntry)
         updateMaxLifecycle()
+    }
+
+    override fun pushWithTransition(
+        backStackEntry: NavBackStackEntry
+    ): OnTransitionCompleteListener {
+        val innerListener = super.pushWithTransition(backStackEntry)
+        val listener = OnTransitionCompleteListener {
+            innerListener.onTransitionComplete()
+            updateMaxLifecycle()
+        }
+        addInProgressTransition(backStackEntry, listener)
+        updateMaxLifecycle()
+        return listener
     }
 
     override fun pop(popUpTo: NavBackStackEntry, saveState: Boolean) {
@@ -100,6 +114,20 @@ public class TestNavigatorState @JvmOverloads constructor(
         val poppedList = beforePopList.subList(beforePopList.indexOf(popUpTo), beforePopList.size)
         super.pop(popUpTo, saveState)
         updateMaxLifecycle(poppedList, saveState)
+    }
+
+    override fun popWithTransition(
+        popUpTo: NavBackStackEntry,
+        saveState: Boolean
+    ): OnTransitionCompleteListener {
+        val innerListener = super.popWithTransition(popUpTo, saveState)
+        val listener = OnTransitionCompleteListener {
+            innerListener.onTransitionComplete()
+            updateMaxLifecycle()
+        }
+        addInProgressTransition(popUpTo, listener)
+        updateMaxLifecycle()
+        return listener
     }
 
     private fun updateMaxLifecycle(
@@ -120,14 +148,25 @@ public class TestNavigatorState @JvmOverloads constructor(
                         entry.saveState(savedState)
                         savedStates[entry.id] = savedState
                     }
-                    entry.maxLifecycle = Lifecycle.State.DESTROYED
+                    val transitioning = transitionsInProgress.value.containsKey(entry)
+                    if (!transitioning) {
+                        entry.maxLifecycle = Lifecycle.State.DESTROYED
+                    } else {
+                        entry.maxLifecycle = Lifecycle.State.CREATED
+                    }
                 }
                 // Now go through the current list of destinations, updating their Lifecycle state
                 val currentList = backStack.value
                 var previousEntry: NavBackStackEntry? = null
                 for (entry in currentList.reversed()) {
+                    val transitioning = transitionsInProgress.value.containsKey(entry)
                     entry.maxLifecycle = when {
-                        previousEntry == null -> Lifecycle.State.RESUMED
+                        previousEntry == null ->
+                            if (!transitioning) {
+                                Lifecycle.State.RESUMED
+                            } else {
+                                Lifecycle.State.STARTED
+                            }
                         previousEntry.destination is FloatingWindow -> Lifecycle.State.STARTED
                         else -> Lifecycle.State.CREATED
                     }

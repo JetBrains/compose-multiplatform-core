@@ -28,7 +28,6 @@ import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.io.File
-import java.io.FileDescriptor
 
 @SmallTest
 @RunWith(AndroidJUnit4::class)
@@ -66,45 +65,40 @@ class OutputOptionsTest {
             put(MediaStore.Video.Media.DISPLAY_NAME, fileName)
         }
 
-        val uri = contentResolver.insert(
-            MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
-            contentValues
-        )
-
-        assertThat(uri).isNotNull()
-
         val mediaStoreOutputOptions = MediaStoreOutputOptions.builder()
             .setContentResolver(contentResolver)
             .setFileSizeLimit(FILE_SIZE_LIMIT)
-            .setUri(uri!!)
+            .setCollection(MediaStore.Video.Media.EXTERNAL_CONTENT_URI)
+            .setContentValues(contentValues)
             .build()
 
-        assertThat(mediaStoreOutputOptions.uri).isNotNull()
+        assertThat(mediaStoreOutputOptions.contentResolver).isEqualTo(contentResolver)
+        assertThat(mediaStoreOutputOptions.collection).isEqualTo(
+            MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+        )
+        assertThat(mediaStoreOutputOptions.contentValues).isEqualTo(contentValues)
         assertThat(mediaStoreOutputOptions.type).isEqualTo(OutputOptions.Type.MEDIA_STORE)
         assertThat(mediaStoreOutputOptions.fileSizeLimit).isEqualTo(FILE_SIZE_LIMIT)
-        contentResolver.delete(uri, null, null)
     }
 
     @Test
     fun canBuildFileDescriptorOutputOptions() {
         val savedFile = File.createTempFile("CameraX", ".tmp")
         savedFile.deleteOnExit()
-        val pfd: ParcelFileDescriptor = ParcelFileDescriptor.open(
+        ParcelFileDescriptor.open(
             savedFile,
             ParcelFileDescriptor.MODE_READ_WRITE
-        )
-        val fd: FileDescriptor = pfd.fileDescriptor
+        ).use { pfd ->
+            val fdOutputOptions = FileDescriptorOutputOptions.builder()
+                .setParcelFileDescriptor(pfd)
+                .setFileSizeLimit(FILE_SIZE_LIMIT)
+                .build()
 
-        val fdOutputOptions = FileDescriptorOutputOptions.builder()
-            .setFileDescriptor(fd)
-            .setFileSizeLimit(FILE_SIZE_LIMIT)
-            .build()
-
-        assertThat(fdOutputOptions).isNotNull()
-        assertThat(fdOutputOptions.type).isEqualTo(OutputOptions.Type.FILE_DESCRIPTOR)
-        assertThat(fdOutputOptions.fileDescriptor).isNotNull()
-        assertThat(fdOutputOptions.fileSizeLimit).isEqualTo(FILE_SIZE_LIMIT)
-        pfd.close()
+            assertThat(fdOutputOptions).isNotNull()
+            assertThat(fdOutputOptions.type).isEqualTo(OutputOptions.Type.FILE_DESCRIPTOR)
+            assertThat(fdOutputOptions.parcelFileDescriptor).isNotNull()
+            assertThat(fdOutputOptions.fileSizeLimit).isEqualTo(FILE_SIZE_LIMIT)
+        }
         savedFile.delete()
     }
 
@@ -130,34 +124,30 @@ class OutputOptionsTest {
             put(MediaStore.Video.Media.TITLE, fileName)
             put(MediaStore.Video.Media.DISPLAY_NAME, fileName)
         }
-        val uri = contentResolver.insert(
-            MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
-            contentValues
-        )
+
         val mediaStoreOutputOptions = MediaStoreOutputOptions.builder()
             .setContentResolver(contentResolver)
-            .setUri(uri!!)
+            .setCollection(MediaStore.Video.Media.EXTERNAL_CONTENT_URI)
+            .setContentValues(contentValues)
             .build()
 
         assertThat(mediaStoreOutputOptions.fileSizeLimit)
             .isEqualTo(OutputOptions.FILE_SIZE_UNLIMITED)
-        contentResolver.delete(uri, null, null)
     }
 
     @Test
     fun fileDescriptor_builderContainsCorrectDefaults() {
         val savedFile = File.createTempFile("CameraX", ".tmp")
-        val pfd: ParcelFileDescriptor = ParcelFileDescriptor.open(
+        ParcelFileDescriptor.open(
             savedFile,
             ParcelFileDescriptor.MODE_READ_WRITE
-        )
-        val fd: FileDescriptor = pfd.fileDescriptor
-        val fdOutputOptions = FileDescriptorOutputOptions.builder()
-            .setFileDescriptor(fd)
-            .build()
+        ).use { pfd ->
+            val fdOutputOptions = FileDescriptorOutputOptions.builder()
+                .setParcelFileDescriptor(pfd)
+                .build()
 
-        assertThat(fdOutputOptions.fileSizeLimit).isEqualTo(OutputOptions.FILE_SIZE_UNLIMITED)
-        pfd.close()
+            assertThat(fdOutputOptions.fileSizeLimit).isEqualTo(OutputOptions.FILE_SIZE_UNLIMITED)
+        }
         savedFile.delete()
     }
 }

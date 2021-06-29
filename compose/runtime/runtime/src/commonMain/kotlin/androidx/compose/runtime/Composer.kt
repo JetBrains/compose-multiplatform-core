@@ -19,14 +19,15 @@
 )
 package androidx.compose.runtime
 
+import androidx.compose.runtime.collection.IdentityArrayMap
 import androidx.compose.runtime.collection.IdentityArraySet
+import androidx.compose.runtime.external.kotlinx.collections.immutable.PersistentMap
+import androidx.compose.runtime.external.kotlinx.collections.immutable.persistentHashMapOf
 import androidx.compose.runtime.snapshots.currentSnapshot
 import androidx.compose.runtime.snapshots.fastForEach
 import androidx.compose.runtime.snapshots.fastToSet
 import androidx.compose.runtime.tooling.CompositionData
 import androidx.compose.runtime.tooling.LocalInspectionTables
-import kotlinx.collections.immutable.PersistentMap
-import kotlinx.collections.immutable.persistentHashMapOf
 import kotlin.coroutines.CoroutineContext
 
 internal typealias Change = (
@@ -202,9 +203,26 @@ private class Pending(
 }
 
 private class Invalidation(
+    /**
+     * The recompose scope being invalidate
+     */
     val scope: RecomposeScopeImpl,
-    var location: Int
-)
+
+    /**
+     * The index of the group in the slot table being invalidated.
+     */
+    val location: Int,
+
+    /**
+     * The instances invalidating the scope. If this is `null` or empty then the scope is
+     * unconditionally invalid. If it contains instances it is only invalid if at least on of the
+     * instances is changed. This is used to track `DerivedState<*>` changes and only treat the
+     * scope as invalid if the instance has changed.
+     */
+    var instances: IdentityArraySet<Any>?
+) {
+    fun isInvalid(): Boolean = scope.isInvalidFor(instances)
+}
 
 /**
  * Internal compose compiler plugin API that is used to update the function the composer will
@@ -308,9 +326,13 @@ interface Composer {
     /**
      * A Compose compiler plugin API. DO NOT call directly.
      *
-     * This is the instance that changes that are calculated by the composer will be played to.
-     * During while invoking [Composable] functions none of the [applier] methods are called.
-     * The changes are made in a batch after the all [Composable] functions have completed.
+     * Changes calculated and recorded during composition and are sent to [applier] which makes
+     * the physical changes to the node tree implied by a composition.
+     *
+     * Composition has two discrete phases, 1) calculate and record changes and 2) making the
+     * changes via the [applier]. While a [Composable] functions is executing, none of the
+     * [applier] methods are called. The recorded changes are sent to the [applier] all at once
+     * after all [Composable] functions have completed.
      */
     @ComposeCompilerApi
     val applier: Applier<*>
@@ -1028,7 +1050,6 @@ internal class ComposerImpl(
     private var collectParameterInformation = false
     private var nodeExpected = false
     private val invalidations: MutableList<Invalidation> = mutableListOf()
-    internal var pendingInvalidScopes = false
     private val entersStack = IntStack()
     private var parentProvider: CompositionLocalMap = persistentHashMapOf()
     private val providerUpdates = HashMap<Int, CompositionLocalMap>()
@@ -1211,7 +1232,6 @@ internal class ComposerImpl(
     private fun endRoot() {
         endGroup()
         parentContext.doneComposing()
-
         endGroup()
         recordEndRoot()
         finalizeCompose()
@@ -1301,7 +1321,7 @@ internal class ComposerImpl(
     /**
      * End the current group.
      */
-    internal fun endGroup() = end(isNode = false)
+    private fun endGroup() = end(isNode = false)
 
     @OptIn(InternalComposeApi::class)
     private fun skipGroup() {
@@ -1337,7 +1357,7 @@ internal class ComposerImpl(
     @Suppress("UNUSED")
     override fun <T> createNode(factory: () -> T) {
         validateNodeExpected()
-        check(inserting) { "createNode() can only be called when inserting" }
+        runtimeCheck(inserting) { "createNode() can only be called when inserting" }
         val insertIndex = nodeIndexStack.peek()
         val groupAnchor = writer.anchor(writer.parent)
         groupNodeCount++
@@ -1364,7 +1384,7 @@ internal class ComposerImpl(
     @OptIn(InternalComposeApi::class)
     override fun useNode() {
         validateNodeExpected()
-        check(!inserting) { "useNode() called while inserting" }
+        runtimeCheck(!inserting) { "useNode() called while inserting" }
         recordDown(reader.node)
     }
 
@@ -2111,35 +2131,44 @@ internal class ComposerImpl(
 
             invalidations.removeLocation(location)
 
-            recomposed = true
+            if (firstInRange.isInvalid()) {
+                recomposed = true
 
-            reader.reposition(location)
-            val newGroup = reader.currentGroup
-            // Record the changes to the applier location
-            recordUpsAndDowns(oldGroup, newGroup, parent)
-            oldGroup = newGroup
+                reader.reposition(location)
+                val newGroup = reader.currentGroup
+                // Record the changes to the applier location
+                recordUpsAndDowns(oldGroup, newGroup, parent)
+                oldGroup = newGroup
 
-            // Calculate the node index (the distance index in the node this groups nodes are
-            // located in the parent node).
-            nodeIndex = nodeIndexOf(
-                location,
-                newGroup,
-                parent,
-                recomposeIndex
-            )
+                // Calculate the node index (the distance index in the node this groups nodes are
+                // located in the parent node).
+                nodeIndex = nodeIndexOf(
+                    location,
+                    newGroup,
+                    parent,
+                    recomposeIndex
+                )
 
-            // Calculate the compound hash code (a semi-unique code for every group in the
-            // composition used to restore saved state).
-            compoundKeyHash = compoundKeyOf(
-                reader.parent(newGroup),
-                parent,
-                recomposeCompoundKey
-            )
+                // Calculate the compound hash code (a semi-unique code for every group in the
+                // composition used to restore saved state).
+                compoundKeyHash = compoundKeyOf(
+                    reader.parent(newGroup),
+                    parent,
+                    recomposeCompoundKey
+                )
 
-            firstInRange.scope.compose(this)
+                firstInRange.scope.compose(this)
 
-            // Restore the parent of the reader to the previous parent
-            reader.restoreParent(parent)
+                // Restore the parent of the reader to the previous parent
+                reader.restoreParent(parent)
+            } else {
+                // If the invalidation is not used restore the reads that were removed when the
+                // the invalidation was recorded. This happens, for example, when on of a derived
+                // state's dependencies changed but the derived state itself was not changed.
+                invalidateStack.push(firstInRange.scope)
+                firstInRange.scope.rereadTrackedInstances()
+                invalidateStack.pop()
+            }
 
             // Using slots.current here ensures composition always walks forward even if a component
             // before the current composition is invalidated when performing this composition. Any
@@ -2339,46 +2368,18 @@ internal class ComposerImpl(
     private fun SlotReader.groupCompoundKeyPart(group: Int) =
         if (hasObjectKey(group)) groupObjectKey(group)?.hashCode() ?: 0
         else groupKey(group).let {
-            if (it == reusingGroup) groupAux(group)?.let { aux ->
+            if (it == reuseKey) groupAux(group)?.let { aux ->
                 if (aux == Composer.Empty) it else aux.hashCode()
             } ?: it else it
         }
 
-    internal fun invalidateForResult(scope: RecomposeScopeImpl): InvalidationResult {
-        if (scope.defaultsInScope) {
-            scope.defaultsInvalid = true
-        }
-        val anchor = scope.anchor
-        if (anchor == null || !slotTable.ownsAnchor(anchor) || !anchor.valid)
-            return InvalidationResult.IGNORED // The scope has not yet entered the composition
-        val location = anchor.toIndexFor(slotTable)
-        if (location < 0)
-            return InvalidationResult.IGNORED // The scope was removed from the composition
-        invalidations.insertIfMissing(location, scope)
-        if (isComposing && location >= reader.currentGroup) {
-            // if we are invalidating a scope that is going to be traversed during this
-            // composition.
-            return InvalidationResult.IMMINENT
-        }
-        parentContext.invalidate(composition)
-        return if (isComposing) InvalidationResult.DEFERRED else InvalidationResult.SCHEDULED
-    }
-
-    /**
-     * Unlike [invalidateForResult] above, this method can be called on any thread and synchronizes
-     * with the parent reference to ensure [invalidateForResult] is called on the correct thread.
-     */
-    internal fun invalidate(scope: RecomposeScopeImpl) {
-        parentContext.invalidateScope(scope)
-    }
-
-    internal fun tryImminentInvalidation(scope: RecomposeScopeImpl): Boolean {
+    internal fun tryImminentInvalidation(scope: RecomposeScopeImpl, instance: Any?): Boolean {
         val anchor = scope.anchor ?: return false
         val location = anchor.toIndexFor(slotTable)
         if (isComposing && location >= reader.currentGroup) {
             // if we are invalidating a scope that is going to be traversed during this
             // composition.
-            invalidations.insertIfMissing(location, scope)
+            invalidations.insertIfMissing(location, scope, instance)
             return true
         }
         return false
@@ -2415,7 +2416,9 @@ internal class ComposerImpl(
      */
     @ComposeCompilerApi
     override fun skipToGroupEnd() {
-        check(groupNodeCount == 0) { "No nodes can be emitted before calling skipAndEndGroup" }
+        runtimeCheck(groupNodeCount == 0) {
+            "No nodes can be emitted before calling skipAndEndGroup"
+        }
         currentRecomposeScope?.scopeSkipped()
         if (invalidations.isEmpty()) {
             skipReaderToGroupEnd()
@@ -2468,7 +2471,10 @@ internal class ComposerImpl(
         scope?.end(snapshot.id)?.let {
             record { _, _, _ -> it(composition) }
         }
-        val result = if (scope != null && (scope.used || collectParameterInformation)) {
+        val result = if (scope != null &&
+            !scope.skipped &&
+            (scope.used || collectParameterInformation)
+        ) {
             if (scope.anchor == null) {
                 scope.anchor = if (inserting) {
                     writer.anchor(writer.parent)
@@ -2508,20 +2514,35 @@ internal class ComposerImpl(
      * [content].
      */
     internal fun composeContent(
-        invalidationsRequested: IdentityArraySet<RecomposeScopeImpl>,
+        invalidationsRequested: IdentityArrayMap<RecomposeScopeImpl, IdentityArraySet<Any>?>,
         content: @Composable () -> Unit
     ) {
-        check(changes.isEmpty()) { "Expected applyChanges() to have been called" }
+        runtimeCheck(changes.isEmpty()) { "Expected applyChanges() to have been called" }
         doCompose(invalidationsRequested, content)
     }
 
+    internal fun prepareCompose(block: () -> Unit) {
+        runtimeCheck(!isComposing) { "Preparing a composition while composing is not supported" }
+        isComposing = true
+        try {
+            block()
+        } finally {
+            isComposing = false
+        }
+    }
     /**
      * Synchronously recompose all invalidated groups. This collects the changes which must be
      * applied by [ControlledComposition.applyChanges] to have an effect.
      */
-    internal fun recompose(invalidationsRequested: IdentityArraySet<RecomposeScopeImpl>): Boolean {
-        check(changes.isEmpty()) { "Expected applyChanges() to have been called" }
-        if (invalidationsRequested.isNotEmpty()) {
+    internal fun recompose(
+        invalidationsRequested: IdentityArrayMap<RecomposeScopeImpl, IdentityArraySet<Any>?>
+    ): Boolean {
+        runtimeCheck(changes.isEmpty()) { "Expected applyChanges() to have been called" }
+        // even if invalidationsRequested is empty we still need to recompose if the Composer has
+        // some invalidations scheduled already. it can happen when during some parent composition
+        // there were a change for a state which was used by the child composition. such changes
+        // will be tracked and added into `invalidations` list.
+        if (invalidationsRequested.isNotEmpty() || invalidations.isNotEmpty()) {
             doCompose(invalidationsRequested, null)
             return changes.isNotEmpty()
         }
@@ -2529,16 +2550,15 @@ internal class ComposerImpl(
     }
 
     private fun doCompose(
-        invalidationsRequested: IdentityArraySet<RecomposeScopeImpl>,
+        invalidationsRequested: IdentityArrayMap<RecomposeScopeImpl, IdentityArraySet<Any>?>,
         content: (@Composable () -> Unit)?
     ) {
-        check(!isComposing) { "Reentrant composition is not supported" }
+        runtimeCheck(!isComposing) { "Reentrant composition is not supported" }
         trace("Compose:recompose") {
-            invalidations.clear()
             snapshot = currentSnapshot()
-            invalidationsRequested.forEach { scope ->
+            invalidationsRequested.forEach { scope, set ->
                 val location = scope.anchor?.location ?: return
-                invalidations.add(Invalidation(scope, location))
+                invalidations.add(Invalidation(scope, location, set))
             }
             invalidations.sortBy { it.location }
             nodeIndex = 0
@@ -2546,17 +2566,30 @@ internal class ComposerImpl(
             isComposing = true
             try {
                 startRoot()
-                if (content != null) {
-                    startGroup(invocationKey, invocation)
-                    invokeComposable(this, content)
-                    endGroup()
-                } else {
-                    skipCurrentGroup()
+                // Ignore reads of derivedStatOf recalculations
+                observeDerivedStateRecalculations(
+                    start = {
+                        childrenComposing++
+                    },
+                    done = {
+                        childrenComposing--
+                    },
+                ) {
+                    if (content != null) {
+                        startGroup(invocationKey, invocation)
+
+                        invokeComposable(this, content)
+                        endGroup()
+                    } else {
+                        skipCurrentGroup()
+                    }
                 }
                 endRoot()
                 complete = true
             } finally {
                 isComposing = false
+                invalidations.clear()
+                providerUpdates.clear()
                 if (!complete) abortRoot()
             }
         }
@@ -2569,14 +2602,14 @@ internal class ComposerImpl(
     private fun SlotReader.nodeAt(index: Int) = node(index)
 
     private fun validateNodeExpected() {
-        check(nodeExpected) {
+        runtimeCheck(nodeExpected) {
             "A call to createNode(), emitNode() or useNode() expected was not expected"
         }
         nodeExpected = false
     }
 
     private fun validateNodeNotExpected() {
-        check(!nodeExpected) { "A call to createNode(), emitNode() or useNode() expected" }
+        runtimeCheck(!nodeExpected) { "A call to createNode(), emitNode() or useNode() expected" }
     }
 
     /**
@@ -2798,7 +2831,7 @@ internal class ComposerImpl(
     private fun recordEndGroup() {
         val location = reader.parent
         val currentStartedGroup = startedGroups.peekOr(-1)
-        check(currentStartedGroup <= location) { "Missed recording an endGroup" }
+        runtimeCheck(currentStartedGroup <= location) { "Missed recording an endGroup" }
         if (startedGroups.peekOr(-1) == location) {
             startedGroups.pop()
             recordSlotTableOperation(change = endGroupInstance)
@@ -2814,8 +2847,8 @@ internal class ComposerImpl(
 
     private fun finalizeCompose() {
         realizeUps()
-        check(pendingStack.isEmpty()) { "Start/end imbalance" }
-        check(startedGroups.isEmpty()) { "Missed recording an endGroup()" }
+        runtimeCheck(pendingStack.isEmpty()) { "Start/end imbalance" }
+        runtimeCheck(startedGroups.isEmpty()) { "Missed recording an endGroup()" }
         cleanUpCompose()
     }
 
@@ -2839,7 +2872,7 @@ internal class ComposerImpl(
 
     private fun recordRemoveNode(nodeIndex: Int, count: Int) {
         if (count > 0) {
-            check(nodeIndex >= 0) { "Invalid remove index $nodeIndex" }
+            runtimeCheck(nodeIndex >= 0) { "Invalid remove index $nodeIndex" }
             if (previousRemove == nodeIndex) previousCount += count
             else {
                 realizeMovement()
@@ -3006,6 +3039,8 @@ internal class ComposerImpl(
                 updateCompoundKeyWhenWeEnterGroupKeyHash(data.hashCode())
             else
                 updateCompoundKeyWhenWeEnterGroupKeyHash(groupKey)
+        else if (dataKey is Enum<*>)
+            updateCompoundKeyWhenWeEnterGroupKeyHash(dataKey.ordinal)
         else
             updateCompoundKeyWhenWeEnterGroupKeyHash(dataKey.hashCode())
     }
@@ -3020,6 +3055,8 @@ internal class ComposerImpl(
                 updateCompoundKeyWhenWeExitGroupKeyHash(data.hashCode())
             else
                 updateCompoundKeyWhenWeExitGroupKeyHash(groupKey)
+        else if (dataKey is Enum<*>)
+            updateCompoundKeyWhenWeExitGroupKeyHash(dataKey.ordinal)
         else
             updateCompoundKeyWhenWeExitGroupKeyHash(dataKey.hashCode())
     }
@@ -3040,7 +3077,7 @@ internal class ComposerImpl(
  *
  * @see ComposeNode
  */
-@Suppress("EXPERIMENTAL_FEATURE_WARNING")
+@Suppress("INLINE_CLASS_DEPRECATED", "EXPERIMENTAL_FEATURE_WARNING")
 inline class Updater<T> constructor(
     @PublishedApi internal val composer: Composer
 ) {
@@ -3097,9 +3134,10 @@ inline class Updater<T> constructor(
         value: Int,
         noinline block: T.(value: Int) -> Unit
     ) = with(composer) {
+        val inserting = inserting
         if (inserting || rememberedValue() != value) {
             updateRememberedValue(value)
-            composer.apply(value, block)
+            if (!inserting) apply(value, block)
         }
     }
 
@@ -3118,9 +3156,10 @@ inline class Updater<T> constructor(
         value: V,
         block: T.(value: V) -> Unit
     ) = with(composer) {
+        val inserting = inserting
         if (inserting || rememberedValue() != value) {
             updateRememberedValue(value)
-            composer.apply(value, block)
+            if (!inserting) apply(value, block)
         }
     }
 
@@ -3154,7 +3193,7 @@ inline class Updater<T> constructor(
         composer.apply<Unit, T>(Unit, { this.block() })
     }
 }
-@Suppress("EXPERIMENTAL_FEATURE_WARNING")
+@Suppress("INLINE_CLASS_DEPRECATED", "EXPERIMENTAL_FEATURE_WARNING")
 inline class SkippableUpdater<T> constructor(
     @PublishedApi internal val composer: Composer
 ) {
@@ -3237,10 +3276,29 @@ private fun MutableList<Invalidation>.findLocation(location: Int): Int {
     return -(low + 1) // key not found
 }
 
-private fun MutableList<Invalidation>.insertIfMissing(location: Int, scope: RecomposeScopeImpl) {
+private fun MutableList<Invalidation>.insertIfMissing(
+    location: Int,
+    scope: RecomposeScopeImpl,
+    instance: Any?
+) {
     val index = findLocation(location)
     if (index < 0) {
-        add(-(index + 1), Invalidation(scope, location))
+        add(
+            -(index + 1),
+            Invalidation(
+                scope,
+                location,
+                instance?.let { i ->
+                    IdentityArraySet<Any>().also { it.add(i) }
+                }
+            )
+        )
+    } else {
+        if (instance == null) {
+            get(index).instances = null
+        } else {
+            get(index).instances?.add(instance)
+        }
     }
 }
 
@@ -3387,3 +3445,20 @@ internal val reference: Any = OpaqueKey("reference")
 
 @PublishedApi
 internal const val reuseKey = 207
+
+internal inline fun runtimeCheck(value: Boolean, lazyMessage: () -> Any) {
+    if (!value) {
+        val message = lazyMessage()
+        composeRuntimeError(message.toString())
+    }
+}
+
+internal fun runtimeCheck(value: Boolean) = runtimeCheck(value) { "Check failed" }
+
+internal fun composeRuntimeError(message: String): Nothing {
+    error(
+        "Compose Runtime internal error. Unexpected or incorrect use of the Compose " +
+            "internal runtime API ($message). Please report to Google or use " +
+            "https://goo.gle/compose-feedback"
+    )
+}

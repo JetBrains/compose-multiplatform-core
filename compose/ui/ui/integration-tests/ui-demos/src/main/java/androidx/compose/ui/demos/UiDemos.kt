@@ -20,6 +20,7 @@ import androidx.compose.foundation.demos.text.SoftwareKeyboardControllerDemo
 import androidx.compose.integration.demos.common.ComposableDemo
 import androidx.compose.integration.demos.common.DemoCategory
 import androidx.compose.ui.demos.autofill.ExplicitAutofillTypesDemo
+import androidx.compose.ui.demos.focus.CaptureFocusDemo
 import androidx.compose.ui.demos.focus.CustomFocusOrderDemo
 import androidx.compose.ui.demos.focus.FocusInDialogDemo
 import androidx.compose.ui.demos.focus.FocusInPopupDemo
@@ -47,7 +48,14 @@ import androidx.compose.ui.demos.gestures.RawDragGestureFilterDemo
 import androidx.compose.ui.demos.gestures.ScaleGestureFilterDemo
 import androidx.compose.ui.demos.gestures.ScrollGestureFilterDemo
 import androidx.compose.ui.demos.gestures.VerticalScrollerInDrawerDemo
+import androidx.compose.ui.demos.input.nestedscroll.BringIntoViewDemo
 import androidx.compose.ui.demos.keyinput.KeyInputDemo
+import androidx.compose.ui.demos.scroll.RequestRectangleOnScreenDemo
+import androidx.compose.ui.demos.viewinterop.AndroidInComposeDemos
+import androidx.compose.ui.demos.viewinterop.ComplexTouchInterop
+import androidx.compose.ui.demos.viewinterop.ComposeInAndroidDemos
+import androidx.compose.ui.demos.viewinterop.EditTextInteropDemo
+import androidx.compose.ui.demos.viewinterop.FocusTransferDemo
 import androidx.compose.ui.demos.viewinterop.ViewInteropDemo
 import androidx.compose.ui.samples.NestedScrollConnectionSample
 
@@ -111,7 +119,8 @@ private val FocusDemos = DemoCategory(
         ComposableDemo("Reuse Focus Requester") { ReuseFocusRequesterDemo() },
         ComposableDemo("Focus Search") { FocusSearchDemo() },
         ComposableDemo("Custom Focus Order") { CustomFocusOrderDemo() },
-        ComposableDemo("FocusManager.moveFocus()") { FocusManagerMoveFocusDemo() }
+        ComposableDemo("FocusManager.moveFocus()") { FocusManagerMoveFocusDemo() },
+        ComposableDemo("Capture/Free Focus") { CaptureFocusDemo() }
     )
 )
 
@@ -121,6 +130,26 @@ private val GraphicsDemos = DemoCategory(
         ComposableDemo("VectorGraphicsDemo") { VectorGraphicsDemo() },
         ComposableDemo("AnimatedVectorGraphicsDemo") { AnimatedVectorGraphicsDemo() },
         ComposableDemo("DeclarativeGraphicsDemo") { DeclarativeGraphicsDemo() }
+    )
+)
+
+private val RelocationDemos = DemoCategory(
+    "Relocation",
+    listOf(
+        ComposableDemo("Bring Into View") { BringIntoViewDemo() },
+        ComposableDemo("Request Rectangle On Screen") { RequestRectangleOnScreenDemo() }
+    )
+)
+
+private val ViewInteropDemos = DemoCategory(
+    "View Interop",
+    listOf(
+        ComposableDemo("Views interoperability") { ViewInteropDemo() },
+        ComposeInAndroidDemos,
+        AndroidInComposeDemos,
+        ComplexTouchInterop,
+        ComposableDemo("TextField Interop") { EditTextInteropDemo() },
+        ComposableDemo("Focus Transfer") { FocusTransferDemo() },
     )
 )
 
@@ -135,7 +164,8 @@ val CoreDemos = DemoCategory(
         ComposableDemo("Popup") { PopupDemo() },
         GraphicsDemos,
         GestureDemos,
-        ComposableDemo("Views interoperability") { ViewInteropDemo() },
-        ComposableDemo("Software Keyboard Controller") { SoftwareKeyboardControllerDemo() }
+        ViewInteropDemos,
+        ComposableDemo("Software Keyboard Controller") { SoftwareKeyboardControllerDemo() },
+        RelocationDemos
     )
 )

@@ -17,7 +17,6 @@
 package androidx.appcompat.widget;
 
 import static androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX;
-import static androidx.appcompat.widget.AppCompatReceiveContentHelper.createOnCommitContentListener;
 import static androidx.appcompat.widget.AppCompatReceiveContentHelper.maybeHandleDragEventViaPerformReceiveContent;
 import static androidx.appcompat.widget.AppCompatReceiveContentHelper.maybeHandleMenuActionViaPerformReceiveContent;
 
@@ -50,9 +49,9 @@ import androidx.core.view.TintableBackgroundView;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.inputmethod.EditorInfoCompat;
 import androidx.core.view.inputmethod.InputConnectionCompat;
-import androidx.core.view.inputmethod.InputConnectionCompat.OnCommitContentListener;
 import androidx.core.widget.TextViewCompat;
 import androidx.core.widget.TextViewOnReceiveContentListener;
+import androidx.resourceinspection.annotation.AppCompatShadowedAttributes;
 
 /**
  * A {@link EditText} which supports compatible features on older versions of the platform,
@@ -73,6 +72,7 @@ import androidx.core.widget.TextViewOnReceiveContentListener;
  * <a href="{@docRoot}topic/libraries/support-library/packages.html#v7-appcompat">appcompat</a>.
  * You should only need to manually use this class when writing custom views.</p>
  */
+@AppCompatShadowedAttributes
 public class AppCompatEditText extends EditText implements TintableBackgroundView,
         OnReceiveContentViewBehavior, EmojiCompatConfigurationView {
 
@@ -233,8 +233,7 @@ public class AppCompatEditText extends EditText implements TintableBackgroundVie
         String[] mimeTypes = ViewCompat.getOnReceiveContentMimeTypes(this);
         if (ic != null && mimeTypes != null) {
             EditorInfoCompat.setContentMimeTypes(outAttrs, mimeTypes);
-            OnCommitContentListener onCommitContentListener = createOnCommitContentListener(this);
-            ic = InputConnectionCompat.createWrapper(ic, outAttrs, onCommitContentListener);
+            ic = InputConnectionCompat.createWrapper(this, ic, outAttrs);
         }
         return mAppCompatEmojiEditTextHelper.onCreateInputConnection(ic, outAttrs);
     }
@@ -338,7 +337,7 @@ public class AppCompatEditText extends EditText implements TintableBackgroundVie
      * {@inheritDoc}
      */
     @Override
-    public void setKeyListener(@NonNull KeyListener keyListener) {
+    public void setKeyListener(@Nullable KeyListener keyListener) {
         super.setKeyListener(mAppCompatEmojiEditTextHelper.getKeyListener(keyListener));
     }
 

@@ -42,6 +42,7 @@ import android.util.DisplayMetrics;
 
 import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.Nullable;
+import androidx.car.app.hardware.CarHardwareManager;
 import androidx.car.app.navigation.NavigationManager;
 import androidx.car.app.testing.TestLifecycleOwner;
 import androidx.lifecycle.Lifecycle.Event;
@@ -69,6 +70,7 @@ public class CarContextTest {
     private static final String APP_SERVICE = "app";
     private static final String NAVIGATION_SERVICE = "navigation";
     private static final String SCREEN_SERVICE = "screen";
+    private static final String HARDWARE_SERVICE = "hardware";
 
     @Mock
     private ICarHost mMockCarHost;
@@ -144,6 +146,12 @@ public class CarContextTest {
     }
 
     @Test
+    public void getCarService_hardwareManager() {
+        assertThrows(IllegalStateException.class, () ->
+                mCarContext.getCarService(CarContext.HARDWARE_SERVICE));
+    }
+
+    @Test
     public void getCarService_unknown_throws() {
         assertThrows(IllegalArgumentException.class, () -> mCarContext.getCarService("foo"));
     }
@@ -170,6 +178,12 @@ public class CarContextTest {
     public void getCarServiceName_screenManager() {
         assertThat(mCarContext.getCarServiceName(ScreenManager.class)).isEqualTo(
                 SCREEN_SERVICE);
+    }
+
+    @Test
+    public void getCarServiceName_hardwareManager_throws() {
+        assertThat(mCarContext.getCarServiceName(CarHardwareManager.class)).isEqualTo(
+                HARDWARE_SERVICE);
     }
 
     @Test
@@ -414,10 +428,10 @@ public class CarContextTest {
         permissions.add("foo");
         permissions.add("bar");
 
-        OnRequestPermissionsCallback callback = mock(OnRequestPermissionsCallback.class);
+        OnRequestPermissionsListener listener = mock(OnRequestPermissionsListener.class);
 
         mLifecycleOwner.mRegistry.setCurrentState(State.CREATED);
-        mCarContext.requestPermissions(Runnable::run, permissions, callback);
+        mCarContext.requestPermissions(permissions, Runnable::run, listener);
 
         ShadowApplication sa = shadowOf((Application) ApplicationProvider.getApplicationContext());
         Intent startActivityIntent = sa.getNextStartedActivity();
@@ -433,11 +447,11 @@ public class CarContextTest {
                 permissions.toArray(new String[0]));
 
         IBinder binder =
-                extras.getBinder(CarContext.EXTRA_ON_REQUEST_PERMISSIONS_RESULT_CALLBACK_KEY);
+                extras.getBinder(CarContext.EXTRA_ON_REQUEST_PERMISSIONS_RESULT_LISTENER_KEY);
 
-        IOnRequestPermissionsCallback iCallback = IOnRequestPermissionsCallback.Stub.asInterface(
+        IOnRequestPermissionsListener iListener = IOnRequestPermissionsListener.Stub.asInterface(
                 binder);
-        iCallback.onRequestPermissionsResult(new String[]{"foo"}, new String[]{"bar"});
+        iListener.onRequestPermissionsResult(new String[]{"foo"}, new String[]{"bar"});
 
         List<String> approved = new ArrayList<>();
         approved.add("foo");
@@ -445,6 +459,6 @@ public class CarContextTest {
         List<String> rejected = new ArrayList<>();
         rejected.add("bar");
 
-        verify(callback).onRequestPermissionsResult(approved, rejected);
+        verify(listener).onRequestPermissionsResult(approved, rejected);
     }
 }

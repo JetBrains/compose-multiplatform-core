@@ -163,7 +163,7 @@ package androidx.fragment.app {
     field public static final android.os.Parcelable.Creator<androidx.fragment.app.Fragment.SavedState!> CREATOR;
   }
 
-  public class FragmentActivity extends androidx.activity.ComponentActivity implements androidx.core.app.ActivityCompat.OnRequestPermissionsResultCallback androidx.core.app.ActivityCompat.RequestPermissionsRequestCodeValidator {
+  public class FragmentActivity extends androidx.activity.ComponentActivity implements androidx.core.app.ActivityCompat.OnRequestPermissionsResultCallback androidx.lifecycle.LifecycleOwner {
     ctor public FragmentActivity();
     ctor @ContentView public FragmentActivity(@LayoutRes int);
     method public androidx.fragment.app.FragmentManager getSupportFragmentManager();
@@ -237,11 +237,11 @@ package androidx.fragment.app {
     method @Deprecated public void restoreAllState(android.os.Parcelable?, java.util.List<androidx.fragment.app.Fragment!>?);
     method @Deprecated public void restoreAllState(android.os.Parcelable?, androidx.fragment.app.FragmentManagerNonConfig?);
     method @Deprecated public void restoreLoaderNonConfig(androidx.collection.SimpleArrayMap<java.lang.String!,androidx.loader.app.LoaderManager!>!);
-    method public void restoreSaveState(android.os.Parcelable?);
+    method @Deprecated public void restoreSaveState(android.os.Parcelable?);
     method @Deprecated public androidx.collection.SimpleArrayMap<java.lang.String!,androidx.loader.app.LoaderManager!>? retainLoaderNonConfig();
     method @Deprecated public androidx.fragment.app.FragmentManagerNonConfig? retainNestedNonConfig();
     method @Deprecated public java.util.List<androidx.fragment.app.Fragment!>? retainNonConfig();
-    method public android.os.Parcelable? saveAllState();
+    method @Deprecated public android.os.Parcelable? saveAllState();
   }
 
   public class FragmentFactory {
@@ -458,17 +458,11 @@ package androidx.fragment.app {
 package androidx.fragment.app.strictmode {
 
   public final class FragmentReuseViolation extends androidx.fragment.app.strictmode.Violation {
-    ctor public FragmentReuseViolation();
+    method public String getPreviousFragmentId();
   }
 
   public final class FragmentStrictMode {
     method public static androidx.fragment.app.strictmode.FragmentStrictMode.Policy getDefaultPolicy();
-    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY) public static void onFragmentReuse(androidx.fragment.app.Fragment);
-    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY) public static void onFragmentTagUsage(androidx.fragment.app.Fragment);
-    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY) public static void onRetainInstanceUsage(androidx.fragment.app.Fragment);
-    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY) public static void onSetUserVisibleHint(androidx.fragment.app.Fragment);
-    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY) public static void onTargetFragmentUsage(androidx.fragment.app.Fragment);
-    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY) public static void onWrongFragmentContainer(androidx.fragment.app.Fragment);
     method public static void setDefaultPolicy(androidx.fragment.app.strictmode.FragmentStrictMode.Policy);
   }
 
@@ -482,6 +476,7 @@ package androidx.fragment.app.strictmode {
 
   public static final class FragmentStrictMode.Policy.Builder {
     ctor public FragmentStrictMode.Policy.Builder();
+    method public androidx.fragment.app.strictmode.FragmentStrictMode.Policy.Builder allowViolation(Class<? extends androidx.fragment.app.Fragment>, Class<? extends androidx.fragment.app.strictmode.Violation>);
     method public androidx.fragment.app.strictmode.FragmentStrictMode.Policy build();
     method public androidx.fragment.app.strictmode.FragmentStrictMode.Policy.Builder detectFragmentReuse();
     method public androidx.fragment.app.strictmode.FragmentStrictMode.Policy.Builder detectFragmentTagUsage();
@@ -495,27 +490,42 @@ package androidx.fragment.app.strictmode {
   }
 
   public final class FragmentTagUsageViolation extends androidx.fragment.app.strictmode.Violation {
-    ctor public FragmentTagUsageViolation();
+    method public android.view.ViewGroup? getParentContainer();
   }
 
-  public final class RetainInstanceUsageViolation extends androidx.fragment.app.strictmode.Violation {
-    ctor public RetainInstanceUsageViolation();
+  public final class GetRetainInstanceUsageViolation extends androidx.fragment.app.strictmode.RetainInstanceUsageViolation {
+  }
+
+  public final class GetTargetFragmentRequestCodeUsageViolation extends androidx.fragment.app.strictmode.TargetFragmentUsageViolation {
+  }
+
+  public final class GetTargetFragmentUsageViolation extends androidx.fragment.app.strictmode.TargetFragmentUsageViolation {
+  }
+
+  public abstract class RetainInstanceUsageViolation extends androidx.fragment.app.strictmode.Violation {
+  }
+
+  public final class SetRetainInstanceUsageViolation extends androidx.fragment.app.strictmode.RetainInstanceUsageViolation {
+  }
+
+  public final class SetTargetFragmentUsageViolation extends androidx.fragment.app.strictmode.TargetFragmentUsageViolation {
+    method public int getRequestCode();
+    method public androidx.fragment.app.Fragment getTargetFragment();
   }
 
   public final class SetUserVisibleHintViolation extends androidx.fragment.app.strictmode.Violation {
-    ctor public SetUserVisibleHintViolation();
+    method public boolean isVisibleToUser();
   }
 
-  public final class TargetFragmentUsageViolation extends androidx.fragment.app.strictmode.Violation {
-    ctor public TargetFragmentUsageViolation();
+  public abstract class TargetFragmentUsageViolation extends androidx.fragment.app.strictmode.Violation {
   }
 
   public abstract class Violation extends java.lang.RuntimeException {
-    ctor public Violation();
+    method public androidx.fragment.app.Fragment getFragment();
   }
 
   public final class WrongFragmentContainerViolation extends androidx.fragment.app.strictmode.Violation {
-    ctor public WrongFragmentContainerViolation();
+    method public android.view.ViewGroup getContainer();
   }
 
 }
