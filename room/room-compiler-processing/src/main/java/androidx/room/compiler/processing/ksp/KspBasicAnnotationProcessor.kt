@@ -20,10 +20,12 @@ import androidx.room.compiler.processing.XBasicAnnotationProcessor
 import androidx.room.compiler.processing.XElement
 import androidx.room.compiler.processing.XProcessingEnv
 import androidx.room.compiler.processing.XRoundEnv
+import com.google.devtools.ksp.isLocal
 import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.processing.SymbolProcessor
 import com.google.devtools.ksp.processing.SymbolProcessorEnvironment
 import com.google.devtools.ksp.symbol.KSAnnotated
+import com.google.devtools.ksp.symbol.KSDeclaration
 import com.google.devtools.ksp.validate
 
 /**
@@ -44,16 +46,40 @@ abstract class KspBasicAnnotationProcessor(
         val round = XRoundEnv.create(processingEnv)
         val deferredElements = processingSteps().flatMap { step ->
             val invalidElements = mutableSetOf<XElement>()
-            val elementsByAnnotation = step.annotations().associateWith { annotation ->
+            val elementsByAnnotation = step.annotations().mapNotNull { annotation ->
                 val annotatedElements = round.getElementsAnnotatedWith(annotation)
-                annotatedElements
-                    .filter { (it as KspElement).declaration.validate() }
-                    .also { invalidElements.addAll(annotatedElements - it) }
+                val validElements = annotatedElements
+                    .filter { (it as KspElement).declaration.validateExceptLocals() }
                     .toSet()
+                invalidElements.addAll(annotatedElements - validElements)
+                if (validElements.isNotEmpty()) {
+                    annotation to validElements
+                } else {
+                    null
+                }
+            }.toMap()
+            // Only process the step if there are annotated elements found for this step.
+            if (elementsByAnnotation.isNotEmpty()) {
+                invalidElements + step.process(processingEnv, elementsByAnnotation)
+            } else {
+                invalidElements
             }
-            invalidElements + step.process(processingEnv, elementsByAnnotation)
         }
         postRound(processingEnv, round)
         return deferredElements.map { (it as KspElement).declaration }
+    }
+}
+
+/**
+ * TODO remove this once we update to KSP beta03
+ * https://github.com/google/ksp/pull/479
+ */
+private fun KSAnnotated.validateExceptLocals(): Boolean {
+    return this.validate { parent, current ->
+        // skip locals
+        // https://github.com/google/ksp/issues/489
+        val skip = (parent as? KSDeclaration)?.isLocal() == true ||
+            (current as? KSDeclaration)?.isLocal() == true
+        !skip
     }
 }

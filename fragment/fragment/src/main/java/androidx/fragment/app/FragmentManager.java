@@ -732,10 +732,14 @@ public abstract class FragmentManager implements FragmentResultOwner {
      * @param flags Either 0 or {@link #POP_BACK_STACK_INCLUSIVE}.
      */
     public void popBackStack(final int id, final int flags) {
+        popBackStack(id, flags, false);
+    }
+
+    void popBackStack(final int id, final int flags, boolean allowStateLoss) {
         if (id < 0) {
             throw new IllegalArgumentException("Bad id: " + id);
         }
-        enqueueAction(new PopBackStackState(null, id, flags), false);
+        enqueueAction(new PopBackStackState(null, id, flags), allowStateLoss);
     }
 
     /**
@@ -1994,12 +1998,23 @@ public abstract class FragmentManager implements FragmentResultOwner {
 
     boolean restoreBackStackState(@NonNull ArrayList<BackStackRecord> records,
             @NonNull ArrayList<Boolean> isRecordPop, @NonNull String name) {
-        BackStackState backStackState = mBackStackStates.get(name);
+        BackStackState backStackState = mBackStackStates.remove(name);
         if (backStackState == null) {
             return false;
         }
 
-        List<BackStackRecord> backStackRecords = backStackState.instantiate(this);
+        HashMap<String, Fragment> pendingSavedFragments = new HashMap<>();
+        for (BackStackRecord record : records) {
+            if (record.mBeingSaved) {
+                for (FragmentTransaction.Op op : record.mOps) {
+                    if (op.mFragment != null) {
+                        pendingSavedFragments.put(op.mFragment.mWho, op.mFragment);
+                    }
+                }
+            }
+        }
+        List<BackStackRecord> backStackRecords = backStackState.instantiate(this,
+                pendingSavedFragments);
         boolean added = false;
         for (BackStackRecord record : backStackRecords) {
             added = record.generateOps(records, isRecordPop) || added;

@@ -21,7 +21,6 @@ import androidx.room.Dao;
 import androidx.room.Insert;
 import androidx.room.Query;
 import androidx.room.RawQuery;
-import androidx.room.RoomWarnings;
 import androidx.room.Transaction;
 import androidx.room.integration.testapp.vo.Album;
 import androidx.room.integration.testapp.vo.AlbumNameAndBandName;
@@ -36,14 +35,17 @@ import androidx.room.integration.testapp.vo.ReleasedAlbum;
 import androidx.room.integration.testapp.vo.Song;
 import androidx.sqlite.db.SupportSQLiteQuery;
 
+import com.google.common.collect.ImmutableListMultimap;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSetMultimap;
+
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import io.reactivex.Flowable;
 
 @Dao
-@SuppressWarnings(RoomWarnings.CURSOR_MISMATCH)
-// TODO: (b/191693863) Cannot use @RewriteQueriesToDropUnusedColumns due to this bug.
 public interface MusicDao {
 
     @Insert
@@ -77,25 +79,104 @@ public interface MusicDao {
     @Query("SELECT * FROM Playlist")
     List<MultiSongPlaylistWithSongs> getAllMultiSongPlaylistWithSongs();
 
+    /* Map of Object to Object */
     @Query("SELECT * FROM Artist JOIN Song ON Artist.mArtistName = Song.mArtist")
-    Map<Artist, List<Song>> getAllArtistAndTheirSongs();
+    Map<Artist, Song> getArtistAndFirstSongMap();
 
+    @Query("SELECT * FROM Song JOIN Artist ON Song.mArtist = Artist.mArtistName")
+    Map<Song, Artist> getSongAndArtist();
+
+    @Transaction
     @Query("SELECT * FROM Artist JOIN Album ON Artist.mArtistName = Album.mAlbumArtist")
-    Map<Artist, List<AlbumWithSongs>> getAllArtistAndTheirAlbumsWithSongs();
+    Map<Artist, AlbumWithSongs> getAllArtistAndTheirAlbumsWithSongs();
 
     @RawQuery
-    Map<Artist, List<Song>> getAllArtistAndTheirSongsRawQuery(SupportSQLiteQuery query);
+    Map<Artist, Song> getAllArtistAndTheirSongsRawQuery(SupportSQLiteQuery query);
 
     @Query("SELECT * FROM Artist JOIN Song ON Artist.mArtistName = Song.mArtist")
-    LiveData<Map<Artist, List<Song>>> getAllArtistAndTheirSongsAsLiveData();
+    LiveData<Map<Artist, Song>> getAllArtistAndTheirSongsAsLiveData();
+
+    /* Map of Object to List */
+    @Query("SELECT * FROM Artist JOIN Song ON Artist.mArtistName = Song.mArtist")
+    Map<Artist, List<Song>> getAllArtistAndTheirSongsList();
+
+    @Transaction
+    @Query("SELECT * FROM Artist JOIN Album ON Artist.mArtistName = Album.mAlbumArtist")
+    Map<Artist, List<AlbumWithSongs>> getAllArtistAndTheirAlbumsWithSongsList();
+
+    @RawQuery
+    Map<Artist, List<Song>> getAllArtistAndTheirSongsRawQueryList(SupportSQLiteQuery query);
 
     @Query("SELECT * FROM Artist JOIN Song ON Artist.mArtistName = Song.mArtist")
-    Flowable<Map<Artist, List<Song>>> getAllArtistAndTheirSongsAsFlowable();
+    LiveData<Map<Artist, List<Song>>> getAllArtistAndTheirSongsAsLiveDataList();
+
+    @Query("SELECT * FROM Artist JOIN Song ON Artist.mArtistName = Song.mArtist")
+    Flowable<Map<Artist, List<Song>>> getAllArtistAndTheirSongsAsFlowableList();
 
     @Query("SELECT Album.mAlbumReleaseYear as mReleaseYear, Album.mAlbumName, Album.mAlbumArtist "
             + "as mBandName"
             + " from Album "
             + "JOIN Song "
             + "ON Album.mAlbumArtist = Song.mArtist AND Album.mAlbumName = Song.mAlbum")
-    Map<ReleasedAlbum, List<AlbumNameAndBandName>> getReleaseYearToAlbumsAndBands();
+    Map<ReleasedAlbum, List<AlbumNameAndBandName>> getReleaseYearToAlbumsAndBandsList();
+
+    /* Map of Object to Set */
+    @Query("SELECT * FROM Artist JOIN Song ON Artist.mArtistName = Song.mArtist")
+    Map<Artist, Set<Song>> getAllArtistAndTheirSongsSet();
+
+    @RawQuery
+    Map<Artist, Set<Song>> getAllArtistAndTheirSongsRawQuerySet(SupportSQLiteQuery query);
+
+    @Query("SELECT * FROM Artist JOIN Song ON Artist.mArtistName = Song.mArtist")
+    LiveData<Map<Artist, Set<Song>>> getAllArtistAndTheirSongsAsLiveDataSet();
+
+    @Query("SELECT * FROM Artist JOIN Song ON Artist.mArtistName = Song.mArtist")
+    Flowable<Map<Artist, Set<Song>>> getAllArtistAndTheirSongsAsFlowableSet();
+
+    /* Guava ImmutableMap */
+    @Query("SELECT * FROM Artist JOIN Song ON Artist.mArtistName = Song.mArtist")
+    ImmutableMap<Artist, List<Song>> getAllArtistAndTheirSongsImmutableMap();
+
+    @RawQuery
+    ImmutableMap<Artist, List<Song>> getAllArtistAndTheirSongsRawQueryImmutableMap(
+            SupportSQLiteQuery query
+    );
+
+    @Query("SELECT * FROM Artist JOIN Song ON Artist.mArtistName = Song.mArtist")
+    LiveData<ImmutableMap<Artist, Set<Song>>> getAllArtistAndTheirSongsAsLiveDataImmutableMap();
+
+    /* Guava Multimap */
+    @Query("SELECT * FROM Artist JOIN Song ON Artist.mArtistName = Song.mArtist")
+    ImmutableSetMultimap<Artist, Song> getAllArtistAndTheirSongsGuavaImmutableSetMultimap();
+
+    @Query("SELECT * FROM Artist JOIN Song ON Artist.mArtistName = Song.mArtist")
+    ImmutableListMultimap<Artist, Song> getAllArtistAndTheirSongsGuavaImmutableListMultimap();
+
+    @Transaction
+    @Query("SELECT * FROM Artist JOIN Album ON Artist.mArtistName = Album.mAlbumArtist")
+    ImmutableSetMultimap<Artist, AlbumWithSongs>
+            getAllArtistAndTheirAlbumsWithSongsGuavaImmutableSetMultimap();
+
+    @Transaction
+    @Query("SELECT * FROM Artist JOIN Album ON Artist.mArtistName = Album.mAlbumArtist")
+    ImmutableListMultimap<Artist, AlbumWithSongs>
+            getAllArtistAndTheirAlbumsWithSongsGuavaImmutableListMultimap();
+
+    @RawQuery
+    ImmutableSetMultimap<Artist, Song> getAllArtistAndTheirSongsRawQueryGuavaImmutableSetMultimap(
+            SupportSQLiteQuery query
+    );
+
+    @RawQuery
+    ImmutableListMultimap<Artist, Song> getAllArtistAndTheirSongsRawQueryGuavaImmutableListMultimap(
+            SupportSQLiteQuery query
+    );
+
+    @Query("SELECT * FROM Artist JOIN Song ON Artist.mArtistName = Song.mArtist")
+    LiveData<ImmutableSetMultimap<Artist, Song>>
+            getAllArtistAndTheirSongsAsLiveDataGuavaImmutableSetMultimap();
+
+    @Query("SELECT * FROM Artist JOIN Song ON Artist.mArtistName = Song.mArtist")
+    LiveData<ImmutableListMultimap<Artist, Song>>
+            getAllArtistAndTheirSongsAsLiveDataGuavaImmutableListMultimap();
 }

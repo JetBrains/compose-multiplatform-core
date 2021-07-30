@@ -28,7 +28,6 @@ import androidx.annotation.UiThread
 import androidx.annotation.VisibleForTesting
 import androidx.annotation.WorkerThread
 import androidx.wear.complications.ComplicationSlotBounds
-import androidx.wear.complications.ComplicationHelperActivity
 import androidx.wear.complications.data.ComplicationData
 import androidx.wear.complications.data.ComplicationType
 import androidx.wear.complications.data.EmptyComplicationData
@@ -91,6 +90,9 @@ public class ComplicationSlotsManager(
     /** A map of complication IDs to complicationSlots. */
     public val complicationSlots: Map<Int, ComplicationSlot> =
         complicationSlotCollection.associateBy(ComplicationSlot::id)
+
+    /** The set of slot ids that are rendered as pressed. */
+    public val pressedSlotIds: Set<Int> = HashSet()
 
     private class InitialComplicationConfig(
         val complicationSlotBounds: ComplicationSlotBounds,
@@ -219,22 +221,22 @@ public class ComplicationSlotsManager(
                     labelsDirty || complication.dataDirty || complication.complicationBoundsDirty ||
                     complication.accessibilityTraversalIndexDirty
 
-                if (complication.defaultProviderPolicyDirty ||
-                    complication.defaultProviderTypeDirty
+                if (complication.defaultDataSourcePolicyDirty ||
+                    complication.defaultDataSourceTypeDirty
                 ) {
-                    watchFaceHostApi.setDefaultComplicationProviderWithFallbacks(
+                    watchFaceHostApi.setDefaultComplicationDataSourceWithFallbacks(
                         complication.id,
-                        complication.defaultProviderPolicy.providersAsList(),
-                        complication.defaultProviderPolicy.systemProviderFallback,
-                        complication.defaultProviderType.toWireComplicationType()
+                        complication.defaultDataSourcePolicy.dataSourcesAsList(),
+                        complication.defaultDataSourcePolicy.systemDataSourceFallback,
+                        complication.defaultDataSourceType.toWireComplicationType()
                     )
                 }
 
                 complication.dataDirty = false
                 complication.complicationBoundsDirty = false
                 complication.supportedTypesDirty = false
-                complication.defaultProviderPolicyDirty = false
-                complication.defaultProviderTypeDirty = false
+                complication.defaultDataSourcePolicyDirty = false
+                complication.defaultDataSourceTypeDirty = false
             }
 
             complication.enabledDirty = false
@@ -284,17 +286,17 @@ public class ComplicationSlotsManager(
      */
     @UiThread
     public fun displayPressedAnimation(complicationSlotId: Int) {
-        val complication = requireNotNull(complicationSlots[complicationSlotId]) {
+        requireNotNull(complicationSlots[complicationSlotId]) {
             "No complication found with ID $complicationSlotId"
         }
-        complication.setIsHighlighted(true)
+        (pressedSlotIds as HashSet<Int>).add(complicationSlotId)
 
         val weakRef = WeakReference(this)
         watchFaceHostApi.getUiThreadHandler().postDelayed(
             {
                 // The watch face might go away before this can run.
                 if (weakRef.get() != null) {
-                    complication.setIsHighlighted(false)
+                    pressedSlotIds.remove(complicationSlotId)
                 }
             },
             WatchFaceImpl.CANCEL_COMPLICATION_HIGHLIGHTED_DELAY_MS
@@ -380,6 +382,7 @@ public class ComplicationSlotsManager(
     @UiThread
     internal fun dump(writer: IndentingPrintWriter) {
         writer.println("ComplicationSlotsManager:")
+        writer.println("renderer.pressedSlotIds=${pressedSlotIds.joinToString()}")
         writer.increaseIndent()
         for ((_, complication) in complicationSlots) {
             complication.dump(writer)
@@ -397,9 +400,9 @@ public class ComplicationSlotsManager(
         complicationSlots.map {
             IdTypeAndDefaultProviderPolicyWireFormat(
                 it.key,
-                it.value.defaultProviderPolicy.providersAsList(),
-                it.value.defaultProviderPolicy.systemProviderFallback,
-                it.value.defaultProviderType.toWireComplicationType()
+                it.value.defaultDataSourcePolicy.dataSourcesAsList(),
+                it.value.defaultDataSourcePolicy.systemDataSourceFallback,
+                it.value.defaultDataSourceType.toWireComplicationType()
             )
         }.toTypedArray()
 }

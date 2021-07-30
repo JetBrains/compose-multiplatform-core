@@ -67,6 +67,10 @@ object ProcessorErrors {
     val AUTO_INCREMENT_EMBEDDED_HAS_MULTIPLE_FIELDS = "When @PrimaryKey annotation is used on a" +
         " field annotated with @Embedded, the embedded class should have only 1 field."
 
+    val DO_NOT_USE_GENERIC_IMMUTABLE_MULTIMAP = "Do not use ImmutableMultimap as a type (as with" +
+        " Multimap itself). Instead use the subtypes such as ImmutableSetMultimap or " +
+        "ImmutableListMultimap."
+
     fun multiplePrimaryKeyAnnotations(primaryKeys: List<String>): String {
         return """
                 You cannot have multiple primary keys defined in an Entity. If you
@@ -127,6 +131,10 @@ object ProcessorErrors {
 
     fun cannotFindQueryResultAdapter(returnTypeName: TypeName) = "Not sure how to convert a " +
         "Cursor to this method's return type ($returnTypeName)."
+
+    fun classMustImplementEqualsAndHashCode(mapType: TypeName, keyType: TypeName) = "The key" +
+        " of the provided method's multimap return type ($mapType) must implement equals() and " +
+        "hashCode(). Key type is: $keyType."
 
     val INSERTION_DOES_NOT_HAVE_ANY_PARAMETERS_TO_INSERT = "Method annotated with" +
         " @Insert but does not have any parameters to insert."
@@ -250,16 +258,20 @@ object ProcessorErrors {
     }
 
     fun cursorPojoMismatch(
-        pojoTypeName: TypeName,
+        pojoTypeNames: List<TypeName>,
         unusedColumns: List<String>,
         allColumns: List<String>,
-        unusedFields: List<Field>,
-        allFields: List<Field>
+        pojoUnusedFields: Map<TypeName, List<Field>>,
     ): String {
         val unusedColumnsWarning = if (unusedColumns.isNotEmpty()) {
+            val pojoNames = if (pojoTypeNames.size > 1) {
+                "any of [${pojoTypeNames.joinToString(", ")}]"
+            } else {
+                pojoTypeNames.single().toString()
+            }
             """
                 The query returns some columns [${unusedColumns.joinToString(", ")}] which are not
-                used by $pojoTypeName. You can use @ColumnInfo annotation on the fields to specify
+                used by $pojoNames. You can use @ColumnInfo annotation on the fields to specify
                 the mapping.
                 You can annotate the method with @RewriteQueriesToDropUnusedColumns to direct Room
                 to rewrite your query to avoid fetching unused columns.
@@ -267,24 +279,20 @@ object ProcessorErrors {
         } else {
             ""
         }
-        val unusedFieldsWarning = if (unusedFields.isNotEmpty()) {
+        val unusedFieldsWarning = pojoUnusedFields.map { (pojoName, unusedFields) ->
             """
-                $pojoTypeName has some fields
-                [${unusedFields.joinToString(", ") { it.columnName }}] which are not returned by the
-                query. If they are not supposed to be read from the result, you can mark them with
-                @Ignore annotation.
+                $pojoName has some fields
+                [${unusedFields.joinToString(", ") { it.columnName }}] which are not returned by
+                the query. If they are not supposed to be read from the result, you can mark them
+                with @Ignore annotation.
             """.trim()
-        } else {
-            ""
         }
-
         return """
             $unusedColumnsWarning
-            $unusedFieldsWarning
+            ${unusedFieldsWarning.joinToString(separator = " ")}
             You can suppress this warning by annotating the method with
             @SuppressWarnings(RoomWarnings.CURSOR_MISMATCH).
             Columns returned by the query: ${allColumns.joinToString(", ")}.
-            Fields in $pojoTypeName: ${allFields.joinToString(", ") { it.columnName }}.
             """.trim()
     }
 
@@ -610,6 +618,9 @@ object ProcessorErrors {
 
     val PAGING_SPECIFY_PAGING_SOURCE_TYPE = "For now, Room only supports PagingSource with Key of" +
         " type Int."
+
+    val PAGING_SPECIFY_PAGING_SOURCE_VALUE_TYPE = "For now, Room only supports PagingSource with" +
+        " Value that is not of Collection type."
 
     fun primaryKeyNull(field: String): String {
         return "You must annotate primary keys with @NonNull. \"$field\" is nullable. SQLite " +

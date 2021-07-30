@@ -19,6 +19,9 @@ package androidx.compose.ui.layout
 import androidx.compose.runtime.collection.MutableVector
 import androidx.compose.runtime.collection.mutableVectorOf
 import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.toRect
+import androidx.compose.ui.unit.toSize
 
 /**
  * This class can be used to send relocation requests. Pass it as a parameter to
@@ -28,7 +31,11 @@ import androidx.compose.ui.ExperimentalComposeUiApi
  * make all the scrollable parents scroll so that the specified item is brought into parent
  * bounds. This sample demonstrates this use case:
  *
+ * Here is a sample where a composable is brought into view:
  * @sample androidx.compose.ui.samples.BringIntoViewSample
+ *
+ * Here is a sample where a part of a composable is brought into view:
+ * @sample androidx.compose.ui.samples.BringPartOfComposableIntoViewSample
  */
 @ExperimentalComposeUiApi
 class RelocationRequester {
@@ -36,8 +43,21 @@ class RelocationRequester {
 
     /**
      * Bring this item into bounds by making all the scrollable parents scroll appropriately.
+     *
+     * @param rect The rectangle (In local coordinates) that should be brought into view. If you
+     * don't specify the coordinates, the coordinates of the
+     * [Modifier.relocationRequester()][relocationRequester] associated with this
+     * [RelocationRequester] will be used.
+     *
+     * Here is a sample where a composable is brought into view:
+     * @sample androidx.compose.ui.samples.BringIntoViewSample
+     *
+     * Here is a sample where a part of a composable is brought into view:
+     * @sample androidx.compose.ui.samples.BringPartOfComposableIntoViewSample
      */
-    fun bringIntoView() {
-        modifiers.forEach { it.bringIntoView() }
+    suspend fun bringIntoView(rect: Rect? = null) {
+        modifiers.forEach {
+            it.bringRectIntoView(rect ?: it.relocationRequesterNode.size.toSize().toRect())
+        }
     }
 }

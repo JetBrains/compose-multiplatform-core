@@ -26,13 +26,6 @@ import static android.os.Build.VERSION_CODES.Q;
 import static android.os.Build.VERSION_CODES.R;
 import static android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS;
 
-import static androidx.core.content.IntentCompat.APP_HIBERNATION_DISABLED;
-import static androidx.core.content.IntentCompat.APP_HIBERNATION_ENABLED;
-import static androidx.core.content.IntentCompat.PERMISSION_REVOCATION_DISABLED;
-import static androidx.core.content.IntentCompat.PERMISSION_REVOCATION_ENABLED;
-import static androidx.core.content.IntentCompat.UNUSED_APP_RESTRICTION_FEATURE_NOT_AVAILABLE;
-import static androidx.core.content.IntentCompat.UNUSED_APP_RESTRICTION_STATUS_UNKNOWN;
-
 import static com.google.common.truth.Truth.assertThat;
 
 import static org.junit.Assert.assertThrows;
@@ -50,7 +43,9 @@ import android.content.pm.PackageManager;
 import android.content.pm.ProviderInfo;
 import android.content.pm.ResolveInfo;
 import android.net.Uri;
+import android.os.Build;
 
+import androidx.annotation.RequiresApi;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.SdkSuppress;
@@ -201,105 +196,11 @@ public class IntentCompatTest {
                         mContext, PACKAGE_NAME));
     }
 
-    @Test
-    @SdkSuppress(minSdkVersion = 31)
-    public void getUnusedAppRestrictionsStatus_api31Plus_disabled_returnsAppHibernationDisabled() {
-        // Mark the application as exempt from app hibernation, so the feature is disabled
-        when(mPackageManager.isAutoRevokeWhitelisted()).thenReturn(true);
-
-        assertThat(IntentCompat.getUnusedAppRestrictionsStatus(mContext)).isEqualTo(
-                APP_HIBERNATION_DISABLED);
-    }
-
-    @Test
-    @SdkSuppress(minSdkVersion = 31)
-    public void getUnusedAppRestrictionsStatus_api31Plus_enabled_returnsAppHibernationEnabled() {
-        // Mark the application as _not_ exempt from app hibernation, so the feature is enabled
-        when(mPackageManager.isAutoRevokeWhitelisted()).thenReturn(false);
-
-        assertThat(IntentCompat.getUnusedAppRestrictionsStatus(mContext)).isEqualTo(
-                APP_HIBERNATION_ENABLED);
-    }
-
-    @Test
-    @SdkSuppress(minSdkVersion = R, maxSdkVersion = R)
-    public void getUnusedAppRestrictionsStatus_api30_disabled_returnsPermRevocationDisabled() {
-        // Mark the application as exempt from permission revocation, so the feature is disabled
-        when(mPackageManager.isAutoRevokeWhitelisted()).thenReturn(true);
-
-        assertThat(IntentCompat.getUnusedAppRestrictionsStatus(mContext)).isEqualTo(
-                PERMISSION_REVOCATION_DISABLED);
-    }
-
-    @Test
-    @SdkSuppress(minSdkVersion = R)
-    public void getUnusedAppRestrictionsStatus_api30Plus_enabled_returnsPermRevocationEnabled() {
-        // Mark the application as _not_ exempt from permission revocation, so the feature is
-        // enabled
-        when(mPackageManager.isAutoRevokeWhitelisted()).thenReturn(false);
-
-        assertThat(IntentCompat.getUnusedAppRestrictionsStatus(mContext)).isEqualTo(
-                PERMISSION_REVOCATION_ENABLED);
-    }
-
-    @Test
-    @SdkSuppress(minSdkVersion = M, maxSdkVersion = Q)
-    public void getUnusedAppRestrictionsStatus_preApi30_noRevocationApp_returnsNotAvailable() {
-        // Don't install an app that can resolve the permission auto-revocation intent
-
-        assertThat(IntentCompat.getUnusedAppRestrictionsStatus(mContext)).isEqualTo(
-                UNUSED_APP_RESTRICTION_FEATURE_NOT_AVAILABLE);
-    }
-
-    @Test
-    @SdkSuppress(minSdkVersion = M, maxSdkVersion = Q)
-    public void getUnusedAppRestrictionsStatus_preApi30_noVerifierRevokeApp_returnsNotAvailable() {
-        setupPermissionRevocationApps(Arrays.asList(NON_VERIFIER_PACKAGE_NAME));
-        // Do not set this app as the Verifier on the device
-        when(mPackageManager.checkPermission("android.permission.PACKAGE_VERIFICATION_AGENT",
-                NON_VERIFIER_PACKAGE_NAME)).thenReturn(PERMISSION_DENIED);
-
-        assertThat(IntentCompat.getUnusedAppRestrictionsStatus(mContext)).isEqualTo(
-                UNUSED_APP_RESTRICTION_FEATURE_NOT_AVAILABLE);
-    }
-
-    @Test
-    @SdkSuppress(minSdkVersion = M, maxSdkVersion = Q)
-    public void getUnusedAppRestrictionsStatus_preApi30_verifierRevocationApp_returnsUnknown() {
-        setupPermissionRevocationApps(Arrays.asList(VERIFIER_PACKAGE_NAME));
-        // Set this app as the Verifier on the device
-        when(mPackageManager.checkPermission("android.permission.PACKAGE_VERIFICATION_AGENT",
-                VERIFIER_PACKAGE_NAME)).thenReturn(PERMISSION_GRANTED);
-
-        assertThat(IntentCompat.getUnusedAppRestrictionsStatus(mContext)).isEqualTo(
-                UNUSED_APP_RESTRICTION_STATUS_UNKNOWN);
-    }
-
-    @Test
-    @SdkSuppress(minSdkVersion = M, maxSdkVersion = Q)
-    public void getUnusedAppRestrictionsStatus_preApi30_manyVerifierRevocationApps_doesNotThrow() {
-        setupPermissionRevocationApps(Arrays.asList(VERIFIER_PACKAGE_NAME, VERIFIER_PACKAGE_NAME2));
-        // Set both apps as the Verifier on the device, but we should have a graceful failure.
-        when(mPackageManager.checkPermission("android.permission.PACKAGE_VERIFICATION_AGENT",
-                VERIFIER_PACKAGE_NAME)).thenReturn(PERMISSION_GRANTED);
-        when(mPackageManager.checkPermission("android.permission.PACKAGE_VERIFICATION_AGENT",
-                VERIFIER_PACKAGE_NAME2)).thenReturn(PERMISSION_GRANTED);
-
-        assertThat(IntentCompat.getUnusedAppRestrictionsStatus(mContext)).isEqualTo(
-                UNUSED_APP_RESTRICTION_STATUS_UNKNOWN);
-    }
-
-    @Test
-    @SdkSuppress(maxSdkVersion = LOLLIPOP)
-    public void getUnusedAppRestrictionsStatus_preApi23_returnsFeatureNotAvailable() {
-        assertThat(IntentCompat.getUnusedAppRestrictionsStatus(mContext)).isEqualTo(
-                UNUSED_APP_RESTRICTION_FEATURE_NOT_AVAILABLE);
-    }
-
     /**
      * Setup applications that can handle unused app restriction features. In this case,
      * they are permission revocation apps.
      */
+    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     private void setupPermissionRevocationApps(List<String> packageNames) {
         List<ResolveInfo> resolveInfos = new ArrayList<>();
 

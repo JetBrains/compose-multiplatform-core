@@ -16,13 +16,13 @@
 
 package androidx.compose.ui.window
 
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.desktop.AppManager
 import androidx.compose.desktop.AppWindow
 import androidx.compose.desktop.ComposePanel
 import androidx.compose.runtime.Applier
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Composition
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MonotonicFrameClock
 import androidx.compose.runtime.Recomposer
@@ -30,17 +30,19 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
+import androidx.compose.ui.configureSwingGlobalsForCompose
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.platform.GlobalSnapshotManager
+import androidx.compose.ui.platform.LocalDensity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.swing.Swing
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.yield
 import java.awt.Window
-import javax.swing.SwingUtilities
 
 // TODO(demin): remove ExperimentalComposeUiApi once we implement Dialog/Menu/Tray/Notifier, deprecate
 //  AppWindow/AppWindowManager
@@ -76,8 +78,8 @@ import javax.swing.SwingUtilities
 fun application(
     content: @Composable ApplicationScope.() -> Unit
 ) {
-    check(!SwingUtilities.isEventDispatchThread()) {
-        "application can't run inside UI thread (Event Dispatch Thread)"
+    if (System.getProperty("compose.application.configure.swing.globals") == "true") {
+        configureSwingGlobalsForCompose()
     }
 
     runBlocking {
@@ -110,8 +112,13 @@ fun application(
 @ExperimentalComposeUiApi
 fun CoroutineScope.launchApplication(
     content: @Composable ApplicationScope.() -> Unit
-) = launch {
-    awaitApplication(content = content)
+): Job {
+    if (System.getProperty("compose.application.configure.swing.globals") == "true") {
+        configureSwingGlobalsForCompose()
+    }
+    return launch {
+        awaitApplication(content = content)
+    }
 }
 
 /**
@@ -144,7 +151,7 @@ fun CoroutineScope.launchApplication(
  * [LaunchedEffect]) or that have child composition created inside [Window], [Dialog], or [Tray].
  *
  * Don't use any animation in this function
- * (for example, [withFrameNanos] or [animateFloatAsState]),
+ * (for example, [withFrameNanos] or [androidx.compose.animation.core.animateFloatAsState]),
  * because underlying [MonotonicFrameClock] hasn't synchronized with any display, and produces
  * frames as fast as possible.
  *
@@ -155,38 +162,49 @@ fun CoroutineScope.launchApplication(
  */
 suspend fun awaitApplication(
     content: @Composable ApplicationScope.() -> Unit
-): Unit = withContext(Dispatchers.Swing) {
-    withContext(YieldFrameClock) {
-        GlobalSnapshotManager.ensureStarted()
+) {
+    if (System.getProperty("compose.application.configure.swing.globals") == "true") {
+        configureSwingGlobalsForCompose()
+    }
+    withContext(Dispatchers.Swing) {
+        withContext(YieldFrameClock) {
+            GlobalSnapshotManager.ensureStarted()
 
-        val recomposer = Recomposer(coroutineContext)
-        var isOpen by mutableStateOf(true)
+            val recomposer = Recomposer(coroutineContext)
+            var isOpen by mutableStateOf(true)
 
-        val applicationScope = object : ApplicationScope {
-            override val ownerWindow: Window? get() = null
+            val applicationScope = object : ApplicationScope {
+                override val ownerWindow: Window? get() = null
 
-            override fun exitApplication() {
-                isOpen = false
-            }
-        }
-
-        launch {
-            recomposer.runRecomposeAndApplyChanges()
-        }
-
-        launch {
-            val applier = ApplicationApplier()
-            val composition = Composition(applier, recomposer)
-            try {
-                composition.setContent {
-                    if (isOpen) {
-                        applicationScope.content()
-                    }
+                override fun exitApplication() {
+                    isOpen = false
                 }
-                recomposer.close()
-                recomposer.join()
-            } finally {
-                composition.dispose()
+            }
+
+            launch {
+                recomposer.runRecomposeAndApplyChanges()
+            }
+
+            launch {
+                val applier = ApplicationApplier()
+                val composition = Composition(applier, recomposer)
+                try {
+                    composition.setContent {
+                        if (isOpen) {
+                            CompositionLocalProvider(
+                                // Resources which are defined at the application level can use
+                                // density to calculate intrinsicSize
+                                LocalDensity provides GlobalDensity
+                            ) {
+                                applicationScope.content()
+                            }
+                        }
+                    }
+                    recomposer.close()
+                    recomposer.join()
+                } finally {
+                    composition.dispose()
+                }
             }
         }
     }

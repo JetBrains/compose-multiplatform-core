@@ -16,9 +16,11 @@
 
 package androidx.build.uptodatedness
 
+import androidx.build.VERIFY_UP_TO_DATE
 import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.api.Task
+import org.gradle.api.provider.Provider
 import org.gradle.api.services.BuildService
 import org.gradle.api.services.BuildServiceParameters
 import org.gradle.build.event.BuildEventsListenerRegistry
@@ -36,13 +38,14 @@ import org.gradle.tooling.events.task.TaskExecutionResult
 
 const val DISALLOW_TASK_EXECUTION_FLAG_NAME = "disallowExecution"
 
+private const val ENABLE_FLAG_NAME = VERIFY_UP_TO_DATE
+
 // Temporary set of exempt tasks that are known to still be out-of-date after running once
 // Entries in this set may be task names (like assembleRelease) or task paths
 // (like :core:core:assembleRelease)
 // Entries in this set do still get rerun because they might produce files that are needed by
 // subsequent tasks
 val ALLOW_RERUNNING_TASKS = setOf(
-    "analyticsRecordingRelease",
     "buildOnServer",
     "checkExternalLicenses",
     "createArchive",
@@ -58,6 +61,7 @@ val ALLOW_RERUNNING_TASKS = setOf(
     "generateMetadataFileForDesktopPublication",
     "generateMetadataFileForJvmPublication",
     "generateMetadataFileForJvmlinux-x64Publication",
+    "generateMetadataFileForJvmlinux-arm64Publication",
     "generateMetadataFileForJvmmacos-x64Publication",
     "generateMetadataFileForJvmmacos-arm64Publication",
     "generateMetadataFileForJvmwindows-x64Publication",
@@ -71,6 +75,7 @@ val ALLOW_RERUNNING_TASKS = setOf(
     "generatePomFileForAndroidReleasePublication",
     "generatePomFileForDesktopPublication",
     "generatePomFileForJvmlinux-x64Publication",
+    "generatePomFileForJvmlinux-arm64Publication",
     "generatePomFileForJvmmacos-x64Publication",
     "generatePomFileForJvmmacos-arm64Publication",
     "generatePomFileForJvmwindows-x64Publication",
@@ -89,6 +94,7 @@ val ALLOW_RERUNNING_TASKS = setOf(
     "publishDesktopPublicationToMavenRepository",
     "publishJvmPublicationToMavenRepository",
     "publishJvmlinux-x64PublicationToMavenRepository",
+    "publishJvmlinux-arm64PublicationToMavenRepository",
     "publishJvmmacos-x64PublicationToMavenRepository",
     "publishJvmmacos-arm64PublicationToMavenRepository",
     "publishJvmwindows-x64PublicationToMavenRepository",
@@ -175,16 +181,23 @@ val DONT_TRY_RERUNNING_TASKS = setOf(
     "lintAnalyzeDebug",
     "lintDebug",
     "lintVitalRelease",
+    "lintWithExpandProjectionDebug",
+    "lintWithoutExpandProjectionDebug",
 )
 
-class TaskUpToDateValidator :
+abstract class TaskUpToDateValidator :
     BuildService<TaskUpToDateValidator.Parameters>, OperationCompletionListener {
-    open class Parameters : BuildServiceParameters
-    override fun getParameters(): Parameters {
-        return Parameters()
+    interface Parameters : BuildServiceParameters {
+        // We check <validate> during task execution rather than during project configuration
+        // so that any configuration cache created during the first build can be reused during the
+        // second build, saving build time
+        var validate: Provider<Boolean>
     }
 
     override fun onFinish(event: FinishEvent) {
+        if (!getParameters().validate.get()) {
+            return
+        }
         val result = event.result
         if (result is TaskExecutionResult) {
             val name = event.descriptor.name
@@ -207,8 +220,9 @@ class TaskUpToDateValidator :
     }
 
     companion object {
-        private fun shouldValidate(project: Project): Boolean {
-            return project.providers.gradleProperty(DISALLOW_TASK_EXECUTION_FLAG_NAME)
+        // Tells whether to create a TaskUpToDateValidator listener
+        private fun shouldEnable(project: Project): Boolean {
+            return project.providers.gradleProperty(ENABLE_FLAG_NAME)
                 .forUseAtConfigurationTime().isPresent()
         }
 
@@ -234,22 +248,26 @@ class TaskUpToDateValidator :
         }
 
         fun setup(rootProject: Project, registry: BuildEventsListenerRegistry) {
-            if (!shouldValidate(rootProject)) {
+            if (!shouldEnable(rootProject)) {
                 return
             }
+            val validate = rootProject.providers.gradleProperty(DISALLOW_TASK_EXECUTION_FLAG_NAME)
+                .map({ _ -> true }).orElse(false)
             // create listener for validating that any task that reran was expected to rerun
             val validatorProvider = rootProject.getGradle().getSharedServices()
                 .registerIfAbsent(
                     "TaskUpToDateValidator",
                     TaskUpToDateValidator::class.java,
-                    { _ -> }
+                    { spec -> spec.getParameters().validate = validate }
                 )
             registry.onTaskCompletion(validatorProvider)
 
             // skip rerunning tasks that are known to be unnecessary to rerun
             rootProject.allprojects { subproject ->
                 subproject.tasks.configureEach { task ->
-                    task.onlyIf { shouldTryRerunningTask(task) }
+                    task.onlyIf {
+                        shouldTryRerunningTask(task) || !validate.get()
+                    }
                 }
             }
         }

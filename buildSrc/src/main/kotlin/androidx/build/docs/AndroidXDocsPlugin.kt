@@ -30,7 +30,6 @@ import androidx.build.getBuildId
 import androidx.build.getCheckoutRoot
 import androidx.build.getDistributionDirectory
 import androidx.build.getKeystore
-import androidx.build.gradle.getByType
 import com.android.build.api.attributes.BuildTypeAttr
 import com.android.build.gradle.LibraryExtension
 import com.android.build.gradle.LibraryPlugin
@@ -52,6 +51,7 @@ import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.bundling.Zip
 import org.gradle.api.tasks.testing.Test
 import org.gradle.kotlin.dsl.all
+import org.gradle.kotlin.dsl.getByType
 import org.gradle.kotlin.dsl.named
 import org.jetbrains.dokka.gradle.DokkaAndroidTask
 import org.jetbrains.dokka.gradle.PackageOptions
@@ -310,10 +310,14 @@ class AndroidXDocsPlugin : Plugin<Project> {
 
                 dackkaClasspath.from(project.files(dackkaConfiguration))
                 destinationDir = generatedDocsDir
+                frameworkSamplesDir = File(project.rootDir, "samples")
                 samplesDir = unzippedSamplesSources
                 sourcesDir = unzippedDocsSources
                 docsProjectDir = File(project.rootDir, "docs-public")
                 dependenciesClasspath = androidJarFile(project) + dependencyClasspath
+                excludedPackages = hiddenPackages.toSet()
+                excludedPackagesForJava = hiddenPackagesJava
+                excludedPackagesForKotlin = emptySet()
             }
         }
 
@@ -559,26 +563,91 @@ abstract class SourcesVariantRule : ComponentMetadataRule {
     }
 }
 
-private const val DACKKA_DEPENDENCY = "com.google.devsite:dackka:0.0.6"
+private const val DACKKA_DEPENDENCY = "com.google.devsite:dackka:0.0.9"
 private const val DOCLAVA_DEPENDENCY = "com.android:doclava:1.0.6"
 
 // Allowlist for directories that should be processed by Dackka
 private val dackkaDirsToProcess = listOf(
+    "android/support/v4/media/**",
+    "androidx/activity/**",
+    "androidx/ads/**",
     "androidx/annotation/**",
+    "androidx/appcompat/**",
+    "androidx/appsearch/**",
+    "androidx/arch/**",
+    "androidx/asynclayoutinflater/**",
+    "androidx/autofill/**",
     "androidx/benchmark/**",
     "androidx/biometric/**",
+    "androidx/browser/**",
+    "androidx/camera/**",
+    "androidx/car/**",
+    "androidx/cardview/**",
     "androidx/collection/**",
     "androidx/compose/**",
+    "androidx/concurrent/**",
+    "androidx/contentpager/**",
+    "androidx/coordinatorlayout/**",
+    "androidx/core/**",
+    "androidx/cursoradapter/**",
+    "androidx/customview/**",
     "androidx/datastore/**",
+    "androidx/documentfile/**",
+    "androidx/drawerlayout/**",
+    "androidx/dynamicanimation/**",
+    "androidx/emoji/**",
+    "androidx/emoji2/**",
+    "androidx/enterprise/**",
+    "androidx/exifinterface/**",
+    "androidx/fragment/**",
+    "androidx/gridlayout/**",
+    "androidx/health/**",
+    "androidx/heifwriter/**",
+    "androidx/hilt/**",
+    "androidx/interpolator/**",
+    "androidx/leanback/**",
+    "androidx/legacy/**",
     "androidx/lifecycle/**",
+    "androidx/loader/**",
+    "androidx/localbroadcastmanager/**",
+    "androidx/media/**",
+    "androidx/media2/**",
+    "androidx/mediarouter/**",
     "androidx/navigation/**",
     "androidx/paging/**",
+    "androidx/palette/**",
+    "androidx/percentlayout/**",
+    "androidx/preference/**",
+    "androidx/print/**",
+    "androidx/profileinstaller/**",
+    "androidx/recommendation/**",
+    "androidx/recyclerview/**",
+    "androidx/remotecallback/**",
+    "androidx/resourceinspection/**",
     "androidx/room/**",
+    "androidx/savedstate/**",
+    "androidx/security/**",
+    "androidx/sharetarget/**",
+    "androidx/slice/**",
+    "androidx/slidingpanelayout/**",
+    "androidx/sqlite/**",
+    "androidx/startup/**",
+    "androidx/swiperefreshlayout/**",
+    "androidx/textclassifier/**",
+    "androidx/tracing/**",
+    "androidx/transition/**",
+    "androidx/tvprovider/**",
+    "androidx/vectordrawable/**",
+    "androidx/versionedparcelable/**",
+    "androidx/viewpager/**",
+    "androidx/viewpager2/**",
     "androidx/wear/**",
+    "androidx/webkit/**",
     "androidx/window/**",
     "androidx/work/**"
 )
 
+// List of packages to exclude from both Java and Kotlin refdoc generation
 private val hiddenPackages = listOf(
     "androidx.camera.camera2.impl",
     "androidx.camera.camera2.internal",
@@ -597,6 +666,7 @@ private val hiddenPackages = listOf(
     "androidx.webkit.internal",
     "androidx.work.impl",
     "androidx.work.impl.background",
+    "androidx.work.impl.background.gcm",
     "androidx.work.impl.background.systemalarm",
     "androidx.work.impl.background.systemjob",
     "androidx.work.impl.constraints",
@@ -606,4 +676,75 @@ private val hiddenPackages = listOf(
     "androidx.work.impl.utils",
     "androidx.work.impl.utils.futures",
     "androidx.work.impl.utils.taskexecutor"
+)
+
+// Set of packages to exclude from Java refdoc generation
+private val hiddenPackagesJava = setOf(
+    "androidx.compose.animation",
+    "androidx.compose.animation.core",
+    "androidx.compose.foundation",
+    "androidx.compose.foundation.gestures",
+    "androidx.compose.foundation.interaction",
+    "androidx.compose.foundation.layout",
+    "androidx.compose.foundation.lazy",
+    "androidx.compose.foundation.selection",
+    "androidx.compose.foundation.shape",
+    "androidx.compose.foundation.text",
+    "androidx.compose.foundation.text.selection",
+    "androidx.compose.material",
+    "androidx.compose.material.icons",
+    "androidx.compose.material.icons.filled",
+    "androidx.compose.material.icons.outlined",
+    "androidx.compose.material.icons.rounded",
+    "androidx.compose.material.icons.sharp",
+    "androidx.compose.material.icons.twotone",
+    "androidx.compose.material.ripple",
+    "androidx.compose.runtime",
+    "androidx.compose.runtime.collection",
+    "androidx.compose.runtime.internal",
+    "androidx.compose.runtime.livedata",
+    "androidx.compose.runtime.rxjava2",
+    "androidx.compose.runtime.rxjava3",
+    "androidx.compose.runtime.saveable",
+    "androidx.compose.runtime.snapshots",
+    "androidx.compose.runtime.tooling",
+    "androidx.compose.ui",
+    "androidx.compose.ui.autofill",
+    "androidx.compose.ui.draw",
+    "androidx.compose.ui.focus",
+    "androidx.compose.ui.geometry",
+    "androidx.compose.ui.graphics",
+    "androidx.compose.ui.graphics.colorspace",
+    "androidx.compose.ui.graphics.drawscope",
+    "androidx.compose.ui.graphics.painter",
+    "androidx.compose.ui.graphics.vector",
+    "androidx.compose.ui.hapticfeedback",
+    "androidx.compose.ui.input.key",
+    "androidx.compose.ui.input.nestedscroll",
+    "androidx.compose.ui.input.pointer",
+    "androidx.compose.ui.input.pointer.util",
+    "androidx.compose.ui.layout",
+    "androidx.compose.ui.node",
+    "androidx.compose.ui.platform",
+    "androidx.compose.ui.res",
+    "androidx.compose.ui.semantics",
+    "androidx.compose.ui.state",
+    "androidx.compose.ui.test",
+    "androidx.compose.ui.test.junit4",
+    "androidx.compose.ui.test.junit4.android",
+    "androidx.compose.ui.text",
+    "androidx.compose.ui.text.android",
+    "androidx.compose.ui.text.font",
+    "androidx.compose.ui.text.input",
+    "androidx.compose.ui.text.intl",
+    "androidx.compose.ui.text.platform.extensions",
+    "androidx.compose.ui.text.style",
+    "androidx.compose.ui.tooling",
+    "androidx.compose.ui.tooling.data",
+    "androidx.compose.ui.tooling.preview",
+    "androidx.compose.ui.tooling.preview.datasource",
+    "androidx.compose.ui.unit",
+    "androidx.compose.ui.util",
+    "androidx.compose.ui.viewinterop",
+    "androidx.compose.ui.window",
 )

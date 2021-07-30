@@ -121,6 +121,20 @@ class ComposeViewAdapterTest {
     }
 
     @Test
+    fun animatedVisibilityIsIgnored() {
+        assertRendersCorrectly(
+            "androidx.compose.ui.tooling.TestAnimationPreviewKt",
+            "AnimatedVisibilityPreview"
+        )
+
+        activityTestRule.runOnUiThread {
+            // Verify that this composable has no animations, since we should ignore
+            // AnimatedVisibility animations
+            assertFalse(composeViewAdapter.hasAnimations())
+        }
+    }
+
+    @Test
     fun transitionAnimationsAreSubscribedToTheClock() {
         checkComposableAnimationIsSubscribed("CheckBoxPreview")
     }
@@ -152,7 +166,7 @@ class ComposeViewAdapterTest {
         }
 
         activityTestRule.runOnUiThread {
-            val animation = clock.trackedTransitions.keys.single()
+            val animation = clock.trackedTransitions.single()
             assertEquals("checkBoxAnim", animation.label)
         }
     }

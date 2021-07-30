@@ -108,9 +108,13 @@ val taskNamesKnownToDuplicateOutputs = setOf(
     "kotlinSourcesJar",
     "releaseSourcesJar",
     "sourceJarRelease",
+    // Can remove "lint" after AGP 7.1.0-alpha05.
     "lint",
+    "lintReport",
     "lintFix",
+    // Can remove "lintVital" after AGP 7.1.0-alpha05.
     "lintVital",
+    "lintVitalReport",
     "sourceJar",
     // MPP plugin has issues with modules using withJava() clause, see b/158747039.
     "processTestResources",
@@ -122,6 +126,8 @@ val taskNamesKnownToDuplicateOutputs = setOf(
     // https://github.com/square/wire/issues/1947
     "generateDebugProtos",
     "generateReleaseProtos",
+    // Release APKs
+    "copyReleaseApk"
 )
 
 // For this project and all subprojects, collects all tasks and creates a map keyed by their output files

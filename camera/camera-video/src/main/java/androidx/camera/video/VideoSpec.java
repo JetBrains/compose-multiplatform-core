@@ -25,6 +25,8 @@ import android.util.Range;
 
 import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
+import androidx.annotation.RestrictTo;
+import androidx.annotation.RestrictTo.Scope;
 
 import com.google.auto.value.AutoValue;
 
@@ -33,7 +35,9 @@ import java.lang.annotation.RetentionPolicy;
 
 /**
  * Video specification that is options to config video encoding.
+ * @hide
  */
+@RestrictTo(Scope.LIBRARY)
 @AutoValue
 public abstract class VideoSpec {
 
@@ -43,6 +47,7 @@ public abstract class VideoSpec {
      * <p>Using this value with {@link Builder#setFrameRate(Range)} informs the video frame producer
      * it should choose any appropriate frame rate given the device and codec constraints.
      */
+    @NonNull
     public static final Range<Integer> FRAME_RATE_RANGE_AUTO = new Range<>(0,
             Integer.MAX_VALUE);
 
@@ -52,6 +57,7 @@ public abstract class VideoSpec {
      * <p>Using this value with {@link Builder#setBitrate(Range)} informs the video frame producer
      * it should choose any appropriate bitrate given the device and codec constraints.
      */
+    @NonNull
     public static final Range<Integer> BITRATE_RANGE_AUTO = new Range<>(0,
             Integer.MAX_VALUE);
 
@@ -61,6 +67,7 @@ public abstract class VideoSpec {
      * <p>Using this value with {@link Builder#setQualitySelector(QualitySelector)} allows the
      * video frame producer to choose video quality based on its current state.
      */
+    @NonNull
     public static final QualitySelector QUALITY_SELECTOR_AUTO =
             QualitySelector.firstTry(QUALITY_FHD)
                     .thenTry(QUALITY_HD)
@@ -121,7 +128,12 @@ public abstract class VideoSpec {
     @NonNull
     public abstract Builder toBuilder();
 
-    /** The builder of the {@link VideoSpec}. */
+    /**
+     * The builder of the {@link VideoSpec}.
+     * @hide
+     */
+    @RestrictTo(Scope.LIBRARY)
+    @SuppressWarnings("StaticFinalBuilder")
     @AutoValue.Builder
     public abstract static class Builder {
         // Restrict construction to same package

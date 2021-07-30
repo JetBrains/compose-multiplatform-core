@@ -35,7 +35,7 @@ import com.google.auto.value.AutoValue;
 public abstract class FileDescriptorOutputOptions extends OutputOptions {
 
     FileDescriptorOutputOptions() {
-        super(Type.FILE_DESCRIPTOR);
+        super(OPTIONS_TYPE_FILE_DESCRIPTOR);
     }
 
     /** Returns a builder for this FileDescriptorOutputOptions. */
@@ -49,7 +49,7 @@ public abstract class FileDescriptorOutputOptions extends OutputOptions {
      * Gets the limit for the file length in bytes.
      */
     @Override
-    public abstract int getFileSizeLimit();
+    public abstract long getFileSizeLimit();
 
     /**
      * Gets the file descriptor instance.
@@ -80,7 +80,7 @@ public abstract class FileDescriptorOutputOptions extends OutputOptions {
          * <p>If not set, defaults to {@link #FILE_SIZE_UNLIMITED}.
          */
         @NonNull
-        public abstract Builder setFileSizeLimit(int bytes);
+        public abstract Builder setFileSizeLimit(long bytes);
 
         /** Builds the FileDescriptorOutputOptions instance. */
         @NonNull

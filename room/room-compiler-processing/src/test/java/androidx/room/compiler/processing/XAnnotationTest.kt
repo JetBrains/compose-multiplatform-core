@@ -30,7 +30,6 @@ import androidx.room.compiler.processing.util.compileFiles
 import androidx.room.compiler.processing.util.getField
 import androidx.room.compiler.processing.util.getMethod
 import androidx.room.compiler.processing.util.getParameter
-import androidx.room.compiler.processing.util.getSystemClasspathFiles
 import androidx.room.compiler.processing.util.runProcessorTest
 import androidx.room.compiler.processing.util.runProcessorTestWithoutKsp
 import androidx.room.compiler.processing.util.typeName
@@ -41,6 +40,8 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
+// used in typealias test
+typealias OtherAnnotationTypeAlias = OtherAnnotation
 @RunWith(Parameterized::class)
 class XAnnotationTest(
     private val preCompiled: Boolean
@@ -69,7 +70,7 @@ class XAnnotationTest(
             runProcessorTest(
                 sources = newSources,
                 handler = handler,
-                classpath = listOf(compiled) + getSystemClasspathFiles()
+                classpath = compiled
             )
         } else {
             runProcessorTest(
@@ -660,6 +661,33 @@ class XAnnotationTest(
                         .that(values)
                         .containsExactly("x")
                 }
+        }
+    }
+
+    @Test
+    fun typealiasAnnotation() {
+        val source = Source.kotlin(
+            "Subject.kt",
+            """
+            typealias SourceTypeAlias = ${OtherAnnotation::class.qualifiedName}
+            @SourceTypeAlias("x")
+            class Subject {
+            }
+            """.trimIndent()
+        )
+        runTest(
+            sources = listOf(source)
+        ) { invocation ->
+            // TODO use getSymbolsWithAnnotation after
+            // https://github.com/google/ksp/issues/506 is fixed
+            val subject = invocation.processingEnv.requireTypeElement("Subject")
+            val annotation = subject.getAnnotation(OtherAnnotation::class)
+            assertThat(annotation).isNotNull()
+            assertThat(annotation?.value?.value).isEqualTo("x")
+
+            val annotation2 = subject.getAnnotation(OtherAnnotationTypeAlias::class)
+            assertThat(annotation2).isNotNull()
+            assertThat(annotation2?.value?.value).isEqualTo("x")
         }
     }
 

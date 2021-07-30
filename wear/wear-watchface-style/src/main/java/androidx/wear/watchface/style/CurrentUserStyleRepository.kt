@@ -80,6 +80,13 @@ public class UserStyle(
     public operator fun get(setting: UserStyleSetting): UserStyleSetting.Option? =
         selectedOptions[setting]
 
+    /**
+     * Returns the [UserStyleSetting.Option] for [settingId] if there is one or `null` otherwise.
+     * Note this is an O(n) operation.
+     */
+    public operator fun get(settingId: UserStyleSetting.Id): UserStyleSetting.Option? =
+        selectedOptions.firstNotNullOfOrNull { if (it.key.id == settingId) it.value else null }
+
     override fun toString(): String =
         "[" + selectedOptions.entries.joinToString(
             transform = { "${it.key.id} -> ${it.value}" }
@@ -252,6 +259,8 @@ public class CurrentUserStyleRepository(
 
     /**
      * Adds a [UserStyleChangeListener] which is called immediately and whenever the style changes.
+     *
+     * NB the order in which ambient vs style changes are reported is not guaranteed.
      */
     @UiThread
     @SuppressLint("ExecutorRegistration")

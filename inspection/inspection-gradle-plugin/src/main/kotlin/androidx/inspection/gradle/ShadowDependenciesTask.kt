@@ -37,6 +37,7 @@ import java.util.jar.JarFile
 @Suppress("DEPRECATION") // BaseVariant
 fun Project.registerShadowDependenciesTask(
     variant: com.android.build.gradle.api.BaseVariant,
+    jarName: String?,
     zipTask: TaskProvider<Copy>
 ): TaskProvider<ShadowJar> {
     val uberJar = registerUberJarTask(variant)
@@ -60,14 +61,15 @@ fun Project.registerShadowDependenciesTask(
         it.transform(RenameServicesTransformer::class.java)
         it.from(versionTask.get().outputDir)
         it.destinationDirectory.set(taskWorkingDir(variant, "shadowedJar"))
-        it.archiveBaseName.set("${project.name}-shadowed")
+        it.archiveBaseName.set("${jarName ?: project.name}-nondexed")
+        it.archiveVersion.set("")
         it.dependsOn(zipTask)
         val prefix = "deps.${project.name.replace('-', '.')}"
+        val inputProvider = uberJar.get().archiveFile
+        it.from(inputProvider)
         it.doFirst {
             val task = it as ShadowJar
-            val input = uberJar.get().outputs.files
-            task.from(input)
-            input.extractPackageNames().forEach { packageName ->
+            inputProvider.get().asFile.extractPackageNames().forEach { packageName ->
                 task.relocate(packageName, "$prefix.$packageName")
             }
         }
@@ -86,6 +88,7 @@ private fun Project.registerUberJarTask(
         it.dependsOn(variant.assembleProvider)
         it.archiveClassifier.set("uberRuntimeDepsJar")
         it.exclude("**/module-info.class")
+        it.exclude("**/*.proto")
         it.exclude("META-INF/versions/9/**/*.class")
         it.from({
             variant.runtimeConfiguration.incoming.artifactView {
@@ -98,8 +101,8 @@ private fun Project.registerUberJarTask(
     }
 }
 
-private fun Iterable<File>.extractPackageNames(): Set<String> = map(::JarFile)
-    .map { jar -> jar.use { it.entries().toList() } }.flatten()
+private fun File.extractPackageNames(): Set<String> = JarFile(this)
+    .use { it.entries().toList() }
     .filter { jarEntry -> jarEntry.name.endsWith(".class") }
     .map { jarEntry -> jarEntry.name.substringBeforeLast("/").replace('/', '.') }
     .toSet()

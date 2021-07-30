@@ -108,6 +108,11 @@ public class RenderParametersWireFormat implements VersionedParcelable, Parcelab
     @ColorInt
     int mBackgroundTint;
 
+    /** Optional set of ComplicationSlots to render as pressed. */
+    @ParcelField(8)
+    @NonNull
+    int[] mPressedComplicationSlotIds = new int[0];
+
     RenderParametersWireFormat() {
     }
 
@@ -118,7 +123,8 @@ public class RenderParametersWireFormat implements VersionedParcelable, Parcelab
             int complicationSlotId,
             @Nullable String elementUserStyleSettingId,
             @ColorInt int highlightTint,
-            @ColorInt int backgroundTint) {
+            @ColorInt int backgroundTint,
+            @NonNull int[] pressedComplicationSlotIds) {
         mDrawMode = drawMode;
         mWatchFaceLayerSetBitfield = watchFaceLayerSetBitfield;
         mElementType = elementType;
@@ -126,6 +132,7 @@ public class RenderParametersWireFormat implements VersionedParcelable, Parcelab
         mElementUserStyleSettingId = elementUserStyleSettingId;
         mHighlightTint = highlightTint;
         mBackgroundTint = backgroundTint;
+        mPressedComplicationSlotIds = pressedComplicationSlotIds;
         if (elementType == ELEMENT_TYPE_USER_STYLE) {
             if (elementUserStyleSettingId == null) {
                 throw new IllegalArgumentException(
@@ -172,6 +179,11 @@ public class RenderParametersWireFormat implements VersionedParcelable, Parcelab
         return mBackgroundTint;
     }
 
+    @NonNull
+    public int[] getPressedComplicationSlotIds() {
+        return mPressedComplicationSlotIds;
+    }
+
     /** Serializes this IndicatorState to the specified {@link Parcel}. */
     @Override
     public void writeToParcel(@NonNull Parcel parcel, int flags) {
@@ -187,9 +199,8 @@ public class RenderParametersWireFormat implements VersionedParcelable, Parcelab
             new Parcelable.Creator<RenderParametersWireFormat>() {
                 @Override
                 public RenderParametersWireFormat createFromParcel(Parcel source) {
-                    return RenderParametersWireFormatParcelizer.read(
-                            ParcelUtils.fromParcelable(source.readParcelable(
-                                    getClass().getClassLoader())));
+                    return ParcelUtils.fromParcelable(
+                            source.readParcelable(getClass().getClassLoader()));
                 }
 
                 @Override

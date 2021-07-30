@@ -150,7 +150,7 @@ public class NavDeepLink internal constructor(
         deepLink: Uri,
         arguments: Map<String, NavArgument?>
     ): Bundle? {
-        val matcher = pattern!!.matcher(deepLink.toString())
+        val matcher = pattern?.matcher(deepLink.toString()) ?: return null
         if (!matcher.matches()) {
             return null
         }
@@ -260,6 +260,21 @@ public class NavDeepLink internal constructor(
             type = typeAndSubType[0]
             subType = typeAndSubType[1]
         }
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (other == null || other !is NavDeepLink) return false
+        return uriPattern == other.uriPattern &&
+            action == other.action &&
+            mimeType == other.mimeType
+    }
+
+    override fun hashCode(): Int {
+        var result = 0
+        result = 31 * result + uriPattern.hashCode()
+        result = 31 * result + action.hashCode()
+        result = 31 * result + mimeType.hashCode()
+        return result
     }
 
     /**

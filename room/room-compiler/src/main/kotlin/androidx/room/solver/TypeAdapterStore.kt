@@ -21,6 +21,7 @@ import androidx.room.compiler.processing.isArray
 import androidx.room.compiler.processing.isEnum
 import androidx.room.ext.CommonTypeNames
 import androidx.room.ext.GuavaBaseTypeNames
+import androidx.room.ext.implementsEqualsAndHashcode
 import androidx.room.ext.isEntityElement
 import androidx.room.ext.isNotByte
 import androidx.room.ext.isNotKotlinUnit
@@ -32,6 +33,8 @@ import androidx.room.processor.Context
 import androidx.room.processor.EntityProcessor
 import androidx.room.processor.FieldProcessor
 import androidx.room.processor.PojoProcessor
+import androidx.room.processor.ProcessorErrors.DO_NOT_USE_GENERIC_IMMUTABLE_MULTIMAP
+import androidx.room.processor.ProcessorErrors.classMustImplementEqualsAndHashCode
 import androidx.room.solver.binderprovider.CoroutineFlowResultBinderProvider
 import androidx.room.solver.binderprovider.CursorQueryResultBinderProvider
 import androidx.room.solver.binderprovider.DataSourceFactoryQueryResultBinderProvider
@@ -54,8 +57,10 @@ import androidx.room.solver.query.parameter.CollectionQueryParameterAdapter
 import androidx.room.solver.query.parameter.QueryParameterAdapter
 import androidx.room.solver.query.result.ArrayQueryResultAdapter
 import androidx.room.solver.query.result.EntityRowAdapter
+import androidx.room.solver.query.result.GuavaImmutableMultimapQueryResultAdapter
 import androidx.room.solver.query.result.GuavaOptionalQueryResultAdapter
 import androidx.room.solver.query.result.ImmutableListQueryResultAdapter
+import androidx.room.solver.query.result.ImmutableMapQueryResultAdapter
 import androidx.room.solver.query.result.ListQueryResultAdapter
 import androidx.room.solver.query.result.MapQueryResultAdapter
 import androidx.room.solver.query.result.OptionalQueryResultAdapter
@@ -93,8 +98,14 @@ import androidx.room.solver.types.StatementValueBinder
 import androidx.room.solver.types.StringColumnTypeAdapter
 import androidx.room.solver.types.TypeConverter
 import androidx.room.vo.ShortcutQueryParameter
+import androidx.room.vo.Warning
 import com.google.common.annotations.VisibleForTesting
 import com.google.common.collect.ImmutableList
+import com.google.common.collect.ImmutableListMultimap
+import com.google.common.collect.ImmutableMultimap
+import com.google.common.collect.ImmutableSetMultimap
+import com.google.common.collect.ImmutableMap
+import com.squareup.javapoet.ClassName
 import java.util.LinkedList
 
 @Suppress("PLATFORM_CLASS_MAPPED_TO_KOTLIN")
@@ -330,8 +341,8 @@ class TypeAdapterStore private constructor(
             val targetTypes = targetTypeMirrorsFor(affinity)
             val intoStatement = findTypeConverter(out, targetTypes) ?: return null
             // ok found a converter, try the reverse now
-            val fromCursor = reverse(intoStatement) ?: findTypeConverter(intoStatement.to, out)
-                ?: return null
+            val fromCursor = reverse(intoStatement)
+                ?: findTypeConverter(intoStatement.to, out) ?: return null
             return CompositeAdapter(
                 out, getAllColumnAdapters(intoStatement.to).first(), intoStatement, fromCursor
             )
@@ -419,72 +430,155 @@ class TypeAdapterStore private constructor(
         if (typeMirror.isError()) {
             return null
         }
+        // TODO: (b/192068912) Refactor the following since this if-else cascade has gotten large
         if (typeMirror.isArray() && typeMirror.componentType.isNotByte()) {
             val rowAdapter =
                 findRowAdapter(typeMirror.componentType, query) ?: return null
             return ArrayQueryResultAdapter(rowAdapter)
-        } else {
-            if (typeMirror.typeArguments.isEmpty()) {
-                val rowAdapter = findRowAdapter(typeMirror, query) ?: return null
-                return SingleEntityQueryResultAdapter(rowAdapter)
-            } else if (typeMirror.rawType.typeName == GuavaBaseTypeNames.OPTIONAL) {
-                // Handle Guava Optional by unpacking its generic type argument and adapting that.
-                // The Optional adapter will reappend the Optional type.
-                val typeArg = typeMirror.typeArguments.first()
-                // use nullable when finding row adapter as non-null adapters might return
-                // default values
-                val rowAdapter = findRowAdapter(typeArg.makeNullable(), query) ?: return null
-                return GuavaOptionalQueryResultAdapter(
-                    typeArg = typeArg,
-                    resultAdapter = SingleEntityQueryResultAdapter(rowAdapter)
-                )
-            } else if (typeMirror.rawType.typeName == CommonTypeNames.OPTIONAL) {
-                // Handle java.util.Optional similarly.
-                val typeArg = typeMirror.typeArguments.first()
-                // use nullable when finding row adapter as non-null adapters might return
-                // default values
-                val rowAdapter = findRowAdapter(typeArg.makeNullable(), query) ?: return null
-                return OptionalQueryResultAdapter(
-                    typeArg = typeArg,
-                    resultAdapter = SingleEntityQueryResultAdapter(rowAdapter)
-                )
-            } else if (typeMirror.isTypeOf(ImmutableList::class)) {
-                val typeArg = typeMirror.typeArguments.first().extendsBoundOrSelf()
-                val rowAdapter = findRowAdapter(typeArg, query) ?: return null
-                return ImmutableListQueryResultAdapter(
-                    typeArg = typeArg,
-                    rowAdapter = rowAdapter
-                )
-            } else if (typeMirror.isTypeOf(java.util.List::class)) {
-                val typeArg = typeMirror.typeArguments.first().extendsBoundOrSelf()
-                val rowAdapter = findRowAdapter(typeArg, query) ?: return null
-                return ListQueryResultAdapter(
-                    typeArg = typeArg,
-                    rowAdapter = rowAdapter
-                )
-            } else if (typeMirror.isTypeOf(java.util.Map::class)) {
-                val keyArg = typeMirror.typeArguments[0].extendsBoundOrSelf()
-                val secondTypeArg = typeMirror.typeArguments[1].extendsBoundOrSelf()
+        } else if (typeMirror.typeArguments.isEmpty()) {
+            val rowAdapter = findRowAdapter(typeMirror, query) ?: return null
+            return SingleEntityQueryResultAdapter(rowAdapter)
+        } else if (typeMirror.rawType.typeName == GuavaBaseTypeNames.OPTIONAL) {
+            // Handle Guava Optional by unpacking its generic type argument and adapting that.
+            // The Optional adapter will reappend the Optional type.
+            val typeArg = typeMirror.typeArguments.first()
+            // use nullable when finding row adapter as non-null adapters might return
+            // default values
+            val rowAdapter = findRowAdapter(typeArg.makeNullable(), query) ?: return null
+            return GuavaOptionalQueryResultAdapter(
+                typeArg = typeArg,
+                resultAdapter = SingleEntityQueryResultAdapter(rowAdapter)
+            )
+        } else if (typeMirror.rawType.typeName == CommonTypeNames.OPTIONAL) {
+            // Handle java.util.Optional similarly.
+            val typeArg = typeMirror.typeArguments.first()
+            // use nullable when finding row adapter as non-null adapters might return
+            // default values
+            val rowAdapter = findRowAdapter(typeArg.makeNullable(), query) ?: return null
+            return OptionalQueryResultAdapter(
+                typeArg = typeArg,
+                resultAdapter = SingleEntityQueryResultAdapter(rowAdapter)
+            )
+        } else if (typeMirror.isTypeOf(ImmutableList::class)) {
+            val typeArg = typeMirror.typeArguments.first().extendsBoundOrSelf()
+            val rowAdapter = findRowAdapter(typeArg, query) ?: return null
+            return ImmutableListQueryResultAdapter(
+                typeArg = typeArg,
+                rowAdapter = rowAdapter
+            )
+        } else if (typeMirror.isTypeOf(java.util.List::class)) {
+            val typeArg = typeMirror.typeArguments.first().extendsBoundOrSelf()
+            val rowAdapter = findRowAdapter(typeArg, query) ?: return null
+            return ListQueryResultAdapter(
+                typeArg = typeArg,
+                rowAdapter = rowAdapter
+            )
+        } else if (typeMirror.isTypeOf(ImmutableMap::class)) {
+            val keyTypeArg = typeMirror.typeArguments[0].extendsBoundOrSelf()
+            val valueTypeArg = typeMirror.typeArguments[1].extendsBoundOrSelf()
 
-                // TODO: Support Set::class here as well.
-                if (!secondTypeArg.isTypeOf(java.util.List::class)) {
-                    context.logger.e("Only supporting Map<Key, List<Value>> for now.")
-                    return null
-                }
-                val valueArg = secondTypeArg.typeArguments.first().extendsBoundOrSelf()
+            // Create a type mirror for a regular Map in order to use MapQueryResultAdapter. This
+            // avoids code duplication as Immutable Map can be initialized by creating an immutable
+            // copy of a regular map.
+            val mapType = context.processingEnv.getDeclaredType(
+                context.processingEnv.requireTypeElement(Map::class),
+                keyTypeArg,
+                valueTypeArg
+            )
+            val resultAdapter = findQueryResultAdapter(mapType, query = query) ?: return null
+            return ImmutableMapQueryResultAdapter(
+                keyTypeArg = keyTypeArg,
+                valueTypeArg = valueTypeArg,
+                resultAdapter = resultAdapter
+            )
+        } else if (typeMirror.isTypeOf(ImmutableSetMultimap::class) ||
+            typeMirror.isTypeOf(ImmutableListMultimap::class) ||
+            typeMirror.isTypeOf(ImmutableMultimap::class)
+        ) {
+            val keyTypeArg = typeMirror.typeArguments[0].extendsBoundOrSelf()
+            val valueTypeArg = typeMirror.typeArguments[1].extendsBoundOrSelf()
 
-                val keyRowAdapter = findRowAdapter(keyArg, query) ?: return null
-                val valueRowAdapter = findRowAdapter(valueArg, query) ?: return null
+            if (valueTypeArg.typeElement == null) {
+                context.logger.e(
+                    "Guava multimap 'value' type argument does not represent a class. " +
+                        "Found $valueTypeArg."
+                )
+                return null
+            }
 
-                return MapQueryResultAdapter(
-                    keyTypeArg = keyArg,
-                    valueTypeArg = valueArg,
-                    keyRowAdapter = keyRowAdapter,
-                    valueRowAdapter = valueRowAdapter
+            val immutableClassName = if (typeMirror.isTypeOf(ImmutableListMultimap::class)) {
+                ClassName.get(ImmutableListMultimap::class.java)
+            } else if (typeMirror.isTypeOf(ImmutableSetMultimap::class)) {
+                ClassName.get(ImmutableSetMultimap::class.java)
+            } else {
+                // Return type is base class ImmutableMultimap which is not recommended.
+                context.logger.e(DO_NOT_USE_GENERIC_IMMUTABLE_MULTIMAP)
+                return null
+            }
+
+            return GuavaImmutableMultimapQueryResultAdapter(
+                keyTypeArg = keyTypeArg,
+                valueTypeArg = valueTypeArg,
+                keyRowAdapter = findRowAdapter(keyTypeArg, query) ?: return null,
+                valueRowAdapter = findRowAdapter(valueTypeArg, query) ?: return null,
+                immutableClassName = immutableClassName
+            )
+        } else if (typeMirror.isTypeOf(java.util.Map::class)) {
+            val keyTypeArg = typeMirror.typeArguments[0].extendsBoundOrSelf()
+            val mapValueTypeArg = typeMirror.typeArguments[1].extendsBoundOrSelf()
+
+            if (mapValueTypeArg.typeElement == null) {
+                context.logger.e(
+                    "Multimap 'value' collection type argument does not represent a class. " +
+                        "Found $mapValueTypeArg."
+                )
+                return null
+            }
+            // TODO: Handle nested collection values in the map
+            if (!keyTypeArg.implementsEqualsAndHashcode()) {
+                context.logger.w(
+                    Warning.DOES_NOT_IMPLEMENT_EQUALS_HASHCODE,
+                    keyTypeArg.typeElement,
+                    classMustImplementEqualsAndHashCode(
+                        typeMirror.typeName,
+                        keyTypeArg.typeName
+                    )
                 )
             }
-            return null
+
+            val collectionTypeRaw = context.COMMON_TYPES.READONLY_COLLECTION.rawType
+            if (collectionTypeRaw.isAssignableFrom(mapValueTypeArg.rawType)) {
+                // The Map's value type argument is assignable to a Collection, we need to make
+                // sure it is either a list or a set.
+                if (
+                    mapValueTypeArg.isTypeOf(java.util.List::class) ||
+                    mapValueTypeArg.isTypeOf(java.util.Set::class)
+                ) {
+                    val valueTypeArg = mapValueTypeArg.typeArguments.single().extendsBoundOrSelf()
+                    return MapQueryResultAdapter(
+                        keyTypeArg = keyTypeArg,
+                        valueTypeArg = valueTypeArg,
+                        keyRowAdapter = findRowAdapter(keyTypeArg, query) ?: return null,
+                        valueRowAdapter = findRowAdapter(valueTypeArg, query) ?: return null,
+                        valueCollectionType = mapValueTypeArg
+                    )
+                } else {
+                    context.logger.e(
+                        "Multimap 'value' collection type must be a List or Set. Found " +
+                            "${mapValueTypeArg.typeName}."
+                    )
+                }
+            } else {
+                return MapQueryResultAdapter(
+                    keyTypeArg = keyTypeArg,
+                    valueTypeArg = mapValueTypeArg,
+                    keyRowAdapter = findRowAdapter(keyTypeArg, query) ?: return null,
+                    valueRowAdapter = findRowAdapter(mapValueTypeArg, query) ?: return null,
+                    valueCollectionType = null
+                )
+            }
         }
+        return null
     }
 
     /**
@@ -699,20 +793,19 @@ class TypeAdapterStore private constructor(
      * The returned list is ordered by priority such that if we have an exact match, it is
      * prioritized.
      */
-    private fun getAllTypeConverters(input: XType, excludes: List<XType>):
-        List<TypeConverter> {
-            // for input, check assignability because it defines whether we can use the method or not.
-            // for excludes, use exact match
-            return typeConverters.filter { converter ->
-                converter.from.isAssignableFrom(input) &&
-                    !excludes.any { it.isSameType(converter.to) }
-            }.sortedByDescending {
-                // if it is the same, prioritize
-                if (it.from.isSameType(input)) {
-                    2
-                } else {
-                    1
-                }
+    private fun getAllTypeConverters(input: XType, excludes: List<XType>): List<TypeConverter> {
+        // for input, check assignability because it defines whether we can use the method or not.
+        // for excludes, use exact match
+        return typeConverters.filter { converter ->
+            converter.from.isAssignableFrom(input) &&
+                !excludes.any { it.isSameType(converter.to) }
+        }.sortedByDescending {
+            // if it is the same, prioritize
+            if (it.from.isSameType(input)) {
+                2
+            } else {
+                1
             }
         }
+    }
 }

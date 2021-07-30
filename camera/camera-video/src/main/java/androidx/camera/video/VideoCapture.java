@@ -43,13 +43,11 @@ import android.view.Surface;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.OptIn;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 import androidx.annotation.UiThread;
 import androidx.camera.core.AspectRatio;
 import androidx.camera.core.CameraSelector;
-import androidx.camera.core.ExperimentalUseCaseGroup;
 import androidx.camera.core.Logger;
 import androidx.camera.core.SurfaceRequest;
 import androidx.camera.core.UseCase;
@@ -90,19 +88,15 @@ import java.util.concurrent.Executor;
 /**
  * A use case that provides camera stream suitable for video application.
  *
- * <p>VideoCapture is used to create a camera stream suitable for video application. This stream
- * is used by the implementation of {@link VideoOutput}. Calling {@link #withOutput(VideoOutput)}
- * can generate a VideoCapture use case binding to the given VideoOutput.
- *
- * <p>When binding VideoCapture, VideoCapture will initialize the camera stream according to the
- * resolution found by the {@link QualitySelector} in VideoOutput. Then VideoCapture will invoke
- * {@link VideoOutput#onSurfaceRequested(SurfaceRequest)} to request VideoOutput to provide a
- * {@link Surface} via {@link SurfaceRequest#provideSurface} to complete the initialization
- * process. After VideoCapture is bound, updating the QualitySelector in VideoOutput will have no
- * effect. If it needs to change the resolution of the camera stream after VideoCapture is bound,
- * it has to unbind the original VideoCapture, update the QualitySelector in VideoOutput and then
- * re-bind the VideoCapture. If the implementation of VideoOutput does not support modifying the
- * QualitySelector afterwards, it has to create a new VideoOutput and VideoCapture for re-bind.
+ * <p>VideoCapture is used to create a camera stream suitable for video application. The camera
+ * stream is used by the extended classes of {@link VideoOutput}.
+ * {@link #withOutput(VideoOutput)} can be used to create a VideoCapture instance associated with
+ * the given VideoOutput. Take {@link Recorder} as an example,
+ * <pre>{@code
+ *         VideoCapture<Recorder> videoCapture
+ *                 = VideoCapture.withOutput(new Recorder.Builder().build());
+ * }</pre>
+ * Then {@link #getOutput()} can retrieve the Recorder instance.
  *
  * @param <T> the type of VideoOutput
  */
@@ -118,14 +112,13 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
     private SurfaceRequest mSurfaceRequest;
 
     /**
-     * Create a VideoCapture builder with a {@link VideoOutput}.
+     * Create a VideoCapture associated with the given {@link VideoOutput}.
      *
-     * @param videoOutput the associated VideoOutput.
-     * @return the new Builder
+     * @throws NullPointerException if {@code videoOutput} is null.
      */
     @NonNull
     public static <T extends VideoOutput> VideoCapture<T> withOutput(@NonNull T videoOutput) {
-        return new VideoCapture.Builder<T>(videoOutput).build();
+        return new VideoCapture.Builder<T>(Preconditions.checkNotNull(videoOutput)).build();
     }
 
     /**
@@ -138,7 +131,10 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
     }
 
     /**
-     * Gets the {@link VideoOutput} associated to this VideoCapture.
+     * Gets the {@link VideoOutput} associated with this VideoCapture.
+     *
+     * @return the value provided to {@link #withOutput(VideoOutput)} used to create this
+     * VideoCapture.
      */
     @SuppressWarnings("unchecked")
     @NonNull
@@ -155,7 +151,10 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
      * has been attached to a camera.
      *
      * @return The rotation of the intended target.
+     *
+     * @hide
      */
+    @RestrictTo(Scope.LIBRARY_GROUP)
     @RotationValue
     public int getTargetRotation() {
         return getTargetRotationInternal();
@@ -173,14 +172,22 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
      * created. The use case is fully created once it has been attached to a camera.
      *
      * @param rotation Desired rotation of the output video.
+     *
+     * @hide
      */
-    @OptIn(markerClass = ExperimentalUseCaseGroup.class)
+    @RestrictTo(Scope.LIBRARY_GROUP)
     public void setTargetRotation(@RotationValue int rotation) {
         if (setTargetRotationInternal(rotation)) {
             sendTransformationInfoIfReady(getAttachedSurfaceResolution());
         }
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @hide
+     */
+    @RestrictTo(Scope.LIBRARY_GROUP)
     @Override
     public void onAttached() {
         getOutput().getStreamState().addObserver(CameraXExecutors.mainThreadExecutor(),
@@ -215,7 +222,6 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
      * @hide
      */
     @Override
-    @OptIn(markerClass = ExperimentalUseCaseGroup.class)
     @RestrictTo(Scope.LIBRARY_GROUP)
     public void setViewPortCropRect(@NonNull Rect viewPortCropRect) {
         super.setViewPortCropRect(viewPortCropRect);
@@ -288,7 +294,6 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
         return Builder.fromConfig(config);
     }
 
-    @OptIn(markerClass = ExperimentalUseCaseGroup.class)
     private void sendTransformationInfoIfReady(@Nullable Size resolution) {
         CameraInternal cameraInternal = getCamera();
         SurfaceRequest surfaceRequest = mSurfaceRequest;

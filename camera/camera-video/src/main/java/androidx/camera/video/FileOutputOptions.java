@@ -34,7 +34,7 @@ import java.io.File;
 public abstract class FileOutputOptions extends OutputOptions {
 
     FileOutputOptions() {
-        super(Type.FILE);
+        super(OPTIONS_TYPE_FILE);
     }
 
     /** Returns a builder for this FileOutputOptions. */
@@ -48,7 +48,7 @@ public abstract class FileOutputOptions extends OutputOptions {
      * Gets the limit for the file length in bytes.
      */
     @Override
-    public abstract int getFileSizeLimit();
+    public abstract long getFileSizeLimit();
 
     /** Gets the File instance */
     @NonNull
@@ -73,7 +73,7 @@ public abstract class FileOutputOptions extends OutputOptions {
          * <p>If not set, defaults to {@link #FILE_SIZE_UNLIMITED}.
          */
         @NonNull
-        public abstract Builder setFileSizeLimit(int bytes);
+        public abstract Builder setFileSizeLimit(long bytes);
 
         /** Builds the FileOutputOptions instance. */
         @NonNull

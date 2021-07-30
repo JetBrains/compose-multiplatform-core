@@ -113,8 +113,6 @@ import androidx.camera.core.impl.utils.futures.Futures;
 import androidx.camera.core.internal.IoConfig;
 import androidx.camera.core.internal.TargetConfig;
 import androidx.camera.core.internal.YuvToJpegProcessor;
-import androidx.camera.core.internal.compat.quirk.DeviceQuirks;
-import androidx.camera.core.internal.compat.quirk.ImageCaptureWashedOutImageQuirk;
 import androidx.camera.core.internal.compat.quirk.SoftwareJpegEncodingPreferredQuirk;
 import androidx.camera.core.internal.compat.workaround.ExifRotationAvailability;
 import androidx.camera.core.internal.utils.ImageUtil;
@@ -235,6 +233,7 @@ public final class ImageCapture extends UseCase {
     private static final String TAG = "ImageCapture";
     @SuppressWarnings("WeakerAccess") /* synthetic accessor */
     private static final long CHECK_3A_TIMEOUT_IN_MS = 1000L;
+    private static final long CHECK_3A_WITH_FLASH_TIMEOUT_IN_MS = 5000L;
     private static final int MAX_IMAGES = 2;
     // TODO(b/149336664) Move the quality to a compatibility class when there is a per device case.
     private static final byte JPEG_QUALITY_MAXIMIZE_QUALITY_MODE = 100;
@@ -306,14 +305,6 @@ public final class ImageCapture extends UseCase {
      */
     private boolean mUseSoftwareJpeg = false;
 
-    /**
-     * Whether the torch flash will be used.
-     *
-     * <p>When the flag is set, torch will be opened and closed to replace the flash fired by flash
-     * mode.
-     */
-    private final boolean mUseTorchFlash;
-
     ////////////////////////////////////////////////////////////////////////////////////////////
     // [UseCase attached dynamic] - Can change but is only available when the UseCase is attached.
     ////////////////////////////////////////////////////////////////////////////////////////////
@@ -361,11 +352,6 @@ public final class ImageCapture extends UseCase {
             mEnableCheck3AConverged = true; // check 3A convergence in MAX_QUALITY mode
         } else {
             mEnableCheck3AConverged = false; // skip 3A convergence in MIN_LATENCY mode
-        }
-
-        mUseTorchFlash = DeviceQuirks.get(ImageCaptureWashedOutImageQuirk.class) != null;
-        if (mUseTorchFlash) {
-            Logger.d(TAG, "Open and close torch to replace the flash fired by flash mode.");
         }
     }
 
@@ -417,16 +403,12 @@ public final class ImageCapture extends UseCase {
             }
 
             // TODO: To allow user to use an Executor for the image processing.
-            mProcessingImageReader =
-                    new ProcessingImageReader(
-                            resolution.getWidth(),
-                            resolution.getHeight(),
-                            inputFormat,
-                            mMaxCaptureStages,
-                            /* postProcessExecutor */mExecutor,
-                            getCaptureBundle(CaptureBundles.singleDefaultCaptureBundle()),
-                            captureProcessor,
-                            outputFormat);
+            mProcessingImageReader = new ProcessingImageReader.Builder(resolution.getWidth(),
+                    resolution.getHeight(), inputFormat, mMaxCaptureStages,
+                    getCaptureBundle(CaptureBundles.singleDefaultCaptureBundle()),
+                    captureProcessor).setPostProcessExecutor(mExecutor).setOutputFormat(
+                    outputFormat).build();
+
             mMetadataMatchingCaptureCallback = mProcessingImageReader.getCameraCaptureCallback();
             mImageReader = new SafeCloseImageReaderProxy(mProcessingImageReader);
             if (softwareJpegProcessor != null) {
@@ -448,6 +430,10 @@ public final class ImageCapture extends UseCase {
             mMetadataMatchingCaptureCallback = metadataImageReader.getCameraCaptureCallback();
             mImageReader = new SafeCloseImageReaderProxy(metadataImageReader);
         }
+        if (mImageCaptureRequestProcessor != null) {
+            mImageCaptureRequestProcessor.cancelRequests(
+                    new CancellationException("Request is canceled."));
+        }
         mImageCaptureRequestProcessor = new ImageCaptureRequestProcessor(MAX_IMAGES,
                 request -> takePictureInternal(request));
 
@@ -459,7 +445,9 @@ public final class ImageCapture extends UseCase {
         if (mDeferrableSurface != null) {
             mDeferrableSurface.close();
         }
-        mDeferrableSurface = new ImmediateSurface(mImageReader.getSurface());
+        mDeferrableSurface = new ImmediateSurface(
+                mImageReader.getSurface(), new Size(mImageReader.getWidth(),
+                mImageReader.getHeight()), mImageReader.getImageFormat());
         mDeferrableSurface.getTerminationFuture().addListener(
                 imageReaderProxy::safeClose, CameraXExecutors.mainThreadExecutor());
         sessionConfigBuilder.addNonRepeatingSurface(mDeferrableSurface);
@@ -487,6 +475,11 @@ public final class ImageCapture extends UseCase {
     @SuppressWarnings("WeakerAccess")
     void clearPipeline() {
         Threads.checkMainThread();
+        if (mImageCaptureRequestProcessor != null) {
+            mImageCaptureRequestProcessor.cancelRequests(
+                    new CancellationException("Request is canceled."));
+            mImageCaptureRequestProcessor = null;
+        }
         DeferrableSurface deferrableSurface = mDeferrableSurface;
         mDeferrableSurface = null;
         mImageReader = null;
@@ -960,9 +953,12 @@ public final class ImageCapture extends UseCase {
         abortImageCaptureRequests();
     }
 
+    @UiThread
     private void abortImageCaptureRequests() {
-        Throwable throwable = new CameraClosedException("Camera is closed.");
-        mImageCaptureRequestProcessor.cancelRequests(throwable);
+        if (mImageCaptureRequestProcessor != null) {
+            Throwable throwable = new CameraClosedException("Camera is closed.");
+            mImageCaptureRequestProcessor.cancelRequests(throwable);
+        }
     }
 
     @UiThread
@@ -979,6 +975,13 @@ public final class ImageCapture extends UseCase {
             callbackExecutor.execute(
                     () -> callback.onError(new ImageCaptureException(ERROR_INVALID_CAMERA,
                             "Not bound to a valid Camera [" + ImageCapture.this + "]", null)));
+            return;
+        }
+
+        if (mImageCaptureRequestProcessor == null) {
+            callbackExecutor.execute(
+                    () -> callback.onError(
+                            new ImageCaptureException(ERROR_UNKNOWN, "Request is canceled", null)));
             return;
         }
 
@@ -1346,6 +1349,9 @@ public final class ImageCapture extends UseCase {
         // enforceSoftwareJpegConstraints() hasn't removed the request.
         mUseSoftwareJpeg = useCaseConfig.isSoftwareJpegEncoderRequested();
 
+        CameraInternal camera = getCamera();
+        Preconditions.checkNotNull(camera, "Attached camera cannot be null");
+
         mExecutor =
                 Executors.newFixedThreadPool(
                         1,
@@ -1394,11 +1400,7 @@ public final class ImageCapture extends UseCase {
                     state.mPreCaptureState = captureResult;
                     triggerAfIfNeeded(state);
                     if (isFlashRequired(state)) {
-                        if (mUseTorchFlash) {
-                            return openTorch(state);
-                        } else {
-                            return triggerAePrecapture(state);
-                        }
+                        return startFlashSequence(state);
                     }
                     return Futures.immediateFuture(null);
                 }, mExecutor)
@@ -1413,35 +1415,8 @@ public final class ImageCapture extends UseCase {
      * <p>For example, cancel 3A scan, close torch if necessary.
      */
     void postTakePicture(final TakePictureState state) {
-        closeTorch(state);
-        cancelAfAeTrigger(state);
+        cancelAfAndFinishFlashSequence(state);
         unlockFlashMode();
-    }
-
-    @NonNull
-    private ListenableFuture<Void> openTorch(@NonNull TakePictureState state) {
-        CameraInternal camera = getCamera();
-        if (camera != null && camera.getCameraInfo().getTorchState().getValue() == TorchState.ON) {
-            // Torch is already opened.
-            return Futures.immediateFuture(null);
-        }
-
-        Logger.d(TAG, "openTorch");
-
-        // Create a new future in order to ignore any fail from CameraControl.enableTorch().
-        return CallbackToFutureAdapter.getFuture(completer -> {
-            getCameraControl().enableTorch(state.mIsTorchOpened = true).addListener(
-                    () -> completer.set(null), CameraXExecutors.directExecutor());
-            return "openTorch";
-        });
-    }
-
-    private void closeTorch(@NonNull TakePictureState state) {
-        if (state.mIsTorchOpened) {
-            // Add listener to avoid FutureReturnValueIgnored error.
-            getCameraControl().enableTorch(state.mIsTorchOpened = false).addListener(() -> {
-            }, CameraXExecutors.directExecutor());
-        }
     }
 
     /**
@@ -1489,8 +1464,13 @@ public final class ImageCapture extends UseCase {
     }
 
     ListenableFuture<Boolean> check3AConverged(TakePictureState state) {
-        if (!mEnableCheck3AConverged && !state.mIsAePrecaptureTriggered && !state.mIsTorchOpened) {
+        if (!mEnableCheck3AConverged && !state.mIsFlashSequenceStarted) {
             return Futures.immediateFuture(false);
+        }
+
+        long waitTimeout = CHECK_3A_TIMEOUT_IN_MS;
+        if (state.mIsFlashSequenceStarted) {
+            waitTimeout = CHECK_3A_WITH_FLASH_TIMEOUT_IN_MS;
         }
 
         return mSessionCallbackChecker.checkCaptureResult(
@@ -1510,7 +1490,7 @@ public final class ImageCapture extends UseCase {
                         return null;
                     }
                 },
-                CHECK_3A_TIMEOUT_IN_MS,
+                waitTimeout,
                 false);
     }
 
@@ -1568,23 +1548,22 @@ public final class ImageCapture extends UseCase {
     }
 
     /** Issues a request to start auto exposure scan. */
-    ListenableFuture<Void> triggerAePrecapture(TakePictureState state) {
-        Logger.d(TAG, "triggerAePrecapture");
-        state.mIsAePrecaptureTriggered = true;
-        // Transform type from CameraCaptureResult to Void
-        return Futures.transform(getCameraControl().triggerAePrecapture(), captureResult -> null,
-                CameraXExecutors.directExecutor());
+    @NonNull
+    ListenableFuture<Void> startFlashSequence(@NonNull TakePictureState state) {
+        Logger.d(TAG, "startFlashSequence");
+        state.mIsFlashSequenceStarted = true;
+        return getCameraControl().startFlashSequence();
     }
 
     /** Issues a request to cancel auto focus and/or auto exposure scan. */
-    void cancelAfAeTrigger(TakePictureState state) {
-        if (!state.mIsAfTriggered && !state.mIsAePrecaptureTriggered) {
+    void cancelAfAndFinishFlashSequence(@NonNull TakePictureState state) {
+        if (!state.mIsAfTriggered && !state.mIsFlashSequenceStarted) {
             return;
         }
-        getCameraControl()
-                .cancelAfAeTrigger(state.mIsAfTriggered, state.mIsAePrecaptureTriggered);
+        getCameraControl().cancelAfAndFinishFlashSequence(state.mIsAfTriggered,
+                state.mIsFlashSequenceStarted);
         state.mIsAfTriggered = false;
-        state.mIsAePrecaptureTriggered = false;
+        state.mIsFlashSequenceStarted = false;
     }
 
     /**
@@ -1697,7 +1676,7 @@ public final class ImageCapture extends UseCase {
 
         }
 
-        getCameraControl().submitCaptureRequests(captureConfigs);
+        getCameraControl().submitStillCaptureRequests(captureConfigs);
         return Futures.transform(Futures.allAsList(futureList),
                 input -> null, CameraXExecutors.directExecutor());
     }
@@ -2045,11 +2024,9 @@ public final class ImageCapture extends UseCase {
         /**
          * Returns the {@link Uri} of the saved file.
          *
-         * <p> This field is only returned if the {@link OutputFileOptions} is backed by
-         * {@link MediaStore} constructed with
-         *
+         * <p> Returns null if the {@link OutputFileOptions} is constructed with
          * {@link androidx.camera.core.ImageCapture.OutputFileOptions.Builder
-         * #Builder(ContentResolver, Uri, ContentValues)}.
+         * #Builder(OutputStream)}.
          */
         @Nullable
         public Uri getSavedUri() {
@@ -2162,9 +2139,8 @@ public final class ImageCapture extends UseCase {
      */
     static final class TakePictureState {
         CameraCaptureResult mPreCaptureState = EmptyCameraCaptureResult.create();
-        boolean mIsTorchOpened = false;
         boolean mIsAfTriggered = false;
-        boolean mIsAePrecaptureTriggered = false;
+        boolean mIsFlashSequenceStarted = false;
     }
 
     /**
@@ -2873,6 +2849,12 @@ public final class ImageCapture extends UseCase {
          *
          * <p>If not set, the largest available resolution will be selected to use. Usually,
          * users will intend to get the largest still image that the camera device can support.
+         *
+         * <p>When using the <code>camera-camera2</code> CameraX implementation, which resolution
+         * will be finally selected will depend on the camera device's hardware level and the
+         * bound use cases combination. For more details see the guaranteed supported
+         * configurations tables in {@link android.hardware.camera2.CameraDevice}'s
+         * <a href="https://developer.android.com/reference/android/hardware/camera2/CameraDevice#regular-capture">Regular capture</a> section.
          *
          * @param resolution The target resolution to choose from supported output sizes list.
          * @return The current Builder.

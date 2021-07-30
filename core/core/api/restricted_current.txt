@@ -1092,20 +1092,12 @@ package androidx.core.content {
 
   public final class IntentCompat {
     method public static android.content.Intent createManageUnusedAppRestrictionsIntent(android.content.Context, String);
-    method public static int getUnusedAppRestrictionsStatus(android.content.Context);
     method public static android.content.Intent makeMainSelectorActivity(String, String);
     field public static final String ACTION_CREATE_REMINDER = "android.intent.action.CREATE_REMINDER";
-    field public static final String ACTION_UNUSED_APP_RESTRICTIONS = "android.intent.action.AUTO_REVOKE_PERMISSIONS";
-    field public static final int APP_HIBERNATION_DISABLED = 5; // 0x5
-    field public static final int APP_HIBERNATION_ENABLED = 4; // 0x4
     field public static final String CATEGORY_LEANBACK_LAUNCHER = "android.intent.category.LEANBACK_LAUNCHER";
     field public static final String EXTRA_HTML_TEXT = "android.intent.extra.HTML_TEXT";
     field public static final String EXTRA_START_PLAYBACK = "android.intent.extra.START_PLAYBACK";
     field public static final String EXTRA_TIME = "android.intent.extra.TIME";
-    field public static final int PERMISSION_REVOCATION_DISABLED = 3; // 0x3
-    field public static final int PERMISSION_REVOCATION_ENABLED = 2; // 0x2
-    field public static final int UNUSED_APP_RESTRICTION_FEATURE_NOT_AVAILABLE = 1; // 0x1
-    field public static final int UNUSED_APP_RESTRICTION_STATUS_UNKNOWN = 0; // 0x0
   }
 
   public final class LocusIdCompat {
@@ -1120,6 +1112,17 @@ package androidx.core.content {
     method public static String? matches(String?, String![]);
     method public static String? matches(String![]?, String);
     method public static String![] matchesMany(String![]?, String);
+  }
+
+  public final class PackageManagerCompat {
+    method public static int getUnusedAppRestrictionsStatus(android.content.Context);
+    field public static final String ACTION_PERMISSION_REVOCATION_SETTINGS = "android.intent.action.AUTO_REVOKE_PERMISSIONS";
+    field public static final int APP_HIBERNATION_DISABLED = 5; // 0x5
+    field public static final int APP_HIBERNATION_ENABLED = 4; // 0x4
+    field public static final int PERMISSION_REVOCATION_DISABLED = 3; // 0x3
+    field public static final int PERMISSION_REVOCATION_ENABLED = 2; // 0x2
+    field public static final int UNUSED_APP_RESTRICTION_FEATURE_NOT_AVAILABLE = 1; // 0x1
+    field public static final int UNUSED_APP_RESTRICTION_STATUS_UNKNOWN = 0; // 0x0
   }
 
   public final class PermissionChecker {
@@ -1450,8 +1453,8 @@ package androidx.core.graphics {
     method public static void RGBToHSL(@IntRange(from=0, to=255) int, @IntRange(from=0, to=255) int, @IntRange(from=0, to=255) int, float[]);
     method public static void RGBToLAB(@IntRange(from=0, to=255) int, @IntRange(from=0, to=255) int, @IntRange(from=0, to=255) int, double[]);
     method public static void RGBToXYZ(@IntRange(from=0, to=255) int, @IntRange(from=0, to=255) int, @IntRange(from=0, to=255) int, double[]);
-    method @ColorInt public static int XYZToColor(@FloatRange(from=0.0f, to=androidx.core.graphics.ColorUtils.XYZ_WHITE_REFERENCE_X) double, @FloatRange(from=0.0f, to=androidx.core.graphics.ColorUtils.XYZ_WHITE_REFERENCE_Y) double, @FloatRange(from=0.0f, to=androidx.core.graphics.ColorUtils.XYZ_WHITE_REFERENCE_Z) double);
-    method public static void XYZToLAB(@FloatRange(from=0.0f, to=androidx.core.graphics.ColorUtils.XYZ_WHITE_REFERENCE_X) double, @FloatRange(from=0.0f, to=androidx.core.graphics.ColorUtils.XYZ_WHITE_REFERENCE_Y) double, @FloatRange(from=0.0f, to=androidx.core.graphics.ColorUtils.XYZ_WHITE_REFERENCE_Z) double, double[]);
+    method @ColorInt public static int XYZToColor(@FloatRange(from=0.0f, to=95.047) double, @FloatRange(from=0.0f, to=0x64) double, @FloatRange(from=0.0f, to=108.883) double);
+    method public static void XYZToLAB(@FloatRange(from=0.0f, to=95.047) double, @FloatRange(from=0.0f, to=0x64) double, @FloatRange(from=0.0f, to=108.883) double, double[]);
     method @ColorInt public static int blendARGB(@ColorInt int, @ColorInt int, @FloatRange(from=0.0, to=1.0) float);
     method public static void blendHSL(float[], float[], @FloatRange(from=0.0, to=1.0) float, float[]);
     method public static void blendLAB(double[], double[], @FloatRange(from=0.0, to=1.0) double, double[]);
@@ -1806,10 +1809,23 @@ package androidx.core.location {
 package androidx.core.math {
 
   public class MathUtils {
+    method public static int addExact(int, int);
+    method public static long addExact(long, long);
     method public static float clamp(float, float, float);
     method public static double clamp(double, double, double);
     method public static int clamp(int, int, int);
     method public static long clamp(long, long, long);
+    method public static int decrementExact(int);
+    method public static long decrementExact(long);
+    method public static int incrementExact(int);
+    method public static long incrementExact(long);
+    method public static int multiplyExact(int, int);
+    method public static long multiplyExact(long, long);
+    method public static int negateExact(int);
+    method public static long negateExact(long);
+    method public static int subtractExact(int, int);
+    method public static long subtractExact(long, long);
+    method public static int toIntExact(long);
   }
 
 }
@@ -3217,7 +3233,7 @@ package androidx.core.view {
     method @androidx.core.view.WindowInsetsCompat.Type.InsetsType public static int tappableElement();
   }
 
-  @IntDef(flag=true, value={androidx.core.view.WindowInsetsCompat.Type.STATUS_BARS, androidx.core.view.WindowInsetsCompat.Type.NAVIGATION_BARS, androidx.core.view.WindowInsetsCompat.Type.CAPTION_BAR, androidx.core.view.WindowInsetsCompat.Type.IME, androidx.core.view.WindowInsetsCompat.Type.WINDOW_DECOR, androidx.core.view.WindowInsetsCompat.Type.SYSTEM_GESTURES, androidx.core.view.WindowInsetsCompat.Type.MANDATORY_SYSTEM_GESTURES, androidx.core.view.WindowInsetsCompat.Type.TAPPABLE_ELEMENT, androidx.core.view.WindowInsetsCompat.Type.DISPLAY_CUTOUT}) @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP) @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.SOURCE) public static @interface WindowInsetsCompat.Type.InsetsType {
+  @IntDef(flag=true, value={0x1, 0x2, 0x4, 0x8, 0x100, 0x10, 0x20, 0x40, 0x80}) @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP) @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.SOURCE) public static @interface WindowInsetsCompat.Type.InsetsType {
   }
 
   public final class WindowInsetsControllerCompat {
