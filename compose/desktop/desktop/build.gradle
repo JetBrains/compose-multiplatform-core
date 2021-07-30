@@ -45,6 +45,7 @@ kotlin {
             api(project(":compose:material:material"))
             api(project(":compose:runtime:runtime"))
             api(project(":compose:ui:ui"))
+            api(project(":compose:ui:ui-tooling-preview"))
         }
 
         jvmMain.dependencies {
@@ -120,6 +121,7 @@ afterEvaluate {
     publishing {
         publications {
             it.jvmOs("linux-x64", [libs.skikoLinuxX64])
+            it.jvmOs("linux-arm64", [libs.skikoLinuxArm64])
             it.jvmOs("macos-x64", [libs.skikoMacOsX64])
             it.jvmOs("macos-arm64", [libs.skikoMacOsArm64])
             it.jvmOs("windows-x64", [libs.skikoWindowsX64])

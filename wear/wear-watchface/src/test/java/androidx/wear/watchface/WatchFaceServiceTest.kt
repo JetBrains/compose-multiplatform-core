@@ -40,8 +40,8 @@ import androidx.annotation.Px
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.SdkSuppress
 import androidx.wear.complications.ComplicationSlotBounds
-import androidx.wear.complications.DefaultComplicationProviderPolicy
-import androidx.wear.complications.SystemProviders
+import androidx.wear.complications.DefaultComplicationDataSourcePolicy
+import androidx.wear.complications.SystemDataSources
 import androidx.wear.complications.data.ComplicationType
 import androidx.wear.complications.data.PlainComplicationText
 import androidx.wear.complications.data.ShortTextComplicationData
@@ -99,6 +99,7 @@ private const val NO_COMPLICATIONS = "NO_COMPLICATIONS"
 private const val LEFT_COMPLICATION = "LEFT_COMPLICATION"
 private const val RIGHT_COMPLICATION = "RIGHT_COMPLICATION"
 private const val LEFT_AND_RIGHT_COMPLICATIONS = "LEFT_AND_RIGHT_COMPLICATIONS"
+private const val RIGHT_AND_LEFT_COMPLICATIONS = "RIGHT_AND_LEFT_COMPLICATIONS"
 
 @Config(manifest = Config.NONE)
 @RunWith(WatchFaceTestRunner::class)
@@ -131,7 +132,7 @@ public class WatchFaceServiceTest {
         ListUserStyleSetting.ListOption(Option.Id("green_style"), "Green", icon = null)
 
     private val blueStyleOption =
-        ListUserStyleSetting.ListOption(Option.Id("bluestyle"), "Blue", icon = null)
+        ListUserStyleSetting.ListOption(Option.Id("blue_style"), "Blue", icon = null)
 
     private val colorStyleList = listOf(redStyleOption, greenStyleOption, blueStyleOption)
 
@@ -185,9 +186,9 @@ public class WatchFaceServiceTest {
                 ComplicationType.MONOCHROMATIC_IMAGE,
                 ComplicationType.SMALL_IMAGE
             ),
-            DefaultComplicationProviderPolicy(SystemProviders.PROVIDER_SUNRISE_SUNSET),
+            DefaultComplicationDataSourcePolicy(SystemDataSources.DATA_SOURCE_SUNRISE_SUNSET),
             ComplicationSlotBounds(RectF(0.2f, 0.4f, 0.4f, 0.6f))
-        ).setDefaultProviderType(ComplicationType.SHORT_TEXT)
+        ).setDefaultDataSourceType(ComplicationType.SHORT_TEXT)
             .build()
 
     private val rightComplication =
@@ -207,9 +208,9 @@ public class WatchFaceServiceTest {
                 ComplicationType.MONOCHROMATIC_IMAGE,
                 ComplicationType.SMALL_IMAGE
             ),
-            DefaultComplicationProviderPolicy(SystemProviders.PROVIDER_DAY_OF_WEEK),
+            DefaultComplicationDataSourcePolicy(SystemDataSources.DATA_SOURCE_DAY_OF_WEEK),
             ComplicationSlotBounds(RectF(0.6f, 0.4f, 0.8f, 0.6f))
-        ).setDefaultProviderType(ComplicationType.SHORT_TEXT)
+        ).setDefaultDataSourceType(ComplicationType.SHORT_TEXT)
             .build()
 
     private val edgeComplicationHitTester = mock<ComplicationTapFilter>()
@@ -230,10 +231,10 @@ public class WatchFaceServiceTest {
                 ComplicationType.MONOCHROMATIC_IMAGE,
                 ComplicationType.SMALL_IMAGE
             ),
-            DefaultComplicationProviderPolicy(SystemProviders.PROVIDER_DAY_OF_WEEK),
+            DefaultComplicationDataSourcePolicy(SystemDataSources.DATA_SOURCE_DAY_OF_WEEK),
             ComplicationSlotBounds(RectF(0.0f, 0.4f, 0.4f, 0.6f)),
             edgeComplicationHitTester
-        ).setDefaultProviderType(ComplicationType.SHORT_TEXT)
+        ).setDefaultDataSourceType(ComplicationType.SHORT_TEXT)
             .build()
 
     private val backgroundComplication =
@@ -249,13 +250,13 @@ public class WatchFaceServiceTest {
             listOf(
                 ComplicationType.PHOTO_IMAGE
             ),
-            DefaultComplicationProviderPolicy()
-        ).setDefaultProviderType(ComplicationType.PHOTO_IMAGE)
+            DefaultComplicationDataSourcePolicy()
+        ).setDefaultDataSourceType(ComplicationType.PHOTO_IMAGE)
             .build()
 
     private val leftAndRightComplicationsOption = ComplicationSlotsOption(
         Option.Id(LEFT_AND_RIGHT_COMPLICATIONS),
-        "Both",
+        "Left and Right",
         null,
         listOf(
             ComplicationSlotOverlay.Builder(LEFT_COMPLICATION_ID)
@@ -266,7 +267,7 @@ public class WatchFaceServiceTest {
     )
     private val noComplicationsOption = ComplicationSlotsOption(
         Option.Id(NO_COMPLICATIONS),
-        "Both",
+        "None",
         null,
         listOf(
             ComplicationSlotOverlay.Builder(LEFT_COMPLICATION_ID)
@@ -370,7 +371,7 @@ public class WatchFaceServiceTest {
         for (complication in complicationSlots) {
             setComplicationViaWallpaperCommand(
                 complication.id,
-                when (complication.defaultProviderType) {
+                when (complication.defaultDataSourceType) {
                     ComplicationType.SHORT_TEXT ->
                         ComplicationData.Builder(ComplicationData.TYPE_SHORT_TEXT)
                             .setShortText(ComplicationText.plainText("Initial Short"))
@@ -720,27 +721,27 @@ public class WatchFaceServiceTest {
             UserStyleSchema(emptyList())
         )
 
-        assertThat(complicationDrawableLeft.isHighlighted).isFalse()
-        assertThat(complicationDrawableRight.isHighlighted).isFalse()
+        assertThat(complicationSlotsManager.pressedSlotIds).doesNotContain(LEFT_COMPLICATION_ID)
+        assertThat(complicationSlotsManager.pressedSlotIds).doesNotContain(RIGHT_COMPLICATION_ID)
 
         // Tap left complication.
         tapAt(30, 50)
-        assertThat(complicationDrawableLeft.isHighlighted).isTrue()
+        assertThat(complicationSlotsManager.pressedSlotIds).contains(LEFT_COMPLICATION_ID)
         assertThat(testWatchFaceService.tappedComplicationSlotIds)
             .isEqualTo(listOf(LEFT_COMPLICATION_ID))
 
         runPostedTasksFor(WatchFaceImpl.CANCEL_COMPLICATION_HIGHLIGHTED_DELAY_MS)
-        assertThat(complicationDrawableLeft.isHighlighted).isFalse()
+        assertThat(complicationSlotsManager.pressedSlotIds).doesNotContain(LEFT_COMPLICATION_ID)
 
         // Tap right complication.
         testWatchFaceService.reset()
         tapAt(70, 50)
-        assertThat(complicationDrawableRight.isHighlighted).isTrue()
+        assertThat(complicationSlotsManager.pressedSlotIds).contains(RIGHT_COMPLICATION_ID)
         assertThat(testWatchFaceService.tappedComplicationSlotIds)
             .isEqualTo(listOf(RIGHT_COMPLICATION_ID))
 
         runPostedTasksFor(WatchFaceImpl.CANCEL_COMPLICATION_HIGHLIGHTED_DELAY_MS)
-        assertThat(complicationDrawableLeft.isHighlighted).isFalse()
+        assertThat(complicationSlotsManager.pressedSlotIds).doesNotContain(LEFT_COMPLICATION_ID)
 
         // Tap on blank space.
         testWatchFaceService.reset()
@@ -748,7 +749,7 @@ public class WatchFaceServiceTest {
         assertThat(testWatchFaceService.tappedComplicationSlotIds).isEmpty()
 
         runPostedTasksFor(WatchFaceImpl.CANCEL_COMPLICATION_HIGHLIGHTED_DELAY_MS)
-        assertThat(complicationDrawableLeft.isHighlighted).isFalse()
+        assertThat(complicationSlotsManager.pressedSlotIds).doesNotContain(LEFT_COMPLICATION_ID)
         assertThat(testWatchFaceService.tappedComplicationSlotIds).isEmpty()
     }
 
@@ -760,21 +761,21 @@ public class WatchFaceServiceTest {
             UserStyleSchema(emptyList())
         )
 
-        assertThat(complicationDrawableLeft.isHighlighted).isFalse()
-        assertThat(complicationDrawableRight.isHighlighted).isFalse()
+        assertThat(complicationSlotsManager.pressedSlotIds).doesNotContain(LEFT_COMPLICATION_ID)
+        assertThat(complicationSlotsManager.pressedSlotIds).doesNotContain(RIGHT_COMPLICATION_ID)
 
         // Rapidly tap left then right complication.
         tapAt(30, 50)
         tapAt(70, 50)
 
         // Both complicationSlots get temporarily highlighted.
-        assertThat(complicationDrawableLeft.isHighlighted).isTrue()
-        assertThat(complicationDrawableRight.isHighlighted).isTrue()
+        assertThat(complicationSlotsManager.pressedSlotIds).contains(LEFT_COMPLICATION_ID)
+        assertThat(complicationSlotsManager.pressedSlotIds).contains(RIGHT_COMPLICATION_ID)
 
         // And the highlight goes away after a delay.
         runPostedTasksFor(WatchFaceImpl.CANCEL_COMPLICATION_HIGHLIGHTED_DELAY_MS)
-        assertThat(complicationDrawableLeft.isHighlighted).isFalse()
-        assertThat(complicationDrawableRight.isHighlighted).isFalse()
+        assertThat(complicationSlotsManager.pressedSlotIds).doesNotContain(LEFT_COMPLICATION_ID)
+        assertThat(complicationSlotsManager.pressedSlotIds).doesNotContain(RIGHT_COMPLICATION_ID)
 
         // Taps are registered on both complicationSlots.
         assertThat(testWatchFaceService.tappedComplicationSlotIds)
@@ -804,7 +805,7 @@ public class WatchFaceServiceTest {
             tapListener = tapListener
         )
 
-        assertThat(complicationDrawableEdge.isHighlighted).isFalse()
+        assertThat(complicationSlotsManager.pressedSlotIds).doesNotContain(EDGE_COMPLICATION_ID)
 
         `when`(
             edgeComplicationHitTester.hitTest(
@@ -817,12 +818,12 @@ public class WatchFaceServiceTest {
 
         // Tap the edge complication.
         tapAt(0, 50)
-        assertThat(complicationDrawableEdge.isHighlighted).isTrue()
+        assertThat(complicationSlotsManager.pressedSlotIds).contains(EDGE_COMPLICATION_ID)
         assertThat(testWatchFaceService.tappedComplicationSlotIds)
             .isEqualTo(listOf(EDGE_COMPLICATION_ID))
 
         runPostedTasksFor(WatchFaceImpl.CANCEL_COMPLICATION_HIGHLIGHTED_DELAY_MS)
-        assertThat(complicationDrawableEdge.isHighlighted).isFalse()
+        assertThat(complicationSlotsManager.pressedSlotIds).doesNotContain(EDGE_COMPLICATION_ID)
     }
 
     @Test
@@ -839,6 +840,48 @@ public class WatchFaceServiceTest {
 
         verify(tapListener).onTap(TapType.DOWN, 1, 1)
         verify(tapListener).onTap(TapType.UP, 1, 1)
+    }
+
+    @Test
+    public fun tapListener_tap_viaWallpaperCommand() {
+        initEngine(
+            WatchFaceType.ANALOG,
+            listOf(leftComplication, rightComplication),
+            UserStyleSchema(emptyList()),
+            tapListener = tapListener
+        )
+
+        // Tap on nothing.
+        engineWrapper.onCommand(
+            Constants.COMMAND_TOUCH,
+            10,
+            20,
+            0,
+            Bundle().apply {
+                putBinder(
+                    Constants.EXTRA_BINDER,
+                    WatchFaceServiceStub(iWatchFaceService).asBinder()
+                )
+            },
+            false
+        )
+
+        engineWrapper.onCommand(
+            Constants.COMMAND_TAP,
+            10,
+            20,
+            0,
+            Bundle().apply {
+                putBinder(
+                    Constants.EXTRA_BINDER,
+                    WatchFaceServiceStub(iWatchFaceService).asBinder()
+                )
+            },
+            false
+        )
+
+        verify(tapListener).onTap(TapType.DOWN, 10, 20)
+        verify(tapListener).onTap(TapType.UP, 10, 20)
     }
 
     @Test
@@ -1359,9 +1402,9 @@ public class WatchFaceServiceTest {
 
     @Test
     public fun styleChangesAccessibilityTraversalIndex() {
-        val leftAndRightComplicationsOptionIndexReversed = ComplicationSlotsOption(
-            Option.Id(LEFT_AND_RIGHT_COMPLICATIONS),
-            "Both",
+        val rightAndSelectComplicationsOption = ComplicationSlotsOption(
+            Option.Id(RIGHT_AND_LEFT_COMPLICATIONS),
+            "Right and Left",
             null,
             listOf(
                 ComplicationSlotOverlay.Builder(LEFT_COMPLICATION_ID)
@@ -1378,7 +1421,7 @@ public class WatchFaceServiceTest {
             icon = null,
             complicationConfig = listOf(
                 leftAndRightComplicationsOption,
-                leftAndRightComplicationsOptionIndexReversed
+                rightAndSelectComplicationsOption
             ),
             affectsWatchFaceLayers = listOf(WatchFaceLayer.COMPLICATIONS)
         )
@@ -1422,7 +1465,7 @@ public class WatchFaceServiceTest {
 
         // Change the style
         watchFaceImpl.currentUserStyleRepository.userStyle = UserStyle(
-            hashMapOf(complicationsStyleSetting to leftAndRightComplicationsOptionIndexReversed)
+            hashMapOf(complicationsStyleSetting to rightAndSelectComplicationsOption)
         )
         runPostedTasksFor(0)
 
@@ -1457,18 +1500,14 @@ public class WatchFaceServiceTest {
     @Test
     public fun getOptionForIdentifier_ListViewStyleSetting() {
         // Check the correct Options are returned for known option names.
-        assertThat(colorStyleSetting.getOptionForId(redStyleOption.id.value)).isEqualTo(
-            redStyleOption
-        )
-        assertThat(colorStyleSetting.getOptionForId(greenStyleOption.id.value)).isEqualTo(
+        assertThat(colorStyleSetting.getOptionForId(redStyleOption.id)).isEqualTo(redStyleOption)
+        assertThat(colorStyleSetting.getOptionForId(greenStyleOption.id)).isEqualTo(
             greenStyleOption
         )
-        assertThat(colorStyleSetting.getOptionForId(blueStyleOption.id.value)).isEqualTo(
-            blueStyleOption
-        )
+        assertThat(colorStyleSetting.getOptionForId(blueStyleOption.id)).isEqualTo(blueStyleOption)
 
         // For unknown option names the first element in the list should be returned.
-        assertThat(colorStyleSetting.getOptionForId("unknown".encodeToByteArray()))
+        assertThat(colorStyleSetting.getOptionForId(Option.Id("unknown".encodeToByteArray())))
             .isEqualTo(colorStyleList.first())
     }
 
@@ -1532,22 +1571,22 @@ public class WatchFaceServiceTest {
     }
 
     @Test
-    public fun defaultProvidersWithFallbacks_newApi() {
-        val provider1 = ComponentName("com.app1", "com.app1.App1")
-        val provider2 = ComponentName("com.app2", "com.app2.App2")
+    public fun defaultComplicationDataSourcesWithFallbacks_newApi() {
+        val dataSource1 = ComponentName("com.app1", "com.app1.App1")
+        val dataSource2 = ComponentName("com.app2", "com.app2.App2")
         val complication = ComplicationSlot.createRoundRectComplicationSlotBuilder(
             LEFT_COMPLICATION_ID,
             { watchState, listener ->
                 CanvasComplicationDrawable(complicationDrawableLeft, watchState, listener)
             },
             emptyList(),
-            DefaultComplicationProviderPolicy(
-                provider1,
-                provider2,
-                SystemProviders.PROVIDER_SUNRISE_SUNSET
+            DefaultComplicationDataSourcePolicy(
+                dataSource1,
+                dataSource2,
+                SystemDataSources.DATA_SOURCE_SUNRISE_SUNSET
             ),
             ComplicationSlotBounds(RectF(0.2f, 0.4f, 0.4f, 0.6f))
-        ).setDefaultProviderType(ComplicationType.SHORT_TEXT)
+        ).setDefaultDataSourceType(ComplicationType.SHORT_TEXT)
             .build()
         initEngine(WatchFaceType.ANALOG, listOf(complication), UserStyleSchema(emptyList()))
 
@@ -1555,29 +1594,29 @@ public class WatchFaceServiceTest {
 
         verify(iWatchFaceService).setDefaultComplicationProviderWithFallbacks(
             LEFT_COMPLICATION_ID,
-            listOf(provider1, provider2),
-            SystemProviders.PROVIDER_SUNRISE_SUNSET,
+            listOf(dataSource1, dataSource2),
+            SystemDataSources.DATA_SOURCE_SUNRISE_SUNSET,
             ComplicationData.TYPE_SHORT_TEXT
         )
     }
 
     @Test
-    public fun defaultProvidersWithFallbacks_oldApi() {
-        val provider1 = ComponentName("com.app1", "com.app1.App1")
-        val provider2 = ComponentName("com.app2", "com.app2.App2")
+    public fun defaultComplicationDataSourcesWithFallbacks_oldApi() {
+        val dataSource1 = ComponentName("com.app1", "com.app1.App1")
+        val dataSource2 = ComponentName("com.app2", "com.app2.App2")
         val complication = ComplicationSlot.createRoundRectComplicationSlotBuilder(
             LEFT_COMPLICATION_ID,
             { watchState, listener ->
                 CanvasComplicationDrawable(complicationDrawableLeft, watchState, listener)
             },
             emptyList(),
-            DefaultComplicationProviderPolicy(
-                provider1,
-                provider2,
-                SystemProviders.PROVIDER_SUNRISE_SUNSET
+            DefaultComplicationDataSourcePolicy(
+                dataSource1,
+                dataSource2,
+                SystemDataSources.DATA_SOURCE_SUNRISE_SUNSET
             ),
             ComplicationSlotBounds(RectF(0.2f, 0.4f, 0.4f, 0.6f))
-        ).setDefaultProviderType(ComplicationType.SHORT_TEXT)
+        ).setDefaultDataSourceType(ComplicationType.SHORT_TEXT)
             .build()
         initEngine(
             WatchFaceType.ANALOG,
@@ -1589,14 +1628,14 @@ public class WatchFaceServiceTest {
         runPostedTasksFor(0)
 
         verify(iWatchFaceService).setDefaultComplicationProvider(
-            LEFT_COMPLICATION_ID, provider2, ComplicationData.TYPE_SHORT_TEXT
+            LEFT_COMPLICATION_ID, dataSource2, ComplicationData.TYPE_SHORT_TEXT
         )
         verify(iWatchFaceService).setDefaultComplicationProvider(
-            LEFT_COMPLICATION_ID, provider1, ComplicationData.TYPE_SHORT_TEXT
+            LEFT_COMPLICATION_ID, dataSource1, ComplicationData.TYPE_SHORT_TEXT
         )
         verify(iWatchFaceService).setDefaultSystemComplicationProvider(
             LEFT_COMPLICATION_ID,
-            SystemProviders.PROVIDER_SUNRISE_SUNSET,
+            SystemDataSources.DATA_SOURCE_SUNRISE_SUNSET,
             ComplicationData.TYPE_SHORT_TEXT
         )
     }
@@ -1966,9 +2005,9 @@ public class WatchFaceServiceTest {
                     listOf(
                         ComplicationType.RANGED_VALUE,
                     ),
-                    DefaultComplicationProviderPolicy(SystemProviders.PROVIDER_DAY_OF_WEEK),
+                    DefaultComplicationDataSourcePolicy(SystemDataSources.DATA_SOURCE_DAY_OF_WEEK),
                     ComplicationSlotBounds(RectF(0.2f, 0.7f, 0.4f, 0.9f))
-                ).setDefaultProviderType(ComplicationType.RANGED_VALUE)
+                ).setDefaultDataSourceType(ComplicationType.RANGED_VALUE)
                     .setEnabled(false)
                     .build(),
 
@@ -1980,9 +2019,9 @@ public class WatchFaceServiceTest {
                     listOf(
                         ComplicationType.LONG_TEXT,
                     ),
-                    DefaultComplicationProviderPolicy(SystemProviders.PROVIDER_DAY_OF_WEEK),
+                    DefaultComplicationDataSourcePolicy(SystemDataSources.DATA_SOURCE_DAY_OF_WEEK),
                     ComplicationSlotBounds(RectF(0.2f, 0.7f, 0.4f, 0.9f))
-                ).setDefaultProviderType(ComplicationType.LONG_TEXT)
+                ).setDefaultDataSourceType(ComplicationType.LONG_TEXT)
                     .setEnabled(false)
                     .build()
             ),
@@ -2588,9 +2627,9 @@ public class WatchFaceServiceTest {
                 listOf(
                     ComplicationType.SHORT_TEXT,
                 ),
-                DefaultComplicationProviderPolicy(SystemProviders.PROVIDER_SUNRISE_SUNSET),
+                DefaultComplicationDataSourcePolicy(SystemDataSources.DATA_SOURCE_SUNRISE_SUNSET),
                 ComplicationSlotBounds(RectF(0.2f, 0.4f, 0.4f, 0.6f))
-            ).setDefaultProviderType(ComplicationType.SHORT_TEXT)
+            ).setDefaultDataSourceType(ComplicationType.SHORT_TEXT)
                 .build()
 
         val rightCanvasComplication = mock<CanvasComplication>()
@@ -2601,9 +2640,9 @@ public class WatchFaceServiceTest {
                 listOf(
                     ComplicationType.SHORT_TEXT,
                 ),
-                DefaultComplicationProviderPolicy(SystemProviders.PROVIDER_DATE),
+                DefaultComplicationDataSourcePolicy(SystemDataSources.DATA_SOURCE_DATE),
                 ComplicationSlotBounds(RectF(0.6f, 0.4f, 0.8f, 0.6f))
-            ).setDefaultProviderType(ComplicationType.SHORT_TEXT)
+            ).setDefaultDataSourceType(ComplicationType.SHORT_TEXT)
                 .build()
 
         initEngine(

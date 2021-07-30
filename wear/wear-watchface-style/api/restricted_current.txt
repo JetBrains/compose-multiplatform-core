@@ -21,6 +21,7 @@ package androidx.wear.watchface.style {
     ctor public UserStyle(androidx.wear.watchface.style.UserStyle userStyle);
     ctor public UserStyle(androidx.wear.watchface.style.UserStyleData userStyle, androidx.wear.watchface.style.UserStyleSchema styleSchema);
     method public operator androidx.wear.watchface.style.UserStyleSetting.Option? get(androidx.wear.watchface.style.UserStyleSetting setting);
+    method public operator androidx.wear.watchface.style.UserStyleSetting.Option? get(androidx.wear.watchface.style.UserStyleSetting.Id settingId);
     method public java.util.Map<androidx.wear.watchface.style.UserStyleSetting,androidx.wear.watchface.style.UserStyleSetting.Option> getSelectedOptions();
     method public androidx.wear.watchface.style.UserStyleData toUserStyleData();
     method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.wear.watchface.style.data.UserStyleWireFormat toWireFormat();
@@ -51,7 +52,7 @@ package androidx.wear.watchface.style {
     method public final CharSequence getDisplayName();
     method public final android.graphics.drawable.Icon? getIcon();
     method public final androidx.wear.watchface.style.UserStyleSetting.Id getId();
-    method public androidx.wear.watchface.style.UserStyleSetting.Option getOptionForId(byte[] optionId);
+    method public androidx.wear.watchface.style.UserStyleSetting.Option getOptionForId(androidx.wear.watchface.style.UserStyleSetting.Option.Id optionId);
     method public final java.util.List<androidx.wear.watchface.style.UserStyleSetting.Option> getOptions();
     method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final java.util.List<androidx.wear.watchface.style.data.OptionWireFormat> getWireFormatOptionsList();
     method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public abstract androidx.wear.watchface.style.data.UserStyleSettingWireFormat toWireFormat();
@@ -73,10 +74,17 @@ package androidx.wear.watchface.style {
   }
 
   public static final class UserStyleSetting.BooleanUserStyleSetting.BooleanOption extends androidx.wear.watchface.style.UserStyleSetting.Option {
-    ctor public UserStyleSetting.BooleanUserStyleSetting.BooleanOption(boolean value);
+    method public static androidx.wear.watchface.style.UserStyleSetting.BooleanUserStyleSetting.BooleanOption from(boolean value);
     method public boolean getValue();
     method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.wear.watchface.style.data.BooleanOptionWireFormat toWireFormat();
     property public final boolean value;
+    field public static final androidx.wear.watchface.style.UserStyleSetting.BooleanUserStyleSetting.BooleanOption.Companion Companion;
+    field public static final androidx.wear.watchface.style.UserStyleSetting.BooleanUserStyleSetting.BooleanOption FALSE;
+    field public static final androidx.wear.watchface.style.UserStyleSetting.BooleanUserStyleSetting.BooleanOption TRUE;
+  }
+
+  public static final class UserStyleSetting.BooleanUserStyleSetting.BooleanOption.Companion {
+    method public androidx.wear.watchface.style.UserStyleSetting.BooleanUserStyleSetting.BooleanOption from(boolean value);
   }
 
   public static final class UserStyleSetting.Companion {
@@ -93,7 +101,7 @@ package androidx.wear.watchface.style {
     method public Integer? getAccessibilityTraversalIndex();
     method public androidx.wear.complications.ComplicationSlotBounds? getComplicationSlotBounds();
     method public int getComplicationSlotId();
-    method public Boolean? isEnabled();
+    method public Boolean? getEnabled();
     property public final Integer? accessibilityTraversalIndex;
     property public final androidx.wear.complications.ComplicationSlotBounds? complicationSlotBounds;
     property public final int complicationSlotId;
@@ -215,6 +223,9 @@ package androidx.wear.watchface.style {
   }
 
   public static final class UserStyleSetting.Option.Id.Companion {
+  }
+
+  public final class UserStyleSettingKt {
   }
 
   public enum WatchFaceLayer {

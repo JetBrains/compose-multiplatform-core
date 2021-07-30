@@ -17,13 +17,15 @@
 package androidx.navigation.compose
 
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
-import androidx.compose.foundation.layout.Box
+import androidx.compose.animation.Crossfade
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.lifecycle.Lifecycle
@@ -95,24 +97,16 @@ public fun NavHost(
     }
     val onBackPressedDispatcherOwner = LocalOnBackPressedDispatcherOwner.current
     val onBackPressedDispatcher = onBackPressedDispatcherOwner?.onBackPressedDispatcher
-    val rememberedGraph = remember { graph }
 
-    // on successful recompose we setup the navController with proper inputs
-    // after the first time, this will only happen again if one of the inputs changes
-    DisposableEffect(navController, lifecycleOwner, viewModelStoreOwner, onBackPressedDispatcher) {
-        navController.setLifecycleOwner(lifecycleOwner)
-        navController.setViewModelStore(viewModelStoreOwner.viewModelStore)
-        if (onBackPressedDispatcher != null) {
-            navController.setOnBackPressedDispatcher(onBackPressedDispatcher)
-        }
-
-        onDispose { }
+    // Setup the navController with proper owners
+    navController.setLifecycleOwner(lifecycleOwner)
+    navController.setViewModelStore(viewModelStoreOwner.viewModelStore)
+    if (onBackPressedDispatcher != null) {
+        navController.setOnBackPressedDispatcher(onBackPressedDispatcher)
     }
 
-    DisposableEffect(rememberedGraph) {
-        navController.graph = rememberedGraph
-        onDispose { }
-    }
+    // Then set the graph
+    navController.graph = graph
 
     val saveableStateHolder = rememberSaveableStateHolder()
 
@@ -122,16 +116,36 @@ public fun NavHost(
         ComposeNavigator.NAME
     ) as? ComposeNavigator ?: return
     val backStack by composeNavigator.backStack.collectAsState()
+    val transitionsInProgress by composeNavigator.transitionsInProgress.collectAsState()
 
-    backStack.filter { backStackEntry ->
-        backStackEntry.lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)
-    }.forEach { backStackEntry ->
-        val destination = backStackEntry.destination as ComposeNavigator.Destination
+    val backStackEntry = transitionsInProgress.lastOrNull { entry ->
+        entry.lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)
+    } ?: backStack.lastOrNull { entry ->
+        entry.lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)
+    }
+
+    var initialCrossfade by remember { mutableStateOf(true) }
+    if (backStackEntry != null) {
         // while in the scope of the composable, we provide the navBackStackEntry as the
         // ViewModelStoreOwner and LifecycleOwner
-        Box(modifier, propagateMinConstraints = true) {
-            backStackEntry.LocalOwnersProvider(saveableStateHolder) {
-                destination.content(backStackEntry)
+        Crossfade(backStackEntry, modifier) { currentEntry ->
+            currentEntry.LocalOwnersProvider(saveableStateHolder) {
+                (currentEntry.destination as ComposeNavigator.Destination).content(currentEntry)
+            }
+            DisposableEffect(currentEntry) {
+                if (initialCrossfade) {
+                    // There's no animation for the initial crossfade,
+                    // so we can instantly mark the transition as complete
+                    transitionsInProgress.forEach { entry ->
+                        composeNavigator.onTransitionComplete(entry)
+                    }
+                    initialCrossfade = false
+                }
+                onDispose {
+                    transitionsInProgress.forEach { entry ->
+                        composeNavigator.onTransitionComplete(entry)
+                    }
+                }
             }
         }
     }
@@ -141,5 +155,5 @@ public fun NavHost(
     ) as? DialogNavigator ?: return
 
     // Show any dialog destinations
-    dialogNavigator.Dialogs()
+    DialogHost(dialogNavigator)
 }

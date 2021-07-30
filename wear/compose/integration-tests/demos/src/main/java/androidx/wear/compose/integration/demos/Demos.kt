@@ -24,6 +24,7 @@ import androidx.compose.integration.demos.common.DemoCategory
 val WearComposeDemos = DemoCategory(
     "Wear Compose Demos",
     listOf(
+        WearFoundationDemos,
         WearMaterialDemos,
     )
 )

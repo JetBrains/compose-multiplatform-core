@@ -56,7 +56,8 @@ dependencies {
 
     // Android Support Library
     implementation("androidx.appcompat:appcompat:1.2.0")
-    implementation("androidx.viewpager2:viewpager2:1.0.0")
+    implementation("androidx.activity:activity-ktx:1.2.0")
+    implementation("androidx.viewpager2:viewpager2:1.1.0-alpha01")
 
     // Testing framework
     androidTestImplementation(libs.testExtJunit)

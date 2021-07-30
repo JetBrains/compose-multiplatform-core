@@ -38,7 +38,7 @@ public class CurrentUserStyleRepositoryTest {
         ListUserStyleSetting.ListOption(Option.Id("green_style"), "Green", icon = null)
 
     private val blueStyleOption =
-        ListUserStyleSetting.ListOption(Option.Id("bluestyle"), "Blue", icon = null)
+        ListUserStyleSetting.ListOption(Option.Id("blue_style"), "Blue", icon = null)
 
     private val colorStyleList = listOf(redStyleOption, greenStyleOption, blueStyleOption)
 
@@ -195,7 +195,7 @@ public class CurrentUserStyleRepositoryTest {
         val userStyle = UserStyle(
             UserStyleData(
                 mapOf(
-                    "color_style_setting" to "bluestyle".encodeToByteArray(),
+                    "color_style_setting" to "blue_style".encodeToByteArray(),
                     "hand_style_setting" to "gothic_style".encodeToByteArray()
                 )
             ),
@@ -203,7 +203,7 @@ public class CurrentUserStyleRepositoryTest {
         )
 
         assertThat(userStyle.selectedOptions[colorStyleSetting]!!.id.value.decodeToString())
-            .isEqualTo("bluestyle")
+            .isEqualTo("blue_style")
         assertThat(userStyle.selectedOptions[watchHandStyleSetting]!!.id.value.decodeToString())
             .isEqualTo("gothic_style")
     }
@@ -317,6 +317,203 @@ public class CurrentUserStyleRepositoryTest {
     }
 
     @Test
+    public fun userStyle_get() {
+        val userStyle = UserStyle(
+            hashMapOf(
+                colorStyleSetting to greenStyleOption,
+                watchHandStyleSetting to gothicStyleOption
+            )
+        )
+
+        assertThat(userStyle[colorStyleSetting]).isEqualTo(greenStyleOption)
+        assertThat(userStyle[watchHandStyleSetting]).isEqualTo(gothicStyleOption)
+    }
+
+    @Test
+    public fun userStyle_getById() {
+        val userStyle = UserStyle(
+            hashMapOf(
+                colorStyleSetting to greenStyleOption,
+                watchHandStyleSetting to gothicStyleOption
+            )
+        )
+
+        assertThat(userStyle[colorStyleSetting.id]).isEqualTo(greenStyleOption)
+        assertThat(userStyle[watchHandStyleSetting.id]).isEqualTo(gothicStyleOption)
+    }
+
+    @Test
+    public fun userStyle_getAndSetDifferentOptionInstances() {
+        val option0 = ListUserStyleSetting.ListOption(
+            Option.Id("0"),
+            "option 0",
+            icon = null
+        )
+        val option1 = ListUserStyleSetting.ListOption(
+            Option.Id("1"),
+            "option 1",
+            icon = null
+        )
+        val option0Copy = ListUserStyleSetting.ListOption(
+            Option.Id("0"),
+            "option #0",
+            icon = null
+        )
+        val option1Copy = ListUserStyleSetting.ListOption(
+            Option.Id("1"),
+            "option #1",
+            icon = null
+        )
+        val setting = ListUserStyleSetting(
+            UserStyleSetting.Id("setting"),
+            "setting",
+            "setting description",
+            icon = null,
+            listOf(option0, option1),
+            WatchFaceLayer.ALL_WATCH_FACE_LAYERS
+        )
+
+        val userStyle = UserStyle(mapOf(setting to option0))
+        assertThat(userStyle.selectedOptions[setting]).isEqualTo(option0)
+        assertThat(userStyle.selectedOptions[setting]).isEqualTo(option0Copy)
+
+        val userStyleMap = userStyle.selectedOptions.toMutableMap()
+        userStyleMap[setting] = option1
+        val newUserStyle = UserStyle(userStyleMap)
+
+        assertThat(userStyle.selectedOptions[setting]).isEqualTo(option0)
+        assertThat(newUserStyle.selectedOptions[setting]).isEqualTo(option1)
+        assertThat(newUserStyle.selectedOptions[setting]).isEqualTo(option1Copy)
+    }
+
+    @Test
+    public fun userStyle_getDifferentSettingInstances() {
+        val setting = BooleanUserStyleSetting(
+            UserStyleSetting.Id("setting"),
+            "setting",
+            "setting description",
+            null,
+            WatchFaceLayer.ALL_WATCH_FACE_LAYERS,
+            true
+        )
+        val settingCopy = BooleanUserStyleSetting(
+            UserStyleSetting.Id("setting"),
+            "setting",
+            "setting description",
+            null,
+            WatchFaceLayer.ALL_WATCH_FACE_LAYERS,
+            true
+        )
+        val settingModifiedInfo = BooleanUserStyleSetting(
+            UserStyleSetting.Id("setting"),
+            "setting modified",
+            "setting description modified",
+            null,
+            WatchFaceLayer.ALL_WATCH_FACE_LAYERS,
+            false
+        )
+        val settingModifiedId = BooleanUserStyleSetting(
+            UserStyleSetting.Id("setting_modified"),
+            "setting",
+            "setting description",
+            null,
+            WatchFaceLayer.ALL_WATCH_FACE_LAYERS,
+            true
+        )
+
+        val optionTrue = BooleanUserStyleSetting.BooleanOption.TRUE
+
+        val userStyle = UserStyle(mapOf(setting to optionTrue))
+        assertThat(userStyle.selectedOptions[setting]).isEqualTo(optionTrue)
+        assertThat(userStyle.selectedOptions[settingCopy]).isEqualTo(optionTrue)
+        assertThat(userStyle.selectedOptions[settingModifiedInfo]).isEqualTo(optionTrue)
+        assertThat(userStyle.selectedOptions[settingModifiedId]).isEqualTo(null)
+    }
+
+    @Test
+    public fun userStyle_setDifferentSettingInstances() {
+        val setting = BooleanUserStyleSetting(
+            UserStyleSetting.Id("setting"),
+            "setting",
+            "setting description",
+            null,
+            WatchFaceLayer.ALL_WATCH_FACE_LAYERS,
+            true
+        )
+        val settingCopy = BooleanUserStyleSetting(
+            UserStyleSetting.Id("setting"),
+            "setting",
+            "setting description",
+            null,
+            WatchFaceLayer.ALL_WATCH_FACE_LAYERS,
+            true
+        )
+        val settingModifiedInfo = BooleanUserStyleSetting(
+            UserStyleSetting.Id("setting"),
+            "setting modified",
+            "setting description modified",
+            null,
+            WatchFaceLayer.ALL_WATCH_FACE_LAYERS,
+            false
+        )
+        val settingModifiedId = BooleanUserStyleSetting(
+            UserStyleSetting.Id("setting_modified"),
+            "setting",
+            "setting description",
+            null,
+            WatchFaceLayer.ALL_WATCH_FACE_LAYERS,
+            true
+        )
+
+        val optionTrue = BooleanUserStyleSetting.BooleanOption.TRUE
+        val optionFalse = BooleanUserStyleSetting.BooleanOption.FALSE
+
+        val userStyle = UserStyle(mapOf(setting to optionTrue))
+        assertThat(userStyle.selectedOptions[setting]).isEqualTo(optionTrue)
+
+        UserStyle(
+            userStyle.selectedOptions.toMutableMap().apply { this[setting] = optionFalse }
+        ).let { newUserStyle ->
+            assertThat(userStyle.selectedOptions[setting]).isEqualTo(optionTrue)
+            assertThat(newUserStyle.selectedOptions[setting]).isEqualTo(optionFalse)
+            assertThat(newUserStyle.selectedOptions[settingCopy]).isEqualTo(optionFalse)
+            assertThat(newUserStyle.selectedOptions[settingModifiedInfo]).isEqualTo(optionFalse)
+            assertThat(newUserStyle.selectedOptions[settingModifiedId]).isEqualTo(null)
+        }
+
+        UserStyle(
+            userStyle.selectedOptions.toMutableMap().apply { this[settingCopy] = optionFalse }
+        ).let { newUserStyle ->
+            assertThat(userStyle.selectedOptions[setting]).isEqualTo(optionTrue)
+            assertThat(newUserStyle.selectedOptions[setting]).isEqualTo(optionFalse)
+            assertThat(newUserStyle.selectedOptions[settingCopy]).isEqualTo(optionFalse)
+            assertThat(newUserStyle.selectedOptions[settingModifiedInfo]).isEqualTo(optionFalse)
+            assertThat(newUserStyle.selectedOptions[settingModifiedId]).isEqualTo(null)
+        }
+
+        UserStyle(
+            userStyle.selectedOptions.toMutableMap()
+                .apply { this[settingModifiedInfo] = optionFalse }
+        ).let { newUserStyle ->
+            assertThat(userStyle.selectedOptions[setting]).isEqualTo(optionTrue)
+            assertThat(newUserStyle.selectedOptions[setting]).isEqualTo(optionFalse)
+            assertThat(newUserStyle.selectedOptions[settingCopy]).isEqualTo(optionFalse)
+            assertThat(newUserStyle.selectedOptions[settingModifiedInfo]).isEqualTo(optionFalse)
+            assertThat(newUserStyle.selectedOptions[settingModifiedId]).isEqualTo(null)
+        }
+
+        UserStyle(
+            userStyle.selectedOptions.toMutableMap().apply { this[settingModifiedId] = optionFalse }
+        ).let { newUserStyle ->
+            assertThat(userStyle.selectedOptions[setting]).isEqualTo(optionTrue)
+            assertThat(newUserStyle.selectedOptions[setting]).isEqualTo(optionTrue)
+            assertThat(newUserStyle.selectedOptions[settingCopy]).isEqualTo(optionTrue)
+            assertThat(newUserStyle.selectedOptions[settingModifiedInfo]).isEqualTo(optionTrue)
+            assertThat(newUserStyle.selectedOptions[settingModifiedId]).isEqualTo(optionFalse)
+        }
+    }
+
+    @Test
     public fun setAndGetCustomStyleSetting() {
         val customStyleSetting = CustomValueUserStyleSetting(
             listOf(WatchFaceLayer.BASE),
@@ -385,8 +582,8 @@ public class CurrentUserStyleRepositoryTest {
 
     @Test
     public fun optionIdToStringTest() {
-        assertThat(BooleanUserStyleSetting.BooleanOption(true).toString()).isEqualTo("true")
-        assertThat(BooleanUserStyleSetting.BooleanOption(false).toString()).isEqualTo("false")
+        assertThat(BooleanUserStyleSetting.BooleanOption.TRUE.toString()).isEqualTo("true")
+        assertThat(BooleanUserStyleSetting.BooleanOption.FALSE.toString()).isEqualTo("false")
         assertThat(gothicStyleOption.toString()).isEqualTo("gothic_style")
         assertThat(DoubleRangeUserStyleSetting.DoubleRangeOption(12.3).toString())
             .isEqualTo("12.3")

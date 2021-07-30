@@ -32,6 +32,7 @@ import androidx.annotation.NavigationRes
 import androidx.annotation.RestrictTo
 import androidx.core.app.TaskStackBuilder
 import androidx.core.net.toUri
+import androidx.core.os.bundleOf
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleObserver
@@ -39,6 +40,7 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.navigation.NavDestination.Companion.createRoute
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -64,12 +66,15 @@ public open class NavController(
     public val context: Context
 ) {
     private var activity: Activity? = generateSequence(context) {
-        if (it is ContextWrapper) { it.baseContext } else null
+        if (it is ContextWrapper) {
+            it.baseContext
+        } else null
     }.firstOrNull { it is Activity } as Activity?
 
     private var inflater: NavInflater? = null
 
     private var _graph: NavGraph? = null
+
     /**
      * The topmost navigation graph associated with this NavController.
      *
@@ -105,6 +110,7 @@ public open class NavController(
     private val backStackMap = mutableMapOf<Int, String?>()
     private val backStackStates = mutableMapOf<String, ArrayDeque<NavBackStackEntryState>>()
     private var lifecycleOwner: LifecycleOwner? = null
+    private var onBackPressedDispatcher: OnBackPressedDispatcher? = null
     private var viewModel: NavControllerViewModel? = null
     private val onDestinationChangedListeners = CopyOnWriteArrayList<OnDestinationChangedListener>()
 
@@ -147,6 +153,7 @@ public open class NavController(
     }
 
     private var _navigatorProvider = NavigatorProvider()
+
     @set:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     /**
      * The NavController's [NavigatorProvider]. All [Navigators][Navigator] used
@@ -174,6 +181,7 @@ public open class NavController(
         mutableMapOf<Navigator<out NavDestination>, NavControllerNavigatorState>()
     private var addToBackStackHandler: ((backStackEntry: NavBackStackEntry) -> Unit)? = null
     private var popFromBackStackHandler: ((popUpTo: NavBackStackEntry) -> Unit)? = null
+    private val entrySavedState = mutableMapOf<NavBackStackEntry, Boolean>()
 
     /**
      * Call [Navigator.navigate] while setting up a [handler] that receives callbacks
@@ -262,33 +270,28 @@ public open class NavController(
             }
         }
 
-        override fun pushWithTransition(
-            backStackEntry: NavBackStackEntry
-        ): OnTransitionCompleteListener {
-            val innerListener = super.pushWithTransition(backStackEntry)
-            val listener = OnTransitionCompleteListener {
-                innerListener.onTransitionComplete()
-                if (!this@NavControllerNavigatorState.isNavigating) {
-                    updateBackStackLifecycle()
-                }
-            }
-            addInProgressTransition(backStackEntry, listener)
-            return listener
+        override fun popWithTransition(popUpTo: NavBackStackEntry, saveState: Boolean) {
+            super.popWithTransition(popUpTo, saveState)
+            entrySavedState[popUpTo] = saveState
         }
 
-        override fun popWithTransition(
-            popUpTo: NavBackStackEntry,
-            saveState: Boolean
-        ): OnTransitionCompleteListener {
-            val innerListener = super.popWithTransition(popUpTo, saveState)
-            val listener = OnTransitionCompleteListener {
-                innerListener.onTransitionComplete()
-                if (backQueue.contains(popUpTo)) {
-                    updateBackStackLifecycle()
+        override fun markTransitionComplete(entry: NavBackStackEntry) {
+            val savedState = entrySavedState[entry] == true
+            super.markTransitionComplete(entry)
+            entrySavedState.remove(entry)
+            if (!backQueue.contains(entry)) {
+                // If the entry is no longer part of the backStack, we need to manually move
+                // it to DESTROYED, and clear its view model
+                entry.maxLifecycle = Lifecycle.State.DESTROYED
+                if (!savedState) {
+                    viewModel?.clear(entry.id)
                 }
+                updateBackStackLifecycle()
+            } else if (!this@NavControllerNavigatorState.isNavigating) {
+                updateBackStackLifecycle()
             }
-            addInProgressTransition(popUpTo, listener)
-            return listener
+            // else, updateBackStackLifecycle() will be called after any ongoing navigate() call
+            // completes
         }
     }
 
@@ -587,7 +590,7 @@ public open class NavController(
         val navigator = navigatorProvider
             .getNavigator<Navigator<NavDestination>>(entry.destination.navigatorName)
         val state = navigatorState[navigator]
-        val transitioning = state?.transitionsInProgress?.value?.containsKey(entry)
+        val transitioning = state?.transitionsInProgress?.value?.contains(entry)
         if (entry.lifecycle.currentState.isAtLeast(Lifecycle.State.CREATED)) {
             if (saveState) {
                 // Move the state through STOPPED
@@ -622,53 +625,119 @@ public open class NavController(
      */
     @MainThread
     public open fun navigateUp(): Boolean {
-        return if (destinationCountOnBackStack == 1) {
-            // If there's only one entry, then we've deep linked into a specific destination
-            // on another task so we need to find the parent and start our task from there
-            val currentDestination = currentDestination
-            var destId = currentDestination!!.id
-            var parent = currentDestination.parent
-            while (parent != null) {
-                if (parent.startDestinationId != destId) {
-                    val args = Bundle()
-                    if (activity != null && activity!!.intent != null) {
-                        val data = activity!!.intent.data
+        // If there's only one entry, then we may have deep linked into a specific destination
+        // on another task.
+        if (destinationCountOnBackStack == 1) {
+            val extras = activity?.intent?.extras
+            if (extras?.getIntArray(KEY_DEEP_LINK_IDS) != null) {
+                return tryRelaunchUpToExplicitStack()
+            } else {
+                return tryRelaunchUpToGeneratedStack()
+            }
+        } else {
+            return popBackStack()
+        }
+    }
 
-                        // We were started via a URI intent.
-                        if (data != null) {
-                            // Include the original deep link Intent so the Destinations can
-                            // synthetically generate additional arguments as necessary.
-                            args.putParcelable(
-                                KEY_DEEP_LINK_INTENT,
-                                activity!!.intent
+    /** Starts a new Activity directed to the next-upper Destination in the explicit deep link
+     * stack used to start this Activity. Returns false if
+     * the current destination was already the root of the deep link.
+     */
+    private fun tryRelaunchUpToExplicitStack(): Boolean {
+        if (!deepLinkHandled) {
+            return false
+        }
+
+        val intent = activity!!.intent
+        val extras = intent.extras
+
+        val deepLinkIds = extras!!.getIntArray(KEY_DEEP_LINK_IDS)!!.toMutableList()
+        val deepLinkArgs = extras.getParcelableArrayList<Bundle>(KEY_DEEP_LINK_ARGS)
+
+        // Remove the leaf destination to pop up to one level above it
+        var leafDestinationId = deepLinkIds.removeLast()
+        deepLinkArgs?.removeLast()
+
+        // Probably deep linked to a single destination only.
+        if (deepLinkIds.isEmpty()) {
+            return false
+        }
+
+        // Find the destination if the leaf destination was a NavGraph
+        with(graph.findDestination(leafDestinationId)) {
+            if (this is NavGraph) {
+                leafDestinationId = this.findStartDestination().id
+            }
+        }
+
+        // The final element of the deep link couldn't have brought us to the current location.
+        if (leafDestinationId != currentDestination?.id) {
+            return false
+        }
+
+        val navDeepLinkBuilder = createDeepLink()
+
+        // Attach the original global arguments, and also the original calling Intent.
+        val arguments = bundleOf(KEY_DEEP_LINK_INTENT to intent)
+        extras.getBundle(KEY_DEEP_LINK_EXTRAS)?.let {
+            arguments.putAll(it)
+        }
+        navDeepLinkBuilder.setArguments(arguments)
+
+        deepLinkIds.forEachIndexed { index, deepLinkId ->
+            navDeepLinkBuilder.addDestination(deepLinkId, deepLinkArgs?.get(index))
+        }
+
+        navDeepLinkBuilder.createTaskStackBuilder().startActivities()
+        activity?.finish()
+        return true
+    }
+
+    /**
+     * Starts a new Activity directed to the parent of the current Destination. Returns false if
+     * the current destination was already the root of the deep link.
+     */
+    private fun tryRelaunchUpToGeneratedStack(): Boolean {
+        val currentDestination = currentDestination
+        var destId = currentDestination!!.id
+        var parent = currentDestination.parent
+        while (parent != null) {
+            if (parent.startDestinationId != destId) {
+                val args = Bundle()
+                if (activity != null && activity!!.intent != null) {
+                    val data = activity!!.intent.data
+
+                    // We were started via a URI intent.
+                    if (data != null) {
+                        // Include the original deep link Intent so the Destinations can
+                        // synthetically generate additional arguments as necessary.
+                        args.putParcelable(
+                            KEY_DEEP_LINK_INTENT,
+                            activity!!.intent
+                        )
+                        val matchingDeepLink = _graph!!.matchDeepLink(
+                            NavDeepLinkRequest(activity!!.intent)
+                        )
+                        if (matchingDeepLink != null) {
+                            val destinationArgs = matchingDeepLink.destination.addInDefaultArgs(
+                                matchingDeepLink.matchingArgs
                             )
-                            val matchingDeepLink = _graph!!.matchDeepLink(
-                                NavDeepLinkRequest(activity!!.intent)
-                            )
-                            if (matchingDeepLink != null) {
-                                val destinationArgs = matchingDeepLink.destination.addInDefaultArgs(
-                                    matchingDeepLink.matchingArgs
-                                )
-                                args.putAll(destinationArgs)
-                            }
+                            args.putAll(destinationArgs)
                         }
                     }
-                    val parentIntents = NavDeepLinkBuilder(this)
-                        .setDestination(parent.id)
-                        .setArguments(args)
-                        .createTaskStackBuilder()
-                    parentIntents.startActivities()
-                    activity?.finish()
-                    return true
                 }
-                destId = parent.id
-                parent = parent.parent
+                val parentIntents = NavDeepLinkBuilder(this)
+                    .setDestination(parent.id)
+                    .setArguments(args)
+                    .createTaskStackBuilder()
+                parentIntents.startActivities()
+                activity?.finish()
+                return true
             }
-            // We're already at the startDestination of the graph so there's no 'Up' to go to
-            false
-        } else {
-            popBackStack()
+            destId = parent.id
+            parent = parent.parent
         }
+        return false
     }
 
     /**
@@ -678,6 +747,9 @@ public open class NavController(
         get() = backQueue.count { entry ->
             entry.destination !is NavGraph
         }
+
+    private var dispatchReentrantCount = 0
+    private val backStackEntriesToDispatch = mutableListOf<NavBackStackEntry>()
 
     /**
      * Dispatch changes to all OnDestinationChangedListeners.
@@ -694,34 +766,53 @@ public open class NavController(
         ) {
             // Keep popping
         }
-        if (!backQueue.isEmpty()) {
-            updateBackStackLifecycle()
-
-            // Now call all registered OnDestinationChangedListener instances
-            val backStackEntry = backQueue.last()
-            for (listener in onDestinationChangedListeners) {
-                listener.onDestinationChanged(
-                    this,
-                    backStackEntry.destination,
-                    backStackEntry.arguments
-                )
-            }
-            _currentBackStackEntryFlow.tryEmit(backStackEntry)
-            return true
+        val lastBackStackEntry = backQueue.lastOrNull()
+        if (lastBackStackEntry != null) {
+            backStackEntriesToDispatch += lastBackStackEntry
         }
-        return false
+        // Track that we're updating the back stack lifecycle
+        // just in case updateBackStackLifecycle() results in
+        // additional calls to navigate() or popBackStack()
+        dispatchReentrantCount++
+        updateBackStackLifecycle()
+        dispatchReentrantCount--
+
+        if (dispatchReentrantCount == 0) {
+            // Only the outermost dispatch should dispatch
+            val dispatchList = backStackEntriesToDispatch.toMutableList()
+            backStackEntriesToDispatch.clear()
+            for (backStackEntry in dispatchList) {
+                // Now call all registered OnDestinationChangedListener instances
+                for (listener in onDestinationChangedListeners) {
+                    listener.onDestinationChanged(
+                        this,
+                        backStackEntry.destination,
+                        backStackEntry.arguments
+                    )
+                }
+                _currentBackStackEntryFlow.tryEmit(backStackEntry)
+            }
+        }
+        return lastBackStackEntry != null
     }
 
     internal fun updateBackStackLifecycle() {
+        // Operate on a copy of the queue to avoid issues with reentrant
+        // calls if updating the Lifecycle calls navigate() or popBackStack()
+        val backStack = backQueue.toMutableList()
+        if (backStack.isEmpty()) {
+            // Nothing to update
+            return
+        }
         // First determine what the current resumed destination is and, if and only if
         // the current resumed destination is a FloatingWindow, what destination is
         // underneath it that must remain started.
-        var nextResumed: NavDestination? = backQueue.last().destination
+        var nextResumed: NavDestination? = backStack.last().destination
         var nextStarted: NavDestination? = null
         if (nextResumed is FloatingWindow) {
             // Find the next destination in the back stack as that destination
             // should still be STARTED when the FloatingWindow destination is above it.
-            val iterator = backQueue.reversed().iterator()
+            val iterator = backStack.reversed().iterator()
             while (iterator.hasNext()) {
                 val destination = iterator.next().destination
                 if (destination !is NavGraph && destination !is FloatingWindow) {
@@ -735,7 +826,7 @@ public open class NavController(
         // This ensures proper nesting where parent navigation graphs are started before
         // their children and stopped only after their children are stopped.
         val upwardStateTransitions = HashMap<NavBackStackEntry, Lifecycle.State>()
-        var iterator = backQueue.reversed().iterator()
+        var iterator = backStack.reversed().iterator()
         while (iterator.hasNext()) {
             val entry = iterator.next()
             val currentMaxLifecycle = entry.maxLifecycle
@@ -747,7 +838,7 @@ public open class NavController(
                     val navigator = navigatorProvider
                         .getNavigator<Navigator<*>>(entry.destination.navigatorName)
                     val state = navigatorState[navigator]
-                    val transitioning = state?.transitionsInProgress?.value?.containsKey(entry)
+                    val transitioning = state?.transitionsInProgress?.value?.contains(entry)
                     if (transitioning != true) {
                         upwardStateTransitions[entry] = Lifecycle.State.RESUMED
                     } else {
@@ -772,7 +863,7 @@ public open class NavController(
         }
         // Apply all upward Lifecycle transitions by iterating through the stack again,
         // this time applying the new lifecycle to the parent navigation graphs first
-        iterator = backQueue.iterator()
+        iterator = backStack.iterator()
         while (iterator.hasNext()) {
             val entry = iterator.next()
             val newState = upwardStateTransitions[entry]
@@ -844,12 +935,24 @@ public open class NavController(
     @MainThread
     @CallSuper
     public open fun setGraph(graph: NavGraph, startDestinationArgs: Bundle?) {
-        _graph?.let { previousGraph ->
-            // Pop everything from the old graph off the back stack
-            popBackStackInternal(previousGraph.id, true)
+        if (_graph != graph) {
+            _graph?.let { previousGraph ->
+                // Pop everything from the old graph off the back stack
+                popBackStackInternal(previousGraph.id, true)
+            }
+            _graph = graph
+            onGraphCreated(startDestinationArgs)
+        } else {
+            for (i in 0..graph.nodes.size()) {
+                val newDestination = graph.nodes.valueAt(i)
+                _graph!!.nodes.replace(i, newDestination)
+                backQueue.filter { currentEntry ->
+                    currentEntry.destination.id == newDestination?.id
+                }.forEach { entry ->
+                    entry.destination = newDestination
+                }
+            }
         }
-        _graph = graph
-        onGraphCreated(startDestinationArgs)
     }
 
     @MainThread
@@ -952,14 +1055,16 @@ public open class NavController(
         if (deepLinkExtras != null) {
             globalArgs.putAll(deepLinkExtras)
         }
-        if ((deepLink == null || deepLink.isEmpty()) && intent.data != null) {
+        if (deepLink == null || deepLink.isEmpty()) {
             val matchingDeepLink = _graph!!.matchDeepLink(NavDeepLinkRequest(intent))
             if (matchingDeepLink != null) {
                 val destination = matchingDeepLink.destination
                 deepLink = destination.buildDeepLinkIds()
                 deepLinkArgs = null
                 val destinationArgs = destination.addInDefaultArgs(matchingDeepLink.matchingArgs)
-                globalArgs.putAll(destinationArgs)
+                if (destinationArgs != null) {
+                    globalArgs.putAll(destinationArgs)
+                }
             }
         }
         if (deepLink == null || deepLink.isEmpty()) {
@@ -1230,6 +1335,7 @@ public open class NavController(
             else
                 backQueue.last().destination
             ) ?: throw IllegalStateException("no current navigation node")
+
         @IdRes
         var destId = resId
         val navAction = currentNode.getAction(resId)
@@ -1499,7 +1605,7 @@ public open class NavController(
         }
         if (popped || navigated || launchSingleTop) {
             dispatchOnDestinationChanged()
-        } else if (backQueue.isNotEmpty()) {
+        } else {
             updateBackStackLifecycle()
         }
     }
@@ -1829,17 +1935,21 @@ public open class NavController(
     /** @suppress */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public open fun setOnBackPressedDispatcher(dispatcher: OnBackPressedDispatcher) {
-        checkNotNull(lifecycleOwner) {
+        if (dispatcher == onBackPressedDispatcher) {
+            return
+        }
+        val lifecycleOwner = checkNotNull(lifecycleOwner) {
             "You must call setLifecycleOwner() before calling setOnBackPressedDispatcher()"
         }
         // Remove the callback from any previous dispatcher
         onBackPressedCallback.remove()
         // Then add it to the new dispatcher
-        dispatcher.addCallback(lifecycleOwner!!, onBackPressedCallback)
+        onBackPressedDispatcher = dispatcher
+        dispatcher.addCallback(lifecycleOwner, onBackPressedCallback)
 
         // Make sure that listener for updating the NavBackStackEntry lifecycles comes after
         // the dispatcher
-        lifecycleOwner!!.lifecycle.apply {
+        lifecycleOwner.lifecycle.apply {
             removeObserver(lifecycleObserver)
             addObserver(lifecycleObserver)
         }

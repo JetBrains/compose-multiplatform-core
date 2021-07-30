@@ -21,11 +21,6 @@ import android.graphics.Bitmap
 import android.graphics.ImageFormat
 import android.graphics.Rect
 import android.media.Image
-import android.renderscript.Allocation
-import android.renderscript.Element
-import android.renderscript.RenderScript
-import android.renderscript.ScriptIntrinsicYuvToRGB
-import android.renderscript.Type
 
 /**
  * Copy from the github for testing.
@@ -45,13 +40,16 @@ import android.renderscript.Type
  */
 @Suppress("DEPRECATION")
 class YuvToRgbConverter(context: Context) {
-    private val rs = RenderScript.create(context)
-    private val scriptYuvToRgb = ScriptIntrinsicYuvToRGB.create(rs, Element.U8_4(rs))
+    private val rs = android.renderscript.RenderScript.create(context)
+    private val scriptYuvToRgb = android.renderscript.ScriptIntrinsicYuvToRGB.create(
+        rs,
+        android.renderscript.Element.U8_4(rs)
+    )
 
     private var pixelCount: Int = -1
     private lateinit var yuvBuffer: ByteArray
-    private lateinit var inputAllocation: Allocation
-    private lateinit var outputAllocation: Allocation
+    private lateinit var inputAllocation: android.renderscript.Allocation
+    private lateinit var outputAllocation: android.renderscript.Allocation
 
     @Synchronized
     fun yuvToRgb(image: Image, output: Bitmap) {
@@ -71,11 +69,14 @@ class YuvToRgbConverter(context: Context) {
         // Ensure that the RenderScript inputs and outputs are allocated
         if (!::inputAllocation.isInitialized) {
             // Explicitly create an element with type NV21, since that's the pixel format we use
-            val elemType = Type.Builder(rs, Element.YUV(rs)).setYuvFormat(ImageFormat.NV21).create()
-            inputAllocation = Allocation.createSized(rs, elemType.element, yuvBuffer.size)
+            val elemType =
+                android.renderscript.Type.Builder(rs, android.renderscript.Element.YUV(rs))
+                    .setYuvFormat(ImageFormat.NV21).create()
+            inputAllocation =
+                android.renderscript.Allocation.createSized(rs, elemType.element, yuvBuffer.size)
         }
         if (!::outputAllocation.isInitialized) {
-            outputAllocation = Allocation.createFromBitmap(rs, output)
+            outputAllocation = android.renderscript.Allocation.createFromBitmap(rs, output)
         }
 
         // Convert NV21 format YUV to RGB

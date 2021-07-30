@@ -34,6 +34,7 @@ import kotlinx.coroutines.swing.Swing
 import org.jetbrains.skija.Canvas
 import org.jetbrains.skiko.SkiaLayer
 import org.jetbrains.skiko.SkiaRenderer
+import java.awt.Dimension
 import java.awt.Point
 import java.awt.event.FocusEvent
 import java.awt.event.InputMethodEvent
@@ -46,6 +47,7 @@ import java.awt.event.MouseMotionAdapter
 import java.awt.event.MouseWheelEvent
 import java.awt.im.InputMethodRequests
 import androidx.compose.ui.input.key.KeyEvent as ComposeKeyEvent
+import androidx.compose.ui.window.density
 
 internal class ComposeLayer {
     private var isDisposed = false
@@ -88,7 +90,7 @@ internal class ComposeLayer {
         }
 
         internal fun resetDensity() {
-            this@ComposeLayer.density = detectCurrentDensity()
+            this@ComposeLayer.density = (this as SkiaLayer).density
             owner?.density = density
         }
 
@@ -105,7 +107,25 @@ internal class ComposeLayer {
             currentInputMethodRequests = null
         }
 
+        override fun doLayout() {
+            super.doLayout()
+            val owner = owner
+            if (owner != null) {
+                val density = density.density
+                owner.setSize(
+                    (width * density).toInt().coerceAtLeast(0),
+                    (height * density).toInt().coerceAtLeast(0)
+                )
+                owner.measureAndLayout()
+                preferredSize = Dimension(
+                    (owner.root.width / density).toInt(),
+                    (owner.root.height / density).toInt()
+                )
+            }
+        }
+
         override val locationOnScreen: Point
+            @Suppress("ACCIDENTAL_OVERRIDE") // KT-47743
             get() = super.getLocationOnScreen()
 
         override val density: Density
@@ -229,14 +249,6 @@ internal class ComposeLayer {
             MouseScrollOrientation.Vertical
         }
     )
-
-    // TODO(demin): detect OS fontScale
-    //  font size can be changed on Windows 10 in Settings - Ease of Access,
-    //  on Ubuntu in Settings - Universal Access
-    //  on macOS there is no such setting
-    private fun detectCurrentDensity(): Density {
-        return Density(wrapped.contentScale, 1f)
-    }
 
     fun dispose() {
         check(!isDisposed)

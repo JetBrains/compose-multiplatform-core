@@ -19,6 +19,7 @@ package androidx.wear.watchface
 import android.annotation.SuppressLint
 import android.app.NotificationManager
 import android.content.ComponentName
+import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.graphics.Bitmap
@@ -29,6 +30,7 @@ import android.icu.util.TimeZone
 import android.os.BatteryManager
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
 import android.support.wearable.watchface.SharedMemoryImage
 import android.support.wearable.watchface.WatchFaceStyle
 import android.view.Gravity
@@ -41,13 +43,14 @@ import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
 import androidx.annotation.UiThread
 import androidx.annotation.VisibleForTesting
-import androidx.wear.complications.SystemProviders
+import androidx.wear.complications.SystemDataSources
 import androidx.wear.complications.data.ComplicationData
 import androidx.wear.complications.data.ComplicationType
 import androidx.wear.complications.data.toApiComplicationData
 import androidx.wear.utility.TraceEvent
 import androidx.wear.watchface.ObservableWatchData.MutableObservableWatchData
 import androidx.wear.watchface.control.data.ComplicationRenderParams
+import androidx.wear.watchface.control.data.HeadlessWatchFaceInstanceParams
 import androidx.wear.watchface.control.data.WatchFaceRenderParams
 import androidx.wear.watchface.data.ComplicationStateWireFormat
 import androidx.wear.watchface.data.IdAndComplicationStateWireFormat
@@ -169,6 +172,40 @@ public class WatchFace(
             pendingEditorDelegateCB = CompletableDeferred()
             return pendingEditorDelegateCB!!
         }
+
+        /**
+         * For use by on watch face editors.
+         * @hide
+         */
+        @SuppressLint("NewApi")
+        @JvmStatic
+        @UiThread
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+        public suspend fun createHeadlessSessionDelegate(
+            componentName: ComponentName,
+            params: HeadlessWatchFaceInstanceParams,
+            context: Context
+        ): EditorDelegate {
+            // Attempt to construct the class for the specified watchFaceName, failing if it either
+            // doesn't exist or isn't a [WatchFaceService].
+            val watchFaceServiceClass =
+                Class.forName(componentName.className) ?: throw IllegalArgumentException(
+                    "Can't create ${componentName.className}"
+                )
+            if (!WatchFaceService::class.java.isAssignableFrom(WatchFaceService::class.java)) {
+                throw IllegalArgumentException(
+                    "${componentName.className} is not a WatchFaceService"
+                )
+            } else {
+                val watchFaceService =
+                    watchFaceServiceClass.getConstructor().newInstance() as WatchFaceService
+                watchFaceService.setContext(context)
+                val engine = watchFaceService.createHeadlessEngine() as
+                    WatchFaceService.EngineWrapper
+                engine.createHeadlessInstance(params)
+                return engine.deferredWatchFaceImpl.await().WFEditorDelegate()
+            }
+        }
     }
 
     /**
@@ -191,6 +228,9 @@ public class WatchFace(
 
         /** The UTC reference time to use for previews in milliseconds since the epoch. */
         public val previewReferenceTimeMillis: Long
+
+        /** The [Handler] for the background thread. */
+        public val backgroundThreadHandler: Handler
 
         /** Renders the watchface to a [Bitmap] with the [CurrentUserStyleRepository]'s [UserStyle]. */
         public fun renderWatchFaceToBitmap(
@@ -352,7 +392,9 @@ public class WatchFaceImpl @UiThread constructor(
     private val watchFaceHostApi: WatchFaceHostApi,
     private val watchState: WatchState,
     internal val currentUserStyleRepository: CurrentUserStyleRepository,
-    internal var complicationSlotsManager: ComplicationSlotsManager,
+
+    @get:VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+    public var complicationSlotsManager: ComplicationSlotsManager,
 
     /** @hide */
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
@@ -362,7 +404,7 @@ public class WatchFaceImpl @UiThread constructor(
     internal var broadcastsReceiver: BroadcastsReceiver?
 ) {
     internal companion object {
-        internal const val NO_DEFAULT_PROVIDER = SystemProviders.NO_PROVIDER
+        internal const val NO_DEFAULT_DATA_SOURCE = SystemDataSources.NO_DATA_SOURCE
 
         internal const val MOCK_TIME_INTENT = "androidx.wear.watchface.MockTime"
 
@@ -395,28 +437,39 @@ public class WatchFaceImpl @UiThread constructor(
         // available programmatically. The value below is the default but it could be overridden
         // by OEMs.
         internal const val INITIAL_LOW_BATTERY_THRESHOLD = 15.0f
-
-        internal val defaultRenderParametersForDrawMode: HashMap<DrawMode, RenderParameters> =
-            hashMapOf(
-                DrawMode.AMBIENT to
-                    RenderParameters(
-                        DrawMode.AMBIENT, WatchFaceLayer.ALL_WATCH_FACE_LAYERS, null
-                    ),
-                DrawMode.INTERACTIVE to
-                    RenderParameters(
-                        DrawMode.INTERACTIVE, WatchFaceLayer.ALL_WATCH_FACE_LAYERS, null
-                    ),
-                DrawMode.LOW_BATTERY_INTERACTIVE to
-                    RenderParameters(
-                        DrawMode.LOW_BATTERY_INTERACTIVE, WatchFaceLayer.ALL_WATCH_FACE_LAYERS,
-                        null
-                    ),
-                DrawMode.MUTE to
-                    RenderParameters(
-                        DrawMode.MUTE, WatchFaceLayer.ALL_WATCH_FACE_LAYERS, null
-                    ),
-            )
     }
+
+    private val defaultRenderParametersForDrawMode: HashMap<DrawMode, RenderParameters> =
+        hashMapOf(
+            DrawMode.AMBIENT to
+                RenderParameters(
+                    DrawMode.AMBIENT,
+                    WatchFaceLayer.ALL_WATCH_FACE_LAYERS,
+                    null,
+                    complicationSlotsManager.pressedSlotIds
+                ),
+            DrawMode.INTERACTIVE to
+                RenderParameters(
+                    DrawMode.INTERACTIVE,
+                    WatchFaceLayer.ALL_WATCH_FACE_LAYERS,
+                    null,
+                    complicationSlotsManager.pressedSlotIds
+                ),
+            DrawMode.LOW_BATTERY_INTERACTIVE to
+                RenderParameters(
+                    DrawMode.LOW_BATTERY_INTERACTIVE,
+                    WatchFaceLayer.ALL_WATCH_FACE_LAYERS,
+                    null,
+                    complicationSlotsManager.pressedSlotIds
+                ),
+            DrawMode.MUTE to
+                RenderParameters(
+                    DrawMode.MUTE,
+                    WatchFaceLayer.ALL_WATCH_FACE_LAYERS,
+                    null,
+                    complicationSlotsManager.pressedSlotIds
+                ),
+        )
 
     private val systemTimeProvider = watchface.systemTimeProvider
     private val legacyWatchFaceStyle = watchface.legacyWatchFaceStyle
@@ -486,10 +539,17 @@ public class WatchFaceImpl @UiThread constructor(
         }
 
     private var inOnSetStyle = false
+    internal var initComplete = false
 
     private val ambientObserver = Observer<Boolean> {
-        scheduleDraw()
-        watchFaceHostApi.invalidate()
+        TraceEvent("WatchFaceImpl.ambientObserver").use {
+            // It's not safe to draw until initComplete because the ComplicationSlotManager init
+            // may not have completed.
+            if (initComplete) {
+                onDraw()
+            }
+            scheduleDraw()
+        }
     }
 
     private val interruptionFilterObserver = Observer<Int> {
@@ -511,11 +571,16 @@ public class WatchFaceImpl @UiThread constructor(
                 // Update time zone in case it changed while we weren't visible.
                 calendar.timeZone = TimeZone.getDefault()
                 watchFaceHostApi.invalidate()
+
+                // It's not safe to draw until initComplete because the ComplicationSlotManager init
+                // may not have completed.
+                if (initComplete) {
+                    onDraw()
+                }
+                scheduleDraw()
             } else {
                 unregisterReceivers()
             }
-
-            scheduleDraw()
         }
     }
 
@@ -595,6 +660,9 @@ public class WatchFaceImpl @UiThread constructor(
 
         override val previewReferenceTimeMillis
             get() = this@WatchFaceImpl.previewReferenceTimeMillis
+
+        override val backgroundThreadHandler
+            get() = watchFaceHostApi.getBackgroundThreadHandler()
 
         override fun renderWatchFaceToBitmap(
             renderParameters: RenderParameters,
@@ -872,14 +940,14 @@ public class WatchFaceImpl @UiThread constructor(
                 it.value.computeBounds(renderer.screenBounds),
                 it.value.boundsType,
                 ComplicationType.toWireTypes(it.value.supportedTypes),
-                it.value.defaultProviderPolicy.providersAsList(),
-                it.value.defaultProviderPolicy.systemProviderFallback,
-                it.value.defaultProviderType.toWireComplicationType(),
+                it.value.defaultDataSourcePolicy.dataSourcesAsList(),
+                it.value.defaultDataSourcePolicy.systemDataSourceFallback,
+                it.value.defaultDataSourceType.toWireComplicationType(),
                 it.value.enabled,
                 it.value.initiallyEnabled,
                 it.value.renderer.getData()?.type?.toWireComplicationType()
                     ?: ComplicationType.NO_DATA.toWireComplicationType(),
-                it.value.fixedComplicationProvider,
+                it.value.fixedComplicationDataSource,
                 it.value.configExtras
             )
         )
@@ -964,7 +1032,8 @@ public class WatchFaceImpl @UiThread constructor(
                 Canvas(complicationBitmap),
                 Rect(0, 0, bounds.width(), bounds.height()),
                 calendar,
-                RenderParameters(params.renderParametersWireFormat)
+                RenderParameters(params.renderParametersWireFormat),
+                params.complicationSlotId
             )
 
             // Restore previous ComplicationData & style if required.

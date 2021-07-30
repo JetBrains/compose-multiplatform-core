@@ -25,8 +25,11 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.car.app.Screen;
 import androidx.car.app.model.Template;
+import androidx.lifecycle.DefaultLifecycleObserver;
+import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.Lifecycle.Event;
 import androidx.lifecycle.Lifecycle.State;
+import androidx.lifecycle.LifecycleOwner;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -44,25 +47,43 @@ import java.util.List;
  *       be reset with {@link #reset}.
  * </ul>
  */
-@SuppressWarnings("NotCloseable")
 public class ScreenController {
     private final TestCarContext mTestCarContext;
     private final Screen mScreen;
+    private final TestLifecycleOwner mLifecycleOwner;
 
     /**
      * Creates a ScreenController to control a {@link Screen} for testing.
      *
      * @throws NullPointerException if either {@code testCarContext} or {@code screen} are null
      */
+    public ScreenController(@NonNull TestCarContext testCarContext, @NonNull Screen screen) {
+        mScreen = requireNonNull(screen);
+        mTestCarContext = requireNonNull(testCarContext);
+
+        mLifecycleOwner = new TestLifecycleOwner();
+        mLifecycleOwner.getRegistry().addObserver(new ScreenLifecycleObserver());
+
+        // Use reflection to inject the TestCarContext into the Screen.
+        try {
+            Field field = Screen.class.getDeclaredField("mCarContext");
+            field.setAccessible(true);
+            field.set(screen, testCarContext);
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalStateException("Failed to set a test car context for testing", e);
+        }
+    }
+
+    /** Returns the {@link Screen} being controlled. */
     @NonNull
-    public static ScreenController of(
-            @NonNull TestCarContext testCarContext, @NonNull Screen screen) {
-        return new ScreenController(requireNonNull(screen), requireNonNull(testCarContext));
+    public Screen getScreen() {
+        return mScreen;
     }
 
     /** Resets values tracked by this {@link ScreenController}. */
     public void reset() {
-        mTestCarContext.getCarService(TestAppManager.class).resetTemplatesStoredForScreen(get());
+        mTestCarContext.getCarService(TestAppManager.class).resetTemplatesStoredForScreen(
+                getScreen());
     }
 
     /**
@@ -80,7 +101,7 @@ public class ScreenController {
         List<Template> templates = new ArrayList<>();
         for (Pair<Screen, Template> pair :
                 mTestCarContext.getCarService(TestAppManager.class).getTemplatesReturned()) {
-            if (pair.first == get()) {
+            if (pair.first == getScreen()) {
                 templates.add(pair.second);
             }
         }
@@ -104,91 +125,23 @@ public class ScreenController {
     }
 
     /**
-     * Creates the {@link Screen} being controlled.
+     * Moves the {@link Screen} being controlled to the input {@code state}.
      *
-     * <p>This method will also push the {@link Screen} onto the {@link
-     * androidx.car.app.ScreenManager}'s screen stack if it isn't the current top.
-     */
-    @NonNull
-    public ScreenController create() {
-        putScreenOnStackIfNotTop();
-
-        dispatchLifecycleEvent(Event.ON_CREATE);
-        return this;
-    }
-
-    /**
-     * Starts the {@link Screen} being controlled.
+     * <p>Note that moving the {@link Screen} up a state will also push the {@link Screen} onto
+     * the {@link androidx.car.app.ScreenManager}'s screen stack if it isn't the current top.
      *
-     * <p>This method will also push the {@link Screen} onto the {@link
-     * androidx.car.app.ScreenManager}'s screen stack if it isn't the current top.
+     * <p>{@link Lifecycle.State#DESTROYED} is a terminal state, and you cannot move to any other
+     * state after the {@link Screen} reaches that state.
      *
      * @see Screen#getLifecycle
      */
     @NonNull
-    public ScreenController start() {
-        putScreenOnStackIfNotTop();
-
-        dispatchLifecycleEvent(Event.ON_START);
+    public ScreenController moveToState(@NonNull Lifecycle.State state) {
+        mLifecycleOwner.getRegistry().setCurrentState(state);
         return this;
     }
 
-    /**
-     * Resumes the {@link Screen} being controlled.
-     *
-     * <p>This method will also push the {@link Screen} onto the {@link
-     * androidx.car.app.ScreenManager}'s screen stack if it isn't the current top.
-     *
-     * @see Screen#getLifecycle
-     */
-    @NonNull
-    public ScreenController resume() {
-        putScreenOnStackIfNotTop();
-
-        dispatchLifecycleEvent(Event.ON_RESUME);
-        return this;
-    }
-
-    /**
-     * Pauses the {@link Screen} being controlled.
-     *
-     * @see Screen#getLifecycle
-     */
-    @NonNull
-    public ScreenController pause() {
-        dispatchLifecycleEvent(Event.ON_PAUSE);
-        return this;
-    }
-
-    /**
-     * Stops to the {@link Screen} being controlled.
-     *
-     * @see Screen#getLifecycle
-     */
-    @NonNull
-    public ScreenController stop() {
-        dispatchLifecycleEvent(Event.ON_STOP);
-        return this;
-    }
-
-    /**
-     * Destroys to the {@link Screen} being controlled.
-     *
-     * @see Screen#getLifecycle
-     */
-    @NonNull
-    public ScreenController destroy() {
-        dispatchLifecycleEvent(Event.ON_DESTROY);
-        return this;
-    }
-
-    /** Returns the {@link Screen} being controlled. */
-    @NonNull
-    public Screen get() {
-        return mScreen;
-    }
-
-    private void putScreenOnStackIfNotTop() {
+    void putScreenOnStackIfNotTop() {
         TestScreenManager testScreenManager = mTestCarContext.getCarService(
                 TestScreenManager.class);
         if (!testScreenManager.hasScreens() || !mScreen.equals(testScreenManager.getTop())) {
@@ -196,22 +149,8 @@ public class ScreenController {
         }
     }
 
-    private ScreenController(Screen screen, TestCarContext testCarContext) {
-        this.mScreen = screen;
-        this.mTestCarContext = testCarContext;
-
-        // Use reflection to inject the TestCarContext into the Screen.
-        try {
-            Field field = Screen.class.getDeclaredField("mCarContext");
-            field.setAccessible(true);
-            field.set(screen, testCarContext);
-        } catch (ReflectiveOperationException e) {
-            throw new IllegalStateException("Failed to set a test car context for testing", e);
-        }
-    }
-
     @SuppressLint("BanUncheckedReflection")
-    private void dispatchLifecycleEvent(Event event) {
+    void dispatchLifecycleEvent(Event event) {
         // Use reflection to call internal APIs for testing purposes.
         try {
             Method method = Screen.class.getDeclaredMethod("dispatchLifecycleEvent", Event.class);
@@ -219,6 +158,44 @@ public class ScreenController {
             method.invoke(mScreen, event);
         } catch (ReflectiveOperationException e) {
             throw new IllegalStateException("Failed dispatching lifecycle event", e);
+        }
+    }
+
+    /**
+     * A helper class to forward the lifecycle events from this controller to the screen.
+     */
+    class ScreenLifecycleObserver implements DefaultLifecycleObserver {
+        @Override
+        public void onCreate(@NonNull LifecycleOwner owner) {
+            putScreenOnStackIfNotTop();
+            dispatchLifecycleEvent(Event.ON_CREATE);
+        }
+
+        @Override
+        public void onStart(@NonNull LifecycleOwner owner) {
+            putScreenOnStackIfNotTop();
+            dispatchLifecycleEvent(Event.ON_START);
+        }
+
+        @Override
+        public void onResume(@NonNull LifecycleOwner owner) {
+            putScreenOnStackIfNotTop();
+            dispatchLifecycleEvent(Event.ON_RESUME);
+        }
+
+        @Override
+        public void onPause(@NonNull LifecycleOwner owner) {
+            dispatchLifecycleEvent(Event.ON_PAUSE);
+        }
+
+        @Override
+        public void onStop(@NonNull LifecycleOwner owner) {
+            dispatchLifecycleEvent(Event.ON_STOP);
+        }
+
+        @Override
+        public void onDestroy(@NonNull LifecycleOwner owner) {
+            dispatchLifecycleEvent(Event.ON_DESTROY);
         }
     }
 }

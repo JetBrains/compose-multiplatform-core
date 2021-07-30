@@ -23,6 +23,7 @@ import androidx.wear.complications.data.ComplicationType
 import androidx.wear.watchface.style.UserStyleSetting.ComplicationSlotsUserStyleSetting.ComplicationSlotOverlay
 import androidx.wear.watchface.style.UserStyleSetting.ComplicationSlotsUserStyleSetting.ComplicationSlotsOption
 import androidx.wear.watchface.style.UserStyleSetting.Id.Companion.MAX_LENGTH
+import androidx.wear.watchface.style.UserStyleSetting.Option.Id.Companion.MAX_LENGTH
 import androidx.wear.watchface.style.data.BooleanOptionWireFormat
 import androidx.wear.watchface.style.data.BooleanUserStyleSettingWireFormat
 import androidx.wear.watchface.style.data.ComplicationOverlayWireFormat
@@ -93,22 +94,20 @@ public sealed class UserStyleSetting(
             }
         }
 
-        override fun toString(): String = value
-
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
             if (javaClass != other?.javaClass) return false
 
             other as Id
 
-            if (value != other.value) return false
-
-            return true
+            return value == other.value
         }
 
         override fun hashCode(): Int {
             return value.hashCode()
         }
+
+        override fun toString(): String = value
     }
 
     public companion object {
@@ -144,7 +143,7 @@ public sealed class UserStyleSetting(
         if (id == null) {
             options[defaultOptionIndex]
         } else {
-            getOptionForId(id)
+            getOptionForId(Option.Id(id))
         }
 
     private constructor(wireFormat: UserStyleSettingWireFormat) : this(
@@ -169,6 +168,19 @@ public sealed class UserStyleSetting(
     /** Returns the default for when the user hasn't selected an option. */
     public val defaultOption: Option
         get() = options[defaultOptionIndex]
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as UserStyleSetting
+
+        return id == other.id
+    }
+
+    override fun hashCode(): Int {
+        return id.hashCode()
+    }
 
     override fun toString(): String = "{${id.value} : " +
         options.joinToString(transform = { it.toString() }) + "}"
@@ -205,6 +217,17 @@ public sealed class UserStyleSetting(
                 }
             }
 
+            override fun equals(other: Any?): Boolean {
+                if (this === other) return true
+                if (javaClass != other?.javaClass) return false
+                other as Id
+                return value.contentEquals(other.value)
+            }
+
+            override fun hashCode(): Int {
+                return value.contentHashCode()
+            }
+
             override fun toString(): String =
                 try {
                     value.decodeToString()
@@ -221,7 +244,7 @@ public sealed class UserStyleSetting(
             ): Option =
                 when (wireFormat) {
                     is BooleanOptionWireFormat ->
-                        BooleanUserStyleSetting.BooleanOption(wireFormat)
+                        BooleanUserStyleSetting.BooleanOption.fromWireFormat(wireFormat)
 
                     is ComplicationsOptionWireFormat ->
                         ComplicationSlotsUserStyleSetting.ComplicationSlotsOption(wireFormat)
@@ -250,6 +273,19 @@ public sealed class UserStyleSetting(
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
         public abstract fun toWireFormat(): OptionWireFormat
 
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (javaClass != other?.javaClass) return false
+
+            other as Option
+
+            return id == other.id
+        }
+
+        override fun hashCode(): Int {
+            return id.hashCode()
+        }
+
         override fun toString(): String =
             try {
                 id.value.decodeToString()
@@ -262,14 +298,14 @@ public sealed class UserStyleSetting(
      * Translates an option name into an option. This will need to be overridden for userStyle
      * categories that can't sensibly be fully enumerated (e.g. a full 24-bit color picker).
      *
-     * @param optionId The ID of the option
+     * @param optionId The [Option.Id] of the option
      * @return An [Option] corresponding to the name. This could either be one of the options from
      * [UserStyleSetting]s or a newly constructed Option depending on the nature of the
      * UserStyleSetting. If optionName is unrecognized then the default value for the setting should
      * be returned.
      */
-    public open fun getOptionForId(optionId: ByteArray): Option =
-        options.find { it.id.value.contentEquals(optionId) } ?: options[defaultOptionIndex]
+    public open fun getOptionForId(optionId: Option.Id): Option =
+        options.find { it.id.value.contentEquals(optionId.value) } ?: options[defaultOptionIndex]
 
     /** A BooleanUserStyleSetting represents a setting with a true and a false setting. */
     public class BooleanUserStyleSetting : UserStyleSetting {
@@ -298,7 +334,7 @@ public sealed class UserStyleSetting(
             displayName,
             description,
             icon,
-            listOf(BooleanOption(true), BooleanOption(false)),
+            listOf(BooleanOption.TRUE, BooleanOption.FALSE),
             when (defaultValue) {
                 true -> 0
                 false -> 1
@@ -325,27 +361,38 @@ public sealed class UserStyleSetting(
         public fun getDefaultValue(): Boolean = (options[defaultOptionIndex] as BooleanOption).value
 
         /** Represents a true or false option in the [BooleanUserStyleSetting]. */
-        public class BooleanOption : Option {
+        public class BooleanOption private constructor(
+            /** The boolean value this instance represents. */
             public val value: Boolean
-
-            public constructor(value: Boolean) : super(
-                Id(ByteArray(1).apply { this[0] = if (value) 1 else 0 })
-            ) {
-                this.value = value
-            }
-
-            internal constructor(
-                wireFormat: BooleanOptionWireFormat
-            ) : super(Id(wireFormat.mId)) {
-                value = wireFormat.mId[0] == 1.toByte()
-            }
-
+        ) : Option(
+            Id(ByteArray(1).apply { this[0] = if (value) 1 else 0 })
+        ) {
             /** @hide */
             @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
             override fun toWireFormat(): BooleanOptionWireFormat =
                 BooleanOptionWireFormat(id.value)
 
             override fun toString(): String = if (id.value[0] == 1.toByte()) "true" else "false"
+
+            public companion object {
+                @JvmField
+                public val TRUE = BooleanOption(true)
+
+                @JvmField
+                public val FALSE = BooleanOption(false)
+
+                @JvmStatic
+                public fun from(value: Boolean): BooleanOption {
+                    return if (value) TRUE else FALSE
+                }
+
+                @JvmStatic
+                internal fun fromWireFormat(
+                    wireFormat: BooleanOptionWireFormat
+                ): BooleanOption {
+                    return from(wireFormat.mId[0] == 1.toByte())
+                }
+            }
         }
     }
 
@@ -362,7 +409,7 @@ public sealed class UserStyleSetting(
      * not apply any overrides. Only a single [ComplicationSlotsUserStyleSetting] is permitted in
      * the [UserStyleSchema].
      *
-     * Not to be confused with complication provider selection.
+     * Not to be confused with complication data source selection.
      */
     public class ComplicationSlotsUserStyleSetting : UserStyleSetting {
 
@@ -382,6 +429,8 @@ public sealed class UserStyleSetting(
          */
         public class ComplicationSlotOverlay constructor(
             public val complicationSlotId: Int,
+            @Suppress("AutoBoxing")
+            @get:Suppress("AutoBoxing")
             @get:JvmName("isEnabled")
             public val enabled: Boolean? = null,
             public val complicationSlotBounds: ComplicationSlotBounds? = null,
@@ -398,6 +447,7 @@ public sealed class UserStyleSetting(
                 private var accessibilityTraversalIndex: Int? = null
 
                 /** Overrides the complication's enabled flag. */
+                @Suppress("MissingGetterMatchingBuilder")
                 public fun setEnabled(enabled: Boolean): Builder = apply {
                     this.enabled = enabled
                 }
@@ -494,7 +544,10 @@ public sealed class UserStyleSetting(
             complicationConfig.indexOf(defaultOption),
             affectsWatchFaceLayers
         ) {
-            require(affectsWatchFaceLayers.contains(WatchFaceLayer.COMPLICATIONS))
+            require(affectsWatchFaceLayers.contains(WatchFaceLayer.COMPLICATIONS)) {
+                "ComplicationSlotsUserStyleSetting must affect the complications layer"
+            }
+            requireUniqueOptionIds(id, complicationConfig)
         }
 
         internal constructor(
@@ -698,8 +751,10 @@ public sealed class UserStyleSetting(
             get() = (options[defaultOptionIndex] as DoubleRangeOption).value
 
         /** We support all values in the range [min ... max] not just min & max. */
-        override fun getOptionForId(optionId: ByteArray): Option =
-            options.find { it.id.value.contentEquals(optionId) } ?: checkedOptionForId(optionId)
+        override fun getOptionForId(optionId: Option.Id): Option =
+            options.find { it.id.value.contentEquals(optionId.value) } ?: checkedOptionForId(
+                optionId.value
+            )
 
         private fun checkedOptionForId(optionId: ByteArray): DoubleRangeOption {
             return try {
@@ -748,7 +803,9 @@ public sealed class UserStyleSetting(
             options,
             options.indexOf(defaultOption),
             affectsWatchFaceLayers
-        )
+        ) {
+            requireUniqueOptionIds(id, options)
+        }
 
         internal constructor(wireFormat: ListUserStyleSettingWireFormat) : super(wireFormat)
 
@@ -937,8 +994,10 @@ public sealed class UserStyleSetting(
         /**
          * We support all values in the range [min ... max] not just min & max.
          */
-        override fun getOptionForId(optionId: ByteArray): Option =
-            options.find { it.id.value.contentEquals(optionId) } ?: checkedOptionForId(optionId)
+        override fun getOptionForId(optionId: Option.Id): Option =
+            options.find { it.id.value.contentEquals(optionId.value) } ?: checkedOptionForId(
+                optionId.value
+            )
 
         private fun checkedOptionForId(optionId: ByteArray): LongRangeOption {
             return try {
@@ -1025,7 +1084,21 @@ public sealed class UserStyleSetting(
                 CustomValueOptionWireFormat(id.value)
         }
 
-        override fun getOptionForId(optionId: ByteArray): Option =
-            options.find { it.id.value.contentEquals(optionId) } ?: CustomValueOption(optionId)
+        override fun getOptionForId(optionId: Option.Id): Option =
+            options.find { it.id.value.contentEquals(optionId.value) } ?: CustomValueOption(
+                optionId.value
+            )
+    }
+}
+
+internal fun requireUniqueOptionIds(
+    setting: UserStyleSetting.Id,
+    options: List<UserStyleSetting.Option>
+) {
+    val uniqueIds = HashSet<UserStyleSetting.Option.Id>()
+    for (option in options) {
+        require(uniqueIds.add(option.id)) {
+            "duplicated option id: ${option.id} in $setting"
+        }
     }
 }

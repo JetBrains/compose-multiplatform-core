@@ -1,5 +1,6 @@
 import androidx.build.LibraryGroups
 import androidx.build.Publish
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     id("AndroidXPlugin")
@@ -19,6 +20,7 @@ dependencies {
     androidTestImplementation(libs.kotlinStdlib)
     androidTestImplementation(libs.truth)
     androidTestImplementation(project(':internal-testutils-runtime'))
+    androidTestImplementation(project(":window:window-testing"))
 }
 
 androidx {

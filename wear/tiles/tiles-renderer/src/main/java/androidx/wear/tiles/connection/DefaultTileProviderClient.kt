@@ -34,6 +34,7 @@ import androidx.wear.tiles.TileBuilders
 import androidx.wear.tiles.TileEnterEventData
 import androidx.wear.tiles.TileLeaveEventData
 import androidx.wear.tiles.TileProvider
+import androidx.wear.tiles.TileProviderService
 import androidx.wear.tiles.TileRemoveEventData
 import androidx.wear.tiles.client.TileProviderClient
 import androidx.wear.tiles.proto.ResourceProto
@@ -62,7 +63,7 @@ import kotlin.coroutines.resumeWithException
  * the same binder).
  *
  * Note that there is a timeout of 10s when connecting to the `TileProviderService`, and a
- * timeout of 30s for [tileRequest] and [resourcesRequest] to return a payload.
+ * timeout of 30s for [requestTile] and [requestResources] to return a payload.
  */
 public class DefaultTileProviderClient : TileProviderClient {
     internal companion object {
@@ -93,6 +94,17 @@ public class DefaultTileProviderClient : TileProviderClient {
     private val coroutineDispatcher: CoroutineDispatcher
     private val connectionBinder: TilesConnectionBinder
 
+    /**
+     * Build an instance of [DefaultTileProviderClient] for use with a coroutine dispatcher.
+     *
+     * @param context The application context to use when binding to the [TileProviderService].
+     * @param componentName The [ComponentName] of the [TileProviderService] to bind to.
+     * @param coroutineScope A [CoroutineScope] to use when dispatching calls to the
+     *   [TileProviderService]. Cancelling the passed [CoroutineScope] will also cancel any pending
+     *   work in this class.
+     * @param coroutineDispatcher A [CoroutineDispatcher] to use when dispatching work from this
+     *   class.
+     */
     public constructor(
         context: Context,
         componentName: ComponentName,
@@ -105,6 +117,13 @@ public class DefaultTileProviderClient : TileProviderClient {
             TilesConnectionBinder(context, componentName, coroutineScope, coroutineDispatcher)
     }
 
+    /**
+     * Build an instance of [DefaultTileProviderClient] for use with a given [Executor].
+     *
+     * @param context The application context to use when binding to the [TileProviderService].
+     * @param componentName The [ComponentName] of the [TileProviderService] to bind to.
+     * @param executor An [Executor] to use when dispatching calls to the [TileProviderService].
+     */
     public constructor(context: Context, componentName: ComponentName, executor: Executor) {
         this.coroutineDispatcher = executor.asCoroutineDispatcher()
         this.coroutineScope = CoroutineScope(this.coroutineDispatcher)
@@ -112,11 +131,11 @@ public class DefaultTileProviderClient : TileProviderClient {
             TilesConnectionBinder(context, componentName, coroutineScope, coroutineDispatcher)
     }
 
-    public override fun getApiVersion(): ListenableFuture<Int> {
+    public override fun requestApiVersion(): ListenableFuture<Int> {
         return runForFuture { it.apiVersion }
     }
 
-    public override fun tileRequest(
+    public override fun requestTile(
         requestParams: RequestBuilders.TileRequest
     ): ListenableFuture<TileBuilders.Tile> {
         return runForFuture {
@@ -131,7 +150,7 @@ public class DefaultTileProviderClient : TileProviderClient {
         }
     }
 
-    public override fun resourcesRequest(
+    public override fun requestResources(
         requestParams: RequestBuilders.ResourcesRequest
     ): ListenableFuture<ResourceBuilders.Resources> {
         return runForFuture {
@@ -149,28 +168,28 @@ public class DefaultTileProviderClient : TileProviderClient {
         }
     }
 
-    public override fun onTileAdded(): ListenableFuture<Void?> {
+    public override fun sendOnTileAddedEvent(): ListenableFuture<Void?> {
         return runForFuture {
             it.onTileAddEvent(TILE_ADD_EVENT)
             null
         }
     }
 
-    public override fun onTileEnter(): ListenableFuture<Void?> {
+    public override fun sendOnTileEnterEvent(): ListenableFuture<Void?> {
         return runForFuture {
             it.onTileEnterEvent(TILE_ENTER_EVENT)
             null
         }
     }
 
-    public override fun onTileLeave(): ListenableFuture<Void?> {
+    public override fun sendOnTileLeaveEvent(): ListenableFuture<Void?> {
         return runForFuture {
             it.onTileLeaveEvent(TILE_LEAVE_EVENT)
             null
         }
     }
 
-    public override fun onTileRemoved(): ListenableFuture<Void?> {
+    public override fun sendOnTileRemovedEvent(): ListenableFuture<Void?> {
         return runForFuture {
             it.onTileRemoveEvent(TILE_REMOVE_EVENT)
             null

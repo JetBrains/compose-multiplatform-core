@@ -34,13 +34,13 @@ function zipKotlinMetadata() {
   zipFile=kotlinMetadata.zip
   echo "zipping kotlin metadata"
   rm -f "$DIST_DIR/$zipFile"
-  (cd $OUT_DIR && find -name "*kotlin_module" | xargs zip -u "$DIST_DIR/$zipFile")
+  (cd $OUT_DIR && find -name "*kotlin_module" | xargs zip -q -u "$DIST_DIR/$zipFile")
   echo done zipping kotlin metadata
 }
 
 # Run Gradle
 EXIT_VALUE=0
-if impl/build.sh buildOnServer checkExternalLicenses listTaskOutputs validateAllProperties \
+if impl/build.sh --diagnose buildOnServer checkExternalLicenses listTaskOutputs validateAllProperties \
     --profile "$@"; then
   echo build succeeded
   EXIT_VALUE=0

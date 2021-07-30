@@ -17,7 +17,8 @@
 package androidx.build
 
 import androidx.build.AndroidXRootPlugin.Companion.PROJECT_OR_ARTIFACT_EXT_NAME
-import androidx.build.gradle.getByType
+import androidx.build.dependencyTracker.DependencyTracker
+import androidx.build.dependencyTracker.ProjectGraph
 import androidx.build.gradle.isRoot
 import androidx.build.playground.FindAffectedModulesTask
 import com.android.build.gradle.LibraryExtension
@@ -31,6 +32,7 @@ import org.gradle.api.artifacts.component.ModuleComponentSelector
 import org.gradle.api.artifacts.dsl.RepositoryHandler
 import org.gradle.kotlin.dsl.KotlinClosure1
 import org.gradle.kotlin.dsl.extra
+import org.gradle.kotlin.dsl.getByType
 import java.net.URI
 import java.net.URL
 
@@ -82,7 +84,13 @@ class AndroidXPlaygroundRootPlugin : Plugin<Project> {
         target.findProject(":navigation:navigation-dynamic-features-fragment")
             ?.disableInvalidFragmentVersionForActivityResultLint()
 
-        rootProject.tasks.register("findAffectedModules", FindAffectedModulesTask::class.java)
+        rootProject.tasks.register(
+            "findAffectedModules",
+            FindAffectedModulesTask::class.java
+        ) { task ->
+            task.projectGraph = ProjectGraph(rootProject)
+            task.dependencyTracker = DependencyTracker(rootProject, task.logger)
+        }
     }
 
     private fun Project.disableInvalidFragmentVersionForActivityResultLint() {
@@ -91,6 +99,7 @@ class AndroidXPlaygroundRootPlugin : Plugin<Project> {
                 is LibraryPlugin -> {
                     val libraryExtension = extensions.getByType<LibraryExtension>()
                     afterEvaluate {
+                        @Suppress("DEPRECATION") // lintOptions methods
                         libraryExtension.lintOptions.apply {
                             disable("InvalidFragmentVersionForActivityResult")
                         }
