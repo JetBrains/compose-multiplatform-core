@@ -24,7 +24,7 @@ import androidx.test.filters.LargeTest
 import androidx.window.WindowTestBase
 import androidx.window.core.Bounds
 import androidx.window.layout.FoldingFeature.State.Companion.FLAT
-import androidx.window.layout.FoldingFeature.Type.Companion.HINGE
+import androidx.window.layout.HardwareFoldingFeature.Type.Companion.HINGE
 import com.google.common.util.concurrent.MoreExecutors
 import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
@@ -61,21 +61,10 @@ public class ExtensionWindowBackendTest : WindowTestBase() {
     }
 
     @Test
-    public fun testInitAndVerifyExtension() {
-        val extensionVersion = ExtensionCompat.extensionVersion
-        assumeTrue(extensionVersion != null)
-        assertTrue(ExtensionWindowBackend.isExtensionVersionSupported(extensionVersion))
-        val extension = ExtensionWindowBackend.initAndVerifyExtension(context)
-        assertNotNull(extension)
-        assertTrue(extension is ExtensionCompat)
-        assertTrue(extension!!.validateExtensionInterface())
-    }
-
-    @Test
     public fun testInitAndVerifySidecar() {
         val sidecarVersion = SidecarCompat.sidecarVersion
         assumeTrue(sidecarVersion != null)
-        assertTrue(ExtensionWindowBackend.isExtensionVersionSupported(sidecarVersion))
+        assertTrue(ExtensionWindowBackend.isSidecarVersionSupported(sidecarVersion))
         val sidecar = ExtensionWindowBackend.initAndVerifyExtension(context)
         assertNotNull(sidecar)
         assertTrue(sidecar is SidecarCompat)
@@ -218,15 +207,10 @@ public class ExtensionWindowBackendTest : WindowTestBase() {
 
     internal companion object {
         private fun newTestWindowLayoutInfo(): WindowLayoutInfo {
-            var builder = WindowLayoutInfo.Builder()
-            val windowLayoutInfo = builder.build()
-            assertTrue(windowLayoutInfo.displayFeatures.isEmpty())
-            val feature1: DisplayFeature = FoldingFeature(Bounds(0, 2, 3, 4), HINGE, FLAT)
-            val feature2: DisplayFeature = FoldingFeature(Bounds(0, 1, 5, 1), HINGE, FLAT)
+            val feature1: DisplayFeature = HardwareFoldingFeature(Bounds(0, 2, 3, 4), HINGE, FLAT)
+            val feature2: DisplayFeature = HardwareFoldingFeature(Bounds(0, 1, 5, 1), HINGE, FLAT)
             val displayFeatures = listOf(feature1, feature2)
-            builder = WindowLayoutInfo.Builder()
-            builder.setDisplayFeatures(displayFeatures)
-            return builder.build()
+            return WindowLayoutInfo(displayFeatures)
         }
     }
 }

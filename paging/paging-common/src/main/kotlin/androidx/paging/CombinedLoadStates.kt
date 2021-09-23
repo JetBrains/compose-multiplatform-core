@@ -18,6 +18,9 @@ package androidx.paging
 
 /**
  * Collection of pagination [LoadState]s for both a [PagingSource], and [RemoteMediator].
+ *
+ * Note: The [LoadType] [REFRESH][LoadType.REFRESH] always has [LoadState.endOfPaginationReached]
+ * set to `false`.
  */
 public class CombinedLoadStates(
     /**
@@ -101,14 +104,5 @@ public class CombinedLoadStates(
         mediator?.forEach { type, state ->
             op(type, true, state)
         }
-    }
-
-    internal companion object {
-        val IDLE_SOURCE = CombinedLoadStates(
-            refresh = LoadState.NotLoading.Incomplete,
-            prepend = LoadState.NotLoading.Incomplete,
-            append = LoadState.NotLoading.Incomplete,
-            source = LoadStates.IDLE
-        )
     }
 }

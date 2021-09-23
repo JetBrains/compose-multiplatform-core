@@ -47,6 +47,10 @@ public class Camera2CameraCaptureResult implements CameraCaptureResult {
         mCaptureResult = captureResult;
     }
 
+    public Camera2CameraCaptureResult(@NonNull CaptureResult captureResult) {
+        this(TagBundle.emptyBundle(), captureResult);
+    }
+
     /**
      * Converts the camera2 {@link CaptureResult#CONTROL_AF_MODE} to {@link AfMode}.
      *
@@ -92,14 +96,16 @@ public class Camera2CameraCaptureResult implements CameraCaptureResult {
                 return AfState.INACTIVE;
             case CaptureResult.CONTROL_AF_STATE_ACTIVE_SCAN:
             case CaptureResult.CONTROL_AF_STATE_PASSIVE_SCAN:
-            case CaptureResult.CONTROL_AF_STATE_PASSIVE_UNFOCUSED:
                 return AfState.SCANNING;
             case CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED:
                 return AfState.LOCKED_FOCUSED;
             case CaptureResult.CONTROL_AF_STATE_NOT_FOCUSED_LOCKED:
                 return AfState.LOCKED_NOT_FOCUSED;
+            case CaptureResult.CONTROL_AF_STATE_PASSIVE_UNFOCUSED:
+                return AfState.PASSIVE_NOT_FOCUSED;
             case CaptureResult.CONTROL_AF_STATE_PASSIVE_FOCUSED:
-                return AfState.FOCUSED;
+                return AfState.PASSIVE_FOCUSED;
+
             default: // fall out
         }
         Logger.e(TAG, "Undefined af state: " + state);

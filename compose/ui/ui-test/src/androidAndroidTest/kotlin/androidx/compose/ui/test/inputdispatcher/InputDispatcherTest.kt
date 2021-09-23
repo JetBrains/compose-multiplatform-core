@@ -60,34 +60,32 @@ open class InputDispatcherTest(eventPeriodOverride: Long? = null) {
     }
 }
 
-internal fun AndroidInputDispatcher.generateDownAndCheck(pointerId: Int, position: Offset) {
-    enqueueDown(pointerId, position)
-    assertThat(getCurrentPosition(pointerId)).isEqualTo(position)
+internal fun AndroidInputDispatcher.generateTouchDownAndCheck(pointerId: Int, position: Offset) {
+    enqueueTouchDown(pointerId, position)
+    assertThat(getCurrentTouchPosition(pointerId)).isEqualTo(position)
 }
 
-internal fun AndroidInputDispatcher.movePointerAndCheck(pointerId: Int, position: Offset) {
-    movePointer(pointerId, position)
-    assertThat(getCurrentPosition(pointerId)).isEqualTo(position)
+internal fun AndroidInputDispatcher.updateTouchPointerAndCheck(pointerId: Int, position: Offset) {
+    updateTouchPointer(pointerId, position)
+    assertThat(getCurrentTouchPosition(pointerId)).isEqualTo(position)
 }
 
-internal fun AndroidInputDispatcher.generateUpAndCheck(pointerId: Int, delay: Long? = null) {
+internal fun AndroidInputDispatcher.generateTouchUpAndCheck(pointerId: Int, delay: Long? = null) {
     if (delay != null) {
-        enqueueUp(pointerId, delay)
-    } else {
-        enqueueUp(pointerId)
+        advanceEventTime(delay)
     }
-    assertThat(getCurrentPosition(pointerId)).isNull()
+    enqueueTouchUp(pointerId)
+    assertThat(getCurrentTouchPosition(pointerId)).isNull()
 }
 
-internal fun AndroidInputDispatcher.generateCancelAndCheck(delay: Long? = null) {
+internal fun AndroidInputDispatcher.generateTouchCancelAndCheck(delay: Long? = null) {
     if (delay != null) {
-        enqueueCancel(delay)
-    } else {
-        enqueueCancel()
+        advanceEventTime(delay)
     }
-    verifyNoGestureInProgress()
+    enqueueTouchCancel()
+    verifyNoTouchGestureInProgress()
 }
 
-internal fun InputDispatcher.verifyNoGestureInProgress() {
-    assertThat((this as AndroidInputDispatcher).isGestureInProgress).isFalse()
+internal fun InputDispatcher.verifyNoTouchGestureInProgress() {
+    assertThat((this as AndroidInputDispatcher).isTouchInProgress).isFalse()
 }

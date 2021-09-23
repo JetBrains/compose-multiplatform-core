@@ -19,7 +19,6 @@ package androidx.camera.camera2.pipe.integration.adapter
 import android.view.Surface
 import androidx.camera.camera2.pipe.CameraGraph
 import androidx.camera.camera2.pipe.StreamId
-import androidx.camera.camera2.pipe.core.Log
 import androidx.camera.camera2.pipe.core.Log.debug
 import androidx.camera.camera2.pipe.integration.impl.UseCaseThreads
 import androidx.camera.core.UseCase
@@ -41,14 +40,13 @@ private const val TIMEOUT_GET_SURFACE_IN_MS = 5_000L
  * operation.
  */
 class SessionConfigAdapter(
-    private val useCases: List<UseCase>,
+    private val useCases: Collection<UseCase>,
     private val threads: UseCaseThreads,
 ) {
     private val validatingBuilder: SessionConfig.ValidatingBuilder by lazy {
         val validatingBuilder = SessionConfig.ValidatingBuilder()
         useCases.forEach {
-            it.sessionConfig?.let { sessionConfig -> validatingBuilder.add(sessionConfig) }
-                ?: Log.debug { "Failed to add use case: $it" }
+            validatingBuilder.add(it.sessionConfig)
         }
         validatingBuilder
     }
@@ -81,7 +79,7 @@ class SessionConfigAdapter(
             if (!isActive) return@async
 
             if (surfaces.isEmpty()) {
-                Log.debug { "Surface list is empty" }
+                debug { "Surface list is empty" }
                 return@async
             }
 
@@ -96,7 +94,7 @@ class SessionConfigAdapter(
                     )
                 }
             } else {
-                Log.debug { "Surface contains failed, notify SessionConfig invalid" }
+                debug { "Surface contains failed, notify SessionConfig invalid" }
 
                 // Only handle the first failed Surface since subsequent calls to
                 // CameraInternal#onUseCaseReset() will handle the other failed Surfaces if there
@@ -104,7 +102,7 @@ class SessionConfigAdapter(
                 val deferrableSurface = deferrableSurfaces[surfaces.indexOf(null)]
                 val sessionConfig =
                     useCases.firstOrNull { useCase ->
-                        useCase.sessionConfig?.surfaces?.contains(deferrableSurface) ?: false
+                        useCase.sessionConfig.surfaces.contains(deferrableSurface)
                     }?.sessionConfig
 
                 withContext(Dispatchers.Main) {

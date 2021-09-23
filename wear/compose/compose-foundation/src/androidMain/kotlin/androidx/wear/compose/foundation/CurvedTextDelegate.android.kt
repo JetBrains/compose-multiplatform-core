@@ -16,6 +16,9 @@
 
 package androidx.wear.compose.foundation
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.graphics.Color
@@ -33,8 +36,8 @@ internal actual class CurvedTextDelegate {
     private var fontSizePx: Float = 0f
     private var arcPaddingPx: ArcPaddingPx = ArcPaddingPx(0f, 0f, 0f, 0f)
 
-    actual var textWidth = 0f
-    actual var textHeight = 0f
+    actual var textWidth by mutableStateOf(0f)
+    actual var textHeight by mutableStateOf(0f)
     actual var baseLinePosition = 0f
 
     private val paint = android.graphics.Paint().apply { isAntiAlias = true }
@@ -131,7 +134,7 @@ internal actual class CurvedTextDelegate {
     actual fun doDraw(canvas: Canvas, size: Size, color: Color, background: Color) {
         updatePathsIfNeeded(size)
 
-        if (background.isSpecified) {
+        if (background.isSpecified && background != Color.Transparent) {
             paint.color = background.toArgb()
             canvas.nativeCanvas.drawPath(backgroundPath, paint)
         }

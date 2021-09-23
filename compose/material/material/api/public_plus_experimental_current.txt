@@ -435,6 +435,9 @@ package androidx.compose.material {
     method @androidx.compose.runtime.Composable public static void MaterialTheme(optional androidx.compose.material.Colors colors, optional androidx.compose.material.Typography typography, optional androidx.compose.material.Shapes shapes, kotlin.jvm.functions.Function0<kotlin.Unit> content);
   }
 
+  public final class MaterialTheme_androidKt {
+  }
+
   public final class MenuDefaults {
     method public androidx.compose.foundation.layout.PaddingValues getDropdownMenuItemContentPadding();
     property public final androidx.compose.foundation.layout.PaddingValues DropdownMenuItemContentPadding;
@@ -751,6 +754,11 @@ package androidx.compose.material {
     method @androidx.compose.runtime.Composable public androidx.compose.runtime.State<androidx.compose.ui.graphics.Color> trailingIconColor(boolean enabled, boolean isError);
   }
 
+  @androidx.compose.material.ExperimentalMaterialApi public interface TextFieldColorsWithIcons extends androidx.compose.material.TextFieldColors {
+    method @androidx.compose.runtime.Composable public default androidx.compose.runtime.State<androidx.compose.ui.graphics.Color> leadingIconColor(boolean enabled, boolean isError, androidx.compose.foundation.interaction.InteractionSource interactionSource);
+    method @androidx.compose.runtime.Composable public default androidx.compose.runtime.State<androidx.compose.ui.graphics.Color> trailingIconColor(boolean enabled, boolean isError, androidx.compose.foundation.interaction.InteractionSource interactionSource);
+  }
+
   public final class TextFieldDefaults {
     method public float getMinHeight();
     method public float getMinWidth();
@@ -781,6 +789,10 @@ package androidx.compose.material {
 
   @androidx.compose.material.ExperimentalMaterialApi @androidx.compose.runtime.Stable public interface ThresholdConfig {
     method public float computeThreshold(androidx.compose.ui.unit.Density, float fromValue, float toValue);
+  }
+
+  public final class TouchTargetKt {
+    method @androidx.compose.material.ExperimentalMaterialApi public static androidx.compose.runtime.ProvidableCompositionLocal<java.lang.Boolean> getLocalMinimumTouchTargetEnforcement();
   }
 
   @androidx.compose.runtime.Immutable public final class Typography {

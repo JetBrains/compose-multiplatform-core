@@ -18,7 +18,6 @@ package androidx.car.app.testing;
 
 import static java.util.Objects.requireNonNull;
 
-import android.annotation.SuppressLint;
 import android.util.Pair;
 
 import androidx.annotation.NonNull;
@@ -31,13 +30,11 @@ import androidx.lifecycle.Lifecycle.Event;
 import androidx.lifecycle.Lifecycle.State;
 import androidx.lifecycle.LifecycleOwner;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * A controller that allows testing of a {@link Screen}.
+ * {@link ScreenController} provides API that allows testing of a {@link Screen}.
  *
  * <p>This controller will allows:
  *
@@ -55,23 +52,21 @@ public class ScreenController {
     /**
      * Creates a ScreenController to control a {@link Screen} for testing.
      *
-     * @throws NullPointerException if either {@code testCarContext} or {@code screen} are null
+     * @throws NullPointerException     if {@code screen} is null
+     * @throws IllegalArgumentException if {@code screen} was not created with a
+     *                                  {@link TestCarContext}
      */
-    public ScreenController(@NonNull TestCarContext testCarContext, @NonNull Screen screen) {
+    public ScreenController(@NonNull Screen screen) {
         mScreen = requireNonNull(screen);
-        mTestCarContext = requireNonNull(testCarContext);
+        TestCarContext carContext = (TestCarContext) mScreen.getCarContext();
+        if (carContext == null) {
+            throw new IllegalArgumentException(
+                    "Screen should be created with TestCarContext for testing");
+        }
+        mTestCarContext = carContext;
 
         mLifecycleOwner = new TestLifecycleOwner();
         mLifecycleOwner.getRegistry().addObserver(new ScreenLifecycleObserver());
-
-        // Use reflection to inject the TestCarContext into the Screen.
-        try {
-            Field field = Screen.class.getDeclaredField("mCarContext");
-            field.setAccessible(true);
-            field.set(screen, testCarContext);
-        } catch (ReflectiveOperationException e) {
-            throw new IllegalStateException("Failed to set a test car context for testing", e);
-        }
     }
 
     /** Returns the {@link Screen} being controlled. */
@@ -109,22 +104,6 @@ public class ScreenController {
     }
 
     /**
-     * Returns the result that was set via {@link Screen#setResult(Object)}, or {@code null} if
-     * one was not set.
-     */
-    @Nullable
-    public Object getScreenResult() {
-        try {
-            Field result = Screen.class.getDeclaredField("mResult");
-            result.setAccessible(true);
-            return result.get(mScreen);
-        } catch (ReflectiveOperationException e) {
-            throw new IllegalStateException("Unable to access result from screen being "
-                    + "controlled", e);
-        }
-    }
-
-    /**
      * Moves the {@link Screen} being controlled to the input {@code state}.
      *
      * <p>Note that moving the {@link Screen} up a state will also push the {@link Screen} onto
@@ -141,6 +120,15 @@ public class ScreenController {
         return this;
     }
 
+    /**
+     * Returns the result that was set via {@link Screen#setResult(Object)}, or {@code null} if
+     * one was not set.
+     */
+    @Nullable
+    public Object getScreenResult() {
+        return mScreen.getResultInternal();
+    }
+
     void putScreenOnStackIfNotTop() {
         TestScreenManager testScreenManager = mTestCarContext.getCarService(
                 TestScreenManager.class);
@@ -149,16 +137,8 @@ public class ScreenController {
         }
     }
 
-    @SuppressLint("BanUncheckedReflection")
     void dispatchLifecycleEvent(Event event) {
-        // Use reflection to call internal APIs for testing purposes.
-        try {
-            Method method = Screen.class.getDeclaredMethod("dispatchLifecycleEvent", Event.class);
-            method.setAccessible(true);
-            method.invoke(mScreen, event);
-        } catch (ReflectiveOperationException e) {
-            throw new IllegalStateException("Failed dispatching lifecycle event", e);
-        }
+        mScreen.dispatchLifecycleEvent(event);
     }
 
     /**

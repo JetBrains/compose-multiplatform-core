@@ -24,7 +24,10 @@ import android.os.Build
 import android.os.Looper
 import android.util.Log
 import android.util.SparseArray
+import android.view.InputDevice
 import android.view.MotionEvent
+import android.view.MotionEvent.ACTION_HOVER_EXIT
+import android.view.MotionEvent.ACTION_HOVER_MOVE
 import android.view.View
 import android.view.ViewGroup
 import android.view.ViewStructure
@@ -90,6 +93,7 @@ import androidx.compose.ui.layout.onRelocationRequest
 import androidx.compose.ui.node.InternalCoreApi
 import androidx.compose.ui.node.LayoutNode
 import androidx.compose.ui.node.LayoutNode.UsageByParent
+import androidx.compose.ui.node.LayoutNodeDrawScope
 import androidx.compose.ui.node.MeasureAndLayoutDelegate
 import androidx.compose.ui.node.OwnedLayer
 import androidx.compose.ui.node.Owner
@@ -139,6 +143,8 @@ internal class AndroidComposeView(context: Context) :
      */
     private var superclassInitComplete = true
 
+    override val sharedDrawScope = LayoutNodeDrawScope()
+
     override val view: View get() = this
 
     override var density = Density(context)
@@ -186,6 +192,7 @@ internal class AndroidComposeView(context: Context) :
             .then(semanticsModifier)
             .then(_focusManager.modifier)
             .then(keyInputModifier)
+        it.density = density
     }
 
     override val rootForTest: RootForTest = this
@@ -346,6 +353,13 @@ internal class AndroidComposeView(context: Context) :
      */
     override val textToolbar: TextToolbar = AndroidTextToolbar(this)
 
+    /**
+     * The previous raw position of the first pointer. This is useful for avoiding sending
+     * excess Move events when ACTION_HOVER_MOVE immediately follows a different, more meaningful
+     * event, like ACTION_SCROLL.
+     */
+    private var previousPosition = Offset.Infinite
+
     init {
         setWillNotDraw(false)
         isFocusable = true
@@ -471,9 +485,8 @@ internal class AndroidComposeView(context: Context) :
      */
     fun removeAndroidView(view: AndroidViewHolder) {
         androidViewsHandler.removeView(view)
-        androidViewsHandler.holderToLayoutNode.remove(view)
         androidViewsHandler.layoutNodeToHolder.remove(
-            androidViewsHandler.holderToLayoutNode[view]
+            androidViewsHandler.holderToLayoutNode.remove(view)
         )
         ViewCompat.setImportantForAccessibility(
             view,
@@ -848,22 +861,33 @@ internal class AndroidComposeView(context: Context) :
 
     // TODO(shepshapard): Test this method.
     override fun dispatchTouchEvent(motionEvent: MotionEvent): Boolean {
-        if (motionEvent.x.isNaN() ||
-            motionEvent.y.isNaN() ||
-            motionEvent.rawX.isNaN() ||
-            motionEvent.rawY.isNaN()
-        ) {
+        if (isBadMotionEvent(motionEvent)) {
             return false // Bad MotionEvent. Don't handle it.
         }
+
+        val processResult = handleMotionEvent(motionEvent)
+
+        if (processResult.anyMovementConsumed) {
+            parent.requestDisallowInterceptTouchEvent(true)
+        }
+
+        return processResult.dispatchedToAPointerInputModifier
+    }
+
+    private fun handleMotionEvent(motionEvent: MotionEvent): ProcessResult {
         try {
             recalculateWindowPosition(motionEvent)
             forceUseMatrixCache = true
             measureAndLayout()
-            val processResult = trace("AndroidOwner:onTouch") {
+            val result = trace("AndroidOwner:onTouch") {
                 val pointerInputEvent =
                     motionEventAdapter.convertToPointerInputEvent(motionEvent, this)
                 if (pointerInputEvent != null) {
-                    pointerInputEventProcessor.process(pointerInputEvent, this)
+                    pointerInputEventProcessor.process(
+                        pointerInputEvent,
+                        this,
+                        isInBounds(motionEvent)
+                    )
                 } else {
                     pointerInputEventProcessor.processCancel()
                     ProcessResult(
@@ -872,15 +896,17 @@ internal class AndroidComposeView(context: Context) :
                     )
                 }
             }
-
-            if (processResult.anyMovementConsumed) {
-                parent.requestDisallowInterceptTouchEvent(true)
-            }
-
-            return processResult.dispatchedToAPointerInputModifier
+            previousPosition = Offset(motionEvent.rawX, motionEvent.rawY)
+            return result
         } finally {
             forceUseMatrixCache = false
         }
+    }
+
+    private fun isInBounds(motionEvent: MotionEvent): Boolean {
+        val x = motionEvent.x
+        val y = motionEvent.y
+        return (x in 0f..width.toFloat() && y in 0f..height.toFloat())
     }
 
     override fun localToScreen(localPosition: Offset): Offset {
@@ -982,7 +1008,43 @@ internal class AndroidComposeView(context: Context) :
     private fun autofillSupported() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
 
     public override fun dispatchHoverEvent(event: MotionEvent): Boolean {
-        return accessibilityDelegate.dispatchHoverEvent(event)
+        if (isBadMotionEvent(event)) {
+            return false // Bad MotionEvent. Don't handle it.
+        }
+        if (event.isFromSource(InputDevice.SOURCE_TOUCHSCREEN) &&
+            event.getToolType(0) == MotionEvent.TOOL_TYPE_FINGER
+        ) {
+            // Accessibility touch exploration
+            return accessibilityDelegate.dispatchHoverEvent(event)
+        }
+        when (event.actionMasked) {
+            ACTION_HOVER_EXIT ->
+                // Check if we're receiving ACTION_HOVER_EXIT because of a button press
+                if (event.buttonState != 0) {
+                    return false
+                }
+            ACTION_HOVER_MOVE ->
+                // Check if we're receiving this when we've already handled it elsewhere
+                if (!isPositionChanged(event)) {
+                    return false
+                }
+        }
+        val result = handleMotionEvent(event)
+        return result.dispatchedToAPointerInputModifier
+    }
+
+    private fun isBadMotionEvent(event: MotionEvent): Boolean {
+        return event.x.isNaN() ||
+            event.y.isNaN() ||
+            event.rawX.isNaN() ||
+            event.rawY.isNaN()
+    }
+
+    private fun isPositionChanged(event: MotionEvent): Boolean {
+        if (event.pointerCount != 1) {
+            return true
+        }
+        return event.rawX != previousPosition.x || event.rawY != previousPosition.y
     }
 
     private fun findViewByAccessibilityIdRootedAtCurrentView(

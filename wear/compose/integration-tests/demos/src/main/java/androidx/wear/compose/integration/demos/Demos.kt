@@ -16,11 +16,12 @@
 
 package androidx.wear.compose.integration.demos
 
-import androidx.compose.integration.demos.common.DemoCategory
+import androidx.wear.compose.material.ExperimentalWearMaterialApi
 
 /**
  * [DemoCategory] containing all the top level demo categories.
  */
+@ExperimentalWearMaterialApi
 val WearComposeDemos = DemoCategory(
     "Wear Compose Demos",
     listOf(

@@ -122,6 +122,9 @@ package androidx.compose.foundation {
 
 package androidx.compose.foundation.gestures {
 
+  public final class AndroidOverScrollKt {
+  }
+
   public final class AndroidScrollable_androidKt {
   }
 
@@ -171,6 +174,9 @@ package androidx.compose.foundation.gestures {
   public enum Orientation {
     enum_constant public static final androidx.compose.foundation.gestures.Orientation Horizontal;
     enum_constant public static final androidx.compose.foundation.gestures.Orientation Vertical;
+  }
+
+  public final class OverScrollConfigurationKt {
   }
 
   public interface PressGestureScope extends androidx.compose.ui.unit.Density {
@@ -361,9 +367,6 @@ package androidx.compose.foundation.lazy {
   public final class LazyListHeadersKt {
   }
 
-  public final class LazyListItemContentFactoryKt {
-  }
-
   public interface LazyListItemInfo {
     method public int getIndex();
     method public Object getKey();
@@ -390,9 +393,6 @@ package androidx.compose.foundation.lazy {
   }
 
   public final class LazyListMeasureKt {
-  }
-
-  public final class LazyListPrefetcher_androidKt {
   }
 
   @androidx.compose.foundation.lazy.LazyScopeMarker public interface LazyListScope {
@@ -438,6 +438,25 @@ package androidx.compose.foundation.lazy {
   }
 
   public final class Lazy_androidKt {
+  }
+
+}
+
+package androidx.compose.foundation.lazy.layout {
+
+  public final class LazyLayoutItemContentFactoryKt {
+  }
+
+  public final class LazyLayoutKt {
+  }
+
+  public final class LazyLayoutPrefetchPolicyKt {
+  }
+
+  public final class LazyLayoutPrefetcher_androidKt {
+  }
+
+  public final class LazyLayoutStateKt {
   }
 
 }
@@ -720,6 +739,9 @@ package androidx.compose.foundation.text.selection {
   }
 
   public final class MultiWidgetSelectionDelegateKt {
+  }
+
+  public final class SelectionAdjustmentKt {
   }
 
   public final class SelectionContainerKt {

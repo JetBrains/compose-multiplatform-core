@@ -137,12 +137,17 @@ class NavControllerTest {
     @Test
     fun testSetGraphTwice() {
         val navController = createNavController()
+        navController.setViewModelStore(ViewModelStore())
         navController.setGraph(R.navigation.nav_start_destination)
+        navController.navigate(R.id.second_test)
         val navigator = navController.navigatorProvider[TestNavigator::class]
         assertThat(navController.currentDestination?.id)
-            .isEqualTo(R.id.start_test)
+            .isEqualTo(R.id.second_test)
         assertThat(navigator.backStack.size)
-            .isEqualTo(1)
+            .isEqualTo(2)
+        val originalBackStackEntry = navigator.backStack.last()
+        val originalViewModel = ViewModelProvider(originalBackStackEntry)
+            .get<TestAndroidViewModel>()
 
         // Now set a new graph, overriding the first
         navController.setGraph(R.navigation.nav_nested_start_destination)
@@ -150,6 +155,68 @@ class NavControllerTest {
             .isEqualTo(R.id.nested_test)
         assertThat(navigator.backStack.size)
             .isEqualTo(1)
+        assertThat(originalViewModel.isCleared).isTrue()
+    }
+
+    @UiThreadTest
+    @Test
+    fun testSetGraphTwiceSameGraph() {
+        val navController = createNavController()
+        navController.setViewModelStore(ViewModelStore())
+        navController.setGraph(R.navigation.nav_start_destination)
+        navController.navigate(R.id.second_test)
+        val navigator = navController.navigatorProvider[TestNavigator::class]
+        assertThat(navController.currentDestination?.id)
+            .isEqualTo(R.id.second_test)
+        assertThat(navigator.backStack.size)
+            .isEqualTo(2)
+        val originalBackStackEntry = navigator.backStack.last()
+        val originalViewModel = ViewModelProvider(originalBackStackEntry)
+            .get<TestAndroidViewModel>()
+
+        // Now set the graph a second time, using the same graph
+        navController.setGraph(R.navigation.nav_start_destination)
+        // Setting the same graph shouldn't change the back stack
+        assertThat(navController.currentDestination?.id)
+            .isEqualTo(R.id.second_test)
+        assertThat(navigator.backStack.size)
+            .isEqualTo(2)
+        val newBackStackEntry = navigator.backStack.last()
+        val newViewModel = ViewModelProvider(newBackStackEntry).get<TestAndroidViewModel>()
+        assertThat(newBackStackEntry.id).isSameInstanceAs(originalBackStackEntry.id)
+        assertThat(newViewModel).isSameInstanceAs(originalViewModel)
+    }
+
+    @UiThreadTest
+    @Test
+    fun testSetGraphTwiceWithSavedBackStack() {
+        val navController = createNavController()
+        navController.setViewModelStore(ViewModelStore())
+        navController.setGraph(R.navigation.nav_start_destination)
+        navController.navigate(R.id.second_test)
+        val navigator = navController.navigatorProvider[TestNavigator::class]
+        assertThat(navController.currentDestination?.id)
+            .isEqualTo(R.id.second_test)
+        assertThat(navigator.backStack.size)
+            .isEqualTo(2)
+        val originalBackStackEntry = navigator.backStack.last()
+        val originalViewModel = ViewModelProvider(originalBackStackEntry)
+            .get<TestAndroidViewModel>()
+
+        navController.popBackStack(R.id.second_test, inclusive = true, saveState = true)
+        assertThat(navController.currentDestination?.id)
+            .isEqualTo(R.id.start_test)
+        assertThat(navigator.backStack.size)
+            .isEqualTo(1)
+        assertThat(originalViewModel.isCleared).isFalse()
+
+        // Now set a new graph, overriding the first
+        navController.setGraph(R.navigation.nav_nested_start_destination)
+        assertThat(navController.currentDestination?.id)
+            .isEqualTo(R.id.nested_test)
+        assertThat(navigator.backStack.size)
+            .isEqualTo(1)
+        assertThat(originalViewModel.isCleared).isTrue()
     }
 
     @UiThreadTest
@@ -396,7 +463,7 @@ class NavControllerTest {
         val navController = createNavController()
         navController.setGraph(R.navigation.nav_simple)
         val navigator = navController.navigatorProvider.getNavigator(TestNavigator::class.java)
-        val deepLink = Uri.parse("android-app://androidx.navigation.test/test")
+        val deepLink = Uri.parse("android-app://androidx.navigation.test/test/arg2")
 
         navController.navigate(deepLink)
         assertThat(navController.currentDestination?.id ?: 0).isEqualTo(R.id.second_test)
@@ -413,7 +480,7 @@ class NavControllerTest {
         val navController = createNavController()
         navController.setGraph(R.navigation.nav_simple)
         val navigator = navController.navigatorProvider.getNavigator(TestNavigator::class.java)
-        val deepLink = Uri.parse("android-app://androidx.navigation.test/test")
+        val deepLink = Uri.parse("android-app://androidx.navigation.test/test/arg2")
 
         navController.navigate(deepLink)
 
@@ -549,7 +616,7 @@ class NavControllerTest {
         val navController = createNavController()
         navController.setGraph(R.navigation.nav_simple)
         val navigator = navController.navigatorProvider.getNavigator(TestNavigator::class.java)
-        val deepLink = Uri.parse("android-app://androidx.navigation.test/test")
+        val deepLink = Uri.parse("android-app://androidx.navigation.test/test/arg2")
 
         navController.navigate(
             deepLink,
@@ -1765,6 +1832,7 @@ class NavControllerTest {
         args.putString(testKey, testValue)
 
         var destinationListenerExecuted = false
+        val currentBackStackEntry = navController.currentBackStackEntry
 
         navController.navigate(R.id.self, args)
 
@@ -1780,6 +1848,9 @@ class NavControllerTest {
         val returnedArgs = navigator.current.arguments
         assertThat(returnedArgs?.getString(testKey)).isEqualTo(testValue)
         assertThat(destinationListenerExecuted).isTrue()
+        assertThat(navController.currentBackStackEntry).isNotSameInstanceAs(
+            currentBackStackEntry
+        )
     }
 
     @UiThreadTest
@@ -1797,7 +1868,18 @@ class NavControllerTest {
         val testValue = "testValue"
         args.putString(testKey, testValue)
 
-        var destinationListenerExecuted = false
+        var destinationListenerExecutionCount = 0
+        val currentBackStackEntry = navController.currentBackStackEntry
+
+        navController.addOnDestinationChangedListener { _, destination, arguments ->
+            assertThat(destination.id).isEqualTo(R.id.start_test)
+            if (destinationListenerExecutionCount == 0) {
+                assertThat(arguments).isNull()
+            } else {
+                assertThat(arguments?.getString(testKey)).isEqualTo(testValue)
+            }
+            destinationListenerExecutionCount++
+        }
 
         navController.navigate(
             R.id.start_test, args,
@@ -1806,18 +1888,15 @@ class NavControllerTest {
             }
         )
 
-        navController.addOnDestinationChangedListener { _, destination, arguments ->
-            destinationListenerExecuted = true
-            assertThat(destination.id).isEqualTo(R.id.start_test)
-            assertThat(arguments?.getString(testKey)).isEqualTo(testValue)
-        }
-
         assertThat(navController.currentDestination?.id ?: 0).isEqualTo(R.id.start_test)
         assertThat(navigator.backStack.size).isEqualTo(1)
 
         val returnedArgs = navigator.current.arguments
         assertThat(returnedArgs?.getString(testKey)).isEqualTo(testValue)
-        assertThat(destinationListenerExecuted).isTrue()
+        assertThat(destinationListenerExecutionCount).isEqualTo(2)
+        assertThat(navController.currentBackStackEntry).isNotSameInstanceAs(
+            currentBackStackEntry
+        )
     }
 
     @UiThreadTest
@@ -1838,7 +1917,20 @@ class NavControllerTest {
         val testValue = "testValue"
         args.putString(testKey, testValue)
 
-        var destinationListenerExecuted = false
+        var destinationListenerExecutionCount = 0
+        val currentBackStackEntry = navController.currentBackStackEntry
+
+        navController.addOnDestinationChangedListener { _, destination, arguments ->
+            assertThat(destination.id).isEqualTo(R.id.start_test_with_default_arg)
+            // Assert that the default value is there
+            assertThat(arguments?.getBoolean("defaultArg", false)).isTrue()
+            if (destinationListenerExecutionCount == 0) {
+                assertThat(arguments?.containsKey(testKey)).isFalse()
+            } else {
+                assertThat(arguments?.getString(testKey)).isEqualTo(testValue)
+            }
+            destinationListenerExecutionCount++
+        }
 
         navController.navigate(
             R.id.start_test_with_default_arg, args,
@@ -1847,13 +1939,6 @@ class NavControllerTest {
             }
         )
 
-        navController.addOnDestinationChangedListener { _, destination, arguments ->
-            destinationListenerExecuted = true
-            assertThat(destination.id).isEqualTo(R.id.start_test_with_default_arg)
-            assertThat(arguments?.getString(testKey)).isEqualTo(testValue)
-            assertThat(arguments?.getBoolean("defaultArg", false)).isTrue()
-        }
-
         assertThat(navController.currentDestination?.id ?: 0)
             .isEqualTo(R.id.start_test_with_default_arg)
         assertThat(navigator.backStack.size).isEqualTo(2)
@@ -1861,7 +1946,10 @@ class NavControllerTest {
         val returnedArgs = navigator.current.arguments
         assertThat(returnedArgs?.getString(testKey)).isEqualTo(testValue)
         assertThat(returnedArgs?.getBoolean("defaultArg", false)).isTrue()
-        assertThat(destinationListenerExecuted).isTrue()
+        assertThat(destinationListenerExecutionCount).isEqualTo(2)
+        assertThat(navController.currentBackStackEntry).isNotSameInstanceAs(
+            currentBackStackEntry
+        )
     }
 
     @UiThreadTest
@@ -1937,6 +2025,36 @@ class NavControllerTest {
         val newViewModel = ViewModelProvider(newBackStackEntry).get<TestAndroidViewModel>()
         assertThat(newBackStackEntry.id).isSameInstanceAs(originalBackStackEntry.id)
         assertThat(newViewModel).isSameInstanceAs(originalViewModel)
+    }
+
+    @UiThreadTest
+    @Test
+    fun testNavigateOptionSaveClearState() {
+        val navController = createNavController()
+        navController.setViewModelStore(ViewModelStore())
+        navController.setGraph(R.navigation.nav_simple)
+        val navigator = navController.navigatorProvider.getNavigator(TestNavigator::class.java)
+        assertThat(navigator.backStack.size).isEqualTo(1)
+        val originalBackStackEntry = navigator.backStack[0]
+        val originalViewModel = ViewModelProvider(originalBackStackEntry)
+            .get<TestAndroidViewModel>()
+        navController.navigate(
+            R.id.second_test,
+            null,
+            navOptions {
+                popUpTo(R.id.start_test) {
+                    inclusive = true
+                    saveState = true
+                }
+            }
+        )
+        assertThat(navController.currentDestination?.id ?: 0).isEqualTo(R.id.second_test)
+        assertThat(navigator.backStack.size).isEqualTo(1)
+
+        navController.clearBackStack(R.id.start_test)
+        assertThat(navController.currentDestination?.id ?: 0).isEqualTo(R.id.second_test)
+        assertThat(navigator.backStack.size).isEqualTo(1)
+        assertThat(originalViewModel.isCleared).isTrue()
     }
 
     @UiThreadTest

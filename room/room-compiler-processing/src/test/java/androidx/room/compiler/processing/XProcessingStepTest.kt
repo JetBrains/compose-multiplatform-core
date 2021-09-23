@@ -22,6 +22,9 @@ import androidx.room.compiler.processing.ksp.KspElement
 import androidx.room.compiler.processing.testcode.MainAnnotation
 import androidx.room.compiler.processing.testcode.OtherAnnotation
 import androidx.room.compiler.processing.util.CompilationTestCapabilities
+import androidx.room.compiler.processing.util.Source
+import androidx.room.compiler.processing.util.compiler.TestCompilationArguments
+import androidx.room.compiler.processing.util.compiler.compile
 import com.google.common.truth.Truth.assertAbout
 import com.google.common.truth.Truth.assertThat
 import com.google.devtools.ksp.processing.SymbolProcessor
@@ -36,9 +39,6 @@ import com.squareup.javapoet.ClassName
 import com.squareup.javapoet.JavaFile
 import com.squareup.javapoet.TypeName
 import com.squareup.javapoet.TypeSpec
-import com.tschuchort.compiletesting.KotlinCompilation
-import com.tschuchort.compiletesting.SourceFile
-import com.tschuchort.compiletesting.symbolProcessorProviders
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -268,6 +268,168 @@ class XProcessingStepTest {
     }
 
     @Test
+    fun javacProcessingEnvCaching() {
+        // Create a scenario to test that the xProcessingEnv instance is available before processing
+        // and that the xProcessingEnv is the same instance across rounds.
+        val main = JavaFileObjects.forSourceString(
+            "foo.bar.Main",
+            """
+            package foo.bar;
+            import androidx.room.compiler.processing.testcode.*;
+            @MainAnnotation(
+                typeList = {},
+                singleType = Object.class,
+                intMethod = 3,
+                singleOtherAnnotation = @OtherAnnotation("y")
+            )
+            class Main {
+            }
+            """.trimIndent()
+        )
+
+        val processingEnvPerRound = mutableMapOf<Int, XProcessingEnv>()
+        val processingStep = object : XProcessingStep {
+            var roundCounter = 0
+            override fun process(
+                env: XProcessingEnv,
+                elementsByAnnotation: Map<String, Set<XElement>>
+            ): Set<XTypeElement> {
+                processingEnvPerRound[roundCounter++] = env
+                // trigger another round
+                elementsByAnnotation[MainAnnotation::class.qualifiedName]
+                    ?.filterIsInstance<XTypeElement>()
+                    ?.forEach {
+                        val className = ClassName.get(it.packageName, "${it.name}_Impl")
+                        val spec = TypeSpec.classBuilder(className)
+                            .addAnnotation(
+                                AnnotationSpec.builder(OtherAnnotation::class.java).apply {
+                                    addMember("value", "\"foo\"")
+                                }.build()
+                            )
+                            .build()
+                        JavaFile.builder(className.packageName(), spec)
+                            .build()
+                            .writeTo(env.filer)
+                    }
+                return emptySet()
+            }
+
+            override fun annotations(): Set<String> {
+                return setOf(
+                    OtherAnnotation::class.qualifiedName!!,
+                    MainAnnotation::class.qualifiedName!!
+                )
+            }
+        }
+
+        val xProcessingEnvs = mutableListOf<XProcessingEnv>()
+        assertAbout(
+            JavaSourcesSubjectFactory.javaSources()
+        ).that(
+            listOf(main)
+        ).processedWith(
+            object : JavacBasicAnnotationProcessor() {
+                override fun processingSteps(): Iterable<XProcessingStep> {
+                    xProcessingEnvs.add(xProcessingEnv)
+                    return listOf(processingStep)
+                }
+            }
+        ).compilesWithoutError()
+
+        // Makes sure processingSteps() was only called once, and that the xProcessingEnv was set.
+        assertThat(xProcessingEnvs).hasSize(1)
+        assertThat(xProcessingEnvs.get(0)).isNotNull()
+
+        // Make sure there were two rounds, and processingEnv between rounds is the same instance.
+        assertThat(processingEnvPerRound).hasSize(2)
+        assertThat(xProcessingEnvs.get(0)).isSameInstanceAs(processingEnvPerRound.get(0))
+        assertThat(xProcessingEnvs.get(0)).isSameInstanceAs(processingEnvPerRound.get(1))
+    }
+
+    @Test
+    fun kspProcessingEnvCaching() {
+        val main = Source.java(
+            "foo.bar.Main",
+            """
+            package foo.bar;
+            import androidx.room.compiler.processing.testcode.*;
+            @MainAnnotation(
+                typeList = {},
+                singleType = Object.class,
+                intMethod = 3,
+                singleOtherAnnotation = @OtherAnnotation("y")
+            )
+            class Main {
+            }
+            """.trimIndent()
+        )
+
+        val processingEnvPerRound = mutableMapOf<Int, XProcessingEnv>()
+        // create a scenario where we run multi-step processing so that we can test caching
+        val processingStep = object : XProcessingStep {
+            var roundCounter = 0
+            override fun process(
+                env: XProcessingEnv,
+                elementsByAnnotation: Map<String, Set<XElement>>
+            ): Set<XTypeElement> {
+                processingEnvPerRound[roundCounter++] = env
+                // trigger another round
+                elementsByAnnotation[MainAnnotation::class.qualifiedName]
+                    ?.filterIsInstance<XTypeElement>()
+                    ?.forEach {
+                        val className = ClassName.get(it.packageName, "${it.name}_Impl")
+                        val spec = TypeSpec.classBuilder(className)
+                            .addAnnotation(
+                                AnnotationSpec.builder(OtherAnnotation::class.java).apply {
+                                    addMember("value", "\"foo\"")
+                                }.build()
+                            )
+                            .build()
+                        JavaFile.builder(className.packageName(), spec)
+                            .build()
+                            .writeTo(env.filer)
+                    }
+                return emptySet()
+            }
+
+            override fun annotations(): Set<String> {
+                return setOf(
+                    OtherAnnotation::class.qualifiedName!!,
+                    MainAnnotation::class.qualifiedName!!
+                )
+            }
+        }
+
+        val xProcessingEnvs = mutableListOf<XProcessingEnv>()
+        val processorProvider = object : SymbolProcessorProvider {
+            override fun create(environment: SymbolProcessorEnvironment): SymbolProcessor {
+                return object : KspBasicAnnotationProcessor(environment) {
+                    override fun processingSteps(): Iterable<XProcessingStep> {
+                        xProcessingEnvs.add(xProcessingEnv)
+                        return listOf(processingStep)
+                    }
+                }
+            }
+        }
+
+        compile(
+            workingDir = temporaryFolder.root,
+            arguments = TestCompilationArguments(
+                sources = listOf(main),
+                symbolProcessorProviders = listOf(processorProvider)
+            )
+        )
+        // Makes sure processingSteps() was only called once, and that the xProcessingEnv was set.
+        assertThat(xProcessingEnvs).hasSize(1)
+        assertThat(xProcessingEnvs.get(0)).isNotNull()
+
+        // Make sure there were two rounds, and processingEnv between rounds is the same instance.
+        assertThat(processingEnvPerRound).hasSize(2)
+        assertThat(xProcessingEnvs.get(0)).isSameInstanceAs(processingEnvPerRound.get(0))
+        assertThat(xProcessingEnvs.get(0)).isSameInstanceAs(processingEnvPerRound.get(1))
+    }
+
+    @Test
     fun cachingBetweenSteps() {
         val main = JavaFileObjects.forSourceString(
             "foo.bar.Main",
@@ -355,7 +517,7 @@ class XProcessingStepTest {
                 }
             }
         }
-        val main = SourceFile.kotlin(
+        val main = Source.kotlin(
             "Other.kt",
             """
             package foo.bar
@@ -366,13 +528,13 @@ class XProcessingStepTest {
             """.trimIndent()
         )
 
-        KotlinCompilation().apply {
-            workingDir = temporaryFolder.root
-            inheritClassPath = true
-            symbolProcessorProviders = listOf(processorProvider)
-            sources = listOf(main)
-            verbose = false
-        }.compile()
+        compile(
+            workingDir = temporaryFolder.root,
+            arguments = TestCompilationArguments(
+                sources = listOf(main),
+                symbolProcessorProviders = listOf(processorProvider)
+            )
+        )
 
         assertThat(returned).apply {
             isNotNull()
@@ -491,18 +653,25 @@ class XProcessingStepTest {
                 return deferredElements
             }
         }
+        var invokedProcessingSteps = 0
         assertAbout(
             JavaSourcesSubjectFactory.javaSources()
         ).that(
             listOf(main)
         ).processedWith(
             object : JavacBasicAnnotationProcessor() {
-                override fun processingSteps() = listOf(mainStep)
+                override fun processingSteps(): List<XProcessingStep> {
+                    invokedProcessingSteps++
+                    return listOf(mainStep)
+                }
             }
         ).compilesWithoutError()
 
         // Assert that mainStep was processed twice due to deferring
         assertThat(stepsProcessed).containsExactly(mainStep, mainStep)
+
+        // Assert processingSteps() was only called once
+        assertThat(invokedProcessingSteps).isEqualTo(1)
     }
 
     @Test
@@ -557,7 +726,7 @@ class XProcessingStepTest {
 
     @Test
     fun kspAnnotatedElementsByStep() {
-        val main = SourceFile.kotlin(
+        val main = Source.kotlin(
             "Classes.kt",
             """
             package foo.bar
@@ -605,13 +774,13 @@ class XProcessingStepTest {
                 }
             }
         }
-        KotlinCompilation().apply {
-            workingDir = temporaryFolder.root
-            inheritClassPath = true
-            symbolProcessorProviders = listOf(processorProvider)
-            sources = listOf(main)
-            verbose = false
-        }.compile()
+        compile(
+            workingDir = temporaryFolder.root,
+            arguments = TestCompilationArguments(
+                sources = listOf(main),
+                symbolProcessorProviders = listOf(processorProvider)
+            )
+        )
         assertThat(elementsByStep[mainStep])
             .containsExactly("foo.bar.Main")
         assertThat(elementsByStep[otherStep])
@@ -621,7 +790,7 @@ class XProcessingStepTest {
     @Test
     fun kspDeferredStep() {
         // create a scenario where we defer the first round of processing
-        val main = SourceFile.kotlin(
+        val main = Source.kotlin(
             "Classes.kt",
             """
             package foo.bar
@@ -660,29 +829,34 @@ class XProcessingStepTest {
                 return deferredElements
             }
         }
-
+        var invokedProcessingSteps = 0
         val processorProvider = object : SymbolProcessorProvider {
             override fun create(environment: SymbolProcessorEnvironment): SymbolProcessor {
                 return object : KspBasicAnnotationProcessor(environment) {
-                    override fun processingSteps() = listOf(mainStep)
+                    override fun processingSteps(): List<XProcessingStep> {
+                        invokedProcessingSteps++
+                        return listOf(mainStep)
+                    }
                 }
             }
         }
-        KotlinCompilation().apply {
-            workingDir = temporaryFolder.root
-            inheritClassPath = true
-            symbolProcessorProviders = listOf(processorProvider)
-            sources = listOf(main)
-            verbose = false
-        }.compile()
-
+        compile(
+            workingDir = temporaryFolder.root,
+            arguments = TestCompilationArguments(
+                sources = listOf(main),
+                symbolProcessorProviders = listOf(processorProvider)
+            )
+        )
         // Assert that mainStep was processed twice due to deferring
         assertThat(stepsProcessed).containsExactly(mainStep, mainStep)
+
+        // Assert processingSteps() was only called once
+        assertThat(invokedProcessingSteps).isEqualTo(1)
     }
 
     @Test
     fun kspStepOnlyCalledIfElementsToProcess() {
-        val main = SourceFile.kotlin(
+        val main = Source.kotlin(
             "Classes.kt",
             """
             package foo.bar
@@ -725,13 +899,13 @@ class XProcessingStepTest {
                 }
             }
         }
-        KotlinCompilation().apply {
-            workingDir = temporaryFolder.root
-            inheritClassPath = true
-            symbolProcessorProviders = listOf(processorProvider)
-            sources = listOf(main)
-            verbose = false
-        }.compile()
+        compile(
+            workingDir = temporaryFolder.root,
+            arguments = TestCompilationArguments(
+                sources = listOf(main),
+                symbolProcessorProviders = listOf(processorProvider)
+            )
+        )
         assertThat(stepsProcessed).containsExactly(mainStep)
     }
 }

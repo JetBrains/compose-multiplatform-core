@@ -32,7 +32,10 @@ import androidx.room.ext.typeName
 import androidx.room.parser.QueryType
 import androidx.room.parser.Table
 import androidx.room.processor.ProcessorErrors.DO_NOT_USE_GENERIC_IMMUTABLE_MULTIMAP
+import androidx.room.processor.ProcessorErrors.MAP_INFO_MUST_HAVE_AT_LEAST_ONE_COLUMN_PROVIDED
 import androidx.room.processor.ProcessorErrors.cannotFindQueryResultAdapter
+import androidx.room.processor.ProcessorErrors.keyMayNeedMapInfo
+import androidx.room.processor.ProcessorErrors.valueMayNeedMapInfo
 import androidx.room.solver.query.result.DataSourceFactoryQueryResultBinder
 import androidx.room.solver.query.result.ListQueryResultAdapter
 import androidx.room.solver.query.result.LiveDataQueryResultBinder
@@ -75,6 +78,7 @@ class QueryMethodProcessorTest(private val enableVerification: Boolean) {
                 import androidx.annotation.NonNull;
                 import androidx.room.*;
                 import java.util.*;
+                import com.google.common.collect.*;
                 @Dao
                 abstract class MyClass {
                 """
@@ -1303,7 +1307,8 @@ class QueryMethodProcessorTest(private val enableVerification: Boolean) {
         )
         val commonSources = listOf(
             COMMON.LIVE_DATA, COMMON.COMPUTABLE_LIVE_DATA, COMMON.USER, COMMON.BOOK,
-            COMMON.NOT_AN_ENTITY
+            COMMON.NOT_AN_ENTITY, COMMON.ARTIST, COMMON.SONG, COMMON.IMAGE, COMMON.IMAGE_FORMAT,
+            COMMON.CONVERTER
         )
         runProcessorTest(
             sources = additionalSources + commonSources + inputSource,
@@ -1366,8 +1371,243 @@ class QueryMethodProcessorTest(private val enableVerification: Boolean) {
         ) { _, invocation ->
             invocation.assertCompilationResult {
                 hasErrorCount(2)
-                hasError(DO_NOT_USE_GENERIC_IMMUTABLE_MULTIMAP)
+                hasErrorContaining(DO_NOT_USE_GENERIC_IMMUTABLE_MULTIMAP)
                 hasErrorContaining("Not sure how to convert a Cursor to this method's return type")
+            }
+        }
+    }
+
+    @Test
+    fun testUseMapInfoWithBothEmptyColumnsProvided() {
+        if (!enableVerification) {
+            return
+        }
+        singleQueryMethod<ReadQueryMethod>(
+            """
+                @MapInfo
+                @Query("select * from User u JOIN Book b ON u.uid == b.uid")
+                abstract Map<User, Book> getMultimap();
+            """
+        ) { _, invocation ->
+            invocation.assertCompilationResult {
+                hasErrorCount(1)
+                hasErrorContaining(MAP_INFO_MUST_HAVE_AT_LEAST_ONE_COLUMN_PROVIDED)
+            }
+        }
+    }
+
+    @Test
+    fun testDoesNotImplementEqualsAndHashcodeQuery() {
+        singleQueryMethod<ReadQueryMethod>(
+            """
+                @Query("select * from User u JOIN Book b ON u.uid == b.uid")
+                abstract Map<User, Book> getMultimap();
+            """
+        ) { _, invocation ->
+            invocation.assertCompilationResult {
+                hasWarningCount(1)
+                hasWarningContaining(
+                    ProcessorErrors.classMustImplementEqualsAndHashCode(
+                        "foo.bar.User"
+                    )
+                )
+            }
+        }
+    }
+
+    @Test
+    fun testMissingMapInfoOneToOneString() {
+        singleQueryMethod<ReadQueryMethod>(
+            """
+                @Query("select * from Artist JOIN Song ON Artist.mArtistName == Song.mArtist")
+                abstract Map<Artist, String> getAllArtistsWithAlbumCoverYear();
+            """
+        ) { _, invocation ->
+            invocation.assertCompilationResult {
+                hasErrorContaining(
+                    valueMayNeedMapInfo(
+                        ClassName.get("java.lang", "String")
+                    )
+                )
+            }
+        }
+    }
+
+    @Test
+    fun testOneToOneStringMapInfoForKeyInsteadOfColumn() {
+        singleQueryMethod<ReadQueryMethod>(
+            """
+                @MapInfo(keyColumn = "mArtistName")
+                @Query("select * from Artist JOIN Song ON Artist.mArtistName == Song.mArtist")
+                abstract Map<Artist, String> getAllArtistsWithAlbumCoverYear();
+            """
+        ) { _, invocation ->
+            invocation.assertCompilationResult {
+                hasErrorContaining(
+                    valueMayNeedMapInfo(
+                        ClassName.get("java.lang", "String")
+                    )
+                )
+            }
+        }
+    }
+
+    @Test
+    fun testMissingMapInfoOneToManyString() {
+        singleQueryMethod<ReadQueryMethod>(
+            """
+                @Query("select * from Artist JOIN Song ON Artist.mArtistName == Song.mArtist")
+                abstract Map<Artist, List<String>> getAllArtistsWithAlbumCoverYear();
+            """
+        ) { _, invocation ->
+            invocation.assertCompilationResult {
+                hasErrorContaining(
+                    valueMayNeedMapInfo(
+                        ClassName.get("java.lang", "String")
+                    )
+                )
+            }
+        }
+    }
+
+    @Test
+    fun testMissingMapInfoImmutableListMultimapOneToOneString() {
+        singleQueryMethod<ReadQueryMethod>(
+            """
+                @Query("select * from Artist JOIN Song ON Artist.mArtistName == Song.mArtist")
+                abstract ImmutableListMultimap<Artist, String> getAllArtistsWithAlbumCoverYear();
+            """
+        ) { _, invocation ->
+            invocation.assertCompilationResult {
+                hasErrorContaining(
+                    valueMayNeedMapInfo(
+                        ClassName.get("java.lang", "String")
+                    )
+                )
+            }
+        }
+    }
+
+    @Test
+    fun testMissingMapInfoOneToOneLong() {
+        singleQueryMethod<ReadQueryMethod>(
+            """
+                @Query("SELECT * FROM Artist JOIN Image ON Artist.mArtistName = Image.mArtistInImage")
+                Map<Artist, Long> getAllArtistsWithAlbumCoverYear();
+            """
+        ) { _, invocation ->
+            invocation.assertCompilationResult {
+                hasErrorContaining(
+                    valueMayNeedMapInfo(
+                        ClassName.get("java.lang", "Long")
+                    )
+                )
+            }
+        }
+    }
+
+    @Test
+    fun testMissingMapInfoOneToManyLong() {
+        singleQueryMethod<ReadQueryMethod>(
+            """
+                @Query("SELECT * FROM Artist JOIN Image ON Artist.mArtistName = Image.mArtistInImage")
+                Map<Artist, Set<Long>> getAllArtistsWithAlbumCoverYear();
+            """
+        ) { _, invocation ->
+            invocation.assertCompilationResult {
+                hasErrorContaining(
+                    valueMayNeedMapInfo(
+                        ClassName.get("java.lang", "Long")
+                    )
+                )
+            }
+        }
+    }
+
+    @Test
+    fun testMissingMapInfoImmutableListMultimapOneToOneLong() {
+        singleQueryMethod<ReadQueryMethod>(
+            """
+                @Query("SELECT * FROM Artist JOIN Image ON Artist.mArtistName = Image.mArtistInImage")
+                ImmutableListMultimap<Artist, Long> getAllArtistsWithAlbumCoverYear();
+            """
+        ) { _, invocation ->
+            invocation.assertCompilationResult {
+                hasErrorContaining(
+                    valueMayNeedMapInfo(
+                        ClassName.get("java.lang", "Long")
+                    )
+                )
+            }
+        }
+    }
+
+    @Test
+    fun testMissingMapInfoImmutableListMultimapOneToOneTypeConverterKey() {
+        singleQueryMethod<ReadQueryMethod>(
+            """
+                @TypeConverters(DateConverter.class)
+                @Query("SELECT * FROM Image JOIN Artist ON Artist.mArtistName = Image.mArtistInImage")
+                ImmutableMap<java.util.Date, Artist> getAlbumDateWithBandActivity();
+            """
+        ) { _, invocation ->
+            invocation.assertCompilationResult {
+                hasErrorContaining(
+                    keyMayNeedMapInfo(
+                        ClassName.get("java.util", "Date")
+                    )
+                )
+            }
+        }
+    }
+
+    @Test
+    fun testMissingMapInfoImmutableListMultimapOneToOneTypeConverterValue() {
+        singleQueryMethod<ReadQueryMethod>(
+            """
+                @TypeConverters(DateConverter.class)
+                @Query("SELECT * FROM Artist JOIN Image ON Artist.mArtistName = Image.mArtistInImage")
+                ImmutableMap<Artist, java.util.Date> getAlbumDateWithBandActivity();
+            """
+        ) { _, invocation ->
+            invocation.assertCompilationResult {
+                hasErrorContaining(
+                    valueMayNeedMapInfo(
+                        ClassName.get("java.util", "Date")
+                    )
+                )
+            }
+        }
+    }
+
+    @Test
+    fun testUseMapInfoWithColumnsNotInQuery() {
+        if (!enableVerification) {
+            return
+        }
+        singleQueryMethod<ReadQueryMethod>(
+            """
+                @MapInfo(keyColumn="cat", valueColumn="dog")
+                @Query("select * from User u JOIN Book b ON u.uid == b.uid")
+                abstract Map<User, Book> getMultimap();
+            """
+        ) { _, invocation ->
+            invocation.assertCompilationResult {
+                hasWarningCount(1)
+                hasWarningContaining(
+                    ProcessorErrors.classMustImplementEqualsAndHashCode(
+                        "foo.bar.User"
+                    )
+                )
+                hasErrorCount(2)
+                hasErrorContaining(
+                    "Column(s) specified in the provided @MapInfo annotation must " +
+                        "be present in the query. Provided: cat."
+                )
+                hasErrorContaining(
+                    "Column(s) specified in the provided @MapInfo annotation must " +
+                        "be present in the query. Provided: dog."
+                )
             }
         }
     }

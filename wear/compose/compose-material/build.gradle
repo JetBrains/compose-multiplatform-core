@@ -39,12 +39,15 @@ dependencies {
         implementation(libs.kotlinStdlib)
         implementation("androidx.compose.material:material:1.0.0-rc02")
         implementation("androidx.compose.material:material-ripple:1.0.0-rc02")
+        implementation(project(":compose:ui:ui-util"))
+        implementation(project(":wear:compose:compose-foundation"))
 
         androidTestImplementation project(path: ':compose:ui:ui-test')
         androidTestImplementation project(path: ':compose:ui:ui-test-junit4')
         androidTestImplementation project(path: ':compose:test-utils')
-        androidTestImplementation project(":test:screenshot:test-screenshot")
+        androidTestImplementation project(":test:screenshot:screenshot")
         androidTestImplementation(libs.testRunner)
+        androidTestImplementation(libs.truth)
     }
 }
 
@@ -65,9 +68,12 @@ if(AndroidXComposePlugin.isMultiplatformEnabled(project)) {
                 api(project(":compose:ui:ui"))
                 api(project(":compose:ui:ui-text"))
                 api(project(":compose:runtime:runtime"))
+                api("androidx.annotation:annotation:1.1.0")
 
                 implementation(project(":compose:material:material"))
                 implementation(project(":compose:material:material-ripple"))
+                implementation(project(":compose:ui:ui-util"))
+                implementation(project(":wear:compose:compose-foundation"))
             }
             jvmMain.dependencies {
                 implementation(libs.kotlinStdlib)
@@ -87,10 +93,11 @@ if(AndroidXComposePlugin.isMultiplatformEnabled(project)) {
                 implementation(libs.testRules)
                 implementation(libs.testRunner)
                 implementation(libs.truth)
+                implementation(project(":compose:ui:ui-util"))
                 implementation(project(path: ':compose:ui:ui-test'))
                 implementation(project(path: ':compose:ui:ui-test-junit4'))
                 implementation(project(path: ':compose:test-utils'))
-                implementation(project(":test:screenshot:test-screenshot"))
+                implementation(project(":test:screenshot:screenshot"))
             }
         }
     }
@@ -113,7 +120,6 @@ androidx {
     name = "Android Wear Compose Material"
     type = LibraryType.PUBLISHED_LIBRARY
     mavenGroup = LibraryGroups.WEAR_COMPOSE
-    mavenVersion = LibraryVersions.WEAR_COMPOSE
     inceptionYear = "2021"
     description = "WearOS Compose Material Library. This library makes it easier for developers " +
             "to write Jetpack Compose applications for Wearable devices that implement Wear " +

@@ -23,6 +23,7 @@ import static androidx.camera.core.impl.ImageCaptureConfig.OPTION_CAPTURE_PROCES
 import static androidx.camera.core.impl.ImageCaptureConfig.OPTION_DEFAULT_CAPTURE_CONFIG;
 import static androidx.camera.core.impl.ImageCaptureConfig.OPTION_DEFAULT_SESSION_CONFIG;
 import static androidx.camera.core.impl.ImageCaptureConfig.OPTION_FLASH_MODE;
+import static androidx.camera.core.impl.ImageCaptureConfig.OPTION_FLASH_TYPE;
 import static androidx.camera.core.impl.ImageCaptureConfig.OPTION_IMAGE_CAPTURE_MODE;
 import static androidx.camera.core.impl.ImageCaptureConfig.OPTION_IMAGE_READER_PROXY_PROVIDER;
 import static androidx.camera.core.impl.ImageCaptureConfig.OPTION_IO_EXECUTOR;
@@ -224,6 +225,21 @@ public final class ImageCapture extends UseCase {
     public static final int FLASH_MODE_OFF = 2;
 
     /**
+     * When flash is required for taking a picture, a normal one shot flash will be used.
+     *
+     * @hide
+     */
+    @RestrictTo(Scope.LIBRARY_GROUP)
+    public static final int FLASH_TYPE_ONE_SHOT_FLASH = 0;
+    /**
+     * When flash is required for taking a picture, torch will be used as flash.
+     *
+     * @hide
+     */
+    @RestrictTo(Scope.LIBRARY_GROUP)
+    public static final int FLASH_TYPE_USE_TORCH_AS_FLASH = 1;
+
+    /**
      * Provides a static configuration with implementation-agnostic options.
      *
      * @hide
@@ -270,6 +286,9 @@ public final class ImageCapture extends UseCase {
 
     @GuardedBy("mLockedFlashMode")
     private final AtomicReference<Integer> mLockedFlashMode = new AtomicReference<>(null);
+
+    @FlashType
+    private final int mFlashType;
 
     ////////////////////////////////////////////////////////////////////////////////////////////
     // [UseCase lifetime dynamic] - Dynamic variables which could change during anytime during
@@ -343,6 +362,8 @@ public final class ImageCapture extends UseCase {
         } else {
             mCaptureMode = DEFAULT_CAPTURE_MODE;
         }
+
+        mFlashType = useCaseConfig.getFlashType(FLASH_TYPE_ONE_SHOT_FLASH);
 
         mIoExecutor = Preconditions.checkNotNull(
                 useCaseConfig.getIoExecutor(CameraXExecutors.ioExecutor()));
@@ -868,6 +889,7 @@ public final class ImageCapture extends UseCase {
                     () -> takePicture(outputFileOptions, executor, imageSavedCallback));
             return;
         }
+
         /*
          * We need to chain the following callbacks to save the image to disk:
          *
@@ -914,6 +936,8 @@ public final class ImageCapture extends UseCase {
                     }
                 };
 
+        int jpegQuality = getJpegQuality();
+
         // Wrap the ImageCapture.OnImageSavedCallback with an OnImageCapturedCallback so it can
         // be put into the capture request queue
         OnImageCapturedCallback imageCaptureCallbackWrapper =
@@ -925,6 +949,7 @@ public final class ImageCapture extends UseCase {
                                         image,
                                         outputFileOptions,
                                         image.getImageInfo().getRotationDegrees(),
+                                        jpegQuality,
                                         executor,
                                         mSequentialIoExecutor,
                                         imageSavedCallbackWrapper));
@@ -1499,15 +1524,14 @@ public final class ImageCapture extends UseCase {
             return false;
         }
 
-        // If afMode is CAF, don't check af locked to speed up.
         // If afMode is OFF or UNKNOWN , no need for waiting.
         // otherwise wait until af is locked or focused.
-        boolean isAfReady = (captureResult.getAfMode() == AfMode.ON_CONTINUOUS_AUTO
-                || captureResult.getAfMode() == AfMode.OFF
+        boolean isAfReady = captureResult.getAfMode() == AfMode.OFF
                 || captureResult.getAfMode() == AfMode.UNKNOWN
-                || captureResult.getAfState() == AfState.FOCUSED
+                || captureResult.getAfState() == AfState.PASSIVE_FOCUSED
+                || captureResult.getAfState() == AfState.PASSIVE_NOT_FOCUSED
                 || captureResult.getAfState() == AfState.LOCKED_FOCUSED
-                || captureResult.getAfState() == AfState.LOCKED_NOT_FOCUSED);
+                || captureResult.getAfState() == AfState.LOCKED_NOT_FOCUSED;
 
         // Unknown means cannot get valid state from CaptureResult
         boolean isAeReady = captureResult.getAeState() == AeState.CONVERGED
@@ -1552,7 +1576,7 @@ public final class ImageCapture extends UseCase {
     ListenableFuture<Void> startFlashSequence(@NonNull TakePictureState state) {
         Logger.d(TAG, "startFlashSequence");
         state.mIsFlashSequenceStarted = true;
-        return getCameraControl().startFlashSequence();
+        return getCameraControl().startFlashSequence(mFlashType);
     }
 
     /** Issues a request to cancel auto focus and/or auto exposure scan. */
@@ -1753,6 +1777,17 @@ public final class ImageCapture extends UseCase {
     @Retention(RetentionPolicy.SOURCE)
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public @interface FlashMode {
+    }
+
+    /**
+     * The flash type options when flash is required for taking a picture.
+     *
+     * @hide
+     */
+    @IntDef({FLASH_TYPE_ONE_SHOT_FLASH, FLASH_TYPE_USE_TORCH_AS_FLASH})
+    @Retention(RetentionPolicy.SOURCE)
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public @interface FlashType {
     }
 
     /** Listener containing callbacks for image file I/O events. */
@@ -2907,6 +2942,23 @@ public final class ImageCapture extends UseCase {
         public Builder setSoftwareJpegEncoderRequested(boolean requestSoftwareJpeg) {
             getMutableConfig().insertOption(OPTION_USE_SOFTWARE_JPEG_ENCODER,
                     requestSoftwareJpeg);
+            return this;
+        }
+
+        /**
+         * Sets the flashType.
+         *
+         * <p>If not set, the flash type will default to {@link #FLASH_TYPE_ONE_SHOT_FLASH}.
+         *
+         * @param flashType The requested flash mode. Value is {@link #FLASH_TYPE_ONE_SHOT_FLASH}
+         *                 or {@link #FLASH_TYPE_USE_TORCH_AS_FLASH}.
+         * @return The current Builder.
+         * @hide
+         */
+        @NonNull
+        @RestrictTo(Scope.LIBRARY_GROUP)
+        public Builder setFlashType(@FlashType int flashType) {
+            getMutableConfig().insertOption(OPTION_FLASH_TYPE, flashType);
             return this;
         }
 

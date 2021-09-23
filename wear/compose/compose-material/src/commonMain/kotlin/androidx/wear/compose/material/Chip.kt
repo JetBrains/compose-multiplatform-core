@@ -44,6 +44,7 @@ import androidx.compose.ui.draw.paint
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
@@ -267,6 +268,9 @@ public fun Chip(
  * default height of [ChipDefaults.CompactChipHeight] and the default width of
  * [ChipDefaults.IconOnlyCompactChipWidth]
  *
+ * If neither icon nor label is provided then the chip will displayed like an icon only chip but
+ * with no contents and [ChipColors.background()] color.
+ *
  * The [CompactChip] can have different styles with configurable content colors, background colors
  * including gradients, these are provided by [ChipColors] implementations.
  *
@@ -431,8 +435,10 @@ public object ChipDefaults {
      */
     @Composable
     public fun gradientBackgroundChipColors(
-        startBackgroundColor: Color = MaterialTheme.colors.primary.copy(alpha = 0.5f),
-        endBackgroundColor: Color = MaterialTheme.colors.surface,
+        startBackgroundColor: Color = MaterialTheme.colors.primary.copy(alpha = 0.325f)
+            .compositeOver(MaterialTheme.colors.surface.copy(alpha = 0.75f)),
+        endBackgroundColor: Color = MaterialTheme.colors.surface.copy(alpha = 0f)
+            .compositeOver(MaterialTheme.colors.surface.copy(alpha = 0.75f)),
         contentColor: Color = contentColorFor(endBackgroundColor),
         secondaryContentColor: Color = contentColor,
         iconTintColor: Color = contentColor,
@@ -636,7 +642,7 @@ public object ChipDefaults {
      * The default size of the spacing between an icon and a text when they are used inside a
      * [Chip].
      */
-    internal val IconSpacing = 8.dp
+    internal val IconSpacing = 6.dp
 
     /**
      * Creates a [ChipColors] that represents the default background and content colors used in

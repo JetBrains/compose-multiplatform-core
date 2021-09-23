@@ -17,6 +17,7 @@
 package androidx.room.solver.query.result
 
 import androidx.room.compiler.processing.XType
+import androidx.room.ext.CollectionTypeNames.ARRAY_MAP
 import androidx.room.ext.L
 import androidx.room.ext.T
 import androidx.room.solver.CodeGenScope
@@ -24,12 +25,13 @@ import com.squareup.javapoet.ClassName
 import com.squareup.javapoet.ParameterizedTypeName
 
 class MapQueryResultAdapter(
-    private val keyTypeArg: XType,
-    private val valueTypeArg: XType,
+    override val keyTypeArg: XType,
+    override val valueTypeArg: XType,
     private val keyRowAdapter: RowAdapter,
     private val valueRowAdapter: RowAdapter,
-    private val valueCollectionType: XType?
-) : QueryResultAdapter(listOf(keyRowAdapter, valueRowAdapter)) {
+    private val valueCollectionType: XType?,
+    isArrayMap: Boolean = false
+) : QueryResultAdapter(listOf(keyRowAdapter, valueRowAdapter)), MultimapQueryResultAdapter {
     private val declaredToConcreteCollection = mapOf<ClassName, ClassName>(
         ClassName.get(List::class.java) to ClassName.get(ArrayList::class.java),
         ClassName.get(Set::class.java) to ClassName.get(HashSet::class.java)
@@ -54,13 +56,14 @@ class MapQueryResultAdapter(
     }
 
     private val mapType = ParameterizedTypeName.get(
-        ClassName.get(Map::class.java),
+        if (isArrayMap) ARRAY_MAP else ClassName.get(Map::class.java),
         keyTypeArg.typeName,
         declaredValueType
     )
 
-    private val hashMapType = ParameterizedTypeName.get(
-        ClassName.get(HashMap::class.java),
+    // LinkedHashMap is used as impl to preserve key ordering for ordered query results.
+    private val mapImplType = ParameterizedTypeName.get(
+        if (isArrayMap) ARRAY_MAP else ClassName.get(LinkedHashMap::class.java),
         keyTypeArg.typeName,
         declaredValueType
     )
@@ -71,7 +74,7 @@ class MapQueryResultAdapter(
             valueRowAdapter.onCursorReady(cursorVarName, scope)
 
             val mapVarName = outVarName
-            addStatement("final $T $L = new $T()", mapType, mapVarName, hashMapType)
+            addStatement("final $T $L = new $T()", mapType, mapVarName, mapImplType)
 
             val tmpKeyVarName = scope.getTmpVar("_key")
             val tmpValueVarName = scope.getTmpVar("_value")

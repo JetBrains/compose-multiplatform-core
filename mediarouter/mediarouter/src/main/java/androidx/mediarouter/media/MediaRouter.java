@@ -17,6 +17,7 @@
 package androidx.mediarouter.media;
 
 import static androidx.annotation.RestrictTo.Scope.LIBRARY;
+import static androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP;
 
 import android.annotation.SuppressLint;
 import android.app.ActivityManager;
@@ -291,6 +292,35 @@ public final class MediaRouter {
         }
         // Use sGlobal directly to avoid initialization.
         return sGlobal.getRouter(context);
+    }
+
+    /**
+     * Resets all internal state for testing. Should be only used for testing purpose.
+     * <p>
+     * After calling this method, the caller should stop using the existing media router instances.
+     * Instead, the caller should create a new media router instance again by calling
+     * {@link #getInstance(Context)}.
+     * <p>
+     * Note that the following classes' instances need to be recreated after calling this method,
+     * as these classes store the media router instance on their constructor:
+     * <ul>
+     *     <li>{@link androidx.mediarouter.app.MediaRouteActionProvider}
+     *     <li>{@link androidx.mediarouter.app.MediaRouteButton}
+     *     <li>{@link androidx.mediarouter.app.MediaRouteChooserDialog}
+     *     <li>{@link androidx.mediarouter.app.MediaRouteControllerDialog}
+     *     <li>{@link androidx.mediarouter.app.MediaRouteDiscoveryFragment}
+     * </ul>
+     * Please make sure this is called in the main thread.
+     * @hide
+     */
+    @MainThread
+    @RestrictTo(LIBRARY_GROUP)
+    public static void resetGlobalRouter() {
+        if (sGlobal == null) {
+            return;
+        }
+        sGlobal.reset();
+        sGlobal = null;
     }
 
     /**
@@ -2498,6 +2528,25 @@ public final class MediaRouter {
             mRegisteredProviderWatcher.start();
         }
 
+        void reset() {
+            if (!mIsInitialized) {
+                return;
+            }
+            mRegisteredProviderWatcher.stop();
+            mActiveScanThrottlingHelper.reset();
+
+            setMediaSessionCompat(null);
+            for (RemoteControlClientRecord record : mRemoteControlClients) {
+                record.disconnect();
+            }
+
+            List<ProviderInfo> providers = new ArrayList<>(mProviders);
+            for (ProviderInfo providerInfo : providers) {
+                removeProvider(providerInfo.mProviderInstance);
+            }
+            mCallbackHandler.removeCallbacksAndMessages(null);
+        }
+
         public MediaRouter getRouter(Context context) {
             MediaRouter router;
             for (int i = mRouters.size(); --i >= 0; ) {
@@ -2728,12 +2777,20 @@ public final class MediaRouter {
                 return true;
             }
 
+            boolean useOutputSwitcher = mRouterParams != null
+                    && mRouterParams.isOutputSwitcherEnabled()
+                    && isMediaTransferEnabled();
             // Check whether any existing routes match the selector.
             final int routeCount = mRoutes.size();
             for (int i = 0; i < routeCount; i++) {
                 RouteInfo route = mRoutes.get(i);
                 if ((flags & AVAILABILITY_FLAG_IGNORE_DEFAULT_ROUTE) != 0
                         && route.isDefaultOrBluetooth()) {
+                    continue;
+                }
+                // When using the output switcher, we only care about MR2 routes and system routes.
+                if (useOutputSwitcher && !route.isDefaultOrBluetooth()
+                        && route.getProviderInstance() != mMr2Provider) {
                     continue;
                 }
                 if (route.matchesSelector(selector)) {

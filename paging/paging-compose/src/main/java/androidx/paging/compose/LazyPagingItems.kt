@@ -23,11 +23,9 @@ import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.paging.CombinedLoadStates
 import androidx.paging.DifferCallback
@@ -35,7 +33,6 @@ import androidx.paging.ItemSnapshotList
 import androidx.paging.LoadState
 import androidx.paging.LoadStates
 import androidx.paging.NullPaddedList
-import androidx.paging.PagingConfig
 import androidx.paging.PagingData
 import androidx.paging.PagingDataDiffer
 import kotlinx.coroutines.Dispatchers
@@ -61,18 +58,21 @@ public class LazyPagingItems<T : Any> internal constructor(
     private val mainDispatcher = Dispatchers.Main
 
     /**
-     * Contains the latest items list snapshot collected from the [flow].
+     * Contains the immutable [ItemSnapshotList] of currently presented items, including any
+     * placeholders if they are enabled.
+     * Note that similarly to [peek] accessing the items in a list will not trigger any loads.
+     * Use [get] to achieve such behavior.
      */
-    private var itemSnapshotList by mutableStateOf(
+    var itemSnapshotList by mutableStateOf(
         ItemSnapshotList<T>(0, 0, emptyList())
     )
+        private set
 
     /**
      * The number of items which can be accessed.
      */
     val itemCount: Int get() = itemSnapshotList.size
 
-    @SuppressLint("RestrictedApi")
     private val differCallback: DifferCallback = object : DifferCallback {
         override fun onChanged(position: Int, count: Int) {
             if (count > 0) {
@@ -100,7 +100,6 @@ public class LazyPagingItems<T : Any> internal constructor(
         override suspend fun presentNewList(
             previousList: NullPaddedList<T>,
             newList: NullPaddedList<T>,
-            newCombinedLoadStates: CombinedLoadStates,
             lastAccessedIndex: Int,
             onListPresentable: () -> Unit
         ): Int? {
@@ -126,23 +125,6 @@ public class LazyPagingItems<T : Any> internal constructor(
     }
 
     /**
-     * Returns the state containing the item specified at [index] and notifies Paging of the item
-     * accessed in order to trigger any loads necessary to fulfill [PagingConfig.prefetchDistance].
-     *
-     * @param index the index of the item which should be returned.
-     * @return the state containing the item specified at [index] or null if the item is a
-     * placeholder or [index] is not within the correct bounds.
-     */
-    @Composable
-    @Deprecated(
-        "Use get() instead. It will return you the value not wrapped into a State",
-        ReplaceWith("this[index]")
-    )
-    fun getAsState(index: Int): State<T?> {
-        return rememberUpdatedState(get(index))
-    }
-
-    /**
      * Returns the presented item at the specified position, without notifying Paging of the item
      * access that would normally trigger page loads.
      *
@@ -151,14 +133,6 @@ public class LazyPagingItems<T : Any> internal constructor(
      */
     fun peek(index: Int): T? {
         return itemSnapshotList[index]
-    }
-
-    /**
-     * Returns a new [ItemSnapshotList] representing the currently presented items, including any
-     * placeholders if they are enabled.
-     */
-    fun snapshot(): ItemSnapshotList<T> {
-        return itemSnapshotList
     }
 
     /**

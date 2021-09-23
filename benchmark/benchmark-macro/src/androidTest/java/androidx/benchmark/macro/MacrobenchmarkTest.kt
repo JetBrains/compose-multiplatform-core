@@ -21,15 +21,14 @@ import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.lang.IllegalArgumentException
 import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
 @RunWith(AndroidJUnit4::class)
 @SmallTest
-public class MacrobenchmarkTest {
+class MacrobenchmarkTest {
     @Test
-    public fun macrobenchmarkWithStartupMode_emptyMetricList() {
+    fun macrobenchmarkWithStartupMode_emptyMetricList() {
         val exception = assertFailsWith<IllegalArgumentException> {
             macrobenchmarkWithStartupMode(
                 uniqueName = "uniqueName", // ignored, uniqueness not important
@@ -48,7 +47,7 @@ public class MacrobenchmarkTest {
     }
 
     @Test
-    public fun macrobenchmarkWithStartupMode_iterations() {
+    fun macrobenchmarkWithStartupMode_iterations() {
         val exception = assertFailsWith<IllegalArgumentException> {
             macrobenchmarkWithStartupMode(
                 uniqueName = "uniqueName", // ignored, uniqueness not important
@@ -66,9 +65,9 @@ public class MacrobenchmarkTest {
         assertTrue(exception.message!!.contains("Require iterations > 0"))
     }
 
-    @SdkSuppress(maxSdkVersion = 28)
+    @SdkSuppress(maxSdkVersion = 22)
     @Test
-    public fun macrobenchmarkWithStartupMode_sdkVersion() {
+    fun macrobenchmarkWithStartupMode_sdkVersion() {
         val exception = assertFailsWith<IllegalArgumentException> {
             macrobenchmarkWithStartupMode(
                 uniqueName = "uniqueName", // ignored, uniqueness not important
@@ -83,6 +82,6 @@ public class MacrobenchmarkTest {
                 measureBlock = {}
             )
         }
-        assertTrue(exception.message!!.contains("requires Android 10 (API 29) or greater"))
+        assertTrue(exception.message!!.contains("requires Android 6 (API 23) or greater"))
     }
 }

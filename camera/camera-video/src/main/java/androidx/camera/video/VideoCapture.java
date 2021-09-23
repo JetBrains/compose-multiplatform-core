@@ -20,7 +20,6 @@ import static androidx.camera.core.impl.ImageOutputConfig.OPTION_DEFAULT_RESOLUT
 import static androidx.camera.core.impl.ImageOutputConfig.OPTION_MAX_RESOLUTION;
 import static androidx.camera.core.impl.ImageOutputConfig.OPTION_SUPPORTED_RESOLUTIONS;
 import static androidx.camera.core.impl.ImageOutputConfig.OPTION_TARGET_ASPECT_RATIO;
-import static androidx.camera.core.impl.ImageOutputConfig.OPTION_TARGET_RESOLUTION;
 import static androidx.camera.core.impl.ImageOutputConfig.OPTION_TARGET_ROTATION;
 import static androidx.camera.core.impl.UseCaseConfig.OPTION_ATTACHED_USE_CASES_UPDATE_LISTENER;
 import static androidx.camera.core.impl.UseCaseConfig.OPTION_CAMERA_SELECTOR;
@@ -36,6 +35,7 @@ import static androidx.camera.core.internal.UseCaseEventConfig.OPTION_USE_CASE_E
 import static androidx.camera.video.impl.VideoCaptureConfig.OPTION_VIDEO_OUTPUT;
 
 import android.graphics.Rect;
+import android.media.MediaCodec;
 import android.util.Pair;
 import android.util.Size;
 import android.view.Display;
@@ -79,8 +79,11 @@ import androidx.core.util.Preconditions;
 import com.google.common.util.concurrent.ListenableFuture;
 
 import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
@@ -200,12 +203,53 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
      * @hide
      */
     @SuppressWarnings("unchecked")
+    @RestrictTo(Scope.LIBRARY_GROUP)
+    @Override
+    public void onStateAttached() {
+        super.onStateAttached();
+        getOutput().onSourceStateChanged(VideoOutput.SourceState.ACTIVE);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @hide
+     */
+    @SuppressWarnings("unchecked")
     @Override
     @RestrictTo(Scope.LIBRARY_GROUP)
     @NonNull
     protected Size onSuggestedResolutionUpdated(@NonNull Size suggestedResolution) {
+        Logger.d(TAG, "suggestedResolution = " + suggestedResolution);
         String cameraId = getCameraId();
         VideoCaptureConfig<T> config = (VideoCaptureConfig<T>) getCurrentConfig();
+
+        // SuggestedResolution gives the upper bound of allowed resolution size.
+        // Try to find a resolution that is smaller but has higher priority.
+        Size[] supportedResolutions = null;
+        List<Pair<Integer, Size[]>> supportedResolutionsPairs =
+                config.getSupportedResolutions(null);
+        if (supportedResolutionsPairs != null) {
+            for (Pair<Integer, Size[]> pair : supportedResolutionsPairs) {
+                if (pair.first == getImageFormat() && pair.second != null) {
+                    supportedResolutions = pair.second;
+                    break;
+                }
+            }
+        }
+        if (supportedResolutions != null) {
+            int suggestedSize = suggestedResolution.getWidth() * suggestedResolution.getHeight();
+            // The supportedResolutions is sorted by preferred order of QualitySelector.
+            for (Size resolution : supportedResolutions) {
+                if (Objects.equals(resolution, suggestedResolution)) {
+                    break;
+                } else if (resolution.getWidth() * resolution.getHeight() < suggestedSize) {
+                    Logger.d(TAG, "Find a higher priority resolution: " + resolution);
+                    suggestedResolution = resolution;
+                    break;
+                }
+            }
+        }
 
         mSessionConfigBuilder = createPipeline(cameraId, config, suggestedResolution);
         updateSessionConfig(mSessionConfigBuilder.build());
@@ -238,6 +282,18 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
     public void onDetached() {
         clearPipeline();
         getOutput().getStreamState().removeObserver(mStreamStateObserver);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @hide
+     */
+    @SuppressWarnings("unchecked")
+    @RestrictTo(Scope.LIBRARY_GROUP)
+    @Override
+    public void onStateDetached() {
+        getOutput().onSourceStateChanged(VideoOutput.SourceState.INACTIVE);
     }
 
     @NonNull
@@ -277,7 +333,7 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
     protected UseCaseConfig<?> onMergeConfig(@NonNull CameraInfoInternal cameraInfo,
             @NonNull UseCaseConfig.Builder<?, ?, ?> builder) {
 
-        updateTargetResolutionByQuality(cameraInfo, builder);
+        updateSupportedResolutionsByQuality(cameraInfo, builder);
 
         return builder.getUseCaseConfig();
     }
@@ -332,6 +388,9 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
         config.getVideoOutput().onSurfaceRequested(mSurfaceRequest);
         sendTransformationInfoIfReady(resolution);
         mDeferrableSurface = mSurfaceRequest.getDeferrableSurface();
+        // Since VideoCapture is in video module and can't be recognized by core module, use
+        // MediaCodec class instead.
+        mDeferrableSurface.setContainerClass(MediaCodec.class);
 
         SessionConfig.Builder sessionConfigBuilder = SessionConfig.Builder.createFrom(config);
         if (fetchObservableValue(getOutput().getStreamState(), StreamState.INACTIVE)
@@ -393,8 +452,6 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
         private static final int DEFAULT_SURFACE_OCCUPANCY_PRIORITY = 3;
         private static final VideoOutput DEFAULT_VIDEO_OUTPUT =
                 SurfaceRequest::willNotProvideSurface;
-        static final Size DEFAULT_RESOLUTION = new Size(1920, 1080);
-
         private static final VideoCaptureConfig<?> DEFAULT_CONFIG;
 
         static {
@@ -441,57 +498,50 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
     };
 
     /**
-     * Set {@link ImageOutputConfig#OPTION_TARGET_RESOLUTION} according to the resolution found
+     * Set {@link ImageOutputConfig#OPTION_SUPPORTED_RESOLUTIONS} according to the resolution found
      * by the {@link QualitySelector} in VideoOutput.
-     *
-     * <p>If the device doesn't have any supported quality, a default resolution will be set.
      *
      * @throws IllegalArgumentException if not able to find a resolution by the QualitySelector
      * in VideoOutput.
      */
-    private void updateTargetResolutionByQuality(@NonNull CameraInfoInternal cameraInfo,
+    private void updateSupportedResolutionsByQuality(@NonNull CameraInfoInternal cameraInfo,
             @NonNull UseCaseConfig.Builder<?, ?, ?> builder) throws IllegalArgumentException {
         MediaSpec mediaSpec = getMediaSpec();
 
         Preconditions.checkArgument(mediaSpec != null,
                 "Unable to update target resolution by null MediaSpec.");
 
-        Size resolution;
-        if (QualitySelector.getSupportedQualities(cameraInfo).isEmpty()) {
+        List<Integer> supportedQualities = QualitySelector.getSupportedQualities(cameraInfo);
+        if (supportedQualities.isEmpty()) {
             // When the device does not have any supported quality, even the most flexible
             // QualitySelector such as QualitySelector.of(QUALITY_HIGHEST), still cannot
             // find any resolution. This should be a rare case but will cause VideoCapture
-            // to always fail to bind. The workaround is to set a default resolution.
-            Logger.w(TAG,
-                    "Can't find any supported quality on the device, use default resolution.");
-            resolution = Defaults.DEFAULT_RESOLUTION;
-        } else {
-            QualitySelector qualitySelector = mediaSpec.getVideoSpec().getQualitySelector();
-
-            int quality = qualitySelector.select(cameraInfo);
-
-            Logger.d(TAG, "Found quality " + quality + " by qualitySelector " + qualitySelector);
-
-            if (quality != QualitySelector.QUALITY_NONE) {
-                resolution = QualitySelector.getResolution(cameraInfo, quality);
-            } else {
-                throw new IllegalArgumentException(
-                        "Unable to find a resolution by QualitySelector: " + qualitySelector);
-            }
+            // to always fail to bind. The workaround is not set any resolution and leave it to
+            // auto resolution mechanism.
+            Logger.w(TAG, "Can't find any supported quality on the device.");
+            return;
         }
 
-        int targetRotation = builder.getMutableConfig().retrieveOption(OPTION_TARGET_ROTATION,
-                Surface.ROTATION_0);
-        int relativeRotation = cameraInfo.getSensorRotationDegrees(targetRotation);
-        boolean needRotate = relativeRotation == 90 || relativeRotation == 270;
-        if (needRotate) {
-            resolution = new Size(/* width= */resolution.getHeight(),
-                    /* height= */resolution.getWidth());
-        }
+        QualitySelector qualitySelector = mediaSpec.getVideoSpec().getQualitySelector();
+
+        List<Integer> selectedQualities = qualitySelector.getPrioritizedQualities(cameraInfo);
+
         Logger.d(TAG,
-                "relativeRotation = " + relativeRotation + " and final resolution = " + resolution);
+                "Found selectedQualities " + selectedQualities + " by " + qualitySelector);
 
-        builder.getMutableConfig().insertOption(OPTION_TARGET_RESOLUTION, resolution);
+        if (selectedQualities.isEmpty()) {
+            throw new IllegalArgumentException(
+                    "Unable to find supported quality by QualitySelector");
+        }
+
+        List<Size> supportedResolutions = new ArrayList<>();
+        for (Integer selectedQuality : selectedQualities) {
+            supportedResolutions.add(QualitySelector.getResolution(cameraInfo, selectedQuality));
+        }
+        Logger.d(TAG, "Set supported resolutions = " + supportedResolutions);
+        builder.getMutableConfig().insertOption(OPTION_SUPPORTED_RESOLUTIONS,
+                Arrays.asList(
+                        Pair.create(getImageFormat(), supportedResolutions.toArray(new Size[0]))));
     }
 
     /**

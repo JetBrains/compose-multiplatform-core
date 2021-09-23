@@ -34,6 +34,7 @@ import androidx.wear.compose.foundation.ArcPaddingValues
 import androidx.wear.compose.foundation.BasicCurvedText
 import androidx.wear.compose.foundation.CurvedRow
 import androidx.wear.compose.foundation.CurvedRowScope
+import androidx.wear.compose.foundation.CurvedTextStyle
 import androidx.wear.compose.foundation.RadialAlignment
 import androidx.wear.compose.material.Text
 
@@ -162,18 +163,22 @@ fun CurvedRowAlignmentDemo() {
 }
 
 @Composable
-fun CurvedTextDemo() {
+fun BasicCurvedTextDemo() {
     CurvedRow(modifier = Modifier.fillMaxSize()) {
         SeparatorBlock()
         BasicCurvedText(
             "Curved Text",
-            18.sp,
+            CurvedTextStyle(
+                fontSize = 18.sp
+            ),
             modifier = Modifier.radialAlignment(RadialAlignment.Outer)
         )
         SeparatorBlock()
         BasicCurvedText(
             "And More",
-            20.sp,
+            CurvedTextStyle(
+                fontSize = 24.sp
+            ),
             clockwise = false,
             contentArcPadding = ArcPaddingValues(angular = 5.dp),
             modifier = Modifier.radialAlignment(RadialAlignment.Inner)

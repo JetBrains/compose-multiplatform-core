@@ -33,6 +33,7 @@ import org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.backend.common.serialization.DeclarationTable
 import org.jetbrains.kotlin.backend.common.serialization.signature.IdSignatureSerializer
+import org.jetbrains.kotlin.backend.common.serialization.signature.PublicIdSignatureComputer
 import org.jetbrains.kotlin.ir.ObsoleteDescriptorBasedAPI
 import org.jetbrains.kotlin.ir.backend.js.lower.serialization.ir.JsGlobalDeclarationTable
 import org.jetbrains.kotlin.ir.backend.js.lower.serialization.ir.JsManglerIr
@@ -47,7 +48,10 @@ class ComposeIrGenerationExtension(
     private val sourceInformationEnabled: Boolean = true,
     private val intrinsicRememberEnabled: Boolean = true,
     private val decoysEnabled: Boolean = false,
+    private val metricsDestination: String? = null,
+    private val reportsDestination: String? = null
 ) : IrGenerationExtension {
+    var metrics: ModuleMetrics = EmptyModuleMetrics
     @OptIn(ObsoleteDescriptorBasedAPI::class)
     override fun generate(
         moduleFragment: IrModuleFragment,
@@ -66,10 +70,18 @@ class ComposeIrGenerationExtension(
         // create a symbol remapper to be used across all transforms
         val symbolRemapper = ComposableSymbolRemapper()
 
+        if (metricsDestination != null || reportsDestination != null) {
+            metrics = ModuleMetricsImpl(
+                moduleFragment.name.asString(),
+                pluginContext
+            )
+        }
+
         ClassStabilityTransformer(
             pluginContext,
             symbolRemapper,
-            bindingTrace
+            bindingTrace,
+            metrics
         ).lower(moduleFragment)
 
         LiveLiteralTransformer(
@@ -78,18 +90,30 @@ class ComposeIrGenerationExtension(
             DurableKeyVisitor(),
             pluginContext,
             symbolRemapper,
-            bindingTrace
+            bindingTrace,
+            metrics
         ).lower(moduleFragment)
 
         ComposableFunInterfaceLowering(pluginContext).lower(moduleFragment)
 
         // Memoize normal lambdas and wrap composable lambdas
-        ComposerLambdaMemoization(pluginContext, symbolRemapper, bindingTrace).lower(moduleFragment)
+        ComposerLambdaMemoization(
+            pluginContext,
+            symbolRemapper,
+            bindingTrace,
+            metrics
+        ).lower(moduleFragment)
+
+        val mangler = when {
+            pluginContext.platform.isJs() -> JsManglerIr
+            else -> null
+        }
 
         val idSignatureBuilder = when {
-            pluginContext.platform.isJs() -> IdSignatureSerializer(JsManglerIr).also {
-                it.table = DeclarationTable(JsGlobalDeclarationTable(it, pluginContext.irBuiltIns))
-            }
+            pluginContext.platform.isJs() -> IdSignatureSerializer(
+                PublicIdSignatureComputer(mangler!!),
+                DeclarationTable(JsGlobalDeclarationTable(pluginContext.irBuiltIns))
+            )
             else -> null
         }
         if (decoysEnabled) {
@@ -97,13 +121,20 @@ class ComposeIrGenerationExtension(
                 "decoys are not supported for ${pluginContext.platform}"
             }
 
-            CreateDecoysTransformer(pluginContext, symbolRemapper, bindingTrace, idSignatureBuilder)
-                .lower(moduleFragment)
+            CreateDecoysTransformer(
+                pluginContext,
+                symbolRemapper,
+                bindingTrace,
+                idSignatureBuilder,
+                metrics,
+            ).lower(moduleFragment)
+
             SubstituteDecoyCallsTransformer(
                 pluginContext,
                 symbolRemapper,
                 bindingTrace,
-                idSignatureBuilder
+                idSignatureBuilder,
+                metrics,
             ).lower(moduleFragment)
         }
 
@@ -114,7 +145,8 @@ class ComposeIrGenerationExtension(
             pluginContext,
             symbolRemapper,
             bindingTrace,
-            decoysEnabled
+            decoysEnabled,
+            metrics,
         ).lower(moduleFragment)
 
         // transform calls to the currentComposer to just use the local parameter from the
@@ -125,6 +157,7 @@ class ComposeIrGenerationExtension(
             pluginContext,
             symbolRemapper,
             bindingTrace,
+            metrics,
             sourceInformationEnabled,
             intrinsicRememberEnabled
         ).lower(moduleFragment)
@@ -138,7 +171,9 @@ class ComposeIrGenerationExtension(
                 pluginContext,
                 symbolRemapper,
                 bindingTrace,
-                idSignatureBuilder
+                idSignatureBuilder,
+                metrics,
+                mangler!!
             ).lower(moduleFragment)
         }
 
@@ -146,8 +181,16 @@ class ComposeIrGenerationExtension(
             KlibAssignableParamTransformer(
                 pluginContext,
                 symbolRemapper,
-                bindingTrace
+                bindingTrace,
+                metrics,
             ).lower(moduleFragment)
+        }
+
+        if (metricsDestination != null) {
+            metrics.saveMetricsTo(metricsDestination)
+        }
+        if (reportsDestination != null) {
+            metrics.saveReportsTo(reportsDestination)
         }
     }
 }

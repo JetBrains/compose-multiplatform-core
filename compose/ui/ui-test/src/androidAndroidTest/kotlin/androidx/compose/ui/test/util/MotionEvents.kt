@@ -16,10 +16,17 @@
 
 package androidx.compose.ui.test.util
 
+import android.view.InputDevice
 import android.view.MotionEvent
 import androidx.compose.ui.geometry.Offset
 import com.google.common.truth.Truth.assertThat
+import com.google.common.truth.Truth.assertWithMessage
 import kotlin.math.abs
+
+const val Finger = MotionEvent.TOOL_TYPE_FINGER
+const val Touchscreen = InputDevice.SOURCE_TOUCHSCREEN
+const val TypeMouse = MotionEvent.TOOL_TYPE_MOUSE
+const val SourceMouse = InputDevice.SOURCE_MOUSE
 
 internal class MotionEventRecorder {
 
@@ -47,47 +54,59 @@ val List<MotionEvent>.moveEvents
  * stream has increasing event times.
  */
 internal fun MotionEventRecorder.assertHasValidEventTimes() {
-    events.fold(0L) { previousTime, event ->
-        assertThat(event.relativeTime).isAtLeast(previousTime)
-        event.relativeTime
+    events.fold(Pair(0L, 0L)) { (lastDownTime, lastEventTime), event ->
+        assertWithMessage("monotonically increasing downTime")
+            .that(event.downTime).isAtLeast(lastDownTime)
+        assertWithMessage("monotonically increasing eventTime")
+            .that(event.eventTime).isAtLeast(lastEventTime)
+        assertWithMessage("downTime <= eventTime")
+            .that(event.downTime).isAtMost(event.eventTime)
+        Pair(event.downTime, event.eventTime)
     }
 }
 
 internal fun MotionEvent.verify(
     curve: (Long) -> Offset,
     expectedAction: Int,
-    expectedRelativeTime: Long
+    expectedRelativeTime: Long,
+    expectedSource: Int,
+    expectedToolType: Int
 ) {
-    verifyEvent(1, expectedAction, 0, expectedRelativeTime)
+    verifyEvent(1, expectedAction, 0, expectedRelativeTime, expectedSource)
     // x and y can just be taken from the function. We're not testing the function, we're
     // testing if the MotionEvent sampled the function at the correct point
-    verifyPointer(0, curve(expectedRelativeTime))
+    verifyPointer(0, curve(expectedRelativeTime), expectedToolType)
 }
 
 internal fun MotionEvent.verify(
     expectedPosition: Offset,
     expectedAction: Int,
-    expectedRelativeTime: Long
+    expectedRelativeTime: Long,
+    expectedSource: Int,
+    expectedToolType: Int
 ) {
-    verifyEvent(1, expectedAction, 0, expectedRelativeTime)
-    verifyPointer(0, expectedPosition)
+    verifyEvent(1, expectedAction, 0, expectedRelativeTime, expectedSource)
+    verifyPointer(0, expectedPosition, expectedToolType)
 }
 
 internal fun MotionEvent.verifyEvent(
     expectedPointerCount: Int,
     expectedAction: Int,
     expectedActionIndex: Int,
-    expectedRelativeTime: Long
+    expectedRelativeTime: Long,
+    expectedSource: Int
 ) {
     assertThat(pointerCount).isEqualTo(expectedPointerCount)
     assertThat(actionMasked).isEqualTo(expectedAction)
     assertThat(actionIndex).isEqualTo(expectedActionIndex)
     assertThat(relativeTime).isEqualTo(expectedRelativeTime)
+    assertThat(source).isEqualTo(expectedSource)
 }
 
 internal fun MotionEvent.verifyPointer(
     expectedPointerId: Int,
-    expectedPosition: Offset
+    expectedPosition: Offset,
+    expectedToolType: Int
 ) {
     var index = -1
     for (i in 0 until pointerCount) {
@@ -99,6 +118,29 @@ internal fun MotionEvent.verifyPointer(
     assertThat(index).isAtLeast(0)
     assertThat(getX(index)).isEqualTo(expectedPosition.x)
     assertThat(getY(index)).isEqualTo(expectedPosition.y)
+    assertThat(getToolType(index)).isEqualTo(expectedToolType)
+}
+
+internal fun MotionEvent.verifyMouseEvent(
+    expectedAction: Int,
+    expectedRelativeTime: Long,
+    expectedPosition: Offset,
+    expectedButtonState: Int,
+    vararg expectedAxisValues: Pair<Int, Float>, // <axis, value>
+) {
+    assertWithMessage("pointerCount").that(pointerCount).isEqualTo(1)
+    assertWithMessage("pointerId").that(getPointerId(0)).isEqualTo(0)
+    assertWithMessage("actionMasked").that(actionMasked).isEqualTo(expectedAction)
+    assertWithMessage("actionIndex").that(actionIndex).isEqualTo(0)
+    assertWithMessage("relativeTime").that(relativeTime).isEqualTo(expectedRelativeTime)
+    assertWithMessage("x").that(x).isEqualTo(expectedPosition.x)
+    assertWithMessage("y").that(y).isEqualTo(expectedPosition.y)
+    assertWithMessage("buttonState").that(buttonState).isEqualTo(expectedButtonState)
+    assertWithMessage("source").that(source).isEqualTo(SourceMouse)
+    assertWithMessage("toolType").that(getToolType(0)).isEqualTo(TypeMouse)
+    expectedAxisValues.forEach { (axis, expectedValue) ->
+        assertWithMessage("axisValue($axis)").that(getAxisValue(axis)).isEqualTo(expectedValue)
+    }
 }
 
 /**

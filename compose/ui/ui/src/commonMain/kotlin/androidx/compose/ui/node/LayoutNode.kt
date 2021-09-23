@@ -50,11 +50,14 @@ import androidx.compose.ui.layout.RelocationModifier
 import androidx.compose.ui.layout.RelocationRequesterModifier
 import androidx.compose.ui.layout.Remeasurement
 import androidx.compose.ui.layout.RemeasurementModifier
+import androidx.compose.ui.modifier.ModifierLocalConsumer
+import androidx.compose.ui.modifier.ModifierLocalProvider
 import androidx.compose.ui.node.LayoutNode.LayoutState.LayingOut
 import androidx.compose.ui.node.LayoutNode.LayoutState.Measuring
 import androidx.compose.ui.node.LayoutNode.LayoutState.NeedsRelayout
 import androidx.compose.ui.node.LayoutNode.LayoutState.NeedsRemeasure
 import androidx.compose.ui.node.LayoutNode.LayoutState.Ready
+import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.platform.nativeClass
 import androidx.compose.ui.platform.simpleIdentityToString
 import androidx.compose.ui.semantics.SemanticsModifier
@@ -62,16 +65,13 @@ import androidx.compose.ui.semantics.SemanticsWrapper
 import androidx.compose.ui.semantics.outerSemantics
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.LayoutDirection
 
 /**
  * Enable to log changes to the LayoutNode tree.  This logging is quite chatty.
  */
 private const val DebugChanges = false
-
-// Top level DrawScope instance shared across the LayoutNode hierarchy to re-use internal
-// drawing objects
-internal val sharedDrawScope = LayoutNodeDrawScope()
 
 /**
  * An element in the layout hierarchy, built with compose UI.
@@ -88,7 +88,7 @@ internal class LayoutNode : Measurable, Remeasurement, OwnerScope, LayoutInfo, C
     // but just a holder for its children - allows us to combine some children into something we
     // can subcompose in(LayoutNode) without being required to define it as a real layout - we
     // don't want to define the layout strategy for such nodes, instead the children of the
-    // virtual nodes will be threated as the direct children of the virtual node parent.
+    // virtual nodes will be treated as the direct children of the virtual node parent.
     // This whole concept will be replaced with a proper subcomposition logic which allows to
     // subcompose multiple times into the same LayoutNode and define offsets.
 
@@ -517,6 +517,8 @@ internal class LayoutNode : Measurable, Remeasurement, OwnerScope, LayoutInfo, C
             }
         }
 
+    override var viewConfiguration: ViewConfiguration = DummyViewConfiguration
+
     private fun onDensityOrLayoutDirectionChanged() {
         // measure/layout modifiers on the node
         requestRemeasure()
@@ -541,7 +543,8 @@ internal class LayoutNode : Measurable, Remeasurement, OwnerScope, LayoutInfo, C
      */
     internal val alignmentLines = LayoutNodeAlignmentLines(this)
 
-    internal val mDrawScope: LayoutNodeDrawScope = sharedDrawScope
+    internal val mDrawScope: LayoutNodeDrawScope
+        get() = requireOwner().sharedDrawScope
 
     /**
      * Whether or not this [LayoutNode] and all of its parents have been placed in the hierarchy.
@@ -675,6 +678,13 @@ internal class LayoutNode : Measurable, Remeasurement, OwnerScope, LayoutInfo, C
                     // DrawModifier block should be before the LayoutModifier block so that a
                     // Modifier that implements both DrawModifier and LayoutModifier will have
                     // it's draw bounds reflect the dimensions defined by the LayoutModifier.
+                    // Please ensure that ModifierLocalProvider is the first item here so that
+                    // other layoutNodeWrappers don't accidentally use values that they provided.
+                    // Also ensure that ModifierLocalConsumer is the last item here, so that the
+                    // other modifiers can access ModifierLocals read by the ModifierLocalConsumer.
+                    if (mod is ModifierLocalProvider<*>) {
+                        wrapper = ModifierLocalProviderNode(wrapper, mod).assignChained(toWrap)
+                    }
                     if (mod is DrawModifier) {
                         wrapper = ModifiedDrawNode(wrapper, mod)
                     }
@@ -724,6 +734,9 @@ internal class LayoutNode : Measurable, Remeasurement, OwnerScope, LayoutInfo, C
                             OnGloballyPositionedModifierWrapper(wrapper, mod).assignChained(toWrap)
                         getOrCreateOnPositionedCallbacks() += wrapper
                     }
+                    if (mod is ModifierLocalConsumer) {
+                        wrapper = ModifierLocalConsumerNode(wrapper, mod).assignChained(toWrap)
+                    }
                 }
                 wrapper
             }
@@ -756,7 +769,6 @@ internal class LayoutNode : Measurable, Remeasurement, OwnerScope, LayoutInfo, C
                 outerWrapper != innerLayoutNodeWrapper
             ) {
                 requestRemeasure()
-                parent?.requestRelayout()
             } else if (layoutState == Ready && addedCallback) {
                 // We need to notify the callbacks of a change in position since there's
                 // a new one.
@@ -829,28 +841,32 @@ internal class LayoutNode : Measurable, Remeasurement, OwnerScope, LayoutInfo, C
      * all [PointerInputModifier]s on all descendant [LayoutNode]s.
      *
      * If [pointerPosition] is within the bounds of any tested
-     * [PointerInputModifier]s, the [PointerInputModifier] is added to [hitPointerInputFilters]
+     * [PointerInputModifier]s, the [PointerInputModifier] is added to [hitTestResult]
      * and true is returned.
      *
      * @param pointerPosition The tested pointer position, which is relative to
      * the LayoutNode.
-     * @param hitPointerInputFilters The collection that the hit [PointerInputFilter]s will be
+     * @param hitTestResult The collection that the hit [PointerInputFilter]s will be
      * added to if hit.
      */
     internal fun hitTest(
         pointerPosition: Offset,
-        hitPointerInputFilters: MutableList<PointerInputFilter>
+        hitTestResult: HitTestResult<PointerInputFilter>,
+        isTouchEvent: Boolean = false
     ) {
         val positionInWrapped = outerLayoutNodeWrapper.fromParentPosition(pointerPosition)
         outerLayoutNodeWrapper.hitTest(
             positionInWrapped,
-            hitPointerInputFilters
+            hitTestResult,
+            isTouchEvent
         )
     }
 
+    @Suppress("UNUSED_PARAMETER")
     internal fun hitTestSemantics(
         pointerPosition: Offset,
-        hitSemanticsWrappers: MutableList<SemanticsWrapper>
+        hitSemanticsWrappers: HitTestResult<SemanticsWrapper>,
+        isTouchEvent: Boolean = true
     ) {
         val positionInWrapped = outerLayoutNodeWrapper.fromParentPosition(pointerPosition)
         outerLayoutNodeWrapper.hitTestSemantics(
@@ -1339,6 +1355,23 @@ internal class LayoutNode : Measurable, Remeasurement, OwnerScope, LayoutInfo, C
          * Pre-allocated constructor to be used with ComposeNode
          */
         internal val Constructor: () -> LayoutNode = { LayoutNode() }
+
+        /**
+         * All of these values are only used in tests. The real ViewConfiguration should
+         * be set in Layout()
+         */
+        internal val DummyViewConfiguration = object : ViewConfiguration {
+            override val longPressTimeoutMillis: Long
+                get() = 400L
+            override val doubleTapTimeoutMillis: Long
+                get() = 300L
+            override val doubleTapMinTimeMillis: Long
+                get() = 40L
+            override val touchSlop: Float
+                get() = 16f
+            override val minimumTouchTargetSize: DpSize
+                get() = DpSize.Zero
+        }
     }
 
     /**

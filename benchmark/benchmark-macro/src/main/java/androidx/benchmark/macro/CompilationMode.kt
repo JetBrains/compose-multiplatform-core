@@ -16,13 +16,13 @@
 
 package androidx.benchmark.macro
 
-import android.app.Instrumentation
 import android.util.Log
 import androidx.annotation.RestrictTo
+import androidx.benchmark.DeviceInfo
+import androidx.benchmark.Shell
+import androidx.benchmark.macro.CompilationMode.SpeedProfile
 import androidx.profileinstaller.ProfileInstallReceiver
 import androidx.profileinstaller.ProfileInstaller
-import androidx.test.platform.app.InstrumentationRegistry
-import androidx.test.uiautomator.UiDevice
 import org.junit.AssumptionViolatedException
 
 /**
@@ -95,23 +95,19 @@ public sealed class CompilationMode(
  * For more information: https://source.android.com/devices/tech/dalvik/jit-compiler
  */
 internal fun CompilationMode.compile(packageName: String, block: () -> Unit) {
-    val instrumentation = InstrumentationRegistry.getInstrumentation()
-    val device = instrumentation.device()
     // Clear profile between runs.
     Log.d(TAG, "Clearing profiles for $packageName")
-    device.executeShellCommand("cmd package compile --reset $packageName")
-
+    Shell.executeCommand("cmd package compile --reset $packageName")
     if (this == CompilationMode.None || this == CompilationMode.Interpreted) {
         return // nothing to do
-    }
-    if (this == CompilationMode.BaselineProfile) {
-        // For baseline profiles, if the profileinstaller library is included in the APK, then we
+    } else if (this == CompilationMode.BaselineProfile) {
+        // For baseline profiles, if the ProfileInstaller library is included in the APK, then we
         // triggering this broadcast will cause the baseline profile to get installed
         // synchronously, instead of waiting for the
         val action = ProfileInstallReceiver.ACTION_INSTALL_PROFILE
         // Use an explicit broadcast given the app was force-stopped.
         val name = ProfileInstallReceiver::class.java.name
-        val result = device.executeShellCommand("am broadcast -a $action $packageName/$name")
+        val result = Shell.executeCommand("am broadcast -a $action $packageName/$name")
             .substringAfter("Broadcast completed: result=")
             .trim()
             .toIntOrNull()
@@ -126,9 +122,15 @@ internal fun CompilationMode.compile(packageName: String, block: () -> Unit) {
                         "must be in order to use CompilationMode.BaselineProfile."
                 )
             }
-            ProfileInstaller.RESULT_INSTALL_SUCCESS,
+            ProfileInstaller.RESULT_INSTALL_SUCCESS -> {
+                // success !
+            }
             ProfileInstaller.RESULT_ALREADY_INSTALLED -> {
-                // success!
+                throw RuntimeException(
+                    "Unable to install baseline profiles. This most likely means that the latest " +
+                        "version of the profileinstaller library is not being used. Please " +
+                        "use the latest profileinstaller library version."
+                )
             }
             ProfileInstaller.RESULT_UNSUPPORTED_ART_VERSION -> {
                 throw RuntimeException("Baseline profiles aren't supported on this device version")
@@ -148,8 +150,13 @@ internal fun CompilationMode.compile(packageName: String, block: () -> Unit) {
                 )
             }
         }
-    }
-    if (this is CompilationMode.SpeedProfile) {
+        // Kill Process
+        Log.d(TAG, "Killing process $packageName")
+        Shell.executeCommand("am force-stop $packageName")
+        // Compile
+        compilePackage(packageName)
+        Log.d(TAG, "$packageName is compiled.")
+    } else if (this is CompilationMode.SpeedProfile) {
         repeat(this.warmupIterations) {
             block()
         }
@@ -157,21 +164,12 @@ internal fun CompilationMode.compile(packageName: String, block: () -> Unit) {
         // is in the foreground, dump the profile, wait for another 5 secs before
         // speed-profile compilation.
         Thread.sleep(5000)
-        val response = device.executeShellCommand("killall -s SIGUSR1 $packageName")
+        val response = Shell.executeCommand("killall -s SIGUSR1 $packageName")
         if (response.isNotBlank()) {
             Log.d(TAG, "Received dump profile response $response")
             throw RuntimeException("Failed to dump profile for $packageName ($response)")
         }
-        Thread.sleep(5000)
-    }
-
-    Log.d(TAG, "Compiling $packageName ($this)")
-    val response = device.executeShellCommand(
-        "cmd package compile -f -m ${compileArgument()} $packageName"
-    )
-    if (!response.contains("Success")) {
-        Log.d(TAG, "Received compile cmd response: $response")
-        throw RuntimeException("Failed to compile $packageName ($response)")
+        compilePackage(packageName)
     }
 }
 
@@ -184,8 +182,7 @@ internal fun CompilationMode.compile(packageName: String, block: () -> Unit) {
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun CompilationMode.isSupportedWithVmSettings(): Boolean {
-    val device = InstrumentationRegistry.getInstrumentation().device()
-    val getProp = device.executeShellCommand("getprop dalvik.vm.extra-opts")
+    val getProp = Shell.executeCommand("getprop dalvik.vm.extra-opts")
     val vmRunningInterpretedOnly = getProp.contains("-Xusejit:false")
 
     // true if requires interpreted, false otherwise
@@ -217,6 +214,16 @@ internal fun CompilationMode.assumeSupportedWithVmSettings() {
     }
 }
 
-internal fun Instrumentation.device(): UiDevice {
-    return UiDevice.getInstance(this)
+/**
+ * Compiles the application.
+ */
+internal fun CompilationMode.compilePackage(packageName: String) {
+    Log.d(TAG, "Compiling $packageName ($this)")
+    val response = Shell.executeCommand(
+        "cmd package compile -f -m ${compileArgument()} $packageName"
+    )
+    if (!response.contains("Success")) {
+        Log.d(TAG, "Received compile cmd response: $response")
+        throw RuntimeException("Failed to compile $packageName ($response)")
+    }
 }

@@ -61,6 +61,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.concurrent.futures.AbstractResolvableFuture;
 import androidx.concurrent.futures.ResolvableFuture;
+import androidx.core.os.BuildCompat;
 import androidx.core.util.ObjectsCompat;
 import androidx.media.AudioAttributesCompat;
 import androidx.media.MediaBrowserServiceCompat;
@@ -184,13 +185,14 @@ class MediaSessionImplBase implements MediaSession.MediaSessionImpl {
             }
             mbrComponent = sServiceComponentName;
         }
+        int pendingIntentFlagMutable = BuildCompat.isAtLeastS() ? PendingIntent.FLAG_MUTABLE : 0;
         if (mbrComponent == null) {
             // No service to revive playback after it's dead.
             // Create a PendingIntent that points to the runtime broadcast receiver.
             Intent intent = new Intent(Intent.ACTION_MEDIA_BUTTON, mSessionUri);
             intent.setPackage(context.getPackageName());
             mMediaButtonIntent = PendingIntent.getBroadcast(
-                    context, 0 /* requestCode */, intent, 0 /* flags */);
+                    context, 0 /* requestCode */, intent, pendingIntentFlagMutable);
 
             // Creates a fake ComponentName for MediaSessionCompat in pre-L.
             // TODO: Replace this with the MediaButtonReceiver class.
@@ -210,9 +212,10 @@ class MediaSessionImplBase implements MediaSession.MediaSessionImpl {
             if (Build.VERSION.SDK_INT >= 26) {
                 mMediaButtonIntent =
                         ClassVerificationHelper.PendingIntent.Api26.getForegroundService(
-                                mContext, 0, intent, 0);
+                                mContext, 0, intent, pendingIntentFlagMutable);
             } else {
-                mMediaButtonIntent = PendingIntent.getService(mContext, 0, intent, 0);
+                mMediaButtonIntent = PendingIntent.getService(
+                        mContext, 0, intent, pendingIntentFlagMutable);
             }
             mBroadcastReceiver = null;
         }

@@ -19,6 +19,15 @@ package androidx.camera.integration.core;
 import static androidx.camera.core.ImageCapture.FLASH_MODE_AUTO;
 import static androidx.camera.core.ImageCapture.FLASH_MODE_OFF;
 import static androidx.camera.core.ImageCapture.FLASH_MODE_ON;
+import static androidx.camera.video.QualitySelector.QUALITY_FHD;
+import static androidx.camera.video.QualitySelector.QUALITY_HD;
+import static androidx.camera.video.QualitySelector.QUALITY_NONE;
+import static androidx.camera.video.QualitySelector.QUALITY_SD;
+import static androidx.camera.video.QualitySelector.QUALITY_UHD;
+import static androidx.camera.video.VideoRecordEvent.Finalize.ERROR_FILE_SIZE_LIMIT_REACHED;
+import static androidx.camera.video.VideoRecordEvent.Finalize.ERROR_INSUFFICIENT_DISK;
+import static androidx.camera.video.VideoRecordEvent.Finalize.ERROR_NONE;
+import static androidx.camera.video.VideoRecordEvent.Finalize.ERROR_SOURCE_INACTIVE;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
@@ -28,7 +37,9 @@ import android.content.Context;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.hardware.display.DisplayManager;
+import android.media.MediaScannerConnection;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
@@ -41,13 +52,16 @@ import android.util.Range;
 import android.util.Rational;
 import android.view.Display;
 import android.view.GestureDetector;
+import android.view.Menu;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 import android.view.View;
 import android.view.ViewStub;
+import android.webkit.MimeTypeMap;
 import android.widget.Button;
 import android.widget.CompoundButton;
 import android.widget.ImageButton;
+import android.widget.PopupMenu;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -82,7 +96,11 @@ import androidx.camera.core.ViewPort;
 import androidx.camera.core.impl.utils.executor.CameraXExecutors;
 import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.camera.video.ActiveRecording;
+import androidx.camera.video.FileOutputOptions;
 import androidx.camera.video.MediaStoreOutputOptions;
+import androidx.camera.video.OutputOptions;
+import androidx.camera.video.PendingRecording;
+import androidx.camera.video.QualitySelector;
 import androidx.camera.video.Recorder;
 import androidx.camera.video.RecordingStats;
 import androidx.camera.video.VideoCapture;
@@ -174,10 +192,12 @@ public class CameraXActivity extends AppCompatActivity {
     private SeekBar mZoomSeekBar;
     private Button mZoomIn2XToggle;
     private Button mZoomResetToggle;
+    private Toast mEvToast = null;
 
     private OpenGLRenderer mPreviewRenderer;
     private DisplayManager.DisplayListener mDisplayListener;
     private RecordUi mRecordUi;
+    private int mVideoQuality = QUALITY_NONE;
 
     SessionImagesUriSet mSessionImagesUriSet = new SessionImagesUriSet();
 
@@ -210,15 +230,14 @@ public class CameraXActivity extends AppCompatActivity {
                 ExposureState exposureState = cameraInfo.getExposureState();
                 float ev = result * exposureState.getExposureCompensationStep().floatValue();
                 Log.d(TAG, "success new EV: " + ev);
-                Toast.makeText(getApplicationContext(), String.format("EV: %.2f", ev),
-                        Toast.LENGTH_SHORT).show();
+                showEVToast(String.format("EV: %.2f", ev));
             }
         }
 
         @Override
         public void onFailure(@NonNull Throwable t) {
             Log.d(TAG, "failed " + t);
-            Toast.makeText(getApplicationContext(), "Fail to set EV", Toast.LENGTH_SHORT).show();
+            showEVToast("Fail to set EV");
         }
     };
 
@@ -359,9 +378,20 @@ public class CameraXActivity extends AppCompatActivity {
             switch (state) {
                 case IDLE:
                     createDefaultVideoFolderIfNotExist();
-                    mActiveRecording = getVideoCapture().getOutput()
-                            .prepareRecording(getNewVideoOutputFileOptions())
-                            .withAudioEnabled()
+                    PendingRecording pendingRecording = null;
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                        // For Android 10 or versions above, use MediaStoreOutputOptions for public
+                        // share media storage.
+                        pendingRecording = getVideoCapture().getOutput()
+                                .prepareRecording(this, getNewVideoOutputMediaStoreOptions());
+                    } else {
+                        // For Android 9 or versions below, use FileOutputOptions. Can still use
+                        // MediaStoreOutputOptions, but there are some known issues, b/197476455 or
+                        // b/198543058.
+                        pendingRecording = getVideoCapture().getOutput()
+                                .prepareRecording(this, getNewVideoOutputFileOptions());
+                    }
+                    mActiveRecording = pendingRecording.withAudioEnabled()
                             .withEventListener(ContextCompat.getMainExecutor(CameraXActivity.this),
                                     mVideoRecordEventListener)
                             .start();
@@ -400,51 +430,106 @@ public class CameraXActivity extends AppCompatActivity {
                             "Unexpected state when click pause button: " + state);
             }
         });
+
+        mRecordUi.getButtonQuality().setText(getQualityIconName(mVideoQuality));
+        mRecordUi.getButtonQuality().setOnClickListener(view -> {
+            PopupMenu popup = new PopupMenu(this, view);
+            Menu menu = popup.getMenu();
+
+            // Add Auto item
+            final int groupId = Menu.NONE;
+            final int autoOrder = 0;
+            menu.add(groupId, QUALITY_NONE, autoOrder, getQualityMenuItemName(QUALITY_NONE));
+            if (mVideoQuality == QUALITY_NONE) {
+                menu.findItem(QUALITY_NONE).setChecked(true);
+            }
+
+            // Add device supported qualities
+            List<Integer> supportedQualities =
+                    QualitySelector.getSupportedQualities(mCamera.getCameraInfo());
+            // supportedQualities has been sorted by descending order.
+            for (int i = 0; i < supportedQualities.size(); i++) {
+                int quality = supportedQualities.get(i);
+                menu.add(groupId, quality, autoOrder + 1 + i,
+                        getQualityMenuItemName(quality));
+                if (mVideoQuality == quality) {
+                    menu.findItem(quality).setChecked(true);
+                }
+
+            }
+            // Make menu single checkable
+            menu.setGroupCheckable(groupId, true, true);
+
+            popup.setOnMenuItemClickListener(item -> {
+                if (item.getItemId() != mVideoQuality) {
+                    mVideoQuality = item.getItemId();
+                    mRecordUi.getButtonQuality().setText(getQualityIconName(mVideoQuality));
+                    // Quality changed, rebind UseCases
+                    tryBindUseCases();
+                }
+                return true;
+            });
+
+            popup.show();
+        });
     }
 
     private final Consumer<VideoRecordEvent> mVideoRecordEventListener = event -> {
         updateRecordingStats(event.getRecordingStats());
 
-        switch (event.getEventType()) {
-            case VideoRecordEvent.EVENT_TYPE_FINALIZE:
-                VideoRecordEvent.Finalize finalize = (VideoRecordEvent.Finalize) event;
+        if (event instanceof VideoRecordEvent.Finalize) {
+            VideoRecordEvent.Finalize finalize = (VideoRecordEvent.Finalize) event;
 
-                switch (finalize.getError()) {
-                    case VideoRecordEvent.ERROR_NONE:
-                    case VideoRecordEvent.ERROR_FILE_SIZE_LIMIT_REACHED:
-                    case VideoRecordEvent.ERROR_INSUFFICIENT_DISK:
-                        Uri uri = finalize.getOutputResults().getOutputUri();
-                        String msg = "Saved uri " + uri;
-                        if (finalize.getError() != VideoRecordEvent.ERROR_NONE) {
-                            msg += " with error (" + finalize.getError() + ")";
-                        }
-                        // The video file path is used in tracing e2e test log. Don't remove it.
-                        String videoFile = getAbsolutePathFromUri(
+            switch (finalize.getError()) {
+                case ERROR_NONE:
+                case ERROR_FILE_SIZE_LIMIT_REACHED:
+                case ERROR_INSUFFICIENT_DISK:
+                case ERROR_SOURCE_INACTIVE:
+                    Uri uri = finalize.getOutputResults().getOutputUri();
+                    OutputOptions outputOptions = finalize.getOutputOptions();
+                    String msg;
+                    String videoFilePath;
+                    if (outputOptions instanceof MediaStoreOutputOptions) {
+                        msg = "Saved uri " + uri;
+                        videoFilePath = getAbsolutePathFromUri(
                                 getApplicationContext().getContentResolver(),
                                 uri
                         );
-                        Log.d(TAG, "Saved video file: " + videoFile);
+                        // For OutputOptionsType is OutputOptions.OPTIONS_TYPE_MEDIA_STORE,
+                        // the Photo/Gallery apps on devices (API Level < Q) sometimes will
+                        // not show the video files saved in MediaStore, suggest to call
+                        // scanFile still to force scan the media file.
+                        // scanVideoOutputFile(new File(videoFilePath));
+                    } else if (outputOptions instanceof FileOutputOptions) {
+                        videoFilePath = ((FileOutputOptions) outputOptions)
+                                .getFile().getAbsolutePath();
+                        msg = "Saved video file: " + videoFilePath;
+                        scanVideoOutputFile(new File(videoFilePath));
+                    } else {
+                        throw new AssertionError("Unknown or unsupported OutputOptions type: "
+                                + outputOptions.getClass().getSimpleName());
+                    }
+                    // The video file path is used in tracing e2e test log. Don't remove it.
+                    Log.d(TAG, "Saved video file: " + videoFilePath);
 
-                        Log.d(TAG, msg, finalize.getCause());
-                        Toast.makeText(CameraXActivity.this, msg, Toast.LENGTH_LONG).show();
-                        break;
-                    default:
-                        String errMsg = "Video capture failed by (" + finalize.getError() + "): "
-                                + finalize.getCause();
-                        Log.e(TAG, errMsg, finalize.getCause());
-                        Toast.makeText(CameraXActivity.this, errMsg, Toast.LENGTH_LONG).show();
-                }
-                mRecordUi.setState(RecordUi.State.IDLE);
-                break;
-
-            default:
-                // No-op
-                break;
+                    if (finalize.getError() != ERROR_NONE) {
+                        msg += " with code (" + finalize.getError() + ")";
+                    }
+                    Log.d(TAG, msg, finalize.getCause());
+                    Toast.makeText(CameraXActivity.this, msg, Toast.LENGTH_LONG).show();
+                    break;
+                default:
+                    String errMsg = "Video capture failed by (" + finalize.getError() + "): "
+                            + finalize.getCause();
+                    Log.e(TAG, errMsg, finalize.getCause());
+                    Toast.makeText(CameraXActivity.this, errMsg, Toast.LENGTH_LONG).show();
+            }
+            mRecordUi.setState(RecordUi.State.IDLE);
         }
     };
 
     @NonNull
-    private MediaStoreOutputOptions getNewVideoOutputFileOptions() {
+    private MediaStoreOutputOptions getNewVideoOutputMediaStoreOptions() {
         String videoFileName = "video_" + System.currentTimeMillis();
         ContentValues contentValues = new ContentValues();
         contentValues.put(MediaStore.MediaColumns.MIME_TYPE, "video/mp4");
@@ -452,11 +537,38 @@ public class CameraXActivity extends AppCompatActivity {
         contentValues.put(MediaStore.Video.Media.DISPLAY_NAME, videoFileName);
         contentValues.put(MediaStore.Video.Media.DATE_ADDED, System.currentTimeMillis() / 1000);
         contentValues.put(MediaStore.Video.Media.DATE_TAKEN, System.currentTimeMillis());
-        return MediaStoreOutputOptions.builder()
-                .setContentResolver(getContentResolver())
-                .setCollection(MediaStore.Video.Media.EXTERNAL_CONTENT_URI)
+        return new MediaStoreOutputOptions.Builder(getContentResolver(),
+                MediaStore.Video.Media.EXTERNAL_CONTENT_URI)
                 .setContentValues(contentValues)
                 .build();
+    }
+
+    @NonNull
+    private FileOutputOptions getNewVideoOutputFileOptions() {
+        String videoFileName = "video_" + System.currentTimeMillis();
+        File videoFile = new File(
+                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES),
+                videoFileName + ".mp4");
+        Log.d(TAG, "VideoOutputFileOptions file: " + videoFile.getAbsolutePath());
+        return new FileOutputOptions.Builder(videoFile).build();
+    }
+
+    @NonNull
+    private void scanVideoOutputFile(@NonNull File videoFile) {
+        String extension = MimeTypeMap.getFileExtensionFromUrl(videoFile.getName());
+        String mimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension);
+        MediaScannerConnection.scanFile(this,
+                new String[] {videoFile.getAbsolutePath()},
+                new String[] {mimeType},
+                new MediaScannerConnection.OnScanCompletedListener() {
+                    @Override
+                    public void onScanCompleted(final String path, final Uri uri) {
+                        Log.d(TAG, "Video scanned into media store: " + path
+                                + ", Uri: " + uri
+                                + ", mimetype: " + mimeType
+                                + ".");
+                    }
+                });
     }
 
     private void updateRecordingStats(@NonNull RecordingStats stats) {
@@ -578,10 +690,8 @@ public class CameraXActivity extends AppCompatActivity {
                 Futures.addCallback(future, mEVFutureCallback,
                         CameraXExecutors.mainThreadExecutor());
             } else {
-                Toast.makeText(getApplicationContext(), String.format("EV: %.2f",
-                        range.getUpper()
-                                * exposureState.getExposureCompensationStep().floatValue()),
-                        Toast.LENGTH_LONG).show();
+                showEVToast(String.format("EV: %.2f", range.getUpper()
+                        * exposureState.getExposureCompensationStep().floatValue()));
             }
         });
 
@@ -599,12 +709,18 @@ public class CameraXActivity extends AppCompatActivity {
                 Futures.addCallback(future, mEVFutureCallback,
                         CameraXExecutors.mainThreadExecutor());
             } else {
-                Toast.makeText(getApplicationContext(), String.format("EV: %.2f",
-                        range.getLower()
-                                * exposureState.getExposureCompensationStep().floatValue()),
-                        Toast.LENGTH_LONG).show();
+                showEVToast(String.format("EV: %.2f", range.getLower()
+                        * exposureState.getExposureCompensationStep().floatValue()));
             }
         });
+    }
+
+    void showEVToast(String message) {
+        if (mEvToast != null) {
+            mEvToast.cancel();
+        }
+        mEvToast = Toast.makeText(getApplicationContext(), message, Toast.LENGTH_SHORT);
+        mEvToast.show();
     }
 
     private void updateButtonsUi() {
@@ -683,7 +799,8 @@ public class CameraXActivity extends AppCompatActivity {
         mRecordUi = new RecordUi(
                 findViewById(R.id.Video),
                 findViewById(R.id.video_pause),
-                findViewById(R.id.video_stats)
+                findViewById(R.id.video_stats),
+                findViewById(R.id.video_quality)
         );
 
         setUpButtonEvents();
@@ -813,14 +930,22 @@ public class CameraXActivity extends AppCompatActivity {
             // Set the use cases after a successful binding.
             mUseCases = useCases;
         } catch (IllegalArgumentException ex) {
-            Log.e(TAG, "bindToLifecycle() failed. Usually caused by binding too many use cases.");
-            Toast.makeText(this, "Bind too many use cases.", Toast.LENGTH_SHORT).show();
+            String msg;
+            if (mVideoQuality != QUALITY_NONE) {
+                msg = "Bind too many use cases or video quality is too large.";
+            } else {
+                msg = "Bind too many use cases.";
+            }
+            Log.e(TAG, "bindToLifecycle() failed. " + msg);
+            Toast.makeText(this, msg, Toast.LENGTH_LONG).show();
 
             // Restore toggle buttons to the previous state if the bind failed.
             mPreviewToggle.setChecked(getPreview() != null);
             mPhotoToggle.setChecked(getImageCapture() != null);
             mAnalysisToggle.setChecked(getImageAnalysis() != null);
             mVideoToggle.setChecked(getVideoCapture() != null);
+            // Reset video quality to avoid always fail by quality too large.
+            mRecordUi.getButtonQuality().setText(getQualityIconName(mVideoQuality = QUALITY_NONE));
 
             if (!calledBySelf) {
                 // Only call self if not already calling self to avoid an infinite loop.
@@ -870,8 +995,11 @@ public class CameraXActivity extends AppCompatActivity {
         }
 
         if (mVideoToggle.isChecked()) {
-            VideoCapture<Recorder> videoCapture =
-                    VideoCapture.withOutput(new Recorder.Builder().build());
+            Recorder.Builder builder = new Recorder.Builder();
+            if (mVideoQuality != QUALITY_NONE) {
+                builder.setQualitySelector(QualitySelector.of(mVideoQuality));
+            }
+            VideoCapture<Recorder> videoCapture = VideoCapture.withOutput(builder.build());
             useCases.add(videoCapture);
         }
         return useCases;
@@ -1194,14 +1322,16 @@ public class CameraXActivity extends AppCompatActivity {
         private final Button mButtonRecord;
         private final Button mButtonPause;
         private final TextView mTextStats;
+        private final Button mButtonQuality;
         private boolean mEnabled = false;
         private State mState = State.IDLE;
 
         RecordUi(@NonNull Button buttonRecord, @NonNull Button buttonPause,
-                @NonNull TextView textStats) {
+                @NonNull TextView textStats, @NonNull Button buttonQuality) {
             mButtonRecord = buttonRecord;
             mButtonPause = buttonPause;
             mTextStats = textStats;
+            mButtonQuality = buttonQuality;
         }
 
         void setEnabled(boolean enabled) {
@@ -1209,11 +1339,13 @@ public class CameraXActivity extends AppCompatActivity {
             if (enabled) {
                 mTextStats.setText("");
                 mTextStats.setVisibility(View.VISIBLE);
+                mButtonQuality.setVisibility(View.VISIBLE);
                 updateUi();
             } else {
                 mButtonRecord.setText("Record");
                 mButtonRecord.setEnabled(false);
                 mButtonPause.setVisibility(View.INVISIBLE);
+                mButtonQuality.setVisibility(View.INVISIBLE);
                 mTextStats.setVisibility(View.GONE);
             }
         }
@@ -1271,6 +1403,11 @@ public class CameraXActivity extends AppCompatActivity {
         TextView getTextStats() {
             return mTextStats;
         }
+
+        @NonNull
+        Button getButtonQuality() {
+            return mButtonQuality;
+        }
     }
 
     Preview getPreview() {
@@ -1315,5 +1452,41 @@ public class CameraXActivity extends AppCompatActivity {
     @Nullable
     CameraControl getCameraControl() {
         return mCamera != null ? mCamera.getCameraControl() : null;
+    }
+
+    @NonNull
+    private static String getQualityIconName(int quality) {
+        switch (quality) {
+            case QUALITY_NONE:
+                return "Auto";
+            case QUALITY_UHD:
+                return "UHD";
+            case QUALITY_FHD:
+                return "FHD";
+            case QUALITY_HD:
+                return "HD";
+            case QUALITY_SD:
+                return "SD";
+            default:
+                return "?";
+        }
+    }
+
+    @NonNull
+    private static String getQualityMenuItemName(int quality) {
+        switch (quality) {
+            case QUALITY_NONE:
+                return "Auto";
+            case QUALITY_UHD:
+                return "UHD (2160P)";
+            case QUALITY_FHD:
+                return "FHD (1080P)";
+            case QUALITY_HD:
+                return "HD (720P)";
+            case QUALITY_SD:
+                return "SD (480P)";
+            default:
+                return "Unknown quality";
+        }
     }
 }

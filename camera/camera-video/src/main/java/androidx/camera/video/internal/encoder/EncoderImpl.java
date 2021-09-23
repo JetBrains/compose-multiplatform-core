@@ -45,6 +45,9 @@ import androidx.camera.core.impl.utils.executor.CameraXExecutors;
 import androidx.camera.core.impl.utils.futures.FutureCallback;
 import androidx.camera.core.impl.utils.futures.Futures;
 import androidx.camera.video.internal.DebugUtils;
+import androidx.camera.video.internal.compat.quirk.CameraUseInconsistentTimebaseQuirk;
+import androidx.camera.video.internal.compat.quirk.DeviceQuirks;
+import androidx.camera.video.internal.workaround.CorrectVideoTimeByTimebase;
 import androidx.camera.video.internal.workaround.EncoderFinder;
 import androidx.concurrent.futures.CallbackToFutureAdapter;
 import androidx.concurrent.futures.CallbackToFutureAdapter.Completer;
@@ -165,7 +168,7 @@ public class EncoderImpl implements Encoder {
     EncoderCallback mEncoderCallback = EncoderCallback.EMPTY;
     @SuppressWarnings("WeakerAccess") /* synthetic accessor */
     @GuardedBy("mLock")
-    Executor mEncoderCallbackExecutor = CameraXExecutors.mainThreadExecutor();
+    Executor mEncoderCallbackExecutor = CameraXExecutors.directExecutor();
     @SuppressWarnings("WeakerAccess") /* synthetic accessor */
     InternalState mState;
     @SuppressWarnings("WeakerAccess") /* synthetic accessor */
@@ -201,6 +204,7 @@ public class EncoderImpl implements Encoder {
         }
 
         mMediaFormat = encoderConfig.toMediaFormat();
+        Logger.d(mTag, "mMediaFormat = " + mMediaFormat);
         mMediaCodec = mEncoderFinder.findEncoder(mMediaFormat,
                 new MediaCodecList(MediaCodecList.ALL_CODECS));
         Logger.i(mTag, "Selected encoder: " + mMediaCodec.getName());
@@ -645,7 +649,7 @@ public class EncoderImpl implements Encoder {
             setState(CONFIGURED);
             if (oldState == PENDING_START || oldState == PENDING_START_PAUSED) {
                 start();
-                if (oldState == PENDING_START_PAUSED && mState == STARTED) {
+                if (oldState == PENDING_START_PAUSED) {
                     pause();
                 }
             }
@@ -762,6 +766,8 @@ public class EncoderImpl implements Encoder {
 
     @SuppressWarnings("WeakerAccess") /* synthetic accessor */
     class MediaCodecCallback extends MediaCodec.Callback {
+        @Nullable
+        private final CorrectVideoTimeByTimebase mCorrectVideoTimestamp;
 
         private boolean mHasSendStartCallback = false;
         private boolean mHasFirstData = false;
@@ -774,6 +780,15 @@ public class EncoderImpl implements Encoder {
          */
         private long mLastSentPresentationTimeUs = 0L;
         private boolean mIsOutputBufferInPauseState = false;
+
+        MediaCodecCallback() {
+            if (mIsVideoEncoder
+                    && DeviceQuirks.get(CameraUseInconsistentTimebaseQuirk.class) != null) {
+                mCorrectVideoTimestamp = new CorrectVideoTimeByTimebase();
+            } else {
+                mCorrectVideoTimestamp = null;
+            }
+        }
 
         @Override
         public void onInputBufferAvailable(MediaCodec mediaCodec, int index) {
@@ -819,6 +834,10 @@ public class EncoderImpl implements Encoder {
 
                         if (DEBUG) {
                             Logger.d(mTag, DebugUtils.readableBufferInfo(bufferInfo));
+                        }
+
+                        if (mCorrectVideoTimestamp != null) {
+                            mCorrectVideoTimestamp.correctTimestamp(bufferInfo);
                         }
 
                         // Handle start of stream
@@ -978,6 +997,15 @@ public class EncoderImpl implements Encoder {
                 Logger.d(mTag, "Switch to pause state");
                 // From resume to pause
                 mIsOutputBufferInPauseState = true;
+
+                // Invoke paused callback
+                Executor executor;
+                EncoderCallback encoderCallback;
+                synchronized (mLock) {
+                    executor = mEncoderCallbackExecutor;
+                    encoderCallback = mEncoderCallback;
+                }
+                executor.execute(() -> encoderCallback.onEncodePaused());
 
                 // It has to ensure the current state is PAUSED state and then stop the input
                 // source. This is because start() will resume input source and could be called

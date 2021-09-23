@@ -45,6 +45,12 @@ public class DeviceQuirksLoader {
         if (MediaCodecInfoReportIncorrectInfoQuirk.load()) {
             quirks.add(new MediaCodecInfoReportIncorrectInfoQuirk());
         }
+        if (DeactivateEncoderSurfaceBeforeStopEncoderQuirk.load()) {
+            quirks.add(new DeactivateEncoderSurfaceBeforeStopEncoderQuirk());
+        }
+        if (CameraUseInconsistentTimebaseQuirk.load()) {
+            quirks.add(new CameraUseInconsistentTimebaseQuirk());
+        }
 
         return quirks;
     }

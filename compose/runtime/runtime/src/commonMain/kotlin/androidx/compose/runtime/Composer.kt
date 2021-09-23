@@ -1590,12 +1590,15 @@ internal class ComposerImpl(
             writer.update(value)
             if (value is RememberObserver) {
                 record { _, _, rememberManager -> rememberManager.remembering(value) }
+                abandonSet.add(value)
             }
         } else {
             val groupSlotIndex = reader.groupSlotIndex - 1
+            if (value is RememberObserver) {
+                abandonSet.add(value)
+            }
             recordSlotTableOperation(forParent = true) { _, slots, rememberManager ->
                 if (value is RememberObserver) {
-                    abandonSet.add(value)
                     rememberManager.remembering(value)
                 }
                 when (val previous = slots.set(groupSlotIndex, value)) {
@@ -1621,9 +1624,6 @@ internal class ComposerImpl(
     @PublishedApi
     @OptIn(InternalComposeApi::class)
     internal fun updateCachedValue(value: Any?) {
-        if (inserting && value is RememberObserver) {
-            abandonSet.add(value)
-        }
         updateValue(value)
     }
 
@@ -2368,8 +2368,11 @@ internal class ComposerImpl(
     }
 
     private fun SlotReader.groupCompoundKeyPart(group: Int) =
-        if (hasObjectKey(group)) groupObjectKey(group)?.hashCode() ?: 0
-        else groupKey(group).let {
+        if (hasObjectKey(group)) {
+            groupObjectKey(group)?.let {
+                if (it is Enum<*>) it.ordinal else it.hashCode()
+            } ?: 0
+        } else groupKey(group).let {
             if (it == reuseKey) groupAux(group)?.let { aux ->
                 if (aux == Composer.Empty) it else aux.hashCode()
             } ?: it else it
@@ -2975,7 +2978,9 @@ internal class ComposerImpl(
         override val effectCoroutineContext: CoroutineContext
             get() = parentContext.effectCoroutineContext
 
+        @Suppress("EXPERIMENTAL_ANNOTATION_ON_WRONG_TARGET")
         @OptIn(ExperimentalComposeApi::class)
+        @get:OptIn(ExperimentalComposeApi::class)
         override val recomposeCoroutineContext: CoroutineContext
             get() = composition.recomposeCoroutineContext
 

@@ -17,6 +17,7 @@
 package androidx.wear.compose.material.samples
 
 import androidx.annotation.Sampled
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
@@ -31,7 +32,20 @@ import androidx.wear.compose.material.Text
 @Sampled
 @Composable
 fun SimpleScalingLazyColumn() {
-    ScalingLazyColumn() {
+    ScalingLazyColumn {
+        items(20) {
+            Chip(
+                onClick = { },
+                label = { Text("List item $it") },
+                colors = ChipDefaults.secondaryChipColors()
+            )
+        }
+    }
+}
+
+@Composable
+fun SimpleScalingLazyColumnWithContentPadding() {
+    ScalingLazyColumn(contentPadding = PaddingValues(top = 100.dp, bottom = 100.dp)) {
         items(20) {
             Chip(
                 onClick = { },
@@ -45,6 +59,29 @@ fun SimpleScalingLazyColumn() {
 @Composable
 fun ScalingLazyColumnWithHeaders() {
     ScalingLazyColumn {
+        item { Spacer(modifier = Modifier.size(20.dp)) }
+        item { ListHeader { Text("Header1") } }
+        items(5) {
+            Chip(
+                onClick = { },
+                label = { Text("List item $it") },
+                colors = ChipDefaults.secondaryChipColors()
+            )
+        }
+        item { ListHeader { Text("Header2") } }
+        items(5) {
+            Chip(
+                onClick = { },
+                label = { Text("List item ${it + 5}") },
+                colors = ChipDefaults.secondaryChipColors()
+            )
+        }
+    }
+}
+
+@Composable
+fun ScalingLazyColumnWithHeadersReversed() {
+    ScalingLazyColumn(reverseLayout = true) {
         item { Spacer(modifier = Modifier.size(20.dp)) }
         item { ListHeader { Text("Header1") } }
         items(5) {

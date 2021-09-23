@@ -16,18 +16,16 @@
 
 package androidx.camera.camera2.pipe.integration.impl
 
+import android.hardware.camera2.CameraDevice
 import android.hardware.camera2.CaptureRequest
 import android.hardware.camera2.params.MeteringRectangle
 import androidx.camera.camera2.pipe.CameraGraph
 import androidx.camera.camera2.pipe.CameraPipe
 import androidx.camera.camera2.pipe.CameraStream
-import androidx.camera.camera2.pipe.Lock3ABehavior
 import androidx.camera.camera2.pipe.Result3A
 import androidx.camera.camera2.pipe.StreamFormat
 import androidx.camera.camera2.pipe.StreamId
-import androidx.camera.camera2.pipe.TorchState
 import androidx.camera.camera2.pipe.core.Log.debug
-import androidx.camera.camera2.pipe.integration.adapter.CaptureConfigAdapter
 import androidx.camera.camera2.pipe.integration.adapter.SessionConfigAdapter
 import androidx.camera.camera2.pipe.integration.config.CameraConfig
 import androidx.camera.camera2.pipe.integration.config.UseCaseCameraScope
@@ -35,6 +33,7 @@ import androidx.camera.core.UseCase
 import androidx.camera.core.impl.CaptureConfig
 import androidx.camera.core.impl.Config
 import androidx.camera.core.impl.DeferrableSurface
+import androidx.camera.core.impl.SessionConfig
 import dagger.Module
 import dagger.Provides
 import kotlinx.atomicfu.atomic
@@ -42,29 +41,25 @@ import kotlinx.coroutines.Deferred
 
 internal val useCaseCameraIds = atomic(0)
 internal val defaultOptionPriority = Config.OptionPriority.OPTIONAL
+internal const val defaultTemplate = CameraDevice.TEMPLATE_PREVIEW
 
 interface UseCaseCamera {
     // UseCases
     var activeUseCases: Set<UseCase>
 
+    // RequestControl of the UseCaseCamera
+    val requestControl: UseCaseCameraRequestControl
+
     // Parameters
-    fun <T> setParameter(
-        key: CaptureRequest.Key<T>,
-        value: T,
-        priority: Config.OptionPriority = defaultOptionPriority
-    )
     fun <T> setParameterAsync(
         key: CaptureRequest.Key<T>,
         value: T,
-        priority: Config.OptionPriority = defaultOptionPriority
+        priority: Config.OptionPriority = defaultOptionPriority,
     ): Deferred<Unit>
-    fun setParameters(
-        values: Map<CaptureRequest.Key<*>, Any>,
-        priority: Config.OptionPriority = defaultOptionPriority
-    )
+
     fun setParametersAsync(
         values: Map<CaptureRequest.Key<*>, Any>,
-        priority: Config.OptionPriority = defaultOptionPriority
+        priority: Config.OptionPriority = defaultOptionPriority,
     ): Deferred<Unit>
 
     // 3A
@@ -88,24 +83,26 @@ interface UseCaseCamera {
 class UseCaseCameraImpl(
     private val cameraGraph: CameraGraph,
     private val useCases: List<UseCase>,
-    private val surfaceToStreamMap: Map<DeferrableSurface, StreamId>,
-    private val state: UseCaseCameraState,
-    private val configAdapter: CaptureConfigAdapter,
     private val threads: UseCaseThreads,
+    override val requestControl: UseCaseCameraRequestControl,
 ) : UseCaseCamera {
     private val debugId = useCaseCameraIds.incrementAndGet()
-    private val currentOptionBuilder = Camera2ImplConfig.Builder()
-    private var activeSessionConfigAdapter: SessionConfigAdapter? = null
 
-    private var _activeUseCases = setOf<UseCase>()
-    override var activeUseCases: Set<UseCase>
-        get() = _activeUseCases
+    override var activeUseCases = setOf<UseCase>()
         set(value) {
+            field = value
             // Note: This may be called with the same set of values that was previously set. This
             // is used as a signal to indicate the properties of the UseCase may have changed.
-            _activeUseCases = value
-            activeSessionConfigAdapter = SessionConfigAdapter(_activeUseCases.toList(), threads)
-            updateUseCases()
+            SessionConfigAdapter(value, threads).getValidSessionConfigOrNull()?.let {
+                requestControl.setSessionConfigAsync(it)
+            } ?: run {
+                debug { "Unable to reset the session due to invalid config" }
+                requestControl.setSessionConfigAsync(
+                    SessionConfig.Builder().apply {
+                        setTemplateType(defaultTemplate)
+                    }.build()
+                )
+            }
         }
 
     init {
@@ -117,110 +114,32 @@ class UseCaseCameraImpl(
         cameraGraph.close()
     }
 
-    override suspend fun setTorchAsync(enabled: Boolean): Deferred<Result3A> {
-        return cameraGraph.acquireSession().use {
-            it.setTorch(
-                when (enabled) {
-                    true -> TorchState.ON
-                    false -> TorchState.OFF
-                }
-            )
-        }
-    }
+    override suspend fun setTorchAsync(enabled: Boolean): Deferred<Result3A> =
+        requestControl.setTorchAsync(enabled)
 
     override suspend fun startFocusAndMeteringAsync(
         aeRegions: List<MeteringRectangle>,
         afRegions: List<MeteringRectangle>,
         awbRegions: List<MeteringRectangle>
-    ): Deferred<Result3A> {
-        return cameraGraph.acquireSession().use {
-            it.lock3A(
-                aeRegions = aeRegions,
-                afRegions = afRegions,
-                awbRegions = awbRegions,
-                afLockBehavior = Lock3ABehavior.AFTER_NEW_SCAN
-            )
-        }
-    }
-
-    override fun <T> setParameter(
-        key: CaptureRequest.Key<T>,
-        value: T,
-        priority: Config.OptionPriority
-    ) {
-        currentOptionBuilder.setCaptureRequestOptionWithPriority(key, value, priority)
-        state.update(parameters = currentOptionBuilder.build().toParameters())
-    }
+    ): Deferred<Result3A> =
+        requestControl.startFocusAndMeteringAsync(aeRegions, afRegions, awbRegions)
 
     override fun <T> setParameterAsync(
         key: CaptureRequest.Key<T>,
         value: T,
-        priority: Config.OptionPriority
-    ): Deferred<Unit> {
-        currentOptionBuilder.setCaptureRequestOptionWithPriority(key, value, priority)
-        return state.updateAsync(parameters = currentOptionBuilder.build().toParameters())
-    }
-
-    override fun setParameters(
-        values: Map<CaptureRequest.Key<*>, Any>,
-        priority: Config.OptionPriority
-    ) {
-        currentOptionBuilder.addAllCaptureRequestOptionsWithPriority(values, priority)
-        state.update(parameters = currentOptionBuilder.build().toParameters())
-    }
+        priority: Config.OptionPriority,
+    ): Deferred<Unit> = setParametersAsync(mapOf(key to (value as Any)), priority)
 
     override fun setParametersAsync(
         values: Map<CaptureRequest.Key<*>, Any>,
-        priority: Config.OptionPriority
-    ): Deferred<Unit> {
-        currentOptionBuilder.addAllCaptureRequestOptionsWithPriority(values, priority)
-        return state.updateAsync(parameters = currentOptionBuilder.build().toParameters())
-    }
+        priority: Config.OptionPriority,
+    ): Deferred<Unit> = requestControl.appendParametersAsync(
+        values = values,
+        optionPriority = priority
+    )
 
-    override fun capture(captureSequence: List<CaptureConfig>) {
-        val requests = captureSequence.map { configAdapter.mapToRequest(it) }
-        state.capture(requests)
-    }
-
-    private fun updateUseCases() {
-        val repeatingStreamIds = mutableSetOf<StreamId>()
-        val repeatingListeners = CameraCallbackMap()
-
-        for (useCase in activeUseCases) {
-            val repeatingCapture = useCase.sessionConfig?.repeatingCaptureConfig
-            if (repeatingCapture != null) {
-                for (deferrableSurface in repeatingCapture.surfaces) {
-                    val streamId = surfaceToStreamMap[deferrableSurface]
-                    if (streamId != null) {
-                        repeatingStreamIds.add(streamId)
-                    }
-                }
-            }
-        }
-
-        activeSessionConfigAdapter?.getValidSessionConfigOrNull()?.let { sessionConfig ->
-            sessionConfig.repeatingCameraCaptureCallbacks.forEach { callback ->
-                repeatingListeners.addCaptureCallback(
-                    callback,
-                    threads.backgroundExecutor
-                )
-            }
-
-            // Only update the state when the SessionConfig is valid
-            state.update(
-                parameters = Camera2ImplConfig.Builder().apply {
-                    insertAllOptions(currentOptionBuilder.mutableConfig)
-                    insertAllOptions(sessionConfig.implementationOptions)
-                }.build().toParameters(),
-                appendParameters = false,
-                streams = repeatingStreamIds,
-                listeners = setOf(repeatingListeners)
-            )
-        } ?: run {
-            debug { "Unable to reset the session due to invalid config" }
-            // TODO: Consider to reset the session if there is no valid config.
-        }
-    }
+    override fun capture(captureSequence: List<CaptureConfig>) =
+        requestControl.issueSingleCapture(captureSequence)
 
     override fun toString(): String = "UseCaseCamera-$debugId"
 
@@ -234,6 +153,7 @@ class UseCaseCameraImpl(
                 useCases: java.util.ArrayList<UseCase>,
                 cameraConfig: CameraConfig,
                 callbackMap: CameraCallbackMap,
+                requestListener: ComboRequestListener,
                 threads: UseCaseThreads,
             ): UseCaseCamera {
                 val streamConfigMap = mutableMapOf<CameraStream.Config, DeferrableSurface>()
@@ -258,7 +178,7 @@ class UseCaseCameraImpl(
                 val config = CameraGraph.Config(
                     camera = cameraConfig.cameraId,
                     streams = streamConfigMap.keys.toList(),
-                    defaultListeners = listOf(callbackMap),
+                    defaultListeners = listOf(callbackMap, requestListener),
                 )
                 val graph = cameraPipe.create(config)
 
@@ -275,18 +195,18 @@ class UseCaseCameraImpl(
                     debug { "Unable to create capture session due to conflicting configurations" }
                 }
 
-                val state = UseCaseCameraState(graph, threads)
-                val configAdapter =
-                    CaptureConfigAdapter(surfaceToStreamMap, threads.backgroundExecutor)
+                val requestControl = UseCaseCameraRequestControlImpl(
+                    graph,
+                    surfaceToStreamMap,
+                    threads
+                )
 
                 graph.start()
                 return UseCaseCameraImpl(
                     graph,
                     useCases,
-                    surfaceToStreamMap,
-                    state,
-                    configAdapter,
-                    threads
+                    threads,
+                    requestControl,
                 )
             }
         }

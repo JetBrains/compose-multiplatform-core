@@ -37,16 +37,13 @@ import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
-import androidx.compose.ui.test.center
-import androidx.compose.ui.test.down
 import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performGesture
-import androidx.compose.ui.test.up
+import androidx.compose.ui.test.performTouchInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
@@ -209,7 +206,7 @@ class SelectableTest {
         }
 
         rule.onNodeWithText("SelectableText")
-            .performGesture { down(center) }
+            .performTouchInput { down(center) }
 
         // Advance past the tap timeout
         rule.mainClock.advanceTimeBy(TapIndicationDelay)
@@ -220,7 +217,7 @@ class SelectableTest {
         }
 
         rule.onNodeWithText("SelectableText")
-            .performGesture { up() }
+            .performTouchInput { up() }
 
         rule.runOnIdle {
             assertThat(interactions).hasSize(2)
@@ -269,7 +266,7 @@ class SelectableTest {
         }
 
         rule.onNodeWithText("SelectableText")
-            .performGesture { down(center) }
+            .performTouchInput { down(center) }
 
         // Advance past the tap timeout
         rule.mainClock.advanceTimeBy(TapIndicationDelay)
@@ -317,7 +314,7 @@ class SelectableTest {
                 false,
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null
-            ) {} as InspectableValue
+            ) {}.toList().first() as InspectableValue
             assertThat(modifier.nameFallback).isEqualTo("selectable")
             assertThat(modifier.valueOverride).isNull()
             assertThat(modifier.inspectableElements.map { it.name }.asIterable()).containsExactly(
@@ -330,4 +327,7 @@ class SelectableTest {
             )
         }
     }
+
+    private fun Modifier.toList(): List<Modifier.Element> =
+        foldIn(mutableListOf()) { acc, e -> acc.apply { acc.add(e) } }
 }
