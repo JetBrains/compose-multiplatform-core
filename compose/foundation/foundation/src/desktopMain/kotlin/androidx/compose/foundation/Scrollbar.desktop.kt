@@ -27,6 +27,7 @@ import androidx.compose.foundation.interaction.DragInteraction
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocal
 import androidx.compose.runtime.DisposableEffect
@@ -44,11 +45,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.consumePositionChange
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.input.pointer.pointerMoveFilter
 import androidx.compose.ui.input.pointer.positionChange
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.MeasurePolicy
@@ -86,15 +86,15 @@ data class ScrollbarStyle(
 )
 
 /**
- * Simple default [ScrollbarStyle] without hover effects and without applying MaterialTheme.
+ * Simple default [ScrollbarStyle] without applying MaterialTheme.
  */
 fun defaultScrollbarStyle() = ScrollbarStyle(
     minimalHeight = 16.dp,
     thickness = 8.dp,
-    shape = RectangleShape,
-    hoverDurationMillis = 0,
+    shape = RoundedCornerShape(4.dp),
+    hoverDurationMillis = 300,
     unhoverColor = Color.Black.copy(alpha = 0.12f),
-    hoverColor = Color.Black.copy(alpha = 0.12f)
+    hoverColor = Color.Black.copy(alpha = 0.50f)
 )
 
 /**
@@ -253,10 +253,21 @@ private fun Scrollbar(
             )
         },
         modifier
-            .pointerMoveFilter(
-                onExit = { isHovered = false; false },
-                onEnter = { isHovered = true; false }
-            )
+            .pointerInput(Unit) {
+                awaitPointerEventScope {
+                    while (true) {
+                        val event = awaitPointerEvent()
+                        when (event.type) {
+                            PointerEventType.Enter -> {
+                                isHovered = true
+                            }
+                            PointerEventType.Exit -> {
+                                isHovered = false
+                            }
+                        }
+                    }
+                }
+            }
             .scrollOnPressOutsideSlider(isVertical, sliderAdapter, adapter, containerSize),
         measurePolicy
     )
@@ -492,7 +503,7 @@ private class LazyScrollbarAdapter(
     }
 
     override fun maxScrollOffset(containerSize: Int) =
-        averageItemSize * itemCount - containerSize
+        (averageItemSize * itemCount - containerSize).coerceAtLeast(0f)
 
     private val itemCount get() = scrollState.layoutInfo.totalItemsCount
 

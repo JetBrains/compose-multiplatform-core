@@ -35,6 +35,7 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -138,9 +139,8 @@ private object LibrariesSnippet6 {
             navigation(startDestination = innerStartRoute, route = "Parent") {
                 // ...
                 composable("exampleWithRoute") { backStackEntry ->
-                    val parentViewModel = hiltViewModel<ParentViewModel>(
-                        navController.getBackStackEntry("Parent")
-                    )
+                    val parentEntry = remember { navController.getBackStackEntry("Parent") }
+                    val parentViewModel = hiltViewModel<ParentViewModel>(parentEntry)
                     ExampleWithRouteScreen(parentViewModel)
                 }
             }
@@ -163,7 +163,12 @@ private object LibrariesSnippet7 {
 private object LibrariesSnippet8 {
     @Composable
     fun MyExample() {
-        val painter = rememberCoilPainter("https://picsum.photos/300/300")
+        val painter = rememberImagePainter(
+            data = "https://picsum.photos/300/300",
+            builder = {
+                crossfade(true)
+            }
+        )
 
         Box {
             Image(
@@ -171,12 +176,12 @@ private object LibrariesSnippet8 {
                 contentDescription = stringResource(R.string.image_content_desc),
             )
 
-            when (painter.loadState) {
-                is ImageLoadState.Loading -> {
+            when (painter.state) {
+                is ImagePainter.State.Loading -> {
                     // Display a circular progress indicator whilst loading
                     CircularProgressIndicator(Modifier.align(Alignment.Center))
                 }
-                is ImageLoadState.Error -> {
+                is ImagePainter.State.Error -> {
                     // If you wish to display some content if the request fails
                 }
             }
@@ -248,17 +253,26 @@ private class PagingData<T>
 
 private fun Flow<PagingData<String>>.collectAsLazyPagingItems() = listOf("")
 
-// Accompanist
+// Coil
+interface ImageRequest { interface Builder }
+
 @Composable
-fun rememberCoilPainter(request: Any?): LoadPainter { TODO() }
+fun rememberImagePainter(
+    data: Any?,
+    builder: ImageRequest.Builder.() -> Unit = {},
+): LoadPainter { TODO() }
+fun ImageRequest.Builder.crossfade(enable: Boolean): Nothing = TODO()
+
 fun interface Loader<R> {
-    fun load(request: R, size: IntSize): Flow<ImageLoadState>
+    fun load(request: R, size: IntSize): Flow<ImagePainter.State>
 }
 abstract class LoadPainter : Painter() {
-    var loadState: ImageLoadState by mutableStateOf(ImageLoadState.Loading)
+    var state: ImagePainter.State by mutableStateOf(ImagePainter.State.Loading)
         private set
 }
-sealed class ImageLoadState {
-    object Loading : ImageLoadState()
-    object Error : ImageLoadState()
+interface ImagePainter {
+    sealed class State {
+        object Loading : State()
+        object Error : State()
+    }
 }

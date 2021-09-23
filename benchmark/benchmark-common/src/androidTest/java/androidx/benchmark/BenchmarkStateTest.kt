@@ -17,7 +17,6 @@
 package androidx.benchmark
 
 import android.Manifest
-import android.util.Log
 import androidx.benchmark.BenchmarkState.Companion.ExperimentalExternalReport
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.FlakyTest
@@ -29,6 +28,7 @@ import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
+import org.junit.Assume.assumeTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -77,12 +77,12 @@ public class BenchmarkStateTest {
         }
         // The point of these asserts are to verify that pause/resume work, and that metrics that
         // come out are reasonable, not perfect - this isn't always run in stable perf environments
-        val medianTime = state.getReport().getStats("timeNs").median
+        val medianTime = state.getReport().getMetricResult("timeNs").median.toLong()
         assertTrue(
             "median time (ns) $medianTime should be roughly 300us",
             medianTime in us2ns(280)..us2ns(900)
         )
-        val medianAlloc = state.getReport().getStats("allocationCount").median
+        val medianAlloc = state.getReport().getMetricResult("allocationCount").median.toInt()
         assertTrue(
             "median allocs $medianAlloc should be approximately 40",
             medianAlloc in 40..50
@@ -166,6 +166,10 @@ public class BenchmarkStateTest {
         val expectedCount = report.warmupIterations + report.repeatIterations * expectedRepeatCount
         assertEquals(expectedCount, total)
 
+        if (Arguments.iterations != null) {
+            assertEquals(Arguments.iterations, report.repeatIterations)
+        }
+
         // verify we're not in warmup mode
         assertTrue(report.warmupIterations > 0)
         assertTrue(report.repeatIterations > 1)
@@ -180,16 +184,14 @@ public class BenchmarkStateTest {
 
     @Test
     public fun iterationCheck_withAllocations() {
-        if (CpuInfo.locked ||
-            IsolationActivity.sustainedPerformanceModeInUse ||
-            Errors.isEmulator
-        ) {
-            // In any of these conditions, it's known that throttling won't happen, so it's safe
-            // to check for allocation count, by setting checkingForThermalThrottling = false
-            iterationCheck(checkingForThermalThrottling = false)
-        } else {
-            Log.d(BenchmarkState.TAG, "Warning - bypassing iterationCheck_withAllocations")
-        }
+        // In any of these conditions, it's known that throttling won't happen, so it's safe
+        // to check for allocation count, by setting checkingForThermalThrottling = false
+        assumeTrue(
+            CpuInfo.locked ||
+                IsolationActivity.sustainedPerformanceModeInUse ||
+                Errors.isEmulator
+        )
+        iterationCheck(checkingForThermalThrottling = false)
     }
 
     @Test
@@ -198,7 +200,7 @@ public class BenchmarkStateTest {
             while (keepRunning()) {
                 // nothing, we're ignoring numbers
             }
-        }.getFullStatusReport(key = "foo", includeStats = true)
+        }.getFullStatusReport(key = "foo", reportMetrics = true)
 
         assertTrue(
             (bundle.get("android.studio.display.benchmark") as String).contains("foo")
@@ -206,11 +208,6 @@ public class BenchmarkStateTest {
 
         // check attribute presence and naming
         val prefix = Errors.PREFIX
-
-        // legacy - before metric name was included
-        assertNotNull(bundle.get("${prefix}min"))
-        assertNotNull(bundle.get("${prefix}median"))
-        assertNotNull(bundle.get("${prefix}standardDeviation"))
 
         // including metric name
         assertNotNull(bundle.get("${prefix}time_nanos_min"))
@@ -226,7 +223,7 @@ public class BenchmarkStateTest {
     public fun notStarted() {
         val initialPriority = ThreadPriority.get()
         try {
-            BenchmarkState().getReport().getStats("timeNs").median
+            BenchmarkState().getReport().getMetricResult("timeNs").median
             fail("expected exception")
         } catch (e: IllegalStateException) {
             assertEquals(initialPriority, ThreadPriority.get())
@@ -240,7 +237,7 @@ public class BenchmarkStateTest {
         try {
             BenchmarkState().run {
                 keepRunning()
-                getReport().getStats("timeNs").median
+                getReport().getMetricResult("timeNs").median
             }
             fail("expected exception")
         } catch (e: IllegalStateException) {
@@ -270,7 +267,7 @@ public class BenchmarkStateTest {
             metrics = listOf(
                 MetricResult(
                     name = "timeNs",
-                    data = longArrayOf(100, 200, 300)
+                    data = listOf(100.0, 200.0, 300.0)
                 )
             ),
             repeatIterations = 1,

@@ -66,6 +66,8 @@ object ProcessorErrors {
         " autoGenerate, its type must be int, Integer, long or Long."
     val AUTO_INCREMENT_EMBEDDED_HAS_MULTIPLE_FIELDS = "When @PrimaryKey annotation is used on a" +
         " field annotated with @Embedded, the embedded class should have only 1 field."
+    val INVALID_INDEX_ORDERS_SIZE = "The number of entries in @Index#orders() should be " +
+        "equal to the amount of columns defined in the @Index value."
 
     val DO_NOT_USE_GENERIC_IMMUTABLE_MULTIMAP = "Do not use ImmutableMultimap as a type (as with" +
         " Multimap itself). Instead use the subtypes such as ImmutableSetMultimap or " +
@@ -132,8 +134,8 @@ object ProcessorErrors {
     fun cannotFindQueryResultAdapter(returnTypeName: TypeName) = "Not sure how to convert a " +
         "Cursor to this method's return type ($returnTypeName)."
 
-    fun classMustImplementEqualsAndHashCode(mapType: TypeName, keyType: TypeName) = "The key" +
-        " of the provided method's multimap return type ($mapType) must implement equals() and " +
+    fun classMustImplementEqualsAndHashCode(keyType: String) = "The key" +
+        " of the provided method's multimap return type must implement equals() and " +
         "hashCode(). Key type is: $keyType."
 
     val INSERTION_DOES_NOT_HAVE_ANY_PARAMETERS_TO_INSERT = "Method annotated with" +
@@ -141,6 +143,29 @@ object ProcessorErrors {
 
     val DELETION_MISSING_PARAMS = "Method annotated with" +
         " @Delete but does not have any parameters to delete."
+
+    fun cannotMapInfoSpecifiedColumn(column: String, columnsInQuery: List<String>) =
+        "Column(s) specified in the provided @MapInfo annotation must be present in the query. " +
+            "Provided: $column. Columns Found: ${columnsInQuery.joinToString(", ")}"
+
+    val MAP_INFO_MUST_HAVE_AT_LEAST_ONE_COLUMN_PROVIDED = "To use the @MapInfo annotation, you " +
+        "must provide either the key column name, value column name, or both."
+
+    fun keyMayNeedMapInfo(keyArg: TypeName): String {
+        return """
+            Looks like you may need to use @MapInfo to clarify the 'keyColumnName' needed for
+            the return type of a method. Type argument that needs
+            @MapInfo: $keyArg
+            """.trim()
+    }
+
+    fun valueMayNeedMapInfo(valueArg: TypeName): String {
+        return """
+            Looks like you may need to use @MapInfo to clarify the 'valueColumnName' needed for
+            the return type of a method. Type argument that needs
+            @MapInfo: $valueArg
+            """.trim()
+    }
 
     val CANNOT_FIND_DELETE_RESULT_ADAPTER = "Not sure how to handle delete method's " +
         "return type. Currently the supported return types are void, int or Int."
@@ -214,6 +239,10 @@ object ProcessorErrors {
 
     fun missingParameterForBindVariable(bindVarName: List<String>): String {
         return MISSING_PARAMETER_FOR_BIND.format(bindVarName.joinToString(", "))
+    }
+
+    fun valueCollectionMustBeListOrSet(mapValueTypeName: TypeName): String {
+        return "Multimap 'value' collection type must be a List or Set. Found $mapValueTypeName."
     }
 
     private val UNUSED_QUERY_METHOD_PARAMETER = "Unused parameter%s: %s"
@@ -582,6 +611,9 @@ object ProcessorErrors {
 
     val MISSING_ROOM_RXJAVA3_ARTIFACT = "To use RxJava3 features, you must add `rxjava3`" +
         " artifact from Room as a dependency. androidx.room:room-rxjava3:<version>"
+
+    val MISSING_ROOM_PAGING_ARTIFACT = "To use PagingSource, you must add `room-paging`" +
+        " artifact from Room as a dependency. androidx.room:room-paging:<version>"
 
     val MISSING_ROOM_COROUTINE_ARTIFACT = "To use Coroutine features, you must add `ktx`" +
         " artifact from Room as a dependency. androidx.room:room-ktx:<version>"

@@ -24,6 +24,8 @@ import androidx.compose.foundation.interaction.Interaction
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.requiredHeight
+import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.getValue
@@ -32,6 +34,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.InspectableValue
 import androidx.compose.ui.platform.isDebugInspectorInfoEnabled
@@ -41,24 +45,21 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertHasClickAction
+import androidx.compose.ui.test.assertHeightIsEqualTo
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
-import androidx.compose.ui.test.cancel
-import androidx.compose.ui.test.center
-import androidx.compose.ui.test.centerLeft
-import androidx.compose.ui.test.centerRight
+import androidx.compose.ui.test.assertTouchHeightIsEqualTo
+import androidx.compose.ui.test.assertTouchWidthIsEqualTo
+import androidx.compose.ui.test.assertWidthIsEqualTo
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.doubleClick
-import androidx.compose.ui.test.down
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.longClick
-import androidx.compose.ui.test.moveTo
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performGesture
 import androidx.compose.ui.test.performSemanticsAction
-import androidx.compose.ui.test.up
+import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
@@ -234,7 +235,7 @@ class ClickableTest {
         }
 
         rule.onNodeWithTag("myClickable")
-            .performGesture {
+            .performTouchInput {
                 longClick()
             }
 
@@ -243,7 +244,7 @@ class ClickableTest {
         }
 
         rule.onNodeWithTag("myClickable")
-            .performGesture {
+            .performTouchInput {
                 longClick()
             }
 
@@ -274,7 +275,7 @@ class ClickableTest {
         }
 
         rule.onNodeWithTag("myClickable")
-            .performGesture {
+            .performTouchInput {
                 click()
             }
 
@@ -284,7 +285,7 @@ class ClickableTest {
         }
 
         rule.onNodeWithTag("myClickable")
-            .performGesture {
+            .performTouchInput {
                 longClick()
             }
 
@@ -325,7 +326,7 @@ class ClickableTest {
         }
 
         rule.onNodeWithTag("myClickable")
-            .performGesture {
+            .performTouchInput {
                 doubleClick()
             }
 
@@ -371,7 +372,7 @@ class ClickableTest {
         }
 
         rule.onNodeWithTag("myClickable")
-            .performGesture {
+            .performTouchInput {
                 doubleClick()
             }
 
@@ -383,7 +384,7 @@ class ClickableTest {
         }
 
         rule.onNodeWithTag("myClickable")
-            .performGesture {
+            .performTouchInput {
                 longClick()
             }
 
@@ -412,14 +413,14 @@ class ClickableTest {
         }
 
         rule.onNodeWithTag("myClickable")
-            .performGesture {
+            .performTouchInput {
                 doubleClick()
             }
 
         rule.mainClock.advanceTimeUntil { counter == 1 }
 
         rule.onNodeWithTag("myClickable")
-            .performGesture {
+            .performTouchInput {
                 doubleClick()
             }
 
@@ -460,7 +461,7 @@ class ClickableTest {
         }
 
         rule.onNodeWithTag("myClickable")
-            .performGesture { down(center) }
+            .performTouchInput { down(center) }
 
         val halfTapIndicationDelay = TapIndicationDelay / 2
 
@@ -480,7 +481,7 @@ class ClickableTest {
         }
 
         rule.onNodeWithTag("myClickable")
-            .performGesture { up() }
+            .performTouchInput { up() }
 
         rule.runOnIdle {
             assertThat(interactions).hasSize(2)
@@ -525,7 +526,7 @@ class ClickableTest {
         }
 
         rule.onNodeWithTag("myClickable")
-            .performGesture {
+            .performTouchInput {
                 down(center)
                 up()
             }
@@ -575,7 +576,7 @@ class ClickableTest {
         }
 
         rule.onNodeWithTag("myClickable")
-            .performGesture {
+            .performTouchInput {
                 down(center)
                 cancel()
             }
@@ -625,7 +626,7 @@ class ClickableTest {
         }
 
         rule.onNodeWithTag("myClickable")
-            .performGesture {
+            .performTouchInput {
                 down(centerLeft)
                 moveTo(centerRight)
             }
@@ -676,7 +677,7 @@ class ClickableTest {
         }
 
         rule.onNodeWithTag("myClickable")
-            .performGesture {
+            .performTouchInput {
                 down(centerLeft)
             }
 
@@ -688,7 +689,7 @@ class ClickableTest {
         }
 
         rule.onNodeWithTag("myClickable")
-            .performGesture {
+            .performTouchInput {
                 moveTo(centerRight)
             }
 
@@ -736,7 +737,7 @@ class ClickableTest {
         }
 
         rule.onNodeWithTag("myClickable")
-            .performGesture { down(center) }
+            .performTouchInput { down(center) }
 
         rule.mainClock.advanceTimeBy(TapIndicationDelay)
 
@@ -746,7 +747,7 @@ class ClickableTest {
         }
 
         rule.onNodeWithTag("myClickable")
-            .performGesture { cancel() }
+            .performTouchInput { cancel() }
 
         rule.runOnIdle {
             assertThat(interactions).hasSize(2)
@@ -794,7 +795,7 @@ class ClickableTest {
         }
 
         rule.onNodeWithTag("myClickable")
-            .performGesture { down(center) }
+            .performTouchInput { down(center) }
 
         rule.mainClock.advanceTimeBy(TapIndicationDelay)
 
@@ -868,7 +869,7 @@ class ClickableTest {
         }
 
         rule.onNodeWithTag("myClickable")
-            .performGesture { down(center) }
+            .performTouchInput { down(center) }
 
         // Simulate a long click
         rule.mainClock.advanceTimeBy(1000)
@@ -884,7 +885,7 @@ class ClickableTest {
         }
 
         rule.onNodeWithTag("myClickable")
-            .performGesture { up() }
+            .performTouchInput { up() }
 
         // The up should now cause a release
         rule.runOnIdle {
@@ -944,7 +945,7 @@ class ClickableTest {
         }
 
         rule.onNodeWithTag("myClickable")
-            .performGesture { down(center) }
+            .performTouchInput { down(center) }
 
         // Initial press
         rule.mainClock.advanceTimeBy(100)
@@ -1011,7 +1012,7 @@ class ClickableTest {
         }
 
         rule.onNodeWithTag("myClickable")
-            .performGesture {
+            .performTouchInput {
                 doubleClick()
             }
 
@@ -1025,7 +1026,7 @@ class ClickableTest {
         }
 
         rule.onNodeWithTag("myClickable")
-            .performGesture {
+            .performTouchInput {
                 longClick()
             }
 
@@ -1051,7 +1052,7 @@ class ClickableTest {
         }
 
         rule.onNodeWithTag("myClickable")
-            .performGesture {
+            .performTouchInput {
                 doubleClick()
             }
 
@@ -1064,7 +1065,7 @@ class ClickableTest {
         }
 
         rule.onNodeWithTag("myClickable")
-            .performGesture {
+            .performTouchInput {
                 longClick()
             }
 
@@ -1132,7 +1133,7 @@ class ClickableTest {
         }
 
         rule.onNodeWithTag("myClickable")
-            .performGesture {
+            .performTouchInput {
                 doubleClick()
             }
 
@@ -1149,7 +1150,7 @@ class ClickableTest {
         }
 
         rule.onNodeWithTag("myClickable")
-            .performGesture {
+            .performTouchInput {
                 longClick()
             }
 
@@ -1181,7 +1182,7 @@ class ClickableTest {
         }
 
         rule.onNodeWithTag("myClickable")
-            .performGesture {
+            .performTouchInput {
                 doubleClick()
             }
 
@@ -1197,7 +1198,7 @@ class ClickableTest {
         }
 
         rule.onNodeWithTag("myClickable")
-            .performGesture {
+            .performTouchInput {
                 longClick()
             }
 
@@ -1318,5 +1319,89 @@ class ClickableTest {
             .performClick()
 
         assertThat(wasSuccess.value).isTrue()
+    }
+
+    @Test
+    fun clickInMinimumTouchArea() {
+        var clicked by mutableStateOf(false)
+        val tag = "my clickable"
+        rule.setContent {
+            Box(
+                Modifier
+                    .requiredHeight(20.dp)
+                    .requiredWidth(20.dp)
+                    .clipToBounds()
+                    .clickable { clicked = true }
+                    .testTag(tag)
+            )
+        }
+        rule.onNodeWithTag(tag)
+            .assertWidthIsEqualTo(20.dp)
+            .assertHeightIsEqualTo(20.dp)
+            .assertTouchHeightIsEqualTo(48.dp)
+            .assertTouchWidthIsEqualTo(48.dp)
+            .performTouchInput {
+                click(Offset(-1f, -1f))
+            }
+
+        rule.runOnIdle {
+            assertThat(clicked).isTrue()
+        }
+    }
+
+    @Test
+    fun clickInVerticalTargetInMinimumTouchArea() {
+        var clicked by mutableStateOf(false)
+        val tag = "my clickable"
+        rule.setContent {
+            Box(
+                Modifier
+                    .requiredHeight(50.dp)
+                    .requiredWidth(20.dp)
+                    .clipToBounds()
+                    .clickable { clicked = true }
+                    .testTag(tag)
+            )
+        }
+        rule.onNodeWithTag(tag)
+            .assertWidthIsEqualTo(20.dp)
+            .assertHeightIsEqualTo(50.dp)
+            .assertTouchHeightIsEqualTo(50.dp)
+            .assertTouchWidthIsEqualTo(48.dp)
+            .performTouchInput {
+                click(Offset(-1f, 0f))
+            }
+
+        rule.runOnIdle {
+            assertThat(clicked).isTrue()
+        }
+    }
+
+    @Test
+    fun clickInHorizontalTargetInMinimumTouchArea() {
+        var clicked by mutableStateOf(false)
+        val tag = "my clickable"
+        rule.setContent {
+            Box(
+                Modifier
+                    .requiredHeight(20.dp)
+                    .requiredWidth(50.dp)
+                    .clipToBounds()
+                    .clickable { clicked = true }
+                    .testTag(tag)
+            )
+        }
+        rule.onNodeWithTag(tag)
+            .assertWidthIsEqualTo(50.dp)
+            .assertHeightIsEqualTo(20.dp)
+            .assertTouchHeightIsEqualTo(48.dp)
+            .assertTouchWidthIsEqualTo(50.dp)
+            .performTouchInput {
+                click(Offset(0f, -1f))
+            }
+
+        rule.runOnIdle {
+            assertThat(clicked).isTrue()
+        }
     }
 }

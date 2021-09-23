@@ -17,6 +17,7 @@
 package androidx.compose.ui.window
 
 import androidx.compose.runtime.AbstractApplier
+import androidx.compose.runtime.Applier
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ComposeNode
 import androidx.compose.runtime.Composition
@@ -29,6 +30,8 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.asAwtImage
+import androidx.compose.ui.input.key.KeyShortcut
+import androidx.compose.ui.input.key.toSwingKeyStroke
 import androidx.compose.ui.node.Ref
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -36,7 +39,9 @@ import androidx.compose.ui.util.AddRemoveMutableList
 import java.awt.CheckboxMenuItem
 import java.awt.Menu
 import java.awt.MenuItem
+import java.awt.event.KeyEvent
 import java.lang.UnsupportedOperationException
+import javax.swing.AbstractButton
 import javax.swing.Icon
 import javax.swing.ImageIcon
 import javax.swing.JCheckBoxMenuItem
@@ -90,7 +95,7 @@ fun Menu.setContent(
     parentComposition: CompositionContext,
     content: @Composable (MenuScope.() -> Unit)
 ): Composition {
-    val applier = MutableListApplier(asMutableList())
+    val applier = MenuItemApplier(this)
     val composition = Composition(applier, parentComposition)
     val scope = MenuScope(AwtMenuScope())
     composition.setContent {
@@ -115,7 +120,7 @@ fun JMenu.setContent(
     parentComposition: CompositionContext,
     content: @Composable (MenuScope.() -> Unit)
 ): Composition {
-    val applier = MutableListApplier(asMutableList())
+    val applier = JMenuItemApplier(this)
     val composition = Composition(applier, parentComposition)
     val scope = MenuScope(SwingMenuScope())
     composition.setContent {
@@ -124,61 +129,10 @@ fun JMenu.setContent(
     return composition
 }
 
-// This menu is used by Tray
-@Composable
-private fun AwtMenu(
-    text: String,
-    enabled: Boolean,
-    content: @Composable MenuScope.() -> Unit
-) {
-    val menu = remember(::Menu)
-    val compositionContext = rememberCompositionContext()
-
-    DisposableEffect(Unit) {
-        val composition = menu.setContent(compositionContext, content)
-        onDispose {
-            composition.dispose()
-        }
-    }
-
-    ComposeNode<Menu, MutableListApplier<MenuItem>>(
-        factory = { menu },
-        update = {
-            set(text, Menu::setLabel)
-            set(enabled, Menu::setEnabled)
-        }
-    )
-}
-
-@Composable
-private fun SwingMenu(
-    text: String,
-    enabled: Boolean,
-    content: @Composable MenuScope.() -> Unit
-) {
-    val menu = remember(::JMenu)
-    val compositionContext = rememberCompositionContext()
-
-    DisposableEffect(Unit) {
-        val composition = menu.setContent(compositionContext, content)
-        onDispose {
-            composition.dispose()
-        }
-    }
-
-    ComposeNode<JMenu, MutableListApplier<JComponent>>(
-        factory = { menu },
-        update = {
-            set(text, JMenu::setText)
-            set(enabled, JMenu::setEnabled)
-        }
-    )
-}
-
 // TODO(demin): consider making MenuBarScope/MenuScope as an interface
 //  after b/165812010 will be fixed
 /**
- * Receiver scope which is used by [JMenuBar.setContent] and [WindowScope.MenuBar].
+ * Receiver scope which is used by [JMenuBar.setContent] and [FrameWindowScope.MenuBar].
  */
 class MenuBarScope internal constructor() {
     /**
@@ -186,18 +140,38 @@ class MenuBarScope internal constructor() {
      *
      * @param text text of the menu that will be shown on the menu bar
      * @param enabled is this menu item can be chosen
+     * @param mnemonic character that corresponds to some key on the keyboard.
+     * When this key and Alt modifier will be pressed - menu will be open.
+     * If the character is found within the item's text, the first occurrence
+     * of it will be underlined.
      * @param content content of the menu (sub menus, items, separators, etc)
      */
     @Composable
     fun Menu(
         text: String,
+        mnemonic: Char? = null,
         enabled: Boolean = true,
         content: @Composable MenuScope.() -> Unit
-    ): Unit = SwingMenu(
-        text,
-        enabled,
-        content
-    )
+    ) {
+        val menu = remember(::JMenu)
+        val compositionContext = rememberCompositionContext()
+
+        DisposableEffect(Unit) {
+            val composition = menu.setContent(compositionContext, content)
+            onDispose {
+                composition.dispose()
+            }
+        }
+
+        ComposeNode<JMenu, MutableListApplier<JComponent>>(
+            factory = { menu },
+            update = {
+                set(text, JMenu::setText)
+                set(enabled, JMenu::setEnabled)
+                set(mnemonic, JMenu::setMnemonic)
+            }
+        )
+    }
 }
 
 internal interface MenuScopeImpl {
@@ -205,6 +179,7 @@ internal interface MenuScopeImpl {
     fun Menu(
         text: String,
         enabled: Boolean,
+        mnemonic: Char?,
         content: @Composable MenuScope.() -> Unit
     )
 
@@ -216,6 +191,8 @@ internal interface MenuScopeImpl {
         text: String,
         icon: Painter?,
         enabled: Boolean,
+        mnemonic: Char?,
+        shortcut: KeyShortcut?,
         onClick: () -> Unit
     )
 
@@ -225,6 +202,8 @@ internal interface MenuScopeImpl {
         checked: Boolean,
         icon: Painter?,
         enabled: Boolean,
+        mnemonic: Char?,
+        shortcut: KeyShortcut?,
         onCheckedChange: (Boolean) -> Unit
     )
 
@@ -234,6 +213,8 @@ internal interface MenuScopeImpl {
         selected: Boolean,
         icon: Painter?,
         enabled: Boolean,
+        mnemonic: Char?,
+        shortcut: KeyShortcut?,
         onClick: () -> Unit
     )
 }
@@ -250,16 +231,29 @@ private class AwtMenuScope : MenuScopeImpl {
     override fun Menu(
         text: String,
         enabled: Boolean,
+        mnemonic: Char?,
         content: @Composable MenuScope.() -> Unit
-    ): Unit = AwtMenu(
-        text,
-        enabled,
-        content
-    )
+    ) {
+        if (mnemonic != null) {
+            throw UnsupportedOperationException("java.awt.Menu doesn't support mnemonic")
+        }
+
+        ComposeNode<Menu, MenuItemApplier>(
+            factory = { Menu() },
+            update = {
+                set(text, Menu::setLabel)
+                set(enabled, Menu::setEnabled)
+            },
+            content = {
+                val scope = MenuScope(this)
+                scope.content()
+            }
+        )
+    }
 
     @Composable
     override fun Separator() {
-        ComposeNode<MenuItem, MutableListApplier<MenuItem>>(
+        ComposeNode<MenuItem, MenuItemApplier>(
             // item with name "-" has different look
             factory = { MenuItem("-") },
             update = {}
@@ -271,15 +265,23 @@ private class AwtMenuScope : MenuScopeImpl {
         text: String,
         icon: Painter?,
         enabled: Boolean,
+        mnemonic: Char?,
+        shortcut: KeyShortcut?,
         onClick: () -> Unit
     ) {
         if (icon != null) {
             throw UnsupportedOperationException("java.awt.Menu doesn't support icon")
         }
+        if (mnemonic != null) {
+            throw UnsupportedOperationException("java.awt.Menu doesn't support mnemonic")
+        }
+        if (shortcut != null) {
+            throw UnsupportedOperationException("java.awt.Menu doesn't support shortcut")
+        }
 
         val currentOnClick by rememberUpdatedState(onClick)
 
-        ComposeNode<MenuItem, MutableListApplier<MenuItem>>(
+        ComposeNode<MenuItem, MenuItemApplier>(
             factory = {
                 MenuItem().apply {
                     addActionListener {
@@ -300,10 +302,18 @@ private class AwtMenuScope : MenuScopeImpl {
         checked: Boolean,
         icon: Painter?,
         enabled: Boolean,
+        mnemonic: Char?,
+        shortcut: KeyShortcut?,
         onCheckedChange: (Boolean) -> Unit
     ) {
         if (icon != null) {
             throw UnsupportedOperationException("java.awt.Menu doesn't support icon")
+        }
+        if (mnemonic != null) {
+            throw UnsupportedOperationException("java.awt.Menu doesn't support mnemonic")
+        }
+        if (shortcut != null) {
+            throw UnsupportedOperationException("java.awt.Menu doesn't support shortcut")
         }
 
         val currentOnCheckedChange by rememberUpdatedState(onCheckedChange)
@@ -313,7 +323,7 @@ private class AwtMenuScope : MenuScopeImpl {
             CheckboxMenuItem::getState
         )
 
-        ComposeNode<CheckboxMenuItem, MutableListApplier<JComponent>>(
+        ComposeNode<CheckboxMenuItem, MenuItemApplier>(
             factory = {
                 CheckboxMenuItem().apply {
                     addItemListener {
@@ -335,6 +345,8 @@ private class AwtMenuScope : MenuScopeImpl {
         selected: Boolean,
         icon: Painter?,
         enabled: Boolean,
+        mnemonic: Char?,
+        shortcut: KeyShortcut?,
         onClick: () -> Unit
     ) {
         throw UnsupportedOperationException("java.awt.Menu doesn't support RadioButtonItem")
@@ -353,16 +365,26 @@ private class SwingMenuScope : MenuScopeImpl {
     override fun Menu(
         text: String,
         enabled: Boolean,
+        mnemonic: Char?,
         content: @Composable MenuScope.() -> Unit
-    ): Unit = SwingMenu(
-        text,
-        enabled,
-        content
-    )
+    ) {
+        ComposeNode<JMenu, JMenuItemApplier>(
+            factory = { JMenu() },
+            update = {
+                set(text, JMenu::setText)
+                set(enabled, JMenu::setEnabled)
+                set(mnemonic, JMenu::setMnemonic)
+            },
+            content = {
+                val scope = MenuScope(this)
+                scope.content()
+            }
+        )
+    }
 
     @Composable
     override fun Separator() {
-        ComposeNode<JComponent, MutableListApplier<JComponent>>(
+        ComposeNode<JPopupMenu.Separator, JMenuItemApplier>(
             // item with name "-" has different look
             factory = { JPopupMenu.Separator() },
             update = {}
@@ -374,12 +396,14 @@ private class SwingMenuScope : MenuScopeImpl {
         text: String,
         icon: Painter?,
         enabled: Boolean,
+        mnemonic: Char?,
+        shortcut: KeyShortcut?,
         onClick: () -> Unit
     ) {
         val currentOnClick by rememberUpdatedState(onClick)
         val awtIcon = rememberAwtIcon(icon)
 
-        ComposeNode<JMenuItem, MutableListApplier<JComponent>>(
+        ComposeNode<JMenuItem, JMenuItemApplier>(
             factory = {
                 JMenuItem().apply {
                     addActionListener {
@@ -391,6 +415,8 @@ private class SwingMenuScope : MenuScopeImpl {
                 set(text, JMenuItem::setText)
                 set(awtIcon, JMenuItem::setIcon)
                 set(enabled, JMenuItem::setEnabled)
+                set(mnemonic, JMenuItem::setMnemonic)
+                set(shortcut, JMenuItem::setShortcut)
             }
         )
     }
@@ -401,6 +427,8 @@ private class SwingMenuScope : MenuScopeImpl {
         checked: Boolean,
         icon: Painter?,
         enabled: Boolean,
+        mnemonic: Char?,
+        shortcut: KeyShortcut?,
         onCheckedChange: (Boolean) -> Unit,
     ) {
         val currentOnCheckedChange by rememberUpdatedState(onCheckedChange)
@@ -411,7 +439,7 @@ private class SwingMenuScope : MenuScopeImpl {
             JCheckBoxMenuItem::getState
         )
 
-        ComposeNode<JCheckBoxMenuItem, MutableListApplier<JComponent>>(
+        ComposeNode<JCheckBoxMenuItem, JMenuItemApplier>(
             factory = {
                 JCheckBoxMenuItem().apply {
                     addItemListener {
@@ -424,6 +452,8 @@ private class SwingMenuScope : MenuScopeImpl {
                 set(checked, checkedState::set)
                 set(awtIcon, JCheckBoxMenuItem::setIcon)
                 set(enabled, JCheckBoxMenuItem::setEnabled)
+                set(mnemonic, JCheckBoxMenuItem::setMnemonic)
+                set(shortcut, JCheckBoxMenuItem::setShortcut)
             }
         )
     }
@@ -434,6 +464,8 @@ private class SwingMenuScope : MenuScopeImpl {
         selected: Boolean,
         icon: Painter?,
         enabled: Boolean,
+        mnemonic: Char?,
+        shortcut: KeyShortcut?,
         onClick: () -> Unit,
     ) {
         val currentOnClick by rememberUpdatedState(onClick)
@@ -444,7 +476,7 @@ private class SwingMenuScope : MenuScopeImpl {
             JRadioButtonMenuItem::isSelected
         )
 
-        ComposeNode<JRadioButtonMenuItem, MutableListApplier<JComponent>>(
+        ComposeNode<JRadioButtonMenuItem, JMenuItemApplier>(
             factory = {
                 JRadioButtonMenuItem().apply {
                     addItemListener {
@@ -457,6 +489,8 @@ private class SwingMenuScope : MenuScopeImpl {
                 set(selected, selectedState::set)
                 set(awtIcon, JRadioButtonMenuItem::setIcon)
                 set(enabled, JRadioButtonMenuItem::setEnabled)
+                set(mnemonic, JRadioButtonMenuItem::setMnemonic)
+                set(shortcut, JRadioButtonMenuItem::setShortcut)
             }
         )
     }
@@ -473,16 +507,22 @@ class MenuScope internal constructor(private val impl: MenuScopeImpl) {
      *
      * @param text text of the menu that will be shown in the menu
      * @param enabled is this menu item can be chosen
+     * @param mnemonic character that corresponds to some key on the keyboard.
+     * When this key will be pressed - menu will be open.
+     * If the character is found within the item's text, the first occurrence
+     * of it will be underlined.
      * @param content content of the menu (sub menus, items, separators, etc)
      */
     @Composable
     fun Menu(
         text: String,
         enabled: Boolean = true,
+        mnemonic: Char? = null,
         content: @Composable MenuScope.() -> Unit
     ): Unit = impl.Menu(
         text,
         enabled,
+        mnemonic,
         content
     )
 
@@ -498,6 +538,12 @@ class MenuScope internal constructor(private val impl: MenuScopeImpl) {
      * @param text text of the item that will be shown in the menu
      * @param icon icon of the item
      * @param enabled is this item item can be chosen
+     * @param mnemonic character that corresponds to some key on the keyboard.
+     * When this key will be pressed - [onClick] will be triggered.
+     * If the character is found within the item's text, the first occurrence
+     * of it will be underlined.
+     * @param shortcut key combination which triggers [onClick] action without
+     * navigating the menu hierarchy.
      * @param onClick action that should be performed when the user clicks on the item
      */
     @Composable
@@ -505,8 +551,10 @@ class MenuScope internal constructor(private val impl: MenuScopeImpl) {
         text: String,
         icon: Painter? = null,
         enabled: Boolean = true,
+        mnemonic: Char? = null,
+        shortcut: KeyShortcut? = null,
         onClick: () -> Unit
-    ): Unit = impl.Item(text, icon, enabled, onClick)
+    ): Unit = impl.Item(text, icon, enabled, mnemonic, shortcut, onClick)
 
     /**
      * Adds item with checkbox to the menu
@@ -515,6 +563,12 @@ class MenuScope internal constructor(private val impl: MenuScopeImpl) {
      * @param checked whether checkbox is checked or unchecked
      * @param icon icon of the item
      * @param enabled is this item item can be chosen
+     * @param mnemonic character that corresponds to some key on the keyboard.
+     * When this key will be pressed - [onCheckedChange] will be triggered.
+     * If the character is found within the item's text, the first occurrence
+     * of it will be underlined.
+     * @param shortcut key combination which triggers [onCheckedChange] action without
+     * navigating the menu hierarchy.
      * @param onCheckedChange callback to be invoked when checkbox is being clicked,
      * therefore the change of checked state in requested
      */
@@ -524,8 +578,12 @@ class MenuScope internal constructor(private val impl: MenuScopeImpl) {
         checked: Boolean,
         icon: Painter? = null,
         enabled: Boolean = true,
+        mnemonic: Char? = null,
+        shortcut: KeyShortcut? = null,
         onCheckedChange: (Boolean) -> Unit
-    ): Unit = impl.CheckboxItem(text, checked, icon, enabled, onCheckedChange)
+    ): Unit = impl.CheckboxItem(
+        text, checked, icon, enabled, mnemonic, shortcut, onCheckedChange
+    )
 
     /**
      * Adds item with radio button to the menu
@@ -534,6 +592,12 @@ class MenuScope internal constructor(private val impl: MenuScopeImpl) {
      * @param selected boolean state for this button: either it is selected or not
      * @param icon icon of the item
      * @param enabled is this item item can be chosen
+     * @param mnemonic character that corresponds to some key on the keyboard.
+     * When this key will be pressed - [onClick] will be triggered.
+     * If the character is found within the item's text, the first occurrence
+     * of it will be underlined.
+     * @param shortcut key combination which triggers [onClick] action without
+     * navigating the menu hierarchy.
      * @param onClick callback to be invoked when the radio button is being clicked
      */
     @Composable
@@ -542,8 +606,12 @@ class MenuScope internal constructor(private val impl: MenuScopeImpl) {
         selected: Boolean,
         icon: Painter? = null,
         enabled: Boolean = true,
+        mnemonic: Char? = null,
+        shortcut: KeyShortcut? = null,
         onClick: () -> Unit
-    ): Unit = impl.RadioButtonItem(text, selected, icon, enabled, onClick)
+    ): Unit = impl.RadioButtonItem(
+        text, selected, icon, enabled, mnemonic, shortcut, onClick
+    )
 }
 
 private class MutableListApplier<T>(
@@ -573,6 +641,125 @@ private class MutableListApplier<T>(
     }
 }
 
+// Copied from androidx/compose/ui/graphics/vector/Vector.kt
+private inline fun <T> performMove(
+    from: Int,
+    to: Int,
+    count: Int,
+    getItem: (Int) -> T,
+    removeItem: (Int) -> Unit,
+    insertItem: (T, Int) -> Unit
+) {
+    if (from > to) {
+        var current = to
+        repeat(count) {
+            val node = getItem(from)
+            removeItem(from)
+            insertItem(node, current)
+            current++
+        }
+    } else {
+        repeat(count) {
+            val node = getItem(from)
+            removeItem(from)
+            insertItem(node, to - 1)
+        }
+    }
+}
+
+internal abstract class JComponentApplier(root: JComponent) : AbstractApplier<JComponent>(root) {
+    override fun onClear() {
+        root.removeAll()
+    }
+
+    override fun insertBottomUp(index: Int, instance: JComponent) {
+        // Ignored as the tree is built top-down.
+    }
+
+    override fun insertTopDown(index: Int, instance: JComponent) {
+        current.add(instance, index)
+    }
+
+    override fun move(from: Int, to: Int, count: Int) {
+        val current = current
+
+        performMove(
+            from, to, count,
+            getItem = { current.getComponent(it) },
+            removeItem = { current.remove(it) },
+            insertItem = { item, idx -> current.add(item, idx) }
+        )
+    }
+
+    override fun remove(index: Int, count: Int) {
+        val current = current
+        for (i in index + count - 1 downTo index) {
+            current.remove(i)
+        }
+    }
+}
+
+internal class JMenuItemApplier(root: JMenu) : JComponentApplier(root) {
+    override fun onEndChanges() {
+        // If the menu is changed while the popup is open, we need to ask the popup to remeasure
+        // itself.
+        (root as JMenu).popupMenu.pack()
+    }
+}
+
+internal class MenuItemApplier(private val root: Menu) : Applier<MenuItem> {
+    override var current: MenuItem = root
+
+    override fun up() {
+        check(current != root)
+        current = current.parent as MenuItem
+    }
+
+    override fun down(node: MenuItem) {
+        check(current == node.parent)
+        current = node
+    }
+
+    override fun clear() {
+        current = root
+        root.removeAll()
+    }
+
+    override fun insertBottomUp(index: Int, instance: MenuItem) {
+        // Ignored as the tree is built top-down.
+    }
+
+    override fun insertTopDown(index: Int, instance: MenuItem) {
+        val menu = current.asMenu()
+        menu.insert(instance, index)
+    }
+
+    override fun move(from: Int, to: Int, count: Int) {
+        val menu = current.asMenu()
+
+        performMove(
+            from, to, count,
+            getItem = { menu.getItem(it) },
+            removeItem = { menu.remove(it) },
+            insertItem = { item, idx -> menu.insert(item, idx) }
+        )
+    }
+
+    override fun remove(index: Int, count: Int) {
+        val menu = current.asMenu()
+        for (i in index + count - 1 downTo index) {
+            menu.remove(i)
+        }
+    }
+
+    private fun MenuItem.asMenu(): Menu {
+        return when (this) {
+            is Menu -> this
+            else -> error("Can only insert MenuItem into Menu, not ${this::class}")
+        }
+    }
+}
+
 private fun JMenuBar.asMutableList(): MutableList<JComponent> {
     return object : AddRemoveMutableList<JComponent>() {
         override val size: Int get() = this@asMutableList.menuCount
@@ -588,34 +775,12 @@ private fun JMenuBar.asMutableList(): MutableList<JComponent> {
     }
 }
 
-private fun JMenu.asMutableList(): MutableList<JComponent> {
-    return object : AddRemoveMutableList<JComponent>() {
-        override val size: Int get() = this@asMutableList.itemCount
-        override fun get(index: Int) = this@asMutableList.getMenuComponent(index) as JComponent
-
-        override fun performAdd(element: JComponent) {
-            this@asMutableList.add(element)
-        }
-
-        override fun performRemove(index: Int) {
-            this@asMutableList.remove(index)
-        }
-    }
+private fun AbstractButton.setMnemonic(char: Char?) {
+    mnemonic = KeyEvent.getExtendedKeyCodeForChar(char?.code ?: 0)
 }
 
-private fun Menu.asMutableList(): MutableList<MenuItem> {
-    return object : AddRemoveMutableList<MenuItem>() {
-        override val size: Int get() = this@asMutableList.itemCount
-        override fun get(index: Int) = this@asMutableList.getItem(index)
-
-        override fun performAdd(element: MenuItem) {
-            this@asMutableList.add(element)
-        }
-
-        override fun performRemove(index: Int) {
-            this@asMutableList.remove(index)
-        }
-    }
+private fun JMenuItem.setShortcut(shortcut: KeyShortcut?) {
+    accelerator = shortcut?.toSwingKeyStroke()
 }
 
 @Composable

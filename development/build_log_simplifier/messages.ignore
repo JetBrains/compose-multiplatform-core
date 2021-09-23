@@ -124,13 +124,13 @@ OUT_DIR=\$OUT_DIR
 DIST_DIR=\$DIST_DIR
 CHECKOUT=\$CHECKOUT
 GRADLE_USER_HOME=\$GRADLE_USER_HOME
-To honour the JVM settings for this build a single\-use Daemon process will be forked\. See https://docs\.gradle\.org/[0-9]+\.[0-9]+/userguide/gradle_daemon\.html\#sec:disabling_the_daemon\.
 Downloading file\:\$SUPPORT\/gradle\/wrapper\/.*
-\.\.\.\.\.\.\.\.\.\.10%\.\.\.\.\.\.\.\.\.\.\.20%\.\.\.\.\.\.\.\.\.\.\.30%\.\.\.\.\.\.\.\.\.\.40%\.\.\.\.\.\.\.\.\.\.\.50%\.\.\.\.\.\.\.\.\.\.\.60%\.\.\.\.\.\.\.\.\.\.70%\.\.\.\.\.\.\.\.\.\.\.80%\.\.\.\.\.\.\.\.\.\.\.90%\.\.\.\.\.\.\.\.\.\.\.100%
+\.\.\.\.\.\.\.\.\.\.10%\.\.\.\.\.\.\.\.\.\.\.20%\.\.\.\.\.\.\.\.\.\.\.30%\.\.\.\.\.\.\.\.\.\.\.40%\.\.\.\.\.\.\.\.\.\.\.50%\.\.\.\.\.\.\.\.\.\.\.60%\.\.\.\.\.\.\.\.\.\.\.70%\.\.\.\.\.\.\.\.\.\.\.80%\.\.\.\.\.\.\.\.\.\.\.90%\.\.\.\.\.\.\.\.\.\.\.100%
 Welcome to Gradle .*
 Here are the highlights of this release:
-\- Faster incremental Java compilation
-\- Easier source set configuration in the Kotlin DSL
+\- Toolchain support for Scala
+\- More cache hits when Java source files have platform-specific line endings
+\- More resilient remote HTTP build cache behavior
 For more details see .*
 Daemon will be stopped at the end of the build
 # > Task :buildSrc:build
@@ -159,7 +159,7 @@ See https://kotlinlang\.org/docs/reference/building\-mpp\-with\-gradle\.html\#co
 # > Task :listTaskOutputs
 Wrote \$DIST_DIR/task_outputs\.txt
 Deprecated Gradle features were used in this build, making it incompatible with Gradle [0-9]+\.[0-9]+\.
-See https://docs\.gradle\.org/[0-9]+\.[0-9]+/userguide/command_line_interface\.html\#sec:command_line_warnings
+See https://docs.gradle.org/.*/userguide/command_line_interface\.html#sec:command_line_warnings
 Execution optimizations have been disabled for [0-9]+ invalid unit\(s\) of work during this build to ensure correctness\.
 Please consult deprecation warnings for more details\.
 BUILD SUCCESSFUL in .*
@@ -207,8 +207,8 @@ application@android:debuggable was tagged at .*\.xml:[0-9]+ to replace other dec
 \$SUPPORT/compose/runtime/runtime/compose\-runtime\-benchmark/src/androidTest/AndroidManifest\.xml:[0-9]+:[0-9]+\-[0-9]+:[0-9]+ Warning:
 # > Task :compose:ui:ui:compileKotlinMetadata
 w: Runtime JAR files in the classpath should have the same version\. These files were found in the classpath:
-\$CHECKOUT/prebuilts/androidx/external/org/jetbrains/kotlin/kotlin\-stdlib/[0-9]+\.[0-9]+\.[0-9]+/kotlin\-stdlib\-[0-9]+\.[0-9]+\.[0-9]+\.jar \(version [0-9]+\.[0-9]+\)
-\$CHECKOUT/prebuilts/androidx/external/org/jetbrains/kotlin/kotlin\-stdlib\-common/[0-9]+\.[0-9]+\.[0-9]+/kotlin\-stdlib\-common\-[0-9]+\.[0-9]+\.[0-9]+\.jar \(version [0-9]+\.[0-9]+\)
+\$CHECKOUT/prebuilts/androidx/external/org/jetbrains/kotlin/kotlin\-stdlib/[0-9]+\.[0-9]+\.[0-9]+-?[A-Z0-9]*/kotlin\-stdlib\-[0-9]+\.[0-9]+\.[0-9]+-?[A-Z0-9]*\.jar \(version [0-9]+\.[0-9]+-?[A-Z0-9]*\)
+\$CHECKOUT/prebuilts/androidx/external/org/jetbrains/kotlin/kotlin\-stdlib\-common/[0-9]+\.[0-9]+\.[0-9]+-?[A-Z0-9]*/kotlin\-stdlib\-common\-[0-9]+\.[0-9]+\.[0-9]+-?[A-Z0-9]*\.jar \(version [0-9]+\.[0-9]+-?[A-Z0-9]*\)
 w: Some runtime JAR files in the classpath have an incompatible version\. Consider removing them from the classpath
 w: \$SUPPORT/compose/ui/ui/src/commonMain/kotlin/androidx/compose/ui/node/DepthSortedSet\.kt: \([0-9]+, [0-9]+\): The corresponding parameter in the supertype 'Comparator' is named 'a'\. This may cause problems when calling this function with named arguments\.
 w: \$SUPPORT/compose/ui/ui/src/commonMain/kotlin/androidx/compose/ui/node/DepthSortedSet\.kt: \([0-9]+, [0-9]+\): The corresponding parameter in the supertype 'Comparator' is named 'b'\. This may cause problems when calling this function with named arguments\.
@@ -241,12 +241,6 @@ Note: Recompile with \-Xlint\:deprecation for details\.
 # > Task :startup:integration-tests:first-library:processDebugManifest
 \$SUPPORT/startup/integration\-tests/first\-library/src/main/AndroidManifest\.xml:[0-9]+:[0-9]+\-[0-9]+:[0-9]+ Warning:
 meta\-data\#androidx\.work\.WorkManagerInitializer was tagged at AndroidManifest\.xml\:[0-9]+ to remove other declarations but no other declaration present
-# > Task :camera:integration-tests:camera-testapp-extensions:compileDebugJavaWithJavac
-# > Task :camera:integration-tests:camera-testapp-core:compileDebugJavaWithJavac
-# > Task :room:integration-tests:room-testapp:processDebugMainManifest
-\[androidx\.vectordrawable:vectordrawable\-animated:[0-9]+\.[0-9]+\.[0-9]+\] \$GRADLE_USER_HOME/caches/transforms\-[0-9]+/[0-9a-f]{32}/transformed/vectordrawable\-animated\-[0-9]+\.[0-9]+\.[0-9]+/AndroidManifest\.xml Warning:
-Package name 'androidx\.vectordrawable' used in: androidx\.vectordrawable:vectordrawable\-animated:[0-9]+\.[0-9]+\.[0-9]+, androidx\.vectordrawable:vectordrawable:[0-9]+\.[0-9]+\.[0-9]+\.
-# > Task :lifecycle:integration-tests:lifecycle-testapp:compileDebugJavaWithJavac
 # > Task :support-slices-demos:compileDebugJavaWithJavac
 Note: \$SUPPORT/samples/SupportSliceDemos/src/main/java/com/example/androidx/slice/demos/SliceBrowser\.java uses unchecked or unsafe operations\.
 # > Task :emoji2:emoji2-benchmark:processReleaseAndroidTestManifest
@@ -307,10 +301,10 @@ Annotation processors discovery from compile classpath is deprecated\.
 Set 'kapt\.includeCompileClasspath = false' to disable discovery\.
 Run the build with '\-\-info' for more details\.
 # > Task :room:room-compiler:test
-WARNING: Illegal reflective access by androidx\.room\.compiler\.processing\.javac\.JavacProcessingEnvMessager\$Companion \(file:\$OUT_DIR/androidx/room/room\-compiler\-processing/build/libs/room\-compiler\-processing\-[0-9]+\.[0-9]+\.[0-9]+(\-(alpha|beta|rc)[0-9]+)?\.jar\) to field com\.sun\.tools\.javac\.code\.Symbol\$ClassSymbol\.classfile
+WARNING: Illegal reflective access by androidx\.room\.compiler\.processing\.javac\.JavacProcessingEnvMessager\$Companion \(file:\$OUT_DIR/androidx/room/room\-compiler\-processing/build/(classes/kotlin/main/|libs/room\-compiler\-processing\-[0-9]+\.[0-9]+\.[0-9]+(\-(alpha|beta|rc)[0-9]+)?\.jar)\) to field com\.sun\.tools\.javac\.code\.Symbol\$ClassSymbol\.classfile
 WARNING: Please consider reporting this to the maintainers of androidx\.room\.compiler\.processing\.javac\.JavacProcessingEnvMessager\$Companion
 # > Task :docs-runner:dokkaJavaTipOfTreeDocs
-\$CHECKOUT/prebuilts/androidx/external/org/jetbrains/kotlin/kotlin\-stdlib\-jdk[0-9]+/[0-9]+\.[0-9]+\.[0-9]+/kotlin\-stdlib\-jdk[0-9]+\-[0-9]+\.[0-9]+\.[0-9]+\.jar \(version [0-9]+\.[0-9]+\)
+\$CHECKOUT/prebuilts/androidx/external/org/jetbrains/kotlin/kotlin\-stdlib\-jdk[0-9]+/[0-9]+\.[0-9]+\.[0-9]+-?[A-Z0-9]*/kotlin\-stdlib\-jdk[0-9]+\-[0-9]+\.[0-9]+\.[0-9]+-?[A-Z0-9]*\.jar \(version [0-9]+\.[0-9]+-?[A-Z0-9]*\)
 # > Task :compose:ui:ui:processDebugAndroidTestManifest
 \$OUT_DIR/androidx/compose/ui/ui/build/intermediates/tmp/manifest/androidTest/debug/tempFile[0-9]+ProcessTestManifest[0-9]+\.xml Warning:
 Package name 'androidx\.compose\.ui\.test' used in: tempFile[0-9]+ProcessTestManifest[0-9]+\.xml, :compose:ui:ui\-test\.
@@ -326,8 +320,8 @@ as no stability\/compatibility guarantees are given on
 compiler or generated code\. Use it at your own risk\!
 # > Task :compose:ui:ui-util:compileReleaseKotlin
 \-XXLanguage\:\+InlineClasses
-# > Task :docs-public:lintDebug
-Wrote HTML report to file://\$OUT_DIR/androidx/docs\-public/build/reports/lint\-results\-debug\.html
+# > Task :docs-public:lintRelease
+Wrote HTML report to file://\$OUT_DIR/androidx/docs\-public/build/reports/lint\-results\-release\.html
 # > Task :camera:camera-core:compileDebugJavaWithJavac
 warning: unknown enum constant AnnotationRetention\.BINARY
 # > Task :compose:ui:ui:processDebugUnitTestManifest
@@ -353,6 +347,10 @@ w\: \$SUPPORT\/viewpager[0-9]+\/viewpager[0-9]+\/src\/androidTest\/java\/android
 # > Task :contentpager:contentpager:compileDebugAndroidTestJavaWithJavac
 # > Task :docs-public:dokkaKotlinDocs
 No documentation for .*
+Found an unresolved type in androidx\.compose\.runtime\.snapshots\.SnapshotStateList\$add\(androidx\.compose\.runtime\.snapshots\.SnapshotStateList\.T\) \(SnapshotStateList\.kt:[0-9]+\)
+Found an unresolved type in androidx\.compose\.runtime\.snapshots\.SnapshotStateList\$addAll\(kotlin\.collections\.Collection\(\(androidx\.compose\.runtime\.snapshots\.SnapshotStateList\.T\)\)\) \(SnapshotStateList\.kt:[0-9]+\)
+Found an unresolved type in androidx\.compose\.runtime\.snapshots\.SnapshotStateList\$remove\(androidx\.compose\.runtime\.snapshots\.SnapshotStateList\.T\) \(SnapshotStateList\.kt:[0-9]+\)
+Found an unresolved type in androidx\.compose\.runtime\.snapshots\.SnapshotStateList\$removeAll\(kotlin\.collections\.Collection\(\(androidx\.compose\.runtime\.snapshots\.SnapshotStateList\.T\)\)\) \(SnapshotStateList\.kt:[0-9]+\)
 Found an unresolved type in androidx\.compose\.animation\.AnimatedContentScope\$using\(androidx\.compose\.animation\.ContentTransform, androidx\.compose\.animation\.SizeTransform\) \(AnimatedContent\.kt:[0-9]+\)
 Found an unresolved type in androidx\.compose\.runtime\.BroadcastFrameClock\$cancel\(\) \(BroadcastFrameClock\.kt:[0-9]+\)
 Found an unresolved type in androidx\.datastore\.rxjava[0-9]+\.RxDataStore\$dispose\(\) \(RxDataStore\.kt:[0-9]+\)
@@ -528,6 +526,8 @@ in DClass ComplicationSlot
 @param bounds,
 \@param defaultPolicy
 @param complicationTapFilter
+in DClass UserStyle
+@param copySelectedOptions
 in DClass Builder
 Did you make a typo\? Are you trying to refer to something not visible to users\?
 # Wire proto generation, task :generateDebugProtos
@@ -538,12 +538,12 @@ javadoc\: warning \- Multiple sources of package comments found for package \"ja
 # > Task :stripArchiveForPartialDejetification
 Execution optimizations have been disabled for task ':stripArchiveForPartialDejetification' to ensure correctness due to the following reasons:
 \- Gradle detected a problem with the following location: '\$DIST_DIR/top\-of\-tree\-m2repository\-all\-.*.zip'\. Reason: Task ':stripArchiveForPartialDejetification' uses this output of task ':benchmark:benchmark\-gradle\-plugin:buildOnServer' without declaring an explicit or implicit dependency\. This can lead to incorrect results being produced, depending on what order the tasks are executed\. Please refer to https://docs\.gradle\.org/[0-9]+\.[0-9]+/userguide/validation_problems\.html\#implicit_dependency for more details about this problem\.
-# > Task :icing:lintDebug
-Wrote HTML report to file://\$OUT_DIR/androidx/icing/build/reports/lint\-results\-debug\.html
+# > Task :icing:lintRelease
+Wrote HTML report to file://\$OUT_DIR/androidx/icing/build/reports/lint\-results\-release\.html
 # https://youtrack.jetbrains.com/issue/KT-30589
 WARNING: Illegal reflective access by org\.jetbrains\.kotlin\.kapt3\.base\.javac\.KaptJavaFileManager .* to method com\.sun\.tools\.javac\.file\.BaseFileManager\.handleOption\(com\.sun\.tools\.javac\.main\.Option,java\.lang\.String\)
 # > Task :benchmark:benchmark-macro:compileReleaseKotlin
-Execution optimizations have been disabled for task ':benchmark:benchmark\-macro:.*' to ensure correctness due to the following reasons:
+Execution optimizations have been disabled for task ':benchmark:benchmark\-common:.*' to ensure correctness due to the following reasons:
 \- Gradle detected a problem with the following location: '\$OUT_DIR/androidx/benchmark/benchmark\-macro/build/generated/source/wire'\. Reason: Task ':benchmark:benchmark\-macro:.*' uses this output of task ':benchmark:benchmark\-macro:.*' without declaring an explicit or implicit dependency\. This can lead to incorrect results being produced, depending on what order the tasks are executed\. Please refer to https://docs\.gradle\.org/[0-9]+\.[0-9]+/userguide/validation_problems\.html\#implicit_dependency for more details about this problem\.
 # > Task :profileinstaller:profileinstaller:processDebugUnitTestManifest
 Scanning .+: \.*
@@ -599,7 +599,13 @@ meta\-data\#androidx\.emoji[0-9]+\.text\.EmojiCompatInitializer was tagged at An
 \$SUPPORT/emoji[0-9]+/emoji[0-9]+\-bundled/src/main/AndroidManifest\.xml:[0-9]+:[0-9]+\-[0-9]+:[0-9]+ Warning:
 # > Configure project :emoji2:emoji2-bundled
 WARNING:The option setting 'android\.disableAutomaticComponentCreation=true' is experimental\.
-# > Task :compose:ui:ui-test-junit4:testDebugUnitTest
-System\.logW: A resource was acquired at attached stack trace but never released\. See java\.io\.Closeable for information on avoiding resource leaks\.java\.lang\.Throwable: Explicit termination method 'dispose' not called
 # > Task :navigation:navigation-benchmark:processReleaseAndroidTestManifest
 \$SUPPORT/navigation/navigation\-benchmark/src/androidTest/AndroidManifest\.xml:[0-9]+:[0-9]+\-[0-9]+:[0-9]+ Warning:
+# b/195025261
+Unable to detect AGP versions for included builds\. All projects in the build should use the same AGP version\. Class name for the included build .*
+\- Gradle detected a problem with the following location: '\$OUT_DIR/androidx/benchmark/benchmark-common/build/generated/source/wire'\. Reason: Task ':benchmark:benchmark-common:.*' uses this output of task ':benchmark:benchmark-common:generate(Debug|Release)Protos' without declaring an explicit or implicit dependency. This can lead to incorrect results being produced, depending on what order the tasks are executed. Please refer to .*
+To honour the JVM settings for this build a single\-use Daemon process will be forked.*
+# > Task :work:work-benchmark:processReleaseAndroidTestManifest
+\$SUPPORT/work/work\-benchmark/src/androidTest/AndroidManifest\.xml:[0-9]+:[0-9]+\-[0-9]+:[0-9]+ Warning:
+# > Task :lint-checks:integration-tests:copyReleaseAndroidLintReports
+Copying lint text report to \$OUT_DIR/androidx/lint\-checks/integration\-tests/build/lint\-results\-release\.txt

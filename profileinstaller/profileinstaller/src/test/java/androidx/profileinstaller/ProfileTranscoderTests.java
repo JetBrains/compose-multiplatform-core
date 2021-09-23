@@ -19,7 +19,10 @@ package androidx.profileinstaller;
 
 import static androidx.profileinstaller.ProfileTranscoder.MAGIC;
 
+import android.os.Build;
+
 import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
 
 import com.google.common.truth.Truth;
 
@@ -30,14 +33,16 @@ import org.junit.runners.JUnit4;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.file.Files;
-import java.util.Arrays;
-import java.util.Map;
 
+@RequiresApi(api = Build.VERSION_CODES.O)
 @RunWith(JUnit4.class)
 public class ProfileTranscoderTests {
+    private static final String APK_NAME = "base.apk";
     @Test
     public void testReadProfile() throws IOException {
         byte[] version = ProfileVersion.V010_P;
@@ -45,9 +50,9 @@ public class ProfileTranscoderTests {
         try (InputStream is = new FileInputStream(pprof)) {
             expectBytes(is, MAGIC);
             expectBytes(is, version);
-            Map<String, DexProfileData> data = ProfileTranscoder.readProfile(is, version);
-            Truth.assertThat(data).hasSize(1);
-            DexProfileData item = data.values().iterator().next();
+            DexProfileData[] data = ProfileTranscoder.readProfile(is, version, APK_NAME);
+            Truth.assertThat(data).hasLength(1);
+            DexProfileData item = data[0];
             Truth.assertThat(item.dexChecksum).isEqualTo(147004379);
             Truth.assertThat(item.numMethodIds).isEqualTo(18487);
             Truth.assertThat(item.hotMethodRegionSize).isEqualTo(140);
@@ -57,7 +62,7 @@ public class ProfileTranscoderTests {
     @Test
     public void testTranscodeForN() throws IOException {
         assertGoldenTranscode(
-                testFile("baseline-p.prof"),
+                testFile("baseline.prof"),
                 testFile("baseline-n.prof"),
                 ProfileVersion.V001_N
         );
@@ -66,18 +71,54 @@ public class ProfileTranscoderTests {
     @Test
     public void testTranscodeForO() throws IOException {
         assertGoldenTranscode(
-                testFile("baseline-p.prof"),
+                testFile("baseline.prof"),
                 testFile("baseline-o.prof"),
                 ProfileVersion.V005_O
         );
     }
 
     @Test
+    public void testTranscodeForO_MR1() throws IOException {
+        assertGoldenTranscode(
+                testFile("baseline.prof"),
+                testFile("baseline-o-mr1.prof"),
+                ProfileVersion.V009_O_MR1
+        );
+    }
+
+    @Test
     public void testTranscodeForP() throws IOException {
         assertGoldenTranscode(
-                testFile("baseline-p.prof"),
+                testFile("baseline.prof"),
                 testFile("baseline-p.prof"),
                 ProfileVersion.V010_P
+        );
+    }
+
+    @Test
+    public void testMultidexTranscodeForO() throws IOException {
+        assertGoldenTranscode(
+                testFile("baseline-multidex.prof"),
+                testFile("baseline-multidex-o.prof"),
+                ProfileVersion.V005_O
+        );
+    }
+
+    @Test
+    public void testMultidexTranscodeForO_MR1() throws IOException {
+        assertGoldenTranscode(
+                testFile("baseline-multidex.prof"),
+                testFile("baseline-multidex-o-mr1.prof"),
+                ProfileVersion.V009_O_MR1
+        );
+    }
+
+    @Test
+    public void testMultidexTranscodeForN() throws IOException {
+        assertGoldenTranscode(
+                testFile("baseline-multidex.prof"),
+                testFile("baseline-multidex-n.prof"),
+                ProfileVersion.V001_N
         );
     }
 
@@ -96,18 +137,41 @@ public class ProfileTranscoderTests {
         ) {
             byte[] version = ProfileTranscoder.readHeader(is);
             ProfileTranscoder.writeHeader(os, desiredVersion);
-            if (!Arrays.equals(desiredVersion, ProfileVersion.V010_P)) {
-                Map<String, DexProfileData> data = ProfileTranscoder.readProfile(
-                        is,
-                        version
-                );
-                ProfileTranscoder.transcodeAndWriteBody(os, desiredVersion, data);
-            } else {
-                Encoding.writeAll(is, os);
-            }
+            DexProfileData[] data = ProfileTranscoder.readProfile(
+                    is,
+                    version,
+                    APK_NAME
+            );
+            ProfileTranscoder.transcodeAndWriteBody(os, desiredVersion, data);
             byte[] goldenBytes = Files.readAllBytes(golden.toPath());
             byte[] actualBytes = os.toByteArray();
             Truth.assertThat(actualBytes).isEqualTo(goldenBytes);
+        }
+    }
+
+    /**
+     * Call this to quickly regenerate golden transcodes based on profile format changes.
+     *
+     * Please ensure that the new file is correct and provide a detailed description of the
+     * change in the commit message whenever you call this.
+     */
+    private static void updateGoldenTranscode(
+            @NonNull File input,
+            @NonNull File golden,
+            @NonNull byte[] desiredVersion
+    ) throws IOException {
+        try (
+                InputStream is = new FileInputStream(input);
+                OutputStream os = new FileOutputStream(golden)
+        ) {
+            byte[] version = ProfileTranscoder.readHeader(is);
+            ProfileTranscoder.writeHeader(os, desiredVersion);
+            DexProfileData[] data = ProfileTranscoder.readProfile(
+                    is,
+                    version,
+                    APK_NAME
+            );
+            ProfileTranscoder.transcodeAndWriteBody(os, desiredVersion, data);
         }
     }
 

@@ -17,6 +17,7 @@
 package androidx.navigation
 
 import android.os.Bundle
+import androidx.annotation.CallSuper
 import androidx.annotation.RestrictTo
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -31,8 +32,8 @@ import kotlin.concurrent.withLock
 public abstract class NavigatorState {
     private val backStackLock = ReentrantLock(true)
     private val _backStack: MutableStateFlow<List<NavBackStackEntry>> = MutableStateFlow(listOf())
-    private val _transitionsInProgress: MutableStateFlow<Set<NavBackStackEntry>> =
-        MutableStateFlow(setOf())
+    private val _transitionsInProgress: MutableStateFlow<List<NavBackStackEntry>> =
+        MutableStateFlow(listOf())
 
     /**
      * @hide
@@ -53,7 +54,7 @@ public abstract class NavigatorState {
      * This is the set of currently running transitions. Use this set to retrieve the entry and call
      * [markTransitionComplete] once the transition is complete.
      */
-    public val transitionsInProgress: StateFlow<Set<NavBackStackEntry>> =
+    public val transitionsInProgress: StateFlow<List<NavBackStackEntry>> =
         _transitionsInProgress.asStateFlow()
 
     /**
@@ -134,6 +135,18 @@ public abstract class NavigatorState {
     }
 
     /**
+     * Informational callback indicating that the given [backStackEntry] has been
+     * affected by a [NavOptions.shouldLaunchSingleTop] operation.
+     */
+    @CallSuper
+    public open fun onLaunchSingleTop(backStackEntry: NavBackStackEntry) {
+        // We update the back stack here because we don't want to leave it to the navigator since
+        // it might be using transitions.
+        _backStack.value = _backStack.value - _backStack.value.last()
+        _backStack.value = _backStack.value + backStackEntry
+    }
+
+    /**
      * This removes the given [NavBackStackEntry] from the [set of the transitions in
      * progress][transitionsInProgress]. This should be called in conjunction with
      * [pushWithTransition] and [popWithTransition] as those call are responsible for adding
@@ -146,6 +159,6 @@ public abstract class NavigatorState {
      * @see popWithTransition
      */
     public open fun markTransitionComplete(entry: NavBackStackEntry) {
-        _transitionsInProgress.value = _transitionsInProgress.value - entry
+        _transitionsInProgress.value = _transitionsInProgress.value.filter { it != entry }
     }
 }

@@ -1,13 +1,39 @@
 #!/bin/bash
 #
-# Script to fetch generated API references docs from the Android build server and stage them.
+# Script to fetch generated API references docs and stage them.
+#
+# Examples:
+#
+# Stage refdocs from a given build ID (to the default staging DB):
+#
+#   ./stageReferenceDocsWithDackka.sh --buildId 1234567
+#
+# Stage locally-generated refdocs (to the default staging DB) *:
+#
+#   /stageReferenceDocsWithDackka.sh --buildId 0
+#   --sourceDir=/dir/to/androidx-main/out/androidx/docs-public/build
+#
+# Stage ToT refdocs from a given build ID, to a specified DB, using a specific
+# date string for the generated CL:
+#
+#   ./stageReferenceDocsWithDackka.sh --buildId 1234567 --db androidx-docs
+#   --dateStr "April 29, 2021" --useToT
+#
+# ===
+#
+# * buildId still needs to be specified when staging locally-generated refdocs,
+#   but the value is unused and ignored.
+#
+# ===
+#
 
 source gbash.sh || exit
 
 readonly defaultDb=""
-DEFINE_string buildId --required "" "The build ID from the Android build server"
+DEFINE_string buildId --required "" "The build ID from the Android build server. This is ignored when specifying the 'sourceDir' flag."
 DEFINE_string dateStr "<insert date here>" "Date string used for CL message. Enclose date in double quotes (ex: \"April 29, 2021\")"
 DEFINE_string db "$defaultDb" "The database used for staging. Omitting this value will stage changes to the staging DB."
+DEFINE_string sourceDir "" "Local directory to fetch doc artifacts from"
 DEFINE_bool useToT false "Stage docs from tip-of-tree docs build rather than public docs build"
 
 gbash::init_google "$@"
@@ -23,17 +49,23 @@ gbash::init_google "$@"
 # This list should match, or be a subset of, the list of libraries defined in
 # https://cs.android.com/androidx/platform/frameworks/support/+/androidx-main:buildSrc/src/main/kotlin/androidx/build/docs/AndroidXDocsPlugin.kt;l=568
 readonly javaLibraryDirs=(
+  "activity"
+  "annotation"
 #  "benchmark"
 #  "collection"
+  "fragment"
   "navigation"
   "paging"
   "wear"
   "window"
 )
 readonly kotlinLibraryDirs=(
+  "activity"
+  "annotation"
 #  "benchmark"
   "compose"
 #  "collection"
+  "fragment"
   "navigation"
   "paging"
   "wear"
@@ -56,38 +88,49 @@ mkdir -p $outDir/$newDir
 mkdir -p $outDir/$dackkaNewDir
 cd $outDir
 
-printf "=================================================================== \n"
-printf "== Download the doc zip files from the build server \n"
-printf "=================================================================== \n"
+if [ "$FLAGS_sourceDir" == "" ]; then
+  printf "=================================================================== \n"
+  printf "== Download the doc zip files from the build server \n"
+  printf "=================================================================== \n"
 
-if (( FLAGS_useToT )); then
-  printf "Downloading docs-tip-of-tree zip files \n"
-  androidxJavaDocsZip="doclava-tip-of-tree-docs-${FLAGS_buildId}.zip"
-  androidxKotlinDocsZip="dokka-tip-of-tree-docs-${FLAGS_buildId}.zip"
-  androidxDackkaDocsZip="dackka-tip-of-tree-docs-${FLAGS_buildId}.zip"
+  if (( FLAGS_useToT )); then
+    printf "Downloading docs-tip-of-tree zip files \n"
+    androidxJavaDocsZip="doclava-tip-of-tree-docs-${FLAGS_buildId}.zip"
+    androidxKotlinDocsZip="dokka-tip-of-tree-docs-${FLAGS_buildId}.zip"
+    androidxDackkaDocsZip="dackka-tip-of-tree-docs-${FLAGS_buildId}.zip"
+  else
+    printf "Downloading docs-public zip files \n"
+    androidxJavaDocsZip="doclava-public-docs-${FLAGS_buildId}.zip"
+    androidxKotlinDocsZip="dokka-public-docs-${FLAGS_buildId}.zip"
+    androidxDackkaDocsZip="dackka-public-docs-${FLAGS_buildId}.zip"
+  fi
+
+  /google/data/ro/projects/android/fetch_artifact --bid $FLAGS_buildId --target androidx $androidxJavaDocsZip
+  /google/data/ro/projects/android/fetch_artifact --bid $FLAGS_buildId --target androidx $androidxKotlinDocsZip
+  /google/data/ro/projects/android/fetch_artifact --bid $FLAGS_buildId --target androidx $androidxDackkaDocsZip
+
+  printf "\n"
+  printf "=================================================================== \n"
+  printf "== Unzip the doc zip files \n"
+  printf "=================================================================== \n"
+
+  unzip $androidxJavaDocsZip -d $newDir
+  unzip $androidxKotlinDocsZip -d $newDir
+  unzip $androidxDackkaDocsZip -d $dackkaNewDir
 else
-  printf "Downloading docs-public zip files \n"
-  androidxJavaDocsZip="doclava-public-docs-${FLAGS_buildId}.zip"
-  androidxKotlinDocsZip="dokka-public-docs-${FLAGS_buildId}.zip"
-  androidxDackkaDocsZip="dackka-public-docs-${FLAGS_buildId}.zip"
+  printf "=================================================================== \n"
+  printf "== Copying doc sources from local directory $FLAGS_sourceDir \n"
+  printf "=================================================================== \n"
+
+  cp -r "$FLAGS_sourceDir/javadoc/." $newDir
+  mkdir -p $newDir/reference/kotlin
+  cp -r "$FLAGS_sourceDir/dokkaKotlinDocs/." $newDir/reference/kotlin
+  cp -r "$FLAGS_sourceDir/dackkaDocs/." $dackkaNewDir
 fi
 
-/google/data/ro/projects/android/fetch_artifact --bid $FLAGS_buildId --target androidx $androidxJavaDocsZip
-/google/data/ro/projects/android/fetch_artifact --bid $FLAGS_buildId --target androidx $androidxKotlinDocsZip
-/google/data/ro/projects/android/fetch_artifact --bid $FLAGS_buildId --target androidx $androidxDackkaDocsZip
-
 printf "\n"
 printf "=================================================================== \n"
-printf "== Unzip the doc zip files \n"
-printf "=================================================================== \n"
-
-unzip $androidxJavaDocsZip -d $newDir
-unzip $androidxKotlinDocsZip -d $newDir
-unzip $androidxDackkaDocsZip -d $dackkaNewDir
-
-printf "\n"
-printf "=================================================================== \n"
-printf "== Format the doc zip files \n"
+printf "== Format the doc files \n"
 printf "=================================================================== \n"
 
 cd $newDir
@@ -146,6 +189,7 @@ printf "=================================================================== \n"
 
 cd $newDir/reference
 python3 ./../../../switcher.py --work androidx
+python3 ./../../../switcher.py --work support
 
 printf "\n"
 printf "=================================================================== \n"
@@ -181,9 +225,9 @@ printf "=================================================================== \n"
 cd third_party/devsite/android/en/reference
 
 cd kotlin/androidx
-ls | grep -v "package\|class\|book\|toc\|constraint\|test\|index" | xargs -I {} rm -rf {}
+ls | grep -v "package\|class\|book\|toc\|constraint\|test\|index\|redirects" | xargs -I {} rm -rf {}
 cd ../../androidx
-ls | grep -v "package\|class\|book\|toc\|constraint\|test\|index" | xargs -I {} rm -rf {}
+ls | grep -v "package\|class\|book\|toc\|constraint\|test\|index\|redirects" | xargs -I {} rm -rf {}
 cd ..
 
 cp -r $outDir/$newDir/reference/* .

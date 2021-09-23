@@ -106,6 +106,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.offset
 import androidx.compose.ui.unit.toOffset
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.FlakyTest
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import org.junit.Assert.assertEquals
@@ -253,7 +254,8 @@ class AndroidLayoutDrawTest {
                 shape = RectangleShape,
                 clip = true,
                 layoutDirection = LayoutDirection.Ltr,
-                density = Density(1f)
+                density = Density(1f),
+                renderEffect = null
             )
         }
         // Verify that the camera distance is applied properly even after accounting for
@@ -2915,6 +2917,7 @@ class AndroidLayoutDrawTest {
         validateSquareColors(outerColor = Color.Blue, innerColor = Color.White, size = 10)
     }
 
+    @FlakyTest
     @Test
     fun makingItemLarger() {
         var height by mutableStateOf(30)
@@ -3509,6 +3512,55 @@ class AndroidLayoutDrawTest {
 
         assertTrue(latch.await(10000, TimeUnit.SECONDS))
         assertEquals(2, parentRemeasures)
+    }
+
+    @Test
+    fun updatingModifierIsNotCausingParentsRelayout() {
+        var parentLayoutsCount = 0
+        var latch = CountDownLatch(1)
+        var modifier by mutableStateOf(Modifier.layout(onLayout = { println("1") }))
+        val parentMeasurePolicy = MeasurePolicy { measurables, constraints ->
+            val placeable = measurables.first().measure(constraints)
+            layout(placeable.width, placeable.height) {
+                parentLayoutsCount++
+                placeable.place(0, 0)
+            }
+        }
+        activityTestRule.runOnUiThread {
+            activity.setContent {
+                Layout(
+                    content = {
+                        Layout({}, modifier) { _, _ ->
+                            layout(10, 10) {
+                                latch.countDown()
+                            }
+                        }
+                    },
+                    measurePolicy = parentMeasurePolicy
+                )
+            }
+        }
+        assertTrue(latch.await(1, TimeUnit.SECONDS))
+
+        latch = CountDownLatch(1)
+        activityTestRule.runOnUiThread {
+            assertEquals(1, parentLayoutsCount)
+            modifier = Modifier.layout(onLayout = { println("2") })
+        }
+
+        assertTrue(latch.await(1, TimeUnit.SECONDS))
+
+        activityTestRule.runOnUiThread {
+            assertEquals(1, parentLayoutsCount)
+        }
+    }
+
+    private fun Modifier.layout(onLayout: () -> Unit) = layout { measurable, constraints ->
+        val placeable = measurable.measure(constraints)
+        layout(placeable.width, placeable.height) {
+            onLayout()
+            placeable.place(0, 0)
+        }
     }
 
     private fun composeSquares(model: SquareModel) {

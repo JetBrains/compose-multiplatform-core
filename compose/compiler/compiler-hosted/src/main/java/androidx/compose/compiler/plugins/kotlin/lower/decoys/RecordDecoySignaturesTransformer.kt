@@ -18,6 +18,7 @@
 
 package androidx.compose.compiler.plugins.kotlin.lower.decoys
 
+import androidx.compose.compiler.plugins.kotlin.ModuleMetrics
 import androidx.compose.compiler.plugins.kotlin.lower.AbstractComposeLowering
 import androidx.compose.compiler.plugins.kotlin.lower.ModuleLoweringPass
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
@@ -28,6 +29,7 @@ import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.declarations.IrModuleFragment
 import org.jetbrains.kotlin.ir.util.DeepCopySymbolRemapper
 import org.jetbrains.kotlin.ir.util.IdSignature
+import org.jetbrains.kotlin.ir.util.KotlinMangler
 import org.jetbrains.kotlin.ir.util.dump
 import org.jetbrains.kotlin.ir.util.getAnnotation
 import org.jetbrains.kotlin.resolve.BindingTrace
@@ -41,11 +43,14 @@ class RecordDecoySignaturesTransformer(
     pluginContext: IrPluginContext,
     symbolRemapper: DeepCopySymbolRemapper,
     bindingTrace: BindingTrace,
-    override val signatureBuilder: IdSignatureSerializer
+    override val signatureBuilder: IdSignatureSerializer,
+    metrics: ModuleMetrics,
+    val mangler: KotlinMangler.IrMangler
 ) : AbstractComposeLowering(
     context = pluginContext,
     symbolRemapper = symbolRemapper,
-    bindingTrace = bindingTrace
+    bindingTrace = bindingTrace,
+    metrics = metrics,
 ),
     ModuleLoweringPass,
     DecoyTransformBase {
@@ -63,7 +68,7 @@ class RecordDecoySignaturesTransformer(
         val decoyFunction =
             symbolRemapper.getReferencedFunction(declaration.getComposableForDecoy())
         val sig =
-            signatureBuilder.composePublicIdSignature(decoyFunction.owner)
+            signatureBuilder.computeSignature(decoyFunction.owner)
                 as? IdSignature.PublicSignature
 
         if (sig != null) {
@@ -86,5 +91,5 @@ class RecordDecoySignaturesTransformer(
     }
 
     private fun IrDeclaration.canBeLinkedAgainst(): Boolean =
-        signatureBuilder.mangler.run { this@canBeLinkedAgainst.isExported() }
+        mangler.run { this@canBeLinkedAgainst.isExported() }
 }

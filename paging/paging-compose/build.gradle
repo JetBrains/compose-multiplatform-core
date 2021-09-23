@@ -28,11 +28,12 @@ plugins {
 }
 
 dependencies {
-    kotlinPlugin("androidx.compose.compiler:compiler:1.0.1")
+    kotlinPlugin(projectOrArtifact(":compose:compiler:compiler"))
 
     implementation(libs.kotlinStdlib)
-    api("androidx.compose.foundation:foundation:1.0.1")
-    api("androidx.paging:paging-common:3.0.0")
+    api("androidx.compose.foundation:foundation:1.0.2")
+    api(project(":paging:paging-common"))
+    api("androidx.compose.runtime:runtime:1.0.2")
 
     androidTestImplementation(projectOrArtifact(":compose:ui:ui-test-junit4"))
     androidTestImplementation(project(":compose:test-utils"))

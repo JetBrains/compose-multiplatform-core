@@ -16,6 +16,7 @@
 
 import androidx.build.LibraryGroups
 import androidx.build.LibraryType
+import androidx.build.LibraryVersions
 import androidx.build.Release
 import androidx.build.checkapi.LibraryApiTaskConfig
 import androidx.build.metalava.MetalavaRunnerKt
@@ -32,6 +33,15 @@ import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 import static androidx.build.dependencies.DependenciesKt.*
+
+buildscript {
+    dependencies {
+        // This dependency means that tasks in this project might become out-of-date whenever
+        // certain classes in buildSrc change, and should generally be avoided.
+        // See b/140265324 for more information
+        classpath(project.files("${project.rootProject.ext["outDir"]}/buildSrc/private/build/libs/private.jar"))
+    }
+}
 
 plugins {
     id("AndroidXPlugin")
@@ -68,20 +78,21 @@ project.ext {
 }
 
 android {
+    buildFeatures {
+        resValues = true
+        aidl = true
+    }
     defaultConfig {
         minSdkVersion 23
         multiDexEnabled = true
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+
+        resValue "string", "car_app_library_version", LibraryVersions.CAR_APP.toString()
+        consumerProguardFiles "proguard-rules.pro"
     }
     lintOptions {
         // We rely on keeping a bunch of private variables in the library for serialization.
         disable("BanKeepAnnotation")
-    }
-    buildFeatures {
-        aidl = true
-    }
-    buildTypes.all {
-        consumerProguardFiles "proguard-rules.pro"
     }
 
     testOptions.unitTests.includeAndroidResources = true
@@ -172,7 +183,9 @@ class GenerateProtocolApiTask extends ProtocolApiTask {
 
     @InputFiles
     @PathSensitive(PathSensitivity.RELATIVE)
-    FileCollection inputSourceDirs = project.files() // Re-run on source changes
+    def getInputSource() {
+        return sourceDirs // Re-run on source changes
+    }
 
     @OutputFile
     File generatedApi
@@ -200,6 +213,10 @@ class CheckProtocolApiTask extends DefaultTask {
     File currentApi
 
     @InputFile
+    @Optional
+    File previousApi
+
+    @InputFile
     File generatedApi
 
     def summarizeDiff(File a, File b) {
@@ -224,15 +241,22 @@ class CheckProtocolApiTask extends DefaultTask {
 
     @TaskAction
     def exec() {
-        if (currentApi == null) {
+        if (currentApi == null && previousApi == null) {
             return
         }
 
-        if (!FileUtils.contentEquals(currentApi, generatedApi)) {
-            String diff = summarizeDiff(currentApi, generatedApi)
+        File apiFile
+        if (currentApi != null) {
+            apiFile = currentApi
+        } else {
+            apiFile = previousApi
+        }
+
+        if (!FileUtils.contentEquals(apiFile, generatedApi)) {
+            String diff = summarizeDiff(apiFile, generatedApi)
             String message = """API definition has changed
 
-                    Declared definition is $currentApi
+                    Declared definition is $apiFile
                     True     definition is $generatedApi
 
                     Please run `./gradlew updateProtocolApi` to confirm these changes are
@@ -281,14 +305,13 @@ class CheckProtocolApiCompatibilityTask extends ProtocolApiTask {
 // Update protocol API signature file for current Car API level to reflect the state of current
 // protocol API in the project.
 class UpdateProtocolApiTask extends DefaultTask {
-    @InputDirectory
+    @Internal
     File protocolDir
 
     @InputFile
     File generatedApi
 
-    @InputFile
-    @Optional
+    @Internal
     File currentApi
 
     @TaskAction
@@ -298,6 +321,10 @@ class UpdateProtocolApiTask extends DefaultTask {
         File updatedApi = new File(protocolDir, String.format(
                 "protocol-%s_%s.txt", project.latestCarAppApiLevel, project.version))
 
+        if (currentApi != null && FileUtils.contentEquals(currentApi, generatedApi)) {
+            return
+        }
+
         // Determine whether this API level was previously released by checking whether the project
         // version matches
         boolean alreadyReleased = currentApi != updatedApi
@@ -306,13 +333,7 @@ class UpdateProtocolApiTask extends DefaultTask {
         // non-final)
         boolean isCurrentApiFinal = false
         if (currentApi != null) {
-            String currentApiFileName = currentApi.name
-            int versionStart = currentApiFileName.indexOf("_")
-            int versionEnd = currentApiFileName.indexOf(".txt")
-
-            String parsedCurrentVersion = currentApiFileName.substring(versionStart + 1, versionEnd)
-            Version currentVersion = new Version(parsedCurrentVersion)
-            isCurrentApiFinal = currentVersion.isFinalApi()
+            isCurrentApiFinal = ProtocolLocation.parseVersion(currentApi).isFinalApi()
         }
 
         if (currentApi != null && alreadyReleased && isCurrentApiFinal) {
@@ -320,7 +341,7 @@ class UpdateProtocolApiTask extends DefaultTask {
                     "Car API level before making protocol API changes")
         }
 
-        // Overwrite protocol API signature file for current Car API level
+        // Create new protocol API signature file for current Car API level
         Files.copy(generatedApi, updatedApi)
     }
 }
@@ -348,6 +369,13 @@ class ProtocolLocation {
     File currentApi
     File previousApi
 
+    static Version parseVersion(File file) {
+        int versionStart = file.name.indexOf("_")
+        int versionEnd = file.name.indexOf(".txt")
+        String parsedCurrentVersion = file.name.substring(versionStart + 1, versionEnd)
+        return new Version(parsedCurrentVersion)
+    }
+
     def getProtocolApiFile(int carApiLevel) {
         File[] apiFiles = protocolDir.listFiles(new FilenameFilter() {
             boolean accept(File dir, String name) {
@@ -358,15 +386,18 @@ class ProtocolLocation {
         if (apiFiles == null || apiFiles.size() == 0) {
             return null
         } else if (apiFiles.size() > 1) {
-            StringBuilder builder = new StringBuilder()
-            for (File file : currentApis) {
-                builder.append(file.path)
-                builder.append("\n")
-            }
+            File latestApiFile = apiFiles[0]
+            Version latestVersion = parseVersion(latestApiFile)
+            for (int i = 1; i < apiFiles.size(); i++) {
+                File file = apiFiles[i]
+                Version fileVersion = parseVersion(file)
+                if (fileVersion > latestVersion) {
+                    latestApiFile = file
+                    latestVersion = fileVersion
+                }
 
-            throw new GradleException(
-                    String.format("Multiple API signature files found for Car API level %s\n%s",
-                            carApiLevel, builder.toString()))
+            }
+            return latestApiFile
         }
 
         return apiFiles[0]
@@ -413,15 +444,14 @@ afterEvaluate {
     }
     task checkProtocolApiCompat(type: CheckProtocolApiCompatibilityTask) {
         description = "Check for BREAKING changes to the protocol API"
-        if (projectProtocolLocation.previousApi != null) {
-            previousApi = projectProtocolLocation.previousApi
-        }
+        previousApi = projectProtocolLocation.previousApi
         generatedApi = projectProtocolLocation.generatedApi
         dependsOn(generateProtocolApi)
     }
     task checkProtocolApi(type: CheckProtocolApiTask) {
         description = "Check for changes to the protocol API"
         generatedApi = projectProtocolLocation.generatedApi
+        previousApi = projectProtocolLocation.previousApi
         currentApi = projectProtocolLocation.currentApi
         dependsOn(checkProtocolApiCompat)
     }

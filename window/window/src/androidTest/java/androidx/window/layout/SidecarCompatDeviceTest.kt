@@ -28,8 +28,9 @@ import androidx.window.TestConfigChangeHandlingActivity
 import androidx.window.WindowTestBase
 import androidx.window.core.Version
 import androidx.window.layout.ExtensionInterfaceCompat.ExtensionCallbackInterface
-import androidx.window.layout.FoldingFeature.Type.Companion.FOLD
-import androidx.window.layout.FoldingFeature.Type.Companion.HINGE
+import androidx.window.layout.HardwareFoldingFeature.Type
+import androidx.window.layout.HardwareFoldingFeature.Type.Companion.FOLD
+import androidx.window.layout.HardwareFoldingFeature.Type.Companion.HINGE
 import androidx.window.sidecar.SidecarDisplayFeature
 import androidx.window.sidecar.SidecarWindowLayoutInfo
 import com.nhaarman.mockitokotlin2.any
@@ -60,7 +61,7 @@ public class SidecarCompatDeviceTest : WindowTestBase(), CompatDeviceTestInterfa
 
     @Before
     public fun setUp() {
-        assumeExtensionV01()
+        assumeValidSidecar()
         sidecarCompat = SidecarCompat(ApplicationProvider.getApplicationContext() as Context)
     }
 
@@ -123,9 +124,9 @@ public class SidecarCompatDeviceTest : WindowTestBase(), CompatDeviceTestInterfa
         }
     }
 
-    private fun assumeExtensionV01() {
+    private fun assumeValidSidecar() {
         val sidecarVersion = SidecarCompat.sidecarVersion
-        assumeTrue(Version.VERSION_0_1 == sidecarVersion)
+        assumeTrue(Version.VERSION_0_1 == sidecarVersion || Version.VERSION_1_0 == sidecarVersion)
     }
 
     private class SidecarMatcher(
@@ -139,7 +140,7 @@ public class SidecarCompatDeviceTest : WindowTestBase(), CompatDeviceTestInterfa
             }
             for (i in windowLayoutInfo.displayFeatures.indices) {
                 // Sidecar only has folding features
-                val feature = windowLayoutInfo.displayFeatures[i] as FoldingFeature
+                val feature = windowLayoutInfo.displayFeatures[i] as HardwareFoldingFeature
                 val sidecarDisplayFeature = sidecarDisplayFeatures[i]
                 if (!hasMatchingType(feature.type, sidecarDisplayFeature.type)) {
                     return false
@@ -151,7 +152,7 @@ public class SidecarCompatDeviceTest : WindowTestBase(), CompatDeviceTestInterfa
             return true
         }
 
-        private fun hasMatchingType(featureType: FoldingFeature.Type, sidecarType: Int): Boolean {
+        private fun hasMatchingType(featureType: Type, sidecarType: Int): Boolean {
             return when (featureType) {
                 FOLD -> sidecarType == SidecarDisplayFeature.TYPE_FOLD
                 HINGE -> sidecarType == SidecarDisplayFeature.TYPE_HINGE

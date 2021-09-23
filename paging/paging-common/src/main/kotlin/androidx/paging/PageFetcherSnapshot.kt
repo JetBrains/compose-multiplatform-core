@@ -43,6 +43,7 @@ import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -77,7 +78,9 @@ internal class PageFetcherSnapshot<Key : Any, Value : Any>(
 
     private val pageEventChannelFlowJob = Job()
 
-    val pageEventFlow: Flow<PageEvent<Value>> = cancelableChannelFlow(pageEventChannelFlowJob) {
+    val pageEventFlow: Flow<PageEvent<Value>> = cancelableChannelFlow<PageEvent<Value>>(
+        pageEventChannelFlowJob
+    ) {
         check(pageEventChCollected.compareAndSet(false, true)) {
             "Attempt to collect twice from pageEventFlow, which is an illegal operation. Did you " +
                 "forget to call Flow<PagingData<*>>.cachedIn(coroutineScope)?"
@@ -107,7 +110,7 @@ internal class PageFetcherSnapshot<Key : Any, Value : Any>(
             retryChannel.consumeAsFlow()
                 .collect {
                     val (sourceLoadStates, remotePagingState) = stateHolder.withLock { state ->
-                        state.sourceLoadStates to state.currentPagingState(lastHint)
+                        state.sourceLoadStates.snapshot() to state.currentPagingState(lastHint)
                     }
                     // tell remote mediator to retry and it will trigger necessary work / change
                     // its state as necessary.
@@ -163,6 +166,12 @@ internal class PageFetcherSnapshot<Key : Any, Value : Any>(
         if (stateHolder.withLock { state -> state.sourceLoadStates.get(REFRESH) } !is Error) {
             startConsumingHints()
         }
+    }.onStart {
+        // Immediately emit the initial load state when creating a new generation to give
+        // PageFetcher a real event from source side as soon as possible. This allows PageFetcher
+        // to operate on this stream in a way that waits for a real event (for example, by using
+        // Flow.combine) without the consequence of getting "stuck".
+        emit(LoadStateUpdate(stateHolder.withLock { it.sourceLoadStates.snapshot() }))
     }
 
     @Suppress("SuspendFunctionOnCoroutineScope")
@@ -243,7 +252,7 @@ internal class PageFetcherSnapshot<Key : Any, Value : Any>(
             if (state.sourceLoadStates.get(loadType) == NotLoading.Complete) {
                 return@simpleFlatMapLatest flowOf()
             } else if (state.sourceLoadStates.get(loadType) !is Error) {
-                state.setSourceLoadState(loadType, NotLoading.Incomplete)
+                state.sourceLoadStates.set(loadType, NotLoading.Incomplete)
             }
         }
 
@@ -274,25 +283,30 @@ internal class PageFetcherSnapshot<Key : Any, Value : Any>(
         val params = loadParams(REFRESH, initialKey)
         when (val result = pagingSource.load(params)) {
             is Page<Key, Value> -> {
+                // Atomically update load states + pages while still holding the mutex, otherwise
+                // remote state can race here and lead to confusing load states.
                 val insertApplied = stateHolder.withLock { state ->
-                    state.insert(0, REFRESH, result)
-                }
+                    val insertApplied = state.insert(0, REFRESH, result)
 
-                // Update loadStates which are sent along with this load's Insert PageEvent.
-                stateHolder.withLock { state ->
-                    state.setSourceLoadState(REFRESH, NotLoading.Incomplete)
+                    // Update loadStates which are sent along with this load's Insert PageEvent.
+                    state.sourceLoadStates.set(
+                        type = REFRESH,
+                        state = NotLoading.Incomplete
+                    )
                     if (result.prevKey == null) {
-                        state.setSourceLoadState(
+                        state.sourceLoadStates.set(
                             type = PREPEND,
-                            newState = NotLoading.Complete
+                            state = NotLoading.Complete
                         )
                     }
                     if (result.nextKey == null) {
-                        state.setSourceLoadState(
+                        state.sourceLoadStates.set(
                             type = APPEND,
-                            newState = NotLoading.Complete
+                            state = NotLoading.Complete
                         )
                     }
+
+                    insertApplied
                 }
 
                 // Send insert event after load state updates, so that endOfPaginationReached is
@@ -325,9 +339,7 @@ internal class PageFetcherSnapshot<Key : Any, Value : Any>(
             }
             is LoadResult.Error -> stateHolder.withLock { state ->
                 val loadState = Error(result.throwable)
-                if (state.setSourceLoadState(REFRESH, loadState)) {
-                    pageEventCh.send(LoadStateUpdate(REFRESH, false, loadState))
-                }
+                state.setError(loadType = REFRESH, error = loadState)
             }
             is LoadResult.Invalid -> onInvalidLoad()
         }
@@ -434,9 +446,7 @@ internal class PageFetcherSnapshot<Key : Any, Value : Any>(
                 is LoadResult.Error -> {
                     stateHolder.withLock { state ->
                         val loadState = Error(result.throwable)
-                        if (state.setSourceLoadState(loadType, loadState)) {
-                            pageEventCh.send(LoadStateUpdate(loadType, false, loadState))
-                        }
+                        state.setError(loadType = loadType, error = loadState)
 
                         // Save the hint for retry on incoming retry signal, typically sent from
                         // user interaction.
@@ -470,9 +480,9 @@ internal class PageFetcherSnapshot<Key : Any, Value : Any>(
                 // Update load state to success if this is the final load result for this
                 // load hint, and only if we didn't error out.
                 if (loadKey == null && state.sourceLoadStates.get(loadType) !is Error) {
-                    state.setSourceLoadState(
+                    state.sourceLoadStates.set(
                         type = loadType,
-                        newState = when {
+                        state = when {
                             endOfPaginationReached -> NotLoading.Complete
                             else -> NotLoading.Incomplete
                         }
@@ -506,9 +516,28 @@ internal class PageFetcherSnapshot<Key : Any, Value : Any>(
     }
 
     private suspend fun PageFetcherSnapshotState<Key, Value>.setLoading(loadType: LoadType) {
-        if (setSourceLoadState(loadType, Loading)) {
+        if (sourceLoadStates.get(loadType) != Loading) {
+            sourceLoadStates.set(type = loadType, state = Loading)
             pageEventCh.send(
-                LoadStateUpdate(loadType, fromMediator = false, Loading)
+                LoadStateUpdate(
+                    source = sourceLoadStates.snapshot(),
+                    mediator = null,
+                )
+            )
+        }
+    }
+
+    private suspend fun PageFetcherSnapshotState<Key, Value>.setError(
+        loadType: LoadType,
+        error: Error
+    ) {
+        if (sourceLoadStates.get(loadType) != error) {
+            sourceLoadStates.set(type = loadType, state = error)
+            pageEventCh.send(
+                LoadStateUpdate(
+                    source = sourceLoadStates.snapshot(),
+                    mediator = null,
+                )
             )
         }
     }

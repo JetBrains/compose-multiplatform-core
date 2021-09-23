@@ -43,6 +43,7 @@ import androidx.camera.core.CameraSelector;
 import androidx.camera.core.ImageAnalysis;
 import androidx.camera.core.ImageCapture;
 import androidx.camera.core.ImageCaptureException;
+import androidx.camera.core.Logger;
 import androidx.camera.core.ZoomState;
 import androidx.camera.core.impl.utils.executor.CameraXExecutors;
 import androidx.camera.core.impl.utils.futures.FutureCallback;
@@ -99,6 +100,7 @@ public class CameraControllerFragment extends Fragment {
     // Listen to accelerometer rotation change and pass it to tests.
     private RotationProvider mRotationProvider;
     private int mRotation;
+    private final RotationProvider.Listener mRotationListener = rotation -> mRotation = rotation;
 
     // Wrapped analyzer for tests to receive callbacks.
     @Nullable
@@ -131,7 +133,11 @@ public class CameraControllerFragment extends Fragment {
             @Nullable Bundle savedInstanceState) {
         mExecutorService = Executors.newSingleThreadExecutor();
         mRotationProvider = new RotationProvider(requireContext());
-        mRotationProvider.setListener(rotation -> mRotation = rotation);
+        boolean canDetectRotation = mRotationProvider.addListener(
+                CameraXExecutors.mainThreadExecutor(), mRotationListener);
+        if (!canDetectRotation) {
+            Logger.e(TAG, "The device cannot detect rotation with motion sensor.");
+        }
         mCameraController = new LifecycleCameraController(requireContext());
         checkFailedFuture(mCameraController.getInitializationFuture());
         runSafely(() -> mCameraController.bindToLifecycle(getViewLifecycleOwner()));
@@ -334,7 +340,7 @@ public class CameraControllerFragment extends Fragment {
         if (mExecutorService != null) {
             mExecutorService.shutdown();
         }
-        mRotationProvider.clearListener();
+        mRotationProvider.removeListener(mRotationListener);
     }
 
     void checkFailedFuture(ListenableFuture<Void> voidFuture) {

@@ -16,13 +16,12 @@
 
 package androidx.compose.ui.window
 
-import androidx.compose.desktop.ComposeDialog
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCompositionContext
 import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.awt.ComposeDialog
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.unit.dp
@@ -89,12 +88,9 @@ import javax.swing.JDialog
  * keyboard. While implementing this callback, return true to stop propagation of this event.
  * If you return false, the key event will be sent to this [onKeyEvent]'s parent.
  * @param content content of the dialog
- *
- * This API is experimental and will eventually replace [androidx.compose.ui.window.v1.Dialog]
  */
-@ExperimentalComposeUiApi
 @Composable
-fun OwnerWindowScope.Dialog(
+fun Dialog(
     onCloseRequest: () -> Unit,
     state: DialogState = rememberDialogState(),
     visible: Boolean = true,
@@ -106,9 +102,9 @@ fun OwnerWindowScope.Dialog(
     focusable: Boolean = true,
     onPreviewKeyEvent: ((KeyEvent) -> Boolean) = { false },
     onKeyEvent: ((KeyEvent) -> Boolean) = { false },
-    content: @Composable DialogScope.() -> Unit
+    content: @Composable DialogWindowScope.() -> Unit
 ) {
-    val owner = this.ownerWindow
+    val owner = LocalWindow.current
 
     val currentState by rememberUpdatedState(state)
     val currentTitle by rememberUpdatedState(title)
@@ -184,8 +180,6 @@ fun OwnerWindowScope.Dialog(
  * Dialog is needed for creating dialog's that still can't be created with
  * the default Compose function [androidx.compose.ui.window.Dialog]
  *
- * This API is experimental and will eventually replace [androidx.compose.ui.window.v1.Dialog].
- *
  * @param visible Is [ComposeDialog] visible to user.
  * If `false`:
  * - internal state of [ComposeDialog] is preserved and will be restored next time the dialog
@@ -207,28 +201,22 @@ fun OwnerWindowScope.Dialog(
  * @param content Composable content of the creating dialog.
  */
 @Suppress("unused")
-@ExperimentalComposeUiApi
 @Composable
-fun OwnerWindowScope.Dialog(
+fun Dialog(
     visible: Boolean = true,
     onPreviewKeyEvent: ((KeyEvent) -> Boolean) = { false },
     onKeyEvent: ((KeyEvent) -> Boolean) = { false },
     create: () -> ComposeDialog,
     dispose: (ComposeDialog) -> Unit,
     update: (ComposeDialog) -> Unit = {},
-    content: @Composable DialogScope.() -> Unit
+    content: @Composable DialogWindowScope.() -> Unit
 ) {
     val composition = rememberCompositionContext()
     AwtWindow(
         visible = visible,
         create = {
             create().apply {
-                val scope = object : DialogScope {
-                    override val dialog: ComposeDialog get() = this@apply
-                }
-                setContent(composition, onPreviewKeyEvent, onKeyEvent) {
-                    scope.content()
-                }
+                setContent(composition, onPreviewKeyEvent, onKeyEvent, content)
             }
         },
         dispose = dispose,
@@ -239,11 +227,9 @@ fun OwnerWindowScope.Dialog(
 /**
  * Receiver scope which is used by [androidx.compose.ui.window.Dialog].
  */
-interface DialogScope : OwnerWindowScope {
+interface DialogWindowScope : WindowScope {
     /**
      * [ComposeDialog] that was created inside [androidx.compose.ui.window.Dialog].
      */
-    val dialog: ComposeDialog
-
-    override val ownerWindow: Window get() = dialog
+    override val window: ComposeDialog
 }

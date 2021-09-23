@@ -25,13 +25,13 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
-import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalDensity
@@ -39,12 +39,11 @@ import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
-import kotlin.math.roundToInt
 
 /**
  * Receiver scope which is used by [ScalingLazyColumn].
  */
-public interface ScalingLazyColumnScope {
+public interface ScalingLazyListScope {
     /**
      * Adds a single item.
      *
@@ -78,6 +77,8 @@ public interface ScalingLazyColumnScope {
  * @param modifier The modifier to be applied to the component
  * @param scalingParams The parameters to configure the scaling and transparency effects for the
  * component
+ * @param reverseLayout reverse the direction of scrolling and layout, when `true` items will be
+ * composed from the bottom to the top
  * @param verticalArrangement The vertical arrangement of the layout's children. This allows us
  * to add spacing between items and specify the arrangement of the items when we have not enough
  * of them to fill the whole minimum size
@@ -89,50 +90,48 @@ public interface ScalingLazyColumnScope {
 public fun ScalingLazyColumn(
     modifier: Modifier = Modifier,
     scalingParams: ScalingParams = ScalingLazyColumnDefaults.scalingParams(),
-    verticalArrangement: Arrangement.Vertical = Arrangement.spacedBy(4.dp),
+    reverseLayout: Boolean = false,
+    verticalArrangement: Arrangement.Vertical =
+        Arrangement.spacedBy(
+            space = 4.dp,
+            alignment = if (!reverseLayout) Alignment.Top else Alignment.Bottom
+        ),
     horizontalAlignment: Alignment.Horizontal = Alignment.Start,
     contentPadding: PaddingValues = PaddingValues(horizontal = 8.dp),
-    state: ScalingLazyColumnState = rememberScalingLazyColumnState(),
-    content: ScalingLazyColumnScope.() -> Unit
+    state: ScalingLazyListState = rememberScalingLazyListState(),
+    content: ScalingLazyListScope.() -> Unit
 ) {
     BoxWithConstraints(modifier = modifier) {
-
         val extraPaddingInPixels = scalingParams.resolveViewportVerticalOffset(constraints)
         val extraPadding = with(LocalDensity.current) { extraPaddingInPixels.toDp() }
+
+        // Set up transient state
+        state.scalingParams.value = scalingParams
+        state.extraPaddingInPixels.value = extraPaddingInPixels
+        state.viewportHeightPx.value = constraints.maxHeight
+        state.gapBetweenItemsPx.value = with(LocalDensity.current) {
+            verticalArrangement.spacing.roundToPx()
+        }
+        state.reverseLayout.value = reverseLayout
+
         val combinedPaddingValues = CombinedPaddingValues(
             contentPadding = contentPadding,
             extraPadding = extraPadding
         )
         LazyColumn(
-            // TODO (b/194464849): Refactor by adding a Modifier.verticalNegativePadding fun
             Modifier
                 .fillMaxSize()
                 .clipToBounds()
-                .layout { measurable, constraints ->
-                    require(constraints.hasBoundedWidth)
-                    require(constraints.hasBoundedHeight)
-                    val placeable = measurable.measure(
-                        Constraints.fixed(
-                            width = constraints.maxWidth,
-                            height = constraints.maxHeight +
-                                (extraPadding * 2).roundToPx()
-                        )
-                    )
-                    layout(constraints.maxWidth, constraints.maxHeight) {
-                        placeable.place(0, -extraPadding.roundToPx())
-                    }
-                },
+                .verticalNegativePadding(extraPadding),
             horizontalAlignment = horizontalAlignment,
             contentPadding = combinedPaddingValues,
+            reverseLayout = reverseLayout,
             verticalArrangement = verticalArrangement,
             state = state.lazyListState
         ) {
-            val scope = ScalingLazyColumnScopeImpl(
-                state.lazyListState,
+            val scope = ScalingLazyListScopeImpl(
+                state,
                 this,
-                scalingParams,
-                maxHeight,
-                verticalArrangement.spacing
             )
             scope.content()
         }
@@ -147,32 +146,88 @@ public object ScalingLazyColumnDefaults {
      * Creates a [ScalingParams] that represents the scaling and alpha properties for a
      * [ScalingLazyColumn].
      *
+     * Items in the ScalingLazyColumn have scaling and alpha effects applied to them depending on
+     * their position in the viewport. The closer to the edge (top or bottom) of the viewport that
+     * they are the greater the down scaling and transparency that is applied. Note that scaling and
+     * transparency effects are applied from the center of the viewport (full size and normal
+     * transparency) towards the edge (items can be smaller and more transparent).
+     *
+     * Deciding how much scaling and alpha to apply is based on the position and size of the item
+     * and on a series of properties that are used to determine the transition area for each item.
+     *
+     * The transition area is defined by the edge of the screen and a transition line which is
+     * calculated for each item in the list. The items transition line is based upon its size with
+     * the potential for larger list items to start their transition earlier (closer to the center)
+     * than smaller items.
+     *
+     * [minTransitionArea] and [maxTransitionArea] are both in the range [0f..1f] and are
+     * the fraction of the distance between the edge of the viewport and the center of
+     * the viewport. E.g. a value of 0.2f for minTransitionArea and 0.75f for maxTransitionArea
+     * determines that all transition lines will fall between 1/5th (20%) and 3/4s (75%) of the
+     * distance between the viewport edge and center.
+     *
+     * The size of the each item is used to determine where within the transition area range
+     * minTransitionArea..maxTransitionArea the actual transition line will be. [minElementHeight]
+     * and [maxElementHeight] are used along with the item height (as a fraction of the viewport
+     * height in the range [0f..1f]) to find the transition line. So if the items size is 0.25f
+     * (25%) of way between minElementSize..maxElementSize then the transition line will be 0.25f
+     * (25%) of the way between minTransitionArea..maxTransitionArea.
+     *
+     * A list item smaller than minElementHeight is rounded up to minElementHeight and larger than
+     * maxElementHeight is rounded down to maxElementHeight. Whereabouts the items height sits
+     * between minElementHeight..maxElementHeight is then used to determine where the transition
+     * line sits between minTransitionArea..maxTransition area.
+     *
+     * If an item is smaller than or equal to minElementSize its transition line with be at
+     * minTransitionArea and if it is larger than or equal to maxElementSize its transition line
+     * will be  at maxTransitionArea.
+     *
+     * For example, if we take the default values for minTransitionArea = 0.2f and
+     * maxTransitionArea = 0.6f and minElementSize = 0.2f and maxElementSize= 0.8f then an item
+     * with a height of 0.4f (40%) of the viewport height is one third of way between
+     * minElementSize and maxElementSize, (0.4f - 0.2f) / (0.8f - 0.2f) = 0.33f. So its transition
+     * line would be one third of way between 0.2f and 0.6f, transition line = 0.2f + (0.6f -
+     * 0.2f) * 0.33f = 0.33f.
+     *
+     * Once the position of the transition line is established we now have a transition area
+     * for the item, e.g. in the example above the item will start/finish its transitions when it
+     * is 0.33f (33%) of the distance from the edge of the viewport and will start/finish its
+     * transitions at the viewport edge.
+     *
+     * The scaleInterpolator is used to determine how much of the scaling and alpha to apply
+     * as the item transits through the transition area.
+     *
+     * The edge of the item furthest from the edge of the screen is used as a scaling trigger
+     * point for each item.
+     *
      * @param edgeScale What fraction of the full size of the item to scale it by when most
-     * scaled, e.g. at the [minTransitionArea] line. A value between [0.0,1.0], so a value of 0.2f
+     * scaled, e.g. at the edge of the viewport. A value between [0f,1f], so a value of 0.2f
      * means to scale an item to 20% of its normal size.
      *
-     * @param edgeAlpha What fraction of the full transparency of the item to scale it by when
-     * most scaled, e.g. at the [minTransitionArea] line. A value between [0.0,1.0], so a value of
+     * @param edgeAlpha What fraction of the full transparency of the item to draw it with
+     * when closest to the edge of the screen. A value between [0f,1f], so a value of
      * 0.2f means to set the alpha of an item to 20% of its normal value.
      *
      * @param minElementHeight The minimum element height as a ratio of the viewport size to use
      * for determining the transition point within ([minTransitionArea], [maxTransitionArea])
-     * that a given content item will start to be scaled. Items smaller than [minElementHeight]
-     * will be treated as if [minElementHeight]. Must be less than or equal to [maxElementHeight].
+     * that a given content item will start to be transitioned. Items smaller than
+     * [minElementHeight] will be treated as if [minElementHeight]. Must be less than or equal to
+     * [maxElementHeight].
      *
      * @param maxElementHeight The maximum element height as a ratio of the viewport size to use
      * for determining the transition point within ([minTransitionArea], [maxTransitionArea])
-     * that a given content item will start to be scaled. Items larger than [maxElementHeight]
+     * that a given content item will start to be transitioned. Items larger than [maxElementHeight]
      * will be treated as if [maxElementHeight]. Must be greater than or equal to
      * [minElementHeight].
      *
-     * @param minTransitionArea The lower bound of the scaling transition area, closest to the
-     * edge of the component. Defined as a ratio of the distance between the viewport center line
-     * and viewport edge of the list component. Must be less than or equal to [maxTransitionArea].
+     * @param minTransitionArea The lower bound of the transition line area, closest to the
+     * edge of the viewport. Defined as a fraction (value between 0f..1f) of the distance between
+     * the viewport edge and viewport center line. Must be less than or equal to
+     * [maxTransitionArea].
      *
-     * @param maxTransitionArea The upper bound of the scaling transition area, closest to the
-     * center of the component. The is a ratio of the distance between the viewport center line and
-     * viewport edge of the list component. Must be greater
+     * @param maxTransitionArea The upper bound of the transition line area, closest to the
+     * center of the viewport. The fraction (value between 0f..1f) of the distance
+     * between the viewport edge and viewport center line. Must be greater
      * than or equal to [minTransitionArea].
      *
      * @param scaleInterpolator An interpolator to use to determine how to apply scaling as a
@@ -212,13 +267,10 @@ public object ScalingLazyColumnDefaults {
     )
 }
 
-private class ScalingLazyColumnScopeImpl(
-    private val state: LazyListState,
+private class ScalingLazyListScopeImpl(
+    private val state: ScalingLazyListState,
     private val scope: LazyListScope,
-    private val scalingParams: ScalingParams,
-    private val realViewportSize: Dp,
-    private val paddingBetweenItems: Dp
-) : ScalingLazyColumnScope {
+) : ScalingLazyListScope {
 
     private var currentStartIndex = 0
 
@@ -228,9 +280,6 @@ private class ScalingLazyColumnScopeImpl(
             ScalingLazyColumnItemWrapper(
                 startIndex,
                 state,
-                scalingParams,
-                realViewportSize,
-                paddingBetweenItems,
                 content = content
             )
         }
@@ -243,9 +292,6 @@ private class ScalingLazyColumnScopeImpl(
             ScalingLazyColumnItemWrapper(
                 startIndex + it,
                 state,
-                scalingParams,
-                realViewportSize,
-                paddingBetweenItems
             ) {
                 itemContent(it)
             }
@@ -257,85 +303,24 @@ private class ScalingLazyColumnScopeImpl(
 @Composable
 private fun ScalingLazyColumnItemWrapper(
     index: Int,
-    state: LazyListState,
-    scalingParams: ScalingParams,
-    realViewportSize: Dp,
-    paddingBetweenItems: Dp,
+    state: ScalingLazyListState,
     content: @Composable () -> Unit
 ) {
     Box(
-        // TODO (b/194464927): Refactor this method to make it more readable
         Modifier.graphicsLayer {
             val items = state.layoutInfo.visibleItemsInfo
+            val reverseLayout = state.reverseLayout.value!!
             val currentItem = items.find { it.index == index }
             if (currentItem != null) {
-                val viewportSize = realViewportSize.roundToPx()
-                val centerOffset = viewportSize / 2
-                val paddingBetweenItemsPx = paddingBetweenItems.roundToPx()
-
-                val rawItemStart = currentItem.offset
-                val rawItemEnd = rawItemStart + currentItem.size
-                if (rawItemEnd < centerOffset) {
-                    var currentSumOfScaledSizeDiffs = 0
-                    items.reversed().forEach {
-                        if (it.index > currentItem.index && it.offset < centerOffset) {
-                            val (scale, _) = calculateScaleAndAlpha(
-                                0,
-                                viewportSize,
-                                it.offset + currentSumOfScaledSizeDiffs,
-                                it.offset + it.size + currentSumOfScaledSizeDiffs,
-                                scalingParams
-                            )
-                            currentSumOfScaledSizeDiffs += it.size -
-                                (it.size * scale).roundToInt() +
-                                (
-                                    paddingBetweenItemsPx -
-                                        (paddingBetweenItemsPx * scale).roundToInt()
-                                    )
-                        }
-                    }
-                    translationY = currentSumOfScaledSizeDiffs.toFloat()
-                }
-                if (rawItemEnd > centerOffset) {
-                    var currentSumOfScaledSizeDiffs = 0
-                    items.forEach {
-                        if (it.index < currentItem.index && it.offset > centerOffset) {
-                            val (scale, _) = calculateScaleAndAlpha(
-                                0,
-                                viewportSize,
-                                it.offset + currentSumOfScaledSizeDiffs,
-                                it.offset + it.size + currentSumOfScaledSizeDiffs,
-                                scalingParams
-                            )
-                            currentSumOfScaledSizeDiffs -= it.size -
-                                (it.size * scale).roundToInt() -
-                                (
-                                    paddingBetweenItemsPx -
-                                        (paddingBetweenItemsPx * scale).roundToInt()
-                                    )
-                        }
-                    }
-                    translationY = currentSumOfScaledSizeDiffs.toFloat()
-                }
-
-                val (scaleToApply, alphaToApply) = calculateScaleAndAlpha(
-                    0,
-                    viewportSize,
-                    rawItemStart + translationY.roundToInt(),
-                    rawItemEnd + translationY.roundToInt(),
-                    scalingParams
+                alpha = currentItem.alpha
+                scaleX = currentItem.scale
+                scaleY = currentItem.scale
+                val offsetAdjust = (currentItem.offset - currentItem.unadjustedOffset).toFloat()
+                translationY = if (reverseLayout) - offsetAdjust else offsetAdjust
+                transformOrigin = TransformOrigin(
+                    pivotFractionX = 0.5f,
+                    pivotFractionY = if (reverseLayout) 1.0f else 0.0f
                 )
-
-                alpha = alphaToApply
-                scaleX = scaleToApply
-                scaleY = scaleToApply
-                val halfScaleSizeDiff = (currentItem.size - (currentItem.size * scaleToApply)) / 2f
-                if (rawItemEnd < centerOffset) {
-                    translationY += halfScaleSizeDiff
-                }
-                if (rawItemEnd > centerOffset) {
-                    translationY -= halfScaleSizeDiff
-                }
             }
         }
     ) {
@@ -384,5 +369,22 @@ private class CombinedPaddingValues(
     override fun toString(): String {
         return "CombinedPaddingValuesImpl(contentPadding=$contentPadding, " +
             "extraPadding=$extraPadding)"
+    }
+}
+
+private fun Modifier.verticalNegativePadding(
+    extraPadding: Dp
+) = layout { measurable, constraints ->
+    require(constraints.hasBoundedWidth)
+    require(constraints.hasBoundedHeight)
+    val placeable = measurable.measure(
+        Constraints.fixed(
+            width = constraints.maxWidth,
+            height = constraints.maxHeight +
+                (extraPadding * 2).roundToPx()
+        )
+    )
+    layout(constraints.maxWidth, constraints.maxHeight) {
+        placeable.place(0, -extraPadding.roundToPx())
     }
 }

@@ -19,6 +19,8 @@ package androidx.camera.core;
 import static androidx.camera.core.impl.ImageAnalysisConfig.OPTION_BACKPRESSURE_STRATEGY;
 import static androidx.camera.core.impl.ImageAnalysisConfig.OPTION_IMAGE_QUEUE_DEPTH;
 import static androidx.camera.core.impl.ImageAnalysisConfig.OPTION_IMAGE_READER_PROXY_PROVIDER;
+import static androidx.camera.core.impl.ImageAnalysisConfig.OPTION_ONE_PIXEL_SHIFT_ENABLED;
+import static androidx.camera.core.impl.ImageAnalysisConfig.OPTION_OUTPUT_IMAGE_FORMAT;
 import static androidx.camera.core.impl.ImageOutputConfig.OPTION_MAX_RESOLUTION;
 import static androidx.camera.core.impl.ImageOutputConfig.OPTION_SUPPORTED_RESOLUTIONS;
 import static androidx.camera.core.impl.ImageOutputConfig.OPTION_TARGET_ASPECT_RATIO;
@@ -36,6 +38,8 @@ import static androidx.camera.core.impl.UseCaseConfig.OPTION_TARGET_NAME;
 import static androidx.camera.core.impl.UseCaseConfig.OPTION_USE_CASE_EVENT_CALLBACK;
 import static androidx.camera.core.internal.ThreadConfig.OPTION_BACKGROUND_EXECUTOR;
 
+import android.graphics.ImageFormat;
+import android.graphics.PixelFormat;
 import android.media.CamcorderProfile;
 import android.media.ImageReader;
 import android.util.Pair;
@@ -49,6 +53,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
+import androidx.camera.core.impl.CameraInfoInternal;
 import androidx.camera.core.impl.CameraInternal;
 import androidx.camera.core.impl.CaptureConfig;
 import androidx.camera.core.impl.Config;
@@ -68,6 +73,7 @@ import androidx.camera.core.impl.utils.Threads;
 import androidx.camera.core.impl.utils.executor.CameraXExecutors;
 import androidx.camera.core.internal.TargetConfig;
 import androidx.camera.core.internal.ThreadConfig;
+import androidx.camera.core.internal.compat.quirk.OnePixelShiftQuirk;
 import androidx.core.util.Consumer;
 import androidx.core.util.Preconditions;
 import androidx.lifecycle.LifecycleOwner;
@@ -139,6 +145,26 @@ public final class ImageAnalysis extends UseCase {
     public static final int STRATEGY_BLOCK_PRODUCER = 1;
 
     /**
+     * Images sent to the analyzer will have YUV format.
+     *
+     * <p>All {@link ImageProxy} sent to {@link Analyzer#analyze(ImageProxy)} will have
+     * format {@link android.graphics.ImageFormat#YUV_420_888}
+     *
+     * @see Builder#setOutputImageFormat(int)
+     */
+    public static final int OUTPUT_IMAGE_FORMAT_YUV_420_888 = 1;
+
+    /**
+     * Images sent to the analyzer will have RGBA format.
+     *
+     * <p>All {@link ImageProxy} sent to {@link Analyzer#analyze(ImageProxy)} will have
+     * format {@link android.graphics.PixelFormat#RGBA_8888}
+     *
+     * @see Builder#setOutputImageFormat(int)
+     */
+    public static final int OUTPUT_IMAGE_FORMAT_RGBA_8888 = 2;
+
+    /**
      * Provides a static configuration with implementation-agnostic options.
      *
      * @hide
@@ -151,6 +177,10 @@ public final class ImageAnalysis extends UseCase {
     @BackpressureStrategy
     private static final int DEFAULT_BACKPRESSURE_STRATEGY = STRATEGY_KEEP_ONLY_LATEST;
     private static final int DEFAULT_IMAGE_QUEUE_DEPTH = 6;
+    // Default to YUV_420_888 format for output.
+    private static final int DEFAULT_OUTPUT_IMAGE_FORMAT = OUTPUT_IMAGE_FORMAT_YUV_420_888;
+    // One pixel shift for YUV.
+    private static final Boolean DEFAULT_ONE_PIXEL_SHIFT_ENABLED = null;
 
     @SuppressWarnings("WeakerAccess") /* synthetic access */
     final ImageAnalysisAbstractAnalyzer mImageAnalysisAbstractAnalyzer;
@@ -190,6 +220,31 @@ public final class ImageAnalysis extends UseCase {
             mImageAnalysisAbstractAnalyzer = new ImageAnalysisNonBlockingAnalyzer(
                     config.getBackgroundExecutor(CameraXExecutors.highPriorityExecutor()));
         }
+        mImageAnalysisAbstractAnalyzer.setOutputImageFormat(getOutputImageFormat());
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @hide
+     */
+    @RestrictTo(Scope.LIBRARY_GROUP)
+    @NonNull
+    @Override
+    protected UseCaseConfig<?> onMergeConfig(@NonNull CameraInfoInternal cameraInfo,
+            @NonNull UseCaseConfig.Builder<?, ?, ?> builder) {
+
+        // Flag to enable or disable one pixel shift. It will override the flag set by device info.
+        // If enabled, the workaround will be applied for all devices.
+        // If disabled, the workaround will be disabled for all devices.
+        // If not configured, the workaround will be applied to the problem devices only.
+        Boolean isOnePixelShiftEnabled = getOnePixelShiftEnabled();
+        boolean isOnePixelShiftIssueDevice = cameraInfo.getCameraQuirks().contains(
+                OnePixelShiftQuirk.class) ? true : false;
+        mImageAnalysisAbstractAnalyzer.setOnePixelShiftEnabled(
+                isOnePixelShiftEnabled == null ? isOnePixelShiftIssueDevice
+                        : isOnePixelShiftEnabled);
+        return super.onMergeConfig(cameraInfo, builder);
     }
 
     @SuppressWarnings("WeakerAccess") /* synthetic accessor */
@@ -218,6 +273,22 @@ public final class ImageAnalysis extends UseCase {
                             imageQueueDepth));
         }
 
+        // TODO(b/195021586): to support RGB format input for image analysis for devices already
+        // supporting RGB natively. The logic here will check if the specific configured size is
+        // available in RGB and if not, fall back to YUV-RGB conversion.
+        final SafeCloseImageReaderProxy rgbImageReaderProxy =
+                (getImageFormat() == ImageFormat.YUV_420_888
+                        && getOutputImageFormat() == OUTPUT_IMAGE_FORMAT_RGBA_8888)
+                        ? new SafeCloseImageReaderProxy(
+                                ImageReaderProxys.createIsolatedReader(
+                                        resolution.getWidth(),
+                                        resolution.getHeight(),
+                                        PixelFormat.RGBA_8888,
+                                        imageReaderProxy.getMaxImages())) : null;
+        if (rgbImageReaderProxy != null) {
+            mImageAnalysisAbstractAnalyzer.setRGBImageReaderProxy(rgbImageReaderProxy);
+        }
+
         tryUpdateRelativeRotation();
 
         imageReaderProxy.setOnImageAvailableListener(mImageAnalysisAbstractAnalyzer,
@@ -230,7 +301,13 @@ public final class ImageAnalysis extends UseCase {
         }
         mDeferrableSurface = new ImmediateSurface(imageReaderProxy.getSurface(), resolution,
                 getImageFormat());
-        mDeferrableSurface.getTerminationFuture().addListener(imageReaderProxy::safeClose,
+        mDeferrableSurface.getTerminationFuture().addListener(
+                () -> {
+                    imageReaderProxy.safeClose();
+                    if (rgbImageReaderProxy != null) {
+                        rgbImageReaderProxy.safeClose();
+                    }
+                },
                 CameraXExecutors.mainThreadExecutor());
 
         sessionConfigBuilder.addSurface(mDeferrableSurface);
@@ -418,6 +495,31 @@ public final class ImageAnalysis extends UseCase {
     }
 
     /**
+     * Gets output image format.
+     *
+     * <p>The returned image format will be
+     * {@link ImageAnalysis#OUTPUT_IMAGE_FORMAT_YUV_420_888} or
+     * {@link ImageAnalysis#OUTPUT_IMAGE_FORMAT_RGBA_8888}.
+     *
+     * @return output image format.
+     */
+    @ImageAnalysis.OutputImageFormat
+    public int getOutputImageFormat() {
+        return ((ImageAnalysisConfig) getCurrentConfig()).getOutputImageFormat(
+                DEFAULT_OUTPUT_IMAGE_FORMAT);
+    }
+
+    /**
+     * @hide
+     */
+    @RestrictTo(Scope.LIBRARY_GROUP)
+    @Nullable
+    public Boolean getOnePixelShiftEnabled() {
+        return ((ImageAnalysisConfig) getCurrentConfig()).getOnePixelShiftEnabled(
+                DEFAULT_ONE_PIXEL_SHIFT_ENABLED);
+    }
+
+    /**
      * Gets resolution related information of the {@link ImageAnalysis}.
      *
      * <p>The returned {@link ResolutionInfo} will be expressed in the coordinates of the camera
@@ -546,6 +648,24 @@ public final class ImageAnalysis extends UseCase {
     @Retention(RetentionPolicy.SOURCE)
     @RestrictTo(Scope.LIBRARY_GROUP)
     public @interface BackpressureStrategy {
+    }
+
+    /**
+     * Supported output image format for image analysis.
+     *
+     * <p>The supported output image format
+     * is {@link ImageAnalysis#OUTPUT_IMAGE_FORMAT_YUV_420_888} and
+     * {@link ImageAnalysis#OUTPUT_IMAGE_FORMAT_RGBA_8888}.
+     *
+     * <p>By default, {@link ImageAnalysis#OUTPUT_IMAGE_FORMAT_YUV_420_888} will be used.
+     *
+     * @hide
+     * @see Builder#setOutputImageFormat(int)
+     */
+    @IntDef({OUTPUT_IMAGE_FORMAT_YUV_420_888, OUTPUT_IMAGE_FORMAT_RGBA_8888})
+    @Retention(RetentionPolicy.SOURCE)
+    @RestrictTo(Scope.LIBRARY_GROUP)
+    public @interface OutputImageFormat {
     }
 
     /**
@@ -729,6 +849,36 @@ public final class ImageAnalysis extends UseCase {
         @NonNull
         public Builder setImageQueueDepth(int depth) {
             getMutableConfig().insertOption(OPTION_IMAGE_QUEUE_DEPTH, depth);
+            return this;
+        }
+
+        /**
+         * Sets output image format.
+         *
+         * <p>The supported output image format
+         * is {@link OutputImageFormat#OUTPUT_IMAGE_FORMAT_YUV_420_888} and
+         * {@link OutputImageFormat#OUTPUT_IMAGE_FORMAT_RGBA_8888}.
+         *
+         * <p>If not set, {@link OutputImageFormat#OUTPUT_IMAGE_FORMAT_YUV_420_888} will be used.
+         *
+         * Requesting {@link OutputImageFormat#OUTPUT_IMAGE_FORMAT_RGBA_8888} will have extra
+         * overhead because format conversion takes time.
+         *
+         * @param outputImageFormat The output image format.
+         * @return The current Builder.
+         */
+        @NonNull
+        public Builder setOutputImageFormat(@OutputImageFormat int outputImageFormat) {
+            getMutableConfig().insertOption(OPTION_OUTPUT_IMAGE_FORMAT, outputImageFormat);
+            return this;
+        }
+
+        /** @hide */
+        @RestrictTo(Scope.LIBRARY_GROUP)
+        @NonNull
+        public Builder setOnePixelShiftEnabled(boolean onePixelShiftEnabled) {
+            getMutableConfig().insertOption(OPTION_ONE_PIXEL_SHIFT_ENABLED,
+                    Boolean.valueOf(onePixelShiftEnabled));
             return this;
         }
 

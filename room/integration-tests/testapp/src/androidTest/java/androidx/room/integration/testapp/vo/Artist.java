@@ -24,10 +24,12 @@ public class Artist {
     @PrimaryKey
     public final int mArtistId;
     public final String mArtistName;
+    public final boolean mIsActive;
 
-    public Artist(int artistId, String artistName) {
+    public Artist(int artistId, String artistName, boolean isActive) {
         mArtistId = artistId;
         mArtistName = artistName;
+        mIsActive = isActive;
     }
 
     @Override
@@ -39,7 +41,7 @@ public class Artist {
 
         if (mArtistId != artist.mArtistId) return false;
         if (mArtistName != null ? !mArtistName.equals(artist.mArtistName) :
-                artist.mArtistName != null) {
+                artist.mArtistName != null && mIsActive == artist.mIsActive) {
             return false;
         }
         return true;
@@ -50,5 +52,10 @@ public class Artist {
         int result = mArtistId;
         result = 31 * result + (mArtistName != null ? mArtistName.hashCode() : 0);
         return result;
+    }
+
+    @Override
+    public String toString() {
+        return "Artist{name='" + mArtistName + "'}";
     }
 }

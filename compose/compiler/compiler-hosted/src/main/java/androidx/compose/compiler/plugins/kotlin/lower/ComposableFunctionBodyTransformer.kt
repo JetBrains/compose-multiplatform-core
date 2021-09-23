@@ -16,7 +16,9 @@
 
 package androidx.compose.compiler.plugins.kotlin.lower
 
+import androidx.compose.compiler.plugins.kotlin.ModuleMetrics
 import androidx.compose.compiler.plugins.kotlin.ComposeFqNames
+import androidx.compose.compiler.plugins.kotlin.FunctionMetrics
 import androidx.compose.compiler.plugins.kotlin.KtxNameConventions
 import androidx.compose.compiler.plugins.kotlin.analysis.Stability
 import androidx.compose.compiler.plugins.kotlin.analysis.knownStable
@@ -30,6 +32,7 @@ import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
 import org.jetbrains.kotlin.backend.common.pop
 import org.jetbrains.kotlin.backend.common.push
 import org.jetbrains.kotlin.backend.jvm.JvmLoweredDeclarationOrigin
+import org.jetbrains.kotlin.backend.jvm.ir.isInlineClassType
 import org.jetbrains.kotlin.builtins.PrimitiveType
 import org.jetbrains.kotlin.builtins.StandardNames
 import org.jetbrains.kotlin.descriptors.CallableMemberDescriptor
@@ -137,7 +140,6 @@ import org.jetbrains.kotlin.ir.util.file
 import org.jetbrains.kotlin.ir.util.fqNameWhenAvailable
 import org.jetbrains.kotlin.ir.util.functions
 import org.jetbrains.kotlin.ir.util.getPropertyGetter
-import org.jetbrains.kotlin.ir.util.isInlined
 import org.jetbrains.kotlin.ir.util.isLocal
 import org.jetbrains.kotlin.ir.util.isVararg
 import org.jetbrains.kotlin.ir.util.parentClassOrNull
@@ -148,6 +150,8 @@ import org.jetbrains.kotlin.ir.visitors.IrElementTransformerVoid
 import org.jetbrains.kotlin.ir.visitors.transformChildrenVoid
 import org.jetbrains.kotlin.name.FqNameUnsafe
 import org.jetbrains.kotlin.name.Name
+import org.jetbrains.kotlin.platform.js.isJs
+import org.jetbrains.kotlin.platform.jvm.isJvm
 import org.jetbrains.kotlin.resolve.BindingTrace
 import org.jetbrains.kotlin.resolve.descriptorUtil.fqNameSafe
 import org.jetbrains.kotlin.types.typeUtil.isUnit
@@ -443,10 +447,11 @@ class ComposableFunctionBodyTransformer(
     context: IrPluginContext,
     symbolRemapper: DeepCopySymbolRemapper,
     bindingTrace: BindingTrace,
+    metrics: ModuleMetrics,
     sourceInformationEnabled: Boolean,
     private val intrinsicRememberEnabled: Boolean
 ) :
-    AbstractComposeLowering(context, symbolRemapper, bindingTrace),
+    AbstractComposeLowering(context, symbolRemapper, bindingTrace, metrics),
     FileLoweringPass,
     ModuleLoweringPass {
 
@@ -668,6 +673,7 @@ class ComposableFunctionBodyTransformer(
             if (scope.isInlinedLambda && !scope.isComposable && scope.hasComposableCalls) {
                 encounteredCapturedComposableCall()
             }
+            metrics.recordFunction(scope.metrics)
         }
     }
 
@@ -855,6 +861,17 @@ class ComposableFunctionBodyTransformer(
             }
         }
 
+        scope.metrics.recordFunction(
+            composable = true,
+            restartable = false,
+            skippable = false,
+            isLambda = declaration.isLambda(),
+            inline = declaration.isInline,
+            hasDefaults = false,
+            readonly = elideGroups,
+        )
+
+        scope.metrics.recordGroup()
         return declaration
     }
 
@@ -895,7 +912,8 @@ class ComposableFunctionBodyTransformer(
         // we know we will never be mutating this variable _after_ it gets captured, we can
         // safely mark this as `isVar = false`.
             changedParam.irCopyToTemporary(
-                isVar = false,
+                // LLVM validation doesn't allow us to have val here.
+                isVar = if (context.platform.isJvm() || context.platform.isJs()) false else true,
                 nameHint = "\$dirty",
                 exactName = true
             )
@@ -978,6 +996,18 @@ class ComposableFunctionBodyTransformer(
                 )
             )
         }
+        scope.metrics.recordFunction(
+            composable = true,
+            restartable = true,
+            skippable = canSkipExecution,
+            isLambda = true,
+            inline = false,
+            hasDefaults = false,
+            readonly = false,
+        )
+        // composable lambdas all have a root group, but we don't generate them as the source
+        // code itself has the start/end call.
+        scope.metrics.recordGroup()
 
         return declaration
     }
@@ -1009,7 +1039,8 @@ class ComposableFunctionBodyTransformer(
         // safely mark this as `isVar = false`.
         val dirty = if (scope.allTrackedParams.isNotEmpty())
             changedParam.irCopyToTemporary(
-                isVar = false,
+                // LLVM validation doesn't allow us to have val here.
+                isVar = if (context.platform.isJvm() || context.platform.isJs()) false else true,
                 nameHint = "\$dirty",
                 exactName = true
             )
@@ -1120,6 +1151,18 @@ class ComposableFunctionBodyTransformer(
                 returnVar?.let { irReturn(declaration.symbol, irGet(it)) }
             )
         )
+
+        scope.metrics.recordFunction(
+            composable = true,
+            restartable = true,
+            skippable = canSkipExecution,
+            isLambda = false,
+            inline = false,
+            hasDefaults = scope.hasDefaultsGroup,
+            readonly = false,
+        )
+
+        scope.metrics.recordGroup()
 
         return declaration
     }
@@ -1248,6 +1291,15 @@ class ComposableFunctionBodyTransformer(
             val isRequired = param.defaultValue == null
             val isUnstable = stability.knownUnstable()
             val isUsed = scope.usedParams[slotIndex]
+
+            scope.metrics.recordParameter(
+                declaration = param,
+                type = param.type,
+                stability = stability,
+                default = defaultExpr[slotIndex],
+                defaultStatic = defaultExprIsStatic[slotIndex],
+                used = isUsed
+            )
 
             if (isUsed && isUnstable && isRequired) {
                 // if it is a used + unstable parameter with no default expression, the fn
@@ -1423,6 +1475,7 @@ class ComposableFunctionBodyTransformer(
         } else if (setDefaults.statements.isNotEmpty()) {
             // otherwise, we wrap the whole thing in an if expression with a skip
             scope.hasDefaultsGroup = true
+            scope.metrics.recordGroup()
             bodyPreamble.statements.add(
                 irIfThenElse(
                     // this prevents us from re-executing the defaults if this function is getting
@@ -2053,6 +2106,7 @@ class ComposableFunctionBodyTransformer(
     }
 
     private fun IrExpression.asReplaceableGroup(scope: Scope.BlockScope): IrExpression {
+        currentFunctionScope.metrics.recordGroup()
         // if the scope has no composable calls, then the only important thing is that a
         // start/end call gets executed. as a result, we can just put them both at the top of
         // the group, and we don't have to deal with any of the complicated jump logic that
@@ -2143,6 +2197,7 @@ class ComposableFunctionBodyTransformer(
     }
 
     private fun IrExpression.asCoalescableGroup(scope: Scope.BlockScope): IrExpression {
+        val metrics = currentFunctionScope.metrics
         val before = mutableStatementContainer()
         val after = mutableStatementContainer()
 
@@ -2153,6 +2208,7 @@ class ComposableFunctionBodyTransformer(
             scope,
             realizeGroup = {
                 if (before.statements.isEmpty()) {
+                    metrics.recordGroup()
                     before.statements.add(irStartReplaceableGroup(this, scope))
                     after.statements.add(irEndReplaceableGroup())
                 }
@@ -2196,6 +2252,9 @@ class ComposableFunctionBodyTransformer(
                 is Scope.ClassScope -> {
                     break@loop
                 }
+                else -> {
+                    /* Do nothing, continue traversing */
+                }
             }
             scope = scope.parent
         }
@@ -2214,6 +2273,9 @@ class ComposableFunctionBodyTransformer(
                 }
                 is Scope.ClassScope ->
                     break@loop
+                else -> {
+                    /* Do nothing, continue traversing */
+                }
             }
             scope = scope.parent
         }
@@ -2226,6 +2288,9 @@ class ComposableFunctionBodyTransformer(
                 is Scope.CaptureScope -> {
                     scope.markCapturedComposableCall()
                     break@loop
+                }
+                else -> {
+                    /* Do nothing, continue traversing */
                 }
             }
             scope = scope.parent
@@ -2272,6 +2337,9 @@ class ComposableFunctionBodyTransformer(
                 is Scope.BlockScope -> {
                     scope.markReturn(extraEndLocation)
                 }
+                else -> {
+                    /* Do nothing, continue traversing */
+                }
             }
             scope = scope.parent
         }
@@ -2293,6 +2361,9 @@ class ComposableFunctionBodyTransformer(
                 }
                 is Scope.BlockScope -> {
                     scope.markJump(extraEndLocation)
+                }
+                else -> {
+                    /* Do nothing, continue traversing */
                 }
             }
             scope = scope.parent
@@ -2598,6 +2669,14 @@ class ComposableFunctionBodyTransformer(
             expression.putValueArgument(changedArgIndex + i, param)
         }
 
+        currentFunctionScope.metrics.recordComposableCall(
+            expression,
+            paramMeta
+        )
+        metrics.recordComposableCall(
+            expression,
+            paramMeta
+        )
         recordCallInSource(call = expression)
 
         return expression
@@ -2873,6 +2952,9 @@ class ComposableFunctionBodyTransformer(
                         return true
                     }
                 }
+                else -> {
+                    /* Do nothing, continue traversing */
+                }
             }
             scope = scope.parent
         }
@@ -3026,6 +3108,9 @@ class ComposableFunctionBodyTransformer(
                 is Scope.FileScope,
                 is Scope.ClassScope -> {
                     break@loop
+                }
+                else -> {
+                    /* Do nothing, continue traversing */
                 }
             }
             scope = scope.parent
@@ -3277,6 +3362,8 @@ class ComposableFunctionBodyTransformer(
         ) : BlockScope("fun ${function.name.asString()}") {
             val isInlinedLambda = with(transformer) { function.isInlinedLambda() }
 
+            val metrics: FunctionMetrics = transformer.metrics.makeFunctionMetrics(function)
+
             private var lastTemporaryIndex: Int = 0
 
             private fun nextTemporaryIndex(): Int = lastTemporaryIndex++
@@ -3366,7 +3453,7 @@ class ComposableFunctionBodyTransformer(
 
                 parameters.forEachIndexed { originalIndex, parameter ->
                     if (expectedIndexes.first() == sortIndex[originalIndex] &&
-                        !parameter.type.isInlined()
+                        !parameter.type.isInlineClassType()
                     ) {
                         run++
                         expectedIndexes.removeAt(0)
@@ -3377,7 +3464,7 @@ class ComposableFunctionBodyTransformer(
                             ?: error("missing index $originalIndex")
                         builder.append(index)
                         expectedIndexes.remove(index)
-                        if (parameter.type.isInlined()) {
+                        if (parameter.type.isInlineClassType()) {
                             parameter.type.getClass()?.fqNameWhenAvailable?.let {
                                 builder.append(':')
                                 builder.append(

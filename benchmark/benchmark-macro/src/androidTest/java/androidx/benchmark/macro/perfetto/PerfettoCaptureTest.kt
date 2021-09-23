@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Android Open Source Project
+ * Copyright 2021 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,16 @@
 
 package androidx.benchmark.macro.perfetto
 
-import android.os.Build
 import androidx.benchmark.macro.FileLinkingRule
 import androidx.benchmark.macro.Packages
-import androidx.benchmark.macro.perfetto.PerfettoHelper.Companion.isAbiSupported
+import androidx.benchmark.perfetto.PerfettoCapture
+import androidx.benchmark.perfetto.PerfettoHelper
+import androidx.benchmark.perfetto.PerfettoHelper.Companion.LOWEST_BUNDLED_VERSION_SUPPORTED
+import androidx.benchmark.perfetto.PerfettoHelper.Companion.isAbiSupported
+import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
+import androidx.test.filters.SmallTest
 import androidx.testutils.verifyWithPolling
 import androidx.tracing.Trace
 import androidx.tracing.trace
@@ -32,66 +36,92 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.junit.runners.Parameterized
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 
-@SdkSuppress(minSdkVersion = 29) // Lower to 21 after fixing trace config.
-@RunWith(Parameterized::class)
-class PerfettoCaptureTest(private val unbundled: Boolean) {
+/**
+ * Tests for PerfettoCapture
+ *
+ * Note: this test is defined in benchmark-macro instead of benchmark-common so that it can
+ * validate trace contents with PerfettoTraceProcessor
+ */
+@SdkSuppress(minSdkVersion = 23)
+@RunWith(AndroidJUnit4::class)
+class PerfettoCaptureTest {
     @get:Rule
     val linkRule = FileLinkingRule()
 
     @Before
     @After
     fun cleanup() {
-        PerfettoCapture(unbundled).cancel()
+        PerfettoHelper.stopAllPerfettoProcesses()
     }
+
+    @SdkSuppress(
+        minSdkVersion = 21,
+        maxSdkVersion = LOWEST_BUNDLED_VERSION_SUPPORTED - 1
+    )
+    @SmallTest
+    @Test
+    fun bundledNotSupported() {
+        assumeTrue(isAbiSupported())
+
+        assertFailsWith<IllegalArgumentException> {
+            PerfettoCapture(false)
+        }
+    }
+
+    @SdkSuppress(minSdkVersion = LOWEST_BUNDLED_VERSION_SUPPORTED)
+    @LargeTest
+    @Test
+    fun captureAndValidateTrace_bundled() = captureAndValidateTrace(unbundled = false)
 
     @LargeTest
     @Test
-    fun captureAndValidateTrace() {
-        // Change the check to API >=21, once we have the correct Perfetto config.
-        assumeTrue(Build.VERSION.SDK_INT >= 29 && isAbiSupported())
+    fun captureAndValidateTrace_unbundled() = captureAndValidateTrace(unbundled = true)
+
+    private fun captureAndValidateTrace(unbundled: Boolean) {
+        assumeTrue(isAbiSupported())
 
         val traceFilePath = linkRule.createReportedTracePath(Packages.TEST)
         val perfettoCapture = PerfettoCapture(unbundled)
 
         verifyTraceEnable(false)
 
-        perfettoCapture.start()
+        perfettoCapture.start(listOf(Packages.TEST))
 
         verifyTraceEnable(true)
 
         // TODO: figure out why this sleep (200ms+) is needed - possibly related to b/194105203
         Thread.sleep(500)
 
-        trace(TRACE_SECTION_LABEL) {
-            // Tracing non-trivial duration for manual debugging/verification
-            Thread.sleep(20)
-        }
+        // Tracing non-trivial duration for manual debugging/verification
+        trace(CUSTOM_TRACE_SECTION_LABEL_1) { Thread.sleep(20) }
+        trace(CUSTOM_TRACE_SECTION_LABEL_2) { Thread.sleep(20) }
 
         perfettoCapture.stop(traceFilePath)
 
         val matchingSlices = PerfettoTraceProcessor.querySlices(
             absoluteTracePath = traceFilePath,
-            TRACE_SECTION_LABEL
+            CUSTOM_TRACE_SECTION_LABEL_1,
+            CUSTOM_TRACE_SECTION_LABEL_2
         )
 
-        assertEquals(1, matchingSlices.size)
-        matchingSlices.first().apply {
-            assertEquals(TRACE_SECTION_LABEL, name)
-            assertTrue(dur > 15_000_000) // should be at least 15ms
-        }
+        // Note: this test avoids validating platform-triggered trace sections, to avoid flakes
+        // from legitimate (and coincidental) platform use during test.
+        assertEquals(
+            listOf(CUSTOM_TRACE_SECTION_LABEL_1, CUSTOM_TRACE_SECTION_LABEL_2),
+            matchingSlices.sortedBy { it.ts }.map { it.name }
+        )
+        matchingSlices
+            .forEach {
+                assertTrue(it.dur > 15_000_000) // should be at least 15ms
+            }
     }
 
     companion object {
-        const val TRACE_SECTION_LABEL = "PerfettoCaptureTest"
-
-        @Parameterized.Parameters(name = "unbundled={0}")
-        @JvmStatic
-        fun parameters(): Array<Any> {
-            return arrayOf(true, false)
-        }
+        const val CUSTOM_TRACE_SECTION_LABEL_1 = "PerfettoCaptureTest_1"
+        const val CUSTOM_TRACE_SECTION_LABEL_2 = "PerfettoCaptureTest_2"
     }
 }
 

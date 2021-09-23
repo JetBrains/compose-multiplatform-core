@@ -21,7 +21,6 @@ import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.node.RootForTest
 import androidx.compose.ui.platform.TestComposeWindow
 import androidx.compose.ui.semantics.SemanticsNode
-import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.IdlingResource
 import androidx.compose.ui.test.InternalTestApi
 import androidx.compose.ui.test.MainTestClock
@@ -98,7 +97,6 @@ class DesktopComposeTestRule : ComposeContentTestRule {
         }
     }
 
-    @ExperimentalTestApi
     override suspend fun awaitIdle() {
         while (!isIdle()) {
             delay(10)
@@ -187,7 +185,23 @@ class DesktopComposeTestRule : ComposeContentTestRule {
             return rule.window.roots
         }
 
-        override val mainClock: MainTestClock
-            get() = TODO()
+        // TODO(https://github.com/JetBrains/compose-jb/issues/637): support MainTestClock
+        override val mainClock = object : MainTestClock {
+            override val currentTime: Long
+                get() = 0
+            override var autoAdvance: Boolean = false
+
+            override fun advanceTimeByFrame() {
+                TODO()
+            }
+
+            override fun advanceTimeBy(milliseconds: Long, ignoreFrameDuration: Boolean) {
+                TODO()
+            }
+
+            override fun advanceTimeUntil(timeoutMillis: Long, condition: () -> Boolean) {
+                TODO()
+            }
+        }
     }
 }

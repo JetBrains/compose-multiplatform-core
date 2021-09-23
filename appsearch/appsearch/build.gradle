@@ -24,9 +24,8 @@ plugins {
 }
 
 android {
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+    buildTypes.all {
+        consumerProguardFiles "proguard-rules.pro"
     }
 }
 
@@ -38,6 +37,8 @@ dependencies {
 
     androidTestAnnotationProcessor project(':appsearch:appsearch-compiler')
     androidTestImplementation project(':appsearch:appsearch-local-storage')
+    androidTestImplementation project(':appsearch:appsearch-platform-storage')
+    androidTestImplementation project(':appsearch:appsearch-test-util')
     androidTestImplementation(libs.testCore)
     androidTestImplementation(libs.testRules)
     androidTestImplementation(libs.truth)
@@ -63,7 +64,6 @@ androidx {
     name = 'AndroidX AppSearch'
     publish = Publish.SNAPSHOT_AND_RELEASE
     mavenGroup = LibraryGroups.APPSEARCH
-    mavenVersion = LibraryVersions.APPSEARCH
     inceptionYear = '2019'
     description = 'AndroidX AppSearch - App Indexing'
 }

@@ -23,11 +23,17 @@ import android.util.Log
 import androidx.annotation.RestrictTo
 import androidx.benchmark.Arguments
 import androidx.benchmark.BenchmarkResult
+import androidx.benchmark.ConfigurationError
+import androidx.benchmark.DeviceInfo
 import androidx.benchmark.InstrumentationResults
 import androidx.benchmark.ResultWriter
-import androidx.benchmark.macro.perfetto.PerfettoCaptureWrapper
-import androidx.benchmark.macro.perfetto.UiState
-import androidx.benchmark.macro.perfetto.appendUiState
+import androidx.benchmark.UserspaceTracing
+import androidx.benchmark.checkAndGetSuppressionState
+import androidx.benchmark.conditionalError
+import androidx.benchmark.perfetto.PerfettoCaptureWrapper
+import androidx.benchmark.perfetto.UiState
+import androidx.benchmark.perfetto.appendUiState
+import androidx.benchmark.userspaceTrace
 import androidx.test.platform.app.InstrumentationRegistry
 import java.io.File
 
@@ -110,8 +116,8 @@ private fun macrobenchmark(
     require(metrics.isNotEmpty()) {
         "Empty list of metrics passed to metrics param, must pass at least one Metric"
     }
-    require(Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-        "Macrobenchmark currently requires Android 10 (API 29) or greater."
+    require(Build.VERSION.SDK_INT >= 23) {
+        "Macrobenchmark currently requires Android 6 (API 23) or greater."
     }
 
     // skip benchmark if not supported by vm settings
@@ -142,13 +148,17 @@ private fun macrobenchmark(
             it.configure(packageName)
         }
         var isFirstRun = true
-        val metricResults = List(iterations) { iteration ->
+        val measurements = List(iterations) { iteration ->
             userspaceTrace("setupBlock") {
                 setupBlock(scope, isFirstRun)
             }
             isFirstRun = false
 
-            val tracePath = perfettoCollector.record(uniqueName, iteration) {
+            val tracePath = perfettoCollector.record(
+                benchmarkName = uniqueName,
+                iteration = iteration,
+                packages = listOf(packageName)
+            ) {
                 try {
                     userspaceTrace("start metrics") {
                         metrics.forEach {
@@ -169,7 +179,7 @@ private fun macrobenchmark(
 
             tracePaths.add(tracePath)
 
-            val metricsWithUiState = userspaceTrace("extract metrics") {
+            val iterationResult = userspaceTrace("extract metrics") {
                 metrics
                     // capture list of Map<String,Long> per metric
                     .map { it.getMetrics(packageName, tracePath) }
@@ -178,8 +188,8 @@ private fun macrobenchmark(
             }
             // append UI state to trace, so tools opening trace will highlight relevant part in UI
             val uiState = UiState(
-                timelineStart = metricsWithUiState.timelineStart,
-                timelineEnd = metricsWithUiState.timelineEnd,
+                timelineStart = iterationResult.timelineRangeNs?.first,
+                timelineEnd = iterationResult.timelineRangeNs?.last,
                 highlightPackage = packageName
             )
             File(tracePath).apply {
@@ -192,10 +202,10 @@ private fun macrobenchmark(
             Log.d(TAG, "Iteration $iteration captured $uiState")
 
             // report just the metrics
-            metricsWithUiState.metrics
-        }.mergeToMetricResults(tracePaths)
+            iterationResult
+        }.mergeIterationMeasurements()
 
-        require(metricResults.isNotEmpty()) {
+        require(measurements.isNotEmpty()) {
             """
                 Unable to read any metrics during benchmark (metric list: $metrics).
                 Check that you're performing the operations to be measured. For example, if
@@ -204,16 +214,20 @@ private fun macrobenchmark(
             """.trimIndent()
         }
         InstrumentationResults.instrumentationReport {
-            val statsList = metricResults.map { it.stats }
             val (summaryV1, summaryV2) = ideSummaryStrings(
                 warningMessage,
                 uniqueName,
-                statsList,
+                measurements,
                 tracePaths
             )
             ideSummaryRecord(summaryV1 = summaryV1, summaryV2 = summaryV2)
             warningMessage = "" // warning only printed once
-            statsList.forEach { it.putInBundle(bundle, suppressionState?.prefix ?: "") }
+            measurements.singleMetrics.forEach {
+                it.putInBundle(bundle, suppressionState?.prefix ?: "")
+            }
+            measurements.sampledMetrics.forEach {
+                it.putPercentilesInBundle(bundle, suppressionState?.prefix ?: "")
+            }
         }
 
         val warmupIterations = if (compilationMode is CompilationMode.SpeedProfile) {
@@ -227,7 +241,7 @@ private fun macrobenchmark(
                 className = className,
                 testName = testName,
                 totalRunTimeNs = System.nanoTime() - startTime,
-                metrics = metricResults,
+                metrics = measurements,
                 repeatIterations = iterations,
                 thermalThrottleSleepSeconds = 0,
                 warmupIterations = warmupIterations
@@ -269,6 +283,27 @@ public fun macrobenchmarkWithStartupMode(
                 killProcess()
                 // drop app pages from page cache to ensure it is loaded from disk, from scratch
                 dropKernelPageCache()
+                // Clear profile caches when possible.
+
+                // Benchmarks get faster over time as ART can create profiles for future
+                // optimizations; JIT methods/classes, and persist the compiled code to disk `N`
+                // seconds after startup. This information affects subsequent benchmark runs.
+
+                // Only Cold startup benchmarks kill the target process, allowing us to reset
+                // compilation state; and only `CompilationMode.None` benchmarks can be
+                // 'inexpensively' recompiled in this way  (i.e. without running warmup, or
+                // recompiling, since it's just a compile --reset).
+                //
+                // Empirically, this is also the  scenario most significantly affected by this
+                // JIT persistence, so we optimize  specifically for measurement correctness in
+                // this scenario.
+                if (compilationMode == CompilationMode.None) {
+                    compilationMode.compile(packageName) {
+                        // This is only compiling for Compilation.None
+                        // So passing an empty block as a measureBlock is inconsequential.
+                        throw IllegalStateException("block never used for CompilationMode.None")
+                    }
+                }
             } else if (startupMode != null && firstIterationAfterCompile) {
                 // warmup process by running the measure block once unmeasured
                 measureBlock()

@@ -63,7 +63,10 @@ import androidx.compose.ui.text.platform.toAccessibilitySpannableString
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.fastJoinToString
+import androidx.compose.ui.focus.requestFocus
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.node.HitTestResult
+import androidx.compose.ui.platform.accessibility.hasCollectionInfo
 import androidx.compose.ui.platform.accessibility.setCollectionInfo
 import androidx.compose.ui.platform.accessibility.setCollectionItemInfo
 import androidx.compose.ui.semantics.AccessibilityAction
@@ -450,9 +453,25 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
         info.isFocusable = semanticsNode.unmergedConfig.contains(SemanticsProperties.Focused)
         if (info.isFocusable) {
             info.isFocused = semanticsNode.unmergedConfig[SemanticsProperties.Focused]
+            if (info.isFocused) {
+                info.addAction(AccessibilityNodeInfoCompat.ACTION_CLEAR_FOCUS)
+            } else {
+                info.addAction(AccessibilityNodeInfoCompat.ACTION_FOCUS)
+            }
         }
-        info.isVisibleToUser =
-            (semanticsNode.unmergedConfig.getOrNull(SemanticsProperties.InvisibleToUser) == null)
+
+        // Mark invisible nodes
+        val wrapperToCheckTransparency = if (semanticsNode.isFake) {
+            // when node is fake, its parent that is the original semantics node should define the
+            // alpha value
+            semanticsNode.parent?.findWrapperToGetBounds()
+        } else {
+            semanticsNode.findWrapperToGetBounds()
+        }
+        val isTransparent = wrapperToCheckTransparency?.isTransparent() ?: false
+        info.isVisibleToUser = !isTransparent &&
+            semanticsNode.unmergedConfig.getOrNull(SemanticsProperties.InvisibleToUser) == null
+
         semanticsNode.unmergedConfig.getOrNull(SemanticsProperties.LiveRegion)?.let {
             info.liveRegion = when (it) {
                 LiveRegionMode.Polite -> ACCESSIBILITY_LIVE_REGION_POLITE
@@ -648,8 +667,11 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
             val maxValue = xScrollState.maxValue()
             val reverseScrolling = xScrollState.reverseScrolling
             // Talkback defines SCROLLABLE_ROLE_FILTER_FOR_DIRECTION_NAVIGATION, so we need to
-            // assign a role for auto scroll to work.
-            info.className = "android.widget.HorizontalScrollView"
+            // assign a role for auto scroll to work. Node with collectionInfo resolved by
+            // Talkback to ROLE_LIST and supports autoscroll too
+            if (!semanticsNode.hasCollectionInfo()) {
+                info.className = "android.widget.HorizontalScrollView"
+            }
             if (maxValue > 0f) {
                 info.isScrollable = true
             }
@@ -689,8 +711,11 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
             val maxValue = yScrollState.maxValue()
             val reverseScrolling = yScrollState.reverseScrolling
             // Talkback defines SCROLLABLE_ROLE_FILTER_FOR_DIRECTION_NAVIGATION, so we need to
-            // assign a role for auto scroll to work.
-            info.className = "android.widget.ScrollView"
+            // assign a role for auto scroll to work. Node with collectionInfo resolved by
+            // Talkback to ROLE_LIST and supports autoscroll too
+            if (!semanticsNode.hasCollectionInfo()) {
+                info.className = "android.widget.ScrollView"
+            }
             if (maxValue > 0f) {
                 info.isScrollable = true
             }
@@ -1198,6 +1223,23 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                     arguments.getFloat(AccessibilityNodeInfoCompat.ACTION_ARGUMENT_PROGRESS_VALUE)
                 ) ?: false
             }
+            AccessibilityNodeInfoCompat.ACTION_FOCUS -> {
+                if (node.unmergedConfig.getOrNull(SemanticsProperties.Focused) == false) {
+                    node.layoutNode.outerLayoutNodeWrapper.findLastFocusWrapper()
+                        ?.requestFocus(propagateFocus = false) ?: return false
+                    return true
+                } else {
+                    return false
+                }
+            }
+            AccessibilityNodeInfoCompat.ACTION_CLEAR_FOCUS -> {
+                return if (node.unmergedConfig.getOrNull(SemanticsProperties.Focused) == true) {
+                    view.focusManager.clearFocus()
+                    true
+                } else {
+                    false
+                }
+            }
             AccessibilityNodeInfoCompat.ACTION_SET_TEXT -> {
                 val text = arguments?.getString(
                     AccessibilityNodeInfoCompat.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE
@@ -1405,11 +1447,12 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
      * Hit test the layout tree for semantics wrappers.
      * The return value is a virtual view id, or InvalidId if an embedded Android View was hit.
      */
+    @OptIn(ExperimentalComposeUiApi::class)
     @VisibleForTesting
     internal fun hitTestSemanticsAt(x: Float, y: Float): Int {
         view.measureAndLayout()
 
-        val hitSemanticsWrappers: MutableList<SemanticsWrapper> = mutableListOf()
+        val hitSemanticsWrappers = HitTestResult<SemanticsWrapper>()
         view.root.hitTestSemantics(
             pointerPosition = Offset(x, y),
             hitSemanticsWrappers = hitSemanticsWrappers
@@ -1418,9 +1461,21 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
         val wrapper = hitSemanticsWrappers.lastOrNull()?.layoutNode?.outerSemantics
         var virtualViewId = InvalidId
         if (wrapper != null) {
-            val androidView = view.androidViewsHandler.layoutNodeToHolder[wrapper.layoutNode]
-            if (androidView == null) {
-                virtualViewId = semanticsNodeIdToAccessibilityVirtualNodeId(wrapper.modifier.id)
+
+            // The node below is not added to the tree; it's a wrapper around outer semantics to
+            // use the methods available to the SemanticsNode
+            val semanticsNode = SemanticsNode(wrapper, false)
+            val wrapperToCheckAlpha = semanticsNode.findWrapperToGetBounds()
+
+            // Do not 'find' invisible nodes when exploring by touch. This will prevent us from
+            // sending events for invisible nodes
+            if (!semanticsNode.unmergedConfig.contains(SemanticsProperties.InvisibleToUser) &&
+                !wrapperToCheckAlpha.isTransparent()
+            ) {
+                val androidView = view.androidViewsHandler.layoutNodeToHolder[wrapper.layoutNode]
+                if (androidView == null) {
+                    virtualViewId = semanticsNodeIdToAccessibilityVirtualNodeId(wrapper.modifier.id)
+                }
             }
         }
         return virtualViewId
@@ -2426,7 +2481,7 @@ internal fun SemanticsOwner
         ) {
             return
         }
-        val boundsInRoot = currentNode.boundsInRoot.toAndroidRect()
+        val boundsInRoot = currentNode.touchBoundsInRoot.toAndroidRect()
         val region = Region().also { it.set(boundsInRoot) }
         val virtualViewId = if (currentNode.id == root.id) {
             AccessibilityNodeProviderCompat.HOST_VIEW_ID
@@ -2446,10 +2501,16 @@ internal fun SemanticsOwner
             unaccountedSpace.op(boundsInRoot, unaccountedSpace, Region.Op.REVERSE_DIFFERENCE)
         } else {
             if (currentNode.isFake) {
+                val parentNode = currentNode.parent
+                // use parent bounds for fake node
+                val boundsForFakeNode = if (parentNode?.layoutInfo?.isPlaced == true) {
+                    parentNode.boundsInRoot
+                } else {
+                    Rect(0f, 0f, 10f, 10f)
+                }
                 nodes[virtualViewId] = SemanticsNodeWithAdjustedBounds(
                     currentNode,
-                    // provide some non-zero size as otherwise it will be ignored
-                    Rect(0f, 0f, 10f, 10f).toAndroidRect()
+                    boundsForFakeNode.toAndroidRect()
                 )
             } else if (virtualViewId == AccessibilityNodeProviderCompat.HOST_VIEW_ID) {
                 // Root view might have WRAP_CONTENT layout params in which case it will have zero

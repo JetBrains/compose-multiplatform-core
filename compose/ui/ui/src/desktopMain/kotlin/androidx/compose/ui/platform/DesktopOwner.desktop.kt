@@ -49,14 +49,14 @@ import androidx.compose.ui.input.mouse.MouseScrollEventFilter
 import androidx.compose.ui.input.pointer.PointerInputEvent
 import androidx.compose.ui.input.pointer.PointerInputEventProcessor
 import androidx.compose.ui.input.pointer.PointerInputFilter
-import androidx.compose.ui.input.pointer.PointerMoveEventFilter
 import androidx.compose.ui.input.pointer.PositionCalculator
 import androidx.compose.ui.input.pointer.ProcessResult
 import androidx.compose.ui.input.pointer.TestPointerInputEventData
 import androidx.compose.ui.layout.RootMeasurePolicy
-import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.node.HitTestResult
 import androidx.compose.ui.node.InternalCoreApi
 import androidx.compose.ui.node.LayoutNode
+import androidx.compose.ui.node.LayoutNodeDrawScope
 import androidx.compose.ui.node.MeasureAndLayoutDelegate
 import androidx.compose.ui.node.Owner
 import androidx.compose.ui.node.OwnerSnapshotObserver
@@ -98,6 +98,8 @@ internal class DesktopOwner(
 
     // TODO(demin): support RTL
     override val layoutDirection: LayoutDirection = LayoutDirection.Ltr
+
+    override val sharedDrawScope = LayoutNodeDrawScope()
 
     private val semanticsModifier = SemanticsModifierCore(
         id = SemanticsModifierCore.generateSemanticsId(),
@@ -156,9 +158,6 @@ internal class DesktopOwner(
         container.register(this)
         snapshotObserver.startObserving()
         root.attach(this)
-        if (isFocusable) {
-            container.focusedOwner = this
-        }
         _focusManager.takeFocus()
     }
 
@@ -188,19 +187,15 @@ internal class DesktopOwner(
 
     override val viewConfiguration: ViewConfiguration = DesktopViewConfiguration(density)
 
-    val keyboard: Keyboard?
-        get() = container.keyboard
-
     override fun sendKeyEvent(keyEvent: KeyEvent): Boolean {
         when {
             keyEvent.nativeKeyEvent.id == java.awt.event.KeyEvent.KEY_TYPED ->
                 container.platformInputService.charKeyPressed = true
-            keyEvent.type == KeyEventType.KeyDown ->
+            keyEvent.type == KeyEventType.KeyUp ->
                 container.platformInputService.charKeyPressed = false
         }
 
-        return keyInputModifier.processKeyInput(keyEvent) ||
-            keyboard?.processKeyInput(keyEvent) ?: false
+        return keyInputModifier.processKeyInput(keyEvent)
     }
 
     override var showLayoutBounds = false
@@ -224,7 +219,7 @@ internal class DesktopOwner(
     var onNeedsRender: (() -> Unit)? = null
     var onDispatchCommand: ((Command) -> Unit)? = null
 
-    fun render(canvas: org.jetbrains.skija.Canvas, width: Int, height: Int) {
+    fun render(canvas: org.jetbrains.skia.Canvas, width: Int, height: Int) {
         needsLayout = false
         setSize(width, height)
         measureAndLayout()
@@ -275,7 +270,7 @@ internal class DesktopOwner(
     override fun createLayer(
         drawBlock: (Canvas) -> Unit,
         invalidateParentLayer: () -> Unit
-    ) = SkijaLayer(
+    ) = SkiaLayer(
         density,
         invalidateParentLayer = {
             invalidateParentLayer()
@@ -317,13 +312,20 @@ internal class DesktopOwner(
         measureAndLayoutDelegate.updateRootConstraints(constraints)
     }
 
-    fun draw(canvas: org.jetbrains.skija.Canvas) {
+    fun draw(canvas: org.jetbrains.skia.Canvas) {
         root.draw(DesktopCanvas(canvas))
     }
 
     internal fun processPointerInput(event: PointerInputEvent): ProcessResult {
         measureAndLayout()
-        return pointerInputEventProcessor.process(event, this)
+        return pointerInputEventProcessor.process(
+            event,
+            this,
+            isInBounds = event.pointers.all {
+                it.position.x in 0f..root.width.toFloat() &&
+                    it.position.y in 0f..root.height.toFloat()
+            }
+        )
     }
 
     override fun processPointerInput(nanoTime: Long, pointers: List<TestPointerInputEventData>) {
@@ -340,7 +342,7 @@ internal class DesktopOwner(
     internal fun onMouseScroll(position: Offset, event: MouseScrollEvent) {
         measureAndLayout()
 
-        val inputFilters = mutableListOf<PointerInputFilter>()
+        val inputFilters = HitTestResult<PointerInputFilter>()
         root.hitTest(position, inputFilters)
 
         for (
@@ -352,79 +354,5 @@ internal class DesktopOwner(
             val isConsumed = filter.onMouseScroll(event)
             if (isConsumed) break
         }
-    }
-
-    private var oldMoveFilters = listOf<PointerMoveEventFilter>()
-    private var newMoveFilters = mutableListOf<PointerInputFilter>()
-
-    internal fun onPointerMove(position: Offset) {
-        // TODO: do we actually need that?
-        measureAndLayout()
-
-        root.hitTest(position, newMoveFilters)
-        // Optimize fastpath, where no pointer move event listeners are there.
-        if (newMoveFilters.isEmpty() && oldMoveFilters.isEmpty()) return
-
-        // For elements in `newMoveFilters` we call on `onMoveHandler`.
-        // For elements in `oldMoveFilters` but not in `newMoveFilters` we call `onExitHandler`.
-        // For elements not in `oldMoveFilters` but in `newMoveFilters` we call `onEnterHandler`.
-
-        var onMoveConsumed = false
-        var onEnterConsumed = false
-        var onExitConsumed = false
-
-        for (
-            filter in newMoveFilters
-                .asReversed()
-                .asSequence()
-                .filterIsInstance<PointerMoveEventFilter>()
-        ) {
-            if (!onMoveConsumed) {
-                val relative = position - filter.layoutCoordinates!!.boundsInWindow().topLeft
-                onMoveConsumed = filter.onMoveHandler(relative)
-            }
-            if (!onEnterConsumed && !oldMoveFilters.contains(filter))
-                onEnterConsumed = filter.onEnterHandler()
-        }
-
-        // TODO: is this quadratic algorithm (by number of matching filters) a problem?
-        //  Unlikely we'll have significant number of filters.
-        for (filter in oldMoveFilters.asReversed()) {
-            if (!onExitConsumed && !newMoveFilters.contains(filter))
-                onExitConsumed = filter.onExitHandler()
-        }
-
-        oldMoveFilters = newMoveFilters.filterIsInstance<PointerMoveEventFilter>()
-        newMoveFilters = mutableListOf()
-    }
-
-    internal fun onPointerEnter(position: Offset) {
-        var onEnterConsumed = false
-        // TODO: do we actually need that?
-        measureAndLayout()
-        root.hitTest(position, newMoveFilters)
-        for (
-            filter in newMoveFilters
-                .asReversed()
-                .asSequence()
-                .filterIsInstance<PointerMoveEventFilter>()
-        ) {
-            if (!onEnterConsumed) {
-                onEnterConsumed = filter.onEnterHandler()
-            }
-        }
-        oldMoveFilters = newMoveFilters.filterIsInstance<PointerMoveEventFilter>()
-        newMoveFilters = mutableListOf()
-    }
-
-    internal fun onPointerExit() {
-        var onExitConsumed = false
-        for (filter in oldMoveFilters.asReversed()) {
-            if (!onExitConsumed) {
-                onExitConsumed = filter.onExitHandler()
-            }
-        }
-        oldMoveFilters = listOf()
-        newMoveFilters = mutableListOf()
     }
 }

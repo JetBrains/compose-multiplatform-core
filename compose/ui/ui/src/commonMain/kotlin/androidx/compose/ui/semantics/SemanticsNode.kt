@@ -19,14 +19,15 @@ package androidx.compose.ui.semantics
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.AlignmentLine
-import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.layout.LayoutInfo
+import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.node.LayoutNode
 import androidx.compose.ui.node.LayoutNodeWrapper
 import androidx.compose.ui.node.RootForTest
+import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.util.fastForEach
 
@@ -82,6 +83,16 @@ class SemanticsNode internal constructor(
     // GEOMETRY
 
     /**
+     * The rectangle of the touchable area.
+     *
+     * If this is a clickable region, this is the rectangle that accepts touch input. This can
+     * be larger than [size] when the layout is less than
+     * [ViewConfiguration.minimumTouchTargetSize]
+     */
+    val touchBoundsInRoot: Rect
+        get() = findWrapperToGetBounds().touchBoundsInRoot()
+
+    /**
      * The size of the bounding box for this node, with no clipping applied
      */
     val size: IntSize get() = findWrapperToGetBounds().size
@@ -94,7 +105,7 @@ class SemanticsNode internal constructor(
     val boundsInRoot: Rect
         get() {
             if (!layoutNode.isAttached) return Rect.Zero
-            return this.findWrapperToGetBounds().boundsInRoot()
+            return findWrapperToGetBounds().boundsInRoot()
         }
 
     /**
@@ -319,7 +330,7 @@ class SemanticsNode internal constructor(
      * of use cases it means that accessibility bounds will be equal to the clickable area.
      * Otherwise the outermost semantics will be used to report bounds, size and position.
      */
-    private fun findWrapperToGetBounds(): LayoutNodeWrapper {
+    internal fun findWrapperToGetBounds(): SemanticsWrapper {
         return if (unmergedConfig.isMergingSemanticsOfDescendants) {
             layoutNode.outerMergingSemantics ?: outerSemanticsNodeWrapper
         } else {

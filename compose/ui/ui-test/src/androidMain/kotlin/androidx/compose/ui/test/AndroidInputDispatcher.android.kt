@@ -16,19 +16,26 @@
 
 package androidx.compose.ui.test
 
-import android.os.SystemClock
+import android.view.InputDevice
 import android.view.MotionEvent
+import android.view.MotionEvent.ACTION_BUTTON_PRESS
+import android.view.MotionEvent.ACTION_BUTTON_RELEASE
 import android.view.MotionEvent.ACTION_CANCEL
 import android.view.MotionEvent.ACTION_DOWN
+import android.view.MotionEvent.ACTION_HOVER_ENTER
+import android.view.MotionEvent.ACTION_HOVER_EXIT
+import android.view.MotionEvent.ACTION_HOVER_MOVE
 import android.view.MotionEvent.ACTION_MOVE
 import android.view.MotionEvent.ACTION_POINTER_DOWN
 import android.view.MotionEvent.ACTION_POINTER_INDEX_SHIFT
 import android.view.MotionEvent.ACTION_POINTER_UP
+import android.view.MotionEvent.ACTION_SCROLL
 import android.view.MotionEvent.ACTION_UP
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.node.RootForTest
 import androidx.compose.ui.platform.ViewRootForTest
-import kotlinx.coroutines.ExperimentalCoroutinesApi
+
+private val MouseAsTouchEvents = listOf(ACTION_DOWN, ACTION_MOVE, ACTION_UP)
 
 internal actual fun createInputDispatcher(
     testContext: TestContext,
@@ -39,7 +46,23 @@ internal actual fun createInputDispatcher(
             root::class.java.simpleName
     }
     val view = root.view
-    return AndroidInputDispatcher(testContext, root) { view.dispatchTouchEvent(it) }
+    return AndroidInputDispatcher(testContext, root) {
+        when (it.source) {
+            InputDevice.SOURCE_TOUCHSCREEN -> {
+                view.dispatchTouchEvent(it)
+            }
+            InputDevice.SOURCE_MOUSE -> {
+                if (it.action in MouseAsTouchEvents) {
+                    view.dispatchTouchEvent(it)
+                } else {
+                    view.dispatchGenericMotionEvent(it)
+                }
+            }
+            else -> throw IllegalArgumentException(
+                "Can't dispatch MotionEvents with source ${it.source}"
+            )
+        }
+    }
 }
 
 internal class AndroidInputDispatcher(
@@ -51,30 +74,85 @@ internal class AndroidInputDispatcher(
     private val batchLock = Any()
     private var batchedEvents = mutableListOf<MotionEvent>()
     private var acceptEvents = true
-    private var lastEventTime = currentTime
-
-    override val now: Long get() = SystemClock.uptimeMillis()
+    private var currentClockTime = currentTime
 
     override fun PartialGesture.enqueueDown(pointerId: Int) {
-        batchMotionEvent(
+        enqueueTouchEvent(
             if (lastPositions.size == 1) ACTION_DOWN else ACTION_POINTER_DOWN,
             lastPositions.keys.sorted().indexOf(pointerId)
         )
     }
 
     override fun PartialGesture.enqueueMove() {
-        batchMotionEvent(ACTION_MOVE, 0)
+        enqueueTouchEvent(ACTION_MOVE, 0)
+    }
+
+    override fun PartialGesture.enqueueMoves(
+        relativeHistoricalTimes: List<Long>,
+        historicalCoordinates: List<List<Offset>>
+    ) {
+        val entries = lastPositions.entries.sortedBy { it.key }
+        val absoluteHistoricalTimes = relativeHistoricalTimes.map { currentTime + it }
+        enqueueTouchEvent(
+            downTime = downTime,
+            action = ACTION_MOVE,
+            actionIndex = 0,
+            pointerIds = List(entries.size) { entries[it].key },
+            eventTimes = absoluteHistoricalTimes + listOf(currentTime),
+            coordinates = List(entries.size) {
+                historicalCoordinates[it] + listOf(entries[it].value)
+            }
+        )
     }
 
     override fun PartialGesture.enqueueUp(pointerId: Int) {
-        batchMotionEvent(
+        enqueueTouchEvent(
             if (lastPositions.size == 1) ACTION_UP else ACTION_POINTER_UP,
             lastPositions.keys.sorted().indexOf(pointerId)
         )
     }
 
     override fun PartialGesture.enqueueCancel() {
-        batchMotionEvent(ACTION_CANCEL, 0)
+        enqueueTouchEvent(ACTION_CANCEL, 0)
+    }
+
+    override fun MouseInputState.enqueuePress(buttonId: Int) {
+        enqueueMouseEvent(if (hasOneButtonPressed) ACTION_DOWN else ACTION_MOVE)
+        enqueueMouseEvent(ACTION_BUTTON_PRESS)
+    }
+
+    override fun MouseInputState.enqueueMove() {
+        enqueueMouseEvent(if (isEntered) ACTION_HOVER_MOVE else ACTION_MOVE)
+    }
+
+    override fun MouseInputState.enqueueRelease(buttonId: Int) {
+        enqueueMouseEvent(ACTION_BUTTON_RELEASE)
+        enqueueMouseEvent(if (hasNoButtonsPressed) ACTION_UP else ACTION_MOVE)
+    }
+
+    override fun MouseInputState.enqueueEnter() {
+        enqueueMouseEvent(ACTION_HOVER_ENTER)
+    }
+
+    override fun MouseInputState.enqueueExit() {
+        enqueueMouseEvent(ACTION_HOVER_EXIT)
+    }
+
+    override fun MouseInputState.enqueueCancel() {
+        enqueueMouseEvent(ACTION_CANCEL)
+    }
+
+    @OptIn(ExperimentalTestApi::class)
+    override fun MouseInputState.enqueueScroll(delta: Float, scrollWheel: ScrollWheel) {
+        enqueueMouseEvent(
+            ACTION_SCROLL,
+            delta,
+            when (scrollWheel) {
+                ScrollWheel.Horizontal -> MotionEvent.AXIS_HSCROLL
+                ScrollWheel.Vertical -> MotionEvent.AXIS_VSCROLL
+                else -> -1
+            }
+        )
     }
 
     /**
@@ -84,72 +162,170 @@ internal class AndroidInputDispatcher(
      * @see MotionEvent.getAction
      * @see MotionEvent.getActionIndex
      */
-    private fun PartialGesture.batchMotionEvent(action: Int, actionIndex: Int) {
+    private fun PartialGesture.enqueueTouchEvent(action: Int, actionIndex: Int) {
         val entries = lastPositions.entries.sortedBy { it.key }
-        batchMotionEvent(
-            downTime,
-            currentTime,
-            action,
-            actionIndex,
-            List(entries.size) { entries[it].value },
-            List(entries.size) { entries[it].key }
+        enqueueTouchEvent(
+            downTime = downTime,
+            action = action,
+            actionIndex = actionIndex,
+            pointerIds = List(entries.size) { entries[it].key },
+            eventTimes = listOf(currentTime),
+            coordinates = List(entries.size) { listOf(entries[it].value) }
         )
     }
 
     /**
      * Generates an event with the given parameters.
      */
-    private fun batchMotionEvent(
+    private fun enqueueTouchEvent(
         downTime: Long,
-        eventTime: Long,
         action: Int,
         actionIndex: Int,
-        coordinates: List<Offset>,
-        pointerIds: List<Int>
+        pointerIds: List<Int>,
+        eventTimes: List<Long>,
+        coordinates: List<List<Offset>>
     ) {
+        check(coordinates.size == pointerIds.size) {
+            "Coordinates size should equal pointerIds size " +
+                "(was: ${coordinates.size}, ${pointerIds.size})"
+        }
+        repeat(pointerIds.size) { pointerIndex ->
+            check(eventTimes.size == coordinates[pointerIndex].size) {
+                "Historical eventTimes size should equal coordinates[$pointerIndex] size " +
+                    "(was: ${eventTimes.size}, ${coordinates[pointerIndex].size})"
+            }
+        }
+
         synchronized(batchLock) {
             check(acceptEvents) {
-                "Can't enqueue event (" +
+                "Can't enqueue touch event (" +
                     "downTime=$downTime, " +
-                    "eventTime=$eventTime, " +
                     "action=$action, " +
                     "actionIndex=$actionIndex, " +
                     "pointerIds=$pointerIds, " +
+                    "eventTimes=$eventTimes, " +
                     "coordinates=$coordinates" +
                     "), events have already been (or are being) dispatched or disposed"
             }
-            if (lastEventTime == TimeNotSet) {
-                lastEventTime = eventTime
+            val positionInScreen = root?.let {
+                val array = intArrayOf(0, 0)
+                it.view.getLocationOnScreen(array)
+                Offset(array[0].toFloat(), array[1].toFloat())
+            } ?: Offset.Zero
+            val motionEvent = MotionEvent.obtain(
+                /* downTime = */ downTime,
+                /* eventTime = */ eventTimes[0],
+                /* action = */ action + (actionIndex shl ACTION_POINTER_INDEX_SHIFT),
+                /* pointerCount = */ coordinates.size,
+                /* pointerProperties = */ Array(coordinates.size) { pointerIndex ->
+                    MotionEvent.PointerProperties().apply {
+                        id = pointerIds[pointerIndex]
+                        toolType = MotionEvent.TOOL_TYPE_FINGER
+                    }
+                },
+                /* pointerCoords = */ Array(coordinates.size) { pointerIndex ->
+                    MotionEvent.PointerCoords().apply {
+                        x = positionInScreen.x + coordinates[pointerIndex][0].x
+                        y = positionInScreen.y + coordinates[pointerIndex][0].y
+                    }
+                },
+                /* metaState = */ 0,
+                /* buttonState = */ 0,
+                /* xPrecision = */ 1f,
+                /* yPrecision = */ 1f,
+                /* deviceId = */ 0,
+                /* edgeFlags = */ 0,
+                /* source = */ InputDevice.SOURCE_TOUCHSCREEN,
+                /* flags = */ 0
+            ).apply {
+                // The current time & coordinates are the last element in the lists, and need to
+                // be passed into the final addBatch call. If there are no historical events,
+                // the list sizes are 1 and we don't need to call addBatch at all.
+                for (timeIndex in 1 until eventTimes.size) {
+                    addBatch(
+                        /* eventTime = */ eventTimes[timeIndex],
+                        /* pointerCoords = */ Array(coordinates.size) { pointerIndex ->
+                            MotionEvent.PointerCoords().apply {
+                                x = positionInScreen.x + coordinates[pointerIndex][timeIndex].x
+                                y = positionInScreen.y + coordinates[pointerIndex][timeIndex].y
+                            }
+                        },
+                        /* metaState = */ 0
+                    )
+                }
+                offsetLocation(-positionInScreen.x, -positionInScreen.y)
             }
-            val positionInScreen = if (root != null) {
+
+            batchedEvents.add(motionEvent)
+        }
+    }
+
+    private fun MouseInputState.enqueueMouseEvent(action: Int, delta: Float = 0f, axis: Int = -1) {
+        enqueueMouseEvent(
+            downTime = downTime,
+            eventTime = currentTime,
+            action = action,
+            coordinate = lastPosition,
+            buttonState = pressedButtons.fold(0) { state, buttonId -> state or buttonId },
+            axis = axis,
+            axisDelta = delta
+        )
+    }
+
+    private fun enqueueMouseEvent(
+        downTime: Long,
+        eventTime: Long,
+        action: Int,
+        coordinate: Offset,
+        buttonState: Int,
+        axis: Int = -1,
+        axisDelta: Float = 0f
+    ) {
+        synchronized(batchLock) {
+            check(acceptEvents) {
+                "Can't enqueue mouse event (" +
+                    "downTime=$downTime, " +
+                    "eventTime=$eventTime, " +
+                    "action=$action, " +
+                    "coordinate=$coordinate, " +
+                    "buttonState=$buttonState, " +
+                    "axis=$axis, " +
+                    "axisDelta=$axisDelta" +
+                    "), events have already been (or are being) dispatched or disposed"
+            }
+            val positionInScreen = root?.let {
                 val array = intArrayOf(0, 0)
                 root.view.getLocationOnScreen(array)
                 Offset(array[0].toFloat(), array[1].toFloat())
-            } else {
-                Offset.Zero
-            }
+            } ?: Offset.Zero
             batchedEvents.add(
                 MotionEvent.obtain(
                     /* downTime = */ downTime,
                     /* eventTime = */ eventTime,
-                    /* action = */ action + (actionIndex shl ACTION_POINTER_INDEX_SHIFT),
-                    /* pointerCount = */ coordinates.size,
-                    /* pointerProperties = */ Array(coordinates.size) {
-                        MotionEvent.PointerProperties().apply { id = pointerIds[it] }
-                    },
-                    /* pointerCoords = */ Array(coordinates.size) {
-                        MotionEvent.PointerCoords().apply {
-                            x = positionInScreen.x + coordinates[it].x
-                            y = positionInScreen.y + coordinates[it].y
+                    /* action = */ action,
+                    /* pointerCount = */ 1,
+                    /* pointerProperties = */ arrayOf(
+                        MotionEvent.PointerProperties().apply {
+                            id = 0
+                            toolType = MotionEvent.TOOL_TYPE_MOUSE
                         }
-                    },
+                    ),
+                    /* pointerCoords = */ arrayOf(
+                        MotionEvent.PointerCoords().apply {
+                            x = positionInScreen.x + coordinate.x
+                            y = positionInScreen.y + coordinate.y
+                            if (axis != -1) {
+                                setAxisValue(axis, axisDelta)
+                            }
+                        }
+                    ),
                     /* metaState = */ 0,
-                    /* buttonState = */ 0,
-                    /* xPrecision = */ 0f,
-                    /* yPrecision = */ 0f,
+                    /* buttonState = */ buttonState,
+                    /* xPrecision = */ 1f,
+                    /* yPrecision = */ 1f,
                     /* deviceId = */ 0,
                     /* edgeFlags = */ 0,
-                    /* source = */ 0,
+                    /* source = */ InputDevice.SOURCE_MOUSE,
                     /* flags = */ 0
                 ).apply {
                     offsetLocation(-positionInScreen.x, -positionInScreen.y)
@@ -164,22 +340,21 @@ internal class AndroidInputDispatcher(
         testContext.testOwner.runOnUiThread {
             checkAndStopAcceptingEvents()
 
-            var currentEventTime = lastEventTime
             batchedEvents.forEach { event ->
                 // Before injecting the next event, pump the clock
                 // by the difference between this and the last event
-                pumpClock(event.eventTime - currentEventTime)
-                currentEventTime = event.eventTime
+                advanceClockTime(event.eventTime - currentClockTime)
+                currentClockTime = event.eventTime
                 sendAndRecycleEvent(event)
             }
         }
-        // Each invocation of performGesture (Actions.kt) uses a new instance of an input
+        // Each invocation of perform.*Input (Actions.kt) uses a new instance of an input
         // dispatcher, so we don't have to reset firstEventTime after use
     }
 
-    @OptIn(InternalTestApi::class, ExperimentalCoroutinesApi::class)
-    private fun pumpClock(millis: Long) {
-        // Don't bother calling the method if there's nothing to advance
+    @OptIn(InternalTestApi::class)
+    private fun advanceClockTime(millis: Long) {
+        // Don't bother advancing the clock if there's nothing to advance
         if (millis > 0) {
             testContext.testOwner.mainClock.advanceTimeBy(millis, ignoreFrameDuration = true)
         }

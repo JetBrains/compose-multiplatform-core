@@ -29,7 +29,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.BufferOverflow.DROP_OLDEST
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.withContext
@@ -44,8 +43,7 @@ public abstract class PagingDataDiffer<T : Any>(
 ) {
     private var presenter: PagePresenter<T> = PagePresenter.initial()
     private var receiver: UiReceiver? = null
-    private val combinedLoadStates = MutableLoadStateCollection()
-    private val loadStateListeners = CopyOnWriteArrayList<(CombinedLoadStates) -> Unit>()
+    private val combinedLoadStatesCollection = MutableCombinedLoadStateCollection()
     private val onPagesUpdatedListeners = CopyOnWriteArrayList<() -> Unit>()
 
     private val collectFromRunner = SingleRunner()
@@ -83,27 +81,38 @@ public abstract class PagingDataDiffer<T : Any>(
             differCallback.onRemoved(position, count)
         }
 
+        // for state updates from LoadStateUpdate events
+        override fun onStateUpdate(source: LoadStates, mediator: LoadStates?) {
+            dispatchLoadStates(source, mediator)
+        }
+
+        // for state updates from Drop events
         override fun onStateUpdate(
             loadType: LoadType,
             fromMediator: Boolean,
             loadState: LoadState
         ) {
-            val currentLoadState = combinedLoadStates.get(loadType, fromMediator)
+            val currentLoadState = combinedLoadStatesCollection.get(loadType, fromMediator)
 
             // No change, skip update + dispatch.
             if (currentLoadState == loadState) return
 
-            combinedLoadStates.set(loadType, fromMediator, loadState)
-            val newLoadStates = combinedLoadStates.snapshot()
-            loadStateListeners.forEach { it(newLoadStates) }
+            combinedLoadStatesCollection.set(loadType, fromMediator, loadState)
         }
     }
 
-    private fun dispatchLoadStates(states: CombinedLoadStates) {
-        if (combinedLoadStates.snapshot() == states) return
+    internal fun dispatchLoadStates(source: LoadStates, mediator: LoadStates?) {
+        // No change, skip update + dispatch.
+        if (combinedLoadStatesCollection.source == source &&
+            combinedLoadStatesCollection.mediator == mediator
+        ) {
+            return
+        }
 
-        combinedLoadStates.set(states)
-        loadStateListeners.forEach { it(states) }
+        combinedLoadStatesCollection.set(
+            sourceLoadStates = source,
+            remoteLoadStates = mediator
+        )
     }
 
     /**
@@ -121,7 +130,6 @@ public abstract class PagingDataDiffer<T : Any>(
     public abstract suspend fun presentNewList(
         previousList: NullPaddedList<T>,
         newList: NullPaddedList<T>,
-        newCombinedLoadStates: CombinedLoadStates,
         lastAccessedIndex: Int,
         onListPresentable: () -> Unit,
     ): Int?
@@ -143,7 +151,6 @@ public abstract class PagingDataDiffer<T : Any>(
                         val transformedLastAccessedIndex = presentNewList(
                             previousList = presenter,
                             newList = newPresenter,
-                            newCombinedLoadStates = event.combinedLoadStates,
                             lastAccessedIndex = lastAccessedIndex,
                             onListPresentable = {
                                 presenter = newPresenter
@@ -159,7 +166,7 @@ public abstract class PagingDataDiffer<T : Any>(
 
                         // Dispatch LoadState updates as soon as we are done diffing, but after
                         // setting presenter.
-                        dispatchLoadStates(event.combinedLoadStates)
+                        dispatchLoadStates(event.sourceLoadStates, event.mediatorLoadStates)
 
                         if (transformedLastAccessedIndex == null) {
                             // Send an initialize hint in case the new list is empty, which would
@@ -198,9 +205,10 @@ public abstract class PagingDataDiffer<T : Any>(
                         // If index points to a placeholder after transformations, resend it unless
                         // there are no more items to load.
                         if (event is Insert) {
-                            val prependDone =
-                                event.combinedLoadStates.prepend.endOfPaginationReached
-                            val appendDone = event.combinedLoadStates.append.endOfPaginationReached
+                            val prependDone = combinedLoadStatesCollection.source.prepend
+                                .endOfPaginationReached
+                            val appendDone = combinedLoadStatesCollection.source.append
+                                .endOfPaginationReached
                             val canContinueLoading = !(event.loadType == PREPEND && prependDone) &&
                                 !(event.loadType == APPEND && appendDone)
 
@@ -322,19 +330,17 @@ public abstract class PagingDataDiffer<T : Any>(
     public val size: Int
         get() = presenter.size
 
-    private val _combinedLoadState = MutableStateFlow(combinedLoadStates.snapshot())
-
     /**
      * A hot [Flow] of [CombinedLoadStates] that emits a snapshot whenever the loading state of the
      * current [PagingData] changes.
      *
-     * This flow is conflated, so it buffers the last update to [CombinedLoadStates] and
-     * immediately delivers the current load states on collection.
+     * This flow is conflated. It buffers the last update to [CombinedLoadStates] and immediately
+     * delivers the current load states on collection, unless this [PagingDataDiffer] has not been
+     * hooked up to a [PagingData] yet, and thus has no state to emit.
      *
      * @sample androidx.paging.samples.loadStateFlowSample
      */
-    public val loadStateFlow: Flow<CombinedLoadStates>
-        get() = _combinedLoadState
+    public val loadStateFlow: Flow<CombinedLoadStates> = combinedLoadStatesCollection.flow
 
     private val _onPagesUpdatedFlow: MutableSharedFlow<Unit> = MutableSharedFlow(
         replay = 0,
@@ -366,10 +372,6 @@ public abstract class PagingDataDiffer<T : Any>(
     init {
         addOnPagesUpdatedListener {
             _onPagesUpdatedFlow.tryEmit(Unit)
-        }
-
-        addLoadStateListener {
-            _combinedLoadState.value = it
         }
     }
 
@@ -408,6 +410,10 @@ public abstract class PagingDataDiffer<T : Any>(
      * As new [PagingData] generations are submitted and displayed, the listener will be notified to
      * reflect the current [CombinedLoadStates].
      *
+     * When a new listener is added, it will be immediately called with the current
+     * [CombinedLoadStates], unless this [PagingDataDiffer] has not been hooked up to a [PagingData]
+     * yet, and thus has no state to emit.
+     *
      * @param listener [LoadStates] listener to receive updates.
      *
      * @see removeLoadStateListener
@@ -415,11 +421,7 @@ public abstract class PagingDataDiffer<T : Any>(
      * @sample androidx.paging.samples.addLoadStateListenerSample
      */
     public fun addLoadStateListener(listener: (CombinedLoadStates) -> Unit) {
-        // Note: Important to add the listener first before sending off events, in case the
-        // callback triggers removal, which could lead to a leak if the listener is added
-        // afterwards.
-        loadStateListeners.add(listener)
-        listener(combinedLoadStates.snapshot())
+        combinedLoadStatesCollection.addListener(listener)
     }
 
     /**
@@ -429,7 +431,7 @@ public abstract class PagingDataDiffer<T : Any>(
      * @see addLoadStateListener
      */
     public fun removeLoadStateListener(listener: (CombinedLoadStates) -> Unit) {
-        loadStateListeners.remove(listener)
+        combinedLoadStatesCollection.removeListener(listener)
     }
 }
 

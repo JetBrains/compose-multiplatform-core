@@ -46,6 +46,11 @@ internal interface Owner {
      */
     val root: LayoutNode
 
+    /**
+     * Draw scope reused for drawing speed up.
+     */
+    val sharedDrawScope: LayoutNodeDrawScope
+
     val rootForTest: RootForTest
 
     /**
@@ -74,6 +79,7 @@ internal interface Owner {
      *  TODO(ralu): Replace with SemanticsTree. This is a temporary hack until we have a semantics
      *  tree implemented.
      */
+    @Suppress("EXPERIMENTAL_ANNOTATION_ON_WRONG_TARGET")
     @get:ExperimentalComposeUiApi
     @ExperimentalComposeUiApi
     val autofillTree: AutofillTree
@@ -82,6 +88,7 @@ internal interface Owner {
      * The [Autofill] class can be used to perform autofill operations. It is used as a
      * CompositionLocal.
      */
+    @Suppress("EXPERIMENTAL_ANNOTATION_ON_WRONG_TARGET")
     @get:ExperimentalComposeUiApi
     @ExperimentalComposeUiApi
     val autofill: Autofill?

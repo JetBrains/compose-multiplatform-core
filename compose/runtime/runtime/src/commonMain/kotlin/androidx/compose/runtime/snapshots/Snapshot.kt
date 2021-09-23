@@ -1130,7 +1130,7 @@ internal class GlobalSnapshot(id: Int, invalid: SnapshotIdSet) :
                     globalWriteObservers.toMutableList()
                 } else null
                 )?.let {
-                it.firstOrNull() ?: { state: Any ->
+                it.singleOrNull() ?: { state: Any ->
                     it.fastForEach { it(state) }
                 }
             }
@@ -1565,7 +1565,7 @@ internal fun <T : StateRecord> T.writableRecord(state: StateObject, snapshot: Sn
 
     // Otherwise, make a copy of the readable data and mark it as born in this snapshot, making it
     // writable.
-    val newData = newWritableRecord(state, snapshot)
+    val newData = readData.newWritableRecord(state, snapshot)
 
     snapshot.recordModified(state)
 

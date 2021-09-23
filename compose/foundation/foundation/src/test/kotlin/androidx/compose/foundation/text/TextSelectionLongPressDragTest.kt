@@ -112,7 +112,7 @@ class TextSelectionLongPressDragTest {
         verify(selectionRegistrar, times(1)).notifySelectionUpdateStart(
             layoutCoordinates = layoutCoordinates,
             startPosition = position,
-            adjustment = SelectionAdjustment.WORD
+            adjustment = SelectionAdjustment.Word
         )
     }
 
@@ -160,8 +160,10 @@ class TextSelectionLongPressDragTest {
         verify(selectionRegistrar, times(1))
             .notifySelectionUpdate(
                 layoutCoordinates = layoutCoordinates,
-                endPosition = beginPosition2 + dragDistance2,
-                adjustment = SelectionAdjustment.CHARACTER
+                newPosition = beginPosition2 + dragDistance2,
+                previousPosition = beginPosition2,
+                adjustment = SelectionAdjustment.CharacterWithWordAccelerate,
+                isStartHandle = false
             )
     }
 
@@ -180,8 +182,10 @@ class TextSelectionLongPressDragTest {
         verify(selectionRegistrar, times(1))
             .notifySelectionUpdate(
                 layoutCoordinates = layoutCoordinates,
-                endPosition = beginPosition + dragDistance,
-                adjustment = SelectionAdjustment.CHARACTER
+                newPosition = beginPosition + dragDistance,
+                previousPosition = beginPosition,
+                adjustment = SelectionAdjustment.CharacterWithWordAccelerate,
+                isStartHandle = false
             )
     }
 
@@ -200,8 +204,10 @@ class TextSelectionLongPressDragTest {
         verify(selectionRegistrar, times(0))
             .notifySelectionUpdate(
                 layoutCoordinates = layoutCoordinates,
-                endPosition = beginPosition + dragDistance,
-                adjustment = SelectionAdjustment.CHARACTER
+                newPosition = beginPosition + dragDistance,
+                previousPosition = beginPosition,
+                adjustment = SelectionAdjustment.Character,
+                isStartHandle = false
             )
     }
 

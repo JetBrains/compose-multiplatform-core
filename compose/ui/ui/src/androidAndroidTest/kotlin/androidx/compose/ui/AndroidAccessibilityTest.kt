@@ -28,7 +28,9 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
+import android.view.accessibility.AccessibilityNodeInfo.ACTION_CLEAR_FOCUS
 import android.view.accessibility.AccessibilityNodeInfo.ACTION_CLICK
+import android.view.accessibility.AccessibilityNodeInfo.ACTION_FOCUS
 import android.view.accessibility.AccessibilityNodeInfo.ACTION_NEXT_AT_MOVEMENT_GRANULARITY
 import android.view.accessibility.AccessibilityNodeInfo.ACTION_PREVIOUS_AT_MOVEMENT_GRANULARITY
 import android.view.accessibility.AccessibilityNodeInfo.ACTION_SET_SELECTION
@@ -41,7 +43,10 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.scrollBy
+import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -54,6 +59,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.progressSemantics
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.text.BasicText
@@ -66,6 +72,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.toAndroidRect
@@ -73,8 +83,10 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.AndroidComposeView
 import androidx.compose.ui.platform.AndroidComposeViewAccessibilityDelegateCompat
 import androidx.compose.ui.platform.AndroidComposeViewAccessibilityDelegateCompat.Companion.ClassName
+import androidx.compose.ui.platform.AndroidComposeViewAccessibilityDelegateCompat.Companion.InvalidId
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.platform.getAllUncoveredSemanticsNodesToMap
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsActions
@@ -83,6 +95,7 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.getOrNull
+import androidx.compose.ui.semantics.invisibleToUser
 import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
@@ -110,6 +123,7 @@ import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
 import androidx.core.view.ViewCompat
@@ -451,12 +465,76 @@ class AndroidAccessibilityTest {
                 )
             )
         )
+        assertTrue(
+            accessibilityNodeInfo.actionList.contains(
+                AccessibilityNodeInfo.AccessibilityAction(ACTION_FOCUS, null)
+            )
+        )
+        assertFalse(
+            accessibilityNodeInfo.actionList.contains(
+                AccessibilityNodeInfo.AccessibilityAction(ACTION_CLEAR_FOCUS, null)
+            )
+        )
         if (Build.VERSION.SDK_INT >= 26) {
             assertEquals(
                 listOf(AccessibilityNodeInfo.EXTRA_DATA_TEXT_CHARACTER_LOCATION_KEY),
                 accessibilityNodeInfo.availableExtraData
             )
         }
+    }
+
+    @Test
+    fun testCreateAccessibilityNodeInfo_forFocusable_notFocused() {
+        val tag = "node"
+        container.setContent {
+            Box(Modifier.testTag(tag).focusable()) {
+                BasicText("focusable")
+            }
+        }
+
+        val focusableNode = rule.onNodeWithTag(tag)
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.Focused, false))
+            .fetchSemanticsNode("couldn't find node with tag $tag")
+        val accessibilityNodeInfo = provider.createAccessibilityNodeInfo(focusableNode.id)
+        assertTrue(
+            accessibilityNodeInfo.actionList.contains(
+                AccessibilityNodeInfo.AccessibilityAction(ACTION_FOCUS, null)
+            )
+        )
+        assertFalse(
+            accessibilityNodeInfo.actionList.contains(
+                AccessibilityNodeInfo.AccessibilityAction(ACTION_CLEAR_FOCUS, null)
+            )
+        )
+        accessibilityNodeInfo.recycle()
+    }
+
+    @Test
+    fun testCreateAccessibilityNodeInfo_forFocusable_focused() {
+        val tag = "node"
+        val focusRequester = FocusRequester()
+        container.setContent {
+            Box(Modifier.testTag(tag).focusRequester(focusRequester).focusable()) {
+                BasicText("focusable")
+            }
+        }
+        rule.runOnIdle { focusRequester.requestFocus() }
+
+        val focusableNode = rule.onNodeWithTag(tag)
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.Focused, true))
+            .fetchSemanticsNode("couldn't find node with tag $tag")
+        val accessibilityNodeInfo = provider.createAccessibilityNodeInfo(focusableNode.id)
+        assertFalse(
+            accessibilityNodeInfo.actionList.contains(
+                AccessibilityNodeInfo.AccessibilityAction(ACTION_FOCUS, null)
+            )
+        )
+        assertTrue(
+            accessibilityNodeInfo.actionList.contains(
+                AccessibilityNodeInfo.AccessibilityAction(ACTION_CLEAR_FOCUS, null)
+            )
+        )
+        accessibilityNodeInfo.recycle()
     }
 
     @Test
@@ -617,6 +695,50 @@ class AndroidAccessibilityTest {
     }
 
     @Test
+    fun testPerformAction_focus() {
+        val tag = "node"
+        container.setContent {
+            Box(Modifier.testTag(tag).focusable()) {
+                BasicText("focusable")
+            }
+        }
+
+        val focusableNode = rule.onNodeWithTag(tag)
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.Focused, false))
+            .fetchSemanticsNode("couldn't find node with tag $tag")
+
+        rule.runOnUiThread {
+            assertTrue(provider.performAction(focusableNode.id, ACTION_FOCUS, null))
+        }
+
+        rule.onNodeWithTag(tag)
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.Focused, true))
+    }
+
+    @Test
+    fun testPerformAction_clearFocus() {
+        val tag = "node"
+        val focusRequester = FocusRequester()
+        container.setContent {
+            Box(Modifier.testTag(tag).focusRequester(focusRequester).focusable()) {
+                BasicText("focusable")
+            }
+        }
+        rule.runOnIdle { focusRequester.requestFocus() }
+
+        val focusableNode = rule.onNodeWithTag(tag)
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.Focused, true))
+            .fetchSemanticsNode("couldn't find node with tag $tag")
+
+        rule.runOnUiThread {
+            assertTrue(provider.performAction(focusableNode.id, ACTION_CLEAR_FOCUS, null))
+        }
+
+        rule.onNodeWithTag(tag)
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.Focused, false))
+    }
+
+    @Test
     fun testPerformAction_succeedOnEnabledNodes() {
         val tag = "Toggleable"
         container.setContent {
@@ -741,6 +863,36 @@ class AndroidAccessibilityTest {
                     TextRange(1)
                 )
             )
+    }
+
+    @Test
+    fun testTextField_testFocusClearFocusAction() {
+        val tag = "TextField"
+        container.setContent {
+            BasicTextField(
+                modifier = Modifier.testTag(tag),
+                value = "value",
+                onValueChange = {}
+            )
+        }
+
+        val textFieldNode = rule.onNodeWithTag(tag)
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.Focused, false))
+            .fetchSemanticsNode("couldn't find node with tag $tag")
+
+        rule.runOnUiThread {
+            assertTrue(provider.performAction(textFieldNode.id, ACTION_FOCUS, null))
+        }
+
+        rule.onNodeWithTag(tag)
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.Focused, true))
+
+        rule.runOnUiThread {
+            assertTrue(provider.performAction(textFieldNode.id, ACTION_CLEAR_FOCUS, null))
+        }
+
+        rule.onNodeWithTag(tag)
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.Focused, false))
     }
 
     @Test
@@ -1486,6 +1638,45 @@ class AndroidAccessibilityTest {
         assertEquals(childNode.id, hitTestedId)
     }
 
+    @OptIn(ExperimentalComposeUiApi::class)
+    @Test
+    fun testSemanticsHitTest_invisibleToUserSemantics() {
+        val tag = "box"
+        container.setContent {
+            Box(Modifier.size(100.dp).clickable {}.testTag(tag).semantics { invisibleToUser() }) {
+                BasicText("")
+            }
+        }
+
+        val node = rule.onNodeWithTag(tag).fetchSemanticsNode("")
+        val bounds = node.boundsInRoot
+
+        val hitNodeId = delegate.hitTestSemanticsAt(
+            bounds.left + bounds.width / 2,
+            bounds.top + bounds.height / 2
+        )
+        assertEquals(InvalidId, hitNodeId)
+    }
+
+    @Test
+    fun testSemanticsHitTest_transparentNode() {
+        val tag = "box"
+        container.setContent {
+            Box(Modifier.alpha(0f).size(100.dp).clickable {}.testTag(tag)) {
+                BasicText("")
+            }
+        }
+
+        val node = rule.onNodeWithTag(tag).fetchSemanticsNode("")
+        val bounds = node.boundsInRoot
+
+        val hitNodeId = delegate.hitTestSemanticsAt(
+            bounds.left + bounds.width / 2,
+            bounds.top + bounds.height / 2
+        )
+        assertEquals(InvalidId, hitNodeId)
+    }
+
     @Test
     @SdkSuppress(maxSdkVersion = Build.VERSION_CODES.P)
     fun testViewInterop_findViewByAccessibilityId() {
@@ -1602,12 +1793,11 @@ class AndroidAccessibilityTest {
             .fetchSemanticsNode("can't find node with tag $colTag")
         rule.runOnUiThread {
             val bounds = colSemanticsNode.replacedChildren[0].boundsInRoot
-            val hoverEnter = MotionEvent.obtain(
-                0 /* downTime */, 0 /* eventTime */,
-                ACTION_HOVER_ENTER, (bounds.left + bounds.right) / 2 /* x */,
-                (bounds.top + bounds.bottom) / 2/* y */, 0 /* metaState*/
+            val hoverEnter = createHoverMotionEvent(
+                action = ACTION_HOVER_ENTER,
+                x = (bounds.left + bounds.right) / 2f,
+                y = (bounds.top + bounds.bottom) / 2f
             )
-            hoverEnter.source = InputDevice.SOURCE_CLASS_POINTER
             assertTrue(androidComposeView.dispatchHoverEvent(hoverEnter))
             assertEquals(
                 AndroidComposeViewAccessibilityDelegateCompat.InvalidId,
@@ -1629,12 +1819,11 @@ class AndroidAccessibilityTest {
             .fetchSemanticsNode("can't find node with tag $textTag")
         rule.runOnUiThread {
             val bounds = textNode.boundsInRoot
-            val hoverEnter = MotionEvent.obtain(
-                0 /* downTime */, 0 /* eventTime */,
-                ACTION_HOVER_MOVE, (bounds.left + bounds.right) / 2 /* x */,
-                (bounds.top + bounds.bottom) / 2/* y */, 0 /* metaState*/
+            val hoverEnter = createHoverMotionEvent(
+                action = ACTION_HOVER_MOVE,
+                x = (bounds.left + bounds.right) / 2,
+                y = (bounds.top + bounds.bottom) / 2
             )
-            hoverEnter.source = InputDevice.SOURCE_CLASS_POINTER
             assertTrue(androidComposeView.dispatchHoverEvent(hoverEnter))
             assertEquals(
                 textNode.id,
@@ -1652,6 +1841,32 @@ class AndroidAccessibilityTest {
                 )
             )
         }
+    }
+
+    fun createHoverMotionEvent(action: Int, x: Float, y: Float): MotionEvent {
+        val pointerProperties = MotionEvent.PointerProperties().apply {
+            toolType = MotionEvent.TOOL_TYPE_FINGER
+        }
+        val pointerCoords = MotionEvent.PointerCoords().also {
+            it.x = x
+            it.y = y
+        }
+        return MotionEvent.obtain(
+            0L /* downTime */,
+            0L /* eventTime */,
+            action,
+            1 /* pointerCount */,
+            arrayOf(pointerProperties),
+            arrayOf(pointerCoords),
+            0 /* metaState */,
+            0 /* buttonState */,
+            0f /* xPrecision */,
+            0f /* yPrecision */,
+            0 /* deviceId */,
+            0 /* edgeFlags */,
+            InputDevice.SOURCE_TOUCHSCREEN,
+            0 /* flags */
+        )
     }
 
     @Test
@@ -2130,8 +2345,8 @@ class AndroidAccessibilityTest {
     }
 
     @Test
-    fun testReportedBounds_clickableNode_includesPadding() {
-        val size = 100
+    fun testReportedBounds_clickableNode_includesPadding(): Unit = with(rule.density) {
+        val size = 100.dp.roundToPx()
         container.setContent {
             with(LocalDensity.current) {
                 Column {
@@ -2162,8 +2377,8 @@ class AndroidAccessibilityTest {
     }
 
     @Test
-    fun testReportedBounds_clickableNode_excludesPadding() {
-        val size = 100
+    fun testReportedBounds_clickableNode_excludesPadding(): Unit = with(rule.density) {
+        val size = 100.dp.roundToPx()
         val density = Density(2f)
         container.setContent {
             CompositionLocalProvider(LocalDensity provides density) {
@@ -2225,8 +2440,8 @@ class AndroidAccessibilityTest {
     }
 
     @Test
-    fun testReportedBounds_withTwoClickable_outermostWins() {
-        val size = 100
+    fun testReportedBounds_withTwoClickable_outermostWins(): Unit = with(rule.density) {
+        val size = 100.dp.roundToPx()
         container.setContent {
             with(LocalDensity.current) {
                 Column {
@@ -2455,6 +2670,33 @@ class AndroidAccessibilityTest {
     }
 
     @Test
+    fun testFakeNode_reportParentBoundsAsFakeNodeBounds() {
+        val density = Density(2f)
+        val tag = "button"
+        container.setContent {
+            CompositionLocalProvider(LocalDensity provides density) {
+                with(density) {
+                    Box(Modifier.size(100.toDp()).clickable(role = Role.Button) {}.testTag(tag)) {
+                        BasicText("Example")
+                    }
+                }
+            }
+        }
+
+        // Button node
+        val parentNode = rule.onNodeWithTag(tag, useUnmergedTree = true).fetchSemanticsNode()
+        val parentBounds = Rect()
+        provider.createAccessibilityNodeInfo(parentNode.id).getBoundsInScreen(parentBounds)
+
+        // Button role fake node
+        val fakeRoleNode = parentNode.unmergedChildren(includeFakeNodes = true).last()
+        val fakeRoleNodeBounds = Rect()
+        provider.createAccessibilityNodeInfo(fakeRoleNode.id).getBoundsInScreen(fakeRoleNodeBounds)
+
+        assertEquals(parentBounds, fakeRoleNodeBounds)
+    }
+
+    @Test
     fun testContentDescription_withFakeNode_mergedCorrectly() {
         val testTag = "Column"
         container.setContent {
@@ -2511,6 +2753,96 @@ class AndroidAccessibilityTest {
         val imageNode = rule.onNodeWithTag("image", true).fetchSemanticsNode()
         val imageInfo = provider.createAccessibilityNodeInfo(imageNode.id)
         assertEquals("android.widget.ImageView", imageInfo.className)
+    }
+
+    @Test
+    fun testScrollableContainer_scrollViewClassNotSet_whenCollectionInfo() {
+        val tagColumn = "lazy column"
+        val tagRow = "scrollable row"
+        container.setContent {
+            LazyColumn(Modifier.testTag(tagColumn)) {
+                item {
+                    Row(
+                        Modifier
+                            .testTag(tagRow)
+                            .scrollable(rememberScrollState(), Orientation.Horizontal)
+                    ) {
+                        BasicText("test")
+                    }
+                }
+            }
+        }
+
+        val columnNode = rule.onNodeWithTag(tagColumn).fetchSemanticsNode()
+        val columnInfo = provider.createAccessibilityNodeInfo(columnNode.id)
+        assertNotEquals("android.widget.ScrollView", columnInfo.className)
+
+        val rowNode = rule.onNodeWithTag(tagRow).fetchSemanticsNode()
+        val rowInfo = provider.createAccessibilityNodeInfo(rowNode.id)
+        assertNotEquals("android.widget.HorizontalScrollView", rowInfo.className)
+    }
+
+    @Test
+    fun testTransparentNode_withAlphaModifier_notAccessible() {
+        container.setContent {
+            Column(Modifier.testTag("tag")) {
+                val modifier = Modifier.size(100.dp)
+                Box(Modifier.alpha(0f)) {
+                    Box(modifier.semantics { contentDescription = "test" })
+                }
+                Box(Modifier.alpha(0f).then(modifier).semantics { contentDescription = "test" })
+                Box(Modifier.alpha(0f).semantics { contentDescription = "test" }.then(modifier))
+                Box(modifier.alpha(0f).semantics { contentDescription = "test" })
+                Box(
+                    Modifier
+                        .size(100.dp)
+                        .alpha(0f)
+                        .shadow(2.dp)
+                        .semantics { contentDescription = "test" }
+                )
+            }
+        }
+
+        rule.onNodeWithTag("tag").fetchSemanticsNode()
+
+        val nodesWithContentDescr = androidComposeView.semanticsOwner
+            .getAllUncoveredSemanticsNodesToMap()
+            .filter {
+                it.value.semanticsNode.config.contains(SemanticsProperties.ContentDescription)
+            }
+        assertEquals(nodesWithContentDescr.size, 5)
+        nodesWithContentDescr.forEach {
+            val node = it.value.semanticsNode
+            val info = provider.createAccessibilityNodeInfo(node.id)
+            assertEquals(false, info.isVisibleToUser)
+        }
+    }
+
+    @Test
+    fun testVisibleNode_withAlphaModifier_accessible() {
+        container.setContent {
+            Column(Modifier.testTag("tag")) {
+                val modifier = Modifier.size(100.dp)
+                Box(Modifier.semantics { contentDescription = "test" }.then(modifier).alpha(0f))
+                Box(Modifier.semantics { contentDescription = "test" }.alpha(0f).then(modifier))
+                Box(modifier.semantics { contentDescription = "test" }.alpha(0f))
+            }
+        }
+
+        rule.onNodeWithTag("tag").fetchSemanticsNode()
+
+        val nodesWithContentDescr = androidComposeView.semanticsOwner
+            .getAllUncoveredSemanticsNodesToMap()
+            .filter {
+                it.value.semanticsNode.config.contains(SemanticsProperties.ContentDescription)
+            }
+
+        assertEquals(nodesWithContentDescr.size, 3)
+        nodesWithContentDescr.forEach {
+            val node = it.value.semanticsNode
+            val info = provider.createAccessibilityNodeInfo(node.id)
+            assertEquals(true, info.isVisibleToUser)
+        }
     }
 
     private fun eventIndex(list: List<AccessibilityEvent>, event: AccessibilityEvent): Int {

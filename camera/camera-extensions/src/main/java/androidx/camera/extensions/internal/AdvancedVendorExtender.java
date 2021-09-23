@@ -16,6 +16,7 @@
 
 package androidx.camera.extensions.internal;
 
+import android.content.Context;
 import android.graphics.ImageFormat;
 import android.hardware.camera2.CameraCharacteristics;
 import android.util.Pair;
@@ -28,6 +29,7 @@ import androidx.annotation.OptIn;
 import androidx.camera.camera2.interop.Camera2CameraInfo;
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop;
 import androidx.camera.core.CameraInfo;
+import androidx.camera.core.impl.SessionProcessor;
 import androidx.camera.extensions.ExtensionMode;
 import androidx.camera.extensions.impl.advanced.AdvancedExtenderImpl;
 import androidx.camera.extensions.impl.advanced.AutoAdvancedExtenderImpl;
@@ -35,6 +37,7 @@ import androidx.camera.extensions.impl.advanced.BeautyAdvancedExtenderImpl;
 import androidx.camera.extensions.impl.advanced.BokehAdvancedExtenderImpl;
 import androidx.camera.extensions.impl.advanced.HdrAdvancedExtenderImpl;
 import androidx.camera.extensions.impl.advanced.NightAdvancedExtenderImpl;
+import androidx.camera.extensions.internal.sessionprocessor.AdvancedSessionProcessor;
 import androidx.core.util.Preconditions;
 
 import java.util.ArrayList;
@@ -61,7 +64,7 @@ public class AdvancedVendorExtender implements VendorExtender {
                 case ExtensionMode.NIGHT:
                     mAdvancedExtenderImpl = new NightAdvancedExtenderImpl();
                     break;
-                case ExtensionMode.BEAUTY:
+                case ExtensionMode.FACE_RETOUCH:
                     mAdvancedExtenderImpl = new BeautyAdvancedExtenderImpl();
                     break;
                 case ExtensionMode.AUTO:
@@ -136,5 +139,13 @@ public class AdvancedVendorExtender implements VendorExtender {
         Preconditions.checkNotNull(mCameraId, "VendorExtender#init() must be called first");
         List<Size> yuvList = mAdvancedExtenderImpl.getSupportedYuvAnalysisResolutions(mCameraId);
         return yuvList == null ? new Size[0] : yuvList.toArray(new Size[0]);
+    }
+
+    @Nullable
+    @Override
+    public SessionProcessor createSessionProcessor(@NonNull Context context) {
+        Preconditions.checkNotNull(mCameraId, "VendorExtender#init() must be called first");
+        return new AdvancedSessionProcessor(
+                mAdvancedExtenderImpl.createSessionProcessor(), context);
     }
 }

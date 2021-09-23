@@ -24,15 +24,23 @@ import android.os.Build
 import android.util.Log
 import android.util.Size
 import android.view.Surface
+import androidx.annotation.NonNull
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
+import androidx.camera.core.ImageAnalysis
+import androidx.camera.core.ImageCapture
+import androidx.camera.core.ImageCaptureException
+import androidx.camera.core.ImageProxy
 import androidx.camera.core.Preview
+import androidx.camera.core.UseCase
 import androidx.camera.core.impl.utils.CameraOrientationUtil
 import androidx.camera.core.impl.utils.executor.CameraXExecutors
+import androidx.camera.core.internal.CameraUseCaseAdapter
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.testing.CameraUtil
 import androidx.camera.testing.SurfaceTextureProvider
 import androidx.camera.testing.fakes.FakeLifecycleOwner
+import androidx.camera.video.VideoRecordEvent.Finalize.ERROR_SOURCE_INACTIVE
 import androidx.core.util.Consumer
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.LargeTest
@@ -46,6 +54,13 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
+import org.mockito.ArgumentCaptor.forClass
+import org.mockito.ArgumentMatchers.any
+import org.mockito.Mockito.atLeastOnce
+import org.mockito.Mockito.mock
+import org.mockito.Mockito.timeout
+import org.mockito.Mockito.verify
+import org.mockito.Mockito.verifyNoMoreInteractions
 import java.io.File
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
@@ -78,6 +93,7 @@ class VideoRecordingTest(
     private lateinit var lifecycleOwner: FakeLifecycleOwner
     private lateinit var preview: Preview
     private lateinit var cameraInfo: CameraInfo
+    private lateinit var cameraUseCaseAdapter: CameraUseCaseAdapter
 
     private lateinit var latchForVideoSaved: CountDownLatch
     private lateinit var latchForVideoRecording: CountDownLatch
@@ -85,22 +101,22 @@ class VideoRecordingTest(
     private lateinit var finalize: VideoRecordEvent.Finalize
 
     private val videoRecordEventListener = Consumer<VideoRecordEvent> {
-        when (it.eventType) {
-            VideoRecordEvent.EVENT_TYPE_START -> {
+        when (it) {
+            is VideoRecordEvent.Start -> {
                 // Recording start.
                 Log.d(TAG, "Recording start")
             }
-            VideoRecordEvent.EVENT_TYPE_FINALIZE -> {
+            is VideoRecordEvent.Finalize -> {
                 // Recording stop.
                 Log.d(TAG, "Recording finalize")
-                finalize = it as VideoRecordEvent.Finalize
+                finalize = it
                 latchForVideoSaved.countDown()
             }
-            VideoRecordEvent.EVENT_TYPE_STATUS -> {
+            is VideoRecordEvent.Status -> {
                 // Make sure the recording proceed for a while.
                 latchForVideoRecording.countDown()
             }
-            VideoRecordEvent.EVENT_TYPE_PAUSE, VideoRecordEvent.EVENT_TYPE_RESUME -> {
+            is VideoRecordEvent.Pause, is VideoRecordEvent.Resume -> {
                 // no op for this test, skip these event now.
             }
             else -> {
@@ -121,14 +137,14 @@ class VideoRecordingTest(
         cameraProvider = ProcessCameraProvider.getInstance(context).get()
         lifecycleOwner = FakeLifecycleOwner()
         lifecycleOwner.startAndResume()
+        cameraUseCaseAdapter = CameraUtil.createCameraUseCaseAdapter(context, cameraSelector)
+        cameraInfo = cameraUseCaseAdapter.cameraInfo
 
         // Add extra Preview to provide an additional surface for b/168187087.
         preview = Preview.Builder().build()
         // Sets surface provider to preview
         instrumentation.runOnMainSync {
             preview.setSurfaceProvider(getSurfaceProvider())
-            cameraInfo = cameraProvider.bindToLifecycle(lifecycleOwner, cameraSelector, preview)
-                .cameraInfo
         }
     }
 
@@ -155,7 +171,7 @@ class VideoRecordingTest(
         latchForVideoRecording = CountDownLatch(5)
 
         instrumentation.runOnMainSync {
-            cameraProvider.bindToLifecycle(lifecycleOwner, cameraSelector, videoCapture)
+            cameraProvider.bindToLifecycle(lifecycleOwner, cameraSelector, preview, videoCapture)
         }
 
         // Act.
@@ -163,6 +179,7 @@ class VideoRecordingTest(
 
         // Verify.
         verifyMetadataRotation(targetRotation, file)
+        // Cleanup.
         file.delete()
     }
 
@@ -188,11 +205,11 @@ class VideoRecordingTest(
                 .setQualitySelector(QualitySelector.of(quality)).build()
 
             val videoCapture = VideoCapture.withOutput(recorder)
-            val file = File.createTempFile("video_$targetResolution", ".tmp")
-                .apply { deleteOnExit() }
 
-            latchForVideoSaved = CountDownLatch(1)
-            latchForVideoRecording = CountDownLatch(5)
+            if (!checkUseCasesCombinationSupported(preview, videoCapture)) {
+                Log.e(TAG, "The UseCase combination is not supported for quality setting: $quality")
+                return@loop
+            }
 
             instrumentation.runOnMainSync {
                 cameraProvider.unbindAll()
@@ -203,6 +220,12 @@ class VideoRecordingTest(
                     videoCapture
                 )
             }
+
+            val file = File.createTempFile("video_$targetResolution", ".tmp")
+                .apply { deleteOnExit() }
+
+            latchForVideoSaved = CountDownLatch(1)
+            latchForVideoRecording = CountDownLatch(5)
 
             // Act.
             completeVideoRecording(videoCapture, file)
@@ -224,7 +247,7 @@ class VideoRecordingTest(
         latchForVideoRecording = CountDownLatch(5)
 
         instrumentation.runOnMainSync {
-            cameraProvider.bindToLifecycle(lifecycleOwner, cameraSelector, videoCapture)
+            cameraProvider.bindToLifecycle(lifecycleOwner, cameraSelector, preview, videoCapture)
         }
 
         // Act.
@@ -237,22 +260,150 @@ class VideoRecordingTest(
         // Wait for finalize event to saved file.
         assertThat(latchForVideoSaved.await(VIDEO_TIMEOUT_SEC, TimeUnit.SECONDS)).isTrue()
 
-        // Check if any error after recording finalized
-        assertWithMessage(TAG + "Finalize with error: ${finalize.error}, ${finalize.cause}.")
-            .that(finalize.hasError()).isFalse()
+        assertThat(finalize.error).isEqualTo(ERROR_SOURCE_INACTIVE)
 
         // Cleanup.
         file.delete()
     }
 
-    // TODO(b/193385037): Add test to check video-recording stop when lifecylce state is paused.
+    @Test
+    fun stopRecordingWhenLifecycleStops() {
+        // Arrange.
+        val videoCapture = VideoCapture.withOutput(Recorder.Builder().build())
+        val file = File.createTempFile("CameraX", ".tmp").apply { deleteOnExit() }
+        latchForVideoSaved = CountDownLatch(1)
+        latchForVideoRecording = CountDownLatch(5)
+
+        instrumentation.runOnMainSync {
+            cameraProvider.bindToLifecycle(lifecycleOwner, cameraSelector, videoCapture)
+        }
+
+        // Act.
+        startVideoRecording(videoCapture, file)
+        lifecycleOwner.pauseAndStop()
+
+        // Verify.
+        // Wait for finalize event to saved file.
+        assertThat(latchForVideoSaved.await(VIDEO_TIMEOUT_SEC, TimeUnit.SECONDS)).isTrue()
+
+        assertThat(finalize.error).isEqualTo(ERROR_SOURCE_INACTIVE)
+
+        // Cleanup.
+        file.delete()
+    }
+
+    @Test
+    fun start_finalizeImmediatelyWhenSourceInactive() {
+        // Arrange.
+        val videoCapture = VideoCapture.withOutput(Recorder.Builder().build())
+        val file = File.createTempFile("CameraX", ".tmp").apply { deleteOnExit() }
+        @Suppress("UNCHECKED_CAST")
+        val mockListener = mock(Consumer::class.java) as Consumer<VideoRecordEvent>
+        instrumentation.runOnMainSync {
+            cameraProvider.bindToLifecycle(lifecycleOwner, cameraSelector, videoCapture)
+        }
+        lifecycleOwner.pauseAndStop()
+
+        // Act.
+        videoCapture.output
+            .prepareRecording(context, FileOutputOptions.Builder(file).build())
+            .withEventListener(
+                CameraXExecutors.directExecutor(),
+                mockListener
+            )
+            .start()
+
+        // Verify.
+        verify(mockListener, timeout(1000L))
+            .accept(any(VideoRecordEvent.Finalize::class.java))
+        verifyNoMoreInteractions(mockListener)
+        val captor = forClass(VideoRecordEvent::class.java)
+        verify(mockListener, atLeastOnce()).accept(captor.capture())
+        val finalize = captor.value as VideoRecordEvent.Finalize
+        assertThat(finalize.error).isEqualTo(ERROR_SOURCE_INACTIVE)
+
+        // Cleanup.
+        file.delete()
+    }
+
+    @Test
+    fun recordingWithPreviewAndImageAnalysis() {
+        // Pre-check and arrange
+        val videoCapture = VideoCapture.withOutput(Recorder.Builder().build())
+        val analysis = ImageAnalysis.Builder().build()
+        Assume.assumeTrue(checkUseCasesCombinationSupported(preview, videoCapture, analysis))
+
+        val file = File.createTempFile("CameraX", ".tmp").apply { deleteOnExit() }
+        latchForVideoSaved = CountDownLatch(1)
+        latchForVideoRecording = CountDownLatch(5)
+        val latchForImageAnalysis = CountDownLatch(5)
+        analysis.setAnalyzer(CameraXExecutors.directExecutor()) { it: ImageProxy ->
+            latchForImageAnalysis.countDown()
+            it.close()
+        }
+
+        instrumentation.runOnMainSync {
+            cameraProvider.bindToLifecycle(
+                lifecycleOwner,
+                cameraSelector,
+                preview,
+                analysis,
+                videoCapture
+            )
+        }
+
+        // Act.
+        completeVideoRecording(videoCapture, file)
+
+        // Verify.
+        verifyRecordingResult(file)
+        assertThat(latchForImageAnalysis.await(10, TimeUnit.SECONDS)).isTrue()
+        // Cleanup.
+        file.delete()
+    }
+
+    @Test
+    fun recordingWithPreviewAndImageCapture() {
+        // Pre-check and arrange
+        val videoCapture = VideoCapture.withOutput(Recorder.Builder().build())
+        val imageCapture = ImageCapture.Builder().build()
+        Assume.assumeTrue(checkUseCasesCombinationSupported(preview, videoCapture, imageCapture))
+
+        val videoFile = File.createTempFile("camerax-video", ".tmp").apply {
+            deleteOnExit()
+        }
+        val imageFile = File.createTempFile("camerax-image-capture", ".tmp").apply {
+            deleteOnExit()
+        }
+        latchForVideoSaved = CountDownLatch(1)
+        latchForVideoRecording = CountDownLatch(5)
+
+        instrumentation.runOnMainSync {
+            cameraProvider.bindToLifecycle(
+                lifecycleOwner,
+                cameraSelector,
+                preview,
+                imageCapture,
+                videoCapture
+            )
+        }
+
+        // Act.
+        completeVideoRecording(videoCapture, videoFile)
+        completeImageCapture(imageCapture, imageFile)
+
+        // Verify.
+        verifyRecordingResult(videoFile)
+
+        // Cleanup.
+        videoFile.delete()
+        imageFile.delete()
+    }
 
     private fun startVideoRecording(videoCapture: VideoCapture<Recorder>, file: File):
         ActiveRecording {
-            val outputOptions = FileOutputOptions.builder().setFile(file).build()
-
             val activeRecording = videoCapture.output
-                .prepareRecording(outputOptions)
+                .prepareRecording(context, FileOutputOptions.Builder(file).build())
                 .withEventListener(
                     CameraXExecutors.directExecutor(),
                     videoRecordEventListener
@@ -275,6 +426,17 @@ class VideoRecordingTest(
         // Check if any error after recording finalized
         assertWithMessage(TAG + "Finalize with error: ${finalize.error}, ${finalize.cause}.")
             .that(finalize.hasError()).isFalse()
+    }
+
+    private fun completeImageCapture(imageCapture: ImageCapture, imageFile: File) {
+        val savedCallback = ImageSavedCallback()
+
+        imageCapture.takePicture(
+            ImageCapture.OutputFileOptions.Builder(imageFile).build(),
+            CameraXExecutors.ioExecutor(),
+            savedCallback
+        )
+        savedCallback.verifyCaptureResult()
     }
 
     private fun verifyMetadataRotation(targetRotation: Int, file: File) {
@@ -315,6 +477,18 @@ class VideoRecordingTest(
         ).that(resolution).isEqualTo(targetResolution)
     }
 
+    private fun verifyRecordingResult(file: File, hasAudio: Boolean = false) {
+        val mediaRetriever = MediaMetadataRetriever()
+        mediaRetriever.apply {
+            setDataSource(context, Uri.fromFile(file))
+            val video = extractMetadata(MediaMetadataRetriever.METADATA_KEY_HAS_VIDEO)
+            val audio = extractMetadata(MediaMetadataRetriever.METADATA_KEY_HAS_AUDIO)
+
+            assertThat(video).isEqualTo("yes")
+            assertThat(audio).isEqualTo(if (hasAudio) "yes" else null)
+        }
+    }
+
     private fun getRotationInMetadata(uri: Uri): Int {
         val mediaRetriever = MediaMetadataRetriever()
         return mediaRetriever.let {
@@ -337,5 +511,44 @@ class VideoRecordingTest(
                 }
             }
         )
+    }
+
+    private fun checkUseCasesCombinationSupported(@NonNull vararg useCases: UseCase): Boolean {
+        val useCaseList: MutableList<UseCase> = ArrayList()
+        for (case in useCases) {
+            useCaseList.add(case)
+        }
+
+        try {
+            cameraUseCaseAdapter.checkAttachUseCases(useCaseList)
+        } catch (e: CameraUseCaseAdapter.CameraException) {
+            // This use case combination is not supported on this device, abort this test.
+            Log.e(TAG, "This combination is not supported: $useCaseList , ${e.message}")
+            return false
+        }
+        return true
+    }
+
+    private class ImageSavedCallback() :
+        ImageCapture.OnImageSavedCallback {
+
+        private val latch = CountDownLatch(1)
+        val results = mutableListOf<ImageCapture.OutputFileResults>()
+        val errors = mutableListOf<ImageCaptureException>()
+
+        override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
+            results.add(outputFileResults)
+            latch.countDown()
+        }
+
+        override fun onError(exception: ImageCaptureException) {
+            errors.add(exception)
+            Log.e(TAG, "OnImageSavedCallback.onError: ${exception.message}")
+            latch.countDown()
+        }
+
+        fun verifyCaptureResult() {
+            assertThat(latch.await(10, TimeUnit.SECONDS)).isTrue()
+        }
     }
 }

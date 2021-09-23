@@ -16,10 +16,11 @@
 
 package androidx.benchmark.macro
 
+import android.util.Log
 import androidx.benchmark.InstrumentationResults
 import androidx.benchmark.Outputs
-import androidx.benchmark.macro.perfetto.UiState
-import androidx.benchmark.macro.perfetto.appendUiState
+import androidx.benchmark.perfetto.UiState
+import androidx.benchmark.perfetto.appendUiState
 import org.junit.rules.RuleChain
 import org.junit.rules.TestRule
 import org.junit.runner.Description
@@ -84,10 +85,6 @@ class FileLinkingRule : TestRule {
 
     private fun applyInternal(base: Statement, description: Description) = object : Statement() {
         override fun evaluate() {
-            require(Outputs.outputDirectory == Outputs.dirUsableByAppAndShell) {
-                "FileLinkingRule may only be used when outputDirectory == dirUsableByAppAndShell"
-            }
-
             currentDescription = description
             try {
                 base.evaluate()
@@ -108,11 +105,15 @@ class FileLinkingRule : TestRule {
             }
         }
 
-        InstrumentationResults.instrumentationReport {
-            ideSummaryRecord(
-                summaryV1 = "", // not supported
-                summaryV2 = summaryString.trim()
-            )
+        if (Outputs.outputDirectory == Outputs.dirUsableByAppAndShell) {
+            InstrumentationResults.instrumentationReport {
+                ideSummaryRecord(
+                    summaryV1 = "", // not supported
+                    summaryV2 = summaryString.trim()
+                )
+            }
+        } else {
+            Log.d(TAG, "FileLinkingRule doesn't support outputDirectory != dirUsableByAppAndShell")
         }
     }
 

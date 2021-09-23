@@ -35,6 +35,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewParent;
 import android.view.accessibility.AccessibilityEvent;
+import android.widget.FrameLayout;
 
 import androidx.annotation.ColorInt;
 import androidx.annotation.DrawableRes;
@@ -42,16 +43,19 @@ import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.Px;
-import androidx.annotation.VisibleForTesting;
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.AccessibilityDelegateCompat;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat;
+import androidx.core.view.animation.PathInterpolatorCompat;
 import androidx.customview.view.AbsSavedState;
 import androidx.customview.widget.Openable;
 import androidx.customview.widget.ViewDragHelper;
+import androidx.transition.ChangeBounds;
+import androidx.transition.Transition;
+import androidx.transition.TransitionManager;
 import androidx.window.layout.FoldingFeature;
 import androidx.window.layout.WindowInfoRepository;
 
@@ -239,7 +243,6 @@ public class SlidingPaneLayout extends ViewGroup implements Openable {
     /**
      * Get the lock mode used to control over the swipe behavior.
      *
-     * @return
      * @see #setLockMode(int)
      */
     @LockMode
@@ -295,9 +298,13 @@ public class SlidingPaneLayout extends ViewGroup implements Openable {
     private FoldingFeatureObserver.OnFoldingFeatureChangeListener mOnFoldingFeatureChangeListener =
             new FoldingFeatureObserver.OnFoldingFeatureChangeListener() {
                 @Override
-                public void onFoldingFeatureChange(
-                        @NonNull FoldingFeature foldingFeature) {
+                public void onFoldingFeatureChange(@NonNull FoldingFeature foldingFeature) {
                     mFoldingFeature = foldingFeature;
+                    // Start transition animation when folding feature changed
+                    Transition changeBounds = new ChangeBounds();
+                    changeBounds.setDuration(300L);
+                    changeBounds.setInterpolator(PathInterpolatorCompat.create(0.2f, 0, 0, 1));
+                    TransitionManager.beginDelayedTransition(SlidingPaneLayout.this, changeBounds);
                     requestLayout();
                 }
             };
@@ -338,8 +345,7 @@ public class SlidingPaneLayout extends ViewGroup implements Openable {
         }
     }
 
-    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
-    void setFoldingFeatureObserver(
+    private void setFoldingFeatureObserver(
             FoldingFeatureObserver foldingFeatureObserver) {
         mFoldingFeatureObserver = foldingFeatureObserver;
         mFoldingFeatureObserver.setOnFoldingFeatureChangeListener(
@@ -380,7 +386,6 @@ public class SlidingPaneLayout extends ViewGroup implements Openable {
 
     /**
      * @return The ARGB-packed color value used to fade the sliding pane
-     *
      * @deprecated This field is no longer populated by SlidingPaneLayout.
      */
     @Deprecated
@@ -403,7 +408,6 @@ public class SlidingPaneLayout extends ViewGroup implements Openable {
 
     /**
      * @return The ARGB-packed color value used to fade the fixed pane
-     *
      * @deprecated This field is no longer populated by SlidingPaneLayout
      */
     @Deprecated
@@ -418,10 +422,10 @@ public class SlidingPaneLayout extends ViewGroup implements Openable {
      * {@link #removePanelSlideListener(PanelSlideListener)} to remove a registered listener.
      *
      * @param listener Listener to notify when drawer events occur
-     * @deprecated Use {@link #addPanelSlideListener(PanelSlideListener)}
      * @see PanelSlideListener
      * @see #addPanelSlideListener(PanelSlideListener)
      * @see #removePanelSlideListener(PanelSlideListener)
+     * @deprecated Use {@link #addPanelSlideListener(PanelSlideListener)}
      */
     @Deprecated
     public void setPanelSlideListener(@Nullable PanelSlideListener listener) {
@@ -557,6 +561,26 @@ public class SlidingPaneLayout extends ViewGroup implements Openable {
     }
 
     @Override
+    public void addView(@NonNull View child, int index, @Nullable ViewGroup.LayoutParams params) {
+        if (getChildCount() == 1) {
+            // Wrap detail view inside a touch blocker container
+            View detailView = new TouchBlocker(child);
+            super.addView(detailView, index, params);
+            return;
+        }
+        super.addView(child, index, params);
+    }
+
+    @Override
+    public void removeView(@NonNull View view) {
+        if (view.getParent() instanceof TouchBlocker) {
+            super.removeView((View) view.getParent());
+            return;
+        }
+        super.removeView(view);
+    }
+
+    @Override
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
         mFirstLayout = true;
@@ -586,35 +610,6 @@ public class SlidingPaneLayout extends ViewGroup implements Openable {
         int heightMode = MeasureSpec.getMode(heightMeasureSpec);
         int heightSize = MeasureSpec.getSize(heightMeasureSpec);
 
-        if (widthMode != MeasureSpec.EXACTLY) {
-            if (isInEditMode()) {
-                // Don't crash the layout editor. Consume all of the space if specified
-                // or pick a magic number from thin air otherwise.
-                // TODO Better communication with tools of this bogus state.
-                // It will crash on a real device.
-                if (widthMode == MeasureSpec.AT_MOST) {
-                    widthMode = MeasureSpec.EXACTLY;
-                } else if (widthMode == MeasureSpec.UNSPECIFIED) {
-                    widthMode = MeasureSpec.EXACTLY;
-                    widthSize = 300;
-                }
-            } else {
-                throw new IllegalStateException("Width must have an exact value or MATCH_PARENT");
-            }
-        } else if (heightMode == MeasureSpec.UNSPECIFIED) {
-            if (isInEditMode()) {
-                // Don't crash the layout editor. Pick a magic number from thin air instead.
-                // TODO Better communication with tools of this bogus state.
-                // It will crash on a real device.
-                if (heightMode == MeasureSpec.UNSPECIFIED) {
-                    heightMode = MeasureSpec.AT_MOST;
-                    heightSize = 300;
-                }
-            } else {
-                throw new IllegalStateException("Height must not be UNSPECIFIED");
-            }
-        }
-
         int layoutHeight = 0;
         int maxLayoutHeight = 0;
         switch (heightMode) {
@@ -628,7 +623,7 @@ public class SlidingPaneLayout extends ViewGroup implements Openable {
 
         float weightSum = 0;
         boolean canSlide = false;
-        final int widthAvailable = widthSize - getPaddingLeft() - getPaddingRight();
+        final int widthAvailable = Math.max(widthSize - getPaddingLeft() - getPaddingRight(), 0);
         int widthRemaining = widthAvailable;
         final int childCount = getChildCount();
 
@@ -661,31 +656,30 @@ public class SlidingPaneLayout extends ViewGroup implements Openable {
             int childWidthSpec;
             final int horizontalMargin = lp.leftMargin + lp.rightMargin;
 
+            int childWidthSize = Math.max(widthAvailable - horizontalMargin, 0);
+            // When the parent width spec is UNSPECIFIED, measure each of child to get its
+            // desired width.
             if (lp.width == LayoutParams.WRAP_CONTENT) {
-                childWidthSpec = MeasureSpec.makeMeasureSpec(widthAvailable - horizontalMargin,
-                        MeasureSpec.AT_MOST);
+                childWidthSpec = MeasureSpec.makeMeasureSpec(childWidthSize,
+                        widthMode == MeasureSpec.UNSPECIFIED ? widthMode : MeasureSpec.AT_MOST);
             } else if (lp.width == LayoutParams.MATCH_PARENT) {
-                childWidthSpec = MeasureSpec.makeMeasureSpec(widthAvailable - horizontalMargin,
-                        MeasureSpec.EXACTLY);
+                childWidthSpec = MeasureSpec.makeMeasureSpec(childWidthSize, widthMode);
             } else {
                 childWidthSpec = MeasureSpec.makeMeasureSpec(lp.width, MeasureSpec.EXACTLY);
             }
 
-            int childHeightSpec;
-            if (lp.height == LayoutParams.WRAP_CONTENT) {
-                childHeightSpec = MeasureSpec.makeMeasureSpec(maxLayoutHeight, MeasureSpec.AT_MOST);
-            } else if (lp.height == LayoutParams.MATCH_PARENT) {
-                childHeightSpec = MeasureSpec.makeMeasureSpec(maxLayoutHeight, MeasureSpec.EXACTLY);
-            } else {
-                childHeightSpec = MeasureSpec.makeMeasureSpec(lp.height, MeasureSpec.EXACTLY);
-            }
-
+            int childHeightSpec = getChildMeasureSpec(heightMeasureSpec,
+                    getPaddingTop() + getPaddingBottom(), lp.height);
             child.measure(childWidthSpec, childHeightSpec);
             final int childWidth = child.getMeasuredWidth();
             final int childHeight = child.getMeasuredHeight();
 
-            if (heightMode == MeasureSpec.AT_MOST && childHeight > layoutHeight) {
-                layoutHeight = Math.min(childHeight, maxLayoutHeight);
+            if (childHeight > layoutHeight) {
+                if (heightMode == MeasureSpec.AT_MOST) {
+                    layoutHeight = Math.min(childHeight, maxLayoutHeight);
+                } else if (heightMode == MeasureSpec.UNSPECIFIED) {
+                    layoutHeight = childHeight;
+                }
             }
 
             widthRemaining -= childWidth;
@@ -729,9 +723,18 @@ public class SlidingPaneLayout extends ViewGroup implements Openable {
                     newWidth = measuredWidth + addedWidth;
                     childWidthSpec = MeasureSpec.makeMeasureSpec(newWidth, MeasureSpec.EXACTLY);
                 }
-                final int childHeightSpec = measureChildHeight(child, maxLayoutHeight);
+                final int childHeightSpec = measureChildHeight(child, heightMeasureSpec,
+                        getPaddingTop() + getPaddingBottom());
                 if (measuredWidth != newWidth) {
                     child.measure(childWidthSpec, childHeightSpec);
+                    final int childHeight = child.getMeasuredHeight();
+                    if (childHeight > layoutHeight) {
+                        if (heightMode == MeasureSpec.AT_MOST) {
+                            layoutHeight = Math.min(childHeight, maxLayoutHeight);
+                        } else if (heightMode == MeasureSpec.UNSPECIFIED) {
+                            layoutHeight = childHeight;
+                        }
+                    }
                 }
             }
         }
@@ -760,8 +763,8 @@ public class SlidingPaneLayout extends ViewGroup implements Openable {
                         MeasureSpec.AT_MOST);
                 child.measure(childWidthSpec, childHeightSpec);
                 if ((child.getMeasuredWidthAndState() & MEASURED_STATE_TOO_SMALL) == 1 || (
-                        ViewCompat.getMinimumWidth(child) != 0
-                                && splitView.width() < ViewCompat.getMinimumWidth(child))) {
+                        getMinimumWidth(child) != 0
+                                && splitView.width() < getMinimumWidth(child))) {
                     childWidthSpec = MeasureSpec.makeMeasureSpec(widthAvailable - horizontalMargin,
                             MeasureSpec.EXACTLY);
                     child.measure(childWidthSpec, childHeightSpec);
@@ -791,23 +794,22 @@ public class SlidingPaneLayout extends ViewGroup implements Openable {
         }
     }
 
+    private static int getMinimumWidth(View child) {
+        if (child instanceof TouchBlocker) {
+            return ViewCompat.getMinimumWidth(((TouchBlocker) child).getChildAt(0));
+        }
+        return ViewCompat.getMinimumWidth(child);
+    }
+
     private static int measureChildHeight(@NonNull View child,
-            int maxLayoutHeight) {
+            int spec, int padding) {
         final LayoutParams lp = (LayoutParams) child.getLayoutParams();
         final int childHeightSpec;
         final boolean skippedFirstPass = lp.width == 0 && lp.weight > 0;
         if (skippedFirstPass) {
             // This was skipped the first time; figure out a real height spec.
-            if (lp.height == LayoutParams.WRAP_CONTENT) {
-                childHeightSpec = MeasureSpec.makeMeasureSpec(maxLayoutHeight,
-                        MeasureSpec.AT_MOST);
-            } else if (lp.height == LayoutParams.MATCH_PARENT) {
-                childHeightSpec = MeasureSpec.makeMeasureSpec(maxLayoutHeight,
-                        MeasureSpec.EXACTLY);
-            } else {
-                childHeightSpec = MeasureSpec.makeMeasureSpec(lp.height,
-                        MeasureSpec.EXACTLY);
-            }
+            childHeightSpec = getChildMeasureSpec(spec, padding, lp.height);
+
         } else {
             childHeightSpec = MeasureSpec.makeMeasureSpec(
                     child.getMeasuredHeight(), MeasureSpec.EXACTLY);
@@ -1692,7 +1694,8 @@ public class SlidingPaneLayout extends ViewGroup implements Openable {
 
     static class SavedState extends AbsSavedState {
         boolean isOpen;
-        @LockMode int mLockMode;
+        @LockMode
+        int mLockMode;
 
         SavedState(Parcelable superState) {
             super(superState);
@@ -1809,6 +1812,23 @@ public class SlidingPaneLayout extends ViewGroup implements Openable {
             dest.addAction(src.getActions());
 
             dest.setMovementGranularities(src.getMovementGranularities());
+        }
+    }
+
+    private static class TouchBlocker extends FrameLayout {
+        TouchBlocker(View view) {
+            super(view.getContext());
+            addView(view);
+        }
+
+        @Override
+        public boolean onTouchEvent(MotionEvent event) {
+            return true;
+        }
+
+        @Override
+        public boolean onGenericMotionEvent(MotionEvent event) {
+            return true;
         }
     }
 

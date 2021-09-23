@@ -547,20 +547,18 @@ public object ToggleChipDefaults {
      */
     @Composable
     public fun toggleChipColors(
-        checkedStartBackgroundColor: Color = MaterialTheme.colors.secondary.copy(alpha = 0.5f),
-        checkedEndBackgroundColor: Color = MaterialTheme.colors.surface,
-        checkedContentColor: Color = contentColorFor(checkedEndBackgroundColor),
+        checkedStartBackgroundColor: Color = MaterialTheme.colors.surface.copy(alpha = 0.75f),
+        checkedEndBackgroundColor: Color = MaterialTheme.colors.primary.copy(alpha = 0.325f),
+        checkedContentColor: Color = MaterialTheme.colors.onSurface,
         checkedSecondaryContentColor: Color = MaterialTheme.colors.onSurfaceVariant,
-        checkedToggleIconTintColor: Color = checkedContentColor,
+        checkedToggleIconTintColor: Color = MaterialTheme.colors.secondary,
         uncheckedStartBackgroundColor: Color = MaterialTheme.colors.surface,
         uncheckedEndBackgroundColor: Color = MaterialTheme.colors.surface,
         uncheckedContentColor: Color = contentColorFor(checkedEndBackgroundColor),
         uncheckedSecondaryContentColor: Color = uncheckedContentColor,
         uncheckedToggleIconTintColor: Color = uncheckedContentColor,
         splitBackgroundOverlayColor: Color = Color.White.copy(alpha = 0.05f),
-        gradientDirection: LayoutDirection =
-            if (LocalLayoutDirection.current == LayoutDirection.Ltr) LayoutDirection.Rtl
-            else LayoutDirection.Ltr
+        gradientDirection: LayoutDirection = LocalLayoutDirection.current
     ): ToggleChipColors {
         val checkedBackgroundColors: List<Color>
         val disabledCheckedBackgroundColors: List<Color>
@@ -666,12 +664,23 @@ public object ToggleChipDefaults {
      * or 'off' (unchecked/false)
      */
     @Composable
-    public fun SwitchIcon(checked: Boolean) {
-        Icon(
-            imageVector = if (checked) SwitchOn else SwitchOff,
-            contentDescription = "Switch selector",
-            modifier = Modifier.size(24.dp)
-        )
+    public fun SwitchIcon(
+        checked: Boolean,
+    ) {
+        if (checked) {
+            Icon(
+                imageVector = SwitchOn,
+                contentDescription = "Switch selector",
+                modifier = Modifier.size(24.dp),
+            )
+        } else {
+            Icon(
+                imageVector = SwitchOff,
+                contentDescription = "Switch selector",
+                modifier = Modifier.size(24.dp),
+                tint = MaterialTheme.colors.onSurface.copy(0.6f)
+            )
+        }
     }
 
     /**
@@ -723,7 +732,7 @@ public object ToggleChipDefaults {
      * The default size of the spacing between an icon and a text when they are used inside a
      * [ToggleChip].
      */
-    internal val IconSpacing = 8.dp
+    internal val IconSpacing = 6.dp
 
     /**
      * The default size of the spacing between a toggle icon and text when they are used
