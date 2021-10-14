@@ -8,7 +8,7 @@
         errorLine2="                    ~~~~~~~~~~~">
         <location
             file="src/main/java/androidx/wear/watchface/editor/EditorSession.kt"
-            line="510"
+            line="507"
             column="21"/>
     </issue>
 
@@ -19,7 +19,7 @@
         errorLine2="                            ~~~~~~~~~~~">
         <location
             file="src/main/java/androidx/wear/watchface/editor/EditorSession.kt"
-            line="697"
+            line="688"
             column="29"/>
     </issue>
 
@@ -30,7 +30,7 @@
         errorLine2="                                        ~~~~~~~~~~~">
         <location
             file="src/androidTest/java/androidx/wear/watchface/editor/EditorSessionTest.kt"
-            line="671"
+            line="675"
             column="41"/>
     </issue>
 
@@ -41,8 +41,30 @@
         errorLine2="                                          ~~~~~~~~~~~">
         <location
             file="src/androidTest/java/androidx/wear/watchface/editor/EditorSessionTest.kt"
-            line="690"
+            line="694"
             column="43"/>
+    </issue>
+
+    <issue
+        id="SupportAnnotationUsage"
+        message="The API level is already known to be at least 30 here from outer annotations"
+        errorLine1="    @RequiresApi(Build.VERSION_CODES.R)"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/wear/watchface/editor/WatchFaceEditorContract.kt"
+            line="107"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Should explicitly declare type here since implicit type does not specify nullness"
+        errorLine1="    override fun parseResult(resultCode: Int, intent: Intent?) = intent?.let {"
+        errorLine2="                 ~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/wear/watchface/editor/EditorSession.kt"
+            line="1022"
+            column="18"/>
     </issue>
 
 </issues>

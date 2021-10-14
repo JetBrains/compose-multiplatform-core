@@ -22,8 +22,8 @@ import androidx.annotation.UiThread
 import androidx.wear.watchface.style.CurrentUserStyleRepository
 import com.google.common.util.concurrent.ListenableFuture
 import com.google.common.util.concurrent.SettableFuture
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
-import kotlin.coroutines.suspendCoroutine
 
 /**
  * [ListenableFuture]-based compatibility wrapper around [Renderer.CanvasRenderer]'s suspending
@@ -45,7 +45,8 @@ public abstract class ListenableCanvasRenderer(
 ) {
     /**
      * Perform UiThread specific initialization.  Will be called once during initialization
-     * before any subsequent calls to [render].
+     * before any subsequent calls to [render].  Note cancellation of the returned future is not
+     * supported.
      *
      * @return A ListenableFuture<Unit> which is resolved when UiThread has completed. Rendering
      * will be blocked until this has resolved.
@@ -57,7 +58,7 @@ public abstract class ListenableCanvasRenderer(
         }
     }
 
-    override suspend fun init(): Unit = suspendCoroutine {
+    override suspend fun init(): Unit = suspendCancellableCoroutine {
         val future = initFuture()
         future.addListener(
             { it.resume(future.get()) },

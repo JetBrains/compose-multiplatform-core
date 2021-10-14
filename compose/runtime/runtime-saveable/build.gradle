@@ -59,6 +59,8 @@ dependencies {
         androidTestImplementation(libs.mockitoCore)
 
         lintPublish(project(":compose:runtime:runtime-saveable-lint"))
+
+        samples(projectOrArtifact(":compose:runtime:runtime-saveable:runtime-saveable-samples"))
     }
 }
 
@@ -105,6 +107,9 @@ if(AndroidXComposePlugin.isMultiplatformEnabled(project)) {
                 implementation(libs.mockitoCore)
             }
         }
+    }
+    dependencies {
+        samples(projectOrArtifact(":compose:runtime:runtime-saveable:runtime-saveable-samples"))
     }
 }
 

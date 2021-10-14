@@ -14,8 +14,11 @@
  * limitations under the License.
  */
 
+@file:OptIn(InternalComposeUiApi::class)
+
 package androidx.compose.ui.test
 
+import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.input.pointer.PointerId
 import androidx.compose.ui.input.pointer.TestPointerInputEventData
 import androidx.compose.ui.geometry.Offset
@@ -114,7 +117,7 @@ internal class DesktopInputDispatcher(
         return event
     }
 
-    override fun sendAllSynchronous() {
+    override fun flush() {
         val copy = batchedEvents.toList()
         batchedEvents.clear()
         copy.forEach {

@@ -52,8 +52,11 @@ import androidx.compose.ui.demos.gestures.RawDragGestureFilterDemo
 import androidx.compose.ui.demos.gestures.ScaleGestureFilterDemo
 import androidx.compose.ui.demos.gestures.ScrollGestureFilterDemo
 import androidx.compose.ui.demos.gestures.VerticalScrollerInDrawerDemo
+import androidx.compose.ui.demos.input.TouchModeDemo
+import androidx.compose.ui.demos.focus.ConditionalFocusabilityDemo
 import androidx.compose.ui.demos.scroll.BringIntoViewDemo
 import androidx.compose.ui.demos.keyinput.KeyInputDemo
+import androidx.compose.ui.demos.keyinput.InterceptEnterToSendMessageDemo
 import androidx.compose.ui.demos.modifier.CommunicatingModifierDemo
 import androidx.compose.ui.demos.scroll.BringRectangleIntoViewDemo
 import androidx.compose.ui.demos.scroll.RequestRectangleOnScreenDemo
@@ -130,7 +133,16 @@ private val FocusDemos = DemoCategory(
         ComposableDemo("Custom Focus Order") { CustomFocusOrderDemo() },
         ComposableDemo("FocusManager.moveFocus()") { FocusManagerMoveFocusDemo() },
         ComposableDemo("Capture/Free Focus") { CaptureFocusDemo() },
-        ComposableDemo("Focus In Scrollable Row") { ScrollableRowFocusDemo() }
+        ComposableDemo("Focus In Scrollable Row") { ScrollableRowFocusDemo() },
+        ComposableDemo("Conditional Focusability") { ConditionalFocusabilityDemo() }
+    )
+)
+
+private val KeyInputDemos = DemoCategory(
+    "KeyInput",
+    listOf(
+        ComposableDemo("onKeyEvent") { KeyInputDemo() },
+        ComposableDemo("onPreviewKeyEvent") { InterceptEnterToSendMessageDemo() },
     )
 )
 
@@ -176,7 +188,8 @@ val CoreDemos = DemoCategory(
         ModifierDemos,
         ComposableDemo("Explicit autofill types") { ExplicitAutofillTypesDemo() },
         FocusDemos,
-        ComposableDemo("KeyInput") { KeyInputDemo() },
+        KeyInputDemos,
+        ComposableDemo("TouchMode") { TouchModeDemo() },
         ComposableDemo("Multiple collects measure") { MultipleCollectTest() },
         ComposableDemo("Dialog") { DialogDemo() },
         ComposableDemo("Popup") { PopupDemo() },

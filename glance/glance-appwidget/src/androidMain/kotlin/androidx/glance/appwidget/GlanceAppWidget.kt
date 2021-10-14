@@ -21,6 +21,7 @@ import android.appwidget.AppWidgetProviderInfo
 import android.content.Context
 import android.os.Build
 import android.os.Bundle
+import android.util.DisplayMetrics
 import android.util.SizeF
 import android.widget.RemoteViews
 import androidx.annotation.DoNotInline
@@ -32,7 +33,6 @@ import androidx.compose.runtime.Composition
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Recomposer
 import androidx.glance.Applier
-import androidx.glance.GlanceInternalApi
 import androidx.glance.LocalContext
 import androidx.glance.LocalSize
 import androidx.glance.unit.DpSize
@@ -53,7 +53,6 @@ import kotlin.math.min
  * the composition and translate [Content] into a [RemoteViews] which is then sent to the
  * [AppWidgetManager].
  */
-@OptIn(GlanceInternalApi::class)
 public abstract class GlanceAppWidget {
     /**
      * Definition of the UI.
@@ -112,7 +111,11 @@ public abstract class GlanceAppWidget {
 
     // Retrieves the minimum size of an App Widget, as configured by the App Widget provider.
     @VisibleForTesting
-    internal fun appWidgetMinSize(appWidgetManager: AppWidgetManager, appWidgetId: Int): DpSize {
+    internal fun appWidgetMinSize(
+        displayMetrics: DisplayMetrics,
+        appWidgetManager: AppWidgetManager,
+        appWidgetId: Int
+    ): DpSize {
         val info = appWidgetManager.getAppWidgetInfo(appWidgetId)
         val minWidth = min(
             info.minWidth,
@@ -130,7 +133,7 @@ public abstract class GlanceAppWidget {
                 Int.MAX_VALUE
             }
         )
-        return DpSize(minWidth.dp, minHeight.dp)
+        return DpSize(minWidth.pixelsToDp(displayMetrics), minHeight.pixelsToDp(displayMetrics))
     }
 
     // Trigger the composition of the View to create the RemoteViews.
@@ -147,7 +150,11 @@ public abstract class GlanceAppWidget {
                     context,
                     appWidgetId,
                     options,
-                    appWidgetMinSize(appWidgetManager, appWidgetId),
+                    appWidgetMinSize(
+                        context.resources.displayMetrics,
+                        appWidgetManager,
+                        appWidgetId
+                    ),
                 )
             }
             is SizeMode.Exact -> {
@@ -157,7 +164,13 @@ public abstract class GlanceAppWidget {
                         context,
                         appWidgetId,
                         options,
-                        options.extractAllSizes { appWidgetMinSize(appWidgetManager, appWidgetId) }
+                        options.extractAllSizes {
+                            appWidgetMinSize(
+                                context.resources.displayMetrics,
+                                appWidgetManager,
+                                appWidgetId
+                            )
+                        }
                     )
                 } else {
                     composeExactMode(context, appWidgetManager, appWidgetId, options)
@@ -193,7 +206,7 @@ public abstract class GlanceAppWidget {
             context,
             appWidgetId,
             options,
-            appWidgetMinSize(appWidgetManager, appWidgetId),
+            appWidgetMinSize(context.resources.displayMetrics, appWidgetManager, appWidgetId),
         )
     }
 

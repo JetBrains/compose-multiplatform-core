@@ -19,7 +19,6 @@
 package androidx.compose.ui.test
 
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.unit.IntSize
 import kotlin.math.roundToInt
@@ -38,11 +37,10 @@ private const val edgeFuzzFactor = 0.083f
 private const val doubleClickDelayMillis = 145L
 
 /** The time before a long press gesture attempts to win. */
-// remove after b/179281066
 private const val LongPressTimeoutMillis: Long = 500L
 
 /**
- * The receiver scope for injecting gestures on the [semanticsNode] identified by the
+ * The receiver scope for injecting gestures on the SemanticsNode identified by the
  * corresponding [SemanticsNodeInteraction]. Gestures can be injected by calling methods defined
  * on [GestureScope], such as [click] or [swipe]. The [SemanticsNodeInteraction] can be found by
  * one of the finder methods such as
@@ -94,25 +92,14 @@ private const val LongPressTimeoutMillis: Long = 500L
 )
 class GestureScope(node: SemanticsNode, testContext: TestContext) {
     @PublishedApi
-    internal val delegateScope = MultiModalInjectionScope(node, testContext)
-
-    internal val semanticsNode get() = delegateScope.semanticsNode
-    internal val inputDispatcher get() = delegateScope.inputDispatcher
-
-    /**
-     * Returns and stores the visible bounds of the [semanticsNode] we're interacting with. This
-     * applies clipping, which is almost always the correct thing to do when injecting gestures,
-     * as gestures operate on visible UI.
-     */
-    internal val boundsInRoot: Rect by lazy { semanticsNode.boundsInRoot }
+    internal val delegateScope: MultiModalInjectionScope =
+        MultiModalInjectionScopeImpl(node, testContext)
 
     /**
      * Returns the size of the visible part of the node we're interacting with. This is contrary
      * to [SemanticsNode.size], which returns the unclipped size of the node.
      */
     val visibleSize: IntSize = delegateScope.visibleSize
-
-    internal fun dispose() = delegateScope.dispose()
 }
 
 /**
@@ -579,7 +566,7 @@ private val GestureScope.bottomFuzzed: Float get() = height.endFuzzed
  * move event just before the down or up event if [movePointerTo] or [movePointerBy] has been
  * called and no move event has been sent yet. This does not happen for cancel events, but the
  * cancel event will contain the up to date position of all pointers. Move and cancel events will
- * advance the event time by 10 milliseconds.
+ * advance the event time by 16 milliseconds.
  *
  * Because gestures don't have to be defined all in the same [performGesture] block,
  * keep in mind that while the gesture is not complete, all code you execute in between

@@ -17,7 +17,7 @@
 package androidx.glance.appwidget
 
 import android.os.Build
-import android.view.View
+import android.view.Gravity
 import android.view.ViewGroup
 import android.widget.ListView
 import android.widget.RelativeLayout
@@ -25,11 +25,11 @@ import android.widget.TextView
 import androidx.glance.Modifier
 import androidx.glance.appwidget.layout.LazyColumn
 import androidx.glance.appwidget.layout.ReservedItemIdRangeEnd
+import androidx.glance.layout.Alignment
 import androidx.glance.layout.Text
 import androidx.glance.layout.padding
 import androidx.glance.unit.Dp
 import androidx.glance.unit.dp
-import androidx.test.filters.FlakyTest
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
@@ -63,15 +63,9 @@ class LazyColumnTest {
         }
     }
 
-    @FlakyTest
     @Test
     fun item_withoutItemIds_createsNonStableList() {
         TestGlanceAppWidget.uiDefinition = {
-            LazyColumn {
-                item { Text("First row") }
-                item { Text("Second row") }
-            }
-
             LazyColumn {
                 item { Text("First row") }
                 item { Text("Second row") }
@@ -89,7 +83,6 @@ class LazyColumnTest {
         }
     }
 
-    @FlakyTest
     @Test
     fun item_withItemIds_createsStableList() {
         TestGlanceAppWidget.uiDefinition = {
@@ -110,7 +103,6 @@ class LazyColumnTest {
         }
     }
 
-    @FlakyTest
     @Test
     fun items_withoutItemIds_createsNonStableList() {
         TestGlanceAppWidget.uiDefinition = {
@@ -131,7 +123,6 @@ class LazyColumnTest {
         }
     }
 
-    @FlakyTest
     @Test
     fun items_withItemIds_createsStableList() {
         TestGlanceAppWidget.uiDefinition = {
@@ -167,14 +158,14 @@ class LazyColumnTest {
         mHostRule.startHost()
 
         waitForListViewChildren { list ->
-            val textView1 = list.getListChildAt<TextView>(0)
-            val textView2 = list.getListChildAt<TextView>(1)
-            val textView3 = list.getListChildAt<TextView>(2)
-            val textView4 = list.getListChildAt<TextView>(3)
-            assertThat(textView1.text.toString()).isEqualTo("Row 0")
-            assertThat(textView2.text.toString()).isEqualTo("Row 1")
-            assertThat(textView3.text.toString()).isEqualTo("Row 2")
-            assertThat(textView4.text.toString()).isEqualTo("Row 3")
+            val textView0 = list.getListItemAt<TextView>(0)
+            val textView1 = list.getListItemAt<TextView>(1)
+            val textView2 = list.getListItemAt<TextView>(2)
+            val textView3 = list.getListItemAt<TextView>(3)
+            assertThat(textView0.text.toString()).isEqualTo("Row 0")
+            assertThat(textView1.text.toString()).isEqualTo("Row 1")
+            assertThat(textView2.text.toString()).isEqualTo("Row 2")
+            assertThat(textView3.text.toString()).isEqualTo("Row 3")
         }
     }
 
@@ -191,30 +182,84 @@ class LazyColumnTest {
         mHostRule.startHost()
 
         waitForListViewChildren { list ->
-            val textView1 = list.getListChildAt<TextView>(0)
-            val textView2 = list.getListChildAt<TextView>(1)
-            val textView3 = list.getListChildAt<TextView>(2)
-            val textView4 = list.getListChildAt<TextView>(3)
-            assertThat(textView1.text.toString()).isEqualTo("Row 0")
-            assertThat(textView2.text.toString()).isEqualTo("Row 1")
-            assertThat(textView3.text.toString()).isEqualTo("Row 2")
-            assertThat(textView4.text.toString()).isEqualTo("Row 3")
+            val textView0 = list.getListItemAt<TextView>(0)
+            val textView1 = list.getListItemAt<TextView>(1)
+            val textView2 = list.getListItemAt<TextView>(2)
+            val textView3 = list.getListItemAt<TextView>(3)
+            assertThat(textView0.text.toString()).isEqualTo("Row 0")
+            assertThat(textView1.text.toString()).isEqualTo("Row 1")
+            assertThat(textView2.text.toString()).isEqualTo("Row 2")
+            assertThat(textView3.text.toString()).isEqualTo("Row 3")
         }
     }
 
     @Test
-    fun itemContent_emptyItem() {
+    fun itemContent_defaultAlignment_doesNotWrapItem() {
         TestGlanceAppWidget.uiDefinition = {
             LazyColumn {
-                item { }
+                item {
+                    Text("Row item 0")
+                }
             }
         }
 
         mHostRule.startHost()
 
         waitForListViewChildren { list ->
-            val row = list.getListChildAt<RelativeLayout>(0)
-            assertThat(row.childCount).isEqualTo(0)
+            list.getListItemAt<TextView>(0)
+        }
+    }
+
+    @Test
+    fun itemContent_startAlignment_doesNotWrapItem() {
+        TestGlanceAppWidget.uiDefinition = {
+            LazyColumn(horizontalAlignment = Alignment.Start) {
+                item {
+                    Text("Row item 0")
+                }
+            }
+        }
+
+        mHostRule.startHost()
+
+        waitForListViewChildren { list ->
+            list.getListItemAt<TextView>(0)
+        }
+    }
+
+    @Test
+    fun itemContent_centerAlignment_wrapsItemWithGravityCenterContainer() {
+        TestGlanceAppWidget.uiDefinition = {
+            LazyColumn(horizontalAlignment = Alignment.Horizontal.CenterHorizontally) {
+                item {
+                    Text("Row item 0")
+                }
+            }
+        }
+
+        mHostRule.startHost()
+
+        waitForListViewChildren { list ->
+            val listItem = list.getListItemAt<RelativeLayout>(0)
+            assertThat(listItem.gravity).isEqualTo(Gravity.CENTER)
+        }
+    }
+
+    @Test
+    fun itemContent_endAlignment_wrapsItemWithGravityEndContainer() {
+        TestGlanceAppWidget.uiDefinition = {
+            LazyColumn(horizontalAlignment = Alignment.Horizontal.End) {
+                item {
+                    Text("Row item 0")
+                }
+            }
+        }
+
+        mHostRule.startHost()
+
+        waitForListViewChildren { list ->
+            val listItem = list.getListItemAt<RelativeLayout>(0)
+            assertThat(listItem.gravity).isEqualTo(Gravity.END + Gravity.CENTER_VERTICAL)
         }
     }
 
@@ -232,11 +277,28 @@ class LazyColumnTest {
         mHostRule.startHost()
 
         waitForListViewChildren { list ->
-            val row = list.getListChildAt<RelativeLayout>(0)
+            val row = list.getListItemAt<RelativeLayout>(0)
             val rowItem0 = assertIs<TextView>(row.getChildAt(0))
             val rowItem1 = assertIs<TextView>(row.getChildAt(1))
             assertThat(rowItem0.text.toString()).isEqualTo("Row item 0")
             assertThat(rowItem1.text.toString()).isEqualTo("Row item 1")
+        }
+    }
+
+    @Test
+    fun adapter_setsViewTypeCount() {
+        TestGlanceAppWidget.uiDefinition = {
+            LazyColumn {
+                item { Text("Item") }
+            }
+        }
+
+        mHostRule.startHost()
+
+        waitForListViewChildren { list ->
+            // The adapter may report more layout types than the provider declared, e.g. adding a
+            // loading layout
+            assertThat(list.adapter.viewTypeCount).isAtLeast(generatedLayouts.size)
         }
     }
 
@@ -245,19 +307,19 @@ class LazyColumnTest {
 
         mHostRule.runAndObserveUntilDraw(condition = "ListView did not load in time") {
             mHostRule.mHostView.let { host ->
-                val list = host.findViewByType<ListView>()
+                val list = host.findChildByType<ListView>()
                 host.childCount > 0 &&
                     list?.let { it.childCount > 0 && it.adapter != null } ?: false
             }
         }
 
         mHostRule.onHostView {
-            action(mHostRule.mHostView.findViewByType<ListView>()!!)
+            action(mHostRule.mHostView.findChildByType<ListView>()!!)
         }
     }
 
-    private inline fun <reified V : View> ListView.getListChildAt(position: Int): V {
-        return assertIs<V>(
+    private inline fun <reified T> ListView.getListItemAt(position: Int): T {
+        return assertIs<T>(
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 this.getChildAt(position)
             } else {

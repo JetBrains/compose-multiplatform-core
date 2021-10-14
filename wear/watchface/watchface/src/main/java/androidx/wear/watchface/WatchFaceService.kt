@@ -28,6 +28,7 @@ import android.os.Handler
 import android.os.HandlerThread
 import android.os.Looper
 import android.os.PowerManager
+import android.os.Process
 import android.os.RemoteException
 import android.os.Trace
 import android.service.wallpaper.WallpaperService
@@ -252,10 +253,9 @@ public abstract class WatchFaceService : WallpaperService() {
     ): ComplicationSlotsManager = ComplicationSlotsManager(emptyList(), currentUserStyleRepository)
 
     /**
-     * Override this factory method to create your [WatchFace]. This method will be called by the
-     * library on the UiThread. If possible any expensive initialization should be done on a
-     * background thread to avoid blocking the UiThread. This will be called from a background
-     * thread but the [WatchFace] and its [Renderer] should be accessed exclusively from the
+     * Override this factory method to create your WatchFaceImpl. This method will be called by the
+     * library on a background thread, if possible any expensive initialization should be done
+     * asynchronously. The [WatchFace] and its [Renderer] should be accessed exclusively from the
      * UiThread afterwards. There is a memory barrier between construction and rendering so no
      * special threading primitives are required.
      *
@@ -301,11 +301,14 @@ public abstract class WatchFaceService : WallpaperService() {
 
     internal var backgroundThread: HandlerThread? = null
 
-    /** This is open for testing. */
+    /** This is open for testing. The background thread is used for watch face initialization. */
     internal open fun getBackgroundThreadHandlerImpl(): Handler {
         synchronized(this) {
             if (backgroundThread == null) {
-                backgroundThread = HandlerThread("WatchFaceBackground").apply { start() }
+                backgroundThread = HandlerThread(
+                    "WatchFaceBackground",
+                    Process.THREAD_PRIORITY_FOREGROUND // The user is waiting on WF init.
+                ).apply { start() }
             }
             return Handler(backgroundThread!!.looper)
         }
@@ -322,6 +325,9 @@ public abstract class WatchFaceService : WallpaperService() {
      * This is open for use by tests.
      */
     internal open fun expectPreRInitFlow() = Build.VERSION.SDK_INT < Build.VERSION_CODES.R
+
+    /** This is open to allow mocking. */
+    internal open fun getChoreographer(): Choreographer = Choreographer.getInstance()
 
     /**
      * This is open for use by tests, it allows them to inject a custom [SurfaceHolder].
@@ -701,6 +707,7 @@ public abstract class WatchFaceService : WallpaperService() {
         internal var allowWatchfaceToAnimate = allowWatchFaceToAnimate()
 
         internal var destroyed = false
+        internal var surfaceDestroyed = false
 
         internal lateinit var ambientUpdateWakelock: PowerManager.WakeLock
 
@@ -722,7 +729,16 @@ public abstract class WatchFaceService : WallpaperService() {
                     "Choreographer doFrame called but allowWatchfaceToAnimate is false"
                 }
                 frameCallbackPending = false
-                draw()
+
+                val watchFaceImpl: WatchFaceImpl? = getWatchFaceImplOrNull()
+
+                /**
+                 * It's possible we went ambient by the time our callback occurred in which case
+                 * there's no point drawing. Note if watchFaceImpl is null we call [drawBlack].
+                 */
+                if (watchFaceImpl?.renderer?.shouldAnimate() != false) {
+                    draw()
+                }
             }
         }
 
@@ -871,7 +887,7 @@ public abstract class WatchFaceService : WallpaperService() {
                 // It's unlikely an ambient tick would be sent to a watch face that hasn't loaded
                 // yet. The watch face will render at least once upon loading so we don't need to do
                 // anything special here.
-                invalidate()
+                draw()
                 ambientUpdateWakelock.acquire(SURFACE_DRAW_TIMEOUT_MS)
             }
         }
@@ -929,11 +945,10 @@ public abstract class WatchFaceService : WallpaperService() {
         }
 
         /** This can be called on any thread. */
-        internal fun addWatchfaceReadyListener(listener: IWatchfaceReadyListener) {
-            uiThreadCoroutineScope.launch {
-                deferredWatchFaceImpl.await()
-                listener.onWatchfaceReady()
-            }
+        @UiThread
+        internal suspend fun addWatchfaceReadyListener(listener: IWatchfaceReadyListener) {
+            deferredWatchFaceImpl.await()
+            listener.onWatchfaceReady()
         }
 
         @UiThread
@@ -1002,7 +1017,6 @@ public abstract class WatchFaceService : WallpaperService() {
             holder: SurfaceHolder
         ): Unit = TraceEvent("EngineWrapper.onCreate").use {
             super.onCreate(holder)
-
             ambientUpdateWakelock =
                 (getSystemService(Context.POWER_SERVICE) as PowerManager)
                     .newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "$TAG:[AmbientUpdate]")
@@ -1094,6 +1108,10 @@ public abstract class WatchFaceService : WallpaperService() {
             }
 
             super.onDestroy()
+        }
+
+        override fun onSurfaceDestroyed(holder: SurfaceHolder) {
+            surfaceDestroyed = true
         }
 
         override fun onCommand(
@@ -1495,7 +1513,9 @@ public abstract class WatchFaceService : WallpaperService() {
                 )
 
                 // Perform UI thread render init.
-                watchFaceImpl.renderer.uiThreadInitInternal(uiThreadCoroutineScope)
+                if (!surfaceDestroyed) {
+                    watchFaceImpl.renderer.uiThreadInitInternal(uiThreadCoroutineScope)
+                }
 
                 // Make sure no UI thread rendering (a consequence of completing
                 // deferredWatchFaceImpl) occurs before initStyleAndComplications has
@@ -1519,7 +1539,9 @@ public abstract class WatchFaceService : WallpaperService() {
                 // to draw this expedited first frame.
                 if (!watchState.isHeadless && allowWatchFaceToAnimate()) {
                     TraceEvent("WatchFace.drawFirstFrame").use {
-                        watchFaceImpl.onDraw()
+                        if (!surfaceDestroyed) {
+                            watchFaceImpl.onDraw()
+                        }
                     }
                 }
             }
@@ -1628,7 +1650,7 @@ public abstract class WatchFaceService : WallpaperService() {
                 }
                 frameCallbackPending = true
                 if (!this::choreographer.isInitialized) {
-                    choreographer = Choreographer.getInstance()
+                    choreographer = getChoreographer()
                 }
                 choreographer.postFrameCallback(frameCallback)
             } else {
@@ -1644,7 +1666,7 @@ public abstract class WatchFaceService : WallpaperService() {
                     Trace.beginSection("onDraw")
                 }
                 if (LOG_VERBOSE) {
-                    Log.v(WatchFaceService.TAG, "drawing frame")
+                    Log.v(TAG, "drawing frame")
                 }
 
                 val watchFaceImpl: WatchFaceImpl? = getWatchFaceImplOrNull()

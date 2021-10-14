@@ -102,6 +102,8 @@ dependencies {
 
         lintChecks(project(":compose:ui:ui-lint"))
         lintPublish(project(":compose:ui:ui-lint"))
+
+        samples(project(":compose:ui:ui:ui-samples"))
     }
 }
 
@@ -158,7 +160,7 @@ if(AndroidXComposePlugin.isMultiplatformEnabled(project)) {
                 dependsOn(jvmMain)
             }
 
-            test.dependencies {
+            androidTest.dependencies {
                 implementation(libs.testRules)
                 implementation(libs.testRunner)
                 implementation(libs.kotlinCoroutinesTest)
@@ -207,6 +209,9 @@ if(AndroidXComposePlugin.isMultiplatformEnabled(project)) {
                 implementation(project(":compose:ui:ui-test-junit4"))
             }
         }
+    }
+    dependencies {
+        samples(project(":compose:ui:ui:ui-samples"))
     }
 }
 

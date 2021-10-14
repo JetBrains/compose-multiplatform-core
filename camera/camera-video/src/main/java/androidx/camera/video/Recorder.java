@@ -36,6 +36,7 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.media.MediaCodecInfo;
 import android.media.MediaMuxer;
+import android.media.MediaScannerConnection;
 import android.net.Uri;
 import android.os.Build;
 import android.os.ParcelFileDescriptor;
@@ -95,6 +96,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * An implementation of {@link VideoOutput} for starting video recordings that are saved
@@ -117,12 +119,13 @@ import java.util.concurrent.TimeUnit;
  * cameraProvider.bindToLifecycle(this, cameraSelector, preview, videoCapture);
  * </pre>
  *
- * <p>Once the recorder is attached to a video source, a new recording can be configured with one of
- * the {@link PendingRecording} methods, such as
+ * <p>Once the recorder is attached to a video source as a {@link VideoOutput}, e.g. using it to
+ * create a {@link VideoCapture} by calling {@link VideoCapture#withOutput(VideoOutput)}, a new
+ * recording can be generated with one of the prepareRecording methods, such as
  * {@link #prepareRecording(Context, MediaStoreOutputOptions)}. The {@link PendingRecording} class
- * also allows setting a listener with
- * {@link PendingRecording#withEventListener(Executor, Consumer)} to listen for
- * {@link VideoRecordEvent}s such as {@link VideoRecordEvent.Start},
+ * then can be used to adjust per-recording settings and to start the recording. It also allows
+ * setting a listener with {@link PendingRecording#withEventListener(Executor, Consumer)} to
+ * listen for {@link VideoRecordEvent}s such as {@link VideoRecordEvent.Start},
  * {@link VideoRecordEvent.Pause}, {@link VideoRecordEvent.Resume}, and
  * {@link VideoRecordEvent.Finalize}. This listener will also receive regular recording status
  * updates via the {@link VideoRecordEvent.Status} event.
@@ -133,6 +136,7 @@ import java.util.concurrent.TimeUnit;
  * @see VideoCapture#withOutput(VideoOutput)
  * @see PendingRecording
  */
+@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public final class Recorder implements VideoOutput {
 
     private static final String TAG = "Recorder";
@@ -232,6 +236,8 @@ public final class Recorder implements VideoOutput {
      *         .thenTry(QUALITY_SD)
      *         .finallyTry(QUALITY_FHD, FALLBACK_STRATEGY_HIGHER);
      * }</pre>
+     *
+     * @see QualitySelector
      */
     public static final QualitySelector DEFAULT_QUALITY_SELECTOR =
             QualitySelector.firstTry(QUALITY_FHD)
@@ -484,16 +490,19 @@ public final class Recorder implements VideoOutput {
      *
      * <p>The provided {@link FileOutputOptions} specifies the file to use.
      *
-     * <p>The recording will not begin until {@link PendingRecording#start()} is called on the
-     * returned {@link PendingRecording}. Only a single pending recording can be started per
-     * {@link Recorder} instance.
+     * <p>Calling this method multiple times will generate multiple {@link PendingRecording}s,
+     * each of the recordings can be used to adjust per-recording settings individually. The
+     * recording will not begin until {@link PendingRecording#start()} is called. Only a single
+     * pending recording can be started per {@link Recorder} instance.
      *
      * @param context the context used to enforce runtime permissions, interface with the media
      *                scanner service, and attribute access to permission protected data, such as
-     *                audio.
+     *                audio. If using this context to <a href="{@docRoot}guide
+     *                /topics/data/audit-access#audit-by-attribution-tagaudit">audit audio
+     *                access</a> on API level 31+, a context created with
+     *                {@link Context#createAttributionContext(String)} should be used.
      * @param fileOutputOptions the options that configures how the output will be handled.
      * @return a {@link PendingRecording} that is associated with this Recorder.
-     * @throws IllegalStateException if the Recorder is released.
      * @see FileOutputOptions
      */
     @NonNull
@@ -511,25 +520,33 @@ public final class Recorder implements VideoOutput {
      * <p>Currently, file descriptors as output destinations are not supported on pre-Android O
      * (API 26) devices.
      *
-     * <p>The recording will not begin until {@link PendingRecording#start()} is called on the
-     * returned {@link PendingRecording}. Only a single pending recording can be started per
-     * {@link Recorder} instance.
+     * <p>Calling this method multiple times will generate multiple {@link PendingRecording}s,
+     * each of the recordings can be used to adjust per-recording settings individually. The
+     * recording will not begin until {@link PendingRecording#start()} is called. Only a single
+     * pending recording can be started per {@link Recorder} instance.
      *
      * @param context the context used to enforce runtime permissions, interface with the media
      *                scanner service, and attribute access to permission protected data, such as
-     *                audio.
+     *                audio. If using this context to <a href="{@docRoot}guide
+     *                /topics/data/audit-access#audit-by-attribution-tagaudit">audit audio
+     *                access</a> on API level 31+, a context created with
+     *                {@link Context#createAttributionContext(String)} should be used.
      * @param fileDescriptorOutputOptions the options that configures how the output will be
      *                                    handled.
      * @return a {@link PendingRecording} that is associated with this Recorder.
-     * @throws IllegalStateException if the Recorder is released.
+     * @throws UnsupportedOperationException if this method is called on per-Android O (API 26)
+     * devices.
      * @see FileDescriptorOutputOptions
      */
     @RequiresApi(26)
     @NonNull
     public PendingRecording prepareRecording(@NonNull Context context,
             @NonNull FileDescriptorOutputOptions fileDescriptorOutputOptions) {
-        Preconditions.checkState(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O,
-                "MediaMuxer doesn't accept FileDescriptor as output destination.");
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+            throw new UnsupportedOperationException(
+                    "File descriptors as output destinations are not supported on pre-Android O "
+                            + "(API 26) devices.");
+        }
         return prepareRecordingInternal(context, fileDescriptorOutputOptions);
     }
 
@@ -539,16 +556,19 @@ public final class Recorder implements VideoOutput {
      * <p>The provided {@link MediaStoreOutputOptions} specifies the options which will be used
      * to save the recording to a {@link MediaStore}.
      *
-     * <p>The recording will not begin until {@link PendingRecording#start()} is called on the
-     * returned {@link PendingRecording}. Only a single pending recording can be started per
-     * {@link Recorder} instance.
+     * <p>Calling this method multiple times will generate multiple {@link PendingRecording}s,
+     * each of the recordings can be used to adjust per-recording settings individually. The
+     * recording will not begin until {@link PendingRecording#start()} is called. Only a single
+     * pending recording can be started per {@link Recorder} instance.
      *
      * @param context the context used to enforce runtime permissions, interface with the media
      *                scanner service, and attribute access to permission protected data, such as
-     *                audio.
+     *                audio. If using this context to <a href="{@docRoot}guide
+     *                /topics/data/audit-access#audit-by-attribution-tagaudit">audit audio
+     *                access</a> on API level 31+, a context created with
+     *                {@link Context#createAttributionContext(String)} should be used.
      * @param mediaStoreOutputOptions the options that configures how the output will be handled.
      * @return a {@link PendingRecording} that is associated with this Recorder.
-     * @throws IllegalStateException if the Recorder is released.
      * @see MediaStoreOutputOptions
      */
     @NonNull
@@ -619,10 +639,10 @@ public final class Recorder implements VideoOutput {
      * completes. The recording will be considered active, so before it's finalized, an
      * {@link IllegalStateException} will be thrown if this method is called for a second time.
      *
-     * <p>The recording will be finalized with
-     * {@link VideoRecordEvent.Finalize#ERROR_SOURCE_INACTIVE} when the video frame producer
-     * stops sending frames to the provided {@link Surface}, for example, when the
-     * {@link VideoCapture} this Recorder is associated with is detached from the camera.
+     * <p>If the video producer stops sending frames to the provided surface, the recording will
+     * be automatically finalized with {@link VideoRecordEvent.Finalize#ERROR_SOURCE_INACTIVE}.
+     * This can happen, for example, when the {@link VideoCapture} this Recorder is associated
+     * with is detached from the camera.
      *
      * @throws IllegalStateException if there's an active recording, or the audio is
      *                               {@link PendingRecording#withAudioEnabled() enabled} for the
@@ -1341,7 +1361,7 @@ public final class Recorder implements VideoOutput {
                 contentValues.put(MediaStore.Video.Media.IS_PENDING, PENDING);
             }
             Uri outputUri = mediaStoreOutputOptions.getContentResolver().insert(
-                    mediaStoreOutputOptions.getCollection(), contentValues);
+                    mediaStoreOutputOptions.getCollectionUri(), contentValues);
             if (outputUri == null) {
                 throw new IOException("Unable to create MediaStore entry.");
             }
@@ -1802,10 +1822,7 @@ public final class Recorder implements VideoOutput {
         OutputOptions outputOptions = mInProgressRecording.getOutputOptions();
         RecordingStats stats = getInProgressRecordingStats();
 
-        if (outputOptions instanceof MediaStoreOutputOptions) {
-            // Toggle off pending status for the video file.
-            finalizeMediaStoreFile((MediaStoreOutputOptions) outputOptions);
-        }
+        mInProgressRecording.finalizeOutputFile(mOutputUri);
 
         OutputResults outputResults = OutputResults.of(mOutputUri);
         mInProgressRecording.updateVideoRecordEvent(errorToSend == ERROR_NONE
@@ -2042,20 +2059,6 @@ public final class Recorder implements VideoOutput {
         }
     }
 
-    @ExecutedBy("mSequentialExecutor")
-    private void finalizeMediaStoreFile(@NonNull MediaStoreOutputOptions mediaStoreOutputOptions) {
-        if (mOutputUri.equals(Uri.EMPTY)) {
-            return;
-        }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            ContentValues contentValues = new ContentValues();
-            contentValues.put(MediaStore.Video.Media.IS_PENDING, NOT_PENDING);
-            mediaStoreOutputOptions.getContentResolver().update(mOutputUri, contentValues, null,
-                    null);
-        }
-        // TODO (b/198551531): Trigger MediaScannerConnection.scanFile to rescan.
-    }
-
     @SuppressWarnings("WeakerAccess") /* synthetic accessor */
     @ExecutedBy("mSequentialExecutor")
     @NonNull
@@ -2164,17 +2167,77 @@ public final class Recorder implements VideoOutput {
         mAudioState = audioState;
     }
 
+    @RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
     @AutoValue
     abstract static class RecordingRecord {
 
+        private final AtomicReference<Consumer<Uri>> mOutputFileFinalizer =
+                new AtomicReference<>(ignored -> {
+                    /* no-op by default */
+                });
+
         static RecordingRecord from(@NonNull PendingRecording pendingRecording, long recordingId) {
-            return new AutoValue_Recorder_RecordingRecord(
-                    pendingRecording.getOutputOptions(),
+            OutputOptions outputOptions = pendingRecording.getOutputOptions();
+            RecordingRecord recordingRecord = new AutoValue_Recorder_RecordingRecord(
+                    outputOptions,
                     pendingRecording.getCallbackExecutor(),
                     pendingRecording.getEventListener(),
                     pendingRecording.isAudioEnabled(),
                     recordingId
             );
+
+            if (outputOptions instanceof MediaStoreOutputOptions) {
+                MediaStoreOutputOptions mediaStoreOutputOptions =
+                        (MediaStoreOutputOptions) outputOptions;
+                // TODO(b/201946954): Investigate whether we should add a setting to disable
+                //  scan/update to allow users to perform it themselves.
+                Consumer<Uri> outputFileFinalizer;
+                if (Build.VERSION.SDK_INT >= 29) {
+                    outputFileFinalizer = outputUri -> {
+                        if (outputUri.equals(Uri.EMPTY)) {
+                            return;
+                        }
+                        ContentValues contentValues = new ContentValues();
+                        contentValues.put(MediaStore.Video.Media.IS_PENDING, NOT_PENDING);
+                        mediaStoreOutputOptions.getContentResolver().update(outputUri,
+                                contentValues, null, null);
+                    };
+                } else {
+                    // Context will only be held in local scope of the consumer so it will not be
+                    // retained after finalizeOutputFile() is called.
+                    Context finalContext = pendingRecording.getApplicationContext();
+                    outputFileFinalizer = outputUri -> {
+                        if (outputUri.equals(Uri.EMPTY)) {
+                            return;
+                        }
+                        String filePath = OutputUtil.getAbsolutePathFromUri(
+                                mediaStoreOutputOptions.getContentResolver(), outputUri,
+                                MEDIA_COLUMN);
+                        if (filePath != null) {
+                            // Use null mime type list to have MediaScanner derive mime type from
+                            // extension
+                            MediaScannerConnection.scanFile(finalContext,
+                                    new String[]{filePath}, /*mimeTypes=*/null, (path, uri) -> {
+                                        if (uri == null) {
+                                            Logger.e(TAG, String.format("File scanning operation "
+                                                    + "failed [path: %s]", path));
+                                        } else {
+                                            Logger.d(TAG, String.format("File scan completed "
+                                                    + "successfully [path: %s, URI: %s]", path,
+                                                    uri));
+                                        }
+                                    });
+                        } else {
+                            Logger.d(TAG,
+                                    "Skipping media scanner scan. Unable to retrieve file path "
+                                            + "from URI: " + outputUri);
+                        }
+                    };
+                }
+                recordingRecord.mOutputFileFinalizer.set(outputFileFinalizer);
+            }
+
+            return recordingRecord;
         }
 
         @NonNull
@@ -2206,11 +2269,30 @@ public final class Recorder implements VideoOutput {
                 }
             }
         }
+
+        /**
+         * Performs final operations required to prepare completed output file.
+         *
+         * <p>Output file finalization can only occur once. Any subsequent calls to this method
+         * will throw an {@link AssertionError}.
+         *
+         * @param uri The uri of the output file.
+         */
+        void finalizeOutputFile(@NonNull Uri uri) {
+            Consumer<Uri> outputFileFinalizer = mOutputFileFinalizer.getAndSet(null);
+            if (outputFileFinalizer == null) {
+                throw new AssertionError(
+                        "Output file has already been finalized for recording " + this);
+            }
+
+            outputFileFinalizer.accept(uri);
+        }
     }
 
     /**
      * Builder class for {@link Recorder} objects.
      */
+    @RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
     public static final class Builder {
 
         private final MediaSpec.Builder mMediaSpecBuilder;
@@ -2233,6 +2315,8 @@ public final class Recorder implements VideoOutput {
          * encoding. For the best performance, it's recommended to be an {@link Executor} that is
          * capable of running at least two tasks concurrently, such as a
          * {@link java.util.concurrent.ThreadPoolExecutor} backed by 2 or more threads.
+         *
+         * <p>If not set, the Recorder will be run on the IO executor internally managed by CameraX.
          */
         @NonNull
         public Builder setExecutor(@NonNull Executor executor) {

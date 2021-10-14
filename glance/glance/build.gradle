@@ -17,7 +17,6 @@
 import androidx.build.LibraryGroups
 import androidx.build.LibraryType
 import androidx.build.Publish
-import androidx.build.RunApiTasks
 import androidx.build.AndroidXComposePlugin
 
 plugins {
@@ -33,15 +32,22 @@ dependencies {
     kotlinPlugin(project(":compose:compiler:compiler"))
 
     api("androidx.compose.runtime:runtime:1.0.1")
+    api("androidx.annotation:annotation:1.2.0")
 
+    implementation("androidx.annotation:annotation:1.1.0")
     implementation(libs.kotlinStdlib)
 
+    testImplementation(libs.robolectric)
+    testImplementation(libs.testCore)
     testImplementation(libs.testRules)
     testImplementation(libs.testRunner)
     testImplementation(libs.truth)
     testImplementation(libs.junit)
     testImplementation(libs.kotlinCoroutinesTest)
     testImplementation(libs.kotlinTest)
+    testImplementation(libs.kotlinReflect)
+    testImplementation(libs.mockitoCore)
+    testImplementation(libs.mockitoKotlin)
 }
 
 android {

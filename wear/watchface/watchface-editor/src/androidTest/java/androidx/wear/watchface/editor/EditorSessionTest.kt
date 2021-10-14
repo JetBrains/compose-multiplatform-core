@@ -21,8 +21,8 @@ import android.app.Activity
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
+import android.content.pm.ServiceInfo
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
@@ -96,6 +96,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.android.asCoroutineDispatcher
 import kotlinx.coroutines.async
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -107,6 +108,7 @@ import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
+import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.ArgumentMatchers.any
@@ -1102,6 +1104,9 @@ public class EditorSessionTest {
             assertThat(
                 editorSession.complicationSlotsState.value[LEFT_COMPLICATION_ID]!!.bounds
             ).isEqualTo(Rect(120, 160, 160, 240))
+            assertThat(
+                editorSession.complicationsDataSourceInfo.value[LEFT_COMPLICATION_ID]!!.name
+            ).isEqualTo("DataSource1")
 
             /**
              * Invoke [TestComplicationHelperActivity] which will change the complication data
@@ -1120,7 +1125,7 @@ public class EditorSessionTest {
 
             // This should update the preview data to point to the updated DataSource3 data.
             val previewComplication =
-                editorSession.getComplicationsPreviewData().value[LEFT_COMPLICATION_ID]
+                editorSession.complicationsPreviewData.value[LEFT_COMPLICATION_ID]
                     as LongTextComplicationData
 
             assertThat(
@@ -1129,6 +1134,10 @@ public class EditorSessionTest {
                     Instant.EPOCH
                 )
             ).isEqualTo("DataSource3")
+
+            assertThat(
+                editorSession.complicationsDataSourceInfo.value[LEFT_COMPLICATION_ID]!!.name
+            ).isEqualTo("TestDataSource3")
 
             assertThat(
                 TestComplicationHelperActivity.lastIntent?.extras?.getString(
@@ -1263,7 +1272,7 @@ public class EditorSessionTest {
             assertThat(chosenComplicationDataSource.complicationSlotId)
                 .isEqualTo(LEFT_COMPLICATION_ID)
             assertThat(chosenComplicationDataSource.complicationDataSourceInfo).isNull()
-            assertThat(editorSession.getComplicationsPreviewData().value[LEFT_COMPLICATION_ID])
+            assertThat(editorSession.complicationsPreviewData.value[LEFT_COMPLICATION_ID])
                 .isInstanceOf(EmptyComplicationData::class.java)
         }
     }
@@ -1818,6 +1827,7 @@ public class EditorSessionTest {
     }
 
     @Test
+    @Ignore // TODO(b/200917204): This test is flaking on the bots.
     public fun forceCloseEditorSessionDuring_fetchComplicationsData() {
         val getProviderInfosLatch = CountDownLatch(1)
         val complicationDataSourceInfoRetrieverProvider =
@@ -1832,7 +1842,7 @@ public class EditorSessionTest {
 
         scenario.onActivity { activity ->
             activity.immediateCoroutineScope.launch {
-                activity.editorSession.getComplicationsPreviewData()
+                activity.editorSession.complicationsPreviewData.collect {}
                 fail("We shouldn't get here due to the editor closing")
             }
         }
@@ -2002,7 +2012,7 @@ public class EditorSessionTest {
 
         scenario.onActivity { activity ->
             runBlocking {
-                val previewData = activity.editorSession.getComplicationsPreviewData().value
+                val previewData = activity.editorSession.complicationsPreviewData.value
                 assertThat(previewData.size).isEqualTo(2)
                 assertThat(previewData[LEFT_COMPLICATION_ID])
                     .isInstanceOf(ShortTextComplicationData::class.java)
@@ -2037,7 +2047,7 @@ public class EditorSessionTest {
 
         scenario.onActivity { activity ->
             runBlocking {
-                val previewData = activity.editorSession.getComplicationsPreviewData().value
+                val previewData = activity.editorSession.complicationsPreviewData.value
                 assertThat(previewData.size).isEqualTo(2)
                 assertThat(previewData[LEFT_COMPLICATION_ID])
                     .isInstanceOf(ShortTextComplicationData::class.java)
@@ -2150,17 +2160,21 @@ public class EditorSessionTest {
     public fun watchfaceSupportsHeadlessEditing() {
         val mockPackageManager = Mockito.mock(PackageManager::class.java)
 
-        `when`(mockPackageManager.getApplicationInfo("test.package", PackageManager.GET_META_DATA))
-            .thenReturn(
-                ApplicationInfo().apply {
-                    metaData = Bundle().apply {
-                        putString(EditorRequest.ANDROIDX_WATCHFACE_API_VERSION, "4")
-                    }
-                }
+        `when`(
+            mockPackageManager.getServiceInfo(
+                ComponentName("test.package", EditorRequest.WATCHFACE_CONTROL_SERVICE),
+                PackageManager.GET_META_DATA
             )
+        ).thenReturn(
+            ServiceInfo().apply {
+                metaData = Bundle().apply {
+                    putInt(EditorRequest.ANDROIDX_WATCHFACE_API_VERSION, 4)
+                }
+            }
+        )
 
         assertThat(
-            EditorRequest.canWatchFaceSupportHeadlessEditing(mockPackageManager, "test.package")
+            EditorRequest.supportsWatchFaceHeadlessEditing(mockPackageManager, "test.package")
         ).isTrue()
     }
 
@@ -2168,17 +2182,21 @@ public class EditorSessionTest {
     public fun watchfaceSupportsHeadlessEditing_oldApi() {
         val mockPackageManager = Mockito.mock(PackageManager::class.java)
 
-        `when`(mockPackageManager.getApplicationInfo("test.package", PackageManager.GET_META_DATA))
-            .thenReturn(
-                ApplicationInfo().apply {
-                    metaData = Bundle().apply {
-                        putString(EditorRequest.ANDROIDX_WATCHFACE_API_VERSION, "3")
-                    }
-                }
+        `when`(
+            mockPackageManager.getServiceInfo(
+                ComponentName("test.package", EditorRequest.WATCHFACE_CONTROL_SERVICE),
+                PackageManager.GET_META_DATA
             )
+        ).thenReturn(
+            ServiceInfo().apply {
+                metaData = Bundle().apply {
+                    putInt(EditorRequest.ANDROIDX_WATCHFACE_API_VERSION, 3)
+                }
+            }
+        )
 
         assertThat(
-            EditorRequest.canWatchFaceSupportHeadlessEditing(mockPackageManager, "test.package")
+            EditorRequest.supportsWatchFaceHeadlessEditing(mockPackageManager, "test.package")
         ).isFalse()
     }
 

@@ -23,6 +23,7 @@ import android.os.ParcelFileDescriptor
 import android.provider.MediaStore
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
@@ -31,6 +32,7 @@ import java.io.File
 
 @SmallTest
 @RunWith(AndroidJUnit4::class)
+@SdkSuppress(minSdkVersion = 21)
 class OutputOptionsTest {
 
     companion object {
@@ -69,7 +71,7 @@ class OutputOptionsTest {
         ).setContentValues(contentValues).setFileSizeLimit(FILE_SIZE_LIMIT).build()
 
         assertThat(mediaStoreOutputOptions.contentResolver).isEqualTo(contentResolver)
-        assertThat(mediaStoreOutputOptions.collection).isEqualTo(
+        assertThat(mediaStoreOutputOptions.collectionUri).isEqualTo(
             MediaStore.Video.Media.EXTERNAL_CONTENT_URI
         )
         assertThat(mediaStoreOutputOptions.contentValues).isEqualTo(contentValues)

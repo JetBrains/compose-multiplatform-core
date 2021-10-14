@@ -17,22 +17,37 @@
 package androidx.glance.action
 
 import android.app.Activity
-import androidx.glance.GlanceInternalApi
+import androidx.annotation.RestrictTo
+import android.content.ComponentName
 
-@GlanceInternalApi
-class LaunchActivityAction(val activityClass: Class<out Activity>) : Action
+/** @suppress */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public interface LaunchActivityAction : Action
+
+/** @suppress */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public class LaunchActivityComponentAction(val componentName: ComponentName) : LaunchActivityAction
+
+/** @suppress */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public class LaunchActivityClassAction(val activityClass: Class<out Activity>) :
+    LaunchActivityAction
+
+/**
+ * Creates an [Action] that launches the [Activity] specified by the given [ComponentName].
+ */
+public fun actionLaunchActivity(componentName: ComponentName): Action =
+    LaunchActivityComponentAction(componentName)
 
 /**
  * Creates an [Action] that launches the specified [Activity] when triggered.
  */
-@OptIn(GlanceInternalApi::class)
-public fun <T : Activity> launchActivityAction(activity: Class<T>): Action =
-    LaunchActivityAction(activity)
+public fun <T : Activity> actionLaunchActivity(activity: Class<T>): Action =
+    LaunchActivityClassAction(activity)
 
 @Suppress("MissingNullability") /* Shouldn't need to specify @NonNull. b/199284086 */
-@OptIn(GlanceInternalApi::class)
 /**
  * Creates an [Action] that launches the specified [Activity] when triggered.
  */
-public inline fun <reified T : Activity> launchActivityAction(): Action =
-    launchActivityAction(T::class.java)
+public inline fun <reified T : Activity> actionLaunchActivity(): Action =
+    actionLaunchActivity(T::class.java)

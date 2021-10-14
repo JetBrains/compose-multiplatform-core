@@ -410,6 +410,28 @@
 
     <issue
         id="NewApi"
+        message="Call requires API level 16 (current min is 14): `WRITE_AHEAD_LOGGING`"
+        errorLine1="                .setJournalMode(RoomDatabase.JournalMode.WRITE_AHEAD_LOGGING).build();"
+        errorLine2="                                                         ~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/test/java/androidx/room/BuilderTest.java"
+            line="411"
+            column="58"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 16 (current min is 14): `WRITE_AHEAD_LOGGING`"
+        errorLine1="        assertThat(config.journalMode, is(RoomDatabase.JournalMode.WRITE_AHEAD_LOGGING));"
+        errorLine2="                                                                   ~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/test/java/androidx/room/BuilderTest.java"
+            line="414"
+            column="68"/>
+    </issue>
+
+    <issue
+        id="NewApi"
         message="Call requires API level 21 (current min is 14): `java.util.Locale#forLanguageTag`"
         errorLine1="        Locale.setDefault(Locale.forLanguageTag(&quot;tr-TR&quot;));"
         errorLine2="                                 ~~~~~~~~~~~~~~">
@@ -1737,6 +1759,28 @@
             file="src/main/java/androidx/room/util/ViewInfo.java"
             line="83"
             column="65"/>
+    </issue>
+
+    <issue
+        id="UnsafeOptInUsageError"
+        message="This declaration is opt-in and its usage should be marked with&#xA;&apos;@androidx.room.ExperimentalRoomApi&apos; or &apos;@OptIn(markerClass = androidx.room.ExperimentalRoomApi.class)&apos;"
+        errorLine1="                MultiInstanceInvalidationService.class) : null,"
+        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/room/DatabaseConfiguration.java"
+            line="513"
+            column="17"/>
+    </issue>
+
+    <issue
+        id="UnsafeOptInUsageError"
+        message="This declaration is opt-in and its usage should be marked with&#xA;&apos;@androidx.room.ExperimentalRoomApi&apos; or &apos;@OptIn(markerClass = androidx.room.ExperimentalRoomApi.class)&apos;"
+        errorLine1="                    MultiInstanceInvalidationService.class) : null;"
+        errorLine2="                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/room/RoomDatabase.java"
+            line="1172"
+            column="21"/>
     </issue>
 
 </issues>
