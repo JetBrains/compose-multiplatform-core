@@ -19,7 +19,13 @@
 package androidx.compose.material3.catalog.library.model
 
 import androidx.compose.material3.catalog.library.util.SampleSourceUrl
+import androidx.compose.material3.samples.AlertDialogSample
+import androidx.compose.material3.samples.AlertDialogWithIconSample
 import androidx.compose.material3.samples.ColorSchemeSample
+import androidx.compose.material3.samples.EnterAlwaysSmallTopAppBar
+import androidx.compose.material3.samples.PinnedSmallTopAppBar
+import androidx.compose.material3.samples.SimpleCenteredTopAppBar
+import androidx.compose.material3.samples.SimpleSmallTopAppBar
 import androidx.compose.runtime.Composable
 
 data class Example(
@@ -38,4 +44,46 @@ val ColorExamples =
             description = ColorExampleDescription,
             sourceUrl = ColorExampleSourceUrl,
         ) { ColorSchemeSample() },
+    )
+
+private const val DialogExampleDescription = "Basic Dialog examples"
+private const val DialogExampleSourceUrl = "$SampleSourceUrl/AlertDialogSamples.kt"
+val DialogExamples =
+    listOf(
+        Example(
+            name = ::AlertDialogSample.name,
+            description = DialogExampleDescription,
+            sourceUrl = DialogExampleSourceUrl,
+        ) { AlertDialogSample() },
+        Example(
+            name = ::AlertDialogWithIconSample.name,
+            description = DialogExampleDescription,
+            sourceUrl = DialogExampleSourceUrl,
+        ) { AlertDialogWithIconSample() },
+    )
+
+private const val TopAppBarExampleDescription = "Top app bar examples"
+private const val TopAppBarExampleSourceUrl = "$SampleSourceUrl/AppBarSamples.kt"
+val TopAppBarExamples =
+    listOf(
+        Example(
+            name = ::SimpleSmallTopAppBar.name,
+            description = TopAppBarExampleDescription,
+            sourceUrl = TopAppBarExampleSourceUrl,
+        ) { SimpleSmallTopAppBar() },
+        Example(
+            name = ::SimpleCenteredTopAppBar.name,
+            description = TopAppBarExampleDescription,
+            sourceUrl = TopAppBarExampleSourceUrl,
+        ) { SimpleCenteredTopAppBar() },
+        Example(
+            name = ::PinnedSmallTopAppBar.name,
+            description = TopAppBarExampleDescription,
+            sourceUrl = TopAppBarExampleSourceUrl,
+        ) { PinnedSmallTopAppBar() },
+        Example(
+            name = ::EnterAlwaysSmallTopAppBar.name,
+            description = TopAppBarExampleDescription,
+            sourceUrl = TopAppBarExampleSourceUrl,
+        ) { EnterAlwaysSmallTopAppBar() },
     )

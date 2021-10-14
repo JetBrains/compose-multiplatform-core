@@ -16,19 +16,23 @@
 
 package androidx.glance.appwidget.demos
 
+import android.app.Activity
 import androidx.compose.runtime.Composable
+import androidx.glance.LocalContext
 import androidx.glance.LocalSize
 import androidx.glance.Modifier
+import androidx.glance.action.actionLaunchActivity
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
 import androidx.glance.appwidget.SizeMode
+import androidx.glance.background
+import androidx.glance.layout.Button
 import androidx.glance.layout.Column
-import androidx.glance.layout.FontWeight
-import androidx.glance.layout.Row
 import androidx.glance.layout.Text
-import androidx.glance.layout.TextDecoration
-import androidx.glance.layout.TextStyle
 import androidx.glance.layout.padding
+import androidx.glance.text.FontWeight
+import androidx.glance.text.TextDecoration
+import androidx.glance.text.TextStyle
 import androidx.glance.unit.DpSize
 import androidx.glance.unit.dp
 import androidx.glance.unit.sp
@@ -44,35 +48,32 @@ class ResponsiveAppWidget : GlanceAppWidget() {
     @Composable
     override fun Content() {
         val size = LocalSize.current
-        Column(modifier = Modifier.padding(8.dp)) {
+        val context = LocalContext.current
+        Column(
+            modifier = Modifier
+                .padding(8.dp)
+                .background(R.color.responsive_widget_background)
+        ) {
             val content = if (size.width < 100.dp) {
                 "${size.width.value}dp x ${size.height.value}dp"
             } else {
                 "Current layout: ${size.width.value}dp x ${size.height.value}dp"
             }
             if (size.height >= 100.dp) {
-                Row {
-                    Text(
-                        "Responsive",
-                        style = TextStyle(
-                            fontSize = 15.sp, fontWeight = FontWeight.Bold,
-                            textDecoration = TextDecoration.Underline
-                        )
+                Text(
+                    context.getString(R.string.responsive_widget_title),
+                    style = TextStyle(
+                        fontSize = 15.sp, fontWeight = FontWeight.Bold,
+                        textDecoration = TextDecoration.Underline
                     )
-                    Text(
-                        " layout",
-                        style = TextStyle(
-                            fontSize = 15.sp, fontWeight = FontWeight.Medium,
-                            textDecoration = TextDecoration.Underline
-                        )
-                    )
-                }
+                )
             }
             Text(content)
+            Button("Button", onClick = actionLaunchActivity<Activity>())
         }
     }
 }
 
 class ResponsiveAppWidgetReceiver : GlanceAppWidgetReceiver() {
-    override val glanceAppWidget: GlanceAppWidget by lazy { ResponsiveAppWidget() }
+    override val glanceAppWidget: GlanceAppWidget = ResponsiveAppWidget()
 }

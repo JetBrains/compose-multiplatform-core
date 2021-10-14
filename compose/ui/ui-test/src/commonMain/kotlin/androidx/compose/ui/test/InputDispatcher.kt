@@ -56,16 +56,15 @@ internal expect fun createInputDispatcher(
  */
 internal abstract class InputDispatcher(
     private val testContext: TestContext,
-    private val root: RootForTest?
+    private val root: RootForTest
 ) {
     companion object {
         /**
-         * The default time between two successively injected events, 10 milliseconds.
-         * Ideally, the value should reflect a realistic pointer input sample rate, but that
-         * depends on too many factors. Instead, the value is chosen comfortably below the
-         * targeted frame rate (60 fps, equating to a 16ms period).
+         * The default time between two successively injected events, 16 milliseconds. Events are
+         * normally sent on every frame and thus follow the frame rate. On a 60Hz screen this is
+         * ~16ms per frame.
          */
-        var eventPeriodMillis = 10L
+        var eventPeriodMillis = 16L
             internal set
     }
 
@@ -111,7 +110,12 @@ internal abstract class InputDispatcher(
     }
 
     @OptIn(InternalTestApi::class)
-    private val TestContext.currentTime get() = testOwner.mainClock.currentTime
+    private val TestContext.currentTime
+        get() = testOwner.mainClock.currentTime
+
+    private val RootForTest.bounds get() = semanticsOwner.rootSemanticsNode.boundsInRoot
+
+    protected fun isWithinRootBounds(position: Offset): Boolean = root.bounds.contains(position)
 
     /**
      * Increases the current event time by [durationMillis].
@@ -330,17 +334,20 @@ internal abstract class InputDispatcher(
         check(!mouse.isButtonPressed(buttonId)) {
             "Cannot send mouse button down event, button $buttonId is already pressed"
         }
+        check(isWithinRootBounds(currentMousePosition) || mouse.hasAnyButtonPressed) {
+            "Cannot start a mouse gesture outside the Compose root bounds, mouse position is " +
+                "$currentMousePosition and bounds are ${root.bounds}"
+        }
         if (partialGesture != null) {
             enqueueTouchCancel()
         }
 
-        val nothingWasPressed = mouse.hasNoButtonsPressed
-        mouse.setButtonBit(buttonId)
-
-        // Down time is when the _first_ button was pressed
-        if (nothingWasPressed) {
+        // Down time is when the first button is pressed
+        if (mouse.hasNoButtonsPressed) {
             mouse.downTime = currentTime
         }
+        mouse.setButtonBit(buttonId)
+
         // Exit hovering if necessary
         if (mouse.isEntered) {
             mouse.exitHover()
@@ -358,16 +365,20 @@ internal abstract class InputDispatcher(
     fun enqueueMouseMove(position: Offset) {
         val mouse = mouseInputState
 
-        // TODO(fresen): synthesize ENTER and EXIT events
-        //  when the mouse enters/exits the Compose host.
-
+        // Touch needs to be cancelled, even if mouse is out of bounds
         if (partialGesture != null) {
             enqueueTouchCancel()
         }
+
         updateMousePosition(position)
-        // If not yet hovering and no buttons pressed, enter hover state
-        if (!mouse.isEntered && mouse.hasNoButtonsPressed) {
+        val isWithinBounds = isWithinRootBounds(position)
+
+        if (isWithinBounds && !mouse.isEntered && mouse.hasNoButtonsPressed) {
+            // If not yet hovering and no buttons pressed, enter hover state
             mouse.enterHover()
+        } else if (!isWithinBounds && mouse.isEntered) {
+            // If hovering, exit now
+            mouse.exitHover()
         }
         mouse.enqueueMove()
     }
@@ -406,7 +417,7 @@ internal abstract class InputDispatcher(
         mouse.enqueueRelease(buttonId)
 
         // When no buttons remaining, enter hover state immediately
-        if (mouse.hasNoButtonsPressed) {
+        if (mouse.hasNoButtonsPressed && isWithinRootBounds(currentMousePosition)) {
             mouse.enterHover()
             mouse.enqueueMove()
         }
@@ -425,6 +436,9 @@ internal abstract class InputDispatcher(
         }
         check(mouse.hasNoButtonsPressed) {
             "Cannot send mouse hover enter event, mouse buttons are down"
+        }
+        check(isWithinRootBounds(position)) {
+            "Cannot send mouse hover enter event, $position is out of bounds"
         }
 
         updateMousePosition(position)
@@ -471,8 +485,10 @@ internal abstract class InputDispatcher(
         val mouse = mouseInputState
 
         // A scroll is always preceded by a move(/hover) event
-        enqueueMouseMove(mouse.lastPosition)
-        mouse.enqueueScroll(delta, scrollWheel)
+        enqueueMouseMove(currentMousePosition)
+        if (isWithinRootBounds(currentMousePosition)) {
+            mouse.enqueueScroll(delta, scrollWheel)
+        }
     }
 
     private fun MouseInputState.enterHover() {
@@ -489,7 +505,7 @@ internal abstract class InputDispatcher(
      * Sends all enqueued events and blocks while they are dispatched. If an exception is
      * thrown during the process, all events that haven't yet been dispatched will be dropped.
      */
-    abstract fun sendAllSynchronous()
+    abstract fun flush()
 
     protected abstract fun PartialGesture.enqueueDown(pointerId: Int)
 
@@ -521,7 +537,7 @@ internal abstract class InputDispatcher(
 
     /**
      * Called when this [InputDispatcher] is about to be discarded, from
-     * [MultiModalInjectionScope.dispose].
+     * [InjectionScope.dispose].
      */
     fun dispose() {
         saveState(root)

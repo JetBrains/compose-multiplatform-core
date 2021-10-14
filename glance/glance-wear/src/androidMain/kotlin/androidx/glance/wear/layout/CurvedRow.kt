@@ -1,4 +1,3 @@
-@file:OptIn(GlanceInternalApi::class)
 /*
  * Copyright 2021 The Android Open Source Project
  *
@@ -23,11 +22,10 @@ import androidx.compose.runtime.Immutable
 import androidx.glance.Applier
 import androidx.glance.Emittable
 import androidx.glance.EmittableWithChildren
-import androidx.glance.GlanceInternalApi
 import androidx.glance.Modifier
-import androidx.glance.layout.FontStyle
-import androidx.glance.layout.FontWeight
-import androidx.glance.layout.TextStyle
+import androidx.glance.text.FontStyle
+import androidx.glance.text.FontWeight
+import androidx.glance.text.TextStyle
 import androidx.glance.unit.Sp
 
 /**

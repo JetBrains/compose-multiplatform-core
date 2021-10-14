@@ -27,21 +27,21 @@ import androidx.compose.runtime.Composition
 import androidx.compose.runtime.Recomposer
 import androidx.core.content.ContextCompat
 import androidx.glance.Applier
-import androidx.glance.GlanceInternalApi
 import androidx.glance.Modifier
+import androidx.glance.background
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.Box
 import androidx.glance.layout.Column
 import androidx.glance.layout.EmittableBox
-import androidx.glance.layout.FontStyle
-import androidx.glance.layout.FontWeight
 import androidx.glance.layout.Row
 import androidx.glance.layout.Text
-import androidx.glance.layout.TextDecoration
-import androidx.glance.layout.TextStyle
-import androidx.glance.layout.expandHeight
-import androidx.glance.layout.expandWidth
+import androidx.glance.layout.fillMaxHeight
+import androidx.glance.layout.fillMaxWidth
 import androidx.glance.layout.size
+import androidx.glance.text.FontStyle
+import androidx.glance.text.FontWeight
+import androidx.glance.text.TextDecoration
+import androidx.glance.text.TextStyle
 import androidx.glance.unit.Color
 import androidx.glance.unit.dp
 import androidx.glance.unit.sp
@@ -49,7 +49,6 @@ import androidx.glance.wear.layout.AnchorType
 import androidx.glance.wear.layout.CurvedRow
 import androidx.glance.wear.layout.CurvedTextStyle
 import androidx.glance.wear.layout.RadialAlignment
-import androidx.glance.wear.layout.background
 import androidx.test.core.app.ApplicationProvider.getApplicationContext
 import androidx.test.screenshot.AndroidXScreenshotTestRule
 import androidx.test.screenshot.matchers.MSSIMMatcher
@@ -66,7 +65,7 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 
-@OptIn(GlanceInternalApi::class, ExperimentalCoroutinesApi::class)
+@OptIn(ExperimentalCoroutinesApi::class)
 class ScreenshotTests {
     @get:Rule
     var screenshotRule = AndroidXScreenshotTestRule("glance/glance-wear")
@@ -149,7 +148,7 @@ class ScreenshotTests {
 
     private suspend fun runComposition(content: @Composable () -> Unit) = coroutineScope {
         val root = EmittableBox()
-        root.modifier = Modifier.expandWidth().expandHeight()
+        root.modifier = Modifier.fillMaxWidth().fillMaxHeight()
         root.contentAlignment = Alignment.Center
 
         val applier = Applier(root)
@@ -173,7 +172,7 @@ class ScreenshotTests {
     ) = fakeCoroutineScope.runBlockingTest {
         val context = getApplicationContext<Context>()
         val composition = runComposition(content)
-        val translatedComposition = translateComposition(composition)
+        val translatedComposition = translateComposition(context, composition)
 
         val renderer = TileRenderer(
             context,

@@ -26,6 +26,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.testutils.assertAgainstGolden
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
@@ -34,6 +37,7 @@ import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.isToggleable
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
@@ -233,6 +237,52 @@ class SwitchScreenshotTest {
         Thread.sleep(300)
 
         assertToggeableAgainstGolden("switch_animateToUnchecked")
+    }
+
+    @Test
+    fun switchTest_hover() {
+        rule.setMaterialContent {
+            Box(wrapperModifier) {
+                Switch(
+                    checked = true,
+                    onCheckedChange = { }
+                )
+            }
+        }
+
+        rule.onNode(isToggleable())
+            .performMouseInput { enter(center) }
+
+        rule.waitForIdle()
+
+        assertToggeableAgainstGolden("switch_hover")
+    }
+
+    @Test
+    fun switchTest_focus() {
+        val focusRequester = FocusRequester()
+
+        rule.setMaterialContent {
+            Box(wrapperModifier) {
+                Switch(
+                    checked = true,
+                    onCheckedChange = { },
+                    modifier = Modifier
+                        // Normally this is only focusable in non-touch mode, so let's force it to
+                        // always be focusable so we can test how it appears
+                        .focusProperties { canFocus = true }
+                        .focusRequester(focusRequester)
+                )
+            }
+        }
+
+        rule.runOnIdle {
+            focusRequester.requestFocus()
+        }
+
+        rule.waitForIdle()
+
+        assertToggeableAgainstGolden("switch_focus")
     }
 
     private fun assertToggeableAgainstGolden(goldenName: String) {

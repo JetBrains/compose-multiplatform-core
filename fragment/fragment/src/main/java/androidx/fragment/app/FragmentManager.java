@@ -616,6 +616,18 @@ public abstract class FragmentManager implements FragmentResultOwner {
         return parent.isMenuVisible();
     }
 
+    /**
+     * Recursively check up the FragmentManager hierarchy of Fragments to see
+     * if the fragment is hidden.
+     */
+    boolean isParentHidden(@Nullable Fragment parent) {
+        if (parent == null) {
+            return false;
+        }
+
+        return parent.isHidden();
+    }
+
     @SuppressWarnings("WeakerAccess") /* synthetic access */
     void handleOnBackPressed() {
         // First, execute any pending actions to make sure we're in an
@@ -3137,6 +3149,15 @@ public abstract class FragmentManager implements FragmentResultOwner {
      */
     public void removeFragmentOnAttachListener(@NonNull FragmentOnAttachListener listener) {
         mOnAttachListeners.remove(listener);
+    }
+
+    void dispatchOnHiddenChanged() {
+        for (Fragment fragment : mFragmentStore.getActiveFragments()) {
+            if (fragment != null) {
+                fragment.onHiddenChanged(fragment.isHidden());
+                fragment.mChildFragmentManager.dispatchOnHiddenChanged();
+            }
+        }
     }
 
     // Checks if fragments that belong to this fragment manager (or their children) have menus,

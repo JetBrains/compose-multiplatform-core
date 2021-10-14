@@ -25,6 +25,7 @@ import androidx.compose.ui.autofill.AutofillTree
 import androidx.compose.ui.draw.DrawModifier
 import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.hapticfeedback.HapticFeedback
+import androidx.compose.ui.input.InputModeManager
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.node.Owner
 import androidx.compose.ui.text.font.Font
@@ -73,8 +74,6 @@ val LocalClipboardManager = staticCompositionLocalOf<ClipboardManager> {
  * pixel units. This is typically used when a
  * [DP][androidx.compose.ui.unit.Dp] is provided and it must be converted in the body of
  * [Layout] or [DrawModifier].
- *
- * @sample androidx.compose.ui.unit.samples.WithDensitySample
  */
 val LocalDensity = staticCompositionLocalOf<Density> {
     noLocalProvidedFor("LocalDensity")
@@ -102,6 +101,14 @@ val LocalFontLoader = staticCompositionLocalOf<Font.ResourceLoader> {
  */
 val LocalHapticFeedback = staticCompositionLocalOf<HapticFeedback> {
     noLocalProvidedFor("LocalHapticFeedback")
+}
+
+/**
+ * The CompositionLocal to provide an instance of InputModeManager which controls the current
+ * input mode.
+ */
+val LocalInputModeManager = staticCompositionLocalOf<InputModeManager> {
+    noLocalProvidedFor("LocalInputManager")
 }
 
 /**
@@ -160,6 +167,7 @@ internal fun ProvideCommonCompositionLocals(
         LocalFocusManager provides owner.focusManager,
         LocalFontLoader provides owner.fontLoader,
         LocalHapticFeedback provides owner.hapticFeedBack,
+        LocalInputModeManager provides owner.inputModeManager,
         LocalLayoutDirection provides owner.layoutDirection,
         LocalTextInputService provides owner.textInputService,
         LocalTextToolbar provides owner.textToolbar,

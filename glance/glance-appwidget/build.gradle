@@ -19,6 +19,7 @@ import androidx.build.AndroidXComposePlugin
 import androidx.build.LibraryGroups
 import androidx.build.LibraryType
 import androidx.build.Publish
+import androidx.glance.appwidget.layoutgenerator.gradle.LayoutGeneratorTask
 
 plugins {
     id("AndroidXPlugin")
@@ -27,7 +28,7 @@ plugins {
 }
 
 // Disable multi-platform; this will only be used on Android.
-AndroidXComposePlugin.applyAndConfigureKotlinPlugin(project, /* isMultiplatformEnabled= */false)
+AndroidXComposePlugin.applyAndConfigureKotlinPlugin(project, /* isMultiplatformEnabled= */ false)
 
 dependencies {
     kotlinPlugin(project(":compose:compiler:compiler"))
@@ -38,6 +39,7 @@ dependencies {
 
     implementation project(path: ':annotation:annotation')
     implementation project(path: ':core:core-remoteviews')
+    implementation project(path: ':core:core-ktx')
     implementation(libs.kotlinStdlib)
 
     testImplementation(project(":core:core-ktx"))
@@ -51,7 +53,9 @@ dependencies {
     testImplementation(libs.testRules)
     testImplementation(libs.testRunner)
     testImplementation(libs.truth)
+    testImplementation(libs.kotlinReflect)
 
+    androidTestImplementation("androidx.test.uiautomator:uiautomator:2.2.0")
     androidTestImplementation(project(":test:screenshot:screenshot"))
     androidTestImplementation(project(":core:core-ktx"))
     androidTestImplementation(libs.espressoCore)
@@ -64,6 +68,7 @@ dependencies {
     androidTestImplementation(libs.testRules)
     androidTestImplementation(libs.testRunner)
     androidTestImplementation(libs.truth)
+    androidTestImplementation(libs.kotlinReflect)
 }
 
 android {
@@ -72,6 +77,12 @@ android {
 
     sourceSets {
         androidTest.assets.srcDirs += project.rootDir.absolutePath + "/../../golden/glance/glance-appwidget"
+    }
+
+    buildTypes {
+        debug {
+            pseudoLocalesEnabled true
+        }
     }
 }
 
@@ -85,3 +96,9 @@ androidx {
             "using a Jetpack Compose-style API."
     targetsJavaConsumers = false
 }
+
+LayoutGeneratorTask.registerLayoutGenerator(
+        project,
+        android,
+        /* layoutDirectory= */ file("src/androidMain/layoutTemplates")
+)

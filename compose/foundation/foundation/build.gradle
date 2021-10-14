@@ -70,6 +70,8 @@ dependencies {
         androidTestImplementation(libs.dexmakerMockito)
         androidTestImplementation(libs.mockitoCore)
         androidTestImplementation(libs.mockitoKotlin)
+
+        samples(project(":compose:foundation:foundation:foundation-samples"))
     }
 }
 
@@ -121,6 +123,7 @@ if(AndroidXComposePlugin.isMultiplatformEnabled(project)) {
                 implementation(project(":compose:test-utils"))
                 implementation(project(":compose:ui:ui-test-font"))
                 implementation(project(":test:screenshot:screenshot"))
+                implementation(project(":internal-testutils-runtime"))
                 implementation("androidx.activity:activity-compose:1.3.1")
 
                 implementation(libs.testUiautomator)
@@ -143,6 +146,9 @@ if(AndroidXComposePlugin.isMultiplatformEnabled(project)) {
                 implementation(libs.mockitoKotlin)
             }
         }
+    }
+    dependencies {
+        samples(project(":compose:foundation:foundation:foundation-samples"))
     }
 }
 

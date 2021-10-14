@@ -3,6 +3,248 @@
 
     <issue
         id="NewApi"
+        message="Call requires API level S (current min is 14): `android.view.ContentInfo#getClip`"
+        errorLine1="            return mWrapped.getClip();"
+        errorLine2="                            ~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/view/ContentInfoCompat.java"
+            line="456"
+            column="29"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level S (current min is 14): `android.view.ContentInfo#getSource`"
+        errorLine1="            return mWrapped.getSource();"
+        errorLine2="                            ~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/view/ContentInfoCompat.java"
+            line="462"
+            column="29"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level S (current min is 14): `android.view.ContentInfo#getFlags`"
+        errorLine1="            return mWrapped.getFlags();"
+        errorLine2="                            ~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/view/ContentInfoCompat.java"
+            line="468"
+            column="29"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level S (current min is 14): `android.view.ContentInfo#getLinkUri`"
+        errorLine1="            return mWrapped.getLinkUri();"
+        errorLine2="                            ~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/view/ContentInfoCompat.java"
+            line="474"
+            column="29"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level S (current min is 14): `android.view.ContentInfo#getExtras`"
+        errorLine1="            return mWrapped.getExtras();"
+        errorLine2="                            ~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/view/ContentInfoCompat.java"
+            line="480"
+            column="29"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level S (current min is 30): `new android.widget.EdgeEffect`"
+        errorLine1="                return new EdgeEffect(context, attrs);"
+        errorLine2="                       ~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/widget/EdgeEffectCompat.java"
+            line="306"
+            column="24"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level S (current min is 30): `android.widget.EdgeEffect#onPullDistance`"
+        errorLine1="                return edgeEffect.onPullDistance(deltaDistance, displacement);"
+        errorLine2="                                  ~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/widget/EdgeEffectCompat.java"
+            line="319"
+            column="35"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level S (current min is 30): `android.widget.EdgeEffect#getDistance`"
+        errorLine1="                return edgeEffect.getDistance();"
+        errorLine2="                                  ~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/widget/EdgeEffectCompat.java"
+            line="329"
+            column="35"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Class requires API level S (current min is 14): `android.location.LocationRequest`"
+        errorLine1="                            LocationRequest.class, Executor.class, LocationListener.class);"
+        errorLine2="                            ~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/location/LocationManagerCompat.java"
+            line="254"
+            column="29"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Class requires API level S (current min is 14): `android.location.LocationRequest`"
+        errorLine1="                            LocationRequest.class, LocationListener.class, Looper.class);"
+        errorLine2="                            ~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/location/LocationManagerCompat.java"
+            line="278"
+            column="29"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Class requires API level S (current min is 14): `android.location.LocationRequest`"
+        errorLine1="                            LocationRequest.class, LocationListener.class, Looper.class);"
+        errorLine2="                            ~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/location/LocationManagerCompat.java"
+            line="333"
+            column="29"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level S (current min is 14): `android.location.LocationListener#onLocationChanged`"
+        errorLine1="                listener.onLocationChanged(locations);"
+        errorLine2="                         ~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/location/LocationManagerCompat.java"
+            line="692"
+            column="26"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level S (current min is 14): `android.location.LocationListener#onFlushComplete`"
+        errorLine1="                listener.onFlushComplete(requestCode);"
+        errorLine2="                         ~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/location/LocationManagerCompat.java"
+            line="707"
+            column="26"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Class requires API level S (current min is 19): `android.location.LocationRequest`"
+        errorLine1="                    sCreateFromDeprecatedProviderMethod = LocationRequest.class.getDeclaredMethod("
+        errorLine2="                                                          ~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/location/LocationRequestCompat.java"
+            line="251"
+            column="59"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Class requires API level S (current min is 19): `android.location.LocationRequest`"
+        errorLine1="                        (LocationRequest) sCreateFromDeprecatedProviderMethod.invoke(null, provider,"
+        errorLine2="                         ~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/location/LocationRequestCompat.java"
+            line="258"
+            column="26"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Class requires API level S (current min is 19): `android.location.LocationRequest`"
+        errorLine1="                    sSetQualityMethod = LocationRequest.class.getDeclaredMethod("
+        errorLine2="                                        ~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/location/LocationRequestCompat.java"
+            line="266"
+            column="41"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Class requires API level S (current min is 19): `android.location.LocationRequest`"
+        errorLine1="                        sSetFastestIntervalMethod = LocationRequest.class.getDeclaredMethod("
+        errorLine2="                                                    ~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/location/LocationRequestCompat.java"
+            line="274"
+            column="53"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Class requires API level S (current min is 19): `android.location.LocationRequest`"
+        errorLine1="                        sSetNumUpdatesMethod = LocationRequest.class.getDeclaredMethod("
+        errorLine2="                                               ~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/location/LocationRequestCompat.java"
+            line="284"
+            column="48"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Class requires API level S (current min is 19): `android.location.LocationRequest`"
+        errorLine1="                        sSetExpireInMethod = LocationRequest.class.getDeclaredMethod("
+        errorLine2="                                             ~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/location/LocationRequestCompat.java"
+            line="294"
+            column="46"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level S (current min is 19): `android.location.LocationRequest#getQuality`"
+        errorLine1="                builder.build().toLocationRequest(&quot;test&quot;).getQuality());"
+        errorLine2="                                                          ~~~~~~~~~~">
+        <location
+            file="src/androidTest/java/androidx/core/location/LocationRequestCompatTest.java"
+            line="107"
+            column="59"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level S (current min is 19): `android.location.LocationRequest#getQuality`"
+        errorLine1="        assertEquals(QUALITY_HIGH_ACCURACY, builder.build().toLocationRequest(&quot;test&quot;).getQuality());"
+        errorLine2="                                                                                      ~~~~~~~~~~">
+        <location
+            file="src/androidTest/java/androidx/core/location/LocationRequestCompatTest.java"
+            line="115"
+            column="87"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Class requires API level S (current min is 30): `android.location.LocationRequest`"
+        errorLine1="            sGetExpireInMethod = LocationRequest.class.getDeclaredMethod(&quot;getExpireIn&quot;);"
+        errorLine2="                                 ~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidTest/java/androidx/core/location/LocationRequestCompatTest.java"
+            line="242"
+            column="34"/>
+    </issue>
+
+    <issue
+        id="NewApi"
         message="Call requires API level 24 (current min is 14): `java.util.Optional#of`"
         errorLine1="                return Optional.of(modeCompat);"
         errorLine2="                                ~~">
@@ -773,6 +1015,127 @@
 
     <issue
         id="NewApi"
+        message="Call requires API level 29 (current min is 28): `COLOR_DODGE`"
+        errorLine1="        verifyPorterDuffMatchesCompat(BlendModeCompat.COLOR_DODGE, null);"
+        errorLine2="                                                      ~~~~~~~~~~~">
+        <location
+            file="src/androidTest/java/androidx/core/graphics/PaintTest.java"
+            line="100"
+            column="55"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 29 (current min is 28): `COLOR_BURN`"
+        errorLine1="        verifyPorterDuffMatchesCompat(BlendModeCompat.COLOR_BURN, null);"
+        errorLine2="                                                      ~~~~~~~~~~">
+        <location
+            file="src/androidTest/java/androidx/core/graphics/PaintTest.java"
+            line="101"
+            column="55"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 29 (current min is 28): `HARD_LIGHT`"
+        errorLine1="        verifyPorterDuffMatchesCompat(BlendModeCompat.HARD_LIGHT, null);"
+        errorLine2="                                                      ~~~~~~~~~~">
+        <location
+            file="src/androidTest/java/androidx/core/graphics/PaintTest.java"
+            line="102"
+            column="55"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 29 (current min is 28): `SOFT_LIGHT`"
+        errorLine1="        verifyPorterDuffMatchesCompat(BlendModeCompat.SOFT_LIGHT, null);"
+        errorLine2="                                                      ~~~~~~~~~~">
+        <location
+            file="src/androidTest/java/androidx/core/graphics/PaintTest.java"
+            line="103"
+            column="55"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 29 (current min is 28): `DIFFERENCE`"
+        errorLine1="        verifyPorterDuffMatchesCompat(BlendModeCompat.DIFFERENCE, null);"
+        errorLine2="                                                      ~~~~~~~~~~">
+        <location
+            file="src/androidTest/java/androidx/core/graphics/PaintTest.java"
+            line="104"
+            column="55"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 29 (current min is 28): `EXCLUSION`"
+        errorLine1="        verifyPorterDuffMatchesCompat(BlendModeCompat.EXCLUSION, null);"
+        errorLine2="                                                      ~~~~~~~~~">
+        <location
+            file="src/androidTest/java/androidx/core/graphics/PaintTest.java"
+            line="105"
+            column="55"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 29 (current min is 28): `MULTIPLY`"
+        errorLine1="        verifyPorterDuffMatchesCompat(BlendModeCompat.MULTIPLY, null);"
+        errorLine2="                                                      ~~~~~~~~">
+        <location
+            file="src/androidTest/java/androidx/core/graphics/PaintTest.java"
+            line="108"
+            column="55"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 29 (current min is 28): `HUE`"
+        errorLine1="        verifyPorterDuffMatchesCompat(BlendModeCompat.HUE, null);"
+        errorLine2="                                                      ~~~">
+        <location
+            file="src/androidTest/java/androidx/core/graphics/PaintTest.java"
+            line="109"
+            column="55"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 29 (current min is 28): `SATURATION`"
+        errorLine1="        verifyPorterDuffMatchesCompat(BlendModeCompat.SATURATION, null);"
+        errorLine2="                                                      ~~~~~~~~~~">
+        <location
+            file="src/androidTest/java/androidx/core/graphics/PaintTest.java"
+            line="110"
+            column="55"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 29 (current min is 28): `COLOR`"
+        errorLine1="        verifyPorterDuffMatchesCompat(BlendModeCompat.COLOR, null);"
+        errorLine2="                                                      ~~~~~">
+        <location
+            file="src/androidTest/java/androidx/core/graphics/PaintTest.java"
+            line="111"
+            column="55"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 29 (current min is 28): `LUMINOSITY`"
+        errorLine1="        verifyPorterDuffMatchesCompat(BlendModeCompat.LUMINOSITY, null);"
+        errorLine2="                                                      ~~~~~~~~~~">
+        <location
+            file="src/androidTest/java/androidx/core/graphics/PaintTest.java"
+            line="112"
+            column="55"/>
+    </issue>
+
+    <issue
+        id="NewApi"
         message="Call requires API level 29 (current min is 14): `android.graphics.Paint#getBlendMode`"
         errorLine1="            assertEquals(blendMode, p.getBlendMode());"
         errorLine2="                                      ~~~~~~~~~~~~">
@@ -1104,6 +1467,72 @@
     <issue
         id="NewApi"
         message="Field requires API level 23 (current min is 21): `scenario`"
+        errorLine1="        val decorView = scenario.withActivity { window.decorView }"
+        errorLine2="                        ~~~~~~~~">
+        <location
+            file="src/androidTest/java/androidx/core/view/WindowInsetsControllerCompatActivityTest.kt"
+            line="319"
+            column="25"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 23 (current min is 21): `scenario`"
+        errorLine1="        scenario.onActivity {"
+        errorLine2="        ~~~~~~~~">
+        <location
+            file="src/androidTest/java/androidx/core/view/WindowInsetsControllerCompatActivityTest.kt"
+            line="298"
+            column="9"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 23 (current min is 21): `windowInsetsController`"
+        errorLine1="            windowInsetsController.systemBarsBehavior ="
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidTest/java/androidx/core/view/WindowInsetsControllerCompatActivityTest.kt"
+            line="299"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 23 (current min is 21): `scenario`"
+        errorLine1="        val decorView = scenario.withActivity { window.decorView }"
+        errorLine2="                        ~~~~~~~~">
+        <location
+            file="src/androidTest/java/androidx/core/view/WindowInsetsControllerCompatActivityTest.kt"
+            line="302"
+            column="25"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 23 (current min is 21): `scenario`"
+        errorLine1="        scenario.onActivity {"
+        errorLine2="        ~~~~~~~~">
+        <location
+            file="src/androidTest/java/androidx/core/view/WindowInsetsControllerCompatActivityTest.kt"
+            line="315"
+            column="9"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 23 (current min is 21): `windowInsetsController`"
+        errorLine1="            windowInsetsController.systemBarsBehavior ="
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidTest/java/androidx/core/view/WindowInsetsControllerCompatActivityTest.kt"
+            line="316"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 23 (current min is 21): `scenario`"
         errorLine1="        val decorView = scenario.withActivity { window.decorView }"
         errorLine2="                        ~~~~~~~~">
         <location
@@ -10885,6 +11314,116 @@
             file="src/main/java/androidx/core/graphics/drawable/WrappedDrawable.java"
             line="34"
             column="29"/>
+    </issue>
+
+   <issue
+        id="SupportAnnotationUsage"
+        message="The API level is already known to be at least 16 here from outer annotations"
+        errorLine1="            @RequiresApi(16)"
+        errorLine2="            ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/app/NotificationCompat.java"
+            line="3195"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="SupportAnnotationUsage"
+        message="The API level is already known to be at least 16 here from outer annotations"
+        errorLine1="            @RequiresApi(16)"
+        errorLine2="            ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/app/NotificationCompat.java"
+            line="3203"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="SupportAnnotationUsage"
+        message="The API level is already known to be at least 23 here from outer annotations"
+        errorLine1="            @RequiresApi(23)"
+        errorLine2="            ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/app/NotificationCompat.java"
+            line="3222"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="SupportAnnotationUsage"
+        message="The API level is already known to be at least 31 here from outer annotations"
+        errorLine1="            @RequiresApi(31)"
+        errorLine2="            ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/app/NotificationCompat.java"
+            line="3241"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="SupportAnnotationUsage"
+        message="The API level is already known to be at least 29 here from outer annotations"
+        errorLine1="            @RequiresApi(29)"
+        errorLine2="            ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/app/NotificationCompat.java"
+            line="7142"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="SupportAnnotationUsage"
+        message="The API level is already known to be at least 29 here from outer annotations"
+        errorLine1="            @RequiresApi(29)"
+        errorLine2="            ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/app/NotificationCompat.java"
+            line="7181"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="SupportAnnotationUsage"
+        message="The API level is already known to be at least 30 here from outer annotations"
+        errorLine1="            @RequiresApi(30)"
+        errorLine2="            ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/app/NotificationCompat.java"
+            line="7225"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="SupportAnnotationUsage"
+        message="The API level is already known to be at least 30 here from outer annotations"
+        errorLine1="            @RequiresApi(30)"
+        errorLine2="            ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/app/NotificationCompat.java"
+            line="7266"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="SupportAnnotationUsage"
+        message="The API level is already known to be at least 21 here from outer annotations"
+        errorLine1="        @RequiresApi(21)"
+        errorLine2="        ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/view/WindowInsetsAnimationCompat.java"
+            line="689"
+            column="9"/>
+    </issue>
+
+    <issue
+        id="SupportAnnotationUsage"
+        message="The API level is already known to be at least 30 here from outer annotations"
+        errorLine1="        @RequiresApi(30)"
+        errorLine2="        ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/core/view/WindowInsetsAnimationCompat.java"
+            line="962"
+            column="9"/>
     </issue>
 
 </issues>

@@ -72,13 +72,13 @@ plugins {
 
 val metalavaBuildId: String? = findProperty("metalavaBuildId") as String?
 repositories {
+    if (metalavaBuildId != null) {
+        maven(url="https://androidx.dev/metalava/builds/${metalavaBuildId}/artifacts/repo/m2repository")
+    }
     jcenter()
     mavenCentral()
     google()
     gradlePluginPortal()
-    if (metalavaBuildId != null) {
-        maven(url="https://androidx.dev/metalava/builds/${metalavaBuildId}/artifacts/repo/m2repository")
-    }
 
     val allowBintray: String? = findProperty("allowBintray") as String?
     if (allowBintray != null) {
@@ -124,28 +124,19 @@ repositories {
         }
     }
 
-    ivy {
-        setUrl("https://download.jetbrains.com/kotlin/native/builds/releases")
-        patternLayout {
-            artifact("[revision]/macos/[artifact]-[revision].[ext]")
-        }
-        metadataSources {
-            artifact()
-        }
-        content {
-            includeGroup("")
-        }
-    }
-    ivy {
-        setUrl("https://download.jetbrains.com/kotlin/native/builds/releases")
-        patternLayout {
-            artifact("[revision]/linux/[artifact]-[revision].[ext]")
-        }
-        metadataSources {
-            artifact()
-        }
-        content {
-            includeGroup("")
+
+    listOf("macos", "macos-x86_64", "linux", "linux-x86_64").forEach { platstring ->
+        ivy {
+            setUrl("https://download.jetbrains.com/kotlin/native/builds/releases")
+            patternLayout {
+                artifact("[revision]/$platstring/[artifact]-[revision].[ext]")
+            }
+            metadataSources {
+                artifact()
+            }
+            content {
+                includeGroup("")
+            }
         }
     }
 }

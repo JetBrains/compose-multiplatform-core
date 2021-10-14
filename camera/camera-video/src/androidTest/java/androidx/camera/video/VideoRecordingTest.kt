@@ -44,6 +44,7 @@ import androidx.camera.video.VideoRecordEvent.Finalize.ERROR_SOURCE_INACTIVE
 import androidx.core.util.Consumer
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.LargeTest
+import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
@@ -67,6 +68,7 @@ import java.util.concurrent.TimeUnit
 
 @LargeTest
 @RunWith(Parameterized::class)
+@SdkSuppress(minSdkVersion = 21)
 class VideoRecordingTest(
     private var cameraSelector: CameraSelector
 ) {
@@ -275,7 +277,7 @@ class VideoRecordingTest(
         latchForVideoRecording = CountDownLatch(5)
 
         instrumentation.runOnMainSync {
-            cameraProvider.bindToLifecycle(lifecycleOwner, cameraSelector, videoCapture)
+            cameraProvider.bindToLifecycle(lifecycleOwner, cameraSelector, preview, videoCapture)
         }
 
         // Act.
@@ -300,7 +302,7 @@ class VideoRecordingTest(
         @Suppress("UNCHECKED_CAST")
         val mockListener = mock(Consumer::class.java) as Consumer<VideoRecordEvent>
         instrumentation.runOnMainSync {
-            cameraProvider.bindToLifecycle(lifecycleOwner, cameraSelector, videoCapture)
+            cameraProvider.bindToLifecycle(lifecycleOwner, cameraSelector, preview, videoCapture)
         }
         lifecycleOwner.pauseAndStop()
 

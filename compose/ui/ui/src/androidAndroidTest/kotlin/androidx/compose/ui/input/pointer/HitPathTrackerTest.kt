@@ -31,6 +31,7 @@ import androidx.compose.ui.graphics.RenderEffect
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.hapticfeedback.HapticFeedback
+import androidx.compose.ui.input.InputModeManager
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.layout.AlignmentLine
 import androidx.compose.ui.layout.LayoutCoordinates
@@ -3593,6 +3594,8 @@ private class MockOwner(
         get() = TODO("Not yet implemented")
     override val hapticFeedBack: HapticFeedback
         get() = TODO("Not yet implemented")
+    override val inputModeManager: InputModeManager
+        get() = TODO("Not yet implemented")
     override val clipboardManager: ClipboardManager
         get() = TODO("Not yet implemented")
     override val accessibilityManager: AccessibilityManager
@@ -3656,8 +3659,6 @@ private class MockOwner(
             override val layerId: Long
                 get() = 0
 
-            @OptIn(ExperimentalComposeUiApi::class)
-            @get:OptIn(ExperimentalComposeUiApi::class)
             override val ownerViewId: Long
                 get() = 0
 
@@ -3703,6 +3704,12 @@ private class MockOwner(
             }
 
             override fun mapBounds(rect: MutableRect, inverse: Boolean) {
+            }
+
+            override fun reuseLayer(
+                drawBlock: (Canvas) -> Unit,
+                invalidateParentLayer: () -> Unit
+            ) {
             }
 
             override fun mapOffset(point: Offset, inverse: Boolean) = point

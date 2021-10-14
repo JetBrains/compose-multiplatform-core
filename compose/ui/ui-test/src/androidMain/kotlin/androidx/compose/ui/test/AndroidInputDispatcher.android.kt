@@ -67,13 +67,13 @@ internal actual fun createInputDispatcher(
 
 internal class AndroidInputDispatcher(
     private val testContext: TestContext,
-    private val root: ViewRootForTest?,
+    private val root: ViewRootForTest,
     private val sendEvent: (MotionEvent) -> Unit
 ) : InputDispatcher(testContext, root) {
 
     private val batchLock = Any()
     private var batchedEvents = mutableListOf<MotionEvent>()
-    private var acceptEvents = true
+    private var disposed = false
     private var currentClockTime = currentTime
 
     override fun PartialGesture.enqueueDown(pointerId: Int) {
@@ -118,20 +118,30 @@ internal class AndroidInputDispatcher(
 
     override fun MouseInputState.enqueuePress(buttonId: Int) {
         enqueueMouseEvent(if (hasOneButtonPressed) ACTION_DOWN else ACTION_MOVE)
-        enqueueMouseEvent(ACTION_BUTTON_PRESS)
+        if (isWithinRootBounds(currentMousePosition)) {
+            enqueueMouseEvent(ACTION_BUTTON_PRESS)
+        }
     }
 
     override fun MouseInputState.enqueueMove() {
-        enqueueMouseEvent(if (isEntered) ACTION_HOVER_MOVE else ACTION_MOVE)
+        if (isWithinRootBounds(currentMousePosition)) {
+            enqueueMouseEvent(if (isEntered) ACTION_HOVER_MOVE else ACTION_MOVE)
+        } else if (hasAnyButtonPressed) {
+            enqueueMouseEvent(ACTION_MOVE)
+        }
     }
 
     override fun MouseInputState.enqueueRelease(buttonId: Int) {
-        enqueueMouseEvent(ACTION_BUTTON_RELEASE)
+        if (isWithinRootBounds(currentMousePosition)) {
+            enqueueMouseEvent(ACTION_BUTTON_RELEASE)
+        }
         enqueueMouseEvent(if (hasNoButtonsPressed) ACTION_UP else ACTION_MOVE)
     }
 
     override fun MouseInputState.enqueueEnter() {
-        enqueueMouseEvent(ACTION_HOVER_ENTER)
+        if (isWithinRootBounds(currentMousePosition)) {
+            enqueueMouseEvent(ACTION_HOVER_ENTER)
+        }
     }
 
     override fun MouseInputState.enqueueExit() {
@@ -197,21 +207,20 @@ internal class AndroidInputDispatcher(
         }
 
         synchronized(batchLock) {
-            check(acceptEvents) {
+            ensureNotDisposed {
                 "Can't enqueue touch event (" +
                     "downTime=$downTime, " +
                     "action=$action, " +
                     "actionIndex=$actionIndex, " +
                     "pointerIds=$pointerIds, " +
                     "eventTimes=$eventTimes, " +
-                    "coordinates=$coordinates" +
-                    "), events have already been (or are being) dispatched or disposed"
+                    "coordinates=$coordinates)"
             }
-            val positionInScreen = root?.let {
+            val positionInScreen = run {
                 val array = intArrayOf(0, 0)
-                it.view.getLocationOnScreen(array)
+                root.view.getLocationOnScreen(array)
                 Offset(array[0].toFloat(), array[1].toFloat())
-            } ?: Offset.Zero
+            }
             val motionEvent = MotionEvent.obtain(
                 /* downTime = */ downTime,
                 /* eventTime = */ eventTimes[0],
@@ -282,7 +291,7 @@ internal class AndroidInputDispatcher(
         axisDelta: Float = 0f
     ) {
         synchronized(batchLock) {
-            check(acceptEvents) {
+            ensureNotDisposed {
                 "Can't enqueue mouse event (" +
                     "downTime=$downTime, " +
                     "eventTime=$eventTime, " +
@@ -290,14 +299,13 @@ internal class AndroidInputDispatcher(
                     "coordinate=$coordinate, " +
                     "buttonState=$buttonState, " +
                     "axis=$axis, " +
-                    "axisDelta=$axisDelta" +
-                    "), events have already been (or are being) dispatched or disposed"
+                    "axisDelta=$axisDelta)"
             }
-            val positionInScreen = root?.let {
+            val positionInScreen = run {
                 val array = intArrayOf(0, 0)
                 root.view.getLocationOnScreen(array)
                 Offset(array[0].toFloat(), array[1].toFloat())
-            } ?: Offset.Zero
+            }
             batchedEvents.add(
                 MotionEvent.obtain(
                     /* downTime = */ downTime,
@@ -334,13 +342,19 @@ internal class AndroidInputDispatcher(
         }
     }
 
-    override fun sendAllSynchronous() {
+    override fun flush() {
         // Must inject on the main thread, because it might modify View properties
         @OptIn(InternalTestApi::class)
         testContext.testOwner.runOnUiThread {
-            checkAndStopAcceptingEvents()
+            val events = synchronized(batchLock) {
+                ensureNotDisposed { "Can't flush events" }
+                mutableListOf<MotionEvent>().apply {
+                    addAll(batchedEvents)
+                    batchedEvents.clear()
+                }
+            }
 
-            batchedEvents.forEach { event ->
+            events.forEach { event ->
                 // Before injecting the next event, pump the clock
                 // by the difference between this and the last event
                 advanceClockTime(event.eventTime - currentClockTime)
@@ -348,8 +362,6 @@ internal class AndroidInputDispatcher(
                 sendAndRecycleEvent(event)
             }
         }
-        // Each invocation of perform.*Input (Actions.kt) uses a new instance of an input
-        // dispatcher, so we don't have to reset firstEventTime after use
     }
 
     @OptIn(InternalTestApi::class)
@@ -360,20 +372,18 @@ internal class AndroidInputDispatcher(
         }
     }
 
-    override fun onDispose() {
-        stopAcceptingEvents()
-    }
-
-    private fun checkAndStopAcceptingEvents() {
-        synchronized(batchLock) {
-            check(acceptEvents) { "Events have already been (or are being) dispatched or disposed" }
-            acceptEvents = false
+    private fun ensureNotDisposed(lazyMessage: () -> String) {
+        check(!disposed) {
+            "${lazyMessage()}, AndroidInputDispatcher has already been disposed"
         }
     }
 
-    private fun stopAcceptingEvents(): Boolean {
+    override fun onDispose() {
         synchronized(batchLock) {
-            return acceptEvents.also { acceptEvents = false }
+            if (!disposed) {
+                disposed = true
+                batchedEvents.forEach { it.recycle() }
+            }
         }
     }
 

@@ -19,7 +19,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.Interaction
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.material3.tokens.IconButton
@@ -29,7 +28,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.unit.dp
 
 /**
  * IconButton is a clickable icon, used to represent actions. An IconButton has an overall minimum
@@ -42,6 +40,8 @@ import androidx.compose.ui.unit.dp
  * [content] should typically be an [Icon], using an icon from
  * [androidx.compose.material.icons.Icons]. If using a custom icon, note that the typical size for
  * the internal icon is 24 x 24 dp.
+ *
+ * @sample androidx.compose.material3.samples.IconButtonSample
  *
  * @param onClick the lambda to be invoked when this icon is pressed
  * @param modifier optional [Modifier] for this IconButton
@@ -64,14 +64,14 @@ fun IconButton(
     Box(
         modifier =
             modifier
+                .minimumTouchTargetSize()
                 .clickable(
                     onClick = onClick,
                     enabled = enabled,
                     role = Role.Button,
                     interactionSource = interactionSource,
                     indication = rememberRipple(bounded = false, radius = RippleRadius)
-                )
-                .then(IconButtonSizeModifier),
+                ),
         contentAlignment = Alignment.Center
     ) {
         val contentColor =
@@ -87,6 +87,8 @@ fun IconButton(
 /**
  * An [IconButton] with two states, for icons that can be toggled 'on' and 'off', such as a bookmark
  * icon, or a navigation icon that opens a drawer.
+ *
+ * @sample androidx.compose.material3.samples.IconToggleButtonSample
  *
  * @param checked whether this IconToggleButton is currently checked
  * @param onCheckedChange callback to be invoked when this icon is selected
@@ -112,6 +114,7 @@ fun IconToggleButton(
     Box(
         modifier =
             modifier
+                .minimumTouchTargetSize()
                 .toggleable(
                     value = checked,
                     onValueChange = onCheckedChange,
@@ -119,8 +122,7 @@ fun IconToggleButton(
                     role = Role.Checkbox,
                     interactionSource = interactionSource,
                     indication = rememberRipple(bounded = false, radius = RippleRadius)
-                )
-                .then(IconButtonSizeModifier),
+                ),
         contentAlignment = Alignment.Center
     ) {
         val contentColor =
@@ -135,8 +137,3 @@ fun IconToggleButton(
 
 // Default radius of an unbounded ripple in an IconButton
 private val RippleRadius = IconButton.StateLayerSize
-
-// TODO: b/149691127 investigate our strategy around accessibility touch targets, and remove
-// per-component definitions of this size.
-// Diameter of the IconButton, to allow for correct minimum touch target size for accessibility
-private val IconButtonSizeModifier = Modifier.size(48.dp)

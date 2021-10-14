@@ -25,6 +25,7 @@ import android.content.pm.PackageManager
 import android.os.Build
 import androidx.activity.result.contract.ActivityResultContract
 import androidx.annotation.RequiresApi
+import androidx.annotation.RestrictTo
 import androidx.wear.watchface.RenderParameters
 import androidx.wear.watchface.client.DeviceConfig
 import androidx.wear.watchface.client.EditorServiceClient
@@ -91,7 +92,8 @@ public class PreviewScreenshotParams(
  * @param headlessDeviceConfig If `non-null` then this is the [DeviceConfig] to use when creating
  * a headless instance to back the [EditorSession]. If `null` then the current interactive instance
  * will be used. If there isn't one then the [EditorSession] won't launch until it's been created.
- * Note [canWatchFaceSupportHeadlessEditing] can be used to determine if this feature is supported.
+ * Note [supportsWatchFaceHeadlessEditing] can be used to determine if this feature is supported.
+ * If it's not supported this parameter will be ignored.
  * @param previewScreenshotParams If `non-null` then [EditorSession] upon
  * closing will render a screenshot with [PreviewScreenshotParams] using the existing interactive
  * or headless instance which will be sent in [EditorState] to any registered clients.
@@ -168,22 +170,31 @@ public class EditorRequest @RequiresApi(Build.VERSION_CODES.R) constructor(
         )
 
         internal const val ANDROIDX_WATCHFACE_API_VERSION = "androidx.wear.watchface.api_version"
+        internal const val WATCHFACE_CONTROL_SERVICE =
+            "androidx.wear.watchface.control.WatchFaceControlService"
 
         /**
-         * Inspects the watchface's manifest to determine whether or not it supports headless
-         * editing.
+         * Intended to be used in conjunction with [EditorRequest], inspects the watchface's
+         * manifest to determine whether or not it supports headless editing.
+         *
+         * @param packageManager The [PackageManager].
+         * @param watchfacePackageName The package name of the watchface, see
+         * [ComponentName.getPackageName].
+         * @throws [PackageManager.NameNotFoundException] if watchfacePackageName is not recognized.
+         * @hide
          */
         @JvmStatic
-        public fun canWatchFaceSupportHeadlessEditing(
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+        @Throws(PackageManager.NameNotFoundException::class)
+        public fun supportsWatchFaceHeadlessEditing(
             packageManager: PackageManager,
             watchfacePackageName: String
         ): Boolean {
-            val metaData = packageManager.getApplicationInfo(
-                watchfacePackageName, PackageManager.GET_META_DATA
-            ).metaData
-            val apiVersion =
-                metaData.getString(ANDROIDX_WATCHFACE_API_VERSION)?.toInt() ?: return false
-            return apiVersion >= 4
+            val metaData = packageManager.getServiceInfo(
+                ComponentName(watchfacePackageName, WATCHFACE_CONTROL_SERVICE),
+                PackageManager.GET_META_DATA
+            ).metaData ?: return false
+            return metaData.getInt(ANDROIDX_WATCHFACE_API_VERSION) >= 4
         }
     }
 }

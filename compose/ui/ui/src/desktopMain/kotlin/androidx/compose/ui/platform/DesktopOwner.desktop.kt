@@ -22,6 +22,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.autofill.Autofill
 import androidx.compose.ui.autofill.AutofillTree
 import androidx.compose.ui.focus.FocusDirection
@@ -33,7 +34,10 @@ import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.focus.FocusManagerImpl
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Canvas
-import androidx.compose.ui.graphics.DesktopCanvas
+import androidx.compose.ui.graphics.asComposeCanvas
+import androidx.compose.ui.input.InputModeManager
+import androidx.compose.ui.input.InputModeManagerImpl
+import androidx.compose.ui.input.InputMode.Companion.Keyboard
 import androidx.compose.ui.input.key.Key.Companion.Back
 import androidx.compose.ui.input.key.Key.Companion.DirectionCenter
 import androidx.compose.ui.input.key.Key.Companion.Tab
@@ -46,6 +50,7 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.mouse.MouseScrollEvent
 import androidx.compose.ui.input.mouse.MouseScrollEventFilter
+import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.PointerInputEvent
 import androidx.compose.ui.input.pointer.PointerInputEventProcessor
 import androidx.compose.ui.input.pointer.PointerInputFilter
@@ -76,10 +81,11 @@ private typealias Command = () -> Unit
 
 @OptIn(
     ExperimentalComposeUiApi::class,
-    InternalCoreApi::class
+    InternalCoreApi::class,
+    InternalComposeUiApi::class
 )
 internal class DesktopOwner(
-    val container: DesktopOwners,
+    private val platformInputService: DesktopPlatformInput,
     density: Density = Density(1f, 1f),
     val isPopup: Boolean = false,
     val isFocusable: Boolean = true,
@@ -88,8 +94,9 @@ internal class DesktopOwner(
     private val onKeyEvent: (KeyEvent) -> Boolean = { false },
 ) : Owner, RootForTest, DesktopRootForTest, PositionCalculator {
 
-    internal fun isHovered(point: IntOffset): Boolean {
-        return bounds.contains(point)
+    internal fun isHovered(point: Offset): Boolean {
+        val intOffset = IntOffset(point.x.toInt(), point.y.toInt())
+        return bounds.contains(intOffset)
     }
 
     internal var bounds by mutableStateOf(IntRect.Zero)
@@ -115,6 +122,18 @@ internal class DesktopOwner(
     override val focusManager: FocusManager
         get() = _focusManager
 
+    // TODO: Set the input mode. For now we don't support touch mode, (always in Key mode).
+    private val _inputModeManager = InputModeManagerImpl(
+        initialInputMode = Keyboard,
+        onRequestInputModeChange = {
+            // TODO: Change the input mode programmatically. For now we just return true if the
+            //  requested input mode is Keyboard mode.
+            it == Keyboard
+        }
+    )
+    override val inputModeManager: InputModeManager
+        get() = _inputModeManager
+
     // TODO: set/clear _windowInfo.isWindowFocused when the window gains/loses focus.
     private val _windowInfo: WindowInfoImpl = WindowInfoImpl()
     override val windowInfo: WindowInfo
@@ -132,6 +151,18 @@ internal class DesktopOwner(
         },
         onPreviewKeyEvent = null
     )
+
+    var constraints: Constraints = Constraints()
+        set(value) {
+            field = value
+
+            if (!isPopup) {
+                this.bounds = IntRect(
+                    IntOffset(bounds.left, bounds.top),
+                    IntSize(constraints.maxWidth, constraints.maxHeight)
+                )
+            }
+        }
 
     override val root = LayoutNode().also {
         it.measurePolicy = RootMeasurePolicy
@@ -155,7 +186,6 @@ internal class DesktopOwner(
     private val measureAndLayoutDelegate = MeasureAndLayoutDelegate(root)
 
     init {
-        container.register(this)
         snapshotObserver.startObserving()
         root.attach(this)
         _focusManager.takeFocus()
@@ -163,11 +193,10 @@ internal class DesktopOwner(
 
     fun dispose() {
         snapshotObserver.stopObserving()
-        container.unregister(this)
         // we don't need to call root.detach() because root will be garbage collected
     }
 
-    override val textInputService = TextInputService(container.platformInputService)
+    override val textInputService = TextInputService(platformInputService)
 
     override val fontLoader = FontLoader()
 
@@ -190,9 +219,9 @@ internal class DesktopOwner(
     override fun sendKeyEvent(keyEvent: KeyEvent): Boolean {
         when {
             keyEvent.nativeKeyEvent.id == java.awt.event.KeyEvent.KEY_TYPED ->
-                container.platformInputService.charKeyPressed = true
+                platformInputService.charKeyPressed = true
             keyEvent.type == KeyEventType.KeyUp ->
-                container.platformInputService.charKeyPressed = false
+                platformInputService.charKeyPressed = false
         }
 
         return keyInputModifier.processKeyInput(keyEvent)
@@ -219,9 +248,8 @@ internal class DesktopOwner(
     var onNeedsRender: (() -> Unit)? = null
     var onDispatchCommand: ((Command) -> Unit)? = null
 
-    fun render(canvas: org.jetbrains.skia.Canvas, width: Int, height: Int) {
+    fun render(canvas: org.jetbrains.skia.Canvas) {
         needsLayout = false
-        setSize(width, height)
         measureAndLayout()
         needsDraw = false
         draw(canvas)
@@ -249,6 +277,7 @@ internal class DesktopOwner(
     }
 
     override fun measureAndLayout() {
+        measureAndLayoutDelegate.updateRootConstraints(constraints)
         if (measureAndLayoutDelegate.measureAndLayout()) {
             requestDraw()
         }
@@ -301,19 +330,8 @@ internal class DesktopOwner(
 
     override fun screenToLocal(positionOnScreen: Offset): Offset = positionOnScreen
 
-    fun setSize(width: Int, height: Int) {
-        val constraints = Constraints(0, width, 0, height)
-        if (!isPopup) {
-            this.bounds = IntRect(
-                IntOffset(bounds.left, bounds.top),
-                IntSize(width, height)
-            )
-        }
-        measureAndLayoutDelegate.updateRootConstraints(constraints)
-    }
-
     fun draw(canvas: org.jetbrains.skia.Canvas) {
-        root.draw(DesktopCanvas(canvas))
+        root.draw(canvas.asComposeCanvas())
     }
 
     internal fun processPointerInput(event: PointerInputEvent): ProcessResult {
@@ -328,10 +346,11 @@ internal class DesktopOwner(
         )
     }
 
-    override fun processPointerInput(nanoTime: Long, pointers: List<TestPointerInputEventData>) {
+    override fun processPointerInput(timeMillis: Long, pointers: List<TestPointerInputEventData>) {
         processPointerInput(
             PointerInputEvent(
-                nanoTime,
+                PointerEventType.Unknown,
+                timeMillis,
                 pointers.map { it.toPointerInputEventData() }
             )
         )

@@ -19,14 +19,12 @@ package androidx.compose.material3.tokens
 
 internal enum class ColorSchemeKey {
     Background,
-    Disabled,
     Error,
     ErrorContainer,
     InverseOnSurface,
     InversePrimary,
     InverseSurface,
     OnBackground,
-    OnDisabled,
     OnError,
     OnErrorContainer,
     OnPrimary,
@@ -46,9 +44,4 @@ internal enum class ColorSchemeKey {
     SurfaceVariant,
     Tertiary,
     TertiaryContainer,
-    Surface1,
-    Surface2,
-    Surface3,
-    Surface4,
-    Surface5,
 }

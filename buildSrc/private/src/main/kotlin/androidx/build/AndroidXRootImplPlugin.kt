@@ -38,6 +38,7 @@ import org.gradle.api.tasks.bundling.Zip
 import org.gradle.api.tasks.bundling.ZipEntryCompression
 import org.gradle.build.event.BuildEventsListenerRegistry
 import org.gradle.kotlin.dsl.KotlinClosure1
+import org.gradle.kotlin.dsl.configure
 import org.gradle.kotlin.dsl.extra
 import java.io.File
 import java.util.Locale
@@ -77,6 +78,11 @@ abstract class AndroidXRootImplPlugin : Plugin<Project> {
             BUILD_ON_SERVER_TASK,
             BuildOnServerTask::class.java
         )
+        buildOnServerTask.distributionDirectory = getDistributionDirectory()
+        buildOnServerTask.repositoryDirectory = getRepositoryDirectory()
+        buildOnServerTask.buildId = getBuildId()
+        buildOnServerTask.jetifierProjectPresent =
+            project.findProject(":jetifier:jetifier-standalone") != null
         buildOnServerTask.dependsOn(
             tasks.register(
                 AndroidXImplPlugin.CREATE_AGGREGATE_BUILD_INFO_FILES_TASK,
@@ -137,8 +143,8 @@ abstract class AndroidXRootImplPlugin : Plugin<Project> {
                     if (!project.usingMaxDepVersions()) {
                         project.agpVariants.all { variant ->
                             // in AndroidX, release and debug variants are essentially the same,
-                            // so we don't run the lintDebug task on the build server
-                            if (!variant.name.lowercase(Locale.getDefault()).contains("debug")) {
+                            // so we don't run the lintRelease task on the build server
+                            if (!variant.name.lowercase(Locale.getDefault()).contains("release")) {
                                 val taskName = "lint${variant.name.replaceFirstChar {
                                     if (it.isLowerCase()) {
                                         it.titlecase(Locale.getDefault())
