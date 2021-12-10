@@ -86,7 +86,7 @@ class SystemForegroundDispatcherTest {
             .build()
         taskExecutor = InstantWorkTaskExecutor()
         val scheduler = mock(Scheduler::class.java)
-        workDatabase = WorkDatabase.create(context, taskExecutor.backgroundExecutor, true)
+        workDatabase = WorkDatabase.create(context, taskExecutor.serialTaskExecutor, true)
         processor = spy(Processor(context, config, taskExecutor, workDatabase, listOf(scheduler)))
         workManager = spy(
             WorkManagerImpl(
@@ -101,7 +101,7 @@ class SystemForegroundDispatcherTest {
         workDatabase = workManager.workDatabase
         // Initialize WorkConstraintsTracker
         constraintsCallback = mock(WorkConstraintsCallback::class.java)
-        tracker = spy(WorkConstraintsTracker(context, taskExecutor, constraintsCallback))
+        tracker = mock(WorkConstraintsTracker::class.java)
         // Initialize dispatcher
         dispatcherCallback = mock(SystemForegroundDispatcher.Callback::class.java)
         dispatcher = spy(SystemForegroundDispatcher(context, workManager, tracker))

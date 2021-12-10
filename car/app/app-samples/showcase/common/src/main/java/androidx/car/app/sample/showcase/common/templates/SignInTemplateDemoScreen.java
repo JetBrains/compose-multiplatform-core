@@ -23,11 +23,9 @@ import android.net.Uri;
 
 import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
-import androidx.annotation.OptIn;
 import androidx.car.app.CarContext;
 import androidx.car.app.CarToast;
 import androidx.car.app.Screen;
-import androidx.car.app.annotations.ExperimentalCarApi;
 import androidx.car.app.model.Action;
 import androidx.car.app.model.CarColor;
 import androidx.car.app.model.CarIcon;
@@ -71,7 +69,7 @@ public class SignInTemplateDemoScreen extends Screen {
             () -> getScreenManager().push(new LongMessageTemplateDemoScreen(getCarContext())));
 
     private final Action mProviderSignInAction = new Action.Builder()
-            .setTitle("Google Sign-In")
+            .setTitle("Google sign-in")
             .setOnClickListener(ParkedOnlyOnClickListener.create(() -> {
                 mState = State.PROVIDER;
                 invalidate();
@@ -218,10 +216,6 @@ public class SignInTemplateDemoScreen extends Screen {
         if (!isError) {
             // If there's no error, go to the password screen.
             mState = State.PASSWORD;
-        } else {
-            // If there's an error, display a toast.
-            CarToast.makeText(getCarContext(), "Please enter a valid user name",
-                    LENGTH_LONG).show();
         }
 
         // Invalidate the template so that we either display an error, or go to the password screen.
@@ -271,7 +265,6 @@ public class SignInTemplateDemoScreen extends Screen {
                 .build();
     }
 
-    @OptIn(markerClass = ExperimentalCarApi.class)
     private Template getQRCodeSignInTemplate() {
         QRCodeSignInMethod qrCodeSignInMethod = new QRCodeSignInMethod(Uri.parse("https://www"
                 + ".youtube.com/watch?v=dQw4w9WgXcQ"));

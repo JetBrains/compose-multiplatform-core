@@ -18,6 +18,7 @@ package androidx.work.impl.background.systemjob;
 
 import static androidx.annotation.VisibleForTesting.PACKAGE_PRIVATE;
 
+import android.annotation.SuppressLint;
 import android.app.job.JobInfo;
 import android.content.ComponentName;
 import android.content.Context;
@@ -30,7 +31,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
-import androidx.core.os.BuildCompat;
 import androidx.work.BackoffPolicy;
 import androidx.work.Constraints;
 import androidx.work.ContentUriTriggers;
@@ -46,6 +46,7 @@ import androidx.work.impl.model.WorkSpec;
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @RequiresApi(api = WorkManagerImpl.MIN_JOB_SCHEDULER_API_LEVEL)
+@SuppressLint("ClassVerificationFailure")
 class SystemJobInfoConverter {
     private static final String TAG = Logger.tagWithPrefix("SystemJobInfoConverter");
 
@@ -125,7 +126,8 @@ class SystemJobInfoConverter {
         }
         // Retries cannot be expedited jobs, given they will occur at some point in the future.
         boolean isRetry = workSpec.runAttemptCount > 0;
-        if (BuildCompat.isAtLeastS() && workSpec.expedited && !isRetry) {
+        boolean isDelayed = offset > 0;
+        if (Build.VERSION.SDK_INT >= 31 && workSpec.expedited && !isRetry && !isDelayed) {
             //noinspection NewApi
             builder.setExpedited(true);
         }
@@ -187,8 +189,7 @@ class SystemJobInfoConverter {
                 }
                 break;
         }
-        Logger.get().debug(TAG, String.format(
-                "API version too low. Cannot convert network type value %s", networkType));
+        Logger.get().debug(TAG, "API version too low. Cannot convert network type value " + networkType);
         return JobInfo.NETWORK_TYPE_ANY;
     }
 }

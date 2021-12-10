@@ -48,7 +48,7 @@ public abstract class ConstraintTracker<T> {
     // Synthetic access
     T mCurrentState;
 
-    ConstraintTracker(@NonNull Context context, @NonNull TaskExecutor taskExecutor) {
+    protected ConstraintTracker(@NonNull Context context, @NonNull TaskExecutor taskExecutor) {
         mAppContext = context.getApplicationContext();
         mTaskExecutor = taskExecutor;
     }
@@ -65,9 +65,8 @@ public abstract class ConstraintTracker<T> {
             if (mListeners.add(listener)) {
                 if (mListeners.size() == 1) {
                     mCurrentState = getInitialState();
-                    Logger.get().debug(TAG, String.format("%s: initial state = %s",
-                            getClass().getSimpleName(),
-                            mCurrentState));
+                    Logger.get().debug(TAG,
+                            getClass().getSimpleName() + ": initial state = " + mCurrentState);
                     startTracking();
                 }
                 listener.onConstraintChanged(mCurrentState);

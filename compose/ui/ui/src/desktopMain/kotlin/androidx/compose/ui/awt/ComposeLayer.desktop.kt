@@ -19,11 +19,9 @@ package androidx.compose.ui.awt
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.input.mouse.MouseScrollOrientation
-import androidx.compose.ui.input.mouse.MouseScrollUnit
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.PointerType
-import androidx.compose.ui.platform.DesktopComponent
+import androidx.compose.ui.platform.PlatformComponent
 import androidx.compose.ui.ComposeScene
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
@@ -33,6 +31,7 @@ import kotlinx.coroutines.swing.Swing
 import org.jetbrains.skia.Canvas
 import org.jetbrains.skiko.SkiaLayer
 import org.jetbrains.skiko.SkiaRenderer
+import java.awt.Cursor
 import java.awt.Dimension
 import java.awt.Graphics
 import java.awt.Point
@@ -68,7 +67,7 @@ internal class ComposeLayer {
 
     private val density get() = _component.density.density
 
-    private inner class ComponentImpl : SkiaLayer(), DesktopComponent {
+    private inner class ComponentImpl : SkiaLayer(), PlatformComponent {
         var currentInputMethodRequests: InputMethodRequests? = null
 
         override fun addNotify() {
@@ -83,6 +82,9 @@ internal class ComposeLayer {
         }
 
         override fun getInputMethodRequests() = currentInputMethodRequests
+        override var componentCursor: Cursor
+            get() = super.getCursor()
+            set(value) { super.setCursor(value) }
 
         override fun enableInput(inputMethodRequests: InputMethodRequests) {
             currentInputMethodRequests = inputMethodRequests
@@ -254,7 +256,7 @@ private fun ComposeScene.onMouseEvent(
         position = Offset(event.x.toFloat(), event.y.toFloat()) * density,
         timeMillis = event.`when`,
         type = PointerType.Mouse,
-        mouseEvent = event
+        nativeEvent = event
     )
 }
 
@@ -263,23 +265,18 @@ private fun ComposeScene.onMouseEvent(
 private fun ComposeScene.onMouseWheelEvent(
     density: Float,
     event: MouseWheelEvent
-) = with(event) {
-    sendPointerScrollEvent(
+) {
+    sendPointerEvent(
+        eventType = PointerEventType.Scroll,
         position = Offset(event.x.toFloat(), event.y.toFloat()) * density,
-        delta = if (scrollType == MouseWheelEvent.WHEEL_BLOCK_SCROLL) {
-            MouseScrollUnit.Page((scrollAmount * preciseWheelRotation).toFloat())
+        scrollDelta = if (event.isShiftDown) {
+            Offset(event.preciseWheelRotation.toFloat(), 0f)
         } else {
-            MouseScrollUnit.Line((scrollAmount * preciseWheelRotation).toFloat())
-        },
-        // There are no other way to detect horizontal scrolling in AWT
-        orientation = if (isShiftDown) {
-            MouseScrollOrientation.Horizontal
-        } else {
-            MouseScrollOrientation.Vertical
+            Offset(0f, event.preciseWheelRotation.toFloat())
         },
         timeMillis = event.`when`,
         type = PointerType.Mouse,
-        mouseEvent = event
+        nativeEvent = event
     )
 }
 

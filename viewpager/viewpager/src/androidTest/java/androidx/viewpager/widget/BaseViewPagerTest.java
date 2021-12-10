@@ -55,6 +55,7 @@ import static org.mockito.Mockito.verify;
 import android.app.Activity;
 import android.content.Context;
 import android.graphics.Color;
+import android.os.Build;
 import android.support.v4.testutils.TestUtilsMatchers;
 import android.text.TextUtils;
 import android.util.Pair;
@@ -66,12 +67,12 @@ import android.widget.EdgeEffect;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-import androidx.core.os.BuildCompat;
 import androidx.test.espresso.ViewAction;
 import androidx.test.espresso.action.EspressoKey;
 import androidx.test.filters.FlakyTest;
 import androidx.test.filters.LargeTest;
 import androidx.test.filters.MediumTest;
+import androidx.test.filters.SdkSuppress;
 import androidx.test.rule.ActivityTestRule;
 import androidx.viewpager.test.R;
 
@@ -463,10 +464,11 @@ public abstract class BaseViewPagerTest<T extends Activity> {
                 mViewPager.getCurrentItem());
     }
 
+    @SdkSuppress(maxSdkVersion = 30) // b/202408966
     @Test
     @MediumTest
     public void testFlingAfterStretchAtLeft() {
-        if (BuildCompat.isAtLeastS()) {
+        if (Build.VERSION.SDK_INT >= 31) {
             CaptureOnAbsorb edgeEffect = new CaptureOnAbsorb(mViewPager.getContext());
             mViewPager.mLeftEdge = edgeEffect;
             onView(withId(R.id.pager)).perform(ViewPagerActions.wrap(swipeRight()));
@@ -475,10 +477,11 @@ public abstract class BaseViewPagerTest<T extends Activity> {
         }
     }
 
+    @SdkSuppress(maxSdkVersion = 30) // b/202408966
     @Test
     @MediumTest
     public void testFlingAfterStretchAtRight() throws Throwable {
-        if (BuildCompat.isAtLeastS()) {
+        if (Build.VERSION.SDK_INT >= 31) {
             CaptureOnAbsorb edgeEffect = new CaptureOnAbsorb(mViewPager.getContext());
             mViewPager.mRightEdge = edgeEffect;
             mActivityTestRule.runOnUiThread(() -> {

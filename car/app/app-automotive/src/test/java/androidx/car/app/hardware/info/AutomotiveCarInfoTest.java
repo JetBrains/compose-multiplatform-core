@@ -19,6 +19,7 @@ import static android.car.VehiclePropertyIds.DISTANCE_DISPLAY_UNITS;
 import static android.car.VehiclePropertyIds.EV_BATTERY_LEVEL;
 import static android.car.VehiclePropertyIds.FUEL_LEVEL;
 import static android.car.VehiclePropertyIds.FUEL_LEVEL_LOW;
+import static android.car.VehiclePropertyIds.FUEL_VOLUME_DISPLAY_UNITS;
 import static android.car.VehiclePropertyIds.INFO_EV_BATTERY_CAPACITY;
 import static android.car.VehiclePropertyIds.INFO_EV_CONNECTOR_TYPE;
 import static android.car.VehiclePropertyIds.INFO_FUEL_CAPACITY;
@@ -223,9 +224,9 @@ public class AutomotiveCarInfoTest {
         assertThat(tollCard.getCardState().getValue()).isEqualTo(TollCard.TOLLCARD_STATE_VALID);
     }
 
-    @Config(minSdk = 30)
+    @Config(maxSdk = 30)
     @Test
-    public void getTollCard_verifyResponseApi30() {
+    public void getTollCard_verifyResponseApi30() throws InterruptedException {
         AtomicReference<TollCard> loadedResult = new AtomicReference<>();
         OnCarDataAvailableListener<TollCard> listener = (data) -> {
             loadedResult.set(data);
@@ -278,6 +279,8 @@ public class AutomotiveCarInfoTest {
     public void getEnergyLevel_verifyResponse() throws InterruptedException {
         ArgumentCaptor<OnCarPropertyResponseListener> captor = ArgumentCaptor.forClass(
                 OnCarPropertyResponseListener.class);
+        int meterDistanceUnit = 0x21;
+        int meterVolumeUnit = 0x40;
         float evBatteryCapacity = 100f;
         float evBatteryLevelValue = 50f;
         float fuelCapacity = 120f;
@@ -312,7 +315,9 @@ public class AutomotiveCarInfoTest {
         mResponse.add(CarPropertyResponse.create(RANGE_REMAINING,
                 STATUS_SUCCESS, 1, 5f));
         mResponse.add(CarPropertyResponse.create(DISTANCE_DISPLAY_UNITS,
-                STATUS_SUCCESS, 1, 7));
+                STATUS_SUCCESS, 1, meterDistanceUnit));
+        mResponse.add(CarPropertyResponse.create(FUEL_VOLUME_DISPLAY_UNITS,
+                STATUS_SUCCESS, 2, meterVolumeUnit));
         captor.getValue().onCarPropertyResponses(mResponse);
         mCountDownLatch.await();
 
@@ -325,13 +330,16 @@ public class AutomotiveCarInfoTest {
                 true);
         assertThat(energyLevel.getRangeRemainingMeters().getValue()).isEqualTo(
                 5f);
-        assertThat(energyLevel.getDistanceDisplayUnit().getValue()).isEqualTo(7);
+        assertThat(energyLevel.getDistanceDisplayUnit().getValue()).isEqualTo(2);
+        assertThat(energyLevel.getFuelVolumeDisplayUnit().getValue()).isEqualTo(201);
     }
 
     @Test
     public void getEnergyLevel_withUnavailableCapacityValues() throws InterruptedException {
         ArgumentCaptor<OnCarPropertyResponseListener> captor = ArgumentCaptor.forClass(
                 OnCarPropertyResponseListener.class);
+        int meterDistanceUnit = 0x21;
+        int meterVolumeUnit = 0x40;
         float evBatteryCapacity = 100f;
         float evBatteryLevelValue = 50f;
         float fuelCapacity = 120f;
@@ -366,7 +374,9 @@ public class AutomotiveCarInfoTest {
         mResponse.add(CarPropertyResponse.create(RANGE_REMAINING,
                 STATUS_SUCCESS, 1, 5f));
         mResponse.add(CarPropertyResponse.create(DISTANCE_DISPLAY_UNITS,
-                STATUS_SUCCESS, 1, 7));
+                STATUS_SUCCESS, 1, meterDistanceUnit));
+        mResponse.add(CarPropertyResponse.create(FUEL_VOLUME_DISPLAY_UNITS,
+                STATUS_SUCCESS, 2, meterVolumeUnit));
         captor.getValue().onCarPropertyResponses(mResponse);
         mCountDownLatch.await();
 
@@ -384,6 +394,7 @@ public class AutomotiveCarInfoTest {
                 true);
         assertThat(energyLevel.getRangeRemainingMeters().getValue()).isEqualTo(
                 5f);
-        assertThat(energyLevel.getDistanceDisplayUnit().getValue()).isEqualTo(7);
+        assertThat(energyLevel.getDistanceDisplayUnit().getValue()).isEqualTo(2);
+        assertThat(energyLevel.getFuelVolumeDisplayUnit().getValue()).isEqualTo(201);
     }
 }

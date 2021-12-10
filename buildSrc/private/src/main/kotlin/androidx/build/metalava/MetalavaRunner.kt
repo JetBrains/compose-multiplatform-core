@@ -17,7 +17,6 @@
 package androidx.build.metalava
 
 import androidx.build.checkapi.ApiLocation
-import androidx.build.dependencies.getDependencyAsString
 import androidx.build.java.JavaCompileInputs
 import androidx.build.logging.TERMINAL_RED
 import androidx.build.logging.TERMINAL_RESET
@@ -63,7 +62,7 @@ interface MetalavaParams : WorkParameters {
     val metalavaClasspath: SetProperty<File>
 }
 
-abstract class MetalavaWorkAction @Inject constructor (
+abstract class MetalavaWorkAction @Inject constructor(
     private val execOperations: ExecOperations
 ) : WorkAction<MetalavaParams> {
     override fun execute() {
@@ -98,7 +97,7 @@ fun Project.getMetalavaClasspath(): FileCollection {
             VersionCatalogsExtension::class.java
         ).find("libs").get()
         val dependency = dependencies.create(
-            getDependencyAsString(libs.findDependency("metalava").get())
+            libs.findDependency("metalava").get().get()
         )
         it.dependencies.add(dependency)
     }

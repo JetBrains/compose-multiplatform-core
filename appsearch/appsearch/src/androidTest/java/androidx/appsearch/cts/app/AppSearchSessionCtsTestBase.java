@@ -36,6 +36,7 @@ import androidx.appsearch.app.AppSearchSchema;
 import androidx.appsearch.app.AppSearchSchema.PropertyConfig;
 import androidx.appsearch.app.AppSearchSchema.StringPropertyConfig;
 import androidx.appsearch.app.AppSearchSession;
+import androidx.appsearch.app.Features;
 import androidx.appsearch.app.GenericDocument;
 import androidx.appsearch.app.GetByDocumentIdRequest;
 import androidx.appsearch.app.GetSchemaResponse;
@@ -1901,7 +1902,8 @@ public abstract class AppSearchSessionCtsTestBase {
                 new SearchResult.MatchRange(/*lower=*/26,  /*upper=*/33));
         assertThat(matchInfo.getSnippet()).isEqualTo("is foo.");
 
-        if (!mDb1.getCapabilities().isSubmatchSupported()) {
+        if (!mDb1.getFeatures().isFeatureSupported(
+                Features.SEARCH_RESULT_MATCH_INFO_SUBMATCH)) {
             assertThrows(
                     UnsupportedOperationException.class,
                     () -> matchInfo.getSubmatchRange());
@@ -2005,9 +2007,9 @@ public abstract class AppSearchSessionCtsTestBase {
 
         String japanese =
                 "差し出されたのが今日ランドセルでした普通の子であれば満面の笑みで俺を言うでしょうしかし私は赤いランド"
-                + "セルを見て笑うことができませんでしたどうしたのと心配そうな仕事ガラスながら渋い顔する私書いたこと言"
-                + "うんじゃないのカードとなる声を聞きたい私は目から涙をこぼしながらおじいちゃんの近くにかけおり頭をポ"
-                + "ンポンと叩きピンクが良かったんだもん";
+                        + "セルを見て笑うことができませんでしたどうしたのと心配そうな仕事ガラスながら渋い顔する私書いたこと言"
+                        + "うんじゃないのカードとなる声を聞きたい私は目から涙をこぼしながらおじいちゃんの近くにかけおり頭をポ"
+                        + "ンポンと叩きピンクが良かったんだもん";
         // Index a document
         GenericDocument document =
                 new GenericDocument.Builder<>("namespace", "id", "Generic")
@@ -2036,7 +2038,8 @@ public abstract class AppSearchSessionCtsTestBase {
                 new SearchResult.MatchRange(/*lower=*/44,  /*upper=*/45));
         assertThat(matchInfo.getExactMatch()).isEqualTo("は");
 
-        if (!mDb1.getCapabilities().isSubmatchSupported()) {
+        if (!mDb1.getFeatures().isFeatureSupported(
+                Features.SEARCH_RESULT_MATCH_INFO_SUBMATCH)) {
             assertThrows(
                     UnsupportedOperationException.class,
                     () -> matchInfo.getSubmatchRange());
@@ -2194,6 +2197,44 @@ public abstract class AppSearchSessionCtsTestBase {
         assertThat(getResult.isSuccess()).isFalse();
         assertThat(getResult.getFailures().get("id2").getResultCode())
                 .isEqualTo(AppSearchResult.RESULT_NOT_FOUND);
+    }
+
+
+    @Test
+    public void testRemoveByQuery_nonExistNamespace() throws Exception {
+        // Schema registration
+        mDb1.setSchema(
+                new SetSchemaRequest.Builder().addSchemas(AppSearchEmail.SCHEMA).build()).get();
+
+        // Index documents
+        AppSearchEmail email1 =
+                new AppSearchEmail.Builder("namespace1", "id1")
+                        .setFrom("from@example.com")
+                        .setTo("to1@example.com", "to2@example.com")
+                        .setSubject("foo")
+                        .setBody("This is the body of the testPut email")
+                        .build();
+        AppSearchEmail email2 =
+                new AppSearchEmail.Builder("namespace2", "id2")
+                        .setFrom("from@example.com")
+                        .setTo("to1@example.com", "to2@example.com")
+                        .setSubject("bar")
+                        .setBody("This is the body of the testPut second email")
+                        .build();
+        checkIsBatchResultSuccess(mDb1.put(
+                new PutDocumentsRequest.Builder().addGenericDocuments(email1, email2).build()));
+
+        // Check the presence of the documents
+        assertThat(doGet(mDb1, "namespace1", "id1")).hasSize(1);
+        assertThat(doGet(mDb1, "namespace2", "id2")).hasSize(1);
+
+        // Delete the email by nonExist namespace.
+        mDb1.remove("",
+                new SearchSpec.Builder().setTermMatch(SearchSpec.TERM_MATCH_PREFIX)
+                        .addFilterNamespaces("nonExistNamespace").build()).get();
+        // None of these emails will be deleted.
+        assertThat(doGet(mDb1, "namespace1", "id1")).hasSize(1);
+        assertThat(doGet(mDb1, "namespace2", "id2")).hasSize(1);
     }
 
     @Test

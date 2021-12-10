@@ -19,17 +19,17 @@ package androidx.glance.appwidget.action
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
-import androidx.glance.Modifier
+import androidx.glance.GlanceModifier
 import androidx.glance.action.ActionModifier
 import androidx.glance.action.clickable
 import androidx.glance.findModifier
 import androidx.test.core.app.ApplicationProvider
-import org.junit.Test
-import kotlin.test.assertIs
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import kotlin.test.assertIs
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
@@ -41,9 +41,9 @@ class AppWidgetLaunchActionTest {
     fun testLaunchIntent() {
         val intentActionString = "test_action"
         val intent = Intent(context, TestActivity::class.java).setAction(intentActionString)
-        val modifiers = Modifier.clickable(launchActivityAction(intent))
+        val modifiers = GlanceModifier.clickable(actionStartActivity(intent))
         val modifier = checkNotNull(modifiers.findModifier<ActionModifier>())
-        val action = assertIs<LaunchActivityIntentAction>(modifier.action)
+        val action = assertIs<StartActivityIntentAction>(modifier.action)
         assertThat(action.intent).isEqualTo(intent)
         assertThat(action.intent.action).isEqualTo(intentActionString)
     }

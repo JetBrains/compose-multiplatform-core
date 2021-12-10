@@ -31,7 +31,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.platform.DesktopOwner
+import androidx.compose.ui.platform.SkiaBasedOwner
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.setContent
 import androidx.compose.ui.unit.Dp
@@ -168,7 +168,7 @@ private fun PopupLayout(
 
     val parentComposition = rememberCompositionContext()
     val (owner, composition) = remember {
-        val owner = DesktopOwner(
+        val owner = SkiaBasedOwner(
             platformInputService = scene.platformInputService,
             density = density,
             isPopup = true,
@@ -230,7 +230,6 @@ private fun PopupLayout(
  * @param alignment The alignment of the popup relative to the current cursor position.
  * @param windowMargin Defines the area within the window that limits the placement of the popup.
  */
-@ExperimentalComposeUiApi
 @Composable
 fun rememberCursorPositionProvider(
     offset: DpOffset = DpOffset.Zero,
@@ -293,7 +292,6 @@ fun rememberCursorPositionProvider(
  * @param alignment The alignment of the popup relative to the [anchor] point.
  * @param offset [DpOffset] to be added to the position of the popup.
  */
-@ExperimentalComposeUiApi
 @Composable
 fun rememberComponentRectPositionProvider(
     anchor: Alignment = Alignment.BottomCenter,

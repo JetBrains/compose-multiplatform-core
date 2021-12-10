@@ -28,6 +28,7 @@ import androidx.appsearch.app.AppSearchBatchResult;
 import androidx.appsearch.app.AppSearchResult;
 import androidx.appsearch.app.AppSearchSchema;
 import androidx.appsearch.app.AppSearchSession;
+import androidx.appsearch.app.Features;
 import androidx.appsearch.app.GenericDocument;
 import androidx.appsearch.app.Migrator;
 import androidx.appsearch.app.PutDocumentsRequest;
@@ -408,7 +409,8 @@ public class AppSearchSessionLocalCtsTest extends AppSearchSessionCtsTestBase {
 
         db2.setSchema(new SetSchemaRequest.Builder().addSchemas(
                 schema).setForceOverride(true).build()).get();
-        db2.put(new PutDocumentsRequest.Builder().addGenericDocuments(doc).build());
+        checkIsBatchResultSuccess(db2.put(
+                new PutDocumentsRequest.Builder().addGenericDocuments(doc).build()));
         db2.setSchema(new SetSchemaRequest.Builder().addSchemas(newSchema)
                 .setMigrator("testSchema", migrator)
                 .setVersion(2)     // upgrade version
@@ -494,6 +496,7 @@ public class AppSearchSessionLocalCtsTest extends AppSearchSessionCtsTestBase {
         AppSearchSession db2 = LocalStorage.createSearchSession(
                 new LocalStorage.SearchContext.Builder(context, DB_NAME_2).build()).get();
 
-        assertThat(db2.getCapabilities().isSubmatchSupported()).isTrue();
+        assertThat(db2.getFeatures().isFeatureSupported(
+                Features.SEARCH_RESULT_MATCH_INFO_SUBMATCH)).isTrue();
     }
 }

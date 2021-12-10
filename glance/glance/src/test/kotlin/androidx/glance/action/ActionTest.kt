@@ -16,12 +16,12 @@
 
 package androidx.glance.action
 
-import android.content.Context
-import com.google.common.truth.Truth.assertThat
 import android.content.ComponentName
-import androidx.glance.Modifier
+import android.content.Context
+import androidx.glance.GlanceModifier
 import androidx.glance.findModifier
 import androidx.test.core.app.ApplicationProvider
+import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestCoroutineScope
 import kotlinx.coroutines.test.runBlockingTest
@@ -45,26 +45,19 @@ class ActionTest {
     }
 
     @Test
-    fun testLaunchActivity() {
-        val modifiers = Modifier.clickable(actionLaunchActivity(TestActivity::class.java))
+    fun testStartActivity() {
+        val modifiers = GlanceModifier.clickable(actionStartActivity(TestActivity::class.java))
         val modifier = checkNotNull(modifiers.findModifier<ActionModifier>())
-        assertIs<LaunchActivityClassAction>(modifier.action)
-    }
-
-    @Test
-    fun testUpdate() {
-        val modifiers = Modifier.clickable(actionUpdateContent<TestRunnable>())
-        val modifier = checkNotNull(modifiers.findModifier<ActionModifier>())
-        assertIs<UpdateContentAction>(modifier.action)
+        assertIs<StartActivityClassAction>(modifier.action)
     }
 
     @Test
     fun testLaunchFromComponent() = fakeCoroutineScope.runBlockingTest {
         val c = ComponentName("androidx.glance.action", "androidx.glance.action.TestActivity")
 
-        val modifiers = Modifier.clickable(actionLaunchActivity(c))
+        val modifiers = GlanceModifier.clickable(actionStartActivity(c))
         val modifier = checkNotNull(modifiers.findModifier<ActionModifier>())
-        val action = assertIs<LaunchActivityComponentAction>(modifier.action)
+        val action = assertIs<StartActivityComponentAction>(modifier.action)
         val component = assertNotNull(action.componentName)
 
         assertThat(component).isEqualTo(c)
@@ -74,15 +67,11 @@ class ActionTest {
     fun testLaunchFromComponentWithContext() = fakeCoroutineScope.runBlockingTest {
         val c = ComponentName(context, "androidx.glance.action.TestActivity")
 
-        val modifiers = Modifier.clickable(actionLaunchActivity(c))
+        val modifiers = GlanceModifier.clickable(actionStartActivity(c))
         val modifier = checkNotNull(modifiers.findModifier<ActionModifier>())
-        val action = assertIs<LaunchActivityComponentAction>(modifier.action)
+        val action = assertIs<StartActivityComponentAction>(modifier.action)
         val component = assertNotNull(action.componentName)
 
         assertThat(component).isEqualTo(c)
     }
-}
-
-class TestRunnable : ActionRunnable {
-    override suspend fun run(context: Context) { }
 }

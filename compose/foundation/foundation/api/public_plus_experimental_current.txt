@@ -65,6 +65,7 @@ package androidx.compose.foundation {
     method @androidx.compose.runtime.Composable public static void Image(androidx.compose.ui.graphics.ImageBitmap bitmap, String? contentDescription, optional androidx.compose.ui.Modifier modifier, optional androidx.compose.ui.Alignment alignment, optional androidx.compose.ui.layout.ContentScale contentScale, optional float alpha, optional androidx.compose.ui.graphics.ColorFilter? colorFilter, optional int filterQuality);
     method @androidx.compose.runtime.Composable public static void Image(androidx.compose.ui.graphics.vector.ImageVector imageVector, String? contentDescription, optional androidx.compose.ui.Modifier modifier, optional androidx.compose.ui.Alignment alignment, optional androidx.compose.ui.layout.ContentScale contentScale, optional float alpha, optional androidx.compose.ui.graphics.ColorFilter? colorFilter);
     method @androidx.compose.runtime.Composable public static void Image(androidx.compose.ui.graphics.painter.Painter painter, String? contentDescription, optional androidx.compose.ui.Modifier modifier, optional androidx.compose.ui.Alignment alignment, optional androidx.compose.ui.layout.ContentScale contentScale, optional float alpha, optional androidx.compose.ui.graphics.ColorFilter? colorFilter);
+    method @Deprecated @androidx.compose.runtime.Composable public static void Image(androidx.compose.ui.graphics.ImageBitmap bitmap, String contentDescription, optional androidx.compose.ui.Modifier modifier, optional androidx.compose.ui.Alignment alignment, optional androidx.compose.ui.layout.ContentScale contentScale, optional float alpha, optional androidx.compose.ui.graphics.ColorFilter? colorFilter);
   }
 
   @androidx.compose.runtime.Stable public interface Indication {
@@ -78,9 +79,28 @@ package androidx.compose.foundation {
   public final class IndicationKt {
     method public static androidx.compose.runtime.ProvidableCompositionLocal<androidx.compose.foundation.Indication> getLocalIndication();
     method public static androidx.compose.ui.Modifier indication(androidx.compose.ui.Modifier, androidx.compose.foundation.interaction.InteractionSource interactionSource, androidx.compose.foundation.Indication? indication);
+    property public static final androidx.compose.runtime.ProvidableCompositionLocal<androidx.compose.foundation.Indication> LocalIndication;
   }
 
-  @kotlin.RequiresOptIn(message="This API is internal to library.") @kotlin.annotation.Target(allowedTargets={kotlin.annotation.AnnotationTarget, kotlin.annotation.AnnotationTarget, kotlin.annotation.AnnotationTarget, kotlin.annotation.AnnotationTarget, kotlin.annotation.AnnotationTarget}) public @interface InternalFoundationApi {
+  @kotlin.RequiresOptIn(message="This API is internal to library.") @kotlin.annotation.Target(allowedTargets={kotlin.annotation.AnnotationTarget.CLASS, kotlin.annotation.AnnotationTarget.FUNCTION, kotlin.annotation.AnnotationTarget.PROPERTY, kotlin.annotation.AnnotationTarget.PROPERTY_GETTER, kotlin.annotation.AnnotationTarget.PROPERTY_SETTER}) public @interface InternalFoundationApi {
+  }
+
+  public final class MagnifierKt {
+    method @androidx.compose.foundation.ExperimentalFoundationApi public static androidx.compose.ui.Modifier magnifier(androidx.compose.ui.Modifier, kotlin.jvm.functions.Function1<? super androidx.compose.ui.unit.Density,androidx.compose.ui.geometry.Offset> sourceCenter, optional kotlin.jvm.functions.Function1<? super androidx.compose.ui.unit.Density,androidx.compose.ui.geometry.Offset> magnifierCenter, optional float zoom, optional androidx.compose.foundation.MagnifierStyle style);
+  }
+
+  @androidx.compose.foundation.ExperimentalFoundationApi @androidx.compose.runtime.Stable public final class MagnifierStyle {
+    ctor @androidx.compose.foundation.ExperimentalFoundationApi public MagnifierStyle(optional long size, optional float cornerRadius, optional float elevation, optional boolean clippingEnabled, optional boolean fishEyeEnabled);
+    method public boolean isSupported();
+    property public final boolean isSupported;
+    field public static final androidx.compose.foundation.MagnifierStyle.Companion Companion;
+  }
+
+  public static final class MagnifierStyle.Companion {
+    method public androidx.compose.foundation.MagnifierStyle getDefault();
+    method public androidx.compose.foundation.MagnifierStyle getTextDefault();
+    property public final androidx.compose.foundation.MagnifierStyle Default;
+    property public final androidx.compose.foundation.MagnifierStyle TextDefault;
   }
 
   public enum MutatePriority {
@@ -201,6 +221,7 @@ package androidx.compose.foundation.gestures {
 
   public final class OverScrollConfigurationKt {
     method @androidx.compose.foundation.ExperimentalFoundationApi public static androidx.compose.runtime.ProvidableCompositionLocal<androidx.compose.foundation.gestures.OverScrollConfiguration> getLocalOverScrollConfiguration();
+    property @androidx.compose.foundation.ExperimentalFoundationApi public static final androidx.compose.runtime.ProvidableCompositionLocal<androidx.compose.foundation.gestures.OverScrollConfiguration> LocalOverScrollConfiguration;
   }
 
   public interface PressGestureScope extends androidx.compose.ui.unit.Density {
@@ -402,7 +423,8 @@ package androidx.compose.foundation.lazy {
     property public final int count;
   }
 
-  public final class IntervalListKt {
+  @androidx.compose.foundation.ExperimentalFoundationApi @androidx.compose.runtime.Immutable public final inline class GridItemSpan {
+    ctor public GridItemSpan();
   }
 
   public final class LazyDslKt {
@@ -414,26 +436,37 @@ package androidx.compose.foundation.lazy {
     method public static inline <T> void itemsIndexed(androidx.compose.foundation.lazy.LazyListScope, T![] items, optional kotlin.jvm.functions.Function2<? super java.lang.Integer,? super T,?>? key, kotlin.jvm.functions.Function3<? super androidx.compose.foundation.lazy.LazyItemScope,? super java.lang.Integer,? super T,kotlin.Unit> itemContent);
   }
 
+  @androidx.compose.foundation.ExperimentalFoundationApi public interface LazyGridItemSpanScope {
+    method public int getItemColumn();
+    method public int getItemRow();
+    method public int getMaxCurrentLineSpan();
+    property public abstract int itemColumn;
+    property public abstract int itemRow;
+    property public abstract int maxCurrentLineSpan;
+  }
+
   public final class LazyGridKt {
     method @androidx.compose.foundation.ExperimentalFoundationApi @androidx.compose.runtime.Composable public static void LazyVerticalGrid(androidx.compose.foundation.lazy.GridCells cells, optional androidx.compose.ui.Modifier modifier, optional androidx.compose.foundation.lazy.LazyListState state, optional androidx.compose.foundation.layout.PaddingValues contentPadding, optional androidx.compose.foundation.layout.Arrangement.Vertical verticalArrangement, optional androidx.compose.foundation.layout.Arrangement.Horizontal horizontalArrangement, kotlin.jvm.functions.Function1<? super androidx.compose.foundation.lazy.LazyGridScope,kotlin.Unit> content);
-    method @androidx.compose.foundation.ExperimentalFoundationApi public static inline <T> void items(androidx.compose.foundation.lazy.LazyGridScope, java.util.List<? extends T> items, kotlin.jvm.functions.Function2<? super androidx.compose.foundation.lazy.LazyItemScope,? super T,kotlin.Unit> itemContent);
-    method @androidx.compose.foundation.ExperimentalFoundationApi public static inline <T> void items(androidx.compose.foundation.lazy.LazyGridScope, T![] items, kotlin.jvm.functions.Function2<? super androidx.compose.foundation.lazy.LazyItemScope,? super T,kotlin.Unit> itemContent);
-    method @androidx.compose.foundation.ExperimentalFoundationApi public static inline <T> void itemsIndexed(androidx.compose.foundation.lazy.LazyGridScope, java.util.List<? extends T> items, kotlin.jvm.functions.Function3<? super androidx.compose.foundation.lazy.LazyItemScope,? super java.lang.Integer,? super T,kotlin.Unit> itemContent);
-    method @androidx.compose.foundation.ExperimentalFoundationApi public static inline <T> void itemsIndexed(androidx.compose.foundation.lazy.LazyGridScope, T![] items, kotlin.jvm.functions.Function3<? super androidx.compose.foundation.lazy.LazyItemScope,? super java.lang.Integer,? super T,kotlin.Unit> itemContent);
+    method @androidx.compose.foundation.ExperimentalFoundationApi public static inline <T> void items(androidx.compose.foundation.lazy.LazyGridScope, java.util.List<? extends T> items, optional kotlin.jvm.functions.Function2<? super androidx.compose.foundation.lazy.LazyGridItemSpanScope,? super T,androidx.compose.foundation.lazy.GridItemSpan>? spans, kotlin.jvm.functions.Function2<? super androidx.compose.foundation.lazy.LazyItemScope,? super T,kotlin.Unit> itemContent);
+    method @androidx.compose.foundation.ExperimentalFoundationApi public static inline <T> void items(androidx.compose.foundation.lazy.LazyGridScope, T![] items, optional kotlin.jvm.functions.Function2<? super androidx.compose.foundation.lazy.LazyGridItemSpanScope,? super T,androidx.compose.foundation.lazy.GridItemSpan>? spans, kotlin.jvm.functions.Function2<? super androidx.compose.foundation.lazy.LazyItemScope,? super T,kotlin.Unit> itemContent);
+    method @androidx.compose.foundation.ExperimentalFoundationApi public static inline <T> void itemsIndexed(androidx.compose.foundation.lazy.LazyGridScope, java.util.List<? extends T> items, optional kotlin.jvm.functions.Function3<? super androidx.compose.foundation.lazy.LazyGridItemSpanScope,? super java.lang.Integer,? super T,androidx.compose.foundation.lazy.GridItemSpan>? spans, kotlin.jvm.functions.Function3<? super androidx.compose.foundation.lazy.LazyItemScope,? super java.lang.Integer,? super T,kotlin.Unit> itemContent);
+    method @androidx.compose.foundation.ExperimentalFoundationApi public static inline <T> void itemsIndexed(androidx.compose.foundation.lazy.LazyGridScope, T![] items, optional kotlin.jvm.functions.Function3<? super androidx.compose.foundation.lazy.LazyGridItemSpanScope,? super java.lang.Integer,? super T,androidx.compose.foundation.lazy.GridItemSpan>? spans, kotlin.jvm.functions.Function3<? super androidx.compose.foundation.lazy.LazyItemScope,? super java.lang.Integer,? super T,kotlin.Unit> itemContent);
   }
 
   @androidx.compose.foundation.ExperimentalFoundationApi public interface LazyGridScope {
-    method public void item(kotlin.jvm.functions.Function1<? super androidx.compose.foundation.lazy.LazyItemScope,kotlin.Unit> content);
-    method public void items(int count, kotlin.jvm.functions.Function2<? super androidx.compose.foundation.lazy.LazyItemScope,? super java.lang.Integer,kotlin.Unit> itemContent);
+    method public void item(optional kotlin.jvm.functions.Function1<? super androidx.compose.foundation.lazy.LazyGridItemSpanScope,androidx.compose.foundation.lazy.GridItemSpan>? span, kotlin.jvm.functions.Function1<? super androidx.compose.foundation.lazy.LazyItemScope,kotlin.Unit> content);
+    method public void items(int count, optional kotlin.jvm.functions.Function2<? super androidx.compose.foundation.lazy.LazyGridItemSpanScope,? super java.lang.Integer,androidx.compose.foundation.lazy.GridItemSpan>? span, kotlin.jvm.functions.Function2<? super androidx.compose.foundation.lazy.LazyItemScope,? super java.lang.Integer,kotlin.Unit> itemContent);
+  }
+
+  public final class LazyGridSpanKt {
+    method @androidx.compose.foundation.ExperimentalFoundationApi public static long GridItemSpan(int currentLineSpan);
   }
 
   @androidx.compose.foundation.lazy.LazyScopeMarker @androidx.compose.runtime.Stable public interface LazyItemScope {
+    method @androidx.compose.foundation.ExperimentalFoundationApi public androidx.compose.ui.Modifier animateItemPlacement(androidx.compose.ui.Modifier, optional androidx.compose.animation.core.FiniteAnimationSpec<androidx.compose.ui.unit.IntOffset> animationSpec);
     method public androidx.compose.ui.Modifier fillParentMaxHeight(androidx.compose.ui.Modifier, optional float fraction);
     method public androidx.compose.ui.Modifier fillParentMaxSize(androidx.compose.ui.Modifier, optional float fraction);
     method public androidx.compose.ui.Modifier fillParentMaxWidth(androidx.compose.ui.Modifier, optional float fraction);
-  }
-
-  public final class LazyListHeadersKt {
   }
 
   public interface LazyListItemInfo {
@@ -447,12 +480,6 @@ package androidx.compose.foundation.lazy {
     property public abstract int size;
   }
 
-  public final class LazyListItemsProviderImplKt {
-  }
-
-  public final class LazyListKt {
-  }
-
   public interface LazyListLayoutInfo {
     method public int getTotalItemsCount();
     method public int getViewportEndOffset();
@@ -464,16 +491,10 @@ package androidx.compose.foundation.lazy {
     property public abstract java.util.List<androidx.compose.foundation.lazy.LazyListItemInfo> visibleItemsInfo;
   }
 
-  public final class LazyListMeasureKt {
-  }
-
   @androidx.compose.foundation.lazy.LazyScopeMarker public interface LazyListScope {
     method public void item(optional Object? key, kotlin.jvm.functions.Function1<? super androidx.compose.foundation.lazy.LazyItemScope,kotlin.Unit> content);
     method public void items(int count, optional kotlin.jvm.functions.Function1<? super java.lang.Integer,?>? key, kotlin.jvm.functions.Function2<? super androidx.compose.foundation.lazy.LazyItemScope,? super java.lang.Integer,kotlin.Unit> itemContent);
     method @androidx.compose.foundation.ExperimentalFoundationApi public void stickyHeader(optional Object? key, kotlin.jvm.functions.Function1<? super androidx.compose.foundation.lazy.LazyItemScope,kotlin.Unit> content);
-  }
-
-  public final class LazyListScrollingKt {
   }
 
   @androidx.compose.runtime.Stable public final class LazyListState implements androidx.compose.foundation.gestures.ScrollableState {
@@ -507,9 +528,6 @@ package androidx.compose.foundation.lazy {
   @kotlin.DslMarker public @interface LazyScopeMarker {
   }
 
-  public final class LazySemanticsKt {
-  }
-
   public final class Lazy_androidKt {
   }
 
@@ -530,6 +548,63 @@ package androidx.compose.foundation.lazy.layout {
   }
 
   public final class LazyLayoutStateKt {
+  }
+
+}
+
+package androidx.compose.foundation.lazy.list {
+
+  public final class IntervalListKt {
+  }
+
+  public final class LazyListHeadersKt {
+  }
+
+  public final class LazyListItemPlacementAnimatorKt {
+  }
+
+  public final class LazyListItemsProviderImplKt {
+  }
+
+  public final class LazyListKt {
+  }
+
+  public final class LazyListMeasureKt {
+  }
+
+  public final class LazyListScrollingKt {
+  }
+
+  public final class LazySemanticsKt {
+  }
+
+}
+
+package androidx.compose.foundation.relocation {
+
+  @androidx.compose.foundation.ExperimentalFoundationApi public sealed interface BringIntoViewRequester {
+    method public suspend Object? bringIntoView(optional androidx.compose.ui.geometry.Rect? rect, optional kotlin.coroutines.Continuation<? super kotlin.Unit> p);
+  }
+
+  public final class BringIntoViewRequesterKt {
+    method @androidx.compose.foundation.ExperimentalFoundationApi public static androidx.compose.foundation.relocation.BringIntoViewRequester BringIntoViewRequester();
+    method @androidx.compose.foundation.ExperimentalFoundationApi public static androidx.compose.ui.Modifier bringIntoViewRequester(androidx.compose.ui.Modifier, androidx.compose.foundation.relocation.BringIntoViewRequester bringIntoViewRequester);
+  }
+
+  @androidx.compose.foundation.ExperimentalFoundationApi public interface BringIntoViewResponder {
+    method public suspend Object? bringIntoView(androidx.compose.ui.geometry.Rect rect, kotlin.coroutines.Continuation<? super kotlin.Unit> p);
+    method public androidx.compose.ui.geometry.Rect toLocalRect(androidx.compose.ui.geometry.Rect rect, androidx.compose.ui.layout.LayoutCoordinates layoutCoordinates);
+    field public static final androidx.compose.foundation.relocation.BringIntoViewResponder.Companion Companion;
+  }
+
+  @androidx.compose.foundation.ExperimentalFoundationApi public static final class BringIntoViewResponder.Companion {
+    method public androidx.compose.ui.modifier.ProvidableModifierLocal<androidx.compose.foundation.relocation.BringIntoViewResponder> getModifierLocalBringIntoViewResponder();
+    method public androidx.compose.foundation.relocation.BringIntoViewResponder getRootBringIntoViewResponder();
+    property public final androidx.compose.ui.modifier.ProvidableModifierLocal<androidx.compose.foundation.relocation.BringIntoViewResponder> ModifierLocalBringIntoViewResponder;
+    property public final androidx.compose.foundation.relocation.BringIntoViewResponder RootBringIntoViewResponder;
+  }
+
+  public final class BringRectangleOnScreen_androidKt {
   }
 
 }
@@ -613,6 +688,7 @@ package androidx.compose.foundation.shape {
     method @androidx.compose.runtime.Stable public static androidx.compose.foundation.shape.CornerSize CornerSize(float size);
     method @androidx.compose.runtime.Stable public static androidx.compose.foundation.shape.CornerSize CornerSize(int percent);
     method public static androidx.compose.foundation.shape.CornerSize getZeroCornerSize();
+    property public static final androidx.compose.foundation.shape.CornerSize ZeroCornerSize;
   }
 
   public final class CutCornerShape extends androidx.compose.foundation.shape.CornerBasedShape {
@@ -651,6 +727,7 @@ package androidx.compose.foundation.shape {
     method public static androidx.compose.foundation.shape.RoundedCornerShape RoundedCornerShape(optional float topStart, optional float topEnd, optional float bottomEnd, optional float bottomStart);
     method public static androidx.compose.foundation.shape.RoundedCornerShape RoundedCornerShape(optional int topStartPercent, optional int topEndPercent, optional int bottomEndPercent, optional int bottomStartPercent);
     method public static androidx.compose.foundation.shape.RoundedCornerShape getCircleShape();
+    property public static final androidx.compose.foundation.shape.RoundedCornerShape CircleShape;
   }
 
 }
@@ -692,7 +769,7 @@ package androidx.compose.foundation.text {
     method public static void appendInlineContent(androidx.compose.ui.text.AnnotatedString.Builder, String id, optional String alternateText);
   }
 
-  @kotlin.RequiresOptIn(message="Internal/Unstable API for use only between foundation modules sharing " + "the same exact version, subject to change without notice.") @kotlin.annotation.Target(allowedTargets={kotlin.annotation.AnnotationTarget, kotlin.annotation.AnnotationTarget, kotlin.annotation.AnnotationTarget, kotlin.annotation.AnnotationTarget, kotlin.annotation.AnnotationTarget}) public @interface InternalFoundationTextApi {
+  @kotlin.RequiresOptIn(message="Internal/Unstable API for use only between foundation modules sharing " + "the same exact version, subject to change without notice.") @kotlin.annotation.Target(allowedTargets={kotlin.annotation.AnnotationTarget.CLASS, kotlin.annotation.AnnotationTarget.FUNCTION, kotlin.annotation.AnnotationTarget.PROPERTY, kotlin.annotation.AnnotationTarget.PROPERTY_GETTER, kotlin.annotation.AnnotationTarget.PROPERTY_SETTER}) public @interface InternalFoundationTextApi {
   }
 
   public final class KeyEventHelpers_androidKt {
@@ -798,6 +875,9 @@ package androidx.compose.foundation.text {
   public final class TextLayoutResultProxyKt {
   }
 
+  public final class TextPointerIcon_androidKt {
+  }
+
   public final class TouchMode_androidKt {
   }
 
@@ -826,6 +906,9 @@ package androidx.compose.foundation.text.selection {
   }
 
   public final class SelectionHandlesKt {
+  }
+
+  public final class SelectionMagnifierKt {
   }
 
   public final class SelectionManagerKt {
@@ -859,6 +942,7 @@ package androidx.compose.foundation.text.selection {
 
   public final class TextSelectionColorsKt {
     method public static androidx.compose.runtime.ProvidableCompositionLocal<androidx.compose.foundation.text.selection.TextSelectionColors> getLocalTextSelectionColors();
+    property public static final androidx.compose.runtime.ProvidableCompositionLocal<androidx.compose.foundation.text.selection.TextSelectionColors> LocalTextSelectionColors;
   }
 
   public final class TextSelectionDelegateKt {

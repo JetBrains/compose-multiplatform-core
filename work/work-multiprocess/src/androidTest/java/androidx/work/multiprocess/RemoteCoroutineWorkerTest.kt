@@ -72,7 +72,7 @@ public class RemoteCoroutineWorkerTest {
             .setTaskExecutor(mExecutor)
             .build()
         mTaskExecutor = mock(TaskExecutor::class.java)
-        `when`(mTaskExecutor.backgroundExecutor).thenReturn(SerialExecutor(mExecutor))
+        `when`(mTaskExecutor.serialTaskExecutor).thenReturn(SerialExecutor(mExecutor))
         `when`(mTaskExecutor.mainThreadExecutor).thenReturn(mExecutor)
         mScheduler = mock(Scheduler::class.java)
         mForegroundProcessor = mock(ForegroundProcessor::class.java)
@@ -102,7 +102,7 @@ public class RemoteCoroutineWorkerTest {
         val wrapper = buildWrapper(request)
         wrapper.run()
         wrapper.future.get()
-        val workSpec = mDatabase.workSpecDao().getWorkSpec(request.stringId)
+        val workSpec = mDatabase.workSpecDao().getWorkSpec(request.stringId)!!
         assertEquals(workSpec.state, WorkInfo.State.SUCCEEDED)
     }
 
@@ -118,7 +118,7 @@ public class RemoteCoroutineWorkerTest {
         val wrapper = buildWrapper(request)
         wrapper.run()
         wrapper.future.get()
-        val workSpec = mDatabase.workSpecDao().getWorkSpec(request.stringId)
+        val workSpec = mDatabase.workSpecDao().getWorkSpec(request.stringId)!!
         assertEquals(workSpec.state, WorkInfo.State.FAILED)
     }
 
@@ -134,7 +134,7 @@ public class RemoteCoroutineWorkerTest {
         val wrapper = buildWrapper(request)
         wrapper.run()
         wrapper.future.get()
-        val workSpec = mDatabase.workSpecDao().getWorkSpec(request.stringId)
+        val workSpec = mDatabase.workSpecDao().getWorkSpec(request.stringId)!!
         assertEquals(workSpec.state, WorkInfo.State.ENQUEUED)
     }
 

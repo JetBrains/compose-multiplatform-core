@@ -33,6 +33,7 @@ android {
         consumerProguardFiles "proguard-rules.pro"
     }
     defaultConfig {
+        multiDexEnabled = true
         javaCompileOptions {
             annotationProcessorOptions {
                 arguments = [
@@ -49,10 +50,10 @@ android {
 }
 
 dependencies {
-    implementation("androidx.core:core:1.5.0-beta01")
-    annotationProcessor("androidx.room:room-compiler:2.2.5")
-    implementation("androidx.room:room-runtime:2.2.5")
-    androidTestImplementation("androidx.room:room-testing:2.2.5")
+    implementation("androidx.core:core:1.6.0")
+    annotationProcessor("androidx.room:room-compiler:2.4.0-rc01")
+    implementation("androidx.room:room-runtime:2.4.0-rc01")
+    androidTestImplementation("androidx.room:room-testing:2.4.0-rc01")
     implementation("androidx.sqlite:sqlite:2.1.0")
     implementation("androidx.sqlite:sqlite-framework:2.1.0")
     api("androidx.annotation:annotation-experimental:1.0.0")
@@ -61,7 +62,9 @@ dependencies {
     api("androidx.startup:startup-runtime:1.0.0")
     implementation("androidx.core:core:1.1.0")
     implementation("androidx.lifecycle:lifecycle-service:2.1.0")
-    androidTestImplementation(libs.kotlinStdlib)
+    api(libs.kotlinStdlib)
+    androidTestImplementation(libs.multidex)
+    androidTestImplementation(libs.truth)
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.testCore)
     androidTestImplementation("androidx.arch.core:core-testing:2.1.0")

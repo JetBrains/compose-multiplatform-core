@@ -28,7 +28,6 @@ import android.support.wearable.complications.ComplicationText
 import android.support.wearable.watchface.IWatchFaceService
 import android.support.wearable.watchface.WatchFaceStyle
 import android.support.wearable.watchface.accessibility.ContentDescriptionLabel
-import android.view.Choreographer
 import android.view.SurfaceHolder
 import androidx.test.core.app.ApplicationProvider
 import androidx.wear.watchface.complications.data.toApiComplicationData
@@ -53,15 +52,23 @@ internal class TestWatchFaceService(
     private val watchState: MutableWatchState,
     private val handler: Handler,
     private val tapListener: WatchFace.TapListener?,
+    private val pendingIntentTapListener: WatchFace.PendingIntentTapListener?,
     private val preAndroidR: Boolean,
     private val directBootParams: WallpaperInteractiveWatchFaceInstanceParams?,
-    private val choreographer: Choreographer
+    private val choreographer: ChoreographerWrapper,
+    var mockSystemTimeMillis: Long = 0L,
+    private val mainThreadPriorityDelegate: MainThreadPriorityDelegate =
+        object : MainThreadPriorityDelegate {
+            override fun setNormalPriority() {}
+
+            override fun setInteractivePriority() {}
+        },
+    private val complicationCache: MutableMap<String, ByteArray>? = null
 ) : WatchFaceService() {
     /** The ids of the [ComplicationSlot]s that have been tapped. */
     val tappedComplicationSlotIds: List<Int>
         get() = mutableTappedComplicationIds
     var complicationSelected: Int? = null
-    var mockSystemTimeMillis = 0L
     var mockZoneId: ZoneId = ZoneId.of("UTC")
     var renderer: TestRenderer? = null
 
@@ -100,6 +107,8 @@ internal class TestWatchFaceService(
         return complicationSlotsManager
     }
 
+    override fun getMainThreadPriorityDelegate() = mainThreadPriorityDelegate
+
     override suspend fun createWatchFace(
         surfaceHolder: SurfaceHolder,
         watchState: WatchState,
@@ -107,12 +116,19 @@ internal class TestWatchFaceService(
         currentUserStyleRepository: CurrentUserStyleRepository
     ): WatchFace {
         renderer = rendererFactory(surfaceHolder, currentUserStyleRepository, watchState)
-        return WatchFace(watchFaceType, renderer!!)
+        val watchFace = WatchFace(watchFaceType, renderer!!)
             .setSystemTimeProvider(object : WatchFace.SystemTimeProvider {
                 override fun getSystemTimeMillis() = mockSystemTimeMillis
 
                 override fun getSystemTimeZoneId() = mockZoneId
-            }).setTapListener(tapListener)
+            })
+        tapListener?.let {
+            watchFace.setTapListener(it)
+        }
+        pendingIntentTapListener?.let {
+            watchFace.setPendingIntentTapListener(it)
+        }
+        return watchFace
     }
 
     override fun getUiThreadHandlerImpl() = handler
@@ -125,10 +141,6 @@ internal class TestWatchFaceService(
 
     override fun getChoreographer() = choreographer
 
-    fun setIsVisible(isVisible: Boolean) {
-        watchState.isVisible.value = isVisible
-    }
-
     override fun readDirectBootPrefs(
         context: Context,
         fileName: String
@@ -138,7 +150,19 @@ internal class TestWatchFaceService(
         context: Context,
         fileName: String,
         prefs: WallpaperInteractiveWatchFaceInstanceParams
+    ) {}
+
+    override fun readComplicationDataCacheByteArray(
+        context: Context,
+        fileName: String
+    ): ByteArray? = complicationCache?.get(fileName)
+
+    override fun writeComplicationDataCacheByteArray(
+        context: Context,
+        fileName: String,
+        byteArray: ByteArray
     ) {
+        complicationCache?.set(fileName, byteArray)
     }
 
     override fun expectPreRInitFlow() = preAndroidR

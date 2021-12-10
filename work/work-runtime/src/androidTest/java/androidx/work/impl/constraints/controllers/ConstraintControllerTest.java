@@ -58,9 +58,9 @@ public class ConstraintControllerTest extends WorkManagerTest {
     }
 
     private WorkSpec createTestWorkSpec(Constraints constraints) {
-        return getWorkSpec(new OneTimeWorkRequest.Builder(TestWorker.class)
+        return new OneTimeWorkRequest.Builder(TestWorker.class)
                 .setConstraints(constraints)
-                .build());
+                .build().getWorkSpec();
     }
 
     private WorkSpec createTestConstraintWorkSpec() {
@@ -250,12 +250,12 @@ public class ConstraintControllerTest extends WorkManagerTest {
         }
 
         @Override
-        boolean hasConstraint(@NonNull WorkSpec workSpec) {
+        public boolean hasConstraint(@NonNull WorkSpec workSpec) {
             return workSpec.constraints.requiresDeviceIdle();
         }
 
         @Override
-        boolean isConstrained(@NonNull Boolean isDeviceIdle) {
+        public boolean isConstrained(@NonNull Boolean isDeviceIdle) {
             return !isDeviceIdle;
         }
 

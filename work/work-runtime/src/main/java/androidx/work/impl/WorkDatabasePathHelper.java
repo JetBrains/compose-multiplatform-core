@@ -19,6 +19,7 @@ package androidx.work.impl;
 import android.content.Context;
 import android.os.Build;
 
+import androidx.annotation.DoNotInline;
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
@@ -68,15 +69,15 @@ public class WorkDatabasePathHelper {
                 File destination = paths.get(source);
                 if (source.exists() && destination != null) {
                     if (destination.exists()) {
-                        String message = String.format("Over-writing contents of %s", destination);
+                        String message = "Over-writing contents of " + destination;
                         Logger.get().warning(TAG, message);
                     }
                     boolean renamed = source.renameTo(destination);
                     String message;
                     if (renamed) {
-                        message = String.format("Migrated %s to %s", source, destination);
+                        message = "Migrated " + source + "to " + destination;
                     } else {
-                        message = String.format("Renaming %s to %s failed", source, destination);
+                        message = "Renaming " + source + " to " + destination + " failed";
                     }
                     Logger.get().debug(TAG, message);
                 }
@@ -142,6 +143,18 @@ public class WorkDatabasePathHelper {
      */
     @RequiresApi(23)
     private static File getNoBackupPath(@NonNull Context context, @NonNull String filePath) {
-        return new File(context.getNoBackupFilesDir(), filePath);
+        return new File(Api21Impl.getNoBackupFilesDir(context), filePath);
+    }
+
+    @RequiresApi(21)
+    static class Api21Impl {
+        private Api21Impl() {
+            // This class is not instantiable.
+        }
+
+        @DoNotInline
+        static File getNoBackupFilesDir(Context context) {
+            return context.getNoBackupFilesDir();
+        }
     }
 }

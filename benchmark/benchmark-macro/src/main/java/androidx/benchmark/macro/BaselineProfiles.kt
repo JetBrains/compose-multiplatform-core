@@ -18,27 +18,12 @@ package androidx.benchmark.macro
 
 import android.os.Build
 import android.util.Log
+import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
-import androidx.benchmark.ConfigurationError
-import androidx.benchmark.DeviceInfo
 import androidx.benchmark.InstrumentationResults
 import androidx.benchmark.Outputs
 import androidx.benchmark.Shell
-import androidx.benchmark.checkAndGetSuppressionState
-import androidx.benchmark.conditionalError
 import androidx.benchmark.userspaceTrace
-
-/**
- * A list of configuration errors applicable for baseline profile collection.
- */
-private val errors: List<ConfigurationError> = listOfNotNull(
-    conditionalError(
-        hasError = !DeviceInfo.isRooted,
-        id = "NEEDS-ROOT",
-        summary = "Run on a rooted device",
-        message = "Baseline Profile Collection needs to run on a rooted device."
-    )
-)
 
 /**
  * Collects baseline profiles using a given [profileBlock].
@@ -46,6 +31,7 @@ private val errors: List<ConfigurationError> = listOfNotNull(
  * @suppress
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@RequiresApi(28)
 fun collectBaselineProfile(
     uniqueName: String,
     packageName: String,
@@ -57,20 +43,23 @@ fun collectBaselineProfile(
     }
 
     require(Shell.isSessionRooted()) {
-        "Baseline Profile Collection requires a rooted session. Use `adb root`."
+        "Baseline Profile Collection requires a rooted device, and a rooted adb session." +
+            " Use `adb root`."
     }
 
-    errors.checkAndGetSuppressionState(emptySet())
-
     val startTime = System.nanoTime()
-    val scope = MacrobenchmarkScope(packageName, /* launchWithClearTask */ true)
-    val speedProfile = CompilationMode.SpeedProfile(warmupIterations = 3)
+    val scope = MacrobenchmarkScope(packageName, launchWithClearTask = true)
+
+    // useBaselineProfile = false because we're *creating* a baseline profile, not using it yet
+    val compilationMode = CompilationMode.Partial(baselineProfile = false, warmupIterations = 3)
 
     // always kill the process at beginning of a collection.
     scope.killProcess()
     try {
         userspaceTrace("compile $packageName") {
-            speedProfile.compile(packageName) {
+            compilationMode.resetAndCompile(
+                packageName = packageName
+            ) {
                 setupBlock(scope)
                 profileBlock(scope)
             }

@@ -35,7 +35,8 @@ import android.widget.FrameLayout
 import android.widget.RemoteViews
 import androidx.annotation.RequiresApi
 import androidx.glance.appwidget.test.R
-import androidx.glance.unit.DpSize
+import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.unit.dp
 import org.junit.Assert.fail
 import java.util.Locale
 import java.util.concurrent.CountDownLatch
@@ -77,7 +78,7 @@ class AppWidgetHostTestActivity : Activity() {
         val wasBound = appWidgetManager.bindAppWidgetIdIfAllowed(
             appWidgetId,
             componentName,
-            optionsBundleOf(portraitSize, landscapeSize)
+            optionsBundleOf(listOf(portraitSize, landscapeSize))
         )
         if (!wasBound) {
             fail("Failed to bind the app widget")
@@ -98,6 +99,14 @@ class AppWidgetHostTestActivity : Activity() {
         hostView.setBackgroundColor(Color.WHITE)
         mHostViews += hostView
         return hostView
+    }
+
+    fun deleteAppWidget(hostView: TestAppWidgetHostView) {
+        val appWidgetId = hostView.appWidgetId
+        mHost?.deleteAppWidgetId(appWidgetId)
+        mHostViews.remove(hostView)
+        val contentFrame = findViewById<FrameLayout>(R.id.content)
+        contentFrame.removeView(hostView)
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {
@@ -135,8 +144,8 @@ class TestAppWidgetHostView(context: Context) : AppWidgetHostView(context) {
 
     private var mLatch: CountDownLatch? = null
     private var mRemoteViews: RemoteViews? = null
-    private lateinit var mPortraitSize: DpSize
-    private lateinit var mLandscapeSize: DpSize
+    private var mPortraitSize: DpSize = DpSize(0.dp, 0.dp)
+    private var mLandscapeSize: DpSize = DpSize(0.dp, 0.dp)
 
     /**
      * Wait for the new remote views to be received. If a remote views was already received, return

@@ -19,21 +19,28 @@ package androidx.wear.compose.integration.demos
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.wear.compose.material.ExperimentalWearMaterialApi
+import androidx.wear.compose.material.samples.AlertDialogWithButtons
+import androidx.wear.compose.material.samples.AlertDialogWithChips
 import androidx.wear.compose.material.samples.AppCardWithIcon
 import androidx.wear.compose.material.samples.ButtonWithIcon
 import androidx.wear.compose.material.samples.ButtonWithText
 import androidx.wear.compose.material.samples.ChipWithIconAndLabels
 import androidx.wear.compose.material.samples.CompactButtonWithIcon
 import androidx.wear.compose.material.samples.CompactChipWithIconAndLabel
+import androidx.wear.compose.material.samples.ConfirmationDialogWithAnimation
 import androidx.wear.compose.material.samples.CurvedTextDemo
+import androidx.wear.compose.material.samples.InlineSliderSample
+import androidx.wear.compose.material.samples.InlineSliderSegmentedSample
 import androidx.wear.compose.material.samples.ScalingLazyColumnWithHeaders
 import androidx.wear.compose.material.samples.ScalingLazyColumnWithHeadersReversed
+import androidx.wear.compose.material.samples.SimplePicker
 import androidx.wear.compose.material.samples.SimpleScaffoldWithScrollIndicator
 import androidx.wear.compose.material.samples.SimpleScalingLazyColumn
 import androidx.wear.compose.material.samples.SimpleScalingLazyColumnWithContentPadding
 import androidx.wear.compose.material.samples.SimpleSwipeToDismissBox
 import androidx.wear.compose.material.samples.SplitToggleChipWithCheckbox
 import androidx.wear.compose.material.samples.StatefulSwipeToDismissBox
+import androidx.wear.compose.material.samples.StepperSample
 import androidx.wear.compose.material.samples.TimeTextWithCustomSeparator
 import androidx.wear.compose.material.samples.TimeTextWithFullDateAndTimeFormat
 import androidx.wear.compose.material.samples.TitleCardStandard
@@ -77,6 +84,53 @@ val WearMaterialDemos = DemoCategory(
     "Material",
     listOf(
         DemoCategory(
+            "Slider",
+            listOf(
+                DemoCategory(
+                    "Samples",
+                    listOf(
+                        ComposableDemo("Inline slider") { Centralize { InlineSliderSample() } },
+                        ComposableDemo("Segmented inline slider") {
+                            Centralize { InlineSliderSegmentedSample() }
+                        },
+                    )
+                ),
+                DemoCategory(
+                    "Demos",
+                    listOf(
+                        ComposableDemo("Inline slider") { InlineSliderDemo() },
+                        ComposableDemo("RTL Inline slider") { InlineSliderRTLDemo() },
+                        ComposableDemo("Inline slider segmented") { InlineSliderSegmented() },
+                    )
+                )
+            )
+        ),
+        DemoCategory(
+            "Stepper",
+            listOf(
+                DemoCategory(
+                    "Samples",
+                    listOf(
+                        ComposableDemo("Stepper") {
+                            Centralize({ StepperSample() })
+                        },
+                    )
+                ),
+                DemoCategory(
+                    "Demos",
+                    listOf(
+                        ComposableDemo("Simple stepper") { StepperDemo() },
+                        ComposableDemo("With scrollbar") {
+                            StepperWithScrollBarDemo()
+                        },
+                        ComposableDemo("With custom colors") {
+                            StepperWithCustomColors()
+                        },
+                    )
+                )
+            )
+        ),
+        DemoCategory(
             "TimeText",
             listOf(
                 DemoCategory(
@@ -108,8 +162,25 @@ val WearMaterialDemos = DemoCategory(
                         ComposableDemo("Clock with padding") {
                             TimeTextWithPadding()
                         },
+                        ComposableDemo("Clock with yyyy.MM.dd HH:mm:ss format") {
+                            TimeTextWithLongDateTime()
+                        },
+                        ComposableDemo("Clock with custom format and color") {
+                            TimeTextWithCustomFormatAndColor()
+                        },
+                        ComposableDemo("Clock with localised format") {
+                            TimeTextWithLocalisedFormat()
+                        },
                     )
                 ),
+            )
+        ),
+        DemoCategory(
+            "Dialogs",
+            listOf(
+                ComposableDemo("AlertDialog - Buttons") { AlertDialogWithButtons() },
+                ComposableDemo("AlertDialog - Chips") { AlertDialogWithChips() },
+                ComposableDemo("ConfirmationDialog") { ConfirmationDialogWithAnimation() },
             )
         ),
         DemoCategory(
@@ -227,5 +298,16 @@ val WearMaterialDemos = DemoCategory(
             )
         ),
         ComposableDemo("Curved Text") { CurvedTextDemo() },
+        DemoCategory(
+            "Picker",
+            listOf(
+                ComposableDemo("Simple Picker") {
+                    SimplePicker()
+                },
+                ComposableDemo("Time Picker") {
+                    PickerTimeDemo()
+                }
+            )
+        )
     ),
 )

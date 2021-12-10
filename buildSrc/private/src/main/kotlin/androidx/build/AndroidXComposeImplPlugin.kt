@@ -59,7 +59,7 @@ const val enableReportsArg = "androidx.enableComposeCompilerReports"
  */
 class AndroidXComposeImplPlugin : Plugin<Project> {
     override fun apply(project: Project) {
-        val f: KFunction<Unit> = AndroidXComposeImplPlugin.Companion::applyAndConfigureKotlinPlugin
+        val f: KFunction<Unit> = Companion::applyAndConfigureKotlinPlugin
         project.extensions.add("applyAndConfigureKotlinPlugin", f)
         project.plugins.all { plugin ->
             when (plugin) {
@@ -126,28 +126,28 @@ class AndroidXComposeImplPlugin : Plugin<Project> {
             extensions.findByType(AndroidComponentsExtension::class.java)!!.finalizeDsl {
                 val isPublished = androidxExtension()?.type == LibraryType.PUBLISHED_LIBRARY
 
-                @Suppress("DEPRECATION") // lintOptions methods
-                testedExtension.lintOptions.apply {
+                it.lint {
                     // Too many Kotlin features require synthetic accessors - we want to rely on R8 to
                     // remove these accessors
-                    disable("SyntheticAccessor")
+                    disable.add("SyntheticAccessor")
                     // These lint checks are normally a warning (or lower), but we ignore (in AndroidX)
                     // warnings in Lint, so we make it an error here so it will fail the build.
                     // Note that this causes 'UnknownIssueId' lint warnings in the build log when
                     // Lint tries to apply this rule to modules that do not have this lint check, so
                     // we disable that check too
-                    disable("UnknownIssueId")
-                    error("ComposableNaming")
-                    error("ComposableLambdaParameterNaming")
-                    error("ComposableLambdaParameterPosition")
-                    error("CompositionLocalNaming")
-                    error("ComposableModifierFactory")
-                    error("InvalidColorHexValue")
-                    error("MissingColorAlphaChannel")
-                    error("ModifierFactoryReturnType")
-                    error("ModifierFactoryExtensionFunction")
-                    error("ModifierParameter")
-                    error("UnnecessaryComposedModifier")
+                    disable.add("UnknownIssueId")
+                    error.add("ComposableNaming")
+                    error.add("ComposableLambdaParameterNaming")
+                    error.add("ComposableLambdaParameterPosition")
+                    error.add("CompositionLocalNaming")
+                    error.add("ComposableModifierFactory")
+                    error.add("InvalidColorHexValue")
+                    error.add("MissingColorAlphaChannel")
+                    error.add("ModifierFactoryReturnType")
+                    error.add("ModifierFactoryExtensionFunction")
+                    error.add("ModifierParameter")
+                    error.add("MutableCollectionMutableState")
+                    error.add("UnnecessaryComposedModifier")
 
                     // Paths we want to enable ListIterator checks for - for higher level
                     // libraries it won't have a noticeable performance impact, and we don't want
@@ -174,21 +174,18 @@ class AndroidXComposeImplPlugin : Plugin<Project> {
                         ignoreListIteratorFilter.any { path.contains(it) } ||
                         !isPublished
                     ) {
-                        disable("ListIterator")
+                        disable.add("ListIterator")
                     }
                 }
             }
 
-            // TODO(148540713): remove this exclusion when Lint can support using multiple lint jars
-            configurations.getByName("lintChecks").exclude(
-                mapOf("module" to "lint-checks")
-            )
             // TODO: figure out how to apply this to multiplatform modules
             dependencies.add(
                 "lintChecks",
                 project.dependencies.project(
                     mapOf(
                         "path" to ":compose:lint:internal-lint-checks",
+                        // TODO(b/206617878) remove this shadow configuration
                         "configuration" to "shadow"
                     )
                 )
@@ -312,9 +309,9 @@ fun Project.configureComposeImplPluginForAndroidx() {
         }
     }.files
 
-    val isTipOfTreeComposeCompilerProvider = project.provider({
+    val isTipOfTreeComposeCompilerProvider = project.provider {
         (!conf.isEmpty) && (conf.dependencies.first() !is ExternalModuleDependency)
-    })
+    }
     val enableMetricsProvider = project.providers.gradleProperty(enableMetricsArg)
     val enableReportsProvider = project.providers.gradleProperty(enableReportsArg)
 
@@ -331,9 +328,9 @@ fun Project.configureComposeImplPluginForAndroidx() {
                 compile.kotlinOptions.freeCompilerArgs +=
                     "-Xplugin=${kotlinPlugin.first()}"
 
-                val enableMetrics = (enableMetricsProvider.getOrNull() == "true")
+                val enableMetrics = (enableMetricsProvider.orNull == "true")
 
-                val enableReports = (enableReportsProvider.getOrNull() == "true")
+                val enableReports = (enableReportsProvider.orNull == "true")
 
                 // since metrics reports in compose compiler are a new feature, we only want to
                 // pass in this parameter for modules that are using the tip of tree compose

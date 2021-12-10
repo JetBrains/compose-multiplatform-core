@@ -16,8 +16,9 @@
 
 package androidx.compose.foundation.text.selection
 
-import androidx.compose.foundation.text.InternalFoundationTextApi
+import androidx.compose.foundation.text.Handle
 import androidx.compose.foundation.text.HandleState
+import androidx.compose.foundation.text.InternalFoundationTextApi
 import androidx.compose.foundation.text.TextDragObserver
 import androidx.compose.foundation.text.TextFieldState
 import androidx.compose.foundation.text.UndoManager
@@ -77,7 +78,7 @@ internal class TextFieldSelectionManager(
     /**
      * The current [TextFieldValue].
      */
-    internal var value: TextFieldValue = TextFieldValue()
+    internal var value: TextFieldValue by mutableStateOf(TextFieldValue())
 
     /**
      * Visual transformation of the text field's text. Used to check if certain toolbar options
@@ -143,7 +144,7 @@ internal class TextFieldSelectionManager(
     internal val touchSelectionObserver = object : TextDragObserver {
         override fun onStart(startPoint: Offset) {
             state?.let {
-                if (it.draggingHandle) return
+                if (it.draggingHandle != null) return
             }
 
             // Long Press at the blank area, the cursor should show up at the end of the line.
@@ -315,7 +316,8 @@ internal class TextFieldSelectionManager(
                 dragBeginPosition = getAdjustedCoordinates(getHandlePosition(isStartHandle))
                 // Zero out the total distance that being dragged.
                 dragTotalDistance = Offset.Zero
-                state?.draggingHandle = true
+                state?.draggingHandle =
+                    if (isStartHandle) Handle.SelectionStart else Handle.SelectionEnd
                 state?.showFloatingToolbar = false
             }
 
@@ -345,7 +347,7 @@ internal class TextFieldSelectionManager(
             }
 
             override fun onStop() {
-                state?.draggingHandle = false
+                state?.draggingHandle = null
                 state?.showFloatingToolbar = true
                 if (textToolbar?.status == TextToolbarStatus.Hidden) showSelectionToolbar()
             }
@@ -365,7 +367,7 @@ internal class TextFieldSelectionManager(
                 dragBeginPosition = getAdjustedCoordinates(getHandlePosition(true))
                 // Zero out the total distance that being dragged.
                 dragTotalDistance = Offset.Zero
-                state?.draggingHandle = true
+                state?.draggingHandle = Handle.Cursor
             }
 
             override fun onDrag(delta: Offset) {
@@ -391,7 +393,7 @@ internal class TextFieldSelectionManager(
             }
 
             override fun onStop() {
-                state?.draggingHandle = false
+                state?.draggingHandle = null
             }
 
             override fun onCancel() {}
@@ -755,3 +757,48 @@ internal fun TextFieldSelectionManager.isSelectionHandleInVisibleBound(
 
 // TODO(b/180075467) it should be part of PointerEvent API in one way or another
 internal expect val PointerEvent.isShiftPressed: Boolean
+
+/**
+ * Optionally shows a magnifier widget, if the current platform supports it, for the current state
+ * of a [TextFieldSelectionManager]. Should check [TextFieldState.draggingHandle] to see which
+ * handle is being dragged and then calculate the magnifier position for that handle.
+ *
+ * Actual implementations should as much as possible actually live in this common source set, _not_
+ * the platform-specific source sets. The actual implementations of this function should then just
+ * delegate to those functions.
+ */
+internal expect fun Modifier.textFieldMagnifier(manager: TextFieldSelectionManager): Modifier
+
+internal fun calculateSelectionMagnifierCenterAndroid(manager: TextFieldSelectionManager): Offset {
+    // manager.state is not a snapshot state value, it's just a regular lazily-initialized property
+    // that doesn't change after being initialized, so it doesn't need to be read inside a
+    // restartable function.
+    val state = manager.state ?: return Offset.Unspecified
+
+    return calculateSelectionMagnifierCenterAndroid(
+        draggingHandle = state.draggingHandle,
+        fieldValue = manager.value,
+        transformTextOffset = { manager.offsetMapping.originalToTransformed(it) },
+        getCursorRect = { state.layoutResult?.value?.getCursorRect(it) },
+    )
+}
+
+/*@VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)*/
+internal fun calculateSelectionMagnifierCenterAndroid(
+    draggingHandle: Handle?,
+    fieldValue: TextFieldValue,
+    transformTextOffset: (Int) -> Int,
+    getCursorRect: (offset: Int) -> Rect?,
+): Offset {
+    val rawTextOffset = when (draggingHandle) {
+        null -> return Offset.Unspecified
+        Handle.Cursor,
+        Handle.SelectionStart -> fieldValue.selection.start
+        Handle.SelectionEnd -> fieldValue.selection.end
+    }
+    val textOffset = transformTextOffset(rawTextOffset)
+
+    // Center vertically on the current line.
+    // If the text hasn't been laid out yet, don't show the modifier.
+    return getCursorRect(textOffset)?.center ?: Offset.Unspecified
+}

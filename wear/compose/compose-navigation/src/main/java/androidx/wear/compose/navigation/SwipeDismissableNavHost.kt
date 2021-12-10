@@ -18,14 +18,20 @@ package androidx.wear.compose.navigation
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.SaveableStateHolder
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavDestination
@@ -55,6 +61,12 @@ import androidx.wear.compose.material.rememberSwipeToDismissBoxState
  * Content is displayed within a [SwipeToDismissBox], showing the current navigation level.
  * During a swipe-to-dismiss gesture, the previous navigation level (if any) is shown in
  * the background.
+ *
+ * Example of a [SwipeDismissableNavHost] alternating between 2 screens:
+ * @sample androidx.wear.compose.navigation.samples.SimpleNavHost
+ *
+ * Example of a [SwipeDismissableNavHost] for which a destination has a named argument:
+ * @sample androidx.wear.compose.navigation.samples.NavHostWithNamedArgument
  *
  * @param navController The navController for this host
  * @param startDestination The route for the start destination
@@ -93,6 +105,12 @@ public fun SwipeDismissableNavHost(
  * During a swipe-to-dismiss gesture, the previous navigation level (if any) is shown in
  * the background.
  *
+ * Example of a [SwipeDismissableNavHost] alternating between 2 screens:
+ * @sample androidx.wear.compose.navigation.samples.SimpleNavHost
+ *
+ * Example of a [SwipeDismissableNavHost] for which a destination has a named argument:
+ * @sample androidx.wear.compose.navigation.samples.NavHostWithNamedArgument
+ *
  * @param navController [NavHostController] for this host
  * @param graph Graph for this host
  * @param modifier [Modifier] to be applied to the layout.
@@ -121,12 +139,15 @@ public fun SwipeDismissableNavHost(
 
     val stateHolder = rememberSaveableStateHolder()
 
-    // Find the ComposeNavigator, returning early if it isn't found
-    // (such as is the case when using TestNavHostController)
-    val composeNavigator = navController.navigatorProvider.get<Navigator<out NavDestination>>(
+    // Find the WearNavigator, returning early if it isn't found
+    // (such as is the case when using TestNavHostController).
+    val wearNavigator = navController.navigatorProvider.get<Navigator<out NavDestination>>(
         WearNavigator.NAME
     ) as? WearNavigator ?: return
-    val backStack by composeNavigator.backStack.collectAsState()
+    val backStack by wearNavigator.backStack.collectAsState()
+    val transitionsInProgress by wearNavigator.transitionsInProgress.collectAsState()
+    var initialContent by remember { mutableStateOf(true) }
+
     val previous = if (backStack.size <= 1) null else backStack[backStack.lastIndex - 1]
     val current = if (backStack.isNotEmpty()) backStack.last() else throw IllegalArgumentException(
         "No WearNavigation.Destination has been added to the WearNavigator in this NavGraph. " +
@@ -135,9 +156,21 @@ public fun SwipeDismissableNavHost(
 
     val state = rememberSwipeToDismissBoxState()
     LaunchedEffect(state.currentValue) {
+        // This effect operates when the swipe gesture is complete:
+        // 1) Resets the screen offset (otherwise, the next destination is draw off-screen)
+        // 2) Pops the navigation back stack to return to the previous level
         if (state.currentValue == SwipeDismissTarget.Dismissal) {
             state.snapTo(SwipeDismissTarget.Original)
             navController.popBackStack()
+        }
+    }
+    LaunchedEffect(state.isAnimationRunning) {
+        // This effect marks the transitions completed when swipe animations finish,
+        // so that the navigation backstack entries can go to Lifecycle.State.RESUMED.
+        if (state.isAnimationRunning == false) {
+                transitionsInProgress.forEach { entry ->
+                    wearNavigator.onTransitionComplete(entry)
+                }
         }
     }
 
@@ -151,6 +184,17 @@ public fun SwipeDismissableNavHost(
             BoxedStackEntryContent(if (isBackground) previous else current, stateHolder, modifier)
         }
     )
+
+    SideEffect {
+        if (initialContent) {
+            // There are no animations for showing the initial content, so mark transitions complete,
+            // allowing the navigation backstack entry to go to Lifecycle.State.RESUMED.
+            transitionsInProgress.forEach { entry ->
+                wearNavigator.onTransitionComplete(entry)
+            }
+            initialContent = false
+        }
+    }
 }
 
 @Composable
@@ -160,10 +204,24 @@ private fun BoxedStackEntryContent(
     modifier: Modifier = Modifier,
 ) {
     if (entry != null) {
-        Box(modifier, propagateMinConstraints = true) {
-            val destination = entry.destination as WearNavigator.Destination
-            entry.LocalOwnersProvider(saveableStateHolder) {
-                destination.content(entry)
+        var lifecycleState by remember {
+            mutableStateOf(entry.lifecycle.currentState)
+        }
+        DisposableEffect(entry.lifecycle) {
+            val observer = LifecycleEventObserver { _, event ->
+                lifecycleState = event.targetState
+            }
+            entry.lifecycle.addObserver(observer)
+            onDispose {
+                entry.lifecycle.removeObserver(observer)
+            }
+        }
+        if (lifecycleState.isAtLeast(Lifecycle.State.CREATED)) {
+            Box(modifier, propagateMinConstraints = true) {
+                val destination = entry.destination as WearNavigator.Destination
+                entry.LocalOwnersProvider(saveableStateHolder) {
+                    destination.content(entry)
+                }
             }
         }
     }

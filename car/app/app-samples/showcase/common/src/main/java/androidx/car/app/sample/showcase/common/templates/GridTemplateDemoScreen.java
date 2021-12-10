@@ -30,6 +30,7 @@ import androidx.annotation.Nullable;
 import androidx.car.app.CarContext;
 import androidx.car.app.CarToast;
 import androidx.car.app.Screen;
+import androidx.car.app.constraints.ConstraintManager;
 import androidx.car.app.model.Action;
 import androidx.car.app.model.ActionStrip;
 import androidx.car.app.model.CarIcon;
@@ -38,12 +39,14 @@ import androidx.car.app.model.GridTemplate;
 import androidx.car.app.model.ItemList;
 import androidx.car.app.model.Template;
 import androidx.car.app.sample.showcase.common.R;
+import androidx.car.app.versioning.CarAppApiLevels;
 import androidx.core.graphics.drawable.IconCompat;
 import androidx.lifecycle.DefaultLifecycleObserver;
 import androidx.lifecycle.LifecycleOwner;
 
 /** Creates a screen that demonstrates usage of the full screen {@link GridTemplate}. */
 public final class GridTemplateDemoScreen extends Screen implements DefaultLifecycleObserver {
+    private static final int MAX_GRID_ITEMS = 100;
     private static final int LOADING_TIME_MILLIS = 2000;
     private final Handler mHandler = new Handler(Looper.getMainLooper());
 
@@ -166,7 +169,7 @@ public final class GridTemplateDemoScreen extends Screen implements DefaultLifec
         // Grid item with an image marked as an icon, a long title, a long text and onClickListener.
         gridItemListBuilder.addItem(
                 new GridItem.Builder()
-                        .setImage(new CarIcon.Builder(mImage).build(), GridItem.IMAGE_TYPE_ICON)
+                        .setImage(new CarIcon.Builder(mIcon).build(), GridItem.IMAGE_TYPE_ICON)
                         .setTitle("Sixth Item has a long title set")
                         .setText("Sixth Item has a long text set")
                         .setOnClickListener(
@@ -177,6 +180,33 @@ public final class GridTemplateDemoScreen extends Screen implements DefaultLifec
                                                 LENGTH_LONG)
                                                 .show())
                         .build());
+
+        // Some hosts may allow more items in the grid than others, so create more.
+        if (getCarContext().getCarAppApiLevel() > CarAppApiLevels.LEVEL_1) {
+            int itemLimit =
+                    Math.min(MAX_GRID_ITEMS,
+                            getCarContext().getCarService(ConstraintManager.class).getContentLimit(
+                                    ConstraintManager.CONTENT_LIMIT_TYPE_GRID));
+
+            for (int i = 7; i <= itemLimit; i++) {
+                String titleText = "Item: " + i;
+                String toastText = "Clicked item " + i;
+
+                gridItemListBuilder.addItem(
+                        new GridItem.Builder()
+                                .setImage(new CarIcon.Builder(mIcon).build(),
+                                        GridItem.IMAGE_TYPE_ICON)
+                                .setTitle(titleText)
+                                .setOnClickListener(
+                                        () ->
+                                                CarToast.makeText(
+                                                        getCarContext(),
+                                                        toastText,
+                                                        LENGTH_LONG)
+                                                        .show())
+                                .build());
+            }
+        }
 
         return new GridTemplate.Builder()
                 .setHeaderAction(Action.APP_ICON)

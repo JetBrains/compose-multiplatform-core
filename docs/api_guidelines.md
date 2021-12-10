@@ -53,7 +53,7 @@ Library groups should organize their projects into directories and project names
 ```
 <feature-name>/
   <feature-name>-<sub-feature>/ [<feature-name>:<feature-name>-<sub-feature>]
-    samples/ [<feature-name>:<feature-name>-<sub-feature>:samples]
+    samples/ [<feature-name>:<feature-name>-<sub-feature>-samples]
   integration-tests/
     testapp/ [<feature-name>:testapp]
     testlib/ [<feature-name>:testlib]
@@ -101,6 +101,8 @@ cd development/project-creator && \
 *   `-ktx` for an Kotlin artifact that exposes idiomatic Kotlin APIs as an
     extension to a Java-only library (see
     [additional -ktx guidance](#module-ktx))
+*   `-samples` for sample code which can be inlined in documentation (see
+    [Sample code in Kotlin modules](#sample-code-in-kotlin-modules)
 *   `-<third-party>` for an artifact that integrates an optional third-party API
     surface, e.g. `-proto` or `-rxjava2`. Note that a major version is included
     in the sub-feature name for third-party API surfaces where the major version
@@ -151,7 +153,7 @@ on libraries within the group. Such groups must increment the version of every
 library at the same time and release all libraries at the same time.
 
 Atomic groups are specified in
-[`LibraryGroups.kt`](https://cs.android.com/androidx/platform/frameworks/support/+/androidx-main:buildSrc/src/main/kotlin/androidx/build/LibraryGroups.kt):
+[`LibraryGroups.kt`](https://cs.android.com/androidx/platform/frameworks/support/+/androidx-main:buildSrc/public/src/main/kotlin/androidx/build/LibraryGroups.kt):
 
 ```kotlin
 // Non-atomic library group
@@ -275,13 +277,14 @@ Implementation requirements
 *   Superclass **must** be `Object`
 *   Class **must** be non-instantiable, i.e. constructor is private no-op
 *   Static fields and static methods **must** match match signatures with
-    `PlatformClass`
+    `<PlatformClass>`
     *   Static fields that can be inlined, ex. integer constants, **must not**
         be shimmed
 *   Public method names **must** match platform method names
-*   Public methods **must** be static and take `PlatformClass` as first
-    parameter
-*   Implementation *may* delegate to `PlatformClass` methods when available
+*   Public methods **must** be static and take `<PlatformClass>` as first
+    parameter (except in the case of static methods on the platform class, as
+    shown below)
+*   Implementation *may* delegate to `<PlatformClass>` methods when available
 
 #### Sample {#static-shim-sample}
 
@@ -457,12 +460,14 @@ public final class ModemInfoCompat {
   // loading and prevent optimization.
   @RequiresApi(23)
   private static class Api23Impl {
+    @DoNotInline
     @NonNull
     static ModemInfo create() {
       return new ModemInfo();
     }
 
-    static boolean isLteSupported(PlatformClass obj) {
+    @DoNotInline
+    static boolean isLteSupported(ModemInfo obj) {
       return obj.isLteSupported();
     }
   }
@@ -791,12 +796,17 @@ buffers in your library.
 Developers **may** use `Bundle` in simple cases that require sending `Binder`s
 or `FileDescriptor`s across IPC. Note that `Bundle` has several caveats:
 
--   Accessing *any* entry in a `Bundle` will result in the platform attempting
-    to load *every* entry. If a single entry cannot be loaded -- for example if
-    a developer added a custom `Parcelable` that doesn't exist in the receiver's
-    classpath -- an exception will be thrown when accessing *any* entry. Library
-    code that accesses `Bundle`s received from outside the process **must** do
-    so defensively. Library code that sends `Bundle`s outside the process
+-   When running on Android S and below, accessing *any* entry in a `Bundle`
+    will result in the platform attempting to deserialize *every* entry. This
+    has been fixed in Android T and later with "lazy" bundles, but developers
+    should be careful when accessing `Bundle` on earlier platforms. If a single
+    entry cannot be loaded -- for example if a developer added a custom
+    `Parcelable` that doesn't exist in the receiver's classpath -- an exception
+    will be thrown when accessing *any* entry.
+-   On all platforms, library code that receives `Bundle`s data from outside the
+    process **must** read the data defensively. See previous note regarding
+    additional concerns for Android S and below.
+-   On all platforms, library code that sends `Bundle`s outside the process
     *should* discourage clients from passing custom `Parcelable`s.
 -   `Bundle` provides no versioning and Jetpack provides no affordances for
     tracking the keys or value types associated with a `Bundle`. Library owners
@@ -1340,19 +1350,26 @@ Gradle's
 [Incremental annotation processing](https://docs.gradle.org/current/userguide/java_plugin.html#sec:incremental_annotation_processing)
 documentation for information on how to opt-in.
 
-### Experimental `@RequiresOptIn` APIs {#experimental-api}
+### `@RequiresOptIn` APIs {#experimental-api}
 
 Jetpack libraries may choose to annotate API surfaces as unstable using either
 Kotlin's
-[`@RequiresOptIn` annotation](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-requires-opt-in/)
+[`@RequiresOptIn` meta-annotation](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-requires-opt-in/)
 for APIs written in Kotlin or Jetpack's
-[`@RequiresOptIn` annotation](https://developer.android.com/reference/kotlin/androidx/annotation/RequiresOptIn)
+[`@RequiresOptIn` meta-annotation](https://developer.android.com/reference/kotlin/androidx/annotation/RequiresOptIn)
 for APIs written in Java.
 
-In both cases, API surfaces marked as experimental are considered alpha and will
-be excluded from API compatibility guarantees. Due to the lack of compatibility
-guarantees, stable libraries *must never* call experimental APIs exposed by
-other libraries outside of their
+> `@RequiresOptIn` at-a-glance:
+>
+> *   Use for unstable API surfaces
+> *   Can be called by anyone
+> *   Documented in public documentation
+> *   Does not maintain compatibility
+
+For either annotation, API surfaces marked as opt-in are considered alpha and
+will be excluded from API compatibility guarantees. Due to the lack of
+compatibility guarantees, stable libraries *must never* call experimental APIs
+exposed by other libraries outside of their
 [same-version group](#same-version-atomic-groups) and *may not* use the `@OptIn`
 annotation except in the following cases:
 
@@ -1374,6 +1391,27 @@ and avoid using them outside of `alpha`; however, teams are welcome to obtain
 written assurance from JetBrains regarding binary stability of specific APIs.
 `@RequiresOptIn` APIs that are guaranteed to remain binary compatible *may* be
 used in `beta`, but usages must be removed when the library moves to `rc`.
+
+#### When to mark an API surface as experimental
+
+*Do not* use `@RequiresOptIn` for a stable API surface that is difficult to use.
+It is not a substitute for a properly-designed API surface.
+
+*Do not* use `@RequiresOptIn` for an API surface that is unreliable or unstable
+because it is missing tests. It is not a substitute for a properly-tested API
+surface, and all APIs -- including those in `alpha` -- are expected to be
+functionally stable.
+
+*Do not* use `@RequiresOptIn` for an internal-facing API surface. Use either the
+appropriate language visibility (ex. `private` or `internal`) or `@RestrictTo`.
+
+*Do not* use `@RequiresOptIn` for an API that you expect library developers to
+call. Experimental APIs do not maintain binary compatibility guarantees, and you
+will put external clients in a difficult situation.
+
+*Do* use `@RequiresOptIn` for API surfaces that must be publicly available and
+documented but need the flexibility to stay in `alpha` (and break compatibility)
+during the rest of the library's `beta`, `rc`, or stable cycles.
 
 #### How to mark an API surface as experimental
 
@@ -1402,30 +1440,33 @@ rather than the Kotlin compiler's annotation.
 #### How to transition an API out of experimental
 
 When an API surface is ready to transition out of experimental, the annotation
-may only be removed during an alpha pre-release stage since removing the
-experimental marker from an API is equivalent to adding the API to the current
-API surface.
+may only be removed during an alpha pre-release stage. Removing the experimental
+marker from an API is equivalent to adding the API to the current API surface.
 
 When transitioning an entire feature surface out of experimental, you *should*
-remove the associated annotations.
+remove the definition for the associated annotation.
 
 When making any change to the experimental API surface, you *must* run
 `./gradlew updateApi` prior to uploading your change.
 
-### Restricted APIs {#restricted-api}
+### `@RestrictTo` APIs {#restricted-api}
 
 Jetpack's library tooling supports hiding Java-visible (ex. `public` and
 `protected`) APIs from developers using a combination of the `@RestrictTo`
 source annotation, and the `@hide` docs annotation (`@suppress` in Kotlin).
 These annotations **must** be paired together when used, and are validated as
-part of presubmit checks for Java code (Kotlin not yet supported by Checkstyle).
+part of presubmit checks for Java code.
 
-The effects of hiding an API are as follows:
+> `@RestrictTo` at-a-glance:
+>
+> *   Use for internal-facing API surfaces
+> *   Can be called within the specified `Scope`
+> *   Does not appear in public documentation
+> *   Does not maintain compatibility in most scopes
 
-*   The API will not appear in documentation
-*   Android Studio will warn the developer not to use the API
-
-Hiding an API does *not* provide strong guarantees about usage:
+While restricted APIs do not appear in documentation and Android Studio will
+warn against calling them, hiding an API does *not* provide strong guarantees
+about usage:
 
 *   There are no runtime restrictions on calling hidden APIs
 *   Android Studio will not warn if hidden APIs are called using reflection
@@ -1476,21 +1517,31 @@ scopes:
         <td><code>RestrictTo.Scope</code></td>
         <td>Visibility by Maven coordinate</td>
         <td>Versioning</td>
+        <td>Note</td>
     </tr>
     <tr>
         <td><code>LIBRARY</code></td>
         <td><code>androidx.concurrent:concurrent</code></td>
-        <td>No compatibility gurantees (same as private)</td>
+        <td>No compatibility guarantees (same as private)</td>
+        <td></td>
     </tr>
     <tr>
         <td><code>LIBRARY_GROUP</code></td>
         <td><code>androidx.concurrent:*</code></td>
         <td>Semantic versioning (including deprecation)</td>
+        <td></td>
     </tr>
     <tr>
         <td><code>LIBRARY_GROUP_PREFIX</code></td>
         <td><code>androidx.*:*</code></td>
         <td>Semantic versioning (including deprecation)</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td><code>TEST</code></td>
+        <td><code>*</code></td>
+        <td>No compatibility guarantees (same as private)</td>
+        <td>Not recommended. Prefer language visibility, e.g. `internal` or package-private.</td>
     </tr>
 </table>
 
@@ -1963,7 +2014,7 @@ you can suppress Metalava API lint issues using `@SuppressLint` (for Java) or
 baseline with the `updateApiLintBaseline` task.
 
 ```shell
-./gradlew core:updateApiLintBaseline
+./gradlew :core:core:updateApiLintBaseline
 ```
 
 This will create/amend the `api_lint.ignore` file that lives in a library's
@@ -2106,7 +2157,8 @@ unmaintained and outdated.
 
 The follow demonstrates how to reference sample functions from public API. It is
 also recommended to reuse these samples in unit tests / integration tests / test
-apps / library demos where possible.
+apps / library demos where possible to help ensure that the samples work as
+intended.
 
 **Public API:**
 
@@ -2132,7 +2184,7 @@ fun fancySample() {
 }
 ```
 
-**Generated documentation visible on d.android.com\***
+**Generated documentation visible on d.android.com / within Android Studio**
 
 ```
 fun fancyPrint(str: String)
@@ -2146,16 +2198,37 @@ Fancy prints the given [string]
 <code>
 ```
 
-\**still some improvements to be made to DAC side, such as syntax highlighting*
+Warning: Only the body of the function is used in generated documentation, so
+any other references to elements defined outside the body of the function (such
+as variables defined within the sample file) will not be visible. To ensure that
+samples can be easily copy and pasted without errors, make sure that any
+references are defined within the body of the function.
 
 ### Module configuration
 
-The following module setups should be used for sample functions, and are
-enforced by lint:
+The following module setups should be used for sample functions:
+
+**Per-module samples**
+
+For library groups with relatively independent sub-libraries. This is the
+recommended project setup, and should be used in most cases.
+
+Gradle project name: `:foo-library:foo-module:foo-module-samples`
+
+```
+foo-library/
+  foo-module/
+    samples/
+```
 
 **Group-level samples**
 
-For library groups with strongly related samples that want to share code.
+For library groups with strongly related samples that want to share code and be
+reused across a library group, a singular shared samples library can be created.
+In most cases this is discouraged - samples should be small and show the usage
+of a particular API / small set of APIs, instead of more complicated usage
+combining multiple APIs from across libraries. For these cases a sample
+application is more appropriate.
 
 Gradle project name: `:foo-library:foo-library-samples`
 
@@ -2166,22 +2239,10 @@ foo-library/
   samples/
 ```
 
-**Per-module samples**
-
-For library groups with complex, relatively independent sub-libraries
-
-Gradle project name: `:foo-library:foo-module:foo-module-samples`
-
-```
-foo-library/
-  foo-module/
-    samples/
-```
-
 **Samples module configuration**
 
 Samples modules are published to GMaven so that they are available to Android
-Studio, which displays code in @Sample annotations as hover-over pop-ups.
+Studio, which displays referenced samples as hover-over pop-ups.
 
 To achieve this, samples modules must declare the same MavenGroup and `publish`
 as the library(s) they are samples for.
