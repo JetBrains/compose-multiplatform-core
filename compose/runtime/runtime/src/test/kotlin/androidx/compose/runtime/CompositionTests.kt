@@ -41,12 +41,15 @@ import androidx.compose.runtime.mock.expectNoChanges
 import androidx.compose.runtime.mock.skip
 import androidx.compose.runtime.mock.validate
 import androidx.compose.runtime.snapshots.Snapshot
+import androidx.compose.runtime.snapshots.SnapshotStateObserver
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.TestCoroutineDispatcher
 import kotlinx.coroutines.test.runBlockingTest
+import kotlin.concurrent.thread
 import kotlin.random.Random
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -3152,6 +3155,64 @@ class CompositionTests {
                 currentComposer.createNode { null }
             }
         }
+    }
+
+    // Regression test for b/202967533
+    // Test taken from the bug report; reformatted to conform to lint rules.
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun avoidsDeadlockInRecomposerComposerDispose() {
+        val thread = thread {
+            while (!Thread.interrupted()) {
+                // -> synchronized(stateLock) -> recordComposerModificationsLocked
+                // -> composition.recordModificationsOf -> synchronized(lock)
+                Snapshot.sendApplyNotifications()
+            }
+        }
+
+        for (i in 1..5000) {
+            runBlocking(TestCoroutineDispatcher()) {
+                localRecomposerTest {
+                    @Suppress("ASSIGNED_BUT_NEVER_ACCESSED_VARIABLE")
+                    var value by mutableStateOf(0)
+                    val snapshotObserver = SnapshotStateObserver {}
+                    snapshotObserver.start()
+                    @Suppress("UNUSED_VALUE")
+                    value = 4
+                    val composition = Composition(EmptyApplier(), it)
+                    composition.setContent {}
+
+                    // -> synchronized(lock) -> parent.unregisterComposition(this)
+                    // -> synchronized(stateLock)
+                    composition.dispose()
+                    snapshotObserver.stop()
+                }
+            }
+        }
+
+        thread.interrupt()
+    }
+
+    @Test // b/197064250 and others
+    fun canInvalidateDuringApplyChanges() = compositionTest {
+        var value by mutableStateOf(0)
+        compose {
+            Wrap {
+                val scope = currentRecomposeScope
+                ComposeNode<View, ViewApplier>(
+                    factory = { View().also { it.name = "linear" } },
+                    update = {
+                        set(value) {
+                            scope.invalidate()
+                            this.attributes["value"] = value.toString()
+                        }
+                    }
+                )
+            }
+        }
+
+        value = 2
+        expectChanges()
     }
 }
 

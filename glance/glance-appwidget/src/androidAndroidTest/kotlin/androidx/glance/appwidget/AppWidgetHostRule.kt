@@ -24,9 +24,11 @@ import android.content.Context
 import android.content.pm.ActivityInfo
 import android.os.Build
 import android.view.View
+import android.view.ViewGroup
 import android.view.ViewTreeObserver
-import androidx.glance.unit.DpSize
-import androidx.glance.unit.dp
+import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.unit.dp
+import androidx.core.view.children
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.Espresso.onView
@@ -46,6 +48,7 @@ import org.junit.runner.Description
 import org.junit.runners.model.Statement
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import kotlin.test.assertIs
 import kotlin.test.fail
 
 @SdkSuppress(minSdkVersion = 29)
@@ -82,11 +85,14 @@ class AppWidgetHostRule(
     private val mInnerRules = RuleChain.outerRule(mActivityRule).around(mOrientationRule)
 
     private var mHostStarted = false
-    lateinit var mHostView: TestAppWidgetHostView
+    private var mMaybeHostView: TestAppWidgetHostView? = null
     private var mAppWidgetId = 0
     private val mScenario: ActivityScenario<AppWidgetHostTestActivity>
         get() = mActivityRule.scenario
     private val mContext = ApplicationProvider.getApplicationContext<Context>()
+
+    val mHostView: TestAppWidgetHostView
+        get() = checkNotNull(mMaybeHostView) { "No app widget installed on the host" }
 
     override fun apply(base: Statement, description: Description) = object : Statement() {
 
@@ -108,12 +114,21 @@ class AppWidgetHostRule(
         mHostStarted = true
 
         mActivityRule.scenario.onActivity { activity ->
-            mHostView = activity.bindAppWidget(mPortraitSize, mLandscapeSize)
+            mMaybeHostView = activity.bindAppWidget(mPortraitSize, mLandscapeSize)
         }
 
+        val hostView = checkNotNull(mMaybeHostView) { "Host view wasn't successfully started" }
+
         runAndWaitForChildren {
-            mAppWidgetId = mHostView.appWidgetId
-            mHostView.waitForRemoteViews()
+            mAppWidgetId = hostView.appWidgetId
+            hostView.waitForRemoteViews()
+        }
+    }
+
+    fun removeAppWidget() {
+        mActivityRule.scenario.onActivity { activity ->
+            val hostView = checkNotNull(mMaybeHostView) { "No app widget to remove" }
+            activity.deleteAppWidget(hostView)
         }
     }
 
@@ -123,6 +138,19 @@ class AppWidgetHostRule(
 
     fun onHostView(block: (AppWidgetHostView) -> Unit) {
         onHostActivity { block(mHostView) }
+    }
+
+    /**
+     * The top-level view is always boxed into a FrameLayout.
+     *
+     * This will retrieve the actual top-level view, skipping the boxing for the root view, and
+     * possibly the one to get the exact size.
+     */
+    inline fun <reified T : View> onUnboxedHostView(crossinline block: (T) -> Unit) {
+        onHostActivity {
+            val boxingView = assertIs<ViewGroup>(mHostView.getChildAt(0))
+            block(boxingView.children.single().getTargetView())
+        }
     }
 
     /** Change the orientation to landscape.*/
@@ -140,22 +168,47 @@ class AppWidgetHostRule(
      *
      * If specified, the options bundle for the AppWidget is updated and the code waits for the
      * new RemoteViews from the provider.
+     *
+     * @param portraitSize Size of the view in portrait mode.
+     * @param landscapeSize Size of the view in landscape. If null, the portrait and landscape sizes
+     *   will be set to be such that portrait is narrower than tall and the landscape wider than
+     *   tall.
+     * @param updateRemoteViews If the host is already started and this is true, the provider will
+     *   be called to get a new set of RemoteViews for the new sizes.
      */
-    fun setSizes(portraitSize: DpSize, landscapeSize: DpSize, updateRemoteViews: Boolean = true) {
-        mLandscapeSize = landscapeSize
-        mPortraitSize = portraitSize
-        mScenario.onActivity {
-            mHostView.setSizes(portraitSize, landscapeSize)
+    fun setSizes(
+        portraitSize: DpSize,
+        landscapeSize: DpSize? = null,
+        updateRemoteViews: Boolean = true
+    ) {
+        val (portrait, landscape) = if (landscapeSize != null) {
+            portraitSize to landscapeSize
+        } else {
+            if (portraitSize.width < portraitSize.height) {
+                portraitSize to DpSize(portraitSize.height, portraitSize.width)
+            } else {
+                DpSize(portraitSize.height, portraitSize.width) to portraitSize
+            }
         }
+        mLandscapeSize = landscape
+        mPortraitSize = portrait
+        if (!mHostStarted) return
 
-        if (updateRemoteViews) {
-            runAndWaitForChildren {
-                mHostView.resetRemoteViewsLatch()
-                AppWidgetManager.getInstance(mContext).updateAppWidgetOptions(
-                    mAppWidgetId,
-                    optionsBundleOf(portraitSize, landscapeSize)
-                )
-                mHostView.waitForRemoteViews()
+        val hostView = mMaybeHostView
+        if (hostView != null) {
+            mScenario.onActivity {
+                hostView.setSizes(portrait, landscape)
+            }
+
+            if (updateRemoteViews) {
+                runAndWaitForChildren {
+                    hostView.resetRemoteViewsLatch()
+                    AppWidgetManager.getInstance(mContext).updateAppWidgetOptions(
+                        mAppWidgetId,
+                        optionsBundleOf(listOf(portrait, landscape))
+                    )
+                    hostView.waitForRemoteViews()
+                }
             }
         }
     }
@@ -165,12 +218,13 @@ class AppWidgetHostRule(
         run: () -> Unit = {},
         test: () -> Boolean
     ) {
+        val hostView = mHostView
         val latch = CountDownLatch(1)
         val onDrawListener = ViewTreeObserver.OnDrawListener {
-            if (mHostView.childCount > 0 && test()) latch.countDown()
+            if (hostView.childCount > 0 && test()) latch.countDown()
         }
         mActivityRule.scenario.onActivity {
-            mHostView.viewTreeObserver.addOnDrawListener(onDrawListener)
+            hostView.viewTreeObserver.addOnDrawListener(onDrawListener)
         }
 
         run()
@@ -186,7 +240,7 @@ class AppWidgetHostRule(
         } finally {
             latch.countDown() // make sure it's released in all conditions
             mActivityRule.scenario.onActivity {
-                mHostView.viewTreeObserver.removeOnDrawListener(onDrawListener)
+                hostView.viewTreeObserver.removeOnDrawListener(onDrawListener)
             }
         }
     }

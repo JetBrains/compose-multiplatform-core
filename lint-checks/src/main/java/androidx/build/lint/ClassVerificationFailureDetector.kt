@@ -60,6 +60,7 @@ import org.jetbrains.uast.UThisExpression
 import org.jetbrains.uast.getContainingUClass
 import org.jetbrains.uast.getContainingUMethod
 import org.jetbrains.uast.java.JavaUAnnotation
+import org.jetbrains.uast.java.JavaUQualifiedReferenceExpression
 import org.jetbrains.uast.java.JavaUSimpleNameReferenceExpression
 import org.jetbrains.uast.util.isConstructorCall
 import org.jetbrains.uast.util.isMethodCall
@@ -485,28 +486,33 @@ class ClassVerificationFailureDetector : Detector(), SourceCodeScanner {
             location: Location
         ) {
             call ?: return
+            var classUnderInspection: UClass? = call.getContainingUClass() ?: return
 
-            if (call.getContainingUClass() == null) {
-                // Can't verify if containing class is annotated with @RequiresApi
-                return
-            }
-            val potentialRequiresApiVersion = getRequiresApiFromAnnotations(
-                call.getContainingUClass()!!.javaPsi
-            )
-            if (potentialRequiresApiVersion == NO_API_REQUIREMENT ||
-                api > potentialRequiresApiVersion
-            ) {
-                val containingClassName = call.getContainingUClass()!!.qualifiedName.toString()
-                val fix = createLintFix(method, call, api)
-
-                context.report(
-                    ISSUE, reference, location,
-                    "This call references a method added in API level $api; however, the " +
-                        "containing class $containingClassName is reachable from earlier API " +
-                        "levels and will fail run-time class verification.",
-                    fix,
+            // Walk up class hierarchy to find if there is any RequiresApi annotation that fulfills
+            // the API requirements
+            while (classUnderInspection != null) {
+                val potentialRequiresApiVersion = getRequiresApiFromAnnotations(
+                    classUnderInspection.javaPsi
                 )
+
+                if (potentialRequiresApiVersion >= api) {
+                    return
+                }
+
+                classUnderInspection = classUnderInspection.getContainingUClass()
             }
+
+            // call.getContainingUClass()!! refers to the direct parent class of this method
+            val containingClassName = call.getContainingUClass()!!.qualifiedName.toString()
+            val fix = createLintFix(method, call, api)
+
+            context.report(
+                ISSUE, reference, location,
+                "This call references a method added in API level $api; however, the " +
+                    "containing class $containingClassName is reachable from earlier API " +
+                    "levels and will fail run-time class verification.",
+                fix,
+            )
         }
 
         /**
@@ -651,17 +657,22 @@ class ClassVerificationFailureDetector : Detector(), SourceCodeScanner {
                 unwrappedCallReceiver = unwrappedCallReceiver.expression
             }
 
-            val isStatic = context.evaluator.isStatic(method)
-            val isConstructor = method.isConstructor
-            val isSimpleReference = unwrappedCallReceiver is JavaUSimpleNameReferenceExpression
-
             val callReceiverStr = when {
-                isStatic -> null
-                isConstructor -> null
-                isSimpleReference ->
-                    (unwrappedCallReceiver as JavaUSimpleNameReferenceExpression).identifier
+                // Static method
+                context.evaluator.isStatic(method) ->
+                    null
+                // Constructor
+                method.isConstructor ->
+                    null
+                // Simple reference
+                unwrappedCallReceiver is JavaUSimpleNameReferenceExpression ->
+                    unwrappedCallReceiver.identifier
+                // Qualified reference
+                unwrappedCallReceiver is JavaUQualifiedReferenceExpression ->
+                    "${unwrappedCallReceiver.receiver}.${unwrappedCallReceiver.selector}"
                 else -> {
-                    // We don't know how to handle this type of receiver. This should never happen.
+                    // We don't know how to handle this type of receiver. If this happens a lot, we
+                    // might try returning `UElement.asSourceString()` by default.
                     return null
                 }
             }

@@ -17,11 +17,11 @@
 package androidx.navigation.compose
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.ui.window.Dialog
-import androidx.lifecycle.Lifecycle
 import androidx.navigation.compose.DialogNavigator.Destination
 
 /**
@@ -33,10 +33,10 @@ import androidx.navigation.compose.DialogNavigator.Destination
 public fun DialogHost(dialogNavigator: DialogNavigator) {
     val saveableStateHolder = rememberSaveableStateHolder()
     val dialogBackStack by dialogNavigator.backStack.collectAsState()
+    val visibleBackStack = rememberVisibleList(dialogBackStack)
+    visibleBackStack.PopulateVisibleList(dialogBackStack)
 
-    dialogBackStack.filter { backStackEntry ->
-        backStackEntry.lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)
-    }.forEach { backStackEntry ->
+    visibleBackStack.forEach { backStackEntry ->
         val destination = backStackEntry.destination as Destination
         Dialog(
             onDismissRequest = { dialogNavigator.dismiss(backStackEntry) },
@@ -46,6 +46,12 @@ public fun DialogHost(dialogNavigator: DialogNavigator) {
             // ViewModelStoreOwner and LifecycleOwner
             backStackEntry.LocalOwnersProvider(saveableStateHolder) {
                 destination.content(backStackEntry)
+            }
+
+            DisposableEffect(backStackEntry) {
+                onDispose {
+                    dialogNavigator.onTransitionComplete(backStackEntry)
+                }
             }
         }
     }

@@ -35,14 +35,21 @@ actual data class PointerEvent internal constructor(
     actual val changes: List<PointerInputChange>,
 
     /**
-     * Original raw native event from AWT
+     * Original raw native event from AWT.
+     *
+     * Note, that its type can be different from [type], which is sent by Compose.
+     * For example, Compose can send synthetic Move event on relayout,
+     * but [mouseEvent] will tell that it is Up event
      */
     val mouseEvent: MouseEvent?
 ) {
     internal actual constructor(
         changes: List<PointerInputChange>,
         internalPointerEvent: InternalPointerEvent?
-    ) : this(changes, internalPointerEvent?.mouseEvent) {
+    ) : this(
+        changes,
+        internalPointerEvent?.mouseEvent
+    ) {
         this.type = internalPointerEvent?.type ?: PointerEventType.Unknown
     }
 
@@ -53,7 +60,10 @@ actual data class PointerEvent internal constructor(
     /**
      * @param changes The changes.
      */
-    actual constructor(changes: List<PointerInputChange>) : this(changes, mouseEvent = null)
+    actual constructor(changes: List<PointerInputChange>) : this(
+        changes,
+        mouseEvent = null
+    )
 
     actual var type: PointerEventType = PointerEventType.Unknown
         internal set

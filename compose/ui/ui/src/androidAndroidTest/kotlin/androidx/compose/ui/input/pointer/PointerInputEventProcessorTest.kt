@@ -3025,6 +3025,8 @@ class PointerInputEventProcessorTest {
             MotionEvent.BUTTON_FORWARD to ButtonValidation(4, forward = true),
             MotionEvent.BUTTON_PRIMARY or MotionEvent.BUTTON_TERTIARY to
                 ButtonValidation(0, 2, primary = true, tertiary = true),
+            MotionEvent.BUTTON_BACK or MotionEvent.BUTTON_STYLUS_PRIMARY to
+                ButtonValidation(0, 3, primary = true, back = true),
             0 to ButtonValidation(anyPressed = false)
         )
 
@@ -3215,6 +3217,8 @@ private class TestOwner : Owner {
         get() = Density(1f)
     override val textInputService: TextInputService
         get() = TODO("Not yet implemented")
+    override val pointerIconService: PointerIconService
+        get() = TODO("Not yet implemented")
     override val focusManager: FocusManager
         get() = TODO("Not yet implemented")
     override val windowInfo: WindowInfo
@@ -3247,8 +3251,12 @@ private class TestOwner : Owner {
     override fun calculateLocalPosition(positionInWindow: Offset): Offset =
         positionInWindow - position.toOffset()
 
-    override fun measureAndLayout() {
+    override fun measureAndLayout(sendPointerUpdate: Boolean) {
         delegate.measureAndLayout()
+    }
+
+    override fun forceMeasureTheSubtree(layoutNode: LayoutNode) {
+        delegate.forceMeasureTheSubtree(layoutNode)
     }
 
     override fun createLayer(

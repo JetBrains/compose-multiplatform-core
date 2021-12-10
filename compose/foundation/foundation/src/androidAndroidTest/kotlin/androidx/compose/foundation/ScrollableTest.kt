@@ -17,7 +17,9 @@
 package androidx.compose.foundation
 
 import androidx.compose.animation.core.keyframes
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.gestures.FlingBehavior
+import androidx.compose.foundation.gestures.ModifierLocalScrollableContainer
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.ScrollScope
 import androidx.compose.foundation.gestures.ScrollableState
@@ -41,6 +43,8 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollDispatcher
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.modifier.ModifierLocalConsumer
+import androidx.compose.ui.modifier.ModifierLocalReadScope
 import androidx.compose.ui.platform.InspectableValue
 import androidx.compose.ui.platform.isDebugInspectorInfoEnabled
 import androidx.compose.ui.platform.testTag
@@ -57,6 +61,7 @@ import androidx.test.filters.LargeTest
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import org.junit.After
@@ -377,6 +382,61 @@ class ScrollableTest {
         }
         val expected = prevAfterSomeFling + 115
         assertThat(total).isEqualTo(expected)
+    }
+
+    @Test
+    fun scrollable_blocksDownEvents_ifFlingingCaught() {
+        rule.mainClock.autoAdvance = false
+        var total = 0f
+        val controller = ScrollableState(
+            consumeScrollDelta = {
+                total += it
+                it
+            }
+        )
+        rule.setContent {
+            Box {
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .size(300.dp)
+                        .scrollable(
+                            orientation = Orientation.Horizontal,
+                            state = controller
+                        )
+                ) {
+                    Box(
+                        modifier = Modifier.size(300.dp)
+                            .testTag(scrollableBoxTag)
+                            .clickable {
+                                assertWithMessage("Clickable shouldn't click when fling caught")
+                                    .fail()
+                            }
+                    )
+                }
+            }
+        }
+        rule.onNodeWithTag(scrollableBoxTag).performTouchInput {
+            swipeWithVelocity(
+                start = this.center,
+                end = Offset(this.center.x + 200f, this.center.y),
+                durationMillis = 100,
+                endVelocity = 4000f
+            )
+        }
+        assertThat(total).isGreaterThan(0f)
+        val prev = total
+        // pump frames twice to start fling animation
+        rule.mainClock.advanceTimeByFrame()
+        rule.mainClock.advanceTimeByFrame()
+        val prevAfterSomeFling = total
+        assertThat(prevAfterSomeFling).isGreaterThan(prev)
+        // don't advance main clock anymore since we're in the middle of the fling. Now interrupt
+        rule.onNodeWithTag(scrollableBoxTag).performTouchInput {
+            down(this.center)
+            up()
+        }
+        // shouldn't assert in clickable lambda
     }
 
     @Test
@@ -1353,6 +1413,56 @@ class ScrollableTest {
     }
 
     @Test
+    fun scrollable_setsModifierLocalScrollableContainer() {
+        val controller = ScrollableState { it }
+
+        var isOuterInScrollableContainer: Boolean? = null
+        var isInnerInScrollableContainer: Boolean? = null
+        rule.setContent {
+            Box {
+                Box(
+                    modifier = Modifier
+                        .testTag(scrollableBoxTag)
+                        .size(100.dp)
+                        .then(
+                            object : ModifierLocalConsumer {
+                                override fun onModifierLocalsUpdated(
+                                    scope: ModifierLocalReadScope
+                                ) {
+                                    with(scope) {
+                                        isOuterInScrollableContainer =
+                                            ModifierLocalScrollableContainer.current
+                                    }
+                                }
+                            }
+                        )
+                        .scrollable(
+                            state = controller,
+                            orientation = Orientation.Horizontal
+                        )
+                        .then(
+                            object : ModifierLocalConsumer {
+                                override fun onModifierLocalsUpdated(
+                                    scope: ModifierLocalReadScope
+                                ) {
+                                    with(scope) {
+                                        isInnerInScrollableContainer =
+                                            ModifierLocalScrollableContainer.current
+                                    }
+                                }
+                            }
+                        )
+                )
+            }
+        }
+
+        rule.runOnIdle {
+            assertThat(isOuterInScrollableContainer).isFalse()
+            assertThat(isInnerInScrollableContainer).isTrue()
+        }
+    }
+
+    @Test
     fun scrollable_scrollByWorksWithRepeatableAnimations() {
         rule.mainClock.autoAdvance = false
 
@@ -1428,6 +1538,176 @@ class ScrollableTest {
         rule.runOnIdle {
             // third animation finished
             assertThat(total).isEqualTo(100)
+        }
+    }
+
+    @Test
+    fun scrollable_cancellingAnimateScrollUpdatesIsScrollInProgress() {
+        rule.mainClock.autoAdvance = false
+
+        var total = 0f
+        val controller = ScrollableState(
+            consumeScrollDelta = {
+                total += it
+                it
+            }
+        )
+        rule.setContentAndGetScope {
+            Box(
+                modifier = Modifier
+                    .size(100.dp).scrollable(
+                        state = controller,
+                        orientation = Orientation.Horizontal
+                    )
+            )
+        }
+
+        lateinit var animateJob: Job
+
+        rule.runOnIdle {
+            animateJob = scope.launch {
+                controller.animateScrollBy(
+                    100f,
+                    tween(1000)
+                )
+            }
+        }
+
+        rule.mainClock.advanceTimeBy(500)
+        rule.runOnIdle {
+            assertThat(controller.isScrollInProgress).isTrue()
+        }
+
+        // Stop halfway through the animation
+        animateJob.cancel()
+
+        rule.runOnIdle {
+            assertThat(controller.isScrollInProgress).isFalse()
+        }
+    }
+
+    @Test
+    fun scrollable_preemptingAnimateScrollUpdatesIsScrollInProgress() {
+        rule.mainClock.autoAdvance = false
+
+        var total = 0f
+        val controller = ScrollableState(
+            consumeScrollDelta = {
+                total += it
+                it
+            }
+        )
+        rule.setContentAndGetScope {
+            Box(
+                modifier = Modifier
+                    .size(100.dp).scrollable(
+                        state = controller,
+                        orientation = Orientation.Horizontal
+                    )
+            )
+        }
+
+        rule.runOnIdle {
+            scope.launch {
+                controller.animateScrollBy(
+                    100f,
+                    tween(1000)
+                )
+            }
+        }
+
+        rule.mainClock.advanceTimeBy(500)
+        rule.runOnIdle {
+            assertThat(total).isGreaterThan(0f)
+            assertThat(total).isLessThan(100f)
+            assertThat(controller.isScrollInProgress).isTrue()
+            scope.launch {
+                controller.animateScrollBy(
+                    -100f,
+                    tween(1000)
+                )
+            }
+        }
+
+        rule.runOnIdle {
+            assertThat(controller.isScrollInProgress).isTrue()
+        }
+
+        rule.mainClock.advanceTimeBy(1000)
+        rule.mainClock.advanceTimeByFrame()
+
+        rule.runOnIdle {
+            assertThat(total).isGreaterThan(-75f)
+            assertThat(total).isLessThan(0f)
+            assertThat(controller.isScrollInProgress).isFalse()
+        }
+    }
+
+    @Test
+    fun scrollable_multiDirectionsShouldPropagateOrthogonalAxisToNextParentWithSameDirection() {
+        var innerDelta = 0f
+        var middleDelta = 0f
+        var outerDelta = 0f
+
+        val outerStateController = ScrollableState {
+            outerDelta += it
+            it
+        }
+
+        val middleController = ScrollableState {
+            middleDelta += it
+            it / 2
+        }
+
+        val innerController = ScrollableState {
+            innerDelta += it
+            it / 2
+        }
+
+        rule.setContentAndGetScope {
+            Box(
+                modifier = Modifier
+                    .testTag("outerScrollable")
+                    .size(300.dp)
+                    .scrollable(
+                        outerStateController,
+                        orientation = Orientation.Horizontal
+                    )
+
+            ) {
+                Box(
+                    modifier = Modifier
+                        .testTag("middleScrollable")
+                        .size(300.dp)
+                        .scrollable(
+                            middleController,
+                            orientation = Orientation.Vertical
+                        )
+
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .testTag("innerScrollable")
+                            .size(300.dp)
+                            .scrollable(
+                                innerController,
+                                orientation = Orientation.Horizontal
+                            )
+                    )
+                }
+            }
+        }
+
+        rule.onNodeWithTag("innerScrollable").performTouchInput {
+            down(center)
+            moveBy(Offset(this.center.x + 100f, this.center.y))
+            up()
+        }
+
+        rule.runOnIdle {
+            assertThat(innerDelta).isGreaterThan(0)
+            assertThat(middleDelta).isEqualTo(0)
+            assertThat(outerDelta).isEqualTo(innerDelta / 2f)
         }
     }
 

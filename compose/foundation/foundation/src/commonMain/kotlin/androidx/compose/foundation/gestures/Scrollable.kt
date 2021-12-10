@@ -20,19 +20,22 @@ import androidx.compose.animation.core.AnimationState
 import androidx.compose.animation.core.DecayAnimationSpec
 import androidx.compose.animation.core.animateDecay
 import androidx.compose.animation.rememberSplineBasedDecay
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.MutatePriority
 import androidx.compose.foundation.gestures.Orientation.Horizontal
 import androidx.compose.foundation.gestures.Orientation.Vertical
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.relocation.BringIntoViewResponder
+import androidx.compose.foundation.relocation.BringIntoViewResponder.Companion.ModifierLocalBringIntoViewResponder
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollDispatcher
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
@@ -40,10 +43,16 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollSource.Companion.Drag
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource.Companion.Fling
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.pointer.PointerType
-import androidx.compose.ui.layout.onRelocationRequest
+import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.OnGloballyPositionedModifier
+import androidx.compose.ui.modifier.ModifierLocalConsumer
+import androidx.compose.ui.modifier.ModifierLocalProvider
+import androidx.compose.ui.modifier.ModifierLocalReadScope
+import androidx.compose.ui.modifier.modifierLocalOf
 import androidx.compose.ui.platform.debugInspectorInfo
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.toSize
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlin.math.abs
 
@@ -107,15 +116,21 @@ internal fun Modifier.scrollable(
         properties["interactionSource"] = interactionSource
     },
     factory = {
-        val overscrollModifier =
-            if (overScrollController != null) {
-                Modifier.overScroll(overScrollController)
-            } else {
-                Modifier
-            }
+        val overscrollModifier = overScrollController?.let { Modifier.overScroll(it) } ?: Modifier
+        val bringIntoViewModifier = remember(orientation, state, reverseDirection) {
+            BringIntoViewResponder(orientation, state, reverseDirection)
+        }
 
         fun Float.reverseIfNeeded(): Float = if (reverseDirection) this * -1 else this
-        relocationScrollable(state, orientation, reverseDirection)
+
+        val scrollableContainerProvider = if (enabled) {
+            ModifierLocalScrollableContainerProvider
+        } else {
+            Modifier
+        }
+
+        Modifier
+            .then(bringIntoViewModifier)
             .then(overscrollModifier)
             .touchScrollable(
                 interactionSource,
@@ -129,6 +144,7 @@ internal fun Modifier.scrollable(
             .mouseScrollable(orientation) {
                 state.dispatchRawDelta(it.reverseIfNeeded())
             }
+            .then(scrollableContainerProvider)
     }
 )
 
@@ -230,29 +246,35 @@ private class ScrollingLogic(
 
     fun Float.reverseIfNeeded(): Float = if (reverseDirection) this * -1 else this
 
+    fun Offset.reverseIfNeeded(): Offset = if (reverseDirection) this * -1f else this
+
     fun ScrollScope.dispatchScroll(
-        scrollDelta: Float,
+        scrollDelta: Offset,
         pointerPosition: Offset?,
         source: NestedScrollSource
-    ): Float {
+    ): Offset {
         val overScrollPreConsumed =
             overScrollController
-                ?.consumePreScroll(scrollDelta.toOffset(), pointerPosition, source)
-                ?.toFloat()
-                ?: 0f
+                ?.consumePreScroll(scrollDelta, pointerPosition, source)
+                ?: Offset.Zero
+
         val afterPreOverscroll = scrollDelta - overScrollPreConsumed
         val nestedScrollDispatcher = nestedScrollDispatcher.value
         val preConsumedByParent = nestedScrollDispatcher
-            .dispatchPreScroll(afterPreOverscroll.toOffset(), source)
+            .dispatchPreScroll(afterPreOverscroll, source)
 
-        val scrollAvailable = afterPreOverscroll - preConsumedByParent.toFloat()
-        val consumed = scrollBy(scrollAvailable.reverseIfNeeded()).reverseIfNeeded()
-        val leftForParent = scrollAvailable - consumed
+        val scrollAvailable = afterPreOverscroll - preConsumedByParent
+
+        // Consume on a single axis
+        val axisConsumed =
+            scrollBy(scrollAvailable.reverseIfNeeded().toFloat()).toOffset().reverseIfNeeded()
+
+        val leftForParent = scrollAvailable - axisConsumed
         val parentConsumed = nestedScrollDispatcher
-            .dispatchPostScroll(consumed.toOffset(), leftForParent.toOffset(), source)
+            .dispatchPostScroll(axisConsumed, leftForParent, source)
         overScrollController?.consumePostScroll(
-            scrollAvailable.toOffset(),
-            (leftForParent - parentConsumed.toFloat()).toOffset(),
+            scrollAvailable,
+            (leftForParent - parentConsumed),
             pointerPosition,
             source
         )
@@ -286,13 +308,13 @@ private class ScrollingLogic(
     suspend fun doFlingAnimation(available: Velocity): Velocity {
         var result: Velocity = available
         scrollableState.scroll {
-            val outerScopeScroll: (Float) -> Float = { delta ->
+            val outerScopeScroll: (Offset) -> Offset = { delta ->
                 val consumed = this.dispatchScroll(delta.reverseIfNeeded(), null, Fling)
                 delta - consumed.reverseIfNeeded()
             }
             val scope = object : ScrollScope {
                 override fun scrollBy(pixels: Float): Float {
-                    return outerScopeScroll.invoke(pixels)
+                    return outerScopeScroll.invoke(pixels.toOffset()).toFloat()
                 }
             }
             with(scope) {
@@ -320,7 +342,7 @@ private class ScrollDraggableState(
     override fun dragBy(pixels: Float, pointerPosition: Offset) {
         with(scrollLogic.value) {
             with(latestScrollScope) {
-                dispatchScroll(pixels, pointerPosition, Drag)
+                dispatchScroll(pixels.toOffset(), pointerPosition, Drag)
             }
         }
     }
@@ -397,31 +419,91 @@ private class DefaultFlingBehavior(
     }
 }
 
-@OptIn(ExperimentalComposeUiApi::class)
-private fun Modifier.relocationScrollable(
-    scrollableState: ScrollableState,
-    orientation: Orientation,
-    reverseDirection: Boolean = false
-): Modifier {
-    fun Float.reverseIfNeeded(): Float = if (reverseDirection) this * -1 else this
-    return this.onRelocationRequest(
-        onProvideDestination = { rect, layoutCoordinates ->
-            val size = layoutCoordinates.size.toSize()
-            when (orientation) {
-                Vertical ->
-                    rect.translate(0f, relocationDistance(rect.top, rect.bottom, size.height))
-                Horizontal ->
-                    rect.translate(relocationDistance(rect.left, rect.right, size.width), 0f)
+@OptIn(ExperimentalFoundationApi::class)
+private class BringIntoViewResponder(
+    private val orientation: Orientation,
+    private val scrollableState: ScrollableState,
+    private val reverseDirection: Boolean,
+) : ModifierLocalConsumer,
+    ModifierLocalProvider<BringIntoViewResponder>,
+    BringIntoViewResponder,
+    OnGloballyPositionedModifier {
+
+    private fun Float.reverseIfNeeded(): Float = if (reverseDirection) this * -1 else this
+
+    // Read the modifier local and save a reference to the parent.
+    private lateinit var parent: BringIntoViewResponder
+    override fun onModifierLocalsUpdated(scope: ModifierLocalReadScope) {
+        parent = scope.run { ModifierLocalBringIntoViewResponder.current }
+    }
+
+    // Populate the modifier local with this object.
+    override val key = ModifierLocalBringIntoViewResponder
+    override val value = this
+
+    // LayoutCoordinates of this item.
+    private lateinit var layoutCoordinates: LayoutCoordinates
+    override fun onGloballyPositioned(coordinates: LayoutCoordinates) {
+        layoutCoordinates = coordinates
+    }
+
+    override suspend fun bringIntoView(rect: Rect) {
+
+        val destRect = computeDestination(rect)
+
+        // For the item to be visible, if needs to be in the viewport of all its ancestors.
+        // Note: For now we run both of these in parallel, but in the future we could make this
+        // configurable. (The child relocation could be executed before the parent, or parent
+        // before the child).
+        coroutineScope {
+            // Bring the requested Child into this parent's view.
+            launch {
+                performBringIntoView(rect, destRect)
             }
-        },
-        onPerformRelocation = { source, destination ->
-            val offset = when (orientation) {
-                Vertical -> source.top - destination.top
-                Horizontal -> source.left - destination.left
+
+            // If the parent is another BringIntoViewResponder, call bringIntoView.
+            launch {
+                parent.bringIntoView(
+                    parent.toLocalRect(destRect, this@BringIntoViewResponder.layoutCoordinates)
+                )
             }
-            scrollableState.animateScrollBy(offset.reverseIfNeeded())
         }
-    )
+    }
+
+    override fun toLocalRect(rect: Rect, layoutCoordinates: LayoutCoordinates): Rect {
+        // Translate the supplied layout coordinates into the coordinate system of this parent.
+        val parentBoundingBox = this.layoutCoordinates.localBoundingBoxOf(layoutCoordinates, false)
+
+        // Translate the rect to this parent's local coordinates.
+        return rect.translate(parentBoundingBox.topLeft)
+    }
+
+    /**
+     * Compute the destination given the source rectangle and current bounds.
+     *
+     * @param source The bounding box of the item that sent the request to be brought into view.
+     * @return the destination rectangle.
+     */
+    fun computeDestination(source: Rect): Rect {
+        val size = layoutCoordinates.size.toSize()
+        return when (orientation) {
+            Vertical ->
+                source.translate(0f, relocationDistance(source.top, source.bottom, size.height))
+            Horizontal ->
+                source.translate(relocationDistance(source.left, source.right, size.width), 0f)
+        }
+    }
+
+    /**
+     * Using the source and destination bounds, perform an animated scroll.
+     */
+    suspend fun performBringIntoView(source: Rect, destination: Rect) {
+        val offset = when (orientation) {
+            Vertical -> source.top - destination.top
+            Horizontal -> source.left - destination.left
+        }
+        scrollableState.animateScrollBy(offset.reverseIfNeeded())
+    }
 }
 
 // Calculate the offset needed to bring one of the edges into view. The leadingEdge is the side
@@ -438,4 +520,16 @@ private fun relocationDistance(leadingEdge: Float, trailingEdge: Float, parentSi
     // Find the minimum scroll needed to make one of the edges coincide with the parent's edge.
     abs(leadingEdge) < abs(trailingEdge - parentSize) -> leadingEdge
     else -> trailingEdge - parentSize
+}
+
+// TODO: b/203141462 - make this public and move it to ui
+/**
+ * Whether this modifier is inside a scrollable container, provided by [Modifier.scrollable].
+ * Defaults to false.
+ */
+internal val ModifierLocalScrollableContainer = modifierLocalOf { false }
+
+private object ModifierLocalScrollableContainerProvider : ModifierLocalProvider<Boolean> {
+    override val key = ModifierLocalScrollableContainer
+    override val value = true
 }

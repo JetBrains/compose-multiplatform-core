@@ -28,6 +28,7 @@ import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.graphics.Bitmap;
 import android.graphics.ImageFormat;
+import android.graphics.Matrix;
 import android.graphics.Rect;
 import android.provider.MediaStore;
 import android.util.Rational;
@@ -86,6 +87,7 @@ import java.util.concurrent.atomic.AtomicReference;
 public class ImageCaptureTest {
     private CameraUseCaseAdapter mCameraUseCaseAdapter;
     private final Instrumentation mInstrumentation = InstrumentationRegistry.getInstrumentation();
+    private Matrix mSensorToBufferTransformMatrix;
 
     @Before
     public void setup() {
@@ -103,6 +105,9 @@ public class ImageCaptureTest {
                 new LinkedHashSet<>(Collections.singleton(fakeCamera)),
                 fakeCameraDeviceSurfaceManager,
                 useCaseConfigFactory);
+
+        mSensorToBufferTransformMatrix = new Matrix();
+        mSensorToBufferTransformMatrix.setScale(10, 10);
     }
 
     @Test
@@ -216,9 +221,23 @@ public class ImageCaptureTest {
     }
 
     @Test
-    public void captureWithCropAspectRatioByImageSavedCallback_jpegQualityIs100() {
+    public void captureWithCropAspectRatioByImageSavedCallbackAndMinLatencyMode_jpegQualityIs95() {
         int jpegQuality = 50;
-        ImageCapture imageCapture = new ImageCapture.Builder().setJpegQuality(jpegQuality).build();
+        ImageCapture imageCapture = new ImageCapture.Builder()
+                .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
+                .setJpegQuality(jpegQuality).build();
+        imageCapture.setCropAspectRatio(new Rational(1, 1));
+        List<CaptureConfig> captureConfigs = captureImage(imageCapture,
+                ImageCapture.OnImageSavedCallback.class);
+        assertThat(hasJpegQuality(captureConfigs, 95)).isTrue();
+    }
+
+    @Test
+    public void captureWithCropAspectRatioByImageSavedCallbackAndMaxQualityMode_jpegQualityIs100() {
+        int jpegQuality = 50;
+        ImageCapture imageCapture = new ImageCapture.Builder()
+                .setCaptureMode(ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY)
+                .setJpegQuality(jpegQuality).build();
         imageCapture.setCropAspectRatio(new Rational(1, 1));
         List<CaptureConfig> captureConfigs = captureImage(imageCapture,
                 ImageCapture.OnImageSavedCallback.class);
@@ -236,11 +255,26 @@ public class ImageCaptureTest {
     }
 
     @Test
-    public void captureWithViewPortByImageSavedCallback_jpegQualityIs100() {
+    public void captureWithViewPortByImageSavedCallbackAndMinLatencyMode_jpegQualityIs95() {
         mCameraUseCaseAdapter.setViewPort(new ViewPort.Builder(new Rational(1, 1),
                 Surface.ROTATION_0).build());
         int jpegQuality = 50;
-        ImageCapture imageCapture = new ImageCapture.Builder().setJpegQuality(jpegQuality).build();
+        ImageCapture imageCapture = new ImageCapture.Builder()
+                .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
+                .setJpegQuality(jpegQuality).build();
+        List<CaptureConfig> captureConfigs = captureImage(imageCapture,
+                ImageCapture.OnImageSavedCallback.class);
+        assertThat(hasJpegQuality(captureConfigs, 95)).isTrue();
+    }
+
+    @Test
+    public void captureWithViewPortByImageSavedCallbackAndMaxQualityMode_jpegQualityIs100() {
+        mCameraUseCaseAdapter.setViewPort(new ViewPort.Builder(new Rational(1, 1),
+                Surface.ROTATION_0).build());
+        int jpegQuality = 50;
+        ImageCapture imageCapture = new ImageCapture.Builder()
+                .setCaptureMode(ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY)
+                .setJpegQuality(jpegQuality).build();
         List<CaptureConfig> captureConfigs = captureImage(imageCapture,
                 ImageCapture.OnImageSavedCallback.class);
         assertThat(hasJpegQuality(captureConfigs, 100)).isTrue();
@@ -355,6 +389,7 @@ public class ImageCaptureTest {
                 /*jpegQuality*/100,
                 /*targetRatio*/ null,
                 /*viewPortCropRect*/ new Rect(0, 0, 2, 1),
+                mSensorToBufferTransformMatrix,
                 CameraXExecutors.mainThreadExecutor(),
                 new ImageCapture.OnImageCapturedCallback() {
                     @Override
@@ -373,6 +408,8 @@ public class ImageCaptureTest {
         // Assert: that the rotation is 0 and the crop rect has been updated.
         assertThat(imageProxyReference.get().getImageInfo().getRotationDegrees()).isEqualTo(0);
         assertThat(imageProxyReference.get().getCropRect()).isEqualTo(new Rect(3, 0, 4, 2));
+        assertThat(imageProxyReference.get().getImageInfo()
+                .getSensorToBufferTransformMatrix()).isEqualTo(mSensorToBufferTransformMatrix);
     }
 
     /**

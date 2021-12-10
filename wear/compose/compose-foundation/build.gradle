@@ -25,28 +25,26 @@ plugins {
     id("AndroidXComposePlugin")
 }
 
-def compose_version = '1.1.0-beta01'
-
 AndroidXComposePlugin.applyAndConfigureKotlinPlugin(project)
 
 dependencies {
     kotlinPlugin(project(":compose:compiler:compiler"))
 
     if(!AndroidXComposePlugin.isMultiplatformEnabled(project)) {
-        api("androidx.compose.foundation:foundation:$compose_version")
-        api("androidx.compose.ui:ui:$compose_version")
-        api("androidx.compose.ui:ui-text:$compose_version")
-        api("androidx.compose.runtime:runtime:$compose_version")
+        api("androidx.compose.foundation:foundation:1.1.0-rc01")
+        api("androidx.compose.ui:ui:1.1.0-rc01")
+        api("androidx.compose.ui:ui-text:1.1.0-rc01")
+        api("androidx.compose.runtime:runtime:1.1.0-rc01")
 
         implementation(libs.kotlinStdlib)
-        implementation("androidx.compose.foundation:foundation-layout:$compose_version")
+        implementation("androidx.compose.foundation:foundation-layout:1.1.0-rc01")
 
         testImplementation(libs.testRules)
         testImplementation(libs.testRunner)
         testImplementation(libs.junit)
 
-        androidTestImplementation("androidx.compose.ui:ui-test:$compose_version")
-        androidTestImplementation("androidx.compose.ui:ui-test-junit4:$compose_version")
+        androidTestImplementation(project(":compose:ui:ui-test"))
+        androidTestImplementation(project(":compose:ui:ui-test-junit4"))
         androidTestImplementation(project(":compose:test-utils"))
         androidTestImplementation(libs.testRunner)
 

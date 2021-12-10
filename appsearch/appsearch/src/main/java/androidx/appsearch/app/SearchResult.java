@@ -20,6 +20,7 @@ import android.os.Bundle;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresFeature;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.exceptions.AppSearchException;
 import androidx.core.util.ObjectsCompat;
@@ -424,12 +425,17 @@ public final class SearchResult {
          * <p>Class example 2: for the first {@link MatchInfo}, this returns [0, 4] and, for the
          * second {@link MatchInfo}, this returns [0, 4].
          *
+         * <!--@exportToFramework:ifJetpack()-->
          * <p>This information may not be available depending on the backend and Android API
-         * level. To ensure it is available, call {@link Capabilities#isSubmatchSupported}.
+         * level. To ensure it is available, call {@link Features#isFeatureSupported}.
          *
-         * @throws UnsupportedOperationException if {@link Capabilities#isSubmatchSupported} is
+         * @throws UnsupportedOperationException if {@link Features#isFeatureSupported} is
          * false.
+         * <!--@exportToFramework:else()-->
          */
+        @RequiresFeature(
+                enforcement = "androidx.appsearch.app.Features#isFeatureSupported",
+                name = Features.SEARCH_RESULT_MATCH_INFO_SUBMATCH)
         @NonNull
         public MatchRange getSubmatchRange() {
             checkSubmatchSupported();
@@ -447,12 +453,17 @@ public final class SearchResult {
          * <p>Class example 2: for the first {@link MatchInfo}, this returns "Test" and, for the
          * second {@link MatchInfo}, this returns "Test".
          *
-         * This information may not be available depending on the backend and Android API level. To
-         * ensure it is available, call {@link Capabilities#isSubmatchSupported}.
+         * <!--@exportToFramework:ifJetpack()-->
+         * <p>This information may not be available depending on the backend and Android API
+         * level. To ensure it is available, call {@link Features#isFeatureSupported}.
          *
-         * @throws UnsupportedOperationException if {@link Capabilities#isSubmatchSupported} is
+         * @throws UnsupportedOperationException if {@link Features#isFeatureSupported} is
          * false.
+         * <!--@exportToFramework:else()-->
          */
+        @RequiresFeature(
+                enforcement = "androidx.appsearch.app.Features#isFeatureSupported",
+                name = Features.SEARCH_RESULT_MATCH_INFO_SUBMATCH)
         @NonNull
         public CharSequence getSubmatch() {
             checkSubmatchSupported();

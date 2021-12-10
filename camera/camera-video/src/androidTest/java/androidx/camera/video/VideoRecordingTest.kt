@@ -24,7 +24,7 @@ import android.os.Build
 import android.util.Log
 import android.util.Size
 import android.view.Surface
-import androidx.annotation.NonNull
+import androidx.camera.core.Camera
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
@@ -32,10 +32,8 @@ import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.ImageProxy
 import androidx.camera.core.Preview
-import androidx.camera.core.UseCase
 import androidx.camera.core.impl.utils.CameraOrientationUtil
 import androidx.camera.core.impl.utils.executor.CameraXExecutors
-import androidx.camera.core.internal.CameraUseCaseAdapter
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.testing.CameraUtil
 import androidx.camera.testing.SurfaceTextureProvider
@@ -58,6 +56,7 @@ import org.junit.runners.Parameterized
 import org.mockito.ArgumentCaptor.forClass
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.atLeastOnce
+import org.mockito.Mockito.inOrder
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.timeout
 import org.mockito.Mockito.verify
@@ -95,7 +94,7 @@ class VideoRecordingTest(
     private lateinit var lifecycleOwner: FakeLifecycleOwner
     private lateinit var preview: Preview
     private lateinit var cameraInfo: CameraInfo
-    private lateinit var cameraUseCaseAdapter: CameraUseCaseAdapter
+    private lateinit var camera: Camera
 
     private lateinit var latchForVideoSaved: CountDownLatch
     private lateinit var latchForVideoRecording: CountDownLatch
@@ -139,14 +138,17 @@ class VideoRecordingTest(
         cameraProvider = ProcessCameraProvider.getInstance(context).get()
         lifecycleOwner = FakeLifecycleOwner()
         lifecycleOwner.startAndResume()
-        cameraUseCaseAdapter = CameraUtil.createCameraUseCaseAdapter(context, cameraSelector)
-        cameraInfo = cameraUseCaseAdapter.cameraInfo
 
         // Add extra Preview to provide an additional surface for b/168187087.
         preview = Preview.Builder().build()
-        // Sets surface provider to preview
+
         instrumentation.runOnMainSync {
+            // Sets surface provider to preview
             preview.setSurfaceProvider(getSurfaceProvider())
+
+            // Retrieves the target testing camera and camera info
+            camera = cameraProvider.bindToLifecycle(lifecycleOwner, cameraSelector)
+            cameraInfo = camera.cameraInfo
         }
     }
 
@@ -204,11 +206,11 @@ class VideoRecordingTest(
             }
 
             val recorder = Recorder.Builder()
-                .setQualitySelector(QualitySelector.of(quality)).build()
+                .setQualitySelector(QualitySelector.from(quality)).build()
 
             val videoCapture = VideoCapture.withOutput(recorder)
 
-            if (!checkUseCasesCombinationSupported(preview, videoCapture)) {
+            if (!camera.isUseCasesCombinationSupported(preview, videoCapture)) {
                 Log.e(TAG, "The UseCase combination is not supported for quality setting: $quality")
                 return@loop
             }
@@ -309,11 +311,7 @@ class VideoRecordingTest(
         // Act.
         videoCapture.output
             .prepareRecording(context, FileOutputOptions.Builder(file).build())
-            .withEventListener(
-                CameraXExecutors.directExecutor(),
-                mockListener
-            )
-            .start()
+            .start(CameraXExecutors.directExecutor(), mockListener)
 
         // Verify.
         verify(mockListener, timeout(1000L))
@@ -333,7 +331,7 @@ class VideoRecordingTest(
         // Pre-check and arrange
         val videoCapture = VideoCapture.withOutput(Recorder.Builder().build())
         val analysis = ImageAnalysis.Builder().build()
-        Assume.assumeTrue(checkUseCasesCombinationSupported(preview, videoCapture, analysis))
+        Assume.assumeTrue(camera.isUseCasesCombinationSupported(preview, videoCapture, analysis))
 
         val file = File.createTempFile("CameraX", ".tmp").apply { deleteOnExit() }
         latchForVideoSaved = CountDownLatch(1)
@@ -369,7 +367,13 @@ class VideoRecordingTest(
         // Pre-check and arrange
         val videoCapture = VideoCapture.withOutput(Recorder.Builder().build())
         val imageCapture = ImageCapture.Builder().build()
-        Assume.assumeTrue(checkUseCasesCombinationSupported(preview, videoCapture, imageCapture))
+        Assume.assumeTrue(
+            camera.isUseCasesCombinationSupported(
+                preview,
+                videoCapture,
+                imageCapture
+            )
+        )
 
         val videoFile = File.createTempFile("camerax-video", ".tmp").apply {
             deleteOnExit()
@@ -402,26 +406,180 @@ class VideoRecordingTest(
         imageFile.delete()
     }
 
+    @Test
+    fun canRecordMultipleFilesInARow() {
+        @Suppress("UNCHECKED_CAST")
+        val mockListener = mock(Consumer::class.java) as Consumer<VideoRecordEvent>
+        val videoCapture = VideoCapture.withOutput(Recorder.Builder().build())
+        instrumentation.runOnMainSync {
+            cameraProvider.bindToLifecycle(lifecycleOwner, cameraSelector, preview, videoCapture)
+        }
+        val file1 = File.createTempFile("CameraX", ".tmp").apply { deleteOnExit() }
+
+        var activeRecording =
+            videoCapture.output.prepareRecording(context, FileOutputOptions.Builder(file1).build())
+                .withAudioEnabled()
+                .start(CameraXExecutors.directExecutor(), mockListener)
+
+        val inOrder = inOrder(mockListener)
+        inOrder.verify(mockListener, timeout(1000L))
+            .accept(any(VideoRecordEvent.Start::class.java))
+        inOrder.verify(mockListener, timeout(15000L).atLeast(5))
+            .accept(any(VideoRecordEvent.Status::class.java))
+
+        activeRecording.stop()
+
+        inOrder.verify(mockListener, timeout(5000L))
+            .accept(any(VideoRecordEvent.Finalize::class.java))
+
+        val file2 = File.createTempFile("CameraX", ".tmp").apply { deleteOnExit() }
+
+        activeRecording =
+            videoCapture.output.prepareRecording(context, FileOutputOptions.Builder(file2).build())
+                .withAudioEnabled()
+                .start(CameraXExecutors.directExecutor(), mockListener)
+
+        inOrder.verify(mockListener, timeout(1000L))
+            .accept(any(VideoRecordEvent.Start::class.java))
+        inOrder.verify(mockListener, timeout(15000L).atLeast(5))
+            .accept(any(VideoRecordEvent.Status::class.java))
+
+        activeRecording.stop()
+
+        inOrder.verify(mockListener, timeout(5000L))
+            .accept(any(VideoRecordEvent.Finalize::class.java))
+
+        val file3 = File.createTempFile("CameraX", ".tmp").apply { deleteOnExit() }
+
+        activeRecording =
+            videoCapture.output.prepareRecording(context, FileOutputOptions.Builder(file3).build())
+                .withAudioEnabled()
+                .start(CameraXExecutors.directExecutor(), mockListener)
+
+        inOrder.verify(mockListener, timeout(1000L))
+            .accept(any(VideoRecordEvent.Start::class.java))
+        inOrder.verify(mockListener, timeout(15000L).atLeast(5))
+            .accept(any(VideoRecordEvent.Status::class.java))
+
+        activeRecording.stop()
+
+        inOrder.verify(mockListener, timeout(5000L))
+            .accept(any(VideoRecordEvent.Finalize::class.java))
+
+        verifyRecordingResult(file1, true)
+        verifyRecordingResult(file2, true)
+        verifyRecordingResult(file3, true)
+
+        file1.delete()
+        file2.delete()
+        file3.delete()
+    }
+
+    @Test
+    fun canStartNextRecordingPausedAfterFirstRecordingFinalized() {
+        @Suppress("UNCHECKED_CAST")
+        val mockListener = mock(Consumer::class.java) as Consumer<VideoRecordEvent>
+        val videoCapture = VideoCapture.withOutput(Recorder.Builder().build())
+        instrumentation.runOnMainSync {
+            cameraProvider.bindToLifecycle(lifecycleOwner, cameraSelector, preview, videoCapture)
+        }
+
+        val file1 = File.createTempFile("CameraX1", ".tmp").apply { deleteOnExit() }
+        val file2 = File.createTempFile("CameraX2", ".tmp").apply { deleteOnExit() }
+
+        // Start and stop a recording to ensure recorder is idling
+        val inOrder = inOrder(mockListener)
+        val activeRecording1 =
+            videoCapture.output.prepareRecording(context, FileOutputOptions.Builder(file1).build())
+                .withAudioEnabled()
+                .start(CameraXExecutors.directExecutor(), mockListener)
+
+        inOrder.verify(mockListener, timeout(1000L))
+            .accept(any(VideoRecordEvent.Start::class.java))
+
+        inOrder.verify(mockListener, timeout(15000L).atLeast(5))
+            .accept(any(VideoRecordEvent.Status::class.java))
+
+        activeRecording1.stop()
+
+        inOrder.verify(mockListener, timeout(5000L))
+            .accept(any(VideoRecordEvent.Finalize::class.java))
+
+        // First recording is now finalized. Try starting second recording paused.
+        val activeRecording2 =
+            videoCapture.output.prepareRecording(context, FileOutputOptions.Builder(file2).build())
+                .withAudioEnabled()
+                .start(CameraXExecutors.directExecutor(), mockListener)
+
+        activeRecording2.pause()
+
+        inOrder.verify(mockListener, timeout(1000L))
+            .accept(any(VideoRecordEvent.Start::class.java))
+
+        inOrder.verify(mockListener, timeout(1000L))
+            .accept(any(VideoRecordEvent.Pause::class.java))
+
+        activeRecording2.stop()
+
+        file1.delete()
+        file2.delete()
+    }
+
+    @Test
+    fun nextRecordingCanBeStartedAfterLastRecordingStopped() {
+        @Suppress("UNCHECKED_CAST")
+        val mockListener = mock(Consumer::class.java) as Consumer<VideoRecordEvent>
+        val videoCapture = VideoCapture.withOutput(Recorder.Builder().build())
+        instrumentation.runOnMainSync {
+            cameraProvider.bindToLifecycle(lifecycleOwner, cameraSelector, preview, videoCapture)
+        }
+        val file1 = File.createTempFile("CameraX1", ".tmp").apply { deleteOnExit() }
+        val file2 = File.createTempFile("CameraX2", ".tmp").apply { deleteOnExit() }
+
+        val inOrder = inOrder(mockListener)
+        try {
+            videoCapture.output.prepareRecording(context, FileOutputOptions.Builder(file1).build())
+                .start(CameraXExecutors.directExecutor(), mockListener).use {
+                    inOrder.verify(mockListener, timeout(1000L))
+                        .accept(any(VideoRecordEvent.Start::class.java))
+                    inOrder.verify(mockListener, timeout(15000L).atLeast(5))
+                        .accept(any(VideoRecordEvent.Status::class.java))
+                }
+
+            videoCapture.output.prepareRecording(context, FileOutputOptions.Builder(file2).build())
+                .start(CameraXExecutors.directExecutor(), mockListener).use {
+                    inOrder.verify(mockListener, timeout(5000L))
+                        .accept(any(VideoRecordEvent.Finalize::class.java))
+                    inOrder.verify(mockListener, timeout(1000L))
+                        .accept(any(VideoRecordEvent.Start::class.java))
+                    inOrder.verify(mockListener, timeout(15000L).atLeast(5))
+                        .accept(any(VideoRecordEvent.Status::class.java))
+                }
+
+            verify(mockListener, timeout(5000L))
+                .accept(any(VideoRecordEvent.Finalize::class.java))
+        } finally {
+            file1.delete()
+            file2.delete()
+        }
+    }
+
     private fun startVideoRecording(videoCapture: VideoCapture<Recorder>, file: File):
-        ActiveRecording {
-            val activeRecording = videoCapture.output
+        Recording {
+            val recording = videoCapture.output
                 .prepareRecording(context, FileOutputOptions.Builder(file).build())
-                .withEventListener(
-                    CameraXExecutors.directExecutor(),
-                    videoRecordEventListener
-                )
-                .start()
+                .start(CameraXExecutors.directExecutor(), videoRecordEventListener)
 
             // Wait for status event to proceed recording for a while.
             assertThat(latchForVideoRecording.await(VIDEO_TIMEOUT_SEC, TimeUnit.SECONDS)).isTrue()
 
-            return activeRecording
+            return recording
         }
 
     private fun completeVideoRecording(videoCapture: VideoCapture<Recorder>, file: File) {
-        val activeRecording = startVideoRecording(videoCapture, file)
+        val recording = startVideoRecording(videoCapture, file)
 
-        activeRecording.stop()
+        recording.stop()
         // Wait for finalize event to saved file.
         assertThat(latchForVideoSaved.await(VIDEO_TIMEOUT_SEC, TimeUnit.SECONDS)).isTrue()
 
@@ -513,22 +671,6 @@ class VideoRecordingTest(
                 }
             }
         )
-    }
-
-    private fun checkUseCasesCombinationSupported(@NonNull vararg useCases: UseCase): Boolean {
-        val useCaseList: MutableList<UseCase> = ArrayList()
-        for (case in useCases) {
-            useCaseList.add(case)
-        }
-
-        try {
-            cameraUseCaseAdapter.checkAttachUseCases(useCaseList)
-        } catch (e: CameraUseCaseAdapter.CameraException) {
-            // This use case combination is not supported on this device, abort this test.
-            Log.e(TAG, "This combination is not supported: $useCaseList , ${e.message}")
-            return false
-        }
-        return true
     }
 
     private class ImageSavedCallback() :

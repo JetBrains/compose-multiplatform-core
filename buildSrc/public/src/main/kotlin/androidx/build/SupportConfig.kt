@@ -16,8 +16,10 @@
 
 package androidx.build
 
+import androidx.build.SupportConfig.COMPILE_SDK_VERSION
 import org.gradle.api.GradleException
 import org.gradle.api.Project
+import org.gradle.api.file.FileCollection
 import org.gradle.api.plugins.ExtraPropertiesExtension
 import java.io.File
 
@@ -25,13 +27,7 @@ object SupportConfig {
     const val DEFAULT_MIN_SDK_VERSION = 14
     const val INSTRUMENTATION_RUNNER = "androidx.test.runner.AndroidJUnitRunner"
     const val BUILD_TOOLS_VERSION = "30.0.3"
-    val NDK_VERSION by lazy {
-        // TODO(aurimas) b/173737578 remove when we no longer have divergent versions
-        when (getOperatingSystem()) {
-            OperatingSystem.LINUX -> "21.0.6113669"
-            else -> "21.3.6528147"
-        }
-    }
+    const val NDK_VERSION = "23.1.7779620"
 
     /**
      * The Android SDK version to use for compilation.
@@ -76,3 +72,21 @@ fun Project.getPrebuiltsRoot(): File {
     val reposProperties = ext.get("repos") as Map<*, *>
     return File(reposProperties["prebuiltsRoot"].toString())
 }
+
+/**
+ * @return the project's Android SDK stub JAR as a File.
+ */
+fun Project.getAndroidJar(): FileCollection =
+    files(
+        arrayOf(
+            File(
+                getSdkPath(),
+                "platforms/$COMPILE_SDK_VERSION/android.jar"
+            ),
+            // Allow using optional android.car APIs
+            File(
+                getSdkPath(),
+                "platforms/$COMPILE_SDK_VERSION/optional/android.car.jar"
+            )
+        )
+    )

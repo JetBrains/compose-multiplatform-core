@@ -42,7 +42,6 @@ import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.core.content.ContextCompat;
 import androidx.core.content.LocusIdCompat;
-import androidx.core.os.BuildCompat;
 import androidx.core.view.DragAndDropPermissionsCompat;
 
 import java.util.Arrays;
@@ -103,7 +102,7 @@ public class ActivityCompat extends ContextCompat {
          * further requests for permission.
          *
          * @param activity The target activity.
-         * @param permissions The requested permissions. Must me non-null and not empty.
+         * @param permissions The requested permissions. Must be non-null and not empty.
          * @param requestCode Application specific request code to match with a result reported to
          *    {@link
          *    OnRequestPermissionsResultCallback#onRequestPermissionsResult(int, String[], int[])}.
@@ -486,7 +485,7 @@ public class ActivityCompat extends ContextCompat {
      * </p>
      *
      * @param activity The target activity.
-     * @param permissions The requested permissions. Must me non-null and not empty.
+     * @param permissions The requested permissions. Must be non-null and not empty.
      * @param requestCode Application specific request code to match with a result
      *    reported to {@link OnRequestPermissionsResultCallback#onRequestPermissionsResult(int, String[], int[])}.
      *    Should be >= 0.
@@ -580,7 +579,7 @@ public class ActivityCompat extends ContextCompat {
      * </ul>
      */
     public static boolean isLaunchedFromBubble(@NonNull Activity activity) {
-        if (BuildCompat.isAtLeastS()) {
+        if (Build.VERSION.SDK_INT >= 31) {
             return Api31Impl.isLaunchedFromBubble(activity);
         } else if (Build.VERSION.SDK_INT == 30) {
             return activity.getDisplay() != null

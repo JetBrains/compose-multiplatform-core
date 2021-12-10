@@ -678,17 +678,18 @@ private fun Track(
             trackStrokeWidth,
             StrokeCap.Round
         )
-        tickFractions.groupBy { it > positionFractionEnd }.forEach { (afterFraction, list) ->
-            drawPoints(
-                list.map {
-                    Offset(lerp(sliderStart, sliderEnd, it).x, center.y)
-                },
-                PointMode.Points,
-                (if (afterFraction) inactiveTickColor else activeTickColor).value,
-                trackStrokeWidth,
-                StrokeCap.Round
-            )
-        }
+        tickFractions.groupBy { it > positionFractionEnd || it < positionFractionStart }
+            .forEach { (outsideFraction, list) ->
+                drawPoints(
+                    list.map {
+                        Offset(lerp(sliderStart, sliderEnd, it).x, center.y)
+                    },
+                    PointMode.Points,
+                    (if (outsideFraction) inactiveTickColor else activeTickColor).value,
+                    trackStrokeWidth,
+                    StrokeCap.Round
+                )
+            }
     }
 }
 
@@ -758,7 +759,7 @@ private fun Modifier.sliderSemantics(
     steps: Int = 0
 ): Modifier {
     val coerced = value.coerceIn(valueRange.start, valueRange.endInclusive)
-    return semantics(mergeDescendants = true) {
+    return semantics {
         if (!enabled) disabled()
         setProgress(
             action = { targetValue ->

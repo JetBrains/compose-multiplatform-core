@@ -27,6 +27,7 @@ import androidx.compose.compiler.plugins.kotlin.analysis.knownStable
 import androidx.compose.compiler.plugins.kotlin.irTrace
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
+import org.jetbrains.kotlin.backend.jvm.ir.isInlineClassType
 import org.jetbrains.kotlin.builtins.extractParameterNameFromFunctionTypeArgument
 import org.jetbrains.kotlin.builtins.functions.FunctionInvokeDescriptor
 import org.jetbrains.kotlin.builtins.getReceiverTypeFromFunctionType
@@ -58,15 +59,16 @@ import org.jetbrains.kotlin.ir.builders.declarations.addTypeParameter
 import org.jetbrains.kotlin.ir.builders.declarations.addValueParameter
 import org.jetbrains.kotlin.ir.builders.declarations.buildField
 import org.jetbrains.kotlin.ir.builders.declarations.buildFun
+import org.jetbrains.kotlin.ir.builders.declarations.buildProperty
 import org.jetbrains.kotlin.ir.builders.irBlock
 import org.jetbrains.kotlin.ir.builders.irBlockBody
 import org.jetbrains.kotlin.ir.declarations.IrAnnotationContainer
 import org.jetbrains.kotlin.ir.declarations.IrClass
-import org.jetbrains.kotlin.ir.declarations.IrConstructor
 import org.jetbrains.kotlin.ir.declarations.IrDeclarationOrigin
 import org.jetbrains.kotlin.ir.declarations.IrField
 import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.declarations.IrModuleFragment
+import org.jetbrains.kotlin.ir.declarations.IrProperty
 import org.jetbrains.kotlin.ir.declarations.IrSimpleFunction
 import org.jetbrains.kotlin.ir.declarations.IrTypeParameter
 import org.jetbrains.kotlin.ir.declarations.IrValueDeclaration
@@ -129,14 +131,15 @@ import org.jetbrains.kotlin.ir.types.typeWith
 import org.jetbrains.kotlin.ir.util.DeepCopySymbolRemapper
 import org.jetbrains.kotlin.ir.util.SYNTHETIC_OFFSET
 import org.jetbrains.kotlin.ir.util.constructedClass
+import org.jetbrains.kotlin.ir.util.fqNameForIrSerialization
 import org.jetbrains.kotlin.ir.util.functions
 import org.jetbrains.kotlin.ir.util.getArguments
 import org.jetbrains.kotlin.ir.util.getPrimitiveArrayElementType
 import org.jetbrains.kotlin.ir.util.isCrossinline
 import org.jetbrains.kotlin.ir.util.isFunction
-import org.jetbrains.kotlin.ir.util.isInlined
 import org.jetbrains.kotlin.ir.util.isNoinline
 import org.jetbrains.kotlin.ir.visitors.IrElementTransformerVoid
+import org.jetbrains.kotlin.load.kotlin.computeJvmDescriptor
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.platform.jvm.isJvm
@@ -214,12 +217,20 @@ abstract class AbstractComposeLowering(
     }
 
     fun getTopLevelClass(fqName: FqName): IrClassSymbol {
-        return context.referenceClass(fqName) ?: error("Class not found in the classpath: $fqName")
+        return getTopLevelClassOrNull(fqName) ?: error("Class not found in the classpath: $fqName")
+    }
+
+    fun getTopLevelClassOrNull(fqName: FqName): IrClassSymbol? {
+        return context.referenceClass(fqName)
     }
 
     fun getTopLevelFunction(fqName: FqName): IrFunctionSymbol {
-        return context.referenceFunctions(fqName).firstOrNull()
+        return getTopLevelFunctionOrNull(fqName)
             ?: error("Function not found in the classpath: $fqName")
+    }
+
+    fun getTopLevelFunctionOrNull(fqName: FqName): IrFunctionSymbol? {
+        return context.referenceFunctions(fqName).firstOrNull()
     }
 
     fun getTopLevelFunctions(fqName: FqName): List<IrSimpleFunctionSymbol> {
@@ -235,6 +246,10 @@ abstract class AbstractComposeLowering(
     )
 
     fun getInternalClass(name: String) = getTopLevelClass(
+        ComposeFqNames.internalFqNameFor(name)
+    )
+
+    fun getInternalClassOrNull(name: String) = getTopLevelClassOrNull(
         ComposeFqNames.internalFqNameFor(name)
     )
 
@@ -829,10 +844,6 @@ abstract class AbstractComposeLowering(
         val getIteratorFunction = subject.type.classOrNull!!.owner.functions
             .single { it.name.asString() == "iterator" }
 
-        if (getIteratorFunction is IrConstructor) {
-            throw AssertionError("Should be IrConstructorCall: ${getIteratorFunction.descriptor}")
-        }
-
         val iteratorType = iteratorSymbol.typeWith(elementType)
         val nextSymbol = iteratorSymbol.owner.functions
             .single { it.descriptor.name.asString() == "next" }
@@ -1058,6 +1069,15 @@ abstract class AbstractComposeLowering(
         }
     }
 
+    protected fun makeStabilityProp(): IrProperty {
+        return context.irFactory.buildProperty {
+            startOffset = SYNTHETIC_OFFSET
+            endOffset = SYNTHETIC_OFFSET
+            name = KtxNameConventions.STABILITY_PROP_FLAG
+            visibility = DescriptorVisibilities.PRIVATE
+        }
+    }
+
     @OptIn(ObsoleteDescriptorBasedAPI::class)
     fun IrExpression.isStatic(): Boolean {
         return when (this) {
@@ -1093,7 +1113,7 @@ abstract class AbstractComposeLowering(
     fun IrConstructorCall.isStatic(): Boolean {
         // special case constructors of inline classes as static if their underlying
         // value is static.
-        if (type.isInlined()) {
+        if (type.isInlineClassType()) {
             return stabilityOf(type.unboxInlineClass()).knownStable() &&
                 getValueArgument(0)?.isStatic() == true
         }
@@ -1258,6 +1278,22 @@ abstract class AbstractComposeLowering(
         } else {
             null
         }
+    }
+
+    @OptIn(ObsoleteDescriptorBasedAPI::class)
+    fun IrSimpleFunction.sourceKey(): Int {
+        val info = context.irTrace[
+            ComposeWritableSlices.DURABLE_FUNCTION_KEY,
+            this
+        ]
+        if (info != null) {
+            info.used = true
+            return info.key
+        }
+        val signature = symbol.descriptor.computeJvmDescriptor(withName = false)
+        val name = fqNameForIrSerialization
+        val stringKey = "$name$signature"
+        return stringKey.hashCode()
     }
 }
 

@@ -2216,7 +2216,7 @@ class AndroidAccessibilityTest {
                 dialogComposeView = LocalView.current as AndroidComposeView
                 delegate = ViewCompat.getAccessibilityDelegate(dialogComposeView!!) as
                     AndroidComposeViewAccessibilityDelegateCompat
-                provider = delegate.getAccessibilityNodeProvider(dialogComposeView).provider
+                provider = delegate.getAccessibilityNodeProvider(dialogComposeView!!).provider
                     as AccessibilityNodeProvider
 
                 with(LocalDensity.current) {
@@ -2873,6 +2873,30 @@ class AndroidAccessibilityTest {
             val info = provider.createAccessibilityNodeInfo(node.id)
             assertEquals(true, info.isVisibleToUser)
         }
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.P)
+    fun progressSemantics_mergesSemantics_forTalkback() {
+        container.setContent {
+            Box(Modifier.progressSemantics(0.5f).testTag("box"))
+        }
+
+        val node = rule.onNodeWithTag("box").fetchSemanticsNode()
+        val info = provider.createAccessibilityNodeInfo(node.id)
+        assertEquals(info.isScreenReaderFocusable, true)
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.P)
+    fun indeterminateProgressSemantics_mergesSemantics_forTalkback() {
+        container.setContent {
+            Box(Modifier.progressSemantics().testTag("box"))
+        }
+
+        val node = rule.onNodeWithTag("box").fetchSemanticsNode()
+        val info = provider.createAccessibilityNodeInfo(node.id)
+        assertEquals(info.isScreenReaderFocusable, true)
     }
 
     private fun eventIndex(list: List<AccessibilityEvent>, event: AccessibilityEvent): Int {

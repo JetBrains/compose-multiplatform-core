@@ -61,7 +61,7 @@ dependencies {
         implementation("androidx.lifecycle:lifecycle-common-java8:2.3.0")
         implementation("androidx.lifecycle:lifecycle-runtime:2.3.0")
         implementation("androidx.lifecycle:lifecycle-viewmodel:2.3.0")
-        implementation(project(":profileinstaller:profileinstaller"))
+        implementation("androidx.profileinstaller:profileinstaller:1.1.0-rc01")
 
         testImplementation(libs.testRules)
         testImplementation(libs.testRunner)
@@ -70,7 +70,7 @@ dependencies {
         testImplementation(libs.truth)
         testImplementation(libs.mockitoCore)
         testImplementation(libs.mockitoKotlin)
-        testImplementation(libs.robolectric)
+        testImplementation("org.robolectric:robolectric:4.6.1") // TODO(b/209063122): fix tests to work with SDK 31 and robolectric 4.7
         testImplementation(project(":compose:ui:ui-test-junit4"))
         testImplementation(project(":compose:test-utils"))
 
@@ -152,7 +152,15 @@ if(AndroidXComposePlugin.isMultiplatformEnabled(project)) {
             }
 
             androidMain.dependsOn(jvmMain)
+            skikoMain {
+                dependsOn(commonMain)
+                dependencies {
+                    api(project(":compose:ui:ui-graphics"))
+                    api(libs.skikoCommon)
+                }
+            }
             desktopMain {
+                dependsOn(skikoMain)
                 dependencies {
                     implementation(libs.kotlinStdlibJdk8)
                     api(libs.kotlinCoroutinesSwing)

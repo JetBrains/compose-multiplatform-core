@@ -25,24 +25,26 @@ plugins {
     id("org.jetbrains.kotlin.android")
 }
 
-def compose_version = '1.1.0-beta01'
-
 dependencies {
     kotlinPlugin(project(":compose:compiler:compiler"))
 
-    api("androidx.compose.ui:ui:$compose_version")
-    api("androidx.compose.runtime:runtime:$compose_version")
-    api("androidx.navigation:navigation-runtime:2.4.0-alpha10")
+    api("androidx.compose.ui:ui:1.1.0-rc01")
+    api("androidx.compose.runtime:runtime:1.1.0-rc01")
+    api("androidx.navigation:navigation-runtime:2.4.0-rc01")
     api(project(":wear:compose:compose-material"))
 
     implementation(libs.kotlinStdlib)
-    implementation("androidx.navigation:navigation-compose:2.4.0-alpha10")
+    implementation("androidx.navigation:navigation-compose:2.4.0-rc01")
 
-    androidTestImplementation("androidx.compose.ui:ui-test:$compose_version")
-    androidTestImplementation("androidx.compose.ui:ui-test-junit4:$compose_version")
+    androidTestImplementation(project(":compose:test-utils"))
+    androidTestImplementation(project(":compose:ui:ui-test-junit4"))
     androidTestImplementation(project(":compose:test-utils"))
     androidTestImplementation(libs.testRunner)
     androidTestImplementation(project(":wear:compose:compose-material"))
+    androidTestImplementation(project(":wear:compose:compose-navigation-samples"))
+    androidTestImplementation(libs.truth)
+
+    samples(project(":wear:compose:compose-navigation-samples"))
 }
 
 android {

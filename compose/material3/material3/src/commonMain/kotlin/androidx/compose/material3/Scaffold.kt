@@ -36,6 +36,10 @@ import androidx.compose.ui.unit.dp
  * screen, by ensuring proper layout strategy for them and collecting necessary data so these
  * components will work together correctly.
  *
+ * Simple example of a Scaffold with [SmallTopAppBar], [FloatingActionButton]:
+ *
+ * @sample androidx.compose.material3.samples.SimpleScaffoldWithTopBar
+ *
  * @param modifier optional Modifier for the root of the [Scaffold]
  * @param topBar top app bar of the screen. Consider using [SmallTopAppBar].
  * @param bottomBar bottom bar of the screen. Consider using [NavigationBar].
@@ -52,8 +56,6 @@ import androidx.compose.ui.unit.dp
  * you're using Modifier.VerticalScroll, apply this modifier to the child of the scroll, and not on
  * the scroll itself.
  */
-// TODO(b/198144133): Add Simple example of a Scaffold with [SmallTopAppBar], [FloatingActionButton]
-//  and [Navigation drawer].
 @ExperimentalMaterial3Api
 @Composable
 fun Scaffold(
@@ -66,20 +68,16 @@ fun Scaffold(
     contentColor: Color = contentColorFor(containerColor),
     content: @Composable (PaddingValues) -> Unit
 ) {
-    val child = @Composable { childModifier: Modifier ->
-        Surface(modifier = childModifier, color = containerColor, contentColor = contentColor) {
-            ScaffoldLayout(
-                fabPosition = floatingActionButtonPosition,
-                topBar = topBar,
-                bottomBar = bottomBar,
-                content = content,
-                fab = floatingActionButton
-            )
-        }
-    }
 
-    // TODO(b/196872589): Add drawer support.
-    child(modifier)
+    Surface(modifier = modifier, color = containerColor, contentColor = contentColor) {
+        ScaffoldLayout(
+            fabPosition = floatingActionButtonPosition,
+            topBar = topBar,
+            bottomBar = bottomBar,
+            content = content,
+            fab = floatingActionButton
+        )
+    }
 }
 
 /**

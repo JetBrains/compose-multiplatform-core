@@ -21,6 +21,7 @@ import androidx.compose.integration.demos.common.ComposableDemo
 import androidx.compose.integration.demos.common.DemoCategory
 import androidx.compose.ui.demos.autofill.ExplicitAutofillTypesDemo
 import androidx.compose.ui.demos.focus.CaptureFocusDemo
+import androidx.compose.ui.demos.focus.ClickableInLazyColumnDemo
 import androidx.compose.ui.demos.focus.CustomFocusOrderDemo
 import androidx.compose.ui.demos.focus.FocusInDialogDemo
 import androidx.compose.ui.demos.focus.FocusInPopupDemo
@@ -54,12 +55,9 @@ import androidx.compose.ui.demos.gestures.ScrollGestureFilterDemo
 import androidx.compose.ui.demos.gestures.VerticalScrollerInDrawerDemo
 import androidx.compose.ui.demos.input.TouchModeDemo
 import androidx.compose.ui.demos.focus.ConditionalFocusabilityDemo
-import androidx.compose.ui.demos.scroll.BringIntoViewDemo
 import androidx.compose.ui.demos.keyinput.KeyInputDemo
 import androidx.compose.ui.demos.keyinput.InterceptEnterToSendMessageDemo
 import androidx.compose.ui.demos.modifier.CommunicatingModifierDemo
-import androidx.compose.ui.demos.scroll.BringRectangleIntoViewDemo
-import androidx.compose.ui.demos.scroll.RequestRectangleOnScreenDemo
 import androidx.compose.ui.demos.viewinterop.AndroidInComposeDemos
 import androidx.compose.ui.demos.viewinterop.ComplexTouchInterop
 import androidx.compose.ui.demos.viewinterop.ComposeInAndroidDemos
@@ -134,6 +132,7 @@ private val FocusDemos = DemoCategory(
         ComposableDemo("FocusManager.moveFocus()") { FocusManagerMoveFocusDemo() },
         ComposableDemo("Capture/Free Focus") { CaptureFocusDemo() },
         ComposableDemo("Focus In Scrollable Row") { ScrollableRowFocusDemo() },
+        ComposableDemo("Clickable in LazyColumn") { ClickableInLazyColumnDemo() },
         ComposableDemo("Conditional Focusability") { ConditionalFocusabilityDemo() }
     )
 )
@@ -151,15 +150,6 @@ private val GraphicsDemos = DemoCategory(
     listOf(
         ComposableDemo("VectorGraphicsDemo") { VectorGraphicsDemo() },
         ComposableDemo("DeclarativeGraphicsDemo") { DeclarativeGraphicsDemo() }
-    )
-)
-
-private val RelocationDemos = DemoCategory(
-    "Relocation",
-    listOf(
-        ComposableDemo("Bring Into View") { BringIntoViewDemo() },
-        ComposableDemo("Bring Rectangle Into View") { BringRectangleIntoViewDemo() },
-        ComposableDemo("Request Rectangle On Screen") { RequestRectangleOnScreenDemo() }
     )
 )
 
@@ -197,6 +187,5 @@ val CoreDemos = DemoCategory(
         GestureDemos,
         ViewInteropDemos,
         ComposableDemo("Software Keyboard Controller") { SoftwareKeyboardControllerDemo() },
-        RelocationDemos
     )
 )

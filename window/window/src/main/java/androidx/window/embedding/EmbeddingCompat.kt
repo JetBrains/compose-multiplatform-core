@@ -44,8 +44,15 @@ internal class EmbeddingCompat constructor(
     }
 
     override fun setEmbeddingCallback(embeddingCallback: EmbeddingCallbackInterface) {
-        val translatingCallback = EmbeddingTranslatingCallback(embeddingCallback, adapter)
-        embeddingExtension.setSplitInfoCallback(translatingCallback)
+        try {
+            embeddingExtension.setSplitInfoCallback { splitInfoList ->
+                embeddingCallback.onSplitInfoChanged(
+                    adapter.translate(splitInfoList)
+                )
+            }
+        } catch (e: NoSuchMethodError) {
+            // TODO(b/203472665): Remove the try-catch wrapper after the issue is resolved
+        }
     }
 
     companion object {

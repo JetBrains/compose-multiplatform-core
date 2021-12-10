@@ -80,7 +80,7 @@ android {
     externalNativeBuild {
         cmake {
             path "src/main/cpp/CMakeLists.txt"
-            version "3.10.2"
+            version "3.18.1"
         }
     }
 
@@ -92,7 +92,6 @@ android {
 
 tasks.withType(KotlinCompile).configureEach {
     kotlinOptions {
-        useIR = true
         freeCompilerArgs += [
                 "-Xopt-in=kotlin.RequiresOptIn",
                 "-P", "plugin:androidx.compose.compiler.plugins.kotlin:sourceInformation=true"

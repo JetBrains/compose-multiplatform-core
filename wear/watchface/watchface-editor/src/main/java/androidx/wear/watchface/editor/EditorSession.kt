@@ -153,8 +153,10 @@ public interface EditorSession : AutoCloseable {
     /**
      * Returns a flow of maps of [androidx.wear.watchface.ComplicationSlot] ids to preview
      * [ComplicationData] suitable for use in rendering a preview of the watch face. This data is
-     * fetched asynchronously and the map will initially be empty. New data may be pushed as
-     * result of running [openComplicationDataSourceChooser].
+     * fetched asynchronously and the map will initially be empty. For watch faces without
+     * complications this will always be empty.
+     *
+     * Note new data may be pushed as a result of running [openComplicationDataSourceChooser].
      *
      * Note if a slot is configured to be empty then the map will contain an instance of
      * [EmptyComplicationData] for that slot. Disabled complicationSlots are included in the map.
@@ -168,7 +170,9 @@ public interface EditorSession : AutoCloseable {
      * Returns a flow of maps of [androidx.wear.watchface.ComplicationSlot] ids to
      * [ComplicationDataSourceInfo] that represent the information available about the data
      * source for each complication. This data is fetched asynchronously and the map will initially
-     * be empty. New data may be pushed as result of running [openComplicationDataSourceChooser].
+     * be empty. For watch faces without complications this will always be empty.
+     *
+     * Note new data may be pushed as result of running [openComplicationDataSourceChooser].
      *
      * Note a `null` [ComplicationDataSourceInfo] will be associated with a complication slot id if
      * the [androidx.wear.watchface.ComplicationSlot] is configured to show the empty complication
@@ -312,7 +316,8 @@ public interface EditorSession : AutoCloseable {
                                     editorRequest.watchFaceComponentName,
                                     editorRequest.headlessDeviceConfig.asWireDeviceConfig(),
                                     activity.resources.displayMetrics.widthPixels,
-                                    activity.resources.displayMetrics.heightPixels
+                                    activity.resources.displayMetrics.heightPixels,
+                                    editorRequest.watchFaceId.id
                                 ),
                                 activity
                             )
@@ -504,7 +509,9 @@ public abstract class BaseEditorSession internal constructor(
                 ComplicationDataSourceChooserRequest(
                     this,
                     complicationSlotId,
-                    watchFaceId.id
+                    watchFaceId.id,
+                    showComplicationDeniedDialogIntent,
+                    showComplicationRationaleDialogIntent
                 )
             )
         }
@@ -737,6 +744,10 @@ public abstract class BaseEditorSession internal constructor(
 
     @UiThread
     protected abstract fun releaseResources()
+
+    protected open val showComplicationDeniedDialogIntent: Intent? = null
+
+    protected open val showComplicationRationaleDialogIntent: Intent? = null
 }
 
 internal class OnWatchFaceEditorSessionImpl(
@@ -778,7 +789,6 @@ internal class OnWatchFaceEditorSessionImpl(
                 it.value.boundsType,
                 it.value.supportedTypes,
                 it.value.defaultDataSourcePolicy,
-                it.value.defaultDataSourceType,
                 it.value.enabled,
                 it.value.initiallyEnabled,
                 it.value.renderer.getData().type,
@@ -801,10 +811,17 @@ internal class OnWatchFaceEditorSessionImpl(
         if (args == null) {
             method?.invoke(wrappedUserStyle)
         } else {
-            if (method?.name == "setValue") {
-                validateAndUpdateUserStyle(args[0] as UserStyle)
+            val result = method?.invoke(wrappedUserStyle, *args)
+            when (method?.name) {
+                "setValue" -> validateAndUpdateUserStyle(args[0] as UserStyle)
+                "compareAndSet" -> {
+                    if (result is Boolean && result == true) {
+                        validateAndUpdateUserStyle(args[1] as UserStyle)
+                    }
+                }
+                else -> {}
             }
-            method?.invoke(wrappedUserStyle, *args)
+            result
         }
     } as MutableStateFlow<UserStyle>
 
@@ -872,6 +889,7 @@ internal class OnWatchFaceEditorSessionImpl(
 
         // Note this has to be done last to ensure tests are not racy.
         if (this::editorDelegate.isInitialized) {
+            editorDelegate.setComplicationSlotConfigExtrasChangeCallback(null)
             editorDelegate.onDestroy()
         }
     }
@@ -893,7 +911,21 @@ internal class OnWatchFaceEditorSessionImpl(
         )
 
         fetchComplicationsDataJob = fetchComplicationsData(backgroundCoroutineScope)
+
+        editorDelegate.setComplicationSlotConfigExtrasChangeCallback(
+            object : WatchFace.ComplicationSlotConfigExtrasChangeCallback {
+                override fun onComplicationSlotConfigExtrasChanged() {
+                    maybeUpdateComplicationSlotsState()
+                }
+            }
+        )
     }
+
+    override val showComplicationDeniedDialogIntent
+        get() = editorDelegate.complicationDeniedDialogIntent
+
+    override val showComplicationRationaleDialogIntent
+        get() = editorDelegate.complicationRationaleDialogIntent
 }
 
 @RequiresApi(27)
@@ -966,7 +998,9 @@ internal class HeadlessEditorSession(
 internal class ComplicationDataSourceChooserRequest(
     internal val editorSession: EditorSession,
     internal val complicationSlotId: Int,
-    internal val instanceId: String?
+    internal val instanceId: String?,
+    internal var showComplicationDeniedDialogIntent: Intent?,
+    internal val showComplicationRationaleDialogIntent: Intent?
 )
 
 internal class ComplicationDataSourceChooserResult(
@@ -1004,7 +1038,9 @@ internal class ComplicationDataSourceChooserContract : ActivityResultContract<
             input.editorSession.watchFaceComponentName,
             input.complicationSlotId,
             complicationSlotsState[input.complicationSlotId]!!.supportedTypes,
-            input.instanceId
+            input.instanceId,
+            input.showComplicationDeniedDialogIntent,
+            input.showComplicationRationaleDialogIntent,
         )
         val complicationState = complicationSlotsState[input.complicationSlotId]!!
         intent.replaceExtras(

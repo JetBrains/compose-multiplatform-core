@@ -14,6 +14,10 @@
  * limitations under the License.
  */
 
+import androidx.build.LibraryGroups
+import androidx.build.LibraryType
+import androidx.build.Publish
+
 apply plugin: 'AndroidXPlugin'
 apply plugin: 'com.android.library'
 
@@ -34,7 +38,7 @@ android {
 
     externalNativeBuild {
         cmake {
-            version "3.10.2"
+            version "3.18.1"
             path "${yuvSourceDir}/files/CMakeLists.txt"
         }
     }
@@ -50,6 +54,52 @@ android {
         libyuv {
             headers "${yuvSourceDir}/files/include"
             name "yuv"
+        }
+    }
+}
+
+androidx {
+    name = "libyuv"
+    // Only intended to be used as snapshots, do not change to PUBLISHED.
+    publish = Publish.SNAPSHOT_ONLY
+    mavenGroup = LibraryGroups.LIBYUV
+    inceptionYear = "2021"
+    description = "libyuv is an open source project that includes YUV scaling and conversion functionality."
+}
+
+// Entire block is to workaround b/203448887
+afterEvaluate {
+    tasks.named("bundleDebugLocalLintAar").configure {
+        it.dependsOn("prefabDebugConfigurePackage")
+    }
+    tasks.named("bundleReleaseAar").configure {
+        it.dependsOn("prefabReleaseConfigurePackage")
+    }
+    tasks.named("reportLibraryMetrics").configure {
+        it.dependsOn("prefabReleaseConfigurePackage")
+    }
+    tasks.named("prefabReleaseConfigurePackage").configure {
+        def releaseAbiJson = project.file("$buildDir/intermediates/prefab_package/release/prefab/modules/yuv/libs/android.armeabi-v7a/abi.json")
+        def releasePrefabJson = project.file("$buildDir/intermediates/prefab_package/release/prefab/prefab.json")
+        it.doLast {
+            if (!releaseAbiJson.exists()) {
+                throw new GradleException("$releaseAbiJson does not exist")
+            }
+            if (!releasePrefabJson.exists()) {
+                throw new GradleException("$releasePrefabJson does not exist")
+            }
+        }
+    }
+    tasks.named("prefabDebugConfigurePackage").configure {
+        def debugAbiJson = project.file("$buildDir/intermediates/prefab_package/debug/prefab/modules/yuv/libs/android.armeabi-v7a/abi.json")
+        def debugPrefabJson = project.file("$buildDir/intermediates/prefab_package/debug/prefab/prefab.json")
+        it.doLast {
+            if (!debugAbiJson.exists()) {
+                throw new GradleException("$debugAbiJson does not exist")
+            }
+            if (!debugPrefabJson.exists()) {
+                throw new GradleException("$debugPrefabJson does not exist")
+            }
         }
     }
 }

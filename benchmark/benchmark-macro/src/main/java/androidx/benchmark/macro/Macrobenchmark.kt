@@ -35,6 +35,7 @@ import androidx.benchmark.perfetto.UiState
 import androidx.benchmark.perfetto.appendUiState
 import androidx.benchmark.userspaceTrace
 import androidx.test.platform.app.InstrumentationRegistry
+import androidx.tracing.trace
 import java.io.File
 
 internal fun checkErrors(packageName: String): ConfigurationError.SuppressionState? {
@@ -104,10 +105,11 @@ private fun macrobenchmark(
     testName: String,
     packageName: String,
     metrics: List<Metric>,
-    compilationMode: CompilationMode = CompilationMode.SpeedProfile(),
+    compilationMode: CompilationMode,
     iterations: Int,
     launchWithClearTask: Boolean,
-    setupBlock: MacrobenchmarkScope.(Boolean) -> Unit,
+    startupModeMetricHint: StartupMode?,
+    setupBlock: MacrobenchmarkScope.() -> Unit,
     measureBlock: MacrobenchmarkScope.() -> Unit
 ) {
     require(iterations > 0) {
@@ -115,9 +117,6 @@ private fun macrobenchmark(
     }
     require(metrics.isNotEmpty()) {
         "Empty list of metrics passed to metrics param, must pass at least one Metric"
-    }
-    require(Build.VERSION.SDK_INT >= 23) {
-        "Macrobenchmark currently requires Android 6 (API 23) or greater."
     }
 
     // skip benchmark if not supported by vm settings
@@ -129,12 +128,15 @@ private fun macrobenchmark(
     val startTime = System.nanoTime()
     val scope = MacrobenchmarkScope(packageName, launchWithClearTask)
 
-    // always kill the process at beginning of test
+    // Ensure the device is awake
+    scope.device.wakeUp()
+
+    // Always kill the process at beginning of test
     scope.killProcess()
 
     userspaceTrace("compile $packageName") {
-        compilationMode.compile(packageName) {
-            setupBlock(scope, false)
+        compilationMode.resetAndCompile(packageName) {
+            setupBlock(scope)
             measureBlock(scope)
         }
     }
@@ -150,12 +152,16 @@ private fun macrobenchmark(
         metrics.forEach {
             it.configure(packageName)
         }
-        var isFirstRun = true
         val measurements = List(iterations) { iteration ->
-            userspaceTrace("setupBlock") {
-                setupBlock(scope, isFirstRun)
+            // Wake the device to ensure it stays awake with large iteration count
+            userspaceTrace("wake device") {
+                scope.device.wakeUp()
             }
-            isFirstRun = false
+
+            scope.iteration = iteration
+            userspaceTrace("setupBlock") {
+                setupBlock(scope)
+            }
 
             val tracePath = perfettoCollector.record(
                 benchmarkName = uniqueName,
@@ -177,16 +183,16 @@ private fun macrobenchmark(
                 }
             ) {
                 try {
-                    userspaceTrace("start metrics") {
+                    trace("start metrics") {
                         metrics.forEach {
                             it.start()
                         }
                     }
-                    userspaceTrace("measureBlock") {
+                    trace("measureBlock") {
                         measureBlock(scope)
                     }
                 } finally {
-                    userspaceTrace("stop metrics") {
+                    trace("stop metrics") {
                         metrics.forEach {
                             it.stop()
                         }
@@ -199,7 +205,12 @@ private fun macrobenchmark(
             val iterationResult = userspaceTrace("extract metrics") {
                 metrics
                     // capture list of Map<String,Long> per metric
-                    .map { it.getMetrics(packageName, tracePath) }
+                    .map { it.getMetrics(Metric.CaptureInfo(
+                        targetPackageName = packageName,
+                        testPackageName = macrobenchPackageName,
+                        startupMode = startupModeMetricHint,
+                        apiLevel = Build.VERSION.SDK_INT
+                    ), tracePath) }
                     // merge into one map
                     .reduce { sum, element -> sum + element }
             }
@@ -247,10 +258,10 @@ private fun macrobenchmark(
             }
         }
 
-        val warmupIterations = if (compilationMode is CompilationMode.SpeedProfile) {
-            compilationMode.warmupIterations
-        } else {
-            0
+        val warmupIterations = @Suppress("DEPRECATION") when (compilationMode) {
+            is CompilationMode.SpeedProfile -> compilationMode.warmupIterations
+            is CompilationMode.Partial -> compilationMode.warmupIterations
+            else -> 0
         }
 
         ResultWriter.appendReport(
@@ -275,13 +286,13 @@ private fun macrobenchmark(
  * @suppress
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public fun macrobenchmarkWithStartupMode(
+fun macrobenchmarkWithStartupMode(
     uniqueName: String,
     className: String,
     testName: String,
     packageName: String,
     metrics: List<Metric>,
-    compilationMode: CompilationMode = CompilationMode.SpeedProfile(),
+    compilationMode: CompilationMode,
     iterations: Int,
     startupMode: StartupMode?,
     setupBlock: MacrobenchmarkScope.() -> Unit,
@@ -295,7 +306,8 @@ public fun macrobenchmarkWithStartupMode(
         metrics = metrics,
         compilationMode = compilationMode,
         iterations = iterations,
-        setupBlock = { firstIterationAfterCompile ->
+        startupModeMetricHint = startupMode,
+        setupBlock = {
             if (startupMode == StartupMode.COLD) {
                 killProcess()
                 // drop app pages from page cache to ensure it is loaded from disk, from scratch
@@ -314,16 +326,22 @@ public fun macrobenchmarkWithStartupMode(
                 // Empirically, this is also the  scenario most significantly affected by this
                 // JIT persistence, so we optimize  specifically for measurement correctness in
                 // this scenario.
-                if (compilationMode == CompilationMode.None) {
-                    compilationMode.compile(packageName) {
+                if (compilationMode is CompilationMode.None) {
+                    compilationMode.resetAndCompile(packageName = packageName) {
                         // This is only compiling for Compilation.None
-                        // So passing an empty block as a measureBlock is inconsequential.
                         throw IllegalStateException("block never used for CompilationMode.None")
                     }
                 }
-            } else if (startupMode != null && firstIterationAfterCompile) {
-                // warmup process by running the measure block once unmeasured
-                measureBlock()
+            } else if (iteration == 0 && startupMode != null) {
+                try {
+                    iteration = null // override to null for warmup, before starting measurements
+
+                    // warmup process by running the measure block once unmeasured
+                    setupBlock(this)
+                    measureBlock()
+                } finally {
+                    iteration = 0
+                }
             }
             setupBlock(this)
         },
