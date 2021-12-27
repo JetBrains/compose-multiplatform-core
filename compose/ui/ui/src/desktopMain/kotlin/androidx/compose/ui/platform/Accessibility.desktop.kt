@@ -534,7 +534,7 @@ internal class ComposeAccessible(
                 Role.Tab -> AccessibleRole.PAGE_TAB
                 // ?
                 //  Role.Switch ->
-                //  Role.Image ->
+                Role.Image -> return AccessibleRoleExt.IMAGE
             }
             if (isPassword) {
                 return AccessibleRole.PASSWORD_TEXT
@@ -930,3 +930,9 @@ internal class ComposeAccessible(
 }
 
 private typealias ActionKey = SemanticsPropertyKey<AccessibilityAction<() -> Boolean>>
+
+internal class AccessibleRoleExt(key: String) : AccessibleRole(key) {
+    companion object {
+        val IMAGE = AccessibleRoleExt("image")
+    }
+}
