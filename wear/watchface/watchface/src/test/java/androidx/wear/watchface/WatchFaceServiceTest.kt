@@ -1658,6 +1658,24 @@ public class WatchFaceServiceTest {
     }
 
     @Test
+    public fun onCreate_calls_setContentDescriptionLabels_withCorrectArgs_noComplications() {
+        initEngine(
+            WatchFaceType.ANALOG,
+            emptyList(),
+            UserStyleSchema(emptyList())
+        )
+
+        runPostedTasksFor(0)
+
+        val arguments = ArgumentCaptor.forClass(Array<ContentDescriptionLabel>::class.java)
+        verify(iWatchFaceService).setContentDescriptionLabels(arguments.capture())
+
+        val argument = arguments.value
+        assertThat(argument.size).isEqualTo(1)
+        assertThat(argument[0].bounds).isEqualTo(Rect(25, 25, 75, 75)) // Clock element.
+    }
+
+    @Test
     public fun ContentDescriptionLabels_notMadeForEmptyComplication() {
         initEngine(
             WatchFaceType.ANALOG,
@@ -2602,8 +2620,8 @@ public class WatchFaceServiceTest {
         val b = ComplicationData.Builder(ComplicationData.TYPE_SHORT_TEXT)
             .setShortText(ComplicationText.plainText("B"))
             .build()
-        b.timelineStartInstant = Instant.ofEpochSecond(1000)
-        b.timelineEndInstant = Instant.MAX
+        b.timelineStartEpochSecond = 1000
+        b.timelineEndEpochSecond = Long.MAX_VALUE
         a.setTimelineEntryCollection(listOf(b))
 
         // Set the ComplicationData.
@@ -3528,6 +3546,10 @@ public class WatchFaceServiceTest {
 
     @Test
     public fun additionalContentDescriptionLabelsSetBeforeWatchFaceInitComplete() {
+        val pendingIntent = PendingIntent.getActivity(context, 0, Intent("Example"),
+            PendingIntent.FLAG_IMMUTABLE
+        )
+
         testWatchFaceService = TestWatchFaceService(
             WatchFaceType.ANALOG,
             emptyList(),
@@ -3546,7 +3568,7 @@ public class WatchFaceServiceTest {
                         ContentDescriptionLabel(
                             PlainComplicationText.Builder("Example").build(),
                             Rect(10, 10, 20, 20),
-                            null
+                            pendingIntent
                         )
                     )
                 )
@@ -3606,6 +3628,8 @@ public class WatchFaceServiceTest {
                 0
             )
         ).isEqualTo("Example")
+
+        assertThat(engineWrapper.contentDescriptionLabels[1].tapAction).isEqualTo(pendingIntent)
     }
 
     @Test
@@ -4152,14 +4176,14 @@ public class WatchFaceServiceTest {
         val b = ComplicationData.Builder(ComplicationData.TYPE_SHORT_TEXT)
             .setShortText(ComplicationText.plainText("B"))
             .build()
-        b.timelineStartInstant = Instant.ofEpochSecond(1000)
-        b.timelineEndInstant = Instant.ofEpochSecond(4000)
+        b.timelineStartEpochSecond = 1000
+        b.timelineEndEpochSecond = 4000
 
         val c = ComplicationData.Builder(ComplicationData.TYPE_SHORT_TEXT)
             .setShortText(ComplicationText.plainText("C"))
             .build()
-        c.timelineStartInstant = Instant.ofEpochSecond(2000)
-        c.timelineEndInstant = Instant.ofEpochSecond(3000)
+        c.timelineStartEpochSecond = 2000
+        c.timelineEndEpochSecond = 3000
 
         a.setTimelineEntryCollection(listOf(b, c))
 
@@ -4204,14 +4228,14 @@ public class WatchFaceServiceTest {
         val b = ComplicationData.Builder(ComplicationData.TYPE_SHORT_TEXT)
             .setShortText(ComplicationText.plainText("B"))
             .build()
-        b.setTimelineStartInstant(Instant.ofEpochSecond(1000))
-        b.setTimelineEndInstant(Instant.ofEpochSecond(2000))
+        b.timelineStartEpochSecond = 1000
+        b.timelineEndEpochSecond = 2000
 
         val c = ComplicationData.Builder(ComplicationData.TYPE_SHORT_TEXT)
             .setShortText(ComplicationText.plainText("C"))
             .build()
-        c.setTimelineStartInstant(Instant.ofEpochSecond(3000))
-        c.setTimelineEndInstant(Instant.ofEpochSecond(4000))
+        c.timelineStartEpochSecond = 3000
+        c.timelineEndEpochSecond = 4000
 
         a.setTimelineEntryCollection(listOf(b, c))
 

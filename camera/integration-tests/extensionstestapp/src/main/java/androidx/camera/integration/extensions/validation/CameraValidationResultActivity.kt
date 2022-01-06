@@ -175,16 +175,30 @@ class CameraValidationResultActivity : AppCompatActivity() {
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
-            R.id.menu_extensions_app -> {
-                val intent = Intent(this, CameraExtensionsActivity::class.java)
-                intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK
-                startActivity(intent)
-                finish()
+            R.id.menu_export -> {
+                val outputFilePath = testResults.exportTestResults(contentResolver)
+                if (outputFilePath != null) {
+                    Toast.makeText(
+                        this,
+                        "Test results have been saved in $outputFilePath!",
+                        Toast.LENGTH_LONG
+                    ).show()
+                } else {
+                    Toast.makeText(this, "Failed to export the test results!", Toast.LENGTH_LONG)
+                        .show()
+                }
                 true
             }
             R.id.menu_reset -> {
                 testResults.resetTestResults(cameraProvider, extensionsManager)
                 adapter.notifyDataSetChanged()
+                true
+            }
+            R.id.menu_extensions_app -> {
+                val intent = Intent(this, CameraExtensionsActivity::class.java)
+                intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK
+                startActivity(intent)
+                finish()
                 true
             }
             else -> super.onOptionsItemSelected(item)
@@ -193,12 +207,14 @@ class CameraValidationResultActivity : AppCompatActivity() {
 
     companion object {
 
-        fun getLensFacingStringFromId(lensFacing: Int): String = when (lensFacing) {
+        fun getLensFacingStringFromInt(lensFacing: Int): String = when (lensFacing) {
             CameraMetadata.LENS_FACING_BACK -> "BACK"
             CameraMetadata.LENS_FACING_FRONT -> "FRONT"
             CameraMetadata.LENS_FACING_EXTERNAL -> "EXTERNAL"
             else -> throw IllegalArgumentException("Invalid lens facing!!")
         }
+
+        const val INVALID_LENS_FACING = -1
 
         const val INTENT_EXTRA_KEY_CAMERA_ID = "CameraId"
         const val INTENT_EXTRA_KEY_LENS_FACING = "LensFacing"
