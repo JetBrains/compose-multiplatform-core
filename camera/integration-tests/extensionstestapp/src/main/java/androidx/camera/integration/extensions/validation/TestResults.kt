@@ -16,23 +16,37 @@
 
 package androidx.camera.integration.extensions.validation
 
+import android.content.ContentResolver
+import android.content.ContentValues
 import android.content.Context
 import android.hardware.camera2.CameraCharacteristics
+import android.net.Uri
+import android.os.Build
+import android.os.Environment.DIRECTORY_DOCUMENTS
+import android.provider.MediaStore
+import android.util.Log
 import androidx.annotation.OptIn
 import androidx.camera.camera2.interop.Camera2CameraInfo
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop
-import androidx.camera.core.CameraFilter
-import androidx.camera.core.CameraInfo
-import androidx.camera.core.CameraSelector
-import androidx.camera.extensions.ExtensionMode
 import androidx.camera.extensions.ExtensionsManager
+import androidx.camera.integration.extensions.utils.CameraSelectorUtil.createCameraSelectorById
+import androidx.camera.integration.extensions.utils.ExtensionModeUtil.AVAILABLE_EXTENSION_MODES
+import androidx.camera.integration.extensions.utils.ExtensionModeUtil.getExtensionModeIdFromString
+import androidx.camera.integration.extensions.utils.ExtensionModeUtil.getExtensionModeStringFromId
 import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.core.net.toUri
 import java.io.BufferedReader
 import java.io.DataInputStream
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.InputStreamReader
+import java.text.Format
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Locale
+
+private const val TAG = "TestResults"
 
 private const val TEST_RESULTS_FILE_NAME = "TestResult.csv"
 private const val TEST_RESULT_INDEX_CAMERA_ID = 0
@@ -83,6 +97,44 @@ class TestResults constructor(private val context: Context) {
         outputStream.close()
     }
 
+    /**
+     * Exports the test results to a CSV file under the Documents folder.
+     *
+     * @return the file path if it is successful to export the test results. Otherwise, null will
+     * be returned.
+     */
+    fun exportTestResults(contentResolver: ContentResolver): String? {
+        val testResultsFile = File(context.getExternalFilesDir(null), TEST_RESULTS_FILE_NAME)
+        if (!testResultsFile.exists()) {
+            Log.e(TAG, "Test result does not exist!")
+            return null
+        }
+
+        val formatter: Format = SimpleDateFormat("yyyy-MM-dd-HH-mm-ss-SSS", Locale.US)
+        val savedFileName = "TestResult[${formatter.format(Calendar.getInstance().time)}].csv"
+
+        val contentValues = ContentValues().apply {
+            put(MediaStore.MediaColumns.DISPLAY_NAME, savedFileName)
+            put(MediaStore.MediaColumns.MIME_TYPE, "text/comma-separated-values")
+            put(
+                MediaStore.MediaColumns.RELATIVE_PATH,
+                "$DIRECTORY_DOCUMENTS/ExtensionsValidation"
+            )
+        }
+
+        if (copyTempFileToOutputLocation(
+                contentResolver,
+                testResultsFile.toUri(),
+                MediaStore.Files.getContentUri(MediaStore.VOLUME_EXTERNAL),
+                contentValues
+            )
+        ) {
+            return "$DIRECTORY_DOCUMENTS/ExtensionsValidation/$savedFileName"
+        }
+
+        return null
+    }
+
     fun resetTestResults(
         cameraProvider: ProcessCameraProvider,
         extensionsManager: ExtensionsManager
@@ -107,7 +159,7 @@ class TestResults constructor(private val context: Context) {
             val cameraId = Camera2CameraInfo.from(it).cameraId
             val testResultMap = linkedMapOf<Int, Int>()
 
-            EXTENSION_MODES.forEach { mode ->
+            AVAILABLE_EXTENSION_MODES.forEach { mode ->
                 val isSupported = extensionsManager.isExtensionAvailable(
                     createCameraSelectorById(cameraId),
                     mode
@@ -189,51 +241,72 @@ class TestResults constructor(private val context: Context) {
 
     companion object {
 
-        @OptIn(ExperimentalCamera2Interop::class)
-        fun createCameraSelectorById(cameraId: String) =
-            CameraSelector.Builder().addCameraFilter(CameraFilter { cameraInfos ->
-                cameraInfos.forEach {
-                    if (Camera2CameraInfo.from(it).cameraId.equals(cameraId)) {
-                        return@CameraFilter listOf<CameraInfo>(it)
-                    }
-                }
+        /**
+         * Copies temp file to the destination location.
+         *
+         * @return false if the copy process is failed.
+         */
+        fun copyTempFileToOutputLocation(
+            contentResolver: ContentResolver,
+            tempFileUri: Uri,
+            targetUrl: Uri,
+            contentValues: ContentValues,
+        ): Boolean {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+                Log.e(TAG, "The known devices which support Extensions should be at least" +
+                    " Android Q!")
+                return false
+            }
 
-                throw IllegalArgumentException("No camera can be find for id: $cameraId")
-            }).build()
+            contentValues.put(MediaStore.Images.Media.IS_PENDING, 1)
 
-        fun getExtensionModeStringFromId(mode: Int): String = when (mode) {
-            ExtensionMode.BOKEH -> EXTENSION_MODE_STRING_BOKEH
-            ExtensionMode.HDR -> EXTENSION_MODE_STRING_HDR
-            ExtensionMode.NIGHT -> EXTENSION_MODE_STRING_NIGHT
-            ExtensionMode.FACE_RETOUCH -> EXTENSION_MODE_STRING_FACE_RETOUCH
-            ExtensionMode.AUTO -> EXTENSION_MODE_STRING_AUTO
-            else -> throw IllegalArgumentException("Invalid extension mode!!")
+            val outputUri = contentResolver.insert(targetUrl, contentValues)
+
+            if (outputUri != null && copyTempFileToOutputLocation(
+                    contentResolver,
+                    tempFileUri,
+                    outputUri
+                )
+            ) {
+                contentValues.put(MediaStore.Images.Media.IS_PENDING, 0)
+                contentResolver.update(outputUri, contentValues, null, null)
+                return true
+            } else {
+                Log.e(TAG, "Failed to copy the temp file to the output path!")
+            }
+
+            return false
         }
 
-        fun getExtensionModeIdFromString(mode: String): Int = when (mode) {
-            EXTENSION_MODE_STRING_BOKEH -> ExtensionMode.BOKEH
-            EXTENSION_MODE_STRING_HDR -> ExtensionMode.HDR
-            EXTENSION_MODE_STRING_NIGHT -> ExtensionMode.NIGHT
-            EXTENSION_MODE_STRING_FACE_RETOUCH -> ExtensionMode.FACE_RETOUCH
-            EXTENSION_MODE_STRING_AUTO -> ExtensionMode.AUTO
-            else -> throw IllegalArgumentException("Invalid extension mode!!")
+        /**
+         * Copies temp file to output [Uri].
+         *
+         * @return false if the [Uri] is not writable.
+         */
+        private fun copyTempFileToOutputLocation(
+            contentResolver: ContentResolver,
+            tempFileUri: Uri,
+            uri: Uri
+        ): Boolean {
+            contentResolver.openOutputStream(uri).use { outputStream ->
+                if (tempFileUri.path == null || outputStream == null) {
+                    return false
+                }
+
+                val tempFile = File(tempFileUri.path!!)
+
+                FileInputStream(tempFile).use { `in` ->
+                    val buf = ByteArray(1024)
+                    var len: Int
+                    while (`in`.read(buf).also { len = it } > 0) {
+                        outputStream.write(buf, 0, len)
+                    }
+                }
+            }
+            return true
         }
 
         const val INVALID_EXTENSION_MODE = -1
-
-        val EXTENSION_MODES = arrayOf(
-            ExtensionMode.BOKEH,
-            ExtensionMode.HDR,
-            ExtensionMode.NIGHT,
-            ExtensionMode.FACE_RETOUCH,
-            ExtensionMode.AUTO
-        )
-
-        private const val EXTENSION_MODE_STRING_BOKEH = "BOKEH"
-        private const val EXTENSION_MODE_STRING_HDR = "HDR"
-        private const val EXTENSION_MODE_STRING_NIGHT = "NIGHT"
-        private const val EXTENSION_MODE_STRING_FACE_RETOUCH = "FACE RETOUCH"
-        private const val EXTENSION_MODE_STRING_AUTO = "AUTO"
 
         const val TEST_RESULT_NOT_SUPPORTED = -1
         const val TEST_RESULT_NOT_TESTED = 0
