@@ -107,10 +107,7 @@ internal fun LazyList(
     state.prefetchPolicy = rememberLazyLayoutPrefetchPolicy()
     val innerState = rememberLazyLayoutState().also { state.innerState = it }
 
-    val itemsProvider = stateOfItemsProvider.value
-    if (itemsProvider.itemsCount > 0) {
-        state.updateScrollPositionIfTheFirstItemWasMoved(itemsProvider)
-    }
+    ScrollPositionUpdater(stateOfItemsProvider, state)
 
     LazyLayout(
         modifier = modifier
@@ -147,6 +144,18 @@ internal fun LazyList(
         measurePolicy = measurePolicy,
         itemsProvider = { stateOfItemsProvider.value }
     )
+}
+
+/** Extracted to minimize the recomposition scope */
+@Composable
+private fun ScrollPositionUpdater(
+    stateOfItemsProvider: State<LazyListItemsProvider>,
+    state: LazyListState
+) {
+    val itemsProvider = stateOfItemsProvider.value
+    if (itemsProvider.itemsCount > 0) {
+        state.updateScrollPositionIfTheFirstItemWasMoved(itemsProvider)
+    }
 }
 
 @Composable
@@ -251,7 +260,7 @@ private fun rememberLazyListMeasurePolicy(
                 placementAnimator = placementAnimator
             )
         }
-        state.prefetchPolicy?.constraints = itemProvider.childConstraints
+        state.premeasureConstraints = itemProvider.childConstraints
 
         // can be negative if the content padding is larger than the max size from constraints
         val mainAxisAvailableSize = if (isVertical) {

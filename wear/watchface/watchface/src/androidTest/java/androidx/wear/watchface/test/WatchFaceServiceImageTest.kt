@@ -37,7 +37,6 @@ import android.view.SurfaceHolder
 import androidx.annotation.RequiresApi
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.filters.FlakyTest
 import androidx.test.filters.MediumTest
 import androidx.test.screenshot.AndroidXScreenshotTestRule
 import androidx.test.screenshot.assertAgainstGolden
@@ -55,7 +54,6 @@ import androidx.wear.watchface.TapEvent
 import androidx.wear.watchface.TapType
 import androidx.wear.watchface.WatchFace
 import androidx.wear.watchface.WatchFaceService
-import androidx.wear.watchface.WatchFaceType
 import androidx.wear.watchface.WatchState
 import androidx.wear.watchface.control.IInteractiveWatchFace
 import androidx.wear.watchface.control.IPendingInteractiveWatchFace
@@ -82,7 +80,6 @@ import org.junit.After
 import org.junit.Assert.fail
 import org.junit.Assume
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -404,7 +401,7 @@ public class WatchFaceServiceImageTest {
     }
 
     private fun setPendingWallpaperInteractiveWatchFaceInstance() {
-        InteractiveInstanceManager
+        val existingInstance = InteractiveInstanceManager
             .getExistingInstanceOrSetPendingWallpaperInteractiveWatchFaceInstance(
                 InteractiveInstanceManager.PendingWallpaperInteractiveWatchFaceInstance(
                     WallpaperInteractiveWatchFaceInstanceParams(
@@ -436,6 +433,7 @@ public class WatchFaceServiceImageTest {
                     }
                 )
             )
+        assertThat(existingInstance).isNull()
     }
 
     private fun sendComplications() {
@@ -455,13 +453,16 @@ public class WatchFaceServiceImageTest {
                 interactiveWatchFaceInstance.instanceId
             )!!
 
-        interactiveWatchFaceInstance.setWatchUiState(
-            WatchUiState(
-                ambient,
-                0
+        try {
+            interactiveWatchFaceInstance.setWatchUiState(
+                WatchUiState(
+                    ambient,
+                    0
+                )
             )
-        )
-        interactiveWatchFaceInstance.release()
+        } finally {
+            interactiveWatchFaceInstance.release()
+        }
     }
 
     @Test
@@ -476,42 +477,6 @@ public class WatchFaceServiceImageTest {
 
         assertThat(renderDoneLatch.await(TIMEOUT_MS, TimeUnit.MILLISECONDS)).isTrue()
         bitmap.assertAgainstGolden(screenshotRule, "active_screenshot")
-    }
-
-    @Test
-    @Ignore // TODO(b/189452267): Fix drawBlack and reinstate.
-    public fun testNonBlockingDrawScreenshot() {
-        handler.post(this::initControllableWatchFace)
-        assertThat(initLatch.await(TIMEOUT_MS, TimeUnit.MILLISECONDS)).isTrue()
-
-        renderDoneLatch = CountDownLatch(1)
-        handler.post {
-            engineWrapper.draw()
-        }
-
-        assertThat(renderDoneLatch.await(TIMEOUT_MS, TimeUnit.MILLISECONDS)).isTrue()
-        val bitmapBefore = bitmap.copy(bitmap.config, false)
-
-        completableWatchFace.complete(
-            WatchFace(
-                WatchFaceType.DIGITAL,
-                SimpleDigitalWatchFaceRenderer(
-                    surfaceHolder,
-                    MutableWatchState().apply {
-                        isVisible.value = true
-                    }.asWatchState()
-                )
-            )
-        )
-
-        renderDoneLatch = CountDownLatch(1)
-        handler.post {
-            engineWrapper.draw()
-        }
-        assertThat(renderDoneLatch.await(TIMEOUT_MS, TimeUnit.MILLISECONDS)).isTrue()
-
-        bitmapBefore.assertAgainstGolden(screenshotRule, "before_completeCreateWatchFace")
-        bitmap.assertAgainstGolden(screenshotRule, "after_completeCreateWatchFace")
     }
 
     @Test
@@ -563,7 +528,6 @@ public class WatchFaceServiceImageTest {
         )
     }
 
-    @FlakyTest(bugId = 206648285)
     @SuppressLint("NewApi")
     @Test
     public fun testCommandTakeOpenGLScreenShot() {
@@ -642,7 +606,6 @@ public class WatchFaceServiceImageTest {
         bitmap.assertAgainstGolden(screenshotRule, "green_screenshot_no_complication_data")
     }
 
-    @FlakyTest(bugId = 206484052)
     @SuppressLint("NewApi")
     @Test
     public fun testHighlightAllComplicationsInScreenshot() {
@@ -684,7 +647,6 @@ public class WatchFaceServiceImageTest {
 
     @SuppressLint("NewApi")
     @Test
-    @FlakyTest(bugId = 206485794)
     public fun testRenderLeftComplicationPressed() {
         val latch = CountDownLatch(1)
 
@@ -722,7 +684,6 @@ public class WatchFaceServiceImageTest {
         )
     }
 
-    @FlakyTest(bugId = 206647510)
     @SuppressLint("NewApi")
     @Test
     public fun testHighlightRightComplicationInScreenshot() {
@@ -895,12 +856,16 @@ public class WatchFaceServiceImageTest {
             InteractiveInstanceManager.getAndRetainInstance(
                 interactiveWatchFaceInstance.instanceId
             )!!
-        interactiveWatchFaceInstance.sendTouchEvent(
-            85,
-            165,
-            TapType.UP
-        )
+        try {
+            interactiveWatchFaceInstance.sendTouchEvent(
+                85,
+                165,
+                TapType.UP
+            )
 
-        assertThat(ComplicationTapActivity.awaitIntent()).isNotNull()
+            assertThat(ComplicationTapActivity.awaitIntent()).isNotNull()
+        } finally {
+            interactiveWatchFaceInstance.release()
+        }
     }
 }

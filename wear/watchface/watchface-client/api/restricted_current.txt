@@ -2,7 +2,7 @@
 package androidx.wear.watchface.client {
 
   public final class ComplicationSlotMetadata {
-    ctor public ComplicationSlotMetadata(androidx.wear.watchface.complications.ComplicationSlotBounds? bounds, @androidx.wear.watchface.ComplicationSlotBoundsType int boundsType, java.util.List<? extends androidx.wear.watchface.complications.data.ComplicationType> supportedTypes, androidx.wear.watchface.complications.DefaultComplicationDataSourcePolicy defaultDataSourcePolicy, boolean isInitiallyEnabled, boolean fixedComplicationDataSource, android.os.Bundle complicationConfigExtras);
+    ctor public ComplicationSlotMetadata(androidx.wear.watchface.complications.ComplicationSlotBounds? bounds, int boundsType, java.util.List<? extends androidx.wear.watchface.complications.data.ComplicationType> supportedTypes, androidx.wear.watchface.complications.DefaultComplicationDataSourcePolicy defaultDataSourcePolicy, boolean isInitiallyEnabled, boolean fixedComplicationDataSource, android.os.Bundle complicationConfigExtras);
     method public androidx.wear.watchface.complications.ComplicationSlotBounds? getBounds();
     method public int getBoundsType();
     method public android.os.Bundle getComplicationConfigExtras();
@@ -20,8 +20,8 @@ package androidx.wear.watchface.client {
   }
 
   public final class ComplicationSlotState {
-    ctor public ComplicationSlotState(android.graphics.Rect bounds, @androidx.wear.watchface.ComplicationSlotBoundsType int boundsType, java.util.List<? extends androidx.wear.watchface.complications.data.ComplicationType> supportedTypes, androidx.wear.watchface.complications.DefaultComplicationDataSourcePolicy defaultDataSourcePolicy, boolean isEnabled, boolean isInitiallyEnabled, androidx.wear.watchface.complications.data.ComplicationType currentType, boolean fixedComplicationDataSource, android.os.Bundle complicationConfigExtras);
-    ctor @Deprecated public ComplicationSlotState(android.graphics.Rect bounds, @androidx.wear.watchface.ComplicationSlotBoundsType int boundsType, java.util.List<? extends androidx.wear.watchface.complications.data.ComplicationType> supportedTypes, androidx.wear.watchface.complications.DefaultComplicationDataSourcePolicy defaultDataSourcePolicy, androidx.wear.watchface.complications.data.ComplicationType defaultDataSourceType, boolean isEnabled, boolean isInitiallyEnabled, androidx.wear.watchface.complications.data.ComplicationType currentType, boolean fixedComplicationDataSource, android.os.Bundle complicationConfigExtras);
+    ctor public ComplicationSlotState(android.graphics.Rect bounds, int boundsType, java.util.List<? extends androidx.wear.watchface.complications.data.ComplicationType> supportedTypes, androidx.wear.watchface.complications.DefaultComplicationDataSourcePolicy defaultDataSourcePolicy, boolean isEnabled, boolean isInitiallyEnabled, androidx.wear.watchface.complications.data.ComplicationType currentType, boolean fixedComplicationDataSource, android.os.Bundle complicationConfigExtras, Integer? nameResourceId, Integer? screenReaderNameResourceId);
+    ctor @Deprecated public ComplicationSlotState(android.graphics.Rect bounds, int boundsType, java.util.List<? extends androidx.wear.watchface.complications.data.ComplicationType> supportedTypes, androidx.wear.watchface.complications.DefaultComplicationDataSourcePolicy defaultDataSourcePolicy, androidx.wear.watchface.complications.data.ComplicationType defaultDataSourceType, boolean isEnabled, boolean isInitiallyEnabled, androidx.wear.watchface.complications.data.ComplicationType currentType, boolean fixedComplicationDataSource, android.os.Bundle complicationConfigExtras);
     method public android.graphics.Rect getBounds();
     method public int getBoundsType();
     method public android.os.Bundle getComplicationConfigExtras();
@@ -29,6 +29,8 @@ package androidx.wear.watchface.client {
     method public androidx.wear.watchface.complications.DefaultComplicationDataSourcePolicy getDefaultDataSourcePolicy();
     method @Deprecated public androidx.wear.watchface.complications.data.ComplicationType getDefaultDataSourceType();
     method public boolean getFixedComplicationDataSource();
+    method public Integer? getNameResourceId();
+    method public Integer? getScreenReaderNameResourceId();
     method public java.util.List<androidx.wear.watchface.complications.data.ComplicationType> getSupportedTypes();
     method public boolean isEnabled();
     method public boolean isInitiallyEnabled();
@@ -41,6 +43,8 @@ package androidx.wear.watchface.client {
     property public final boolean fixedComplicationDataSource;
     property public final boolean isEnabled;
     property public final boolean isInitiallyEnabled;
+    property public final Integer? nameResourceId;
+    property public final Integer? screenReaderNameResourceId;
     property public final java.util.List<androidx.wear.watchface.complications.data.ComplicationType> supportedTypes;
   }
 
@@ -126,6 +130,7 @@ package androidx.wear.watchface.client {
     method @kotlin.jvm.Throws(exceptionClasses=RemoteException::class) public java.util.Map<java.lang.Integer,androidx.wear.watchface.client.ComplicationSlotState> getComplicationSlotsState();
     method @kotlin.jvm.Throws(exceptionClasses=RemoteException::class) public java.util.List<androidx.wear.watchface.ContentDescriptionLabel> getContentDescriptionLabels();
     method @kotlin.jvm.Throws(exceptionClasses=RemoteException::class) public String getInstanceId();
+    method @kotlin.jvm.Throws(exceptionClasses=RemoteException::class) public default androidx.wear.watchface.client.OverlayStyle getOverlayStyle();
     method @kotlin.jvm.Throws(exceptionClasses=RemoteException::class) public default android.app.PendingIntent? getPendingIntentForTouchEvent(@Px int xPosition, @Px int yPosition, @androidx.wear.watchface.TapType int tapType) throws android.os.RemoteException;
     method @kotlin.jvm.Throws(exceptionClasses=RemoteException::class) public java.time.Instant getPreviewReferenceInstant();
     method @kotlin.jvm.Throws(exceptionClasses=RemoteException::class) public androidx.wear.watchface.style.UserStyleSchema getUserStyleSchema();
@@ -143,6 +148,7 @@ package androidx.wear.watchface.client {
     property @kotlin.jvm.Throws(exceptionClasses=RemoteException::class) public abstract java.util.Map<java.lang.Integer,androidx.wear.watchface.client.ComplicationSlotState> complicationSlotsState;
     property @kotlin.jvm.Throws(exceptionClasses=RemoteException::class) public abstract java.util.List<androidx.wear.watchface.ContentDescriptionLabel> contentDescriptionLabels;
     property @kotlin.jvm.Throws(exceptionClasses=RemoteException::class) public abstract String instanceId;
+    property @kotlin.jvm.Throws(exceptionClasses=RemoteException::class) public default androidx.wear.watchface.client.OverlayStyle overlayStyle;
     property @kotlin.jvm.Throws(exceptionClasses=RemoteException::class) public abstract java.time.Instant previewReferenceInstant;
     property @kotlin.jvm.Throws(exceptionClasses=RemoteException::class) public abstract androidx.wear.watchface.style.UserStyleSchema userStyleSchema;
     field public static final androidx.wear.watchface.client.InteractiveWatchFaceClient.Companion Companion;
@@ -163,6 +169,15 @@ package androidx.wear.watchface.client {
 
   public static fun interface InteractiveWatchFaceClient.OnWatchFaceReadyListener {
     method public void onWatchFaceReady();
+  }
+
+  public final class OverlayStyle {
+    ctor public OverlayStyle(android.graphics.Color? backgroundColor, android.graphics.Color? foregroundColor);
+    ctor public OverlayStyle();
+    method public android.graphics.Color? getBackgroundColor();
+    method public android.graphics.Color? getForegroundColor();
+    property public final android.graphics.Color? backgroundColor;
+    property public final android.graphics.Color? foregroundColor;
   }
 
   public interface WatchFaceControlClient extends java.lang.AutoCloseable {
@@ -196,8 +211,8 @@ package androidx.wear.watchface.client {
   }
 
   public interface WatchFaceMetadataClient extends java.lang.AutoCloseable {
-    method @kotlin.jvm.Throws(exceptionClasses=RemoteException::class) public java.util.Map<java.lang.Integer,androidx.wear.watchface.client.ComplicationSlotMetadata> getComplicationSlotMetadataMap() throws android.os.RemoteException;
-    method @kotlin.jvm.Throws(exceptionClasses=RemoteException::class) public androidx.wear.watchface.style.UserStyleSchema getUserStyleSchema() throws android.os.RemoteException;
+    method @kotlin.jvm.Throws(exceptionClasses=WatchFaceException::class) public java.util.Map<java.lang.Integer,androidx.wear.watchface.client.ComplicationSlotMetadata> getComplicationSlotMetadataMap() throws androidx.wear.watchface.client.WatchFaceMetadataClient.WatchFaceException;
+    method @kotlin.jvm.Throws(exceptionClasses=WatchFaceException::class) public androidx.wear.watchface.style.UserStyleSchema getUserStyleSchema() throws androidx.wear.watchface.client.WatchFaceMetadataClient.WatchFaceException;
     field public static final androidx.wear.watchface.client.WatchFaceMetadataClient.Companion Companion;
   }
 
@@ -211,6 +226,10 @@ package androidx.wear.watchface.client {
 
   public static final class WatchFaceMetadataClient.ServiceStartFailureException extends java.lang.Exception {
     ctor public WatchFaceMetadataClient.ServiceStartFailureException(optional String message);
+  }
+
+  public static final class WatchFaceMetadataClient.WatchFaceException extends java.lang.Exception {
+    ctor public WatchFaceMetadataClient.WatchFaceException(Exception e);
   }
 
   public final class WatchUiState {

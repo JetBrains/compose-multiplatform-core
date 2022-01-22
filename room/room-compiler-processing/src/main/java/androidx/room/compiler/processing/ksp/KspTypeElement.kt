@@ -25,9 +25,13 @@ import androidx.room.compiler.processing.XHasModifiers
 import androidx.room.compiler.processing.XMethodElement
 import androidx.room.compiler.processing.XType
 import androidx.room.compiler.processing.XTypeElement
+import androidx.room.compiler.processing.collectAllMethods
+import androidx.room.compiler.processing.collectFieldsIncludingPrivateSupers
+import androidx.room.compiler.processing.filterMethodsByConfig
 import androidx.room.compiler.processing.ksp.KspAnnotated.UseSiteFilter.Companion.NO_USE_SITE
 import androidx.room.compiler.processing.ksp.synthetic.KspSyntheticPropertyMethodElement
 import androidx.room.compiler.processing.tryBox
+import androidx.room.compiler.processing.util.MemoizedSequence
 import com.google.devtools.ksp.getConstructors
 import com.google.devtools.ksp.getDeclaredFunctions
 import com.google.devtools.ksp.getDeclaredProperties
@@ -113,6 +117,18 @@ internal sealed class KspTypeElement(
         } as ClassName
     }
 
+    private val allMethods = MemoizedSequence {
+        collectAllMethods(this)
+    }
+
+    private val allFieldsIncludingPrivateSupers = MemoizedSequence {
+        collectFieldsIncludingPrivateSupers(this)
+    }
+
+    override fun getAllMethods(): Sequence<XMethodElement> = allMethods
+
+    override fun getAllFieldsIncludingPrivateSupers() = allFieldsIncludingPrivateSupers
+
     /**
      * This list includes fields for all properties in this class and its static companion
      * properties. They are not necessarily fields as it might include properties of interfaces.
@@ -159,11 +175,6 @@ internal sealed class KspTypeElement(
     private val syntheticGetterSetterMethods: List<XMethodElement> by lazy {
         _declaredProperties.flatMap { field ->
             when {
-                field.type.ksType.isInline() -> {
-                    // KAPT does not generate getters/setters for inlines, we'll hide them as well
-                    // until room generates kotlin code
-                    emptyList()
-                }
                 field.declaration.hasJvmFieldAnnotation() -> {
                     // jvm fields cannot have accessors but KSP generates synthetic accessors for
                     // them. We check for JVM field first before checking the getter
@@ -198,7 +209,7 @@ internal sealed class KspTypeElement(
                             )
                         }.toList()
             }
-        }
+        }.filterMethodsByConfig(env)
     }
 
     override fun isNested(): Boolean {
@@ -275,12 +286,6 @@ internal sealed class KspTypeElement(
             .filterNot {
                 // filter out constructors
                 it.simpleName.asString() == name
-            }.filterNot {
-                // if it receives or returns inline, drop it.
-                // we can re-enable these once room generates kotlin code
-                it.parameters.any {
-                    it.type.resolve().isInline()
-                } || it.returnType?.resolve()?.isInline() == true
             }.map {
                 KspMethodElement.create(
                     env = env,
@@ -288,6 +293,7 @@ internal sealed class KspTypeElement(
                     declaration = it
                 )
             }.toList()
+            .filterMethodsByConfig(env)
         KspClassFileUtility.orderMethods(declaration, declaredMethods) +
             syntheticGetterSetterMethods
     }

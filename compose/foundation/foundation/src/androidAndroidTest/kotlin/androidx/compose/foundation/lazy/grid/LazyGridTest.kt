@@ -44,6 +44,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.composed
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.SemanticsActions
@@ -158,13 +160,13 @@ class LazyGridTest {
             .assertIsDisplayed()
 
         rule.onNodeWithTag("7")
-            .assertDoesNotExist()
+            .assertIsNotDisplayed()
 
         rule.onNodeWithTag("8")
-            .assertDoesNotExist()
+            .assertIsNotDisplayed()
 
         rule.onNodeWithTag("9")
-            .assertDoesNotExist()
+            .assertIsNotDisplayed()
     }
 
     @Test
@@ -991,6 +993,114 @@ class LazyGridTest {
         rule.onNodeWithTag("0").assertLeftPositionInRootIsEqualTo(gridWidthDp * 2 / 3)
         rule.onNodeWithTag("1").assertLeftPositionInRootIsEqualTo(gridWidthDp / 3)
         rule.onNodeWithTag("2").assertLeftPositionInRootIsEqualTo(0.dp)
+    }
+
+    @Test
+    fun withMissingItems() {
+        val itemHeight = with(rule.density) { 30.toDp() }
+        lateinit var state: LazyGridState
+        rule.setContent {
+            state = rememberLazyGridState()
+            LazyVerticalGrid(
+                cells = GridCells.Fixed(2),
+                modifier = Modifier.height(itemHeight + 1.dp),
+                state = state
+            ) {
+                items((0..8).map { it.toString() }) {
+                    if (it != "3") {
+                        Box(Modifier.size(itemHeight).testTag(it))
+                    }
+                }
+            }
+        }
+
+        rule.onNodeWithTag("0").assertIsDisplayed()
+        rule.onNodeWithTag("1").assertIsDisplayed()
+        rule.onNodeWithTag("2").assertIsDisplayed()
+
+        rule.runOnIdle {
+            runBlocking {
+                state.scrollToItem(3)
+            }
+        }
+
+        rule.onNodeWithTag("0").assertIsNotDisplayed()
+        rule.onNodeWithTag("1").assertIsNotDisplayed()
+        rule.onNodeWithTag("2").assertIsDisplayed()
+        rule.onNodeWithTag("4").assertIsDisplayed()
+        rule.onNodeWithTag("5").assertIsDisplayed()
+        rule.onNodeWithTag("6").assertDoesNotExist()
+        rule.onNodeWithTag("7").assertDoesNotExist()
+    }
+
+    @Test
+    fun recomposingWithNewComposedModifierObjectIsNotCausingRemeasure() {
+        var remeasureCount = 0
+        val layoutModifier = Modifier.layout { measurable, constraints ->
+            remeasureCount++
+            val placeable = measurable.measure(constraints)
+            layout(placeable.width, placeable.height) {
+                placeable.place(0, 0)
+            }
+        }
+        val counter = mutableStateOf(0)
+
+        rule.setContentWithTestViewConfiguration {
+            counter.value // just to trigger recomposition
+            LazyVerticalGrid(
+                GridCells.Fixed(1),
+                // this will return a new object everytime causing LazyVerticalGrid recomposition
+                // without causing remeasure
+                Modifier.composed { layoutModifier }
+            ) {
+                items(1) {
+                    Spacer(Modifier.size(10.dp))
+                }
+            }
+        }
+
+        rule.runOnIdle {
+            Truth.assertThat(remeasureCount).isEqualTo(1)
+            counter.value++
+        }
+
+        rule.runOnIdle {
+            Truth.assertThat(remeasureCount).isEqualTo(1)
+        }
+    }
+
+    @Test
+    fun scrollingALotDoesntCauseLazyLayoutRecomposition() {
+        var recomposeCount = 0
+        lateinit var state: LazyGridState
+
+        rule.setContentWithTestViewConfiguration {
+            state = rememberLazyGridState()
+            LazyVerticalGrid(
+                GridCells.Fixed(1),
+                Modifier.composed {
+                    recomposeCount++
+                    Modifier
+                }.size(100.dp),
+                state
+            ) {
+                items(1000) {
+                    Spacer(Modifier.size(100.dp))
+                }
+            }
+        }
+
+        rule.runOnIdle {
+            Truth.assertThat(recomposeCount).isEqualTo(1)
+
+            runBlocking {
+                state.scrollToItem(100)
+            }
+        }
+
+        rule.runOnIdle {
+            Truth.assertThat(recomposeCount).isEqualTo(1)
+        }
     }
 
     // TODO: add tests for the cache logic

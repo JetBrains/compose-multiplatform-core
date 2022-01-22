@@ -2,13 +2,13 @@
 # -----------------------------------------------------------------------------
 # All of the following should be updated in sync.
 # -----------------------------------------------------------------------------
-androidGradlePlugin = "7.2.0-alpha06"
+androidGradlePlugin = "7.2.0-alpha07"
 # NOTE: When updating the lint version we also need to update the `api` version
 # supported by `IssueRegistry`'s.' For e.g. r.android.com/1331903
-androidLint = "30.2.0-alpha06"
+androidLint = "30.2.0-alpha07"
 # Once you have a chosen version of AGP to upgrade to, go to
 # https://developer.android.com/studio/archive and find the matching version of Studio.
-androidStudio = "2021.2.1.6"
+androidStudio = "2021.2.1.7"
 # -----------------------------------------------------------------------------
 
 androidLintMin = "27.2.1"
@@ -75,6 +75,7 @@ espressoIntents = { module = "androidx.test.espresso:espresso-intents", version.
 espressoWeb = { module = "androidx.test.espresso:espresso-web", version.ref = "espresso" }
 findbugs = { module = "com.google.code.findbugs:jsr305", version = "3.0.2" }
 firebaseAppindexing = { module = "com.google.firebase:firebase-appindexing", version = "19.2.0" }
+googletest = { module = "com.android.ndk.thirdparty:googletest", version = "1.11.0-beta-1" }
 hiltAndroid = { module = "com.google.dagger:hilt-android", version.ref = "hilt" }
 hiltAndroidTesting = { module = "com.google.dagger:hilt-android-testing", version.ref = "hilt" }
 hiltAndroidGradlePluginz = { module = "com.google.dagger:hilt-android-gradle-plugin", version.ref = "hilt" }

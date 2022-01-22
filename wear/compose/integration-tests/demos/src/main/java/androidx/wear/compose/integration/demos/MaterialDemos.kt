@@ -19,18 +19,21 @@ package androidx.wear.compose.integration.demos
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.wear.compose.material.ExperimentalWearMaterialApi
-import androidx.wear.compose.material.samples.AlertDialogWithButtons
-import androidx.wear.compose.material.samples.AlertDialogWithChips
+import androidx.wear.compose.material.samples.AlertWithButtons
+import androidx.wear.compose.material.samples.AlertWithChips
+import androidx.wear.compose.material.samples.AlertDialogSample
 import androidx.wear.compose.material.samples.AppCardWithIcon
 import androidx.wear.compose.material.samples.ButtonWithIcon
 import androidx.wear.compose.material.samples.ButtonWithText
 import androidx.wear.compose.material.samples.ChipWithIconAndLabels
 import androidx.wear.compose.material.samples.CompactButtonWithIcon
 import androidx.wear.compose.material.samples.CompactChipWithIconAndLabel
-import androidx.wear.compose.material.samples.ConfirmationDialogWithAnimation
+import androidx.wear.compose.material.samples.ConfirmationWithAnimation
+import androidx.wear.compose.material.samples.ConfirmationDialogSample
 import androidx.wear.compose.material.samples.CurvedTextDemo
 import androidx.wear.compose.material.samples.InlineSliderSample
 import androidx.wear.compose.material.samples.InlineSliderSegmentedSample
+import androidx.wear.compose.material.samples.OptionChangePicker
 import androidx.wear.compose.material.samples.ScalingLazyColumnWithHeaders
 import androidx.wear.compose.material.samples.ScalingLazyColumnWithHeadersReversed
 import androidx.wear.compose.material.samples.SimplePicker
@@ -178,9 +181,21 @@ val WearMaterialDemos = DemoCategory(
         DemoCategory(
             "Dialogs",
             listOf(
-                ComposableDemo("AlertDialog - Buttons") { AlertDialogWithButtons() },
-                ComposableDemo("AlertDialog - Chips") { AlertDialogWithChips() },
-                ComposableDemo("ConfirmationDialog") { ConfirmationDialogWithAnimation() },
+                ComposableDemo("Alert Dialog") {
+                    AlertDialogSample()
+                },
+                ComposableDemo("Confirmation Dialog") {
+                    ConfirmationDialogSample()
+                },
+                ComposableDemo("Alert - Buttons") {
+                    AlertWithButtons()
+                },
+                ComposableDemo("Alert - Chips") {
+                    AlertWithChips()
+                },
+                ComposableDemo("Confirmation") {
+                    ConfirmationWithAnimation()
+                },
             )
         ),
         DemoCategory(
@@ -303,6 +318,9 @@ val WearMaterialDemos = DemoCategory(
             listOf(
                 ComposableDemo("Simple Picker") {
                     SimplePicker()
+                },
+                ComposableDemo("Change Selected Option Picker") {
+                    OptionChangePicker()
                 },
                 ComposableDemo("Time Picker") {
                     PickerTimeDemo()

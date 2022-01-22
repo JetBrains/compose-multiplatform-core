@@ -18,7 +18,7 @@ package androidx.build.dependencyTracker
 
 import androidx.build.dependencyTracker.AffectedModuleDetector.Companion.ENABLE_ARG
 import androidx.build.getDistributionDirectory
-import androidx.build.gitclient.GitClientImpl
+import androidx.build.gitclient.GitClient
 import androidx.build.gradle.isRoot
 import java.io.File
 import org.gradle.api.Action
@@ -146,6 +146,12 @@ abstract class AffectedModuleDetector(
             if (baseCommitOverride != null) {
                 logger.info("using base commit override $baseCommitOverride")
             }
+            @Suppress("DEPRECATION") // TODO: remove when studio upgrades to Gradle 7.4-rc-1
+            val changeInfoPath = GitClient.getChangeInfoPath(rootProject)
+                .forUseAtConfigurationTime()
+            @Suppress("DEPRECATION") // TODO: remove when studio upgrades to Gradle 7.4-rc-1
+            val manifestPath = GitClient.getManifestPath(rootProject)
+                .forUseAtConfigurationTime()
             gradle.taskGraph.whenReady {
                 logger.lifecycle("projects evaluated")
                 val projectGraph = ProjectGraph(rootProject)
@@ -159,6 +165,8 @@ abstract class AffectedModuleDetector(
                         params.dependencyTracker = dependencyTracker
                         params.log = outputFile
                         params.baseCommitOverride = baseCommitOverride
+                        params.changeInfoPath = changeInfoPath
+                        params.manifestPath = manifestPath
                     }
                 )
                 logger.info("using real detector")
@@ -260,6 +268,8 @@ abstract class AffectedModuleDetectorLoader :
         var alwaysBuildIfExists: Set<String>?
         var ignoredPaths: Set<String>?
         var baseCommitOverride: String?
+        var changeInfoPath: Provider<String>
+        var manifestPath: Provider<String>
     }
 
     val detector: AffectedModuleDetector by lazy {
@@ -271,13 +281,20 @@ abstract class AffectedModuleDetectorLoader :
             if (baseCommitOverride != null) {
                 logger.info("using base commit override $baseCommitOverride")
             }
-            val gitClient = GitClientImpl(
-                workingDir = parameters.rootDir,
-                logger = logger
+            val gitClient = GitClient.create(
+                rootProjectDir = parameters.rootDir,
+                logger = logger,
+                changeInfoPath = parameters.changeInfoPath.get(),
+                manifestPath = parameters.manifestPath.get()
             )
             val changedFilesProvider: ChangedFilesProvider = {
                 val baseSha = baseCommitOverride ?: gitClient.findPreviousSubmittedChange()
-                baseSha?.let(gitClient::findChangedFilesSince)
+                check(baseSha != null) {
+                    "gitClient returned null from findPreviousSubmittedChange"
+                }
+                val changedFiles = gitClient.findChangedFilesSince(baseSha)
+                logger.info("changed files: $changedFiles")
+                changedFiles
             }
 
             AffectedModuleDetectorImpl(

@@ -16,6 +16,7 @@
 
 package androidx.wear.watchface.samples
 
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.graphics.Canvas
@@ -103,6 +104,9 @@ const val EXAMPLE_CANVAS_WATCHFACE_RIGHT_COMPLICATION_ID = 102
 const val HOURS_DRAW_FREQ_MIN = 1L
 const val HOURS_DRAW_FREQ_MAX = 4L
 const val HOURS_DRAW_FREQ_DEFAULT = 3L
+
+const val CONFIGURABLE_DATA_SOURCE_PKG = "androidx.wear.watchface.complications.datasource.samples"
+const val CONFIGURABLE_DATA_SOURCE = "$CONFIGURABLE_DATA_SOURCE_PKG.ConfigurableDataSourceService"
 
 /** A simple example canvas based analog watch face. NB this is open for testing. */
 open class ExampleCanvasAnalogWatchFaceService : WatchFaceService() {
@@ -279,12 +283,16 @@ open class ExampleCanvasAnalogWatchFaceService : WatchFaceService() {
                 ComplicationType.MONOCHROMATIC_IMAGE,
                 ComplicationType.SMALL_IMAGE
             ),
+            // try to use the configurable data source sample, then default to system data source
             DefaultComplicationDataSourcePolicy(
+                ComponentName(CONFIGURABLE_DATA_SOURCE_PKG, CONFIGURABLE_DATA_SOURCE),
+                ComplicationType.SHORT_TEXT,
                 SystemDataSources.DATA_SOURCE_DAY_OF_WEEK,
                 ComplicationType.SHORT_TEXT
             ),
             ComplicationSlotBounds(RectF(0.2f, 0.4f, 0.4f, 0.6f))
-        ).build()
+        ).setNameResourceId(R.string.left_complication_screen_name)
+            .setScreenReaderNameResourceId(R.string.left_complication_screen_reader_name).build()
 
         val rightComplication = ComplicationSlot.createRoundRectComplicationSlotBuilder(
             EXAMPLE_CANVAS_WATCHFACE_RIGHT_COMPLICATION_ID,
@@ -301,7 +309,9 @@ open class ExampleCanvasAnalogWatchFaceService : WatchFaceService() {
                 ComplicationType.SHORT_TEXT
             ),
             ComplicationSlotBounds(RectF(0.6f, 0.4f, 0.8f, 0.6f))
-        ).build()
+        ).setNameResourceId(R.string.right_complication_screen_name)
+            .setScreenReaderNameResourceId(R.string.right_complication_screen_reader_name).build()
+
         return ComplicationSlotsManager(
             listOf(leftComplication, rightComplication),
             currentUserStyleRepository
@@ -352,7 +362,8 @@ class ExampleAnalogWatchCanvasRenderer(
     currentUserStyleRepository,
     watchState,
     CanvasType.HARDWARE,
-    FRAME_PERIOD_MS
+    FRAME_PERIOD_MS,
+    clearWithBackgroundTintBeforeRenderingHighlightLayer = true
 ) {
     private val clockHandPaint = Paint().apply {
         isAntiAlias = true
@@ -436,8 +447,6 @@ class ExampleAnalogWatchCanvasRenderer(
     }
 
     override fun renderHighlightLayer(canvas: Canvas, bounds: Rect, zonedDateTime: ZonedDateTime) {
-        canvas.drawColor(renderParameters.highlightLayer!!.backgroundTint)
-
         for ((_, complication) in complicationSlotsManager.complicationSlots) {
             if (complication.enabled) {
                 complication.renderHighlightLayer(canvas, zonedDateTime, renderParameters)
