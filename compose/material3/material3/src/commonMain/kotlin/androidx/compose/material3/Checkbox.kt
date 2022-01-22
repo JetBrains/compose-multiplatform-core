@@ -31,7 +31,7 @@ import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.selection.triStateToggleable
 import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.material3.tokens.CheckboxTokens
-import androidx.compose.material3.tokens.ColorSchemeKey
+import androidx.compose.material3.tokens.ColorSchemeKeyTokens
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
@@ -81,6 +81,7 @@ import kotlin.math.max
  * @param colors [CheckboxColors] that will be used to resolve the color used for this [Checkbox] in
  * different states. See [CheckboxDefaults.colors]
  */
+@ExperimentalMaterial3Api
 @Composable
 fun Checkbox(
     checked: Boolean,
@@ -234,7 +235,7 @@ object CheckboxDefaults {
         uncheckedColor: Color =
             MaterialTheme.colorScheme.fromToken(CheckboxTokens.UnselectedIconColor),
         // TODO(b/188529841): Update the token when this issue is resolved.
-        checkmarkColor: Color = MaterialTheme.colorScheme.fromToken(ColorSchemeKey.Surface),
+        checkmarkColor: Color = MaterialTheme.colorScheme.fromToken(ColorSchemeKeyTokens.Surface),
         disabledCheckedColor: Color =
             MaterialTheme.colorScheme.fromToken(CheckboxTokens.DisabledSelectedIconColor)
                 .copy(alpha = CheckboxTokens.DisabledSelectedIconOpacity),

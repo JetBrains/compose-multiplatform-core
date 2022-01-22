@@ -30,6 +30,7 @@ import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.platform.app.InstrumentationRegistry
+import androidx.testutils.PollingCheck
 import androidx.testutils.withActivity
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
@@ -82,6 +83,7 @@ class ToolbarMenuHostTest {
             }
 
             toolbar.showOverflowMenu()
+            PollingCheck.waitFor { toolbar.isOverflowMenuShowing }
             onView(withText("Item1")).perform(click())
             assertThat(itemSelectedId).isEqualTo(R.id.item1)
         }
@@ -114,6 +116,7 @@ class ToolbarMenuHostTest {
             }
 
             toolbar.showOverflowMenu()
+            PollingCheck.waitFor { toolbar.isOverflowMenuShowing }
             onView(withText("Item1")).perform(click())
             assertThat(itemSelectedId).isEqualTo(R.id.item1)
 
@@ -136,6 +139,7 @@ class ToolbarMenuHostTest {
             }
 
             toolbar.showOverflowMenu()
+            PollingCheck.waitFor { toolbar.isOverflowMenuShowing }
             onView(withText("Item3")).perform(click())
             assertThat(itemSelectedId).isEqualTo(R.id.item3)
         }

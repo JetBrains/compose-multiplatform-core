@@ -18,13 +18,17 @@ package androidx.wear.compose.material
 
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.Easing
+import androidx.compose.foundation.gestures.FlingBehavior
+import androidx.compose.foundation.gestures.ScrollableDefaults
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.runtime.Composable
@@ -237,6 +241,10 @@ internal fun convertToCenterOffset(
  * @param horizontalAlignment the horizontal alignment applied to the items
  * @param contentPadding The padding to apply around the contents
  * @param anchorType How to anchor list items to the center-line of the viewport
+ * @param flingBehavior Logic describing fling behavior
+ * @param autoCentering Flag to determine whether all items should be centerable in the viewport.
+ * If true then sufficient space will be made available before the first and after the last
+ * list item to ensure that they can be scrolled to the center of the viewport.
  * @param state The state of the component
  */
 @Composable
@@ -253,6 +261,8 @@ public fun ScalingLazyColumn(
     contentPadding: PaddingValues = PaddingValues(horizontal = 8.dp),
     state: ScalingLazyListState = rememberScalingLazyListState(),
     anchorType: ScalingLazyListAnchorType = ScalingLazyListAnchorType.ItemCenter,
+    flingBehavior: FlingBehavior = ScrollableDefaults.flingBehavior(),
+    autoCentering: Boolean = true,
     content: ScalingLazyListScope.() -> Unit
 ) {
     var initialized by remember { mutableStateOf(false) }
@@ -260,65 +270,86 @@ public fun ScalingLazyColumn(
         val density = LocalDensity.current
         val layoutDirection = LocalLayoutDirection.current
         val extraPaddingInPixels = scalingParams.resolveViewportVerticalOffset(constraints)
-        val extraPadding = with(density) { extraPaddingInPixels.toDp() }
-        val beforeContentPaddingInPx = with(density) {
-            if (reverseLayout) contentPadding.calculateBottomPadding().roundToPx()
-            else contentPadding.calculateTopPadding().roundToPx()
-        }
-        val itemScope = with(density) {
-            ScalingLazyListItemScopeImpl(
-                density = density,
-                constraints = constraints.offset(
-                    horizontal = -(
-                        contentPadding.calculateStartPadding(layoutDirection) +
-                            contentPadding.calculateEndPadding(layoutDirection)
-                        ).toPx().toInt(),
-                    vertical = -(
-                        contentPadding.calculateTopPadding() +
-                            contentPadding.calculateBottomPadding()
-                        ).roundToPx()
-                )
-            )
-        }
-        // Set up transient state
-        state.scalingParams.value = scalingParams
-        state.extraPaddingPx.value = extraPaddingInPixels
-        state.beforeContentPaddingPx.value = beforeContentPaddingInPx
-        state.viewportHeightPx.value = constraints.maxHeight
-        state.gapBetweenItemsPx.value = with(density) {
-            verticalArrangement.spacing.roundToPx()
-        }
-        state.anchorType.value = anchorType
-        state.reverseLayout.value = reverseLayout
 
-        val combinedPaddingValues = CombinedPaddingValues(
-            contentPadding = contentPadding,
-            extraPadding = extraPadding
-        )
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .clipToBounds()
-                .verticalNegativePadding(extraPadding)
-                .onGloballyPositioned {
-                    initialized = true
-                },
-            horizontalAlignment = horizontalAlignment,
-            contentPadding = combinedPaddingValues,
-            reverseLayout = reverseLayout,
-            verticalArrangement = verticalArrangement,
-            state = state.lazyListState
-        ) {
-            val scope = ScalingLazyListScopeImpl(
-                state = state,
-                scope = this,
-                itemScope = itemScope
+        with(density) {
+            val extraPadding = extraPaddingInPixels.toDp()
+            val combinedPaddingValues = CombinedPaddingValues(
+                contentPadding = contentPadding,
+                extraPadding = extraPadding
             )
-            scope.content()
-        }
-        if (initialized) {
-            LaunchedEffect(state) {
-                state.scrollToInitialItem()
+
+            val beforeContentPaddingInPx =
+                if (reverseLayout) contentPadding.calculateBottomPadding().roundToPx()
+                else contentPadding.calculateTopPadding().roundToPx()
+
+            val itemScope =
+                ScalingLazyListItemScopeImpl(
+                    density = density,
+                    constraints = constraints.offset(
+                        horizontal = -(
+                            contentPadding.calculateStartPadding(layoutDirection) +
+                                contentPadding.calculateEndPadding(layoutDirection)
+                            ).toPx().toInt(),
+                        vertical = -(
+                            contentPadding.calculateTopPadding() +
+                                contentPadding.calculateBottomPadding()
+                            ).roundToPx()
+                    )
+                )
+
+            // Set up transient state
+            state.scalingParams.value = scalingParams
+            state.extraPaddingPx.value = extraPaddingInPixels
+            state.beforeContentPaddingPx.value = beforeContentPaddingInPx
+            state.viewportHeightPx.value = constraints.maxHeight
+            state.gapBetweenItemsPx.value =
+                verticalArrangement.spacing.roundToPx()
+            state.anchorType.value = anchorType
+            state.autoCentering.value = autoCentering
+            state.reverseLayout.value = reverseLayout
+
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clipToBounds()
+                    .verticalNegativePadding(extraPadding)
+                    .onGloballyPositioned {
+                        initialized = true
+                    },
+                horizontalAlignment = horizontalAlignment,
+                contentPadding = combinedPaddingValues,
+                reverseLayout = reverseLayout,
+                verticalArrangement = verticalArrangement,
+                state = state.lazyListState,
+                flingBehavior = flingBehavior,
+            ) {
+                val scope = ScalingLazyListScopeImpl(
+                    state = state,
+                    scope = this,
+                    itemScope = itemScope
+                )
+                // Only add spacers if autoCentering == true as we have to consider the impact of
+                // vertical spacing between items.
+                if (autoCentering) {
+                    item {
+                        Spacer(
+                            modifier = Modifier.height(state.topAutoCenteringPaddingPx.toDp())
+                        )
+                    }
+                }
+                scope.content()
+                if (autoCentering) {
+                    item {
+                        Spacer(
+                            modifier = Modifier.height(state.bottomAutoCenteringPaddingPx.toDp())
+                        )
+                    }
+                }
+            }
+            if (initialized) {
+                LaunchedEffect(state) {
+                    state.scrollToInitialItem()
+                }
             }
         }
     }
@@ -429,7 +460,7 @@ public object ScalingLazyColumnDefaults {
      * viewport, however there is a performance cost associated with materializing items that are
      * subsequently not drawn. The higher/more extreme the scaling parameters that are applied to
      * the [ScalingLazyColumn] the more padding may be needed to ensure there are always enough
-     * content items available to be rendered. By default will be 20% of the maxHeight of the
+     * content items available to be rendered. By default will be 10% of the maxHeight of the
      * viewport above and below the content.
      */
     fun scalingParams(
@@ -440,7 +471,7 @@ public object ScalingLazyColumnDefaults {
         minTransitionArea: Float = 0.2f,
         maxTransitionArea: Float = 0.6f,
         scaleInterpolator: Easing = CubicBezierEasing(0.25f, 0.00f, 0.75f, 1.00f),
-        viewportVerticalOffsetResolver: (Constraints) -> Int = { (it.maxHeight / 5f).toInt() }
+        viewportVerticalOffsetResolver: (Constraints) -> Int = { (it.maxHeight / 10f).toInt() }
     ): ScalingParams = DefaultScalingParams(
         edgeScale = edgeScale,
         edgeAlpha = edgeAlpha,
@@ -503,13 +534,20 @@ private fun ScalingLazyColumnItemWrapper(
     Box(
         modifier = Modifier.graphicsLayer {
             val reverseLayout = state.reverseLayout.value!!
+            val anchorType = state.anchorType.value!!
             val items = state.layoutInfo.visibleItemsInfo
             val currentItem = items.find { it.index == index }
             if (currentItem != null) {
                 alpha = currentItem.alpha
                 scaleX = currentItem.scale
                 scaleY = currentItem.scale
-                val offsetAdjust = (currentItem.offset - currentItem.unadjustedOffset).toFloat()
+                // Calculate how much to adjust/translate the position of the list item by
+                // determining the different between the unadjusted start position based on the
+                // underlying LazyList layout and the start position adjusted to take into account
+                // scaling of the list items. Items further from the middle of the visible viewport
+                // will be subject to more adjustment.
+                val offsetAdjust = currentItem.startOffset(anchorType) -
+                    currentItem.unadjustedStartOffset(anchorType)
                 translationY = if (reverseLayout) -offsetAdjust else offsetAdjust
                 transformOrigin = TransformOrigin(
                     pivotFractionX = 0.5f,
@@ -540,7 +578,6 @@ private class CombinedPaddingValues(
 
     override fun calculateBottomPadding(): Dp =
         contentPadding.calculateBottomPadding() + extraPadding
-
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other == null) return false
