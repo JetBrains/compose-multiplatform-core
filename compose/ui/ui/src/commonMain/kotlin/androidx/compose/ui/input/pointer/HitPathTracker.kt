@@ -93,6 +93,7 @@ internal class HitPathTracker(private val rootCoordinates: LayoutCoordinates) {
             isInBounds
         )
         if (!changed) {
+            root.cleanUp(internalPointerEvent)
             return false
         }
         var dispatchHit = root.dispatchMainEventPass(
@@ -102,6 +103,7 @@ internal class HitPathTracker(private val rootCoordinates: LayoutCoordinates) {
             isInBounds
         )
         dispatchHit = root.dispatchFinalEventPass(internalPointerEvent) || dispatchHit
+        root.cleanUp(internalPointerEvent)
 
         return dispatchHit
     }
@@ -197,8 +199,14 @@ internal open class NodeParent {
         children.forEach {
             dispatched = it.dispatchFinalEventPass(internalPointerEvent) || dispatched
         }
-        cleanUpHits(internalPointerEvent)
         return dispatched
+    }
+
+    open fun cleanUp(internalPointerEvent: InternalPointerEvent) {
+        children.forEach {
+            it.cleanUp(internalPointerEvent)
+        }
+        cleanUpHits(internalPointerEvent)
     }
 
     /**
@@ -329,9 +337,12 @@ internal class Node(val pointerInputFilter: PointerInputFilter) : NodeParent() {
                 children.forEach { it.dispatchFinalEventPass(internalPointerEvent) }
             }
         }
-        cleanUpHits(internalPointerEvent)
-        clearCache()
         return result
+    }
+
+    override fun cleanUp(internalPointerEvent: InternalPointerEvent) {
+        super.cleanUp(internalPointerEvent)
+        clearCache()
     }
 
     /**

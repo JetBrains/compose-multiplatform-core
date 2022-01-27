@@ -283,13 +283,13 @@ class WindowInputEventTest {
 
         window.sendMouseEvent(MouseEvent.MOUSE_ENTERED, x = 100, y = 50)
         awaitIdle()
-        assertThat(onMoves.size).isEqualTo(1)  // there is a synthetic Move on the first layout
+        assertThat(onMoves.size).isEqualTo(0)
         assertThat(onEnters).isEqualTo(1)
         assertThat(onExits).isEqualTo(0)
 
         window.sendMouseEvent(MouseEvent.MOUSE_MOVED, x = 90, y = 50)
         awaitIdle()
-        assertThat(onMoves.size).isEqualTo(2)
+        assertThat(onMoves.size).isEqualTo(1)
         assertThat(onMoves.last()).isEqualTo(Offset(90 * density, 50 * density))
         assertThat(onEnters).isEqualTo(1)
         assertThat(onExits).isEqualTo(0)
@@ -298,7 +298,7 @@ class WindowInputEventTest {
         window.sendMouseEvent(MouseEvent.MOUSE_DRAGGED, x = 80, y = 50, modifiers = MouseEvent.BUTTON1_DOWN_MASK)
         window.sendMouseEvent(MouseEvent.MOUSE_RELEASED, x = 80, y = 50)
         awaitIdle()
-        assertThat(onMoves.size).isEqualTo(3)
+        assertThat(onMoves.size).isEqualTo(2)
         assertThat(onMoves.last()).isEqualTo(Offset(80 * density, 50 * density))
         assertThat(onEnters).isEqualTo(1)
         assertThat(onExits).isEqualTo(0)

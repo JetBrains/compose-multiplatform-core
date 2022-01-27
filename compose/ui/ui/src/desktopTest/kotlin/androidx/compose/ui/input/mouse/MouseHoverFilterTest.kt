@@ -167,6 +167,63 @@ class MouseHoverFilterTest {
         assertThat(exitCount2).isEqualTo(0)
     }
 
+    @Test
+    fun `don't send move with the same position`() = ImageComposeScene(
+        width = 100,
+        height = 100,
+        density = Density(1f)
+    ).use { scene ->
+        var moveCount1 = 0
+        var enterCount1 = 0
+        var exitCount1 = 0
+        var moveCount2 = 0
+        var enterCount2 = 0
+        var exitCount2 = 0
+
+        scene.setContent {
+            Column {
+                Box(
+                    modifier = Modifier
+                        .pointerMove(
+                            onMove = { moveCount1++ },
+                            onEnter = { enterCount1++ },
+                            onExit = { exitCount1++ }
+                        )
+                        .size(10.dp, 10.dp)
+                )
+                Box(
+                    modifier = Modifier
+                        .pointerMove(
+                            onMove = { moveCount2++ },
+                            onEnter = { enterCount2++ },
+                            onExit = { exitCount2++ }
+                        )
+                        .size(10.dp, 10.dp)
+                )
+            }
+        }
+
+        scene.sendPointerEvent(PointerEventType.Enter, Offset(5f, 5f))
+        assertThat(listOf(moveCount1, enterCount1, exitCount1)).isEqualTo(listOf(0, 1, 0))
+        assertThat(listOf(moveCount2, enterCount2, exitCount2)).isEqualTo(listOf(0, 0, 0))
+
+        scene.sendPointerEvent(PointerEventType.Move, Offset(5f, 5f))
+        assertThat(listOf(moveCount1, enterCount1, exitCount1)).isEqualTo(listOf(0, 1, 0))
+        assertThat(listOf(moveCount2, enterCount2, exitCount2)).isEqualTo(listOf(0, 0, 0))
+
+        scene.sendPointerEvent(PointerEventType.Move, Offset(5f, 5f))
+        assertThat(listOf(moveCount1, enterCount1, exitCount1)).isEqualTo(listOf(0, 1, 0))
+        assertThat(listOf(moveCount2, enterCount2, exitCount2)).isEqualTo(listOf(0, 0, 0))
+
+        scene.sendPointerEvent(PointerEventType.Move, Offset(5f, 15f))
+        assertThat(listOf(moveCount1, enterCount1, exitCount1)).isEqualTo(listOf(0, 1, 1))
+        assertThat(listOf(moveCount2, enterCount2, exitCount2)).isEqualTo(listOf(0, 1, 0))
+
+        scene.sendPointerEvent(PointerEventType.Move, Offset(5f, 15f))
+        assertThat(listOf(moveCount1, enterCount1, exitCount1)).isEqualTo(listOf(0, 1, 1))
+        assertThat(listOf(moveCount2, enterCount2, exitCount2)).isEqualTo(listOf(0, 1, 0))
+    }
+
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun `send multiple move events with paused dispatcher`() {

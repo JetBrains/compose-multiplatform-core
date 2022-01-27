@@ -20,11 +20,14 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.ImageComposeScene
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.LocalPointerIconService
 import androidx.compose.ui.platform.TestComposeWindow
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.use
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -33,15 +36,17 @@ import org.junit.runners.JUnit4
 @RunWith(JUnit4::class)
 @OptIn(ExperimentalComposeUiApi::class)
 class PointerIconTest {
-    private val window = TestComposeWindow(width = 100, height = 100, density = Density(1f))
-
     private val iconService = object : PointerIconService {
         override var current: PointerIcon = PointerIconDefaults.Default
     }
 
     @Test
-    fun basicTest() {
-        window.setContent {
+    fun basicTest() = ImageComposeScene(
+        width = 100,
+        height = 100,
+        density = Density(1f),
+    ).use { scene ->
+        scene.setContent {
             CompositionLocalProvider(
                 LocalPointerIconService provides iconService
             ) {
@@ -58,16 +63,20 @@ class PointerIconTest {
             }
         }
 
-        window.onMouseMoved(
-            x = 5,
-            y = 5
+        scene.sendPointerEvent(
+            PointerEventType.Move,
+            Offset(5f, 5f)
         )
         assertThat(iconService.current).isEqualTo(PointerIconDefaults.Text)
     }
 
     @Test
-    fun parentWins() {
-        window.setContent {
+    fun parentWins() = ImageComposeScene(
+        width = 100,
+        height = 100,
+        density = Density(1f),
+    ).use { scene ->
+        scene.setContent {
             CompositionLocalProvider(
                 LocalPointerIconService provides iconService
             ) {
@@ -85,22 +94,26 @@ class PointerIconTest {
             }
         }
 
-        window.onMouseMoved(
-            x = 5,
-            y = 5
+        scene.sendPointerEvent(
+            PointerEventType.Move,
+            Offset(5f, 5f)
         )
         assertThat(iconService.current).isEqualTo(PointerIconDefaults.Hand)
 
-        window.onMouseMoved(
-            x = 15,
-            y = 15
+        scene.sendPointerEvent(
+            PointerEventType.Move,
+            Offset(15f, 15f)
         )
         assertThat(iconService.current).isEqualTo(PointerIconDefaults.Hand)
     }
 
     @Test
-    fun childWins() {
-        window.setContent {
+    fun childWins() = ImageComposeScene(
+        width = 100,
+        height = 100,
+        density = Density(1f),
+    ).use { scene ->
+        scene.setContent {
             CompositionLocalProvider(
                 LocalPointerIconService provides iconService
             ) {
@@ -118,15 +131,15 @@ class PointerIconTest {
             }
         }
 
-        window.onMouseMoved(
-            x = 5,
-            y = 5
+        scene.sendPointerEvent(
+            PointerEventType.Move,
+            Offset(5f, 5f)
         )
         assertThat(iconService.current).isEqualTo(PointerIconDefaults.Text)
 
-        window.onMouseMoved(
-            x = 15,
-            y = 15
+        scene.sendPointerEvent(
+            PointerEventType.Move,
+            Offset(15f, 15f)
         )
         assertThat(iconService.current).isEqualTo(PointerIconDefaults.Hand)
     }

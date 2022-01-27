@@ -458,13 +458,12 @@ class ComposeScene internal constructor(
         // - move from outside to the window (owner != null, lastMouseMoveOwner == null): Enter
         // - move from the window to outside (owner == null, lastMouseMoveOwner != null): Exit
         // - move from one point of the window to another (owner == lastMouseMoveOwner): Move
-        // - move from one popup to another (owner != lastMouseMoveOwner): [Popup 1] Exit, [Popup 2] Enter, Move
+        // - move from one popup to another (owner != lastMouseMoveOwner): [Popup 1] Exit, [Popup 2] Enter
 
         if (owner != lastMouseMoveOwner) {
             lastMouseMoveOwner?.processPointerInput(event.copy(eventType = PointerEventType.Exit), isInBounds = false)
             owner?.processPointerInput(event.copy(eventType = PointerEventType.Enter))
-        }
-        if (event.eventType == PointerEventType.Move) {
+        } else if (event.eventType == PointerEventType.Move) {
             owner?.processPointerInput(event)
         }
 
