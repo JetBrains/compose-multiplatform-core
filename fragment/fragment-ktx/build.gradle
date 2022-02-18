@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-import androidx.build.LibraryGroups
 import androidx.build.Publish
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
@@ -39,7 +38,7 @@ dependencies {
         because 'Mirror fragment dependency graph for -ktx artifacts'
     }
     api(projectOrArtifact(":lifecycle:lifecycle-viewmodel-ktx"))
-    api(projectOrArtifact(":savedstate:savedstate-ktx")) {
+    api("androidx.savedstate:savedstate-ktx:1.2.0-alpha01") {
         because 'Mirror fragment dependency graph for -ktx artifacts'
     }
     api(libs.kotlinStdlib)

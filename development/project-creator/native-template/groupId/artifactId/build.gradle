@@ -14,9 +14,7 @@
  * limitations under the License.
  */
 
-import androidx.build.LibraryGroups
 import androidx.build.LibraryType
-import androidx.build.LibraryVersions
 
 plugins {
     id("AndroidXPlugin")
@@ -49,7 +47,7 @@ android {
     }
     externalNativeBuild {
         cmake {
-            version "3.22.1"
+            version libs.versions.cmake.get()
             path "src/main/cpp/CMakeLists.txt"
         }
     }

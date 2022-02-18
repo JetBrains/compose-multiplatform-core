@@ -22,6 +22,7 @@ import androidx.room.compiler.processing.XEnumEntry
 import androidx.room.compiler.processing.XEnumTypeElement
 import androidx.room.compiler.processing.XFieldElement
 import androidx.room.compiler.processing.XHasModifiers
+import androidx.room.compiler.processing.XMemberContainer
 import androidx.room.compiler.processing.XMethodElement
 import androidx.room.compiler.processing.XType
 import androidx.room.compiler.processing.XTypeElement
@@ -29,7 +30,6 @@ import androidx.room.compiler.processing.collectAllMethods
 import androidx.room.compiler.processing.collectFieldsIncludingPrivateSupers
 import androidx.room.compiler.processing.filterMethodsByConfig
 import androidx.room.compiler.processing.ksp.KspAnnotated.UseSiteFilter.Companion.NO_USE_SITE
-import androidx.room.compiler.processing.ksp.synthetic.KspSyntheticPropertyMethodElement
 import androidx.room.compiler.processing.tryBox
 import androidx.room.compiler.processing.util.MemoizedSequence
 import com.google.devtools.ksp.getConstructors
@@ -37,7 +37,6 @@ import com.google.devtools.ksp.getDeclaredFunctions
 import com.google.devtools.ksp.getDeclaredProperties
 import com.google.devtools.ksp.isConstructor
 import com.google.devtools.ksp.isOpen
-import com.google.devtools.ksp.isPrivate
 import com.google.devtools.ksp.symbol.ClassKind
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSPropertyDeclaration
@@ -65,6 +64,9 @@ internal sealed class KspTypeElement(
         // if it is a file, don't return it
         declaration.findEnclosingMemberContainer(env) as? XTypeElement
     }
+
+    override val enclosingElement: XMemberContainer?
+        get() = enclosingTypeElement
 
     override val equalityItems: Array<out Any?> by lazy {
         arrayOf(declaration)
@@ -174,41 +176,7 @@ internal sealed class KspTypeElement(
 
     private val syntheticGetterSetterMethods: List<XMethodElement> by lazy {
         _declaredProperties.flatMap { field ->
-            when {
-                field.declaration.hasJvmFieldAnnotation() -> {
-                    // jvm fields cannot have accessors but KSP generates synthetic accessors for
-                    // them. We check for JVM field first before checking the getter
-                    emptyList()
-                }
-                field.declaration.isPrivate() -> emptyList()
-
-                else ->
-                    sequenceOf(field.declaration.getter, field.declaration.setter)
-                        .filterNotNull()
-                        .filterNot {
-                            // KAPT does not generate methods for privates, KSP does so we filter
-                            // them out.
-                            it.modifiers.contains(Modifier.PRIVATE)
-                        }
-                        .filter {
-                            if (field.isStatic()) {
-                                // static fields are the properties that are coming from the
-                                // companion. Whether we'll generate method for it or not depends on
-                                // the JVMStatic annotation
-                                it.hasJvmStaticAnnotation() ||
-                                    field.declaration.hasJvmStaticAnnotation()
-                            } else {
-                                true
-                            }
-                        }
-                        .map { accessor ->
-                            KspSyntheticPropertyMethodElement.create(
-                                env = env,
-                                field = field,
-                                accessor = accessor
-                            )
-                        }.toList()
-            }
+            field.syntheticAccessors
         }.filterMethodsByConfig(env)
     }
 

@@ -17,7 +17,9 @@
 package androidx.wear.compose.material
 
 import androidx.compose.animation.core.CubicBezierEasing
+import androidx.compose.animation.core.DecayAnimationSpec
 import androidx.compose.animation.core.Easing
+import androidx.compose.animation.core.exponentialDecay
 import androidx.compose.foundation.gestures.FlingBehavior
 import androidx.compose.foundation.gestures.ScrollableDefaults
 import androidx.compose.foundation.layout.Arrangement
@@ -27,7 +29,6 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
@@ -39,6 +40,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
@@ -53,6 +55,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.offset
+import kotlinx.coroutines.flow.first
 
 /**
  * Receiver scope which is used by [ScalingLazyColumn].
@@ -223,34 +226,48 @@ internal fun convertToCenterOffset(
  * instead to avoid any overhead of measuring and calculating scaling and transparency effects for
  * the content items.
  *
- * Example usage:
+ * Example of a [ScalingLazyColumn] with default parameters:
  * @sample androidx.wear.compose.material.samples.SimpleScalingLazyColumn
+ *
+ * Example of a [ScalingLazyColumn] using [ScalingLazyListAnchorType.ItemStart] anchoring, in this
+ * configuration the edge of list items is aligned to the center of the screen. Also this example
+ * shows scrolling to a clicked list item with [ScalingLazyListState.animateScrollToItem]:
+ * @sample androidx.wear.compose.material.samples.ScalingLazyColumnEdgeAnchoredAndAnimatedScrollTo
+ *
+ * Example of a [ScalingLazyColumn] where [autoCentering] has been disabled and explicit
+ * [contentPadding] provided to ensure there is space above the first and below the last list item
+ * to allow them to be scrolled into view on circular screens:
+ * @sample androidx.wear.compose.material.samples.SimpleScalingLazyColumnWithContentPadding
  *
  * For more information, see the
  * [Lists](https://developer.android.com/training/wearables/components/lists)
  * guide.
  *
  * @param modifier The modifier to be applied to the component
- * @param scalingParams The parameters to configure the scaling and transparency effects for the
- * component
+ * @param state The state of the component
+ * @param contentPadding The padding to apply around the contents
  * @param reverseLayout reverse the direction of scrolling and layout, when `true` items will be
  * composed from the bottom to the top
  * @param verticalArrangement The vertical arrangement of the layout's children. This allows us
  * to add spacing between items and specify the arrangement of the items when we have not enough
  * of them to fill the whole minimum size
  * @param horizontalAlignment the horizontal alignment applied to the items
- * @param contentPadding The padding to apply around the contents
+ * @param flingBehavior Logic describing fling behavior. If snapping is required use
+ * [ScalingLazyColumnDefaults.snapFlingBehavior].
+ * @param userScrollEnabled whether the scrolling via the user gestures or accessibility actions
+ * is allowed. You can still scroll programmatically using the state even when it is disabled.
+ * @param scalingParams The parameters to configure the scaling and transparency effects for the
+ * component
  * @param anchorType How to anchor list items to the center-line of the viewport
- * @param flingBehavior Logic describing fling behavior
  * @param autoCentering Flag to determine whether all items should be centerable in the viewport.
  * If true then sufficient space will be made available before the first and after the last
  * list item to ensure that they can be scrolled to the center of the viewport.
- * @param state The state of the component
  */
 @Composable
 public fun ScalingLazyColumn(
     modifier: Modifier = Modifier,
-    scalingParams: ScalingParams = ScalingLazyColumnDefaults.scalingParams(),
+    state: ScalingLazyListState = rememberScalingLazyListState(),
+    contentPadding: PaddingValues = PaddingValues(horizontal = 8.dp),
     reverseLayout: Boolean = false,
     verticalArrangement: Arrangement.Vertical =
         Arrangement.spacedBy(
@@ -258,15 +275,15 @@ public fun ScalingLazyColumn(
             alignment = if (!reverseLayout) Alignment.Top else Alignment.Bottom
         ),
     horizontalAlignment: Alignment.Horizontal = Alignment.Start,
-    contentPadding: PaddingValues = PaddingValues(horizontal = 8.dp),
-    state: ScalingLazyListState = rememberScalingLazyListState(),
-    anchorType: ScalingLazyListAnchorType = ScalingLazyListAnchorType.ItemCenter,
     flingBehavior: FlingBehavior = ScrollableDefaults.flingBehavior(),
+    userScrollEnabled: Boolean = true,
+    scalingParams: ScalingParams = ScalingLazyColumnDefaults.scalingParams(),
+    anchorType: ScalingLazyListAnchorType = ScalingLazyListAnchorType.ItemCenter,
     autoCentering: Boolean = true,
     content: ScalingLazyListScope.() -> Unit
 ) {
     var initialized by remember { mutableStateOf(false) }
-    BoxWithConstraints(modifier = modifier) {
+    BoxWithConstraints(modifier = modifier, propagateMinConstraints = true) {
         val density = LocalDensity.current
         val layoutDirection = LocalLayoutDirection.current
         val extraPaddingInPixels = scalingParams.resolveViewportVerticalOffset(constraints)
@@ -310,7 +327,6 @@ public fun ScalingLazyColumn(
 
             LazyColumn(
                 modifier = Modifier
-                    .fillMaxSize()
                     .clipToBounds()
                     .verticalNegativePadding(extraPadding)
                     .onGloballyPositioned {
@@ -322,6 +338,7 @@ public fun ScalingLazyColumn(
                 verticalArrangement = verticalArrangement,
                 state = state.lazyListState,
                 flingBehavior = flingBehavior,
+                userScrollEnabled = userScrollEnabled,
             ) {
                 val scope = ScalingLazyListScopeImpl(
                     state = state,
@@ -348,6 +365,12 @@ public fun ScalingLazyColumn(
             }
             if (initialized) {
                 LaunchedEffect(state) {
+                    snapshotFlow {
+                        (state.layoutInfo as DefaultScalingLazyListLayoutInfo)
+                            .readyForInitialization
+                    }.first {
+                        it
+                    }
                     state.scrollToInitialItem()
                 }
             }
@@ -460,7 +483,7 @@ public object ScalingLazyColumnDefaults {
      * viewport, however there is a performance cost associated with materializing items that are
      * subsequently not drawn. The higher/more extreme the scaling parameters that are applied to
      * the [ScalingLazyColumn] the more padding may be needed to ensure there are always enough
-     * content items available to be rendered. By default will be 10% of the maxHeight of the
+     * content items available to be rendered. By default will be 5% of the maxHeight of the
      * viewport above and below the content.
      */
     fun scalingParams(
@@ -471,7 +494,7 @@ public object ScalingLazyColumnDefaults {
         minTransitionArea: Float = 0.2f,
         maxTransitionArea: Float = 0.6f,
         scaleInterpolator: Easing = CubicBezierEasing(0.25f, 0.00f, 0.75f, 1.00f),
-        viewportVerticalOffsetResolver: (Constraints) -> Int = { (it.maxHeight / 10f).toInt() }
+        viewportVerticalOffsetResolver: (Constraints) -> Int = { (it.maxHeight / 20f).toInt() }
     ): ScalingParams = DefaultScalingParams(
         edgeScale = edgeScale,
         edgeAlpha = edgeAlpha,
@@ -482,6 +505,31 @@ public object ScalingLazyColumnDefaults {
         scaleInterpolator = scaleInterpolator,
         viewportVerticalOffsetResolver = viewportVerticalOffsetResolver
     )
+
+    /**
+     * Create and remember a [FlingBehavior] that will represent natural fling curve with snap to
+     * central item as the fling decays.
+     *
+     * @param state the state of the [ScalingLazyColumn]
+     * @param snapOffset an optional offset to be applied when snapping the item. After the snap the
+     * snapped items offset will be [snapOffset].
+     * @param decay the decay to use
+     */
+    @Composable
+    public fun snapFlingBehavior(
+        state: ScalingLazyListState,
+        snapOffset: Dp = 0.dp,
+        decay: DecayAnimationSpec<Float> = exponentialDecay()
+    ): FlingBehavior {
+        val snapOffsetPx = with(LocalDensity.current) { snapOffset.roundToPx() }
+        return remember(state, snapOffset, decay) {
+            ScalingLazyColumnSnapFlingBehavior(
+                state = state,
+                snapOffset = snapOffsetPx,
+                decay = decay
+            )
+        }
+    }
 }
 
 private class ScalingLazyListScopeImpl(
@@ -546,13 +594,15 @@ private fun ScalingLazyColumnItemWrapper(
                 // underlying LazyList layout and the start position adjusted to take into account
                 // scaling of the list items. Items further from the middle of the visible viewport
                 // will be subject to more adjustment.
-                val offsetAdjust = currentItem.startOffset(anchorType) -
-                    currentItem.unadjustedStartOffset(anchorType)
-                translationY = if (reverseLayout) -offsetAdjust else offsetAdjust
-                transformOrigin = TransformOrigin(
-                    pivotFractionX = 0.5f,
-                    pivotFractionY = if (reverseLayout) 1.0f else 0.0f
-                )
+                if (currentItem.scale > 0f) {
+                    val offsetAdjust = currentItem.startOffset(anchorType) -
+                        currentItem.unadjustedStartOffset(anchorType)
+                    translationY = if (reverseLayout) -offsetAdjust else offsetAdjust
+                    transformOrigin = TransformOrigin(
+                        pivotFractionX = 0.5f,
+                        pivotFractionY = if (reverseLayout) 1.0f else 0.0f
+                    )
+                }
             }
         }
     ) {
@@ -604,18 +654,19 @@ private class CombinedPaddingValues(
 }
 
 private fun Modifier.verticalNegativePadding(
-    extraPadding: Dp
+    extraPadding: Dp,
 ) = layout { measurable, constraints ->
     require(constraints.hasBoundedWidth)
     require(constraints.hasBoundedHeight)
+    val topAndBottomPadding = (extraPadding * 2).roundToPx()
     val placeable = measurable.measure(
-        Constraints.fixed(
-            width = constraints.maxWidth,
-            height = constraints.maxHeight +
-                (extraPadding * 2).roundToPx()
+        constraints.copy(
+            minHeight = constraints.minHeight + topAndBottomPadding,
+            maxHeight = constraints.maxHeight + topAndBottomPadding
         )
     )
-    layout(constraints.maxWidth, constraints.maxHeight) {
+
+    layout(placeable.measuredWidth, constraints.maxHeight) {
         placeable.place(0, -extraPadding.roundToPx())
     }
 }

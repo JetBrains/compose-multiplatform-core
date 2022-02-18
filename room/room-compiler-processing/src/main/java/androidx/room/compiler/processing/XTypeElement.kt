@@ -61,6 +61,11 @@ interface XTypeElement : XHasModifiers, XElement, XMemberContainer {
      */
     val enclosingTypeElement: XTypeElement?
 
+    override val enclosingElement: XMemberContainer?
+
+    override val closestMemberContainer: XTypeElement
+        get() = this
+
     override val fallbackLocationText: String
         get() = qualifiedName
 
@@ -108,7 +113,7 @@ interface XTypeElement : XHasModifiers, XElement, XMemberContainer {
     fun isAnnotationClass(): Boolean
 
     /**
-     * Returns `true` if this [XTypeElement] is a non-companion `object` in Kotlin
+     * Returns `true` if this [XTypeElement] is an `object` or `companion object` in Kotlin
      */
     fun isKotlinObject(): Boolean
 

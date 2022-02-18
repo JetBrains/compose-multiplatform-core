@@ -436,6 +436,8 @@ public sealed class Renderer @WorkerThread constructor(
         public fun create(): SharedAssets
     }
 
+    internal abstract fun renderBlackFrame()
+
     /**
      * Watch faces that require [Canvas] rendering should extend their [Renderer] from this class.
      *
@@ -509,7 +511,9 @@ public sealed class Renderer @WorkerThread constructor(
             )
             val prevRenderParameters = this.renderParameters
             this.renderParameters = renderParameters
+            this.renderParameters.isForScreenshot = true
             renderAndComposite(Canvas(bitmap), zonedDateTime)
+            this.renderParameters.isForScreenshot = false
             this.renderParameters = prevRenderParameters
             return bitmap
         }
@@ -591,6 +595,19 @@ public sealed class Renderer @WorkerThread constructor(
             bounds: Rect,
             zonedDateTime: ZonedDateTime
         )
+
+        internal override fun renderBlackFrame() {
+            val canvas = if (canvasType == CanvasType.SOFTWARE) {
+                surfaceHolder.lockCanvas()
+            } else {
+                surfaceHolder.lockHardwareCanvas()
+            }
+            try {
+                canvas.drawColor(Color.BLACK)
+            } finally {
+                surfaceHolder.unlockCanvasAndPost(canvas)
+            }
+        }
 
         /**
          * Sub-classes should override this to implement their watch face highlight layer rendering
@@ -794,7 +811,6 @@ public sealed class Renderer @WorkerThread constructor(
          * Chooses the EGLConfig to use.
          * @throws [GlesException] if [EGL14.eglChooseConfig] fails
          */
-        @Throws(GlesException::class)
         private fun chooseEglConfig(eglDisplay: EGLDisplay): EGLConfig {
             val numEglConfigs = IntArray(1)
             val eglConfigs = arrayOfNulls<EGLConfig>(1)
@@ -817,7 +833,6 @@ public sealed class Renderer @WorkerThread constructor(
             return eglConfigs[0]!!
         }
 
-        @Throws(GlesException::class)
         private suspend fun createWindowSurface(width: Int, height: Int) = TraceEvent(
             "GlesRenderer.createWindowSurface"
         ).use {
@@ -933,7 +948,6 @@ public sealed class Renderer @WorkerThread constructor(
          * @throws [GlesException] If any GL calls fail.
          */
         @WorkerThread
-        @Throws(GlesException::class)
         internal override suspend fun backgroundThreadInitInternal() =
             TraceEvent("GlesRenderer.initBackgroundThreadOpenGlContext").use {
                 if (!sharedAssetsHolder.eglBackgroundThreadContextInitialized()) {
@@ -1017,7 +1031,6 @@ public sealed class Renderer @WorkerThread constructor(
          * @throws [GlesException] If any GL calls fail.
          */
         @UiThread
-        @Throws(GlesException::class)
         internal override suspend fun uiThreadInitInternal(uiThreadCoroutineScope: CoroutineScope) =
             TraceEvent("GlesRenderer.initUiThreadOpenGlContext").use {
                 if (!sharedAssetsHolder.eglUiThreadContextInitialized()) {
@@ -1125,7 +1138,9 @@ public sealed class Renderer @WorkerThread constructor(
                 runUiThreadGlCommands {
                     val prevRenderParameters = this@GlesRenderer.renderParameters
                     this@GlesRenderer.renderParameters = renderParameters
+                    renderParameters.isForScreenshot = true
                     renderAndComposite(zonedDateTime)
+                    renderParameters.isForScreenshot = false
                     this@GlesRenderer.renderParameters = prevRenderParameters
                     GLES20.glFinish()
                     GLES20.glReadPixels(
@@ -1169,6 +1184,17 @@ public sealed class Renderer @WorkerThread constructor(
                         "non-null renderParameters.highlightLayer"
                 }
                 renderHighlightLayer(zonedDateTime)
+            }
+        }
+
+        internal override fun renderBlackFrame() {
+            runBlocking {
+                runUiThreadGlCommands {
+                    GLES20.glClearColor(0f, 0f, 0f, 0f)
+                    if (!EGL14.eglSwapBuffers(eglDisplay, eglSurface)) {
+                        Log.w(TAG, "eglSwapBuffers failed")
+                    }
+                }
             }
         }
 

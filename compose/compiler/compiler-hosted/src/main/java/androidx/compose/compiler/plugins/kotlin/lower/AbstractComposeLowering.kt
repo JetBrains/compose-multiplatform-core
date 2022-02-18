@@ -18,6 +18,7 @@ package androidx.compose.compiler.plugins.kotlin.lower
 
 import androidx.compose.compiler.plugins.kotlin.ModuleMetrics
 import androidx.compose.compiler.plugins.kotlin.ComposeFqNames
+import androidx.compose.compiler.plugins.kotlin.FunctionMetrics
 import androidx.compose.compiler.plugins.kotlin.KtxNameConventions
 import androidx.compose.compiler.plugins.kotlin.allowsComposableCalls
 import androidx.compose.compiler.plugins.kotlin.analysis.ComposeWritableSlices
@@ -63,6 +64,7 @@ import org.jetbrains.kotlin.ir.builders.declarations.buildProperty
 import org.jetbrains.kotlin.ir.builders.irBlock
 import org.jetbrains.kotlin.ir.builders.irBlockBody
 import org.jetbrains.kotlin.ir.declarations.IrAnnotationContainer
+import org.jetbrains.kotlin.ir.declarations.IrAttributeContainer
 import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.declarations.IrDeclarationOrigin
 import org.jetbrains.kotlin.ir.declarations.IrField
@@ -135,9 +137,11 @@ import org.jetbrains.kotlin.ir.util.fqNameForIrSerialization
 import org.jetbrains.kotlin.ir.util.functions
 import org.jetbrains.kotlin.ir.util.getArguments
 import org.jetbrains.kotlin.ir.util.getPrimitiveArrayElementType
+import org.jetbrains.kotlin.ir.util.getPropertyGetter
 import org.jetbrains.kotlin.ir.util.isCrossinline
 import org.jetbrains.kotlin.ir.util.isFunction
 import org.jetbrains.kotlin.ir.util.isNoinline
+import org.jetbrains.kotlin.ir.util.primaryConstructor
 import org.jetbrains.kotlin.ir.visitors.IrElementTransformerVoid
 import org.jetbrains.kotlin.load.kotlin.computeJvmDescriptor
 import org.jetbrains.kotlin.name.FqName
@@ -261,6 +265,15 @@ abstract class AbstractComposeLowering(
         )
     }
 
+    fun metricsFor(function: IrFunction): FunctionMetrics =
+        (function as? IrAttributeContainer)?.let {
+            context.irTrace[ComposeWritableSlices.FUNCTION_METRICS, it] ?: run {
+                val metrics = metrics.makeFunctionMetrics(function)
+                context.irTrace.record(ComposeWritableSlices.FUNCTION_METRICS, it, metrics)
+                metrics
+            }
+        } ?: metrics.makeFunctionMetrics(function)
+
     @OptIn(ObsoleteDescriptorBasedAPI::class)
     fun KotlinType.toIrType(): IrType = typeTranslator.translateType(this)
 
@@ -314,11 +327,22 @@ abstract class AbstractComposeLowering(
         val classSymbol = type.classOrNull ?: return this
         val klass = classSymbol.owner
         if (klass.isInline) {
-            return coerceInlineClasses(
-                this,
-                type,
-                type.unboxInlineClass()
-            ).unboxValueIfInline()
+            if (context.platform.isJvm()) {
+                return coerceInlineClasses(
+                    this,
+                    type,
+                    type.unboxInlineClass()
+                ).unboxValueIfInline()
+            } else {
+                val primaryValueParameter = klass.primaryConstructor?.valueParameters?.get(0)
+                    ?: error("Expected a value parameter")
+                val fieldGetter = klass.getPropertyGetter(primaryValueParameter.name.identifier)
+                    ?: error("Expected a getter")
+                return irCall(
+                    symbol = fieldGetter,
+                    dispatchReceiver = this
+                ).unboxValueIfInline()
+            }
         }
         return this
     }

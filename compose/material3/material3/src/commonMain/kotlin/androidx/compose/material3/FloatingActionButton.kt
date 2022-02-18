@@ -16,15 +16,15 @@
 
 package androidx.compose.material3
 
-import androidx.compose.animation.core.CubicBezierEasing
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.TweenSpec
-import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.VectorConverter
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.FocusInteraction
+import androidx.compose.foundation.interaction.HoverInteraction
 import androidx.compose.foundation.interaction.Interaction
 import androidx.compose.foundation.interaction.InteractionSource
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsHoveredAsState
+import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -32,16 +32,16 @@ import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.material3.tokens.ExtendedFabPrimaryTokens
 import androidx.compose.material3.tokens.FabPrimaryTokens
 import androidx.compose.material3.tokens.FabPrimaryLargeTokens
 import androidx.compose.material3.tokens.FabPrimarySmallTokens
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.State
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -50,12 +50,17 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
+import kotlinx.coroutines.flow.collect
 
 /**
  * ![FAB image](https://developer.android.com/images/reference/androidx/compose/material3/fab.png)
  *
- * A floating action button (FAB) represents the primary action of a screen.
+ * A floating action button (FAB) represents the primary action of a screen. To learn more about the
+ * FAB visit the [Material website](https://m3.material.io/components/floating-action-button).
+ *
+ * FAB typically contains an icon, for a FAB with text and an icon, see
+ * [ExtendedFloatingActionButton].
  *
  * @sample androidx.compose.material3.samples.FloatingActionButtonSample
  *
@@ -80,43 +85,40 @@ fun FloatingActionButton(
     modifier: Modifier = Modifier,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     shape: Shape = FabPrimaryTokens.ContainerShape,
-    containerColor: Color = MaterialTheme.colorScheme.fromToken(FabPrimaryTokens.ContainerColor),
+    containerColor: Color = FabPrimaryTokens.ContainerColor.toColor(),
     contentColor: Color = contentColorFor(containerColor),
     elevation: FloatingActionButtonElevation = FloatingActionButtonDefaults.elevation(),
     content: @Composable () -> Unit,
 ) {
-    val shadowElevation = elevation.shadowElevation(interactionSource = interactionSource).value
-    val tonalElevation = elevation.tonalElevation(interactionSource = interactionSource).value
-    val clickAndSemanticsModifier = Modifier.clickable(
-        interactionSource = interactionSource,
-        indication = rememberRipple(),
-        enabled = true,
-        onClickLabel = null,
-        role = Role.Button,
-        onClick = onClick
-    )
     Surface(
-        modifier = modifier
-            .minimumTouchTargetSize()
-            .shadow(
-                elevation = shadowElevation,
-                shape = shape,
-            ),
+        modifier = modifier.clickable(
+            interactionSource = interactionSource,
+            indication = null,
+            role = Role.Button,
+            onClick = onClick
+        ),
+        interactionSource = interactionSource,
         shape = shape,
         color = containerColor,
         contentColor = contentColor,
-        tonalElevation = tonalElevation,
+        tonalElevation = elevation.tonalElevation(interactionSource = interactionSource).value,
+        shadowElevation = elevation.shadowElevation(interactionSource = interactionSource).value,
     ) {
         CompositionLocalProvider(LocalContentColor provides contentColor) {
-            ProvideTextStyle(MaterialTheme.typography.labelLarge) {
+            // Adding the text style from [ExtendedFloatingActionButton] to all FAB variations. In
+            // the majority of cases this will have no impact, because icons are expected, but if a
+            // developer decides to put some short text to emulate an icon, (like "?") then it will
+            // have the correct styling.
+            ProvideTextStyle(
+                MaterialTheme.typography.fromToken(ExtendedFabPrimaryTokens.LabelTextFont),
+            ) {
                 Box(
                     modifier = Modifier
                         .defaultMinSize(
                             minWidth = FabPrimaryTokens.ContainerWidth,
                             minHeight = FabPrimaryTokens.ContainerHeight,
-                        )
-                        .then(clickAndSemanticsModifier),
-                    contentAlignment = Alignment.Center
+                        ),
+                    contentAlignment = Alignment.Center,
                 ) { content() }
             }
         }
@@ -151,7 +153,7 @@ fun SmallFloatingActionButton(
     modifier: Modifier = Modifier,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     shape: Shape = FabPrimarySmallTokens.ContainerShape,
-    containerColor: Color = MaterialTheme.colorScheme.fromToken(FabPrimaryTokens.ContainerColor),
+    containerColor: Color = FabPrimaryTokens.ContainerColor.toColor(),
     contentColor: Color = contentColorFor(containerColor),
     elevation: FloatingActionButtonElevation = FloatingActionButtonDefaults.elevation(),
     content: @Composable () -> Unit,
@@ -199,9 +201,7 @@ fun LargeFloatingActionButton(
     modifier: Modifier = Modifier,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     shape: Shape = FabPrimaryLargeTokens.ContainerShape,
-    containerColor: Color = MaterialTheme.colorScheme.fromToken(
-        FabPrimaryLargeTokens.ContainerColor
-    ),
+    containerColor: Color = FabPrimaryLargeTokens.ContainerColor.toColor(),
     contentColor: Color = contentColorFor(containerColor),
     elevation: FloatingActionButtonElevation = FloatingActionButtonDefaults.elevation(),
     content: @Composable () -> Unit,
@@ -224,7 +224,8 @@ fun LargeFloatingActionButton(
 /**
  * ![Extended FAB image](https://developer.android.com/images/reference/androidx/compose/material3/extended-fab.png)
  *
- * The extended FAB is wider than a regular FAB, and it includes a text label.
+ * The extended FAB is wider than a regular FAB, and it includes a text label. To learn more about
+ * the extended FAB visit the [Material website](https://m3.material.io/components/extended-fab).
  *
  * @sample androidx.compose.material3.samples.ExtendedFloatingActionButtonSample
  *
@@ -253,9 +254,7 @@ fun ExtendedFloatingActionButton(
     icon: @Composable (() -> Unit)? = null,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     shape: Shape = ExtendedFabPrimaryTokens.ContainerShape,
-    containerColor: Color = MaterialTheme.colorScheme.fromToken(
-        ExtendedFabPrimaryTokens.ContainerColor
-    ),
+    containerColor: Color = ExtendedFabPrimaryTokens.ContainerColor.toColor(),
     contentColor: Color = contentColorFor(containerColor),
     elevation: FloatingActionButtonElevation = FloatingActionButtonDefaults.elevation(),
 ) {
@@ -287,10 +286,7 @@ fun ExtendedFloatingActionButton(
                 icon()
                 Spacer(Modifier.width(ExtendedFabIconPadding))
             }
-            ProvideTextStyle(
-                value = MaterialTheme.typography.fromToken(ExtendedFabPrimaryTokens.LabelTextFont),
-                content = text,
-            )
+            text()
         }
     }
 }
@@ -346,17 +342,29 @@ object FloatingActionButtonDefaults {
      * [FloatingActionButton] in different states. For use cases in which a less prominent
      * [FloatingActionButton] is possible consider the [loweredElevation].
      *
-     * @param defaultElevation the elevation used when the [FloatingActionButton] is not hovered
-     * @param hoveredElevation the elevation used when the [FloatingActionButton] is hovered
+     * @param defaultElevation the elevation used when the [FloatingActionButton] has no other
+     * [Interaction]s.
+     * @param pressedElevation the elevation used when the [FloatingActionButton] is pressed.
+     * @param focusedElevation the elevation used when the [FloatingActionButton] is focused.
+     * @param hoveredElevation the elevation used when the [FloatingActionButton] is hovered.
      */
     @Composable
     fun elevation(
         defaultElevation: Dp = FabPrimaryTokens.ContainerElevation,
+        pressedElevation: Dp = FabPrimaryTokens.PressedContainerElevation,
+        focusedElevation: Dp = FabPrimaryTokens.FocusContainerElevation,
         hoveredElevation: Dp = FabPrimaryTokens.HoverContainerElevation,
     ): FloatingActionButtonElevation {
-        return remember(defaultElevation, hoveredElevation) {
+        return remember(
+            defaultElevation,
+            pressedElevation,
+            focusedElevation,
+            hoveredElevation,
+        ) {
             DefaultFloatingActionButtonElevation(
                 defaultElevation = defaultElevation,
+                pressedElevation = pressedElevation,
+                focusedElevation = focusedElevation,
                 hoveredElevation = hoveredElevation,
             )
         }
@@ -366,17 +374,29 @@ object FloatingActionButtonDefaults {
      * Use this to create a [FloatingActionButton] with a lowered elevation for less emphasis. Use
      * [elevation] to get a normal [FloatingActionButton].
      *
-     * @param defaultElevation the elevation used when the [FloatingActionButton] is not hovered
-     * @param hoveredElevation the elevation used when the [FloatingActionButton] is hovered
+     * @param defaultElevation the elevation used when the [FloatingActionButton] has no other
+     * [Interaction]s.
+     * @param pressedElevation the elevation used when the [FloatingActionButton] is pressed.
+     * @param focusedElevation the elevation used when the [FloatingActionButton] is focused.
+     * @param hoveredElevation the elevation used when the [FloatingActionButton] is hovered.
      */
     @Composable
     fun loweredElevation(
         defaultElevation: Dp = FabPrimaryTokens.LoweredContainerElevation,
+        pressedElevation: Dp = FabPrimaryTokens.LoweredPressedContainerElevation,
+        focusedElevation: Dp = FabPrimaryTokens.LoweredFocusContainerElevation,
         hoveredElevation: Dp = FabPrimaryTokens.LoweredHoverContainerElevation,
     ): FloatingActionButtonElevation {
-        return remember(defaultElevation, hoveredElevation) {
+        return remember(
+            defaultElevation,
+            pressedElevation,
+            focusedElevation,
+            hoveredElevation,
+        ) {
             DefaultFloatingActionButtonElevation(
                 defaultElevation = defaultElevation,
+                pressedElevation = pressedElevation,
+                focusedElevation = focusedElevation,
                 hoveredElevation = hoveredElevation,
             )
         }
@@ -389,6 +409,8 @@ object FloatingActionButtonDefaults {
 @Stable
 private class DefaultFloatingActionButtonElevation(
     private val defaultElevation: Dp,
+    private val pressedElevation: Dp,
+    private val focusedElevation: Dp,
     private val hoveredElevation: Dp,
 ) : FloatingActionButtonElevation {
     @Composable
@@ -403,22 +425,63 @@ private class DefaultFloatingActionButtonElevation(
 
     @Composable
     private fun animateElevation(interactionSource: InteractionSource): State<Dp> {
-        val isHovered by interactionSource.collectIsHoveredAsState()
-        val targetElevation = if (isHovered) hoveredElevation else defaultElevation
-        val animationSpec = if (isHovered) IncomingSpec else OutgoingSpec
-        return animateDpAsState(targetElevation, animationSpec)
+        val interactions = remember { mutableStateListOf<Interaction>() }
+
+        LaunchedEffect(interactionSource) {
+            interactionSource.interactions.collect { interaction ->
+                when (interaction) {
+                    is HoverInteraction.Enter -> {
+                        interactions.add(interaction)
+                    }
+                    is HoverInteraction.Exit -> {
+                        interactions.remove(interaction.enter)
+                    }
+                    is FocusInteraction.Focus -> {
+                        interactions.add(interaction)
+                    }
+                    is FocusInteraction.Unfocus -> {
+                        interactions.remove(interaction.focus)
+                    }
+                    is PressInteraction.Press -> {
+                        interactions.add(interaction)
+                    }
+                    is PressInteraction.Release -> {
+                        interactions.remove(interaction.press)
+                    }
+                    is PressInteraction.Cancel -> {
+                        interactions.remove(interaction.press)
+                    }
+                }
+            }
+        }
+
+        val interaction = interactions.lastOrNull()
+
+        val target = when (interaction) {
+            is PressInteraction.Press -> pressedElevation
+            is HoverInteraction.Enter -> hoveredElevation
+            is FocusInteraction.Focus -> focusedElevation
+            else -> defaultElevation
+        }
+
+        val animatable = remember { Animatable(target, Dp.VectorConverter) }
+
+        LaunchedEffect(target) {
+            val lastInteraction = when (animatable.targetValue) {
+                pressedElevation -> PressInteraction.Press(Offset.Zero)
+                hoveredElevation -> HoverInteraction.Enter()
+                focusedElevation -> FocusInteraction.Focus()
+                else -> null
+            }
+            animatable.animateElevation(
+                from = lastInteraction,
+                to = interaction,
+                target = target,
+            )
+        }
+        return animatable.asState()
     }
 }
-
-private val IncomingSpec = TweenSpec<Dp>(
-    durationMillis = 120,
-    easing = FastOutSlowInEasing
-)
-
-private val OutgoingSpec = TweenSpec<Dp>(
-    durationMillis = 120,
-    easing = CubicBezierEasing(0.40f, 0.00f, 0.60f, 1.00f)
-)
 
 private val ExtendedFabIconPadding = 12.dp
 

@@ -15,7 +15,6 @@
  */
 
 import androidx.build.AndroidXComposePlugin
-import androidx.build.LibraryGroups
 import androidx.build.LibraryType
 import androidx.build.Publish
 import androidx.build.RunApiTasks
@@ -48,7 +47,7 @@ androidx {
     name = "Compose Test Font resources"
     type = LibraryType.INTERNAL_TEST_LIBRARY
     publish = Publish.NONE
-    mavenGroup = LibraryGroups.Compose.UI
+    mavenGroup = LibraryGroups.COMPOSE_UI
     inceptionYear = "2020"
     description = "Fonts designed for testing text capabilities"
     runApiTasks = new RunApiTasks.Yes()

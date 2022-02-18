@@ -20,10 +20,14 @@ buildscript {
         maven {
             url = new File(buildscript.sourceFile.parent + "/../../prebuilts/androidx/external").getCanonicalFile()
         }
+        if (System.getenv("ALLOW_PUBLIC_REPOS") != null) {
+            mavenCentral()
+            gradlePluginPortal()
+        }
     }
 
     dependencies {
-        classpath("com.gradle:gradle-enterprise-gradle-plugin:3.7.2")
+        classpath("com.gradle:gradle-enterprise-gradle-plugin:3.8.1")
     }
 }
 
@@ -40,12 +44,15 @@ gradleEnterprise {
             hostname { host -> "unset" }
             ipAddresses { addresses -> addresses.collect { address -> "0.0.0.0"} }
         }
+        def buildNumber = System.getenv("BUILD_NUMBER")
+        if (buildNumber != null) {
+            value("BUILD_NUMBER", buildNumber)
+            link("ci.android.com build", "https://ci.android.com/builds/branches/aosp-androidx-main/grid?head=$buildNumber&tail=$buildNumber")
+        }
     }
 }
 
 rootProject.name = "androidx"
-
-enableFeaturePreview("VERSION_CATALOGS")
 
 dependencyResolutionManagement {
     versionCatalogs {
@@ -60,18 +67,18 @@ dependencyResolutionManagement {
             if (os.contains("mac os x") ||  os.contains("darwin") || os.contains("osx")) {
                 def arch = System.getProperty("os.arch")
                 if (arch == "aarch64") {
-                    currentOsArtifact = "skiko-jvm-runtime-macos-arm64"
+                    currentOsArtifact = "skiko-awt-runtime-macos-arm64"
                 } else {
-                    currentOsArtifact = "skiko-jvm-runtime-macos-x64"
+                    currentOsArtifact = "skiko-awt-runtime-macos-x64"
                 }
             } else if (os.startsWith("win")) {
-                currentOsArtifact = "skiko-jvm-runtime-windows-x64"
+                currentOsArtifact = "skiko-awt-runtime-windows-x64"
             } else if (os.startsWith("linux") ) {
                 def arch = System.getProperty("os.arch")
                 if (arch == "aarch64") {
-                    currentOsArtifact = "skiko-jvm-runtime-linux-arm64"
+                    currentOsArtifact = "skiko-awt-runtime-linux-arm64"
                 } else {
-                    currentOsArtifact = "skiko-jvm-runtime-linux-x64"
+                    currentOsArtifact = "skiko-awt-runtime-linux-x64"
                 }
             } else {
                 throw GradleException("Unsupported operating system $os")
@@ -102,12 +109,12 @@ enum BuildType {
 }
 
 private String getRequestedProjectSubsetName() {
-    def prop = providers.gradleProperty("androidx.projects").forUseAtConfigurationTime()
+    def prop = providers.gradleProperty("androidx.projects")
     if (prop.isPresent()) {
         return prop.get().toUpperCase()
     }
 
-    def envProp = providers.environmentVariable("ANDROIDX_PROJECTS").forUseAtConfigurationTime()
+    def envProp = providers.environmentVariable("ANDROIDX_PROJECTS")
     if (envProp.isPresent()) {
         return envProp.get().toUpperCase()
     }
@@ -287,6 +294,7 @@ includeProject(":camera:camera-core", "camera/camera-core", [BuildType.MAIN])
 includeProject(":camera:camera-extensions", "camera/camera-extensions", [BuildType.MAIN])
 includeProject(":camera:camera-extensions-stub", "camera/camera-extensions-stub", [BuildType.MAIN])
 includeProject(":camera:camera-lifecycle", "camera/camera-lifecycle", [BuildType.MAIN])
+includeProject(":camera:camera-mlkit-vision", "camera/camera-mlkit-vision", [BuildType.MAIN])
 includeProject(":camera:camera-previewview", "camera/camera-previewview", [BuildType.MAIN])
 includeProject(":camera:camera-testing", "camera/camera-testing", [BuildType.MAIN])
 includeProject(":camera:camera-video", "camera/camera-video", [BuildType.MAIN])
@@ -294,6 +302,7 @@ includeProject(":camera:camera-view", "camera/camera-view", [BuildType.MAIN])
 includeProject(":camera:integration-tests:camera-testapp-camera2-pipe", "camera/integration-tests/camerapipetestapp", [BuildType.MAIN])
 includeProject(":camera:integration-tests:camera-testapp-core", "camera/integration-tests/coretestapp", [BuildType.MAIN])
 includeProject(":camera:integration-tests:camera-testapp-extensions", "camera/integration-tests/extensionstestapp", [BuildType.MAIN])
+includeProject(":camera:integration-tests:camera-testapp-previewview", "camera/integration-tests/previewviewtestapp", [BuildType.MAIN])
 includeProject(":camera:integration-tests:camera-testapp-timing", "camera/integration-tests/timingtestapp", [BuildType.MAIN])
 includeProject(":camera:integration-tests:camera-testapp-uiwidgets", "camera/integration-tests/uiwidgetstestapp", [BuildType.MAIN])
 includeProject(":camera:integration-tests:camera-testapp-view", "camera/integration-tests/viewtestapp", [BuildType.MAIN])
@@ -425,6 +434,7 @@ includeProject(":compose:ui:ui-test-junit4", "compose/ui/ui-test-junit4", [Build
 includeProject(":compose:ui:ui-test-manifest", "compose/ui/ui-test-manifest", [BuildType.COMPOSE])
 includeProject(":compose:ui:ui-test-manifest:integration-tests:testapp", "compose/ui/ui-test-manifest/integration-tests/testapp", [BuildType.COMPOSE])
 includeProject(":compose:ui:ui-text", "compose/ui/ui-text", [BuildType.COMPOSE])
+includeProject(":compose:ui:ui-text-google-fonts", "compose/ui/ui-text-google-fonts", [BuildType.COMPOSE])
 includeProject(":compose:ui:ui-text:ui-text-benchmark", "compose/ui/ui-text/benchmark", [BuildType.COMPOSE])
 includeProject(":compose:ui:ui-text:ui-text-samples", "compose/ui/ui-text/samples", [BuildType.COMPOSE])
 includeProject(":compose:ui:ui-tooling", "compose/ui/ui-tooling", [BuildType.COMPOSE])
@@ -447,6 +457,7 @@ includeProject(":core:core-animation-integration-tests:testapp", "core/core-anim
 includeProject(":core:core-animation-testing", "core/core-animation-testing", [BuildType.MAIN])
 includeProject(":core:core-appdigest", "core/core-appdigest", [BuildType.MAIN])
 includeProject(":core:core-google-shortcuts", "core/core-google-shortcuts", [BuildType.MAIN])
+includeProject(":core:core-i18n", "core/core-i18n", [BuildType.MAIN])
 includeProject(":core:core-ktx", "core/core-ktx", [BuildType.MAIN])
 includeProject(":core:core-performance", "core/core-performance", [BuildType.MAIN])
 includeProject(":core:core-performance:core-performance-samples", "core/core-performance/samples", [BuildType.MAIN])
@@ -455,8 +466,10 @@ includeProject(":core:core-remoteviews:integration-tests:demos", "core/core-remo
 includeProject(":core:core-splashscreen", "core/core-splashscreen", [BuildType.MAIN])
 includeProject(":core:core-splashscreen:core-splashscreen-samples", "core/core-splashscreen/samples", [BuildType.MAIN])
 includeProject(":core:core-role", "core/core-role", [BuildType.MAIN])
+includeProject(":core:uwb:uwb", "core/uwb/uwb", [BuildType.MAIN])
 includeProject(":cursoradapter:cursoradapter", "cursoradapter/cursoradapter", [BuildType.MAIN])
 includeProject(":customview:customview", "customview/customview", [BuildType.MAIN])
+includeProject(":customview:customview-poolingcontainer", "customview/customview-poolingcontainer", [BuildType.MAIN, BuildType.COMPOSE])
 includeProject(":datastore:datastore", "datastore/datastore", [BuildType.MAIN])
 includeProject(":datastore:datastore-core", "datastore/datastore-core", [BuildType.MAIN])
 includeProject(":datastore:datastore-preferences", "datastore/datastore-preferences", [BuildType.MAIN])
@@ -510,6 +523,7 @@ includeProject(":glance:glance-appwidget:glance-layout-generator", "glance/glanc
 includeProject(":glance:glance-wear-tiles:integration-tests:demos", "glance/glance-wear-tiles/integration-tests/demos", [BuildType.MAIN])
 includeProject(":glance:glance-wear-tiles", "glance/glance-wear-tiles", [BuildType.MAIN])
 includeProject(":gridlayout:gridlayout", "gridlayout/gridlayout", [BuildType.MAIN])
+includeProject(":health:health-data-client", "health/health-data-client", [BuildType.MAIN])
 includeProject(":health:health-services-client", "health/health-services-client", [BuildType.MAIN])
 includeProject(":heifwriter:heifwriter", "heifwriter/heifwriter", [BuildType.MAIN])
 includeProject(":hilt:hilt-common", "hilt/hilt-common", [BuildType.MAIN])
@@ -566,7 +580,6 @@ includeProject(":lint-checks:integration-tests", "lint-checks/integration-tests"
 includeProject(":lint-demos:lint-demo-appcompat", "lint-demos/lint-demo-appcompat", [BuildType.MAIN])
 includeProject(":loader:loader", "loader/loader", [BuildType.MAIN])
 includeProject(":loader:loader-ktx", "loader/loader-ktx", [BuildType.MAIN])
-includeProject(":localbroadcastmanager:localbroadcastmanager", "localbroadcastmanager/localbroadcastmanager", [BuildType.MAIN])
 includeProject(":media2:integration-tests:testapp", "media2/integration-tests/testapp", [BuildType.MAIN, BuildType.MEDIA])
 includeProject(":media2:media2-common", "media2/media2-common", [BuildType.MAIN, BuildType.MEDIA])
 includeProject(":media2:media2-exoplayer", "media2/media2-exoplayer", [BuildType.MAIN, BuildType.MEDIA])
@@ -680,7 +693,11 @@ includeProject(":startup:integration-tests:test-app", "startup/integration-tests
 includeProject(":startup:startup-runtime", "startup/startup-runtime", [BuildType.MAIN])
 includeProject(":startup:startup-runtime-lint", "startup/startup-runtime-lint", [BuildType.MAIN])
 includeProject(":swiperefreshlayout:swiperefreshlayout", "swiperefreshlayout/swiperefreshlayout", [BuildType.MAIN])
-includeProject(":test:junit:junit-gtest", "test/junit/junit-gtest", [BuildType.MAIN])
+includeProject(":template:template", "template/template", [BuildType.MAIN])
+includeProject(":template:template-appwidget", "template/template-appwidget", [BuildType.MAIN])
+includeProject(":template:template-appwidget:integration-tests:demos", "template/template-appwidget/integration-tests/demos", [BuildType.MAIN])
+
+includeProject(":test:ext:junit-gtest", "test/ext/junit-gtest", [BuildType.MAIN])
 includeProject(":test:screenshot:screenshot", "test/screenshot/screenshot")
 includeProject(":test:screenshot:screenshot-proto", "test/screenshot/screenshot/proto", [BuildType.MAIN])
 includeProject(":text:text", "text/text", [BuildType.COMPOSE])
@@ -688,8 +705,8 @@ includeProject(":textclassifier:integration-tests:testapp", "textclassifier/inte
 includeProject(":textclassifier:textclassifier", "textclassifier/textclassifier", [BuildType.MAIN])
 includeProject(":tracing:tracing", "tracing/tracing")
 includeProject(":tracing:tracing-ktx", "tracing/tracing-ktx")
-includeProject(":tracing:tracing-perfetto", "tracing/tracing-perfetto", [BuildType.MAIN])
-includeProject(":tracing:tracing-perfetto-binary", "tracing/tracing-perfetto-binary", [BuildType.MAIN])
+includeProject(":tracing:tracing-perfetto", "tracing/tracing-perfetto", [BuildType.MAIN, BuildType.COMPOSE])
+includeProject(":tracing:tracing-perfetto-binary", "tracing/tracing-perfetto-binary", [BuildType.MAIN, BuildType.COMPOSE])
 includeProject(":transition:transition", "transition/transition", [BuildType.MAIN, BuildType.FLAN])
 includeProject(":transition:transition-ktx", "transition/transition-ktx", [BuildType.MAIN, BuildType.FLAN])
 includeProject(":tvprovider:tvprovider", "tvprovider/tvprovider", [BuildType.MAIN])

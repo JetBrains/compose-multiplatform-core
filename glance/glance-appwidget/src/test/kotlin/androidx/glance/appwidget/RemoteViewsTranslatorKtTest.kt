@@ -27,6 +27,7 @@ import android.text.style.UnderlineSpan
 import android.util.Log
 import android.view.View
 import android.widget.FrameLayout
+import android.widget.GridView
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ListView
@@ -46,6 +47,8 @@ import androidx.glance.appwidget.LinearLayoutSubject.Companion.assertThat
 import androidx.glance.appwidget.TextViewSubject.Companion.assertThat
 import androidx.glance.appwidget.ViewSubject.Companion.assertThat
 import androidx.glance.appwidget.lazy.LazyColumn
+import androidx.glance.appwidget.lazy.LazyVerticalGrid
+import androidx.glance.appwidget.lazy.GridCells
 import androidx.glance.appwidget.lazy.ReservedItemIdRangeEnd
 import androidx.glance.appwidget.test.R
 import androidx.glance.background
@@ -583,6 +586,38 @@ class RemoteViewsTranslatorKtTest {
     }
 
     @Test
+    fun canTranslateLazyVerticalGrid_emptyList() = fakeCoroutineScope.runBlockingTest {
+        val rv = context.runAndTranslate {
+            LazyVerticalGrid(gridCells = GridCells.Adaptive) { }
+        }
+
+        assertIs<GridView>(context.applyRemoteViews(rv))
+    }
+
+    @Test
+    fun canTranslateLazyVerticalGrid_withItem() = fakeCoroutineScope.runBlockingTest {
+        val rv = context.runAndTranslate {
+            LazyVerticalGrid(gridCells = GridCells.Adaptive) {
+                item { Text("First") }
+                item { Row { Text("Second") } }
+            }
+        }
+
+        assertIs<GridView>(context.applyRemoteViews(rv))
+    }
+
+    @Test
+    fun canTranslateLazyVerticalGrid_withItems() = fakeCoroutineScope.runBlockingTest {
+        val rv = context.runAndTranslate {
+            LazyVerticalGrid(gridCells = GridCells.Adaptive) {
+                items(2, { it * 2L }) { index -> Text("Item $index") }
+            }
+        }
+
+        assertIs<GridView>(context.applyRemoteViews(rv))
+    }
+
+    @Test
     fun canTranslateAndroidRemoteViews() = fakeCoroutineScope.runBlockingTest {
         val result = context.runAndTranslate {
             val providedViews = RemoteViews(context.packageName, R.layout.text_sample).also {
@@ -719,6 +754,40 @@ class RemoteViewsTranslatorKtTest {
         assertThat(button.text).isEqualTo("Button")
         assertThat(button.isEnabled).isFalse()
         assertThat(button.hasOnClickListeners()).isFalse()
+    }
+
+    @Test
+    fun canTranslateCircularProgressIndicator() = fakeCoroutineScope.runBlockingTest {
+        val rv = context.runAndTranslate {
+            CircularProgressIndicator()
+        }
+
+        val progressIndicator = assertIs<android.widget.ProgressBar>(context.applyRemoteViews(rv))
+        assertThat(progressIndicator.isIndeterminate()).isTrue()
+    }
+
+    @Test
+    fun canTranslateLinearProgressIndicator_determinate() = fakeCoroutineScope.runBlockingTest {
+        val rv = context.runAndTranslate {
+            LinearProgressIndicator(
+                progress = 0.5f,
+            )
+        }
+
+        val progressIndicator = assertIs<android.widget.ProgressBar>(context.applyRemoteViews(rv))
+        assertThat(progressIndicator.isIndeterminate()).isFalse()
+        assertThat(progressIndicator.getMax()).isEqualTo(100)
+        assertThat(progressIndicator.getProgress()).isEqualTo(50)
+    }
+
+    @Test
+    fun canTranslateLinearProgressIndicator_indeterminate() = fakeCoroutineScope.runBlockingTest {
+        val rv = context.runAndTranslate {
+            LinearProgressIndicator()
+        }
+
+        val progressIndicator = assertIs<android.widget.ProgressBar>(context.applyRemoteViews(rv))
+        assertThat(progressIndicator.isIndeterminate()).isTrue()
     }
 
     @Test

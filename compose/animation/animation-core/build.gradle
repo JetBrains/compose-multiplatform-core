@@ -16,7 +16,6 @@
 
 
 import androidx.build.AndroidXComposePlugin
-import androidx.build.LibraryGroups
 import androidx.build.LibraryType
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
@@ -107,6 +106,10 @@ if (AndroidXComposePlugin.isMultiplatformEnabled(project)) {
                 }
             }
 
+            // TODO(b/214407011): These dependencies leak into instrumented tests as well. If you
+            //  need to add Robolectric (which must be kept out of androidAndroidTest), use a top
+            //  level dependencies block instead:
+            //  `dependencies { testImplementation(libs.robolectric) }`
             androidTest.dependencies {
                 implementation(libs.testRules)
                 implementation(libs.testRunner)
@@ -134,7 +137,7 @@ if (AndroidXComposePlugin.isMultiplatformEnabled(project)) {
 androidx {
     name = "Compose Animation Core"
     type = LibraryType.PUBLISHED_LIBRARY
-    mavenGroup = LibraryGroups.Compose.ANIMATION
+    mavenGroup = LibraryGroups.COMPOSE_ANIMATION
     inceptionYear = "2019"
     description = "Animation engine and animation primitives that are the building blocks of the Compose animation library"
     legacyDisableKotlinStrictApiMode = true

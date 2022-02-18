@@ -37,10 +37,19 @@ import androidx.compose.ui.unit.dp
  * This API is not stable, please consider using stable components like [LazyColumn] and [Row]
  * to achieve the same result.
  *
+ * Sample:
+ * @sample androidx.compose.foundation.samples.LazyVerticalGridSample
+ *
+ * Sample with custom item spans:
+ * @sample androidx.compose.foundation.samples.LazyVerticalGridSpanSample
+ *
  * @param cells a class describing how cells form columns, see [GridCells] doc for more information
  * @param modifier the modifier to apply to this layout
  * @param state the state object to be used to control or observe the list's state
  * @param contentPadding specify a padding around the whole content
+ * @param reverseLayout reverse the direction of scrolling and layout, when `true` items will be
+ * composed from the end to the start and [LazyGridState.firstVisibleItemIndex] == 0 will mean
+ * the first item is located at the end.
  * @param verticalArrangement The vertical arrangement of the layout's children
  * @param horizontalArrangement The horizontal arrangement of the layout's children
  * @param flingBehavior logic describing fling behavior
@@ -55,7 +64,9 @@ fun LazyVerticalGrid(
     modifier: Modifier = Modifier,
     state: LazyGridState = rememberLazyGridState(),
     contentPadding: PaddingValues = PaddingValues(0.dp),
-    verticalArrangement: Arrangement.Vertical = Arrangement.Top,
+    reverseLayout: Boolean = false,
+    verticalArrangement: Arrangement.Vertical =
+        if (!reverseLayout) Arrangement.Top else Arrangement.Bottom,
     horizontalArrangement: Arrangement.Horizontal = Arrangement.Start,
     flingBehavior: FlingBehavior = ScrollableDefaults.flingBehavior(),
     userScrollEnabled: Boolean = true,
@@ -76,6 +87,7 @@ fun LazyVerticalGrid(
         modifier = modifier,
         state = state,
         contentPadding = contentPadding,
+        reverseLayout = reverseLayout,
         horizontalArrangement = horizontalArrangement,
         verticalArrangement = verticalArrangement,
         flingBehavior = flingBehavior,
@@ -142,12 +154,16 @@ interface LazyGridScope {
      * @param span the span of the item. Default is 1x1. It is good practice to leave it `null`
      * when this matches the intended behavior, as providing a custom implementation impacts
      * performance
+     * @param contentType the type of the content of this item. The item compositions of the same
+     * type could be reused more efficiently. Note that null is a valid type and items of such
+     * type will be considered compatible.
      * @param content the content of the item
      */
     fun item(
         key: Any? = null,
         span: (LazyGridItemSpanScope.() -> GridItemSpan)? = null,
-        content: @Composable () -> Unit
+        contentType: Any? = null,
+        content: @Composable LazyGridItemScope.() -> Unit
     )
 
     /**
@@ -163,13 +179,17 @@ interface LazyGridScope {
      * @param span define custom spans for the items. Default is 1x1. It is good practice to
      * leave it `null` when this matches the intended behavior, as providing a custom
      * implementation impacts performance
+     * @param contentType a factory of the content types for the item. The item compositions of
+     * the same type could be reused more efficiently. Note that null is a valid type and items of such
+     * type will be considered compatible.
      * @param itemContent the content displayed by a single item
      */
     fun items(
         count: Int,
         key: ((index: Int) -> Any)? = null,
         span: (LazyGridItemSpanScope.(index: Int) -> GridItemSpan)? = null,
-        itemContent: @Composable (index: Int) -> Unit
+        contentType: (index: Int) -> Any? = { null },
+        itemContent: @Composable LazyGridItemScope.(index: Int) -> Unit
     )
 }
 
@@ -186,6 +206,9 @@ interface LazyGridScope {
  * @param span define custom spans for the items. Default is 1x1. It is good practice to
  * leave it `null` when this matches the intended behavior, as providing a custom implementation
  * impacts performance
+ * @param contentType a factory of the content types for the item. The item compositions of
+ * the same type could be reused more efficiently. Note that null is a valid type and items of such
+ * type will be considered compatible.
  * @param itemContent the content displayed by a single item
  */
 @ExperimentalFoundationApi
@@ -193,11 +216,13 @@ inline fun <T> LazyGridScope.items(
     items: List<T>,
     noinline key: ((item: T) -> Any)? = null,
     noinline span: (LazyGridItemSpanScope.(item: T) -> GridItemSpan)? = null,
-    crossinline itemContent: @Composable (item: T) -> Unit
+    noinline contentType: (item: T) -> Any? = { null },
+    crossinline itemContent: @Composable LazyGridItemScope.(item: T) -> Unit
 ) = items(
-    items.size,
-    if (key != null) { index: Int -> key(items[index]) } else null,
-    if (span != null) { { span(items[it]) } } else null
+    count = items.size,
+    key = if (key != null) { index: Int -> key(items[index]) } else null,
+    span = if (span != null) { { span(items[it]) } } else null,
+    contentType = { index: Int -> contentType(items[index]) }
 ) {
     itemContent(items[it])
 }
@@ -215,6 +240,9 @@ inline fun <T> LazyGridScope.items(
  * @param span define custom spans for the items. Default is 1x1. It is good practice to leave
  * it `null` when this matches the intended behavior, as providing a custom implementation
  * impacts performance
+ * @param contentType a factory of the content types for the item. The item compositions of
+ * the same type could be reused more efficiently. Note that null is a valid type and items of such
+ * type will be considered compatible.
  * @param itemContent the content displayed by a single item
  */
 @ExperimentalFoundationApi
@@ -222,11 +250,13 @@ inline fun <T> LazyGridScope.itemsIndexed(
     items: List<T>,
     noinline key: ((index: Int, item: T) -> Any)? = null,
     noinline span: (LazyGridItemSpanScope.(index: Int, item: T) -> GridItemSpan)? = null,
-    crossinline itemContent: @Composable (index: Int, item: T) -> Unit
+    crossinline contentType: (index: Int, item: T) -> Any? = { _, _ -> null },
+    crossinline itemContent: @Composable LazyGridItemScope.(index: Int, item: T) -> Unit
 ) = items(
-    items.size,
-    if (key != null) { index: Int -> key(index, items[index]) } else null,
-    if (span != null) { { span(it, items[it]) } } else null
+    count = items.size,
+    key = if (key != null) { index: Int -> key(index, items[index]) } else null,
+    span = if (span != null) { { span(it, items[it]) } } else null,
+    contentType = { index -> contentType(index, items[index]) }
 ) {
     itemContent(it, items[it])
 }
@@ -244,6 +274,9 @@ inline fun <T> LazyGridScope.itemsIndexed(
  * @param span define custom spans for the items. Default is 1x1. It is good practice to leave
  * it `null` when this matches the intended behavior, as providing a custom implementation
  * impacts performance
+ * @param contentType a factory of the content types for the item. The item compositions of
+ * the same type could be reused more efficiently. Note that null is a valid type and items of such
+ * type will be considered compatible.
  * @param itemContent the content displayed by a single item
  */
 @ExperimentalFoundationApi
@@ -251,11 +284,13 @@ inline fun <T> LazyGridScope.items(
     items: Array<T>,
     noinline key: ((item: T) -> Any)? = null,
     noinline span: (LazyGridItemSpanScope.(item: T) -> GridItemSpan)? = null,
-    crossinline itemContent: @Composable (item: T) -> Unit
+    noinline contentType: (item: T) -> Any? = { null },
+    crossinline itemContent: @Composable LazyGridItemScope.(item: T) -> Unit
 ) = items(
-    items.size,
-    if (key != null) { index: Int -> key(items[index]) } else null,
-    if (span != null) { { span(items[it]) } } else null
+    count = items.size,
+    key = if (key != null) { index: Int -> key(items[index]) } else null,
+    span = if (span != null) { { span(items[it]) } } else null,
+    contentType = { index: Int -> contentType(items[index]) }
 ) {
     itemContent(items[it])
 }
@@ -273,6 +308,9 @@ inline fun <T> LazyGridScope.items(
  * @param span define custom spans for the items. Default is 1x1. It is good practice to leave
  * it `null` when this matches the intended behavior, as providing a custom implementation
  * impacts performance
+ * @param contentType a factory of the content types for the item. The item compositions of
+ * the same type could be reused more efficiently. Note that null is a valid type and items of such
+ * type will be considered compatible.
  * @param itemContent the content displayed by a single item
  */
 @ExperimentalFoundationApi
@@ -280,11 +318,13 @@ inline fun <T> LazyGridScope.itemsIndexed(
     items: Array<T>,
     noinline key: ((index: Int, item: T) -> Any)? = null,
     noinline span: (LazyGridItemSpanScope.(index: Int, item: T) -> GridItemSpan)? = null,
-    crossinline itemContent: @Composable (index: Int, item: T) -> Unit
+    crossinline contentType: (index: Int, item: T) -> Any? = { _, _ -> null },
+    crossinline itemContent: @Composable LazyGridItemScope.(index: Int, item: T) -> Unit
 ) = items(
-    items.size,
-    if (key != null) { index: Int -> key(index, items[index]) } else null,
-    if (span != null) { { span(it, items[it]) } } else null
+    count = items.size,
+    key = if (key != null) { index: Int -> key(index, items[index]) } else null,
+    span = if (span != null) { { span(it, items[it]) } } else null,
+    contentType = { index -> contentType(index, items[index]) }
 ) {
     itemContent(it, items[it])
 }

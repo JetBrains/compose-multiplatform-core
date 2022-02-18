@@ -143,6 +143,7 @@ Calculating task graph as no configuration cache is available for tasks:.*
 Reusing configuration cache\.
 Calculating task graph as configuration cache cannot be reused because an input to task '[^ ]*' has changed\.
 Type\-safe dependency accessors is an incubating feature\.
+The build is running offline\. A build scan will not be published at this time, but it can be published if you run the buildScanPublishPrevious task in the next build\.
 # > Configure project :
 updated local\.properties
 # > Configure project :compose:test\-utils
@@ -179,30 +180,7 @@ Note\: Some input files use unchecked or unsafe operations\.
 Note\: Recompile with \-Xlint\:unchecked for details\.
 # > Task :ui:ui-tooling:processDebugAndroidTestManifest
 application@android:debuggable was tagged at .*\.xml:[0-9]+ to replace other declarations but no other declaration present
-\$OUT_DIR/androidx/wear/compose/compose\-material\-benchmark/build/intermediates/tmp/manifest/androidTest/release/tempFile[0-9]+ProcessTestManifest[0-9]+\.xml:[0-9]+:[0-9]+\-[0-9]+:[0-9]+ Warning:
-\$OUT_DIR/androidx/profileinstaller/profileinstaller\-benchmark/build/intermediates/tmp/manifest/androidTest/release/tempFile[0-9]+ProcessTestManifest[0-9]+\.xml:[0-9]+:[0-9]+\-[0-9]+:[0-9]+ Warning:
-\$OUT_DIR/androidx/appcompat/appcompat\-benchmark/build/intermediates/tmp/manifest/androidTest/release/tempFile[0-9]+ProcessTestManifest[0-9]+\.xml:[0-9]+:[0-9]+\-[0-9]+:[0-9]+ Warning:
-\$OUT_DIR/androidx/benchmark/benchmark\-benchmark/build/intermediates/tmp/manifest/androidTest/release/tempFile[0-9]+ProcessTestManifest[0-9]+\.xml:[0-9]+:[0-9]+\-[0-9]+:[0-9]+ Warning:
-\$OUT_DIR/androidx/collection/collection\-benchmark/build/intermediates/tmp/manifest/androidTest/release/tempFile[0-9]+ProcessTestManifest[0-9]+\.xml:[0-9]+:[0-9]+\-[0-9]+:[0-9]+ Warning:
-\$OUT_DIR/androidx/emoji[0-9]+/emoji[0-9]+\-benchmark/build/intermediates/tmp/manifest/androidTest/release/tempFile[0-9]+ProcessTestManifest[0-9]+\.xml:[0-9]+:[0-9]+\-[0-9]+:[0-9]+ Warning:
-\$OUT_DIR/androidx/navigation/navigation\-benchmark/build/intermediates/tmp/manifest/androidTest/release/tempFile[0-9]+ProcessTestManifest[0-9]+\.xml:[0-9]+:[0-9]+\-[0-9]+:[0-9]+ Warning:
-\$OUT_DIR/androidx/recyclerview/recyclerview\-benchmark/build/intermediates/tmp/manifest/androidTest/release/tempFile[0-9]+ProcessTestManifest[0-9]+\.xml:[0-9]+:[0-9]+\-[0-9]+:[0-9]+ Warning:
-\$OUT_DIR/androidx/room/room\-benchmark/build/intermediates/tmp/manifest/androidTest/release/tempFile[0-9]+ProcessTestManifest[0-9]+\.xml:[0-9]+:[0-9]+\-[0-9]+:[0-9]+ Warning:
-\$OUT_DIR/androidx/work/work\-benchmark/build/intermediates/tmp/manifest/androidTest/release/tempFile[0-9]+ProcessTestManifest[0-9]+\.xml:[0-9]+:[0-9]+\-[0-9]+:[0-9]+ Warning:
 \$OUT_DIR/androidx/benchmark/integration\-tests/dry\-run\-benchmark/build/intermediates/tmp/manifest/androidTest/release/tempFile[0-9]+ProcessTestManifest[0-9]+\.xml:[0-9]+:[0-9]+\-[0-9]+:[0-9]+ Warning:
-\$OUT_DIR/androidx/benchmark/integration\-tests/startup\-benchmark/build/intermediates/tmp/manifest/androidTest/release/tempFile[0-9]+ProcessTestManifest[0-9]+\.xml:[0-9]+:[0-9]+\-[0-9]+:[0-9]+ Warning:
-\$OUT_DIR/androidx/compose/benchmark\-utils/benchmark\-utils\-benchmark/build/intermediates/tmp/manifest/androidTest/release/tempFile[0-9]+ProcessTestManifest[0-9]+\.xml:[0-9]+:[0-9]+\-[0-9]+:[0-9]+ Warning:
-\$OUT_DIR/androidx/compose/foundation/foundation\-layout/build/intermediates/tmp/manifest/androidTest/debug/tempFile[0-9]+ProcessTestManifest[0-9]+\.xml:[0-9]+:[0-9]+\-[0-9]+:[0-9]+ Warning:
-\$OUT_DIR/androidx/compose/foundation/foundation\-benchmark/build/intermediates/tmp/manifest/androidTest/release/tempFile[0-9]+ProcessTestManifest[0-9]+\.xml:[0-9]+:[0-9]+\-[0-9]+:[0-9]+ Warning:
-\$OUT_DIR/androidx/compose/material/material\-benchmark/build/intermediates/tmp/manifest/androidTest/release/tempFile[0-9]+ProcessTestManifest[0-9]+\.xml:[0-9]+:[0-9]+\-[0-9]+:[0-9]+ Warning:
-\$OUT_DIR/androidx/compose/runtime/runtime\-saveable/build/intermediates/tmp/manifest/androidTest/debug/tempFile[0-9]+ProcessTestManifest[0-9]+\.xml:[0-9]+:[0-9]+\-[0-9]+:[0-9]+ Warning:
-\$OUT_DIR/androidx/compose/ui/ui\-benchmark/build/intermediates/tmp/manifest/androidTest/release/tempFile[0-9]+ProcessTestManifest[0-9]+\.xml:[0-9]+:[0-9]+\-[0-9]+:[0-9]+ Warning:
-\$OUT_DIR/androidx/compose/ui/ui\-tooling/build/intermediates/tmp/manifest/androidTest/debug/tempFile[0-9]+ProcessTestManifest[0-9]+\.xml:[0-9]+:[0-9]+\-[0-9]+:[0-9]+ Warning:
-\$OUT_DIR/androidx/compose/animation/animation\-core/animation\-core\-benchmark/build/intermediates/tmp/manifest/androidTest/release/tempFile[0-9]+ProcessTestManifest[0-9]+\.xml:[0-9]+:[0-9]+\-[0-9]+:[0-9]+ Warning:
-\$OUT_DIR/androidx/compose/foundation/foundation\-layout/foundation\-layout\-benchmark/build/intermediates/tmp/manifest/androidTest/release/tempFile[0-9]+ProcessTestManifest[0-9]+\.xml:[0-9]+:[0-9]+\-[0-9]+:[0-9]+ Warning:
-\$OUT_DIR/androidx/compose/runtime/runtime/benchmark/build/intermediates/tmp/manifest/androidTest/release/tempFile[0-9]+ProcessTestManifest[0-9]+\.xml:[0-9]+:[0-9]+\-[0-9]+:[0-9]+ Warning:
-\$OUT_DIR/androidx/compose/ui/ui\-text/ui\-text\-benchmark/build/intermediates/tmp/manifest/androidTest/release/tempFile[0-9]+ProcessTestManifest[0-9]+\.xml:[0-9]+:[0-9]+\-[0-9]+:[0-9]+ Warning:
-\$OUT_DIR/androidx/compose/ui/ui\-graphics/ui\-graphics\-benchmark/build/intermediates/tmp/manifest/androidTest/release/tempFile[0-9]+ProcessTestManifest[0-9]+\.xml:[0-9]+:[0-9]+\-[0-9]+:[0-9]+ Warning:
 # > Task :compose:foundation:foundation-layout:processDebugAndroidTestManifest
 \$SUPPORT/compose/foundation/foundation\-layout/src/androidAndroidTest/AndroidManifest\.xml:[0-9]+:[0-9]+\-[0-9]+:[0-9]+ Warning:
 # > Task :compose:runtime:runtime-saveable:processDebugAndroidTestManifest
@@ -221,6 +199,9 @@ w: \$SUPPORT/compose/ui/ui/src/commonMain/kotlin/androidx/compose/ui/node/DepthS
 w: \$SUPPORT/compose/ui/ui/src/commonMain/kotlin/androidx/compose/ui/node/DepthSortedSet\.kt: \([0-9]+, [0-9]+\): The corresponding parameter in the supertype 'Comparator' is named 'b'\. This may cause problems when calling this function with named arguments\.
 # > Task :benchmark:benchmark-common:runErrorProne
 \^
+public abstract void jvmDelete\(T t\);
+public abstract void jvmInsert\(@org\.jetbrains\.annotations\.NotNull\(\)
+public abstract java\.util\.List<androidx\.room\.androidx\.room\.integration\.kotlintestapp\.test\.JvmNameInDaoTest\.JvmNameEntity> jvmQuery\(\);
 symbol\:   static FLAG_MUTABLE
 location\: class PendingIntent
 \$OUT_DIR\/androidx\/docs\-public\/build\/srcs\/androidx\/work\/impl\/utils\/ForceStopRunnable\.java\:[0-9]+\: error\: cannot find symbol
@@ -241,6 +222,7 @@ See the profiling report at\: file\:\/\/\$OUT_DIR\/gradle\/external\/doclava\/bu
 # > Task :lifecycle:lifecycle-common:compileJava
 Note: \$[^ ]+ uses or overrides a deprecated API\.
 Note: Recompile with \-Xlint\:deprecation for details\.
+Note: \$SUPPORT/samples/Support7Demos/src/main/java/com/example/android/supportv[0-9]+/util/DiffUtilActivity\.java uses unchecked or unsafe operations\.
 # > Task :publicDocsTask
 [0-9]+ warnings
 # > Task :startup:integration-tests:first-library:processDebugManifest
@@ -315,8 +297,10 @@ WARNING: Please consider reporting this to the maintainers of androidx\.room\.co
 # > Task :docs-runner:dokkaJavaTipOfTreeDocs
 \$CHECKOUT/prebuilts/androidx/external/org/jetbrains/kotlin/kotlin\-stdlib\-jdk[0-9]+/[0-9]+\.[0-9]+\.[0-9]+-?[\-A-Z0-9]*/kotlin\-stdlib\-jdk[0-9]+\-[0-9]+\.[0-9]+\.[0-9]+-?[\-A-Z0-9]*\.jar \(version [0-9]+\.[0-9]+-?[\-A-Z0-9]*\)
 # > Task :compose:ui:ui:processDebugAndroidTestManifest
-\$OUT_DIR/androidx/compose/ui/ui/build/intermediates/tmp/manifest/androidTest/debug/tempFile[0-9]+ProcessTestManifest[0-9]+\.xml Warning:
-Package name 'androidx\.compose\.ui\.test' used in: tempFile[0-9]+ProcessTestManifest[0-9]+\.xml, :compose:ui:ui\-test\.
+\$OUT_DIR/.*/tempFile[0-9]+ProcessTestManifest[0-9]+\.xml Warning:
+Namespace 'androidx\..*' used in: tempFile[0-9]+ProcessTestManifest[0-9]+\.xml, :.*
+\$OUT_DIR/androidx/compose/runtime/runtime\-saveable/build/intermediates/tmp/manifest/androidTest/debug/tempFile[0-9]+ProcessTestManifest[0-9]+\.xml:[0-9]+:[0-9]+\-[0-9]+:[0-9]+ Warning:
+\$OUT_DIR/androidx/compose/ui/ui\-tooling/build/intermediates/tmp/manifest/androidTest/debug/tempFile[0-9]+ProcessTestManifest[0-9]+\.xml:[0-9]+:[0-9]+\-[0-9]+:[0-9]+ Warning:
 # > Task :buildSrc:build UP-TO-DATE
 See the profiling report at\: file\:\/\/\$OUT_DIR\/buildSrc\/build\/reports\/profile\/profile\-[0-9]+\-[0-9]+\-[0-9]+\-[0-9]+\-[0-9]+\-[0-9]+\.html
 A fine\-grained performance profile is available\: use the \-\-scan option\.
@@ -332,8 +316,6 @@ compiler or generated code\. Use it at your own risk\!
 Wrote HTML report to file://\$OUT_DIR/androidx/docs\-public/build/reports/lint\-results\-debug\.html
 # > Task :camera:camera-core:compileDebugJavaWithJavac
 warning: unknown enum constant AnnotationRetention\.BINARY
-# > Task :compose:ui:ui:processDebugUnitTestManifest
-\$OUT_DIR/androidx/compose/ui/ui/build/intermediates/tmp/manifest/test/debug/tempFile[0-9]+ProcessTestManifest[0-9]+\.xml Warning:
 # > Task :compose:foundation:foundation:reportLibraryMetrics
 java\.lang\.Object androidx\.compose\.foundation\.lazy\.LazyListScrollingKt\$doSmoothScrollToItem\$[0-9]+\.invokeSuspend\(java\.lang\.Object\)
 java\.lang\.Object androidx\.compose\.foundation\.gestures\.ForEachGestureKt\.forEachGesture\(androidx\.compose\.ui\.input\.pointer\.PointerInputScope, kotlin\.jvm\.functions\.Function[0-9]+, kotlin\.coroutines\.Continuation\)
@@ -591,9 +573,9 @@ Calculating task graph as configuration cache cannot be reused because the set o
 # > Task :car:app:app:generateProtocolApi
 \- Task `:car:app:app:generateProtocolApi` of type `GenerateProtocolApiTask`: invocation of 'Task\.project' at execution time is unsupported\.
 # > Tasks configureCMakeRelWithDebInfo or configureCMakeDebug
-C/C\+\+: (debug|release)\|(x86_64|x86|arm64\-v8a|armeabi\-v7a) :Building ver\.\: [0-9]+\.[0-9]+\.[0-9]+
-C/C\+\+: (debug|release)\|(x86_64|x86|arm64\-v8a|armeabi\-v7a) :Packaging for\: (amd\-[0-9]+|armhf\-[0-9]+|x86\-[0-9]+)
-C/C\+\+: (debug|release)\|(x86_64|x86|arm64\-v8a|armeabi\-v7a) :Compiling for ARM
+C/C\+\+: Building ver\.\: [0-9]+\.[0-9]+\.[0-9]+
+C/C\+\+: Packaging for\: (amd\-[0-9]+|armhf\-[0-9]+|x86\-[0-9]+)
+C/C\+\+: Compiling for ARM
 # > Task :glance:glance:reportLibraryMetrics
 Info: Stripped invalid locals information from [0-9]+ method\.
 Info: Methods with invalid locals information:
@@ -602,3 +584,9 @@ Information in locals\-table is invalid with respect to the stack map table\. Lo
 Info: Some warnings are typically a sign of using an outdated Java toolchain\. To fix, recompile the source with an updated toolchain\.
 # > Task :compose:ui:ui-inspection:buildCMakeRelWithDebInfo[arm64-v8a]
 C/C\+\+: ninja: warning: bad deps log signature or version; starting over
+# > Task :room:integration-tests:room-testapp-kotlin:kspWithKspDebugAndroidTestKotlin
+w: \[ksp\] Using @JvmName annotation on a function or accessor that will be overridden by Room is not supported\. If this is important for your use case, please file a bug at https://issuetracker\.google\.com/issues/new\?component=[0-9]+ with details\. \- androidx\.room\.androidx\.room\.integration\.kotlintestapp\.test\.JvmNameInDaoTest\.JvmNameDb\.jvmDao\(\)
+w: \[ksp\] \$SUPPORT/room/integration\-tests/kotlintestapp/src/androidTest/java/androidx/room/integration/kotlintestapp/test/JvmNameInDaoTest\.kt:[0-9]+: Using @JvmName annotation on a function or accessor that will be overridden by Room is not supported\. If this is important for your use case, please file a bug at https://issuetracker\.google\.com/issues/new\?component=[0-9]+ with details\.
+# > Task :room:integration-tests:room-testapp-kotlin:kaptWithKaptDebugAndroidTestKotlin
+\$OUT_DIR/androidx/room/integration\-tests/room\-testapp\-kotlin/build/tmp/kapt[0-9]+/stubs/withKaptDebugAndroidTest/androidx/room/androidx/room/integration/kotlintestapp/test/JvmNameInDaoTest\.java:[0-9]+: warning: Using @JvmName annotation on a function or accessor that will be overridden by Room is not supported\. If this is important for your use case, please file a bug at https://issuetracker\.google\.com/issues/new\?component=[0-9]+ with details\.
+public abstract androidx\.room\.androidx\.room\.integration\.kotlintestapp\.test\.JvmNameInDaoTest\.JvmNameDao jvmDao\(\);

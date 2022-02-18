@@ -113,7 +113,6 @@ class AndroidXImplPlugin : Plugin<Project> {
 
         project.configureTaskTimeouts()
         project.configureMavenArtifactUpload(extension)
-        project.configureExportAtomicLibraryGroupsToText()
         project.configureExternalDependencyLicenseCheck()
         project.configureProjectStructureValidation(extension)
         project.configureProjectVersionValidation(extension)
@@ -195,10 +194,9 @@ class AndroidXImplPlugin : Plugin<Project> {
                     it.archiveFileName.set(archiveName)
                     it.from(project.file(xmlReport.outputLocation))
                 }
-                @Suppress("DEPRECATION") // TODO: remove when studio upgrades to Gradle 7.4-rc-1
                 val ignoreFailuresProperty = project.providers.gradleProperty(
                     TEST_FAILURES_DO_NOT_FAIL_TEST_TASK
-                ).forUseAtConfigurationTime()
+                )
                 if (ignoreFailuresProperty.isPresent) {
                     task.ignoreFailures = true
                 }
@@ -392,17 +390,6 @@ class AndroidXImplPlugin : Plugin<Project> {
         }
 
         project.addToProjectMap(extension)
-    }
-
-    private fun Project.configureExportAtomicLibraryGroupsToText() {
-        project.tasks.register(
-            "exportAtomicLibraryGroupsToText",
-            ExportAtomicLibraryGroupsToTextTask::class.java
-        ) { task ->
-            task.libraryGroupFile = project.file("${project.getSupportRootFolder()}" +
-                "/buildSrc/public/src/main/kotlin/androidx/build/LibraryGroups.kt")
-            task.textOutputFile = project.file("${project.buildDir}/lint/atomic-library-groups.txt")
-        }
     }
 
     private fun Project.configureProjectStructureValidation(
@@ -915,7 +902,7 @@ fun Project.validateProjectStructure(groupId: String) {
 fun AndroidXExtension.validateMavenVersion() {
     val mavenGroup = mavenGroup
     val mavenVersion = mavenVersion
-    val forcedVersion = mavenGroup?.forcedVersion
+    val forcedVersion = mavenGroup?.atomicGroupVersion
     if (forcedVersion != null && forcedVersion == mavenVersion) {
         throw GradleException(
             """

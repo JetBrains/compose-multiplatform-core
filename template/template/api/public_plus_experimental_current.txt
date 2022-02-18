@@ -1,0 +1,108 @@
+// Signature format: 4.0
+package androidx.template.template {
+
+  public abstract class FreeformTemplate extends androidx.template.template.GlanceTemplate<androidx.template.template.FreeformTemplate.Data> {
+    ctor public FreeformTemplate();
+    method @androidx.compose.runtime.Composable public void WidgetLayoutCollapsed();
+    method @androidx.compose.runtime.Composable public void WidgetLayoutHorizontal();
+    method @androidx.compose.runtime.Composable public void WidgetLayoutVertical();
+  }
+
+  public static final class FreeformTemplate.Data {
+    ctor public FreeformTemplate.Data(androidx.glance.unit.ColorProvider backgroundColor, androidx.template.template.TemplateImageWithDescription headerIcon, androidx.template.template.TemplateImageButton? actionIcon, optional androidx.template.template.TemplateText? header, optional androidx.template.template.TemplateText? title, optional androidx.template.template.TemplateText? subtitle, optional androidx.glance.ImageProvider? backgroundImage);
+    method public androidx.template.template.TemplateImageButton? getActionIcon();
+    method public androidx.glance.unit.ColorProvider getBackgroundColor();
+    method public androidx.glance.ImageProvider? getBackgroundImage();
+    method public androidx.template.template.TemplateText? getHeader();
+    method public androidx.template.template.TemplateImageWithDescription getHeaderIcon();
+    method public androidx.template.template.TemplateText? getSubtitle();
+    method public androidx.template.template.TemplateText? getTitle();
+    property public final androidx.template.template.TemplateImageButton? actionIcon;
+    property public final androidx.glance.unit.ColorProvider backgroundColor;
+    property public final androidx.glance.ImageProvider? backgroundImage;
+    property public final androidx.template.template.TemplateText? header;
+    property public final androidx.template.template.TemplateImageWithDescription headerIcon;
+    property public final androidx.template.template.TemplateText? subtitle;
+    property public final androidx.template.template.TemplateText? title;
+  }
+
+  public abstract class GlanceTemplate<T> {
+    ctor public GlanceTemplate();
+    method @androidx.compose.runtime.Composable public abstract void WidgetLayoutCollapsed();
+    method @androidx.compose.runtime.Composable public abstract void WidgetLayoutHorizontal();
+    method @androidx.compose.runtime.Composable public abstract void WidgetLayoutVertical();
+    method public abstract T! getData(Object? state);
+  }
+
+  public final class GlanceTemplateKt {
+  }
+
+  public abstract class SingleEntityTemplate extends androidx.template.template.GlanceTemplate<androidx.template.template.SingleEntityTemplate.Data> {
+    ctor public SingleEntityTemplate();
+    method @androidx.compose.runtime.Composable public void WidgetLayoutCollapsed();
+    method @androidx.compose.runtime.Composable public void WidgetLayoutHorizontal();
+    method @androidx.compose.runtime.Composable public void WidgetLayoutVertical();
+  }
+
+  public static final class SingleEntityTemplate.Data {
+    ctor public SingleEntityTemplate.Data(androidx.template.template.TemplateImageWithDescription headerIcon, optional androidx.template.template.TemplateText? header, optional androidx.template.template.TemplateText? title, optional androidx.template.template.TemplateText? subtitle, optional androidx.template.template.TemplateText? body, optional androidx.template.template.TemplateButton? button, optional androidx.template.template.TemplateImageWithDescription? image, optional androidx.glance.unit.ColorProvider? backgroundColor);
+    method public androidx.glance.unit.ColorProvider? getBackgroundColor();
+    method public androidx.template.template.TemplateText? getBody();
+    method public androidx.template.template.TemplateButton? getButton();
+    method public androidx.template.template.TemplateText? getHeader();
+    method public androidx.template.template.TemplateImageWithDescription getHeaderIcon();
+    method public androidx.template.template.TemplateImageWithDescription? getImage();
+    method public androidx.template.template.TemplateText? getSubtitle();
+    method public androidx.template.template.TemplateText? getTitle();
+    property public final androidx.glance.unit.ColorProvider? backgroundColor;
+    property public final androidx.template.template.TemplateText? body;
+    property public final androidx.template.template.TemplateButton? button;
+    property public final androidx.template.template.TemplateText? header;
+    property public final androidx.template.template.TemplateImageWithDescription headerIcon;
+    property public final androidx.template.template.TemplateImageWithDescription? image;
+    property public final androidx.template.template.TemplateText? subtitle;
+    property public final androidx.template.template.TemplateText? title;
+  }
+
+  public abstract sealed class TemplateButton {
+    method public final androidx.glance.action.Action getAction();
+    property public final androidx.glance.action.Action action;
+  }
+
+  public final class TemplateImageButton extends androidx.template.template.TemplateButton {
+    ctor public TemplateImageButton(androidx.glance.action.Action action, androidx.template.template.TemplateImageWithDescription image);
+    method public androidx.template.template.TemplateImageWithDescription getImage();
+    property public final androidx.template.template.TemplateImageWithDescription image;
+  }
+
+  public final class TemplateImageWithDescription {
+    ctor public TemplateImageWithDescription(androidx.glance.ImageProvider image, String description);
+    method public String getDescription();
+    method public androidx.glance.ImageProvider getImage();
+    property public final String description;
+    property public final androidx.glance.ImageProvider image;
+  }
+
+  public final class TemplateText {
+    ctor public TemplateText(String text, optional int priority, optional androidx.glance.unit.ColorProvider? color);
+    method public androidx.glance.unit.ColorProvider? getColor();
+    method public int getPriority();
+    method public String getText();
+    property public final androidx.glance.unit.ColorProvider? color;
+    property public final int priority;
+    property public final String text;
+  }
+
+  public final class TemplateTextButton extends androidx.template.template.TemplateButton {
+    ctor public TemplateTextButton(androidx.glance.action.Action action, String text);
+    method public String getText();
+    property public final String text;
+  }
+
+  public final class TemplateTranslator {
+    ctor public TemplateTranslator();
+    method @androidx.compose.runtime.Composable public void TemplateContent(androidx.template.template.GlanceTemplate<?> template);
+  }
+
+}
+

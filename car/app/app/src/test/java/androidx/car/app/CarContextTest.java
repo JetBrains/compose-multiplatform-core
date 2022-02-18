@@ -128,6 +128,10 @@ public class CarContextTest {
                 ApplicationProvider.getApplicationContext(),
                 ApplicationProvider.getApplicationContext().getResources().getConfiguration());
         mCarContext.setCarHost(mMockCarHost);
+        // Set the app's lifecycle to STARTED so that screens would be set to the STARTED state when
+        // pushed. Otherwise we may run into issues in tests when popping screens, where they go
+        // from the INITIALIZED state to the DESTROYED state.
+        mLifecycleOwner.mRegistry.setCurrentState(State.STARTED);
 
         mScreen1 = new TestScreen(mCarContext, mMockScreen1);
         mScreen2 = new TestScreen(mCarContext, mMockScreen2);
@@ -380,9 +384,10 @@ public class CarContextTest {
 
         OnBackPressedCallback callback = mock(OnBackPressedCallback.class);
         when(callback.isEnabled()).thenReturn(true);
-        mLifecycleOwner.mRegistry.setCurrentState(State.STARTED);
 
-        mCarContext.getOnBackPressedDispatcher().addCallback(mLifecycleOwner, callback);
+        TestLifecycleOwner callbackLifecycle = new TestLifecycleOwner();
+        callbackLifecycle.mRegistry.setCurrentState(State.STARTED);
+        mCarContext.getOnBackPressedDispatcher().addCallback(callbackLifecycle, callback);
         mCarContext.getOnBackPressedDispatcher().onBackPressed();
 
         verify(callback).handleOnBackPressed();
@@ -397,9 +402,10 @@ public class CarContextTest {
 
         OnBackPressedCallback callback = mock(OnBackPressedCallback.class);
         when(callback.isEnabled()).thenReturn(true);
-        mLifecycleOwner.mRegistry.setCurrentState(State.CREATED);
 
-        mCarContext.getOnBackPressedDispatcher().addCallback(mLifecycleOwner, callback);
+        TestLifecycleOwner callbackLifecycle = new TestLifecycleOwner();
+        callbackLifecycle.mRegistry.setCurrentState(State.CREATED);
+        mCarContext.getOnBackPressedDispatcher().addCallback(callbackLifecycle, callback);
         mCarContext.getOnBackPressedDispatcher().onBackPressed();
 
         verify(callback, never()).handleOnBackPressed();
@@ -414,15 +420,16 @@ public class CarContextTest {
 
         OnBackPressedCallback callback = mock(OnBackPressedCallback.class);
         when(callback.isEnabled()).thenReturn(true);
-        mLifecycleOwner.mRegistry.setCurrentState(State.CREATED);
 
-        mCarContext.getOnBackPressedDispatcher().addCallback(mLifecycleOwner, callback);
+        TestLifecycleOwner callbackLifecycle = new TestLifecycleOwner();
+        callbackLifecycle.mRegistry.setCurrentState(State.CREATED);
+        mCarContext.getOnBackPressedDispatcher().addCallback(callbackLifecycle, callback);
         mCarContext.getOnBackPressedDispatcher().onBackPressed();
 
         verify(callback, never()).handleOnBackPressed();
         verify(mMockScreen2).dispatchLifecycleEvent(Event.ON_DESTROY);
 
-        mLifecycleOwner.mRegistry.setCurrentState(State.STARTED);
+        callbackLifecycle.mRegistry.setCurrentState(State.STARTED);
         mCarContext.getOnBackPressedDispatcher().onBackPressed();
 
         verify(callback).handleOnBackPressed();

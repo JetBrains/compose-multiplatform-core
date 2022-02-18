@@ -60,6 +60,8 @@ dependencies {
 afterEvaluate {
     tasks.withType(Test) { t ->
         t.dependsOn(":compose:compiler:compiler:embeddedPlugin")
+
+        maxHeapSize("1024m")
     }
 }
 

@@ -17,6 +17,7 @@
 package androidx.compose.foundation.lazy.grid
 
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -25,8 +26,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.GridCells
 import androidx.compose.foundation.lazy.LazyGridLayoutInfo
-import androidx.compose.foundation.lazy.LazyVerticalGrid
 import androidx.compose.foundation.lazy.LazyGridState
+import androidx.compose.foundation.lazy.LazyVerticalGrid
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyGridState
 import androidx.compose.runtime.Composable
@@ -46,18 +47,20 @@ import kotlinx.coroutines.runBlocking
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
 
 @MediumTest
 @OptIn(ExperimentalFoundationApi::class)
-// @RunWith(Parameterized::class)
+@RunWith(Parameterized::class)
 class LazyGridLayoutInfoTest(
-    // private val reverseLayout: Boolean = false
+    private val reverseLayout: Boolean
 ) {
-    // companion object {
-    //     @JvmStatic
-    //     @Parameterized.Parameters(name = "reverseLayout={0}")
-    //     fun initParameters(): Array<Any> = arrayOf(false, true)
-    // }
+    companion object {
+        @JvmStatic
+        @Parameterized.Parameters(name = "reverseLayout={0}")
+        fun initParameters(): Array<Any> = arrayOf(false, true)
+    }
 
     @get:Rule
     val rule = createComposeRule()
@@ -81,7 +84,7 @@ class LazyGridLayoutInfoTest(
         rule.setContent {
             LazyVerticalGrid(
                 state = rememberLazyGridState().also { state = it },
-                // reverseLayout = reverseLayout,
+                reverseLayout = reverseLayout,
                 modifier = Modifier.width(gridWidthDp).height(itemSizeDp * 3.5f),
                 cells = GridCells.Fixed(2)
             ) {
@@ -102,7 +105,7 @@ class LazyGridLayoutInfoTest(
         rule.setContent {
             LazyVerticalGrid(
                 state = rememberLazyGridState().also { state = it },
-                // reverseLayout = reverseLayout,
+                reverseLayout = reverseLayout,
                 modifier = Modifier.width(gridWidthDp).height(itemSizeDp * 3.5f),
                 cells = GridCells.Fixed(2)
             ) {
@@ -127,7 +130,7 @@ class LazyGridLayoutInfoTest(
         rule.setContent {
             LazyVerticalGrid(
                 state = rememberLazyGridState().also { state = it },
-                // reverseLayout = reverseLayout,
+                reverseLayout = reverseLayout,
                 verticalArrangement = Arrangement.spacedBy(itemSizeDp),
                 modifier = Modifier.width(itemSizeDp).height(itemSizeDp * 3.5f),
                 cells = GridCells.Fixed(1)
@@ -154,7 +157,7 @@ class LazyGridLayoutInfoTest(
         rule.setContent {
             LazyVerticalGrid(
                 state = rememberLazyGridState().also { state = it },
-                // reverseLayout = reverseLayout,
+                reverseLayout = reverseLayout,
                 modifier = Modifier.size(itemSizeDp * 2f, itemSizeDp * 3.5f),
                 cells = GridCells.Fixed(2)
             ) {
@@ -192,7 +195,7 @@ class LazyGridLayoutInfoTest(
         rule.setContent {
             LazyVerticalGrid(
                 modifier = Modifier.width(itemSizeDp),
-                // reverseLayout = reverseLayout,
+                reverseLayout = reverseLayout,
                 state = rememberLazyGridState().also { state = it },
                 cells = GridCells.Fixed(1)
             ) {
@@ -230,7 +233,7 @@ class LazyGridLayoutInfoTest(
         lateinit var state: LazyGridState
         rule.setContent {
             LazyVerticalGrid(
-                // reverseLayout = reverseLayout,
+                reverseLayout = reverseLayout,
                 state = rememberLazyGridState().also { state = it },
                 cells = GridCells.Fixed(2)
             ) {
@@ -251,14 +254,14 @@ class LazyGridLayoutInfoTest(
     }
 
     @Test
-    fun viewportOffsetsAreCorrect() {
+    fun viewportOffsetsAndSizeAreCorrect() {
         val sizePx = 45
         val sizeDp = with(rule.density) { sizePx.toDp() }
         lateinit var state: LazyGridState
         rule.setContent {
             LazyVerticalGrid(
-                modifier = Modifier.size(sizeDp),
-                // reverseLayout = reverseLayout,
+                modifier = Modifier.height(sizeDp).width(sizeDp * 2),
+                reverseLayout = reverseLayout,
                 state = rememberLazyGridState().also { state = it },
                 cells = GridCells.Fixed(2)
             ) {
@@ -271,27 +274,33 @@ class LazyGridLayoutInfoTest(
         rule.runOnIdle {
             assertThat(state.layoutInfo.viewportStartOffset).isEqualTo(0)
             assertThat(state.layoutInfo.viewportEndOffset).isEqualTo(sizePx)
+            assertThat(state.layoutInfo.viewportSize).isEqualTo(IntSize(sizePx * 2, sizePx))
         }
     }
 
     @Test
-    fun viewportOffsetsAreCorrectWithContentPadding() {
+    fun viewportOffsetsAndSizeAreCorrectWithContentPadding() {
         val sizePx = 45
         val startPaddingPx = 10
         val endPaddingPx = 15
         val sizeDp = with(rule.density) { sizePx.toDp() }
         val topPaddingDp = with(rule.density) {
-            if (!false/*reverseLayout*/) startPaddingPx.toDp() else endPaddingPx.toDp()
+            if (!reverseLayout) startPaddingPx.toDp() else endPaddingPx.toDp()
         }
         val bottomPaddingDp = with(rule.density) {
-            if (!false/*reverseLayout*/) endPaddingPx.toDp() else startPaddingPx.toDp()
+            if (!reverseLayout) endPaddingPx.toDp() else startPaddingPx.toDp()
         }
         lateinit var state: LazyGridState
         rule.setContent {
             LazyVerticalGrid(
-                modifier = Modifier.size(sizeDp),
-                contentPadding = PaddingValues(top = topPaddingDp, bottom = bottomPaddingDp),
-                // reverseLayout = reverseLayout,
+                modifier = Modifier.height(sizeDp).width(sizeDp * 2),
+                contentPadding = PaddingValues(
+                    top = topPaddingDp,
+                    bottom = bottomPaddingDp,
+                    start = 2.dp,
+                    end = 2.dp
+                ),
+                reverseLayout = reverseLayout,
                 state = rememberLazyGridState().also { state = it },
                 cells = GridCells.Fixed(2)
             ) {
@@ -304,6 +313,7 @@ class LazyGridLayoutInfoTest(
         rule.runOnIdle {
             assertThat(state.layoutInfo.viewportStartOffset).isEqualTo(-startPaddingPx)
             assertThat(state.layoutInfo.viewportEndOffset).isEqualTo(sizePx - startPaddingPx)
+            assertThat(state.layoutInfo.viewportSize).isEqualTo(IntSize(sizePx * 2, sizePx))
         }
     }
 
@@ -324,6 +334,48 @@ class LazyGridLayoutInfoTest(
             assertThat(state.layoutInfo.visibleItemsInfo.size).isEqualTo(2)
             assertThat(state.layoutInfo.visibleItemsInfo.first().index).isEqualTo(0)
             assertThat(state.layoutInfo.visibleItemsInfo.last().index).isEqualTo(1)
+        }
+    }
+
+    @Test
+    fun reverseLayoutIsCorrect() {
+        lateinit var state: LazyGridState
+        rule.setContent {
+            LazyVerticalGrid(
+                state = rememberLazyGridState().also { state = it },
+                reverseLayout = reverseLayout,
+                modifier = Modifier.width(gridWidthDp).height(itemSizeDp * 3.5f),
+                cells = GridCells.Fixed(2)
+            ) {
+                items((0..11).toList()) {
+                    Box(Modifier.size(itemSizeDp))
+                }
+            }
+        }
+
+        rule.runOnIdle {
+            assertThat(state.layoutInfo.reverseLayout).isEqualTo(reverseLayout)
+        }
+    }
+
+    @Test
+    fun orientationIsCorrect() {
+        lateinit var state: LazyGridState
+        rule.setContent {
+            LazyVerticalGrid(
+                state = rememberLazyGridState().also { state = it },
+                reverseLayout = reverseLayout,
+                modifier = Modifier.width(gridWidthDp).height(itemSizeDp * 3.5f),
+                cells = GridCells.Fixed(2)
+            ) {
+                items((0..11).toList()) {
+                    Box(Modifier.size(itemSizeDp))
+                }
+            }
+        }
+
+        rule.runOnIdle {
+            assertThat(state.layoutInfo.orientation).isEqualTo(Orientation.Vertical)
         }
     }
 

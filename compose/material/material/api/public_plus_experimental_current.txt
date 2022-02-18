@@ -225,12 +225,18 @@ package androidx.compose.material {
 
   @androidx.compose.material.ExperimentalMaterialApi public final class ChipDefaults {
     method @androidx.compose.runtime.Composable public androidx.compose.material.ChipColors chipColors(optional long backgroundColor, optional long contentColor, optional long leadingIconContentColor, optional long disabledBackgroundColor, optional long disabledContentColor, optional long disabledLeadingIconContentColor);
+    method @androidx.compose.runtime.Composable public androidx.compose.material.SelectableChipColors filterChipColors(optional long backgroundColor, optional long contentColor, optional long leadingIconColor, optional long disabledBackgroundColor, optional long disabledContentColor, optional long disabledLeadingIconColor, optional long selectedBackgroundColor, optional long selectedContentColor, optional long selectedLeadingIconColor);
+    method public float getLeadingIconSize();
     method public float getMinHeight();
     method @androidx.compose.runtime.Composable public androidx.compose.foundation.BorderStroke getOutlinedBorder();
     method public float getOutlinedBorderSize();
+    method public float getSelectedIconSize();
     method @androidx.compose.runtime.Composable public androidx.compose.material.ChipColors outlinedChipColors(optional long backgroundColor, optional long contentColor, optional long leadingIconContentColor, optional long disabledBackgroundColor, optional long disabledContentColor, optional long disabledLeadingIconContentColor);
+    method @androidx.compose.runtime.Composable public androidx.compose.material.SelectableChipColors outlinedFilterChipColors(optional long backgroundColor, optional long contentColor, optional long leadingIconColor, optional long disabledBackgroundColor, optional long disabledContentColor, optional long disabledLeadingIconColor, optional long selectedBackgroundColor, optional long selectedContentColor, optional long selectedLeadingIconColor);
+    property public final float LeadingIconSize;
     property public final float MinHeight;
     property public final float OutlinedBorderSize;
+    property public final float SelectedIconSize;
     property @androidx.compose.runtime.Composable public final androidx.compose.foundation.BorderStroke outlinedBorder;
     field public static final float ContentOpacity = 0.87f;
     field public static final androidx.compose.material.ChipDefaults INSTANCE;
@@ -240,6 +246,7 @@ package androidx.compose.material {
 
   public final class ChipKt {
     method @androidx.compose.material.ExperimentalMaterialApi @androidx.compose.runtime.Composable public static void Chip(kotlin.jvm.functions.Function0<kotlin.Unit> onClick, optional androidx.compose.ui.Modifier modifier, optional boolean enabled, optional androidx.compose.foundation.interaction.MutableInteractionSource interactionSource, optional androidx.compose.ui.graphics.Shape shape, optional androidx.compose.foundation.BorderStroke? border, optional androidx.compose.material.ChipColors colors, optional kotlin.jvm.functions.Function0<kotlin.Unit>? leadingIcon, kotlin.jvm.functions.Function1<? super androidx.compose.foundation.layout.RowScope,kotlin.Unit> content);
+    method @androidx.compose.material.ExperimentalMaterialApi @androidx.compose.runtime.Composable public static void FilterChip(boolean selected, kotlin.jvm.functions.Function0<kotlin.Unit> onClick, optional androidx.compose.ui.Modifier modifier, optional boolean enabled, optional androidx.compose.foundation.interaction.MutableInteractionSource interactionSource, optional androidx.compose.ui.graphics.Shape shape, optional androidx.compose.foundation.BorderStroke? border, optional androidx.compose.material.SelectableChipColors colors, optional kotlin.jvm.functions.Function0<kotlin.Unit>? leadingIcon, optional kotlin.jvm.functions.Function0<kotlin.Unit>? selectedIcon, optional kotlin.jvm.functions.Function0<kotlin.Unit>? trailingIcon, kotlin.jvm.functions.Function1<? super androidx.compose.foundation.layout.RowScope,kotlin.Unit> content);
   }
 
   @androidx.compose.runtime.Stable public final class Colors {
@@ -598,6 +605,12 @@ package androidx.compose.material {
     property public final androidx.compose.material.SnackbarHostState snackbarHostState;
   }
 
+  @androidx.compose.material.ExperimentalMaterialApi public interface SelectableChipColors {
+    method @androidx.compose.runtime.Composable public androidx.compose.runtime.State<androidx.compose.ui.graphics.Color> backgroundColor(boolean enabled, boolean selected);
+    method @androidx.compose.runtime.Composable public androidx.compose.runtime.State<androidx.compose.ui.graphics.Color> contentColor(boolean enabled, boolean selected);
+    method @androidx.compose.runtime.Composable public androidx.compose.runtime.State<androidx.compose.ui.graphics.Color> leadingIconColor(boolean enabled, boolean selected);
+  }
+
   @androidx.compose.runtime.Immutable public final class Shapes {
     ctor public Shapes(optional androidx.compose.foundation.shape.CornerBasedShape small, optional androidx.compose.foundation.shape.CornerBasedShape medium, optional androidx.compose.foundation.shape.CornerBasedShape large);
     method public androidx.compose.material.Shapes copy(optional androidx.compose.foundation.shape.CornerBasedShape small, optional androidx.compose.foundation.shape.CornerBasedShape medium, optional androidx.compose.foundation.shape.CornerBasedShape large);
@@ -789,8 +802,8 @@ package androidx.compose.material {
   }
 
   public final class TabRowKt {
-    method @androidx.compose.runtime.Composable public static void ScrollableTabRow(int selectedTabIndex, optional androidx.compose.ui.Modifier modifier, optional long backgroundColor, optional long contentColor, optional float edgePadding, optional kotlin.jvm.functions.Function1<? super java.util.List<androidx.compose.material.TabPosition>,kotlin.Unit> indicator, optional kotlin.jvm.functions.Function0<kotlin.Unit> divider, kotlin.jvm.functions.Function0<kotlin.Unit> tabs);
-    method @androidx.compose.runtime.Composable public static void TabRow(int selectedTabIndex, optional androidx.compose.ui.Modifier modifier, optional long backgroundColor, optional long contentColor, optional kotlin.jvm.functions.Function1<? super java.util.List<androidx.compose.material.TabPosition>,kotlin.Unit> indicator, optional kotlin.jvm.functions.Function0<kotlin.Unit> divider, kotlin.jvm.functions.Function0<kotlin.Unit> tabs);
+    method @androidx.compose.runtime.Composable @androidx.compose.ui.UiComposable public static void ScrollableTabRow(int selectedTabIndex, optional androidx.compose.ui.Modifier modifier, optional long backgroundColor, optional long contentColor, optional float edgePadding, optional kotlin.jvm.functions.Function1<? super java.util.List<androidx.compose.material.TabPosition>,kotlin.Unit> indicator, optional kotlin.jvm.functions.Function0<kotlin.Unit> divider, kotlin.jvm.functions.Function0<kotlin.Unit> tabs);
+    method @androidx.compose.runtime.Composable @androidx.compose.ui.UiComposable public static void TabRow(int selectedTabIndex, optional androidx.compose.ui.Modifier modifier, optional long backgroundColor, optional long contentColor, optional kotlin.jvm.functions.Function1<? super java.util.List<androidx.compose.material.TabPosition>,kotlin.Unit> indicator, optional kotlin.jvm.functions.Function0<kotlin.Unit> divider, kotlin.jvm.functions.Function0<kotlin.Unit> tabs);
   }
 
   @androidx.compose.runtime.Stable public interface TextFieldColors {
@@ -810,16 +823,34 @@ package androidx.compose.material {
   }
 
   public final class TextFieldDefaults {
+    method @androidx.compose.material.ExperimentalMaterialApi @androidx.compose.runtime.Composable public void BorderStroke(boolean enabled, boolean isError, androidx.compose.foundation.interaction.InteractionSource interactionSource, androidx.compose.material.TextFieldColors colors, optional androidx.compose.ui.graphics.Shape shape, optional float focusedBorderThickness, optional float unfocusedBorderThickness);
+    method @androidx.compose.material.ExperimentalMaterialApi @androidx.compose.runtime.Composable public void OutlinedTextFieldDecorationBox(String value, kotlin.jvm.functions.Function0<kotlin.Unit> innerTextField, boolean enabled, boolean singleLine, androidx.compose.ui.text.input.VisualTransformation visualTransformation, androidx.compose.foundation.interaction.InteractionSource interactionSource, optional boolean isError, optional kotlin.jvm.functions.Function0<kotlin.Unit>? label, optional kotlin.jvm.functions.Function0<kotlin.Unit>? placeholder, optional kotlin.jvm.functions.Function0<kotlin.Unit>? leadingIcon, optional kotlin.jvm.functions.Function0<kotlin.Unit>? trailingIcon, optional androidx.compose.material.TextFieldColors colors, optional androidx.compose.foundation.layout.PaddingValues contentPadding, optional kotlin.jvm.functions.Function0<kotlin.Unit> border);
+    method @androidx.compose.material.ExperimentalMaterialApi @androidx.compose.runtime.Composable public void TextFieldDecorationBox(String value, kotlin.jvm.functions.Function0<kotlin.Unit> innerTextField, boolean enabled, boolean singleLine, androidx.compose.ui.text.input.VisualTransformation visualTransformation, androidx.compose.foundation.interaction.InteractionSource interactionSource, optional boolean isError, optional kotlin.jvm.functions.Function0<kotlin.Unit>? label, optional kotlin.jvm.functions.Function0<kotlin.Unit>? placeholder, optional kotlin.jvm.functions.Function0<kotlin.Unit>? leadingIcon, optional kotlin.jvm.functions.Function0<kotlin.Unit>? trailingIcon, optional androidx.compose.material.TextFieldColors colors, optional androidx.compose.foundation.layout.PaddingValues contentPadding);
+    method public float getFocusedBorderThickness();
     method public float getMinHeight();
     method public float getMinWidth();
+    method @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.compose.ui.graphics.Shape getOutlinedTextFieldShape();
+    method @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.compose.ui.graphics.Shape getTextFieldShape();
+    method public float getUnfocusedBorderThickness();
+    method @androidx.compose.material.ExperimentalMaterialApi public androidx.compose.ui.Modifier indicatorLine(androidx.compose.ui.Modifier, boolean enabled, boolean isError, androidx.compose.foundation.interaction.InteractionSource interactionSource, androidx.compose.material.TextFieldColors colors, optional float focusedIndicatorLineThickness, optional float unfocusedIndicatorLineThickness);
     method @androidx.compose.runtime.Composable public androidx.compose.material.TextFieldColors outlinedTextFieldColors(optional long textColor, optional long disabledTextColor, optional long backgroundColor, optional long cursorColor, optional long errorCursorColor, optional long focusedBorderColor, optional long unfocusedBorderColor, optional long disabledBorderColor, optional long errorBorderColor, optional long leadingIconColor, optional long disabledLeadingIconColor, optional long errorLeadingIconColor, optional long trailingIconColor, optional long disabledTrailingIconColor, optional long errorTrailingIconColor, optional long focusedLabelColor, optional long unfocusedLabelColor, optional long disabledLabelColor, optional long errorLabelColor, optional long placeholderColor, optional long disabledPlaceholderColor);
+    method @androidx.compose.material.ExperimentalMaterialApi public androidx.compose.foundation.layout.PaddingValues outlinedTextFieldPadding(optional float start, optional float top, optional float end, optional float bottom);
     method @androidx.compose.runtime.Composable public androidx.compose.material.TextFieldColors textFieldColors(optional long textColor, optional long disabledTextColor, optional long backgroundColor, optional long cursorColor, optional long errorCursorColor, optional long focusedIndicatorColor, optional long unfocusedIndicatorColor, optional long disabledIndicatorColor, optional long errorIndicatorColor, optional long leadingIconColor, optional long disabledLeadingIconColor, optional long errorLeadingIconColor, optional long trailingIconColor, optional long disabledTrailingIconColor, optional long errorTrailingIconColor, optional long focusedLabelColor, optional long unfocusedLabelColor, optional long disabledLabelColor, optional long errorLabelColor, optional long placeholderColor, optional long disabledPlaceholderColor);
+    method @androidx.compose.material.ExperimentalMaterialApi public androidx.compose.foundation.layout.PaddingValues textFieldWithLabelPadding(optional float start, optional float end, optional float top, optional float bottom);
+    method @androidx.compose.material.ExperimentalMaterialApi public androidx.compose.foundation.layout.PaddingValues textFieldWithoutLabelPadding(optional float start, optional float top, optional float end, optional float bottom);
+    property public final float FocusedBorderThickness;
     property public final float MinHeight;
     property public final float MinWidth;
+    property @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public final androidx.compose.ui.graphics.Shape OutlinedTextFieldShape;
+    property @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public final androidx.compose.ui.graphics.Shape TextFieldShape;
+    property public final float UnfocusedBorderThickness;
     field public static final float BackgroundOpacity = 0.12f;
     field public static final androidx.compose.material.TextFieldDefaults INSTANCE;
     field public static final float IconOpacity = 0.54f;
     field public static final float UnfocusedIndicatorLineOpacity = 0.42f;
+  }
+
+  public final class TextFieldDefaultsKt {
   }
 
   public final class TextFieldImplKt {

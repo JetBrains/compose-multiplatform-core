@@ -23,7 +23,9 @@ import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.de
 import androidx.lifecycle.viewmodel.CreationExtras.Key
 import androidx.lifecycle.ViewModelProvider.NewInstanceFactory.Companion.VIEW_MODEL_KEY
 import androidx.lifecycle.viewmodel.CreationExtras
+import androidx.lifecycle.viewmodel.InitializerViewModelFactory
 import androidx.lifecycle.viewmodel.MutableCreationExtras
+import androidx.lifecycle.viewmodel.ViewModelInitializer
 import java.lang.IllegalArgumentException
 import java.lang.RuntimeException
 import java.lang.reflect.InvocationTargetException
@@ -77,6 +79,18 @@ constructor(
          */
         public fun <T : ViewModel> create(modelClass: Class<T>, extras: CreationExtras): T =
             create(modelClass)
+
+        companion object {
+            /**
+             * Creates an [InitializerViewModelFactory] using the given initializers.
+             *
+             * @param initializers the class initializer pairs used for the factory to create
+             * simple view models
+             */
+            @JvmStatic
+            fun from(vararg initializers: ViewModelInitializer<*>): Factory =
+                InitializerViewModelFactory(*initializers)
+        }
     }
 
     /**
@@ -258,10 +272,18 @@ constructor(
             return if (application != null) {
                 create(modelClass, application)
             } else {
-                val application = extras[APPLICATION_KEY] ?: throw IllegalArgumentException(
-                    "CreationExtras mush have an application by `APPLICATION_KEY`"
-                )
-                create(modelClass, application)
+                val application = extras[APPLICATION_KEY]
+                if (application != null) {
+                    create(modelClass, application)
+                } else {
+                    // For AndroidViewModels, CreationExtras must have an application set
+                    if (AndroidViewModel::class.java.isAssignableFrom(modelClass)) {
+                        throw IllegalArgumentException(
+                            "CreationExtras must have an application by `APPLICATION_KEY`"
+                        )
+                    }
+                    super.create(modelClass)
+                }
             }
         }
 

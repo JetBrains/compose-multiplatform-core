@@ -69,13 +69,14 @@ import androidx.compose.ui.semantics.SemanticsConfiguration
 import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.semantics.SemanticsOwner
 import androidx.compose.ui.semantics.SemanticsProperties
-import androidx.compose.ui.semantics.SemanticsWrapper
+import androidx.compose.ui.semantics.SemanticsEntity
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.semantics.outerSemantics
 import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.InternalTextApi
 import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.platform.toAccessibilitySpannableString
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.toSize
@@ -891,17 +892,18 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
     @OptIn(InternalTextApi::class)
     private fun setText(
         node: SemanticsNode,
-        info: AccessibilityNodeInfoCompat
+        info: AccessibilityNodeInfoCompat,
     ) {
+        val fontFamilyResolver: FontFamily.Resolver = view.fontFamilyResolver
         val editableTextToAssign = trimToSize(
             node.unmergedConfig.getTextForTextField()
-                ?.toAccessibilitySpannableString(density = view.density, view.fontLoader),
+                ?.toAccessibilitySpannableString(density = view.density, fontFamilyResolver),
             ParcelSafeTextLength
         )
 
         val textToAssign = trimToSize(
             node.unmergedConfig.getOrNull(SemanticsProperties.Text)?.firstOrNull()
-                ?.toAccessibilitySpannableString(density = view.density, view.fontLoader),
+                ?.toAccessibilitySpannableString(density = view.density, fontFamilyResolver),
             ParcelSafeTextLength
         )
 
@@ -1020,6 +1022,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
      * @return An {@link AccessibilityEvent} populated with information about
      *         the specified item.
      */
+    @Suppress("DEPRECATION")
     @VisibleForTesting
     internal fun createEvent(virtualViewId: Int, eventType: Int): AccessibilityEvent {
         val event: AccessibilityEvent = AccessibilityEvent.obtain(eventType)
@@ -1498,13 +1501,13 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
     internal fun hitTestSemanticsAt(x: Float, y: Float): Int {
         view.measureAndLayout()
 
-        val hitSemanticsWrappers = HitTestResult<SemanticsWrapper>()
+        val hitSemanticsEntities = HitTestResult<SemanticsEntity>()
         view.root.hitTestSemantics(
             pointerPosition = Offset(x, y),
-            hitSemanticsWrappers = hitSemanticsWrappers
+            hitSemanticsEntities = hitSemanticsEntities
         )
 
-        val wrapper = hitSemanticsWrappers.lastOrNull()?.layoutNode?.outerSemantics
+        val wrapper = hitSemanticsEntities.lastOrNull()?.layoutNode?.outerSemantics
         var virtualViewId = InvalidId
         if (wrapper != null) {
 
@@ -1816,7 +1819,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                                 )
                                 // Here we use the merged node
                                 val mergedNode =
-                                    SemanticsNode(newNode.outerSemanticsNodeWrapper, true)
+                                    SemanticsNode(newNode.outerSemanticsEntity, true)
                                 val contentDescription = mergedNode.config.getOrNull(
                                     SemanticsProperties.ContentDescription
                                 )?.fastJoinToString(",")

@@ -18,26 +18,32 @@ package androidx.compose.foundation.lazy
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.MutatePriority
+import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.ScrollScope
 import androidx.compose.foundation.gestures.ScrollableState
 import androidx.compose.foundation.interaction.InteractionSource
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.lazy.grid.ItemIndex
+import androidx.compose.foundation.lazy.grid.LazyGridItemPlacementAnimator
 import androidx.compose.foundation.lazy.grid.LazyGridItemsProvider
 import androidx.compose.foundation.lazy.grid.LazyGridMeasureResult
 import androidx.compose.foundation.lazy.grid.LazyGridScrollPosition
 import androidx.compose.foundation.lazy.grid.LineIndex
 import androidx.compose.foundation.lazy.grid.doSmoothScrollToItem
 import androidx.compose.foundation.lazy.layout.LazyLayoutPrefetchPolicy
-import androidx.compose.foundation.lazy.layout.LazyLayoutState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.layout.Remeasurement
+import androidx.compose.ui.layout.RemeasurementModifier
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.IntSize
 import kotlin.math.abs
 
 /**
@@ -86,7 +92,18 @@ class LazyGridState constructor(
         LazyGridScrollPosition(firstVisibleItemIndex, firstVisibleItemScrollOffset)
 
     /**
-     * The index of the first item that is visible
+     * The index of the first item that is visible.
+     *
+     * Note that this property is observable and if you use it in the composable function it will
+     * be recomposed on every change causing potential performance issues.
+     *
+     * If you want to run some side effects like sending an analytics event or updating a state
+     * based on this value consider using "snapshotFlow":
+     * @sample androidx.compose.foundation.samples.UsingGridScrollPositionForSideEffectSample
+     *
+     * If you need to use it in the composition then consider wrapping the calculation into a
+     * derived state in order to only have recompositions when the derived value changes:
+     * @sample androidx.compose.foundation.samples.UsingGridScrollPositionInCompositionSample
      */
     val firstVisibleItemIndex: Int get() = scrollPosition.observableIndex
 
@@ -102,6 +119,15 @@ class LazyGridState constructor(
     /**
      * The object of [LazyGridLayoutInfo] calculated during the last layout pass. For example,
      * you can use it to calculate what items are currently visible.
+     *
+     * Note that this property is observable and is updated after every scroll or remeasure.
+     * If you use it in the composable function it will be recomposed on every change causing
+     * potential performance issues including infinity recomposition loop.
+     * Therefore, avoid using it in the composition.
+     *
+     * If you want to run some side effects like sending an analytics event or updating a state
+     * based on this value consider using "snapshotFlow":
+     * @sample androidx.compose.foundation.samples.UsingGridLayoutInfoForSideEffectSample
      */
     val layoutInfo: LazyGridLayoutInfo get() = layoutInfoState.value
 
@@ -139,6 +165,11 @@ class LazyGridState constructor(
     /**
      * Needed for [animateScrollToItem]. Updated on every measure.
      */
+    internal var slotsPerLine: Int = 0
+
+    /**
+     * Needed for [animateScrollToItem]. Updated on every measure.
+     */
     internal var density: Density = Density(1f, 1f)
 
     /**
@@ -172,9 +203,19 @@ class LazyGridState constructor(
     private var wasScrollingForward = false
 
     /**
-     * The state of the inner LazyLayout.
+     * The [Remeasurement] object associated with our layout. It allows us to remeasure
+     * synchronously during scroll.
      */
-    internal var innerState: LazyLayoutState? = null
+    private var remeasurement: Remeasurement? = null
+
+    /**
+     * The modifier which provides [remeasurement].
+     */
+    internal val remeasurementModifier = object : RemeasurementModifier {
+        override fun onRemeasurementAvailable(remeasurement: Remeasurement) {
+            this@LazyGridState.remeasurement = remeasurement
+        }
+    }
 
     /**
      * Finds items on a line and their measurement constraints. Used for prefetching.
@@ -182,24 +223,20 @@ class LazyGridState constructor(
     internal var prefetchInfoRetriever: (line: LineIndex) -> List<Pair<Int, Constraints>> =
         { emptyList() }
 
-    // internal var placementAnimator by mutableStateOf<LazyListItemPlacementAnimator?>(null)
+    internal var placementAnimator by mutableStateOf<LazyGridItemPlacementAnimator?>(null)
 
     /**
      * Instantly brings the item at [index] to the top of the viewport, offset by [scrollOffset]
      * pixels.
      *
-     * Cancels the currently running scroll, if any, and suspends until the cancellation is
-     * complete.
-     *
-     * @param index the data index to snap to. Must be between 0 and the number of elements.
-     * @param scrollOffset the number of pixels past the start of the item to snap to. Must
-     * not be negative.
+     * @param index the index to which to scroll. Must be non-negative.
+     * @param scrollOffset the offset that the item should end up after the scroll. Note that
+     * positive offset refers to forward scroll, so in a top-to-bottom list, positive offset will
+     * scroll the item further upward (taking it partly offscreen).
      */
-    @OptIn(ExperimentalFoundationApi::class)
     suspend fun scrollToItem(
         /*@IntRange(from = 0)*/
         index: Int,
-        /*@IntRange(from = 0)*/
         scrollOffset: Int = 0
     ) {
         return scrollableState.scroll {
@@ -210,8 +247,8 @@ class LazyGridState constructor(
     internal fun snapToItemIndexInternal(index: Int, scrollOffset: Int) {
         scrollPosition.requestPosition(ItemIndex(index), scrollOffset)
         // placement animation is not needed because we snap into a new position.
-        // placementAnimator?.reset()
-        innerState?.remeasure()
+        placementAnimator?.reset()
+        remeasurement?.forceRemeasure()
     }
 
     /**
@@ -220,12 +257,8 @@ class LazyGridState constructor(
      * performed within a [scroll] block (even if they don't call any other methods on this
      * object) in order to guarantee that mutual exclusion is enforced.
      *
-     * Cancels the currently running scroll, if any, and suspends until the cancellation is
-     * complete.
-     *
      * If [scroll] is called from elsewhere, this will be canceled.
      */
-    @OptIn(ExperimentalFoundationApi::class)
     override suspend fun scroll(
         scrollPriority: MutatePriority,
         block: suspend ScrollScope.() -> Unit
@@ -258,7 +291,7 @@ class LazyGridState constructor(
         // we have less than 0.5 pixels
         if (abs(scrollToBeConsumed) > 0.5f) {
             val preScrollToBeConsumed = scrollToBeConsumed
-            innerState?.remeasure()
+            remeasurement?.forceRemeasure()
             if (prefetchingEnabled && prefetchPolicy != null) {
                 notifyPrefetch(preScrollToBeConsumed - scrollToBeConsumed)
             }
@@ -318,19 +351,17 @@ class LazyGridState constructor(
     /**
      * Animate (smooth scroll) to the given item.
      *
-     * @param index the index to which to scroll
-     * @param scrollOffset the offset that the item should end up after the scroll (same as
-     * [scrollToItem]) - note that positive offset refers to forward scroll, so in a
-     * top-to-bottom grid, positive offset will scroll the item further upward (taking it partly
-     * offscreen)
+     * @param index the index to which to scroll. Must be non-negative.
+     * @param scrollOffset the offset that the item should end up after the scroll. Note that
+     * positive offset refers to forward scroll, so in a top-to-bottom list, positive offset will
+     * scroll the item further upward (taking it partly offscreen).
      */
     suspend fun animateScrollToItem(
         /*@IntRange(from = 0)*/
         index: Int,
-        /*@IntRange(from = 0)*/
         scrollOffset: Int = 0
     ) {
-        doSmoothScrollToItem(index, scrollOffset)
+        doSmoothScrollToItem(index, scrollOffset, slotsPerLine)
     }
 
     /**
@@ -380,4 +411,7 @@ private object EmptyLazyGridLayoutInfo : LazyGridLayoutInfo {
     override val viewportStartOffset = 0
     override val viewportEndOffset = 0
     override val totalItemsCount = 0
+    override val viewportSize = IntSize.Zero
+    override val orientation = Orientation.Vertical
+    override val reverseLayout = false
 }

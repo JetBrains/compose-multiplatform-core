@@ -42,6 +42,19 @@ private fun nextId(): Int = nextId.also { nextId += 1 }
 
 // Components are ordered alphabetically by name.
 
+private val BottomAppBars = Component(
+    id = nextId(),
+    name = "Bottom App Bar",
+    description = "A bottom app bar displays navigation and key actions at the bottom of mobile " +
+        "screens.",
+    // No bottom app bar icon
+    tintIcon = true,
+    guidelinesUrl = "$ComponentGuidelinesUrl/bottom-app-bars",
+    docsUrl = "$DocsUrl#bottomappbar",
+    sourceUrl = "$Material3SourceUrl/AppBar.kt",
+    examples = BottomAppBarsExamples
+)
+
 private val Buttons = Component(
     id = nextId(),
     name = "Buttons",
@@ -53,6 +66,18 @@ private val Buttons = Component(
     docsUrl = "$PackageSummaryUrl#button",
     sourceUrl = "$Material3SourceUrl/Button.kt",
     examples = ButtonsExamples,
+)
+
+private val Card = Component(
+    id = nextId(),
+    name = "Card",
+    description = "Cards contain content and actions that relate information about a subject.",
+    // No card icon
+    tintIcon = true,
+    guidelinesUrl = "$StyleGuidelinesUrl/cards",
+    docsUrl = "$PackageSummaryUrl#card",
+    sourceUrl = "$Material3SourceUrl/Card.kt",
+    examples = CardExamples
 )
 
 private val Color = Component(
@@ -119,6 +144,18 @@ private val FloatingActionButtons = Component(
     examples = FloatingActionButtonsExamples,
 )
 
+private val Menus = Component(
+    id = nextId(),
+    name = "Menus",
+    description = "Menus display a list of choices on temporary surfaces.",
+    // No menu icon
+    tintIcon = true,
+    guidelinesUrl = "$ComponentGuidelinesUrl/menus",
+    docsUrl = "$PackageSummaryUrl#dropdownmenu",
+    sourceUrl = "$Material3SourceUrl/Menu.kt",
+    examples = MenusExamples
+)
+
 private val NavigationBar = Component(
     id = nextId(),
     name = "Navigation bar",
@@ -182,6 +219,17 @@ private val RadioButtons = Component(
     examples = RadioButtonsExamples
 )
 
+private val Sliders = Component(
+    id = nextId(),
+    name = "Sliders",
+    description = "Sliders allow users to make selections from a range of values.",
+    // No slider icon
+    guidelinesUrl = "", // No guidelines yet
+    docsUrl = "", // No docs yet
+    sourceUrl = "$Material3SourceUrl/Slider.kt",
+    examples = SlidersExamples
+)
+
 private val Snackbars = Component(
     id = nextId(),
     name = "Snackbars",
@@ -193,6 +241,18 @@ private val Snackbars = Component(
     docsUrl = "$DocsUrl#snackbar",
     sourceUrl = "$Material3SourceUrl/Snackbar.kt",
     examples = SnackbarsExamples
+)
+
+private val Tabs = Component(
+    id = nextId(),
+    name = "Tabs",
+    description = "Tabs organize content across different screens, data sets, and other " +
+        "interactions.",
+    // No tabs icon
+    guidelinesUrl = "$ComponentGuidelinesUrl/tabs",
+    docsUrl = "$DocsUrl#tab",
+    sourceUrl = "$Material3SourceUrl/Tab.kt",
+    examples = TabsExamples
 )
 
 private val TopAppBar = Component(
@@ -209,17 +269,22 @@ private val TopAppBar = Component(
 
 /** Components for the catalog, ordered alphabetically by name. */
 val Components = listOf(
+    BottomAppBars,
     Buttons,
+    Card,
     Checkboxes,
     Color,
     Dialogs,
     ExtendedFloatingActionButton,
     FloatingActionButtons,
+    Menus,
     NavigationBar,
     NavigationDrawer,
     NavigationRail,
     ProgressIndicators,
     RadioButtons,
+    Sliders,
     Snackbars,
+    Tabs,
     TopAppBar
 )

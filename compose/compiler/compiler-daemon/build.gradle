@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-import androidx.build.LibraryGroups
 import androidx.build.LibraryType
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
@@ -54,7 +53,7 @@ tasks.withType(KotlinCompile).configureEach {
 androidx {
     name = "Compose Compiler Daemon"
     type = LibraryType.COMPILER_DAEMON
-    mavenGroup = LibraryGroups.Compose.COMPILER
+    mavenGroup = LibraryGroups.COMPOSE_COMPILER
     inceptionYear = "2021"
     description = "Compiler Daemon that includes the Compose plugin"
 }
