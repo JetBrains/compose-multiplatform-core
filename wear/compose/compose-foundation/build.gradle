@@ -14,9 +14,7 @@
  * limitations under the License.
  */
 
-import androidx.build.LibraryGroups
 import androidx.build.LibraryType
-import androidx.build.LibraryVersions
 import androidx.build.AndroidXComposePlugin
 
 plugins {
@@ -38,7 +36,7 @@ dependencies {
 
         implementation(libs.kotlinStdlib)
         implementation(project(":compose:foundation:foundation-layout"))
-        implementation(project(":profileinstaller:profileinstaller"))
+        implementation("androidx.profileinstaller:profileinstaller:1.2.0-alpha02")
 
         testImplementation(libs.testRules)
         testImplementation(libs.testRunner)
@@ -82,10 +80,10 @@ if(AndroidXComposePlugin.isMultiplatformEnabled(project)) {
                 implementation(kotlin("test-junit"))
             }
             androidAndroidTest.dependencies {
-                implementation(libs.testExtJunit)
-                implementation(libs.testRules)
+                implementation(project(":compose:ui:ui-test"))
+                implementation(project(":compose:ui:ui-test-junit4"))
+                implementation(project(":compose:test-utils"))
                 implementation(libs.testRunner)
-                implementation(libs.truth)
             }
         }
     }

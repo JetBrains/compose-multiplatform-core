@@ -18,6 +18,7 @@ package androidx.compose.ui.window
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.Stable
 import androidx.compose.runtime.currentCompositionLocalContext
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -77,7 +78,10 @@ import javax.swing.JDialog
  * - native resources will not be released. They will be released only when [Dialog]
  * will leave the composition.
  * @param title Title in the titlebar of the dialog
- * @param icon Icon in the titlebar of the dialog (for platforms which support this)
+ * @param icon Icon in the titlebar of the window (for platforms which support this).
+ * On macOs individual windows can't have a separate icon. To change the icon in the Dock,
+ * set it via `iconFile` in build.gradle
+ * (https://github.com/JetBrains/compose-jb/tree/master/tutorials/Native_distributions_and_local_execution#platform-specific-options)
  * @param undecorated Disables or enables decorations for this window.
  * @param transparent Disables or enables window transparency. Transparency should be set
  * only if window is undecorated, otherwise an exception will be thrown.
@@ -241,6 +245,7 @@ fun Dialog(
 /**
  * Receiver scope which is used by [androidx.compose.ui.window.Dialog].
  */
+@Stable
 interface DialogWindowScope : WindowScope {
     /**
      * [ComposeDialog] that was created inside [androidx.compose.ui.window.Dialog].

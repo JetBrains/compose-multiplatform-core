@@ -513,7 +513,7 @@ class AndroidAccessibilityTest {
                 AccessibilityNodeInfo.AccessibilityAction(ACTION_CLEAR_FOCUS, null)
             )
         )
-        accessibilityNodeInfo.recycle()
+        @Suppress("DEPRECATION") accessibilityNodeInfo.recycle()
     }
 
     @Test
@@ -541,7 +541,7 @@ class AndroidAccessibilityTest {
                 AccessibilityNodeInfo.AccessibilityAction(ACTION_CLEAR_FOCUS, null)
             )
         )
-        accessibilityNodeInfo.recycle()
+        @Suppress("DEPRECATION") accessibilityNodeInfo.recycle()
     }
 
     @Test
@@ -919,7 +919,7 @@ class AndroidAccessibilityTest {
 
         val textFieldNode = rule.onNodeWithTag(tag)
             .fetchSemanticsNode("couldn't find node with tag $tag")
-        val info = AccessibilityNodeInfo.obtain()
+        @Suppress("DEPRECATION") val info = AccessibilityNodeInfo.obtain()
         val argument = Bundle()
         argument.putInt(AccessibilityNodeInfo.EXTRA_DATA_TEXT_CHARACTER_LOCATION_ARG_START_INDEX, 0)
         argument.putInt(AccessibilityNodeInfo.EXTRA_DATA_TEXT_CHARACTER_LOCATION_ARG_LENGTH, 1)
@@ -1708,6 +1708,29 @@ class AndroidAccessibilityTest {
     }
 
     @Test
+    fun testSemanticsHitTest_clearAndSet() {
+        val outertag = "outerbox"
+        val innertag = "innerbox"
+        container.setContent {
+            Box(Modifier.size(100.dp).clickable {}.testTag(outertag).clearAndSetSemantics {}) {
+                Box(Modifier.size(100.dp).clickable {}.testTag(innertag)) {
+                    BasicText("")
+                }
+            }
+        }
+
+        val outerNode = rule.onNodeWithTag(outertag).fetchSemanticsNode("")
+        val innerNode = rule.onNodeWithTag(innertag, true).fetchSemanticsNode("")
+        val bounds = innerNode.boundsInRoot
+
+        val hitNodeId = delegate.hitTestSemanticsAt(
+            bounds.left + bounds.width / 2,
+            bounds.top + bounds.height / 2
+        )
+        assertEquals(outerNode.id, hitNodeId)
+    }
+
+    @Test
     @SdkSuppress(maxSdkVersion = Build.VERSION_CODES.P)
     fun testViewInterop_findViewByAccessibilityId() {
         val androidViewTag = "androidView"
@@ -2151,7 +2174,7 @@ class AndroidAccessibilityTest {
         }
 
         val node = rule.onNodeWithTag("node").fetchSemanticsNode()
-        var info: AccessibilityNodeInfo = AccessibilityNodeInfo.obtain()
+        @Suppress("DEPRECATION") var info: AccessibilityNodeInfo = AccessibilityNodeInfo.obtain()
         rule.runOnUiThread {
             info = provider.createAccessibilityNodeInfo(node.id)
         }
@@ -2161,7 +2184,7 @@ class AndroidAccessibilityTest {
         assertEquals(300, rect.height())
 
         scale = 0.5f
-        info.recycle()
+        @Suppress("DEPRECATION") info.recycle()
         rule.runOnIdle {
             info = provider.createAccessibilityNodeInfo(node.id)
         }
@@ -2189,7 +2212,7 @@ class AndroidAccessibilityTest {
         }
 
         val node = rule.onNodeWithTag("node").fetchSemanticsNode()
-        var info: AccessibilityNodeInfo = AccessibilityNodeInfo.obtain()
+        @Suppress("DEPRECATION") var info: AccessibilityNodeInfo = AccessibilityNodeInfo.obtain()
         rule.runOnUiThread {
             info = provider.createAccessibilityNodeInfo(node.id)
         }
@@ -2199,7 +2222,7 @@ class AndroidAccessibilityTest {
         assertEquals(300, rect.height())
 
         scale = 0.5f
-        info.recycle()
+        @Suppress("DEPRECATION") info.recycle()
         rule.runOnIdle {
             info = provider.createAccessibilityNodeInfo(node.id)
         }
@@ -2231,7 +2254,7 @@ class AndroidAccessibilityTest {
         }
 
         val textNode = rule.onNodeWithText("text").fetchSemanticsNode()
-        var info: AccessibilityNodeInfo = AccessibilityNodeInfo.obtain()
+        @Suppress("DEPRECATION") var info: AccessibilityNodeInfo = AccessibilityNodeInfo.obtain()
         rule.runOnUiThread {
             info = provider.createAccessibilityNodeInfo(textNode.id)
         }
@@ -2604,7 +2627,7 @@ class AndroidAccessibilityTest {
 
         rule.runOnIdle {
             child.layoutNode.innerLayoutNodeWrapper.detach()
-            child.outerSemanticsNodeWrapper.detach()
+            child.outerSemanticsEntity.onDetach()
         }
 
         rule.runOnIdle {
@@ -2633,9 +2656,9 @@ class AndroidAccessibilityTest {
         val grandChild2 = rule.onNodeWithTag("grandChild2").fetchSemanticsNode()
         rule.runOnIdle {
             grandChild1.layoutNode.innerLayoutNodeWrapper.detach()
-            grandChild1.outerSemanticsNodeWrapper.detach()
+            grandChild1.outerSemanticsEntity.onDetach()
             grandChild2.layoutNode.innerLayoutNodeWrapper.detach()
-            grandChild2.outerSemanticsNodeWrapper.detach()
+            grandChild2.outerSemanticsEntity.onDetach()
         }
 
         rule.runOnIdle {

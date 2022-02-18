@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.node
 
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusState
 import androidx.compose.ui.focus.FocusStateImpl.Active
 import androidx.compose.ui.focus.FocusStateImpl.ActiveParent
@@ -30,11 +31,9 @@ import androidx.compose.ui.graphics.GraphicsLayerScope
 import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.PaintingStyle
 import androidx.compose.ui.input.nestedscroll.NestedScrollDelegatingWrapper
-import androidx.compose.ui.input.pointer.PointerInputFilter
 import androidx.compose.ui.layout.AlignmentLine
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.Placeable
-import androidx.compose.ui.semantics.SemanticsWrapper
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntOffset
@@ -55,11 +54,9 @@ internal class InnerPlaceable(
             layoutNode.measureScope.measure(layoutNode.children, constraints)
         }
         layoutNode.handleMeasureResult(measureResult)
+        onMeasured()
         return this
     }
-
-    override val parentData: Any?
-        get() = null
 
     override fun findPreviousFocusWrapper() = wrappedBy?.findPreviousFocusWrapper()
 
@@ -145,46 +142,25 @@ internal class InnerPlaceable(
         }
     }
 
-    override fun hitTest(
+    override fun <T : LayoutNodeEntity<T, M>, C, M : Modifier> hitTestChild(
+        hitTestSource: HitTestSource<T, C, M>,
         pointerPosition: Offset,
-        hitTestResult: HitTestResult<PointerInputFilter>,
+        hitTestResult: HitTestResult<C>,
         isTouchEvent: Boolean,
         isInLayer: Boolean
-    ) {
-        hitTest(pointerPosition, hitTestResult, isTouchEvent, isInLayer, LayoutNode::hitTest)
-    }
-
-    override fun hitTestSemantics(
-        pointerPosition: Offset,
-        hitSemanticsWrappers: HitTestResult<SemanticsWrapper>,
-        isInLayer: Boolean
-    ) {
-        hitTest(
-            pointerPosition,
-            hitSemanticsWrappers,
-            true,
-            isInLayer,
-            LayoutNode::hitTestSemantics
-        )
-    }
-
-    private inline fun <T> hitTest(
-        pointerPosition: Offset,
-        hitTestResult: HitTestResult<T>,
-        isTouchEvent: Boolean,
-        isInLayer: Boolean,
-        childHitTest: LayoutNode.(Offset, HitTestResult<T>, Boolean, Boolean) -> Unit
     ) {
         var inLayer = isInLayer
         var hitTestChildren = false
 
-        if (withinLayerBounds(pointerPosition)) {
-            hitTestChildren = true
-        } else if (isTouchEvent &&
-            distanceInMinimumTouchTarget(pointerPosition, minimumTouchTargetSize).isFinite()
-        ) {
-            inLayer = false
-            hitTestChildren = true
+        if (hitTestSource.shouldHitTestChildren(layoutNode)) {
+            if (withinLayerBounds(pointerPosition)) {
+                hitTestChildren = true
+            } else if (isTouchEvent &&
+                distanceInMinimumTouchTarget(pointerPosition, minimumTouchTargetSize).isFinite()
+            ) {
+                inLayer = false
+                hitTestChildren = true
+            }
         }
 
         if (hitTestChildren) {
@@ -193,7 +169,13 @@ internal class InnerPlaceable(
                 // not add hit results on different paths so we should not even go looking.
                 layoutNode.zSortedChildren.reversedAny { child ->
                     if (child.isPlaced) {
-                        child.childHitTest(pointerPosition, hitTestResult, isTouchEvent, inLayer)
+                        hitTestSource.childHitTest(
+                            child,
+                            pointerPosition,
+                            hitTestResult,
+                            isTouchEvent,
+                            inLayer
+                        )
                         val wasHit = hitTestResult.hasHit()
                         val continueHitTest: Boolean
                         if (!wasHit) {
@@ -218,8 +200,6 @@ internal class InnerPlaceable(
     override fun getWrappedByCoordinates(): LayoutCoordinates {
         return this
     }
-
-    override fun shouldSharePointerInputWithSiblings(): Boolean = false
 
     internal companion object {
         val innerBoundsPaint = Paint().also { paint ->

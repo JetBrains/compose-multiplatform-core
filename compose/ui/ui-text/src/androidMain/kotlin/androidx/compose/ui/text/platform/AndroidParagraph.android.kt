@@ -47,6 +47,8 @@ import androidx.compose.ui.text.android.TextLayout
 import androidx.compose.ui.text.android.selection.WordBoundary
 import androidx.compose.ui.text.android.style.PlaceholderSpan
 import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.createFontFamilyResolver
 import androidx.compose.ui.text.style.ResolvedTextDirection
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
@@ -76,7 +78,7 @@ internal class AndroidParagraph constructor(
         maxLines: Int,
         ellipsis: Boolean,
         width: Float,
-        typefaceAdapter: TypefaceAdapter,
+        fontFamilyResolver: FontFamily.Resolver,
         density: Density
     ) : this(
         paragraphIntrinsics = AndroidParagraphIntrinsics(
@@ -84,7 +86,7 @@ internal class AndroidParagraph constructor(
             style = style,
             placeholders = placeholders,
             spanStyles = spanStyles,
-            typefaceAdapter = typefaceAdapter,
+            fontFamilyResolver = fontFamilyResolver,
             density = density
         ),
         maxLines = maxLines,
@@ -242,6 +244,39 @@ internal class AndroidParagraph constructor(
         return Rect(top = top, bottom = bottom, left = left, right = right)
     }
 
+    /**
+     * Fills the bounding boxes for characters provided in the [range] into [array]. The array is
+     * filled starting from [arrayStart] (inclusive). The coordinates are in local text layout
+     * coordinates.
+     *
+     * The returned information consists of left/right of a character; line top and bottom for the
+     * same character.
+     *
+     * For the grapheme consists of multiple code points, e.g. ligatures, combining marks, the first
+     * character has the total width and the remaining are returned as zero-width.
+     *
+     * The array divided into segments of four where each index in that segment represents left,
+     * top, right, bottom of the character.
+     *
+     * The size of the provided [array] should be greater or equal than the four times * [TextRange]
+     * length.
+     *
+     * The final order of characters in the [array] is from [TextRange.min] to [TextRange.max].
+     *
+     * @param range the [TextRange] representing the start and end indices in the [Paragraph].
+     * @param array the array to fill in the values. The array divided into segments of four where
+     * each index in that segment represents left, top, right, bottom of the character.
+     * @param arrayStart the inclusive start index in the array where the function will start
+     * filling in the values from
+     */
+    fun fillBoundingBoxes(
+        range: TextRange,
+        array: FloatArray,
+        arrayStart: Int
+    ) {
+        layout.fillBoundingBoxes(range.min, range.max, array, arrayStart)
+    }
+
     override fun getPathForRange(start: Int, end: Int): Path {
         if (start !in 0..end || end > charSequence.length) {
             throw AssertionError(
@@ -366,6 +401,12 @@ private fun toLayoutAlign(align: TextAlign?): Int = when (align) {
     else -> DEFAULT_ALIGNMENT
 }
 
+@Suppress("DEPRECATION")
+@Deprecated(
+    "Font.ResourceLoader is deprecated, instead pass FontFamily.Resolver",
+    replaceWith = ReplaceWith("ActualParagraph(text, style, spanStyles, placeholders, " +
+        "maxLines, ellipsis, width, density, fontFamilyResolver)"),
+)
 internal actual fun ActualParagraph(
     text: String,
     style: TextStyle,
@@ -375,16 +416,38 @@ internal actual fun ActualParagraph(
     ellipsis: Boolean,
     width: Float,
     density: Density,
-    resourceLoader: Font.ResourceLoader
+    @Suppress("DEPRECATION") resourceLoader: Font.ResourceLoader
 ): Paragraph = AndroidParagraph(
     AndroidParagraphIntrinsics(
         text = text,
         style = style,
         placeholders = placeholders,
         spanStyles = spanStyles,
-        typefaceAdapter = TypefaceAdapter(
-            resourceLoader = resourceLoader
-        ),
+        fontFamilyResolver = createFontFamilyResolver(resourceLoader),
+        density = density
+    ),
+    maxLines,
+    ellipsis,
+    width
+)
+
+internal actual fun ActualParagraph(
+    text: String,
+    style: TextStyle,
+    spanStyles: List<AnnotatedString.Range<SpanStyle>>,
+    placeholders: List<AnnotatedString.Range<Placeholder>>,
+    maxLines: Int,
+    ellipsis: Boolean,
+    width: Float,
+    density: Density,
+    fontFamilyResolver: FontFamily.Resolver
+): Paragraph = AndroidParagraph(
+    AndroidParagraphIntrinsics(
+        text = text,
+        style = style,
+        placeholders = placeholders,
+        spanStyles = spanStyles,
+        fontFamilyResolver = fontFamilyResolver,
         density = density
     ),
     maxLines,

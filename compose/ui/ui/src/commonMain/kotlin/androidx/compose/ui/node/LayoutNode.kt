@@ -19,7 +19,6 @@ import androidx.compose.runtime.collection.MutableVector
 import androidx.compose.runtime.collection.mutableVectorOf
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.DrawModifier
 import androidx.compose.ui.focus.FocusEventModifier
 import androidx.compose.ui.focus.FocusModifier
 import androidx.compose.ui.focus.FocusOrderModifier
@@ -37,15 +36,13 @@ import androidx.compose.ui.layout.IntrinsicMeasureScope
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.LayoutInfo
 import androidx.compose.ui.layout.LayoutModifier
+import androidx.compose.ui.layout.LayoutNodeSubcompositionsState
 import androidx.compose.ui.layout.Measurable
 import androidx.compose.ui.layout.MeasurePolicy
 import androidx.compose.ui.layout.MeasureResult
 import androidx.compose.ui.layout.MeasureScope
 import androidx.compose.ui.layout.ModifierInfo
 import androidx.compose.ui.layout.OnGloballyPositionedModifier
-import androidx.compose.ui.layout.OnPlacedModifier
-import androidx.compose.ui.layout.OnRemeasuredModifier
-import androidx.compose.ui.layout.ParentDataModifier
 import androidx.compose.ui.layout.Placeable
 import androidx.compose.ui.layout.Remeasurement
 import androidx.compose.ui.layout.RemeasurementModifier
@@ -59,8 +56,7 @@ import androidx.compose.ui.node.LayoutNode.LayoutState.Ready
 import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.platform.nativeClass
 import androidx.compose.ui.platform.simpleIdentityToString
-import androidx.compose.ui.semantics.SemanticsModifier
-import androidx.compose.ui.semantics.SemanticsWrapper
+import androidx.compose.ui.semantics.SemanticsEntity
 import androidx.compose.ui.semantics.outerSemantics
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
@@ -588,7 +584,7 @@ internal class LayoutNode(
     /**
      * The inner state associated with [androidx.compose.ui.layout.SubcomposeLayout].
      */
-    internal var subcompositionsState: Any? = null
+    internal var subcompositionsState: LayoutNodeSubcompositionsState? = null
 
     /**
      * The inner-most layer wrapper. Used for performance for LayoutNodeWrapper.findLayer().
@@ -645,6 +641,7 @@ internal class LayoutNode(
             val invalidateParentLayer = shouldInvalidateParentLayer()
 
             copyWrappersToCache()
+            forEachDelegateIncludingInner { it.entities.clear() }
             markReusedModifiers(value)
 
             // Rebuild LayoutNodeWrapper
@@ -664,11 +661,10 @@ internal class LayoutNode(
                     mod.onRemeasurementAvailable(this)
                 }
 
-                if (mod is DrawModifier) {
-                    val drawEntity = DrawEntity(toWrap, mod)
-                    drawEntity.next = toWrap.drawEntityHead
-                    toWrap.drawEntityHead = drawEntity
-                    drawEntity.onInitialize()
+                toWrap.entities.add(toWrap, mod)
+
+                if (mod is OnGloballyPositionedModifier) {
+                    getOrCreateOnPositionedCallbacks() += toWrap to mod
                 }
 
                 // Re-use the layoutNodeWrapper if possible.
@@ -722,11 +718,6 @@ internal class LayoutNode(
                         .initialize()
                         .assignChained(toWrap)
                 }
-                if (mod is PointerInputModifier) {
-                    wrapper = PointerInputDelegatingWrapper(wrapper, mod)
-                        .initialize()
-                        .assignChained(toWrap)
-                }
                 if (mod is NestedScrollModifier) {
                     wrapper = NestedScrollDelegatingWrapper(wrapper, mod)
                         .initialize()
@@ -734,31 +725,6 @@ internal class LayoutNode(
                 }
                 if (mod is LayoutModifier) {
                     wrapper = ModifiedLayoutNode(wrapper, mod)
-                        .initialize()
-                        .assignChained(toWrap)
-                }
-                if (mod is ParentDataModifier) {
-                    wrapper = ModifiedParentDataNode(wrapper, mod)
-                        .initialize()
-                        .assignChained(toWrap)
-                }
-                if (mod is SemanticsModifier) {
-                    wrapper = SemanticsWrapper(wrapper, mod)
-                        .initialize()
-                        .assignChained(toWrap)
-                }
-                if (mod is OnRemeasuredModifier) {
-                    wrapper = RemeasureModifierWrapper(wrapper, mod)
-                        .initialize()
-                        .assignChained(toWrap)
-                }
-                if (mod is OnPlacedModifier) {
-                    wrapper = OnPlacedModifierWrapper(wrapper, mod)
-                        .initialize()
-                        .assignChained(toWrap)
-                }
-                if (mod is OnGloballyPositionedModifier) {
-                    wrapper = OnGloballyPositionedModifierWrapper(wrapper, mod)
                         .initialize()
                         .assignChained(toWrap)
                 }
@@ -774,10 +740,13 @@ internal class LayoutNode(
                     it.detach()
                 }
 
+                // TODO(mount): simplify this once everything is an Entity.
                 // attach() all new LayoutNodeWrappers
-                forEachDelegate {
+                forEachDelegateIncludingInner {
                     if (!it.isAttached) {
                         it.attach()
+                    } else {
+                        it.entities.forEach { it.onAttach() }
                     }
                 }
             }
@@ -828,10 +797,11 @@ internal class LayoutNode(
     /**
      * List of all OnPositioned callbacks in the modifier chain.
      */
-    private var onPositionedCallbacks: MutableVector<OnGloballyPositionedModifierWrapper>? = null
+    private var onPositionedCallbacks:
+        MutableVector<Pair<LayoutNodeWrapper, OnGloballyPositionedModifier>>? = null
 
     internal fun getOrCreateOnPositionedCallbacks() = onPositionedCallbacks
-        ?: mutableVectorOf<OnGloballyPositionedModifierWrapper>().also {
+        ?: mutableVectorOf<Pair<LayoutNodeWrapper, OnGloballyPositionedModifier>>().also {
             onPositionedCallbacks = it
         }
 
@@ -893,6 +863,7 @@ internal class LayoutNode(
     ) {
         val positionInWrapped = outerLayoutNodeWrapper.fromParentPosition(pointerPosition)
         outerLayoutNodeWrapper.hitTest(
+            LayoutNodeWrapper.PointerInputSource,
             positionInWrapped,
             hitTestResult,
             isTouchEvent,
@@ -903,15 +874,17 @@ internal class LayoutNode(
     @Suppress("UNUSED_PARAMETER")
     internal fun hitTestSemantics(
         pointerPosition: Offset,
-        hitSemanticsWrappers: HitTestResult<SemanticsWrapper>,
+        hitSemanticsEntities: HitTestResult<SemanticsEntity>,
         isTouchEvent: Boolean = true,
         isInLayer: Boolean = true
     ) {
         val positionInWrapped = outerLayoutNodeWrapper.fromParentPosition(pointerPosition)
-        outerLayoutNodeWrapper.hitTestSemantics(
+        outerLayoutNodeWrapper.hitTest(
+            LayoutNodeWrapper.SemanticsSource,
             positionInWrapped,
-            hitSemanticsWrappers,
-            isInLayer
+            hitSemanticsEntities,
+            isTouchEvent = true,
+            isInLayer = isInLayer
         )
     }
 
@@ -922,7 +895,7 @@ internal class LayoutNode(
         val onPositionedCallbacks = onPositionedCallbacks
         return modifier.foldOut(false) { mod, hasNewCallback ->
             hasNewCallback || mod is OnGloballyPositionedModifier &&
-                (onPositionedCallbacks?.firstOrNull { mod == it.modifier } == null)
+                (onPositionedCallbacks?.firstOrNull { mod == it.second } == null)
         }
     }
 
@@ -1188,7 +1161,7 @@ internal class LayoutNode(
             return // it hasn't been placed, so don't make a call
         }
         onPositionedCallbacks?.forEach {
-            it.modifier.onGloballyPositioned(it)
+            it.second.onGloballyPositioned(it.first)
         }
     }
 
@@ -1204,20 +1177,16 @@ internal class LayoutNode(
             val layer = wrapper.layer
             val info = ModifierInfo(wrapper.modifier, wrapper, layer)
             infoList += info
-            var node = wrapper.drawEntityHead // head
-            while (node != null) {
-                infoList += ModifierInfo(node.modifier, wrapper, layer)
-                node = node.next
+            wrapper.entities.forEach {
+                infoList += ModifierInfo(it.modifier, wrapper, layer)
             }
         }
-        var innerNode = innerLayoutNodeWrapper.drawEntityHead
-        while (innerNode != null) {
+        innerLayoutNodeWrapper.entities.forEach {
             infoList += ModifierInfo(
-                innerNode.modifier,
+                it.modifier,
                 innerLayoutNodeWrapper,
                 innerLayoutNodeWrapper.layer
             )
-            innerNode = innerNode.next
         }
         return infoList.asMutableList()
     }
@@ -1283,9 +1252,7 @@ internal class LayoutNode(
     private fun copyWrappersToCache() {
         forEachDelegate {
             wrapperCache += it as DelegatingLayoutNodeWrapper<*>
-            it.drawEntityHead = null
         }
-        innerLayoutNodeWrapper.drawEntityHead = null
     }
 
     private fun markReusedModifiers(modifier: Modifier) {
@@ -1341,7 +1308,12 @@ internal class LayoutNode(
 
     override fun forceRemeasure() {
         requestRemeasure()
-        owner?.measureAndLayout()
+        val lastConstraints = outerMeasurablePlaceable.lastConstraints
+        if (lastConstraints != null) {
+            owner?.measureAndLayout(this, lastConstraints)
+        } else {
+            owner?.measureAndLayout()
+        }
     }
 
     /**
@@ -1372,7 +1344,7 @@ internal class LayoutNode(
         forEachDelegateIncludingInner {
             if (it.layer != null) {
                 return false
-            } else if (it.drawEntityHead != null) {
+            } else if (it.entities.has(EntityList.DrawEntityType)) {
                 return true
             }
         }

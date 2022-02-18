@@ -33,6 +33,8 @@ import androidx.glance.EmittableButton
 import androidx.glance.EmittableImage
 import androidx.glance.appwidget.lazy.EmittableLazyColumn
 import androidx.glance.appwidget.lazy.EmittableLazyListItem
+import androidx.glance.appwidget.lazy.EmittableLazyVerticalGrid
+import androidx.glance.appwidget.lazy.EmittableLazyVerticalGridListItem
 import androidx.glance.appwidget.translators.setText
 import androidx.glance.appwidget.translators.translateEmittableCheckBox
 import androidx.glance.appwidget.translators.translateEmittableImage
@@ -40,6 +42,10 @@ import androidx.glance.appwidget.translators.translateEmittableLazyColumn
 import androidx.glance.appwidget.translators.translateEmittableLazyListItem
 import androidx.glance.appwidget.translators.translateEmittableSwitch
 import androidx.glance.appwidget.translators.translateEmittableText
+import androidx.glance.appwidget.translators.translateEmittableLinearProgressIndicator
+import androidx.glance.appwidget.translators.translateEmittableCircularProgressIndicator
+import androidx.glance.appwidget.translators.translateEmittableLazyVerticalGrid
+import androidx.glance.appwidget.translators.translateEmittableLazyVerticalGridListItem
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.EmittableBox
 import androidx.glance.layout.EmittableColumn
@@ -52,7 +58,6 @@ import java.util.concurrent.atomic.AtomicInteger
 internal fun translateComposition(
     context: Context,
     appWidgetId: Int,
-    appWidgetClass: Class<out GlanceAppWidget>,
     element: RemoteViewsRoot,
     layoutConfiguration: LayoutConfiguration,
     rootViewIndex: Int,
@@ -62,7 +67,6 @@ internal fun translateComposition(
         TranslationContext(
             context,
             appWidgetId,
-            appWidgetClass,
             context.isRtl,
             layoutConfiguration,
             itemPosition = -1,
@@ -98,7 +102,6 @@ internal fun translateComposition(
 internal data class TranslationContext(
     val context: Context,
     val appWidgetId: Int,
-    val appWidgetClass: Class<out GlanceAppWidget>,
     val isRtl: Boolean,
     val layoutConfiguration: LayoutConfiguration,
     val itemPosition: Int,
@@ -146,6 +149,18 @@ internal fun RemoteViews.translateChild(
         is EmittableSpacer -> translateEmittableSpacer(translationContext, element)
         is EmittableSwitch -> translateEmittableSwitch(translationContext, element)
         is EmittableImage -> translateEmittableImage(translationContext, element)
+        is EmittableLinearProgressIndicator -> {
+            translateEmittableLinearProgressIndicator(translationContext, element)
+        }
+        is EmittableCircularProgressIndicator -> {
+            translateEmittableCircularProgressIndicator(translationContext, element)
+        }
+        is EmittableLazyVerticalGrid -> {
+            translateEmittableLazyVerticalGrid(translationContext, element)
+        }
+        is EmittableLazyVerticalGridListItem -> {
+          translateEmittableLazyVerticalGridListItem(translationContext, element)
+      }
         else -> {
             throw IllegalArgumentException(
                 "Unknown element type ${element.javaClass.canonicalName}"

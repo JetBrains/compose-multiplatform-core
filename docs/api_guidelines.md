@@ -153,13 +153,13 @@ on libraries within the group. Such groups must increment the version of every
 library at the same time and release all libraries at the same time.
 
 Atomic groups are specified in
-[`LibraryGroups.kt`](https://cs.android.com/androidx/platform/frameworks/support/+/androidx-main:buildSrc/public/src/main/kotlin/androidx/build/LibraryGroups.kt):
+[libraryversions.toml](https://cs.android.com/androidx/platform/frameworks/support/+/androidx-main:libraryversions.toml):
 
-```kotlin
+```
 // Non-atomic library group
-val APPCOMPAT = LibraryGroup("androidx.appcompat", null)
+APPCOMPAT = { group = "androidx.appcompat" }
 // Atomic library group
-val APPSEARCH = LibraryGroup("androidx.appsearch", LibraryVersions.APPSEARCH)
+APPSEARCH = { group = "androidx.appsearch", atomicGroupVersion = "versions.APPSEARCH" }
 ```
 
 Libraries within an atomic group should not specify a version in their
@@ -780,8 +780,8 @@ different versions of libraries and should be treated similarly to public API.
 
 #### Data structures
 
-**Do not** use Parcelable for any class that may be used for IPC or otherwise
-exposed as public API. The data format used by Parcelable does not provide any
+**Do not** use `Parcelable` for any class that may be used for IPC or otherwise
+exposed as public API. The wire format used by `Parcelable` does not provide any
 compatibility guarantees and will result in crashes if fields are added or
 removed between library versions.
 
@@ -791,10 +791,15 @@ is difficult and error-prone.
 
 Developers **should** use protocol buffers for most cases. See
 [Protobuf](#dependencies-protobuf) for more information on using protocol
-buffers in your library.
+buffers in your library. **Do** use protocol buffers if your data structure is
+complex and likely to change over time. If your data includes `FileDescriptor`s,
+`Binder`s, or other platform-defined `Parcelable` data structures, they will
+need to be stored alongside the protobuf bytes in a `Bundle`.
 
-Developers **may** use `Bundle` in simple cases that require sending `Binder`s
-or `FileDescriptor`s across IPC. Note that `Bundle` has several caveats:
+Developers **may** use `Bundle` in simple cases that require sending `Binder`s,
+`FileDescriptor`s, or platform `Parcelable`s across IPC
+([example](https://cs.android.com/androidx/platform/frameworks/support/+/androidx-main:core/core/src/main/java/androidx/core/graphics/drawable/IconCompat.java;l=820)).
+Note that `Bundle` has several caveats:
 
 -   When running on Android S and below, accessing *any* entry in a `Bundle`
     will result in the platform attempting to deserialize *every* entry. This
@@ -812,6 +817,18 @@ or `FileDescriptor`s across IPC. Note that `Bundle` has several caveats:
     tracking the keys or value types associated with a `Bundle`. Library owners
     are responsible for providing their own system for guaranteeing wire format
     compatibility between versions.
+
+Developers **may** use `VersionedParcelable` in cases where they are already
+using the library and understand its limitations.
+
+In all cases, **do not** expose your serialization mechanism in your API
+surface.
+
+NOTE We are currently investigating the suitability of Square's
+[`wire` library](https://github.com/square/wire) for handling protocol buffers
+in Android libraries. If adopted, it will replace `proto` library dependencies.
+Libraries that expose their serialization mechanism in their API surface *will
+not be able to migrate*.
 
 #### Communication protocols
 
@@ -1301,8 +1318,9 @@ classes, e.g. the Java `Builder` pattern.
 
 ### Open-source compatibility {#dependencies-aosp}
 
-[Jetpack Principles](principles.md) require that libraries consider the
-open-source compatibility implications of their dependencies, including:
+Jetpack's [open-source](open_source.md) principle requires that libraries
+consider the open-source compatibility implications of their dependencies,
+including:
 
 -   Closed-source or proprietary libraries or services that may not be available
     on AOSP devices

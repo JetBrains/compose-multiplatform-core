@@ -22,11 +22,36 @@ import groovy.lang.Closure
 import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.api.provider.Property
-import java.util.ArrayList
+import java.io.File
+
 /**
  * Extension for [AndroidXImplPlugin] that's responsible for holding configuration options.
  */
 open class AndroidXExtension(val project: Project) {
+    @JvmField
+    val LibraryVersions: Map<String, Version>
+    @JvmField
+    val LibraryGroups: Map<String, LibraryGroup>
+
+    init {
+        val toml = project.objects.fileProperty().fileValue(
+            File(project.getSupportRootFolder(), "libraryversions.toml")
+        )
+        val content = project.providers.fileContents(toml)
+        val composeCustomVersion = project.providers.environmentVariable("COMPOSE_CUSTOM_VERSION")
+        val composeCustomGroup = project.providers.environmentVariable("COMPOSE_CUSTOM_GROUP")
+
+        val serviceProvider = project.gradle.sharedServices.registerIfAbsent(
+            "libraryVersionsService",
+            LibraryVersionsService::class.java
+        ) { spec ->
+            spec.parameters.tomlFile = content.asText
+            spec.parameters.composeCustomVersion = composeCustomVersion
+            spec.parameters.composeCustomGroup = composeCustomGroup
+        }
+        LibraryGroups = serviceProvider.get().libraryGroups
+        LibraryVersions = serviceProvider.get().libraryVersions
+    }
 
     var name: Property<String?> = project.objects.property(String::class.java)
     fun setName(newName: String) { name.set(newName) }
@@ -45,7 +70,7 @@ open class AndroidXExtension(val project: Project) {
     private fun chooseProjectVersion() {
         val version: Version
         val group: String? = mavenGroup?.group
-        val groupVersion: Version? = mavenGroup?.forcedVersion
+        val groupVersion: Version? = mavenGroup?.atomicGroupVersion
         val mavenVersion: Version? = mavenVersion
         if (mavenVersion != null) {
             if (groupVersion != null && !isGroupVersionOverrideAllowed()) {
@@ -158,6 +183,8 @@ open class AndroidXExtension(val project: Project) {
     var legacyDisableKotlinStrictApiMode = false
 
     var benchmarkRunAlsoInterpreted = false
+
+    var bypassCoordinateValidation = false
 
     var multiplatform: Boolean
         set(value) {

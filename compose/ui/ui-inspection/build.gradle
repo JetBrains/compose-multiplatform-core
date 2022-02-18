@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-import androidx.build.LibraryGroups
 import androidx.build.LibraryType
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
@@ -62,7 +61,7 @@ dependencies {
 androidx {
     name = "Android Compose Layout Inspector"
     type = LibraryType.IDE_PLUGIN
-    mavenGroup = LibraryGroups.Compose.UI
+    mavenGroup = LibraryGroups.COMPOSE_UI
     inceptionYear = "2021"
     description = "Compose layout inspector. Exposes information to our tools for better IDE support."
 }
@@ -80,7 +79,7 @@ android {
     externalNativeBuild {
         cmake {
             path "src/main/cpp/CMakeLists.txt"
-            version "3.22.1"
+            version libs.versions.cmake.get()
         }
     }
 

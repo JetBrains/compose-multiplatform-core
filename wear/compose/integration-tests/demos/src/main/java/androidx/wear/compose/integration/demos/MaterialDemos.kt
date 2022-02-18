@@ -31,9 +31,14 @@ import androidx.wear.compose.material.samples.CompactChipWithIconAndLabel
 import androidx.wear.compose.material.samples.ConfirmationWithAnimation
 import androidx.wear.compose.material.samples.ConfirmationDialogSample
 import androidx.wear.compose.material.samples.CurvedTextDemo
+import androidx.wear.compose.material.samples.IndeterminateCircularProgressIndicator
 import androidx.wear.compose.material.samples.InlineSliderSample
 import androidx.wear.compose.material.samples.InlineSliderSegmentedSample
+import androidx.wear.compose.material.samples.InlineSliderWithIntegerSample
 import androidx.wear.compose.material.samples.OptionChangePicker
+import androidx.wear.compose.material.samples.CircularProgressIndicatorFullscreenWithGap
+import androidx.wear.compose.material.samples.CircularProgressIndicatorWithAnimation
+import androidx.wear.compose.material.samples.ScalingLazyColumnEdgeAnchoredAndAnimatedScrollTo
 import androidx.wear.compose.material.samples.ScalingLazyColumnWithHeaders
 import androidx.wear.compose.material.samples.ScalingLazyColumnWithHeadersReversed
 import androidx.wear.compose.material.samples.SimplePicker
@@ -44,6 +49,7 @@ import androidx.wear.compose.material.samples.SimpleSwipeToDismissBox
 import androidx.wear.compose.material.samples.SplitToggleChipWithCheckbox
 import androidx.wear.compose.material.samples.StatefulSwipeToDismissBox
 import androidx.wear.compose.material.samples.StepperSample
+import androidx.wear.compose.material.samples.StepperWithIntegerSample
 import androidx.wear.compose.material.samples.TimeTextWithCustomSeparator
 import androidx.wear.compose.material.samples.TimeTextWithFullDateAndTimeFormat
 import androidx.wear.compose.material.samples.TitleCardStandard
@@ -87,6 +93,23 @@ val WearMaterialDemos = DemoCategory(
     "Material",
     listOf(
         DemoCategory(
+            "Picker",
+            listOf(
+                ComposableDemo("Time HH:MM:SS") {
+                    TimePickerWithHoursMinutesSeconds()
+                },
+                ComposableDemo("Time 12 Hour") {
+                    TimePickerWith12HourClock()
+                },
+                ComposableDemo("Simple Picker") {
+                    SimplePicker()
+                },
+                ComposableDemo("Change Selected Option Picker") {
+                    OptionChangePicker()
+                },
+            )
+        ),
+        DemoCategory(
             "Slider",
             listOf(
                 DemoCategory(
@@ -96,6 +119,9 @@ val WearMaterialDemos = DemoCategory(
                         ComposableDemo("Segmented inline slider") {
                             Centralize { InlineSliderSegmentedSample() }
                         },
+                        ComposableDemo("Integer inline slider") {
+                            Centralize { InlineSliderWithIntegerSample() }
+                        },
                     )
                 ),
                 DemoCategory(
@@ -103,7 +129,11 @@ val WearMaterialDemos = DemoCategory(
                     listOf(
                         ComposableDemo("Inline slider") { InlineSliderDemo() },
                         ComposableDemo("RTL Inline slider") { InlineSliderRTLDemo() },
+                        ComposableDemo("With custom colors") { InlineSliderCustomColorsDemo() },
                         ComposableDemo("Inline slider segmented") { InlineSliderSegmented() },
+                        ComposableDemo("Inline slider with integers") {
+                            InlineSliderWithIntegersDemo()
+                        },
                     )
                 )
             )
@@ -117,12 +147,16 @@ val WearMaterialDemos = DemoCategory(
                         ComposableDemo("Stepper") {
                             Centralize({ StepperSample() })
                         },
+                        ComposableDemo("Integer Stepper") {
+                            Centralize({ StepperWithIntegerSample() })
+                        },
                     )
                 ),
                 DemoCategory(
                     "Demos",
                     listOf(
                         ComposableDemo("Simple stepper") { StepperDemo() },
+                        ComposableDemo("Stepper with integer") { StepperWithIntegerDemo() },
                         ComposableDemo("With scrollbar") {
                             StepperWithScrollBarDemo()
                         },
@@ -282,8 +316,8 @@ val WearMaterialDemos = DemoCategory(
                 DemoCategory(
                     "Samples",
                     listOf(
-                        ComposableDemo("AppCard") { Centralize({ AppCardWithIcon() }) },
-                        ComposableDemo("TitleCard") { Centralize({ TitleCardStandard() }) },
+                        ComposableDemo("AppCard") { Centralize { AppCardWithIcon() } },
+                        ComposableDemo("TitleCard") { Centralize { TitleCardStandard() } },
                         ComposableDemo("TitleCardWithImage") {
                             Centralize({ TitleCardWithImage() })
                         },
@@ -292,11 +326,56 @@ val WearMaterialDemos = DemoCategory(
                 ComposableDemo("Demos") { CardDemo() },
             )
         ),
+        DemoCategory(
+            "ProgressIndicator",
+            listOf(
+                DemoCategory(
+                    "Samples",
+                    listOf(
+                        ComposableDemo("Indeterminate") {
+                            Centralize { IndeterminateCircularProgressIndicator() }
+                        },
+                        ComposableDemo("Animation") {
+                            Centralize { CircularProgressIndicatorWithAnimation() }
+                        },
+                        ComposableDemo("Fullscreen with a gap") {
+                            Centralize { CircularProgressIndicatorFullscreenWithGap() }
+                        }
+                    )
+                ),
+                DemoCategory(
+                    "Demos",
+                    listOf(
+                        ComposableDemo("Full screen indeterminate progress") {
+                            Centralize { FullscreenIndeterminateProgress() }
+                        },
+                        ComposableDemo("Small indeterminate progress") {
+                            Centralize { SmallIndeterminateProgress() }
+                        },
+                        ComposableDemo("Custom angles") {
+                            Centralize { ProgressWithCustomAngles() }
+                        },
+                        ComposableDemo("Media controls") {
+                            Centralize { ProgressWithMedia() }
+                        },
+                        ComposableDemo("Multiple progress indicators") {
+                            Centralize { MultipleProgressIndicators() }
+                        },
+                        ComposableDemo("Transforming progress indicator") {
+                            Centralize { TransformingCustomProgressIndicator() }
+                        },
+                    )
+                )
+            )
+        ),
         SwipeToDismissDemos,
         DemoCategory(
             "List",
             listOf(
-                ComposableDemo("Scaling Lazy Column") { SimpleScalingLazyColumn() },
+                ComposableDemo("Scaling Lazy Column [SLC]") { SimpleScalingLazyColumn() },
+                ComposableDemo("SLC with Edge Anchoring and Animated Scroll") {
+                    ScalingLazyColumnEdgeAnchoredAndAnimatedScrollTo()
+                },
                 ComposableDemo("SLC with Content Padding") {
                     SimpleScalingLazyColumnWithContentPadding()
                 },
@@ -313,19 +392,6 @@ val WearMaterialDemos = DemoCategory(
             )
         ),
         ComposableDemo("Curved Text") { CurvedTextDemo() },
-        DemoCategory(
-            "Picker",
-            listOf(
-                ComposableDemo("Simple Picker") {
-                    SimplePicker()
-                },
-                ComposableDemo("Change Selected Option Picker") {
-                    OptionChangePicker()
-                },
-                ComposableDemo("Time Picker") {
-                    PickerTimeDemo()
-                }
-            )
-        )
+
     ),
 )

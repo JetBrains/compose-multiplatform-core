@@ -15,7 +15,6 @@
  */
 
 import androidx.build.AndroidXComposePlugin
-import androidx.build.LibraryGroups
 import androidx.build.LibraryType
 import androidx.build.Publish
 
@@ -102,7 +101,7 @@ androidx {
     name = "Compose Material Window"
     type = LibraryType.PUBLISHED_LIBRARY
     publish = Publish.SNAPSHOT_ONLY
-    mavenGroup = LibraryGroups.Compose.MATERIAL
+    mavenGroup = LibraryGroups.COMPOSE_MATERIAL
     inceptionYear = "2022"
     description = "Provides window size classes for building responsive UI"
 }

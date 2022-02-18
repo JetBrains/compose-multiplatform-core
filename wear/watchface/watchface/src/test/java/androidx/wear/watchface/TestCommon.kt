@@ -52,7 +52,6 @@ internal class TestWatchFaceService(
     private val watchState: MutableWatchState,
     private val handler: Handler,
     private val tapListener: WatchFace.TapListener?,
-    private val pendingIntentTapListener: WatchFace.PendingIntentTapListener?,
     private val preAndroidR: Boolean,
     private val directBootParams: WallpaperInteractiveWatchFaceInstanceParams?,
     private val choreographer: ChoreographerWrapper,
@@ -124,9 +123,6 @@ internal class TestWatchFaceService(
             })
         tapListener?.let {
             watchFace.setTapListener(it)
-        }
-        pendingIntentTapListener?.let {
-            watchFace.setPendingIntentTapListener(it)
         }
         return watchFace
     }
@@ -241,7 +237,7 @@ public open class TestRenderer(
     interactiveFrameRateMs
 ) {
     public var lastOnDrawZonedDateTime: ZonedDateTime? = null
-    public var lastRenderParameters: RenderParameters = RenderParameters.DEFAULT_INTERACTIVE
+    public var lastRenderWasForScreenshot: Boolean? = null
 
     override fun render(
         canvas: Canvas,
@@ -249,7 +245,7 @@ public open class TestRenderer(
         zonedDateTime: ZonedDateTime
     ) {
         lastOnDrawZonedDateTime = zonedDateTime
-        lastRenderParameters = renderParameters
+        lastRenderWasForScreenshot = renderParameters.isForScreenshot
     }
 
     override fun renderHighlightLayer(canvas: Canvas, bounds: Rect, zonedDateTime: ZonedDateTime) {

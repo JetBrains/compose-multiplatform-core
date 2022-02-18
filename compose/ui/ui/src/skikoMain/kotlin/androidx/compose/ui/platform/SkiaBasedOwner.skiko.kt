@@ -21,8 +21,10 @@ package androidx.compose.ui.platform
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.DefaultPointerButtons
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.InternalComposeUiApi
+import androidx.compose.ui.PrimaryPressedPointerButtons
 import androidx.compose.ui.autofill.Autofill
 import androidx.compose.ui.autofill.AutofillTree
 import androidx.compose.ui.focus.FocusDirection
@@ -67,6 +69,7 @@ import androidx.compose.ui.node.RootForTest
 import androidx.compose.ui.semantics.SemanticsModifierCore
 import androidx.compose.ui.semantics.SemanticsOwner
 import androidx.compose.ui.text.input.TextInputService
+import androidx.compose.ui.text.font.createFontFamilyResolver
 import androidx.compose.ui.text.platform.FontLoader
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
@@ -84,6 +87,7 @@ private typealias Command = () -> Unit
 )
 internal class SkiaBasedOwner(
     private val platformInputService: PlatformInput,
+    private val component: PlatformComponent,
     density: Density = Density(1f, 1f),
     val isPopup: Boolean = false,
     val isFocusable: Boolean = true,
@@ -96,6 +100,8 @@ internal class SkiaBasedOwner(
         val intOffset = IntOffset(point.x.toInt(), point.y.toInt())
         return bounds.contains(intOffset)
     }
+
+    internal var accessibilityController: AccessibilityController? = null
 
     internal var bounds by mutableStateOf(IntRect.Zero)
 
@@ -198,6 +204,8 @@ internal class SkiaBasedOwner(
 
     override val fontLoader = FontLoader()
 
+    override val fontFamilyResolver = createFontFamilyResolver()
+
     override val hapticFeedBack = DefaultHapticFeedback()
 
     override val clipboardManager = PlatformClipboardManager()
@@ -237,7 +245,6 @@ internal class SkiaBasedOwner(
     val needRender get() = needLayout || needDraw || needSendSyntheticEvents
     var onNeedRender: (() -> Unit)? = null
     var onDispatchCommand: ((Command) -> Unit)? = null
-    var containerCursor: PlatformComponentWithCursor? = null
 
     fun render(canvas: org.jetbrains.skia.Canvas) {
         needLayout = false
@@ -280,6 +287,11 @@ internal class SkiaBasedOwner(
         measureAndLayoutDelegate.dispatchOnPositionedCallbacks()
     }
 
+    override fun measureAndLayout(layoutNode: LayoutNode, constraints: Constraints) {
+        measureAndLayoutDelegate.measureAndLayout(layoutNode, constraints)
+        measureAndLayoutDelegate.dispatchOnPositionedCallbacks()
+    }
+
     override fun forceMeasureTheSubtree(layoutNode: LayoutNode) {
         measureAndLayoutDelegate.forceMeasureTheSubtree(layoutNode)
     }
@@ -309,9 +321,13 @@ internal class SkiaBasedOwner(
         onDestroy = { needClearObservations = true }
     )
 
-    override fun onSemanticsChange() = Unit
+    override fun onSemanticsChange() {
+        accessibilityController?.onSemanticsChange()
+    }
 
-    override fun onLayoutChange(layoutNode: LayoutNode) = Unit
+    override fun onLayoutChange(layoutNode: LayoutNode) {
+        accessibilityController?.onLayoutChange(layoutNode)
+    }
 
     override fun getFocusDirection(keyEvent: KeyEvent): FocusDirection? {
         return when (keyEvent.key) {
@@ -363,6 +379,8 @@ internal class SkiaBasedOwner(
                         PointerEventType.Move,
                         lastPointerEvent.uptime,
                         lastPointerEvent.pointers,
+                        lastPointerEvent.buttons,
+                        lastPointerEvent.keyboardModifiers,
                         lastPointerEvent.mouseEvent
                     )
                 )
@@ -388,17 +406,19 @@ internal class SkiaBasedOwner(
             }
         ).also {
             if (it.dispatchedToAPointerInputModifier) {
-                setPointerIcon(containerCursor, desiredPointerIcon)
+                setPointerIcon(component, desiredPointerIcon)
             }
         }
     }
 
     override fun processPointerInput(timeMillis: Long, pointers: List<TestPointerInputEventData>) {
+        val isPressed = pointers.any { it.down }
         processPointerInput(
             PointerInputEvent(
                 PointerEventType.Unknown,
                 timeMillis,
-                pointers.map { it.toPointerInputEventData() }
+                pointers.map { it.toPointerInputEventData() },
+                if (isPressed) PrimaryPressedPointerButtons else DefaultPointerButtons
             )
         )
     }

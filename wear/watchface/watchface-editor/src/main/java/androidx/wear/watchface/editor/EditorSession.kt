@@ -101,11 +101,9 @@ public interface EditorSession : AutoCloseable {
     public val watchFaceComponentName: ComponentName
 
     /**
-     * Unique ID for the instance of the watch face being edited, only defined for Android R and
-     * beyond, it's `null` on Android P and earlier. Note each distinct [ComponentName] can have
-     * multiple instances.
+     * Unique ID for the instance of the watch face being edited. Note each distinct [ComponentName]
+     * can sometimes have multiple instances. See [WatchFaceId] for more details.
      */
-    @get:RequiresApi(Build.VERSION_CODES.R)
     public val watchFaceId: WatchFaceId
 
     /**
@@ -827,11 +825,12 @@ internal class OnWatchFaceEditorSessionImpl(
         }
     } as MutableStateFlow<UserStyle>
 
+    @Suppress("Deprecation")
     internal fun validateAndUpdateUserStyle(userStyle: UserStyle) {
         for (userStyleSetting in userStyle.keys) {
             require(userStyleSchema.userStyleSettings.contains(userStyleSetting)) {
-                "A userStyleSetting (userStyleSetting) in userStyle does not match references in " +
-                    "EditorSession's userStyleSchema."
+                "A userStyleSetting ($userStyleSetting) in userStyle does not match " +
+                    "references in EditorSession's userStyleSchema."
             }
         }
 

@@ -16,18 +16,22 @@
 
 package androidx.wear.compose.material
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.requiredWidth
+import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.testutils.WithTouchSlop
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertHeightIsEqualTo
 import androidx.compose.ui.test.assertWidthIsEqualTo
@@ -37,6 +41,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeDown
 import androidx.compose.ui.test.swipeUp
+import androidx.compose.ui.test.swipeWithVelocity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -53,6 +58,7 @@ import kotlin.math.roundToInt
 // These tests are in addition to ScalingLazyListLayoutInfoTest which handles scroll events at an
 // absolute level and is designed to exercise scrolling through the UI directly.
 public class ScalingLazyColumnTest {
+    private val scalingLazyColumnTag = "scalingLazyColumnTag"
     private val firstItemTag = "firstItemTag"
 
     @get:Rule
@@ -68,6 +74,110 @@ public class ScalingLazyColumnTest {
         with(rule.density) {
             itemSizeDp = itemSizePx.toDp()
             defaultItemSpacingPx = defaultItemSpacingDp.roundToPx()
+        }
+    }
+
+    @Test
+    fun autoCenteringCorrectSizeWithCenterAnchor() {
+        lateinit var state: ScalingLazyListState
+        val listSize = itemSizeDp * 3.5f + defaultItemSpacingDp * 2.5f
+        rule.setContent {
+            WithTouchSlop(0f) {
+                ScalingLazyColumn(
+                    state = rememberScalingLazyListState().also { state = it },
+                    modifier = Modifier.testTag(TEST_TAG).requiredSize(listSize),
+                    anchorType = ScalingLazyListAnchorType.ItemCenter,
+                    autoCentering = true,
+                    verticalArrangement = Arrangement.spacedBy(0.dp),
+                    scalingParams = ScalingLazyColumnDefaults.scalingParams(
+                        edgeScale = 0f,
+                        minTransitionArea = 0.5f,
+                        maxTransitionArea = 0.5f
+                    )
+                ) {
+                    items(5) {
+                        Box(Modifier.requiredSize(itemSizeDp))
+                    }
+                }
+            }
+        }
+        // TODO(b/210654937): Remove the waitUntil once we no longer need 2 stage initialization
+        rule.waitUntil { state.initialized.value }
+        rule.waitForIdle()
+
+        val listSizePx = with(rule.density) {
+            listSize.roundToPx()
+        }
+
+        rule.runOnIdle {
+            // Make sure that the edge items have been scaled
+            assertThat(state.layoutInfo.visibleItemsInfo.first().scale).isLessThan(1.0f)
+            // But that size of the Spacer is as expected
+            assertThat(state.lazyListState.layoutInfo.visibleItemsInfo.first().size)
+                .isEqualTo(((listSizePx / 2f) - (itemSizePx / 2f)).roundToInt())
+        }
+        rule.onNodeWithTag(TEST_TAG).performTouchInput {
+            swipeUp()
+        }
+        rule.runOnIdle {
+            // Check that the last item has been scrolled into view
+            assertThat(state.lazyListState.layoutInfo.visibleItemsInfo.last().index)
+                .isEqualTo(state.lazyListState.layoutInfo.totalItemsCount - 1)
+            // And that size of the Spacer is as expected
+            assertThat(state.lazyListState.layoutInfo.visibleItemsInfo.last().size)
+                .isEqualTo(((listSizePx / 2f) - (itemSizePx / 2f)).roundToInt())
+        }
+    }
+
+    @Test
+    fun autoCenteringCorrectSizeWithStartAnchor() {
+        lateinit var state: ScalingLazyListState
+        val listSize = itemSizeDp * 3.5f + defaultItemSpacingDp * 2.5f
+        rule.setContent {
+            WithTouchSlop(0f) {
+                ScalingLazyColumn(
+                    state = rememberScalingLazyListState().also { state = it },
+                    modifier = Modifier.testTag(TEST_TAG).requiredSize(listSize),
+                    anchorType = ScalingLazyListAnchorType.ItemStart,
+                    autoCentering = true,
+                    verticalArrangement = Arrangement.spacedBy(0.dp),
+                    scalingParams = ScalingLazyColumnDefaults.scalingParams(
+                        edgeScale = 0f,
+                        minTransitionArea = 0.5f,
+                        maxTransitionArea = 0.5f
+                    )
+                ) {
+                    items(5) {
+                        Box(Modifier.requiredSize(itemSizeDp))
+                    }
+                }
+            }
+        }
+        // TODO(b/210654937): Remove the waitUntil once we no longer need 2 stage initialization
+        rule.waitUntil { state.initialized.value }
+        rule.waitForIdle()
+
+        val listSizePx = with(rule.density) {
+            listSize.roundToPx()
+        }
+
+        rule.runOnIdle {
+            // Make sure that the edge items have been scaled
+            assertThat(state.layoutInfo.visibleItemsInfo.first().scale).isLessThan(1.0f)
+            // But that size of the Spacer is as expected
+            assertThat(state.lazyListState.layoutInfo.visibleItemsInfo.first().size)
+                .isEqualTo((listSizePx / 2f).roundToInt())
+        }
+        rule.onNodeWithTag(TEST_TAG).performTouchInput {
+            swipeUp(endY = top)
+        }
+        rule.runOnIdle {
+            // Check that the last item has been scrolled into view
+            assertThat(state.lazyListState.layoutInfo.visibleItemsInfo.last().index)
+                .isEqualTo(state.lazyListState.layoutInfo.totalItemsCount - 1)
+            // And that size of the Spacer is as expected
+            assertThat(state.lazyListState.layoutInfo.visibleItemsInfo.last().size)
+                .isEqualTo(((listSizePx / 2f) - itemSizePx).roundToInt())
         }
     }
 
@@ -89,7 +199,12 @@ public class ScalingLazyColumnTest {
                 }
             }
         }
+        // TODO(b/210654937): Remove the waitUntil once we no longer need 2 stage initialization
+        rule.waitUntil { state.initialized.value }
         rule.waitForIdle()
+
+        state.layoutInfo.assertVisibleItems(count = 4, startIndex = 0)
+
         rule.onNodeWithTag(TEST_TAG).performTouchInput {
             swipeUp(endY = bottom - (itemSizePx.toFloat() + defaultItemSpacingPx.toFloat()))
         }
@@ -99,12 +214,47 @@ public class ScalingLazyColumnTest {
     }
 
     @Test
-    fun visibleItemsAreCorrectAfterScrollingWithAutoCentering() {
+    fun visibleItemsAreCorrectAfterAttemptedScrollWithUserScrollDisabled() {
         lateinit var state: ScalingLazyListState
         rule.setContent {
             WithTouchSlop(0f) {
                 ScalingLazyColumn(
                     state = rememberScalingLazyListState().also { state = it },
+                    modifier = Modifier.testTag(TEST_TAG).requiredSize(
+                        itemSizeDp * 3.5f + defaultItemSpacingDp * 2.5f
+                    ),
+                    autoCentering = false,
+                    userScrollEnabled = false
+                ) {
+                    items(5) {
+                        Box(Modifier.requiredSize(itemSizeDp))
+                    }
+                }
+            }
+        }
+
+        // TODO(b/210654937): Remove the waitUntil once we no longer need 2 stage initialization
+        rule.waitUntil { state.initialized.value }
+        rule.waitForIdle()
+
+        state.layoutInfo.assertVisibleItems(count = 4, startIndex = 0)
+
+        rule.onNodeWithTag(TEST_TAG).performTouchInput {
+            swipeUp(endY = bottom - (itemSizePx.toFloat() + defaultItemSpacingPx.toFloat()))
+        }
+
+        rule.waitForIdle()
+        state.layoutInfo.assertVisibleItems(count = 4, startIndex = 0)
+    }
+
+    @Test
+    fun visibleItemsAreCorrectAfterScrollingWithAutoCentering() {
+        lateinit var state: ScalingLazyListState
+        rule.setContent {
+            WithTouchSlop(0f) {
+                ScalingLazyColumn(
+                    state = rememberScalingLazyListState(initialCenterItemIndex = 0)
+                        .also { state = it },
                     modifier = Modifier.testTag(TEST_TAG).requiredSize(
                         itemSizeDp * 3.5f + defaultItemSpacingDp * 2.5f
                     ),
@@ -116,6 +266,8 @@ public class ScalingLazyColumnTest {
                 }
             }
         }
+        // TODO(b/210654937): Remove the waitUntil once we no longer need 2 stage initialization
+        rule.waitUntil { state.initialized.value }
         rule.waitForIdle()
         state.layoutInfo.assertVisibleItems(count = 3, startIndex = 0)
 
@@ -126,6 +278,95 @@ public class ScalingLazyColumnTest {
 
         rule.waitForIdle()
         state.layoutInfo.assertVisibleItems(count = 4, startIndex = 0)
+    }
+
+    @Test
+    fun visibleItemsAreCorrectAfterScrollingWithSnap() {
+        lateinit var state: ScalingLazyListState
+        rule.setContent {
+            WithTouchSlop(0f) {
+                ScalingLazyColumn(
+                    state = rememberScalingLazyListState(initialCenterItemIndex = 0)
+                        .also { state = it },
+                    modifier = Modifier.testTag(TEST_TAG).requiredSize(
+                        itemSizeDp * 3.5f + defaultItemSpacingDp * 2.5f
+                    ),
+                    autoCentering = true,
+                    flingBehavior = ScalingLazyColumnDefaults.snapFlingBehavior(state)
+                ) {
+                    items(5) {
+                        Box(Modifier.requiredSize(itemSizeDp))
+                    }
+                }
+            }
+        }
+        // TODO(b/210654937): Remove the waitUntil once we no longer need 2 stage initialization
+        rule.waitUntil { state.initialized.value }
+        rule.waitForIdle()
+        state.layoutInfo.assertVisibleItems(count = 3, startIndex = 0)
+
+        rule.waitForIdle()
+        rule.onNodeWithTag(TEST_TAG).performTouchInput {
+            // Swipe by an amount that is not a whole item + gap
+            swipeWithVelocity(
+                start = Offset(centerX, bottom),
+                end = Offset(centerX, bottom - (itemSizePx.toFloat())),
+                endVelocity = 1f, // Ensure it's not a fling.
+            )
+        }
+
+        rule.waitForIdle()
+        state.layoutInfo.assertVisibleItems(count = 4, startIndex = 0)
+        assertThat(state.centerItemIndex).isEqualTo(1)
+        assertThat(state.centerItemScrollOffset).isEqualTo(0)
+    }
+
+    @Test
+    fun visibleItemsAreCorrectAfterScrollingWithSnapAndOffset() {
+        lateinit var state: ScalingLazyListState
+        val snapOffset = 5.dp
+        var snapOffsetPx = 0
+        rule.setContent {
+            WithTouchSlop(0f) {
+                snapOffsetPx = with(LocalDensity.current) { snapOffset.roundToPx() }
+
+                ScalingLazyColumn(
+                    state = rememberScalingLazyListState(initialCenterItemIndex = 0)
+                        .also { state = it },
+                    modifier = Modifier.testTag(TEST_TAG).requiredSize(
+                        itemSizeDp * 3.5f + defaultItemSpacingDp * 2.5f
+                    ),
+                    autoCentering = true,
+                    flingBehavior = ScalingLazyColumnDefaults.snapFlingBehavior(
+                        state = state,
+                        snapOffset = snapOffset
+                    )
+                ) {
+                    items(5) {
+                        Box(Modifier.requiredSize(itemSizeDp))
+                    }
+                }
+            }
+        }
+        // TODO(b/210654937): Remove the waitUntil once we no longer need 2 stage initialization
+        rule.waitUntil { state.initialized.value }
+        rule.waitForIdle()
+        state.layoutInfo.assertVisibleItems(count = 3, startIndex = 0)
+
+        rule.waitForIdle()
+        rule.onNodeWithTag(TEST_TAG).performTouchInput {
+            // Swipe by an amount that is not a whole item + gap
+            swipeWithVelocity(
+                start = Offset(centerX, bottom),
+                end = Offset(centerX, bottom - (itemSizePx.toFloat())),
+                endVelocity = 1f, // Ensure it's not a fling.
+            )
+        }
+
+        rule.waitForIdle()
+        state.layoutInfo.assertVisibleItems(count = 4, startIndex = 0)
+        assertThat(state.centerItemIndex).isEqualTo(1)
+        assertThat(state.centerItemScrollOffset).isEqualTo(snapOffsetPx)
     }
 
     @Test
@@ -148,6 +389,8 @@ public class ScalingLazyColumnTest {
             }
         }
 
+        // TODO(b/210654937): Remove the waitUntil once we no longer need 2 stage initialization
+        rule.waitUntil { state.initialized.value }
         rule.onNodeWithTag(TEST_TAG).performTouchInput {
             swipeDown(
                 startY = top,
@@ -164,12 +407,12 @@ public class ScalingLazyColumnTest {
         rule.setContent {
             WithTouchSlop(0f) {
                 ScalingLazyColumn(
-                    state = rememberScalingLazyListState().also { state = it },
+                    state = rememberScalingLazyListState(initialCenterItemIndex = 0)
+                        .also { state = it },
                     modifier = Modifier.testTag(TEST_TAG).requiredSize(
                         itemSizeDp * 3.5f + defaultItemSpacingDp * 2.5f
                     ),
                     scalingParams = ScalingLazyColumnDefaults.scalingParams(1.0f, 1.0f),
-                    contentPadding = PaddingValues(vertical = 100.dp)
                 ) {
                     items(5) {
                         Box(Modifier.requiredSize(itemSizeDp).testTag("Item:" + it))
@@ -178,6 +421,8 @@ public class ScalingLazyColumnTest {
             }
         }
 
+        // TODO(b/210654937): Remove the waitUntil once we no longer need 2 stage initialization
+        rule.waitUntil { state.initialized.value }
         rule.waitForIdle()
         rule.mainClock.autoAdvance = false
         rule.onNodeWithTag(TEST_TAG).performTouchInput {
@@ -211,6 +456,8 @@ public class ScalingLazyColumnTest {
             }
         }
 
+        // TODO(b/210654937): Remove the waitUntil once we no longer need 2 stage initialization
+        rule.waitUntil { state.initialized.value }
         rule.waitForIdle()
         rule.mainClock.autoAdvance = false
         rule.onNodeWithTag(TEST_TAG).performTouchInput {
@@ -253,6 +500,8 @@ public class ScalingLazyColumnTest {
                 ObservingFun(state, currentInfo)
             }
         }
+        // TODO(b/210654937): Remove the waitUntil once we no longer need 2 stage initialization
+        rule.waitUntil { state.initialized.value }
         rule.waitForIdle()
         rule.mainClock.autoAdvance = false
         currentInfo.value = null
@@ -292,8 +541,10 @@ public class ScalingLazyColumnTest {
 
     @Test
     fun itemFillingParentWidth() {
+        lateinit var state: ScalingLazyListState
         rule.setContentWithTestViewConfiguration {
             ScalingLazyColumn(
+                state = rememberScalingLazyListState(8).also { state = it },
                 modifier = Modifier.requiredSize(width = 100.dp, height = 150.dp),
                 contentPadding = PaddingValues(horizontal = 0.dp),
                 scalingParams = ScalingLazyColumnDefaults.scalingParams(1.0f, 1.0f)
@@ -306,6 +557,8 @@ public class ScalingLazyColumnTest {
             }
         }
 
+        // TODO(b/210654937): Remove the waitUntil once we no longer need 2 stage initialization
+        rule.waitUntil { state.initialized.value }
         rule.onNodeWithTag(firstItemTag)
             .assertWidthIsEqualTo(100.dp)
             .assertHeightIsEqualTo(50.dp)
@@ -313,8 +566,10 @@ public class ScalingLazyColumnTest {
 
     @Test
     fun itemFillingParentHeight() {
+        lateinit var state: ScalingLazyListState
         rule.setContentWithTestViewConfiguration {
             ScalingLazyColumn(
+                state = rememberScalingLazyListState(8).also { state = it },
                 modifier = Modifier.requiredSize(width = 100.dp, height = 150.dp),
                 scalingParams = ScalingLazyColumnDefaults.scalingParams(1.0f, 1.0f)
             ) {
@@ -326,6 +581,8 @@ public class ScalingLazyColumnTest {
             }
         }
 
+        // TODO(b/210654937): Remove the waitUntil once we no longer need 2 stage initialization
+        rule.waitUntil { state.initialized.value }
         rule.onNodeWithTag(firstItemTag)
             .assertWidthIsEqualTo(50.dp)
             .assertHeightIsEqualTo(150.dp)
@@ -333,8 +590,10 @@ public class ScalingLazyColumnTest {
 
     @Test
     fun itemFillingParentSize() {
+        lateinit var state: ScalingLazyListState
         rule.setContentWithTestViewConfiguration {
             ScalingLazyColumn(
+                state = rememberScalingLazyListState(8).also { state = it },
                 modifier = Modifier.requiredSize(width = 100.dp, height = 150.dp),
                 contentPadding = PaddingValues(horizontal = 0.dp),
                 scalingParams = ScalingLazyColumnDefaults.scalingParams(1.0f, 1.0f)
@@ -345,6 +604,8 @@ public class ScalingLazyColumnTest {
             }
         }
 
+        // TODO(b/210654937): Remove the waitUntil once we no longer need 2 stage initialization
+        rule.waitUntil { state.initialized.value }
         rule.onNodeWithTag(firstItemTag)
             .assertWidthIsEqualTo(100.dp)
             .assertHeightIsEqualTo(150.dp)
@@ -352,8 +613,10 @@ public class ScalingLazyColumnTest {
 
     @Test
     fun itemFillingParentWidthFraction() {
+        lateinit var state: ScalingLazyListState
         rule.setContentWithTestViewConfiguration {
             ScalingLazyColumn(
+                state = rememberScalingLazyListState(8).also { state = it },
                 modifier = Modifier.requiredSize(width = 100.dp, height = 150.dp),
                 contentPadding = PaddingValues(horizontal = 0.dp),
                 scalingParams = ScalingLazyColumnDefaults.scalingParams(1.0f, 1.0f)
@@ -368,6 +631,8 @@ public class ScalingLazyColumnTest {
             }
         }
 
+        // TODO(b/210654937): Remove the waitUntil once we no longer need 2 stage initialization
+        rule.waitUntil { state.initialized.value }
         rule.onNodeWithTag(firstItemTag)
             .assertWidthIsEqualTo(70.dp)
             .assertHeightIsEqualTo(50.dp)
@@ -375,8 +640,12 @@ public class ScalingLazyColumnTest {
 
     @Test
     fun itemFillingParentHeightFraction() {
+        lateinit var state: ScalingLazyListState
         rule.setContentWithTestViewConfiguration {
-            ScalingLazyColumn(Modifier.requiredSize(width = 100.dp, height = 150.dp)) {
+            ScalingLazyColumn(
+                state = rememberScalingLazyListState(8).also { state = it },
+                modifier = Modifier.requiredSize(width = 100.dp, height = 150.dp)
+            ) {
                 items(listOf(0)) {
                     Spacer(
                         Modifier.requiredWidth(50.dp)
@@ -387,6 +656,8 @@ public class ScalingLazyColumnTest {
             }
         }
 
+        // TODO(b/210654937): Remove the waitUntil once we no longer need 2 stage initialization
+        rule.waitUntil { state.initialized.value }
         rule.onNodeWithTag(firstItemTag)
             .assertWidthIsEqualTo(50.dp)
             .assertHeightIsEqualTo(45.dp)
@@ -394,8 +665,10 @@ public class ScalingLazyColumnTest {
 
     @Test
     fun itemFillingParentSizeFraction() {
+        lateinit var state: ScalingLazyListState
         rule.setContentWithTestViewConfiguration {
             ScalingLazyColumn(
+                state = rememberScalingLazyListState(8).also { state = it },
                 modifier = Modifier.requiredSize(width = 100.dp, height = 150.dp),
                 contentPadding = PaddingValues(horizontal = 0.dp)
             ) {
@@ -405,6 +678,8 @@ public class ScalingLazyColumnTest {
             }
         }
 
+        // TODO(b/210654937): Remove the waitUntil once we no longer need 2 stage initialization
+        rule.waitUntil { state.initialized.value }
         rule.onNodeWithTag(firstItemTag)
             .assertWidthIsEqualTo(50.dp)
             .assertHeightIsEqualTo(75.dp)
@@ -412,9 +687,11 @@ public class ScalingLazyColumnTest {
 
     @Test
     fun itemFillingParentSizeParentResized() {
+        lateinit var state: ScalingLazyListState
         var parentSize by mutableStateOf(100.dp)
         rule.setContentWithTestViewConfiguration {
             ScalingLazyColumn(
+                state = rememberScalingLazyListState(8).also { state = it },
                 modifier = Modifier.requiredSize(parentSize),
                 contentPadding = PaddingValues(horizontal = 0.dp),
             ) {
@@ -424,6 +701,8 @@ public class ScalingLazyColumnTest {
             }
         }
 
+        // TODO(b/210654937): Remove the waitUntil once we no longer need 2 stage initialization
+        rule.waitUntil { state.initialized.value }
         rule.runOnIdle {
             parentSize = 150.dp
         }
@@ -431,6 +710,43 @@ public class ScalingLazyColumnTest {
         rule.onNodeWithTag(firstItemTag)
             .assertWidthIsEqualTo(150.dp)
             .assertHeightIsEqualTo(150.dp)
+    }
+
+    @Test
+    fun listSizeFitsContentsIfNotSet() {
+        lateinit var state: ScalingLazyListState
+        var itemSize by mutableStateOf(100.dp)
+        rule.setContentWithTestViewConfiguration {
+            ScalingLazyColumn(
+                state = rememberScalingLazyListState(8).also { state = it },
+                modifier = Modifier.testTag(scalingLazyColumnTag),
+                contentPadding = PaddingValues(horizontal = 0.dp),
+            ) {
+                items(listOf(0)) {
+                    Spacer(Modifier.size(itemSize).testTag(firstItemTag))
+                }
+            }
+        }
+
+        // TODO(b/210654937): Remove the waitUntil once we no longer need 2 stage initialization
+        rule.waitUntil { state.initialized.value }
+
+        rule.onNodeWithTag(scalingLazyColumnTag)
+            .assertWidthIsEqualTo(itemSize)
+
+        rule.runOnIdle {
+            itemSize = 150.dp
+        }
+
+        rule.onNodeWithTag(scalingLazyColumnTag)
+            .assertWidthIsEqualTo(itemSize)
+
+        rule.runOnIdle {
+            itemSize = 50.dp
+        }
+
+        rule.onNodeWithTag(scalingLazyColumnTag)
+            .assertWidthIsEqualTo(itemSize)
     }
 }
 

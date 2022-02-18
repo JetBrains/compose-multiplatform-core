@@ -169,19 +169,11 @@ class DragDropState internal constructor(
         val draggingItem = draggingItemLayoutInfo ?: return
         val startOffset = draggingItem.offset + draggingItemOffset
         val endOffset = startOffset + draggingItem.size
+        val middleOffset = startOffset + (endOffset - startOffset) / 2f
 
         val targetItem = state.layoutInfo.visibleItemsInfo.find { item ->
-            if (item.offsetEnd > startOffset && item.offset < endOffset &&
+            middleOffset.toInt() in item.offset..item.offsetEnd &&
                 draggingItem.index != item.index
-            ) {
-                val delta = startOffset - draggingItem.offset
-                when {
-                    delta > 0 -> (endOffset > item.offsetEnd)
-                    else -> (startOffset < item.offset)
-                }
-            } else {
-                false
-            }
         }
         if (targetItem != null) {
             val scrollToIndex = if (targetItem.index == state.firstVisibleItemIndex) {

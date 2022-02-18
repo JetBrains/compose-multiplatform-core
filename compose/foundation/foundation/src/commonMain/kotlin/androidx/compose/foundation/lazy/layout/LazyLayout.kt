@@ -17,10 +17,14 @@
 package androidx.compose.foundation.lazy.layout
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.layout.SubcomposeLayoutState
+import androidx.compose.ui.layout.SubcomposeSlotReusePolicy
 
 /**
  * A layout that only composes and lays out currently visible items. Can be used to build
@@ -30,41 +34,66 @@ import androidx.compose.ui.layout.SubcomposeLayoutState
 internal fun LazyLayout(
     itemsProvider: () -> LazyLayoutItemsProvider,
     modifier: Modifier = Modifier,
-    state: LazyLayoutState = rememberLazyLayoutState(),
     prefetchPolicy: LazyLayoutPrefetchPolicy? = null,
     measurePolicy: LazyMeasurePolicy
 ) {
-    state.itemsProvider = itemsProvider
-    val itemContentFactory = rememberItemContentFactory(state)
-    val subcomposeLayoutState = remember { SubcomposeLayoutState(MaxItemsToRetainForReuse) }
+    val currentItemsProvider = rememberUpdatedState(itemsProvider)
+
+    val saveableStateHolder = rememberSaveableStateHolder()
+    val itemContentFactory = remember {
+        LazyLayoutItemContentFactory(saveableStateHolder) { currentItemsProvider.value.invoke() }
+    }
+    val subcomposeLayoutState = remember {
+        SubcomposeLayoutState(LazyLayoutItemReusePolicy(itemContentFactory))
+    }
     prefetchPolicy?.let {
-        LazyLayoutPrefetcher(prefetchPolicy, state, itemContentFactory, subcomposeLayoutState)
+        LazyLayoutPrefetcher(
+            prefetchPolicy,
+            itemContentFactory,
+            subcomposeLayoutState
+        )
     }
 
     SubcomposeLayout(
         subcomposeLayoutState,
-        modifier.then(state.remeasurementModifier),
-        remember(itemContentFactory, state, measurePolicy) {
+        modifier,
+        remember(itemContentFactory, measurePolicy) {
             { constraints ->
                 itemContentFactory.onBeforeMeasure(this, constraints)
 
                 val placeablesProvider = LazyLayoutPlaceablesProvider(
-                    state.itemsProvider(),
                     itemContentFactory,
                     this
                 )
-                val measureResult = with(measurePolicy) { measure(placeablesProvider, constraints) }
-
-                state.onPostMeasureListener?.apply {
-                    onPostMeasure(measureResult, placeablesProvider)
-                }
-                state.layoutInfoState.value = measureResult
-                state.layoutInfoNonObservable = measureResult
-
-                measureResult
+                with(measurePolicy) { measure(placeablesProvider, constraints) }
             }
         }
     )
+}
+
+private class LazyLayoutItemReusePolicy(
+    private val factory: LazyLayoutItemContentFactory
+) : SubcomposeSlotReusePolicy {
+    private val countPerType = mutableMapOf<Any?, Int>()
+
+    override fun getSlotsToRetain(slotIds: MutableSet<Any?>) {
+        countPerType.clear()
+        with(slotIds.iterator()) {
+            while (hasNext()) {
+                val slotId = next()
+                val type = factory.getContentType(slotId)
+                val currentCount = countPerType[type] ?: 0
+                if (currentCount == MaxItemsToRetainForReuse) {
+                    remove()
+                } else {
+                    countPerType[type] = currentCount + 1
+                }
+            }
+        }
+    }
+
+    override fun areCompatible(slotId: Any?, reusableSlotId: Any?): Boolean =
+        factory.getContentType(slotId) == factory.getContentType(reusableSlotId)
 }
 
 private const val MaxItemsToRetainForReuse = 2
@@ -76,7 +105,6 @@ private const val MaxItemsToRetainForReuse = 2
 @Composable
 internal expect fun LazyLayoutPrefetcher(
     prefetchPolicy: LazyLayoutPrefetchPolicy,
-    state: LazyLayoutState,
     itemContentFactory: LazyLayoutItemContentFactory,
     subcomposeLayoutState: SubcomposeLayoutState
 )

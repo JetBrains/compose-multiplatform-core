@@ -15,7 +15,6 @@
  */
 
 import androidx.build.AndroidXComposePlugin
-import androidx.build.LibraryGroups
 import androidx.build.LibraryType
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
@@ -51,17 +50,19 @@ dependencies {
         // any dependency on this module.
         compileOnly(project(":compose:ui:ui-android-stubs"))
 
-        implementation("androidx.compose.runtime:runtime:1.1.0-rc01")
+        implementation(project(":compose:runtime:runtime"))
         implementation(project(":compose:ui:ui-util"))
         implementation(libs.kotlinStdlib)
         implementation("androidx.autofill:autofill:1.0.0")
         implementation(libs.kotlinCoroutinesAndroid)
 
+        implementation("androidx.core:core:1.5.0")
+        implementation('androidx.collection:collection:1.0.0')
         implementation("androidx.savedstate:savedstate:1.1.0")
         implementation("androidx.lifecycle:lifecycle-common-java8:2.3.0")
         implementation("androidx.lifecycle:lifecycle-runtime:2.3.0")
         implementation("androidx.lifecycle:lifecycle-viewmodel:2.3.0")
-        implementation("androidx.profileinstaller:profileinstaller:1.1.0-rc01")
+        implementation("androidx.profileinstaller:profileinstaller:1.2.0-alpha02")
 
         testImplementation(libs.testRules)
         testImplementation(libs.testRunner)
@@ -70,7 +71,7 @@ dependencies {
         testImplementation(libs.truth)
         testImplementation(libs.mockitoCore)
         testImplementation(libs.mockitoKotlin)
-        testImplementation("org.robolectric:robolectric:4.6.1") // TODO(b/209063122): fix tests to work with SDK 31 and robolectric 4.7
+        testImplementation(libs.robolectric)
         testImplementation(project(":compose:ui:ui-test-junit4"))
         testImplementation(project(":compose:test-utils"))
 
@@ -79,7 +80,6 @@ dependencies {
         androidTestImplementation(libs.testRunner)
         androidTestImplementation(libs.testExtJunitKtx)
         androidTestImplementation(libs.testUiautomator)
-        androidTestImplementation(libs.kotlinTest)
         androidTestImplementation(libs.kotlinCoroutinesTest)
         androidTestImplementation(libs.espressoCore)
         androidTestImplementation(libs.junit)
@@ -107,7 +107,7 @@ dependencies {
     }
 }
 
-packageInspector(project, project(":compose:ui:ui-inspection"))
+packageInspector(project, ":compose:ui:ui-inspection")
 
 if(AndroidXComposePlugin.isMultiplatformEnabled(project)) {
     androidXComposeMultiplatform {
@@ -167,6 +167,10 @@ if(AndroidXComposePlugin.isMultiplatformEnabled(project)) {
                 }
             }
 
+            // TODO(b/214407011): These dependencies leak into instrumented tests as well. If you
+            //  need to add Robolectric (which must be kept out of androidAndroidTest), use a top
+            //  level dependencies block instead:
+            //  `dependencies { testImplementation(libs.robolectric) }`
             androidTest.dependencies {
                 implementation(libs.testRules)
                 implementation(libs.testRunner)
@@ -175,8 +179,8 @@ if(AndroidXComposePlugin.isMultiplatformEnabled(project)) {
                 implementation(libs.truth)
                 implementation(libs.mockitoCore)
                 implementation(libs.mockitoKotlin)
-                implementation(libs.robolectric)
                 implementation(project(":compose:ui:ui-test-junit4"))
+                implementation(project(":compose:ui:ui-test-font"))
                 implementation(project(":compose:test-utils"))
             }
 
@@ -219,13 +223,17 @@ if(AndroidXComposePlugin.isMultiplatformEnabled(project)) {
     }
     dependencies {
         samples(project(":compose:ui:ui:ui-samples"))
+
+        // Can't declare this in kotlin { sourceSets { androidTest.dependencies { .. } } } as that
+        // leaks into instrumented tests (b/214407011)
+        testImplementation(libs.robolectric)
     }
 }
 
 androidx {
     name = "Compose UI primitives"
     type = LibraryType.PUBLISHED_LIBRARY
-    mavenGroup = LibraryGroups.Compose.UI
+    mavenGroup = LibraryGroups.COMPOSE_UI
     inceptionYear = "2019"
     description = "Compose UI primitives. This library contains the primitives that form the Compose UI Toolkit, such as drawing, measurement and layout."
     legacyDisableKotlinStrictApiMode = true

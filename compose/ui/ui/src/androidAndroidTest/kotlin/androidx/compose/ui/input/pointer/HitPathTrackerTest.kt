@@ -48,6 +48,7 @@ import androidx.compose.ui.platform.TextToolbar
 import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.platform.WindowInfo
 import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.TextInputService
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
@@ -2947,16 +2948,19 @@ class HitPathTrackerTest {
         removalPass: PointerEventPass
     ) {
         val layoutCoordinates = LayoutCoordinatesStub(true)
+        lateinit var pifRef: PointerInputFilter
         val pif = PointerInputFilterMock(
             pointerEventHandler =
                 { pointerEvent, pass, _ ->
                     if (pass == removalPass) {
                         layoutCoordinates.isAttached = false
+                        pifRef.isAttached = false
                     }
                     pointerEvent.changes
                 },
             layoutCoordinates = layoutCoordinates
         )
+        pifRef = pif
         hitPathTracker.addHitPath(PointerId(13), listOf(pif))
 
         hitPathTracker.dispatchChanges(internalPointerEventOf(down(13)))
@@ -2998,19 +3002,20 @@ class HitPathTrackerTest {
     ) {
         val log = mutableListOf<LogEntry>()
         val childLayoutCoordinates = LayoutCoordinatesStub(true)
+        val childPif = PointerInputFilterMock(
+            log,
+            layoutCoordinates = childLayoutCoordinates
+        )
         val parentPif = PointerInputFilterMock(
             log,
             pointerEventHandler =
                 { pointerEvent, pass, _ ->
                     if (pass == removalPass) {
                         childLayoutCoordinates.isAttached = false
+                        childPif.isAttached = false
                     }
                     pointerEvent.changes
                 }
-        )
-        val childPif = PointerInputFilterMock(
-            log,
-            layoutCoordinates = childLayoutCoordinates
         )
         hitPathTracker.addHitPath(PointerId(13), listOf(parentPif, childPif))
 
@@ -3067,6 +3072,7 @@ class HitPathTrackerTest {
                 { pointerEvent, pass, _ ->
                     if (pass == removalPass) {
                         parentLayoutCoordinates.isAttached = false
+                        parentPif.isAttached = false
                     }
                     pointerEvent.changes
                 }
@@ -3614,7 +3620,10 @@ private class MockOwner(
         get() = TODO("Not yet implemented")
     override val windowInfo: WindowInfo
         get() = TODO("Not yet implemented")
+    @Suppress("OverridingDeprecatedMember", "DEPRECATION")
     override val fontLoader: Font.ResourceLoader
+        get() = TODO("Not yet implemented")
+    override val fontFamilyResolver: FontFamily.Resolver
         get() = TODO("Not yet implemented")
     override val layoutDirection: LayoutDirection
         get() = LayoutDirection.Ltr
@@ -3647,6 +3656,9 @@ private class MockOwner(
     override fun requestFocus(): Boolean = false
 
     override fun measureAndLayout(sendPointerUpdate: Boolean) {
+    }
+
+    override fun measureAndLayout(layoutNode: LayoutNode, constraints: Constraints) {
     }
 
     override fun forceMeasureTheSubtree(layoutNode: LayoutNode) {

@@ -312,6 +312,7 @@ public abstract class WatchFaceService : WallpaperService() {
      * @hide
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    @Suppress("DEPRECATION")
     public open fun getXmlWatchFaceResourceId(): Int {
         return try {
             packageManager.getServiceInfo(
@@ -994,7 +995,7 @@ public abstract class WatchFaceService : WallpaperService() {
 
                 /**
                  * It's possible we went ambient by the time our callback occurred in which case
-                 * there's no point drawing. Note if watchFaceImpl is null we call [drawBlack].
+                 * there's no point drawing.
                  */
                 if (watchFaceImpl?.renderer?.shouldAnimate() != false) {
                     draw()
@@ -1282,7 +1283,7 @@ public abstract class WatchFaceService : WallpaperService() {
                 this.setComplicationDataList(it)
             }
 
-            mutableWatchState.watchFaceInstanceId.value = newInstanceId
+            mutableWatchState.watchFaceInstanceId.value = sanitizeWatchFaceId(newInstanceId)
         }
 
         override fun getContext(): Context = _context
@@ -1616,7 +1617,7 @@ public abstract class WatchFaceService : WallpaperService() {
 
             allowWatchfaceToAnimate = false
             require(mutableWatchState.isHeadless)
-            mutableWatchState.watchFaceInstanceId.value = params.instanceId
+            mutableWatchState.watchFaceInstanceId.value = sanitizeWatchFaceId(params.instanceId)
             val watchState = mutableWatchState.asWatchState()
 
             createWatchFaceInternal(
@@ -1649,7 +1650,7 @@ public abstract class WatchFaceService : WallpaperService() {
             setWatchUiState(params.watchUiState)
             initialUserStyle = params.userStyle
 
-            mutableWatchState.watchFaceInstanceId.value = params.instanceId
+            mutableWatchState.watchFaceInstanceId.value = sanitizeWatchFaceId(params.instanceId)
             val watchState = mutableWatchState.asWatchState()
 
             // Store the initial complications, this could be modified by new data before being
@@ -2011,14 +2012,12 @@ public abstract class WatchFaceService : WallpaperService() {
             getUiThreadHandler().postDelayed(
                 {
                     pendingComplicationDataCacheWrite = false
-                    mutableWatchState.watchFaceInstanceId.value?.let { watchFaceInstanceId ->
-                        getWatchFaceImplOrNull()?.let { watchFaceImpl ->
-                            writeComplicationDataCache(
-                                _context,
-                                watchFaceImpl.complicationSlotsManager,
-                                watchFaceInstanceId
-                            )
-                        }
+                    getWatchFaceImplOrNull()?.let { watchFaceImpl ->
+                        writeComplicationDataCache(
+                            _context,
+                            watchFaceImpl.complicationSlotsManager,
+                            mutableWatchState.watchFaceInstanceId.value
+                        )
                     }
                 },
                 1000
@@ -2035,7 +2034,7 @@ public abstract class WatchFaceService : WallpaperService() {
                 }
 
                 val watchFaceImpl: WatchFaceImpl? = getWatchFaceImplOrNull()
-                watchFaceImpl?.onDraw() ?: drawBlack()
+                watchFaceImpl?.onDraw()
             } finally {
                 if (TRACE_DRAW) {
                     Trace.endSection()
@@ -2047,6 +2046,7 @@ public abstract class WatchFaceService : WallpaperService() {
             "WatchFaceService.validateSchemaWireSize"
         ).use {
             var estimatedBytes = 0
+            @Suppress("Deprecation") // userStyleSettings
             for (styleSetting in schema.userStyleSettings) {
                 estimatedBytes += styleSetting.estimateWireSizeInBytesAndValidateIconDimensions(
                     _context,
@@ -2060,12 +2060,6 @@ public abstract class WatchFaceService : WallpaperService() {
                     "to the companion over bluetooth and should be as small as possible for this " +
                     "to be performant."
             }
-        }
-
-        private fun drawBlack() {
-            // TODO(b/189452267): We don't know if the watchface will use hardware or software
-            // canvas and mixing the two leads to skia crashes. For now we do nothing rather than
-            // drawing a blank frame.
         }
 
         internal fun watchFaceCreated() = deferredWatchFaceImpl.isCompleted
@@ -2346,3 +2340,35 @@ internal fun <R> CoroutineScope.runBlockingWithTracing(
     latch.await()
     return r!!
 }
+
+/**
+ * If the instance ID for [MutableWatchState.watchFaceInstanceId] begin with this prefix, then the
+ * system sends consistent IDs for interactive, headless and editor sessions.
+ *
+ * @hide
+ */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+const val SYSTEM_SUPPORTS_CONSISTENT_IDS_PREFIX = "wfId-"
+
+/**
+ * Instance ID to use when either there's no system id or it doesn't start with
+ * [SYSTEM_SUPPORTS_CONSISTENT_IDS_PREFIX].
+ * @hide
+ */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+const val DEFAULT_INSTANCE_ID = "defaultInstance"
+
+/**
+ * This is needed to make the instance id consistent between Interactive, Headless and
+ * EditorSession for old versions of the system.
+ *
+ * @hide
+ */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+fun sanitizeWatchFaceId(instanceId: String?) =
+    if (instanceId == null || !instanceId.startsWith(SYSTEM_SUPPORTS_CONSISTENT_IDS_PREFIX)
+    ) {
+        DEFAULT_INSTANCE_ID
+    } else {
+        instanceId
+    }

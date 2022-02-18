@@ -16,12 +16,11 @@
 
 package androidx.compose.foundation.lazy.list
 
+import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.lazy.LazyListItemInfo
 import androidx.compose.foundation.lazy.LazyListLayoutInfo
-import androidx.compose.foundation.lazy.layout.LazyLayoutItemInfo
-import androidx.compose.foundation.lazy.layout.LazyLayoutMeasureResult
 import androidx.compose.ui.layout.MeasureResult
-import androidx.compose.ui.util.fastMap
+import androidx.compose.ui.unit.IntSize
 
 /**
  * The result of the measure pass for lazy list layout.
@@ -37,7 +36,7 @@ internal class LazyListMeasureResult(
     /** The amount of scroll consumed during the measure pass.*/
     val consumedScroll: Float,
     /** MeasureResult defining the layout.*/
-    val measureResult: MeasureResult,
+    measureResult: MeasureResult,
     // properties representing the info needed for LazyListLayoutInfo:
     /** see [LazyListLayoutInfo.visibleItemsInfo] */
     override val visibleItemsInfo: List<LazyListItemInfo>,
@@ -47,15 +46,11 @@ internal class LazyListMeasureResult(
     override val viewportEndOffset: Int,
     /** see [LazyListLayoutInfo.totalItemsCount] */
     override val totalItemsCount: Int,
+    /** see [LazyListLayoutInfo.reverseLayout] */
+    override val reverseLayout: Boolean,
+    /** see [LazyListLayoutInfo.orientation] */
+    override val orientation: Orientation
 ) : LazyListLayoutInfo, MeasureResult by measureResult {
-    val lazyLayoutMeasureResult: LazyLayoutMeasureResult get() =
-        object : LazyLayoutMeasureResult, MeasureResult by measureResult {
-            override val visibleItemsInfo: List<LazyLayoutItemInfo>
-                get() = this@LazyListMeasureResult.visibleItemsInfo.fastMap {
-                    object : LazyLayoutItemInfo {
-                        override val index: Int get() = it.index
-                        override val key: Any get() = it.key
-                    }
-                }
-        }
+    override val viewportSize: IntSize
+        get() = IntSize(width, height)
 }

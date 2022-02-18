@@ -16,15 +16,11 @@
 
 package androidx.build.dependencyTracker
 
-import androidx.build.gitclient.Commit
 import androidx.build.gitclient.ChangeInfoGitClient
-import androidx.build.gitclient.GitClient
 import androidx.build.gitclient.GitCommitRange
 import junit.framework.TestCase.assertEquals
-import junit.framework.TestCase.assertNull
 import org.gradle.api.GradleException
 import org.json.simple.parser.ParseException
-import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
@@ -239,7 +235,6 @@ class ChangeInfoGitClientTest {
         return ChangeInfoGitClient(config, "").findChangedFilesSince("", "", false)
     }
 
-
     @Test
     fun getGitLog_hasVersion() {
         checkVersion("""
@@ -271,6 +266,6 @@ class ChangeInfoGitClientTest {
     fun getVersion(config: String): String? {
         return ChangeInfoGitClient("{}", config)
             .getGitLog(GitCommitRange(n = 1), keepMerges = true, fullProjectDir = File("."))
-            .getOrNull(0)?.gitCommit
+            .getOrNull(0)?.sha
     }
 }

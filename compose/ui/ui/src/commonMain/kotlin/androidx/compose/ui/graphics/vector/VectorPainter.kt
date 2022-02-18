@@ -17,15 +17,16 @@
 package androidx.compose.ui.graphics.vector
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ComposableOpenTarget
 import androidx.compose.runtime.Composition
 import androidx.compose.runtime.CompositionContext
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCompositionContext
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.UiComposable
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
@@ -59,6 +60,7 @@ const val RootGroupName = "VectorRootGroup"
  * @param [content] Composable used to define the structure and contents of the vector graphic
  */
 @Composable
+@ComposableOpenTarget(-1)
 fun rememberVectorPainter(
     defaultWidth: Dp,
     defaultHeight: Dp,
@@ -67,7 +69,7 @@ fun rememberVectorPainter(
     name: String = RootGroupName,
     tintColor: Color = Color.Unspecified,
     tintBlendMode: BlendMode = BlendMode.SrcIn,
-    content: @Composable (viewportWidth: Float, viewportHeight: Float) -> Unit
+    content: @Composable @UiComposable (viewportWidth: Float, viewportHeight: Float) -> Unit
 ): VectorPainter {
     val density = LocalDensity.current
     val widthPx = with(density) { defaultWidth.toPx() }
@@ -76,23 +78,20 @@ fun rememberVectorPainter(
     val vpWidth = if (viewportWidth.isNaN()) widthPx else viewportWidth
     val vpHeight = if (viewportHeight.isNaN()) heightPx else viewportHeight
 
-    val painter = remember { VectorPainter() }.apply {
-        // This assignment is thread safe as the internal Size parameter is
-        // backed by a mutableState object
-        size = Size(widthPx, heightPx)
-        RenderVector(name, vpWidth, vpHeight, content)
-    }
-    SideEffect {
-        // Initialize the intrinsic color filter if a tint color is provided on the
-        // vector itself. Note this tint can be overridden by an explicit ColorFilter
-        // provided on the Modifier.paint call
-        painter.intrinsicColorFilter = if (tintColor != Color.Unspecified) {
+    val intrinsicColorFilter = remember(tintColor, tintBlendMode) {
+        if (tintColor != Color.Unspecified) {
             ColorFilter.tint(tintColor, tintBlendMode)
         } else {
             null
         }
     }
-    return painter
+
+    return remember { VectorPainter() }.apply {
+        // These assignments are thread safe as parameters are backed by a mutableState object
+        size = Size(widthPx, heightPx)
+        this.intrinsicColorFilter = intrinsicColorFilter
+        RenderVector(name, vpWidth, vpHeight, content)
+    }
 }
 
 /**

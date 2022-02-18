@@ -144,8 +144,10 @@ package androidx.wear.watchface {
     method public androidx.wear.watchface.RenderParameters.HighlightLayer? getHighlightLayer();
     method public java.util.Map<java.lang.Integer,androidx.wear.watchface.TapEvent> getLastComplicationTapDownEvents();
     method public java.util.Set<androidx.wear.watchface.style.WatchFaceLayer> getWatchFaceLayers();
+    method public boolean isForScreenshot();
     property public final androidx.wear.watchface.DrawMode drawMode;
     property public final androidx.wear.watchface.RenderParameters.HighlightLayer? highlightLayer;
+    property public final boolean isForScreenshot;
     property public final java.util.Map<java.lang.Integer,androidx.wear.watchface.TapEvent> lastComplicationTapDownEvents;
     property public final java.util.Set<androidx.wear.watchface.style.WatchFaceLayer> watchFaceLayers;
     field public static final androidx.wear.watchface.RenderParameters.Companion Companion;
@@ -290,7 +292,6 @@ package androidx.wear.watchface {
     method public androidx.wear.watchface.WatchFace setLegacyWatchFaceStyle(androidx.wear.watchface.WatchFace.LegacyWatchFaceOverlayStyle legacyWatchFaceStyle);
     method public androidx.wear.watchface.WatchFace setOverlayStyle(androidx.wear.watchface.WatchFace.OverlayStyle watchFaceOverlayStyle);
     method public androidx.wear.watchface.WatchFace setOverridePreviewReferenceInstant(java.time.Instant previewReferenceTimeMillis);
-    method public androidx.wear.watchface.WatchFace setPendingIntentTapListener(androidx.wear.watchface.WatchFace.PendingIntentTapListener? pendingIntentTapListener);
     method public androidx.wear.watchface.WatchFace setTapListener(androidx.wear.watchface.WatchFace.TapListener? tapListener);
     method public void setWatchFaceType(int watchFaceType);
     property public final androidx.wear.watchface.WatchFace.LegacyWatchFaceOverlayStyle legacyWatchFaceStyle;
@@ -325,10 +326,6 @@ package androidx.wear.watchface {
     method public android.graphics.Color? getForegroundColor();
     property public final android.graphics.Color? backgroundColor;
     property public final android.graphics.Color? foregroundColor;
-  }
-
-  public static interface WatchFace.PendingIntentTapListener {
-    method @UiThread public android.app.PendingIntent? onTapEvent(int tapType, androidx.wear.watchface.TapEvent tapEvent, androidx.wear.watchface.ComplicationSlot? complicationSlot);
   }
 
   public static interface WatchFace.TapListener {

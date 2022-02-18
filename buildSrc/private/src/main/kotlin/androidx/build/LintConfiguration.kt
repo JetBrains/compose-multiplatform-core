@@ -21,6 +21,8 @@ import com.android.build.api.dsl.Lint
 import com.android.build.gradle.internal.lint.AndroidLintAnalysisTask
 import com.android.build.gradle.internal.lint.AndroidLintTextOutputTask
 import com.google.common.io.Files
+import java.io.File
+import java.util.Locale
 import org.gradle.api.DefaultTask
 import org.gradle.api.Project
 import org.gradle.api.file.RegularFileProperty
@@ -30,8 +32,6 @@ import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
 import org.gradle.kotlin.dsl.getByType
-import java.io.File
-import java.util.Locale
 
 /**
  * Setting this property means that lint will update lint-baseline.xml if it exists.
@@ -72,7 +72,6 @@ fun Project.configureNonAndroidProjectForLint(extension: AndroidXExtension) {
     // Create fake variant tasks since that is what is invoked by developers.
     val lintTask = tasks.named("lint")
     lintTask.configure { task ->
-        task.dependsOn(tasks.named("exportAtomicLibraryGroupsToText"))
         AffectedModuleDetector.configureTaskGuard(task)
     }
     afterEvaluate {
@@ -123,7 +122,6 @@ fun Project.configureAndroidProjectForLint(lint: Lint, extension: AndroidXExtens
                 }}"
             ).configure { task ->
                 AffectedModuleDetector.configureTaskGuard(task)
-                task.dependsOn(tasks.named("exportAtomicLibraryGroupsToText"))
             }
             tasks.named(
                 "lintAnalyze${variant.name.replaceFirstChar {
@@ -131,7 +129,6 @@ fun Project.configureAndroidProjectForLint(lint: Lint, extension: AndroidXExtens
                 }}"
             ).configure { task ->
                 AffectedModuleDetector.configureTaskGuard(task)
-                task.dependsOn(tasks.named("exportAtomicLibraryGroupsToText"))
             }
             /* TODO: uncomment when we upgrade to AGP 7.1.0-alpha04
             tasks.named("lintReport${variant.name.capitalize(Locale.US)}").configure { task ->
@@ -172,10 +169,8 @@ fun Project.configureLint(lint: Lint, extension: AndroidXExtension) {
     val isTestingLintItself = (project.path == ":lint-checks:integration-tests")
 
     // If -PupdateLintBaseline was set we should update the baseline if it exists
-    // forUseAtConfigurationTime() is deprecated in Gradle 7.4, but we still use 7.3
-    @Suppress("DEPRECATION")
-    val updateLintBaseline = project.providers.gradleProperty(UPDATE_LINT_BASELINE)
-        .forUseAtConfigurationTime().isPresent && !isTestingLintItself
+    val updateLintBaseline = project.providers.gradleProperty(UPDATE_LINT_BASELINE).isPresent &&
+        !isTestingLintItself
 
     lint.apply {
         // Skip lintVital tasks on assemble. We explicitly run lintRelease for libraries.
@@ -342,6 +337,7 @@ fun Project.configureLint(lint: Lint, extension: AndroidXExtension) {
             textReport = false
         }
 
+        val lintBaselineFile = lintBaseline.get().asFile
         // If we give lint the filepath of a baseline file, then:
         //   If the file does not exist, lint will write new violations to it
         //   If the file does exist, lint will read extemptions from it
@@ -353,13 +349,14 @@ fun Project.configureLint(lint: Lint, extension: AndroidXExtension) {
         // This requires us only pass a baseline to lint if one already exists.
         if (updateLintBaseline) {
             baseline = generatedLintBaseline
-        } else if (lintBaseline.exists()) {
-            baseline = lintBaseline
+        } else if (lintBaselineFile.exists()) {
+            baseline = lintBaselineFile
         }
     }
 }
 
-val Project.lintBaseline get() = File(projectDir, "/lint-baseline.xml")
+val Project.lintBaseline get() =
+    project.objects.fileProperty().fileValue(File(projectDir, "/lint-baseline.xml"))
 val Project.generatedLintBaseline get() = File(project.buildDir, "/generated-lint-baseline.xml")
 
 /**

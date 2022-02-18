@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.platform
 
+import android.view.KeyEvent as AndroidKeyEvent
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.res.Configuration
@@ -32,10 +33,10 @@ import android.view.MotionEvent.ACTION_DOWN
 import android.view.MotionEvent.ACTION_HOVER_ENTER
 import android.view.MotionEvent.ACTION_HOVER_EXIT
 import android.view.MotionEvent.ACTION_HOVER_MOVE
-import android.view.MotionEvent.ACTION_SCROLL
 import android.view.MotionEvent.ACTION_MOVE
 import android.view.MotionEvent.ACTION_POINTER_DOWN
 import android.view.MotionEvent.ACTION_POINTER_UP
+import android.view.MotionEvent.ACTION_SCROLL
 import android.view.MotionEvent.ACTION_UP
 import android.view.MotionEvent.TOOL_TYPE_MOUSE
 import android.view.View
@@ -113,6 +114,7 @@ import androidx.compose.ui.input.pointer.ProcessResult
 import androidx.compose.ui.input.rotary.RotaryScrollEvent
 import androidx.compose.ui.input.rotary.onRotaryScrollEvent
 import androidx.compose.ui.layout.RootMeasurePolicy
+import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.node.InternalCoreApi
 import androidx.compose.ui.node.LayoutNode
 import androidx.compose.ui.node.LayoutNode.UsageByParent
@@ -127,6 +129,8 @@ import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.semantics.SemanticsOwner
 import androidx.compose.ui.semantics.outerSemantics
 import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.createFontFamilyResolver
 import androidx.compose.ui.text.input.PlatformTextInputService
 import androidx.compose.ui.text.input.TextInputService
 import androidx.compose.ui.text.input.TextInputServiceAndroid
@@ -151,11 +155,10 @@ import androidx.lifecycle.ViewTreeLifecycleOwner
 import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.ViewTreeSavedStateRegistryOwner
 import java.lang.reflect.Method
-import android.view.KeyEvent as AndroidKeyEvent
+import kotlin.math.roundToInt
 
 @SuppressLint("ViewConstructor", "VisibleForTests")
 @OptIn(ExperimentalComposeUiApi::class)
-@RequiresApi(Build.VERSION_CODES.LOLLIPOP)
 internal class AndroidComposeView(context: Context) :
     ViewGroup(context), Owner, ViewRootForTest, PositionCalculator, DefaultLifecycleObserver {
 
@@ -372,7 +375,10 @@ internal class AndroidComposeView(context: Context) :
     @OptIn(InternalComposeUiApi::class)
     override val textInputService = textInputServiceFactory(textInputServiceAndroid)
 
+    @Suppress("DEPRECATION", "OverridingDeprecatedMember")
     override val fontLoader: Font.ResourceLoader = AndroidFontResourceLoader(context)
+
+    override val fontFamilyResolver: FontFamily.Resolver = createFontFamilyResolver(context)
 
     // Backed by mutableStateOf so that the ambient provider recomposes when it changes
     override var layoutDirection by mutableStateOf(
@@ -518,6 +524,19 @@ internal class AndroidComposeView(context: Context) :
             // Support for this feature in Compose is tracked here: b/207654434
             AndroidComposeViewForceDarkModeQ.disallowForceDark(this)
         }
+    }
+
+    /**
+     * Since this view has its own concept of internal focus, it needs to report that to the view
+     * system for accurate focus searching and so ViewRootImpl will scroll correctly.
+     */
+    override fun getFocusedRect(rect: Rect) {
+        _focusManager.getActiveFocusModifier()?.focusNode?.boundsInRoot()?.let {
+            rect.left = it.left.roundToInt()
+            rect.top = it.top.roundToInt()
+            rect.right = it.right.roundToInt()
+            rect.bottom = it.bottom.roundToInt()
+        } ?: super.getFocusedRect(rect)
     }
 
     override fun onResume(owner: LifecycleOwner) {
@@ -675,6 +694,11 @@ internal class AndroidComposeView(context: Context) :
         if (rootNodeResized) {
             requestLayout()
         }
+        measureAndLayoutDelegate.dispatchOnPositionedCallbacks()
+    }
+
+    override fun measureAndLayout(layoutNode: LayoutNode, constraints: Constraints) {
+        measureAndLayoutDelegate.measureAndLayout(layoutNode, constraints)
         measureAndLayoutDelegate.dispatchOnPositionedCallbacks()
     }
 
@@ -936,7 +960,7 @@ internal class AndroidComposeView(context: Context) :
      * runs the latest command.
      */
     suspend fun keyboardVisibilityEventLoop() {
-        textInputServiceAndroid.keyboardVisibilityEventLoop()
+        textInputServiceAndroid.textInputCommandEventLoop()
     }
 
     /**

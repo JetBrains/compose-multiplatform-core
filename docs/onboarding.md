@@ -27,15 +27,16 @@ curl https://storage.googleapis.com/git-repo-downloads/repo \
     > ~/bin/repo && chmod 700 ~/bin/repo
 ```
 
-Then, modify `~/.bash_profile` (if using `bash`) to ensure you can find local
-binaries from the command line.
+Then, modify `~/.zshrc` (or `~/.bash_profile` if using `bash`) to ensure you can
+find local binaries from the command line. We assume you're using zsh, but the
+following should work with `bash` as well.
 
 ```shell
 export PATH=~/bin:$PATH
 ```
 
-You will need to either start a new terminal session or run `source
-~/.bash_profile` to pick up the new path.
+You will need to either start a new terminal session or run `source ~/.zshrc`
+(or `source ~/.bash_profile` if using bash) to pick up the new path.
 
 If you encounter an SSL `CERTIFICATE_VERIFY_FAILED` error or warning about
 Python 2 being no longer supported, you will need to install Python 3 and alias
@@ -56,8 +57,8 @@ Please read the "Important Information" displayed during installation for
 information about SSL/TLS certificate validation and the running the "Install
 Certificates.command".
 
-Next, open your `~/.bash_profile` and add the following lines to wrap the `repo`
-command:
+Next, open your `~/.zshrc` (or `~/.bash_profile` if using bash) and add the
+following lines to wrap the `repo` command:
 
 ```shell
 # Force repo to run with Python3
@@ -137,6 +138,28 @@ The
 contains a history of the matching exact commits of each git repository over
 time, and it can be
 [checked out directly via git](https://stackoverflow.com/questions/3796927/how-to-git-clone-including-submodules)
+
+### Troubleshooting
+
+> NOTE: If the repo manifest changes -- for example when we update the version
+> of `platform-tools` by pointing it to a different git project -- you may see
+> the following error during`repo sync`:
+>
+> ```shell
+> error.GitError: Cannot fetch --force-sync not enabled; cannot overwrite a local work tree.
+> ...
+> error: Unable to fully sync the tree.
+> error: Downloading network changes failed.
+> ```
+>
+> This indicates that Studio or some other process has made changes in the git
+> project that has been replaced or removed. You can force `repo sync` to
+> discard these changes and check out the correct git project by adding the
+> `--force-sync` argument:
+>
+> ```shell
+> repo sync -j32 --force-sync
+> ```
 
 ## Explore source code from a browser {#code-search}
 
@@ -618,7 +641,7 @@ Make sure to upload this change before or concurrently (ex. in the same Gerrit
 topic) with the dependent library code.
 
 Libraries typically reference dependencies using constants defined in
-[`Dependencies.kt`](https://cs.android.com/androidx/platform/frameworks/support/+/androidx-main:buildSrc/public/src/main/kotlin/androidx/build/dependencies/Dependencies.kt),
+[`libs.versions.toml`](https://cs.android.com/androidx/platform/frameworks/support/+/androidx-main:gradle/libs.versions.toml),
 so please update this file to include a constant for the version of the library
 that you have checked in. You will reference this constant in your library's
 `build.gradle` dependencies.
@@ -686,7 +709,10 @@ ln -s /Users/$(whoami)/Library/Android/sdk/system-images \
 ### Benchmarking {#testing-benchmarking}
 
 Libraries are encouraged to write and monitor performance benchmarks. See the
-[Benchmarking](benchmarking.md) page for more details.
+[Benchmarking](benchmarking.md) and [Macrobenchmarking](macrobenchmarking.md)
+pages for more details, and the
+[Benchmarking section of d.android.com](http://d.android.com/benchmark) for more
+info on these tools.
 
 ## Library snapshots {#snapshots}
 

@@ -27,13 +27,20 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.tokens.BottomAppBarTokens
 import androidx.compose.material3.tokens.TopAppBarLargeTokens
 import androidx.compose.material3.tokens.TopAppBarMediumTokens
-import androidx.compose.material3.tokens.TopAppBarSmallTokens
 import androidx.compose.material3.tokens.TopAppBarSmallCenteredTokens
+import androidx.compose.material3.tokens.TopAppBarSmallTokens
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.SideEffect
@@ -46,9 +53,9 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
@@ -57,6 +64,7 @@ import androidx.compose.ui.layout.LastBaseline
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.layoutId
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.Velocity
@@ -271,6 +279,118 @@ fun LargeTopAppBar(
     )
 }
 
+// TODO(b/209583788): Add link to Material 3 bottom app bar spec article.
+/**
+ * A bottom app bar displays navigation and key actions at the bottom of screens.
+ *
+ * @sample androidx.compose.material3.samples.SimpleBottomAppBar
+ *
+ * It can optionally display a [FloatingActionButton] embedded at the end of the BottomAppBar.
+ *
+ * @sample androidx.compose.material3.samples.BottomAppBarWithFAB
+ *
+ * Also see [NavigationBar].
+ *
+ * @param icons the icon content of this BottomAppBar. The default layout here is a [Row],
+ * so content inside will be placed horizontally.
+ * @param modifier The [Modifier] to be applied to this BottomAppBar
+ * @param containerColor The container color for the BottomAppBar. Use [Color.Transparent] to
+ * have no color.
+ * @param contentColor The preferred content color provided by this BottomAppBar to its children.
+ * Defaults to either the matching content color for [containerColor], or if [containerColor] is
+ * not a color from the theme, this will keep the same value set above this BottomAppBar.
+ * @param tonalElevation When [containerColor] is [ColorScheme.surface], a higher tonal elevation
+ * value will result in a darker color in light theme and lighter color in dark theme. See also:
+ * [Surface].
+ * @param contentPadding the padding applied to the content of this BottomAppBar
+ * @param floatingActionButton optional floating action button at the end of this BottomAppBar
+ */
+@Composable
+fun BottomAppBar(
+    icons: @Composable RowScope.() -> Unit,
+    modifier: Modifier = Modifier,
+    containerColor: Color = BottomAppBarTokens.ContainerColor.toColor(),
+    contentColor: Color = contentColorFor(containerColor),
+    tonalElevation: Dp = BottomAppBarTokens.ContainerElevation,
+    contentPadding: PaddingValues = BottomAppBarDefaults.ContentPadding,
+    floatingActionButton: @Composable (() -> Unit)? = null,
+) {
+    Surface(
+        color = containerColor,
+        contentColor = contentColor,
+        tonalElevation = tonalElevation,
+        // TODO(b/209583788): Consider adding a shape parameter if updated design guidance allows
+        shape = BottomAppBarTokens.ContainerShape,
+        modifier = modifier
+    ) {
+        Row(
+            Modifier.fillMaxWidth()
+                .heightIn(BottomAppBarTokens.ContainerHeight, BottomAppBarTokens.FabContainerHeight)
+                .padding(contentPadding),
+            horizontalArrangement = Arrangement.Start,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            icons()
+            if (floatingActionButton != null) {
+                Spacer(Modifier.weight(1f, true))
+                Box(
+                    Modifier.fillMaxHeight().padding(top = FABPadding, end = FABPadding),
+                    contentAlignment = Alignment.BottomCenter
+                ) {
+                    floatingActionButton()
+                }
+            }
+        }
+    }
+}
+
+// TODO(b/209583788): Add link to Material 3 bottom app bar spec article.
+/**
+ * A bottom app bar displays navigation and key actions at the bottom of screens.
+ *
+ * If you are interested in displaying a [FloatingActionButton], consider using another overload.
+ *
+ * Also see [NavigationBar].
+ *
+ * @param modifier The [Modifier] to be applied to this BottomAppBar
+ * @param containerColor The background color for the BottomAppBar. Use [Color.Transparent] to
+ * have no color.
+ * @param contentColor The preferred content color provided by this BottomAppBar to its children.
+ * Defaults to either the matching content color for [containerColor], or if [containerColor] is
+ * not a color from the theme, this will keep the same value set above this BottomAppBar.
+ * @param tonalElevation the elevation of this BottomAppBar.
+ * @param contentPadding the padding applied to the content of this BottomAppBar
+ * @param content the content of this BottomAppBar. The default layout here is a [Row],
+ * so content inside will be placed horizontally.
+ */
+@Composable
+fun BottomAppBar(
+    modifier: Modifier = Modifier,
+    containerColor: Color = BottomAppBarTokens.ContainerColor.toColor(),
+    contentColor: Color = contentColorFor(containerColor),
+    tonalElevation: Dp = BottomAppBarTokens.ContainerElevation,
+    contentPadding: PaddingValues = BottomAppBarDefaults.ContentPadding,
+    content: @Composable RowScope.() -> Unit
+) {
+    Surface(
+        color = containerColor,
+        contentColor = contentColor,
+        tonalElevation = tonalElevation,
+        // TODO(b/209583788): Consider adding a shape parameter if updated design guidance allows
+        shape = BottomAppBarTokens.ContainerShape,
+        modifier = modifier
+    ) {
+        Row(
+            Modifier.fillMaxWidth()
+                .height(BottomAppBarTokens.ContainerHeight)
+                .padding(contentPadding),
+            horizontalArrangement = Arrangement.Start,
+            verticalAlignment = Alignment.CenterVertically,
+            content = content
+        )
+    }
+}
+
 /**
  * A TopAppBarScrollBehavior defines how an app bar should behave when the content under it is
  * scrolled.
@@ -393,18 +513,14 @@ object TopAppBarDefaults {
      */
     @Composable
     fun smallTopAppBarColors(
-        containerColor: Color =
-            MaterialTheme.colorScheme.fromToken(TopAppBarSmallTokens.ContainerColor),
+        containerColor: Color = TopAppBarSmallTokens.ContainerColor.toColor(),
         scrolledContainerColor: Color = MaterialTheme.colorScheme.applyTonalElevation(
             backgroundColor = containerColor,
             elevation = TopAppBarSmallTokens.OnScrollContainerElevation
         ),
-        navigationIconContentColor: Color =
-            MaterialTheme.colorScheme.fromToken(TopAppBarSmallTokens.LeadingIconColor),
-        titleContentColor: Color =
-            MaterialTheme.colorScheme.fromToken(TopAppBarSmallTokens.HeadlineColor),
-        actionIconContentColor: Color =
-            MaterialTheme.colorScheme.fromToken(TopAppBarSmallTokens.TrailingIconColor)
+        navigationIconContentColor: Color = TopAppBarSmallTokens.LeadingIconColor.toColor(),
+        titleContentColor: Color = TopAppBarSmallTokens.HeadlineColor.toColor(),
+        actionIconContentColor: Color = TopAppBarSmallTokens.TrailingIconColor.toColor(),
     ): TopAppBarColors {
         return remember(
             containerColor,
@@ -436,18 +552,14 @@ object TopAppBarDefaults {
      */
     @Composable
     fun centerAlignedTopAppBarColors(
-        containerColor: Color =
-            MaterialTheme.colorScheme.fromToken(TopAppBarSmallCenteredTokens.ContainerColor),
+        containerColor: Color = TopAppBarSmallCenteredTokens.ContainerColor.toColor(),
         scrolledContainerColor: Color = MaterialTheme.colorScheme.applyTonalElevation(
             backgroundColor = containerColor,
             elevation = TopAppBarSmallTokens.OnScrollContainerElevation
         ),
-        navigationIconContentColor: Color =
-            MaterialTheme.colorScheme.fromToken(TopAppBarSmallCenteredTokens.LeadingIconColor),
-        titleContentColor: Color =
-            MaterialTheme.colorScheme.fromToken(TopAppBarSmallCenteredTokens.HeadlineColor),
-        actionIconContentColor: Color =
-            MaterialTheme.colorScheme.fromToken(TopAppBarSmallCenteredTokens.TrailingIconColor)
+        navigationIconContentColor: Color = TopAppBarSmallCenteredTokens.LeadingIconColor.toColor(),
+        titleContentColor: Color = TopAppBarSmallCenteredTokens.HeadlineColor.toColor(),
+        actionIconContentColor: Color = TopAppBarSmallCenteredTokens.TrailingIconColor.toColor(),
     ): TopAppBarColors {
         return remember(
             containerColor,
@@ -480,18 +592,14 @@ object TopAppBarDefaults {
      */
     @Composable
     fun mediumTopAppBarColors(
-        containerColor: Color =
-            MaterialTheme.colorScheme.fromToken(TopAppBarMediumTokens.ContainerColor),
+        containerColor: Color = TopAppBarMediumTokens.ContainerColor.toColor(),
         scrolledContainerColor: Color = MaterialTheme.colorScheme.applyTonalElevation(
             backgroundColor = containerColor,
             elevation = TopAppBarSmallTokens.OnScrollContainerElevation
         ),
-        navigationIconContentColor: Color =
-            MaterialTheme.colorScheme.fromToken(TopAppBarMediumTokens.LeadingIconColor),
-        titleContentColor: Color =
-            MaterialTheme.colorScheme.fromToken(TopAppBarMediumTokens.HeadlineColor),
-        actionIconContentColor: Color =
-            MaterialTheme.colorScheme.fromToken(TopAppBarMediumTokens.TrailingIconColor)
+        navigationIconContentColor: Color = TopAppBarMediumTokens.LeadingIconColor.toColor(),
+        titleContentColor: Color = TopAppBarMediumTokens.HeadlineColor.toColor(),
+        actionIconContentColor: Color = TopAppBarMediumTokens.TrailingIconColor.toColor(),
     ): TopAppBarColors {
         return remember(
             containerColor,
@@ -524,18 +632,14 @@ object TopAppBarDefaults {
      */
     @Composable
     fun largeTopAppBarColors(
-        containerColor: Color =
-            MaterialTheme.colorScheme.fromToken(TopAppBarLargeTokens.ContainerColor),
+        containerColor: Color = TopAppBarLargeTokens.ContainerColor.toColor(),
         scrolledContainerColor: Color = MaterialTheme.colorScheme.applyTonalElevation(
             backgroundColor = containerColor,
             elevation = TopAppBarSmallTokens.OnScrollContainerElevation
         ),
-        navigationIconContentColor: Color =
-            MaterialTheme.colorScheme.fromToken(TopAppBarLargeTokens.LeadingIconColor),
-        titleContentColor: Color =
-            MaterialTheme.colorScheme.fromToken(TopAppBarLargeTokens.HeadlineColor),
-        actionIconContentColor: Color =
-            MaterialTheme.colorScheme.fromToken(TopAppBarLargeTokens.TrailingIconColor)
+        navigationIconContentColor: Color = TopAppBarLargeTokens.LeadingIconColor.toColor(),
+        titleContentColor: Color = TopAppBarLargeTokens.HeadlineColor.toColor(),
+        actionIconContentColor: Color = TopAppBarLargeTokens.TrailingIconColor.toColor(),
     ): TopAppBarColors {
         return remember(
             containerColor,
@@ -600,6 +704,27 @@ object TopAppBarDefaults {
         ExitUntilCollapsedScrollBehavior(decayAnimationSpec, canScroll)
 }
 
+/** Contains default values used for the bottom app bar implementations. */
+object BottomAppBarDefaults {
+    /**
+     * Default padding used for [BottomAppBar] when content are default size (24dp) icons in
+     * [IconButton] that meet the minimum touch target (48.dp).
+     */
+    val ContentPadding = PaddingValues(
+        start = BottomAppBarHorizontalPadding,
+        top = BottomAppBarVerticalPadding,
+        end = BottomAppBarHorizontalPadding
+    )
+}
+
+// Padding minus IconButton's min touch target expansion
+private val BottomAppBarHorizontalPadding = 16.dp - 12.dp
+// Padding minus IconButton's min touch target expansion
+private val BottomAppBarVerticalPadding = 16.dp - 12.dp
+
+// Padding minus content padding
+private val FABPadding = 16.dp - BottomAppBarHorizontalPadding
+
 /**
  * A single-row top app bar that is designed to be called by the small and center aligned top app
  * bar composables.
@@ -650,14 +775,19 @@ private fun SingleRowTopAppBar(
             TopAppBarSmallTokens.ContainerHeight.toPx() + (scrollBehavior?.offset ?: 0f)
         }
         TopAppBarLayout(
+            modifier = Modifier,
             heightPx = height,
             navigationIconContentColor = colors.navigationIconContentColor(scrollFraction).value,
             titleContentColor = colors.titleContentColor(scrollFraction).value,
             actionIconContentColor = colors.actionIconContentColor(scrollFraction).value,
             title = title,
             titleTextStyle = titleTextStyle,
+            titleAlpha = 1f,
+            titleVerticalArrangement = Arrangement.Center,
             titleHorizontalArrangement =
-            if (centeredTitle) Arrangement.Center else Arrangement.Start,
+                if (centeredTitle) Arrangement.Center else Arrangement.Start,
+            titleBottomPadding = 0,
+            hideTitleSemantics = false,
             navigationIcon = navigationIcon,
             actions = actionsRow,
         )
@@ -708,12 +838,13 @@ private fun TwoRowsTopAppBar(
         }
     }
 
-    val titleAlpha =
+    val scrollPercentage =
         if (scrollBehavior == null || scrollBehavior.offsetLimit == 0f) {
-            1f
+            0f
         } else {
-            1f - (scrollBehavior.offset / scrollBehavior.offsetLimit)
+            scrollBehavior.offset / scrollBehavior.offsetLimit
         }
+
     // Obtain the container Color from the TopAppBarColors.
     // This will potentially animate or interpolate a transition between the container color and the
     // container's scrolled color according to the app bar's scroll state.
@@ -728,9 +859,15 @@ private fun TwoRowsTopAppBar(
             content = actions
         )
     }
+    val titleAlpha = 1f - scrollPercentage
+    // Hide the top row title semantics when its alpha value goes below 0.5 threshold.
+    // Hide the bottom row title semantics when the top title semantics are active.
+    val hideTopRowSemantics = scrollPercentage < 0.5f
+    val hideBottomRowSemantics = !hideTopRowSemantics
     Surface(modifier = modifier, color = appBarContainerColor) {
         Column {
             TopAppBarLayout(
+                modifier = Modifier,
                 heightPx = pinnedHeightPx,
                 navigationIconContentColor =
                     colors.navigationIconContentColor(scrollFraction).value,
@@ -739,10 +876,15 @@ private fun TwoRowsTopAppBar(
                 title = smallTitle,
                 titleTextStyle = smallTitleTextStyle,
                 titleAlpha = 1f - titleAlpha,
+                titleVerticalArrangement = Arrangement.Center,
+                titleHorizontalArrangement = Arrangement.Start,
+                titleBottomPadding = 0,
+                hideTitleSemantics = hideTopRowSemantics,
                 navigationIcon = navigationIcon,
                 actions = actionsRow,
             )
             TopAppBarLayout(
+                modifier = Modifier.clipToBounds(),
                 heightPx = maxHeightPx - pinnedHeightPx + (scrollBehavior?.offset ?: 0f),
                 navigationIconContentColor =
                     colors.navigationIconContentColor(scrollFraction).value,
@@ -752,8 +894,11 @@ private fun TwoRowsTopAppBar(
                 titleTextStyle = titleTextStyle,
                 titleAlpha = titleAlpha,
                 titleVerticalArrangement = Arrangement.Bottom,
+                titleHorizontalArrangement = Arrangement.Start,
                 titleBottomPadding = titleBottomPaddingPx,
-                modifier = Modifier.graphicsLayer { clip = true }
+                hideTitleSemantics = hideBottomRowSemantics,
+                navigationIcon = {},
+                actions = {}
             )
         }
     }
@@ -778,24 +923,29 @@ private fun TwoRowsTopAppBar(
  * @param titleVerticalArrangement the title's vertical arrangement
  * @param titleHorizontalArrangement the title's horizontal arrangement
  * @param titleBottomPadding the title's bottom padding
+ * @param hideTitleSemantics hides the title node from the semantic tree. Apply this
+ * boolean when this layout is part of a [TwoRowsTopAppBar] to hide the title's semantics
+ * from accessibility services. This is needed to avoid having multiple titles visible to
+ * accessibility services at the same time, when animating between collapsed / expanded states.
  * @param navigationIcon a navigation icon [Composable]
  * @param actions actions [Composable]
  */
 @Composable
 private fun TopAppBarLayout(
+    modifier: Modifier,
     heightPx: Float,
     navigationIconContentColor: Color,
     titleContentColor: Color,
     actionIconContentColor: Color,
     title: @Composable () -> Unit,
     titleTextStyle: TextStyle,
-    modifier: Modifier = Modifier,
-    titleAlpha: Float = 1f,
-    titleVerticalArrangement: Arrangement.Vertical = Arrangement.Center,
-    titleHorizontalArrangement: Arrangement.Horizontal = Arrangement.Start,
-    titleBottomPadding: Int = 0,
-    navigationIcon: @Composable () -> Unit = {},
-    actions: @Composable () -> Unit = {},
+    titleAlpha: Float,
+    titleVerticalArrangement: Arrangement.Vertical,
+    titleHorizontalArrangement: Arrangement.Horizontal,
+    titleBottomPadding: Int,
+    hideTitleSemantics: Boolean,
+    navigationIcon: @Composable () -> Unit,
+    actions: @Composable () -> Unit,
 ) {
     Layout(
         {
@@ -805,7 +955,10 @@ private fun TopAppBarLayout(
                     content = navigationIcon
                 )
             }
-            Box(Modifier.layoutId("title").padding(horizontal = TopAppBarHorizontalPadding)) {
+            Box(
+                Modifier.layoutId("title").padding(horizontal = TopAppBarHorizontalPadding)
+                    .then(if (hideTitleSemantics) Modifier.clearAndSetSemantics { } else Modifier)
+            ) {
                 ProvideTextStyle(value = titleTextStyle) {
                     CompositionLocalProvider(
                         LocalContentColor provides titleContentColor.copy(alpha = titleAlpha),
@@ -1231,6 +1384,9 @@ private suspend fun onTopBarFling(
 private val MediumTitleBottomPadding = 24.dp
 private val LargeTitleBottomPadding = 28.dp
 private val TopAppBarHorizontalPadding = 4.dp
+
+// TODO: this should probably be part of the touch target of the start and end icons, clarify this
+private val AppBarHorizontalPadding = 4.dp
 
 // A title inset when the App-Bar is a Medium or Large one. Also used to size a spacer when the
 // navigation icon is missing.

@@ -59,7 +59,8 @@ abstract class LifecycleCoroutineScopeTestBase {
 
     @Test
     fun launchAfterDestroy() {
-        val owner = TestLifecycleOwner(Lifecycle.State.DESTROYED, TestCoroutineDispatcher())
+        val owner = TestLifecycleOwner(Lifecycle.State.CREATED, TestCoroutineDispatcher())
+        owner.lifecycle.currentState = Lifecycle.State.DESTROYED
         runBlocking {
             owner.lifecycleScope.launch {
                 // do nothing
@@ -186,10 +187,6 @@ abstract class LifecycleCoroutineScopeTestBase {
                 throw IllegalArgumentException("why not ?")
             }
             val result = kotlin.runCatching {
-                @Suppress(
-                    "IMPLICIT_NOTHING_AS_TYPE_PARAMETER",
-                    "IMPLICIT_NOTHING_TYPE_ARGUMENT_IN_RETURN_POSITION"
-                )
                 action.await()
             }
             assertThat(result.exceptionOrNull())

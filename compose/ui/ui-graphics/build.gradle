@@ -15,7 +15,6 @@
  */
 
 import androidx.build.AndroidXComposePlugin
-import androidx.build.LibraryGroups
 import androidx.build.LibraryType
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
@@ -43,6 +42,7 @@ if(!AndroidXComposePlugin.isMultiplatformEnabled(project)) {
 
         testImplementation(libs.testRules)
         testImplementation(libs.testRunner)
+        testImplementation(libs.kotlinTestJunit)
         testImplementation(libs.junit)
         testImplementation(libs.truth)
 
@@ -102,6 +102,16 @@ if(AndroidXComposePlugin.isMultiplatformEnabled(project)) {
                 }
             }
 
+            commonTest {
+                dependencies {
+                    implementation(kotlin("test"))
+                }
+            }
+
+            // TODO(b/214407011): These dependencies leak into instrumented tests as well. If you
+            //  need to add Robolectric (which must be kept out of androidAndroidTest), use a top
+            //  level dependencies block instead:
+            //  `dependencies { testImplementation(libs.robolectric) }`
             androidTest.dependencies {
                 implementation(libs.testRules)
                 implementation(libs.testRunner)
@@ -138,7 +148,7 @@ if(AndroidXComposePlugin.isMultiplatformEnabled(project)) {
 androidx {
     name = "Compose Graphics"
     type = LibraryType.PUBLISHED_LIBRARY
-    mavenGroup = LibraryGroups.Compose.UI
+    mavenGroup = LibraryGroups.COMPOSE_UI
     inceptionYear = "2020"
     description = "Compose graphics"
     legacyDisableKotlinStrictApiMode = true

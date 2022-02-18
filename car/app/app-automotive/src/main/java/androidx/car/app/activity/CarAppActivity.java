@@ -419,11 +419,14 @@ public final class CarAppActivity extends FragmentActivity {
     @Override
     protected void onDestroy() {
         requireNonNull(mHostUpdateReceiver).unregister(this);
+        requireNonNull(mSurfaceHolderListener).setSurfaceListener(null);
+        requireNonNull(mViewModel).unbind();
         requireNonNull(mViewModel).setActivity(null);
         super.onDestroy();
     }
 
     @Nullable
+    @SuppressWarnings("deprecation")
     private ComponentName retrieveServiceComponentName() {
         Intent intent = new Intent(SERVICE_INTERFACE);
         intent.setPackage(getPackageName());

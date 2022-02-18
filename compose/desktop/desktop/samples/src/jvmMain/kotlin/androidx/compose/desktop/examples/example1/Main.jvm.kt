@@ -94,6 +94,8 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.PointerIconDefaults
+import androidx.compose.ui.input.pointer.isBackPressed
+import androidx.compose.ui.input.pointer.isForwardPressed
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalUriHandler
@@ -104,8 +106,8 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.platform.Font
-import androidx.compose.ui.text.platform.FontLoader
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextDecoration.Companion.Underline
@@ -126,16 +128,14 @@ import kotlin.random.Random
 
 private const val title = "Desktop Compose Elements"
 
-val italicFont = try {
-    FontFamily(
-        Font("NotoSans-Italic.ttf").also {
-            // Check that font is loadable.
-            FontLoader().load(it)
-        }
-    )
-} catch (e: Exception) {
-    FontFamily.SansSerif
-}
+val italicFont = FontFamily(
+    Font("NotoSans-Italic.ttf")
+)
+
+val dispatchedFonts = FontFamily(
+    Font("NotoSans-Italic.ttf", style = FontStyle.Italic),
+    Font("NotoSans-Regular.ttf", style = FontStyle.Normal)
+)
 
 fun main() = singleWindowApplication(
     title = title,
@@ -368,6 +368,18 @@ private fun FrameWindowScope.ScrollableContent(scrollState: ScrollState) {
                 }
             )
         }
+        Text(
+            text = buildAnnotatedString {
+                append("resolved: NotoSans-Regular.ttf ")
+                pushStyle(
+                    SpanStyle(
+                        fontStyle = FontStyle.Italic
+                    )
+                )
+                append("NotoSans-italic.ttf.")
+            },
+            fontFamily = dispatchedFonts,
+        )
 
         Row(verticalAlignment = Alignment.CenterVertically) {
             Button(
@@ -389,6 +401,9 @@ private fun FrameWindowScope.ScrollableContent(scrollState: ScrollState) {
                             append("primary: ${buttons.isPrimaryPressed}\t")
                             append("secondary: ${buttons.isSecondaryPressed}\t")
                             append("tertiary: ${buttons.isTertiaryPressed}\t")
+                            append("primary: ${buttons.isPrimaryPressed}\t")
+                            append("back: ${buttons.isBackPressed}\t")
+                            append("forward: ${buttons.isForwardPressed}\t")
 
                             append("\n\nKeyboard modifiers pressed:\n")
 

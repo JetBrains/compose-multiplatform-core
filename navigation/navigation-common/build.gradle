@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-import androidx.build.LibraryGroups
 import androidx.build.Publish
 
 plugins {
@@ -33,7 +32,7 @@ dependencies {
     api("androidx.annotation:annotation:1.1.0")
     api(projectOrArtifact(":lifecycle:lifecycle-runtime-ktx"))
     api(projectOrArtifact(":lifecycle:lifecycle-viewmodel-ktx"))
-    api(projectOrArtifact(":savedstate:savedstate-ktx"))
+    api("androidx.savedstate:savedstate-ktx:1.2.0-alpha01")
     api(projectOrArtifact(":lifecycle:lifecycle-viewmodel-savedstate"))
     implementation("androidx.core:core-ktx:1.1.0")
     implementation("androidx.collection:collection-ktx:1.1.0")
