@@ -15,8 +15,7 @@
   limitations under the License.
   -->
 
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="androidx.glance.wear.tiles.demos">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-feature android:name="android.hardware.type.watch" />
     <meta-data android:name="com.google.android.wearable.standalone" android:value="true" />
@@ -59,6 +58,28 @@
             android:description="@string/calendar_tile_name"
             android:exported="true"
             android:label="@string/calendar_tile_name"
+            android:permission="com.google.android.wearable.permission.BIND_TILE_PROVIDER">
+            <intent-filter>
+                <action android:name="androidx.wear.tiles.action.BIND_TILE_PROVIDER" />
+            </intent-filter>
+        </service>
+
+        <service
+            android:name="androidx.glance.wear.tiles.demos.CountTileService"
+            android:description="@string/count_tile_name"
+            android:exported="true"
+            android:label="@string/count_tile_name"
+            android:permission="com.google.android.wearable.permission.BIND_TILE_PROVIDER">
+            <intent-filter>
+                <action android:name="androidx.wear.tiles.action.BIND_TILE_PROVIDER" />
+            </intent-filter>
+        </service>
+
+        <service
+            android:name="androidx.glance.wear.tiles.demos.CurvedLayoutTileService"
+            android:description="@string/curved_layout_tile_name"
+            android:exported="true"
+            android:label="@string/curved_layout_tile_name"
             android:permission="com.google.android.wearable.permission.BIND_TILE_PROVIDER">
             <intent-filter>
                 <action android:name="androidx.wear.tiles.action.BIND_TILE_PROVIDER" />

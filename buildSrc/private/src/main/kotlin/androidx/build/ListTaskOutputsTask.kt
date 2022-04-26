@@ -16,6 +16,7 @@
 
 package androidx.build
 
+import java.io.File
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.Project
@@ -24,7 +25,6 @@ import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
-import java.io.File
 
 /**
  * Finds the outputs of every task and saves this mapping into a file
@@ -119,14 +119,51 @@ val taskNamesKnownToDuplicateOutputs = setOf(
     "generateDebugProtos",
     "generateReleaseProtos",
     // Release APKs
-    "copyReleaseApk"
+    "copyReleaseApk",
+    // b/223733695
+    "pixel2api31DebugAndroidTest",
+    "pixel2api31ReleaseAndroidTest",
+    "pixel2api31WithExpandProjectionDebugAndroidTest",
+    "pixel2api31WithNullAwareTypeConverterDebugAndroidTest",
+    "pixel2api31WithoutExpandProjectionDebugAndroidTest",
+    "pixel2api31WithKaptDebugAndroidTest",
+    "pixel2api31WithKspDebugAndroidTest",
+    "pixel2api31TargetSdk29DebugAndroidTest",
+    "pixel2api31TargetSdk30DebugAndroidTest",
+    "pixel2api31TargetSdkLatestDebugAndroidTest",
+    "pixel2api30DebugAndroidTest",
+    "pixel2api30ReleaseAndroidTest",
+    "pixel2api30WithExpandProjectionDebugAndroidTest",
+    "pixel2api30WithNullAwareTypeConverterDebugAndroidTest",
+    "pixel2api30WithoutExpandProjectionDebugAndroidTest",
+    "pixel2api30WithKaptDebugAndroidTest",
+    "pixel2api30WithKspDebugAndroidTest",
+    "pixel2api30TargetSdk29DebugAndroidTest",
+    "pixel2api30TargetSdk30DebugAndroidTest",
+    "pixel2api30TargetSdkLatestDebugAndroidTest",
+    "pixel2api29DebugAndroidTest",
+    "pixel2api29ReleaseAndroidTest",
+    "pixel2api29WithExpandProjectionDebugAndroidTest",
+    "pixel2api29WithNullAwareTypeConverterDebugAndroidTest",
+    "pixel2api29WithoutExpandProjectionDebugAndroidTest",
+    "pixel2api29WithKaptDebugAndroidTest",
+    "pixel2api29WithKspDebugAndroidTest",
+    "pixel2api29TargetSdk29DebugAndroidTest",
+    "pixel2api29TargetSdk30DebugAndroidTest",
+    "pixel2api29TargetSdkLatestDebugAndroidTest",
+)
+
+val taskTypesKnownToDuplicateOutputs = setOf(
+    // b/224564238
+    "com.android.build.gradle.internal.lint.AndroidLintTask_Decorated"
 )
 
 fun shouldValidateTaskOutput(task: Task): Boolean {
     if (!task.enabled) {
         return false
     }
-    return !taskNamesKnownToDuplicateOutputs.contains(task.name)
+    return !taskNamesKnownToDuplicateOutputs.contains(task.name) &&
+        !taskTypesKnownToDuplicateOutputs.contains(task::class.qualifiedName)
 }
 
 // For this project and all subprojects, collects all tasks and creates a map keyed by their output files

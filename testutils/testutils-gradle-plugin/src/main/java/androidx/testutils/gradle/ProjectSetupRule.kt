@@ -50,7 +50,11 @@ class ProjectSetupRule : ExternalResource() {
         listOf(props.tipOfTreeMavenRepoPath) + props.repositoryUrls
     }
 
-    private val repositories: String
+    /**
+     * A `repositories {}` gradle block that contains all default repositories, for inclusion
+     * in gradle configurations.
+     */
+    val repositories: String
         get() = buildString {
             appendLine("repositories {")
             append(defaultRepoLines)
@@ -179,6 +183,9 @@ data class ProjectProps(
         }
         fun load(): ProjectProps {
             val stream = ProjectSetupRule::class.java.classLoader.getResourceAsStream("sdk.prop")
+                ?: throw IllegalStateException("No sdk.prop file found. " +
+                    "(you probably need to call SdkResourceGenerator.generateForHostTest " +
+                    "in build.gradle)")
             val properties = Properties()
             properties.load(stream)
             return ProjectProps(
@@ -195,7 +202,11 @@ data class ProjectProps(
                         File(it).canonicalPath
                     }
                 },
-                compileSdkVersion = properties.getProperty("compileSdkVersion"),
+                compileSdkVersion = properties.getProperty("compileSdkVersion").let {
+                    // Add quotes around preview SDK string so that we call
+                    // compileSdkVersion(String) instead of compileSdkVersion(int)
+                    return@let if (it.startsWith("android-")) "\"$it\"" else it
+                },
                 buildToolsVersion = properties.getProperty("buildToolsVersion"),
                 minSdkVersion = properties.getProperty("minSdkVersion"),
                 navigationRuntime = properties.getProperty("navigationRuntime"),

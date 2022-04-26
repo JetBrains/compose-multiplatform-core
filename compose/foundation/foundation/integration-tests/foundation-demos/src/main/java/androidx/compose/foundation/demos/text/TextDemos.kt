@@ -25,9 +25,13 @@ val TextDemos = DemoCategory(
         ComposableDemo("Static text") { TextDemo() },
         ComposableDemo("Typeface") { TypefaceDemo() },
         ComposableDemo("FontFamily fallback") { FontFamilyDemo() },
+        ComposableDemo("All system font families") { SystemFontFamilyDemo() },
         ComposableDemo("Text selection") { TextSelectionDemo() },
         ComposableDemo("Text selection sample") { TextSelectionSample() },
         ComposableDemo("Multi paragraph") { MultiParagraphDemo() },
+        ComposableDemo("IncludeFontPadding & Clip") { TextFontPaddingDemo() },
+        ComposableDemo("Layout Reuse") { TextReuseLayoutDemo() },
+        ComposableDemo("Line Height Behavior") { TextLineHeightDemo() },
         ComposableDemo("Interactive text") { InteractiveTextDemo() },
         DemoCategory(
             "Input fields",

@@ -67,7 +67,7 @@ import androidx.lifecycle.ViewTreeViewModelStoreOwner
 import androidx.savedstate.SavedStateRegistry
 import androidx.savedstate.SavedStateRegistryController
 import androidx.savedstate.SavedStateRegistryOwner
-import androidx.savedstate.ViewTreeSavedStateRegistryOwner
+import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import java.lang.reflect.Method
 
 private const val TOOLS_NS_URI = "http://schemas.android.com/tools"
@@ -663,7 +663,7 @@ internal class ComposeViewAdapter : FrameLayout {
     private fun init(attrs: AttributeSet) {
         // ComposeView and lifecycle initialization
         ViewTreeLifecycleOwner.set(this, FakeSavedStateRegistryOwner)
-        ViewTreeSavedStateRegistryOwner.set(this, FakeSavedStateRegistryOwner)
+        setViewTreeSavedStateRegistryOwner(FakeSavedStateRegistryOwner)
         ViewTreeViewModelStoreOwner.set(this, FakeViewModelStoreOwner)
         addView(composeView)
 
@@ -728,7 +728,9 @@ internal class ComposeViewAdapter : FrameLayout {
             lifecycle.currentState = Lifecycle.State.RESUMED
         }
 
-        override fun getSavedStateRegistry(): SavedStateRegistry = controller.savedStateRegistry
+        override val savedStateRegistry: SavedStateRegistry
+            get() = controller.savedStateRegistry
+
         override fun getLifecycle(): Lifecycle = lifecycle
     }
 

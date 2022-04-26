@@ -36,7 +36,7 @@ object NativeApiTasks {
     ) {
         val artifactNames = project.extensions.getByType(
             LibraryExtension::class.java
-        ).prefab.names.toList()
+        ).prefab.map { it.name }
 
         // Generates API files from source in the build directory
         val generateNativeApi = project.tasks.register(
@@ -45,6 +45,7 @@ object NativeApiTasks {
         ) { task ->
             task.group = apiGroup
             task.description = "Generates API files from native source"
+            task.projectRootDir.set(project.rootDir)
             task.prefabDirectory.set(
                 project.buildDir.resolve("intermediates/prefab_package/release/prefab")
             )

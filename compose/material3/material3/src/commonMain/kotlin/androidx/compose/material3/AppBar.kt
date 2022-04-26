@@ -24,6 +24,7 @@ import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.animateDecay
 import androidx.compose.animation.core.animateTo
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.interaction.Interaction
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -34,7 +35,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.tokens.BottomAppBarTokens
 import androidx.compose.material3.tokens.TopAppBarLargeTokens
@@ -74,13 +74,13 @@ import kotlin.math.max
 import kotlin.math.roundToInt
 
 /**
- * ![Small top app bar image](https://developer.android.com/images/reference/androidx/compose/material3/small-top-app-bar.png)
+ * <a href="https://m3.material.io/components/top-app-bar/overview" class="external" target="_blank">Material Design small top app bar</a>.
  *
- * Material Design small top app bar.
- *
- * The top app bar displays information and actions relating to the current screen.
+ * Top app bars display information and actions at the top of a screen.
  *
  * This SmallTopAppBar has slots for a title, navigation icon, and actions.
+ *
+ * ![Small top app bar image](https://developer.android.com/images/reference/androidx/compose/material3/small-top-app-bar.png)
  *
  * A simple top app bar looks like:
  * @sample androidx.compose.material3.samples.SimpleSmallTopAppBar
@@ -124,11 +124,13 @@ fun SmallTopAppBar(
 }
 
 /**
+ * <a href="https://m3.material.io/components/top-app-bar/overview" class="external" target="_blank">Material Design center-aligned small top app bar</a>.
+ *
+ * Top app bars display information and actions at the top of a screen.
+ *
+ * This small top app bar has a header title that is horizontally aligned to the center.
+ *
  * ![Center-aligned top app bar image](https://developer.android.com/images/reference/androidx/compose/material3/center-aligned-top-app-bar.png)
- *
- * Material Design small top app bar with a header title that is horizontally aligned to the center.
- *
- * The top app bar displays information and actions relating to the current screen.
  *
  * This CenterAlignedTopAppBar has slots for a title, navigation icon, and actions.
  *
@@ -172,11 +174,11 @@ fun CenterAlignedTopAppBar(
 }
 
 /**
+ * <a href="https://m3.material.io/components/top-app-bar/overview" class="external" target="_blank">Material Design medium top app bar</a>.
+ *
+ * Top app bars display information and actions at the top of a screen.
+ *
  * ![Medium top app bar image](https://developer.android.com/images/reference/androidx/compose/material3/medium-top-app-bar.png)
- *
- * Material Design medium top app bar.
- *
- * The top app bar displays information and actions relating to the current screen.
  *
  * This MediumTopAppBar has slots for a title, navigation icon, and actions. In its default expanded
  * state, the title is displayed in a second row under the navigation and actions.
@@ -226,11 +228,11 @@ fun MediumTopAppBar(
 }
 
 /**
+ * <a href="https://m3.material.io/components/top-app-bar/overview" class="external" target="_blank">Material Design large top app bar</a>.
+ *
+ * Top app bars display information and actions at the top of a screen.
+ *
  * ![Large top app bar image](https://developer.android.com/images/reference/androidx/compose/material3/large-top-app-bar.png)
- *
- * Material Design large top app bar.
- *
- * The top app bar displays information and actions relating to the current screen.
  *
  * This LargeTopAppBar has slots for a title, navigation icon, and actions. In its default expanded
  * state, the title is displayed in a second row under the navigation and actions.
@@ -279,9 +281,12 @@ fun LargeTopAppBar(
     )
 }
 
-// TODO(b/209583788): Add link to Material 3 bottom app bar spec article.
 /**
- * A bottom app bar displays navigation and key actions at the bottom of screens.
+ * <a href="https://m3.material.io/components/bottom-app-bar/overview" class="external" target="_blank">Material Design bottom app bar</a>.
+ *
+ * A bottom app bar displays navigation and key actions at the bottom of mobile screens.
+ *
+ * ![Bottom app bar image](https://developer.android.com/images/reference/androidx/compose/material3/bottom-app-bar.png)
  *
  * @sample androidx.compose.material3.samples.SimpleBottomAppBar
  *
@@ -294,6 +299,7 @@ fun LargeTopAppBar(
  * @param icons the icon content of this BottomAppBar. The default layout here is a [Row],
  * so content inside will be placed horizontally.
  * @param modifier The [Modifier] to be applied to this BottomAppBar
+ * @param floatingActionButton optional floating action button at the end of this BottomAppBar
  * @param containerColor The container color for the BottomAppBar. Use [Color.Transparent] to
  * have no color.
  * @param contentColor The preferred content color provided by this BottomAppBar to its children.
@@ -303,50 +309,43 @@ fun LargeTopAppBar(
  * value will result in a darker color in light theme and lighter color in dark theme. See also:
  * [Surface].
  * @param contentPadding the padding applied to the content of this BottomAppBar
- * @param floatingActionButton optional floating action button at the end of this BottomAppBar
  */
 @Composable
 fun BottomAppBar(
     icons: @Composable RowScope.() -> Unit,
     modifier: Modifier = Modifier,
+    floatingActionButton: @Composable (() -> Unit)? = null,
     containerColor: Color = BottomAppBarTokens.ContainerColor.toColor(),
     contentColor: Color = contentColorFor(containerColor),
     tonalElevation: Dp = BottomAppBarTokens.ContainerElevation,
     contentPadding: PaddingValues = BottomAppBarDefaults.ContentPadding,
-    floatingActionButton: @Composable (() -> Unit)? = null,
-) {
-    Surface(
-        color = containerColor,
+) = BottomAppBar(
+        modifier = modifier,
+        containerColor = containerColor,
         contentColor = contentColor,
         tonalElevation = tonalElevation,
-        // TODO(b/209583788): Consider adding a shape parameter if updated design guidance allows
-        shape = BottomAppBarTokens.ContainerShape,
-        modifier = modifier
+        contentPadding = contentPadding
     ) {
-        Row(
-            Modifier.fillMaxWidth()
-                .heightIn(BottomAppBarTokens.ContainerHeight, BottomAppBarTokens.FabContainerHeight)
-                .padding(contentPadding),
-            horizontalArrangement = Arrangement.Start,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            icons()
-            if (floatingActionButton != null) {
-                Spacer(Modifier.weight(1f, true))
-                Box(
-                    Modifier.fillMaxHeight().padding(top = FABPadding, end = FABPadding),
-                    contentAlignment = Alignment.BottomCenter
-                ) {
-                    floatingActionButton()
-                }
+        icons()
+        if (floatingActionButton != null) {
+            Spacer(Modifier.weight(1f, true))
+            Box(
+                Modifier.fillMaxHeight().padding(
+                    top = FABVerticalPadding,
+                    end = FABHorizontalPadding),
+                contentAlignment = Alignment.TopStart
+            ) {
+                floatingActionButton()
             }
         }
     }
-}
 
-// TODO(b/209583788): Add link to Material 3 bottom app bar spec article.
 /**
- * A bottom app bar displays navigation and key actions at the bottom of screens.
+ * <a href="https://m3.material.io/components/bottom-app-bar/overview" class="external" target="_blank">Material Design bottom app bar</a>.
+ *
+ * A bottom app bar displays navigation and key actions at the bottom of mobile screens.
+ *
+ * ![Bottom app bar image](https://developer.android.com/images/reference/androidx/compose/material3/bottom-app-bar.png)
  *
  * If you are interested in displaying a [FloatingActionButton], consider using another overload.
  *
@@ -377,7 +376,7 @@ fun BottomAppBar(
         contentColor = contentColor,
         tonalElevation = tonalElevation,
         // TODO(b/209583788): Consider adding a shape parameter if updated design guidance allows
-        shape = BottomAppBarTokens.ContainerShape,
+        shape = BottomAppBarTokens.ContainerShape.toShape(),
         modifier = modifier
     ) {
         Row(
@@ -715,6 +714,31 @@ object BottomAppBarDefaults {
         top = BottomAppBarVerticalPadding,
         end = BottomAppBarHorizontalPadding
     )
+
+    /**
+     * Creates a [FloatingActionButtonElevation] that represents the default elevation of a
+     * [FloatingActionButton] used for [BottomAppBar] in different states.
+     *
+     * @param defaultElevation the elevation used when the [FloatingActionButton] has no other
+     * [Interaction]s.
+     * @param pressedElevation the elevation used when the [FloatingActionButton] is pressed.
+     * @param focusedElevation the elevation used when the [FloatingActionButton] is focused.
+     * @param hoveredElevation the elevation used when the [FloatingActionButton] is hovered.
+     */
+    @Composable
+    fun floatingActionButtonElevation(
+        defaultElevation: Dp = 0.dp,
+        pressedElevation: Dp = 0.dp,
+        focusedElevation: Dp = 0.dp,
+        hoveredElevation: Dp = 0.dp,
+    ): FloatingActionButtonElevation {
+        return FloatingActionButtonDefaults.elevation(
+            defaultElevation = defaultElevation,
+            pressedElevation = pressedElevation,
+            focusedElevation = focusedElevation,
+            hoveredElevation = hoveredElevation
+        )
+    }
 }
 
 // Padding minus IconButton's min touch target expansion
@@ -723,7 +747,8 @@ private val BottomAppBarHorizontalPadding = 16.dp - 12.dp
 private val BottomAppBarVerticalPadding = 16.dp - 12.dp
 
 // Padding minus content padding
-private val FABPadding = 16.dp - BottomAppBarHorizontalPadding
+private val FABHorizontalPadding = 16.dp - BottomAppBarHorizontalPadding
+private val FABVerticalPadding = 12.dp - BottomAppBarVerticalPadding
 
 /**
  * A single-row top app bar that is designed to be called by the small and center aligned top app

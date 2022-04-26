@@ -26,13 +26,14 @@ import static androidx.wear.tiles.material.ButtonDefaults.PRIMARY_BUTTON_COLORS;
 import static androidx.wear.tiles.material.Helper.checkNotNull;
 import static androidx.wear.tiles.material.Helper.radiusOf;
 
+import android.content.Context;
+
 import androidx.annotation.Dimension;
 import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
-import androidx.wear.tiles.ActionBuilders.Action;
 import androidx.wear.tiles.ColorBuilders.ColorProp;
 import androidx.wear.tiles.DimensionBuilders.ContainerDimension;
 import androidx.wear.tiles.DimensionBuilders.DpProp;
@@ -60,8 +61,7 @@ import java.lang.annotation.RetentionPolicy;
  *
  * <p>The recommended set of {@link ButtonColors} styles can be obtained from {@link
  * ButtonDefaults}., e.g. {@link ButtonDefaults#PRIMARY_BUTTON_COLORS} to get a color scheme for a
- * primary {@link Button} which by default will have a solid background of {@link Colors#PRIMARY}
- * and content color of {@link Colors#ON_PRIMARY}.
+ * primary {@link Button}.
  */
 public class Button implements LayoutElement {
     @NonNull private final Box mElement;
@@ -84,38 +84,31 @@ public class Button implements LayoutElement {
         @IntDef({NOT_SET, ICON, TEXT, IMAGE, CUSTOM_CONTENT})
         @interface ButtonType {}
 
+        @NonNull private final Context mContext;
         @Nullable private LayoutElement mCustomContent;
-        @Nullable private LayoutElement.Builder mContent;
-        @NonNull private final Action mAction;
-        @NonNull private final String mClickableId;
-        @NonNull private String mContentDescription = "";
+        @NonNull private final Clickable mClickable;
+        @NonNull private CharSequence mContentDescription = "";
         @NonNull private DpProp mSize = DEFAULT_BUTTON_SIZE;
         @Nullable private String mText = null;
-        private @TypographyName int mTypographyName =
-                getDefaultTypographyForSize(DEFAULT_BUTTON_SIZE);
-        private boolean mIsTypographyNameSet = false;
+        @Nullable private Integer mTypographyName = null;
         @Nullable private String mIcon = null;
         @Nullable private DpProp mIconSize = null;
         @Nullable private String mImage = null;
         @NonNull private ButtonColors mButtonColors = PRIMARY_BUTTON_COLORS;
-        private @ButtonType int mType = NOT_SET;
-        private boolean mDefaultSize = false;
+        @ButtonType private int mType = NOT_SET;
 
         /**
          * Creates a builder for the {@link Button} from the given content. Custom content should be
          * later set with one of the following ({@link #setIconContent}, {@link #setTextContent},
          * {@link #setImageContent}.
          *
-         * @param action Associated Actions for click events. When the Button is clicked it will
-         *     fire the associated action.
-         * @param clickableId The ID associated with the given action.
+         * @param context The application's context.
+         * @param clickable Associated {@link Clickable} for click events. When the Button is
+         *     clicked it will fire the associated action.
          */
-        // Action is not a functional interface (and should not be used as one), suppress the
-        // warning.
-        @SuppressWarnings("LambdaLast")
-        public Builder(@NonNull Action action, @NonNull String clickableId) {
-            mAction = action;
-            mClickableId = clickableId;
+        public Builder(@NonNull Context context, @NonNull Clickable clickable) {
+            mClickable = clickable;
+            mContext = context;
         }
 
         /**
@@ -123,7 +116,7 @@ public class Button implements LayoutElement {
          * this for button containing icon or image.
          */
         @NonNull
-        public Builder setContentDescription(@NonNull String contentDescription) {
+        public Builder setContentDescription(@NonNull CharSequence contentDescription) {
             this.mContentDescription = contentDescription;
             return this;
         }
@@ -152,7 +145,6 @@ public class Button implements LayoutElement {
             return this;
         }
 
-        // TODO(b/203078514): Add getting color from the current Theme (from XML).
         /**
          * Sets the colors for the {@link Button}. If set, {@link ButtonColors#getBackgroundColor()}
          * will be used for the background of the button. If not set, {@link
@@ -189,7 +181,6 @@ public class Button implements LayoutElement {
             resetContent();
             this.mIcon = resourceId;
             this.mType = ICON;
-            this.mDefaultSize = false;
             this.mIconSize = size;
             return this;
         }
@@ -208,7 +199,6 @@ public class Button implements LayoutElement {
             resetContent();
             this.mIcon = resourceId;
             this.mType = ICON;
-            this.mDefaultSize = true;
             return this;
         }
 
@@ -229,7 +219,6 @@ public class Button implements LayoutElement {
             resetContent();
             this.mText = text;
             this.mType = TEXT;
-            this.mDefaultSize = true;
             return this;
         }
 
@@ -247,9 +236,7 @@ public class Button implements LayoutElement {
             resetContent();
             this.mText = text;
             this.mTypographyName = typographyName;
-            this.mIsTypographyNameSet = true;
             this.mType = TEXT;
-            this.mDefaultSize = false;
             return this;
         }
 
@@ -267,13 +254,12 @@ public class Button implements LayoutElement {
             resetContent();
             this.mImage = resourceId;
             this.mType = IMAGE;
-            this.mDefaultSize = false;
             return this;
         }
 
         private void resetContent() {
             this.mText = null;
-            this.mIsTypographyNameSet = false;
+            this.mTypographyName = null;
             this.mIcon = null;
             this.mImage = null;
             this.mCustomContent = null;
@@ -286,11 +272,7 @@ public class Button implements LayoutElement {
         public Button build() {
             Modifiers.Builder modifiers =
                     new Modifiers.Builder()
-                            .setClickable(
-                                    new Clickable.Builder()
-                                            .setId(mClickableId)
-                                            .setOnClick(mAction)
-                                            .build())
+                            .setClickable(mClickable)
                             .setBackground(
                                     new Background.Builder()
                                             .setColor(mButtonColors.getBackgroundColor())
@@ -299,10 +281,10 @@ public class Button implements LayoutElement {
                                                             .setRadius(radiusOf(mSize))
                                                             .build())
                                             .build());
-            if (!mContentDescription.isEmpty()) {
+            if (mContentDescription.length() > 0) {
                 modifiers.setSemantics(
                         new ModifiersBuilders.Semantics.Builder()
-                                .setContentDescription(mContentDescription)
+                                .setContentDescription(mContentDescription.toString())
                                 .build());
             }
 
@@ -322,14 +304,15 @@ public class Button implements LayoutElement {
         private LayoutElement getCorrectContent() {
             assertContentFields();
 
+            LayoutElement.Builder content;
             switch (mType) {
                 case ICON:
                 {
                     DpProp iconSize =
-                            mDefaultSize
-                                    ? ButtonDefaults.recommendedIconSize(mSize)
-                                    : checkNotNull(mIconSize);
-                    mContent =
+                            mIconSize != null
+                                    ? mIconSize
+                                    : ButtonDefaults.recommendedIconSize(mSize);
+                    content =
                             new Image.Builder()
                                     .setResourceId(checkNotNull(mIcon))
                                     .setHeight(checkNotNull(iconSize))
@@ -340,32 +323,32 @@ public class Button implements LayoutElement {
                                                     .setTint(mButtonColors.getContentColor())
                                                     .build());
 
-                    return mContent.build();
+                    return content.build();
                 }
                 case TEXT:
                 {
                     @TypographyName
                     int typographyName =
-                            mIsTypographyNameSet
-                                    ? mTypographyName : getDefaultTypographyForSize(mSize);
-                    mContent =
-                            new Text.Builder()
-                                    .setText(checkNotNull(mText))
+                            mTypographyName != null
+                                    ? mTypographyName
+                                    : getDefaultTypographyForSize(mSize);
+                    content =
+                            new Text.Builder(mContext, checkNotNull(mText))
                                     .setMaxLines(1)
                                     .setTypography(typographyName)
                                     .setColor(mButtonColors.getContentColor());
 
-                    return mContent.build();
+                    return content.build();
                 }
                 case IMAGE:
                 {
-                    mContent =
+                    content =
                             new Image.Builder()
                                     .setResourceId(checkNotNull(mImage))
                                     .setHeight(mSize)
                                     .setWidth(mSize)
                                     .setContentScaleMode(CONTENT_SCALE_MODE_FILL_BOUNDS);
-                    return mContent.build();
+                    return content.build();
                 }
                 case CUSTOM_CONTENT:
                     return checkNotNull(mCustomContent);
@@ -421,14 +404,13 @@ public class Button implements LayoutElement {
 
     /** Returns click event action associated with this Button. */
     @NonNull
-    public Action getAction() {
-        return checkNotNull(
-                checkNotNull(checkNotNull(mElement.getModifiers()).getClickable()).getOnClick());
+    public Clickable getClickable() {
+        return checkNotNull(checkNotNull(mElement.getModifiers()).getClickable());
     }
 
     /** Returns content description for this Button. */
     @NonNull
-    public String getContentDescription() {
+    public CharSequence getContentDescription() {
         return checkNotNull(
                 checkNotNull(checkNotNull(mElement.getModifiers()).getSemantics())
                         .getContentDescription());
@@ -488,7 +470,8 @@ public class Button implements LayoutElement {
      * color because if the content is set by some of the provided setters in the Builder it will
      * have color.
      */
-    private @Builder.ButtonType int getType(LayoutElement element) {
+    @Builder.ButtonType
+    private int getType(LayoutElement element) {
         // To elementary Text class as Material Text when it goes to proto disappears.
         if (element instanceof LayoutElementBuilders.Text) {
             FontStyle fontStyle = ((LayoutElementBuilders.Text) element).getFontStyle();

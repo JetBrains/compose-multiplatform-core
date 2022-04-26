@@ -49,6 +49,7 @@ import androidx.compose.foundation.text.InlineTextContent
 import androidx.compose.foundation.text.appendInlineContent
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.window.WindowDraggableArea
 import androidx.compose.material.BottomAppBar
 import androidx.compose.material.Button
 import androidx.compose.material.ButtonDefaults
@@ -74,8 +75,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusOrder
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
@@ -150,17 +152,19 @@ private fun FrameWindowScope.App() {
     MaterialTheme {
         Scaffold(
             topBar = {
-                TopAppBar(
-                    title = {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Image(
-                                painterResource("androidx/compose/desktop/example/star.svg"),
-                                contentDescription = "Star"
-                            )
-                            Text(title)
+                WindowDraggableArea {
+                    TopAppBar(
+                        title = {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Image(
+                                    painterResource("androidx/compose/desktop/example/star.svg"),
+                                    contentDescription = "Star"
+                                )
+                                Text(title)
+                            }
                         }
-                    }
-                )
+                    )
+                }
             },
             floatingActionButton = {
                 ExtendedFloatingActionButton(
@@ -180,8 +184,8 @@ private fun FrameWindowScope.App() {
                     }
                 }
             },
-            content = {
-                Row(Modifier.padding(bottom = 56.dp)) {
+            content = { innerPadding ->
+                Row(Modifier.padding(innerPadding)) {
                     LeftColumn(Modifier.weight(1f))
                     RightColumn(Modifier.width(200.dp))
                 }
@@ -512,7 +516,8 @@ private fun FrameWindowScope.ScrollableContent(scrollState: ScrollState) {
                         }
                         else -> false
                     }
-                }.focusOrder(focusItem1) {
+                }.focusRequester(focusItem1)
+                .focusProperties {
                     next = focusItem2
                 }
             )
@@ -528,9 +533,12 @@ private fun FrameWindowScope.ScrollableContent(scrollState: ScrollState) {
         }
         TextField(
             text2,
-            modifier = Modifier.height(200.dp).focusOrder(focusItem2) {
-                previous = focusItem1
-            },
+            modifier = Modifier
+                .height(200.dp)
+                .focusRequester(focusItem2)
+                .focusProperties {
+                    previous = focusItem1
+                },
             onValueChange = { text2 = it }
         )
 

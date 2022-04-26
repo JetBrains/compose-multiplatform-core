@@ -19,6 +19,8 @@ package androidx.compose.ui.text.platform
 import android.graphics.Typeface
 import android.text.SpannableString
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.DefaultIncludeFontPadding
+import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.Placeholder
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
@@ -31,11 +33,12 @@ import androidx.compose.ui.text.platform.extensions.setLineHeight
 import androidx.compose.ui.text.platform.extensions.setPlaceholders
 import androidx.compose.ui.text.platform.extensions.setSpanStyles
 import androidx.compose.ui.text.platform.extensions.setTextIndent
+import androidx.compose.ui.text.style.LineHeightBehavior
 import androidx.compose.ui.text.style.TextIndent
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.isUnspecified
 
-@OptIn(InternalPlatformTextApi::class)
+@OptIn(InternalPlatformTextApi::class, ExperimentalTextApi::class)
 internal fun createCharSequence(
     text: String,
     contextFontSize: Float,
@@ -55,7 +58,24 @@ internal fun createCharSequence(
 
     val spannableString = SpannableString(text)
 
-    spannableString.setLineHeight(contextTextStyle.lineHeight, contextFontSize, density)
+    if (contextTextStyle.isIncludeFontPaddingEnabled() &&
+        contextTextStyle.lineHeightBehavior == null
+    ) {
+        // keep the existing line height behavior for includeFontPadding=true
+        spannableString.setLineHeight(
+            lineHeight = contextTextStyle.lineHeight,
+            contextFontSize = contextFontSize,
+            density = density
+        )
+    } else {
+        val lineHeightBehavior = contextTextStyle.lineHeightBehavior ?: LineHeightBehavior.Default
+        spannableString.setLineHeight(
+            lineHeight = contextTextStyle.lineHeight,
+            lineHeightBehavior = lineHeightBehavior,
+            contextFontSize = contextFontSize,
+            density = density,
+        )
+    }
 
     spannableString.setTextIndent(contextTextStyle.textIndent, contextFontSize, density)
 
@@ -69,4 +89,10 @@ internal fun createCharSequence(
     spannableString.setPlaceholders(placeholders, density)
 
     return spannableString
+}
+
+@OptIn(ExperimentalTextApi::class)
+@Suppress("DEPRECATION")
+internal fun TextStyle.isIncludeFontPaddingEnabled(): Boolean {
+    return platformStyle?.paragraphStyle?.includeFontPadding ?: DefaultIncludeFontPadding
 }

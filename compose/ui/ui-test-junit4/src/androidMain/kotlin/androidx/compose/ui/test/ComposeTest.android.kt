@@ -20,6 +20,7 @@ package androidx.compose.ui.test
 
 import android.os.Build
 import android.view.View
+import android.view.ViewGroup
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.Composable
@@ -53,7 +54,9 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.TestCoroutineDispatcher
+import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.runTest
 
 @OptIn(InternalTestApi::class, ExperimentalCoroutinesApi::class)
 internal class AndroidComposeTest<A : ComponentActivity>(
@@ -73,8 +76,8 @@ internal class AndroidComposeTest<A : ComponentActivity>(
     private var idlingStrategy: IdlingStrategy = EspressoLink(idlingResourceRegistry)
 
     private val recomposer: Recomposer
-    private val testCoroutineDispatcher = TestCoroutineDispatcher()
-    private val frameCoroutineScope = CoroutineScope(testCoroutineDispatcher)
+    private val testCoroutineDispatcher = UnconfinedTestDispatcher()
+    private val frameCoroutineScope = TestScope(testCoroutineDispatcher)
     private val recomposerApplyCoroutineScope: CoroutineScope
     private val coroutineExceptionHandler = UncaughtExceptionHandler()
 
@@ -115,6 +118,10 @@ internal class AndroidComposeTest<A : ComponentActivity>(
         if (Build.FINGERPRINT.lowercase() == "robolectric") {
             idlingStrategy = RobolectricIdlingStrategy(composeRootRegistry, composeIdlingResource)
         }
+        // Need to await quiescence before registering our ComposeIdlingResource because the host
+        // activity might still be launching. If it is going to set compose content, we want that
+        // to happen before we install our hooks to avoid a race.
+        idlingStrategy.runUntilIdle()
         return composeRootRegistry.withRegistry {
             idlingResourceRegistry.withRegistry {
                 idlingStrategy.withStrategy {
@@ -142,6 +149,14 @@ internal class AndroidComposeTest<A : ComponentActivity>(
 
         // We always make sure we have the latest activity when setting a content
         val currentActivity = activity
+        // Check if the current activity hasn't already called setContent itself
+        val root = currentActivity.findViewById<ViewGroup>(android.R.id.content)
+        check(root == null || root.childCount == 0) {
+            "$currentActivity has already set content. If you have populated the Activity with " +
+                "a ComposeView, make sure to call setContent on that ComposeView instead of on " +
+                "the test rule; and make sure that that call to `setContent {}` is done after " +
+                "the ComposeTestRule has run"
+        }
 
         runOnUiThread {
             currentActivity.setContent(recomposer, composable)
@@ -262,9 +277,11 @@ internal class AndroidComposeTest<A : ComponentActivity>(
         try {
             return block()
         } finally {
+            // runTest {} as the last step -
+            // to replace deprecated TestCoroutineScope.cleanupTestCoroutines
+            frameCoroutineScope.runTest {}
             frameCoroutineScope.cancel()
             coroutineExceptionHandler.throwUncaught()
-            testCoroutineDispatcher.cleanupTestCoroutines()
         }
     }
 

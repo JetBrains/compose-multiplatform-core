@@ -16,14 +16,16 @@
   limitations under the License.
   -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    package="androidx.car.app">
+    xmlns:tools="http://schemas.android.com/tools">
+
     <application>
         <activity
             android:name=".CarAppPermissionActivity"
             android:theme="@android:style/Theme.Translucent.NoTitleBar"
             android:exported="false"/>
-        <receiver android:name=".notification.CarAppNotificationBroadcastReceiver" />
+        <receiver
+            android:name=".notification.CarAppNotificationBroadcastReceiver"
+            android:exported="false"/>
     </application>
     <queries>
         <provider

@@ -27,6 +27,8 @@ import androidx.compose.ui.text.font.PlatformFontLoader
 import androidx.compose.ui.text.font.PlatformFontFamilyTypefaceAdapter
 import androidx.compose.ui.text.font.TypefaceRequestCache
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.text.font.AndroidFontResolveInterceptor
+import androidx.compose.ui.text.font.PlatformResolveInterceptor
 import kotlin.math.ceil
 import kotlin.math.roundToInt
 
@@ -43,13 +45,18 @@ fun Paragraph.bitmap(): Bitmap {
 @OptIn(ExperimentalTextApi::class)
 internal fun UncachedFontFamilyResolver(
     context: Context
-): FontFamily.Resolver = UncachedFontFamilyResolver(AndroidFontLoader(context))
+): FontFamily.Resolver = UncachedFontFamilyResolver(
+    AndroidFontLoader(context),
+    AndroidFontResolveInterceptor(context)
+)
 
 @OptIn(ExperimentalTextApi::class)
 internal fun UncachedFontFamilyResolver(
-    platformFontLoader: PlatformFontLoader
+    platformFontLoader: PlatformFontLoader,
+    platformResolveInterceptor: PlatformResolveInterceptor
 ): FontFamily.Resolver = FontFamilyResolverImpl(
     platformFontLoader,
+    platformResolveInterceptor,
     TypefaceRequestCache(),
     FontListFontFamilyTypefaceAdapter(AsyncTypefaceCache()),
     PlatformFontFamilyTypefaceAdapter()
@@ -68,16 +75,19 @@ internal fun FloatArray.asRectArray(): Array<Rect> {
     }
 }
 
-internal fun ltrCharacterBoundariesForTestFont(
+internal fun getLtrCharacterBoundariesForTestFont(
     text: String,
-    fontSize: Float
+    fontSize: Float,
+    // assumes that the test font is used and fontSize is equal to default line height
+    lineHeight: Float = fontSize,
+    initialTop: Float = 0f
 ): Array<Rect> {
-    var top = 0f
+    var top = initialTop
     var left = 0f
     return text.indices.map { index ->
         // if \n, no position update, same as before
         val right = if (text[index] == '\n') left else left + fontSize
-        val bottom = top + fontSize
+        val bottom = top + lineHeight
         Rect(
             left = left,
             top = top,
@@ -97,10 +107,11 @@ internal fun ltrCharacterBoundariesForTestFont(
     }.toTypedArray()
 }
 
-internal fun rtlCharacterBoundariesForTestFont(
+internal fun getRtlCharacterBoundariesForTestFont(
     text: String,
     width: Float,
-    fontSize: Float
+    fontSize: Float,
+    lineHeight: Float = fontSize
 ): Array<Rect> {
     var top = 0f
     var right = width
@@ -108,7 +119,7 @@ internal fun rtlCharacterBoundariesForTestFont(
         // if \n, position doesn't update, same as before (right)
         // else left is 1 char left
         val left = if (text[index] == '\n') right else right - fontSize
-        val bottom = top + fontSize
+        val bottom = top + lineHeight
         Rect(
             left = left,
             top = top,

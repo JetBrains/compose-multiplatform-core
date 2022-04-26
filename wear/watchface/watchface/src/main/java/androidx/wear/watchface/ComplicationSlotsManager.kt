@@ -82,7 +82,7 @@ public class ComplicationSlotsManager(
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public lateinit var watchState: WatchState
 
-    private lateinit var watchFaceHostApi: WatchFaceHostApi
+    internal lateinit var watchFaceHostApi: WatchFaceHostApi
     internal lateinit var renderer: Renderer
 
     /** A map of complication IDs to complicationSlots. */
@@ -141,7 +141,6 @@ public class ComplicationSlotsManager(
     /** @hide */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public fun listenForStyleChanges(coroutineScope: CoroutineScope) {
-        @Suppress("Deprecation") // userStyleSettings
         val complicationsStyleCategory =
             currentUserStyleRepository.schema.userStyleSettings.firstOrNull {
                 it is ComplicationSlotsUserStyleSetting
@@ -252,9 +251,9 @@ public class ComplicationSlotsManager(
 
                 complication.dataDirty = false
                 complication.complicationBoundsDirty = false
-                complication.supportedTypesDirty = false
                 complication.defaultDataSourcePolicyDirty = false
                 complication.defaultDataSourceTypeDirty = false
+                complication.accessibilityTraversalIndexDirty = false
             }
 
             complication.enabledDirty = false
@@ -455,5 +454,18 @@ public class ComplicationSlotsManager(
             }
         }
         return minInstant
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as ComplicationSlotsManager
+
+        return complicationSlots == other.complicationSlots
+    }
+
+    override fun hashCode(): Int {
+        return complicationSlots.hashCode()
     }
 }

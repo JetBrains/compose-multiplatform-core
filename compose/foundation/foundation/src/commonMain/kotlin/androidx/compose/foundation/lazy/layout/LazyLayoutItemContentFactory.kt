@@ -16,6 +16,7 @@
 
 package androidx.compose.foundation.lazy.layout
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -34,6 +35,7 @@ import androidx.compose.ui.unit.Density
  * 3) Adds state restoration on top of the composable returned by [itemsProvider] with help of
  * [saveableStateHolder].
  */
+@ExperimentalFoundationApi
 internal class LazyLayoutItemContentFactory(
     private val saveableStateHolder: SaveableStateHolder,
     val itemsProvider: () -> LazyLayoutItemsProvider,
@@ -101,7 +103,11 @@ internal class LazyLayoutItemContentFactory(
         var lastKnownIndex by mutableStateOf(initialIndex)
             private set
 
-        val content: @Composable () -> Unit = @Composable {
+        private var _content: (@Composable () -> Unit)? = null
+        val content: (@Composable () -> Unit)
+            get() = _content ?: createContentLambda().also { _content = it }
+
+        private fun createContentLambda() = @Composable {
             val itemsProvider = itemsProvider()
             val index = itemsProvider.keyToIndexMap[key]?.also {
                 lastKnownIndex = it
@@ -115,7 +121,8 @@ internal class LazyLayoutItemContentFactory(
             }
             DisposableEffect(key) {
                 onDispose {
-                    lambdasCache.remove(key)
+                    // we clear the cached content lambda when disposed to not leak RecomposeScopes
+                    _content = null
                 }
             }
         }

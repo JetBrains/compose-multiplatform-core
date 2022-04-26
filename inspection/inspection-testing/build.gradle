@@ -48,7 +48,7 @@ androidx {
 // Allow usage of Kotlin's @OptIn.
 tasks.withType(KotlinCompile).configureEach {
     kotlinOptions {
-        freeCompilerArgs += ["-Xopt-in=kotlin.RequiresOptIn"]
+        freeCompilerArgs += ["-opt-in=kotlin.RequiresOptIn"]
     }
 }
 
@@ -57,4 +57,5 @@ android {
         // studio pipeline works only starting with Android O
         minSdkVersion 26
     }
+    namespace "androidx.inspection.testing"
 }

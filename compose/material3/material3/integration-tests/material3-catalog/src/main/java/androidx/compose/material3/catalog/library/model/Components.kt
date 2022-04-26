@@ -80,18 +80,6 @@ private val Card = Component(
     examples = CardExamples
 )
 
-private val Color = Component(
-    id = nextId(),
-    name = "Color",
-    description = "Color is used to express style and communicate meaning.",
-    // No color icon
-    tintIcon = true,
-    guidelinesUrl = "$StyleGuidelinesUrl/color/overview",
-    docsUrl = "$DocsUrl/ColorScheme",
-    sourceUrl = "$Material3SourceUrl/ColorScheme.kt",
-    examples = ColorExamples
-)
-
 private val Checkboxes = Component(
     id = nextId(),
     name = "Checkboxes",
@@ -103,6 +91,19 @@ private val Checkboxes = Component(
     docsUrl = "$DocsUrl#checkbox",
     sourceUrl = "$Material3SourceUrl/Checkbox.kt",
     examples = CheckboxesExamples
+)
+
+private val Chips = Component(
+    id = nextId(),
+    name = "Chips",
+    description = "Chips allow users to enter information, make selections, filter content, or" +
+        " trigger actions.",
+    // No chip icon
+    tintIcon = true,
+    guidelinesUrl = "$ComponentGuidelinesUrl/chips",
+    docsUrl = "$DocsUrl#chips",
+    sourceUrl = "$Material3SourceUrl/Chip.kt",
+    examples = ChipsExamples
 )
 
 private val Dialogs = Component(
@@ -142,6 +143,18 @@ private val FloatingActionButtons = Component(
     docsUrl = "$PackageSummaryUrl#floatingactionbutton",
     sourceUrl = "$Material3SourceUrl/FloatingActionButton.kt",
     examples = FloatingActionButtonsExamples,
+)
+
+private val IconButtons = Component(
+    id = nextId(),
+    name = "Icon buttons",
+    description = "Icon buttons allow users to take actions and make choices with a single tap.",
+    // No icon-button icon
+    tintIcon = true,
+    guidelinesUrl = "$ComponentGuidelinesUrl/icon-button",
+    docsUrl = "$PackageSummaryUrl#iconbutton",
+    sourceUrl = "$Material3SourceUrl/IconButton.kt",
+    examples = IconButtonExamples,
 )
 
 private val Menus = Component(
@@ -224,6 +237,7 @@ private val Sliders = Component(
     name = "Sliders",
     description = "Sliders allow users to make selections from a range of values.",
     // No slider icon
+    tintIcon = true,
     guidelinesUrl = "", // No guidelines yet
     docsUrl = "", // No docs yet
     sourceUrl = "$Material3SourceUrl/Slider.kt",
@@ -243,6 +257,19 @@ private val Snackbars = Component(
     examples = SnackbarsExamples
 )
 
+private val Switches = Component(
+    id = nextId(),
+    name = "Switches",
+    description = "Switches toggle the state of a single setting on or off.",
+    // No switch icon
+    // No guidelines yet
+    tintIcon = true,
+    guidelinesUrl = "",
+    docsUrl = "",
+    sourceUrl = "$Material3SourceUrl/Switch.kt",
+    examples = SwitchExamples
+)
+
 private val Tabs = Component(
     id = nextId(),
     name = "Tabs",
@@ -253,6 +280,17 @@ private val Tabs = Component(
     docsUrl = "$DocsUrl#tab",
     sourceUrl = "$Material3SourceUrl/Tab.kt",
     examples = TabsExamples
+)
+
+private val TextFields = Component(
+    id = nextId(),
+    name = "Text fields",
+    description = "Text fields let users enter and edit text.",
+    // No text fields icon
+    guidelinesUrl = "$ComponentGuidelinesUrl/text-fields",
+    docsUrl = "$DocsUrl#textfield",
+    sourceUrl = "$Material3SourceUrl/TextField.kt",
+    examples = TextFieldsExamples
 )
 
 private val TopAppBar = Component(
@@ -273,10 +311,11 @@ val Components = listOf(
     Buttons,
     Card,
     Checkboxes,
-    Color,
+    Chips,
     Dialogs,
     ExtendedFloatingActionButton,
     FloatingActionButtons,
+    IconButtons,
     Menus,
     NavigationBar,
     NavigationDrawer,
@@ -285,6 +324,8 @@ val Components = listOf(
     RadioButtons,
     Sliders,
     Snackbars,
+    Switches,
     Tabs,
+    TextFields,
     TopAppBar
 )

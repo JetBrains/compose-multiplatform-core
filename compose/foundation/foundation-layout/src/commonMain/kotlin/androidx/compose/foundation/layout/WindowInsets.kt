@@ -18,6 +18,7 @@ package androidx.compose.foundation.layout
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -81,8 +82,24 @@ value class WindowInsetsSides private constructor(private val value: Int) {
     internal fun hasAny(sides: WindowInsetsSides): Boolean =
         (value and sides.value) != 0
 
+    override fun toString(): String = "WindowInsetsSides(${valueToString()})"
+
+    private fun valueToString(): String = buildString {
+        fun appendPlus(text: String) {
+            if (isNotEmpty()) append('+')
+            append(text)
+        }
+
+        if (value and Start.value == Start.value) appendPlus("Start")
+        if (value and Left.value == Left.value) appendPlus("Left")
+        if (value and Top.value == Top.value) appendPlus("Top")
+        if (value and End.value == End.value) appendPlus("End")
+        if (value and Right.value == Right.value) appendPlus("Right")
+        if (value and Bottom.value == Bottom.value) appendPlus("Bottom")
+    }
+
     companion object {
-        //    _---- allowLeft  in ltr
+        //     _---- allowLeft  in ltr
         //    /
         //    | _--- allowRight in ltr
         //    |/
@@ -157,7 +174,7 @@ value class WindowInsetsSides private constructor(private val value: Int) {
 }
 
 /**
- * Returns an [WindowInsets] that has the maximum values of this [WindowInsets] and [insets].
+ * Returns a [WindowInsets] that has the maximum values of this [WindowInsets] and [insets].
  */
 fun WindowInsets.union(insets: WindowInsets): WindowInsets = UnionInsets(this, insets)
 
@@ -188,23 +205,37 @@ fun WindowInsets.add(insets: WindowInsets): WindowInsets = AddedInsets(this, ins
 fun WindowInsets.only(sides: WindowInsetsSides): WindowInsets = LimitInsets(this, sides)
 
 /**
- * Convert an [WindowInsets] to a [PaddingValues] and uses [LocalDensity] for DP to pixel conversion.
- * [PaddingValues] can be passed to some containers to pad internal content so that it doesn't
- * overlap the insets when fully scrolled. Ensure that the insets are [consumed][consumedWindowInsets]
- * after the padding is applied if insets are to be used further down the hierarchy.
+ * Convert a [WindowInsets] to a [PaddingValues] and uses [LocalDensity] for DP to pixel
+ * conversion. [PaddingValues] can be passed to some containers to pad internal content so that
+ * it doesn't overlap the insets when fully scrolled. Ensure that the insets are
+ * [consumed][consumedWindowInsets] after the padding is applied if insets are to be used further
+ * down the hierarchy.
  *
  * @sample androidx.compose.foundation.layout.samples.paddingValuesSample
  */
+@ReadOnlyComposable
 @Composable
 fun WindowInsets.asPaddingValues(): PaddingValues = InsetsPaddingValues(this, LocalDensity.current)
 
 /**
- * Convert a [PaddingValues] to an [WindowInsets].
+ * Convert a [WindowInsets] to a [PaddingValues] and uses [density] for DP to pixel conversion.
+ * [PaddingValues] can be passed to some containers to pad internal content so that it doesn't
+ * overlap the insets when fully scrolled. Ensure that the insets are
+ * [consumed][consumedWindowInsets] after the padding is applied if insets are to be used further
+ * down the hierarchy.
+ *
+ * @sample androidx.compose.foundation.layout.samples.paddingValuesSample
+ */
+fun WindowInsets.asPaddingValues(density: Density): PaddingValues =
+    InsetsPaddingValues(this, density)
+
+/**
+ * Convert a [PaddingValues] to a [WindowInsets].
  */
 internal fun PaddingValues.asInsets(): WindowInsets = PaddingValuesInsets(this)
 
 /**
- * Create an [WindowInsets] with fixed dimensions.
+ * Create a [WindowInsets] with fixed dimensions.
  *
  * @sample androidx.compose.foundation.layout.samples.insetsInt
  */
@@ -212,7 +243,7 @@ fun WindowInsets(left: Int = 0, top: Int = 0, right: Int = 0, bottom: Int = 0): 
     FixedIntInsets(left, top, right, bottom)
 
 /**
- * Create an [WindowInsets] with fixed dimensions, using [Dp] values.
+ * Create a [WindowInsets] with fixed dimensions, using [Dp] values.
  *
  * @sample androidx.compose.foundation.layout.samples.insetsDp
  */
@@ -305,7 +336,7 @@ private class FixedDpInsets(
  * be updated.
  */
 @Stable
-internal class ValueInsets(val insets: InsetsValues, val name: String) : WindowInsets {
+internal class ValueInsets(insets: InsetsValues, val name: String) : WindowInsets {
     internal var value by mutableStateOf(insets)
 
     override fun getLeft(density: Density, layoutDirection: LayoutDirection): Int = value.left
@@ -328,8 +359,8 @@ internal class ValueInsets(val insets: InsetsValues, val name: String) : WindowI
     }
 
     override fun toString(): String {
-        return "$name(left=${insets.left}, top=${insets.top}, " +
-            "right=${insets.right}, bottom=${insets.bottom})"
+        return "$name(left=${value.left}, top=${value.top}, " +
+            "right=${value.right}, bottom=${value.bottom})"
     }
 }
 
@@ -356,6 +387,9 @@ internal class InsetsValues(val left: Int, val top: Int, val right: Int, val bot
         result = 31 * result + bottom
         return result
     }
+
+    override fun toString(): String =
+        "InsetsValues(left=$left, top=$top, right=$right, bottom=$bottom)"
 }
 
 /**
@@ -567,6 +601,8 @@ private class LimitInsets(
         result = 31 * result + sides.hashCode()
         return result
     }
+
+    override fun toString(): String = "($insets only $sides)"
 }
 
 @Stable

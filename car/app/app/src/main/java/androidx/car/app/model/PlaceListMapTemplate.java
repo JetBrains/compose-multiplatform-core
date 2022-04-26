@@ -17,7 +17,7 @@
 package androidx.car.app.model;
 
 import static androidx.car.app.model.constraints.ActionsConstraints.ACTIONS_CONSTRAINTS_HEADER;
-import static androidx.car.app.model.constraints.ActionsConstraints.ACTIONS_CONSTRAINTS_SIMPLE;
+import static androidx.car.app.model.constraints.ActionsConstraints.ACTIONS_CONSTRAINTS_NAVIGATION;
 import static androidx.car.app.model.constraints.RowListConstraints.ROW_LIST_CONSTRAINTS_SIMPLE;
 
 import static java.util.Objects.requireNonNull;
@@ -27,10 +27,9 @@ import android.annotation.SuppressLint;
 import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.OptIn;
 import androidx.car.app.Screen;
 import androidx.car.app.annotations.CarProtocol;
-import androidx.car.app.annotations.ExperimentalCarApi;
+import androidx.car.app.annotations.RequiresCarApi;
 import androidx.car.app.model.constraints.CarTextConstraints;
 
 import java.util.Collections;
@@ -80,7 +79,6 @@ public final class PlaceListMapTemplate implements Template {
     private final Place mAnchor;
     @Keep
     @Nullable
-    @ExperimentalCarApi
     private final OnContentRefreshDelegate mOnContentRefreshDelegate;
 
     public boolean isCurrentLocationEnabled() {
@@ -155,7 +153,7 @@ public final class PlaceListMapTemplate implements Template {
      * @see Builder#setOnContentRefreshListener
      */
     @Nullable
-    @ExperimentalCarApi
+    @RequiresCarApi(5)
     public OnContentRefreshDelegate getOnContentRefreshDelegate() {
         return mOnContentRefreshDelegate;
     }
@@ -166,7 +164,6 @@ public final class PlaceListMapTemplate implements Template {
         return "PlaceListMapTemplate";
     }
 
-    @OptIn(markerClass = ExperimentalCarApi.class) // OnContentRefreshDelegate
     @Override
     public int hashCode() {
         return Objects.hash(
@@ -174,7 +171,6 @@ public final class PlaceListMapTemplate implements Template {
                     mAnchor, mOnContentRefreshDelegate == null);
     }
 
-    @OptIn(markerClass = ExperimentalCarApi.class) // OnContentRefreshDelegate
     @Override
     public boolean equals(@Nullable Object other) {
         if (this == other) {
@@ -196,7 +192,6 @@ public final class PlaceListMapTemplate implements Template {
                 otherTemplate.mOnContentRefreshDelegate == null);
     }
 
-    @OptIn(markerClass = ExperimentalCarApi.class) // OnContentRefreshDelegate
     PlaceListMapTemplate(Builder builder) {
         mShowCurrentLocation = builder.mShowCurrentLocation;
         mIsLoading = builder.mIsLoading;
@@ -209,7 +204,6 @@ public final class PlaceListMapTemplate implements Template {
     }
 
     /** Constructs an empty instance, used by serialization code. */
-    @OptIn(markerClass = ExperimentalCarApi.class) // OnContentRefreshDelegate
     private PlaceListMapTemplate() {
         mShowCurrentLocation = false;
         mIsLoading = false;
@@ -236,7 +230,7 @@ public final class PlaceListMapTemplate implements Template {
         @Nullable
         Place mAnchor;
         @Nullable
-        @ExperimentalCarApi
+        @RequiresCarApi(5)
         OnContentRefreshDelegate mOnContentRefreshDelegate;
 
         /**
@@ -244,9 +238,10 @@ public final class PlaceListMapTemplate implements Template {
          *
          * <p>The map template will show the user's current location on the map.
          *
-         * <p>This functionality requires the app to have the {@code ACCESS_FINE_LOCATION}
-         * permission. When {@code isEnabled} is {@code true}, the host may receive location
-         * updates from the app in order to show the user's current location.
+         * <p>This functionality requires the app to have either the {@code ACCESS_FINE_LOCATION} or
+         * {@code ACCESS_COARSE_LOCATION} permission. When {@code isEnabled} is {@code true}, the
+         * host may receive location updates from the app in order to show the user's current
+         * location.
          */
         @NonNull
         public Builder setCurrentLocationEnabled(boolean isEnabled) {
@@ -373,18 +368,26 @@ public final class PlaceListMapTemplate implements Template {
          *
          * <p>Unless set with this method, the template will not have an action strip.
          *
+         * <p>The {@link Action} buttons in Map Based Template are automatically adjusted based
+         * on the screen size. On narrow width screen, icon {@link Action}s show by
+         * default. If no icon specify, showing title {@link Action}s instead. On wider width
+         * screen, title {@link Action}s show by default. If no title specify, showing icon
+         * {@link Action}s instead.
+         *
          * <h4>Requirements</h4>
          *
-         * This template allows up to 2 {@link Action}s in its {@link ActionStrip}. Of the 2 allowed
-         * {@link Action}s, one of them can contain a title as set via
-         * {@link Action.Builder#setTitle}. Otherwise, only {@link Action}s with icons are allowed.
+         * This template allows up to 4 {@link Action}s in its {@link ActionStrip}. Of the 4
+         * allowed {@link Action}s, it can either be a title {@link Action} as set via
+         * {@link Action.Builder#setTitle}, or a icon {@link Action} as set via
+         * {@link Action.Builder#setIcon}.
          *
          * @throws IllegalArgumentException if {@code actionStrip} does not meet the requirements
          * @throws NullPointerException     if {@code actionStrip} is {@code null}
          */
         @NonNull
         public Builder setActionStrip(@NonNull ActionStrip actionStrip) {
-            ACTIONS_CONSTRAINTS_SIMPLE.validateOrThrow(requireNonNull(actionStrip).getActions());
+            ACTIONS_CONSTRAINTS_NAVIGATION
+                    .validateOrThrow(requireNonNull(actionStrip).getActions());
             mActionStrip = actionStrip;
             return this;
         }
@@ -424,7 +427,7 @@ public final class PlaceListMapTemplate implements Template {
          */
         @NonNull
         @SuppressLint({"MissingGetterMatchingBuilder", "ExecutorRegistration"})
-        @ExperimentalCarApi
+        @RequiresCarApi(5)
         public Builder setOnContentRefreshListener(
                 @NonNull OnContentRefreshListener onContentRefreshListener) {
             mOnContentRefreshDelegate =
@@ -437,12 +440,11 @@ public final class PlaceListMapTemplate implements Template {
          *
          * <h4>Requirements</h4>
          *
-         * Either a header {@link Action} or title must be set on the template.
+         * <p>If neither header {@link Action} nor title have been set on the template, the
+         * header is hidden.
          *
          * @throws IllegalArgumentException if the template is in a loading state but the list is
          *                                  set, or vice versa
-         * @throws IllegalStateException    if the template does not have either a title or header
-         *                                  {@link Action} set
          */
         @NonNull
         public PlaceListMapTemplate build() {
@@ -450,10 +452,6 @@ public final class PlaceListMapTemplate implements Template {
             if (mIsLoading == hasList) {
                 throw new IllegalArgumentException(
                         "Template is in a loading state but a list is set, or vice versa");
-            }
-
-            if (CarText.isNullOrEmpty(mTitle) && mHeaderAction == null) {
-                throw new IllegalStateException("Either the title or header action must be set");
             }
 
             return new PlaceListMapTemplate(this);

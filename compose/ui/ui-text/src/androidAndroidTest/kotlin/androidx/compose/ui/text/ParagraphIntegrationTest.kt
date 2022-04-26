@@ -29,27 +29,32 @@ import androidx.compose.ui.text.FontTestData.Companion.BASIC_KERN_FONT
 import androidx.compose.ui.text.FontTestData.Companion.BASIC_MEASURE_FONT
 import androidx.compose.ui.text.FontTestData.Companion.FONT_100_REGULAR
 import androidx.compose.ui.text.FontTestData.Companion.FONT_200_REGULAR
+import androidx.compose.ui.text.android.style.lineHeight
 import androidx.compose.ui.text.font.toFontFamily
 import androidx.compose.ui.text.intl.LocaleList
 import androidx.compose.ui.text.matchers.assertThat
 import androidx.compose.ui.text.matchers.isZero
+import androidx.compose.ui.text.platform.AndroidParagraph
 import androidx.compose.ui.text.style.ResolvedTextDirection
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.text.style.TextGeometricTransform
 import androidx.compose.ui.text.style.TextIndent
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
+import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
+import kotlin.math.abs
+import kotlin.math.ceil
+import kotlin.math.roundToInt
 import org.junit.Test
 import org.junit.runner.RunWith
-import androidx.test.ext.junit.runners.AndroidJUnit4
-import kotlin.math.roundToInt
 
 @RunWith(AndroidJUnit4::class)
 @SmallTest
@@ -1707,7 +1712,7 @@ class ParagraphIntegrationTest {
                     density = defaultDensity,
                     fontFamilyResolver = resourceLoader,
                     // just have 10x font size to have a bitmap
-                    width = fontSizeInPx * 10
+                    constraints = Constraints(maxWidth = (fontSizeInPx * 10).ceilToInt())
                 )
 
                 paragraph.bitmap()
@@ -2705,6 +2710,81 @@ class ParagraphIntegrationTest {
         }
     }
 
+    @OptIn(ExperimentalTextApi::class)
+    @Test
+    fun lineHeight_InEm_when_includeFontPadding_is_false() {
+        val text = "abcdefgh"
+        val fontSize = 20f
+        // Make the layout 4 lines
+        val layoutWidth = text.length * fontSize / 4
+        val lineHeight = 2f
+
+        @Suppress("DEPRECATION")
+        val paragraph = simpleParagraph(
+            text = text,
+            style = TextStyle(
+                fontSize = fontSize.sp,
+                lineHeight = lineHeight.em,
+                platformStyle = PlatformTextStyle(includeFontPadding = false)
+            ),
+            width = layoutWidth
+        ) as AndroidParagraph
+
+        val fontMetrics = paragraph.paragraphIntrinsics.textPaint.fontMetricsInt
+        val ascentToLineHeightRatio = abs(fontMetrics.ascent.toFloat()) / fontMetrics.lineHeight()
+        val extraLineHeight = (lineHeight * fontSize) - fontSize
+        val ascentExtra = extraLineHeight * ascentToLineHeightRatio
+        val descentExtra = extraLineHeight - ascentExtra
+
+        assertThat(paragraph.lineCount).isEqualTo(4)
+        assertThat(paragraph.getLineHeight(0)).isEqualTo(fontSize + descentExtra)
+        assertThat(paragraph.getLineHeight(1)).isEqualTo(fontSize * lineHeight)
+        assertThat(paragraph.getLineHeight(2)).isEqualTo(fontSize * lineHeight)
+        assertThat(paragraph.getLineHeight(3)).isEqualTo(fontSize + ascentExtra)
+    }
+
+    @Suppress("DEPRECATION")
+    @OptIn(ExperimentalTextApi::class)
+    @Test
+    fun lineHeight_IsAppliedToFirstLine_when_includeFontPadding_is_true() {
+        // values such as text or TextStyle attributes are from the b/227095468
+        val text = "AAAAAA ".repeat(20)
+        val fontSize = 12.sp
+        val lineHeight = 16.052.sp
+        val maxLines = 4
+        val textStyle = TextStyle(
+            fontSize = fontSize,
+            lineHeight = lineHeight,
+            platformStyle = PlatformTextStyle(includeFontPadding = true)
+        )
+
+        val paragraph = simpleParagraph(
+            text = text,
+            style = textStyle,
+            maxLines = maxLines,
+            ellipsis = true,
+            width = 480f // px
+        ) as AndroidParagraph
+
+        // In LineHeightSpan line height is being ceiled and ratio calculated accordingly.
+        // Then LineHeightSpan changes the descent and ascent, but Android ignores the ascent
+        // change for the first line.
+        // Therefore the descent changes and that's what caused the 1px diff in b/227095468
+        // Here in order to stabilize the behavior we do the same calculation
+        val lineHeightInPx = ceil(with(defaultDensity) { lineHeight.toPx() })
+        val fontMetrics = paragraph.paragraphIntrinsics.textPaint.fontMetricsInt
+        val ratio = lineHeightInPx / (fontMetrics.descent - fontMetrics.ascent)
+        val expectedDescent = ceil(fontMetrics.descent * ratio.toDouble()).toInt()
+        val expectedAscent = expectedDescent - lineHeightInPx
+
+        val expectedFirstLineHeight = expectedDescent - fontMetrics.ascent
+        val expectedSecondLineHeight = expectedDescent - expectedAscent
+        assertThat(paragraph.getLineHeight(0)).isEqualTo(expectedFirstLineHeight)
+        for (i in 1..3) {
+            assertThat(paragraph.getLineHeight(i)).isEqualTo(expectedSecondLineHeight)
+        }
+    }
+
     @Test
     fun testAnnotatedString_setFontSizeOnWholeText() {
         with(defaultDensity) {
@@ -3638,12 +3718,11 @@ class ParagraphIntegrationTest {
                 )
             )
 
-            val expectedPath = Path()
-            val lineRight = paragraph.getLineRight(0)
-            expectedPath.addRect(Rect(lineRight / 2, 0f, lineRight, fontSizeInPx))
-
             // Try to select "\uDD1E\uD834\uDD1F", only "\uD834\uDD1F" is selected.
             val actualPath = paragraph.getPathForRange(1, text.length)
+
+            val expectedPath = Path()
+            expectedPath.addRect(Rect(fontSizeInPx, 0f, 2 * fontSizeInPx, fontSizeInPx))
 
             val diff = Path.combine(PathOperation.Difference, expectedPath, actualPath).getBounds()
             assertThat(diff).isEqualTo(Rect.Zero)
@@ -3664,12 +3743,11 @@ class ParagraphIntegrationTest {
                 )
             )
 
-            val expectedPath = Path()
-            val lineRight = paragraph.getLineRight(0)
-            expectedPath.addRect(Rect(lineRight / 2, 0f, lineRight, fontSizeInPx))
-
             // Try to select "\uDD1E\uD834", actually "\uD834\uDD1F" is selected.
             val actualPath = paragraph.getPathForRange(1, text.length - 1)
+
+            val expectedPath = Path()
+            expectedPath.addRect(Rect(fontSizeInPx, 0f, 2 * fontSizeInPx, fontSizeInPx))
 
             val diff = Path.combine(PathOperation.Difference, expectedPath, actualPath).getBounds()
             assertThat(diff).isEqualTo(Rect.Zero)
@@ -3690,12 +3768,11 @@ class ParagraphIntegrationTest {
                 )
             )
 
-            val expectedPath = Path()
-            val lineRight = paragraph.getLineRight(0)
-            expectedPath.addRect(Rect(lineRight / 2, 0f, lineRight / 2, fontSizeInPx))
-
             // Try to select "\uDD1E", get vertical line segment after this character.
             val actualPath = paragraph.getPathForRange(1, 2)
+
+            val expectedPath = Path()
+            expectedPath.addRect(Rect(fontSizeInPx, 0f, fontSizeInPx, fontSizeInPx))
 
             val diff = Path.combine(PathOperation.Difference, expectedPath, actualPath).getBounds()
             assertThat(diff).isEqualTo(Rect.Zero)
@@ -3705,7 +3782,7 @@ class ParagraphIntegrationTest {
     @Test
     fun testGetPathForRange_Emoji_Sequence() {
         with(defaultDensity) {
-            val text = "\u1F600\u1F603\u1F604\u1F606"
+            val text = "\uD83D\uDE00\uD83D\uDE03\uD83D\uDE04\uD83D\uDE06"
             val fontSize = 20.sp
             val fontSizeInPx = fontSize.toPx()
             val paragraph = simpleParagraph(
@@ -3716,20 +3793,11 @@ class ParagraphIntegrationTest {
                 )
             )
 
-            val expectedPath = Path()
-            val lineLeft = paragraph.getLineLeft(0)
-            val lineRight = paragraph.getLineRight(0)
-            expectedPath.addRect(
-                Rect(
-                    lineLeft + fontSizeInPx,
-                    0f,
-                    lineRight - fontSizeInPx,
-                    fontSizeInPx
-                )
-            )
-
             // Select "\u1F603\u1F604"
             val actualPath = paragraph.getPathForRange(1, text.length - 1)
+
+            val expectedPath = Path()
+            expectedPath.addRect(Rect(fontSizeInPx, 0f, fontSizeInPx * 3, fontSizeInPx))
 
             val diff = Path.combine(PathOperation.Difference, expectedPath, actualPath).getBounds()
             assertThat(diff).isEqualTo(Rect.Zero)
@@ -3984,7 +4052,7 @@ class ParagraphIntegrationTest {
 
             val paragraph = Paragraph(
                 paragraphIntrinsics = paragraphIntrinsics,
-                width = fontSizeInPx * text.length
+                constraints = Constraints(maxWidth = (fontSizeInPx * text.length).ceilToInt())
             )
 
             assertThat(paragraph.maxIntrinsicWidth).isEqualTo(paragraphIntrinsics.maxIntrinsicWidth)
@@ -4026,7 +4094,7 @@ class ParagraphIntegrationTest {
             ).merge(style),
             maxLines = maxLines,
             ellipsis = ellipsis,
-            width = width,
+            constraints = Constraints(maxWidth = width.ceilToInt()),
             density = density ?: defaultDensity,
             fontFamilyResolver = UncachedFontFamilyResolver(context)
         )

@@ -13,6 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+pluginManagement {
+    repositories {
+        mavenCentral()
+        gradlePluginPortal().content {
+            it.includeModule("org.jetbrains.kotlin.jvm", "org.jetbrains.kotlin.jvm.gradle.plugin")
+        }
+    }
+}
+
+dependencyResolutionManagement {
+    repositories {
+        mavenCentral()
+        gradlePluginPortal().content {
+            it.includeModule("com.gradle", "gradle-enterprise-gradle-plugin")
+            it.includeModule("com.gradle", "common-custom-user-data-gradle-plugin")
+        }
+    }
+}
+
 rootProject.name = "playground-plugin"
 
 // Build cache configuration is duplicated here from the GradleEnterpriseConventionsPlugin,
@@ -41,7 +61,6 @@ buildCache {
     }
 }
 
-enableFeaturePreview("VERSION_CATALOGS")
 dependencyResolutionManagement {
     versionCatalogs {
         libs {

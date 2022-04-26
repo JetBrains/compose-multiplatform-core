@@ -612,7 +612,7 @@ public class WorkManagerImpl extends WorkManager {
         RawWorkInfoDao rawWorkInfoDao = mWorkDatabase.rawWorkInfoDao();
         LiveData<List<WorkSpec.WorkInfoPojo>> inputLiveData =
                 rawWorkInfoDao.getWorkInfoPojosLiveData(
-                        RawQueries.workQueryToRawQuery(workQuery));
+                        RawQueries.toRawQuery(workQuery));
         return LiveDataUtils.dedupedMappedLiveDataFor(
                 inputLiveData,
                 WorkSpec.WORK_INFO_MAPPER,
@@ -667,7 +667,7 @@ public class WorkManagerImpl extends WorkManager {
      * @hide
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public void startWork(@NonNull String workSpecId) {
+    public void startWork(@NonNull WorkRunId workSpecId) {
         startWork(workSpecId, null);
     }
 
@@ -678,7 +678,7 @@ public class WorkManagerImpl extends WorkManager {
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public void startWork(
-            @NonNull String workSpecId,
+            @NonNull WorkRunId workSpecId,
             @Nullable WorkerParameters.RuntimeExtras runtimeExtras) {
         mWorkTaskExecutor
                 .executeOnTaskThread(
@@ -690,7 +690,7 @@ public class WorkManagerImpl extends WorkManager {
      * @hide
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public void stopWork(@NonNull String workSpecId) {
+    public void stopWork(@NonNull WorkRunId workSpecId) {
         mWorkTaskExecutor.executeOnTaskThread(new StopWorkRunnable(this, workSpecId, false));
     }
 
@@ -701,7 +701,8 @@ public class WorkManagerImpl extends WorkManager {
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public void stopForegroundWork(@NonNull String workSpecId) {
-        mWorkTaskExecutor.executeOnTaskThread(new StopWorkRunnable(this, workSpecId, true));
+        mWorkTaskExecutor.executeOnTaskThread(new StopWorkRunnable(this,
+                new WorkRunId(workSpecId), true));
     }
 
     /**

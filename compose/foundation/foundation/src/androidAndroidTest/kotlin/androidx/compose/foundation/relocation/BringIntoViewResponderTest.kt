@@ -21,7 +21,6 @@ import androidx.compose.foundation.TestActivity
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
@@ -31,16 +30,19 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.CancellableContinuation
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.TestCoroutineScope
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.advanceUntilIdle
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-@OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
+@OptIn(ExperimentalFoundationApi::class, ExperimentalCoroutinesApi::class)
 @SmallTest
 @RunWith(AndroidJUnit4::class)
 class BringIntoViewResponderTest {
@@ -48,13 +50,13 @@ class BringIntoViewResponderTest {
     @get:Rule
     val rule = createAndroidComposeRule<TestActivity>()
 
-    fun Float.toDp(): Dp = with(rule.density) { this@toDp.toDp() }
+    private fun Float.toDp(): Dp = with(rule.density) { this@toDp.toDp() }
 
     @Test
     fun zeroSizedItem_zeroSizedParent_bringIntoView() {
         // Arrange.
         val bringIntoViewRequester = BringIntoViewRequester()
-        lateinit var requestedRect: Rect
+        var requestedRect: Rect? = null
         rule.setContent {
             Box(
                 Modifier
@@ -64,7 +66,9 @@ class BringIntoViewResponderTest {
         }
 
         // Act.
-        runBlocking { bringIntoViewRequester.bringIntoView() }
+        runBlocking {
+            bringIntoViewRequester.bringIntoView()
+        }
 
         // Assert.
         rule.runOnIdle {
@@ -130,8 +134,8 @@ class BringIntoViewResponderTest {
                 Modifier
                     .size(1f.toDp())
                     .fakeScrollable { requestedRect = it }
-                    .size(20f.toDp(), 10f.toDp())
                     .bringIntoViewRequester(bringIntoViewRequester)
+                    .size(20f.toDp(), 10f.toDp())
             )
         }
 
@@ -245,6 +249,113 @@ class BringIntoViewResponderTest {
     }
 
     @Test
+    fun bringIntoView_noops_whenNewRequestContainedInCurrent() {
+        // Arrange.
+        val bringIntoViewRequester = BringIntoViewRequester()
+        val requests = mutableListOf<CancellableContinuation<Unit>>()
+        val requestScope = TestScope()
+        rule.setContent {
+            Box(
+                Modifier
+                    .fakeScrollable {
+                        suspendCancellableCoroutine {
+                            requests += it
+                        }
+                    }
+                    .bringIntoViewRequester(bringIntoViewRequester)
+            )
+        }
+
+        // Act.
+        requestScope.launch {
+            bringIntoViewRequester.bringIntoView(rect = Rect(0f, 0f, 10f, 10f))
+        }
+        requestScope.advanceUntilIdle()
+        val initialRequest = requests.single()
+        assertThat(initialRequest.isActive).isTrue()
+
+        requestScope.launch {
+            bringIntoViewRequester.bringIntoView(rect = Rect(0f, 0f, 10f, 10f))
+        }
+        requestScope.advanceUntilIdle()
+        assertThat(requests).hasSize(1)
+        assertThat(requests.single()).isSameInstanceAs(initialRequest)
+        assertThat(initialRequest.isActive).isTrue()
+    }
+
+    @Test
+    fun bringIntoView_interruptsCurrentRequest_whenNewRequestOverlapsButNotContainedByCurrent() {
+        // Arrange.
+        val bringIntoViewRequester = BringIntoViewRequester()
+        val requests = mutableListOf<CancellableContinuation<Unit>>()
+        val requestScope = TestScope()
+        rule.setContent {
+            Box(
+                Modifier
+                    .fakeScrollable {
+                        suspendCancellableCoroutine {
+                            requests += it
+                        }
+                    }
+                    .bringIntoViewRequester(bringIntoViewRequester)
+            )
+        }
+
+        // Act.
+        requestScope.launch {
+            bringIntoViewRequester.bringIntoView(rect = Rect(0f, 0f, 10f, 10f))
+        }
+        requestScope.advanceUntilIdle()
+        val initialRequest = requests.single()
+        assertThat(initialRequest.isActive).isTrue()
+
+        requestScope.launch {
+            bringIntoViewRequester.bringIntoView(rect = Rect(5f, 5f, 15f, 15f))
+        }
+        requestScope.advanceUntilIdle()
+        assertThat(requests).hasSize(2)
+        val newRequest = requests.last()
+        assertThat(newRequest).isNotSameInstanceAs(initialRequest)
+        assertThat(newRequest.isActive).isTrue()
+    }
+
+    @Test
+    fun bringIntoView_interruptsCurrentRequest_whenNewRequestOutsideCurrent() {
+        // Arrange.
+        val bringIntoViewRequester = BringIntoViewRequester()
+        val requests = mutableListOf<CancellableContinuation<Unit>>()
+        val requestScope = TestScope()
+        rule.setContent {
+            Box(
+                Modifier
+                    .fakeScrollable {
+                        suspendCancellableCoroutine {
+                            requests += it
+                        }
+                    }
+                    .bringIntoViewRequester(bringIntoViewRequester)
+            )
+        }
+
+        // Act.
+        requestScope.launch {
+            bringIntoViewRequester.bringIntoView(rect = Rect(0f, 0f, 10f, 10f))
+        }
+        requestScope.advanceUntilIdle()
+        val initialRequest = requests.single()
+        assertThat(initialRequest.isActive).isTrue()
+
+        requestScope.launch {
+            bringIntoViewRequester.bringIntoView(rect = Rect(15f, 15f, 20f, 20f))
+        }
+        requestScope.advanceUntilIdle()
+        assertThat(requests).hasSize(2)
+        val newRequest = requests.last()
+        assertThat(newRequest).isNotSameInstanceAs(initialRequest)
+        assertThat(newRequest.isActive).isTrue()
+    }
+
+    @Test
     fun bringChildIntoView_isCalled_whenRectForParentDoesNotReturnInput() {
         // Arrange.
         var requestedRect: Rect? = null
@@ -297,9 +408,7 @@ class BringIntoViewResponderTest {
                     .bringIntoViewRequester(bringIntoViewRequester)
             )
         }
-        val testScope = TestCoroutineScope().apply {
-            pauseDispatcher()
-        }
+        val testScope = TestScope()
         val requestJob = testScope.launch {
             bringIntoViewRequester.bringIntoView()
         }

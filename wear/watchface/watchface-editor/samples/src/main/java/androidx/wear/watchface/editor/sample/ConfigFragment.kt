@@ -131,12 +131,11 @@ internal class ConfigFragment : Fragment() {
         }
 
         for (settingId in settingIds) {
-            @Suppress("Deprecation") // userStyleSettings
             val styleCategory = editingSession.userStyleSchema[UserStyleSetting.Id(settingId)]!!
             configOptions.add(
                 ConfigOption(
                     id = styleCategory.id.value,
-                    icon = styleCategory.onWatchEditorData?.icon ?: styleCategory.icon,
+                    icon = styleCategory.watchFaceEditorData?.icon ?: styleCategory.icon,
                     title = styleCategory.displayName.toString(),
                     summary = styleCategory.description.toString(),
                     highlight = false

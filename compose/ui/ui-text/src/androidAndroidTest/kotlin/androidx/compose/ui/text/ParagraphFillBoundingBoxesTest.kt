@@ -34,6 +34,10 @@ import androidx.test.filters.SmallTest
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
 import androidx.compose.ui.text.matchers.assertThat
+import androidx.compose.ui.text.style.LineHeightBehavior
+import androidx.compose.ui.text.style.LineHeightTrim
+import androidx.compose.ui.text.style.LineVerticalAlignment
+import androidx.compose.ui.unit.Constraints
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -167,10 +171,74 @@ class ParagraphFillBoundingBoxesTest {
         val text = "a"
         val paragraph = Paragraph(text, style = TextStyle(lineHeight = lineHeight))
 
-        // character bound is still based on character but not the line
+        // first line line height is ignored, therefore the result is the same as without line
+        // height
         assertThat(
             paragraph.getBoundingBoxes(TextRange(0, text.length))
         ).isEqualToWithTolerance(ltrCharacterBoundariesForTestFont(text))
+    }
+
+    @OptIn(ExperimentalTextApi::class)
+    @Test
+    fun singleCharacterLineHeight_includeFontPaddingIsFalse() {
+        val lineHeight = fontSize * 2
+        val lineHeightInPx = with(defaultDensity) { lineHeight.toPx() }
+        val text = "a"
+        val paragraph = Paragraph(
+            text,
+            style = TextStyle(
+                lineHeight = lineHeight,
+                platformStyle = @Suppress("DEPRECATION") PlatformTextStyle(
+                    includeFontPadding = false
+                ),
+                lineHeightBehavior = LineHeightBehavior(
+                    alignment = LineVerticalAlignment.Proportional,
+                    trim = LineHeightTrim.None
+                )
+            ),
+        )
+
+        assertThat(
+            paragraph.getBoundingBoxes(TextRange(0, text.length))
+        ).isEqualToWithTolerance(
+            ltrCharacterBoundariesForTestFont(
+                text = text,
+                fontSizeInPx = fontSizeInPx,
+                lineHeightInPx = lineHeightInPx
+            )
+        )
+    }
+
+    @OptIn(ExperimentalTextApi::class)
+    @Test
+    fun multiLineCharacterLineHeight() {
+        val lineHeight = fontSize * 2
+        val lineHeightInPx = with(defaultDensity) { lineHeight.toPx() }
+        val text = "a\na\na"
+        @Suppress("DEPRECATION")
+        val paragraph = Paragraph(
+            text,
+            style = TextStyle(
+                lineHeight = lineHeight,
+                lineHeightBehavior = LineHeightBehavior(
+                    alignment = LineVerticalAlignment.Proportional,
+                    trim = LineHeightTrim.None
+                ),
+                platformStyle = @Suppress("DEPRECATION") PlatformTextStyle(
+                    includeFontPadding = false
+                )
+            )
+        )
+
+        assertThat(
+            paragraph.getBoundingBoxes(TextRange(0, text.length))
+        ).isEqualToWithTolerance(
+            ltrCharacterBoundariesForTestFont(
+                text = text,
+                fontSizeInPx = fontSizeInPx,
+                lineHeightInPx = lineHeightInPx
+            )
+        )
     }
 
     @Test
@@ -539,11 +607,17 @@ class ParagraphFillBoundingBoxesTest {
         return array.asRectArray()
     }
 
-    private fun ltrCharacterBoundariesForTestFont(text: String): Array<Rect> =
-        ltrCharacterBoundariesForTestFont(text, fontSizeInPx)
+    private fun ltrCharacterBoundariesForTestFont(
+        text: String,
+        fontSizeInPx: Float = this.fontSizeInPx,
+        // assumes that the test font is used and fontSize is equal to default line height
+        lineHeightInPx: Float = fontSizeInPx,
+        initialTop: Float = 0f
+    ): Array<Rect> =
+        getLtrCharacterBoundariesForTestFont(text, fontSizeInPx, lineHeightInPx, initialTop)
 
     private fun rtlCharacterBoundariesForTestFont(text: String, width: Float): Array<Rect> =
-        rtlCharacterBoundariesForTestFont(text, width, fontSizeInPx)
+        getRtlCharacterBoundariesForTestFont(text, width, fontSizeInPx)
 
     private fun Paragraph(
         text: String,
@@ -569,7 +643,7 @@ class ParagraphFillBoundingBoxesTest {
             placeholders = placeholders,
             maxLines = Int.MAX_VALUE,
             ellipsis = false,
-            width = width,
+            constraints = Constraints(maxWidth = width.ceilToInt()),
             density = defaultDensity,
             fontFamilyResolver = fontFamilyResolver
         ) as AndroidParagraph

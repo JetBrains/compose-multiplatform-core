@@ -39,7 +39,7 @@ dependencies {
         implementation(libs.kotlinStdlibCommon)
         implementation(libs.kotlinCoroutinesCore)
 
-        api("androidx.compose.runtime:runtime-saveable:1.1.0-rc01")
+        api("androidx.compose.runtime:runtime-saveable:1.1.1")
         api(project(":compose:ui:ui-geometry"))
         api(project(":compose:ui:ui-graphics"))
         api(project(":compose:ui:ui-text"))
@@ -58,7 +58,8 @@ dependencies {
 
         implementation("androidx.core:core:1.5.0")
         implementation('androidx.collection:collection:1.0.0')
-        implementation("androidx.savedstate:savedstate:1.1.0")
+        implementation("androidx.customview:customview-poolingcontainer:1.0.0-alpha01")
+        implementation project(":savedstate:savedstate-ktx")
         implementation("androidx.lifecycle:lifecycle-common-java8:2.3.0")
         implementation("androidx.lifecycle:lifecycle-runtime:2.3.0")
         implementation("androidx.lifecycle:lifecycle-viewmodel:2.3.0")
@@ -82,14 +83,17 @@ dependencies {
         androidTestImplementation(libs.testUiautomator)
         androidTestImplementation(libs.kotlinCoroutinesTest)
         androidTestImplementation(libs.espressoCore)
+        androidTestImplementation(libs.espressoContrib)
         androidTestImplementation(libs.junit)
         androidTestImplementation(libs.dexmakerMockito)
         androidTestImplementation(libs.mockitoCore)
         androidTestImplementation(libs.truth)
         androidTestImplementation(libs.mockitoKotlin)
+        androidTestImplementation(libs.material)
         androidTestImplementation(project(":compose:animation:animation-core"))
         androidTestImplementation(project(":compose:foundation:foundation"))
         androidTestImplementation(project(":compose:foundation:foundation-layout"))
+        androidTestImplementation(project(":compose:material:material"))
         androidTestImplementation(project(":compose:test-utils"))
         androidTestImplementation(project(":compose:ui:ui-test-font"))
         androidTestImplementation(project(":compose:ui:ui-test-junit4"))
@@ -143,7 +147,8 @@ if(AndroidXComposePlugin.isMultiplatformEnabled(project)) {
                 implementation("androidx.autofill:autofill:1.0.0")
                 implementation(libs.kotlinCoroutinesAndroid)
 
-                implementation("androidx.savedstate:savedstate:1.1.0")
+                implementation("androidx.customview:customview-poolingcontainer:1.0.0-alpha01")
+                implementation project(":savedstate:savedstate-ktx")
                 implementation("androidx.lifecycle:lifecycle-common-java8:2.3.0")
                 implementation("androidx.lifecycle:lifecycle-runtime:2.3.0")
                 implementation("androidx.lifecycle:lifecycle-viewmodel:2.3.0")
@@ -193,14 +198,17 @@ if(AndroidXComposePlugin.isMultiplatformEnabled(project)) {
                 implementation(libs.testExtJunitKtx)
                 implementation(libs.kotlinCoroutinesTest)
                 implementation(libs.espressoCore)
+                implementation(libs.espressoContrib)
                 implementation(libs.junit)
                 implementation(libs.dexmakerMockito)
                 implementation(libs.mockitoCore)
                 implementation(libs.truth)
                 implementation(libs.mockitoKotlin)
+                implementation(libs.material)
                 implementation(project(":compose:animation:animation-core"))
                 implementation(project(":compose:foundation:foundation"))
                 implementation(project(":compose:foundation:foundation-layout"))
+                implementation(project(":compose:material:material"))
                 implementation(project(":compose:test-utils"))
                 implementation(project(":compose:ui:ui-test-font"))
                 implementation(project(":compose:ui:ui-test-junit4"))
@@ -248,8 +256,7 @@ if(AndroidXComposePlugin.isMultiplatformEnabled(project)) {
 tasks.withType(KotlinCompile).configureEach {
     kotlinOptions {
         freeCompilerArgs += [
-            "-Xopt-in=kotlin.Experimental",
-            "-XXLanguage:+InlineClasses"
+            "-opt-in=kotlin.Experimental",
         ]
     }
 }
@@ -265,6 +272,7 @@ android {
 android {
     sourceSets.androidTest.assets.srcDirs +=
             project.rootDir.absolutePath + "/../../golden/compose/ui/ui"
+    namespace "androidx.compose.ui"
 }
 
 // Diagnostics for b/188565660

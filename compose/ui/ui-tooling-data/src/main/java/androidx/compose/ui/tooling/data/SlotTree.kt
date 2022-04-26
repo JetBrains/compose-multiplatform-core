@@ -508,8 +508,8 @@ private fun CompositionGroup.getGroup(parentContext: SourceInformationContext?):
             box,
             location,
             identity = if (!context?.name.isNullOrEmpty() &&
-                            location?.sourceFile != null &&
-                            (box.bottom - box.top > 0 || box.right - box.left > 0)) {
+                (box.bottom - box.top > 0 || box.right - box.left > 0)
+            ) {
                 this.identity
             } else {
                 null
@@ -650,7 +650,7 @@ private const val STABLE_BITS = 0b100
  */
 @UiToolingDataApi
 val Group.position: String?
-    @Suppress("EXPERIMENTAL_ANNOTATION_ON_WRONG_TARGET")
+    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
     @UiToolingDataApi
     get() = keyPosition(key)
 

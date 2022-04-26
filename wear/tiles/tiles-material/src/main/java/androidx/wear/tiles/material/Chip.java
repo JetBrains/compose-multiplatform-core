@@ -23,10 +23,12 @@ import static androidx.wear.tiles.material.ChipDefaults.DEFAULT_HEIGHT;
 import static androidx.wear.tiles.material.ChipDefaults.DEFAULT_MARGIN_PERCENT;
 import static androidx.wear.tiles.material.ChipDefaults.HORIZONTAL_PADDING;
 import static androidx.wear.tiles.material.ChipDefaults.ICON_SIZE;
-import static androidx.wear.tiles.material.ChipDefaults.PRIMARY;
-import static androidx.wear.tiles.material.ChipDefaults.VERTICAL_PADDING;
+import static androidx.wear.tiles.material.ChipDefaults.ICON_SPACER_WIDTH;
+import static androidx.wear.tiles.material.ChipDefaults.PRIMARY_COLORS;
 import static androidx.wear.tiles.material.Helper.checkNotNull;
 import static androidx.wear.tiles.material.Helper.radiusOf;
+
+import android.content.Context;
 
 import androidx.annotation.Dimension;
 import androidx.annotation.IntDef;
@@ -34,7 +36,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
-import androidx.wear.tiles.ActionBuilders.Action;
 import androidx.wear.tiles.ColorBuilders.ColorProp;
 import androidx.wear.tiles.DeviceParametersBuilders.DeviceParameters;
 import androidx.wear.tiles.DimensionBuilders.ContainerDimension;
@@ -68,13 +69,10 @@ import java.util.List;
  * <p>The Chip is Stadium shape and has a max height designed to take no more than two lines of text
  * of {@link Typography#TYPOGRAPHY_BUTTON} style. The {@link Chip} can have an icon horizontally
  * parallel to the two lines of text. Width of chip can very, and the recommended size is screen
- * dependent with the recommended margin being defined in
- * {@link ChipDefaults#DEFAULT_MARGIN_PERCENT} which is set by default.
+ * dependent with the recommended margin being applied.
  *
  * <p>The recommended set of {@link ChipColors} styles can be obtained from {@link ChipDefaults}.,
- * e.g. {@link ChipDefaults#PRIMARY} to get a color scheme for a primary {@link Chip} which by
- * default will have a solid background of {@link Colors#PRIMARY} and content color of {@link
- * Colors#ON_PRIMARY}.
+ * e.g. {@link ChipDefaults#PRIMARY_COLORS} to get a color scheme for a primary {@link Chip}.
  */
 public class Chip implements LayoutElement {
     @NonNull private final Box mElement;
@@ -97,38 +95,37 @@ public class Chip implements LayoutElement {
         @IntDef({NOT_SET, TEXT, ICON, CUSTOM_CONTENT})
         @interface ChipType {}
 
+        @NonNull private final Context mContext;
         @Nullable private LayoutElement mCustomContent;
         @NonNull private String mResourceId = "";
         @NonNull private String mPrimaryText = "";
         @Nullable private String mLabelText = null;
-        @NonNull private final Action mAction;
-        @NonNull private final String mClickableId;
-        @NonNull private String mContentDescription = "";
+        @NonNull private final Clickable mClickable;
+        @NonNull private CharSequence mContentDescription = "";
         @NonNull private ContainerDimension mWidth;
         @NonNull private DpProp mHeight = DEFAULT_HEIGHT;
-        @NonNull private ChipColors mChipColors = PRIMARY;
-        private @ChipType int mType = NOT_SET;
-        private @HorizontalAlignment int mHorizontalAlign = HORIZONTAL_ALIGN_START;
+        @NonNull private ChipColors mChipColors = PRIMARY_COLORS;
+        @ChipType private int mType = NOT_SET;
+        @HorizontalAlignment private int mHorizontalAlign = HORIZONTAL_ALIGN_START;
         @TypographyName private int mPrimaryTextTypography;
         @NonNull private DpProp mHorizontalPadding = HORIZONTAL_PADDING;
-        @NonNull private DpProp mVerticalPadding = VERTICAL_PADDING;
+        private boolean mIsScalable = true;
 
         /**
          * Creates a builder for the {@link Chip} with associated action. It is required to add
          * content later with setters.
          *
-         * @param action Associated Actions for click events. When the Chip is clicked it will fire
-         *     the associated action.
-         * @param clickableId The ID associated with the given action's clickable.
+         * @param context The application's context.
+         * @param clickable Associated {@link Clickable} for click events. When the Chip is clicked
+         *     it will fire the associated action.
          * @param deviceParameters The device parameters used to derive defaults for this Chip.
          */
-        @SuppressWarnings("LambdaLast")
         public Builder(
-                @NonNull Action action,
-                @NonNull String clickableId,
+                @NonNull Context context,
+                @NonNull Clickable clickable,
                 @NonNull DeviceParameters deviceParameters) {
-            mAction = action;
-            mClickableId = clickableId;
+            mContext = context;
+            mClickable = clickable;
             mWidth =
                     dp(
                             (100 - 2 * DEFAULT_MARGIN_PERCENT)
@@ -138,18 +135,17 @@ public class Chip implements LayoutElement {
         }
 
         /**
-         * Sets the width of {@link Chip}. If not set, default value will be screen width decreased
-         * by {@link ChipDefaults#DEFAULT_MARGIN_PERCENT}.
+         * Sets the width of {@link Chip}. If not set, default value will be set to fill the screen.
          */
         @NonNull
-        public Builder setWidth(@NonNull DpProp width) {
+        public Builder setWidth(@NonNull ContainerDimension width) {
             mWidth = width;
             return this;
         }
 
         /**
-         * Sets the width of {@link Chip}. If not set, default value will be screen width decreased
-         * by {@link ChipDefaults#DEFAULT_MARGIN_PERCENT}.
+         * Sets the width of {@link TitleChip}. If not set, default value will be set to fill the
+         * screen.
          */
         @NonNull
         public Builder setWidth(@Dimension(unit = DP) float width) {
@@ -173,7 +169,7 @@ public class Chip implements LayoutElement {
          * this for chip containing icon.
          */
         @NonNull
-        public Builder setContentDescription(@NonNull String contentDescription) {
+        public Builder setContentDescription(@NonNull CharSequence contentDescription) {
             this.mContentDescription = contentDescription;
             return this;
         }
@@ -201,6 +197,17 @@ public class Chip implements LayoutElement {
         @NonNull
         Builder setPrimaryTextTypography(@TypographyName int typography) {
             this.mPrimaryTextTypography = typography;
+            return this;
+        }
+
+        /**
+         * Used for creating CompactChip and TitleChip.
+         *
+         * <p>Sets whether the font for the primary text is scalable.
+         */
+        @NonNull
+        Builder setIsPrimaryTextScalable(boolean isScalable) {
+            this.mIsScalable = isScalable;
             return this;
         }
 
@@ -264,7 +271,7 @@ public class Chip implements LayoutElement {
          * will be used for the background of the button, {@link ChipColors#getContentColor()} for
          * main text, {@link ChipColors#getSecondaryContentColor()} for label text and {@link
          * ChipColors#getIconTintColor()} will be used as tint color for the icon itself. If not
-         * set, {@link ChipDefaults#PRIMARY} will be used.
+         * set, {@link ChipDefaults#PRIMARY_COLORS} will be used.
          */
         @NonNull
         public Builder setChipColors(@NonNull ChipColors chipColors) {
@@ -292,22 +299,8 @@ public class Chip implements LayoutElement {
 
         /** Used for creating CompactChip and TitleChip. */
         @NonNull
-        Builder setVerticalPadding(@NonNull DpProp verticalPadding) {
-            this.mVerticalPadding = verticalPadding;
-            return this;
-        }
-
-        /** Used for creating CompactChip and TitleChip. */
-        @NonNull
         Builder setHeight(@NonNull DpProp height) {
             this.mHeight = height;
-            return this;
-        }
-
-        /** Used for creating CompactChip and TitleChip. */
-        @NonNull
-        Builder setWidth(@NonNull ContainerDimension width) {
-            this.mWidth = width;
             return this;
         }
 
@@ -324,17 +317,11 @@ public class Chip implements LayoutElement {
         public Chip build() {
             Modifiers.Builder modifiers =
                     new Modifiers.Builder()
-                            .setClickable(
-                                    new Clickable.Builder()
-                                            .setId(mClickableId)
-                                            .setOnClick(mAction)
-                                            .build())
+                            .setClickable(mClickable)
                             .setPadding(
                                     new Padding.Builder()
                                             .setStart(mHorizontalPadding)
                                             .setEnd(mHorizontalPadding)
-                                            .setBottom(mVerticalPadding)
-                                            .setTop(mVerticalPadding)
                                             .build())
                             .setBackground(
                                     new Background.Builder()
@@ -344,10 +331,10 @@ public class Chip implements LayoutElement {
                                                             .setRadius(radiusOf(mHeight))
                                                             .build())
                                             .build());
-            if (!mContentDescription.isEmpty()) {
+            if (mContentDescription.length() > 0) {
                 modifiers.setSemantics(
                         new ModifiersBuilders.Semantics.Builder()
-                                .setContentDescription(mContentDescription)
+                                .setContentDescription(mContentDescription.toString())
                                 .build());
             }
 
@@ -373,35 +360,36 @@ public class Chip implements LayoutElement {
                 return checkNotNull(mCustomContent);
             }
             Text mainTextElement =
-                    new Text.Builder()
-                            .setText(mPrimaryText)
+                    new Text.Builder(mContext, mPrimaryText)
                             .setTypography(mPrimaryTextTypography)
                             .setColor(mChipColors.getContentColor())
                             .setMaxLines(getCorrectMaxLines())
-                            .setOverflow(LayoutElementBuilders.TEXT_OVERFLOW_TRUNCATE)
+                            .setOverflow(LayoutElementBuilders.TEXT_OVERFLOW_ELLIPSIZE_END)
                             .setMultilineAlignment(LayoutElementBuilders.TEXT_ALIGN_START)
+                            .setIsScalable(mIsScalable)
                             .build();
 
             // Placeholder for text.
             Column.Builder column =
                     new Column.Builder()
                             .setHorizontalAlignment(HORIZONTAL_ALIGN_START)
-                            .addContent(mainTextElement);
+                            .addContent(putLayoutInBox(mainTextElement).build());
+
             if (mLabelText != null) {
                 Text labelTextElement =
-                        new Text.Builder()
-                                .setText(mLabelText)
+                        new Text.Builder(mContext, mLabelText)
                                 .setTypography(Typography.TYPOGRAPHY_CAPTION2)
                                 .setColor(mChipColors.getSecondaryContentColor())
                                 .setMaxLines(1)
-                                .setOverflow(LayoutElementBuilders.TEXT_OVERFLOW_TRUNCATE)
+                                .setOverflow(LayoutElementBuilders.TEXT_OVERFLOW_ELLIPSIZE_END)
                                 .setMultilineAlignment(LayoutElementBuilders.TEXT_ALIGN_START)
                                 .build();
-                column.addContent(labelTextElement);
+                column.addContent(putLayoutInBox(labelTextElement).build());
             }
 
+            Box texts = putLayoutInBox(column.build()).build();
             if (mType == TEXT) {
-                return column.build();
+                return texts;
             } else {
                 return new Row.Builder()
                         .addContent(
@@ -417,9 +405,9 @@ public class Chip implements LayoutElement {
                         .addContent(
                                 new Spacer.Builder()
                                         .setHeight(mHeight)
-                                        .setWidth(VERTICAL_PADDING)
+                                        .setWidth(ICON_SPACER_WIDTH)
                                         .build())
-                        .addContent(column.build())
+                        .addContent(texts)
                         .setVerticalAlignment(LayoutElementBuilders.VERTICAL_ALIGN_CENTER)
                         .build();
             }
@@ -430,6 +418,11 @@ public class Chip implements LayoutElement {
                 return mMaxLines;
             }
             return mLabelText != null ? 1 : 2;
+        }
+
+        private Box.Builder putLayoutInBox(@NonNull LayoutElement element) {
+            // Wrapped and centered content are default.
+            return new Box.Builder().addContent(element);
         }
     }
 
@@ -447,9 +440,8 @@ public class Chip implements LayoutElement {
 
     /** Returns click event action associated with this Chip. */
     @NonNull
-    public Action getAction() {
-        return checkNotNull(
-                checkNotNull(checkNotNull(mElement.getModifiers()).getClickable()).getOnClick());
+    public Clickable getClickable() {
+        return checkNotNull(checkNotNull(mElement.getModifiers()).getClickable());
     }
 
     /** Returns background color of this Chip. */
@@ -483,24 +475,33 @@ public class Chip implements LayoutElement {
                 }
             }
         }
-        if (content instanceof Column) {
-            Column columnContent = (Column) content;
+        if (content instanceof Box && ((Box) content).getContents().get(0) instanceof Column) {
+            Column columnContent = (Column) ((Box) content).getContents().get(0);
             List<LayoutElement> contents = columnContent.getContents();
 
             if (contents.size() == 1 || contents.size() == 2) {
                 // This is potentially our chip and this part contains 1 or 2 lines of text.
                 LayoutElement element = contents.get(0);
-                // To elementary Text class as Material Text when it goes to proto disappears.
-                if (element instanceof LayoutElementBuilders.Text) {
-                    contentColor = getTextColorFromContent((LayoutElementBuilders.Text) element);
+                if (element instanceof Box
+                        && ((Box) element).getContents().get(0)
+                                instanceof LayoutElementBuilders.Text) {
+                    // To elementary Text class as Material Text when it goes to proto disappears.
+                    contentColor =
+                            getTextColorFromContent(
+                                    (LayoutElementBuilders.Text)
+                                            ((Box) element).getContents().get(0));
 
                     if (contents.size() == 2) {
                         element = contents.get(1);
-                        // To elementary Text class as Material Text when it goes to proto
-                        // disappears.
-                        if (element instanceof LayoutElementBuilders.Text) {
+                        if (element instanceof Box
+                                && ((Box) element).getContents().get(0)
+                                        instanceof LayoutElementBuilders.Text) {
+                            // To elementary Text class as Material Text when it goes to proto
+                            // disappears.
                             secondaryContentColor =
-                                    getTextColorFromContent((LayoutElementBuilders.Text) element);
+                                    getTextColorFromContent(
+                                            (LayoutElementBuilders.Text)
+                                                    ((Box) element).getContents().get(0));
                         }
                     }
                 }
@@ -539,7 +540,7 @@ public class Chip implements LayoutElement {
 
     /** Returns content description of this Chip. */
     @NonNull
-    public String getContentDescription() {
+    public CharSequence getContentDescription() {
         return checkNotNull(
                 checkNotNull(checkNotNull(mElement.getModifiers()).getSemantics())
                         .getContentDescription());
@@ -552,7 +553,8 @@ public class Chip implements LayoutElement {
     }
 
     /** Returns the horizontal alignment of the content in this Chip. */
-    public @HorizontalAlignment int getHorizontalAlignment() {
+    @HorizontalAlignment
+    public int getHorizontalAlignment() {
         return checkNotNull(mElement.getHorizontalAlignment()).getValue();
     }
 

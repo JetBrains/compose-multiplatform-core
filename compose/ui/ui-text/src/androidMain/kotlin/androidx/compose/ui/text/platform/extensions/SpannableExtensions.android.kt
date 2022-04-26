@@ -33,6 +33,7 @@ import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.isSpecified
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.android.InternalPlatformTextApi
@@ -40,6 +41,7 @@ import androidx.compose.ui.text.android.style.BaselineShiftSpan
 import androidx.compose.ui.text.android.style.FontFeatureSpan
 import androidx.compose.ui.text.android.style.LetterSpacingSpanEm
 import androidx.compose.ui.text.android.style.LetterSpacingSpanPx
+import androidx.compose.ui.text.android.style.LineHeightBehaviorSpan
 import androidx.compose.ui.text.android.style.LineHeightSpan
 import androidx.compose.ui.text.android.style.ShadowSpan
 import androidx.compose.ui.text.android.style.SkewXSpan
@@ -55,6 +57,7 @@ import androidx.compose.ui.text.intersect
 import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.text.intl.LocaleList
 import androidx.compose.ui.text.style.BaselineShift
+import androidx.compose.ui.text.style.LineHeightBehavior
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextGeometricTransform
 import androidx.compose.ui.text.style.TextIndent
@@ -110,30 +113,55 @@ internal fun Spannable.setTextIndent(
     }
 }
 
+@OptIn(InternalPlatformTextApi::class, ExperimentalTextApi::class)
+internal fun Spannable.setLineHeight(
+    lineHeight: TextUnit,
+    contextFontSize: Float,
+    density: Density,
+    lineHeightBehavior: LineHeightBehavior
+) {
+    val resolvedLineHeight = resolveLineHeightInPx(lineHeight, contextFontSize, density)
+    if (!resolvedLineHeight.isNaN()) {
+        setSpan(
+            span = LineHeightBehaviorSpan(
+                lineHeight = resolvedLineHeight,
+                startIndex = 0,
+                endIndex = length,
+                trimFirstLineTop = lineHeightBehavior.trim.isTrimFirstLineTop(),
+                trimLastLineBottom = lineHeightBehavior.trim.isTrimLastLineBottom(),
+                topPercentage = lineHeightBehavior.alignment.topPercentage
+            ),
+            start = 0,
+            end = length
+        )
+    }
+}
+
 @OptIn(InternalPlatformTextApi::class)
-@Suppress("DEPRECATION")
 internal fun Spannable.setLineHeight(
     lineHeight: TextUnit,
     contextFontSize: Float,
     density: Density
 ) {
-    when (lineHeight.type) {
-        TextUnitType.Sp -> with(density) {
-            setSpan(
-                LineHeightSpan(ceil(lineHeight.toPx()).toInt()),
-                0,
-                length
-            )
-        }
-        TextUnitType.Em -> {
-            setSpan(
-                LineHeightSpan(ceil(lineHeight.value * contextFontSize).toInt()),
-                0,
-                length
-            )
-        }
-        else -> {
-        } // Do nothing
+    val resolvedLineHeight = resolveLineHeightInPx(lineHeight, contextFontSize, density)
+    if (!resolvedLineHeight.isNaN()) {
+        setSpan(
+            span = LineHeightSpan(lineHeight = resolvedLineHeight),
+            start = 0,
+            end = length
+        )
+    }
+}
+
+private fun resolveLineHeightInPx(
+    lineHeight: TextUnit,
+    contextFontSize: Float,
+    density: Density
+): Float {
+    return when (lineHeight.type) {
+        TextUnitType.Sp -> with(density) { lineHeight.toPx() }
+        TextUnitType.Em -> lineHeight.value * contextFontSize
+        else -> Float.NaN
     }
 }
 

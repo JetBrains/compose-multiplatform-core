@@ -21,19 +21,20 @@ import static androidx.wear.tiles.DimensionBuilders.dp;
 import static androidx.wear.tiles.LayoutElementBuilders.HORIZONTAL_ALIGN_CENTER;
 import static androidx.wear.tiles.material.ChipDefaults.TITLE_HEIGHT;
 import static androidx.wear.tiles.material.ChipDefaults.TITLE_HORIZONTAL_PADDING;
-import static androidx.wear.tiles.material.ChipDefaults.TITLE_PRIMARY;
+import static androidx.wear.tiles.material.ChipDefaults.TITLE_PRIMARY_COLORS;
+
+import android.content.Context;
 
 import androidx.annotation.Dimension;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
-import androidx.wear.tiles.ActionBuilders.Action;
 import androidx.wear.tiles.DeviceParametersBuilders.DeviceParameters;
 import androidx.wear.tiles.DimensionBuilders.ContainerDimension;
-import androidx.wear.tiles.DimensionBuilders.DpProp;
 import androidx.wear.tiles.LayoutElementBuilders.HorizontalAlignment;
 import androidx.wear.tiles.LayoutElementBuilders.LayoutElement;
+import androidx.wear.tiles.ModifiersBuilders.Clickable;
 import androidx.wear.tiles.proto.LayoutElementProto;
 
 /**
@@ -43,9 +44,8 @@ import androidx.wear.tiles.proto.LayoutElementProto;
  * take one line of text of {@link Typography#TYPOGRAPHY_TITLE2} style.
  *
  * <p>The recommended set of {@link ChipColors} styles can be obtained from {@link ChipDefaults},
- * e.g. {@link ChipDefaults#TITLE_PRIMARY} to get a color scheme for a primary {@link TitleChip}
- * which by default will have a solid background of {@link Colors#PRIMARY} and text color of {@link
- * Colors#ON_PRIMARY}.
+ * e.g. {@link ChipDefaults#TITLE_PRIMARY_COLORS} to get a color scheme for a primary {@link
+ * TitleChip}.
  */
 public class TitleChip implements LayoutElement {
     @NonNull private final Chip mElement;
@@ -56,36 +56,35 @@ public class TitleChip implements LayoutElement {
 
     /** Builder class for {@link TitleChip}. */
     public static final class Builder implements LayoutElement.Builder {
+        @NonNull private final Context mContext;
         @NonNull private final String mText;
-        @NonNull private final Action mAction;
-        @NonNull private final String mClickableId;
+        @NonNull private final Clickable mClickable;
         @NonNull private final DeviceParameters mDeviceParameters;
-        @NonNull private ChipColors mChipColors = TITLE_PRIMARY;
-        private @HorizontalAlignment int mHorizontalAlign = HORIZONTAL_ALIGN_CENTER;
+        @NonNull private ChipColors mChipColors = TITLE_PRIMARY_COLORS;
+        @HorizontalAlignment private int mHorizontalAlign = HORIZONTAL_ALIGN_CENTER;
 
         // Indicates that the width isn't set, so it will be automatically set by Chip.Builder
         // constructor.
-        @Nullable private DpProp mWidth = null;
+        @Nullable private ContainerDimension mWidth = null;
 
         /**
          * Creates a builder for the {@link TitleChip} with associated action and the given text
          *
+         * @param context The application's context.
          * @param text The text to be displayed in this title chip. Text will be displayed in 1 line
          *     and truncated if it doesn't fit.
-         * @param action Associated Actions for click events. When the TitleChip is clicked it will
-         *     fire the associated action.
-         * @param clickableId The ID associated with the given action's clickable.
+         * @param clickable Associated {@link Clickable} for click events. When the TitleChip is
+         *     clicked it will fire the associated action.
          * @param deviceParameters The device parameters used for styling text.
          */
-        @SuppressWarnings("LambdaLast")
         public Builder(
+                @NonNull Context context,
                 @NonNull String text,
-                @NonNull Action action,
-                @NonNull String clickableId,
+                @NonNull Clickable clickable,
                 @NonNull DeviceParameters deviceParameters) {
+            this.mContext = context;
             this.mText = text;
-            this.mAction = action;
-            this.mClickableId = clickableId;
+            this.mClickable = clickable;
             this.mDeviceParameters = deviceParameters;
         }
 
@@ -94,7 +93,7 @@ public class TitleChip implements LayoutElement {
          * Sets the colors for the {@link TitleChip}. If set, {@link
          * ChipColors#getBackgroundColor()} will be used for the background of the button and {@link
          * ChipColors#getContentColor()} for the text. If not set, {@link
-         * ChipDefaults#TITLE_PRIMARY} will be used.
+         * ChipDefaults#TITLE_PRIMARY_COLORS} will be used.
          */
         @NonNull
         public Builder setChipColors(@NonNull ChipColors chipColors) {
@@ -110,18 +109,18 @@ public class TitleChip implements LayoutElement {
         }
 
         /**
-         * Sets the width of {@link TitleChip}. If not set, default value will be screen width
-         * decreased by {@link ChipDefaults#DEFAULT_MARGIN_PERCENT}.
+         * Sets the width of {@link TitleChip}. If not set, default value will be set to fill the
+         * screen.
          */
         @NonNull
-        public Builder setWidth(@NonNull DpProp width) {
+        public Builder setWidth(@NonNull ContainerDimension width) {
             mWidth = width;
             return this;
         }
 
         /**
-         * Sets the width of {@link TitleChip}. If not set, default value will be screen width
-         * decreased by {@link ChipDefaults#DEFAULT_MARGIN_PERCENT}.
+         * Sets the width of {@link TitleChip}. If not set, default value will be set to fill the
+         * screen.
          */
         @NonNull
         public Builder setWidth(@Dimension(unit = DP) float width) {
@@ -134,7 +133,7 @@ public class TitleChip implements LayoutElement {
         @Override
         public TitleChip build() {
             Chip.Builder chipBuilder =
-                    new Chip.Builder(mAction, mClickableId, mDeviceParameters)
+                    new Chip.Builder(mContext, mClickable, mDeviceParameters)
                             .setChipColors(mChipColors)
                             .setContentDescription(mText)
                             .setHorizontalAlignment(mHorizontalAlign)
@@ -142,7 +141,8 @@ public class TitleChip implements LayoutElement {
                             .setMaxLines(1)
                             .setHorizontalPadding(TITLE_HORIZONTAL_PADDING)
                             .setPrimaryTextContent(mText)
-                            .setPrimaryTextTypography(Typography.TYPOGRAPHY_TITLE2);
+                            .setPrimaryTextTypography(Typography.TYPOGRAPHY_TITLE2)
+                            .setIsPrimaryTextScalable(false);
 
             if (mWidth != null) {
                 chipBuilder.setWidth(mWidth);
@@ -150,12 +150,6 @@ public class TitleChip implements LayoutElement {
 
             return new TitleChip(chipBuilder.build());
         }
-    }
-
-    /** Returns height of this Chip. */
-    @NonNull
-    public ContainerDimension getHeight() {
-        return mElement.getHeight();
     }
 
     /** Returns width of this Chip. */
@@ -166,20 +160,14 @@ public class TitleChip implements LayoutElement {
 
     /** Returns click event action associated with this Chip. */
     @NonNull
-    public Action getAction() {
-        return mElement.getAction();
+    public Clickable getClickable() {
+        return mElement.getClickable();
     }
 
     /** Returns chip color of this Chip. */
     @NonNull
     public ChipColors getChipColors() {
         return mElement.getChipColors();
-    }
-
-    /** Returns content description of this Chip. */
-    @NonNull
-    public String getContentDescription() {
-        return mElement.getContentDescription();
     }
 
     /** Returns content of this Chip. */
@@ -189,7 +177,8 @@ public class TitleChip implements LayoutElement {
     }
 
     /** Returns the horizontal alignment of the content in this Chip. */
-    public @HorizontalAlignment int getHorizontalAlignment() {
+    @HorizontalAlignment
+    public int getHorizontalAlignment() {
         return mElement.getHorizontalAlignment();
     }
 

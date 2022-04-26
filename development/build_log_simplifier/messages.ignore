@@ -199,6 +199,18 @@ w: \$SUPPORT/compose/ui/ui/src/commonMain/kotlin/androidx/compose/ui/node/DepthS
 w: \$SUPPORT/compose/ui/ui/src/commonMain/kotlin/androidx/compose/ui/node/DepthSortedSet\.kt: \([0-9]+, [0-9]+\): The corresponding parameter in the supertype 'Comparator' is named 'b'\. This may cause problems when calling this function with named arguments\.
 # > Task :benchmark:benchmark-common:runErrorProne
 \^
+symbol:   class OnBackInvokedCallback
+location: package android\.view
+import android\.view\.OnBackInvokedDispatcher;
+symbol:   class OnBackInvokedDispatcher
+private OnBackInvokedCallback mOnBackInvokedCallback;
+location: class OnBackPressedDispatcher
+private OnBackInvokedDispatcher mInvokedDispatcher;
+public void setOnBackPressedInvoker\(@NonNull OnBackInvokedDispatcher invoker\) \{
+OnBackInvokedDispatcher onBackInvokedDispatcher,
+location: class Api[0-9]+Impl
+OnBackInvokedCallback onBackInvokedCallback, int priority
+OnBackInvokedCallback onBackInvokedCallback
 public abstract void jvmDelete\(T t\);
 public abstract void jvmInsert\(@org\.jetbrains\.annotations\.NotNull\(\)
 public abstract java\.util\.List<androidx\.room\.androidx\.room\.integration\.kotlintestapp\.test\.JvmNameInDaoTest\.JvmNameEntity> jvmQuery\(\);
@@ -215,6 +227,8 @@ Configuration cache entry reused\.
 Configuration cache entry stored with [0-9]+ problems\.
 Configuration cache entry stored with [0-9] problem\.
 [0-9]+ actionable tasks: [0-9]+ executed, [0-9]+ from cache
+WARNING: [0-9]+ build scan custom values were not captured:
+\- Maximum number of custom values \([0-9]+,[0-9]+\) exceeded: [:A-Za-z0-9#\-]+
 A build scan will not be published due to this build running offline\.
 Configuration cache entry stored\.
 See the profiling report at\: file\:\/\/\$OUT_DIR\/androidx\/build\/reports\/profile\/profile\-[0-9]+\-[0-9]+\-[0-9]+\-[0-9]+\-[0-9]+\-[0-9]+\.html
@@ -234,7 +248,17 @@ Note: \$SUPPORT/samples/SupportSliceDemos/src/main/java/com/example/androidx/sli
 \$SUPPORT/emoji[0-9]+/emoji[0-9]+\-benchmark/src/androidTest/AndroidManifest\.xml:[0-9]+:[0-9]+\-[0-9]+:[0-9]+ Warning:
 # > Task :leanback:leanback:compileDebugAndroidTestJavaWithJavac
 reason: class file for kotlin\.annotation\.AnnotationTarget not found
+warning: unknown enum constant AnnotationTarget\.PROPERTY
+warning: unknown enum constant AnnotationTarget\.LOCAL_VARIABLE
+warning: unknown enum constant AnnotationTarget\.VALUE_PARAMETER
+warning: unknown enum constant AnnotationTarget\.CONSTRUCTOR
+warning: unknown enum constant AnnotationTarget\.FUNCTION
+warning: unknown enum constant AnnotationTarget\.PROPERTY_GETTER
+warning: unknown enum constant AnnotationTarget\.PROPERTY_SETTER
+warning: unknown enum constant AnnotationTarget\.FILE
+warning: unknown enum constant AnnotationTarget\.TYPEALIAS
 reason: class file for kotlin\.annotation\.AnnotationRetention not found
+warning: unknown enum constant AnnotationTarget\.CLASS
 warning: unknown enum constant AnnotationTarget\.ANNOTATION_CLASS
 # > Task :recyclerview:recyclerview-benchmark:processReleaseAndroidTestManifest
 \$SUPPORT/recyclerview/recyclerview\-benchmark/src/androidTest/AndroidManifest\.xml:[0-9]+:[0-9]+\-[0-9]+:[0-9]+ Warning:
@@ -267,6 +291,7 @@ w\: \$CHECKOUT\/prebuilts\/androidx\/external\/org\/jetbrains\/kotlin\/kotlin\-s
 # > Task :compose:material:material:icons:generator:zipHtmlResultsOfTest
 Html results of .* zipped into.*\.zip
 [0-9]+ problems were found storing the configuration cache, [0-9]+ of which seem unique\.
+\- Task `:[:A-Za-z0-9#\-]+` of type `org\.jetbrains\.kotlin\.gradle\.plugin\.mpp\.[A-Za-z0-9]+`: invocation of 'Task\.project' at execution time is unsupported\.
 See https://docs\.gradle\.org/[0-9]+\.[0-9]+.*/userguide/configuration_cache\.html\#config_cache:requirements:disallowed_types
 [0-9]+ problem was found storing the configuration cache.
 \- Task `:listTaskOutputs` of type `androidx\.build\.ListTaskOutputsTask`: invocation of 'Task\.project' at execution time is unsupported\.
@@ -281,6 +306,10 @@ See the complete report at file://\$SUPPORT/build/reports/configuration\-cache/[
 See the complete report at file://\$OUT_DIR/androidx/build/reports/configuration\-cache/[^ ]*/[^ ]*/configuration\-cache\-report\.html
 # > Task :annotation:annotation-experimental-lint:test
 WARNING: An illegal reflective access operation has occurred
+WARNING: Illegal reflective access by org\.robolectric\.interceptors\.AndroidInterceptors\$FileDescriptorInterceptor to field java\.io\.FileDescriptor\.fd
+WARNING: Please consider reporting this to the maintainers of org\.robolectric\.interceptors\.AndroidInterceptors\$FileDescriptorInterceptor
+WARNING: Illegal reflective access by org\.robolectric\.util\.ReflectionHelpers\$[0-9]+ \(file:\$CHECKOUT/prebuilts/androidx/external/org/robolectric/shadowapi/[0-9]+\.[0-9]+\.[0-9]+/shadowapi\-[0-9]+\.[0-9]+\.[0-9]+\.jar\) to field java\.io\.FileDescriptor\.fd
+WARNING: Please consider reporting this to the maintainers of org\.robolectric\.util\.ReflectionHelpers\$[0-9]+
 WARNING: Please consider reporting this to the maintainers of org\.jetbrains\.kotlin\.kapt[0-9]+\.base\.javac\.KaptJavaFileManager
 WARNING: Illegal reflective access by com\.intellij\.util\.ReflectionUtil \(file:\$CHECKOUT/prebuilts/androidx/external/com/google/devsite/dackka/[0-9]+\.[0-9]+\.[0-9]+/dackka\-[0-9]+\.[0-9]+\.[0-9]+\.jar\) to method java\.util\.ResourceBundle\.setParent\(java\.util\.ResourceBundle\)
 WARNING: Please consider reporting this to the maintainers of com\.intellij\.util\.ReflectionUtil
@@ -288,6 +317,7 @@ WARNING: Use \-\-illegal\-access=warn to enable warnings of further illegal refl
 WARNING: All illegal access operations will be denied in a future release
 # > Task :ipc:ipc-compiler:kaptTestKotlin
 Annotation processors discovery from compile classpath is deprecated\.
+Set 'kapt\.include\.compile\.classpath=false' to disable discovery\.
 Set 'kapt\.includeCompileClasspath = false' to disable discovery\.
 Run the build with '\-\-info' for more details\.
 # > Task :room:room-compiler:test
@@ -310,8 +340,6 @@ This build uses unsafe internal compiler arguments\:
 This mode is not recommended for production use\,
 as no stability\/compatibility guarantees are given on
 compiler or generated code\. Use it at your own risk\!
-# > Task :compose:ui:ui-util:compileReleaseKotlin
-\-XXLanguage\:\+InlineClasses
 # > Task :docs-public:lintDebug
 Wrote HTML report to file://\$OUT_DIR/androidx/docs\-public/build/reports/lint\-results\-debug\.html
 # > Task :camera:camera-core:compileDebugJavaWithJavac
@@ -399,9 +427,12 @@ Found an unresolved type in androidx\.paging\.LivePagedListBuilder\$setFetchExec
 # > Task :compose:ui:ui-graphics:ui-graphics-benchmark:processReleaseAndroidTestManifest
 \$SUPPORT/compose/ui/ui\-graphics/benchmark/src/androidTest/AndroidManifest\.xml:[0-9]+:[0-9]+\-[0-9]+:[0-9]+ Warning:
 # > Task :docs-public:doclavaDocs
+\$OUT_DIR/androidx/docs\-public/build/srcs/androidx/activity/OnBackPressedDispatcher\.java:[0-9]+: error: cannot find symbol
+import android\.view\.OnBackInvokedCallback;
 \$OUT_DIR\/androidx\/docs\-public\/build\/srcs\/androidx\/work\/impl\/WorkManagerImpl\.java\:[0-9]+\: error\: cannot find symbol
 import static android\.app\.PendingIntent\.FLAG_MUTABLE\;
 # > Task :docs-public:dackkaDocs
+WARN\: nullability annotation on Kotlin source\.If the annotation cannot be found in source\, it might be unavoidable from inheritance\.
 PROGRESS: Initializing plugins
 Loaded plugins: \[org\.jetbrains\.dokka\.base\.DokkaBase, com\.google\.devsite\.DevsitePlugin\]
 Loaded: \[
@@ -584,9 +615,23 @@ Information in locals\-table is invalid with respect to the stack map table\. Lo
 Info: Some warnings are typically a sign of using an outdated Java toolchain\. To fix, recompile the source with an updated toolchain\.
 # > Task :compose:ui:ui-inspection:buildCMakeRelWithDebInfo[arm64-v8a]
 C/C\+\+: ninja: warning: bad deps log signature or version; starting over
+# > Task :textclassifier:integration-tests:testapp:compileReleaseJavaWithJavac
 # > Task :room:integration-tests:room-testapp-kotlin:kspWithKspDebugAndroidTestKotlin
 w: \[ksp\] Using @JvmName annotation on a function or accessor that will be overridden by Room is not supported\. If this is important for your use case, please file a bug at https://issuetracker\.google\.com/issues/new\?component=[0-9]+ with details\. \- androidx\.room\.androidx\.room\.integration\.kotlintestapp\.test\.JvmNameInDaoTest\.JvmNameDb\.jvmDao\(\)
 w: \[ksp\] \$SUPPORT/room/integration\-tests/kotlintestapp/src/androidTest/java/androidx/room/integration/kotlintestapp/test/JvmNameInDaoTest\.kt:[0-9]+: Using @JvmName annotation on a function or accessor that will be overridden by Room is not supported\. If this is important for your use case, please file a bug at https://issuetracker\.google\.com/issues/new\?component=[0-9]+ with details\.
 # > Task :room:integration-tests:room-testapp-kotlin:kaptWithKaptDebugAndroidTestKotlin
 \$OUT_DIR/androidx/room/integration\-tests/room\-testapp\-kotlin/build/tmp/kapt[0-9]+/stubs/withKaptDebugAndroidTest/androidx/room/androidx/room/integration/kotlintestapp/test/JvmNameInDaoTest\.java:[0-9]+: warning: Using @JvmName annotation on a function or accessor that will be overridden by Room is not supported\. If this is important for your use case, please file a bug at https://issuetracker\.google\.com/issues/new\?component=[0-9]+ with details\.
 public abstract androidx\.room\.androidx\.room\.integration\.kotlintestapp\.test\.JvmNameInDaoTest\.JvmNameDao jvmDao\(\);
+# > Task :hilt:integration-tests:hilt-testapp-worker:kaptGenerateStubsDebugUnitTestKotlin
+at org\.jetbrains\.kotlin\.compilerRunner\.GradleCompilerRunner\.runCompilerAsync\(GradleKotlinCompilerRunner\.kt:[0-9]+\)
+at org\.jetbrains\.kotlin\.compilerRunner\.GradleCompilerRunner\.runJvmCompilerAsync\(GradleKotlinCompilerRunner\.kt:[0-9]+\)
+at org\.jetbrains\.kotlin\.gradle\.tasks\.KotlinCompile\.callCompilerAsync\$kotlin_gradle_plugin\(Tasks\.kt:[0-9]+\)
+at org\.jetbrains\.kotlin\.gradle\.tasks\.AbstractKotlinCompile\.executeImpl\(Tasks\.kt:[0-9]+\)
+at org\.jetbrains\.kotlin\.gradle\.tasks\.AbstractKotlinCompile\.execute\(Tasks\.kt:[0-9]+\)
+# Gradle will log if you are not authenticated to upload scans
+A build scan was not published as you have not authenticated with server 'ge\.androidx\.dev'\.
+# > Task :core:core:processDebugAndroidTestManifest
+package=".*" found in source AndroidManifest\.xml: .*/AndroidManifest\.xml\.
+Setting the namespace via a source AndroidManifest\.xml's package attribute is deprecated\.
+Please instead set the namespace \(or testNamespace\) in the module's build\.gradle file, as described here: https://developer\.android\.com/studio/build/configure\-app\-module\#set\-namespace
+This migration can be done automatically using the AGP Upgrade Assistant, please refer to https://developer\.android\.com/studio/build/agp\-upgrade\-assistant for more information\.

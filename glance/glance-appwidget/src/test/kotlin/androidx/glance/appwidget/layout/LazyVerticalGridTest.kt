@@ -16,6 +16,7 @@
 
 package androidx.glance.appwidget.layout
 
+import android.annotation.TargetApi
 import androidx.glance.appwidget.lazy.EmittableLazyVerticalGrid
 import androidx.glance.appwidget.lazy.EmittableLazyVerticalGridListItem
 import androidx.glance.appwidget.lazy.LazyVerticalGrid
@@ -28,27 +29,29 @@ import androidx.glance.layout.EmittableRow
 import androidx.glance.layout.Row
 import androidx.glance.text.EmittableText
 import androidx.glance.text.Text
+import androidx.compose.ui.unit.dp
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.TestCoroutineScope
-import kotlinx.coroutines.test.runBlockingTest
+import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Test
 import kotlin.test.assertIs
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class LazyVerticalGridTest {
-    private lateinit var fakeCoroutineScope: TestCoroutineScope
+    private lateinit var fakeCoroutineScope: TestScope
 
     @Before
     fun setUp() {
-        fakeCoroutineScope = TestCoroutineScope()
+        fakeCoroutineScope = TestScope()
     }
 
     @Test
-    fun emptyLazyVerticalGrid_addsLazyVerticalGridToTree() = fakeCoroutineScope.runBlockingTest {
+    @TargetApi(31)
+    fun emptyLazyVerticalGrid_addsLazyVerticalGridToTree() = fakeCoroutineScope.runTest {
         val root = runTestingComposition {
-            LazyVerticalGrid(gridCells = GridCells.Adaptive) { }
+            LazyVerticalGrid(gridCells = GridCells.Adaptive(minSize = 100.dp)) { }
         }
 
         val verticalGrid = assertIs<EmittableLazyVerticalGrid>(root.children.single())
@@ -56,9 +59,10 @@ class LazyVerticalGridTest {
     }
 
     @Test
-    fun items_createsListItemsEachWithChild() = fakeCoroutineScope.runBlockingTest {
+    @TargetApi(31)
+    fun items_createsListItemsEachWithChild() = fakeCoroutineScope.runTest {
         val root = runTestingComposition {
-            LazyVerticalGrid(gridCells = GridCells.Adaptive) {
+            LazyVerticalGrid(gridCells = GridCells.Adaptive(minSize = 100.dp)) {
                 items(2, { it * 2L }) { index -> Text("Item $index") }
                 item(4L) { Text("Item 2") }
                 item(6L) { Text("Item 3") }
@@ -75,9 +79,10 @@ class LazyVerticalGridTest {
     }
 
     @Test
-    fun item_multipleChildren_createsListItemWithChildren() = fakeCoroutineScope.runBlockingTest {
+    @TargetApi(31)
+    fun item_multipleChildren_createsListItemWithChildren() = fakeCoroutineScope.runTest {
         val root = runTestingComposition {
-            LazyVerticalGrid(gridCells = GridCells.Adaptive) {
+            LazyVerticalGrid(gridCells = GridCells.Adaptive(minSize = 100.dp)) {
                 item {
                     Text("First")
                     Row { Text("Second") }
@@ -93,9 +98,10 @@ class LazyVerticalGridTest {
     }
 
     @Test
-    fun items_withItemId_addsChildrenWithIds() = fakeCoroutineScope.runBlockingTest {
+    @TargetApi(31)
+    fun items_withItemId_addsChildrenWithIds() = fakeCoroutineScope.runTest {
         val root = runTestingComposition {
-            LazyVerticalGrid(gridCells = GridCells.Adaptive) {
+            LazyVerticalGrid(gridCells = GridCells.Adaptive(minSize = 100.dp)) {
                 items(2, { it * 2L }) { index -> Text("Item $index") }
                 item(4L) { Text("Item 2") }
                 item(6L) { Text("Item 3") }
@@ -111,10 +117,11 @@ class LazyVerticalGridTest {
     }
 
     @Test
+    @TargetApi(31)
     fun items_withoutItemId_addsItemsWithConsecutiveReservedIds() =
-        fakeCoroutineScope.runBlockingTest {
+        fakeCoroutineScope.runTest {
             val root = runTestingComposition {
-                LazyVerticalGrid(gridCells = GridCells.Adaptive) {
+                LazyVerticalGrid(gridCells = GridCells.Adaptive(minSize = 100.dp)) {
                     items(2) { index -> Text("Item $index") }
                     item { Text("Item 2") }
                 }
@@ -128,9 +135,10 @@ class LazyVerticalGridTest {
         }
 
     @Test
-    fun items_someWithItemIds_addsChildrenWithIds() = fakeCoroutineScope.runBlockingTest {
+    @TargetApi(31)
+    fun items_someWithItemIds_addsChildrenWithIds() = fakeCoroutineScope.runTest {
         val root = runTestingComposition {
-            LazyVerticalGrid(gridCells = GridCells.Adaptive) {
+            LazyVerticalGrid(gridCells = GridCells.Adaptive(minSize = 100.dp)) {
                 items(1, { 5L }) { Text("Item 0") }
                 item { Text("Item 1") }
                 items(1) { Text("Item 2") }
@@ -147,9 +155,10 @@ class LazyVerticalGridTest {
     }
 
     @Test
-    fun items_listItemsWithoutItemIds_addsChildren() = fakeCoroutineScope.runBlockingTest {
+    @TargetApi(31)
+    fun items_listItemsWithoutItemIds_addsChildren() = fakeCoroutineScope.runTest {
         val root = runTestingComposition {
-            LazyVerticalGrid(gridCells = GridCells.Adaptive) {
+            LazyVerticalGrid(gridCells = GridCells.Adaptive(minSize = 100.dp)) {
                 items(people) { person ->
                     Text(person.name)
                 }
@@ -165,9 +174,10 @@ class LazyVerticalGridTest {
     }
 
     @Test
-    fun items_listItemsWithItemIds_addsChildren() = fakeCoroutineScope.runBlockingTest {
+    @TargetApi(31)
+    fun items_listItemsWithItemIds_addsChildren() = fakeCoroutineScope.runTest {
         val root = runTestingComposition {
-            LazyVerticalGrid(gridCells = GridCells.Adaptive) {
+            LazyVerticalGrid(gridCells = GridCells.Adaptive(minSize = 100.dp)) {
                 items(people, itemId = { person -> person.userId }) { person ->
                     Text(person.name)
                 }
@@ -183,9 +193,10 @@ class LazyVerticalGridTest {
     }
 
     @Test
-    fun itemsIndexed_listItems_addsChildren() = fakeCoroutineScope.runBlockingTest {
+    @TargetApi(31)
+    fun itemsIndexed_listItems_addsChildren() = fakeCoroutineScope.runTest {
         val root = runTestingComposition {
-            LazyVerticalGrid(gridCells = GridCells.Adaptive) {
+            LazyVerticalGrid(gridCells = GridCells.Adaptive(minSize = 100.dp)) {
                 itemsIndexed(people) { index, person ->
                     Text("${index + 1} - ${person.name}")
                 }
@@ -198,9 +209,10 @@ class LazyVerticalGridTest {
     }
 
     @Test
-    fun items_arrayItemsWithoutItemIds_addsChildren() = fakeCoroutineScope.runBlockingTest {
+    @TargetApi(31)
+    fun items_arrayItemsWithoutItemIds_addsChildren() = fakeCoroutineScope.runTest {
         val root = runTestingComposition {
-            LazyVerticalGrid(gridCells = GridCells.Adaptive) {
+            LazyVerticalGrid(gridCells = GridCells.Adaptive(minSize = 100.dp)) {
                 items(people.toTypedArray()) { person ->
                     Text(person.name)
                 }
@@ -216,9 +228,10 @@ class LazyVerticalGridTest {
     }
 
     @Test
-    fun items_arrayItemsWithItemIds_addsChildren() = fakeCoroutineScope.runBlockingTest {
+    @TargetApi(31)
+    fun items_arrayItemsWithItemIds_addsChildren() = fakeCoroutineScope.runTest {
         val root = runTestingComposition {
-            LazyVerticalGrid(gridCells = GridCells.Adaptive) {
+            LazyVerticalGrid(gridCells = GridCells.Adaptive(minSize = 100.dp)) {
                 items(people.toTypedArray(), itemId = { person -> person.userId }) { person ->
                     Text(person.name)
                 }
@@ -234,9 +247,10 @@ class LazyVerticalGridTest {
     }
 
     @Test
-    fun itemsIndexed_arrayItems_addsChildren() = fakeCoroutineScope.runBlockingTest {
+    @TargetApi(31)
+    fun itemsIndexed_arrayItems_addsChildren() = fakeCoroutineScope.runTest {
         val root = runTestingComposition {
-            LazyVerticalGrid(gridCells = GridCells.Adaptive) {
+            LazyVerticalGrid(gridCells = GridCells.Adaptive(minSize = 100.dp)) {
                 itemsIndexed(people.toTypedArray()) { index, person ->
                     Text("${index + 1} - ${person.name}")
                 }

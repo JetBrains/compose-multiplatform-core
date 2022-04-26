@@ -19,8 +19,8 @@ package androidx.wear.compose.integration.demos
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
@@ -29,13 +29,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.wear.compose.material.Icon
 import androidx.wear.compose.material.InlineSlider
+import androidx.wear.compose.material.InlineSliderColors
 import androidx.wear.compose.material.InlineSliderDefaults
-import androidx.wear.compose.material.ScalingLazyColumn
 import androidx.wear.compose.material.Text
 import androidx.wear.compose.material.ToggleChip
 import androidx.wear.compose.material.ToggleChipDefaults
@@ -46,18 +46,17 @@ fun InlineSliderDemo() {
     var valueWithSegments by remember { mutableStateOf(2f) }
     var enabled by remember { mutableStateOf(true) }
 
-    ScalingLazyColumn(
+    ScalingLazyColumnWithRSB(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(
             space = 4.dp,
             alignment = Alignment.CenterVertically
         ),
-        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 30.dp),
         modifier = Modifier.fillMaxSize()
     ) {
         item { Text("No segments, value = $valueWithoutSegments") }
         item {
-            InlineSlider(
+            DefaultInlineSlider(
                 value = valueWithoutSegments,
                 enabled = enabled,
                 valueRange = 1f..100f,
@@ -66,7 +65,7 @@ fun InlineSliderDemo() {
         }
         item { Text("With segments, value = $valueWithSegments") }
         item {
-            InlineSlider(
+            DefaultInlineSlider(
                 value = valueWithSegments,
                 enabled = enabled,
                 onValueChange = { valueWithSegments = it },
@@ -80,7 +79,18 @@ fun InlineSliderDemo() {
                 checked = enabled,
                 onCheckedChange = { enabled = it },
                 label = { Text("Sliders enabled") },
-                toggleIcon = { ToggleChipDefaults.SwitchIcon(checked = enabled) }
+                // For Switch  toggle controls the Wear Material UX guidance is to set the
+                // unselected toggle control color to ToggleChipDefaults.switchUncheckedIconColor()
+                // rather than the default.
+                colors = ToggleChipDefaults.toggleChipColors(
+                    uncheckedToggleControlColor = ToggleChipDefaults.SwitchUncheckedIconColor
+                ),
+                toggleControl = {
+                    Icon(
+                        imageVector = ToggleChipDefaults.switchIcon(checked = enabled),
+                        contentDescription = if (enabled) "On" else "Off"
+                    )
+                }
             )
         }
     }
@@ -91,18 +101,17 @@ fun InlineSliderWithIntegersDemo() {
     var valueWithoutSegments by remember { mutableStateOf(5) }
     var valueWithSegments by remember { mutableStateOf(2) }
 
-    ScalingLazyColumn(
+    ScalingLazyColumnWithRSB(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(
             space = 4.dp,
             alignment = Alignment.CenterVertically
         ),
-        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 30.dp),
         modifier = Modifier.fillMaxSize()
     ) {
         item { Text("No segments, value = $valueWithoutSegments") }
         item {
-            InlineSlider(
+            DefaultInlineSlider(
                 value = valueWithoutSegments,
                 valueProgression = IntProgression.fromClosedRange(0, 15, 3),
                 segmented = false,
@@ -110,7 +119,7 @@ fun InlineSliderWithIntegersDemo() {
         }
         item { Text("With segments, value = $valueWithSegments") }
         item {
-            InlineSlider(
+            DefaultInlineSlider(
                 value = valueWithSegments,
                 onValueChange = { valueWithSegments = it },
                 valueProgression = IntProgression.fromClosedRange(110, 220, 5),
@@ -134,22 +143,16 @@ fun InlineSliderCustomColorsDemo() {
         contentAlignment = Alignment.Center,
         modifier = Modifier.fillMaxSize()
     ) {
-        InlineSlider(
+        DefaultInlineSlider(
             value = value,
             onValueChange = { value = it },
             valueRange = 3f..6f,
             steps = 5,
             segmented = false,
             colors = InlineSliderDefaults.colors(
-                backgroundColor = Color.Green,
-                spacerColor = Color.Yellow,
-                selectedBarColor = Color.Magenta,
-                unselectedBarColor = Color.White,
-                disabledBackgroundColor = Color.DarkGray,
-                disabledSpacerColor = Color.LightGray,
-                disabledSelectedBarColor = Color.Red,
-                disabledUnselectedBarColor = Color.Blue
-            )
+                selectedBarColor = AlternatePrimaryColor1,
+            ),
+            modifier = Modifier.padding(horizontal = 10.dp)
         )
     }
 }
@@ -165,11 +168,11 @@ fun InlineSliderSegmented() {
             space = 4.dp,
             alignment = Alignment.CenterVertically
         ),
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier.fillMaxSize().padding(horizontal = 10.dp)
     ) {
         Text("Num of segments ${numberOfSegments.toInt()}")
 
-        InlineSlider(
+        DefaultInlineSlider(
             value = numberOfSegments,
             valueRange = 0f..30f,
             onValueChange = { numberOfSegments = it },
@@ -178,7 +181,7 @@ fun InlineSliderSegmented() {
 
         Text("Progress: $progress/20")
 
-        InlineSlider(
+        DefaultInlineSlider(
             value = progress,
             onValueChange = { progress = it },
             valueRange = 1f..20f,
@@ -186,4 +189,56 @@ fun InlineSliderSegmented() {
             steps = numberOfSegments.toInt()
         )
     }
+}
+
+@Composable
+fun DefaultInlineSlider(
+    value: Float,
+    onValueChange: (Float) -> Unit,
+    steps: Int,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    valueRange: ClosedFloatingPointRange<Float> = 0f..(steps + 1).toFloat(),
+    segmented: Boolean = steps <= 8,
+    decreaseIcon: @Composable () -> Unit = { Icon(InlineSliderDefaults.Decrease, "Decrease") },
+    increaseIcon: @Composable () -> Unit = { Icon(InlineSliderDefaults.Increase, "Increase") },
+    colors: InlineSliderColors = InlineSliderDefaults.colors(),
+) {
+    InlineSlider(
+        value = value,
+        onValueChange = onValueChange,
+        increaseIcon = increaseIcon,
+        decreaseIcon = decreaseIcon,
+        valueRange = valueRange,
+        segmented = segmented,
+        modifier = modifier,
+        enabled = enabled,
+        colors = colors,
+        steps = steps
+    )
+}
+
+@Composable
+fun DefaultInlineSlider(
+    value: Int,
+    onValueChange: (Int) -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    valueProgression: IntProgression,
+    segmented: Boolean,
+    decreaseIcon: @Composable () -> Unit = { Icon(InlineSliderDefaults.Decrease, "Decrease") },
+    increaseIcon: @Composable () -> Unit = { Icon(InlineSliderDefaults.Increase, "Increase") },
+    colors: InlineSliderColors = InlineSliderDefaults.colors(),
+) {
+    InlineSlider(
+        value = value,
+        onValueChange = onValueChange,
+        increaseIcon = increaseIcon,
+        decreaseIcon = decreaseIcon,
+        valueProgression = valueProgression,
+        segmented = segmented,
+        modifier = modifier,
+        enabled = enabled,
+        colors = colors,
+    )
 }

@@ -31,6 +31,9 @@ android {
     }
 
     buildTypes {
+        debug {
+            pseudoLocalesEnabled true
+        }
         release {
             // Enables code shrinking, obfuscation, and optimization.
             minifyEnabled true
@@ -39,6 +42,7 @@ android {
                     'proguard-rules.pro'
         }
     }
+    namespace "androidx.car.app.sample.showcase"
 }
 
 dependencies {

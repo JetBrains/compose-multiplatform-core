@@ -99,7 +99,7 @@ class TextDelegate(
     internal var intrinsicsLayoutDirection: LayoutDirection? = null
 
     private val nonNullIntrinsics: MultiParagraphIntrinsics get() = paragraphIntrinsics
-        ?: throw IllegalStateException("layoutForIntrinsics must be called first")
+        ?: throw IllegalStateException("layoutIntrinsics must be called first")
 
     /**
      * The width for text if all soft wrap opportunities were taken.
@@ -153,12 +153,12 @@ class TextDelegate(
     ): MultiParagraph {
         layoutIntrinsics(layoutDirection)
 
-        val minWidth = constraints.minWidth.toFloat()
+        val minWidth = constraints.minWidth
         val widthMatters = softWrap || overflow == TextOverflow.Ellipsis
         val maxWidth = if (widthMatters && constraints.hasBoundedWidth) {
-            constraints.maxWidth.toFloat()
+            constraints.maxWidth
         } else {
-            Float.POSITIVE_INFINITY
+            Constraints.Infinity
         }
 
         // This is a fallback behavior because native text layout doesn't support multiple
@@ -190,15 +190,15 @@ class TextDelegate(
         val width = if (minWidth == maxWidth) {
             maxWidth
         } else {
-            nonNullIntrinsics.maxIntrinsicWidth.coerceIn(minWidth, maxWidth)
+            maxIntrinsicWidth.coerceIn(minWidth, maxWidth)
         }
 
         return MultiParagraph(
             intrinsics = nonNullIntrinsics,
+            constraints = Constraints(maxWidth = width, maxHeight = constraints.maxHeight),
             // This is a fallback behavior for ellipsis. Native
             maxLines = finalMaxLines,
-            ellipsis = overflow == TextOverflow.Ellipsis,
-            width = width
+            ellipsis = overflow == TextOverflow.Ellipsis
         )
     }
 

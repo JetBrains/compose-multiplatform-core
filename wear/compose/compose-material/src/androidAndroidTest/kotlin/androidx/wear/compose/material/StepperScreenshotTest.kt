@@ -19,13 +19,13 @@ package androidx.wear.compose.material
 import android.os.Build
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.ThumbUp
 import androidx.compose.runtime.Composable
 import androidx.compose.testutils.assertAgainstGolden
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
@@ -62,6 +62,8 @@ public class StepperScreenshotTest {
             Stepper(
                 modifier = Modifier.testTag(TEST_TAG),
                 value = 2f,
+                increaseIcon = { Icon(StepperDefaults.Increase, "Increase") },
+                decreaseIcon = { Icon(StepperDefaults.Decrease, "Decrease") },
                 steps = 3,
                 onValueChange = {}
             ) {}
@@ -107,13 +109,20 @@ public class StepperScreenshotTest {
                 modifier = Modifier.testTag(TEST_TAG),
                 value = 2f,
                 steps = 3,
+                increaseIcon = { Icon(StepperDefaults.Increase, "Increase") },
+                decreaseIcon = { Icon(StepperDefaults.Decrease, "Decrease") },
                 onValueChange = {}
             ) {
                 Chip(
                     onClick = {},
                     modifier = Modifier.width(146.dp),
                     colors = ChipDefaults.secondaryChipColors(),
-                    label = { Text("Demo", modifier = Modifier.align(Alignment.Center)) }
+                    label = {
+                        Text(
+                            text = "Demo",
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
                 )
             }
         }
@@ -131,9 +140,11 @@ public class StepperScreenshotTest {
                 value = 2f,
                 steps = 3,
                 onValueChange = {},
+                increaseIcon = { Icon(StepperDefaults.Increase, "Increase") },
+                decreaseIcon = { Icon(StepperDefaults.Decrease, "Decrease") },
                 backgroundColor = Color.Green,
                 contentColor = Color.Yellow,
-                iconTintColor = Color.Magenta,
+                iconColor = Color.Magenta,
             ) {
                 Text("Demo")
             }

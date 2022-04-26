@@ -23,7 +23,6 @@ import androidx.compose.animation.core.VectorConverter
 import androidx.compose.animation.core.VisibilityThreshold
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.lazy.LazyGridItemInfo
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -154,7 +153,7 @@ internal class LazyGridItemPlacementAnimator(
                         item.getCrossAxisOffset()
                     )
                     val previousIndex = keyToIndexMap[item.key]
-                    val offset = item.offset
+                    val offset = item.placeableOffset
 
                     val targetPlaceableOffsetMainAxis = if (previousIndex == null) {
                         // it is a completely new item. no animation is needed
@@ -173,11 +172,7 @@ internal class LazyGridItemPlacementAnimator(
                             fallback = fallback,
                             reverseLayout = reverseLayout,
                             mainAxisLayoutSize = mainAxisLayoutSize
-                        ) /* + if (reverseLayout) {
-                            item.size - firstPlaceableSize
-                        } else {
-                            0
-                        } */
+                        )
                     }
                     val targetPlaceableOffset = if (isVertical) {
                         offset.copy(y = targetPlaceableOffsetMainAxis)
@@ -222,8 +217,8 @@ internal class LazyGridItemPlacementAnimator(
                 newLastItem.lineMainAxisSizeWithSpacings - mainAxisLayoutSize
         } else {
             viewportStartItemIndex = newLastItem.index
-            viewportStartItemNotVisiblePartSize = mainAxisLayoutSize - newLastItem.offset.mainAxis -
-                if (isVertical) newFirstItem.size.height else newFirstItem.size.width
+            viewportStartItemNotVisiblePartSize = mainAxisLayoutSize -
+                newLastItem.offset.mainAxis - newLastItem.lineMainAxisSize
             viewportEndItemIndex = newFirstItem.index
             viewportEndItemNotVisiblePartSize = -newFirstItem.offset.mainAxis +
                 (newFirstItem.lineMainAxisSizeWithSpacings -
@@ -291,9 +286,9 @@ internal class LazyGridItemPlacementAnimator(
                         itemInfo.crossAxisOffset,
                         layoutWidth,
                         layoutHeight,
-                        LazyGridItemInfo.Unknown,
-                        LazyGridItemInfo.Unknown,
-                        measuredItem.mainAxisSizeWithSpacings
+                        LazyGridItemInfo.UnknownRow,
+                        LazyGridItemInfo.UnknownColumn,
+                        measuredItem.mainAxisSize
                     )
                     positionedItems.add(item)
                     startAnimationsIfNeeded(item, itemInfo)
@@ -405,7 +400,7 @@ internal class LazyGridItemPlacementAnimator(
 
         itemInfo.placeables.fastForEachIndexed { index, placeableInfo ->
             val currentTarget = placeableInfo.targetOffset + itemInfo.notAnimatableDelta
-            val currentOffset = item.offset
+            val currentOffset = item.placeableOffset
             placeableInfo.mainAxisSize = item.getMainAxisSize(index)
             val animationSpec = item.getAnimationSpec(index)
             if (currentTarget != currentOffset) {

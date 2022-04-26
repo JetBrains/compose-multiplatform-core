@@ -74,8 +74,13 @@ android {
         multiDexEnabled = true
     }
 
+    lintOptions {
+        enable 'CameraXQuirksClassDetector'
+    }
+
     // Use Robolectric 4.+
     testOptions.unitTests.includeAndroidResources = true
+    namespace "androidx.camera.video"
 }
 
 androidx {
@@ -92,6 +97,6 @@ androidx {
 // Allow usage of Kotlin's @OptIn.
 tasks.withType(KotlinCompile).configureEach {
     kotlinOptions {
-        freeCompilerArgs += ["-Xopt-in=kotlin.RequiresOptIn"]
+        freeCompilerArgs += ["-opt-in=kotlin.RequiresOptIn"]
     }
 }

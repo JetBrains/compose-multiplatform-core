@@ -20,7 +20,6 @@ import androidx.build.OperatingSystem
 import androidx.build.getOperatingSystem
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
-import org.gradle.api.file.ArchiveOperations
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.InputDirectory
@@ -46,11 +45,11 @@ abstract class GenerateNativeApiTask : DefaultTask() {
     @get:Inject
     abstract val workerExecutor: WorkerExecutor
 
-    @get:Inject
-    abstract val archiveOperations: ArchiveOperations
-
     @get:InputDirectory
     abstract val prefabDirectory: Property<File>
+
+    @get:Internal
+    abstract val projectRootDir: Property<File>
 
     @get:Internal
     abstract val apiLocation: Property<File>
@@ -69,7 +68,7 @@ abstract class GenerateNativeApiTask : DefaultTask() {
     @TaskAction
     fun exec() {
         if (getOperatingSystem() != OperatingSystem.LINUX) {
-            project.logger.warn(
+            logger.warn(
                 "Native API checking is currently not supported on non-linux devices"
             )
             return
@@ -85,6 +84,12 @@ abstract class GenerateNativeApiTask : DefaultTask() {
         val workQueue = workerExecutor.processIsolation()
         artifactNames.get().forEach { moduleName ->
             val module = prefabDir.resolve("modules/$moduleName/libs")
+            if (!module.exists()) {
+                throw GradleException(
+                    "Expected prefab directory to include path $module, but it does not exist. " +
+                    "Check value of 'prefab.$moduleName.name' configuration in build.gradle."
+                )
+            }
             module.listFiles().forEach { archDir ->
                 val artifacts = archDir.listFiles().filter {
                     // skip abi.json
@@ -107,8 +112,7 @@ abstract class GenerateNativeApiTask : DefaultTask() {
                     )
                     outputFilePath.parentFile.mkdirs()
                     workQueue.submit(AbiDwWorkAction::class.java) { parameters ->
-                        parameters.rootDir = project.rootDir.toString()
-                        parameters.headersDirs = findHeaderDirs()
+                        parameters.rootDir = projectRootDir.get().toString()
                         parameters.pathToLib = artifact.canonicalPath
                         parameters.outputFilePath = outputFilePath.toString()
                     }
@@ -116,17 +120,10 @@ abstract class GenerateNativeApiTask : DefaultTask() {
             }
         }
     }
-
-    private fun findHeaderDirs(): List<String> {
-        return project.projectDir.walk().filter {
-            it.isDirectory && it.name == "include"
-        }.map { it.toString() }.toList()
-    }
 }
 
 interface AbiDwParameters : WorkParameters {
     var rootDir: String
-    var headersDirs: List<String>
     var pathToLib: String
     var outputFilePath: String
 }
@@ -134,12 +131,12 @@ interface AbiDwParameters : WorkParameters {
 abstract class AbiDwWorkAction @Inject constructor(private val execOperations: ExecOperations) :
     WorkAction<AbiDwParameters> {
     override fun execute() {
-        val headerDirsArgs = parameters.headersDirs.flatMap { listOf("--headers-dir", it) }
         val tempFile = File.createTempFile("abi", null)
         execOperations.exec {
             it.executable = LibabigailPaths.Linux.abidwPath(parameters.rootDir)
-            it.args = headerDirsArgs + listOf(
+            it.args = listOf(
                 "--drop-private-types",
+                "--no-show-locs",
                 "--out-file",
                 tempFile.toString(),
                 parameters.pathToLib
@@ -152,7 +149,10 @@ abstract class AbiDwWorkAction @Inject constructor(private val execOperations: E
                 tempFile.toString(),
                 "--output",
                 parameters.outputFilePath,
-                "--abort-on-untyped-symbols"
+                "--abort-on-untyped-symbols",
+                "--eliminate-duplicates",
+                "--sort",
+                "--prune-unreachable"
             )
         }
     }

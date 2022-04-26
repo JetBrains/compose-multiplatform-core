@@ -19,6 +19,7 @@ package androidx.camera.core.impl;
 import static androidx.camera.core.ImageCapture.FLASH_MODE_OFF;
 
 import android.graphics.Rect;
+import android.util.Size;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
@@ -56,6 +57,25 @@ public interface CameraControlInternal extends CameraControl {
      * @param flashMode the {@link FlashMode}.
      */
     void setFlashMode(@FlashMode int flashMode);
+
+    /**
+     * Adds zero-shutter lag config to {@link SessionConfig}.
+     * @param resolution surface resolution.
+     * @param sessionConfigBuilder session config builder.
+     */
+    void addZslConfig(
+            @NonNull Size resolution,
+            @NonNull SessionConfig.Builder sessionConfigBuilder);
+
+    /**
+     * Sets zsl disabled or not.
+     *
+     * @param disabled True if zero-shutter lag should be disabled. Otherwise, should not be
+     *                 disabled. However, enabling zero-shutter lag needs other conditions e.g.
+     *                 flash mode OFF, so setting to false doesn't guarantee zero-shutter lag to
+     *                 be always ON.
+     */
+    void setZslDisabled(boolean disabled);
 
     /**
      * Performs still capture requests with the desired capture mode.
@@ -117,6 +137,15 @@ public interface CameraControlInternal extends CameraControl {
 
         @Override
         public void setFlashMode(@FlashMode int flashMode) {
+        }
+
+        @Override
+        public void setZslDisabled(boolean disabled) {
+        }
+
+        @Override
+        public void addZslConfig(@NonNull Size resolution,
+                @NonNull SessionConfig.Builder sessionConfigBuilder) {
         }
 
         @NonNull

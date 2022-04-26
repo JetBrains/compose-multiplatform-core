@@ -54,7 +54,7 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.TestCoroutineDispatcher
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -163,7 +163,7 @@ class MaxLinesHeightModifierTest {
     @OptIn(ExperimentalTextApi::class, ExperimentalCoroutinesApi::class)
     @Test
     fun asyncFontLoad_changesLineHeight() {
-        val testDispatcher = TestCoroutineDispatcher()
+        val testDispatcher = UnconfinedTestDispatcher()
         val resolver = createFontFamilyResolver(context, testDispatcher)
 
         val typefaceDeferred = CompletableDeferred<Typeface>()
@@ -176,8 +176,7 @@ class MaxLinesHeightModifierTest {
             }
         }
         val fontFamily = FontFamily(
-            object : AndroidFont(FontLoadingStrategy.Async) {
-                override val typefaceLoader: TypefaceLoader = asyncLoader
+            object : AndroidFont(FontLoadingStrategy.Async, asyncLoader) {
                 override val weight: FontWeight = FontWeight.Normal
                 override val style: FontStyle = FontStyle.Normal
             },

@@ -16,19 +16,14 @@
 
 package androidx.compose.foundation.lazy
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.MutatePriority
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.ScrollScope
 import androidx.compose.foundation.gestures.ScrollableState
 import androidx.compose.foundation.interaction.InteractionSource
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.lazy.layout.LazyLayoutPrefetchPolicy
-import androidx.compose.foundation.lazy.list.DataIndex
-import androidx.compose.foundation.lazy.list.LazyListItemPlacementAnimator
-import androidx.compose.foundation.lazy.list.LazyListItemsProvider
-import androidx.compose.foundation.lazy.list.LazyListMeasureResult
-import androidx.compose.foundation.lazy.list.LazyListScrollPosition
-import androidx.compose.foundation.lazy.list.doSmoothScrollToItem
+import androidx.compose.foundation.lazy.layout.LazyLayoutPrefetchState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
@@ -76,6 +71,7 @@ fun rememberLazyListState(
  * @param firstVisibleItemScrollOffset the initial value for
  * [LazyListState.firstVisibleItemScrollOffset]
  */
+@OptIn(ExperimentalFoundationApi::class)
 @Stable
 class LazyListState constructor(
     firstVisibleItemIndex: Int = 0,
@@ -192,6 +188,11 @@ class LazyListState constructor(
     private var indexToPrefetch = -1
 
     /**
+     * The handle associated with the current index from [indexToPrefetch].
+     */
+    private var currentPrefetchHandle: LazyLayoutPrefetchState.PrefetchHandle? = null
+
+    /**
      * Keeps the scrolling direction during the previous calculation in order to be able to
      * detect the scrolling direction change.
      */
@@ -286,7 +287,7 @@ class LazyListState constructor(
         if (abs(scrollToBeConsumed) > 0.5f) {
             val preScrollToBeConsumed = scrollToBeConsumed
             remeasurement?.forceRemeasure()
-            if (prefetchingEnabled && prefetchPolicy != null) {
+            if (prefetchingEnabled) {
                 notifyPrefetch(preScrollToBeConsumed - scrollToBeConsumed)
             }
         }
@@ -326,18 +327,18 @@ class LazyListState constructor(
                     // is not going to be reached anytime soon so it is safer to dispose it.
                     // if this item is already visible it is safe to call the method anyway
                     // as it will be no-op
-                    prefetchPolicy?.cancelScheduledPrefetch()
+                    currentPrefetchHandle?.cancel()
                 }
                 this.wasScrollingForward = scrollingForward
                 this.indexToPrefetch = indexToPrefetch
-                prefetchPolicy?.scheduleForPrefetch(
-                    listOf(indexToPrefetch to premeasureConstraints)
+                currentPrefetchHandle = prefetchState.schedulePrefetch(
+                    indexToPrefetch, premeasureConstraints
                 )
             }
         }
     }
 
-    internal var prefetchPolicy: LazyLayoutPrefetchPolicy? = null
+    internal val prefetchState = LazyLayoutPrefetchState()
 
     /**
      * Animate (smooth scroll) to the given item.
@@ -404,4 +405,6 @@ private object EmptyLazyListLayoutInfo : LazyListLayoutInfo {
     override val viewportSize = IntSize.Zero
     override val orientation = Orientation.Vertical
     override val reverseLayout = false
+    override val beforeContentPadding = 0
+    override val afterContentPadding = 0
 }

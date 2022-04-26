@@ -19,6 +19,7 @@ import android.content.Context
 import android.graphics.SurfaceTexture
 import android.util.Size
 import android.view.Surface
+import androidx.camera.camera2.internal.DisplayInfoManager
 import androidx.camera.core.AspectRatio
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
@@ -29,6 +30,7 @@ import androidx.camera.core.impl.ImageOutputConfig
 import androidx.camera.core.impl.utils.executor.CameraXExecutors
 import androidx.camera.core.internal.CameraUseCaseAdapter
 import androidx.camera.testing.CameraUtil
+import androidx.camera.testing.CameraUtil.PreTestCameraIdList
 import androidx.camera.testing.CameraXUtil
 import androidx.camera.testing.GLUtil
 import androidx.camera.testing.SurfaceTextureProvider
@@ -40,6 +42,14 @@ import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth
+import java.util.concurrent.ExecutionException
+import java.util.concurrent.Executor
+import java.util.concurrent.Executors
+import java.util.concurrent.Semaphore
+import java.util.concurrent.ThreadFactory
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeoutException
+import java.util.concurrent.atomic.AtomicReference
 import org.junit.After
 import org.junit.Assume
 import org.junit.Before
@@ -49,21 +59,15 @@ import org.junit.runner.RunWith
 import org.mockito.ArgumentMatchers
 import org.mockito.Mockito
 import org.mockito.invocation.InvocationOnMock
-import java.util.concurrent.ExecutionException
-import java.util.concurrent.Executor
-import java.util.concurrent.Executors
-import java.util.concurrent.Semaphore
-import java.util.concurrent.ThreadFactory
-import java.util.concurrent.TimeUnit
-import java.util.concurrent.TimeoutException
-import java.util.concurrent.atomic.AtomicReference
 
 @LargeTest
 @RunWith(AndroidJUnit4::class)
 @SdkSuppress(minSdkVersion = 21)
 class PreviewTest {
     @get:Rule
-    var cameraRule = CameraUtil.grantCameraPermissionAndPreTest()
+    val cameraRule = CameraUtil.grantCameraPermissionAndPreTest(
+        PreTestCameraIdList(Camera2Config.defaultConfig())
+    )
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
     private var defaultBuilder: Preview.Builder? = null
@@ -351,6 +355,15 @@ class PreviewTest {
         // lifecycle.
         camera = CameraUtil.createCameraAndAttachUseCase(context!!, cameraSelector, useCase)
         Truth.assertThat(useCase.targetRotation).isEqualTo(Surface.ROTATION_180)
+    }
+
+    @Test
+    fun targetRotationReturnsDisplayRotationIfNotSet() {
+        val displayRotation = DisplayInfoManager.getInstance(context!!).maxSizeDisplay.rotation
+        val useCase = defaultBuilder!!.build()
+        camera = CameraUtil.createCameraAndAttachUseCase(context!!, cameraSelector, useCase)
+
+        Truth.assertThat(useCase.targetRotation).isEqualTo(displayRotation)
     }
 
     @Test

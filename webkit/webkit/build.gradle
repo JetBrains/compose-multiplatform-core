@@ -32,6 +32,8 @@ dependencies {
     androidTestImplementation(libs.testRunner)
     androidTestImplementation(libs.testRules)
     androidTestImplementation("androidx.concurrent:concurrent-futures:1.0.0")
+    androidTestImplementation(libs.mockitoCore, excludes.bytebuddy) // DexMaker has it"s own MockMaker
+    androidTestImplementation(libs.dexmakerMockito, excludes.bytebuddy)
 
     // Hamcrest matchers:
     androidTestImplementation(libs.espressoContrib, excludes.espresso)
@@ -45,6 +47,7 @@ ext {
 android {
     lintOptions {
         lintConfig = file("lint.xml")
+        baseline file("lint-baseline.xml")
     }
     sourceSets {
         // Allow compiling the WebView support library boundary interfaces from this project.
@@ -57,6 +60,7 @@ android {
                 "proguard-rules.pro"
         )
     }
+    namespace "androidx.webkit"
 }
 
 androidx {

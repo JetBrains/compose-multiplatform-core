@@ -16,6 +16,8 @@
 
 package androidx.car.app.sample.showcase.common.renderer;
 
+import static android.content.pm.PackageManager.FEATURE_AUTOMOTIVE;
+
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -41,6 +43,7 @@ import androidx.car.app.hardware.info.Gyroscope;
 import androidx.car.app.hardware.info.Mileage;
 import androidx.car.app.hardware.info.Speed;
 import androidx.car.app.hardware.info.TollCard;
+import androidx.car.app.sample.showcase.common.R;
 import androidx.car.app.versioning.CarAppApiLevels;
 import androidx.core.content.ContextCompat;
 
@@ -81,16 +84,6 @@ public final class CarHardwareRenderer implements Renderer {
     CarHardwareLocation mCarHardwareLocation;
     @Nullable
     private Runnable mRequestRenderRunnable;
-    private boolean mHasTollCardPermission;
-    private boolean mHasEnergyLevelPermission;
-    private boolean mHasSpeedPermission;
-    private boolean mHasMileagePermission;
-    private boolean mHasEvStatusPermission;
-    private boolean mHasAccelerometerPermission;
-    private boolean mHasGyroscopePermission;
-    private boolean mHasCompassPermission;
-    private boolean mHasCarHardwareLocationPermission;
-
     private final OnCarDataAvailableListener<TollCard> mTollListener = data -> {
         synchronized (this) {
             Log.i(TAG, "Received toll information:" + data);
@@ -154,6 +147,15 @@ public final class CarHardwareRenderer implements Renderer {
             requestRenderFrame();
         }
     };
+    private boolean mHasTollCardPermission;
+    private boolean mHasEnergyLevelPermission;
+    private boolean mHasSpeedPermission;
+    private boolean mHasMileagePermission;
+    private boolean mHasEvStatusPermission;
+    private boolean mHasAccelerometerPermission;
+    private boolean mHasGyroscopePermission;
+    private boolean mHasCompassPermission;
+    private boolean mHasCarHardwareLocationPermission;
 
     public CarHardwareRenderer(@NonNull CarContext carContext) {
         mCarContext = carContext;
@@ -206,13 +208,17 @@ public final class CarHardwareRenderer implements Renderer {
             mHasMileagePermission = false;
         }
 
-        mEvStatus = null;
-        try {
-            carInfo.addEvStatusListener(mCarHardwareExecutor, mEvStatusListener);
-            mHasEvStatusPermission = true;
-        } catch (SecurityException e) {
-            mHasEvStatusPermission = false;
+        if (mCarContext.getPackageManager().hasSystemFeature(
+                FEATURE_AUTOMOTIVE)) {
+            mEvStatus = null;
+            try {
+                carInfo.addEvStatusListener(mCarHardwareExecutor, mEvStatusListener);
+                mHasEvStatusPermission = true;
+            } catch (SecurityException e) {
+                mHasEvStatusPermission = false;
+            }
         }
+
 
         // Request sensors
         mCompass = null;
@@ -305,14 +311,15 @@ public final class CarHardwareRenderer implements Renderer {
         }
         mCompass = null;
 
-        try {
-            carInfo.removeEvStatusListener(mEvStatusListener);
-            mHasEvStatusPermission = true;
-        } catch (SecurityException e) {
-            mHasEvStatusPermission = false;
+        if (mCarContext.getPackageManager().hasSystemFeature(FEATURE_AUTOMOTIVE)) {
+            try {
+                carInfo.removeEvStatusListener(mEvStatusListener);
+                mHasEvStatusPermission = true;
+            } catch (SecurityException e) {
+                mHasEvStatusPermission = false;
+            }
+            mEvStatus = null;
         }
-        mEvStatus = null;
-
 
         try {
             carSensors.removeGyroscopeListener(mGyroscopeListener);
@@ -362,12 +369,13 @@ public final class CarHardwareRenderer implements Renderer {
             // Prepare text for Toll card status
             StringBuilder info = new StringBuilder();
             if (!mHasTollCardPermission) {
-                info.append("No TollCard Permission.");
+                info.append(mCarContext.getString(R.string.no_toll_card_permission));
             } else if (mTollCard == null) {
-                info.append("Fetching Toll information.");
+                info.append(mCarContext.getString(R.string.fetch_toll_info));
             } else {
                 info.append(
-                        generateCarValueText("Toll card state", mTollCard.getCardState(), ". "));
+                        generateCarValueText(mCarContext.getString(R.string.toll_card_state),
+                                mTollCard.getCardState(), ". "));
             }
             canvas.drawText(info.toString(), LEFT_MARGIN, verticalPos, mCarInfoPaint);
             verticalPos += height;
@@ -375,18 +383,22 @@ public final class CarHardwareRenderer implements Renderer {
             // Prepare text for Energy Level
             info = new StringBuilder();
             if (!mHasEnergyLevelPermission) {
-                info.append("No EnergyLevel Permission.");
+                info.append(mCarContext.getString(R.string.no_energy_level_permission));
             } else if (mEnergyLevel == null) {
-                info.append("Fetching Energy Level.");
+                info.append(mCarContext.getString(R.string.fetch_energy_level));
             } else {
                 info.append(
-                        generateCarValueText("Low energy", mEnergyLevel.getEnergyIsLow(), ". "));
+                        generateCarValueText(mCarContext.getString(R.string.low_energy),
+                                mEnergyLevel.getEnergyIsLow(), ". "));
                 info.append(
-                        generateCarValueText("Range", mEnergyLevel.getRangeRemainingMeters(),
+                        generateCarValueText(mCarContext.getString(R.string.range),
+                                mEnergyLevel.getRangeRemainingMeters(),
                                 " m. "));
-                info.append(generateCarValueText("Fuel", mEnergyLevel.getFuelPercent(), " %. "));
+                info.append(generateCarValueText(mCarContext.getString(R.string.fuel),
+                        mEnergyLevel.getFuelPercent(), " %. "));
                 info.append(
-                        generateCarValueText("Battery", mEnergyLevel.getBatteryPercent(), " %. "));
+                        generateCarValueText(mCarContext.getString(R.string.battery),
+                                mEnergyLevel.getBatteryPercent(), " %. "));
             }
             canvas.drawText(info.toString(), LEFT_MARGIN, verticalPos, mCarInfoPaint);
             verticalPos += height;
@@ -394,43 +406,54 @@ public final class CarHardwareRenderer implements Renderer {
             // Prepare text for Speed
             info = new StringBuilder();
             if (!mHasSpeedPermission) {
-                info.append("No Speed Permission.");
+                info.append(mCarContext.getString(R.string.no_speed_permission));
             } else if (mSpeed == null) {
-                info.append("Fetching Speed.");
+                info.append(mCarContext.getString(R.string.fetch_speed));
             } else {
-                info.append(generateCarValueText("Display Speed",
+                info.append(generateCarValueText(mCarContext.getString(R.string.display_speed),
                         mSpeed.getDisplaySpeedMetersPerSecond(), " m/s. "));
-                info.append(generateCarValueText("Raw Speed", mSpeed.getRawSpeedMetersPerSecond(),
+                info.append(generateCarValueText(mCarContext.getString(R.string.raw_speed),
+                        mSpeed.getRawSpeedMetersPerSecond(),
                         " m/s. "));
-                info.append(generateCarValueText("Unit", mSpeed.getSpeedDisplayUnit(), ". "));
+                info.append(generateCarValueText(mCarContext.getString(R.string.unit),
+                        mSpeed.getSpeedDisplayUnit(), ". "));
             }
             canvas.drawText(info.toString(), LEFT_MARGIN, verticalPos, mCarInfoPaint);
             verticalPos += height;
 
-            // Prepare text for Odometer
-            info = new StringBuilder();
-            if (!mHasMileagePermission) {
-                info.append("No Mileage Permission.");
-            } else if (mMileage == null) {
-                info.append("Fetching mileage.");
-            } else {
-                info.append(generateCarValueText("Odometer", mMileage.getOdometerMeters(), " m. "));
-                info.append(generateCarValueText("Unit", mMileage.getDistanceDisplayUnit(), ". "));
+            // Prepare text for Odometer, skip for AAOS
+            if (!mCarContext.getPackageManager().hasSystemFeature(
+                    FEATURE_AUTOMOTIVE)) {
+                info = new StringBuilder();
+                if (!mHasMileagePermission) {
+                    info.append(mCarContext.getString(R.string.no_mileage_permission));
+                } else if (mMileage == null) {
+                    info.append(mCarContext.getString(R.string.no_mileage_permission));
+                } else {
+                    info.append(
+                            generateCarValueText(mCarContext.getString(R.string.odometer),
+                                    mMileage.getOdometerMeters(), " m. "));
+                    info.append(
+                            generateCarValueText(mCarContext.getString(R.string.unit),
+                                    mMileage.getDistanceDisplayUnit(), ". "));
+                }
+                canvas.drawText(info.toString(), LEFT_MARGIN, verticalPos, mCarInfoPaint);
+                verticalPos += height;
             }
-            canvas.drawText(info.toString(), LEFT_MARGIN, verticalPos, mCarInfoPaint);
-            verticalPos += height;
 
-            if (mCarContext.getCarAppApiLevel() >= CarAppApiLevels.LEVEL_4) {
+            if (mCarContext.getCarAppApiLevel() >= CarAppApiLevels.LEVEL_4
+                        && mCarContext.getPackageManager().hasSystemFeature(
+                    FEATURE_AUTOMOTIVE)) {
                 // Prepare text for EV status
                 info = new StringBuilder();
                 if (!mHasEvStatusPermission) {
-                    info.append("No EV status Permission.");
+                    info.append(mCarContext.getString(R.string.no_ev_status_permission));
                 } else if (mEvStatus == null) {
-                    info.append("Fetching EV status.");
+                    info.append(mCarContext.getString(R.string.fetch_ev_status));
                 } else {
-                    info.append(generateCarValueText("Ev Charge Port Connected",
+                    info.append(generateCarValueText(mCarContext.getString(R.string.ev_connected),
                             mEvStatus.getEvChargePortConnected(), ". "));
-                    info.append(generateCarValueText("Ev Charge Port Open",
+                    info.append(generateCarValueText(mCarContext.getString(R.string.ev_open),
                             mEvStatus.getEvChargePortOpen(), ". "));
                 }
                 canvas.drawText(info.toString(), LEFT_MARGIN, verticalPos, mCarInfoPaint);
@@ -440,12 +463,13 @@ public final class CarHardwareRenderer implements Renderer {
             // Prepare text for Accelerometer
             info = new StringBuilder();
             if (!mHasAccelerometerPermission) {
-                info.append("No Accelerometer Permission.");
+                info.append(mCarContext.getString(R.string.no_accelerometer_permission));
             } else if (mAccelerometer == null) {
-                info.append("Fetching accelerometer");
+                info.append(mCarContext.getString(R.string.fetch_accelerometer));
             } else {
                 info.append(
-                        generateCarValueText("Accelerometer", mAccelerometer.getForces(), ". "));
+                        generateCarValueText(mCarContext.getString(R.string.accelerometer),
+                                mAccelerometer.getForces(), ". "));
             }
             canvas.drawText(info.toString(), LEFT_MARGIN, verticalPos, mCarInfoPaint);
             verticalPos += height;
@@ -453,11 +477,12 @@ public final class CarHardwareRenderer implements Renderer {
             // Prepare text for Gyroscope
             info = new StringBuilder();
             if (!mHasGyroscopePermission) {
-                info.append("No Gyroscope Permission.");
+                info.append(mCarContext.getString(R.string.no_gyroscope_permission));
             } else if (mGyroscope == null) {
-                info.append("Fetching gyroscope");
+                info.append(mCarContext.getString(R.string.fetch_gyroscope));
             } else {
-                info.append(generateCarValueText("Gyroscope", mGyroscope.getRotations(), ". "));
+                info.append(generateCarValueText(mCarContext.getString(R.string.gyroscope),
+                        mGyroscope.getRotations(), ". "));
             }
             canvas.drawText(info.toString(), LEFT_MARGIN, verticalPos, mCarInfoPaint);
             verticalPos += height;
@@ -465,11 +490,12 @@ public final class CarHardwareRenderer implements Renderer {
             // Prepare text for Compass
             info = new StringBuilder();
             if (!mHasCompassPermission) {
-                info.append("No Compass Permission.");
+                info.append(mCarContext.getString(R.string.no_compass_permission));
             } else if (mCompass == null) {
-                info.append("Fetching compass");
+                info.append(mCarContext.getString(R.string.fetch_compass));
             } else {
-                info.append(generateCarValueText("Compass", mCompass.getOrientations(), ". "));
+                info.append(generateCarValueText(mCarContext.getString(R.string.compass),
+                        mCompass.getOrientations(), ". "));
             }
             canvas.drawText(info.toString(), LEFT_MARGIN, verticalPos, mCarInfoPaint);
             verticalPos += height;
@@ -477,12 +503,13 @@ public final class CarHardwareRenderer implements Renderer {
             // Prepare text for Location
             info = new StringBuilder();
             if (!mHasCarHardwareLocationPermission) {
-                info.append("No CarHardwareLocation Permission.");
+                info.append(mCarContext.getString(R.string.no_car_hardware_location));
             } else if (mCarHardwareLocation == null) {
-                info.append("Fetching location");
+                info.append(mCarContext.getString(R.string.fetch_location));
             } else {
-                info.append(generateCarValueText("Car Hardware Location",
-                        mCarHardwareLocation.getLocation(), ". "));
+                info.append(
+                        generateCarValueText(mCarContext.getString(R.string.car_hardware_location),
+                                mCarHardwareLocation.getLocation(), ". "));
             }
             canvas.drawText(info.toString(), LEFT_MARGIN, verticalPos, mCarInfoPaint);
         }

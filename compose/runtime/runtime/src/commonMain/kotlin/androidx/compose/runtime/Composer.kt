@@ -184,8 +184,11 @@ private class Pending(
             groupInfo.nodeCount = newCount
             if (difference != 0) {
                 groupInfos.values.forEach { childGroupInfo ->
-                    if (childGroupInfo.nodeIndex >= index && childGroupInfo != groupInfo)
-                        childGroupInfo.nodeIndex += difference
+                    if (childGroupInfo.nodeIndex >= index && childGroupInfo != groupInfo) {
+                        val newIndex = childGroupInfo.nodeIndex + difference
+                        if (newIndex >= 0)
+                            childGroupInfo.nodeIndex = newIndex
+                    }
                 }
             }
             return true
@@ -420,6 +423,17 @@ sealed interface Composer {
     val recomposeScope: RecomposeScope?
 
     /**
+     * A Compose compiler plugin API. DO NOT call directly.
+     *
+     * Return an object that can be used to uniquely identity of the current recomposition scope.
+     * This identity will be the same even if the recompose scope instance changes.
+     *
+     * This is used internally by tooling track composable function invocations.
+     */
+    @ComposeCompilerApi
+    val recomposeScopeIdentity: Any?
+
+    /**
      * A Compose internal property. DO NOT call directly. Use [currentCompositeKeyHash] instead.
      *
      * This a hash value used to coordinate map externally stored state to the composition. For
@@ -593,6 +607,16 @@ sealed interface Composer {
      */
     @ComposeCompilerApi
     fun skipToGroupEnd()
+
+    /**
+     * A Compose compiler plugin API. DO NOT call directly.
+     *
+     * Deactivates the content to the end of the group by treating content as if it was deleted and
+     * replaces all slot table entries for calls to [cache] to be [Empty]. This must be called as
+     * the first call for a group.
+     */
+    @ComposeCompilerApi
+    fun deactivateToEndGroup(changed: Boolean)
 
     /**
      * A Compose compiler plugin API. DO NOT call directly.
@@ -1010,10 +1034,10 @@ sealed interface Composer {
         }
 
         /**
-         * Experimental API for specifying a tracer used for instrumenting frequent
+         * Internal API for specifying a tracer used for instrumenting frequent
          * operations, e.g. recompositions.
          */
-        @ExperimentalComposeApi
+        @InternalComposeTracingApi
         fun setTracer(tracer: CompositionTracer) {
             compositionTracer = tracer
         }
@@ -1068,25 +1092,49 @@ fun sourceInformationMarkerStart(composer: Composer, key: Int, sourceInformation
     composer.sourceInformationMarkerStart(key, sourceInformation)
 }
 
-@ExperimentalComposeApi
+/**
+ * Internal tracing API.
+ *
+ * Should be called without thread synchronization with occasional information loss.
+ */
+@InternalComposeTracingApi
 interface CompositionTracer {
-    fun traceEventStart(key: Int, info: String): Unit
+    fun traceEventStart(key: Int, dirty1: Int, dirty2: Int, info: String): Unit
     fun traceEventEnd(): Unit
+    fun isTraceInProgress(): Boolean
 }
 
-@OptIn(ExperimentalComposeApi::class)
+@OptIn(InternalComposeTracingApi::class)
 private var compositionTracer: CompositionTracer? = null
 
-@OptIn(ExperimentalComposeApi::class)
+/**
+ * Internal tracing API.
+ *
+ * Should be called without thread synchronization with occasional information loss.
+ */
+@OptIn(InternalComposeTracingApi::class)
 @ComposeCompilerApi
-fun isTraceInProgress(): Boolean = compositionTracer != null
+fun isTraceInProgress(): Boolean = compositionTracer.let { it != null && it.isTraceInProgress() }
 
-@OptIn(ExperimentalComposeApi::class)
+/**
+ * Internal tracing API.
+ *
+ * Should be called without thread synchronization with occasional information loss.
+ *
+ * @param dirty1 $dirty metadata: forced-recomposition and function parameters 1..10 if present
+ * @param dirty2 $dirty2 metadata: forced-recomposition and function parameters 11..20 if present
+ */
+@OptIn(InternalComposeTracingApi::class)
 @ComposeCompilerApi
-fun traceEventStart(key: Int, info: String): Unit =
-    compositionTracer?.traceEventStart(key, info) ?: Unit
+fun traceEventStart(key: Int, dirty1: Int, dirty2: Int, info: String): Unit =
+    compositionTracer?.traceEventStart(key, dirty1, dirty2, info) ?: Unit
 
-@OptIn(ExperimentalComposeApi::class)
+/**
+ * Internal tracing API.
+ *
+ * Should be called without thread synchronization with occasional information loss.
+ */
+@OptIn(InternalComposeTracingApi::class)
 @ComposeCompilerApi
 fun traceEventEnd(): Unit = compositionTracer?.traceEventEnd() ?: Unit
 
@@ -1145,7 +1193,8 @@ internal class ComposerImpl(
     private var groupNodeCountStack = IntStack()
     private var nodeCountOverrides: IntArray? = null
     private var nodeCountVirtualOverrides: HashMap<Int, Int>? = null
-    private var collectParameterInformation = false
+    private var forceRecomposeScopes = false
+    private var forciblyRecompose = false
     private var nodeExpected = false
     private val invalidations: MutableList<Invalidation> = mutableListOf()
     private val entersStack = IntStack()
@@ -1174,6 +1223,8 @@ internal class ComposerImpl(
 
     private var writer: SlotWriter = insertTable.openWriter().also { it.close() }
     private var writerHasAProvider = false
+    private var providerCache: CompositionLocalMap? = null
+
     private var insertAnchor: Anchor = insertTable.read { it.anchor(0) }
     private val insertFixups = mutableListOf<Change>()
 
@@ -1314,8 +1365,9 @@ internal class ComposerImpl(
         parentProvider = parentContext.getCompositionLocalScope()
         providersInvalidStack.push(providersInvalid.asInt())
         providersInvalid = changed(parentProvider)
-        if (!collectParameterInformation) {
-            collectParameterInformation = parentContext.collectingParameterInformation
+        providerCache = null
+        if (!forceRecomposeScopes) {
+            forceRecomposeScopes = parentContext.collectingParameterInformation
         }
         resolveCompositionLocal(LocalInspectionTables, parentProvider)?.let {
             it.add(slotTable)
@@ -1336,6 +1388,7 @@ internal class ComposerImpl(
         recordEndRoot()
         finalizeCompose()
         reader.close()
+        forciblyRecompose = false
     }
 
     /**
@@ -1355,6 +1408,7 @@ internal class ComposerImpl(
         childrenComposing = 0
         nodeExpected = false
         isComposing = false
+        forciblyRecompose = false
     }
 
     internal fun changesApplied() {
@@ -1377,7 +1431,8 @@ internal class ComposerImpl(
     override val skipping: Boolean get() {
         return !inserting && !reusing &&
             !providersInvalid &&
-            currentRecomposeScope?.requiresRecompose == false
+            currentRecomposeScope?.requiresRecompose == false &&
+            !forciblyRecompose
     }
 
     /**
@@ -1393,7 +1448,7 @@ internal class ComposerImpl(
      * determine the parameter values of composable calls.
      */
     override fun collectParameterInformation() {
-        collectParameterInformation = true
+        forceRecomposeScopes = true
     }
 
     @OptIn(InternalComposeApi::class)
@@ -1406,6 +1461,16 @@ internal class ComposerImpl(
             providerUpdates.clear()
             applier.clear()
             isDisposed = true
+        }
+    }
+
+    internal fun forceRecomposeScopes(): Boolean {
+        return if (!forceRecomposeScopes) {
+            forceRecomposeScopes = true
+            forciblyRecompose = true
+             true
+        } else {
+            false
         }
     }
 
@@ -1743,6 +1808,8 @@ internal class ComposerImpl(
      * Return the current [CompositionLocal] scope which was provided by a parent group.
      */
     private fun currentCompositionLocalScope(group: Int? = null): CompositionLocalMap {
+        if (group == null)
+            providerCache?.let { return it }
         if (inserting && writerHasAProvider) {
             var current = writer.parent
             while (current > 0) {
@@ -1750,7 +1817,9 @@ internal class ComposerImpl(
                     writer.groupObjectKey(current) == compositionLocalMap
                 ) {
                     @Suppress("UNCHECKED_CAST")
-                    return writer.groupAux(current) as CompositionLocalMap
+                    val providers = writer.groupAux(current) as CompositionLocalMap
+                    providerCache = providers
+                    return providers
                 }
                 current = writer.parent(current)
             }
@@ -1762,12 +1831,15 @@ internal class ComposerImpl(
                     reader.groupObjectKey(current) == compositionLocalMap
                 ) {
                     @Suppress("UNCHECKED_CAST")
-                    return providerUpdates[current]
+                    val providers = providerUpdates[current]
                         ?: reader.groupAux(current) as CompositionLocalMap
+                    providerCache = providers
+                    return providers
                 }
                 current = reader.parent(current)
             }
         }
+        providerCache = parentProvider
         return parentProvider
     }
 
@@ -1837,6 +1909,7 @@ internal class ComposerImpl(
         }
         providersInvalidStack.push(providersInvalid.asInt())
         providersInvalid = invalid
+        providerCache = providers
         start(compositionLocalMapKey, compositionLocalMap, false, providers)
     }
 
@@ -1845,6 +1918,7 @@ internal class ComposerImpl(
         endGroup()
         endGroup()
         providersInvalid = providersInvalidStack.pop().asBool()
+        providerCache = null
     }
 
     @InternalComposeApi
@@ -1862,7 +1936,7 @@ internal class ComposerImpl(
             ref = CompositionContextHolder(
                 CompositionContextImpl(
                     compoundKeyHash,
-                    collectParameterInformation
+                    forceRecomposeScopes
                 )
             )
             updateValue(ref)
@@ -1902,6 +1976,7 @@ internal class ComposerImpl(
             // Append to the end of the table
             writer.skipToGroupEnd()
             writerHasAProvider = false
+            providerCache = null
         }
     }
 
@@ -2007,6 +2082,7 @@ internal class ComposerImpl(
                 // inserted into in the table.
                 reader.beginEmpty()
                 inserting = true
+                providerCache = null
                 ensureWriter()
                 writer.beginInsert()
                 val startIndex = writer.currentGroup
@@ -2267,6 +2343,10 @@ internal class ComposerImpl(
                     recomposeCompoundKey
                 )
 
+                // We have moved so the cached lookup of the provider is invalid
+                providerCache = null
+
+                // Invoke the scope's composition function
                 firstInRange.scope.compose(this)
 
                 // Restore the parent of the reader to the previous parent
@@ -2554,6 +2634,54 @@ internal class ComposerImpl(
         }
     }
 
+    @ComposeCompilerApi
+    override fun deactivateToEndGroup(changed: Boolean) {
+        runtimeCheck(groupNodeCount == 0) {
+            "No nodes can be emitted before calling dactivateToEndGroup"
+        }
+        if (!inserting) {
+            if (!changed) {
+                skipReaderToGroupEnd()
+                return
+            }
+            val start = reader.currentGroup
+            val end = reader.currentEnd
+            for (group in start until end) {
+                reader.forEachData(group) { index, data ->
+                    when (data) {
+                        is RememberObserver -> {
+                            reader.reposition(group)
+                            recordSlotTableOperation { _, slots, rememberManager ->
+                                runtimeCheck(data == slots.slot(group, index)) {
+                                    "Slot table is out of sync"
+                                }
+                                rememberManager.forgetting(data)
+                                slots.set(index, Composer.Empty)
+                            }
+                        }
+                        is RecomposeScopeImpl -> {
+                            val composition = data.composition
+                            if (composition != null) {
+                                composition.pendingInvalidScopes = true
+                                data.composition = null
+                            }
+                            reader.reposition(group)
+                            recordSlotTableOperation { _, slots, _ ->
+                                runtimeCheck(data == slots.slot(group, index)) {
+                                    "Slot table is out of sync"
+                                }
+                                slots.set(index, Composer.Empty)
+                            }
+                        }
+                    }
+                }
+            }
+            invalidations.removeRange(start, end)
+            reader.reposition(start)
+            reader.skipToGroupEnd()
+        }
+    }
+
     /**
      * Start a restart group. A restart group creates a recompose scope and sets it as the current
      * recompose scope of the composition. If the recompose scope is invalidated then this group
@@ -2575,7 +2703,14 @@ internal class ComposerImpl(
             scope.start(snapshot.id)
         } else {
             val invalidation = invalidations.removeLocation(reader.parent)
-            val scope = reader.next() as RecomposeScopeImpl
+            val slot = reader.next()
+            val scope = if (slot == Composer.Empty) {
+                // This code is executed when a previously deactivate region is becomes active
+                // again. See Composer.deactivateToEndGroup()
+                val newScope = RecomposeScopeImpl(composition as CompositionImpl)
+                updateValue(newScope)
+                newScope
+            } else slot as RecomposeScopeImpl
             scope.requiresRecompose = invalidation != null
             invalidateStack.push(scope)
             scope.start(snapshot.id)
@@ -2601,7 +2736,7 @@ internal class ComposerImpl(
         }
         val result = if (scope != null &&
             !scope.skipped &&
-            (scope.used || collectParameterInformation)
+            (scope.used || forceRecomposeScopes)
         ) {
             if (scope.anchor == null) {
                 scope.anchor = if (inserting) {
@@ -2652,13 +2787,15 @@ internal class ComposerImpl(
         // All movable content has a compound hash value rooted at the content itself so the hash
         // value doesn't change as the content moves in the tree.
         val savedCompoundKeyHash = compoundKeyHash
-        compoundKeyHash = movableContentKey xor content.hashCode()
+        compoundKeyHash = movableContentKey
 
         // Either insert a place-holder to be inserted later (either created new or moved from
         // another location) or (re)compose the movable content. This is forced if a new value
         // needs to be created as a late change.
         if (inserting && !force) {
             writerHasAProvider = true
+            providerCache = null
+
             // Create an anchor to the movable group
             val anchor = writer.anchor(writer.parent(writer.parent))
             val reference = MovableContentStateReference(
@@ -2995,7 +3132,11 @@ internal class ComposerImpl(
         // some invalidations scheduled already. it can happen when during some parent composition
         // there were a change for a state which was used by the child composition. such changes
         // will be tracked and added into `invalidations` list.
-        if (invalidationsRequested.isNotEmpty() || invalidations.isNotEmpty()) {
+        if (
+            invalidationsRequested.isNotEmpty() ||
+            invalidations.isNotEmpty() ||
+            forciblyRecompose
+        ) {
             doCompose(invalidationsRequested, null)
             return changes.isNotEmpty()
         }
@@ -3020,6 +3161,15 @@ internal class ComposerImpl(
             isComposing = true
             try {
                 startRoot()
+
+                // vv Experimental for forced
+                @Suppress("UNCHECKED_CAST")
+                val savedContent = nextSlot()
+                if (savedContent !== content && content != null) {
+                    updateValue(content as Any?)
+                }
+                // ^^ Experimental for forced
+
                 // Ignore reads of derivedStateOf recalculations
                 observeDerivedStateRecalculations(
                     start = {
@@ -3031,8 +3181,16 @@ internal class ComposerImpl(
                 ) {
                     if (content != null) {
                         startGroup(invocationKey, invocation)
-
                         invokeComposable(this, content)
+                        endGroup()
+                    } else if (
+                        forciblyRecompose &&
+                        savedContent != null &&
+                        savedContent != Composer.Empty
+                    ) {
+                        startGroup(invocationKey, invocation)
+                        @Suppress("UNCHECKED_CAST")
+                        invokeComposable(this, savedContent as @Composable () -> Unit)
                         endGroup()
                     } else {
                         skipCurrentGroup()
@@ -3305,7 +3463,6 @@ internal class ComposerImpl(
                         slots.moveTo(anchor, 1, writer)
                         writer.endInsert()
                     }
-                    slotTable.verifyWellFormed()
                     val state = MovableContentState(slotTable)
                     parentContext.movableContentStateReleased(reference, state)
                 }
@@ -3533,7 +3690,7 @@ internal class ComposerImpl(
         override val effectCoroutineContext: CoroutineContext
             get() = parentContext.effectCoroutineContext
 
-        @Suppress("EXPERIMENTAL_ANNOTATION_ON_WRONG_TARGET")
+        @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
         @OptIn(ExperimentalComposeApi::class)
         @get:OptIn(ExperimentalComposeApi::class)
         override val recomposeCoroutineContext: CoroutineContext
@@ -3647,6 +3804,7 @@ internal class ComposerImpl(
     }
 
     override val recomposeScope: RecomposeScope? get() = currentRecomposeScope
+    override val recomposeScopeIdentity: Any? get() = currentRecomposeScope?.anchor
     override fun rememberedValue(): Any? = nextSlot()
     override fun updateRememberedValue(value: Any?) = updateValue(value)
     override fun recordUsed(scope: RecomposeScope) { (scope as? RecomposeScopeImpl)?.used = true }
@@ -3658,8 +3816,8 @@ internal class ComposerImpl(
  *
  * @see ComposeNode
  */
-@Suppress("INLINE_CLASS_DEPRECATED", "EXPERIMENTAL_FEATURE_WARNING")
-inline class Updater<T> constructor(
+@kotlin.jvm.JvmInline
+value class Updater<T> constructor(
     @PublishedApi internal val composer: Composer
 ) {
     /**
@@ -3779,8 +3937,9 @@ inline class Updater<T> constructor(
         }
     }
 }
-@Suppress("INLINE_CLASS_DEPRECATED", "EXPERIMENTAL_FEATURE_WARNING")
-inline class SkippableUpdater<T> constructor(
+
+@kotlin.jvm.JvmInline
+value class SkippableUpdater<T> constructor(
     @PublishedApi internal val composer: Composer
 ) {
     inline fun update(block: Updater<T>.() -> Unit) {

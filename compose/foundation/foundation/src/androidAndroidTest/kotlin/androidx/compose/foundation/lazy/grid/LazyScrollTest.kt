@@ -18,17 +18,12 @@ package androidx.compose.foundation.lazy.grid
 
 import androidx.compose.animation.core.FloatSpringSpec
 import androidx.compose.foundation.AutoTestFrameClock
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.foundation.lazy.GridCells
-import androidx.compose.foundation.lazy.LazyGridState
-import androidx.compose.foundation.lazy.LazyVerticalGrid
-import androidx.compose.foundation.lazy.rememberLazyGridState
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.unit.Dp
@@ -48,7 +43,6 @@ import org.junit.Test
 
 @MediumTest
 // @RunWith(Parameterized::class)
-@OptIn(ExperimentalFoundationApi::class)
 class LazyScrollTest { // (private val orientation: Orientation)
     @get:Rule
     val rule = createComposeRule()

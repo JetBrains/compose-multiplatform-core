@@ -32,6 +32,7 @@ import androidx.annotation.RestrictTo
 import androidx.wear.watchface.complications.data.ComplicationData
 import androidx.wear.watchface.complications.data.ComplicationType
 import androidx.wear.watchface.complications.data.ComplicationType.Companion.fromWireType
+import androidx.wear.watchface.complications.data.NoDataComplicationData
 import androidx.wear.watchface.complications.data.TimeRange
 import androidx.wear.watchface.complications.datasource.ComplicationDataSourceService.Companion.METADATA_KEY_IMMEDIATE_UPDATE_PERIOD_MILLISECONDS
 import androidx.wear.watchface.complications.datasource.ComplicationDataSourceService.ComplicationRequestListener
@@ -166,7 +167,7 @@ public class ComplicationRequest(
  * complication data source should be set on the given complication.
  *
  * It is possible to provide additional 'meta-data' tag
- * androidx.watchface.complications.datasource.DEFAULT_CONFIGURATION_SUPPORTED in the service
+ * androidx.watchface.complications.datasource.DEFAULT_CONFIG_SUPPORTED in the service
  * set to "true" to let the system know that the data source is able to provide complication data
  * before it is configured.
  *
@@ -183,6 +184,9 @@ public class ComplicationRequest(
  * Multiple complication data sources in the same APK are supported but in android R there's a
  * soft limit of 100 data sources per APK. Above that the companion watchface editor won't
  * support this complication data source app.
+ *
+ * There's no need to call setDataSource for any the ComplicationData Builders because the system
+ * will append this value on your behalf.
  */
 public abstract class ComplicationDataSourceService : Service() {
     private var wrapper: IComplicationProviderWrapper? = null
@@ -367,6 +371,14 @@ public abstract class ComplicationDataSourceService : Service() {
                                 "Complication data should match the requested type. " +
                                     "Expected $expectedDataType got $dataType."
                             }
+                            if (complicationData is NoDataComplicationData) {
+                                complicationData.placeholder?.let {
+                                    require(it.type == expectedDataType) {
+                                        "Placeholder type must match the requested type. " +
+                                            "Expected $expectedDataType got ${it.type}."
+                                    }
+                                }
+                            }
 
                             // When no update is needed, the complicationData is going to be null.
                             iComplicationManager.updateComplicationData(
@@ -379,9 +391,9 @@ public abstract class ComplicationDataSourceService : Service() {
                             complicationDataTimeline: ComplicationDataTimeline?
                         ) {
                             // This can be run on an arbitrary thread, but that's OK.
-                            val dataType =
-                                complicationDataTimeline?.defaultComplicationData?.type
-                                    ?: ComplicationType.NO_DATA
+                            val defaultComplicationData =
+                                complicationDataTimeline?.defaultComplicationData
+                            val dataType = defaultComplicationData?.type ?: ComplicationType.NO_DATA
                             require(
                                 dataType != ComplicationType.NOT_CONFIGURED &&
                                     dataType != ComplicationType.EMPTY
@@ -396,7 +408,38 @@ public abstract class ComplicationDataSourceService : Service() {
                                 "Complication data should match the requested type. " +
                                     "Expected $expectedDataType got $dataType."
                             }
-
+                            if (defaultComplicationData != null &&
+                                defaultComplicationData is NoDataComplicationData
+                            ) {
+                                defaultComplicationData.placeholder?.let {
+                                    require(it.type == expectedDataType) {
+                                        "Placeholder type must match the requested type. " +
+                                            "Expected $expectedDataType got ${it.type}."
+                                    }
+                                }
+                            }
+                            complicationDataTimeline?.timelineEntries?.let { timelineEntries ->
+                                for (timelineEntry in timelineEntries) {
+                                    val timelineComplicationData = timelineEntry.complicationData
+                                    if (timelineComplicationData is NoDataComplicationData) {
+                                        timelineComplicationData.placeholder?.let {
+                                            require(it.type == expectedDataType) {
+                                                "Timeline entry Placeholder types must match the " +
+                                                    "requested type. Expected $expectedDataType " +
+                                                    "got ${timelineComplicationData.type}."
+                                            }
+                                        }
+                                    } else {
+                                        require(
+                                            timelineComplicationData.type == expectedDataType
+                                        ) {
+                                            "Timeline entry types must match the requested type. " +
+                                                "Expected $expectedDataType got " +
+                                                "${timelineComplicationData.type}."
+                                        }
+                                    }
+                                }
+                            }
                             // When no update is needed, the complicationData is going to be null.
                             iComplicationManager.updateComplicationData(
                                 complicationInstanceId,
@@ -693,8 +736,8 @@ public abstract class ComplicationDataSourceService : Service() {
          * before it is configured.
          * See [METADATA_KEY_DATA_SOURCE_CONFIG_ACTION].
          */
-        public const val METADATA_KEY_DATA_SOURCE_DEFAULT_CONFIGURATION_SUPPORTED: String =
-            "androidx.watchface.complications.datasource.DEFAULT_CONFIGURATION_SUPPORTED"
+        public const val METADATA_KEY_DATA_SOURCE_DEFAULT_CONFIG_SUPPORTED: String =
+            "androidx.watchface.complications.datasource.DEFAULT_CONFIG_SUPPORTED"
 
         /**
          * Category for complication data source config activities. The configuration activity for a

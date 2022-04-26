@@ -38,8 +38,8 @@ dependencies {
 
         api("androidx.annotation:annotation:1.1.0")
 
-        implementation("androidx.compose.runtime:runtime:1.1.0-rc01")
-        implementation("androidx.compose.ui:ui:1.0.0")
+        implementation("androidx.compose.runtime:runtime:1.1.1")
+        implementation(project(":compose:ui:ui"))
         implementation("androidx.compose.ui:ui-unit:1.0.0")
         implementation("androidx.compose.ui:ui-util:1.0.0")
         implementation(libs.kotlinStdlib)
@@ -143,10 +143,14 @@ androidx {
     legacyDisableKotlinStrictApiMode = true
 }
 
+android {
+    namespace "androidx.compose.animation.core"
+}
+
 tasks.withType(KotlinCompile).configureEach {
     kotlinOptions {
         freeCompilerArgs += [
-                "-Xopt-in=kotlin.Experimental",
+                "-opt-in=kotlin.Experimental",
         ]
     }
 }

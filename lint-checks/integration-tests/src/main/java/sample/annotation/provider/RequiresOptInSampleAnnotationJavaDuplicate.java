@@ -25,7 +25,7 @@ import java.lang.annotation.Target;
 import kotlin.RequiresOptIn;
 
 // This is essentially a duplicate of RequiresOptInSampleAnnotationJava. Combined, these two are
-// used in @OptIn with multiple @RequiresOptIn declarations.
+// used in @kotlin.OptIn with multiple @kotlin.RequiresOptIn declarations.
 @RequiresOptIn
 @Retention(CLASS)
 @Target({ElementType.TYPE, ElementType.METHOD})

@@ -21,6 +21,12 @@ plugins {
     id("com.android.library")
 }
 
+android {
+    defaultConfig {
+        multiDexEnabled true
+    }
+}
+
 dependencies {
     // Public API dependencies
     api("androidx.annotation:annotation:1.1.0")
@@ -45,9 +51,12 @@ dependencies {
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.testRules)
     androidTestImplementation(libs.testRunner)
+    androidTestImplementation(libs.testUiautomator)
     androidTestImplementation(libs.dexmakerMockito, excludes.bytebuddy)
     androidTestImplementation(libs.mockitoCore, excludes.bytebuddy)
     androidTestImplementation(libs.truth)
+    androidTestImplementation(libs.multidex)
+    androidTestImplementation("androidx.fragment:fragment-testing:1.4.1")
 }
 
 android {
@@ -59,6 +68,7 @@ android {
         consumerProguardFiles "proguard-rules.pro"
     }
     testOptions.unitTests.includeAndroidResources = true
+    namespace "androidx.biometric"
 }
 
 androidx {

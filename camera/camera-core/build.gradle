@@ -89,12 +89,17 @@ android {
         }
     }
 
+    lintOptions {
+        enable 'CameraXQuirksClassDetector'
+    }
+
     // Use Robolectric 4.+
     testOptions.unitTests.includeAndroidResources = true
 
     packagingOptions {
         pickFirst "META-INF/support.camera_camera-core.version"
     }
+    namespace "androidx.camera.core"
 }
 
 androidx {

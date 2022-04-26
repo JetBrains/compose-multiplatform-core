@@ -21,7 +21,6 @@ import androidx.compose.foundation.gestures.FlingBehavior
 import androidx.compose.foundation.gestures.ScrollableDefaults
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.lazy.list.LazyList
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -416,11 +415,3 @@ fun LazyRow(
         content = content
     )
 }
-
-/**
- * This should create an object meeting following requirements:
- * 1) objects created for the same index are equals and never equals for different indexes
- * 2) this class is saveable via a default SaveableStateRegistry on the platform
- * 3) this objects can't be equals to any object which could be provided by a user as a custom key
- */
-internal expect fun getDefaultLazyKeyFor(index: Int): Any

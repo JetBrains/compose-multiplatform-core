@@ -39,10 +39,13 @@ import androidx.compose.ui.text.font.toFontFamily
 import androidx.compose.ui.text.intl.LocaleList
 import androidx.compose.ui.text.matchers.assertThat
 import androidx.compose.ui.text.style.BaselineShift
+import androidx.compose.ui.text.PlatformTextStyle
+import androidx.compose.ui.text.ceilToInt
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextGeometricTransform
 import androidx.compose.ui.text.style.TextIndent
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
@@ -1307,15 +1310,31 @@ AndroidParagraphTest {
         assertThat(paragraph.textLocale.toLanguageTag()).isEqualTo("ja")
     }
 
+    @OptIn(ExperimentalTextApi::class)
     @Test
-    fun floatingWidth() {
-        val floatWidth = 1.3f
-        val paragraph = simpleParagraph(
-            text = "Hello, World",
-            width = floatWidth
+    fun withIncludeFontPadding() {
+        val text = "A"
+
+        @Suppress("DEPRECATION")
+        val style = TextStyle(
+            fontSize = 20.sp,
+            platformStyle = PlatformTextStyle(includeFontPadding = true)
         )
 
-        assertThat(floatWidth).isEqualTo(paragraph.width)
+        val paragraphPaddingTrue = simpleParagraph(
+            text = text,
+            style = style,
+            width = Float.MAX_VALUE
+        )
+
+        @Suppress("DEPRECATION")
+        val paragraphPaddingFalse = simpleParagraph(
+            text = text,
+            style = style.copy(platformStyle = PlatformTextStyle(includeFontPadding = false)),
+            width = Float.MAX_VALUE
+        )
+
+        assertThat(paragraphPaddingTrue.height).isNotEqualTo(paragraphPaddingFalse.height)
     }
 
     private fun simpleParagraph(
@@ -1339,7 +1358,7 @@ AndroidParagraphTest {
             ).merge(style),
             maxLines = maxLines,
             ellipsis = ellipsis,
-            width = width,
+            constraints = Constraints(maxWidth = width.ceilToInt()),
             density = Density(density = 1f),
             fontFamilyResolver = fontFamilyResolver
         )

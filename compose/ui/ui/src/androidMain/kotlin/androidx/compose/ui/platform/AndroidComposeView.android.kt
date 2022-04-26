@@ -51,8 +51,10 @@ import androidx.annotation.DoNotInline
 import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
 import androidx.annotation.VisibleForTesting
+import androidx.compose.runtime.collection.mutableVectorOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.referentialEqualityPolicy
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.InternalComposeUiApi
@@ -74,7 +76,7 @@ import androidx.compose.ui.focus.FocusDirection.Companion.Right
 import androidx.compose.ui.focus.FocusDirection.Companion.Up
 import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.focus.FocusManagerImpl
-import androidx.compose.ui.focus.FocusTag
+import androidx.compose.ui.focus.focusRect
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.graphics.CanvasHolder
@@ -114,7 +116,6 @@ import androidx.compose.ui.input.pointer.ProcessResult
 import androidx.compose.ui.input.rotary.RotaryScrollEvent
 import androidx.compose.ui.input.rotary.onRotaryScrollEvent
 import androidx.compose.ui.layout.RootMeasurePolicy
-import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.node.InternalCoreApi
 import androidx.compose.ui.node.LayoutNode
 import androidx.compose.ui.node.LayoutNode.UsageByParent
@@ -153,7 +154,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ViewTreeLifecycleOwner
 import androidx.savedstate.SavedStateRegistryOwner
-import androidx.savedstate.ViewTreeSavedStateRegistryOwner
+import androidx.savedstate.findViewTreeSavedStateRegistryOwner
 import java.lang.reflect.Method
 import kotlin.math.roundToInt
 
@@ -223,6 +224,7 @@ internal class AndroidComposeView(context: Context) :
 
     override val root = LayoutNode().also {
         it.measurePolicy = RootMeasurePolicy
+        // Composed modifiers cannot be added here directly
         it.modifier = Modifier
             .then(semanticsModifier)
             .then(rotaryInputModifier)
@@ -244,6 +246,7 @@ internal class AndroidComposeView(context: Context) :
 
     // OwnedLayers that are dirty and should be redrawn.
     private val dirtyLayers = mutableListOf<OwnedLayer>()
+
     // OwnerLayers that invalidated themselves during their last draw. They will be redrawn
     // during the next AndroidComposeView dispatchDraw pass.
     private var postponedDirtyLayers: MutableList<OwnedLayer>? = null
@@ -326,6 +329,7 @@ internal class AndroidComposeView(context: Context) :
     private val viewToWindowMatrix = Matrix()
     private val windowToViewMatrix = Matrix()
     private val tmpCalculationMatrix = Matrix()
+
     @VisibleForTesting
     internal var lastMatrixRecalculationAnimationTime = -1L
     private var forceUseMatrixCache = false
@@ -375,10 +379,27 @@ internal class AndroidComposeView(context: Context) :
     @OptIn(InternalComposeUiApi::class)
     override val textInputService = textInputServiceFactory(textInputServiceAndroid)
 
-    @Suppress("DEPRECATION", "OverridingDeprecatedMember")
+    @Deprecated(
+        "fontLoader is deprecated, use fontFamilyResolver",
+        replaceWith = ReplaceWith("fontFamilyResolver")
+    )
+    @Suppress("DEPRECATION")
     override val fontLoader: Font.ResourceLoader = AndroidFontResourceLoader(context)
 
-    override val fontFamilyResolver: FontFamily.Resolver = createFontFamilyResolver(context)
+    // Backed by mutableStateOf so that the local provider recomposes when it changes
+    // FontFamily.Resolver is not guaranteed to be stable or immutable, hence referential check
+    override var fontFamilyResolver: FontFamily.Resolver by mutableStateOf(
+        createFontFamilyResolver(context),
+        referentialEqualityPolicy()
+    )
+        private set
+
+    // keeps track of changes in font weight adjustment to update fontFamilyResolver
+    private var currentFontWeightAdjustment: Int =
+        context.resources.configuration.fontWeightAdjustmentCompat
+
+    private val Configuration.fontWeightAdjustmentCompat: Int
+        get() = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) fontWeightAdjustment else 0
 
     // Backed by mutableStateOf so that the ambient provider recomposes when it changes
     override var layoutDirection by mutableStateOf(
@@ -437,6 +458,11 @@ internal class AndroidComposeView(context: Context) :
      * as possible. This also helps a little with RenderNodeLayers as well.
      */
     private val layerCache = WeakCache<OwnedLayer>()
+
+    /**
+     * List of lambdas to be called when [onEndApplyChanges] is called.
+     */
+    private val endApplyChangesListeners = mutableVectorOf<(() -> Unit)?>()
 
     /**
      * Runnable used to update the pointer position after layout. If
@@ -531,7 +557,7 @@ internal class AndroidComposeView(context: Context) :
      * system for accurate focus searching and so ViewRootImpl will scroll correctly.
      */
     override fun getFocusedRect(rect: Rect) {
-        _focusManager.getActiveFocusModifier()?.focusNode?.boundsInRoot()?.let {
+        _focusManager.getActiveFocusModifier()?.focusRect()?.let {
             rect.left = it.left.roundToInt()
             rect.top = it.top.roundToInt()
             rect.right = it.right.roundToInt()
@@ -586,7 +612,7 @@ internal class AndroidComposeView(context: Context) :
         observationClearRequested = true
     }
 
-    internal fun clearInvalidObservations() {
+    override fun onEndApplyChanges() {
         if (observationClearRequested) {
             snapshotObserver.clearInvalidObservations()
             observationClearRequested = false
@@ -595,13 +621,33 @@ internal class AndroidComposeView(context: Context) :
         if (childAndroidViews != null) {
             clearChildInvalidObservations(childAndroidViews)
         }
+        // Listeners can add more items to the list and we want to ensure that they
+        // are executed after being added, so loop until the list is empty
+        while (endApplyChangesListeners.isNotEmpty()) {
+            val size = endApplyChangesListeners.size
+            for (i in 0 until size) {
+                val listener = endApplyChangesListeners[i]
+                // null out the item so that if the listener is re-added then we execute it again.
+                endApplyChangesListeners[i] = null
+                listener?.invoke()
+            }
+            // Remove all the items that were visited. Removing items shifts all items after
+            // to the front of the list, so removing in a chunk is cheaper than removing one-by-one
+            endApplyChangesListeners.removeRange(0, size)
+        }
+    }
+
+    override fun registerOnEndApplyChangesListener(listener: () -> Unit) {
+        if (listener !in endApplyChangesListeners) {
+            endApplyChangesListeners += listener
+        }
     }
 
     private fun clearChildInvalidObservations(viewGroup: ViewGroup) {
         for (i in 0 until viewGroup.childCount) {
             val child = viewGroup.getChildAt(i)
             if (child is AndroidComposeView) {
-                child.clearInvalidObservations()
+                child.onEndApplyChanges()
             } else if (child is ViewGroup) {
                 clearChildInvalidObservations(child)
             }
@@ -689,31 +735,35 @@ internal class AndroidComposeView(context: Context) :
     }
 
     override fun measureAndLayout(sendPointerUpdate: Boolean) {
-        val resend = if (sendPointerUpdate) resendMotionEventOnLayout else null
-        val rootNodeResized = measureAndLayoutDelegate.measureAndLayout(resend)
-        if (rootNodeResized) {
-            requestLayout()
+        trace("AndroidOwner:measureAndLayout") {
+            val resend = if (sendPointerUpdate) resendMotionEventOnLayout else null
+            val rootNodeResized = measureAndLayoutDelegate.measureAndLayout(resend)
+            if (rootNodeResized) {
+                requestLayout()
+            }
+            measureAndLayoutDelegate.dispatchOnPositionedCallbacks()
         }
-        measureAndLayoutDelegate.dispatchOnPositionedCallbacks()
     }
 
     override fun measureAndLayout(layoutNode: LayoutNode, constraints: Constraints) {
-        measureAndLayoutDelegate.measureAndLayout(layoutNode, constraints)
-        measureAndLayoutDelegate.dispatchOnPositionedCallbacks()
+        trace("AndroidOwner:measureAndLayout") {
+            measureAndLayoutDelegate.measureAndLayout(layoutNode, constraints)
+            measureAndLayoutDelegate.dispatchOnPositionedCallbacks()
+        }
     }
 
     override fun forceMeasureTheSubtree(layoutNode: LayoutNode) {
         measureAndLayoutDelegate.forceMeasureTheSubtree(layoutNode)
     }
 
-    override fun onRequestMeasure(layoutNode: LayoutNode) {
-        if (measureAndLayoutDelegate.requestRemeasure(layoutNode)) {
+    override fun onRequestMeasure(layoutNode: LayoutNode, forceRequest: Boolean) {
+        if (measureAndLayoutDelegate.requestRemeasure(layoutNode, forceRequest)) {
             scheduleMeasureAndLayout(layoutNode)
         }
     }
 
-    override fun onRequestRelayout(layoutNode: LayoutNode) {
-        if (measureAndLayoutDelegate.requestRelayout(layoutNode)) {
+    override fun onRequestRelayout(layoutNode: LayoutNode, forceRequest: Boolean) {
+        if (measureAndLayoutDelegate.requestRelayout(layoutNode, forceRequest)) {
             scheduleMeasureAndLayout()
         }
     }
@@ -862,6 +912,11 @@ internal class AndroidComposeView(context: Context) :
         accessibilityDelegate.onLayoutChange(layoutNode)
     }
 
+    override fun registerOnLayoutCompletedListener(listener: Owner.OnLayoutCompletedListener) {
+        measureAndLayoutDelegate.registerOnLayoutCompletedListener(listener)
+        scheduleMeasureAndLayout()
+    }
+
     override fun getFocusDirection(keyEvent: KeyEvent): FocusDirection? {
         return when (keyEvent.key) {
             Tab -> if (keyEvent.isShiftPressed) Previous else Next
@@ -995,7 +1050,7 @@ internal class AndroidComposeView(context: Context) :
         }
 
         val lifecycleOwner = ViewTreeLifecycleOwner.get(this)
-        val savedStateRegistryOwner = ViewTreeSavedStateRegistryOwner.get(this)
+        val savedStateRegistryOwner = findViewTreeSavedStateRegistryOwner()
 
         val oldViewTreeOwners = viewTreeOwners
         // We need to change the ViewTreeOwner if there isn't one yet (null)
@@ -1059,11 +1114,11 @@ internal class AndroidComposeView(context: Context) :
     }
 
     override fun dispatchGenericMotionEvent(event: MotionEvent) = when (event.actionMasked) {
-            ACTION_SCROLL -> when {
-                event.isFromSource(SOURCE_ROTARY_ENCODER) -> handleRotaryEvent(event)
-                else -> handleMotionEvent(event).dispatchedToAPointerInputModifier
-            }
-            else -> super.dispatchGenericMotionEvent(event)
+        ACTION_SCROLL -> when {
+            event.isFromSource(SOURCE_ROTARY_ENCODER) -> handleRotaryEvent(event)
+            else -> handleMotionEvent(event).dispatchedToAPointerInputModifier
+        }
+        else -> super.dispatchGenericMotionEvent(event)
     }
 
     // TODO(shepshapard): Test this method.
@@ -1106,7 +1161,8 @@ internal class AndroidComposeView(context: Context) :
         val axisValue = -event.getAxisValue(AXIS_SCROLL)
         val rotaryEvent = RotaryScrollEvent(
             verticalScrollPixels = axisValue * getScaledVerticalScrollFactor(config, context),
-            horizontalScrollPixels = axisValue * getScaledHorizontalScrollFactor(config, context)
+            horizontalScrollPixels = axisValue * getScaledHorizontalScrollFactor(config, context),
+            uptimeMillis = event.eventTime
         )
         return _focusManager.getActiveFocusModifier()?.propagateRotaryEvent(rotaryEvent) ?: false
     }
@@ -1391,6 +1447,10 @@ internal class AndroidComposeView(context: Context) :
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
         density = Density(context)
+        if (newConfig.fontWeightAdjustmentCompat != currentFontWeightAdjustment) {
+            currentFontWeightAdjustment = newConfig.fontWeightAdjustmentCompat
+            fontFamilyResolver = createFontFamilyResolver(context)
+        }
         configurationChangeObserver(newConfig)
     }
 
@@ -1578,6 +1638,7 @@ internal class AndroidComposeView(context: Context) :
     override fun shouldDelayChildPressedState(): Boolean = false
 
     companion object {
+        private const val FocusTag = "Compose Focus"
         private const val MaximumLayerCacheSize = 10
         private var systemPropertiesClass: Class<*>? = null
         private var getBooleanMethod: Method? = null

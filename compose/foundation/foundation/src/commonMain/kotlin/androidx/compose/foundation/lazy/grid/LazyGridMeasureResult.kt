@@ -18,8 +18,6 @@ package androidx.compose.foundation.lazy.grid
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.gestures.Orientation
-import androidx.compose.foundation.lazy.LazyGridItemInfo
-import androidx.compose.foundation.lazy.LazyGridLayoutInfo
 import androidx.compose.ui.layout.MeasureResult
 import androidx.compose.ui.unit.IntSize
 
@@ -52,7 +50,10 @@ internal class LazyGridMeasureResult(
     override val reverseLayout: Boolean,
     /** see [LazyGridLayoutInfo.orientation] */
     override val orientation: Orientation,
+    /** see [LazyGridLayoutInfo.afterContentPadding] */
+    override val afterContentPadding: Int
 ) : LazyGridLayoutInfo, MeasureResult by measureResult {
     override val viewportSize: IntSize
         get() = IntSize(width, height)
+    override val beforeContentPadding: Int get() = -viewportStartOffset
 }

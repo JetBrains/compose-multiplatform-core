@@ -27,6 +27,7 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.platform.Font
 import androidx.compose.ui.text.style.TextDirection
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.sp
 import com.google.common.truth.Truth
@@ -264,6 +265,19 @@ class DesktopParagraphTest {
         Truth.assertThat(paragraph2.testOffset()).isEqualTo(offset2)
     }
 
+    @Test
+    fun `line heights`() {
+        val paragraph = simpleParagraph(
+            text = "aaa\n\naaa\n\n\naaa\n   \naaa",
+            style = TextStyle(fontSize = 50.sp)
+        )
+        val firstLineHeight = paragraph.getLineHeight(0)
+
+        for (i in 1 until paragraph.lineCount) {
+            Truth.assertThat(paragraph.getLineHeight(i)).isEqualTo(firstLineHeight)
+        }
+    }
+
     private fun simpleParagraph(
         text: String = "",
         style: TextStyle? = null,
@@ -281,7 +295,7 @@ class DesktopParagraphTest {
             ).merge(style),
             maxLines = maxLines,
             ellipsis = ellipsis,
-            width = width,
+            constraints = Constraints(maxWidth = width.ceilToInt()),
             density = density ?: defaultDensity,
             fontFamilyResolver = fontFamilyResolver
         )
@@ -314,7 +328,7 @@ class DesktopParagraphTest {
             paragraphIntrinsics = intrinsics,
             maxLines = maxLines,
             ellipsis = ellipsis,
-            width = width,
+            constraints = Constraints(maxWidth = width.ceilToInt()),
         )
     }
 }

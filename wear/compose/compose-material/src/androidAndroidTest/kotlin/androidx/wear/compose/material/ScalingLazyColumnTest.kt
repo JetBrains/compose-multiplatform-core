@@ -80,14 +80,14 @@ public class ScalingLazyColumnTest {
     @Test
     fun autoCenteringCorrectSizeWithCenterAnchor() {
         lateinit var state: ScalingLazyListState
-        val listSize = itemSizeDp * 3.5f + defaultItemSpacingDp * 2.5f
+        val listSize = itemSizeDp * 3.5f
         rule.setContent {
             WithTouchSlop(0f) {
                 ScalingLazyColumn(
                     state = rememberScalingLazyListState().also { state = it },
                     modifier = Modifier.testTag(TEST_TAG).requiredSize(listSize),
                     anchorType = ScalingLazyListAnchorType.ItemCenter,
-                    autoCentering = true,
+                    autoCentering = AutoCenteringParams(),
                     verticalArrangement = Arrangement.spacedBy(0.dp),
                     scalingParams = ScalingLazyColumnDefaults.scalingParams(
                         edgeScale = 0f,
@@ -108,13 +108,13 @@ public class ScalingLazyColumnTest {
         val listSizePx = with(rule.density) {
             listSize.roundToPx()
         }
-
         rule.runOnIdle {
             // Make sure that the edge items have been scaled
             assertThat(state.layoutInfo.visibleItemsInfo.first().scale).isLessThan(1.0f)
-            // But that size of the Spacer is as expected
+            // But that size of the Spacer is as expected - it should be half the viewport size
+            // minus half the size of the center item minus the full size of the 0th item
             assertThat(state.lazyListState.layoutInfo.visibleItemsInfo.first().size)
-                .isEqualTo(((listSizePx / 2f) - (itemSizePx / 2f)).roundToInt())
+                .isEqualTo(((listSizePx / 2f) - (itemSizePx * 1.5f)).roundToInt())
         }
         rule.onNodeWithTag(TEST_TAG).performTouchInput {
             swipeUp()
@@ -132,14 +132,14 @@ public class ScalingLazyColumnTest {
     @Test
     fun autoCenteringCorrectSizeWithStartAnchor() {
         lateinit var state: ScalingLazyListState
-        val listSize = itemSizeDp * 3.5f + defaultItemSpacingDp * 2.5f
+        val listSize = itemSizeDp * 3.5f
         rule.setContent {
             WithTouchSlop(0f) {
                 ScalingLazyColumn(
                     state = rememberScalingLazyListState().also { state = it },
                     modifier = Modifier.testTag(TEST_TAG).requiredSize(listSize),
                     anchorType = ScalingLazyListAnchorType.ItemStart,
-                    autoCentering = true,
+                    autoCentering = AutoCenteringParams(),
                     verticalArrangement = Arrangement.spacedBy(0.dp),
                     scalingParams = ScalingLazyColumnDefaults.scalingParams(
                         edgeScale = 0f,
@@ -164,9 +164,10 @@ public class ScalingLazyColumnTest {
         rule.runOnIdle {
             // Make sure that the edge items have been scaled
             assertThat(state.layoutInfo.visibleItemsInfo.first().scale).isLessThan(1.0f)
-            // But that size of the Spacer is as expected
+            // But that size of the Spacer is as expected, it should be half the viewport size
+            // minus the size of zeroth item in the list
             assertThat(state.lazyListState.layoutInfo.visibleItemsInfo.first().size)
-                .isEqualTo((listSizePx / 2f).roundToInt())
+                .isEqualTo((listSizePx / 2f).roundToInt() - itemSizePx)
         }
         rule.onNodeWithTag(TEST_TAG).performTouchInput {
             swipeUp(endY = top)
@@ -191,7 +192,7 @@ public class ScalingLazyColumnTest {
                     modifier = Modifier.testTag(TEST_TAG).requiredSize(
                         itemSizeDp * 3.5f + defaultItemSpacingDp * 2.5f
                     ),
-                    autoCentering = false
+                    autoCentering = null
                 ) {
                     items(5) {
                         Box(Modifier.requiredSize(itemSizeDp))
@@ -223,7 +224,7 @@ public class ScalingLazyColumnTest {
                     modifier = Modifier.testTag(TEST_TAG).requiredSize(
                         itemSizeDp * 3.5f + defaultItemSpacingDp * 2.5f
                     ),
-                    autoCentering = false,
+                    autoCentering = null,
                     userScrollEnabled = false
                 ) {
                     items(5) {
@@ -258,7 +259,7 @@ public class ScalingLazyColumnTest {
                     modifier = Modifier.testTag(TEST_TAG).requiredSize(
                         itemSizeDp * 3.5f + defaultItemSpacingDp * 2.5f
                     ),
-                    autoCentering = true
+                    autoCentering = AutoCenteringParams(itemIndex = 0)
                 ) {
                     items(5) {
                         Box(Modifier.requiredSize(itemSizeDp))
@@ -291,7 +292,7 @@ public class ScalingLazyColumnTest {
                     modifier = Modifier.testTag(TEST_TAG).requiredSize(
                         itemSizeDp * 3.5f + defaultItemSpacingDp * 2.5f
                     ),
-                    autoCentering = true,
+                    autoCentering = AutoCenteringParams(itemIndex = 0),
                     flingBehavior = ScalingLazyColumnDefaults.snapFlingBehavior(state)
                 ) {
                     items(5) {
@@ -336,7 +337,7 @@ public class ScalingLazyColumnTest {
                     modifier = Modifier.testTag(TEST_TAG).requiredSize(
                         itemSizeDp * 3.5f + defaultItemSpacingDp * 2.5f
                     ),
-                    autoCentering = true,
+                    autoCentering = AutoCenteringParams(itemIndex = 0),
                     flingBehavior = ScalingLazyColumnDefaults.snapFlingBehavior(
                         state = state,
                         snapOffset = snapOffset
@@ -380,7 +381,7 @@ public class ScalingLazyColumnTest {
                         itemSizeDp * 3.5f + defaultItemSpacingDp * 2.5f
                     ),
                     reverseLayout = true,
-                    autoCentering = false
+                    autoCentering = null
                 ) {
                     items(5) {
                         Box(Modifier.requiredSize(itemSizeDp))
@@ -413,6 +414,7 @@ public class ScalingLazyColumnTest {
                         itemSizeDp * 3.5f + defaultItemSpacingDp * 2.5f
                     ),
                     scalingParams = ScalingLazyColumnDefaults.scalingParams(1.0f, 1.0f),
+                    autoCentering = AutoCenteringParams(itemIndex = 0)
                 ) {
                     items(5) {
                         Box(Modifier.requiredSize(itemSizeDp).testTag("Item:" + it))
@@ -491,7 +493,7 @@ public class ScalingLazyColumnTest {
                     modifier = Modifier
                         .testTag(TEST_TAG)
                         .requiredSize(itemSizeDp * 3.5f + defaultItemSpacingDp * 2.5f),
-                    autoCentering = false
+                    autoCentering = null
                 ) {
                     items(6) {
                         Box(Modifier.requiredSize(itemSizeDp))
@@ -747,6 +749,30 @@ public class ScalingLazyColumnTest {
 
         rule.onNodeWithTag(scalingLazyColumnTag)
             .assertWidthIsEqualTo(itemSize)
+    }
+
+    @Test
+    fun listStateUsesInitialCenterItemIndex() {
+        val startIndexValue = 5
+        lateinit var state: ScalingLazyListState
+
+        rule.setContent {
+            state = rememberScalingLazyListState(initialCenterItemIndex = startIndexValue)
+        }
+
+        assertThat(state.centerItemIndex).isEqualTo(startIndexValue)
+    }
+
+    @Test
+    fun listStateUsesInitialCenterItemScrollOffset() {
+        val startScrollValue = 5
+        lateinit var state: ScalingLazyListState
+
+        rule.setContent {
+            state = rememberScalingLazyListState(initialCenterItemScrollOffset = startScrollValue)
+        }
+
+        assertThat(state.centerItemScrollOffset).isEqualTo(startScrollValue)
     }
 }
 

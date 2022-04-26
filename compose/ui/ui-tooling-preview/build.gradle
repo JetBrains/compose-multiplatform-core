@@ -31,7 +31,7 @@ dependencies {
     if(!AndroidXComposePlugin.isMultiplatformEnabled(project)) {
         implementation(libs.kotlinStdlib)
         api("androidx.annotation:annotation:1.2.0")
-        api("androidx.compose.runtime:runtime:1.1.0-rc01")
+        api("androidx.compose.runtime:runtime:1.1.1")
         testImplementation(libs.junit)
     }
 }
@@ -73,4 +73,8 @@ androidx {
     description = "Compose tooling library API. This library provides the API required to declare" +
             " @Preview composables in user apps."
     legacyDisableKotlinStrictApiMode = true
+}
+
+android {
+    namespace "androidx.compose.ui.tooling.preview"
 }

@@ -591,19 +591,30 @@ class ComposableFunctionBodyTransformer(
     private val isTraceInProgressFunction by guardedLazy {
         getTopLevelFunctions(
             ComposeFqNames.fqNameFor(KtxNameConventions.IS_TRACE_IN_PROGRESS)
-        ).map { it.owner }.firstOrNull()
+        ).map { it.owner }.singleOrNull {
+            it.valueParameters.isEmpty()
+        }
     }
 
     private val traceEventStartFunction by guardedLazy {
         getTopLevelFunctions(
             ComposeFqNames.fqNameFor(KtxNameConventions.TRACE_EVENT_START)
-        ).map { it.owner }.firstOrNull()
+        ).map { it.owner }.singleOrNull {
+            it.valueParameters.map { p -> p.type } == listOf(
+                context.irBuiltIns.intType,
+                context.irBuiltIns.intType,
+                context.irBuiltIns.intType,
+                context.irBuiltIns.stringType
+            )
+        }
     }
 
     private val traceEventEndFunction by guardedLazy {
         getTopLevelFunctions(
             ComposeFqNames.fqNameFor(KtxNameConventions.TRACE_EVENT_END)
-        ).map { it.owner }.firstOrNull()
+        ).map { it.owner }.singleOrNull {
+            it.valueParameters.isEmpty()
+        }
     }
 
     private val sourceInformationMarkerEndFunction by guardedLazy {
@@ -1786,8 +1797,10 @@ class ComposableFunctionBodyTransformer(
         }
 
     override fun visitFile(declaration: IrFile): IrFile =
-        inScope(Scope.FileScope(declaration)) {
-            super.visitFile(declaration)
+        includeFileNameInExceptionTrace(declaration) {
+            inScope(Scope.FileScope(declaration)) {
+                super.visitFile(declaration)
+            }
         }
 
     override fun visitDeclaration(declaration: IrDeclarationBase): IrStatement {
@@ -1947,11 +1960,15 @@ class ComposableFunctionBodyTransformer(
             val file = declaration.file.name
             val line = declaration.file.fileEntry.getLineNumber(declaration.startOffset)
             val traceInfo = "$name ($file:$line)" // TODO(174715171) decide on what to log
+            val dirty1 = irConst(-1) // placeholder TODO(228314276): implement
+            val dirty2 = irConst(-1) // placeholder TODO(228314276): implement
 
             irIfTraceInProgress(
                 irCall(traceEventStart, startOffset, endOffset).also {
                     it.putValueArgument(0, key)
-                    it.putValueArgument(1, irConst(traceInfo))
+                    it.putValueArgument(1, dirty1)
+                    it.putValueArgument(2, dirty2)
+                    it.putValueArgument(3, irConst(traceInfo))
                 }
             )
         }

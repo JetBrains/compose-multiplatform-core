@@ -334,7 +334,7 @@ internal class TextInputServiceAndroid(
         }
     }
 
-    @Suppress("OverridingDeprecatedMember")
+    @Deprecated("This method should not be called, used BringIntoViewRequester instead.")
     override fun notifyFocusedRect(rect: Rect) {
         focusedRect = AndroidRect(
             rect.left.roundToInt(),
@@ -419,6 +419,10 @@ internal fun EditorInfo.update(imeOptions: ImeOptions, textFieldValue: TextField
         KeyboardType.NumberPassword -> {
             this.inputType =
                 InputType.TYPE_CLASS_NUMBER or EditorInfo.TYPE_NUMBER_VARIATION_PASSWORD
+        }
+        KeyboardType.Decimal -> {
+            this.inputType =
+                InputType.TYPE_CLASS_NUMBER or EditorInfo.TYPE_NUMBER_FLAG_DECIMAL
         }
         else -> error("Invalid Keyboard Type")
     }

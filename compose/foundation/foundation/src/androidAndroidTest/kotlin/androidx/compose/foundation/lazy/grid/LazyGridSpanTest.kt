@@ -16,14 +16,12 @@
 
 package androidx.compose.foundation.lazy.grid
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.requiredSize
-import androidx.compose.foundation.lazy.GridCells
-import androidx.compose.foundation.lazy.GridItemSpan
-import androidx.compose.foundation.lazy.LazyVerticalGrid
+import androidx.compose.foundation.layout.size
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertLeftPositionInRootIsEqualTo
@@ -35,11 +33,11 @@ import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth
+import kotlinx.coroutines.runBlocking
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-@OptIn(ExperimentalFoundationApi::class)
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class LazyGridSpanTest {
@@ -53,7 +51,7 @@ class LazyGridSpanTest {
         val itemHeight = with(rule.density) { 10.toDp() }
         rule.setContent {
             LazyVerticalGrid(
-                cells = GridCells.Fixed(columns),
+                columns = GridCells.Fixed(columns),
                 modifier = Modifier.requiredSize(columnWidth * columns, itemHeight * 3)
             ) {
                 items(
@@ -127,7 +125,7 @@ class LazyGridSpanTest {
         val spacing = with(rule.density) { 4.toDp() }
         rule.setContent {
             LazyVerticalGrid(
-                cells = GridCells.Fixed(columns),
+                columns = GridCells.Fixed(columns),
                 modifier = Modifier.requiredSize(
                     columnWidth * columns + spacing * (columns - 1),
                     itemHeight
@@ -166,7 +164,7 @@ class LazyGridSpanTest {
         val itemHeight = with(rule.density) { 10.toDp() }
         rule.setContent {
             LazyVerticalGrid(
-                cells = GridCells.Fixed(columns),
+                columns = GridCells.Fixed(columns),
                 modifier = Modifier.requiredSize(columnWidth * columns, itemHeight)
             ) {
                 items(
@@ -222,7 +220,7 @@ class LazyGridSpanTest {
         val itemHeight = with(rule.density) { 10.toDp() }
         rule.setContent {
             LazyVerticalGrid(
-                cells = GridCells.Fixed(columns),
+                columns = GridCells.Fixed(columns),
                 modifier = Modifier.requiredSize(columnWidth * columns, itemHeight * 3)
             ) {
                 item(span = {
@@ -270,5 +268,34 @@ class LazyGridSpanTest {
             .assertTopPositionInRootIsEqualTo(itemHeight * 2)
             .assertLeftPositionInRootIsEqualTo(columnWidth * 2)
             .assertWidthIsEqualTo(columnWidth * 2)
+    }
+
+    @Test
+    fun spansCalculationDoesntCrash() {
+        // regression from b/222530458
+        lateinit var state: LazyGridState
+        rule.setContent {
+            state = rememberLazyGridState()
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(2),
+                state = state,
+                modifier = Modifier.size(100.dp)
+            ) {
+                repeat(100) {
+                    item(span = { GridItemSpan(maxLineSpan) }) {
+                        Box(Modifier.fillMaxWidth().height(1.dp))
+                    }
+                    items(10) {
+                        Box(Modifier.fillMaxWidth().height(1.dp))
+                    }
+                }
+            }
+        }
+
+        rule.runOnIdle {
+            runBlocking {
+                state.scrollToItem(state.layoutInfo.totalItemsCount)
+            }
+        }
     }
 }

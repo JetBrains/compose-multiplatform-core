@@ -21,14 +21,12 @@ import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
 import android.content.pm.PackageManager
+import android.content.res.Resources
 import android.content.res.XmlResourceParser
 import android.graphics.RectF
 import android.os.Bundle
-import android.os.DeadObjectException
 import android.os.IBinder
-import android.os.RemoteException
-import android.os.TransactionTooLargeException
-import androidx.annotation.IntDef
+import android.util.Log
 import androidx.annotation.RestrictTo
 import androidx.wear.watchface.complications.ComplicationSlotBounds
 import androidx.wear.watchface.complications.DefaultComplicationDataSourcePolicy
@@ -42,8 +40,11 @@ import androidx.wear.watchface.control.data.GetComplicationSlotMetadataParams
 import androidx.wear.watchface.control.data.GetUserStyleSchemaParams
 import androidx.wear.watchface.control.data.HeadlessWatchFaceInstanceParams
 import androidx.wear.watchface.ComplicationSlotBoundsType
+import androidx.wear.watchface.UserStyleFlavors
+import androidx.wear.watchface.WatchFaceFlavorsExperimental
 import androidx.wear.watchface.WatchFaceService
 import androidx.wear.watchface.XmlSchemaAndComplicationSlotsDefinition
+import androidx.wear.watchface.control.data.GetUserStyleFlavorsParams
 import androidx.wear.watchface.style.UserStyleSchema
 import androidx.wear.watchface.style.UserStyleSetting.ComplicationSlotsUserStyleSetting
 import androidx.wear.watchface.style.UserStyleSetting.ComplicationSlotsUserStyleSetting.ComplicationSlotOverlay
@@ -56,6 +57,9 @@ import kotlinx.coroutines.CompletableDeferred
 public interface WatchFaceMetadataClient : AutoCloseable {
 
     public companion object {
+        /** @hide */
+        private const val TAG = "WatchFaceMetadataClient"
+
         /**
          * Constructs a [WatchFaceMetadataClient] for fetching metadata for the specified watch
          * face.
@@ -91,11 +95,53 @@ public interface WatchFaceMetadataClient : AutoCloseable {
         }
 
         /** @hide */
+        private const val ANDROIDX_WATCHFACE_XML_VERSION = "androidx.wear.watchface.xml_version"
+        /** @hide */
+        private const val ANDROIDX_WATCHFACE_CONTROL_SERVICE =
+            "androidx.wear.watchface.control.WatchFaceControlService"
+
+        @Suppress("DEPRECATION") // getServiceInfo
+        internal fun isXmlVersionCompatible(
+            context: Context,
+            resources: Resources,
+            controlServicePackage: String,
+            controlServiceName: String = ANDROIDX_WATCHFACE_CONTROL_SERVICE
+        ): Boolean {
+            val controlServiceComponentName = ComponentName(
+                controlServicePackage,
+                controlServiceName)
+            val version = try {
+                context.packageManager.getServiceInfo(
+                    controlServiceComponentName,
+                    PackageManager.GET_META_DATA or PackageManager.MATCH_DISABLED_COMPONENTS
+                ).metaData.getInt(ANDROIDX_WATCHFACE_XML_VERSION, 0)
+            } catch (exception: PackageManager.NameNotFoundException) {
+                // WatchFaceControlService may be missing in case WF is built with
+                // pre-androidx watchface library.
+                return false
+            }
+
+            val ourVersion = resources.getInteger(
+                androidx.wear.watchface.R.integer.watch_face_xml_version)
+
+            if (version > ourVersion) {
+                Log.w(TAG, "WatchFaceControlService version ($version) " +
+                    "of $controlServiceComponentName is higher than $ourVersion")
+                return false
+            }
+
+            return true
+        }
+
+        /** @hide */
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         @Suppress("DEPRECATION")
         open class ParserProvider {
             // Open to allow testing without having to install the sample app.
             open fun getParser(context: Context, watchFaceName: ComponentName): XmlResourceParser? {
+                if (!isXmlVersionCompatible(context, context.resources, watchFaceName.packageName))
+                    return null
+
                 return context.packageManager.getServiceInfo(
                     watchFaceName,
                     PackageManager.GET_META_DATA
@@ -165,60 +211,37 @@ public interface WatchFaceMetadataClient : AutoCloseable {
     public class ServiceStartFailureException(message: String = "") : Exception(message)
 
     /**
-     * Why the remote watch face query failed.
-     * @hide
-     **/
-    @Retention(AnnotationRetention.SOURCE)
-    @IntDef(
-        WatchFaceException.WATCHFACE_DIED,
-        WatchFaceException.TRANSACTION_TOO_LARGE,
-        WatchFaceException.UNKNOWN
-    )
-    annotation class WatchFaceExceptionReason
-
-    /**
-     * The watch face threw an exception while trying to service the request.
-     *
-     * @property reason The [WatchFaceExceptionReason] for the exception.
-     */
-    public class WatchFaceException(
-        e: Exception,
-        @WatchFaceExceptionReason val reason: Int
-    ) : Exception(e) {
-
-        companion object {
-            /**
-             * The watchface process died. Connecting again might work, but this isn't guaranteed.
-             */
-            const val WATCHFACE_DIED = 1
-
-            /**
-             * The watchface tried to send us too much data. Currently the limit on binder
-             * transactions is 1mb. See [TransactionTooLargeException] for more details.
-             */
-            const val TRANSACTION_TOO_LARGE = 2
-
-            /**
-             * The watch face threw an exception, typically during initialization. Depending on the
-             * nature of the problem this might be a transient issue or it might occur every time
-             * for that particular watch face.
-             */
-            const val UNKNOWN = 3
-        }
-    }
-
-    /**
      * Returns the watch face's [UserStyleSchema].
+     *
+     * @throws [RuntimeException] if the watch face threw an exception while trying to service the
+     * request or there was a communication problem with watch face process.
      */
-    @Throws(WatchFaceException::class)
     public fun getUserStyleSchema(): UserStyleSchema
+
+    /**
+     * Whether or not the [UserStyleSchema] is static and won't change unless the APK is updated.
+     */
+    @Suppress("INAPPLICABLE_JVM_NAME")
+    @get:JvmName("isUserStyleSchemaStatic")
+    public val isUserStyleSchemaStatic: Boolean
 
     /**
      * Returns a map of [androidx.wear.watchface.ComplicationSlot] ID to [ComplicationSlotMetadata]
      * for each slot in the watch face's [androidx.wear.watchface.ComplicationSlotsManager].
+     *
+     * @throws [RuntimeException] if the watch face threw an exception while trying to service the
+     * request or there was a communication problem with watch face process.
      */
-    @Throws(WatchFaceException::class)
     public fun getComplicationSlotMetadataMap(): Map<Int, ComplicationSlotMetadata>
+
+    /**
+     * Returns the watch face's [UserStyleFlavors].
+     *
+     * @throws [RuntimeException] if the watch face threw an exception while trying to service the
+     * request or there was a communication problem with watch face process.
+     */
+    @WatchFaceFlavorsExperimental
+    public fun getUserStyleFlavors(): UserStyleFlavors
 }
 
 /**
@@ -294,34 +317,21 @@ internal class WatchFaceMetadataClientImpl internal constructor(
         }
     }
 
-    override fun getUserStyleSchema(): UserStyleSchema {
-        return try {
+    override fun getUserStyleSchema(): UserStyleSchema =
+        callRemote {
             if (service.apiVersion >= 3) {
                 UserStyleSchema(service.getUserStyleSchema(GetUserStyleSchemaParams(watchFaceName)))
             } else {
                 headlessClient.userStyleSchema
             }
-        } catch (e: DeadObjectException) {
-            throw WatchFaceMetadataClient.WatchFaceException(
-                e,
-                WatchFaceMetadataClient.WatchFaceException.WATCHFACE_DIED
-            )
-        } catch (e: TransactionTooLargeException) {
-            throw WatchFaceMetadataClient.WatchFaceException(
-                e,
-                WatchFaceMetadataClient.WatchFaceException.TRANSACTION_TOO_LARGE
-            )
-        } catch (e: RemoteException) {
-            throw WatchFaceMetadataClient.WatchFaceException(
-                e,
-                WatchFaceMetadataClient.WatchFaceException.UNKNOWN
-            )
         }
-    }
+
+    override val isUserStyleSchemaStatic: Boolean
+        get() = false
 
     override fun getComplicationSlotMetadataMap(): Map<Int, ComplicationSlotMetadata> {
         requireNotClosed()
-        return try {
+        return callRemote {
             if (service.apiVersion >= 3) {
                 val wireFormat = service.getComplicationSlotMetadata(
                     GetComplicationSlotMetadataParams(watchFaceName)
@@ -336,7 +346,7 @@ internal class WatchFaceMetadataClientImpl internal constructor(
                             ] = it.complicationBounds[i]
                         }
                         ComplicationSlotMetadata(
-                            ComplicationSlotBounds(perSlotBounds),
+                            ComplicationSlotBounds.createFromPartialMap(perSlotBounds),
                             it.boundsType,
                             it.supportedTypes.map { ComplicationType.fromWireType(it) },
                             DefaultComplicationDataSourcePolicy(
@@ -369,21 +379,19 @@ internal class WatchFaceMetadataClientImpl internal constructor(
                     )
                 }
             }
-        } catch (e: DeadObjectException) {
-            throw WatchFaceMetadataClient.WatchFaceException(
-                e,
-                WatchFaceMetadataClient.WatchFaceException.WATCHFACE_DIED
+        }
+    }
+
+    @OptIn(WatchFaceFlavorsExperimental::class)
+    override fun getUserStyleFlavors(): UserStyleFlavors = callRemote {
+        if (service.apiVersion >= 5) {
+            UserStyleFlavors(
+                service.getUserStyleFlavors(
+                    GetUserStyleFlavorsParams(watchFaceName)
+                )
             )
-        } catch (e: TransactionTooLargeException) {
-            throw WatchFaceMetadataClient.WatchFaceException(
-                e,
-                WatchFaceMetadataClient.WatchFaceException.TRANSACTION_TOO_LARGE
-            )
-        } catch (e: RemoteException) {
-            throw WatchFaceMetadataClient.WatchFaceException(
-                e,
-                WatchFaceMetadataClient.WatchFaceException.UNKNOWN
-            )
+        } else {
+            UserStyleFlavors()
         }
     }
 
@@ -402,6 +410,9 @@ internal class XmlWatchFaceMetadataClientImpl(
     override fun getUserStyleSchema() =
         xmlSchemaAndComplicationSlotsDefinition.schema ?: UserStyleSchema(emptyList())
 
+    override val isUserStyleSchemaStatic: Boolean
+        get() = true
+
     override fun getComplicationSlotMetadataMap() =
         xmlSchemaAndComplicationSlotsDefinition.complicationSlots.associateBy(
             { it.slotId },
@@ -417,6 +428,10 @@ internal class XmlWatchFaceMetadataClientImpl(
                 )
             }
         )
+
+    @WatchFaceFlavorsExperimental
+    override fun getUserStyleFlavors() =
+        xmlSchemaAndComplicationSlotsDefinition.flavors ?: UserStyleFlavors()
 
     override fun close() {}
 }
