@@ -13,13 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-// VERSION: v0_76
+// VERSION: v0_92
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
 package androidx.compose.material3.tokens
 
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.unit.dp
 
 internal object ShapeTokens {
@@ -55,6 +56,6 @@ internal object ShapeTokens {
             bottomStart = 0.0.dp
         )
     val CornerMedium = RoundedCornerShape(12.0.dp)
-    val CornerNone = RoundedCornerShape(0.0.dp)
+    val CornerNone = RectangleShape
     val CornerSmall = RoundedCornerShape(8.0.dp)
 }

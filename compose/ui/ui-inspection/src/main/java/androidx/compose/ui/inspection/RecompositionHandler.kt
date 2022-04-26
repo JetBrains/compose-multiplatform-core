@@ -19,8 +19,6 @@ package androidx.compose.ui.inspection
 import android.util.Log
 import androidx.annotation.GuardedBy
 import androidx.compose.runtime.Composer
-import androidx.compose.runtime.InternalComposeApi
-import androidx.compose.runtime.InternalRecomposeScope
 import androidx.inspection.ArtTooling
 
 private const val START_RESTART_GROUP = "startRestartGroup(I)Landroidx/compose/runtime/Composer;"
@@ -54,7 +52,7 @@ class RecompositionHandler(private val artTooling: ArtTooling) {
     @GuardedBy("lock")
     private var lastMethodKey: Int = 0
 
-    fun changeCollectionMode(startCollecting: Boolean) {
+    fun changeCollectionMode(startCollecting: Boolean, keepCounts: Boolean) {
         synchronized(lock) {
             if (startCollecting != currentlyCollecting) {
                 if (!hooksInstalled) {
@@ -62,7 +60,9 @@ class RecompositionHandler(private val artTooling: ArtTooling) {
                 }
                 currentlyCollecting = startCollecting
             }
-            counts.clear()
+            if (!keepCounts) {
+                counts.clear()
+            }
         }
     }
 
@@ -78,7 +78,6 @@ class RecompositionHandler(private val artTooling: ArtTooling) {
      * - exit hook for ComposerImpl.startRestartGroup gives us the [MethodKey.anchorHash]
      * - entry hook for ComposerImpl.skipToGroupEnd converts a recompose count to a skip count.
      */
-    @OptIn(InternalComposeApi::class)
     private fun installHooks() {
         val composerImpl = try {
             Class.forName("${Composer::class.java.name}Impl")
@@ -96,8 +95,7 @@ class RecompositionHandler(private val artTooling: ArtTooling) {
         artTooling.registerExitHook(composerImpl, START_RESTART_GROUP) { composer: Composer ->
             synchronized(lock) {
                 if (currentlyCollecting) {
-                    val scope = composer.recomposeScope as? InternalRecomposeScope
-                    scope?.identity?.hashCode()?.let { anchor ->
+                    composer.recomposeScopeIdentity?.hashCode()?.let { anchor ->
                         val data = counts.getOrPut(MethodKey(lastMethodKey, anchor)) { Data(0, 0) }
                         data.count++
                     }
@@ -110,8 +108,7 @@ class RecompositionHandler(private val artTooling: ArtTooling) {
             synchronized(lock) {
                 if (currentlyCollecting) {
                     val composer = obj as? Composer
-                    val scope = composer?.recomposeScope as? InternalRecomposeScope
-                    scope?.identity?.hashCode()?.let { anchor ->
+                    composer?.recomposeScopeIdentity?.hashCode()?.let { anchor ->
                         counts[MethodKey(lastMethodKey, anchor)]?.let {
                             it.count--
                             it.skips++

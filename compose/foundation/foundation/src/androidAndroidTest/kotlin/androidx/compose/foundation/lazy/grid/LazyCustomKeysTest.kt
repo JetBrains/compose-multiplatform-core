@@ -16,17 +16,9 @@
 
 package androidx.compose.foundation.lazy.grid
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.GridCells
-import androidx.compose.foundation.lazy.LazyGridScope
-import androidx.compose.foundation.lazy.LazyGridState
-import androidx.compose.foundation.lazy.LazyVerticalGrid
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.lazy.rememberLazyGridState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -48,7 +40,6 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-@OptIn(ExperimentalFoundationApi::class)
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class LazyCustomKeysTest {
@@ -288,7 +279,7 @@ class LazyCustomKeysTest {
 
         rule.setContent {
             state = rememberLazyGridState()
-            LazyVerticalGrid(cells = GridCells.Fixed(columns), state = state) {
+            LazyVerticalGrid(columns = GridCells.Fixed(columns), state = state) {
                 items(list, key = { it.id }) {
                     Item(remember { "${it.id}" })
                 }
@@ -472,5 +463,4 @@ class LazyCustomKeysTest {
     private class MyClass(val id: Int)
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 val LazyGridState.visibleKeys: List<Any> get() = layoutInfo.visibleItemsInfo.map { it.key }

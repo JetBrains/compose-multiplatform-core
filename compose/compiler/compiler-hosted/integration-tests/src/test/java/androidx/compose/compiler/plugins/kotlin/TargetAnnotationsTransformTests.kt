@@ -859,7 +859,7 @@ class TargetAnnotationsTransformTests : ComposeIrTransformTest() {
           static val %stable: Int = 0
         }
         val localBoxMeasurePolicy: MeasurePolicy = class <no name provided> : MeasurePolicy {
-          override fun measure(%this%MeasurePolicy: MeasureScope, %noName_0: List<Measurable>, constraints: Constraints): MeasureResult {
+          override fun measure(%this%MeasurePolicy: MeasureScope, <anonymous parameter 0>: List<Measurable>, constraints: Constraints): MeasureResult {
             return %this%MeasurePolicy.layout(
               width = constraints.minWidth,
               height = constraints.minHeight
@@ -962,7 +962,7 @@ class TargetAnnotationsTransformTests : ComposeIrTransformTest() {
               }
               %composer.endReplaceableGroup()
             }, null, class <no name provided> : MeasurePolicy {
-              override fun measure(%this%Layout: MeasureScope, %noName_0: List<Measurable>, %noName_1: Constraints): MeasureResult {
+              override fun measure(%this%Layout: MeasureScope, <anonymous parameter 0>: List<Measurable>, <anonymous parameter 1>: Constraints): MeasureResult {
                 return error("")
               }
             }
@@ -991,7 +991,7 @@ class TargetAnnotationsTransformTests : ComposeIrTransformTest() {
           }
           if (%dirty and 0b1011 !== 0b0010 || !%composer.skipping) {
             Layout(content, null, class <no name provided> : MeasurePolicy {
-              override fun measure(%this%Layout: MeasureScope, %noName_0: List<Measurable>, %noName_1: Constraints): MeasureResult {
+              override fun measure(%this%Layout: MeasureScope, <anonymous parameter 0>: List<Measurable>, <anonymous parameter 1>: Constraints): MeasureResult {
                 return error("")
               }
             }
@@ -1375,6 +1375,131 @@ class TargetAnnotationsTransformTests : ComposeIrTransformTest() {
             }
           }
         }
+        """
+    )
+
+    @Test
+    fun testFileScoped() = verifyComposeIrTransform(
+        source = """
+            @file:NComposable
+
+            import androidx.compose.runtime.*
+
+            @Composable
+            fun NFromFile() {
+                Open()
+            }
+
+            @Composable
+            fun NFromInference() {
+                N()
+            }
+
+        """,
+        expectedTransformed = """
+            @Composable
+            fun NFromFile(%composer: Composer?, %changed: Int) {
+              if (isTraceInProgress()) {
+                traceEventStart(<>)
+              }
+              %composer = %composer.startRestartGroup(<>)
+              sourceInformation(%composer, "C(NFromFile)<Open()>:Test.kt")
+              if (%changed !== 0 || !%composer.skipping) {
+                Open(%composer, 0)
+              } else {
+                %composer.skipToGroupEnd()
+              }
+              %composer.endRestartGroup()?.updateScope { %composer: Composer?, %force: Int ->
+                NFromFile(%composer, %changed or 0b0001)
+              }
+              if (isTraceInProgress()) {
+                traceEventEnd()
+              }
+            }
+            @Composable
+            fun NFromInference(%composer: Composer?, %changed: Int) {
+              if (isTraceInProgress()) {
+                traceEventStart(<>)
+              }
+              %composer = %composer.startRestartGroup(<>)
+              sourceInformation(%composer, "C(NFromInference)<N()>:Test.kt")
+              if (%changed !== 0 || !%composer.skipping) {
+                N(%composer, 0)
+              } else {
+                %composer.skipToGroupEnd()
+              }
+              %composer.endRestartGroup()?.updateScope { %composer: Composer?, %force: Int ->
+                NFromInference(%composer, %changed or 0b0001)
+              }
+              if (isTraceInProgress()) {
+                traceEventEnd()
+              }
+            }
+        """,
+        extra = """
+            import androidx.compose.runtime.*
+
+            @ComposableTargetMarker(description = "An N Composable")
+            @Target(
+                AnnotationTarget.FILE,
+                AnnotationTarget.FUNCTION,
+                AnnotationTarget.PROPERTY_GETTER,
+                AnnotationTarget.TYPE,
+                AnnotationTarget.TYPE_PARAMETER,
+            )
+            annotation class NComposable()
+
+            @Composable @ComposableOpenTarget(0) fun Open() { }
+            @Composable @NComposable fun N() { }
+        """.trimIndent()
+    )
+
+    @Test
+    fun testCrossfileFileScope() = verifyComposeIrTransform(
+        source = """
+            import androidx.compose.runtime.*
+
+            @Composable
+            fun InferN() { N() }
+        """,
+        expectedTransformed = """
+            @Composable
+            @ComposableTarget(applier = "NComposable")
+            fun InferN(%composer: Composer?, %changed: Int) {
+              if (isTraceInProgress()) {
+                traceEventStart(<>)
+              }
+              %composer = %composer.startRestartGroup(<>)
+              sourceInformation(%composer, "C(InferN)<N()>:Test.kt")
+              if (%changed !== 0 || !%composer.skipping) {
+                N(%composer, 0)
+              } else {
+                %composer.skipToGroupEnd()
+              }
+              %composer.endRestartGroup()?.updateScope { %composer: Composer?, %force: Int ->
+                InferN(%composer, %changed or 0b0001)
+              }
+              if (isTraceInProgress()) {
+                traceEventEnd()
+              }
+            }
+        """,
+        extra = """
+            @file:NComposable
+
+            import androidx.compose.runtime.*
+
+            @ComposableTargetMarker(description = "An N Composable")
+            @Target(
+                AnnotationTarget.FILE,
+                AnnotationTarget.FUNCTION,
+                AnnotationTarget.PROPERTY_GETTER,
+                AnnotationTarget.TYPE,
+                AnnotationTarget.TYPE_PARAMETER,
+            )
+            annotation class NComposable()
+
+            @Composable fun N() { }
         """
     )
 

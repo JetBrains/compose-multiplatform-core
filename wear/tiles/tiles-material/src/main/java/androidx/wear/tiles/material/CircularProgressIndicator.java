@@ -20,7 +20,7 @@ import static androidx.annotation.Dimension.DP;
 import static androidx.wear.tiles.DimensionBuilders.degrees;
 import static androidx.wear.tiles.DimensionBuilders.dp;
 import static androidx.wear.tiles.material.Helper.checkNotNull;
-import static androidx.wear.tiles.material.ProgressIndicatorDefaults.DEFAULT_COLOR;
+import static androidx.wear.tiles.material.ProgressIndicatorDefaults.DEFAULT_COLORS;
 import static androidx.wear.tiles.material.ProgressIndicatorDefaults.DEFAULT_END_ANGLE;
 import static androidx.wear.tiles.material.ProgressIndicatorDefaults.DEFAULT_PADDING;
 import static androidx.wear.tiles.material.ProgressIndicatorDefaults.DEFAULT_START_ANGLE;
@@ -55,9 +55,8 @@ import androidx.wear.tiles.proto.LayoutElementProto;
  * length.
  *
  * <p>The recommended set of {@link ProgressIndicatorColors} can be obtained from {@link
- * ProgressIndicatorDefaults}., e.g. {@link ProgressIndicatorDefaults#DEFAULT_COLOR} to get a color
- * scheme for a {@link CircularProgressIndicator} which by default will have background arc of
- * {@link Colors#ON_SURFACE} and main progress arc color of {@link Colors#PRIMARY}.
+ * ProgressIndicatorDefaults}, e.g. {@link ProgressIndicatorDefaults#DEFAULT_COLORS} to get a
+ * default color scheme for a {@link CircularProgressIndicator}.
  */
 public class CircularProgressIndicator implements LayoutElement {
     @NonNull private final Arc mElement;
@@ -72,9 +71,9 @@ public class CircularProgressIndicator implements LayoutElement {
 
     /** Builder class for {@link CircularProgressIndicator} */
     public static final class Builder implements LayoutElement.Builder {
-        @NonNull private ProgressIndicatorColors mCircularProgressIndicatorColors = DEFAULT_COLOR;
+        @NonNull private ProgressIndicatorColors mCircularProgressIndicatorColors = DEFAULT_COLORS;
         @NonNull private DpProp mStrokeWidth = DEFAULT_STROKE_WIDTH;
-        @NonNull private String mContentDescription = "";
+        @NonNull private CharSequence mContentDescription = "";
         @NonNull private DegreesProp mStartAngle = degrees(DEFAULT_START_ANGLE);
         @NonNull private DegreesProp mEndAngle = degrees(DEFAULT_END_ANGLE);
 
@@ -123,17 +122,16 @@ public class CircularProgressIndicator implements LayoutElement {
          * accessibility support.
          */
         @NonNull
-        public Builder setContentDescription(@NonNull String contentDescription) {
+        public Builder setContentDescription(@NonNull CharSequence contentDescription) {
             this.mContentDescription = contentDescription;
             return this;
         }
 
-        // TODO(b/203078514): Add getting color from the current Theme (from XML).
         /**
          * Sets the colors for the {@link CircularProgressIndicator}. If set, {@link
          * ProgressIndicatorColors#getIndicatorColor()} will be used for a progress that has been
          * made, while {@link ProgressIndicatorColors#getTrackColor()} will be used for a background
-         * full size arc. If not set, {@link ProgressIndicatorDefaults#DEFAULT_COLOR} will be used.
+         * full size arc. If not set, {@link ProgressIndicatorDefaults#DEFAULT_COLORS} will be used.
          */
         @NonNull
         public Builder setCircularProgressIndicatorColors(
@@ -181,7 +179,7 @@ public class CircularProgressIndicator implements LayoutElement {
                                             .setSemantics(
                                                     new Semantics.Builder()
                                                             .setContentDescription(
-                                                                    mContentDescription)
+                                                                    mContentDescription.toString())
                                                             .build())
                                             .setPadding(
                                                     new Padding.Builder()

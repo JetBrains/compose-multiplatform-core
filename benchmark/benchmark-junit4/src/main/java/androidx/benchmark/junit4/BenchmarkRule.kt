@@ -19,6 +19,7 @@ package androidx.benchmark.junit4
 import android.Manifest
 import android.util.Log
 import androidx.annotation.RestrictTo
+import androidx.benchmark.Arguments
 import androidx.benchmark.BenchmarkState
 import androidx.benchmark.UserspaceTracing
 import androidx.benchmark.perfetto.PerfettoCaptureWrapper
@@ -28,12 +29,14 @@ import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
 import androidx.tracing.Trace
 import androidx.tracing.trace
+import java.io.File
+import java.io.FileNotFoundException
 import org.junit.Assert.assertTrue
+import org.junit.Assume.assumeTrue
 import org.junit.rules.RuleChain
 import org.junit.rules.TestRule
 import org.junit.runner.Description
 import org.junit.runners.model.Statement
-import java.io.File
 
 /**
  * JUnit rule for benchmarking code on an Android device.
@@ -185,6 +188,7 @@ public class BenchmarkRule internal constructor(
     private fun applyInternal(base: Statement, description: Description) =
         Statement {
             applied = true
+            assumeTrue(Arguments.RuleType.Microbenchmark in Arguments.enabledRules)
             var invokeMethodName = description.methodName
             Log.d(TAG, "-- Running ${description.className}#$invokeMethodName --")
 
@@ -217,17 +221,23 @@ public class BenchmarkRule internal constructor(
                 userspaceTrace = UserspaceTracing.commitToTrace()
             }?.apply {
                 // trace completed, and copied into app writeable dir
-                val file = File(this)
 
-                file.appendBytes(userspaceTrace!!.encode())
-                file.appendUiState(
-                    UiState(
-                        timelineStart = null,
-                        timelineEnd = null,
-                        highlightPackage = InstrumentationRegistry.getInstrumentation()
-                            .context.packageName
+                try {
+                    val file = File(this)
+
+                    file.appendBytes(userspaceTrace!!.encode())
+                    file.appendUiState(
+                        UiState(
+                            timelineStart = null,
+                            timelineEnd = null,
+                            highlightPackage = InstrumentationRegistry.getInstrumentation()
+                                .context.packageName
+                        )
                     )
-                )
+                } catch (exception: FileNotFoundException) {
+                    // TODO(b/227510293): fix record to return a null in this case
+                    Log.d(TAG, "Unable to add additional detail to captured trace $this")
+                }
             }
 
             if (enableReport) {

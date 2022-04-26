@@ -18,6 +18,7 @@ package androidx.build.studio
 
 import androidx.build.StudioType
 import androidx.build.getSupportRootFolder
+import androidx.build.getVersionByName
 import com.android.Version.ANDROID_GRADLE_PLUGIN_VERSION
 import java.io.File
 import java.nio.file.Files
@@ -26,7 +27,6 @@ import javax.inject.Inject
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.Project
-import org.gradle.api.artifacts.VersionCatalogsExtension
 import org.gradle.api.internal.tasks.userinput.UserInputHandler
 import org.gradle.api.plugins.ExtraPropertiesExtension
 import org.gradle.api.tasks.Internal
@@ -69,19 +69,7 @@ abstract class StudioTask : DefaultTask() {
     protected open val installParentDir: File = project.rootDir
 
     private val studioVersion by lazy {
-        val libs = project.extensions.getByType(
-            VersionCatalogsExtension::class.java
-        ).find("libs").get()
-
-        fun getVersion(key: String): String {
-            val version = libs.findVersion(key)
-            return if (version.isPresent) {
-                version.get().requiredVersion
-            } else {
-                throw GradleException("Could not find a version for `$key`")
-            }
-        }
-        getVersion("androidStudio")
+        project.getVersionByName("androidStudio")
     }
 
     /**
@@ -185,14 +173,20 @@ abstract class StudioTask : DefaultTask() {
     }
 
     private fun launchStudio() {
+        check(ideaProperties.exists()) {
+            "Invalid Studio properties file location: ${ideaProperties.canonicalPath}"
+        }
+        check(vmOptions.exists()) {
+            "Invalid Studio vm options file location: ${vmOptions.canonicalPath}"
+        }
         ProcessBuilder().apply {
             inheritIO()
             with(platformUtilities) { command(launchCommandArguments) }
 
             val additionalStudioEnvironmentProperties = mapOf(
                 // These environment variables are used to set up AndroidX's default configuration.
-                "STUDIO_PROPERTIES" to ideaProperties.absolutePath,
-                "STUDIO_VM_OPTIONS" to vmOptions.absolutePath,
+                "STUDIO_PROPERTIES" to ideaProperties.canonicalPath,
+                "STUDIO_VM_OPTIONS" to vmOptions.canonicalPath,
                 // This environment variable prevents Studio from showing IDE inspection warnings
                 // for nullability issues, if the context is deprecated. This environment variable
                 // is consumed by InteroperabilityDetector.kt
@@ -293,7 +287,7 @@ abstract class PlaygroundStudioTask : RootStudioTask() {
     override val additionalEnvironmentProperties: Map<String, String>
         get() = mapOf("ALLOW_PUBLIC_REPOS" to "true")
     override val ideaProperties
-        get() = supportRootFolder.resolve("../playground-common/idea.properties")
+        get() = supportRootFolder.resolve("playground-common/idea.properties")
     override val vmOptions
-        get() = supportRootFolder.resolve("../playground-common/studio.vmoptions")
+        get() = supportRootFolder.resolve("playground-common/studio.vmoptions")
 }

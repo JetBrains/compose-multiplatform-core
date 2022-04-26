@@ -59,6 +59,7 @@ import androidx.car.app.utils.ThreadUtils;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.FragmentActivity;
+import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.ViewModelProvider;
 
 import java.util.List;
@@ -143,6 +144,16 @@ public final class CarAppActivity extends FragmentActivity {
                 @Override
                 public WindowInsets onApplyWindowInsets(@NonNull View view,
                         @NonNull WindowInsets windowInsets) {
+                    // Do not report inset changes if the activity is not in resumed state.
+                    // Reporting the inset changes when the app is going away results in visible
+                    // rescaling of certain UI elements such as maps right before app goes to the
+                    // background. These inset changes then need to be corrected again once the
+                    // app comes to the foreground resulting with another rescaling of the
+                    // screen which is not desired.
+                    if (getLifecycle().getCurrentState() != Lifecycle.State.RESUMED) {
+                        return WindowInsetsCompat.CONSUMED.toWindowInsets();
+                    }
+
                     // IMPORTANT: The insets calculated here must match the windowing settings in
                     // SystemUiVisibility set in CarAppActivity#onCreate(). Failing to do so would
                     // cause a mismatch between the insets applied to the content on the hosts side
@@ -151,19 +162,13 @@ public final class CarAppActivity extends FragmentActivity {
                             .getInsets(WindowInsetsCompat.Type.systemBars()
                                     | WindowInsetsCompat.Type.ime())
                             .toPlatformInsets();
-                    boolean insetsHandled = requireNonNull(mViewModel).updateWindowInsets(insets);
 
-                    if (insetsHandled) {
-                        // Insets are handled by the host. Only local content need padding.
-                        mActivityContainerView.setPadding(0, 0, 0, 0);
-                        mLocalContentContainerView.setPadding(insets.left, insets.top,
-                                insets.right, insets.bottom);
-                    } else {
-                        // Insets are handled locally, padding is applied at the top level.
-                        mActivityContainerView.setPadding(insets.left, insets.top,
-                                insets.right, insets.bottom);
-                        mLocalContentContainerView.setPadding(0, 0, 0, 0);
-                    }
+                    requireNonNull(mViewModel).updateWindowInsets(insets);
+
+                    // Insets are handled by the host. Only local content need padding.
+                    mActivityContainerView.setPadding(0, 0, 0, 0);
+                    mLocalContentContainerView.setPadding(insets.left, insets.top,
+                            insets.right, insets.bottom);
 
                     return WindowInsetsCompat.CONSUMED.toWindowInsets();
                 }
@@ -420,7 +425,6 @@ public final class CarAppActivity extends FragmentActivity {
     protected void onDestroy() {
         requireNonNull(mHostUpdateReceiver).unregister(this);
         requireNonNull(mSurfaceHolderListener).setSurfaceListener(null);
-        requireNonNull(mViewModel).unbind();
         requireNonNull(mViewModel).setActivity(null);
         super.onDestroy();
     }

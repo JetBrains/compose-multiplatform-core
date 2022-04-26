@@ -42,6 +42,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import java.time.Instant
 import java.time.ZonedDateTime
+import java.util.Objects
 
 /**
  * Interface for rendering complicationSlots onto a [Canvas]. These should be created by
@@ -216,10 +217,14 @@ public annotation class ComplicationSlotBoundsType {
  * complications.
  * @param tapFilter The [ComplicationTapFilter] used to determine whether or not a tap hit the
  * complication slot.
- * @param nameResourceId The ID of a string resource (or `null` if absent) to identify the
- * complication slot on screen in an editor.
- * @param screenReaderNameResourceId The ID of a string resource (or `null` if absent) to identify
- * the complication slot in a screen reader.
+ * @param nameResourceId The ID of string resource (or `null` if absent) to identify the
+ * complication slot on screen in an editor. These strings should be short (perhaps 10 characters
+ * max) E.g. complication slots named 'left' and 'right' might be shown by the editor in a list from
+ * which the user selects a complication slot for editing.
+ * @param screenReaderNameResourceId The ID of a string resource (or `null` if absent) for use by a
+ * watch face editor to identify the complication slot in a screen reader. While similar to
+ * [nameResourceId] this string can be longer and should be more descriptive. E.g. saying
+ * 'left complication' rather than just 'left'.
  */
 public class ComplicationSlot internal constructor(
     public val id: Int,
@@ -600,21 +605,11 @@ public class ComplicationSlot internal constructor(
             enabledDirty = true
         }
 
-    internal var supportedTypesDirty = true
-
     /** The types of complicationSlots the complication supports. Must be non-empty. */
-    public var supportedTypes: List<ComplicationType> = supportedTypes
-        @UiThread
+
+    public val supportedTypes: List<ComplicationType> = supportedTypes
+        @UiThread // TODO(b/229727216): Remove this annotation.
         get
-        @UiThread
-        internal set(value) {
-            if (field == value) {
-                return
-            }
-            require(value.isNotEmpty())
-            field = value
-            supportedTypesDirty = true
-        }
 
     internal var defaultDataSourcePolicyDirty = true
 
@@ -899,5 +894,33 @@ public class ComplicationSlot internal constructor(
         }
         writer.println("bounds=[$bounds]")
         writer.decreaseIndent()
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as ComplicationSlot
+
+        if (id != other.id) return false
+        if (accessibilityTraversalIndex != other.accessibilityTraversalIndex) return false
+        if (boundsType != other.boundsType) return false
+        if (complicationSlotBounds != other.complicationSlotBounds) return false
+        if (supportedTypes.size != other.supportedTypes.size ||
+            !supportedTypes.containsAll(other.supportedTypes)) return false
+        if (defaultDataSourcePolicy != other.defaultDataSourcePolicy) return false
+        if (initiallyEnabled != other.initiallyEnabled) return false
+        if (fixedComplicationDataSource != other.fixedComplicationDataSource) return false
+        if (nameResourceId != other.nameResourceId) return false
+        if (screenReaderNameResourceId != other.screenReaderNameResourceId) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        return Objects.hash(id, accessibilityTraversalIndex, boundsType, complicationSlotBounds,
+            supportedTypes.sorted(),
+            defaultDataSourcePolicy, initiallyEnabled, fixedComplicationDataSource,
+            nameResourceId, screenReaderNameResourceId)
     }
 }

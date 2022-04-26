@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-// VERSION: v0_77
+// VERSION: v0_92
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
 package androidx.compose.material3.tokens
@@ -23,7 +23,7 @@ import androidx.compose.ui.unit.dp
 internal object OutlinedTextFieldTokens {
     val CaretColor = ColorSchemeKeyTokens.Primary
     val ContainerHeight = 56.0.dp
-    val ContainerShape = ShapeTokens.CornerExtraSmall
+    val ContainerShape = ShapeKeyTokens.CornerExtraSmall
     val DisabledInputColor = ColorSchemeKeyTokens.OnSurface
     const val DisabledInputOpacity = 0.38f
     val DisabledLabelColor = ColorSchemeKeyTokens.OnSurface
@@ -72,6 +72,9 @@ internal object OutlinedTextFieldTokens {
     val HoverTrailingIconColor = ColorSchemeKeyTokens.OnSurfaceVariant
     val InputColor = ColorSchemeKeyTokens.OnSurface
     val InputFont = TypographyKeyTokens.BodyLarge
+    val InputPlaceholderColor = ColorSchemeKeyTokens.OnSurfaceVariant
+    val InputPrefixColor = ColorSchemeKeyTokens.OnSurfaceVariant
+    val InputSuffixColor = ColorSchemeKeyTokens.OnSurfaceVariant
     val LabelColor = ColorSchemeKeyTokens.OnSurfaceVariant
     val LabelFont = TypographyKeyTokens.BodyLarge
     val LeadingIconColor = ColorSchemeKeyTokens.OnSurfaceVariant

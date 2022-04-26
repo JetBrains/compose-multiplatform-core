@@ -41,9 +41,6 @@ import androidx.annotation.Px
 import androidx.annotation.UiThread
 import androidx.annotation.WorkerThread
 import androidx.wear.watchface.utility.TraceEvent
-import androidx.wear.watchface.Renderer.CanvasRenderer
-import androidx.wear.watchface.Renderer.GlesRenderer
-import androidx.wear.watchface.Renderer.GlesRenderer.GlesException
 import androidx.wear.watchface.style.CurrentUserStyleRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -55,7 +52,8 @@ import java.nio.ByteBuffer
 import java.time.ZonedDateTime
 
 /**
- * Describes the type of [Canvas] a [CanvasRenderer] should request from a [SurfaceHolder].
+ * Describes the type of [Canvas] a [Renderer.CanvasRenderer] or [Renderer.CanvasRenderer2] should
+ * request from a [SurfaceHolder].
  *
  * @hide
  */
@@ -105,9 +103,67 @@ private val HIGHLIGHT_LAYER_COMPOSITE_PAINT = Paint().apply {
 }
 
 /**
- * The base class for [CanvasRenderer] and [GlesRenderer]. Renderers are constructed on a background
- * thread but all rendering is done on the UiThread. There is a memory barrier between construction
- * and rendering so no special threading primitives are required.
+ * Flips a bitmap.
+ *
+ * @param buffer The rgba [ByteBuffer] containing the bitmap to flip
+ * @param width The width of the bitmap in pixels
+ * @param height The height of the bitmap in pixels
+ */
+internal fun verticalFlip(
+    buffer: ByteBuffer,
+    width: Int,
+    height: Int
+) {
+    val stride = width * 4
+    val heightMinusOne = height - 1
+    val halfHeight = height / 2
+    val tmp = ByteArray(stride)
+    for (i in 0 until halfHeight) {
+        System.arraycopy(
+            buffer.array(),
+            i * stride,
+            tmp,
+            0,
+            stride
+        )
+
+        System.arraycopy(
+            buffer.array(),
+            (heightMinusOne - i) * stride,
+            buffer.array(),
+            i * stride,
+            stride
+        )
+
+        System.arraycopy(
+            tmp,
+            0,
+            buffer.array(),
+            (heightMinusOne - i) * stride,
+            stride
+        )
+    }
+    buffer.rewind()
+}
+
+/**
+ * The base class for [CanvasRenderer], [CanvasRenderer2], [GlesRenderer],
+ * [GlesRenderer2].  Where possible it is recommended to use
+ * [CanvasRenderer2] or [GlesRenderer2] which allow memory to be
+ * saved during editing because there can be more than one watchface instance during editing.
+ *
+ * Renderers are constructed on a background thread but all rendering is done on the UiThread. There
+ * is a memory barrier between construction and rendering so no special threading primitives are
+ * required.
+ *
+ * Please note [android.graphics.drawable.AnimatedImageDrawable] and similar classes which rely on
+ * [android.graphics.drawable.Drawable.Callback] do not animate properly out of the box unless you
+ * register an implementation with [android.graphics.drawable.Drawable.setCallback] that calls
+ * [invalidate]. Even then these classes are not recommend because the [ZonedDateTime] passed
+ * to [Renderer.CanvasRenderer.render] or [Renderer.GlesRenderer.render] is not guaranteed to match
+ * the system time (e.g. for taking screenshots). In addition care is needed when implementing
+ * [android.graphics.drawable.Drawable.Callback] to ensure it does not animate in ambient mode which
+ * could lead to a significant power regression.
  *
  * @param surfaceHolder The [SurfaceHolder] that [renderInternal] will draw into.
  * @param currentUserStyleRepository The associated [CurrentUserStyleRepository].
@@ -119,6 +175,7 @@ private val HIGHLIGHT_LAYER_COMPOSITE_PAINT = Paint().apply {
  * face has a short animation once per second it can adjust the frame rate inorder to sleep when
  * not animating. In ambient mode the watch face will be rendered once per minute.
  */
+@Suppress("Deprecation")
 public sealed class Renderer @WorkerThread constructor(
     public val surfaceHolder: SurfaceHolder,
     private val currentUserStyleRepository: CurrentUserStyleRepository,
@@ -246,13 +303,6 @@ public sealed class Renderer @WorkerThread constructor(
         }
 
     internal var sharedAssetsHolder = getOrCreateSharedAssetsHolder(this)
-
-    /**
-     * The Renderer's [SharedAssets] returned by [createSharedAssets]. Note the default
-     * implementation of createAssets returns `null`.
-     */
-    public val sharedAssets: SharedAssets?
-        get() = sharedAssetsHolder.sharedAssets
 
     /**
      * Accessibility [ContentDescriptionLabel] for any rendered watch face elements other than the
@@ -393,27 +443,7 @@ public sealed class Renderer @WorkerThread constructor(
     internal abstract suspend fun uiThreadInitInternal(uiThreadCoroutineScope: CoroutineScope)
 
     @WorkerThread
-    internal abstract suspend fun backgroundThreadInitInternal()
-
-    /**
-     * When editing multiple [WatchFaceService] instances and hence Renderers can exist concurrently
-     * (e.g. a headless instance and an interactive instance) and using [SharedAssets] allows memory
-     * to be saved by sharing immutable data (e.g. Bitmaps, shaders, etc...) between them.
-     *
-     * To take advantage of SharedAssets, override this method. The constructed SharedAssets are
-     * available to each instance of the renderer via [sharedAssets] (NB you'll have to cast this to
-     * your type). For OpenGL watch faces a context will have been created by the time this method
-     * is called.
-     *
-     * When all instances using SharedAssets have been closed, [SharedAssets.onDestroy] will be
-     * called.
-     *
-     * Note that while SharedAssets are constructed on a background thread, they'll typically be
-     * used on the main thread and subsequently destroyed there. The watch face library constructs
-     * shared GLES contexts to allow resource sharing between threads.
-     */
-    @WorkerThread
-    protected open suspend fun createSharedAssets(): SharedAssets? = null
+    internal open suspend fun backgroundThreadInitInternal() {}
 
     /**
      * Multiple [WatchFaceService] instances and hence Renderers can exist concurrently (e.g. a
@@ -432,14 +462,12 @@ public sealed class Renderer @WorkerThread constructor(
         public fun onDestroy()
     }
 
-    public interface SharedAssetsFactory {
-        public fun create(): SharedAssets
-    }
-
     internal abstract fun renderBlackFrame()
 
     /**
-     * Watch faces that require [Canvas] rendering should extend their [Renderer] from this class.
+     * Watch faces that require [Canvas] rendering should extend their [Renderer] from this class
+     * or [CanvasRenderer2] if they can take advantage of [SharedAssets] to save
+     * memory when editing (there can be more than once WatchFace instance when editing).
      *
      * A CanvasRenderer is expected to be constructed on the background thread associated with
      * [WatchFaceService.getBackgroundThreadHandler] inside a call to
@@ -465,6 +493,7 @@ public sealed class Renderer @WorkerThread constructor(
      * with [RenderParameters.HighlightLayer.backgroundTint] before [renderHighlightLayer] is
      * called. Defaults to `false`.
      */
+    @Deprecated(message = "use CanvasRenderer2 instead")
     public abstract class CanvasRenderer @WorkerThread @JvmOverloads constructor(
         surfaceHolder: SurfaceHolder,
         currentUserStyleRepository: CurrentUserStyleRepository,
@@ -565,12 +594,6 @@ public sealed class Renderer @WorkerThread constructor(
         public open suspend fun init() {
         }
 
-        internal override suspend fun backgroundThreadInitInternal() {
-            if (sharedAssetsHolder.sharedAssets == null) {
-                sharedAssetsHolder.sharedAssets = createSharedAssets()
-            }
-        }
-
         /**
          * Sub-classes should override this to implement their watch face rendering logic which
          * should respect the current [renderParameters]. Please note [WatchState.isAmbient] may not
@@ -654,7 +677,163 @@ public sealed class Renderer @WorkerThread constructor(
     }
 
     /**
-     * Watch faces that require [GLES20] rendering should extend their [Renderer] from this class.
+     * Watch faces that require [Canvas] rendering and are able to take advantage of [SharedAssets]
+     * to save memory (there can be more than once instance when editing), should extend their
+     * [Renderer] from this class.
+     *
+     * A CanvasRenderer is expected to be constructed on the background thread associated with
+     * [WatchFaceService.getBackgroundThreadHandler] inside a call to
+     * [WatchFaceService.createWatchFace]. All rendering is be done on the UiThread. There is a
+     * memory barrier between construction and rendering so no special threading primitives are
+     * required.
+     *
+     * In Java it may be easier to extend [androidx.wear.watchface.ListenableCanvasRenderer2]
+     * instead.
+     *
+     * @param SharedAssetsT The type extending [SharedAssets] returned by [createSharedAssets] and
+     * passed into [render] and [renderHighlightLayer].
+     * @param surfaceHolder The [SurfaceHolder] from which a [Canvas] to will be obtained and passed
+     * into [render].
+     * @param currentUserStyleRepository The watch face's associated [CurrentUserStyleRepository].
+     * @param watchState The watch face's associated [WatchState].
+     * @param canvasType The type of canvas to request.
+     * @param interactiveDrawModeUpdateDelayMillis The interval in milliseconds between frames in
+     * interactive [DrawMode]s. To render at 60hz set to 16. Note when battery is low, the frame
+     * rate will be clamped to 10fps. Watch faces are recommended to use lower frame rates if
+     * possible for better battery life. Variable frame rates can also help preserve battery life,
+     * e.g. if a watch face has a short animation once per second it can adjust the framerate
+     * inorder to sleep when not animating.
+     * @param clearWithBackgroundTintBeforeRenderingHighlightLayer Whether the [Canvas] is cleared
+     * with [RenderParameters.HighlightLayer.backgroundTint] before [renderHighlightLayer] is
+     * called. Defaults to `false`.
+     */
+    public abstract class CanvasRenderer2<SharedAssetsT> @WorkerThread constructor(
+        surfaceHolder: SurfaceHolder,
+        currentUserStyleRepository: CurrentUserStyleRepository,
+        watchState: WatchState,
+        @CanvasType private val canvasType: Int,
+        @IntRange(from = 0, to = 60000)
+        interactiveDrawModeUpdateDelayMillis: Long,
+        clearWithBackgroundTintBeforeRenderingHighlightLayer: Boolean
+    ) : CanvasRenderer(
+        surfaceHolder,
+        currentUserStyleRepository,
+        watchState,
+        canvasType,
+        interactiveDrawModeUpdateDelayMillis,
+        clearWithBackgroundTintBeforeRenderingHighlightLayer
+    ) where SharedAssetsT : SharedAssets {
+        /**
+         * When editing multiple [WatchFaceService] instances and hence Renderers can exist
+         * concurrently (e.g. a headless instance and an interactive instance) and using
+         * [SharedAssets] allows memory to be saved by sharing immutable data (e.g. Bitmaps,
+         * shaders, etc...) between them.
+         *
+         * To take advantage of SharedAssets, override this method. The constructed SharedAssets are
+         * passed into the [render] as an argument (NB you'll have to cast this to your type).
+         *
+         * When all instances using SharedAssets have been closed, [SharedAssets.onDestroy] will be
+         * called.
+         *
+         * Note that while SharedAssets are constructed on a background thread, they'll typically be
+         * used on the main thread and subsequently destroyed there.
+         *
+         * @return The [SharedAssetsT] that will be passed into [render] and [renderHighlightLayer].
+         */
+        @WorkerThread
+        protected abstract suspend fun createSharedAssets(): SharedAssetsT
+
+        internal override suspend fun backgroundThreadInitInternal() {
+            if (sharedAssetsHolder.sharedAssets == null) {
+                sharedAssetsHolder.sharedAssets = createSharedAssets()
+            }
+        }
+
+        /**
+         * Sub-classes should override this to implement their watch face rendering logic which
+         * should respect the current [renderParameters]. Please note [WatchState.isAmbient] may not
+         * match the [RenderParameters.drawMode] and should not be used to decide what to render.
+         * E.g. when editing from the companion phone while the watch is ambient, renders
+         * may be requested with [DrawMode.INTERACTIVE].
+         *
+         * Any highlights due to [RenderParameters.highlightLayer] should be rendered by
+         * [renderHighlightLayer] instead where possible. For correct behavior this function must
+         * use the supplied [ZonedDateTime] in favor of any other ways of getting the time.
+         *
+         * Before any calls to render, [init] will be called once.
+         *
+         * @param canvas The [Canvas] to render into. Don't assume this is always the canvas from
+         * the [SurfaceHolder] backing the display
+         * @param bounds A [Rect] describing the bonds of the canvas to draw into
+         * @param zonedDateTime The [ZonedDateTime] to render with
+         * @param sharedAssets The [SharedAssetsT] returned by [createSharedAssets]
+         */
+        @UiThread
+        public abstract fun render(
+            canvas: Canvas,
+            bounds: Rect,
+            zonedDateTime: ZonedDateTime,
+            sharedAssets: SharedAssetsT
+        )
+
+        /**
+         * Sub-classes should override this to implement their watch face highlight layer rendering
+         * logic for the [RenderParameters.highlightLayer] aspect of [renderParameters]. Typically
+         * the implementation will clear [canvas] to
+         * [RenderParameters.HighlightLayer.backgroundTint] before rendering a transparent highlight
+         * or a solid outline around the [RenderParameters.HighlightLayer.highlightedElement]. This
+         * will be composited as needed on top of the results of [render]. For correct behavior this
+         * function must use the supplied [ZonedDateTime] in favor of any other ways of getting the
+         * time.
+         *
+         * Note if [clearWithBackgroundTintBeforeRenderingHighlightLayer] is `true` then [canvas]
+         * will cleared with [RenderParameters.HighlightLayer.backgroundTint] before
+         * renderHighlightLayer is called. Otherwise it is up to the overridden function to clear
+         * the Canvas if necessary.
+         *
+         * @param canvas The [Canvas] to render into. Don't assume this is always the canvas from
+         * the [SurfaceHolder] backing the display
+         * @param bounds A [Rect] describing the bonds of the canvas to draw into
+         * @param zonedDateTime the [ZonedDateTime] to render with
+         * @param sharedAssets The [SharedAssetsT] returned by [createSharedAssets]
+         */
+        @UiThread
+        public abstract fun renderHighlightLayer(
+            canvas: Canvas,
+            bounds: Rect,
+            zonedDateTime: ZonedDateTime,
+            sharedAssets: SharedAssetsT
+        )
+
+        final override fun render(canvas: Canvas, bounds: Rect, zonedDateTime: ZonedDateTime) {
+            @Suppress("UNCHECKED_CAST") // We know the type is correct.
+            render(
+                canvas,
+                bounds,
+                zonedDateTime,
+                sharedAssetsHolder.sharedAssets!! as SharedAssetsT
+            )
+        }
+
+        final override fun renderHighlightLayer(
+            canvas: Canvas,
+            bounds: Rect,
+            zonedDateTime: ZonedDateTime
+        ) {
+            @Suppress("UNCHECKED_CAST") // We know the type is correct.
+            renderHighlightLayer(
+                canvas,
+                bounds,
+                zonedDateTime,
+                sharedAssetsHolder.sharedAssets!! as SharedAssetsT
+            )
+        }
+    }
+
+    /**
+     * Watch faces that require [GLES20] rendering should extend their [Renderer] from this class
+     * or [GlesRenderer2] if they can take advantage of [SharedAssets] to save memory
+     * when editing (there can be more than once WatchFace instance when editing).
      *
      * A GlesRenderer is expected to be constructed on the background thread associated with
      * [WatchFaceService.getBackgroundThreadHandler] inside a call to
@@ -666,11 +845,6 @@ public sealed class Renderer @WorkerThread constructor(
      * which are associated with background and UiThread respectively and are shared by all
      * instances of the renderer. OpenGL objects created on (e.g. shaders and textures) can be used
      * on the other.
-     *
-     * Because there can be more than once instance when editing, to save memory its recommended to
-     * override [createSharedAssets] and load all static data (e.g. models, textures, shaders,
-     * etc...).  OpenGL objects created inside createSharedAssets will be available to all instances
-     * of the watch face on both threads.
      *
      * If you need to make any OpenGl calls outside of [render],
      * [onBackgroundThreadGlContextCreated] or [onUiThreadGlSurfaceCreated] then you must use either
@@ -699,6 +873,7 @@ public sealed class Renderer @WorkerThread constructor(
      * default this is empty.
      * @throws [GlesException] If any GL calls fail during initialization.
      */
+    @Deprecated(message = "use GlesRenderer2 instead")
     public abstract class GlesRenderer
     @Throws(GlesException::class)
     @JvmOverloads
@@ -918,7 +1093,7 @@ public sealed class Renderer @WorkerThread constructor(
                     )
                 ) {
                     throw IllegalStateException(
-                        "eglMakeCurrent failed, glGetError() = " + GLES20.glGetError()
+                        "eglMakeCurrent failed, eglGetError() = " + EGL14.eglGetError()
                     )
                 }
 
@@ -961,15 +1136,19 @@ public sealed class Renderer @WorkerThread constructor(
                     if (sharedAssetsHolder.eglBackgroundThreadContext == EGL14.EGL_NO_CONTEXT) {
                         throw RuntimeException("eglCreateContext failed")
                     }
+                }
 
-                    TraceEvent("GlesRenderer.onGlContextCreated").use {
-                        runBackgroundThreadGlCommands {
-                            sharedAssetsHolder.sharedAssets = createSharedAssets()
-                            this@GlesRenderer.onBackgroundThreadGlContextCreated()
-                        }
+                TraceEvent("GlesRenderer.onGlContextCreated").use {
+                    runBackgroundThreadGlCommands {
+                        maybeCreateSharedAssets()
+                        this@GlesRenderer.onBackgroundThreadGlContextCreated()
                     }
                 }
             }
+
+        internal open suspend fun maybeCreateSharedAssets() {
+            // NOP
+        }
 
         /**
          * Inside of a [Mutex] this function sets the UiThread GL context as the current
@@ -1001,7 +1180,7 @@ public sealed class Renderer @WorkerThread constructor(
                     )
                 ) {
                     throw IllegalStateException(
-                        "eglMakeCurrent failed, glGetError() = " + GLES20.glGetError()
+                        "eglMakeCurrent failed, eglGetError() = " + EGL14.eglGetError()
                     )
                 }
 
@@ -1198,33 +1377,6 @@ public sealed class Renderer @WorkerThread constructor(
             }
         }
 
-        private fun verticalFlip(
-            buffer: ByteBuffer,
-            width: Int,
-            height: Int
-        ) {
-            var i = 0
-            val tmp = ByteArray(width * 4)
-            while (i++ < height / 2) {
-                buffer[tmp]
-                System.arraycopy(
-                    buffer.array(),
-                    buffer.limit() - buffer.position(),
-                    buffer.array(),
-                    buffer.position() - width * 4,
-                    width * 4
-                )
-                System.arraycopy(
-                    tmp,
-                    0,
-                    buffer.array(),
-                    buffer.limit() - buffer.position(),
-                    width * 4
-                )
-            }
-            buffer.rewind()
-        }
-
         /**
          * Sub-classes should override this to implement their watch face rendering logic which
          * should respect the current [renderParameters]. Please note [WatchState.isAmbient] may not
@@ -1285,5 +1437,163 @@ public sealed class Renderer @WorkerThread constructor(
         }
 
         override fun onDump(writer: PrintWriter) {}
+    }
+
+    /**
+     * Watch faces that require [GLES20] rendering and are able to take advantage of [SharedAssets]
+     * to save memory (there can be more than once instance when editing), should extend their
+     * [Renderer] from this class. OpenGL objects created by [createSharedAssets] will be available
+     * to all instances of the watch face on both threads.
+     *
+     * A GlesRenderer is expected to be constructed on the background thread associated with
+     * [WatchFaceService.getBackgroundThreadHandler] inside a call to
+     * [WatchFaceService.createWatchFace]. All rendering is be done on the UiThread. There is a
+     * memory barrier between construction and rendering so no special threading primitives are
+     * required.
+     *
+     * Two linked [EGLContext]s are created [eglBackgroundThreadContext] and [eglUiThreadContext]
+     * which are associated with background and UiThread respectively and are shared by all
+     * instances of the renderer. OpenGL objects created on (e.g. shaders and textures) can be used
+     * on the other.
+     *
+     * If you need to make any OpenGl calls outside of [render],
+     * [onBackgroundThreadGlContextCreated] or [onUiThreadGlSurfaceCreated] then you must use either
+     * [runUiThreadGlCommands] or [runBackgroundThreadGlCommands] to execute a [Runnable] inside
+     * of the corresponding context. Access to the GL contexts this way is necessary because GL
+     * contexts are not shared between renderers and there can be multiple watch face instances
+     * existing concurrently (e.g. headless and interactive, potentially from different watch
+     * faces if an APK contains more than one [WatchFaceService]). In addition most drivers do not
+     * support concurrent access.
+     *
+     * In Java it may be easier to extend [androidx.wear.watchface.ListenableGlesRenderer2] instead.
+     *
+     * @param SharedAssetsT The type extending [SharedAssets] returned by [createSharedAssets] and
+     * passed into [render] and [renderHighlightLayer].
+     * @param surfaceHolder The [SurfaceHolder] whose [android.view.Surface] [render] will draw
+     * into.
+     * @param currentUserStyleRepository The associated [CurrentUserStyleRepository].
+     * @param watchState The associated [WatchState].
+     * @param interactiveDrawModeUpdateDelayMillis The interval in milliseconds between frames in
+     * interactive [DrawMode]s. To render at 60hz set to 16. Note when battery is low, the frame
+     * rate will be clamped to 10fps. Watch faces are recommended to use lower frame rates if
+     * possible for better battery life. Variable frame rates can also help preserve battery life,
+     * e.g. if a watch face has a short animation once per second it can adjust the frame rate
+     * inorder to sleep when not animating.
+     * @param eglConfigAttribList Attributes for [EGL14.eglChooseConfig]. By default this selects an
+     * RGBA8888 back buffer.
+     * @param eglSurfaceAttribList The attributes to be passed to [EGL14.eglCreateWindowSurface]. By
+     * default this is empty.
+     * @throws [Renderer.GlesException] If any GL calls fail during initialization.
+     */
+    public abstract class GlesRenderer2<SharedAssetsT>
+    @Throws(GlesException::class)
+    @JvmOverloads
+    @WorkerThread
+    constructor(
+        surfaceHolder: SurfaceHolder,
+        currentUserStyleRepository: CurrentUserStyleRepository,
+        watchState: WatchState,
+        @IntRange(from = 0, to = 60000)
+        interactiveDrawModeUpdateDelayMillis: Long,
+        eglConfigAttribList: IntArray = EGL_CONFIG_ATTRIB_LIST,
+        eglSurfaceAttribList: IntArray = EGL_SURFACE_ATTRIB_LIST
+    ) : GlesRenderer(
+        surfaceHolder,
+        currentUserStyleRepository,
+        watchState,
+        interactiveDrawModeUpdateDelayMillis,
+        eglConfigAttribList,
+        eglSurfaceAttribList
+    ) where SharedAssetsT : SharedAssets {
+        /**
+         * When editing multiple [WatchFaceService] instances and hence Renderers can exist
+         * concurrently (e.g. a headless instance and an interactive instance) and using
+         * [SharedAssets] allows memory to be saved by sharing immutable data (e.g. Bitmaps,
+         * shaders, etc...) between them.
+         *
+         * To take advantage of SharedAssets, override this method. The constructed SharedAssets are
+         * passed into the [render] as an argument (NB you'll have to cast this to your type).
+         * It is safe to make GLES calls within this method.
+         *
+         * When all instances using SharedAssets have been closed, [SharedAssets.onDestroy] will be
+         * called.
+         *
+         * Note that while SharedAssets are constructed on a background thread, they'll typically be
+         * used on the main thread and subsequently destroyed there. The watch face library
+         * constructs shared GLES contexts to allow resource sharing between threads.
+         *
+         * @return The [SharedAssetsT] that will be passed into [render] and [renderHighlightLayer].
+         */
+        @WorkerThread
+        protected abstract suspend fun createSharedAssets(): SharedAssetsT
+
+        /**
+         * Sub-classes should override this to implement their watch face rendering logic which
+         * should respect the current [renderParameters]. Please note [WatchState.isAmbient] may not
+         * match the [RenderParameters.drawMode] and should not be used to decide what to render.
+         * E.g. when editing from the companion phone while the watch is ambient, renders
+         * may be requested with [DrawMode.INTERACTIVE].
+         *
+         * Any highlights due to [RenderParameters.highlightLayer] should be rendered by
+         * [renderHighlightLayer] instead where possible. For correct behavior this function must
+         * use the supplied [ZonedDateTime] in favor of any other ways of getting the time.
+         *
+         * Note this function is called inside a lambda passed to [runUiThreadGlCommands] which
+         * has synchronized access to the GL context.
+         *
+         * Note also `GLES20.glBlendFunc(GLES20.GL_ONE, GLES20.GL_ZERO)` is called by the library
+         * before this method.
+         *
+         * Before any calls to this function [onBackgroundThreadGlContextCreated] and
+         * [onUiThreadGlSurfaceCreated] will have been called once on their respective threads. In
+         * addition if [SharedAssets] hasn't already been created, then a call to
+         * [createSharedAssets] will have been completed before calling render.
+         *
+         * @param zonedDateTime The zonedDateTime [ZonedDateTime] to render with
+         * @param sharedAssets The [SharedAssetsT] returned by [createSharedAssets]
+         */
+        @UiThread
+        public abstract fun render(zonedDateTime: ZonedDateTime, sharedAssets: SharedAssetsT)
+
+        final override suspend fun maybeCreateSharedAssets() {
+            if (sharedAssetsHolder.sharedAssets == null) {
+                sharedAssetsHolder.sharedAssets = createSharedAssets()
+            }
+        }
+
+        /**
+         * Sub-classes should override this to implement their watch face highlight layer rendering
+         * logic for the [RenderParameters.highlightLayer] aspect of [renderParameters]. Typically
+         * the implementation will clear the buffer to
+         * [RenderParameters.HighlightLayer.backgroundTint] before rendering a transparent highlight
+         * or a solid outline around the [RenderParameters.HighlightLayer.highlightedElement]. This
+         * will be composited as needed on top of the results of [render]. For correct behavior this
+         * function must use the supplied [ZonedDateTime] in favor of any other ways of getting the
+         * time.
+         *
+         * Note this function is called inside a lambda passed to [runUiThreadGlCommands] which
+         * has synchronized access to the GL context.
+         *
+         * Note also `GLES20.glBlendFunc(GLES20.GL_ONE, GLES20.GL_ZERO)` is called by the library
+         * before this method.
+         *
+         * @param zonedDateTime The zonedDateTime [ZonedDateTime] to render with
+         * @param sharedAssets The [SharedAssetsT] returned by [createSharedAssets]
+         */
+        @UiThread
+        public abstract fun renderHighlightLayer(
+            zonedDateTime: ZonedDateTime,
+            sharedAssets: SharedAssetsT
+        )
+
+        final override fun render(zonedDateTime: ZonedDateTime) {
+            @Suppress("UNCHECKED_CAST") // We know the type is correct.
+            render(zonedDateTime, sharedAssetsHolder.sharedAssets!! as SharedAssetsT)
+        }
+
+        final override fun renderHighlightLayer(zonedDateTime: ZonedDateTime) {
+            @Suppress("UNCHECKED_CAST") // We know the type is correct.
+            renderHighlightLayer(zonedDateTime, sharedAssetsHolder.sharedAssets!! as SharedAssetsT)
+        }
     }
 }

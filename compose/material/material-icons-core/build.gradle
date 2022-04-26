@@ -36,7 +36,7 @@ if (!AndroidXComposePlugin.isMultiplatformEnabled(project)) {
         kotlinPlugin(project(":compose:compiler:compiler"))
 
         api("androidx.compose.ui:ui:1.0.0")
-        implementation("androidx.compose.runtime:runtime:1.1.0-rc01")
+        implementation("androidx.compose.runtime:runtime:1.1.1")
         implementation(libs.kotlinStdlib)
 
         samples(project(":compose:material:material-icons-core:material-icons-core-samples"))
@@ -84,4 +84,8 @@ androidx {
     inceptionYear = "2020"
     description = "Compose Material Design core icons. This module contains the most commonly used set of Material icons."
     legacyDisableKotlinStrictApiMode = true
+}
+
+android {
+    namespace "androidx.compose.material.icons"
 }

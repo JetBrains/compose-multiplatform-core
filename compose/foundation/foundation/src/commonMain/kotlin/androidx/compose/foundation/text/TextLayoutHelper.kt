@@ -64,7 +64,7 @@ internal fun TextLayoutResult.canReuse(
     }
     if (!(
         layoutInput.text == text &&
-            layoutInput.style.canReuseLayout(style) &&
+            layoutInput.style.hasSameLayoutAffectingAttributes(style) &&
             layoutInput.placeholders == placeholders &&
             layoutInput.maxLines == maxLines &&
             layoutInput.softWrap == softWrap &&
@@ -84,28 +84,6 @@ internal fun TextLayoutResult.canReuse(
         // If width does not matter, we can result the same layout.
         return true
     }
-    return constraints.maxWidth == layoutInput.constraints.maxWidth
-}
-
-/**
- * Returns true if text layout created with this TextStyle can be reused for the [other] TextStyle.
- */
-internal fun TextStyle.canReuseLayout(other: TextStyle): Boolean {
-    return (this === other) || (
-        fontSize == other.fontSize &&
-        fontWeight == other.fontWeight &&
-        fontStyle == other.fontStyle &&
-        fontSynthesis == other.fontSynthesis &&
-        fontFamily == other.fontFamily &&
-        fontFeatureSettings == other.fontFeatureSettings &&
-        letterSpacing == other.letterSpacing &&
-        baselineShift == other.baselineShift &&
-        textGeometricTransform == other.textGeometricTransform &&
-        localeList == other.localeList &&
-        background == other.background &&
-        textAlign == other.textAlign &&
-        textDirection == other.textDirection &&
-        lineHeight == other.lineHeight &&
-        textIndent == other.textIndent
-        )
+    return constraints.maxWidth == layoutInput.constraints.maxWidth &&
+        constraints.maxHeight == layoutInput.constraints.maxHeight
 }

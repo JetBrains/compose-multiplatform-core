@@ -27,6 +27,8 @@ dependencies {
     kotlinPlugin(project(":compose:compiler:compiler"))
 
     implementation(libs.kotlinStdlib)
+    implementation(libs.material)
+    implementation("androidx.core:core:1.5.0")
 
     compileOnly(project(":annotation:annotation-sampled"))
 
@@ -43,4 +45,8 @@ androidx {
     mavenGroup = LibraryGroups.COMPOSE_UI
     inceptionYear = "2019"
     description = "Contains the sample code for the Androidx Compose UI Core Classes"
+}
+
+android {
+    namespace "androidx.compose.ui.samples"
 }

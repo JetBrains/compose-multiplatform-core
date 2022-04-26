@@ -59,6 +59,7 @@ import androidx.wear.watchface.DrawMode
 import androidx.wear.watchface.RenderParameters
 import androidx.wear.watchface.Renderer
 import androidx.wear.watchface.WatchFace
+import androidx.wear.watchface.WatchFaceFlavorsExperimental
 import androidx.wear.watchface.WatchFaceService
 import androidx.wear.watchface.WatchFaceType
 import androidx.wear.watchface.WatchState
@@ -100,14 +101,13 @@ import org.junit.After
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
-import org.junit.Assert.fail
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mock
 import org.mockito.Mockito
-import org.mockito.Mockito.`when`
 import org.mockito.MockitoAnnotations
 import java.time.Instant
 import java.time.ZoneId
@@ -492,7 +492,6 @@ class WatchFaceControlClientTest {
     }
 
     @Test
-    @Suppress("Deprecation") // userStyleSettings
     fun headlessUserStyleSchema() {
         val headlessInstance = service.createHeadlessWatchFaceClient(
             "id",
@@ -522,6 +521,29 @@ class WatchFaceControlClientTest {
         headlessInstance.close()
     }
 
+    @OptIn(WatchFaceFlavorsExperimental::class)
+    @Test
+    fun headlessUserStyleFlavors() {
+        val headlessInstance = service.createHeadlessWatchFaceClient(
+            "id",
+            exampleCanvasAnalogWatchFaceComponentName,
+            deviceConfig,
+            400,
+            400
+        )!!
+
+        assertThat(headlessInstance.getUserStyleFlavors().flavors.size).isEqualTo(1)
+        val flavorA = headlessInstance.getUserStyleFlavors().flavors[0]
+        assertThat(flavorA.id).isEqualTo("exampleFlavor")
+        assertThat(flavorA.style.userStyleMap.containsKey("color_style_setting"))
+        assertThat(flavorA.style.userStyleMap.containsKey("watch_hand_length_style_setting"))
+        assertThat(flavorA.complications.containsKey(EXAMPLE_CANVAS_WATCHFACE_LEFT_COMPLICATION_ID))
+        assertThat(flavorA.complications.containsKey(
+            EXAMPLE_CANVAS_WATCHFACE_RIGHT_COMPLICATION_ID))
+
+        headlessInstance.close()
+    }
+
     @Test
     fun headlessToBundleAndCreateFromBundle() {
         val headlessInstance = HeadlessWatchFaceClient.createFromBundle(
@@ -534,7 +556,6 @@ class WatchFaceControlClientTest {
             )!!.toBundle()
         )
 
-        @Suppress("Deprecation")
         assertThat(headlessInstance.userStyleSchema.userStyleSettings.size).isEqualTo(5)
     }
 
@@ -1141,33 +1162,6 @@ class WatchFaceControlClientTest {
         interactiveInstance.close()
     }
 
-    @Test
-    fun crashingWatchFace() {
-        val wallpaperService = TestCrashingWatchFaceServiceWithBaseContext(surfaceHolder)
-        val client = handlerCoroutineScope.async {
-            service.getOrCreateInteractiveWatchFaceClient(
-                "testCrashingId",
-                deviceConfig,
-                systemState,
-                null,
-                complications
-            )
-        }
-
-        // Create the engine which triggers the crashing watchface.
-        handler.post {
-            engine = wallpaperService.onCreateEngine() as WatchFaceService.EngineWrapper
-        }
-
-        try {
-            // The first call on the interface should report the crash.
-            awaitWithTimeout(client).complicationSlotsState
-            fail("Expected an exception to be thrown because the watchface crashed on init")
-        } catch (e: Exception) {
-            assertThat(e.toString()).contains("Deliberately crashing")
-        }
-    }
-
     @Suppress("DEPRECATION") // DefaultComplicationDataSourcePolicyAndType
     @Test
     fun getDefaultProviderPolicies() {
@@ -1184,14 +1178,17 @@ class WatchFaceControlClientTest {
                                 androidx.wear.watchface.samples.CONFIGURABLE_DATA_SOURCE_PKG,
                                 androidx.wear.watchface.samples.CONFIGURABLE_DATA_SOURCE
                             ),
-                            SystemDataSources.DATA_SOURCE_DAY_OF_WEEK
+                            ComplicationType.SHORT_TEXT,
+                            SystemDataSources.DATA_SOURCE_DAY_OF_WEEK,
+                            ComplicationType.SHORT_TEXT
                         ),
                         ComplicationType.SHORT_TEXT
                     ),
                 EXAMPLE_CANVAS_WATCHFACE_RIGHT_COMPLICATION_ID to
                     androidx.wear.watchface.client.DefaultComplicationDataSourcePolicyAndType(
                         DefaultComplicationDataSourcePolicy(
-                            SystemDataSources.DATA_SOURCE_STEP_COUNT
+                            SystemDataSources.DATA_SOURCE_STEP_COUNT,
+                            ComplicationType.SHORT_TEXT
                         ),
                         ComplicationType.SHORT_TEXT
                     )
@@ -1216,14 +1213,17 @@ class WatchFaceControlClientTest {
                                 androidx.wear.watchface.samples.CONFIGURABLE_DATA_SOURCE_PKG,
                                 androidx.wear.watchface.samples.CONFIGURABLE_DATA_SOURCE
                             ),
-                            SystemDataSources.DATA_SOURCE_DAY_OF_WEEK
+                            ComplicationType.SHORT_TEXT,
+                            SystemDataSources.DATA_SOURCE_DAY_OF_WEEK,
+                            ComplicationType.SHORT_TEXT
                         ),
                         ComplicationType.SHORT_TEXT
                     ),
                 EXAMPLE_CANVAS_WATCHFACE_RIGHT_COMPLICATION_ID to
                     androidx.wear.watchface.client.DefaultComplicationDataSourcePolicyAndType(
                         DefaultComplicationDataSourcePolicy(
-                            SystemDataSources.DATA_SOURCE_STEP_COUNT
+                            SystemDataSources.DATA_SOURCE_STEP_COUNT,
+                            ComplicationType.SHORT_TEXT
                         ),
                         ComplicationType.SHORT_TEXT
                     )
@@ -1249,7 +1249,8 @@ class WatchFaceControlClientTest {
                 TestCrashingWatchFaceService.COMPLICATION_ID to
                     androidx.wear.watchface.client.DefaultComplicationDataSourcePolicyAndType(
                         DefaultComplicationDataSourcePolicy(
-                            SystemDataSources.DATA_SOURCE_SUNRISE_SUNSET
+                            SystemDataSources.DATA_SOURCE_SUNRISE_SUNSET,
+                            ComplicationType.LONG_TEXT
                         ),
                         ComplicationType.LONG_TEXT
                     )
@@ -1444,6 +1445,7 @@ class WatchFaceControlClientTest {
         assertTrue(service.hasComplicationDataCache())
     }
 
+    @Ignore // b/225230182
     @RequiresApi(Build.VERSION_CODES.O_MR1)
     @Test
     fun interactiveAndHeadlessOpenGlWatchFaceInstances() {
@@ -1543,6 +1545,34 @@ class WatchFaceControlClientTest {
 
         interactiveInstance.close()
     }
+
+    @Test
+    fun computeUserStyleSchemaDigestHash() {
+        val headlessInstance1 = service.createHeadlessWatchFaceClient(
+            "id",
+            exampleCanvasAnalogWatchFaceComponentName,
+            DeviceConfig(
+                false,
+                false,
+                0,
+                0
+            ),
+            400,
+            400
+        )!!
+
+        val headlessInstance2 = service.createHeadlessWatchFaceClient(
+            "id",
+            exampleOpenGLWatchFaceComponentName,
+            deviceConfig,
+            400,
+            400
+        )!!
+
+        assertThat(headlessInstance1.getUserStyleSchemaDigestHash()).isNotEqualTo(
+            headlessInstance2.getUserStyleSchemaDigestHash()
+        )
+    }
 }
 
 internal class TestExampleCanvasAnalogWatchFaceService(
@@ -1637,16 +1667,6 @@ internal open class TestCrashingWatchFaceService : WatchFaceService() {
     }
 }
 
-internal class TestCrashingWatchFaceServiceWithBaseContext(
-    private var surfaceHolderOverride: SurfaceHolder
-) : TestCrashingWatchFaceService() {
-    init {
-        attachBaseContext(ApplicationProvider.getApplicationContext<Context>())
-    }
-
-    override fun getWallpaperSurfaceHolderOverride() = surfaceHolderOverride
-}
-
 internal class TestWatchfaceOverlayStyleWatchFaceService(
     testContext: Context,
     private var surfaceHolderOverride: SurfaceHolder,
@@ -1666,6 +1686,7 @@ internal class TestWatchfaceOverlayStyleWatchFaceService(
         currentUserStyleRepository: CurrentUserStyleRepository
     ) = WatchFace(
         WatchFaceType.DIGITAL,
+        @Suppress("deprecation")
         object : Renderer.CanvasRenderer(
             surfaceHolder,
             currentUserStyleRepository,
@@ -1707,6 +1728,7 @@ internal class TestAsyncCanvasRenderInitWatchFaceService(
         currentUserStyleRepository: CurrentUserStyleRepository
     ) = WatchFace(
         WatchFaceType.DIGITAL,
+        @Suppress("deprecation")
         object : Renderer.CanvasRenderer(
             surfaceHolder,
             currentUserStyleRepository,
@@ -1758,6 +1780,7 @@ internal class TestAsyncGlesRenderInitWatchFaceService(
         currentUserStyleRepository: CurrentUserStyleRepository
     ) = WatchFace(
         WatchFaceType.DIGITAL,
+        @Suppress("deprecation")
         object : Renderer.GlesRenderer(
             surfaceHolder,
             currentUserStyleRepository,
@@ -1861,6 +1884,7 @@ internal class TestComplicationProviderDefaultsWatchFaceService(
         currentUserStyleRepository: CurrentUserStyleRepository
     ) = WatchFace(
         WatchFaceType.DIGITAL,
+        @Suppress("deprecation")
         object : Renderer.CanvasRenderer(
             surfaceHolder,
             currentUserStyleRepository,

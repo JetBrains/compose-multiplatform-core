@@ -25,10 +25,8 @@ import androidx.annotation.DoNotInline
 import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Stable
 import androidx.compose.ui.text.ExperimentalTextApi
-import androidx.compose.ui.text.android.InternalPlatformTextApi
 import androidx.compose.ui.text.font.FontLoadingStrategy.Companion.Blocking
 import java.io.File
-import java.lang.UnsupportedOperationException
 
 /**
  * Create a Font declaration from a file in the assets directory. The content of the [File] is
@@ -43,11 +41,35 @@ import java.lang.UnsupportedOperationException
  * font request that is given in a [androidx.compose.ui.text.SpanStyle].
  */
 @ExperimentalTextApi
-@OptIn(InternalPlatformTextApi::class, ExperimentalTextApi::class)
 @Stable
+@Deprecated("This experimental Font is replaced by Font(path, assetManager, ...)",
+    replaceWith = ReplaceWith("Font(path, assetManager, weight, style)"),
+    level = DeprecationLevel.WARNING
+)
 fun Font(
     assetManager: AssetManager,
     path: String,
+    weight: FontWeight = FontWeight.Normal,
+    style: FontStyle = FontStyle.Normal
+): Font = AndroidAssetFont(assetManager, path, weight, style)
+
+/**
+ * Create a Font declaration from a file in the assets directory. The content of the [File] is
+ * read during construction.
+ *
+ * @param path full path starting from the assets directory (i.e. dir/myfont.ttf for
+ * assets/dir/myfont.ttf).
+ * @param assetManager Android AssetManager
+ * @param weight The weight of the font. The system uses this to match a font to a font request
+ * that is given in a [androidx.compose.ui.text.SpanStyle].
+ * @param style The style of the font, normal or italic. The system uses this to match a font to a
+ * font request that is given in a [androidx.compose.ui.text.SpanStyle].
+ */
+@ExperimentalTextApi
+@Stable
+fun Font(
+    path: String,
+    assetManager: AssetManager,
     weight: FontWeight = FontWeight.Normal,
     style: FontStyle = FontStyle.Normal
 ): Font = AndroidAssetFont(assetManager, path, weight, style)
@@ -62,7 +84,6 @@ fun Font(
  * font request that is given in a [androidx.compose.ui.text.SpanStyle].
  */
 @ExperimentalTextApi
-@OptIn(InternalPlatformTextApi::class, ExperimentalTextApi::class)
 @Stable
 @Suppress("StreamFiles")
 fun Font(
@@ -83,7 +104,6 @@ fun Font(
  */
 @RequiresApi(26)
 @ExperimentalTextApi
-@OptIn(InternalPlatformTextApi::class, ExperimentalTextApi::class)
 @Stable
 fun Font(
     fileDescriptor: ParcelFileDescriptor,
@@ -102,17 +122,36 @@ fun Font(
  * [FontListFontFamily]. For example, you can add a [FontLoadingStrategy.Blocking] font that
  * returns a Typeface from a local resource not supported by an existing [Font]. Or, you can create
  * an [FontLoadingStrategy.Async] font that loads a font file from your server.
+ *
+ * When introducing new font descriptors, it is recommended to follow the patterns of providing a
+ * public Font constructor and a private implementation class:
+ *
+ * 1. Declare an internal or private subclass of AndroidFont
+ * 2. Expose a public Font(...) constructor that returns your new type.
+ *
+ * Font constructors are
+ *
+ * 1. Regular functions named `Font` that return type `Font`
+ * 2. The first argument is the font name, or similar object that describes the font uniquely
+ * 3. If the font has a provider, loader, or similar argument, put it after the font name.
+ * 4. The last two arguments are FontWeight and FontStyle.
+ *
+ * Examples of Font constructors:
+ *
+ * ```
+ * fun Font("myIdentifier", MyFontLoader, FontWeight, FontStyle): Font
+ * fun Font(CustomFontDescription(...), MyFontLoader, FontWeight, FontStyle): Font
+ * fun Font(CustomFontDescription(...), FontWeight, FontStyle): Font
+ *```
+ *
+ * @param loadingStrategy loadingStrategy this font will provide in fallback chains
+ * @param typefaceLoader a loader that knows how to load this [AndroidFont], may be shared between
+ * several fonts
  */
 abstract class AndroidFont @OptIn(ExperimentalTextApi::class) constructor(
-    final override val loadingStrategy: FontLoadingStrategy
+    final override val loadingStrategy: FontLoadingStrategy,
+    val typefaceLoader: TypefaceLoader
 ) : Font {
-
-    /**
-     * A loader that knows how to load this [AndroidFont].
-     *
-     * This may be shared between several fonts.
-     */
-    abstract val typefaceLoader: TypefaceLoader
 
     /**
      * Loader for loading an [AndroidFont] and producing an [android.graphics.Typeface].
@@ -156,17 +195,12 @@ abstract class AndroidFont @OptIn(ExperimentalTextApi::class) constructor(
          * to throw. Note that this method will never be called for fonts with
          * [FontLoadingStrategy.Async].
          *
-         * This method may throw a [RuntimeException] if the font fails to load, though it is
-         * preferred to return null if the font is [FontLoadingStrategy.OptionalLocal] for
-         * performance.
-         *
          * It is possible for [loadBlocking] to be called for the same instance of [AndroidFont] in
          * parallel. Implementations should support parallel concurrent loads, or de-dup.
          *
          * @param context current Android context for loading the font
          * @param font the font to load which contains this loader as [AndroidFont.typefaceLoader]
          * @return [android.graphics.Typeface] for loaded font, or null if the font fails to load
-         * @throws RuntimeException subclass may optionally be thrown if the font fails to load
          */
         fun loadBlocking(context: Context, font: AndroidFont): Typeface?
 
@@ -193,17 +227,17 @@ abstract class AndroidFont @OptIn(ExperimentalTextApi::class) constructor(
          * @param context current Android context for loading the font
          * @param font the font to load which contains this loader as [AndroidFont.typefaceLoader]
          * @return [android.graphics.Typeface] for loaded font, or null if not available
-         * @throws RuntimeException subclass may optionally be thrown if the font fails to load
          *
          */
         suspend fun awaitLoad(context: Context, font: AndroidFont): Typeface?
     }
 }
 
-@OptIn(ExperimentalTextApi::class)
-internal abstract class AndroidPreloadedFont : AndroidFont(Blocking) {
+internal abstract class AndroidPreloadedFont : AndroidFont(
+    Blocking,
+    AndroidPreloadedFontTypefaceLoader
+) {
     abstract val typefaceInternal: Typeface?
-    override val typefaceLoader: TypefaceLoader = AndroidPreloadedFontTypefaceLoader
     abstract val cacheKey: String?
 }
 
@@ -216,7 +250,6 @@ private object AndroidPreloadedFontTypefaceLoader : AndroidFont.TypefaceLoader {
     }
 }
 
-@OptIn(ExperimentalTextApi::class)
 private class AndroidAssetFont constructor(
     @Suppress("CanBeParameter") val assetManager: AssetManager,
     val path: String,
@@ -246,7 +279,6 @@ private class AndroidAssetFont constructor(
     }
 }
 
-@OptIn(ExperimentalTextApi::class)
 private class AndroidFileFont constructor(
     val file: File,
     override val weight: FontWeight = FontWeight.Normal,
@@ -260,7 +292,6 @@ private class AndroidFileFont constructor(
     }
 }
 
-@OptIn(ExperimentalTextApi::class)
 @RequiresApi(26)
 private class AndroidFileDescriptorFont constructor(
     val fileDescriptor: ParcelFileDescriptor,

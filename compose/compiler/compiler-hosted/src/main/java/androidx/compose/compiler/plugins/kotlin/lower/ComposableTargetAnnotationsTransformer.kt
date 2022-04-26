@@ -78,6 +78,7 @@ import org.jetbrains.kotlin.ir.types.isNullableAny
 import org.jetbrains.kotlin.ir.types.typeOrNull
 import org.jetbrains.kotlin.ir.util.constructors
 import org.jetbrains.kotlin.ir.util.dump
+import org.jetbrains.kotlin.ir.util.file
 import org.jetbrains.kotlin.ir.util.fqNameWhenAvailable
 import org.jetbrains.kotlin.ir.util.functions
 import org.jetbrains.kotlin.ir.util.hasAnnotation
@@ -196,7 +197,8 @@ class ComposableTargetAnnotationsTransformer(
 
             override fun log(node: InferenceNode?, message: String) {
                 val element = node?.element
-                metrics.log("applier inference${lineInfoOf(element)}: $message")
+                if (!metrics.isEmpty)
+                    metrics.log("applier inference${lineInfoOf(element)}: $message")
             }
         }
     )
@@ -214,15 +216,16 @@ class ComposableTargetAnnotationsTransformer(
     }
 
     override fun visitFile(declaration: IrFile): IrFile {
-        currentFile = declaration
-        return super.visitFile(declaration).also { currentFile = null }
+        includeFileNameInExceptionTrace(declaration) {
+            currentFile = declaration
+            return super.visitFile(declaration).also { currentFile = null }
+        }
     }
 
     override fun visitFunction(declaration: IrFunction): IrStatement {
         if (
             declaration.hasSchemeSpecified() ||
             (!declaration.isComposable && !declaration.hasComposableParameter()) ||
-            declaration.hasSchemeSpecified() ||
             declaration.hasOverlyWideParameters() ||
             declaration.hasOpenTypeParameters()
         ) {
@@ -661,6 +664,9 @@ class InferenceFunctionDeclaration(
                 val target = function.annotations.target.let { target ->
                     if (target.isUnspecified && function.body == null) {
                         defaultTarget
+                    } else if (target.isUnspecified) {
+                        // Default to the target specified at the file scope, if one.
+                        function.file.annotations.target
                     } else target
                 }
                 val effectiveDefault =

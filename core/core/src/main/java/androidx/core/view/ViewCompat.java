@@ -16,13 +16,17 @@
 
 package androidx.core.view;
 
+import static android.view.View.VISIBLE;
+
 import static androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX;
 
 import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.content.ClipData;
 import android.content.ClipDescription;
 import android.content.Context;
+import android.content.ContextWrapper;
 import android.content.res.ColorStateList;
 import android.content.res.TypedArray;
 import android.graphics.Matrix;
@@ -47,6 +51,7 @@ import android.view.ViewConfiguration;
 import android.view.ViewGroup;
 import android.view.ViewParent;
 import android.view.ViewTreeObserver;
+import android.view.Window;
 import android.view.WindowInsets;
 import android.view.WindowInsetsController;
 import android.view.WindowManager;
@@ -2666,15 +2671,25 @@ public class ViewCompat {
      *
      * @return A {@link WindowInsetsControllerCompat} or {@code null} if the view is neither
      * attached to a window nor a view tree with a decor.
+     * @see WindowCompat#getInsetsController(Window, View)
+     * @deprecated Prefer {@link WindowCompat#getInsetsController(Window, View)} to explicitly
+     * specify the window (such as when the view is in a dialog).
      */
     @Nullable
+    @Deprecated
     public static WindowInsetsControllerCompat getWindowInsetsController(@NonNull View view) {
-        // Pre-API 30 implementations depend on the root view's WindowManager.LayoutParams
-        // to set and unset window flags.
-        if (!(view.getRootView().getLayoutParams() instanceof WindowManager.LayoutParams)) {
-            return null;
+        if (Build.VERSION.SDK_INT >= 30) {
+            return Api30Impl.getWindowInsetsController(view);
         } else {
-            return new WindowInsetsControllerCompat(view);
+            Context context = view.getContext();
+            while (context instanceof ContextWrapper) {
+                if (context instanceof Activity) {
+                    Window window = ((Activity) context).getWindow();
+                    return window != null ? WindowCompat.getInsetsController(window, view) : null;
+                }
+                context = ((ContextWrapper) context).getBaseContext();
+            }
+            return null;
         }
     }
 
@@ -3630,7 +3645,7 @@ public class ViewCompat {
 
     private static void compatOffsetTopAndBottom(View view, int offset) {
         view.offsetTopAndBottom(offset);
-        if (view.getVisibility() == View.VISIBLE) {
+        if (view.getVisibility() == VISIBLE) {
             tickleInvalidationFlag(view);
 
             ViewParent parent = view.getParent();
@@ -3678,7 +3693,7 @@ public class ViewCompat {
 
     private static void compatOffsetLeftAndRight(View view, int offset) {
         view.offsetLeftAndRight(offset);
-        if (view.getVisibility() == View.VISIBLE) {
+        if (view.getVisibility() == VISIBLE) {
             tickleInvalidationFlag(view);
 
             ViewParent parent = view.getParent();
@@ -4469,7 +4484,7 @@ public class ViewCompat {
             return;
         }
         boolean isVisibleAccessibilityPane = getAccessibilityPaneTitle(view) != null
-                && view.getVisibility() == View.VISIBLE;
+                && (view.isShown() && view.getWindowVisibility() == VISIBLE);
         // If this is a live region or accessibilityPane, we should send a subtree change event
         // from this view immediately. Otherwise, we can let it propagate up.
         if ((getAccessibilityLiveRegion(view) != ACCESSIBILITY_LIVE_REGION_NONE)
@@ -4554,7 +4569,7 @@ public class ViewCompat {
 
         @RequiresApi(19)
         void addAccessibilityPane(View pane) {
-            mPanesToVisible.put(pane, pane.getVisibility() == View.VISIBLE);
+            mPanesToVisible.put(pane, pane.isShown() && pane.getWindowVisibility() == VISIBLE);
             pane.addOnAttachStateChangeListener(this);
             if (Api19Impl.isAttachedToWindow(pane)) {
                 registerForLayoutCallback(pane);
@@ -4570,7 +4585,7 @@ public class ViewCompat {
 
         @RequiresApi(19)
         private void checkPaneVisibility(View pane, boolean oldVisibility) {
-            boolean newVisibility = pane.getVisibility() == View.VISIBLE;
+            boolean newVisibility = pane.isShown() && pane.getWindowVisibility() == VISIBLE;
             if (oldVisibility != newVisibility) {
                 int contentChangeType = newVisibility
                         ? AccessibilityEvent.CONTENT_CHANGE_TYPE_PANE_APPEARED
@@ -5061,6 +5076,14 @@ public class ViewCompat {
     private static class Api30Impl {
         private Api30Impl() {
             // This class is not instantiable.
+        }
+
+        @Nullable
+        public static WindowInsetsControllerCompat getWindowInsetsController(@NonNull View view) {
+            WindowInsetsController windowInsetsController = view.getWindowInsetsController();
+            return windowInsetsController != null
+                    ? WindowInsetsControllerCompat.toWindowInsetsControllerCompat(
+                    windowInsetsController) : null;
         }
 
         @DoNotInline

@@ -18,6 +18,7 @@ package androidx.wear.watchface.style
 
 import android.content.res.Resources
 import android.content.res.XmlResourceParser
+import android.graphics.drawable.Icon
 import androidx.annotation.RestrictTo
 import androidx.wear.watchface.style.UserStyleSetting.Option
 import androidx.wear.watchface.style.data.UserStyleSchemaWireFormat
@@ -26,11 +27,14 @@ import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.DataInputStream
 import java.io.DataOutputStream
+import java.io.IOException
+import java.io.OutputStream
+import java.security.DigestOutputStream
+import java.security.MessageDigest
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import org.xmlpull.v1.XmlPullParser
 import org.xmlpull.v1.XmlPullParserException
-import java.io.IOException
 
 /**
  * An immutable representation of user style choices that maps each [UserStyleSetting] to
@@ -110,7 +114,6 @@ public class UserStyle private constructor(
         styleSchema: UserStyleSchema
     ) : this(
         HashMap<UserStyleSetting, UserStyleSetting.Option>().apply {
-            @Suppress("Deprecation") // userStyleSettings
             for (styleSetting in styleSchema.userStyleSettings) {
                 val option = userStyle.userStyleMap[styleSetting.id.value]
                 if (option != null) {
@@ -422,15 +425,14 @@ public class UserStyleData(
  */
 @OptIn(ExperimentalHierarchicalStyle::class)
 public class UserStyleSchema constructor(
-    @get:Deprecated("Use rootUserStyleSettings instead")
+    // TODO(b/223610314): Deprecate userStyleSettings after rootUserStyleSettings is available
     public val userStyleSettings: List<UserStyleSetting>
 ) {
     /** For use with hierarchical schemas, lists all the settings with no parent [Option]. */
-    @Suppress("EXPERIMENTAL_ANNOTATION_ON_WRONG_TARGET")
+    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
     @get:ExperimentalHierarchicalStyle
     @ExperimentalHierarchicalStyle
     public val rootUserStyleSettings by lazy {
-        @Suppress("Deprecation")
         userStyleSettings.filter { !it.hasParent }
     }
 
@@ -495,7 +497,6 @@ public class UserStyleSchema constructor(
     init {
         var complicationSlotsUserStyleSettingCount = 0
         var customValueUserStyleSettingCount = 0
-        @Suppress("Deprecation")
         for (setting in userStyleSettings) {
             when (setting) {
                 is UserStyleSetting.ComplicationSlotsUserStyleSetting ->
@@ -538,7 +539,6 @@ public class UserStyleSchema constructor(
         wireFormat.mSchema.map { UserStyleSetting.createFromWireFormat(it) }
     ) {
         val wireUserStyleSettingsIterator = wireFormat.mSchema.iterator()
-        @Suppress("Deprecation")
         for (userStyle in userStyleSettings) {
             val wireUserStyleSetting = wireUserStyleSettingsIterator.next()
             wireUserStyleSetting.mOptionChildIndices?.let {
@@ -555,7 +555,6 @@ public class UserStyleSchema constructor(
                         option = null
                     } else {
                         val childSettings = option.childSettings as ArrayList
-                        @Suppress("Deprecation")
                         val child = userStyleSettings[childIndex]
                         childSettings.add(child)
                         child.hasParent = true
@@ -569,7 +568,6 @@ public class UserStyleSchema constructor(
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     public fun toWireFormat(): UserStyleSchemaWireFormat =
         UserStyleSchemaWireFormat(
-            @Suppress("Deprecation")
             userStyleSettings.map { userStyleSetting ->
                 val wireFormat = userStyleSetting.toWireFormat()
                 // Unfortunately due to VersionedParcelable limitations, we can not extend the
@@ -591,16 +589,16 @@ public class UserStyleSchema constructor(
             }
         )
 
-    internal fun getDefaultUserStyle() = UserStyle(
+    /** @hide */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    public fun getDefaultUserStyle() = UserStyle(
         HashMap<UserStyleSetting, UserStyleSetting.Option>().apply {
-            @Suppress("Deprecation")
             for (setting in userStyleSettings) {
                 this[setting] = setting.defaultOption
             }
         }
     )
 
-    @Suppress("Deprecation") // userStyleSettings
     override fun toString(): String = "[" + userStyleSettings.joinToString() + "]"
 
     /**
@@ -609,8 +607,29 @@ public class UserStyleSchema constructor(
      */
     operator fun get(settingId: UserStyleSetting.Id): UserStyleSetting? {
         // NB more than one match is not allowed, UserStyleSetting id's are required to be unique.
-        @Suppress("Deprecation")
         return userStyleSettings.firstOrNull { it.id == settingId }
+    }
+
+    /**
+     * Computes a SHA-1 [MessageDigest] hash of the [UserStyleSchema]. Note that for performance
+     * reasons where possible the resource id or url for [Icon]s in the schema are used rather than
+     * the image bytes. This means that this hash should be considered insensitive to changes to the
+     * contents of icons between APK versions, which the developer should account for accordingly.
+     */
+    fun getDigestHash(): ByteArray {
+        val md = MessageDigest.getInstance("SHA-1")
+        val digestOutputStream = DigestOutputStream(NullOutputStream(), md)
+
+        @Suppress("Deprecation")
+        for (setting in userStyleSettings) {
+            setting.updateMessageDigest(digestOutputStream)
+        }
+
+        return md.digest()
+    }
+
+    private class NullOutputStream : OutputStream() {
+        override fun write(value: Int) {}
     }
 }
 
@@ -643,7 +662,6 @@ public class CurrentUserStyleRepository(public val schema: UserStyleSchema) {
 
     internal fun validateUserStyle(userStyle: UserStyle) {
         for ((key, value) in userStyle) {
-            @Suppress("Deprecation") // userStyleSettings
             val setting = schema.userStyleSettings.firstOrNull { it == key }
 
             require(setting != null) {

@@ -302,6 +302,7 @@ public class ComponentActivity extends androidx.core.app.ComponentActivity imple
             }
         });
         mSavedStateRegistryController.performAttach();
+        enableSavedStateHandles(this);
 
         if (19 <= SDK_INT && SDK_INT <= 23) {
             getLifecycle().addObserver(new ImmLeaksCleaner(this));
@@ -345,7 +346,6 @@ public class ComponentActivity extends androidx.core.app.ComponentActivity imple
      */
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
-        enableSavedStateHandles(this);
         // Restore the Saved State first so that it is available to
         // OnContextAvailableListener instances
         mSavedStateRegistryController.performRestore(savedInstanceState);
@@ -492,6 +492,13 @@ public class ComponentActivity extends androidx.core.app.ComponentActivity imple
     }
 
     @Override
+    public boolean onPrepareOptionsMenu(@NonNull Menu menu) {
+        super.onPrepareOptionsMenu(menu);
+        mMenuHostHelper.onPrepareMenu(menu);
+        return true;
+    }
+
+    @Override
     public boolean onCreateOptionsMenu(@NonNull Menu menu) {
         super.onCreateOptionsMenu(menu);
         mMenuHostHelper.onCreateMenu(menu, getMenuInflater());
@@ -504,6 +511,12 @@ public class ComponentActivity extends androidx.core.app.ComponentActivity imple
             return true;
         }
         return mMenuHostHelper.onMenuItemSelected(item);
+    }
+
+    @Override
+    public void onPanelClosed(int featureId, @NonNull Menu menu) {
+        mMenuHostHelper.onMenuClosed(menu);
+        super.onPanelClosed(featureId, menu);
     }
 
     @Override
@@ -592,7 +605,10 @@ public class ComponentActivity extends androidx.core.app.ComponentActivity imple
     @Override
     public ViewModelProvider.Factory getDefaultViewModelProviderFactory() {
         if (mDefaultFactory == null) {
-            mDefaultFactory = new SavedStateViewModelFactory();
+            mDefaultFactory = new SavedStateViewModelFactory(
+                    getApplication(),
+                    this,
+                    getIntent() != null ? getIntent().getExtras() : null);
         }
         return mDefaultFactory;
     }

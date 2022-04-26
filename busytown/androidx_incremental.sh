@@ -25,6 +25,7 @@ else
   PRESUBMIT=false
 fi
 
+# hash the files in the out dir in case we want to confirm which files changed during the build
 function hashOutDir() {
   hashFile=out.hashes
   echo "hashing out dir and saving into $DIST_DIR/$hashFile"
@@ -33,19 +34,10 @@ function hashOutDir() {
   # process having to do much more work than the others.
   # We do allow each process to hash multiple files (also -n <number>) to avoid spawning too many processes
   # It would be nice to copy all files, but that takes a while
-  time (cd $OUT_DIR && find -type f | grep -v "$hashFile" | xargs --no-run-if-empty -P 32 -n 64 sha1sum > $DIST_DIR/$hashFile)
+  (cd $OUT_DIR && find -type f | grep -v "$hashFile" | xargs --no-run-if-empty -P 32 -n 64 sha1sum > $DIST_DIR/$hashFile)
   echo "done hashing out dir"
 }
 hashOutDir
-
-# diagnostics to hopefully help us figure out b/188565660
-function zipKotlinMetadata() {
-  zipFile=kotlinMetadata.zip
-  echo "zipping kotlin metadata"
-  rm -f "$DIST_DIR/$zipFile"
-  (cd $OUT_DIR && find -name "*kotlin_module" | xargs zip -q -u "$DIST_DIR/$zipFile")
-  echo done zipping kotlin metadata
-}
 
 # If we encounter a failure in postsubmit, we try a few things to determine if the failure is
 # reproducible
@@ -54,21 +46,27 @@ if [ "$PRESUBMIT" == "false" ]; then
   DIAGNOSE_ARG="--diagnose"
 fi
 
-# Run Gradle
 EXIT_VALUE=0
-if impl/build.sh $DIAGNOSE_ARG buildOnServer checkExternalLicenses listTaskOutputs validateAllProperties \
-    --profile "$@"; then
-  echo build succeeded
-  EXIT_VALUE=0
-else
-  zipKotlinMetadata
-  echo build failed
+
+# Validate translation exports, if present
+if ! impl/check_translations.sh; then
+  echo check_translations failed
   EXIT_VALUE=1
+else
+    # Run Gradle
+    if impl/build.sh $DIAGNOSE_ARG buildOnServer checkExternalLicenses listTaskOutputs validateProperties \
+        --profile "$@"; then
+    echo build succeeded
+    EXIT_VALUE=0
+    else
+    echo build failed
+    EXIT_VALUE=1
+    fi
+
+    # Parse performance profile reports (generated with the --profile option above) and re-export the metrics in an easily machine-readable format for tracking
+    impl/parse_profile_htmls.sh
 fi
 
-# Parse performance profile reports (generated with the --profile option above) and re-export the metrics in an easily machine-readable format for tracking
-impl/parse_profile_htmls.sh
-
-echo "Completing $0 at $(date)"
+echo "Completing $0 at $(date) with exit value $EXIT_VALUE"
 
 exit "$EXIT_VALUE"

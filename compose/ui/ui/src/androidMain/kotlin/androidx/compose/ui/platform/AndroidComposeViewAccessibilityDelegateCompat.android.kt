@@ -44,7 +44,6 @@ import androidx.collection.SparseArrayCompat
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.R
 import androidx.compose.ui.fastJoinToString
-import androidx.compose.ui.focus.requestFocus
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.toAndroidRect
@@ -69,6 +68,7 @@ import androidx.compose.ui.semantics.SemanticsConfiguration
 import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.semantics.SemanticsOwner
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.SemanticsPropertiesAndroid
 import androidx.compose.ui.semantics.SemanticsEntity
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.semantics.outerSemantics
@@ -90,6 +90,7 @@ import androidx.core.view.accessibility.AccessibilityEventCompat
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat.AccessibilityActionCompat
 import androidx.core.view.accessibility.AccessibilityNodeProviderCompat
+import androidx.lifecycle.Lifecycle
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlin.math.abs
@@ -334,6 +335,11 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
     }
 
     private fun createNodeInfo(virtualViewId: Int): AccessibilityNodeInfo? {
+        if (view.viewTreeOwners?.lifecycleOwner?.lifecycle?.currentState ==
+            Lifecycle.State.DESTROYED
+        ) {
+            return null
+        }
         val info: AccessibilityNodeInfoCompat = AccessibilityNodeInfoCompat.obtain()
         val semanticsNodeWithAdjustedBounds = currentSemanticsNodes[virtualViewId]
         if (semanticsNodeWithAdjustedBounds == null) {
@@ -416,7 +422,12 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                 }
             }
         }
-        if (semanticsNode.isTextField) info.className = "android.widget.EditText"
+        if (semanticsNode.isTextField) {
+            info.className = "android.widget.EditText"
+        }
+        if (semanticsNode.config.contains(SemanticsProperties.Text)) {
+            info.className = "android.widget.TextView"
+        }
 
         info.packageName = view.context.packageName
 
@@ -507,6 +518,29 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
 
         if (semanticsNode.unmergedConfig.isMergingSemanticsOfDescendants) {
             info.isScreenReaderFocusable = true
+        }
+
+        // Map testTag to resourceName if testTagsAsResourceId == true (which can be set by an ancestor)
+        val testTag = semanticsNode.unmergedConfig.getOrNull(SemanticsProperties.TestTag)
+        if (testTag != null) {
+            var testTagsAsResourceId = false
+            var current: SemanticsNode? = semanticsNode
+            while (current != null) {
+                if (current.unmergedConfig.contains(
+                    SemanticsPropertiesAndroid.TestTagsAsResourceId
+                )) {
+                    testTagsAsResourceId = current.unmergedConfig.get(
+                        SemanticsPropertiesAndroid.TestTagsAsResourceId
+                    )
+                    break
+                } else {
+                    current = current.parent
+                }
+            }
+
+            if (testTagsAsResourceId) {
+                info.viewIdResourceName = testTag
+            }
         }
 
         semanticsNode.unmergedConfig.getOrNull(SemanticsProperties.Heading)?.let {
@@ -1245,13 +1279,8 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                 ) ?: false
             }
             AccessibilityNodeInfoCompat.ACTION_FOCUS -> {
-                if (node.unmergedConfig.getOrNull(SemanticsProperties.Focused) == false) {
-                    node.layoutNode.outerLayoutNodeWrapper.findLastFocusWrapper()
-                        ?.requestFocus() ?: return false
-                    return true
-                } else {
-                    return false
-                }
+                return node.unmergedConfig.getOrNull(SemanticsActions.RequestFocus)
+                    ?.action?.invoke() ?: false
             }
             AccessibilityNodeInfoCompat.ACTION_CLEAR_FOCUS -> {
                 return if (node.unmergedConfig.getOrNull(SemanticsProperties.Focused) == true) {
@@ -1580,6 +1609,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
     // fun clearNode(semanticsNodeId: Int) { // clear the actionIdToId and labelToActionId nodes }
 
     private val semanticsChangeChecker = Runnable {
+        view.measureAndLayout()
         checkForSemanticsChanges()
         checkingForSemanticsChanges = false
     }

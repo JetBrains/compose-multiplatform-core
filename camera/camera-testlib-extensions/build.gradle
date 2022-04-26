@@ -28,9 +28,14 @@ dependencies {
 
 android {
     defaultConfig {
-        versionCode 1
         multiDexEnabled true
     }
+
+    lintOptions {
+        enable 'CameraXQuirksClassDetector'
+    }
+
+    namespace "androidx.camera.extensions.impl"
 }
 
 androidx {

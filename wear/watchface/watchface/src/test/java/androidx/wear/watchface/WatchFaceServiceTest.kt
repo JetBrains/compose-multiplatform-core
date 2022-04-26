@@ -41,6 +41,7 @@ import android.support.wearable.watchface.IWatchFaceService
 import android.support.wearable.watchface.WatchFaceStyle
 import android.support.wearable.watchface.accessibility.ContentDescriptionLabel
 import android.view.Choreographer
+import android.view.Surface
 import android.view.SurfaceHolder
 import android.view.WindowInsets
 import androidx.annotation.Px
@@ -82,12 +83,22 @@ import androidx.wear.watchface.style.UserStyleSetting.ListUserStyleSetting
 import androidx.wear.watchface.style.UserStyleSetting.Option
 import androidx.wear.watchface.style.WatchFaceLayer
 import com.google.common.truth.Truth.assertThat
+import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
+import java.io.StringWriter
+import java.nio.ByteBuffer
+import java.time.Instant
+import java.time.ZoneId
+import java.time.ZonedDateTime
+import java.util.ArrayDeque
+import java.util.PriorityQueue
+import java.util.concurrent.TimeUnit
+import kotlin.test.assertFailsWith
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.android.asCoroutineDispatcher
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -111,14 +122,6 @@ import org.mockito.Mockito.times
 import org.mockito.Mockito.validateMockitoUsage
 import org.mockito.Mockito.verify
 import org.robolectric.annotation.Config
-import java.io.StringWriter
-import java.time.Instant
-import java.time.ZoneId
-import java.time.ZonedDateTime
-import java.util.ArrayDeque
-import java.util.PriorityQueue
-import java.util.concurrent.TimeUnit
-import kotlin.test.assertFailsWith
 
 private const val INTERACTIVE_UPDATE_RATE_MS = 16L
 private const val LEFT_COMPLICATION_ID = 1000
@@ -146,6 +149,7 @@ public class WatchFaceServiceTest {
     private val handler = mock<Handler>()
     private val iWatchFaceService = mock<IWatchFaceService>()
     private val surfaceHolder = mock<SurfaceHolder>()
+    private val surface = mock<Surface>()
     private val tapListener = mock<WatchFace.TapListener>()
     private val mainThreadPriorityDelegate = object : WatchFaceService.MainThreadPriorityDelegate {
         var priority = Priority.Unset
@@ -164,6 +168,8 @@ public class WatchFaceServiceTest {
     init {
         `when`(surfaceHolder.surfaceFrame).thenReturn(ONE_HUNDRED_BY_ONE_HUNDRED_RECT)
         `when`(surfaceHolder.lockHardwareCanvas()).thenReturn(Canvas())
+        `when`(surfaceHolder.surface).thenReturn(surface)
+        `when`(surface.isValid).thenReturn(true)
     }
 
     private companion object {
@@ -267,6 +273,7 @@ public class WatchFaceServiceTest {
             .build()
 
     private val edgeComplicationHitTester = mock<ComplicationTapFilter>()
+
     @Suppress("DEPRECATION") // setDefaultDataSourceType
     private val edgeComplication =
         ComplicationSlot.createEdgeComplicationSlotBuilder(
@@ -494,7 +501,8 @@ public class WatchFaceServiceTest {
                             ComplicationData.Builder(ComplicationData.TYPE_SHORT_TEXT)
                                 .setShortText(ComplicationText.plainText("Initial Short"))
                                 .setTapAction(
-                                    PendingIntent.getActivity(context, 0, Intent("ShortText"),
+                                    PendingIntent.getActivity(
+                                        context, 0, Intent("ShortText"),
                                         PendingIntent.FLAG_IMMUTABLE
                                     )
                                 )
@@ -504,7 +512,8 @@ public class WatchFaceServiceTest {
                             ComplicationData.Builder(ComplicationData.TYPE_SHORT_TEXT)
                                 .setShortText(ComplicationText.plainText("Initial Long"))
                                 .setTapAction(
-                                    PendingIntent.getActivity(context, 0, Intent("LongText"),
+                                    PendingIntent.getActivity(
+                                        context, 0, Intent("LongText"),
                                         PendingIntent.FLAG_IMMUTABLE
                                     )
                                 )
@@ -514,7 +523,8 @@ public class WatchFaceServiceTest {
                             ComplicationData.Builder(ComplicationData.TYPE_LARGE_IMAGE)
                                 .setLargeImage(Icon.createWithContentUri("someuri"))
                                 .setTapAction(
-                                    PendingIntent.getActivity(context, 0, Intent("PhotoImage"),
+                                    PendingIntent.getActivity(
+                                        context, 0, Intent("PhotoImage"),
                                         PendingIntent.FLAG_IMMUTABLE
                                     )
                                 )
@@ -591,6 +601,7 @@ public class WatchFaceServiceTest {
         // coroutine dispatcher.
         runBlocking {
             watchFaceImpl = engineWrapper.deferredWatchFaceImpl.await()
+            engineWrapper.deferredValidation.await()
         }
 
         currentUserStyleRepository = watchFaceImpl.currentUserStyleRepository
@@ -1157,7 +1168,7 @@ public class WatchFaceServiceTest {
                 currentTimeMillis = INTERACTIVE_UPDATE_RATE_MS + 3,
                 Instant.EPOCH
             )
-        ).isEqualTo(- 1)
+        ).isEqualTo(-1)
     }
 
     @Test
@@ -2491,7 +2502,8 @@ public class WatchFaceServiceTest {
                     ComplicationData.Builder(ComplicationData.TYPE_LONG_TEXT)
                         .setLongText(ComplicationText.plainText("TYPE_LONG_TEXT"))
                         .setTapAction(
-                            PendingIntent.getActivity(context, 0, Intent("LongText"),
+                            PendingIntent.getActivity(
+                                context, 0, Intent("LongText"),
                                 PendingIntent.FLAG_IMMUTABLE
                             )
                         )
@@ -2543,7 +2555,8 @@ public class WatchFaceServiceTest {
 
                         override fun onInteractiveWatchFaceCreated(
                             iInteractiveWatchFace: IInteractiveWatchFace
-                        ) {}
+                        ) {
+                        }
 
                         override fun onInteractiveWatchFaceCrashed(exception: CrashInfoParcel?) {
                             fail("WatchFace crashed: $exception")
@@ -2659,7 +2672,8 @@ public class WatchFaceServiceTest {
 
                         override fun onInteractiveWatchFaceCreated(
                             iInteractiveWatchFace: IInteractiveWatchFace
-                        ) {}
+                        ) {
+                        }
 
                         override fun onInteractiveWatchFaceCrashed(exception: CrashInfoParcel?) {
                             fail("WatchFace crashed: $exception")
@@ -3523,17 +3537,18 @@ public class WatchFaceServiceTest {
             UserStyleSchema(emptyList())
         )
 
-        assertTrue(engineWrapper.deferredWatchFaceImpl.isCancelled)
+        assertTrue(engineWrapper.deferredValidation.isCancelled)
         runBlocking {
             assertFailsWith<IllegalArgumentException> {
-                engineWrapper.deferredWatchFaceImpl.await()
+                engineWrapper.deferredValidation.await()
             }
         }
     }
 
     @Test
     public fun additionalContentDescriptionLabelsSetBeforeWatchFaceInitComplete() {
-        val pendingIntent = PendingIntent.getActivity(context, 0, Intent("Example"),
+        val pendingIntent = PendingIntent.getActivity(
+            context, 0, Intent("Example"),
             PendingIntent.FLAG_IMMUTABLE
         )
 
@@ -3639,10 +3654,12 @@ public class WatchFaceServiceTest {
         )
 
         val interactiveInstance = InteractiveInstanceManager.getAndRetainInstance("TestID")
-        val leftPendingIntent = PendingIntent.getActivity(context, 0, Intent("Left"),
+        val leftPendingIntent = PendingIntent.getActivity(
+            context, 0, Intent("Left"),
             PendingIntent.FLAG_IMMUTABLE
         )
-        val rightPendingIntent = PendingIntent.getActivity(context, 0, Intent("Left"),
+        val rightPendingIntent = PendingIntent.getActivity(
+            context, 0, Intent("Left"),
             PendingIntent.FLAG_IMMUTABLE
         )
         interactiveInstance!!.updateComplicationData(
@@ -3824,53 +3841,68 @@ public class WatchFaceServiceTest {
 
     @Test
     @RequiresApi(Build.VERSION_CODES.O_MR1)
-    public fun assetLifeCycle() {
+    public fun glesRendererLifecycle() {
         val eventLog = ArrayList<String>()
+        var renderer: Renderer
 
         testWatchFaceService = TestWatchFaceService(
             WatchFaceType.DIGITAL,
             emptyList(),
             { _, currentUserStyleRepository, watchState ->
-                renderer = object : TestRenderer(
+                @Suppress("DEPRECATION")
+                renderer = object : Renderer.GlesRenderer(
                     surfaceHolder,
                     currentUserStyleRepository,
                     watchState,
                     INTERACTIVE_UPDATE_RATE_MS
                 ) {
                     init {
-                        eventLog.add("TestRenderer created")
+                        eventLog.add(watchState.watchFaceInstanceId.value + " TestRenderer created")
                     }
 
-                    override suspend fun createSharedAssets(): SharedAssets? {
-                        eventLog.add("createAssets")
-                        return object : SharedAssets {
-                            override fun onDestroy() {
-                                eventLog.add("SharedAssets onDestroy")
-                            }
-                        }
+                    override suspend fun onBackgroundThreadGlContextCreated() {
+                        eventLog.add(
+                            watchState.watchFaceInstanceId.value +
+                                " onBackgroundThreadGlContextCreated"
+                        )
+                    }
+
+                    override suspend fun onUiThreadGlSurfaceCreated(width: Int, height: Int) {
+                        eventLog.add(
+                            watchState.watchFaceInstanceId.value + " onUiThreadGlSurfaceCreated"
+                        )
                     }
 
                     override fun onDestroy() {
                         super.onDestroy()
-                        eventLog.add("TestRenderer onDestroy")
+                        eventLog.add(
+                            watchState.watchFaceInstanceId.value + " TestRenderer onDestroy"
+                        )
                     }
+
+                    override fun render(zonedDateTime: ZonedDateTime) {
+                        eventLog.add(watchState.watchFaceInstanceId.value + " render")
+                    }
+
+                    override fun renderHighlightLayer(zonedDateTime: ZonedDateTime) {}
                 }
                 renderer
             },
             UserStyleSchema(emptyList()),
-            watchState,
+            null,
             handler,
             null,
             false,
             null,
-            choreographer
+            choreographer,
+            forceIsVisible = true
         )
 
         InteractiveInstanceManager
             .getExistingInstanceOrSetPendingWallpaperInteractiveWatchFaceInstance(
                 InteractiveInstanceManager.PendingWallpaperInteractiveWatchFaceInstance(
                     WallpaperInteractiveWatchFaceInstanceParams(
-                        "TestID",
+                        SYSTEM_SUPPORTS_CONSISTENT_IDS_PREFIX + "Interactive",
                         DeviceConfig(
                             false,
                             false,
@@ -3911,7 +3943,7 @@ public class WatchFaceServiceTest {
                 DeviceConfig(false, false, 100, 200),
                 100,
                 100,
-                null
+                SYSTEM_SUPPORTS_CONSISTENT_IDS_PREFIX + "Headless"
             )
         )
 
@@ -3919,11 +3951,281 @@ public class WatchFaceServiceTest {
         engineWrapper.onDestroy()
 
         assertThat(eventLog).containsExactly(
-            "TestRenderer created",
+            SYSTEM_SUPPORTS_CONSISTENT_IDS_PREFIX + "Interactive TestRenderer created",
+            SYSTEM_SUPPORTS_CONSISTENT_IDS_PREFIX +
+                "Interactive onBackgroundThreadGlContextCreated",
+            SYSTEM_SUPPORTS_CONSISTENT_IDS_PREFIX + "Interactive onUiThreadGlSurfaceCreated",
+            SYSTEM_SUPPORTS_CONSISTENT_IDS_PREFIX + "Interactive render",
+            SYSTEM_SUPPORTS_CONSISTENT_IDS_PREFIX + "Interactive render",
+            SYSTEM_SUPPORTS_CONSISTENT_IDS_PREFIX + "Headless TestRenderer created",
+            SYSTEM_SUPPORTS_CONSISTENT_IDS_PREFIX + "Headless onBackgroundThreadGlContextCreated",
+            SYSTEM_SUPPORTS_CONSISTENT_IDS_PREFIX + "Headless onUiThreadGlSurfaceCreated",
+            SYSTEM_SUPPORTS_CONSISTENT_IDS_PREFIX + "Headless render",
+            SYSTEM_SUPPORTS_CONSISTENT_IDS_PREFIX + "Headless TestRenderer onDestroy",
+            SYSTEM_SUPPORTS_CONSISTENT_IDS_PREFIX + "Interactive TestRenderer onDestroy"
+        )
+    }
+
+    @Test
+    @RequiresApi(Build.VERSION_CODES.O_MR1)
+    public fun assetLifeCycle_CanvasRenderer() {
+        val eventLog = ArrayList<String>()
+        var renderer: Renderer
+
+        class TestSharedAssets : Renderer.SharedAssets {
+            override fun onDestroy() {
+                eventLog.add("SharedAssets onDestroy")
+            }
+        }
+
+        testWatchFaceService = TestWatchFaceService(
+            WatchFaceType.DIGITAL,
+            emptyList(),
+            { _, currentUserStyleRepository, watchState ->
+                renderer = object : Renderer.CanvasRenderer2<TestSharedAssets>(
+                    surfaceHolder,
+                    currentUserStyleRepository,
+                    watchState,
+                    CanvasType.HARDWARE,
+                    INTERACTIVE_UPDATE_RATE_MS,
+                    clearWithBackgroundTintBeforeRenderingHighlightLayer = false
+                ) {
+                    init {
+                        eventLog.add(watchState.watchFaceInstanceId.value + " TestRenderer created")
+                    }
+
+                    override suspend fun createSharedAssets(): TestSharedAssets {
+                        eventLog.add("createAssets")
+                        return TestSharedAssets()
+                    }
+
+                    override fun render(
+                        canvas: Canvas,
+                        bounds: Rect,
+                        zonedDateTime: ZonedDateTime,
+                        sharedAssets: TestSharedAssets
+                    ) {
+                        eventLog.add(watchState.watchFaceInstanceId.value + " render")
+                    }
+
+                    override fun renderHighlightLayer(
+                        canvas: Canvas,
+                        bounds: Rect,
+                        zonedDateTime: ZonedDateTime,
+                        sharedAssets: TestSharedAssets
+                    ) {
+                        // NOP
+                    }
+
+                    override fun onDestroy() {
+                        super.onDestroy()
+                        eventLog.add(
+                            watchState.watchFaceInstanceId.value + " TestRenderer onDestroy"
+                        )
+                    }
+                }
+                renderer
+            },
+            UserStyleSchema(emptyList()),
+            null,
+            handler,
+            null,
+            false,
+            null,
+            choreographer,
+            forceIsVisible = true
+        )
+
+        InteractiveInstanceManager
+            .getExistingInstanceOrSetPendingWallpaperInteractiveWatchFaceInstance(
+                InteractiveInstanceManager.PendingWallpaperInteractiveWatchFaceInstance(
+                    WallpaperInteractiveWatchFaceInstanceParams(
+                        SYSTEM_SUPPORTS_CONSISTENT_IDS_PREFIX + "Interactive",
+                        DeviceConfig(
+                            false,
+                            false,
+                            0,
+                            0
+                        ),
+                        WatchUiState(false, 0),
+                        UserStyle(emptyMap()).toWireFormat(),
+                        emptyList()
+                    ),
+                    object : IPendingInteractiveWatchFace.Stub() {
+                        override fun getApiVersion() =
+                            IPendingInteractiveWatchFace.API_VERSION
+
+                        override fun onInteractiveWatchFaceCreated(
+                            iInteractiveWatchFace: IInteractiveWatchFace
+                        ) {
+                            interactiveWatchFaceInstance = iInteractiveWatchFace
+                        }
+
+                        override fun onInteractiveWatchFaceCrashed(exception: CrashInfoParcel?) {
+                            fail("WatchFace crashed: $exception")
+                        }
+                    }
+                )
+            )
+
+        engineWrapper = testWatchFaceService.onCreateEngine() as WatchFaceService.EngineWrapper
+        engineWrapper.onCreate(surfaceHolder)
+        engineWrapper.onSurfaceChanged(surfaceHolder, 0, 100, 100)
+
+        val headlessEngineWrapper =
+            testWatchFaceService.createHeadlessEngine() as WatchFaceService.EngineWrapper
+
+        headlessEngineWrapper.createHeadlessInstance(
+            HeadlessWatchFaceInstanceParams(
+                ComponentName("test.watchface.app", "test.watchface.class"),
+                DeviceConfig(false, false, 100, 200),
+                100,
+                100,
+                SYSTEM_SUPPORTS_CONSISTENT_IDS_PREFIX + "Headless"
+            )
+        )
+
+        headlessEngineWrapper.onDestroy()
+        engineWrapper.onDestroy()
+
+        assertThat(eventLog).containsExactly(
+            SYSTEM_SUPPORTS_CONSISTENT_IDS_PREFIX + "Interactive TestRenderer created",
             "createAssets",
-            "TestRenderer created",
-            "TestRenderer onDestroy",
-            "TestRenderer onDestroy",
+            SYSTEM_SUPPORTS_CONSISTENT_IDS_PREFIX + "Interactive render",
+            SYSTEM_SUPPORTS_CONSISTENT_IDS_PREFIX + "Interactive render",
+            SYSTEM_SUPPORTS_CONSISTENT_IDS_PREFIX + "Headless TestRenderer created",
+            SYSTEM_SUPPORTS_CONSISTENT_IDS_PREFIX + "Headless render",
+            SYSTEM_SUPPORTS_CONSISTENT_IDS_PREFIX + "Headless TestRenderer onDestroy",
+            SYSTEM_SUPPORTS_CONSISTENT_IDS_PREFIX + "Interactive TestRenderer onDestroy",
+            "SharedAssets onDestroy"
+        )
+    }
+
+    @Test
+    @RequiresApi(Build.VERSION_CODES.O_MR1)
+    public fun assetLifeCycle_GlesRenderer() {
+        val eventLog = ArrayList<String>()
+        var renderer: Renderer
+
+        class TestSharedAssets : Renderer.SharedAssets {
+            override fun onDestroy() {
+                eventLog.add("SharedAssets onDestroy")
+            }
+        }
+
+        testWatchFaceService = TestWatchFaceService(
+            WatchFaceType.DIGITAL,
+            emptyList(),
+            { _, currentUserStyleRepository, watchState ->
+                renderer = object : Renderer.GlesRenderer2<TestSharedAssets>(
+                    surfaceHolder,
+                    currentUserStyleRepository,
+                    watchState,
+                    INTERACTIVE_UPDATE_RATE_MS
+                ) {
+                    init {
+                        eventLog.add(watchState.watchFaceInstanceId.value + " TestRenderer created")
+                    }
+
+                    override suspend fun createSharedAssets(): TestSharedAssets {
+                        eventLog.add("createAssets")
+                        return TestSharedAssets()
+                    }
+
+                    override fun onDestroy() {
+                        super.onDestroy()
+                        eventLog.add(
+                            watchState.watchFaceInstanceId.value + " TestRenderer onDestroy"
+                        )
+                    }
+
+                    override fun render(
+                        zonedDateTime: ZonedDateTime,
+                        sharedAssets: TestSharedAssets
+                    ) {
+                        eventLog.add(watchState.watchFaceInstanceId.value + " render")
+                    }
+
+                    override fun renderHighlightLayer(
+                        zonedDateTime: ZonedDateTime,
+                        sharedAssets: TestSharedAssets
+                    ) {
+                        // NOP
+                    }
+                }
+                renderer
+            },
+            UserStyleSchema(emptyList()),
+            null,
+            handler,
+            null,
+            false,
+            null,
+            choreographer,
+            forceIsVisible = true
+        )
+
+        InteractiveInstanceManager
+            .getExistingInstanceOrSetPendingWallpaperInteractiveWatchFaceInstance(
+                InteractiveInstanceManager.PendingWallpaperInteractiveWatchFaceInstance(
+                    WallpaperInteractiveWatchFaceInstanceParams(
+                        SYSTEM_SUPPORTS_CONSISTENT_IDS_PREFIX + "Interactive",
+                        DeviceConfig(
+                            false,
+                            false,
+                            0,
+                            0
+                        ),
+                        WatchUiState(false, 0),
+                        UserStyle(emptyMap()).toWireFormat(),
+                        emptyList()
+                    ),
+                    object : IPendingInteractiveWatchFace.Stub() {
+                        override fun getApiVersion() =
+                            IPendingInteractiveWatchFace.API_VERSION
+
+                        override fun onInteractiveWatchFaceCreated(
+                            iInteractiveWatchFace: IInteractiveWatchFace
+                        ) {
+                            interactiveWatchFaceInstance = iInteractiveWatchFace
+                        }
+
+                        override fun onInteractiveWatchFaceCrashed(exception: CrashInfoParcel?) {
+                            fail("WatchFace crashed: $exception")
+                        }
+                    }
+                )
+            )
+
+        engineWrapper = testWatchFaceService.onCreateEngine() as WatchFaceService.EngineWrapper
+        engineWrapper.onCreate(surfaceHolder)
+        engineWrapper.onSurfaceChanged(surfaceHolder, 0, 100, 100)
+
+        val headlessEngineWrapper =
+            testWatchFaceService.createHeadlessEngine() as WatchFaceService.EngineWrapper
+
+        headlessEngineWrapper.createHeadlessInstance(
+            HeadlessWatchFaceInstanceParams(
+                ComponentName("test.watchface.app", "test.watchface.class"),
+                DeviceConfig(false, false, 100, 200),
+                100,
+                100,
+                SYSTEM_SUPPORTS_CONSISTENT_IDS_PREFIX + "Headless"
+            )
+        )
+
+        headlessEngineWrapper.onDestroy()
+        engineWrapper.onDestroy()
+
+        assertThat(eventLog).containsExactly(
+            SYSTEM_SUPPORTS_CONSISTENT_IDS_PREFIX + "Interactive TestRenderer created",
+            "createAssets",
+            SYSTEM_SUPPORTS_CONSISTENT_IDS_PREFIX + "Interactive render",
+            SYSTEM_SUPPORTS_CONSISTENT_IDS_PREFIX + "Interactive render",
+            SYSTEM_SUPPORTS_CONSISTENT_IDS_PREFIX + "Headless TestRenderer created",
+            SYSTEM_SUPPORTS_CONSISTENT_IDS_PREFIX + "Headless render",
+            SYSTEM_SUPPORTS_CONSISTENT_IDS_PREFIX + "Headless TestRenderer onDestroy",
+            SYSTEM_SUPPORTS_CONSISTENT_IDS_PREFIX + "Interactive TestRenderer onDestroy",
             "SharedAssets onDestroy"
         )
     }
@@ -4043,10 +4345,12 @@ public class WatchFaceServiceTest {
         assertThat(dump).contains("isHeadless=false")
         assertThat(dump).contains(
             "currentUserStyleRepository.userStyle=UserStyle[color_style_setting -> red_style, " +
-                "hand_style_setting -> classic_style]")
+                "hand_style_setting -> classic_style]"
+        )
         assertThat(dump).contains(
             "currentUserStyleRepository.schema=[{color_style_setting : red_style, green_style, " +
-                "blue_style}, {hand_style_setting : classic_style, modern_style, gothic_style}]")
+                "blue_style}, {hand_style_setting : classic_style, modern_style, gothic_style}]"
+        )
         assertThat(dump).contains("ComplicationSlot 1000:")
         assertThat(dump).contains("ComplicationSlot 1001:")
         assertThat(dump).contains("screenBounds=Rect(0, 0 - 100, 100)")
@@ -4388,6 +4692,116 @@ public class WatchFaceServiceTest {
 
         renderer.renderInternal(ZonedDateTime.ofInstant(Instant.EPOCH, ZoneId.of("GMT")))
         assertThat(renderer.lastRenderWasForScreenshot).isFalse()
+    }
+
+    @Test
+    public fun applyComplicationSlotsStyleCategoryOption() {
+        initWallpaperInteractiveWatchFaceInstance(
+            WatchFaceType.ANALOG,
+            listOf(leftComplication, rightComplication),
+            UserStyleSchema(emptyList()),
+            WallpaperInteractiveWatchFaceInstanceParams(
+                INTERACTIVE_INSTANCE_ID,
+                DeviceConfig(
+                    false,
+                    false,
+                    0,
+                    0
+                ),
+                WatchUiState(false, 0),
+                UserStyle(emptyMap()).toWireFormat(),
+                null
+            )
+        )
+
+        val mockWatchFaceHostApi = mock<WatchFaceHostApi>()
+        complicationSlotsManager.watchFaceHostApi = mockWatchFaceHostApi
+
+        complicationSlotsManager.applyComplicationSlotsStyleCategoryOption(
+            ComplicationSlotsOption(
+                Option.Id("123"),
+                "testOption",
+                icon = null,
+                complicationSlotOverlays = listOf(
+                    ComplicationSlotOverlay(
+                        LEFT_COMPLICATION_ID,
+                        enabled = false,
+                        complicationSlotBounds =
+                        ComplicationSlotBounds(RectF(0.1f, 0.2f, 0.3f, 0.4f)),
+                        accessibilityTraversalIndex = 100
+                    ),
+                    ComplicationSlotOverlay(
+                        RIGHT_COMPLICATION_ID,
+                        enabled = true,
+                        complicationSlotBounds =
+                        ComplicationSlotBounds(RectF(0.5f, 0.6f, 0.7f, 0.8f)),
+                        accessibilityTraversalIndex = 1
+                    )
+                ),
+                watchFaceEditorData = null
+            )
+        )
+
+        // Dirty flags should lead to several WatchFaceHostApi calls.
+        verify(mockWatchFaceHostApi).setActiveComplicationSlots(
+            eq(intArrayOf(RIGHT_COMPLICATION_ID))
+        )
+        verify(mockWatchFaceHostApi).updateContentDescriptionLabels()
+
+        assertThat(leftComplication.enabled).isFalse()
+        assertThat(
+            leftComplication.complicationSlotBounds.perComplicationTypeBounds[
+                ComplicationType.SHORT_TEXT
+            ]
+        ).isEqualTo(RectF(0.1f, 0.2f, 0.3f, 0.4f))
+        assertThat(leftComplication.accessibilityTraversalIndex).isEqualTo(100)
+
+        assertThat(rightComplication.enabled).isTrue()
+        assertThat(
+            rightComplication.complicationSlotBounds.perComplicationTypeBounds[
+                ComplicationType.SHORT_TEXT
+            ]
+        ).isEqualTo(RectF(0.5f, 0.6f, 0.7f, 0.8f))
+        assertThat(rightComplication.accessibilityTraversalIndex).isEqualTo(1)
+
+        reset(mockWatchFaceHostApi)
+
+        // Dirty flags should be cleared leading to no further interactions if
+        // onComplicationsUpdated is called.
+        complicationSlotsManager.onComplicationsUpdated()
+        verifyNoMoreInteractions(mockWatchFaceHostApi)
+    }
+
+    @Test
+    public fun verticalFlip() {
+        val width = 50
+        val height = 100
+        val buffer = ByteBuffer.allocate(width * height * 4)
+
+        // Fill buffer with a recognizable pattern.
+        for (i in 0 until height) {
+            for (j in 0 until width) {
+                buffer.put(i.toByte())
+                buffer.put(j.toByte())
+                buffer.put(2)
+                buffer.put(3)
+            }
+        }
+        buffer.rewind()
+
+        verticalFlip(buffer, width, height)
+
+        // Check the pattern has been flipped vertically.
+        val heightMinusOne = height - 1
+        var index = 0
+        for (i in 0 until height) {
+            for (j in 0 until width) {
+                assertThat(buffer[index++]).isEqualTo((heightMinusOne - i).toByte())
+                assertThat(buffer[index++]).isEqualTo(j.toByte())
+                assertThat(buffer[index++]).isEqualTo(2.toByte())
+                assertThat(buffer[index++]).isEqualTo(3.toByte())
+            }
+        }
     }
 
     private fun getLeftShortTextComplicationDataText(): CharSequence {

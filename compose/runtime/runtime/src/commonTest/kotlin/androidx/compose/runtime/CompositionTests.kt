@@ -38,6 +38,7 @@ import androidx.compose.runtime.mock.compositionTest
 import androidx.compose.runtime.mock.contact
 import androidx.compose.runtime.mock.expectChanges
 import androidx.compose.runtime.mock.expectNoChanges
+import androidx.compose.runtime.mock.revalidate
 import androidx.compose.runtime.mock.skip
 import androidx.compose.runtime.mock.validate
 import androidx.compose.runtime.snapshots.Snapshot
@@ -45,8 +46,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.runBlockingTest
+import kotlinx.coroutines.test.runTest
 import kotlin.random.Random
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -2012,8 +2012,8 @@ class CompositionTests {
         assertArrayEquals(listOf(observed), abandonedObjects)
     }
 
-    @Test
-    fun testRememberedObserver_Controlled_Dispose() = runBlocking {
+    @Test @OptIn(ExperimentalCoroutinesApi::class)
+    fun testRememberedObserver_Controlled_Dispose() = runTest {
         val recomposer = Recomposer(coroutineContext)
         val root = View()
         val controlled = ControlledComposition(ViewApplier(root), recomposer)
@@ -2412,6 +2412,37 @@ class CompositionTests {
         invalidateComposition()
         expectChanges()
         validate()
+    }
+
+    @Test // regression test for b/199136503
+    fun testMovingSlotsButNotNodes() = compositionTest {
+        val order = mutableStateListOf(1, 2, 3, 4, 5)
+        val includeText = mutableStateMapOf(4 to 4)
+        compose {
+            for (i in order) {
+                key(i) {
+                    if (i in includeText) {
+                        Text("Text for $i")
+                    }
+                }
+            }
+            Text("End")
+        }
+
+        validate {
+            for (i in order) {
+                if (i in includeText) {
+                    Text("Text for $i")
+                }
+            }
+            Text("End")
+        }
+
+        order.swap(3, 5)
+        includeText.remove(4)
+        includeText.set(3, 3)
+        expectChanges()
+        revalidate()
     }
 
     @Test
@@ -2836,7 +2867,7 @@ class CompositionTests {
      */
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
-    fun testComposableLambdaSubcompositionInvalidation() = runBlockingTest {
+    fun testComposableLambdaSubcompositionInvalidation() = runTest {
         localRecomposerTest { recomposer ->
             val composition = Composition(EmptyApplier(), recomposer)
             try {
@@ -2853,7 +2884,7 @@ class CompositionTests {
                 assertEquals(listOf(false), composedResults)
                 rootState = true
                 Snapshot.sendApplyNotifications()
-                advanceUntilIdle()
+                testScheduler.advanceUntilIdle()
                 assertEquals(listOf(false, true), composedResults)
             } finally {
                 composition.dispose()
@@ -2863,7 +2894,7 @@ class CompositionTests {
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
-    fun testCompositionContextIsRemembered() = runBlockingTest {
+    fun testCompositionContextIsRemembered() = runTest {
         localRecomposerTest { recomposer ->
             val composition = Composition(EmptyApplier(), recomposer)
             try {
@@ -2874,7 +2905,7 @@ class CompositionTests {
                     parentReferences += rememberCompositionContext()
                 }
                 scope.invalidate()
-                advanceUntilIdle()
+                testScheduler.advanceUntilIdle()
                 check(parentReferences.size > 1) { "expected to be composed more than once" }
                 check(parentReferences.toSet().size == 1) {
                     "expected all parentReferences to be the same; saw $parentReferences"
@@ -2887,7 +2918,7 @@ class CompositionTests {
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
-    fun testParentCompositionRecomposesFirst() = runBlockingTest {
+    fun testParentCompositionRecomposesFirst() = runTest {
         localRecomposerTest { recomposer ->
             val composition = Composition(EmptyApplier(), recomposer)
             val results = mutableListOf<String>()
@@ -2905,7 +2936,7 @@ class CompositionTests {
                 Snapshot.sendApplyNotifications()
                 firstState = "firstSet"
                 Snapshot.sendApplyNotifications()
-                advanceUntilIdle()
+                testScheduler.advanceUntilIdle()
                 assertEquals(
                     listOf("firstInitial", "secondInitial", "firstSet", "secondSet"),
                     results,
@@ -2928,7 +2959,7 @@ class CompositionTests {
      */
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
-    fun testStateWriteInApplier() = runBlockingTest {
+    fun testStateWriteInApplier() = runTest {
 
         class MutateOnRemoveApplier(
             private val removeCounter: MutableState<Int>
@@ -2978,7 +3009,7 @@ class CompositionTests {
                 assertEquals(1, applier.insertCount, "expected setup node not inserted")
                 shouldEmitNode = false
                 Snapshot.sendApplyNotifications()
-                advanceUntilIdle()
+                testScheduler.advanceUntilIdle()
                 assertEquals(1, stateMutatedOnRemove.value, "observable removals performed")
                 // Only two composition passes should have been performed by this point; a state
                 // invalidation in the applier should not be picked up or acted upon until after
@@ -2987,7 +3018,7 @@ class CompositionTests {
                 // After sending apply notifications we expect the snapshot state change made by
                 // the applier to trigger one final recomposition.
                 Snapshot.sendApplyNotifications()
-                advanceUntilIdle()
+                testScheduler.advanceUntilIdle()
                 assertEquals(3, compositionCount, "expected number of (re)compositions performed")
             } finally {
                 composition.dispose()
@@ -2997,7 +3028,7 @@ class CompositionTests {
 
     @Test // Regression test for b/180124293
     @OptIn(ExperimentalCoroutinesApi::class)
-    fun disposedCompositionShouldReportAsDisposed() = runBlockingTest {
+    fun disposedCompositionShouldReportAsDisposed() = runTest {
         localRecomposerTest { recomposer ->
             val composition = Composition(EmptyApplier(), recomposer)
             assertFalse(composition.isDisposed)
@@ -3091,7 +3122,7 @@ class CompositionTests {
      */
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
-    fun composeNodeSetVsUpdate() = runBlockingTest {
+    fun composeNodeSetVsUpdate() = runTest {
         localRecomposerTest { recomposer ->
             class SetUpdateNode(property: String) {
                 var changeCount = 0
@@ -3136,7 +3167,7 @@ class CompositionTests {
 
             value = "changed"
             Snapshot.sendApplyNotifications()
-            advanceUntilIdle()
+            testScheduler.advanceUntilIdle()
 
             assertEquals("changed", nodes[0].property, "node 0 recomposition value")
             assertEquals("changed", nodes[1].property, "node 1 recomposition value")
@@ -3294,4 +3325,15 @@ private interface Ordered {
 
 private interface Named {
     val name: String
+}
+
+private fun Int.isOdd() = this % 2 == 1
+private fun Int.isEven() = this % 2 == 0
+
+fun <T> MutableList<T>.swap(a: T, b: T) {
+    val aIndex = indexOf(a)
+    val bIndex = indexOf(b)
+    require(aIndex >= 0 && bIndex >= 0)
+    set(aIndex, b)
+    set(bIndex, a)
 }

@@ -30,13 +30,13 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.GridCells
-import androidx.compose.foundation.lazy.LazyGridItemInfo
-import androidx.compose.foundation.lazy.LazyGridItemScope
-import androidx.compose.foundation.lazy.LazyGridState
-import androidx.compose.foundation.lazy.LazyVerticalGrid
-import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.lazy.rememberLazyGridState
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyGridItemInfo
+import androidx.compose.foundation.lazy.grid.LazyGridItemScope
+import androidx.compose.foundation.lazy.grid.LazyGridState
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.itemsIndexed
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material.Card
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
@@ -50,7 +50,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.input.pointer.consumeAllChanges
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntOffset
@@ -76,7 +75,7 @@ fun LazyGridDragAndDropDemo() {
     }
 
     LazyVerticalGrid(
-        cells = GridCells.Fixed(3),
+        columns = GridCells.Fixed(3),
         modifier = Modifier.dragContainer(dragDropState),
         state = gridState,
         contentPadding = PaddingValues(16.dp),
@@ -98,7 +97,6 @@ fun LazyGridDragAndDropDemo() {
     }
 }
 
-@ExperimentalFoundationApi
 @Composable
 fun rememberGridDragDropState(
     gridState: LazyGridState,
@@ -121,7 +119,6 @@ fun rememberGridDragDropState(
     return state
 }
 
-@ExperimentalFoundationApi
 class GridDragDropState internal constructor(
     private val state: LazyGridState,
     private val scope: CoroutineScope,
@@ -237,12 +234,11 @@ private operator fun Offset.plus(size: Size): Offset {
     return Offset(x + size.width, y + size.height)
 }
 
-@ExperimentalFoundationApi
 fun Modifier.dragContainer(dragDropState: GridDragDropState): Modifier {
     return pointerInput(dragDropState) {
         detectDragGesturesAfterLongPress(
             onDrag = { change, offset ->
-                change.consumeAllChanges()
+                change.consume()
                 dragDropState.onDrag(offset = offset)
             },
             onDragStart = { offset -> dragDropState.onDragStart(offset) },

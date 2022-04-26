@@ -27,6 +27,7 @@ import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.geometry.MutableRect
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Canvas
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RenderEffect
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.TransformOrigin
@@ -71,6 +72,7 @@ import com.google.common.truth.Truth.assertThat
 import org.junit.Assert
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
@@ -745,19 +747,31 @@ class LayoutNodeTest {
     @Test
     fun layoutNodeWrapperAttachedWhenLayoutNodeAttached() {
         val layoutNode = LayoutNode()
-        val layoutModifier = Modifier.graphicsLayer { }
+        // 2 modifiers at the start
+        val layoutModifier = Modifier.graphicsLayer { }.graphicsLayer { }
 
         layoutNode.modifier = layoutModifier
         val oldLayoutNodeWrapper = layoutNode.outerLayoutNodeWrapper
+        val oldInnerLayoutNodeWrapper = oldLayoutNodeWrapper.wrapped
         assertFalse(oldLayoutNodeWrapper.isAttached)
+        assertNotNull(oldInnerLayoutNodeWrapper)
+        assertFalse(oldInnerLayoutNodeWrapper!!.isAttached)
 
         layoutNode.attach(MockOwner())
         assertTrue(oldLayoutNodeWrapper.isAttached)
 
+        // only 1 modifier now, so one should be detached and the other can be reused
         layoutNode.modifier = Modifier.graphicsLayer()
         val newLayoutNodeWrapper = layoutNode.outerLayoutNodeWrapper
+
+        // one can be reused, but we don't care which one
+        val notReused = if (newLayoutNodeWrapper == oldLayoutNodeWrapper) {
+            oldInnerLayoutNodeWrapper
+        } else {
+            oldLayoutNodeWrapper
+        }
         assertTrue(newLayoutNodeWrapper.isAttached)
-        assertFalse(oldLayoutNodeWrapper.isAttached)
+        assertFalse(notReused.isAttached)
     }
 
     @Test
@@ -2117,8 +2131,8 @@ class LayoutNodeTest {
         val wrapper1 = root.outerLayoutNodeWrapper
         val wrapper2 = root.outerLayoutNodeWrapper.wrapped
 
-        assertEquals(modifier1, (wrapper1 as DelegatingLayoutNodeWrapper<*>).modifier)
-        assertEquals(modifier2, (wrapper2 as DelegatingLayoutNodeWrapper<*>).modifier)
+        assertEquals(modifier1, (wrapper1 as ModifiedLayoutNode).modifier)
+        assertEquals(modifier2, (wrapper2 as ModifiedLayoutNode).modifier)
 
         root.modifier = modifier2.then(modifier1)
 
@@ -2126,11 +2140,11 @@ class LayoutNodeTest {
         assertEquals(wrapper1, root.outerLayoutNodeWrapper.wrapped)
         assertEquals(
             modifier1,
-            (root.outerLayoutNodeWrapper.wrapped as DelegatingLayoutNodeWrapper<*>).modifier
+            (root.outerLayoutNodeWrapper.wrapped as ModifiedLayoutNode).modifier
         )
         assertEquals(
             modifier2,
-            (root.outerLayoutNodeWrapper as DelegatingLayoutNodeWrapper<*>).modifier
+            (root.outerLayoutNodeWrapper as ModifiedLayoutNode).modifier
         )
     }
 
@@ -2285,7 +2299,11 @@ private class MockOwner(
         get() = TODO("Not yet implemented")
     override val windowInfo: WindowInfo
         get() = TODO("Not yet implemented")
-    @Suppress("DEPRECATION", "OverridingDeprecatedMember")
+    @Deprecated(
+        "fontLoader is deprecated, use fontFamilyResolver",
+        replaceWith = ReplaceWith("fontFamilyResolver")
+    )
+    @Suppress("DEPRECATION")
     override val fontLoader: Font.ResourceLoader
         get() = TODO("Not yet implemented")
     override val fontFamilyResolver: FontFamily.Resolver
@@ -2295,13 +2313,13 @@ private class MockOwner(
     override var showLayoutBounds: Boolean = false
     override val snapshotObserver = OwnerSnapshotObserver { it.invoke() }
 
-    override fun onRequestMeasure(layoutNode: LayoutNode) {
+    override fun onRequestMeasure(layoutNode: LayoutNode, forceRequest: Boolean) {
         onRequestMeasureParams += layoutNode
-        layoutNode.layoutState = LayoutNode.LayoutState.NeedsRemeasure
+        layoutNode.markMeasurePending()
     }
 
-    override fun onRequestRelayout(layoutNode: LayoutNode) {
-        layoutNode.layoutState = LayoutNode.LayoutState.NeedsRelayout
+    override fun onRequestRelayout(layoutNode: LayoutNode, forceRequest: Boolean) {
+        layoutNode.markLayoutPending()
     }
 
     override fun onAttach(node: LayoutNode) {
@@ -2329,6 +2347,17 @@ private class MockOwner(
     override fun forceMeasureTheSubtree(layoutNode: LayoutNode) {
     }
 
+    override fun registerOnEndApplyChangesListener(listener: () -> Unit) {
+        listener()
+    }
+
+    override fun onEndApplyChanges() {
+    }
+
+    override fun registerOnLayoutCompletedListener(listener: Owner.OnLayoutCompletedListener) {
+        TODO("Not yet implemented")
+    }
+
     override fun createLayer(
         drawBlock: (Canvas) -> Unit,
         invalidateParentLayer: () -> Unit
@@ -2349,6 +2378,8 @@ private class MockOwner(
                 shape: Shape,
                 clip: Boolean,
                 renderEffect: RenderEffect?,
+                ambientShadowColor: Color,
+                spotShadowColor: Color,
                 layoutDirection: LayoutDirection,
                 density: Density
             ) {
@@ -2436,7 +2467,7 @@ private fun LayoutNode(
             }
     }
     attach(MockOwner())
-    layoutState = LayoutNode.LayoutState.NeedsRemeasure
+    markMeasurePending()
     remeasure(Constraints())
     var wrapper: LayoutNodeWrapper? = outerLayoutNodeWrapper
     while (wrapper != null) {

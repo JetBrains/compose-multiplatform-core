@@ -346,7 +346,7 @@ internal fun calculateItemInfo(
     scalingParams: ScalingParams,
     beforeContentPaddingPx: Int,
     anchorType: ScalingLazyListAnchorType,
-    autoCentering: Boolean,
+    autoCentering: AutoCenteringParams?,
     initialized: Boolean
 ): ScalingLazyListItemInfo {
     val adjustedItemStart = itemStart - verticalAdjustment
@@ -381,13 +381,14 @@ internal fun calculateItemInfo(
     )
     return DefaultScalingLazyListItemInfo(
         // Adjust index to take into account the Spacer before the first list item
-        index = if (autoCentering) item.index - 1 else item.index,
+        index = if (autoCentering != null) item.index - 1 else item.index,
         key = item.key,
         unadjustedOffset = unadjustedOffset,
         offset = offset,
         size = scaledHeight,
         scale = scaleAndAlpha.scale,
         alpha = if (initialized) scaleAndAlpha.alpha else 0f,
+        unadjustedSize = item.size
     )
 }
 
@@ -401,6 +402,10 @@ internal class DefaultScalingLazyListLayoutInfo(
     override val reverseLayout: Boolean,
     override val orientation: Orientation,
     override val viewportSize: IntSize,
+    override val beforeContentPadding: Int,
+    override val afterContentPadding: Int,
+    override val beforeAutoCenteringPadding: Int,
+    override val afterAutoCenteringPadding: Int,
     // Flag to indicate that we are ready for the second stage of initialization. Note that this
     // flag will be false once initialization is complete and initialized == true.
     internal val readyForInitialization: Boolean,
@@ -416,12 +421,13 @@ internal class DefaultScalingLazyListItemInfo(
     override val offset: Int,
     override val size: Int,
     override val scale: Float,
-    override val alpha: Float
+    override val alpha: Float,
+    override val unadjustedSize: Int
 ) : ScalingLazyListItemInfo {
     override fun toString(): String {
         return "DefaultScalingLazyListItemInfo(index=$index, key=$key, " +
             "unadjustedOffset=$unadjustedOffset, offset=$offset, size=$size, " +
-            "scale=$scale, alpha=$alpha)"
+            "unadjustedSize=$unadjustedSize, scale=$scale, alpha=$alpha)"
     }
 }
 
@@ -434,13 +440,6 @@ internal data class ScaleAndAlpha(
     companion object {
         internal val noScaling = ScaleAndAlpha(1.0f, 1.0f)
     }
-}
-
-/**
- * Find the unadjusted/unscaled size of the list item.
- */
-internal fun ScalingLazyListItemInfo.unadjustedSize(): Int {
-    return (size / scale).roundToInt()
 }
 
 /**
@@ -459,7 +458,7 @@ internal fun ScalingLazyListItemInfo.startOffset(anchorType: ScalingLazyListAnch
  */
 internal fun ScalingLazyListItemInfo.unadjustedStartOffset(anchorType: ScalingLazyListAnchorType) =
     unadjustedOffset - if (anchorType == ScalingLazyListAnchorType.ItemCenter) {
-        (unadjustedSize() / 2f)
+        (unadjustedSize / 2f)
     } else {
         0f
     }

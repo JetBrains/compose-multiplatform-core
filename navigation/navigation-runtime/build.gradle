@@ -25,9 +25,9 @@ plugins {
 
 dependencies {
     api(project(":navigation:navigation-common"))
-    api(projectOrArtifact(":activity:activity-ktx"))
-    api(projectOrArtifact(":lifecycle:lifecycle-runtime-ktx"))
-    api(projectOrArtifact(":lifecycle:lifecycle-viewmodel-ktx"))
+    api("androidx.activity:activity-ktx:1.5.0-rc01")
+    api("androidx.lifecycle:lifecycle-runtime-ktx:2.5.0-rc01")
+    api("androidx.lifecycle:lifecycle-viewmodel-ktx:2.5.0-rc01")
     api("androidx.annotation:annotation-experimental:1.1.0")
     implementation('androidx.collection:collection:1.0.0')
 
@@ -47,12 +47,15 @@ dependencies {
     androidTestImplementation(libs.dexmakerMockito, excludes.bytebuddy)
     androidTestImplementation(libs.kotlinStdlib)
     androidTestImplementation(libs.multidex)
+
+    lintPublish(project(':navigation:navigation-runtime-lint'))
 }
 
 android {
     defaultConfig {
         multiDexEnabled = true
     }
+    namespace "androidx.navigation"
 }
 
 androidx {
@@ -66,9 +69,6 @@ androidx {
 tasks.withType(KotlinCompile).configureEach {
     kotlinOptions {
         // Allow usage of Kotlin's @OptIn.
-        freeCompilerArgs += ["-Xopt-in=kotlin.RequiresOptIn"]
-        // needed only while https://youtrack.jetbrains.com/issue/KT-47000 isn't resolved which is
-        // targeted to 1.6
-        freeCompilerArgs += ["-Xjvm-default=enable"]
+        freeCompilerArgs += ["-opt-in=kotlin.RequiresOptIn"]
     }
 }

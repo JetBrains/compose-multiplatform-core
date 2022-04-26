@@ -19,6 +19,7 @@ package androidx.wear.tiles.material.layouts;
 import static androidx.wear.tiles.DimensionBuilders.dp;
 import static androidx.wear.tiles.DimensionBuilders.expand;
 import static androidx.wear.tiles.material.Helper.checkNotNull;
+import static androidx.wear.tiles.material.Helper.isRoundDevice;
 import static androidx.wear.tiles.material.ProgressIndicatorDefaults.DEFAULT_PADDING;
 import static androidx.wear.tiles.material.layouts.LayoutDefaults.PROGRESS_INDICATOR_LAYOUT_MARGIN_HORIZONTAL_ROUND_DP;
 import static androidx.wear.tiles.material.layouts.LayoutDefaults.PROGRESS_INDICATOR_LAYOUT_MARGIN_HORIZONTAL_SQUARE_DP;
@@ -27,17 +28,13 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
-import androidx.wear.tiles.DeviceParametersBuilders;
 import androidx.wear.tiles.DeviceParametersBuilders.DeviceParameters;
 import androidx.wear.tiles.DimensionBuilders.DpProp;
 import androidx.wear.tiles.LayoutElementBuilders;
 import androidx.wear.tiles.LayoutElementBuilders.Box;
-import androidx.wear.tiles.LayoutElementBuilders.Layout;
 import androidx.wear.tiles.LayoutElementBuilders.LayoutElement;
 import androidx.wear.tiles.ModifiersBuilders.Modifiers;
 import androidx.wear.tiles.ModifiersBuilders.Padding;
-import androidx.wear.tiles.TimelineBuilders.Timeline;
-import androidx.wear.tiles.TimelineBuilders.TimelineEntry;
 import androidx.wear.tiles.material.CircularProgressIndicator;
 import androidx.wear.tiles.proto.LayoutElementProto;
 
@@ -86,11 +83,6 @@ public class ProgressIndicatorLayout implements LayoutElement {
             return this;
         }
 
-        private boolean isRoundDevice() {
-            return mDeviceParameters.getScreenShape()
-                    == DeviceParametersBuilders.SCREEN_SHAPE_ROUND;
-        }
-
         /**
          * Constructs and returns {@link ProgressIndicatorLayout} with the provided content and
          * look.
@@ -105,7 +97,7 @@ public class ProgressIndicatorLayout implements LayoutElement {
                                     .getValue()
                             : 0;
             float horizontalPaddingDp =
-                    isRoundDevice()
+                    isRoundDevice(mDeviceParameters)
                             ? PROGRESS_INDICATOR_LAYOUT_MARGIN_HORIZONTAL_ROUND_DP
                             : PROGRESS_INDICATOR_LAYOUT_MARGIN_HORIZONTAL_SQUARE_DP;
             float indicatorWidth = 2 * (thicknessDp + DEFAULT_PADDING.getValue());
@@ -150,42 +142,6 @@ public class ProgressIndicatorLayout implements LayoutElement {
 
             return new ProgressIndicatorLayout(boxBuilder.build());
         }
-    }
-
-    /** Returns the {@link Layout} object containing this layout template. */
-    @NonNull
-    public Layout toLayout() {
-        return toLayoutBuilder().build();
-    }
-
-    /** Returns the {@link Layout.Builder} object containing this layout template. */
-    @NonNull
-    public Layout.Builder toLayoutBuilder() {
-        return new Layout.Builder().setRoot(mElement);
-    }
-
-    /** Returns the {@link TimelineEntry.Builder} object containing this layout template. */
-    @NonNull
-    public TimelineEntry.Builder toTimelineEntryBuilder() {
-        return new TimelineEntry.Builder().setLayout(toLayout());
-    }
-
-    /** Returns the {@link TimelineEntry} object containing this layout template. */
-    @NonNull
-    public TimelineEntry toTimelineEntry() {
-        return toTimelineEntryBuilder().build();
-    }
-
-    /** Returns the {@link Timeline.Builder} object containing this layout template. */
-    @NonNull
-    public Timeline.Builder toTimelineBuilder() {
-        return new Timeline.Builder().addTimelineEntry(toTimelineEntry());
-    }
-
-    /** Returns the {@link Timeline} object containing this layout template. */
-    @NonNull
-    public Timeline toTimeline() {
-        return toTimelineBuilder().build();
     }
 
     /** Get the inner content from this layout. */

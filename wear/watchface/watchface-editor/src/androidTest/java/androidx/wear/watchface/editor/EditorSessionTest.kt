@@ -258,6 +258,7 @@ public class TestHeadlessWatchFaceService : WatchFaceService() {
         currentUserStyleRepository: CurrentUserStyleRepository
     ) = WatchFace(
         WatchFaceType.ANALOG,
+        @Suppress("deprecation")
         object : Renderer.CanvasRenderer(
             surfaceHolder,
             currentUserStyleRepository,
@@ -751,7 +752,6 @@ public class EditorSessionTest {
             listOf(colorStyleSetting, watchHandStyleSetting),
             emptyList()
         )
-        @Suppress("Deprecation")
         scenario.onActivity {
             val userStyleSchema = it.editorSession.userStyleSchema
             assertThat(userStyleSchema.userStyleSettings.size).isEqualTo(2)
@@ -1365,6 +1365,7 @@ public class EditorSessionTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     public fun launchComplicationDataSourceChooser_ComplicationConfigExtrasToHelper() {
         ComplicationDataSourceChooserContract.useTestComplicationHelperActivity = true
@@ -1420,6 +1421,7 @@ public class EditorSessionTest {
         }
     }
 
+    @Suppress("DEPRECATION")
     @Test
     public fun launchComplicationDataSourceChooser_ComplicationConfigExtrasToChooser() {
         // Invoke the test data source chooser to record the result.
@@ -1593,7 +1595,6 @@ public class EditorSessionTest {
         scenario.onActivity { activity ->
             // Select [blueStyleOption] and [gothicStyleOption].
             val mutableUserStyle = activity.editorSession.userStyle.value.toMutableUserStyle()
-            @Suppress("Deprecation")
             for (userStyleSetting in activity.editorSession.userStyleSchema.userStyleSettings) {
                 mutableUserStyle[userStyleSetting] = userStyleSetting.options.last()
             }
@@ -1696,7 +1697,9 @@ public class EditorSessionTest {
             TIMEOUT_MILLIS,
             TimeUnit.MILLISECONDS
         ).asApiEditorState()
-        assertThat(result.watchFaceId.id).isEqualTo(DEFAULT_INSTANCE_ID)
+
+        // We need to return the same ID we were sent (or lack there of).
+        assertThat(result.watchFaceId.id).isEmpty()
 
         EditorService.globalEditorService.unregisterObserver(observerId)
     }
@@ -1725,7 +1728,9 @@ public class EditorSessionTest {
             TIMEOUT_MILLIS,
             TimeUnit.MILLISECONDS
         ).asApiEditorState()
-        assertThat(result.watchFaceId.id).isEqualTo(DEFAULT_INSTANCE_ID)
+
+        // We need to return the same ID we were sent.
+        assertThat(result.watchFaceId.id).isEqualTo("instance-1")
 
         EditorService.globalEditorService.unregisterObserver(observerId)
     }
@@ -1772,7 +1777,6 @@ public class EditorSessionTest {
 
             // Select [blueStyleOption] and [gothicStyleOption].
             val mutableUserStyle = activity.editorSession.userStyle.value.toMutableUserStyle()
-            @Suppress("Deprecation")
             for (userStyleSetting in activity.editorSession.userStyleSchema.userStyleSettings) {
                 mutableUserStyle[userStyleSetting] = userStyleSetting.options.last()
             }
@@ -1824,7 +1828,6 @@ public class EditorSessionTest {
             }
             // Select [blueStyleOption] and [gothicStyleOption].
             val mutableUserStyle = activity.editorSession.userStyle.value.toMutableUserStyle()
-            @Suppress("Deprecation")
             for (userStyleSetting in activity.editorSession.userStyleSchema.userStyleSettings) {
                 mutableUserStyle[userStyleSetting] = userStyleSetting.options.last()
             }
@@ -1869,7 +1872,6 @@ public class EditorSessionTest {
 
             // Select [blueStyleOption] and [gothicStyleOption].
             val mutableUserStyle = activity.editorSession.userStyle.value.toMutableUserStyle()
-            @Suppress("Deprecation")
             for (userStyleSetting in activity.editorSession.userStyleSchema.userStyleSettings) {
                 mutableUserStyle[userStyleSetting] = userStyleSetting.options.last()
             }
@@ -1919,7 +1921,6 @@ public class EditorSessionTest {
 
             // Select [blueStyleOption] and [gothicStyleOption].
             val mutableUserStyle = activity.editorSession.userStyle.value.toMutableUserStyle()
-            @Suppress("Deprecation")
             for (userStyleSetting in activity.editorSession.userStyleSchema.userStyleSettings) {
                 mutableUserStyle[userStyleSetting] = userStyleSetting.options.last()
             }
@@ -1988,6 +1989,7 @@ public class EditorSessionTest {
         scenario.onActivity { activity ->
             activity.immediateCoroutineScope.launch {
                 activity.editorSession.complicationsPreviewData.collect {}
+                @Suppress("UNREACHABLE_CODE")
                 fail("We shouldn't get here due to the editor closing")
             }
         }
@@ -2015,7 +2017,6 @@ public class EditorSessionTest {
         scenario.onActivity { activity ->
             // Select [blueStyleOption] and [gothicStyleOption].
             val mutableUserStyle = activity.editorSession.userStyle.value.toMutableUserStyle()
-            @Suppress("Deprecation")
             for (userStyleSetting in activity.editorSession.userStyleSchema.userStyleSettings) {
                 mutableUserStyle[userStyleSetting] = userStyleSetting.options.last()
             }
@@ -2266,6 +2267,7 @@ public class EditorSessionTest {
             WatchFaceImpl(
                 WatchFace(
                     WatchFaceType.DIGITAL,
+                    @Suppress("deprecation")
                     object : Renderer.CanvasRenderer(
                         mockSurfaceHolder,
                         currentUserStyleRepository,

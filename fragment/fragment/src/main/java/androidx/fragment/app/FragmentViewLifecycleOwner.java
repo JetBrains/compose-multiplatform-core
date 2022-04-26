@@ -69,6 +69,7 @@ class FragmentViewLifecycleOwner implements HasDefaultViewModelProviderFactory,
         if (mLifecycleRegistry == null) {
             mLifecycleRegistry = new LifecycleRegistry(this);
             mSavedStateRegistryController = SavedStateRegistryController.create(this);
+            mSavedStateRegistryController.performAttach();
             enableSavedStateHandles(this);
         }
     }
@@ -114,7 +115,20 @@ class FragmentViewLifecycleOwner implements HasDefaultViewModelProviderFactory,
         }
 
         if (mDefaultFactory == null) {
-            mDefaultFactory = new SavedStateViewModelFactory();
+            Application application = null;
+            Context appContext = mFragment.requireContext().getApplicationContext();
+            while (appContext instanceof ContextWrapper) {
+                if (appContext instanceof Application) {
+                    application = (Application) appContext;
+                    break;
+                }
+                appContext = ((ContextWrapper) appContext).getBaseContext();
+            }
+
+            mDefaultFactory = new SavedStateViewModelFactory(
+                    application,
+                    this,
+                    mFragment.getArguments());
         }
 
         return mDefaultFactory;

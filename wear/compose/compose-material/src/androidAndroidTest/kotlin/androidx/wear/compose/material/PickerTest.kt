@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.testutils.WithTouchSlop
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -31,6 +32,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.TouchInjectionScope
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeWithVelocity
 import androidx.compose.ui.unit.Dp
@@ -98,6 +100,19 @@ class PickerTest {
     }
 
     @Test
+    fun state_returns_initially_selected_option_at_start() {
+        val startValue = 5
+        lateinit var state: PickerState
+
+        rule.setContent {
+            state = rememberPickerState(
+                initialNumberOfOptions = 10, initiallySelectedOption = startValue)
+        }
+
+        assertThat(state.selectedOption).isEqualTo(startValue)
+    }
+
+    @Test
     fun can_scroll_picker_up_on_start() {
         lateinit var state: PickerState
         rule.setContent {
@@ -117,7 +132,7 @@ class PickerTest {
             swipeWithVelocity(
                 start = Offset(centerX, bottom),
                 end = Offset(centerX, bottom - itemSizePx * 16), // 3 loops + 1 element
-                endVelocity = 1f, // Ensure it's not a fling.
+                endVelocity = NOT_A_FLING_SPEED
             )
         }
 
@@ -146,7 +161,7 @@ class PickerTest {
             swipeWithVelocity(
                 start = Offset(centerX, top),
                 end = Offset(centerX, top + itemSizePx * 16), // 3 loops + 1 element
-                endVelocity = 1f, // Ensure it's not a fling.
+                endVelocity = NOT_A_FLING_SPEED
             )
         }
 
@@ -185,7 +200,7 @@ class PickerTest {
                 start = Offset(centerX, bottom),
                 end = Offset(centerX, bottom -
                     (itemSizePx + separationPx * separationSign) * itemsToScroll),
-                endVelocity = 1f, // Ensure it's not a fling.
+                endVelocity = NOT_A_FLING_SPEED
             )
         }
 
@@ -243,6 +258,64 @@ class PickerTest {
     }
 
     @Test
+    fun keeps_selection_when_increasing_options() {
+        val initialOption = 25
+        lateinit var state: PickerState
+        rule.setContent {
+            WithTouchSlop(0f) {
+                Picker(
+                    state = rememberPickerState(
+                            initialNumberOfOptions = 28,
+                            initiallySelectedOption = initialOption
+                        ).also { state = it },
+                ) {
+                    Box(Modifier.requiredSize(itemSizeDp))
+                }
+            }
+        }
+
+        rule.runOnIdle {
+            runBlocking {
+                state.numberOfOptions = 31
+            }
+        }
+
+        rule.waitForIdle()
+
+        assertThat(state.selectedOption).isEqualTo(initialOption)
+    }
+
+    @Test
+    fun scrolls_to_correct_index_after_increasing_options() {
+        val initialOption = 5
+        val targetOption = 43
+        lateinit var state: PickerState
+        rule.setContent {
+            WithTouchSlop(0f) {
+                Picker(
+                    state = rememberPickerState(
+                            initialNumberOfOptions = 25,
+                            initiallySelectedOption = initialOption
+                        ).also { state = it },
+                ) {
+                    Box(Modifier.requiredSize(itemSizeDp))
+                }
+            }
+        }
+
+        rule.runOnIdle {
+            runBlocking {
+                state.numberOfOptions = 57
+                state.scrollToOption(targetOption)
+            }
+        }
+
+        rule.waitForIdle()
+
+        assertThat(state.selectedOption).isEqualTo(targetOption)
+    }
+
+    @Test
     fun scrolls_before_initialization_correctly() {
         lateinit var state: PickerState
         val targetIndex = 5
@@ -279,7 +352,7 @@ class PickerTest {
         swipeWithVelocity(
             start = Offset(centerX, top),
             end = Offset(centerX, top + itemSizePx / 2),
-            endVelocity = 1f, // Ensure it's not a fling.
+            endVelocity = NOT_A_FLING_SPEED
         )
     }
 
@@ -288,7 +361,7 @@ class PickerTest {
         swipeWithVelocity(
             start = Offset(centerX, bottom),
             end = Offset(centerX, bottom - itemSizePx / 2),
-            endVelocity = 1f, // Ensure it's not a fling.
+            endVelocity = NOT_A_FLING_SPEED
         )
     }
 
@@ -297,7 +370,7 @@ class PickerTest {
         swipeWithVelocity(
             start = Offset(centerX, top),
             end = Offset(centerX, top + itemSizePx / 2),
-            endVelocity = 1f, // Ensure it's not a fling.
+            endVelocity = NOT_A_FLING_SPEED
         )
     }
 
@@ -306,7 +379,7 @@ class PickerTest {
         swipeWithVelocity(
             start = Offset(centerX, top),
             end = Offset(centerX, top + 300),
-            endVelocity = 10000f, // Ensure it IS a fling.
+            endVelocity = DO_FLING_SPEED
         )
     }
 
@@ -315,8 +388,82 @@ class PickerTest {
         swipeWithVelocity(
             start = Offset(centerX, bottom),
             end = Offset(centerX, bottom - 300),
-            endVelocity = 10000f, // Ensure it IS a fling.
+            endVelocity = DO_FLING_SPEED
         )
+    }
+
+    @Test
+    fun displays_label_when_read_only() {
+        val labelText = "Show Me"
+
+        rule.setContent {
+            WithTouchSlop(0f) {
+                Picker(
+                    state = rememberPickerState(5),
+                    readOnly = true,
+                    readOnlyLabel = { Text(text = labelText) },
+                    modifier = Modifier.testTag(TEST_TAG)
+                        .requiredSize(itemSizeDp * 3)
+                ) {
+                    Box(Modifier.requiredSize(itemSizeDp))
+                }
+            }
+        }
+
+        rule.waitForIdle()
+        rule.onNodeWithText(labelText).assertExists()
+    }
+
+    @Test
+    fun hides_label_when_not_read_only() {
+        val labelText = "Show Me"
+
+        rule.setContent {
+            WithTouchSlop(0f) {
+                Picker(
+                    state = rememberPickerState(5),
+                    readOnly = false,
+                    readOnlyLabel = { Text(text = labelText) },
+                    modifier = Modifier.testTag(TEST_TAG)
+                        .requiredSize(itemSizeDp * 3)
+                ) {
+                    Box(Modifier.requiredSize(itemSizeDp))
+                }
+            }
+        }
+
+        rule.waitForIdle()
+        rule.onNodeWithText(labelText).assertDoesNotExist()
+    }
+
+    @Test
+    fun displays_selected_option_when_read_only() {
+        val readOnly = mutableStateOf(false)
+        val initialOption = 4
+        val selectedOption = 2
+        lateinit var state: PickerState
+
+        rule.setContent {
+            WithTouchSlop(0f) {
+                Picker(
+                    state = rememberPickerState(
+                        initialNumberOfOptions = 5,
+                        initiallySelectedOption = initialOption)
+                        .also { state = it },
+                    readOnly = readOnly.value,
+                    modifier = Modifier.testTag(TEST_TAG).requiredSize(itemSizeDp * 3),
+                ) {
+                    Box(Modifier.requiredSize(itemSizeDp))
+                }
+                LaunchedEffect(state) {
+                    state.scrollToOption(selectedOption)
+                }
+            }
+        }
+        readOnly.value = true
+        rule.waitForIdle()
+
+        assertThat(state.selectedOption).isEqualTo(selectedOption)
     }
 
     private fun scroll_snaps(separationSign: Int = 0, touch: (TouchInjectionScope).() -> Unit) {
@@ -357,6 +504,10 @@ class PickerTest {
             .isWithin(0.1f)
             .of(pickerHeightPx / 2f - itemSizePx / 2f)
     }
+
+    // The threshold is 1f, and the specified velocity is not exactly achieved by swipeWithVelocity
+    private val NOT_A_FLING_SPEED = 0.9f
+    private val DO_FLING_SPEED = 10000f
 
     /* TODO(199476914): Add tests for non-wraparound pickers to ensure they have the correct range
      * of scroll.

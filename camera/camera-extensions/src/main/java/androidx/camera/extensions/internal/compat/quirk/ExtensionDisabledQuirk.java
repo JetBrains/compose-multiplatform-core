@@ -22,31 +22,40 @@ import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.camera.core.impl.Quirk;
 import androidx.camera.extensions.ExtensionMode;
+import androidx.camera.extensions.internal.ExtensionVersion;
+import androidx.camera.extensions.internal.Version;
 
 
 /**
- * Quirk required to disable extension for some devices.
- *
- * <p>An example is that Pixel 5's availability check result of the basic extension
- * interface should be false, but it actually returns true. Therefore, force disable Basic
- * Extender capability on the device. See b/199408131.
- *
- * <p>Another example is that Motorola razr 5G's availability check results of both back
- * and front camera are true, but it will cause the black preview screen issue. Therefore, force
- * disable the bokeh mode on the device. See b/214130117.
+ * <p>QuirkSummary
+ *     Bug Id: b/199408131, b/214130117
+ *     Description: Quirk required to disable extension for some devices. An example is that
+ *                  Pixel 5's availability check result of the basic extension interface should
+ *                  be false, but it actually returns true. Therefore, force disable Basic
+ *                  Extender capability on the device. Another example is that Motorola razr 5G's
+ *                  availability check results of both back and front camera are true, but it
+ *                  will cause the black preview screen issue. Therefore, force disable the bokeh
+ *                  mode on the device.
+ *     Device(s): Pixel 5, Motorola razr 5G
+ *     @see androidx.camera.extensions.internal.compat.workaround.ExtensionDisabledValidator
  */
 @RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public class ExtensionDisabledQuirk implements Quirk {
+    private boolean mIsAdvancedInterface = isAdvancedExtenderSupported();
+
     static boolean load() {
-        return isPixel5() || isMotoRazr5G();
+        return isPixel5() || isMotoRazr5G() || isAdvancedExtenderSupported();
     }
 
     /**
      * Checks whether extension should be disabled.
      */
     public boolean shouldDisableExtension(@NonNull String cameraId,
-            @ExtensionMode.Mode int extensionMode, boolean isAdvancedInterface) {
-        if (isPixel5() && !isAdvancedInterface) {
+            @ExtensionMode.Mode int extensionMode) {
+        if (mIsAdvancedInterface) {
+            // Force disable advanced interface until it is well tested
+            return true;
+        } else if (isPixel5() && !mIsAdvancedInterface) {
             // 1. Disables Pixel 5's Basic Extender capability.
             return true;
         } else if (isMotoRazr5G() && ("0".equals(cameraId) || "1".equals(cameraId)) && (
@@ -64,5 +73,12 @@ public class ExtensionDisabledQuirk implements Quirk {
 
     private static boolean isMotoRazr5G() {
         return "motorola".equalsIgnoreCase(Build.BRAND) && "smith".equalsIgnoreCase(Build.DEVICE);
+    }
+
+    private static boolean isAdvancedExtenderSupported() {
+        if (ExtensionVersion.getRuntimeVersion().compareTo(Version.VERSION_1_2) < 0) {
+            return false;
+        }
+        return ExtensionVersion.isAdvancedExtenderSupported();
     }
 }

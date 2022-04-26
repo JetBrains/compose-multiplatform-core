@@ -23,10 +23,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
+import androidx.wear.compose.material.AutoCenteringParams
 import androidx.wear.compose.material.Chip
 import androidx.wear.compose.material.ChipDefaults
 import androidx.wear.compose.material.ListHeader
 import androidx.wear.compose.material.ScalingLazyColumn
+import androidx.wear.compose.material.ScalingLazyColumnDefaults
 import androidx.wear.compose.material.ScalingLazyListAnchorType
 import androidx.wear.compose.material.Text
 import androidx.wear.compose.material.rememberScalingLazyListState
@@ -36,6 +38,34 @@ import kotlinx.coroutines.launch
 @Composable
 fun SimpleScalingLazyColumn() {
     ScalingLazyColumn {
+        item {
+            ListHeader {
+                Text(text = "List Header")
+            }
+        }
+        items(20) {
+            Chip(
+                onClick = { },
+                label = { Text("List item $it") },
+                colors = ChipDefaults.secondaryChipColors()
+            )
+        }
+    }
+}
+
+@Sampled
+@Composable
+fun SimpleScalingLazyColumnWithSnap() {
+    val state = rememberScalingLazyListState()
+    ScalingLazyColumn(
+        state = state,
+        flingBehavior = ScalingLazyColumnDefaults.snapFlingBehavior(state = state)
+    ) {
+        item {
+            ListHeader {
+                Text(text = "List Header")
+            }
+        }
         items(20) {
             Chip(
                 onClick = { },
@@ -63,13 +93,20 @@ fun ScalingLazyColumnEdgeAnchoredAndAnimatedScrollTo() {
     ScalingLazyColumn(
         anchorType = ScalingLazyListAnchorType.ItemStart,
         verticalArrangement = Arrangement.spacedBy(itemSpacing),
-        state = state
+        state = state,
+        autoCentering = AutoCenteringParams(itemOffset = scrollOffset)
     ) {
+        item {
+            ListHeader {
+                Text(text = "List Header")
+            }
+        }
         items(20) {
             Chip(
                 onClick = {
                     coroutineScope.launch {
-                        state.animateScrollToItem(it, scrollOffset)
+                        // Add +1 to allow for the ListHeader
+                        state.animateScrollToItem(it + 1, scrollOffset)
                     }
                 },
                 label = { Text("List item $it") },
@@ -84,8 +121,13 @@ fun ScalingLazyColumnEdgeAnchoredAndAnimatedScrollTo() {
 fun SimpleScalingLazyColumnWithContentPadding() {
     ScalingLazyColumn(
         contentPadding = PaddingValues(top = 20.dp, bottom = 20.dp),
-        autoCentering = false
+        autoCentering = null
     ) {
+        item {
+            ListHeader {
+                Text(text = "List Header")
+            }
+        }
         items(20) {
             Chip(
                 onClick = { },
@@ -100,28 +142,6 @@ fun SimpleScalingLazyColumnWithContentPadding() {
 @Composable
 fun ScalingLazyColumnWithHeaders() {
     ScalingLazyColumn {
-        item { ListHeader { Text("Header1") } }
-        items(5) {
-            Chip(
-                onClick = { },
-                label = { Text("List item $it") },
-                colors = ChipDefaults.secondaryChipColors()
-            )
-        }
-        item { ListHeader { Text("Header2") } }
-        items(5) {
-            Chip(
-                onClick = { },
-                label = { Text("List item ${it + 5}") },
-                colors = ChipDefaults.secondaryChipColors()
-            )
-        }
-    }
-}
-
-@Composable
-fun ScalingLazyColumnWithHeadersReversed() {
-    ScalingLazyColumn(reverseLayout = true) {
         item { ListHeader { Text("Header1") } }
         items(5) {
             Chip(

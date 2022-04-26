@@ -114,7 +114,9 @@ public class NavBackStackEntry private constructor(
     private var lifecycle = LifecycleRegistry(this)
     private val savedStateRegistryController = SavedStateRegistryController.create(this)
     private var savedStateRegistryAttached = false
-    private val defaultFactory by lazy { SavedStateViewModelFactory() }
+    private val defaultFactory by lazy {
+        SavedStateViewModelFactory((context?.applicationContext as? Application), this, arguments)
+    }
 
     /**
      * The [SavedStateHandle] for this entry.
@@ -170,11 +172,6 @@ public class NavBackStackEntry private constructor(
         if (!savedStateRegistryAttached) {
             savedStateRegistryController.performAttach()
             savedStateRegistryAttached = true
-            // This is where we want to make this call, but because enableSavedStateHandles()
-            // currently requires access the ViewModels (b/215406268), we need to only make it
-            // if the ViewModelStore has been set. This means that the NavController needs to call
-            // setViewModelStore() before setting the graph to ensure that SavedStateHandles will
-            // be available from this entry.
             if (viewModelStoreProvider != null) {
                 enableSavedStateHandles()
             }
@@ -230,9 +227,8 @@ public class NavBackStackEntry private constructor(
         return extras
     }
 
-    public override fun getSavedStateRegistry(): SavedStateRegistry {
-        return savedStateRegistryController.savedStateRegistry
-    }
+    override val savedStateRegistry: SavedStateRegistry
+        get() = savedStateRegistryController.savedStateRegistry
 
     /** @suppress */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
@@ -240,6 +236,7 @@ public class NavBackStackEntry private constructor(
         savedStateRegistryController.performSave(outBundle)
     }
 
+    @Suppress("DEPRECATION")
     override fun equals(other: Any?): Boolean {
         if (other == null || other !is NavBackStackEntry) return false
         return id == other.id && destination == other.destination &&
@@ -251,6 +248,7 @@ public class NavBackStackEntry private constructor(
                 )
     }
 
+    @Suppress("DEPRECATION")
     override fun hashCode(): Int {
         var result = id.hashCode()
         result = 31 * result + destination.hashCode()

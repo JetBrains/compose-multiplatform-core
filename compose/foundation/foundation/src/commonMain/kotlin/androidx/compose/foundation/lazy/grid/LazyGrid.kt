@@ -29,11 +29,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
-import androidx.compose.foundation.lazy.LazyGridScope
-import androidx.compose.foundation.lazy.LazyGridState
 import androidx.compose.foundation.lazy.layout.LazyLayout
-import androidx.compose.foundation.lazy.layout.LazyMeasurePolicy
-import androidx.compose.foundation.lazy.layout.rememberLazyLayoutPrefetchPolicy
+import androidx.compose.foundation.lazy.layout.LazyLayoutMeasureScope
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
 import androidx.compose.runtime.derivedStateOf
@@ -41,6 +38,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.layout.MeasureResult
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
@@ -59,14 +57,14 @@ internal fun LazyGrid(
     modifier: Modifier = Modifier,
     /** State controlling the scroll position */
     state: LazyGridState,
-    /** The number of items per line in the grid e.g. the columns for vertical grid. */
-    slotsPerLine: Density.(Constraints) -> Int,
+    /** Prefix sums of cross axis sizes of slots per line, e.g. the columns for vertical grid. */
+    slotSizesSums: Density.(Constraints) -> List<Int>,
     /** The inner padding to be added for the whole content (not for each individual item) */
     contentPadding: PaddingValues = PaddingValues(0.dp),
     /** reverse the direction of scrolling and layout */
     reverseLayout: Boolean = false,
     /** The layout orientation of the grid */
-    isVertical: Boolean = true,
+    isVertical: Boolean,
     /** fling behavior to be used for flinging */
     flingBehavior: FlingBehavior = ScrollableDefaults.flingBehavior(),
     /** Whether scrolling via the user gestures is allowed. */
@@ -82,10 +80,10 @@ internal fun LazyGrid(
 
     val itemScope = remember { LazyGridItemScopeImpl() }
 
-    val stateOfItemsProvider = rememberStateOfItemsProvider(state, content, itemScope)
+    val itemsProvider = rememberItemsProvider(state, content, itemScope)
 
-    val spanLayoutProvider = remember(stateOfItemsProvider) {
-        derivedStateOf { LazyGridSpanLayoutProvider(stateOfItemsProvider.value) }
+    val spanLayoutProvider = remember(itemsProvider) {
+        derivedStateOf { LazyGridSpanLayoutProvider(itemsProvider) }
     }
 
     val scope = rememberCoroutineScope()
@@ -95,11 +93,11 @@ internal fun LazyGrid(
     state.placementAnimator = placementAnimator
 
     val measurePolicy = rememberLazyGridMeasurePolicy(
-        stateOfItemsProvider,
+        itemsProvider,
         state,
         overScrollController,
         spanLayoutProvider,
-        slotsPerLine,
+        slotSizesSums,
         contentPadding,
         reverseLayout,
         isVertical,
@@ -108,15 +106,15 @@ internal fun LazyGrid(
         placementAnimator
     )
 
-    state.prefetchPolicy = rememberLazyLayoutPrefetchPolicy()
+    state.isVertical = isVertical
 
-    ScrollPositionUpdater(stateOfItemsProvider, state)
+    ScrollPositionUpdater(itemsProvider, state)
 
     LazyLayout(
         modifier = modifier
             .then(state.remeasurementModifier)
             .lazyGridSemantics(
-                stateOfItemsProvider = stateOfItemsProvider,
+                itemsProvider = itemsProvider,
                 state = state,
                 coroutineScope = scope,
                 isVertical = isVertical,
@@ -143,9 +141,9 @@ internal fun LazyGrid(
                 overScrollController = overScrollController,
                 enabled = userScrollEnabled
             ),
-        prefetchPolicy = state.prefetchPolicy,
+        prefetchState = state.prefetchState,
         measurePolicy = measurePolicy,
-        itemsProvider = { stateOfItemsProvider.value }
+        itemsProvider = itemsProvider
     )
 }
 
@@ -153,10 +151,9 @@ internal fun LazyGrid(
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun ScrollPositionUpdater(
-    stateOfItemsProvider: State<LazyGridItemsProvider>,
+    itemsProvider: LazyGridItemsProvider,
     state: LazyGridState
 ) {
-    val itemsProvider = stateOfItemsProvider.value
     if (itemsProvider.itemsCount > 0) {
         state.updateScrollPositionIfTheFirstItemWasMoved(itemsProvider)
     }
@@ -165,16 +162,16 @@ private fun ScrollPositionUpdater(
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun rememberLazyGridMeasurePolicy(
-    /** State containing the items provider of the list. */
-    stateOfItemsProvider: State<LazyGridItemsProvider>,
+    /** Items provider of the list. */
+    itemsProvider: LazyGridItemsProvider,
     /** The state of the list. */
     state: LazyGridState,
     /** The overscroll controller. */
     overScrollController: OverScrollController,
     /** Cache based provider for spans. */
     stateOfSpanLayoutProvider: State<LazyGridSpanLayoutProvider>,
-    /** The number of columns of the grid. */
-    slotsPerLine: Density.(Constraints) -> Int,
+    /** Prefix sums of cross axis sizes of slots of the grid. */
+    slotSizesSums: Density.(Constraints) -> List<Int>,
     /** The inner padding to be added for the whole content(nor for each individual item) */
     contentPadding: PaddingValues,
     /** reverse the direction of scrolling and layout */
@@ -187,10 +184,10 @@ private fun rememberLazyGridMeasurePolicy(
     verticalArrangement: Arrangement.Vertical? = null,
     /** Item placement animator. Should be notified with the measuring result */
     placementAnimator: LazyGridItemPlacementAnimator
-) = remember(
+) = remember<LazyLayoutMeasureScope.(Constraints) -> MeasureResult>(
     state,
     overScrollController,
-    slotsPerLine,
+    slotSizesSums,
     contentPadding,
     reverseLayout,
     isVertical,
@@ -198,7 +195,7 @@ private fun rememberLazyGridMeasurePolicy(
     verticalArrangement,
     placementAnimator
 ) {
-    LazyMeasurePolicy { placeablesProvider, constraints ->
+    { constraints ->
         constraints.assertNotNestingScrollableContainers(isVertical)
 
         // resolve content paddings
@@ -218,17 +215,15 @@ private fun rememberLazyGridMeasurePolicy(
         val afterContentPadding = totalMainAxisPadding - beforeContentPadding
         val contentConstraints = constraints.offset(-totalHorizontalPadding, -totalVerticalPadding)
 
-        val itemsProvider = stateOfItemsProvider.value
         state.updateScrollPositionIfTheFirstItemWasMoved(itemsProvider)
 
         val spanLayoutProvider = stateOfSpanLayoutProvider.value
-        // Resolve slotsPerLine.
-        val resolvedSlotsPerLine = slotsPerLine(constraints)
-        spanLayoutProvider.slotsPerLine = resolvedSlotsPerLine
+        val resolvedSlotSizesSums = slotSizesSums(constraints)
+        spanLayoutProvider.slotsPerLine = resolvedSlotSizesSums.size
 
         // Update the state's cached Density and slotsPerLine
         state.density = this
-        state.slotsPerLine = resolvedSlotsPerLine
+        state.slotsPerLine = resolvedSlotSizesSums.size
 
         val spaceBetweenLinesDp = if (isVertical) {
             requireNotNull(verticalArrangement).spacing
@@ -247,7 +242,7 @@ private fun rememberLazyGridMeasurePolicy(
 
         val measuredItemProvider = LazyMeasuredItemProvider(
             itemsProvider,
-            placeablesProvider,
+            this,
             spaceBetweenLines
         ) { index, key, crossAxisSize, mainAxisSpacing, placeables ->
             LazyMeasuredItem(
@@ -266,9 +261,8 @@ private fun rememberLazyGridMeasurePolicy(
             )
         }
         val measuredLineProvider = LazyMeasuredLineProvider(
-            contentConstraints,
             isVertical,
-            resolvedSlotsPerLine,
+            resolvedSlotSizesSums,
             spaceBetweenSlots,
             itemsCount,
             spaceBetweenLines,
@@ -280,8 +274,7 @@ private fun rememberLazyGridMeasurePolicy(
                 items = items,
                 spans = spans,
                 isVertical = isVertical,
-                reverseLayout = reverseLayout,
-                slotsPerLine = resolvedSlotsPerLine,
+                slotsPerLine = resolvedSlotSizesSums.size,
                 layoutDirection = layoutDirection,
                 mainAxisSpacing = mainAxisSpacing,
                 crossAxisSpacing = spaceBetweenSlots
@@ -326,7 +319,7 @@ private fun rememberLazyGridMeasurePolicy(
             measuredLineProvider = measuredLineProvider,
             measuredItemProvider = measuredItemProvider,
             mainAxisAvailableSize = mainAxisAvailableSize,
-            slotsPerLine = resolvedSlotsPerLine,
+            slotsPerLine = resolvedSlotSizesSums.size,
             beforeContentPadding = beforeContentPadding,
             afterContentPadding = afterContentPadding,
             firstVisibleLineIndex = firstVisibleLineIndex,

@@ -41,26 +41,57 @@ internal fun applyAction(
     action: Action,
     @IdRes viewId: Int,
 ) {
+    // CheckBox is wrapped in a FrameLayout, so the viewId passed to this function is the ID of the
+    // FrameLayout, not the CheckBox itself. CheckBoxTranslator sets actionTargetId on the
+    // translationContext which allows us to call setOnCheckedChangeResponse() on the correct
+    // target.
+    val targetId = translationContext.actionTargetId ?: viewId
     try {
         if (translationContext.isLazyCollectionDescendant) {
             val fillInIntent =
-                getFillInIntentForAction(action, translationContext, viewId)
+                getFillInIntentForAction(action, translationContext, targetId)
             if (action is CompoundButtonAction && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                ApplyActionApi31Impl.setOnCheckedChangeResponse(rv, viewId, fillInIntent)
+                ApplyActionApi31Impl.setOnCheckedChangeResponse(rv, targetId, fillInIntent)
+                rv.setOnClickFillInIntent(targetId, null)
             } else {
-                rv.setOnClickFillInIntent(viewId, fillInIntent)
+                rv.setOnClickFillInIntent(targetId, fillInIntent)
             }
         } else {
             val pendingIntent =
-                getPendingIntentForAction(action, translationContext, viewId)
+                getPendingIntentForAction(action, translationContext, targetId)
             if (action is CompoundButtonAction && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                ApplyActionApi31Impl.setOnCheckedChangeResponse(rv, viewId, pendingIntent)
+                ApplyActionApi31Impl.setOnCheckedChangeResponse(rv, targetId, pendingIntent)
+                rv.setOnClickPendingIntent(targetId, null)
             } else {
-                rv.setOnClickPendingIntent(viewId, pendingIntent)
+                rv.setOnClickPendingIntent(targetId, pendingIntent)
             }
+        }
+        if (translationContext.isCompoundButton &&
+            action !is CompoundButtonAction &&
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            ApplyActionApi31Impl.unsetOnCheckedChangeResponse(rv, targetId)
         }
     } catch (t: Throwable) {
         Log.e(GlanceAppWidgetTag, "Unrecognized Action: $action", t)
+    }
+}
+
+internal fun unsetAction(
+    translationContext: TranslationContext,
+    rv: RemoteViews,
+    @IdRes viewId: Int,
+) {
+    // Calling setOnClickListener on AdapterView throws a RuntimeException.
+    if (translationContext.isAdapterView) return
+
+    val targetId = translationContext.actionTargetId ?: viewId
+    if (translationContext.isCompoundButton && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        ApplyActionApi31Impl.unsetOnCheckedChangeResponse(rv, targetId)
+        ApplyActionApi31Impl.unsetOnClickResponse(rv, targetId)
+    } else if (translationContext.isLazyCollectionDescendant) {
+        rv.setOnClickFillInIntent(targetId, null)
+    } else {
+        rv.setOnClickPendingIntent(targetId, null)
     }
 }
 
@@ -276,6 +307,16 @@ private object ApplyActionApi31Impl {
     @DoNotInline
     fun setOnCheckedChangeResponse(rv: RemoteViews, viewId: Int, intent: Intent) {
         rv.setOnCheckedChangeResponse(viewId, RemoteViews.RemoteResponse.fromFillInIntent(intent))
+    }
+
+    @DoNotInline
+    fun unsetOnCheckedChangeResponse(rv: RemoteViews, viewId: Int) {
+        rv.setOnCheckedChangeResponse(viewId, RemoteViews.RemoteResponse())
+    }
+
+    @DoNotInline
+    fun unsetOnClickResponse(rv: RemoteViews, viewId: Int) {
+        rv.setOnClickResponse(viewId, RemoteViews.RemoteResponse())
     }
 }
 

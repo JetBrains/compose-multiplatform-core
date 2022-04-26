@@ -4,6 +4,9 @@ package androidx.compose.ui.text {
   public final class ActualAtomicReferenceJvmKt {
   }
 
+  public final class AndroidTextStyle_androidKt {
+  }
+
   @androidx.compose.runtime.Immutable public final class AnnotatedString implements java.lang.CharSequence {
     ctor public AnnotatedString(String text, optional java.util.List<androidx.compose.ui.text.AnnotatedString.Range<androidx.compose.ui.text.SpanStyle>> spanStyles, optional java.util.List<androidx.compose.ui.text.AnnotatedString.Range<androidx.compose.ui.text.ParagraphStyle>> paragraphStyles);
     method public operator char get(int index);
@@ -81,9 +84,11 @@ package androidx.compose.ui.text {
   }
 
   public final class MultiParagraph {
-    ctor public MultiParagraph(androidx.compose.ui.text.MultiParagraphIntrinsics intrinsics, optional int maxLines, optional boolean ellipsis, float width);
+    ctor public MultiParagraph(androidx.compose.ui.text.MultiParagraphIntrinsics intrinsics, long constraints, optional int maxLines, optional boolean ellipsis);
+    ctor @Deprecated public MultiParagraph(androidx.compose.ui.text.MultiParagraphIntrinsics intrinsics, optional int maxLines, optional boolean ellipsis, float width);
     ctor @Deprecated public MultiParagraph(androidx.compose.ui.text.AnnotatedString annotatedString, androidx.compose.ui.text.TextStyle style, optional java.util.List<androidx.compose.ui.text.AnnotatedString.Range<androidx.compose.ui.text.Placeholder>> placeholders, optional int maxLines, optional boolean ellipsis, float width, androidx.compose.ui.unit.Density density, androidx.compose.ui.text.font.Font.ResourceLoader resourceLoader);
-    ctor public MultiParagraph(androidx.compose.ui.text.AnnotatedString annotatedString, androidx.compose.ui.text.TextStyle style, optional java.util.List<androidx.compose.ui.text.AnnotatedString.Range<androidx.compose.ui.text.Placeholder>> placeholders, optional int maxLines, optional boolean ellipsis, float width, androidx.compose.ui.unit.Density density, androidx.compose.ui.text.font.FontFamily.Resolver fontFamilyResolver);
+    ctor @Deprecated public MultiParagraph(androidx.compose.ui.text.AnnotatedString annotatedString, androidx.compose.ui.text.TextStyle style, float width, androidx.compose.ui.unit.Density density, androidx.compose.ui.text.font.FontFamily.Resolver fontFamilyResolver, optional java.util.List<androidx.compose.ui.text.AnnotatedString.Range<androidx.compose.ui.text.Placeholder>> placeholders, optional int maxLines, optional boolean ellipsis);
+    ctor public MultiParagraph(androidx.compose.ui.text.AnnotatedString annotatedString, androidx.compose.ui.text.TextStyle style, long constraints, androidx.compose.ui.unit.Density density, androidx.compose.ui.text.font.FontFamily.Resolver fontFamilyResolver, optional java.util.List<androidx.compose.ui.text.AnnotatedString.Range<androidx.compose.ui.text.Placeholder>> placeholders, optional int maxLines, optional boolean ellipsis);
     method public androidx.compose.ui.text.style.ResolvedTextDirection getBidiRunDirection(int offset);
     method public androidx.compose.ui.geometry.Rect getBoundingBox(int offset);
     method public androidx.compose.ui.geometry.Rect getCursorRect(int offset);
@@ -205,8 +210,10 @@ package androidx.compose.ui.text {
 
   public final class ParagraphKt {
     method @Deprecated public static androidx.compose.ui.text.Paragraph Paragraph(String text, androidx.compose.ui.text.TextStyle style, optional java.util.List<androidx.compose.ui.text.AnnotatedString.Range<androidx.compose.ui.text.SpanStyle>> spanStyles, optional java.util.List<androidx.compose.ui.text.AnnotatedString.Range<androidx.compose.ui.text.Placeholder>> placeholders, optional int maxLines, optional boolean ellipsis, float width, androidx.compose.ui.unit.Density density, androidx.compose.ui.text.font.Font.ResourceLoader resourceLoader);
-    method public static androidx.compose.ui.text.Paragraph Paragraph(String text, androidx.compose.ui.text.TextStyle style, optional java.util.List<androidx.compose.ui.text.AnnotatedString.Range<androidx.compose.ui.text.SpanStyle>> spanStyles, optional java.util.List<androidx.compose.ui.text.AnnotatedString.Range<androidx.compose.ui.text.Placeholder>> placeholders, optional int maxLines, optional boolean ellipsis, float width, androidx.compose.ui.unit.Density density, androidx.compose.ui.text.font.FontFamily.Resolver fontFamilyResolver);
-    method public static androidx.compose.ui.text.Paragraph Paragraph(androidx.compose.ui.text.ParagraphIntrinsics paragraphIntrinsics, optional int maxLines, optional boolean ellipsis, float width);
+    method @Deprecated public static androidx.compose.ui.text.Paragraph Paragraph(String text, androidx.compose.ui.text.TextStyle style, float width, androidx.compose.ui.unit.Density density, androidx.compose.ui.text.font.FontFamily.Resolver fontFamilyResolver, optional java.util.List<androidx.compose.ui.text.AnnotatedString.Range<androidx.compose.ui.text.SpanStyle>> spanStyles, optional java.util.List<androidx.compose.ui.text.AnnotatedString.Range<androidx.compose.ui.text.Placeholder>> placeholders, optional int maxLines, optional boolean ellipsis);
+    method public static androidx.compose.ui.text.Paragraph Paragraph(String text, androidx.compose.ui.text.TextStyle style, long constraints, androidx.compose.ui.unit.Density density, androidx.compose.ui.text.font.FontFamily.Resolver fontFamilyResolver, optional java.util.List<androidx.compose.ui.text.AnnotatedString.Range<androidx.compose.ui.text.SpanStyle>> spanStyles, optional java.util.List<androidx.compose.ui.text.AnnotatedString.Range<androidx.compose.ui.text.Placeholder>> placeholders, optional int maxLines, optional boolean ellipsis);
+    method @Deprecated public static androidx.compose.ui.text.Paragraph Paragraph(androidx.compose.ui.text.ParagraphIntrinsics paragraphIntrinsics, optional int maxLines, optional boolean ellipsis, float width);
+    method public static androidx.compose.ui.text.Paragraph Paragraph(androidx.compose.ui.text.ParagraphIntrinsics paragraphIntrinsics, long constraints, optional int maxLines, optional boolean ellipsis);
   }
 
   @androidx.compose.runtime.Immutable public final class ParagraphStyle {
@@ -241,8 +248,8 @@ package androidx.compose.ui.text {
     property public final long width;
   }
 
-  public final inline class PlaceholderVerticalAlign {
-    ctor public PlaceholderVerticalAlign();
+  @kotlin.jvm.JvmInline public final value class PlaceholderVerticalAlign {
+    field public static final androidx.compose.ui.text.PlaceholderVerticalAlign.Companion Companion;
   }
 
   public static final class PlaceholderVerticalAlign.Companion {
@@ -396,10 +403,25 @@ package androidx.compose.ui.text {
     field public static final androidx.compose.ui.text.TextPainter INSTANCE;
   }
 
-  @androidx.compose.runtime.Immutable public final inline class TextRange {
-    ctor public TextRange();
+  @androidx.compose.runtime.Immutable @kotlin.jvm.JvmInline public final value class TextRange {
     method public operator boolean contains(long other);
     method public operator boolean contains(int offset);
+    method public boolean getCollapsed();
+    method public int getEnd();
+    method public int getLength();
+    method public int getMax();
+    method public int getMin();
+    method public boolean getReversed();
+    method public int getStart();
+    method public boolean intersects(long other);
+    property public final boolean collapsed;
+    property public final int end;
+    property public final int length;
+    property public final int max;
+    property public final int min;
+    property public final boolean reversed;
+    property public final int start;
+    field public static final androidx.compose.ui.text.TextRange.Companion Companion;
   }
 
   public static final class TextRange.Companion {
@@ -434,6 +456,7 @@ package androidx.compose.ui.text {
     method public androidx.compose.ui.text.style.TextDirection? getTextDirection();
     method public androidx.compose.ui.text.style.TextGeometricTransform? getTextGeometricTransform();
     method public androidx.compose.ui.text.style.TextIndent? getTextIndent();
+    method public boolean hasSameLayoutAffectingAttributes(androidx.compose.ui.text.TextStyle other);
     method @androidx.compose.runtime.Stable public androidx.compose.ui.text.TextStyle merge(optional androidx.compose.ui.text.TextStyle? other);
     method @androidx.compose.runtime.Stable public androidx.compose.ui.text.TextStyle merge(androidx.compose.ui.text.SpanStyle other);
     method @androidx.compose.runtime.Stable public androidx.compose.ui.text.TextStyle merge(androidx.compose.ui.text.ParagraphStyle other);
@@ -495,6 +518,9 @@ package androidx.compose.ui.text.android {
   public final class LayoutIntrinsicsKt {
   }
 
+  public final class PaintExtensionsKt {
+  }
+
   public final class SpannedExtensionsKt {
   }
 
@@ -510,6 +536,9 @@ package androidx.compose.ui.text.android {
 }
 
 package androidx.compose.ui.text.android.style {
+
+  public final class LineHeightBehaviorSpanKt {
+  }
 
   public final class PlaceholderSpanKt {
   }
@@ -529,15 +558,15 @@ package androidx.compose.ui.text.caches {
 package androidx.compose.ui.text.font {
 
   public abstract class AndroidFont implements androidx.compose.ui.text.font.Font {
-    ctor public AndroidFont(int loadingStrategy);
+    ctor public AndroidFont(int loadingStrategy, androidx.compose.ui.text.font.AndroidFont.TypefaceLoader typefaceLoader);
     method public final int getLoadingStrategy();
-    method public abstract androidx.compose.ui.text.font.AndroidFont.TypefaceLoader getTypefaceLoader();
+    method public final androidx.compose.ui.text.font.AndroidFont.TypefaceLoader getTypefaceLoader();
     property public final int loadingStrategy;
-    property public abstract androidx.compose.ui.text.font.AndroidFont.TypefaceLoader typefaceLoader;
+    property public final androidx.compose.ui.text.font.AndroidFont.TypefaceLoader typefaceLoader;
   }
 
   public static interface AndroidFont.TypefaceLoader {
-    method public suspend Object? awaitLoad(android.content.Context context, androidx.compose.ui.text.font.AndroidFont font, kotlin.coroutines.Continuation<? super android.graphics.Typeface> p);
+    method public suspend Object? awaitLoad(android.content.Context context, androidx.compose.ui.text.font.AndroidFont font, kotlin.coroutines.Continuation<? super android.graphics.Typeface>);
     method public android.graphics.Typeface? loadBlocking(android.content.Context context, androidx.compose.ui.text.font.AndroidFont font);
   }
 
@@ -545,6 +574,9 @@ package androidx.compose.ui.text.font {
   }
 
   public final class AndroidFontLoader_androidKt {
+  }
+
+  public final class AndroidFontResolveInterceptor_androidKt {
   }
 
   public final class AndroidFontUtils_androidKt {
@@ -558,6 +590,9 @@ package androidx.compose.ui.text.font {
 
   public final class DelegatingFontLoaderForDeprecatedUsage_androidKt {
     method @Deprecated public static androidx.compose.ui.text.font.FontFamily.Resolver createFontFamilyResolver(androidx.compose.ui.text.font.Font.ResourceLoader fontResourceLoader, android.content.Context context);
+  }
+
+  public final class DeviceFontFamilyNameFontKt {
   }
 
   public abstract sealed class FileBasedFontFamily extends androidx.compose.ui.text.font.FontFamily {
@@ -598,7 +633,7 @@ package androidx.compose.ui.text.font {
   }
 
   public static sealed interface FontFamily.Resolver {
-    method public suspend Object? preload(androidx.compose.ui.text.font.FontFamily fontFamily, kotlin.coroutines.Continuation<? super kotlin.Unit> p);
+    method public suspend Object? preload(androidx.compose.ui.text.font.FontFamily fontFamily, kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method public androidx.compose.runtime.State<java.lang.Object> resolve(optional androidx.compose.ui.text.font.FontFamily? fontFamily, optional androidx.compose.ui.text.font.FontWeight fontWeight, optional int fontStyle, optional int fontSynthesis);
   }
 
@@ -644,10 +679,11 @@ package androidx.compose.ui.text.font {
     property public final int OptionalLocal;
   }
 
-  public final inline class FontStyle {
-    ctor public FontStyle();
+  @kotlin.jvm.JvmInline public final value class FontStyle {
+    ctor public FontStyle(int value);
     method public int getValue();
     property public final int value;
+    field public static final androidx.compose.ui.text.font.FontStyle.Companion Companion;
   }
 
   public static final class FontStyle.Companion {
@@ -658,8 +694,8 @@ package androidx.compose.ui.text.font {
     property public final int Normal;
   }
 
-  public final inline class FontSynthesis {
-    ctor public FontSynthesis();
+  @kotlin.jvm.JvmInline public final value class FontSynthesis {
+    field public static final androidx.compose.ui.text.font.FontSynthesis.Companion Companion;
   }
 
   public static final class FontSynthesis.Companion {
@@ -735,6 +771,9 @@ package androidx.compose.ui.text.font {
   public final class LoadedFontFamily extends androidx.compose.ui.text.font.FontFamily {
     method public androidx.compose.ui.text.font.Typeface getTypeface();
     property public final androidx.compose.ui.text.font.Typeface typeface;
+  }
+
+  public final class PlatformTypefacesKt {
   }
 
   public final class ResourceFont implements androidx.compose.ui.text.font.Font {
@@ -828,8 +867,8 @@ package androidx.compose.ui.text.input {
   public final class GapBufferKt {
   }
 
-  public final inline class ImeAction {
-    ctor public ImeAction();
+  @kotlin.jvm.JvmInline public final value class ImeAction {
+    field public static final androidx.compose.ui.text.input.ImeAction.Companion Companion;
   }
 
   public static final class ImeAction.Companion {
@@ -877,8 +916,8 @@ package androidx.compose.ui.text.input {
     method @Deprecated public void onImeAction(int imeAction);
   }
 
-  public final inline class KeyboardCapitalization {
-    ctor public KeyboardCapitalization();
+  @kotlin.jvm.JvmInline public final value class KeyboardCapitalization {
+    field public static final androidx.compose.ui.text.input.KeyboardCapitalization.Companion Companion;
   }
 
   public static final class KeyboardCapitalization.Companion {
@@ -892,12 +931,13 @@ package androidx.compose.ui.text.input {
     property public final int Words;
   }
 
-  public final inline class KeyboardType {
-    ctor public KeyboardType();
+  @kotlin.jvm.JvmInline public final value class KeyboardType {
+    field public static final androidx.compose.ui.text.input.KeyboardType.Companion Companion;
   }
 
   public static final class KeyboardType.Companion {
     method public int getAscii();
+    method public int getDecimal();
     method public int getEmail();
     method public int getNumber();
     method public int getNumberPassword();
@@ -906,6 +946,7 @@ package androidx.compose.ui.text.input {
     method public int getText();
     method public int getUri();
     property public final int Ascii;
+    property public final int Decimal;
     property public final int Email;
     property public final int Number;
     property public final int NumberPassword;
@@ -1138,10 +1179,11 @@ package androidx.compose.ui.text.platform.extensions {
 
 package androidx.compose.ui.text.style {
 
-  @androidx.compose.runtime.Immutable public final inline class BaselineShift {
-    ctor public BaselineShift();
+  @androidx.compose.runtime.Immutable @kotlin.jvm.JvmInline public final value class BaselineShift {
+    ctor public BaselineShift(float multiplier);
     method public float getMultiplier();
     property public final float multiplier;
+    field public static final androidx.compose.ui.text.style.BaselineShift.Companion Companion;
   }
 
   public static final class BaselineShift.Companion {
@@ -1162,8 +1204,8 @@ package androidx.compose.ui.text.style {
     enum_constant public static final androidx.compose.ui.text.style.ResolvedTextDirection Rtl;
   }
 
-  public final inline class TextAlign {
-    ctor public TextAlign();
+  @kotlin.jvm.JvmInline public final value class TextAlign {
+    field public static final androidx.compose.ui.text.style.TextAlign.Companion Companion;
   }
 
   public static final class TextAlign.Companion {
@@ -1201,8 +1243,8 @@ package androidx.compose.ui.text.style {
     property public final androidx.compose.ui.text.style.TextDecoration Underline;
   }
 
-  public final inline class TextDirection {
-    ctor public TextDirection();
+  @kotlin.jvm.JvmInline public final value class TextDirection {
+    field public static final androidx.compose.ui.text.style.TextDirection.Companion Companion;
   }
 
   public static final class TextDirection.Companion {
@@ -1256,8 +1298,8 @@ package androidx.compose.ui.text.style {
     method public static androidx.compose.ui.text.style.TextIndent lerp(androidx.compose.ui.text.style.TextIndent start, androidx.compose.ui.text.style.TextIndent stop, float fraction);
   }
 
-  public final inline class TextOverflow {
-    ctor public TextOverflow();
+  @kotlin.jvm.JvmInline public final value class TextOverflow {
+    field public static final androidx.compose.ui.text.style.TextOverflow.Companion Companion;
   }
 
   public static final class TextOverflow.Companion {

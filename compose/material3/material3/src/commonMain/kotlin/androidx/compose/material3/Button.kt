@@ -19,7 +19,6 @@ package androidx.compose.material3
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.VectorConverter
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.FocusInteraction
 import androidx.compose.foundation.interaction.HoverInteraction
 import androidx.compose.foundation.interaction.Interaction
@@ -37,7 +36,6 @@ import androidx.compose.material3.tokens.FilledButtonTokens
 import androidx.compose.material3.tokens.FilledTonalButtonTokens
 import androidx.compose.material3.tokens.OutlinedButtonTokens
 import androidx.compose.material3.tokens.TextButtonTokens
-import androidx.compose.material3.tokens.TypographyTokens
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
@@ -52,16 +50,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.flow.collect
 
 /**
- * ![Filled button image](https://developer.android.com/images/reference/androidx/compose/material3/filled-button.png)
+ * <a href="https://m3.material.io/components/buttons/overview" class="external" target="_blank">Material Design button</a>.
  *
- * A default Material button, which is also known as a Filled button. Buttons contain actions for
- * your app.
+ * Buttons help people initiate actions, from sending an email, to sharing a document, to liking a
+ * post.
+ *
+ * ![Filled button image](https://developer.android.com/images/reference/androidx/compose/material3/filled-button.png)
  *
  * Filled buttons are high-emphasis buttons. Filled buttons have the most visual impact after the
  * [FloatingActionButton], and should be used for important, final actions that complete a flow,
@@ -78,7 +77,7 @@ import kotlinx.coroutines.flow.collect
  * - See [TextButton] for a low-emphasis button with no border.
  * - See [FilledTonalButton] for a middle ground between [OutlinedButton] and [Button].
  *
- * The default text style for internal [Text] components will be set to [Typography.LabelLarge].
+ * The default text style for internal [Text] components will be set to [Typography.labelLarge].
  *
  * @param onClick Will be called when the user clicks the button.
  * @param modifier Modifier to be applied to the button.
@@ -99,6 +98,7 @@ import kotlinx.coroutines.flow.collect
  * @param contentPadding The spacing values to apply internally between the container and the
  * content.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun Button(
     onClick: () -> Unit,
@@ -106,7 +106,7 @@ fun Button(
     enabled: Boolean = true,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     elevation: ButtonElevation? = ButtonDefaults.buttonElevation(),
-    shape: Shape = FilledButtonTokens.ContainerShape,
+    shape: Shape = FilledButtonTokens.ContainerShape.toShape(),
     border: BorderStroke? = null,
     colors: ButtonColors = ButtonDefaults.buttonColors(),
     contentPadding: PaddingValues = ButtonDefaults.ContentPadding,
@@ -119,25 +119,19 @@ fun Button(
 
     // TODO(b/202880001): Apply shadow color from token (will not be possibly any time soon, if ever).
     Surface(
-        modifier = modifier
-            .minimumTouchTargetSize()
-            .clickable(
-                interactionSource = interactionSource,
-                indication = null,
-                enabled = enabled,
-                role = Role.Button,
-                onClick = onClick
-            ),
-        interactionSource = interactionSource,
+        onClick = onClick,
+        modifier = modifier,
         shape = shape,
         color = containerColor,
         contentColor = contentColor,
         tonalElevation = tonalElevation,
         shadowElevation = shadowElevation,
-        border = border
+        border = border,
+        interactionSource = interactionSource,
+        enabled = enabled,
     ) {
         CompositionLocalProvider(LocalContentColor provides contentColor) {
-            ProvideTextStyle(value = TypographyTokens.LabelLarge) {
+            ProvideTextStyle(value = MaterialTheme.typography.labelLarge) {
                 Row(
                     Modifier.defaultMinSize(
                         minWidth = ButtonDefaults.MinWidth,
@@ -154,9 +148,12 @@ fun Button(
 }
 
 /**
- * ![Elevated button image](https://developer.android.com/images/reference/androidx/compose/material3/elevated-button.png)
+ * <a href="https://m3.material.io/components/buttons/overview" class="external" target="_blank">Material Design elevated button</a>.
  *
- * A Material Elevated button. Buttons contain actions for your app.
+ * Buttons help people initiate actions, from sending an email, to sharing a document, to liking a
+ * post.
+ *
+ * ![Elevated button image](https://developer.android.com/images/reference/androidx/compose/material3/elevated-button.png)
  *
  * Elevated buttons are high-emphasis buttons that are essentially [FilledTonalButton]s with a
  * shadow. To prevent shadow creep, only use them when absolutely necessary, such as when the button
@@ -172,8 +169,7 @@ fun Button(
  * - See [OutlinedButton] for a medium-emphasis button with a border.
  * - See [TextButton] for a low-emphasis button with no border.
  *
- * The default text style for internal [Text] components will be set to
- * [TypographyTokens.LabelLarge].
+ * The default text style for internal [Text] components will be set to [Typography.labelLarge].
  *
  * @param onClick Will be called when the user clicks the button.
  * @param modifier Modifier to be applied to the button.
@@ -202,7 +198,7 @@ fun ElevatedButton(
     enabled: Boolean = true,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     elevation: ButtonElevation? = ButtonDefaults.elevatedButtonElevation(),
-    shape: Shape = ElevatedButtonTokens.ContainerShape,
+    shape: Shape = ElevatedButtonTokens.ContainerShape.toShape(),
     border: BorderStroke? = null,
     colors: ButtonColors = ButtonDefaults.elevatedButtonColors(),
     contentPadding: PaddingValues = ButtonDefaults.ContentPadding,
@@ -222,9 +218,12 @@ fun ElevatedButton(
     )
 
 /**
- * ![Filled tonal button image](https://developer.android.com/images/reference/androidx/compose/material3/filled-tonal-button.png)
+ * <a href="https://m3.material.io/components/buttons/overview" class="external" target="_blank">Material Design filled tonal button</a>.
  *
- * A Material Filled tonal button. Buttons contain actions for your app.
+ * Buttons help people initiate actions, from sending an email, to sharing a document, to liking a
+ * post.
+ *
+ * ![Filled tonal button image](https://developer.android.com/images/reference/androidx/compose/material3/filled-tonal-button.png)
  *
  * Filled tonal buttons are medium-emphasis buttons that is an alternative middle ground between
  * default [Button]s (filled) and [OutlinedButton]s. They can be used in contexts where
@@ -241,8 +240,7 @@ fun ElevatedButton(
  * - See [OutlinedButton] for a medium-emphasis button with a border.
  * - See [TextButton] for a low-emphasis button with no border.
  *
- * The default text style for internal [Text] components will be set to
- * [TypographyTokens.LabelLarge].
+ * The default text style for internal [Text] components will be set to [Typography.labelLarge].
  *
  * @param onClick Will be called when the user clicks the button.
  * @param modifier Modifier to be applied to the button.
@@ -270,7 +268,7 @@ fun FilledTonalButton(
     enabled: Boolean = true,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     elevation: ButtonElevation? = ButtonDefaults.filledTonalButtonElevation(),
-    shape: Shape = FilledTonalButtonTokens.ContainerShape,
+    shape: Shape = FilledTonalButtonTokens.ContainerShape.toShape(),
     border: BorderStroke? = null,
     colors: ButtonColors = ButtonDefaults.filledTonalButtonColors(),
     contentPadding: PaddingValues = ButtonDefaults.ContentPadding,
@@ -290,9 +288,12 @@ fun FilledTonalButton(
     )
 
 /**
- * ![Outlined button image](https://developer.android.com/images/reference/androidx/compose/material3/outlined-button.png)
+ * <a href="https://m3.material.io/components/buttons/overview" class="external" target="_blank">Material Design outlined button</a>.
  *
- * A Material Outlined button. Buttons contain actions for your app.
+ * Buttons help people initiate actions, from sending an email, to sharing a document, to liking a
+ * post.
+ *
+ * ![Outlined button image](https://developer.android.com/images/reference/androidx/compose/material3/outlined-button.png)
  *
  * Outlined buttons are medium-emphasis buttons. They contain actions that are important, but are
  * not the primary action in an app. Outlined buttons pair well with [Button]s to indicate an
@@ -308,8 +309,7 @@ fun FilledTonalButton(
  * - See [OutlinedButton] for a medium-emphasis button with a border.
  * - See [TextButton] for a low-emphasis button with no border.
  *
- * The default text style for internal [Text] components will be set to
- * [TypographyTokens.LabelLarge].
+ * The default text style for internal [Text] components will be set to [Typography.labelLarge].
  *
  * @param onClick Will be called when the user clicks the button.
  * @param modifier Modifier to be applied to the button.
@@ -337,7 +337,7 @@ fun OutlinedButton(
     enabled: Boolean = true,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     elevation: ButtonElevation? = null,
-    shape: Shape = OutlinedButtonTokens.ContainerShape,
+    shape: Shape = OutlinedButtonTokens.ContainerShape.toShape(),
     border: BorderStroke? = ButtonDefaults.outlinedButtonBorder,
     colors: ButtonColors = ButtonDefaults.outlinedButtonColors(),
     contentPadding: PaddingValues = ButtonDefaults.ContentPadding,
@@ -357,9 +357,12 @@ fun OutlinedButton(
     )
 
 /**
- * ![Text button image](https://developer.android.com/images/reference/androidx/compose/material3/text-button.png)
+ * <a href="https://m3.material.io/components/buttons/overview" class="external" target="_blank">Material Design text button</a>.
  *
- * A Material Text button. Buttons contain actions for your app.
+ * Buttons help people initiate actions, from sending an email, to sharing a document, to liking a
+ * post.
+ *
+ * ![Text button image](https://developer.android.com/images/reference/androidx/compose/material3/text-button.png)
  *
  * Text buttons are typically used for less-pronounced actions, including those located in dialogs
  * and cards. In cards, text buttons help maintain an emphasis on card content. Text buttons are
@@ -375,8 +378,7 @@ fun OutlinedButton(
  * - See [FilledTonalButton] for a middle ground between [OutlinedButton] and [Button].
  * - See [OutlinedButton] for a medium-emphasis button with a border.
  *
- * The default text style for internal [Text] components will be set to
- * [TypographyTokens.LabelLarge].
+ * The default text style for internal [Text] components will be set to [Typography.labelLarge].
  *
  * @param onClick Will be called when the user clicks the button.
  * @param modifier Modifier to be applied to the button.
@@ -407,7 +409,7 @@ fun TextButton(
     enabled: Boolean = true,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     elevation: ButtonElevation? = null,
-    shape: Shape = TextButtonTokens.ContainerShape,
+    shape: Shape = TextButtonTokens.ContainerShape.toShape(),
     border: BorderStroke? = null,
     colors: ButtonColors = ButtonDefaults.textButtonColors(),
     contentPadding: PaddingValues = ButtonDefaults.TextButtonContentPadding,

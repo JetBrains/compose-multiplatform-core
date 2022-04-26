@@ -17,18 +17,19 @@
 package androidx.compose.foundation.samples
 
 import androidx.annotation.Sampled
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.foundation.lazy.GridCells
-import androidx.compose.foundation.lazy.GridItemSpan
-import androidx.compose.foundation.lazy.LazyGridState
-import androidx.compose.foundation.lazy.LazyVerticalGrid
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.lazy.rememberLazyGridState
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyGridState
+import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.itemsIndexed
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -41,7 +42,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.flow.collect
 
-@OptIn(ExperimentalFoundationApi::class)
 @Sampled
 @Composable
 fun LazyVerticalGridSample() {
@@ -51,31 +51,26 @@ fun LazyVerticalGridSample() {
     val itemModifier = Modifier.border(1.dp, Color.Blue).height(80.dp).wrapContentSize()
 
     LazyVerticalGrid(
-        cells = GridCells.Fixed(3),
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        columns = GridCells.Fixed(3)
     ) {
         items(itemsList) {
             Text("Item is $it", itemModifier)
         }
-
         item {
             Text("Single item", itemModifier)
         }
-
         itemsIndexed(itemsIndexedList) { index, item ->
             Text("Item at index $index is $item", itemModifier)
         }
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Sampled
 @Composable
 fun LazyVerticalGridSpanSample() {
     val sections = (0 until 25).toList().chunked(5)
     LazyVerticalGrid(
-        cells = GridCells.Fixed(3),
+        columns = GridCells.Fixed(3),
         horizontalArrangement = Arrangement.spacedBy(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
@@ -100,7 +95,63 @@ fun LazyVerticalGridSpanSample() {
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
+@Sampled
+@Composable
+fun LazyHorizontalGridSample() {
+    val itemsList = (0..5).toList()
+    val itemsIndexedList = listOf("A", "B", "C")
+
+    val itemModifier = Modifier.border(1.dp, Color.Blue).width(80.dp).wrapContentSize()
+
+    LazyHorizontalGrid(
+        rows = GridCells.Fixed(3),
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        items(itemsList) {
+            Text("Item is $it", itemModifier)
+        }
+
+        item {
+            Text("Single item", itemModifier)
+        }
+
+        itemsIndexed(itemsIndexedList) { index, item ->
+            Text("Item at index $index is $item", itemModifier)
+        }
+    }
+}
+
+@Sampled
+@Composable
+fun LazyHorizontalGridSpanSample() {
+    val sections = (0 until 25).toList().chunked(5)
+    LazyHorizontalGrid(
+        rows = GridCells.Fixed(3),
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        sections.forEachIndexed { index, items ->
+            item(span = { GridItemSpan(maxLineSpan) }) {
+                Text(
+                    "This is section $index",
+                    Modifier.border(1.dp, Color.Gray).width(80.dp).wrapContentSize()
+                )
+            }
+            items(
+                items,
+                // not required as it is the default
+                span = { GridItemSpan(1) }
+            ) {
+                Text(
+                    "Item $it",
+                    Modifier.border(1.dp, Color.Blue).width(80.dp).wrapContentSize()
+                )
+            }
+        }
+    }
+}
+
 @Sampled
 @Composable
 fun UsingGridScrollPositionForSideEffectSample() {
@@ -113,7 +164,6 @@ fun UsingGridScrollPositionForSideEffectSample() {
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Sampled
 @Composable
 fun UsingGridScrollPositionInCompositionSample() {
@@ -128,7 +178,6 @@ fun UsingGridScrollPositionInCompositionSample() {
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Sampled
 @Composable
 fun UsingGridLayoutInfoForSideEffectSample() {
@@ -141,7 +190,6 @@ fun UsingGridLayoutInfoForSideEffectSample() {
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun ScrollToTopButton(@Suppress("UNUSED_PARAMETER") gridState: LazyGridState) {
 }

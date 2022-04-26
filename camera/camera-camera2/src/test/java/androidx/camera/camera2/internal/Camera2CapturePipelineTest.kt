@@ -26,6 +26,8 @@ import android.hardware.camera2.CameraMetadata
 import android.hardware.camera2.CaptureRequest
 import android.hardware.camera2.CaptureResult
 import android.hardware.camera2.TotalCaptureResult
+import android.media.Image
+import android.media.ImageWriter
 import android.os.Build
 import android.view.Surface
 import androidx.camera.camera2.impl.Camera2ImplConfig
@@ -48,17 +50,25 @@ import androidx.camera.core.impl.ImmediateSurface
 import androidx.camera.core.impl.Quirks
 import androidx.camera.core.impl.SessionConfig
 import androidx.camera.core.impl.utils.futures.Futures
+import androidx.camera.core.internal.CameraCaptureResultImageInfo
+import androidx.camera.testing.fakes.FakeCameraCaptureResult
+import androidx.camera.testing.fakes.FakeImageProxy
 import androidx.concurrent.futures.await
 import androidx.test.core.app.ApplicationProvider
+import com.google.common.truth.Truth
 import com.google.common.truth.Truth.assertThat
 import com.google.common.util.concurrent.ListenableFuture
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.asExecutor
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.ExecutionException
+import java.util.concurrent.Executors
+import java.util.concurrent.ScheduledFuture
+import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito
@@ -69,11 +79,6 @@ import org.robolectric.annotation.internal.DoNotInstrument
 import org.robolectric.shadow.api.Shadow
 import org.robolectric.shadows.ShadowCameraCharacteristics
 import org.robolectric.shadows.ShadowCameraManager
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.ExecutionException
-import java.util.concurrent.Executors
-import java.util.concurrent.ScheduledFuture
-import java.util.concurrent.TimeUnit
 
 private const val CAMERA_ID_0 = "0"
 
@@ -122,9 +127,11 @@ class Camera2CapturePipelineTest {
     @After
     fun tearDown() {
         runningRepeatingStream = null
-        executorService.shutdownNow()
+        fakeStillCaptureSurface.close()
+        executorService.shutdown()
     }
 
+    @Ignore // b/228856476
     @Test
     fun pipelineTest_preCapturePostCaptureShouldCalled() {
         // Arrange.
@@ -134,11 +141,11 @@ class Camera2CapturePipelineTest {
 
             override fun preCapture(captureResult: TotalCaptureResult?): ListenableFuture<Boolean> {
                 preCaptureCountDown.countDown()
-                return Futures.immediateFuture(true)
+                return Futures.immediateFuture(false)
             }
 
             override fun isCaptureResultNeeded(): Boolean {
-                return true
+                return false
             }
 
             override fun postCapture() {
@@ -152,7 +159,7 @@ class Camera2CapturePipelineTest {
 
         val pipeline = Camera2CapturePipeline.Pipeline(
             CameraDevice.TEMPLATE_PREVIEW,
-            Dispatchers.Default.asExecutor(),
+            executorService,
             cameraControl,
             false,
             OverrideAeModeForStillCapture(Quirks(emptyList())),
@@ -163,7 +170,7 @@ class Camera2CapturePipelineTest {
         // Act.
         pipeline.executeCapture(
             listOf(singleRequest),
-            ImageCapture.FLASH_TYPE_ONE_SHOT_FLASH,
+            FLASH_MODE_OFF,
         )
 
         // Assert.
@@ -455,7 +462,7 @@ class Camera2CapturePipelineTest {
         ).await()
 
         // Assert, there is only 1 single capture request.
-        assertThat(immediateCompleteCapture.allResults.size).isEqualTo(1)
+        assertThat(immediateCompleteCapture.getAllResults().size).isEqualTo(1)
     }
 
     @Test
@@ -537,6 +544,97 @@ class Camera2CapturePipelineTest {
             }.map { captureConfig ->
                 captureConfig.templateType
             }.contains(CameraDevice.TEMPLATE_VIDEO_SNAPSHOT)
+        }
+    }
+
+    @Test
+    fun submitZslCaptureRequests_withZslTemplate_templateZeroShutterLagSent(): Unit = runBlocking {
+        // Arrange.
+        val imageCaptureConfig = CaptureConfig.Builder().let {
+            it.addSurface(fakeStillCaptureSurface)
+            it.templateType = CameraDevice.TEMPLATE_ZERO_SHUTTER_LAG
+            it.build()
+        }
+
+        val cameraControl = createCameraControl().apply {
+            simulateRepeatingResult(initialDelay = 100)
+        }
+
+        val zslControl = ZslControlImpl(createCameraCharacteristicsCompat(
+            hasCapabilities = true,
+            isYuvReprocessingSupported = true,
+            isPrivateReprocessingSupported = true
+        ))
+
+        val captureResult = FakeCameraCaptureResult()
+        val imageProxy = FakeImageProxy(CameraCaptureResultImageInfo(captureResult))
+        imageProxy.image = mock(Image::class.java)
+        zslControl.mImageRingBuffer.add(imageProxy)
+        zslControl.mReprocessingImageWriter = mock(ImageWriter::class.java)
+
+        cameraControl.mZslControl = zslControl
+
+        // Act.
+        cameraControl.submitStillCaptureRequests(
+            listOf(imageCaptureConfig),
+            ImageCapture.CAPTURE_MODE_ZERO_SHUTTER_LAG,
+            FLASH_MODE_OFF,
+        ).await()
+
+        // Assert.
+        val templateTypeToVerify = if (Build.VERSION.SDK_INT >= 23)
+            CameraDevice.TEMPLATE_ZERO_SHUTTER_LAG
+        else CameraDevice.TEMPLATE_STILL_CAPTURE
+
+        immediateCompleteCapture.verifyRequestResult { captureConfigList ->
+            captureConfigList.filter {
+                it.surfaces.contains(fakeStillCaptureSurface)
+            }.map { captureConfig ->
+                captureConfig.templateType
+            }.contains(templateTypeToVerify)
+        }
+    }
+
+    @Test
+    fun submitZslCaptureRequests_withNoTemplate_templateStillPictureSent(): Unit = runBlocking {
+        // Arrange.
+        val imageCaptureConfig = CaptureConfig.Builder().let {
+            it.addSurface(fakeStillCaptureSurface)
+            it.build()
+        }
+
+        val cameraControl = createCameraControl().apply {
+            simulateRepeatingResult(initialDelay = 100)
+        }
+
+        val zslControl = ZslControlImpl(createCameraCharacteristicsCompat(
+            hasCapabilities = true,
+            isYuvReprocessingSupported = true,
+            isPrivateReprocessingSupported = true
+        ))
+
+        val captureResult = FakeCameraCaptureResult()
+        val imageProxy = FakeImageProxy(CameraCaptureResultImageInfo(captureResult))
+        imageProxy.image = mock(Image::class.java)
+        zslControl.mImageRingBuffer.add(imageProxy)
+        zslControl.mReprocessingImageWriter = mock(ImageWriter::class.java)
+
+        cameraControl.mZslControl = zslControl
+
+        // Act.
+        cameraControl.submitStillCaptureRequests(
+            listOf(imageCaptureConfig),
+            ImageCapture.CAPTURE_MODE_ZERO_SHUTTER_LAG,
+            FLASH_MODE_OFF,
+        ).await()
+
+        // Assert.
+        immediateCompleteCapture.verifyRequestResult { captureConfigList ->
+            captureConfigList.filter {
+                it.surfaces.contains(fakeStillCaptureSurface)
+            }.map { captureConfig ->
+                captureConfig.templateType
+            }.contains(CameraDevice.TEMPLATE_STILL_CAPTURE)
         }
     }
 
@@ -644,7 +742,7 @@ class Camera2CapturePipelineTest {
 
         // Assert.
         // AE mode should not be overridden
-        immediateCompleteCapture.allResults.toList().flatten().filter {
+        immediateCompleteCapture.getAllResults().flatten().filter {
             it.surfaces.contains(fakeStillCaptureSurface)
         }.let { stillCaptureRequests ->
             assertThat(stillCaptureRequests).isNotEmpty()
@@ -658,6 +756,7 @@ class Camera2CapturePipelineTest {
     }
 
     @Test
+    @Ignore("AutoFlashUnderExposedQuirk was disabled, ignoring the test.")
     fun overrideAeModeForStillCapture_aePrecaptureStarted_override(): Unit = runBlocking {
         // Arrange.
         val cameraControl = createCameraControl(
@@ -721,19 +820,20 @@ class Camera2CapturePipelineTest {
             resultParameters = resultConverged
         )
         firstCapture.await()
-        immediateCompleteCapture.allResults.clear() // Clear the result of the firstCapture
+        immediateCompleteCapture.clearAllResults() // Clear the result of the firstCapture
 
         // Act.
         // Set flash OFF to disable aePreCapture for testing
         cameraControl.flashMode = FLASH_MODE_OFF
-        cameraControl.submitStillCaptureRequests(
+        val result = cameraControl.submitStillCaptureRequests(
             listOf(singleRequest),
             ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY,
             ImageCapture.FLASH_TYPE_ONE_SHOT_FLASH,
         ).await()
 
         // Assert. The second capturing should not override the AE mode.
-        immediateCompleteCapture.allResults.toList().flatten().filter {
+        assertThat(result.size).isEqualTo(1)
+        immediateCompleteCapture.getAllResults().flatten().filter {
             it.surfaces.contains(fakeStillCaptureSurface)
         }.let { stillCaptureRequests ->
             assertThat(stillCaptureRequests).isNotEmpty()
@@ -774,7 +874,7 @@ class Camera2CapturePipelineTest {
 
         // Assert.
         // AE mode should not be overridden
-        immediateCompleteCapture.allResults.toList().flatten().filter {
+        immediateCompleteCapture.getAllResults().flatten().filter {
             it.surfaces.contains(fakeStillCaptureSurface)
         }.let { stillCaptureRequests ->
             assertThat(stillCaptureRequests).isNotEmpty()
@@ -790,11 +890,13 @@ class Camera2CapturePipelineTest {
     private fun Camera2CameraControlImpl.waitForSessionConfig(
         checkResult: (sessionConfig: SessionConfig) -> Boolean = { true }
     ) {
+        var verifyCount = 0
         while (true) {
             immediateCompleteCapture.waitForSessionConfigUpdate()
             if (checkResult(sessionConfig)) {
                 return
             }
+            Truth.assertWithMessage("Verify over 5 times").that(++verifyCount).isLessThan(5)
         }
     }
 
@@ -847,16 +949,14 @@ class Camera2CapturePipelineTest {
         period: Long = 100, // in milliseconds
         resultParameters: Map<CaptureResult.Key<*>, Any> = mutableMapOf(),
     ) {
-        executorService.schedule({
-            runningRepeatingStream = executorService.scheduleAtFixedRate({
-                val tagBundle = sessionConfig.repeatingCaptureConfig.tagBundle
-                val requestOptions = sessionConfig.repeatingCaptureConfig.implementationOptions
-                val resultOptions = baseRepeatingResult.toMutableMap().apply {
-                    putAll(resultParameters)
-                }
-                sendRepeatingResult(tagBundle, requestOptions.toParameters(), resultOptions)
-            }, 0, period, TimeUnit.MILLISECONDS)
-        }, initialDelay, TimeUnit.MILLISECONDS)
+        runningRepeatingStream = executorService.scheduleAtFixedRate({
+            val tagBundle = sessionConfig.repeatingCaptureConfig.tagBundle
+            val requestOptions = sessionConfig.repeatingCaptureConfig.implementationOptions
+            val resultOptions = baseRepeatingResult.toMutableMap().apply {
+                putAll(resultParameters)
+            }
+            sendRepeatingResult(tagBundle, requestOptions.toParameters(), resultOptions)
+        }, initialDelay, period, TimeUnit.MILLISECONDS)
     }
 
     private fun Camera2CameraControlImpl.sendRepeatingResult(
@@ -897,7 +997,6 @@ class Camera2CapturePipelineTest {
         val characteristicsCompat = CameraCharacteristicsCompat
             .toCameraCharacteristicsCompat(characteristics)
         val cameraQuirk = quirks ?: CameraQuirks.get(cameraId, characteristicsCompat)
-        val executorService = Executors.newSingleThreadScheduledExecutor()
 
         return Camera2CameraControlImpl(
             characteristicsCompat,
@@ -945,10 +1044,10 @@ class Camera2CapturePipelineTest {
     private val immediateCompleteCapture =
         object : CameraControlInternal.ControlUpdateCallback {
             private val lock = Any()
-            val allResults: MutableList<List<CaptureConfig>> = mutableListOf()
+            private val allResults: MutableList<List<CaptureConfig>> = mutableListOf()
             val waitingList = mutableListOf<Pair<CountDownLatch,
                     (captureRequests: List<CaptureConfig>) -> Boolean>>()
-            var updateSessionCountDown: CountDownLatch? = null
+            var updateSessionCountDown = CountDownLatch(1)
 
             fun verifyRequestResult(
                 timeout: Long = TimeUnit.SECONDS.toMillis(5),
@@ -968,15 +1067,20 @@ class Camera2CapturePipelineTest {
             }
 
             fun waitForSessionConfigUpdate(timeout: Long = TimeUnit.SECONDS.toMillis(5)) {
-                if (updateSessionCountDown == null) {
-                    updateSessionCountDown = CountDownLatch(1)
-                }
-                assertTrue(updateSessionCountDown!!.await(timeout, TimeUnit.MILLISECONDS))
+                // No matter onCameraControlUpdateSessionConfig is called before or after
+                // the waitForSessionConfigUpdate call, the count down operation should be
+                // executed correctly on the updateSessionCountDown object
+                updateSessionCountDown.await(timeout, TimeUnit.MILLISECONDS)
+
+                // Reset count down latch here for next call of waitForSessionConfigUpdate
+                updateSessionCountDown = CountDownLatch(1)
             }
 
             override fun onCameraControlUpdateSessionConfig() {
-                updateSessionCountDown?.countDown()
-                updateSessionCountDown = null
+                // Only count down when count is still larger than 1
+                if (updateSessionCountDown.count > 0) {
+                    updateSessionCountDown.countDown()
+                }
             }
 
             override fun onCameraControlCaptureRequests(
@@ -998,6 +1102,14 @@ class Camera2CapturePipelineTest {
                     }
                 }
             }
+
+            fun clearAllResults() = synchronized(lock) {
+                allResults.clear()
+            }
+
+            fun getAllResults() = synchronized(lock) {
+                allResults.toList()
+            }
         }
 
     /**
@@ -1012,5 +1124,33 @@ class Camera2CapturePipelineTest {
         }
 
         return parameters
+    }
+
+    private fun createCameraCharacteristicsCompat(
+        hasCapabilities: Boolean,
+        isYuvReprocessingSupported: Boolean,
+        isPrivateReprocessingSupported: Boolean
+    ): CameraCharacteristicsCompat {
+        val characteristics = ShadowCameraCharacteristics.newCameraCharacteristics()
+        val shadowCharacteristics = Shadow.extract<ShadowCameraCharacteristics>(characteristics)
+
+        val capabilities = arrayListOf<Int>()
+        if (isYuvReprocessingSupported) {
+            capabilities.add(
+                CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES_YUV_REPROCESSING)
+        }
+        if (isPrivateReprocessingSupported) {
+            capabilities.add(
+                CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES_PRIVATE_REPROCESSING)
+        }
+
+        if (hasCapabilities) {
+            shadowCharacteristics.set(
+                CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES,
+                capabilities.toIntArray()
+            )
+        }
+
+        return CameraCharacteristicsCompat.toCameraCharacteristicsCompat(characteristics)
     }
 }

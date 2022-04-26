@@ -16,7 +16,6 @@
 
 package androidx.compose.material.catalog.library.ui.home
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
@@ -24,9 +23,9 @@ import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
-import androidx.compose.foundation.lazy.GridCells
-import androidx.compose.foundation.lazy.LazyVerticalGrid
-import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.material.catalog.library.R
 import androidx.compose.material.catalog.library.model.Component
 import androidx.compose.material.catalog.library.model.Theme
@@ -38,7 +37,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 
 @Composable
-@OptIn(ExperimentalFoundationApi::class)
 fun Home(
     components: List<Component>,
     theme: Theme,
@@ -55,7 +53,7 @@ fun Home(
             LazyVerticalGrid(
                 // LazyGridScope doesn't expose nColumns from LazyVerticalGrid
                 // https://issuetracker.google.com/issues/183187002
-                cells = GridCells.Fixed(count = cellsCount),
+                columns = GridCells.Fixed(count = cellsCount),
                 content = {
                     itemsIndexed(components) { index, component ->
                         ComponentItem(

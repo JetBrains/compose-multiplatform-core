@@ -17,6 +17,7 @@
 package androidx.glance.appwidget.demos
 
 import android.content.Context
+import androidx.compose.runtime.Composable
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.glance.GlanceId
@@ -24,28 +25,26 @@ import androidx.glance.ImageProvider
 import androidx.glance.action.ActionParameters
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
+import androidx.glance.appwidget.SizeMode
 import androidx.glance.appwidget.action.ActionCallback
 import androidx.glance.appwidget.action.actionRunCallback
 import androidx.glance.appwidget.state.updateAppWidgetState
-import androidx.glance.unit.ColorProvider
-import androidx.template.appwidget.GlanceTemplateAppWidget
+import androidx.glance.currentState
+import androidx.template.appwidget.SingleEntityTemplate
+import androidx.template.template.SingleEntityTemplateData
 import androidx.template.template.TemplateImageWithDescription
-import androidx.template.template.SingleEntityTemplate
 import androidx.template.template.TemplateText
 import androidx.template.template.TemplateTextButton
-
-/** A [SingleEntityTemplate] implementation that sets the title given widget state */
-class MyWidgetTemplate : SingleEntityTemplate() {
-    override fun getData(state: Any?): Data {
-        require(state is Preferences)
-        return createData(getHeader(state[PressedKey] == true))
-    }
-}
+import androidx.template.template.TemplateText.Type
 
 private val PressedKey = booleanPreferencesKey("pressedKey")
 
 class ButtonAction : ActionCallback {
-    override suspend fun onRun(context: Context, glanceId: GlanceId, parameters: ActionParameters) {
+    override suspend fun onAction(
+        context: Context,
+        glanceId: GlanceId,
+        parameters: ActionParameters
+    ) {
         // Toggle the "pressed" state
         updateAppWidgetState(context, glanceId) { state ->
             state[PressedKey] = state[PressedKey] != true
@@ -54,26 +53,34 @@ class ButtonAction : ActionCallback {
     }
 }
 
-class SingleEntityWidget : GlanceTemplateAppWidget(MyWidgetTemplate())
+class SingleEntityWidget : GlanceAppWidget() {
+    override val sizeMode = SizeMode.Exact
+
+    @Composable
+    override fun Content() {
+        SingleEntityTemplate(
+            createData(getHeader(currentState<Preferences>()[PressedKey] == true))
+        )
+    }
+}
 
 class SingleEntityWidgetReceiver : GlanceAppWidgetReceiver() {
     override val glanceAppWidget: GlanceAppWidget = SingleEntityWidget()
 }
 
-private fun createData(title: String) = SingleEntityTemplate.Data(
-    header = TemplateText("Single Entity demo"),
+private fun createData(title: String) = SingleEntityTemplateData(
+    header = TemplateText("Single Entity demo", Type.Title),
     headerIcon = TemplateImageWithDescription(
         ImageProvider(R.drawable.compose),
         "Header icon"
     ),
-    title = TemplateText(title, 1),
-    subtitle = TemplateText("Subtitle test", 2),
+    text1 = TemplateText(title, Type.Title),
+    text2 = TemplateText("Subtitle test", Type.Title),
     button = TemplateTextButton(actionRunCallback<ButtonAction>(), "toggle"),
     image = TemplateImageWithDescription(
         ImageProvider(R.drawable.compose),
         "Compose image"
-    ),
-    backgroundColor = ColorProvider(R.color.default_widget_background)
+    )
 )
 
 private fun getHeader(pressed: Boolean) = if (pressed) "header2" else "header1"

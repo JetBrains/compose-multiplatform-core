@@ -45,6 +45,7 @@ android {
     buildFeatures {
         viewBinding true
     }
+    namespace "androidx.camera.integration.uiwidgets"
 }
 
 dependencies {
@@ -63,6 +64,9 @@ dependencies {
     implementation(project(":window:window"))
     implementation(project(":window:window-java"))
     implementation(libs.constraintLayout)
+    implementation(libs.material) {
+        exclude group: "androidx.viewpager2", module: "viewpager2"
+    }
 
     // Guava
     implementation(libs.guavaAndroid)

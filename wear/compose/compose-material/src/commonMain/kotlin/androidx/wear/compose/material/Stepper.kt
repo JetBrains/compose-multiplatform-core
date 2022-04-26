@@ -39,6 +39,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.wear.compose.material.RangeDefaults.calculateCurrentStepValue
 import androidx.wear.compose.material.RangeDefaults.snapValueToStep
@@ -62,14 +63,14 @@ import kotlin.math.roundToInt
  * @param steps Specifies the number of discrete values, excluding min and max values, evenly
  * distributed across the whole value range. Must not be negative. If 0, stepper will have only
  * min and max values and no steps in between
+ * @param decreaseIcon A slot for an icon which is placed on the decrease (bottom) button
+ * @param increaseIcon A slot for an icon which is placed on the increase (top) button
  * @param modifier Modifiers for the Stepper layout
  * @param valueRange Range of values that Stepper value can take. Passed [value] will be coerced to
  * this range
- * @param decreaseIcon A slot for an icon which is placed on the decrease (bottom) button
- * @param increaseIcon A slot for an icon which is placed on the increase (top) button
  * @param backgroundColor [Color] representing the background color for the stepper.
  * @param contentColor [Color] representing the color for [content] in the middle.
- * @param iconTintColor Icon tint [Color] which used by [increaseIcon] and [decreaseIcon]
+ * @param iconColor Icon tint [Color] which used by [increaseIcon] and [decreaseIcon]
  * that defaults to [contentColor], unless specifically overridden.
  */
 @Composable
@@ -77,13 +78,13 @@ public fun Stepper(
     value: Float,
     onValueChange: (Float) -> Unit,
     steps: Int,
+    decreaseIcon: @Composable () -> Unit,
+    increaseIcon: @Composable () -> Unit,
     modifier: Modifier = Modifier,
     valueRange: ClosedFloatingPointRange<Float> = 0f..(steps + 1).toFloat(),
-    decreaseIcon: @Composable () -> Unit = { StepperDefaults.DecreaseIcon() },
-    increaseIcon: @Composable () -> Unit = { StepperDefaults.IncreaseIcon() },
     backgroundColor: Color = MaterialTheme.colors.background,
     contentColor: Color = contentColorFor(backgroundColor),
-    iconTintColor: Color = contentColor,
+    iconColor: Color = contentColor,
     content: @Composable BoxScope.() -> Unit
 ) {
     require(steps >= 0) { "steps should be >= 0" }
@@ -112,7 +113,7 @@ public fun Stepper(
             onClick = { updateValue(1) },
             contentAlignment = Alignment.TopCenter,
             paddingValues = PaddingValues(top = StepperDefaults.BorderPadding),
-            iconTintColor = iconTintColor,
+            iconColor = iconColor,
             content = increaseIcon
         )
         Box(
@@ -121,16 +122,17 @@ public fun Stepper(
                 .weight(StepperDefaults.ContentWeight),
             contentAlignment = Alignment.Center,
         ) {
-            CompositionLocalProvider(LocalContentColor provides contentColor) {
-                content()
-            }
+            CompositionLocalProvider(
+                LocalContentColor provides contentColor,
+                content = content
+            )
         }
         FullScreenButton(
             onClick = { updateValue(-1) },
             contentAlignment = Alignment.BottomCenter,
             paddingValues = PaddingValues(bottom = StepperDefaults.BorderPadding),
             content = decreaseIcon,
-            iconTintColor = iconTintColor
+            iconColor = iconColor
         )
     }
 }
@@ -158,27 +160,27 @@ public fun Stepper(
  * @param value Current value of the Stepper. If outside of [valueProgression] provided, value will be
  * coerced to this range.
  * @param onValueChange Lambda in which value should be updated
- * @param modifier Modifiers for the Stepper layout
  * @param valueProgression Progression of values that Stepper value can take. Consists of
  * rangeStart, rangeEnd and step. Range will be equally divided by step size
  * @param decreaseIcon A slot for an icon which is placed on the decrease (bottom) button
  * @param increaseIcon A slot for an icon which is placed on the increase (top) button
+ * @param modifier Modifiers for the Stepper layout
  * @param backgroundColor [Color] representing the background color for the stepper.
  * @param contentColor [Color] representing the color for [content] in the middle.
- * @param iconTintColor Icon tint [Color] which used by [increaseIcon] and [decreaseIcon]
+ * @param iconColor Icon tint [Color] which used by [increaseIcon] and [decreaseIcon]
  * that defaults to [contentColor], unless specifically overridden.
  */
 @Composable
 public fun Stepper(
     value: Int,
     onValueChange: (Int) -> Unit,
-    modifier: Modifier = Modifier,
     valueProgression: IntProgression,
-    decreaseIcon: @Composable () -> Unit = { StepperDefaults.DecreaseIcon() },
-    increaseIcon: @Composable () -> Unit = { StepperDefaults.IncreaseIcon() },
+    decreaseIcon: @Composable () -> Unit,
+    increaseIcon: @Composable () -> Unit,
+    modifier: Modifier = Modifier,
     backgroundColor: Color = MaterialTheme.colors.background,
     contentColor: Color = contentColorFor(backgroundColor),
-    iconTintColor: Color = contentColor,
+    iconColor: Color = contentColor,
     content: @Composable BoxScope.() -> Unit
 ) {
     Stepper(
@@ -191,9 +193,28 @@ public fun Stepper(
         increaseIcon = increaseIcon,
         backgroundColor = backgroundColor,
         contentColor = contentColor,
-        iconTintColor = iconTintColor,
+        iconColor = iconColor,
         content = content
     )
+}
+
+/**
+ * Defaults used by stepper
+ */
+public object StepperDefaults {
+    internal const val ButtonWeight = 0.35f
+    internal const val ContentWeight = 0.3f
+    internal val BorderPadding = 22.dp
+
+    /**
+     * Decrease [ImageVector]
+     */
+    public val Decrease = RangeIcons.Minus
+
+    /**
+     * Increase [ImageVector]
+     */
+    public val Increase = Icons.Filled.Add
 }
 
 @Composable
@@ -201,7 +222,7 @@ private fun ColumnScope.FullScreenButton(
     onClick: () -> Unit,
     contentAlignment: Alignment,
     paddingValues: PaddingValues,
-    iconTintColor: Color,
+    iconColor: Color,
     content: @Composable () -> Unit
 ) {
     val interactionSource = remember { MutableInteractionSource() }
@@ -215,33 +236,6 @@ private fun ColumnScope.FullScreenButton(
             .padding(paddingValues),
         contentAlignment = contentAlignment,
     ) {
-        CompositionLocalProvider(LocalContentColor provides iconTintColor, content = content)
-    }
-}
-
-/**
- * Defaults used by stepper
- */
-private object StepperDefaults {
-    const val ButtonWeight = 0.35f
-    const val ContentWeight = 0.3f
-    val BorderPadding = 8.dp
-
-    @Composable
-    fun DecreaseIcon() {
-        Icon(
-            imageVector = RangeIcons.Minus,
-            contentDescription = "Decrease", // TODO(b/204187777) i18n
-            modifier = Modifier.padding(14.dp)
-        )
-    }
-
-    @Composable
-    fun IncreaseIcon() {
-        Icon(
-            imageVector = Icons.Filled.Add,
-            contentDescription = "Increase", // TODO(b/204187777) i18n
-            modifier = Modifier.padding(14.dp)
-        )
+        CompositionLocalProvider(LocalContentColor provides iconColor, content = content)
     }
 }

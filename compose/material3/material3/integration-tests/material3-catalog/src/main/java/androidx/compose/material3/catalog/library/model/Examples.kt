@@ -18,44 +18,69 @@
 
 package androidx.compose.material3.catalog.library.model
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.material3.catalog.library.util.SampleSourceUrl
 import androidx.compose.material3.samples.AlertDialogSample
 import androidx.compose.material3.samples.AlertDialogWithIconSample
+import androidx.compose.material3.samples.AnimatedExtendedFloatingActionButtonSample
+import androidx.compose.material3.samples.AssistChipSample
 import androidx.compose.material3.samples.BottomAppBarWithFAB
 import androidx.compose.material3.samples.ButtonSample
 import androidx.compose.material3.samples.ButtonWithIconSample
 import androidx.compose.material3.samples.CardSample
 import androidx.compose.material3.samples.CheckboxSample
+import androidx.compose.material3.samples.ChipGroupSingleLineSample
 import androidx.compose.material3.samples.CircularProgressIndicatorSample
 import androidx.compose.material3.samples.ClickableCardSample
 import androidx.compose.material3.samples.ClickableElevatedCardSample
 import androidx.compose.material3.samples.ClickableOutlinedCardSample
-import androidx.compose.material3.samples.ColorSchemeSample
 import androidx.compose.material3.samples.DismissibleNavigationDrawerSample
+import androidx.compose.material3.samples.EditableExposedDropdownMenuSample
+import androidx.compose.material3.samples.ElevatedAssistChipSample
 import androidx.compose.material3.samples.ElevatedButtonSample
 import androidx.compose.material3.samples.ElevatedCardSample
+import androidx.compose.material3.samples.ElevatedFilterChipSample
+import androidx.compose.material3.samples.ElevatedSuggestionChipSample
 import androidx.compose.material3.samples.EnterAlwaysSmallTopAppBar
 import androidx.compose.material3.samples.ExitUntilCollapsedLargeTopAppBar
 import androidx.compose.material3.samples.ExitUntilCollapsedMediumTopAppBar
+import androidx.compose.material3.samples.ExposedDropdownMenuSample
 import androidx.compose.material3.samples.ExtendedFloatingActionButtonSample
-import androidx.compose.material3.samples.FancyTabs
-import androidx.compose.material3.samples.FancyIndicatorTabs
+import androidx.compose.material3.samples.ExtendedFloatingActionButtonTextSample
 import androidx.compose.material3.samples.FancyIndicatorContainerTabs
+import androidx.compose.material3.samples.FancyIndicatorTabs
+import androidx.compose.material3.samples.FancyTabs
+import androidx.compose.material3.samples.FilledIconButtonSample
+import androidx.compose.material3.samples.FilledIconToggleButtonSample
 import androidx.compose.material3.samples.FilledTonalButtonSample
+import androidx.compose.material3.samples.FilledTonalIconButtonSample
+import androidx.compose.material3.samples.FilledTonalIconToggleButtonSample
+import androidx.compose.material3.samples.FilterChipSample
+import androidx.compose.material3.samples.FilterChipWithLeadingIconSample
 import androidx.compose.material3.samples.FloatingActionButtonSample
+import androidx.compose.material3.samples.IconButtonSample
 import androidx.compose.material3.samples.IconTabs
+import androidx.compose.material3.samples.IconToggleButtonSample
+import androidx.compose.material3.samples.InputChipSample
+import androidx.compose.material3.samples.InputChipWithAvatarSample
 import androidx.compose.material3.samples.LargeFloatingActionButtonSample
-import androidx.compose.material3.samples.LinearProgressIndicatorSample
 import androidx.compose.material3.samples.LeadingIconTabs
+import androidx.compose.material3.samples.LinearProgressIndicatorSample
 import androidx.compose.material3.samples.MenuSample
+import androidx.compose.material3.samples.ModalNavigationDrawerSample
 import androidx.compose.material3.samples.NavigationBarSample
 import androidx.compose.material3.samples.NavigationBarWithOnlySelectedLabelsSample
-import androidx.compose.material3.samples.ModalNavigationDrawerSample
 import androidx.compose.material3.samples.NavigationRailBottomAlignSample
 import androidx.compose.material3.samples.NavigationRailSample
 import androidx.compose.material3.samples.NavigationRailWithOnlySelectedLabelsSample
 import androidx.compose.material3.samples.OutlinedButtonSample
 import androidx.compose.material3.samples.OutlinedCardSample
+import androidx.compose.material3.samples.OutlinedIconButtonSample
+import androidx.compose.material3.samples.OutlinedIconToggleButtonSample
+import androidx.compose.material3.samples.OutlinedTextFieldSample
+import androidx.compose.material3.samples.PasswordTextField
 import androidx.compose.material3.samples.PermanentNavigationDrawerSample
 import androidx.compose.material3.samples.PinnedSmallTopAppBar
 import androidx.compose.material3.samples.RadioButtonSample
@@ -68,15 +93,29 @@ import androidx.compose.material3.samples.ScrollingFancyIndicatorContainerTabs
 import androidx.compose.material3.samples.ScrollingTextTabs
 import androidx.compose.material3.samples.SimpleBottomAppBar
 import androidx.compose.material3.samples.SimpleCenterAlignedTopAppBar
+import androidx.compose.material3.samples.SimpleOutlinedTextFieldSample
 import androidx.compose.material3.samples.SimpleSmallTopAppBar
+import androidx.compose.material3.samples.SimpleTextFieldSample
 import androidx.compose.material3.samples.SliderSample
 import androidx.compose.material3.samples.SmallFloatingActionButtonSample
 import androidx.compose.material3.samples.StepsSliderSample
+import androidx.compose.material3.samples.SuggestionChipSample
+import androidx.compose.material3.samples.SwitchSample
+import androidx.compose.material3.samples.SwitchWithThumbIconSample
 import androidx.compose.material3.samples.TextAndIconTabs
+import androidx.compose.material3.samples.TextArea
 import androidx.compose.material3.samples.TextButtonSample
+import androidx.compose.material3.samples.TextFieldSample
+import androidx.compose.material3.samples.TextFieldWithErrorState
+import androidx.compose.material3.samples.TextFieldWithHideKeyboardOnImeAction
+import androidx.compose.material3.samples.TextFieldWithIcons
+import androidx.compose.material3.samples.TextFieldWithPlaceholder
+import androidx.compose.material3.samples.TextFieldWithSupportingText
 import androidx.compose.material3.samples.TextTabs
 import androidx.compose.material3.samples.TriStateCheckboxSample
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 
 data class Example(
     val name: String,
@@ -168,17 +207,6 @@ val CardExamples = listOf(
     }
 )
 
-private const val ColorExampleDescription = "Color examples"
-private const val ColorExampleSourceUrl = "$SampleSourceUrl/ColorSamples.kt"
-val ColorExamples =
-    listOf(
-        Example(
-            name = ::ColorSchemeSample.name,
-            description = ColorExampleDescription,
-            sourceUrl = ColorExampleSourceUrl,
-        ) { ColorSchemeSample() },
-    )
-
 private const val CheckboxesExampleDescription = "Checkboxes examples"
 private const val CheckboxesExampleSourceUrl = "$SampleSourceUrl/CheckboxSamples.kt"
 val CheckboxesExamples = listOf(
@@ -195,6 +223,81 @@ val CheckboxesExamples = listOf(
         sourceUrl = CheckboxesExampleSourceUrl
     ) {
         TriStateCheckboxSample()
+    }
+)
+
+private const val ChipsExampleDescription = "Chips examples"
+private const val ChipsExampleSourceUrl = "$SampleSourceUrl/ChipSamples.kt"
+val ChipsExamples = listOf(
+    Example(
+        name = ::AssistChipSample.name,
+        description = ChipsExampleDescription,
+        sourceUrl = ChipsExampleSourceUrl
+    ) {
+        AssistChipSample()
+    },
+    Example(
+        name = ::ElevatedAssistChipSample.name,
+        description = ChipsExampleDescription,
+        sourceUrl = ChipsExampleSourceUrl
+    ) {
+        ElevatedAssistChipSample()
+    },
+    Example(
+        name = ::FilterChipSample.name,
+        description = ChipsExampleDescription,
+        sourceUrl = ChipsExampleSourceUrl
+    ) {
+        FilterChipSample()
+    },
+    Example(
+        name = ::ElevatedFilterChipSample.name,
+        description = ChipsExampleDescription,
+        sourceUrl = ChipsExampleSourceUrl
+    ) {
+        ElevatedFilterChipSample()
+    },
+    Example(
+        name = ::FilterChipWithLeadingIconSample.name,
+        description = ChipsExampleDescription,
+        sourceUrl = ChipsExampleSourceUrl
+    ) {
+        FilterChipWithLeadingIconSample()
+    },
+    Example(
+        name = ::InputChipSample.name,
+        description = ChipsExampleDescription,
+        sourceUrl = ChipsExampleSourceUrl
+    ) {
+        InputChipSample()
+    },
+    Example(
+        name = ::InputChipWithAvatarSample.name,
+        description = ChipsExampleDescription,
+        sourceUrl = ChipsExampleSourceUrl
+    ) {
+        InputChipWithAvatarSample()
+    },
+    Example(
+        name = ::SuggestionChipSample.name,
+        description = ChipsExampleDescription,
+        sourceUrl = ChipsExampleSourceUrl
+    ) {
+        SuggestionChipSample()
+    },
+    Example(
+        name = ::ElevatedSuggestionChipSample.name,
+        description = ChipsExampleDescription,
+        sourceUrl = ChipsExampleSourceUrl
+    ) {
+        ElevatedSuggestionChipSample()
+    },
+    Example(
+        name = ::ChipGroupSingleLineSample.name,
+        description = ChipsExampleDescription,
+        sourceUrl = ChipsExampleSourceUrl
+    ) {
+        ChipGroupSingleLineSample()
     }
 )
 
@@ -274,6 +377,16 @@ val ExtendedFABExamples =
             description = ExtendedFABExampleDescription,
             sourceUrl = ExtendedFABExampleSourceUrl,
         ) { ExtendedFloatingActionButtonSample() },
+        Example(
+            name = ::ExtendedFloatingActionButtonTextSample.name,
+            description = ExtendedFABExampleDescription,
+            sourceUrl = ExtendedFABExampleSourceUrl,
+        ) { ExtendedFloatingActionButtonTextSample() },
+        Example(
+            name = ::AnimatedExtendedFloatingActionButtonSample.name,
+            description = ExtendedFABExampleDescription,
+            sourceUrl = ExtendedFABExampleSourceUrl,
+        ) { AnimatedExtendedFloatingActionButtonSample() },
     )
 
 private const val FloatingActionButtonsExampleDescription = "Floating action button examples"
@@ -298,6 +411,52 @@ val FloatingActionButtonsExamples =
         ) { SmallFloatingActionButtonSample() }
     )
 
+private const val IconButtonExampleDescription = "Icon button examples"
+private const val IconButtonExampleSourceUrl = "$SampleSourceUrl/IconButtonSamples.kt"
+val IconButtonExamples =
+    listOf(
+        Example(
+            name = ::IconButtonSample.name,
+            description = IconButtonExampleDescription,
+            sourceUrl = IconButtonExampleSourceUrl,
+        ) { IconButtonSample() },
+        Example(
+            name = ::IconToggleButtonSample.name,
+            description = IconButtonExampleDescription,
+            sourceUrl = IconButtonExampleSourceUrl,
+        ) { IconToggleButtonSample() },
+        Example(
+            name = ::FilledIconButtonSample.name,
+            description = IconButtonExampleDescription,
+            sourceUrl = IconButtonExampleSourceUrl,
+        ) { FilledIconButtonSample() },
+        Example(
+            name = ::FilledIconToggleButtonSample.name,
+            description = IconButtonExampleDescription,
+            sourceUrl = IconButtonExampleSourceUrl,
+        ) { FilledIconToggleButtonSample() },
+        Example(
+            name = ::FilledTonalIconButtonSample.name,
+            description = IconButtonExampleDescription,
+            sourceUrl = IconButtonExampleSourceUrl,
+        ) { FilledTonalIconButtonSample() },
+        Example(
+            name = ::FilledTonalIconToggleButtonSample.name,
+            description = IconButtonExampleDescription,
+            sourceUrl = IconButtonExampleSourceUrl,
+        ) { FilledTonalIconToggleButtonSample() },
+        Example(
+            name = ::OutlinedIconButtonSample.name,
+            description = IconButtonExampleDescription,
+            sourceUrl = IconButtonExampleSourceUrl,
+        ) { OutlinedIconButtonSample() },
+        Example(
+            name = ::OutlinedIconToggleButtonSample.name,
+            description = IconButtonExampleDescription,
+            sourceUrl = IconButtonExampleSourceUrl,
+        ) { OutlinedIconToggleButtonSample() }
+    )
+
 private const val MenusExampleDescription = "Menus examples"
 private const val MenusExampleSourceUrl = "$SampleSourceUrl/MenuSamples.kt"
 val MenusExamples = listOf(
@@ -307,7 +466,21 @@ val MenusExamples = listOf(
         sourceUrl = MenusExampleSourceUrl
     ) {
         MenuSample()
-    }
+    },
+    Example(
+        name = ::ExposedDropdownMenuSample.name,
+        description = MenusExampleDescription,
+        sourceUrl = MenusExampleSourceUrl
+    ) {
+        ExposedDropdownMenuSample()
+    },
+    Example(
+        name = ::EditableExposedDropdownMenuSample.name,
+        description = MenusExampleDescription,
+        sourceUrl = MenusExampleSourceUrl
+    ) {
+        EditableExposedDropdownMenuSample()
+    },
 )
 
 private const val NavigationBarExampleDescription = "Navigation bar examples"
@@ -464,6 +637,26 @@ val SnackbarsExamples = listOf(
     }
 )
 
+private const val SwitchExampleDescription = "Switch examples"
+private const val SwitchExampleSourceUrl = "$SampleSourceUrl/Switch.kt"
+val SwitchExamples = listOf(
+    Example(
+        name = ::SwitchSample.name,
+        description = SwitchExampleDescription,
+        sourceUrl = SwitchExampleSourceUrl
+    ) {
+        SwitchSample()
+    },
+
+    Example(
+        name = ::SwitchWithThumbIconSample.name,
+        description = SwitchExampleDescription,
+        sourceUrl = SwitchExampleSourceUrl
+    ) {
+        SwitchWithThumbIconSample()
+    },
+)
+
 private const val TabsExampleDescription = "Tabs examples"
 private const val TabsExampleSourceUrl = "$SampleSourceUrl/TabSamples.kt"
 val TabsExamples = listOf(
@@ -531,3 +724,92 @@ val TabsExamples = listOf(
         ScrollingFancyIndicatorContainerTabs()
     }
 )
+
+private const val TextFieldsExampleDescription = "Text fields examples"
+private const val TextFieldsExampleSourceUrl = "$SampleSourceUrl/TextFieldSamples.kt"
+val TextFieldsExamples = listOf(
+    Example(
+        name = ::SimpleTextFieldSample.name,
+        description = TextFieldsExampleDescription,
+        sourceUrl = TextFieldsExampleSourceUrl
+    ) {
+        SimpleTextFieldSample()
+    },
+    Example(
+        name = ::TextFieldSample.name,
+        description = TextFieldsExampleDescription,
+        sourceUrl = TextFieldsExampleSourceUrl
+    ) {
+        TextFieldSample()
+    },
+    Example(
+        name = ::SimpleOutlinedTextFieldSample.name,
+        description = TextFieldsExampleDescription,
+        sourceUrl = TextFieldsExampleSourceUrl
+    ) {
+        SimpleOutlinedTextFieldSample()
+    },
+    Example(
+        name = ::OutlinedTextFieldSample.name,
+        description = TextFieldsExampleDescription,
+        sourceUrl = TextFieldsExampleSourceUrl
+    ) {
+        OutlinedTextFieldSample()
+    },
+    Example(
+        name = ::TextFieldWithIcons.name,
+        description = TextFieldsExampleDescription,
+        sourceUrl = TextFieldsExampleSourceUrl
+    ) {
+        TextFieldWithIcons()
+    },
+    Example(
+        name = ::TextFieldWithPlaceholder.name,
+        description = TextFieldsExampleDescription,
+        sourceUrl = TextFieldsExampleSourceUrl
+    ) {
+        TextFieldWithPlaceholder()
+    },
+    Example(
+        name = ::TextFieldWithErrorState.name,
+        description = TextFieldsExampleDescription,
+        sourceUrl = TextFieldsExampleSourceUrl
+    ) {
+        TextFieldWithErrorState()
+    },
+    Example(
+        name = ::TextFieldWithSupportingText.name,
+        description = TextFieldsExampleDescription,
+        sourceUrl = TextFieldsExampleSourceUrl
+    ) {
+        TextFieldWithSupportingText()
+    },
+    Example(
+        name = ::PasswordTextField.name,
+        description = TextFieldsExampleDescription,
+        sourceUrl = TextFieldsExampleSourceUrl
+    ) {
+        PasswordTextField()
+    },
+    Example(
+        name = ::TextFieldWithHideKeyboardOnImeAction.name,
+        description = TextFieldsExampleDescription,
+        sourceUrl = TextFieldsExampleSourceUrl
+    ) {
+        TextFieldWithHideKeyboardOnImeAction()
+    },
+    Example(
+        name = ::TextArea.name,
+        description = TextFieldsExampleDescription,
+        sourceUrl = TextFieldsExampleSourceUrl
+    ) {
+        TextArea()
+    }
+).map {
+    // By default text field samples are minimal and don't have a `width` modifier to restrict the
+    // width. As a result, they grow horizontally if enough text is typed. To prevent this behavior
+    // in Catalog app the code below restricts the width of every text field sample
+    it.copy(content = {
+        Box(Modifier.wrapContentWidth().width(280.dp)) { it.content() }
+    })
+}

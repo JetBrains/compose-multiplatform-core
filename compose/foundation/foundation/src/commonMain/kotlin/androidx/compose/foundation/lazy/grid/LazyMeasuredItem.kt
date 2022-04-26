@@ -18,8 +18,6 @@ package androidx.compose.foundation.lazy.grid
 
 import androidx.compose.animation.core.FiniteAnimationSpec
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.lazy.LazyGridItemInfo
-import androidx.compose.foundation.lazy.layout.LazyLayoutPlaceable
 import androidx.compose.ui.layout.Placeable
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
@@ -29,6 +27,7 @@ import androidx.compose.ui.unit.LayoutDirection
  * Represents one measured item of the lazy grid. It can in fact consist of multiple placeables
  * if the user emit multiple layout nodes in the item callback.
  */
+@OptIn(ExperimentalFoundationApi::class)
 internal class LazyMeasuredItem(
     val index: ItemIndex,
     val key: Any,
@@ -43,7 +42,7 @@ internal class LazyMeasuredItem(
     private val layoutDirection: LayoutDirection,
     private val beforeContentPadding: Int,
     private val afterContentPadding: Int,
-    val placeables: Array<LazyLayoutPlaceable>,
+    val placeables: Array<Placeable>,
     private val placementAnimator: LazyGridItemPlacementAnimator,
     /**
      * The offset which shouldn't affect any calculations but needs to be applied for the final
@@ -64,9 +63,7 @@ internal class LazyMeasuredItem(
     init {
         var maxMainAxis = 0
         placeables.forEach {
-            val placeable = it.placeable
-            maxMainAxis =
-                maxOf(maxMainAxis, if (isVertical) placeable.height else placeable.width)
+            maxMainAxis = maxOf(maxMainAxis, if (isVertical) it.height else it.width)
         }
         mainAxisSize = maxMainAxis
         mainAxisSizeWithSpacings = maxMainAxis + mainAxisSpacing
@@ -86,7 +83,7 @@ internal class LazyMeasuredItem(
         layoutHeight: Int,
         row: Int,
         column: Int,
-        lineMainAxisSizeWithSpacings: Int
+        lineMainAxisSize: Int
     ): LazyGridPositionedItem {
         val wrappers = mutableListOf<LazyGridPlaceableWrapper>()
 
@@ -110,7 +107,7 @@ internal class LazyMeasuredItem(
 
         var placeableIndex = if (reverseLayout) placeables.lastIndex else 0
         while (if (reverseLayout) placeableIndex >= 0 else placeableIndex < placeables.size) {
-            val it = placeables[placeableIndex].placeable
+            val it = placeables[placeableIndex]
             val addIndex = if (reverseLayout) 0 else wrappers.size
             wrappers.add(
                 addIndex,
@@ -135,8 +132,8 @@ internal class LazyMeasuredItem(
             } else {
                 IntSize(mainAxisSize, crossAxisSize)
             },
-            mainAxisSizeWithSpacings = mainAxisSizeWithSpacings,
-            lineMainAxisSizeWithSpacings = lineMainAxisSizeWithSpacings,
+            lineMainAxisSize = lineMainAxisSize,
+            mainAxisSpacing = mainAxisSpacing,
             minMainAxisOffset = -if (!reverseLayout) {
                 beforeContentPadding
             } else {
@@ -161,8 +158,8 @@ internal class LazyGridPositionedItem(
     override val row: Int,
     override val column: Int,
     override val size: IntSize,
-    val mainAxisSizeWithSpacings: Int,
-    val lineMainAxisSizeWithSpacings: Int,
+    val lineMainAxisSize: Int,
+    private val mainAxisSpacing: Int,
     private val minMainAxisOffset: Int,
     private val maxMainAxisOffset: Int,
     private val isVertical: Boolean,
@@ -171,6 +168,11 @@ internal class LazyGridPositionedItem(
     private val visualOffset: IntOffset
 ) : LazyGridItemInfo {
     val placeablesCount: Int get() = wrappers.size
+
+    val mainAxisSizeWithSpacings: Int get() =
+        mainAxisSpacing + if (isVertical) size.height else size.width
+
+    val lineMainAxisSizeWithSpacings: Int get() = mainAxisSpacing + lineMainAxisSize
 
     fun getMainAxisSize(index: Int) = wrappers[index].placeable.mainAxisSize
 

@@ -20,6 +20,7 @@ import android.annotation.SuppressLint
 import android.graphics.Rect
 import android.hardware.camera2.CameraCharacteristics
 import android.util.Rational
+import android.util.Size
 import androidx.annotation.RequiresApi
 import androidx.arch.core.util.Function
 import androidx.camera.camera2.pipe.CameraPipe
@@ -154,6 +155,14 @@ class CameraControlAdapter @Inject constructor(
         Futures.nonCancellationPropagating(
             evCompControl.updateAsync(exposure).asListenableFuture()
         )
+
+    override fun setZslDisabled(disabled: Boolean) {
+        // Override if Zero-Shutter Lag needs to be disabled or not.
+    }
+
+    override fun addZslConfig(resolution: Size, sessionConfigBuilder: SessionConfig.Builder) {
+        // Override if Zero-Shutter Lag needs to add config to session config.
+    }
 
     override fun submitStillCaptureRequests(
         captureConfigs: List<CaptureConfig>,

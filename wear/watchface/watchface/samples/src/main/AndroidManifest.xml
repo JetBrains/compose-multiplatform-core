@@ -14,8 +14,7 @@
   See the License for the specific language governing permissions and
   limitations under the License.
   -->
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="androidx.wear.watchface.samples">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <!--
       Required for complications to receive complication data and open the data source chooser.
@@ -102,6 +101,9 @@
                 android:name=
                     "com.google.android.wearable.watchface.companionBuiltinConfigurationEnabled"
                 android:value="true" />
+            <meta-data
+                android:name="androidx.wear.watchface.FLAVORS_SUPPORTED"
+                android:value="true"/>
         </service>
 
         <service

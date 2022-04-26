@@ -20,7 +20,7 @@ package androidx.wear.compose.material
  *
  * @see ScalingLazyListLayoutInfo
  */
-interface ScalingLazyListItemInfo {
+public sealed interface ScalingLazyListItemInfo {
     /**
      * The index of the item in the list.
      */
@@ -76,4 +76,9 @@ interface ScalingLazyListItemInfo {
      * How much alpha has been applied to the item, between 0 and 1
      */
     val alpha: Float
+
+    /**
+     * The original (before scaling) size of the list item
+     */
+    val unadjustedSize: Int
 }

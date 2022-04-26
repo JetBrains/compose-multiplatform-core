@@ -16,16 +16,10 @@
 
 package androidx.compose.foundation.lazy.grid
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.GridCells
-import androidx.compose.foundation.lazy.LazyVerticalGrid
-import androidx.compose.foundation.lazy.LazyGridState
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyGridState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -43,7 +37,6 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-@OptIn(ExperimentalFoundationApi::class)
 @LargeTest
 @RunWith(AndroidJUnit4::class)
 class LazyGridSlotsReuseTest {
@@ -120,6 +113,39 @@ class LazyGridSlotsReuseTest {
             .assertExists()
             .assertIsNotDisplayed()
         rule.onNodeWithTag("2")
+            .assertIsDisplayed()
+    }
+
+    @Test
+    fun checkMaxItemsKeptForReuse() {
+        lateinit var state: LazyGridState
+        rule.setContent {
+            state = rememberLazyGridState()
+            LazyVerticalGrid(
+                GridCells.Fixed(1),
+                Modifier.height(itemsSizeDp * (DefaultMaxItemsToRetain + 0.5f)),
+                state
+            ) {
+                items(100) {
+                    Spacer(Modifier.height(itemsSizeDp).fillMaxWidth().testTag("$it"))
+                }
+            }
+        }
+
+        rule.runOnIdle {
+            runBlocking {
+                state.scrollToItem(DefaultMaxItemsToRetain + 1)
+            }
+        }
+
+        repeat(DefaultMaxItemsToRetain) {
+            rule.onNodeWithTag("$it")
+                .assertExists()
+                .assertIsNotDisplayed()
+        }
+        rule.onNodeWithTag("$DefaultMaxItemsToRetain")
+            .assertDoesNotExist()
+        rule.onNodeWithTag("${DefaultMaxItemsToRetain + 1}")
             .assertIsDisplayed()
     }
 
@@ -344,54 +370,54 @@ class LazyGridSlotsReuseTest {
     @Test
     fun differentContentTypes() {
         lateinit var state: LazyGridState
+        val visibleItemsCount = (DefaultMaxItemsToRetain + 1) * 2
+        val startOfType1 = DefaultMaxItemsToRetain + 1
         rule.setContent {
             state = rememberLazyGridState()
             LazyVerticalGrid(
                 GridCells.Fixed(1),
-                Modifier.height(itemsSizeDp * 6.5f),
+                Modifier.height(itemsSizeDp * (visibleItemsCount - 0.5f)),
                 state
             ) {
                 items(
                     100,
-                    contentType = { if (it <= 2) 0 else 1 }
+                    contentType = { if (it >= startOfType1) 1 else 0 }
                 ) {
                     Spacer(Modifier.height(itemsSizeDp).fillMaxWidth().testTag("$it"))
                 }
             }
         }
 
-        rule.onNodeWithTag("0")
-            .assertIsDisplayed()
-        rule.onNodeWithTag("1")
-            .assertIsDisplayed()
+        for (i in 0 until visibleItemsCount) {
+            rule.onNodeWithTag("$i")
+                .assertIsDisplayed()
+        }
 
         rule.runOnIdle {
             runBlocking {
-                state.scrollToItem(6)
+                state.scrollToItem(visibleItemsCount)
             }
         }
 
-        rule.onNodeWithTag("6")
+        rule.onNodeWithTag("$visibleItemsCount")
             .assertIsDisplayed()
 
-        // two items of type 0 are left for reuse
-        rule.onNodeWithTag("0")
-            .assertExists()
-            .assertIsNotDisplayed()
-        rule.onNodeWithTag("1")
-            .assertExists()
-            .assertIsNotDisplayed()
-        rule.onNodeWithTag("2")
+        // [DefaultMaxItemsToRetain] items of type 0 are left for reuse
+        for (i in 0 until DefaultMaxItemsToRetain) {
+            rule.onNodeWithTag("$i")
+                .assertExists()
+                .assertIsNotDisplayed()
+        }
+        rule.onNodeWithTag("$DefaultMaxItemsToRetain")
             .assertDoesNotExist()
 
-        // and two items of type 1
-        rule.onNodeWithTag("3")
-            .assertExists()
-            .assertIsNotDisplayed()
-        rule.onNodeWithTag("4")
-            .assertExists()
-            .assertIsNotDisplayed()
-        rule.onNodeWithTag("5")
+        // and 7 items of type 1
+        for (i in startOfType1 until startOfType1 + DefaultMaxItemsToRetain) {
+            rule.onNodeWithTag("$i")
+                .assertExists()
+                .assertIsNotDisplayed()
+        }
+        rule.onNodeWithTag("${startOfType1 + DefaultMaxItemsToRetain}")
             .assertDoesNotExist()
     }
 
@@ -456,3 +482,5 @@ class LazyGridSlotsReuseTest {
             .assertIsDisplayed()
     }
 }
+
+private val DefaultMaxItemsToRetain = 7

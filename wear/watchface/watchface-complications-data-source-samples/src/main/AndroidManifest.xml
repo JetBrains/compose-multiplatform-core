@@ -14,8 +14,7 @@
   See the License for the specific language governing permissions and
   limitations under the License.
   -->
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="androidx.wear.watchface.complications.datasource.samples">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission
         android:name="com.google.android.wearable.permission.USE_IMMEDIATE_COMPLICATION_UPDATE" />
     <application
@@ -117,7 +116,7 @@
                 android:value="androidx.wear.watchface.complications.datasource.samples.CONFIGURE"/>
             <meta-data
                 android:name=
-                    "androidx.watchface.complications.datasource.DEFAULT_CONFIGURATION_SUPPORTED"
+                    "androidx.watchface.complications.datasource.DEFAULT_CONFIG_SUPPORTED"
                 android:value="true"/>
             <intent-filter>
                 <action android:name=

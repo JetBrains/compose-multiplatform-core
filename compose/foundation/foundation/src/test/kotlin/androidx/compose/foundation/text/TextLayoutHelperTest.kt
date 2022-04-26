@@ -245,7 +245,7 @@ class TextLayoutHelperTest {
     }
 
     @Test
-    fun testCanReuse_different_constraints() {
+    fun testCanReuse_different_constraintsWidth() {
         assertThat(
             referenceResult.canReuse(
                 text = AnnotatedString.Builder("Hello, World").toAnnotatedString(),
@@ -258,6 +258,24 @@ class TextLayoutHelperTest {
                 layoutDirection = LayoutDirection.Ltr,
                 fontFamilyResolver = fontFamilyResolver,
                 constraints = Constraints.fixedWidth(200)
+            )
+        ).isFalse()
+    }
+
+    @Test
+    fun testCanReuse_different_constraintsHeight() {
+        assertThat(
+            referenceResult.canReuse(
+                text = AnnotatedString.Builder("Hello, World").toAnnotatedString(),
+                style = TextStyle(),
+                placeholders = emptyList(),
+                maxLines = 1,
+                softWrap = true,
+                overflow = TextOverflow.Ellipsis,
+                density = Density(1.0f),
+                layoutDirection = LayoutDirection.Ltr,
+                fontFamilyResolver = fontFamilyResolver,
+                constraints = Constraints.fixedHeight(200)
             )
         ).isFalse()
     }
@@ -287,7 +305,7 @@ class TextLayoutHelperTest {
     }
 
     @Test
-    fun testCanResuse_notLatestTypefaces_isFalse() {
+    fun testCanReuse_notLatestTypefaces_isFalse() {
         val constraints = Constraints.fixedWidth(100)
         whenever(referenceResult.multiParagraph.intrinsics.hasStaleResolvedFonts)
             .thenReturn(true)

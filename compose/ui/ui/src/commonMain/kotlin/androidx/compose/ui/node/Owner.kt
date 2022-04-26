@@ -15,6 +15,7 @@
  */
 package androidx.compose.ui.node
 
+import androidx.compose.runtime.Applier
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.autofill.Autofill
 import androidx.compose.ui.autofill.AutofillTree
@@ -89,7 +90,7 @@ internal interface Owner {
      *  TODO(ralu): Replace with SemanticsTree. This is a temporary hack until we have a semantics
      *  tree implemented.
      */
-    @Suppress("EXPERIMENTAL_ANNOTATION_ON_WRONG_TARGET")
+    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
     @get:ExperimentalComposeUiApi
     @ExperimentalComposeUiApi
     val autofillTree: AutofillTree
@@ -98,7 +99,7 @@ internal interface Owner {
      * The [Autofill] class can be used to perform autofill operations. It is used as a
      * CompositionLocal.
      */
-    @Suppress("EXPERIMENTAL_ANNOTATION_ON_WRONG_TARGET")
+    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
     @get:ExperimentalComposeUiApi
     @ExperimentalComposeUiApi
     val autofill: Autofill?
@@ -139,14 +140,18 @@ internal interface Owner {
         set
 
     /**
-     * Called by [LayoutNode] to request the Owner a new measurement+layout.
+     * Called by [LayoutNode] to request the Owner a new measurement+layout. [forceRequest] defines
+     * whether the node should bypass the logic that would reject measure requests, and therefore
+     * force the measure request to be evaluated even when it's already pending measure.
      */
-    fun onRequestMeasure(layoutNode: LayoutNode)
+    fun onRequestMeasure(layoutNode: LayoutNode, forceRequest: Boolean = false)
 
     /**
-     * Called by [LayoutNode] to request the Owner a new layout.
+     * Called by [LayoutNode] to request the Owner a new layout. [forceRequest] defines
+     * whether the node should bypass the logic that would reject relayout requests, and therefore
+     * force the relayout request to be evaluated even when it's already pending measure/layout.
      */
-    fun onRequestRelayout(layoutNode: LayoutNode)
+    fun onRequestRelayout(layoutNode: LayoutNode, forceRequest: Boolean = false)
 
     /**
      * Called by [LayoutNode] when it is attached to the view system and now has an owner.
@@ -236,11 +241,33 @@ internal interface Owner {
      */
     val snapshotObserver: OwnerSnapshotObserver
 
+    /**
+     * Registers a call to be made when the [Applier.onEndChanges] is called. [listener]
+     * should be called in [onEndApplyChanges] and then removed after being called.
+     */
+    fun registerOnEndApplyChangesListener(listener: () -> Unit)
+
+    /**
+     * Called when [Applier.onEndChanges] executes. This must call all listeners registered
+     * in [registerOnEndApplyChangesListener] and then remove them so that they are not
+     * called again.
+     */
+    fun onEndApplyChanges()
+
+    /**
+     * [listener] will be notified after the current or next layout has finished.
+     */
+    fun registerOnLayoutCompletedListener(listener: OnLayoutCompletedListener)
+
     companion object {
         /**
          * Enables additional (and expensive to do in production) assertions. Useful to be set
          * to true during the tests covering our core logic.
          */
         var enableExtraAssertions: Boolean = false
+    }
+
+    interface OnLayoutCompletedListener {
+        fun onLayoutComplete()
     }
 }

@@ -103,6 +103,7 @@ package androidx.wear.watchface.client {
     method @kotlin.jvm.Throws(exceptionClasses=RemoteException::class) public java.util.Map<java.lang.Integer,androidx.wear.watchface.client.ComplicationSlotState> getComplicationSlotsState();
     method @kotlin.jvm.Throws(exceptionClasses=RemoteException::class) public java.time.Instant getPreviewReferenceInstant();
     method @kotlin.jvm.Throws(exceptionClasses=RemoteException::class) public androidx.wear.watchface.style.UserStyleSchema getUserStyleSchema();
+    method @kotlin.jvm.Throws(exceptionClasses=RemoteException::class) public default byte[] getUserStyleSchemaDigestHash() throws android.os.RemoteException;
     method @AnyThread public boolean isConnectionAlive();
     method @AnyThread public void removeClientDisconnectListener(androidx.wear.watchface.client.HeadlessWatchFaceClient.ClientDisconnectListener listener);
     method @RequiresApi(27) @kotlin.jvm.Throws(exceptionClasses=RemoteException::class) public android.graphics.Bitmap? renderComplicationToBitmap(int complicationSlotId, androidx.wear.watchface.RenderParameters renderParameters, java.time.Instant instant, androidx.wear.watchface.complications.data.ComplicationData complicationData, androidx.wear.watchface.style.UserStyle? userStyle) throws android.os.RemoteException;
@@ -181,17 +182,17 @@ package androidx.wear.watchface.client {
   public interface WatchFaceControlClient extends java.lang.AutoCloseable {
     method @Deprecated @kotlin.jvm.Throws(exceptionClasses=RemoteException::class) public androidx.wear.watchface.client.HeadlessWatchFaceClient? createHeadlessWatchFaceClient(android.content.ComponentName watchFaceName, androidx.wear.watchface.client.DeviceConfig deviceConfig, @Px int surfaceWidth, @Px int surfaceHeight) throws android.os.RemoteException;
     method @kotlin.jvm.Throws(exceptionClasses=RemoteException::class) public default androidx.wear.watchface.client.HeadlessWatchFaceClient? createHeadlessWatchFaceClient(String id, android.content.ComponentName watchFaceName, androidx.wear.watchface.client.DeviceConfig deviceConfig, @Px int surfaceWidth, @Px int surfaceHeight) throws android.os.RemoteException;
-    method @kotlin.jvm.Throws(exceptionClasses={ServiceNotBoundException::class, ServiceStartFailureException::class}) public default static suspend Object? createWatchFaceControlClient(android.content.Context context, String watchFacePackageName, kotlin.coroutines.Continuation<? super androidx.wear.watchface.client.WatchFaceControlClient> p) throws androidx.wear.watchface.client.WatchFaceControlClient.ServiceNotBoundException, androidx.wear.watchface.client.WatchFaceControlClient.ServiceStartFailureException;
+    method @kotlin.jvm.Throws(exceptionClasses={ServiceNotBoundException::class, ServiceStartFailureException::class}) public default static suspend Object? createWatchFaceControlClient(android.content.Context context, String watchFacePackageName, kotlin.coroutines.Continuation<? super androidx.wear.watchface.client.WatchFaceControlClient>) throws androidx.wear.watchface.client.WatchFaceControlClient.ServiceNotBoundException, androidx.wear.watchface.client.WatchFaceControlClient.ServiceStartFailureException;
     method @Deprecated @kotlin.jvm.Throws(exceptionClasses=RemoteException::class) public java.util.Map<java.lang.Integer,androidx.wear.watchface.client.DefaultComplicationDataSourcePolicyAndType> getDefaultComplicationDataSourcePoliciesAndType(android.content.ComponentName watchFaceName) throws android.os.RemoteException;
     method @kotlin.jvm.Throws(exceptionClasses=RemoteException::class) public androidx.wear.watchface.client.EditorServiceClient getEditorServiceClient() throws android.os.RemoteException;
     method @kotlin.jvm.Throws(exceptionClasses=RemoteException::class) public androidx.wear.watchface.client.InteractiveWatchFaceClient? getInteractiveWatchFaceClientInstance(String instanceId) throws android.os.RemoteException;
-    method @kotlin.jvm.Throws(exceptionClasses=RemoteException::class) public suspend Object? getOrCreateInteractiveWatchFaceClient(String id, androidx.wear.watchface.client.DeviceConfig deviceConfig, androidx.wear.watchface.client.WatchUiState watchUiState, androidx.wear.watchface.style.UserStyleData? userStyle, java.util.Map<java.lang.Integer,? extends androidx.wear.watchface.complications.data.ComplicationData>? slotIdToComplicationData, kotlin.coroutines.Continuation<? super androidx.wear.watchface.client.InteractiveWatchFaceClient> p) throws android.os.RemoteException;
+    method @kotlin.jvm.Throws(exceptionClasses=RemoteException::class) public suspend Object? getOrCreateInteractiveWatchFaceClient(String id, androidx.wear.watchface.client.DeviceConfig deviceConfig, androidx.wear.watchface.client.WatchUiState watchUiState, androidx.wear.watchface.style.UserStyleData? userStyle, java.util.Map<java.lang.Integer,? extends androidx.wear.watchface.complications.data.ComplicationData>? slotIdToComplicationData, kotlin.coroutines.Continuation<? super androidx.wear.watchface.client.InteractiveWatchFaceClient>) throws android.os.RemoteException;
     method public default boolean hasComplicationDataCache();
     field public static final androidx.wear.watchface.client.WatchFaceControlClient.Companion Companion;
   }
 
   public static final class WatchFaceControlClient.Companion {
-    method @kotlin.jvm.Throws(exceptionClasses={ServiceNotBoundException::class, ServiceStartFailureException::class}) public suspend Object? createWatchFaceControlClient(android.content.Context context, String watchFacePackageName, kotlin.coroutines.Continuation<? super androidx.wear.watchface.client.WatchFaceControlClient> p) throws androidx.wear.watchface.client.WatchFaceControlClient.ServiceNotBoundException, androidx.wear.watchface.client.WatchFaceControlClient.ServiceStartFailureException;
+    method @kotlin.jvm.Throws(exceptionClasses={ServiceNotBoundException::class, ServiceStartFailureException::class}) public suspend Object? createWatchFaceControlClient(android.content.Context context, String watchFacePackageName, kotlin.coroutines.Continuation<? super androidx.wear.watchface.client.WatchFaceControlClient>) throws androidx.wear.watchface.client.WatchFaceControlClient.ServiceNotBoundException, androidx.wear.watchface.client.WatchFaceControlClient.ServiceStartFailureException;
   }
 
   public static final class WatchFaceControlClient.ServiceNotBoundException extends java.lang.Exception {
@@ -202,6 +203,9 @@ package androidx.wear.watchface.client {
     ctor public WatchFaceControlClient.ServiceStartFailureException(optional String message);
   }
 
+  public final class WatchFaceExceptionKt {
+  }
+
   public final class WatchFaceId {
     ctor public WatchFaceId(String id);
     method public String getId();
@@ -209,13 +213,15 @@ package androidx.wear.watchface.client {
   }
 
   public interface WatchFaceMetadataClient extends java.lang.AutoCloseable {
-    method @kotlin.jvm.Throws(exceptionClasses=WatchFaceException::class) public java.util.Map<java.lang.Integer,androidx.wear.watchface.client.ComplicationSlotMetadata> getComplicationSlotMetadataMap() throws androidx.wear.watchface.client.WatchFaceMetadataClient.WatchFaceException;
-    method @kotlin.jvm.Throws(exceptionClasses=WatchFaceException::class) public androidx.wear.watchface.style.UserStyleSchema getUserStyleSchema() throws androidx.wear.watchface.client.WatchFaceMetadataClient.WatchFaceException;
+    method public java.util.Map<java.lang.Integer,androidx.wear.watchface.client.ComplicationSlotMetadata> getComplicationSlotMetadataMap();
+    method public androidx.wear.watchface.style.UserStyleSchema getUserStyleSchema();
+    method public boolean isUserStyleSchemaStatic();
+    property public abstract boolean isUserStyleSchemaStatic;
     field public static final androidx.wear.watchface.client.WatchFaceMetadataClient.Companion Companion;
   }
 
   public static final class WatchFaceMetadataClient.Companion {
-    method @kotlin.jvm.Throws(exceptionClasses={ServiceNotBoundException::class, ServiceStartFailureException::class, PackageManager.NameNotFoundException::class}) public suspend Object? create(android.content.Context context, android.content.ComponentName watchFaceName, kotlin.coroutines.Continuation<? super androidx.wear.watchface.client.WatchFaceMetadataClient> p) throws android.content.pm.PackageManager.NameNotFoundException, androidx.wear.watchface.client.WatchFaceMetadataClient.ServiceNotBoundException, androidx.wear.watchface.client.WatchFaceMetadataClient.ServiceStartFailureException;
+    method @kotlin.jvm.Throws(exceptionClasses={ServiceNotBoundException::class, ServiceStartFailureException::class, PackageManager.NameNotFoundException::class}) public suspend Object? create(android.content.Context context, android.content.ComponentName watchFaceName, kotlin.coroutines.Continuation<? super androidx.wear.watchface.client.WatchFaceMetadataClient>) throws android.content.pm.PackageManager.NameNotFoundException, androidx.wear.watchface.client.WatchFaceMetadataClient.ServiceNotBoundException, androidx.wear.watchface.client.WatchFaceMetadataClient.ServiceStartFailureException;
   }
 
   public static final class WatchFaceMetadataClient.ServiceNotBoundException extends java.lang.Exception {
@@ -224,19 +230,6 @@ package androidx.wear.watchface.client {
 
   public static final class WatchFaceMetadataClient.ServiceStartFailureException extends java.lang.Exception {
     ctor public WatchFaceMetadataClient.ServiceStartFailureException(optional String message);
-  }
-
-  public static final class WatchFaceMetadataClient.WatchFaceException extends java.lang.Exception {
-    ctor public WatchFaceMetadataClient.WatchFaceException(Exception e, int reason);
-    method public int getReason();
-    property public final int reason;
-    field public static final androidx.wear.watchface.client.WatchFaceMetadataClient.WatchFaceException.Companion Companion;
-    field public static final int TRANSACTION_TOO_LARGE = 2; // 0x2
-    field public static final int UNKNOWN = 3; // 0x3
-    field public static final int WATCHFACE_DIED = 1; // 0x1
-  }
-
-  public static final class WatchFaceMetadataClient.WatchFaceException.Companion {
   }
 
   public final class WatchUiState {

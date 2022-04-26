@@ -526,7 +526,6 @@ class NavHostTest {
         }
     }
 
-    @OptIn(androidx.navigation.NavControllerVisibleEntries::class)
     @Test
     fun testNavHostCrossFade() {
         lateinit var navController: NavHostController
@@ -850,6 +849,9 @@ class NavHostTest {
         // Now navigate to a second destination in the outer NavHost
         composeTestRule.runOnIdle {
             navController.navigate(second)
+        }
+
+        composeTestRule.runOnIdle {
             innerLifecycleOwner.currentState = Lifecycle.State.DESTROYED
         }
 
