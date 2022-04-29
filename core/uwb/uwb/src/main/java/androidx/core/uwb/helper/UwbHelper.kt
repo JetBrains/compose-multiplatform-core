@@ -42,8 +42,6 @@ internal fun handleApiException(e: ApiException) {
     when (e.statusCode) {
         UwbStatusCodes.INVALID_API_CALL ->
             throw IllegalArgumentException("Illegal api call was received.")
-        UwbStatusCodes.MISSING_PERMISSION_UWB_RANGING ->
-            throw SecurityException("Missing permission to start ranging.")
         UwbStatusCodes.RANGING_ALREADY_STARTED ->
             throw UwbRangingAlreadyStartedException("Ranging has already started for the" +
                 " clientSessionScope.")

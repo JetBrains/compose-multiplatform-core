@@ -83,9 +83,11 @@ internal class AndroidWindowInsets(
     }
 
     @OptIn(ExperimentalLayoutApi::class)
-    internal fun update(windowInsetsCompat: WindowInsetsCompat) {
-        insets = windowInsetsCompat.getInsets(type)
-        isVisible = windowInsetsCompat.isVisible(type)
+    internal fun update(windowInsetsCompat: WindowInsetsCompat, typeMask: Int) {
+        if (typeMask == 0 || typeMask and type != 0) {
+            insets = windowInsetsCompat.getInsets(type)
+            isVisible = windowInsetsCompat.isVisible(type)
+        }
     }
 
     override fun equals(other: Any?): Boolean {
@@ -375,7 +377,7 @@ val WindowInsets.Companion.isTappableElementVisible: Boolean
  * The insets for various values in the current window.
  */
 @OptIn(ExperimentalLayoutApi::class)
-internal class WindowInsetsHolder private constructor(insets: WindowInsetsCompat?) {
+internal class WindowInsetsHolder private constructor(insets: WindowInsetsCompat?, view: View) {
     val captionBar =
         systemInsets(insets, WindowInsetsCompat.Type.captionBar(), "captionBar")
     val displayCutout =
@@ -431,7 +433,8 @@ internal class WindowInsetsHolder private constructor(insets: WindowInsetsCompat
     /**
      * `true` unless the `ComposeView` [ComposeView.consumeWindowInsets] is set to `false`.
      */
-    var consumes = true
+    val consumes = (view.parent as? View)?.getTag(R.id.consume_window_insets_tag)
+        as? Boolean ?: true
 
     /**
      * The number of accesses to [WindowInsetsHolder]. When this reaches
@@ -477,7 +480,7 @@ internal class WindowInsetsHolder private constructor(insets: WindowInsetsCompat
     /**
      * Updates the WindowInsets values and notifies changes.
      */
-    fun update(windowInsets: WindowInsetsCompat) {
+    fun update(windowInsets: WindowInsetsCompat, types: Int = 0) {
         val insets = if (testInsets) {
             // WindowInsetsCompat erases insets that aren't part of the device.
             // For example, if there is no navigation bar because of hardware keys,
@@ -488,36 +491,38 @@ internal class WindowInsetsHolder private constructor(insets: WindowInsetsCompat
         } else {
             windowInsets
         }
-        captionBar.update(insets)
-        ime.update(insets)
-        displayCutout.update(insets)
-        navigationBars.update(insets)
-        statusBars.update(insets)
-        systemBars.update(insets)
-        systemGestures.update(insets)
-        tappableElement.update(insets)
-        mandatorySystemGestures.update(insets)
+        captionBar.update(insets, types)
+        ime.update(insets, types)
+        displayCutout.update(insets, types)
+        navigationBars.update(insets, types)
+        statusBars.update(insets, types)
+        systemBars.update(insets, types)
+        systemGestures.update(insets, types)
+        tappableElement.update(insets, types)
+        mandatorySystemGestures.update(insets, types)
 
-        captionBarIgnoringVisibility.value = insets.getInsetsIgnoringVisibility(
-            WindowInsetsCompat.Type.captionBar()
-        ).toInsetsValues()
-        navigationBarsIgnoringVisibility.value = insets.getInsetsIgnoringVisibility(
-            WindowInsetsCompat.Type.navigationBars()
-        ).toInsetsValues()
-        statusBarsIgnoringVisibility.value = insets.getInsetsIgnoringVisibility(
-            WindowInsetsCompat.Type.statusBars()
-        ).toInsetsValues()
-        systemBarsIgnoringVisibility.value = insets.getInsetsIgnoringVisibility(
-            WindowInsetsCompat.Type.systemBars()
-        ).toInsetsValues()
-        tappableElementIgnoringVisibility.value = insets.getInsetsIgnoringVisibility(
-            WindowInsetsCompat.Type.tappableElement()
-        ).toInsetsValues()
+        if (types == 0) {
+            captionBarIgnoringVisibility.value = insets.getInsetsIgnoringVisibility(
+                WindowInsetsCompat.Type.captionBar()
+            ).toInsetsValues()
+            navigationBarsIgnoringVisibility.value = insets.getInsetsIgnoringVisibility(
+                WindowInsetsCompat.Type.navigationBars()
+            ).toInsetsValues()
+            statusBarsIgnoringVisibility.value = insets.getInsetsIgnoringVisibility(
+                WindowInsetsCompat.Type.statusBars()
+            ).toInsetsValues()
+            systemBarsIgnoringVisibility.value = insets.getInsetsIgnoringVisibility(
+                WindowInsetsCompat.Type.systemBars()
+            ).toInsetsValues()
+            tappableElementIgnoringVisibility.value = insets.getInsetsIgnoringVisibility(
+                WindowInsetsCompat.Type.tappableElement()
+            ).toInsetsValues()
 
-        val cutout = insets.displayCutout
-        if (cutout != null) {
-            val waterfallInsets = cutout.waterfallInsets
-            waterfall.value = waterfallInsets.toInsetsValues()
+            val cutout = insets.displayCutout
+            if (cutout != null) {
+                val waterfallInsets = cutout.waterfallInsets
+                waterfall.value = waterfallInsets.toInsetsValues()
+            }
         }
         Snapshot.sendApplyNotifications()
     }
@@ -549,8 +554,6 @@ internal class WindowInsetsHolder private constructor(insets: WindowInsetsCompat
 
             DisposableEffect(insets) {
                 insets.incrementAccessors(view)
-                insets.consumes = (view.parent as? View)?.getTag(R.id.consume_window_insets_tag)
-                    as? Boolean ?: true
                 onDispose {
                     insets.decrementAccessors(view)
                 }
@@ -570,7 +573,7 @@ internal class WindowInsetsHolder private constructor(insets: WindowInsetsCompat
                     } else {
                         null
                     }
-                    WindowInsetsHolder(insets)
+                    WindowInsetsHolder(insets, view)
                 }
             }
         }
@@ -582,7 +585,7 @@ internal class WindowInsetsHolder private constructor(insets: WindowInsetsCompat
             windowInsets: WindowInsetsCompat?,
             type: Int,
             name: String
-        ) = AndroidWindowInsets(type, name).apply { windowInsets?.let { update(it) } }
+        ) = AndroidWindowInsets(type, name).apply { windowInsets?.let { update(it, type) } }
 
         /**
          * Creates a [ValueInsets] using the "ignoring visibility" value from [windowInsets]
@@ -614,7 +617,9 @@ private object RootWindowInsetsApi23 {
 
 private class InsetsListener(
     val composeInsets: WindowInsetsHolder,
-) : WindowInsetsAnimationCompat.Callback(DISPATCH_MODE_STOP), OnApplyWindowInsetsListener {
+) : OnApplyWindowInsetsListener, WindowInsetsAnimationCompat.Callback(
+    if (composeInsets.consumes) DISPATCH_MODE_STOP else DISPATCH_MODE_CONTINUE_ON_SUBTREE
+) {
     /**
      * When [android.view.WindowInsetsController.controlWindowInsetsAnimation] is called,
      * the [onApplyWindowInsets] is called after [onPrepare] with the target size. We
@@ -634,6 +639,8 @@ private class InsetsListener(
      * and [onApplyWindowInsets] calls should be ignored.
      */
     var started = false
+
+    var animationInsets: WindowInsetsCompat? = null
 
     override fun onPrepare(animation: WindowInsetsAnimationCompat) {
         prepareGiveUpTime = SystemClock.uptimeMillis() + AnimationCanceledMillis
@@ -660,6 +667,11 @@ private class InsetsListener(
     override fun onEnd(animation: WindowInsetsAnimationCompat) {
         started = false
         prepareGiveUpTime = 0L
+        val insets = animationInsets
+        if (animation.durationMillis != 0L && insets != null) {
+            composeInsets.update(insets, animation.typeMask)
+        }
+        animationInsets = null
         super.onEnd(animation)
     }
 
@@ -675,6 +687,7 @@ private class InsetsListener(
             (Build.VERSION.SDK_INT > Build.VERSION_CODES.R ||
                 prepareGiveUpTime > SystemClock.uptimeMillis())
         if (started || preparing) {
+            animationInsets = insets
             // Just ignore this one. It came from the onPrepare.
             return insets
         }

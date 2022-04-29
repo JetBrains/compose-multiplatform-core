@@ -39,6 +39,11 @@ public class Distance(
     override val endZoneOffset: ZoneOffset?,
     override val metadata: Metadata = Metadata.EMPTY,
 ) : IntervalRecord {
+
+    init {
+        requireNonNegative(value = distanceMeters, name = "massKg")
+    }
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is Distance) return false
@@ -65,11 +70,11 @@ public class Distance(
 
     companion object {
         /**
-         * Metric identifier to retrieve total distance from
+         * Metric identifier to retrieve the total distance from
          * [androidx.health.connect.client.aggregate.AggregationResult].
          */
         @JvmField
-        val TOTAL: AggregateMetric<Double> =
+        val DISTANCE_TOTAL: AggregateMetric<Double> =
             AggregateMetric.doubleMetric(
                 "Distance",
                 AggregateMetric.AggregationType.TOTAL,

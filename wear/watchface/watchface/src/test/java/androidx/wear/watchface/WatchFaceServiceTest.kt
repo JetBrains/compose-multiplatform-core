@@ -51,9 +51,11 @@ import androidx.test.filters.SdkSuppress
 import androidx.wear.watchface.complications.ComplicationSlotBounds
 import androidx.wear.watchface.complications.DefaultComplicationDataSourcePolicy
 import androidx.wear.watchface.complications.SystemDataSources
+import androidx.wear.watchface.complications.data.ComplicationExperimental
 import androidx.wear.watchface.complications.data.ComplicationType
 import androidx.wear.watchface.complications.data.CountUpTimeReference
 import androidx.wear.watchface.complications.data.EmptyComplicationData
+import androidx.wear.watchface.complications.data.LongTextComplicationData
 import androidx.wear.watchface.complications.data.NoDataComplicationData
 import androidx.wear.watchface.complications.data.PlainComplicationText
 import androidx.wear.watchface.complications.data.ShortTextComplicationData
@@ -298,6 +300,25 @@ public class WatchFaceServiceTest {
         ).setDefaultDataSourceType(ComplicationType.SHORT_TEXT)
             .build()
 
+    @OptIn(ComplicationExperimental::class)
+    @Suppress("DEPRECATION") // setDefaultDataSourceType
+    private val edgeComplicationWithBoundingArc =
+        ComplicationSlot.createEdgeComplicationSlotBuilder(
+            EDGE_COMPLICATION_ID,
+            { watchState, listener ->
+                CanvasComplicationDrawable(
+                    complicationDrawableEdge,
+                    watchState,
+                    listener
+                )
+            },
+            listOf(ComplicationType.SHORT_TEXT),
+            DefaultComplicationDataSourcePolicy(SystemDataSources.DATA_SOURCE_DAY_OF_WEEK),
+            ComplicationSlotBounds(RectF(0.0f, 0.0f, 1f, 1f)),
+            BoundingArc(-45f, 90f, 0.1f)
+        ).setDefaultDataSourceType(ComplicationType.SHORT_TEXT)
+            .build()
+
     @Suppress("DEPRECATION") // setDefaultDataSourceType
     private val backgroundComplication =
         ComplicationSlot.createBackgroundComplicationSlotBuilder(
@@ -530,7 +551,9 @@ public class WatchFaceServiceTest {
                                 )
                                 .build()
 
-                        else -> throw UnsupportedOperationException()
+                        else -> throw UnsupportedOperationException(
+                            "Don't support type " + complication.defaultDataSourceType
+                        )
                     }
                 )
             }
@@ -973,6 +996,41 @@ public class WatchFaceServiceTest {
             .isEqualTo(TapEvent(0, 50, Instant.EPOCH))
         assertThat(testWatchFaceService.tappedComplicationSlotIds)
             .isEqualTo(listOf(EDGE_COMPLICATION_ID))
+    }
+
+    @Test
+    public fun edgeComplicationWithBoundingArc_tap() {
+        initEngine(
+            WatchFaceType.ANALOG,
+            listOf(edgeComplicationWithBoundingArc),
+            UserStyleSchema(emptyList()),
+            tapListener = tapListener
+        )
+
+        assertThat(complicationSlotsManager.lastComplicationTapDownEvents[EDGE_COMPLICATION_ID])
+            .isNull()
+
+        // Tap the center of the edge complication.
+        tapAt(50, 5)
+        assertThat(complicationSlotsManager.lastComplicationTapDownEvents[EDGE_COMPLICATION_ID])
+            .isEqualTo(TapEvent(50, 5, Instant.EPOCH))
+        assertThat(testWatchFaceService.tappedComplicationSlotIds)
+            .isEqualTo(listOf(EDGE_COMPLICATION_ID))
+
+        testWatchFaceService.reset()
+
+        // Tap at points not in the edge complication
+        tapAt(50, 11)
+        assertThat(testWatchFaceService.tappedComplicationSlotIds).isEmpty()
+
+        tapAt(30, 50)
+        assertThat(testWatchFaceService.tappedComplicationSlotIds).isEmpty()
+
+        tapAt(0, 5)
+        assertThat(testWatchFaceService.tappedComplicationSlotIds).isEmpty()
+
+        tapAt(99, 5)
+        assertThat(testWatchFaceService.tappedComplicationSlotIds).isEmpty()
     }
 
     @Test
@@ -4665,6 +4723,55 @@ public class WatchFaceServiceTest {
     }
 
     @Test
+    public fun selectComplicationDataForInstant_timeLineWithPlaceholder() {
+        val placeholderText =
+            androidx.wear.watchface.complications.data.ComplicationText.PLACEHOLDER
+        val timelineEntry =
+            ComplicationData.Builder(ComplicationData.TYPE_NO_DATA)
+                .setPlaceholder(
+                    ComplicationData.Builder(ComplicationData.TYPE_LONG_TEXT)
+                        .setLongText(placeholderText.toWireComplicationText())
+                        .build()
+                )
+                .build()
+        timelineEntry.timelineStartEpochSecond = 100
+        timelineEntry.timelineEndEpochSecond = 1000
+
+        val wireLongTextComplication = ComplicationData.Builder(
+            ComplicationType.LONG_TEXT.toWireComplicationType()
+        )
+            .setEndDateTimeMillis(1650988800000)
+            .setDataSource(ComponentName("a", "b"))
+            .setLongText(ComplicationText.plainText("longText"))
+            .setSmallImageStyle(ComplicationData.IMAGE_STYLE_ICON)
+            .setContentDescription(ComplicationText.plainText("test"))
+            .build()
+        wireLongTextComplication.setTimelineEntryCollection(listOf(timelineEntry))
+
+        initEngine(
+            WatchFaceType.ANALOG,
+            listOf(leftComplication),
+            UserStyleSchema(emptyList())
+        )
+
+        watchFaceImpl.onComplicationSlotDataUpdate(
+            LEFT_COMPLICATION_ID,
+            wireLongTextComplication.toApiComplicationData()
+        )
+
+        complicationSlotsManager.selectComplicationDataForInstant(Instant.ofEpochSecond(0))
+        assertThat(getLeftLongTextComplicationDataText()).isEqualTo("longText")
+
+        complicationSlotsManager.selectComplicationDataForInstant(Instant.ofEpochSecond(100))
+        val leftComplication = complicationSlotsManager[
+            LEFT_COMPLICATION_ID
+        ]!!.complicationData.value as NoDataComplicationData
+
+        val placeholder = leftComplication.placeholder as LongTextComplicationData
+        assertThat(placeholder.text.isPlaceholder()).isTrue()
+    }
+
+    @Test
     public fun renderParameters_isScreenshot() {
         initWallpaperInteractiveWatchFaceInstance(
             WatchFaceType.ANALOG,
@@ -4808,6 +4915,17 @@ public class WatchFaceServiceTest {
         val complication = complicationSlotsManager[
             LEFT_COMPLICATION_ID
         ]!!.complicationData.value as ShortTextComplicationData
+
+        return complication.text.getTextAt(
+            ApplicationProvider.getApplicationContext<Context>().resources,
+            Instant.EPOCH
+        )
+    }
+
+    private fun getLeftLongTextComplicationDataText(): CharSequence {
+        val complication = complicationSlotsManager[
+            LEFT_COMPLICATION_ID
+        ]!!.complicationData.value as LongTextComplicationData
 
         return complication.text.getTextAt(
             ApplicationProvider.getApplicationContext<Context>().resources,

@@ -40,12 +40,10 @@ import java.util.Locale;
  *                  or more photos.
  *     Device(s): Samsung Galaxy A2 Core (sm-a260f), Samsung Galaxy J5 (sm-j530f), Samsung Galaxy
  *                J6 (sm-j600g), Samsung Galaxy J7 Neo (sm-j701f), Samsung Galaxy J7 Prime
- *                (sm-g610f)
+ *                (sm-g610f), Samsung Galaxy J7 (sm-j710mn)
  */
 @RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public class ImageCaptureWithFlashUnderexposureQuirk implements UseTorchAsFlashQuirk {
-
-    public static final String BUILD_BRAND = "SAMSUNG";
 
     // List of devices with the issue. See b/228800282.
     public static final List<String> BUILD_MODELS = Arrays.asList(
@@ -53,12 +51,12 @@ public class ImageCaptureWithFlashUnderexposureQuirk implements UseTorchAsFlashQ
             "sm-j530f",  // Samsung Galaxy J5
             "sm-j600g",  // Samsung Galaxy J6
             "sm-j701f",  // Samsung Galaxy J7 Neo
-            "sm-g610f"   // Samsung Galaxy J7 Prime
+            "sm-g610f",  // Samsung Galaxy J7 Prime
+            "sm-j710mn"  // Samsung Galaxy J7
     );
 
     static boolean load(@NonNull CameraCharacteristicsCompat cameraCharacteristics) {
-        return BUILD_BRAND.equals(Build.BRAND.toUpperCase(Locale.US))
-                && BUILD_MODELS.contains(Build.MODEL.toLowerCase(Locale.US))
+        return BUILD_MODELS.contains(Build.MODEL.toLowerCase(Locale.US))
                 && cameraCharacteristics.get(CameraCharacteristics.LENS_FACING) == LENS_FACING_BACK;
     }
 }
