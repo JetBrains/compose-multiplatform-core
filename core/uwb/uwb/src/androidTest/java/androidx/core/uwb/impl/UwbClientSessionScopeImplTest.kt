@@ -58,12 +58,12 @@ class UwbClientSessionScopeImplTest {
         androidx.core.uwb.UwbAddress(localAddress.address))
     private val uwbDevice = UwbDevice.createForAddress(ByteArray(0))
     private val rangingParameters = RangingParameters(
-        0,
+        RangingParameters.UWB_CONFIG_ID_1,
         0,
         null,
         null,
         listOf(uwbDevice),
-        0
+        RangingParameters.RANGING_UPDATE_RATE_AUTOMATIC
     )
 
     @Test

@@ -30,6 +30,7 @@ public class ElevationGained(
     override val endZoneOffset: ZoneOffset?,
     override val metadata: Metadata = Metadata.EMPTY,
 ) : IntervalRecord {
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is ElevationGained) return false
@@ -56,11 +57,11 @@ public class ElevationGained(
 
     companion object {
         /**
-         * Metric identifier to retrieve total elevation gained from
+         * Metric identifier to retrieve the total elevation gained from
          * [androidx.health.connect.client.aggregate.AggregationResult].
          */
         @JvmField
-        val TOTAL: AggregateMetric<Double> =
+        val ELEVATION_GAINED_TOTAL: AggregateMetric<Double> =
             AggregateMetric.doubleMetric(
                 "ElevationGained",
                 AggregateMetric.AggregationType.TOTAL,

@@ -28,6 +28,10 @@ public class Height(
     override val zoneOffset: ZoneOffset?,
     override val metadata: Metadata = Metadata.EMPTY,
 ) : InstantaneousRecord {
+    init {
+        requireNonNegative(value = heightMeters, name = "heightMeters")
+    }
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is Height) return false
@@ -54,11 +58,11 @@ public class Height(
         private const val HEIGHT_FIELD_NAME = "height"
 
         /**
-         * Metric identifier to retrieve average height from
+         * Metric identifier to retrieve the average height from
          * [androidx.health.connect.client.aggregate.AggregationResult].
          */
         @JvmField
-        val AVG: AggregateMetric<Double> =
+        val HEIGHT_AVG: AggregateMetric<Double> =
             AggregateMetric.doubleMetric(
                 HEIGHT_NAME,
                 AggregateMetric.AggregationType.AVERAGE,
@@ -70,7 +74,7 @@ public class Height(
          * [androidx.health.connect.client.aggregate.AggregationResult].
          */
         @JvmField
-        val MIN: AggregateMetric<Double> =
+        val HEIGHT_MIN: AggregateMetric<Double> =
             AggregateMetric.doubleMetric(
                 HEIGHT_NAME,
                 AggregateMetric.AggregationType.MINIMUM,
@@ -78,11 +82,11 @@ public class Height(
             )
 
         /**
-         * Metric identifier to retrieve maximum height from
+         * Metric identifier to retrieve the maximum height from
          * [androidx.health.connect.client.aggregate.AggregationResult].
          */
         @JvmField
-        val MAX: AggregateMetric<Double> =
+        val HEIGHT_MAX: AggregateMetric<Double> =
             AggregateMetric.doubleMetric(
                 HEIGHT_NAME,
                 AggregateMetric.AggregationType.MAXIMUM,

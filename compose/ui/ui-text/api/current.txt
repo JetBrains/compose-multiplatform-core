@@ -537,7 +537,7 @@ package androidx.compose.ui.text.android {
 
 package androidx.compose.ui.text.android.style {
 
-  public final class LineHeightBehaviorSpanKt {
+  public final class LineHeightStyleSpanKt {
   }
 
   public final class PlaceholderSpanKt {
@@ -1258,6 +1258,9 @@ package androidx.compose.ui.text.style {
     property public final int ContentOrRtl;
     property public final int Ltr;
     property public final int Rtl;
+  }
+
+  public final class TextDrawStyleKt {
   }
 
   @androidx.compose.runtime.Immutable public final class TextGeometricTransform {
