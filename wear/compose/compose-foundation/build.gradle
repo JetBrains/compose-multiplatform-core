@@ -36,7 +36,7 @@ dependencies {
 
         implementation(libs.kotlinStdlib)
         implementation(project(":compose:foundation:foundation-layout"))
-        implementation("androidx.profileinstaller:profileinstaller:1.2.0-alpha02")
+        implementation(project(":profileinstaller:profileinstaller"))
 
         testImplementation(libs.testRules)
         testImplementation(libs.testRunner)
@@ -102,6 +102,8 @@ android {
     }
     // Use Robolectric 4.+
     testOptions.unitTests.includeAndroidResources = true
+    sourceSets.androidTest.assets.srcDirs +=
+            project.rootDir.absolutePath + "/../../golden/wear/compose/foundation"
     namespace "androidx.wear.compose.foundation"
 }
 
