@@ -32,7 +32,6 @@ import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.BottomAppBarDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LargeTopAppBar
@@ -42,8 +41,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SmallTopAppBar
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberTopAppBarScrollState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.unit.dp
@@ -89,7 +88,9 @@ fun SimpleSmallTopAppBar() {
                     Text(
                         text = list[it],
                         style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp)
                     )
                 }
             }
@@ -138,7 +139,9 @@ fun SimpleCenterAlignedTopAppBar() {
                     Text(
                         text = list[it],
                         style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp)
                     )
                 }
             }
@@ -156,7 +159,7 @@ fun SimpleCenterAlignedTopAppBar() {
 @Sampled
 @Composable
 fun PinnedSmallTopAppBar() {
-    val scrollBehavior = remember { TopAppBarDefaults.pinnedScrollBehavior() }
+    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarScrollState())
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
@@ -198,7 +201,9 @@ fun PinnedSmallTopAppBar() {
                     Text(
                         text = list[it],
                         style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp)
                     )
                 }
             }
@@ -214,7 +219,7 @@ fun PinnedSmallTopAppBar() {
 @Sampled
 @Composable
 fun EnterAlwaysSmallTopAppBar() {
-    val scrollBehavior = remember { TopAppBarDefaults.enterAlwaysScrollBehavior() }
+    val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(rememberTopAppBarScrollState())
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
@@ -249,7 +254,9 @@ fun EnterAlwaysSmallTopAppBar() {
                     Text(
                         text = list[it],
                         style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp)
                     )
                 }
             }
@@ -266,9 +273,10 @@ fun EnterAlwaysSmallTopAppBar() {
 @Composable
 fun ExitUntilCollapsedMediumTopAppBar() {
     val decayAnimationSpec = rememberSplineBasedDecay<Float>()
-    val scrollBehavior = remember(decayAnimationSpec) {
-        TopAppBarDefaults.exitUntilCollapsedScrollBehavior(decayAnimationSpec)
-    }
+    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(
+        decayAnimationSpec,
+        rememberTopAppBarScrollState()
+    )
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
@@ -303,7 +311,9 @@ fun ExitUntilCollapsedMediumTopAppBar() {
                     Text(
                         text = list[it],
                         style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp)
                     )
                 }
             }
@@ -320,9 +330,10 @@ fun ExitUntilCollapsedMediumTopAppBar() {
 @Composable
 fun ExitUntilCollapsedLargeTopAppBar() {
     val decayAnimationSpec = rememberSplineBasedDecay<Float>()
-    val scrollBehavior = remember(decayAnimationSpec) {
-        TopAppBarDefaults.exitUntilCollapsedScrollBehavior(decayAnimationSpec)
-    }
+    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(
+        decayAnimationSpec,
+        rememberTopAppBarScrollState()
+    )
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
@@ -357,7 +368,9 @@ fun ExitUntilCollapsedLargeTopAppBar() {
                     Text(
                         text = list[it],
                         style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp)
                     )
                 }
             }
@@ -391,12 +404,10 @@ fun BottomAppBarWithFAB() {
             }
         },
         floatingActionButton = {
-            // TODO(b/228588827): Replace with Secondary FAB when available.
-            FloatingActionButton(
+            BottomAppBarDefaults.FloatingActionButton(
                 onClick = { /* do something */ },
-                elevation = BottomAppBarDefaults.floatingActionButtonElevation()
             ) {
-                Icon(Icons.Filled.Add, "Localized description")
+                Icon(Icons.Filled.Add, contentDescription = "Localized description")
             }
         }
     )

@@ -28,6 +28,7 @@ import android.os.Parcel;
 import android.os.Parcelable;
 import android.util.Log;
 
+import androidx.annotation.ColorInt;
 import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -252,6 +253,7 @@ public final class ComplicationData implements Parcelable, Serializable {
 
     // Originally it was planned to support both content and image content descriptions.
     private static final String FIELD_DATA_SOURCE = "FIELD_DATA_SOURCE";
+    private static final String FIELD_DRAW_SEGMENTED = "DRAW_SEGMENTED";
     private static final String FIELD_END_TIME = "END_TIME";
     private static final String FIELD_ICON = "ICON";
     private static final String FIELD_ICON_BURN_IN_PROTECTION = "ICON_BURN_IN_PROTECTION";
@@ -262,6 +264,8 @@ public final class ComplicationData implements Parcelable, Serializable {
     private static final String FIELD_LIST_STYLE_HINT = "LIST_STYLE_HINT";
     private static final String FIELD_LONG_TITLE = "LONG_TITLE";
     private static final String FIELD_LONG_TEXT = "LONG_TEXT";
+    private static final String FIELD_MAX_COLOR = "MAX_COLOR";
+    private static final String FIELD_MIN_COLOR = "MIN_COLOR";
     private static final String FIELD_MAX_VALUE = "MAX_VALUE";
     private static final String FIELD_MIN_VALUE = "MIN_VALUE";
     private static final String FIELD_PLACEHOLDER_FIELDS = "PLACEHOLDER_FIELDS";
@@ -340,7 +344,10 @@ public final class ComplicationData implements Parcelable, Serializable {
                     FIELD_ICON_BURN_IN_PROTECTION,
                     FIELD_TAP_ACTION,
                     FIELD_CONTENT_DESCRIPTION,
-                    FIELD_DATA_SOURCE
+                    FIELD_DATA_SOURCE,
+                    FIELD_DRAW_SEGMENTED,
+                    FIELD_MAX_COLOR,
+                    FIELD_MIN_COLOR
             }, // RANGED_VALUE
             {
                     FIELD_TAP_ACTION,
@@ -435,7 +442,7 @@ public final class ComplicationData implements Parcelable, Serializable {
 
     @RequiresApi(api = Build.VERSION_CODES.P)
     private static class SerializedForm implements Serializable {
-        private static final int VERSION_NUMBER = 8;
+        private static final int VERSION_NUMBER = 10;
 
         @NonNull
         ComplicationData mComplicationData;
@@ -496,6 +503,27 @@ public final class ComplicationData implements Parcelable, Serializable {
             }
             if (isFieldValidForType(FIELD_MAX_VALUE, type)) {
                 oos.writeFloat(mComplicationData.getRangedMaxValue());
+            }
+            if (isFieldValidForType(FIELD_DRAW_SEGMENTED, type)) {
+                oos.writeBoolean(mComplicationData.getDrawSegmented());
+            }
+            if (isFieldValidForType(FIELD_MAX_COLOR, type)) {
+                Integer maxColor = mComplicationData.getRangedMaxColor();
+                if (maxColor != null) {
+                    oos.writeBoolean(true);
+                    oos.writeInt(maxColor);
+                } else {
+                    oos.writeBoolean(false);
+                }
+            }
+            if (isFieldValidForType(FIELD_MIN_COLOR, type)) {
+                Integer minColor = mComplicationData.getRangedMinColor();
+                if (minColor != null) {
+                    oos.writeBoolean(true);
+                    oos.writeInt(minColor);
+                } else {
+                    oos.writeBoolean(false);
+                }
             }
             if (isFieldValidForType(FIELD_START_TIME, type)) {
                 oos.writeLong(mComplicationData.getStartDateTimeMillis());
@@ -642,6 +670,15 @@ public final class ComplicationData implements Parcelable, Serializable {
             }
             if (isFieldValidForType(FIELD_MAX_VALUE, type)) {
                 fields.putFloat(FIELD_MAX_VALUE, ois.readFloat());
+            }
+            if (isFieldValidForType(FIELD_DRAW_SEGMENTED, type)) {
+                fields.putBoolean(FIELD_DRAW_SEGMENTED, ois.readBoolean());
+            }
+            if (isFieldValidForType(FIELD_MAX_COLOR, type) && ois.readBoolean()) {
+                fields.putInt(FIELD_MAX_COLOR, ois.readInt());
+            }
+            if (isFieldValidForType(FIELD_MIN_COLOR, type) && ois.readBoolean()) {
+                fields.putInt(FIELD_MIN_COLOR, ois.readInt());
             }
             if (isFieldValidForType(FIELD_START_TIME, type)) {
                 fields.putLong(FIELD_START_TIME, ois.readLong());
@@ -990,6 +1027,47 @@ public final class ComplicationData implements Parcelable, Serializable {
     public float getRangedMaxValue() {
         checkFieldValidForTypeWithoutThrowingException(FIELD_MAX_VALUE, mType);
         return mFields.getFloat(FIELD_MAX_VALUE);
+    }
+
+    /**
+     * Returns whether or not the ranged value complication should be drawn as segments. This is
+     * intended for integral values where one segment = 1 unit.
+     *
+     * <p>Valid only if the type of this complication data is {@link #TYPE_RANGED_VALUE}.
+     */
+    public boolean getDrawSegmented() {
+        checkFieldValidForTypeWithoutThrowingException(FIELD_DRAW_SEGMENTED, mType);
+        return mFields.getBoolean(FIELD_DRAW_SEGMENTED);
+    }
+
+    /**
+     * Returns the color the minimum ranged value should be rendered with.
+     *
+     * <p>Valid only if the type of this complication data is {@link #TYPE_RANGED_VALUE}.
+     */
+    @ColorInt
+    @Nullable
+    public Integer getRangedMinColor() {
+        checkFieldValidForTypeWithoutThrowingException(FIELD_MIN_COLOR, mType);
+        if (mFields.containsKey(FIELD_MIN_COLOR)) {
+            return mFields.getInt(FIELD_MIN_COLOR);
+        }
+        return null;
+    }
+
+    /**
+     * Returns the color the maximum ranged value should be rendered with.
+     *
+     * <p>Valid only if the type of this complication data is {@link #TYPE_RANGED_VALUE}.
+     */
+    @ColorInt
+    @Nullable
+    public Integer getRangedMaxColor() {
+        checkFieldValidForTypeWithoutThrowingException(FIELD_MAX_COLOR, mType);
+        if (mFields.containsKey(FIELD_MAX_COLOR)) {
+            return mFields.getInt(FIELD_MAX_COLOR);
+        }
+        return null;
     }
 
     /**
@@ -1953,6 +2031,40 @@ public final class ComplicationData implements Parcelable, Serializable {
         }
 
         /**
+         * Optional. Whether ot not the ranged value indicator should be drawn using segments.
+         * This hint is intended for integral values where one segment = 1 unit.
+         *
+         * <p>Returns this Builder to allow chaining.
+         */
+        @NonNull
+        public Builder setDrawSegmented(boolean drawSegmented) {
+            putOrRemoveField(FIELD_DRAW_SEGMENTED, drawSegmented);
+            return this;
+        }
+
+        /**
+         * Optional. Sets the color that the minimum ranged value should be rendered with.
+         *
+         * <p>Returns this Builder to allow chaining.
+         */
+        @NonNull
+        public Builder setRangedMinColor(@Nullable Integer minColor) {
+            putOrRemoveField(FIELD_MIN_COLOR, minColor);
+            return this;
+        }
+
+        /**
+         * Optional. Sets the color that the maximum ranged value should be rendered with.
+         *
+         * <p>Returns this Builder to allow chaining.
+         */
+        @NonNull
+        public Builder setRangedMaxColor(@Nullable Integer minColor) {
+            putOrRemoveField(FIELD_MAX_COLOR, minColor);
+            return this;
+        }
+
+        /**
          * Sets the list of {@link ComplicationData} timeline entries.
          *
          * <p>Returns this Builder to allow chaining.
@@ -2036,7 +2148,11 @@ public final class ComplicationData implements Parcelable, Serializable {
                 mFields.remove(field);
                 return;
             }
-            if (obj instanceof String) {
+            if (obj instanceof Boolean) {
+                mFields.putBoolean(field, (Boolean) obj);
+            } else if (obj instanceof Integer) {
+                mFields.putInt(field, (Integer) obj);
+            } else if (obj instanceof String) {
                 mFields.putString(field, (String) obj);
             } else if (obj instanceof Parcelable) {
                 mFields.putParcelable(field, (Parcelable) obj);

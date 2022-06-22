@@ -20,8 +20,10 @@ import android.os.Build
 import android.view.View
 import android.view.ViewGroup
 import android.widget.RemoteViews
+import androidx.annotation.DoNotInline
 import androidx.annotation.IdRes
 import androidx.annotation.LayoutRes
+import androidx.annotation.RequiresApi
 import androidx.compose.ui.unit.dp
 import androidx.glance.GlanceModifier
 import androidx.glance.findModifier
@@ -68,6 +70,29 @@ internal data class ContainerSelector(
 
 internal data class ContainerInfo(@LayoutRes val layoutId: Int)
 
+/**
+ * Box child selector.
+ *
+ * This class is used to select a layout with a particular alignment to be used as a child of
+ * Box.
+ */
+internal data class BoxChildSelector(
+    val type: LayoutType,
+    val horizontalAlignment: Alignment.Horizontal,
+    val verticalAlignment: Alignment.Vertical,
+)
+
+/**
+ * Selector for children of [Row] and [Column].
+ *
+ * This class is used to select a layout with layout_weight set / unset.
+ */
+internal data class RowColumnChildSelector(
+    val type: LayoutType,
+    val expandWidth: Boolean,
+    val expandHeight: Boolean,
+)
+
 /** Type of size needed for a layout. */
 internal enum class LayoutSize {
     Wrap,
@@ -110,27 +135,27 @@ internal enum class LayoutType {
 
 /** Mapping from layout type to fixed layout (if any). */
 private val LayoutMap = mapOf(
-    LayoutType.Text to R.layout.text,
-    LayoutType.List to R.layout.list,
-    LayoutType.CheckBox to R.layout.check_box,
-    LayoutType.CheckBoxBackport to R.layout.check_box_backport,
-    LayoutType.Button to R.layout.button,
-    LayoutType.Swtch to R.layout.swtch,
-    LayoutType.SwtchBackport to R.layout.swtch_backport,
-    LayoutType.Frame to R.layout.frame,
-    LayoutType.ImageCrop to R.layout.image_crop,
-    LayoutType.ImageFit to R.layout.image_fit,
-    LayoutType.ImageFillBounds to R.layout.image_fill_bounds,
-    LayoutType.LinearProgressIndicator to R.layout.linear_progress_indicator,
-    LayoutType.CircularProgressIndicator to R.layout.circular_progress_indicator,
-    LayoutType.VerticalGridOneColumn to R.layout.vertical_grid_one_column,
-    LayoutType.VerticalGridTwoColumns to R.layout.vertical_grid_two_columns,
-    LayoutType.VerticalGridThreeColumns to R.layout.vertical_grid_three_columns,
-    LayoutType.VerticalGridFourColumns to R.layout.vertical_grid_four_columns,
-    LayoutType.VerticalGridFiveColumns to R.layout.vertical_grid_five_columns,
-    LayoutType.VerticalGridAutoFit to R.layout.vertical_grid_auto_fit,
-    LayoutType.RadioButton to R.layout.radio_button,
-    LayoutType.RadioButtonBackport to R.layout.radio_button_backport,
+    LayoutType.Text to R.layout.glance_text,
+    LayoutType.List to R.layout.glance_list,
+    LayoutType.CheckBox to R.layout.glance_check_box,
+    LayoutType.CheckBoxBackport to R.layout.glance_check_box_backport,
+    LayoutType.Button to R.layout.glance_button,
+    LayoutType.Swtch to R.layout.glance_swtch,
+    LayoutType.SwtchBackport to R.layout.glance_swtch_backport,
+    LayoutType.Frame to R.layout.glance_frame,
+    LayoutType.ImageCrop to R.layout.glance_image_crop,
+    LayoutType.ImageFit to R.layout.glance_image_fit,
+    LayoutType.ImageFillBounds to R.layout.glance_image_fill_bounds,
+    LayoutType.LinearProgressIndicator to R.layout.glance_linear_progress_indicator,
+    LayoutType.CircularProgressIndicator to R.layout.glance_circular_progress_indicator,
+    LayoutType.VerticalGridOneColumn to R.layout.glance_vertical_grid_one_column,
+    LayoutType.VerticalGridTwoColumns to R.layout.glance_vertical_grid_two_columns,
+    LayoutType.VerticalGridThreeColumns to R.layout.glance_vertical_grid_three_columns,
+    LayoutType.VerticalGridFourColumns to R.layout.glance_vertical_grid_four_columns,
+    LayoutType.VerticalGridFiveColumns to R.layout.glance_vertical_grid_five_columns,
+    LayoutType.VerticalGridAutoFit to R.layout.glance_vertical_grid_auto_fit,
+    LayoutType.RadioButton to R.layout.glance_radio_button,
+    LayoutType.RadioButtonBackport to R.layout.glance_radio_button_backport,
 )
 
 internal data class SizeSelector(
@@ -167,6 +192,20 @@ internal fun createRootView(
     aliasIndex: Int
 ): RemoteViewsInfo {
     val context = translationContext.context
+    if (Build.VERSION.SDK_INT >= 33) {
+        return RemoteViewsInfo(
+            remoteViews = remoteViews(translationContext, FirstRootAlias).apply {
+                modifier.findModifier<WidthModifier>()?.let {
+                    applySimpleWidthModifier(context, this, it, R.id.rootView)
+                }
+                modifier.findModifier<HeightModifier>()?.let {
+                    applySimpleHeightModifier(context, this, it, R.id.rootView)
+                }
+                removeAllViews(R.id.rootView)
+            },
+            view = InsertedViewInfo(mainViewId = R.id.rootView)
+        )
+    }
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
         require(aliasIndex < RootAliasCount) {
             "Index of the root view cannot be more than $RootAliasCount, " +
@@ -186,7 +225,10 @@ internal fun createRootView(
                     applySimpleHeightModifier(context, this, it, R.id.rootView)
                 }
             },
-            view = InsertedViewInfo(children = mapOf(0 to mapOf(sizeSelector to R.id.rootStubId)))
+            view = InsertedViewInfo(
+                mainViewId = R.id.rootView,
+                children = mapOf(0 to mapOf(sizeSelector to R.id.rootStubId)),
+            )
         )
     }
     require(RootAliasTypeCount * aliasIndex < RootAliasCount) {
@@ -209,12 +251,45 @@ internal fun createRootView(
     )
 }
 
+@IdRes
+private fun selectLayout33(
+    type: LayoutType,
+    modifier: GlanceModifier,
+): Int? {
+    if (Build.VERSION.SDK_INT < 33) return null
+    val align = modifier.findModifier<AlignmentModifier>()
+    val expandWidth =
+        modifier.findModifier<WidthModifier>()?.let { it.width == Dimension.Expand } ?: false
+    val expandHeight =
+        modifier.findModifier<HeightModifier>()?.let { it.height == Dimension.Expand } ?: false
+    if (align != null) {
+        return generatedBoxChildren[BoxChildSelector(
+            type,
+            align.alignment.horizontal,
+            align.alignment.vertical,
+        )]?.layoutId
+            ?: throw IllegalArgumentException(
+                "Cannot find $type with alignment ${align.alignment}"
+            )
+    } else if (expandWidth || expandHeight) {
+        return generatedRowColumnChildren[RowColumnChildSelector(
+            type,
+            expandWidth,
+            expandHeight,
+        )]?.layoutId
+            ?: throw IllegalArgumentException("Cannot find $type with defaultWeight set")
+    } else {
+        return null
+    }
+}
+
 internal fun RemoteViews.insertView(
     translationContext: TranslationContext,
     type: LayoutType,
     modifier: GlanceModifier
 ): InsertedViewInfo {
-    val childLayout = LayoutMap[type]
+    val childLayout = selectLayout33(type, modifier)
+        ?: LayoutMap[type]
         ?: throw IllegalArgumentException("Cannot use `insertView` with a container like $type")
     return insertViewInternal(translationContext, childLayout, modifier)
 }
@@ -235,6 +310,16 @@ private fun RemoteViews.insertViewInternal(
             "At most one view can be set as AppWidgetBackground."
         }
         android.R.id.background
+    }
+    if (Build.VERSION.SDK_INT >= 33) {
+        val viewId = specifiedViewId ?: translationContext.nextViewId()
+        val child = LayoutSelectionApi31Impl.remoteViews(
+            translationContext.context.packageName,
+            childLayout,
+            viewId,
+        )
+        addChildView(translationContext.parentContext.mainViewId, child, pos)
+        return InsertedViewInfo(mainViewId = viewId)
     }
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
         val width = if (widthMod == Dimension.Expand) LayoutSize.Expand else LayoutSize.Wrap
@@ -278,7 +363,8 @@ private fun RemoteViews.selectChild(
     children.values
         .filter { it != stubId }
         .forEach {
-            inflateViewStub(translationContext, it, R.layout.deleted_view, R.id.deletedViewId)
+            inflateViewStub(
+                translationContext, it, R.layout.glance_deleted_view, R.id.deletedViewId)
         }
     return stubId
 }
@@ -291,16 +377,17 @@ internal fun RemoteViews.insertContainerView(
     horizontalAlignment: Alignment.Horizontal?,
     verticalAlignment: Alignment.Vertical?,
 ): InsertedViewInfo {
-    val childLayout = generatedContainers[ContainerSelector(
-        type,
-        numChildren,
-        horizontalAlignment,
-        verticalAlignment
-    )]
+    val childLayout = selectLayout33(type, modifier)
+        ?: generatedContainers[ContainerSelector(
+            type,
+            if (Build.VERSION.SDK_INT >= 33) 0 else numChildren,
+            horizontalAlignment,
+            verticalAlignment
+        )]?.layoutId
         ?: throw IllegalArgumentException("Cannot find container $type with $numChildren children")
     val childrenMapping = generatedChildren[type]
         ?: throw IllegalArgumentException("Cannot find generated children for $type")
-    return insertViewInternal(translationContext, childLayout.layoutId, modifier)
+    return insertViewInternal(translationContext, childLayout, modifier)
         .copy(children = childrenMapping)
 }
 
@@ -320,4 +407,14 @@ internal fun Dimension.resolveDimension(context: Context): Dimension {
         ViewGroup.LayoutParams.WRAP_CONTENT -> Dimension.Wrap
         else -> Dimension.Dp((sizePx / context.resources.displayMetrics.density).dp)
     }
+}
+
+@RequiresApi(Build.VERSION_CODES.S)
+private object LayoutSelectionApi31Impl {
+    @DoNotInline
+    fun remoteViews(
+        packageName: String,
+        @LayoutRes layoutId: Int,
+        viewId: Int
+    ) = RemoteViews(packageName, layoutId, viewId)
 }

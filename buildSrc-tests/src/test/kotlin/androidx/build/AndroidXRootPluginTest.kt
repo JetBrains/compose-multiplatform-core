@@ -16,78 +16,82 @@
 
 package androidx.build
 
-import androidx.testutils.gradle.ProjectSetupRule
 import java.io.File
 import net.saff.checkmark.Checkmark.Companion.check
-import org.gradle.testkit.runner.GradleRunner
+import net.saff.checkmark.Checkmark.Companion.checks
 import org.junit.Assert
 import org.junit.Test
-import org.junit.rules.TemporaryFolder
-import org.junit.rules.TestRule
-import org.junit.runner.Description
-import org.junit.runners.model.Statement
 
 class AndroidXRootPluginTest {
     @Test
-    fun rootProjectConfigurationHasAndroidXTasks() {
-        TemporaryFolder().wrap { tmpFolder ->
-            ProjectSetupRule().wrap { setup ->
-                val props = setup.props
+    fun rootProjectConfigurationHasAndroidXTasks() = pluginTest {
+        writeRootSettingsFile()
+        writeRootBuildFile()
+        Assert.assertTrue(privateJar.path, privateJar.exists())
 
-                fun buildSrcFile(path: String) =
-                    File(props.tipOfTreeMavenRepoPath, "../../../buildSrc/$path")
+        // --stacktrace gives more details on failure.
+        runGradle("tasks", "--stacktrace").output.check {
+            it.contains("listAndroidXProperties - Lists AndroidX-specific properties")
+        }
+    }
 
-                val privateJar = buildSrcFile("private/build/libs/private.jar")
-                val publicJar = buildSrcFile("public/build/libs/public.jar")
+    @Test
+    fun createZipForSimpleProject() = pluginTest {
+        writeRootSettingsFile(":cubane:cubane")
+        writeRootBuildFile()
 
-                val settingsGradleText = """
-                  pluginManagement {
-                    ${setup.repositories}
-                  }
-                """.trimIndent()
+        File(supportRoot, "libraryversions.toml").writeText(
+            """|[groups]
+               |[versions]
+               |""".trimMargin()
+        )
 
-                File(setup.rootDir, "settings.gradle").writeText(settingsGradleText)
+        val projectFolder = setup.rootDir.resolve("cubane/cubane")
 
-                val buildGradleText = """
-                  buildscript {
-                    project.ext.outDir = file("${tmpFolder.newFolder().path}")
-                    project.ext.supportRootFolder = file("${tmpFolder.newFolder().path}")
+        checks {
+            projectFolder.mkdirs()
 
-                    ${setup.repositories}
+            // TODO(b/233089408): avoid full path for androidx.build.AndroidXImplPlugin
+            File(projectFolder, "build.gradle").writeText(
+                """|import androidx.build.LibraryGroup
+                   |import androidx.build.Publish
+                   |import androidx.build.Version
+                   |
+                   |plugins {
+                   |  // b/233089408: would prefer to use this syntax, but it fails
+                   |  // id("AndroidXPlugin")
+                   |  id("java-library")
+                   |  id("kotlin")
+                   |}
+                   |
+                   |// Workaround for b/233089408
+                   |apply plugin: androidx.build.AndroidXImplPlugin
+                   |
+                   |dependencies {
+                   |  api(libs.kotlinStdlib)
+                   |}
+                   |
+                   |androidx {
+                   |  publish = Publish.SNAPSHOT_AND_RELEASE
+                   |  mavenVersion = new Version("1.2.3")
+                   |  mavenGroup = new LibraryGroup("cubane", null)
+                   |}
+                   |""".trimMargin()
+            )
 
-                    dependencies {
-                      classpath(project.files("${privateJar.path}"))
-                      classpath(project.files("${publicJar.path}"))
-                      classpath '${props.agpDependency}'
-                      classpath 'org.jetbrains.kotlin:kotlin-gradle-plugin:${props.kotlinVersion}'
-                    }
-                  }
-
-                  apply plugin: androidx.build.AndroidXRootImplPlugin
-                """.trimIndent()
-
-                File(setup.rootDir, "build.gradle").writeText(buildGradleText)
-                Assert.assertTrue(privateJar.path, privateJar.exists())
-                GradleRunner.create().withProjectDir(setup.rootDir)
-                    .withArguments("tasks", "--stacktrace")
-                    .build().output.check {
-                        it.contains("listAndroidXProperties - Lists AndroidX-specific properties")
-                    }
+            val output = runGradle(
+                ":cubane:cubane:createProjectZip",
+                "--stacktrace",
+                "-P$ALLOW_MISSING_LINT_CHECKS_PROJECT=true"
+            ).output
+            checks {
+                output.check { it.contains("BUILD SUCCESSFUL") }
+                outDir.check { it.fileList().contains("dist") }
+                outDir.resolve("dist/per-project-zips").fileList()
+                    .check { it.contains("cubane-cubane-all-0-1.2.3.zip") }
             }
         }
     }
 
-    companion object {
-        /**
-         * JUnit 4 [TestRule]s are traditionally added to a test class as public JVM fields
-         * with a @[org.junit.Rule] annotation.  This works decently in Java, but has drawbacks,
-         * such as requiring all methods in a test class to be subject to the same [TestRule]s, and
-         * making it difficult to configure [TestRule]s in different ways between test methods.
-         * With lambdas, objects that have been built as [TestRule] can use this extension function
-         * to allow per-method custom application.
-         */
-        private fun <T : TestRule> T.wrap(fn: (T) -> Unit) = apply(object : Statement() {
-            override fun evaluate() = fn(this@wrap)
-        }, Description.EMPTY).evaluate()
-    }
+    private fun File.fileList() = list()!!.toList()
 }

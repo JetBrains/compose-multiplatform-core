@@ -44,8 +44,8 @@ import androidx.compose.ui.text.android.style.BaselineShiftSpan
 import androidx.compose.ui.text.android.style.FontFeatureSpan
 import androidx.compose.ui.text.android.style.LetterSpacingSpanEm
 import androidx.compose.ui.text.android.style.LetterSpacingSpanPx
-import androidx.compose.ui.text.android.style.LineHeightStyleSpan
 import androidx.compose.ui.text.android.style.LineHeightSpan
+import androidx.compose.ui.text.android.style.LineHeightStyleSpan
 import androidx.compose.ui.text.android.style.ShadowSpan
 import androidx.compose.ui.text.android.style.SkewXSpan
 import androidx.compose.ui.text.android.style.TextDecorationSpan
@@ -202,6 +202,7 @@ internal fun Spannable.setSpanStyles(
     }
 }
 
+@OptIn(ExperimentalTextApi::class)
 private fun Spannable.setSpanStyle(
     spanStyleRange: AnnotatedString.Range<SpanStyle>,
     density: Density,
@@ -217,7 +218,7 @@ private fun Spannable.setSpanStyle(
 
     setColor(style.color, start, end)
 
-    setBrush(style.brush, start, end)
+    setBrush(style.brush, style.alpha, start, end)
 
     setTextDecoration(style.textDecoration, start, end)
 
@@ -322,6 +323,7 @@ internal fun flattenFontStylesAndApply(
     spanStyles: List<AnnotatedString.Range<SpanStyle>>,
     block: (SpanStyle, Int, Int) -> Unit
 ) {
+    // quick way out for single SpanStyle or empty list.
     if (spanStyles.size <= 1) {
         if (spanStyles.isNotEmpty()) {
             block(
@@ -333,6 +335,8 @@ internal fun flattenFontStylesAndApply(
         return
     }
 
+    // Sort all span start and end points.
+    // S1--S2--E1--S3--E3--E2
     val spanCount = spanStyles.size
     val transitionOffsets = Array(spanCount * 2) { 0 }
     spanStyles.fastForEachIndexed { idx, spanStyle ->
@@ -341,6 +345,11 @@ internal fun flattenFontStylesAndApply(
     }
     transitionOffsets.sort()
 
+    // S1--S2--E1--S3--E3--E2
+    // - Go through all minimum intervals
+    // - Find Spans that intersect with the given interval
+    // - Merge all spans in order, starting from contextFontSpanStyle
+    // - Apply the merged SpanStyle to the minimal interval
     var lastTransitionOffsets = transitionOffsets.first()
     for (transitionOffset in transitionOffsets) {
         // There might be duplicated transition offsets, we skip them here.
@@ -351,7 +360,9 @@ internal fun flattenFontStylesAndApply(
         // Check all spans that intersects with this transition range.
         var mergedSpanStyle = contextFontSpanStyle
         spanStyles.fastForEach { spanStyle ->
+            // Empty spans do not intersect with anything, skip them.
             if (
+                spanStyle.start != spanStyle.end &&
                 intersect(lastTransitionOffsets, transitionOffset, spanStyle.start, spanStyle.end)
             ) {
                 mergedSpanStyle = mergedSpanStyle.merge(spanStyle.item)
@@ -484,6 +495,7 @@ private fun Spannable.setBaselineShift(baselineShift: BaselineShift?, start: Int
 
 private fun Spannable.setBrush(
     brush: Brush?,
+    alpha: Float,
     start: Int,
     end: Int
 ) {
@@ -493,7 +505,7 @@ private fun Spannable.setBrush(
                 setColor(brush.value, start, end)
             }
             is ShaderBrush -> {
-                setSpan(ShaderBrushSpan(brush), start, end)
+                setSpan(ShaderBrushSpan(brush, alpha), start, end)
             }
         }
     }

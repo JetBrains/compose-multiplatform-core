@@ -332,15 +332,12 @@ internal class InteractiveWatchFaceClientImpl internal constructor(
 
     override val overlayStyle: OverlayStyle
         get() {
-            return if (iInteractiveWatchFace.apiVersion >= 4) {
-                val wireFormat = iInteractiveWatchFace.watchFaceOverlayStyle
-                OverlayStyle(
-                    wireFormat.backgroundColor,
-                    wireFormat.foregroundColor
-                )
-            } else {
-                OverlayStyle(null, null)
+            if (iInteractiveWatchFace.apiVersion >= 4) {
+                iInteractiveWatchFace.watchFaceOverlayStyle?.let {
+                    return OverlayStyle(it.backgroundColor, it.foregroundColor)
+                }
             }
+            return OverlayStyle(null, null)
         }
 
     override fun updateWatchFaceInstance(newInstanceId: String, userStyle: UserStyle) = TraceEvent(
@@ -389,13 +386,13 @@ internal class InteractiveWatchFaceClientImpl internal constructor(
     }
 
     override val contentDescriptionLabels: List<ContentDescriptionLabel>
-        get() = iInteractiveWatchFace.contentDescriptionLabels.map {
+        get() = iInteractiveWatchFace.contentDescriptionLabels?.map {
             ContentDescriptionLabel(
                 it.text.toApiComplicationText(),
                 it.bounds,
                 it.tapAction
             )
-        }
+        } ?: emptyList()
 
     override fun setWatchUiState(
         watchUiState: androidx.wear.watchface.client.WatchUiState

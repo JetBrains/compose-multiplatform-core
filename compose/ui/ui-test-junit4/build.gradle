@@ -16,6 +16,7 @@
 
 import androidx.build.AndroidXComposePlugin
 import androidx.build.LibraryType
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     id("AndroidXPlugin")
@@ -50,8 +51,8 @@ dependencies {
         implementation("androidx.lifecycle:lifecycle-runtime:2.3.0")
         implementation(libs.testCore)
         implementation(libs.testMonitor)
-        implementation(libs.espressoCore)
-        implementation(libs.espressoIdlingResource)
+        implementation("androidx.test.espresso:espresso-core:3.3.0")
+        implementation("androidx.test.espresso:espresso-idling-resource:3.3.0")
         implementation(libs.kotlinCoroutinesCore)
         implementation(libs.kotlinCoroutinesTest)
 
@@ -108,8 +109,8 @@ if(AndroidXComposePlugin.isMultiplatformEnabled(project)) {
                 implementation("androidx.lifecycle:lifecycle-runtime:2.3.0")
                 implementation(libs.testCore)
                 implementation(libs.testMonitor)
-                implementation(libs.espressoCore)
-                implementation(libs.espressoIdlingResource)
+                implementation("androidx.test.espresso:espresso-core:3.3.0")
+                implementation("androidx.test.espresso:espresso-idling-resource:3.3.0")
             }
 
             // TODO(b/214407011): These dependencies leak into instrumented tests as well. If you
@@ -156,4 +157,12 @@ androidx {
     inceptionYear = "2020"
     description = "Compose testing integration with JUnit4"
     legacyDisableKotlinStrictApiMode = true
+}
+
+tasks.withType(KotlinCompile).configureEach {
+    kotlinOptions {
+        freeCompilerArgs += [
+                "-Xjvm-default=all",
+        ]
+    }
 }

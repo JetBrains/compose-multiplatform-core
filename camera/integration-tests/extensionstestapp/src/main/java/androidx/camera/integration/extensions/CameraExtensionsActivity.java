@@ -95,6 +95,11 @@ public class CameraExtensionsActivity extends AppCompatActivity
     @VisibleForTesting
     static final String INTENT_EXTRA_DELETE_CAPTURED_IMAGE = "delete_captured_image";
 
+    // Possible values for this intent key: "BACKWARD" or "FORWARD".
+    private static final String INTENT_EXTRA_CAMERA_DIRECTION = "camera_direction";
+    private static final String BACKWARD = "BACKWARD";
+    private static final String FORWARD = "FORWARD";
+
     private static final String TAG = "CameraExtensionActivity";
     private static final int PERMISSIONS_REQUEST_CODE = 42;
 
@@ -144,7 +149,25 @@ public class CameraExtensionsActivity extends AppCompatActivity
         mCameraProvider.unbindAll();
         mCurrentCameraSelector = (mCurrentCameraSelector == CameraSelector.DEFAULT_BACK_CAMERA)
                 ? CameraSelector.DEFAULT_FRONT_CAMERA : CameraSelector.DEFAULT_BACK_CAMERA;
+        if (!bindUseCasesWithCurrentExtensionMode()) {
+            bindUseCasesWithNextExtensionMode();
+        }
+    }
+
+    @VisibleForTesting
+    boolean switchToExtensionMode(@ExtensionMode.Mode int extensionMode) {
+        if (mCamera == null || mExtensionsManager == null) {
+            return false;
+        }
+
+        if (!mExtensionsManager.isExtensionAvailable(mCurrentCameraSelector, extensionMode)) {
+            return false;
+        }
+
+        mCurrentExtensionMode = extensionMode;
         bindUseCasesWithCurrentExtensionMode();
+
+        return true;
     }
 
     void bindUseCasesWithNextExtensionMode() {
@@ -290,6 +313,18 @@ public class CameraExtensionsActivity extends AppCompatActivity
             mCurrentCameraSelector = CameraSelectorUtil.createCameraSelectorById(cameraId);
         }
 
+        // Get params from adb extra string for the e2e test cases.
+        String cameraDirection = getIntent().getStringExtra(INTENT_EXTRA_CAMERA_DIRECTION);
+        if (cameraDirection != null) {
+            if (cameraDirection.equals(BACKWARD)) {
+                mCurrentCameraSelector = CameraSelector.DEFAULT_BACK_CAMERA;
+            } else if (cameraDirection.equals(FORWARD)) {
+                mCurrentCameraSelector = CameraSelector.DEFAULT_FRONT_CAMERA;
+            } else {
+                throw new IllegalArgumentException(
+                        "The camera " + cameraDirection + " is unavailable.");
+            }
+        }
         mCurrentExtensionMode = getIntent().getIntExtra(INTENT_EXTRA_EXTENSION_MODE,
                 mCurrentExtensionMode);
 
@@ -554,6 +589,12 @@ public class CameraExtensionsActivity extends AppCompatActivity
     boolean isExtensionModeSupported(@NonNull String cameraId, @ExtensionMode.Mode int mode) {
         CameraSelector cameraSelector = CameraSelectorUtil.createCameraSelectorById(cameraId);
 
+        return mExtensionsManager.isExtensionAvailable(cameraSelector, mode);
+    }
+
+    @VisibleForTesting
+    boolean isExtensionModeSupported(@NonNull CameraSelector cameraSelector,
+            @ExtensionMode.Mode int mode) {
         return mExtensionsManager.isExtensionAvailable(cameraSelector, mode);
     }
 

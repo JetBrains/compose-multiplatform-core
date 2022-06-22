@@ -159,13 +159,13 @@ public class SamplePlaces {
         Location location5 = new Location(SamplePlaces.class.getSimpleName());
         location5.setLatitude(37.422014);
         location5.setLongitude(-122.084776);
-        SpannableString title5 = new SpannableString(" ");
+        SpannableString title5 = new SpannableString("  Googleplex");
         title5.setSpan(CarIconSpan.create(new CarIcon.Builder(
                         IconCompat.createWithBitmap(
                                 BitmapFactory.decodeResource(
                                         carContext.getResources(),
                                         R.drawable.ic_hi)))
-                        .build(), CarIconSpan.ALIGN_BOTTOM),
+                        .build(), CarIconSpan.ALIGN_CENTER),
                 0,
                 1,
                 Spanned.SPAN_INCLUSIVE_EXCLUSIVE);
@@ -279,7 +279,7 @@ public class SamplePlaces {
                                         BitmapFactory.decodeResource(
                                                 carContext.getResources(),
                                                 R.drawable.ic_hi)))
-                                .build(), CarIconSpan.ALIGN_BOTTOM),
+                                .build(), CarIconSpan.ALIGN_CENTER),
                         5,
                         6,
                         Spanned.SPAN_INCLUSIVE_EXCLUSIVE);

@@ -49,6 +49,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
@@ -345,7 +346,7 @@ public fun ScalingLazyColumn(
             space = 4.dp,
             alignment = if (!reverseLayout) Alignment.Top else Alignment.Bottom
         ),
-    horizontalAlignment: Alignment.Horizontal = Alignment.Start,
+    horizontalAlignment: Alignment.Horizontal = Alignment.CenterHorizontally,
     flingBehavior: FlingBehavior = ScrollableDefaults.flingBehavior(),
     userScrollEnabled: Boolean = true,
     scalingParams: ScalingParams = ScalingLazyColumnDefaults.scalingParams(),
@@ -400,6 +401,7 @@ public fun ScalingLazyColumn(
             state.anchorType.value = anchorType
             state.autoCentering.value = autoCentering
             state.reverseLayout.value = reverseLayout
+            state.localInspectionMode.value = LocalInspectionMode.current
 
             LazyColumn(
                 modifier = Modifier
@@ -569,7 +571,7 @@ public object ScalingLazyColumnDefaults {
         maxElementHeight: Float = 0.6f,
         minTransitionArea: Float = 0.35f,
         maxTransitionArea: Float = 0.55f,
-        scaleInterpolator: Easing = CubicBezierEasing(0.25f, 0.00f, 0.75f, 1.00f),
+        scaleInterpolator: Easing = CubicBezierEasing(0.3f, 0f, 0.7f, 1f),
         viewportVerticalOffsetResolver: (Constraints) -> Int = { (it.maxHeight / 20f).toInt() }
     ): ScalingParams = DefaultScalingParams(
         edgeScale = edgeScale,
