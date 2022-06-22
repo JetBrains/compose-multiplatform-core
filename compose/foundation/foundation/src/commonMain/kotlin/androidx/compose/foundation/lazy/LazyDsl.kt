@@ -25,11 +25,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import kotlin.jvm.JvmDefaultWithCompatibility
 
 /**
  * Receiver scope which is used by [LazyColumn] and [LazyRow].
  */
 @LazyScopeMarker
+@JvmDefaultWithCompatibility
 interface LazyListScope {
     /**
      * Adds a single item.
@@ -270,9 +272,10 @@ inline fun <T> LazyListScope.itemsIndexed(
  * content after it has been clipped, which is not possible via [modifier] param. You can use it
  * to add a padding before the first item or after the last one. If you want to add a spacing
  * between each item use [horizontalArrangement].
- * @param reverseLayout reverse the direction of scrolling and layout, when `true` items will be
- * composed from the end to the start and [LazyListState.firstVisibleItemIndex] == 0 will mean
- * the first item is located at the end.
+ * @param reverseLayout reverse the direction of scrolling and layout. When `true`, items are
+ * laid out in the reverse order and [LazyListState.firstVisibleItemIndex] == 0 means
+ * that row is scrolled to the end. Note that [reverseLayout] does not change the behavior of
+ * [horizontalArrangement], e.g. with [Arrangement.Start] [123###] becomes [321###].
  * @param horizontalArrangement The horizontal arrangement of the layout's children. This allows
  * to add a spacing between items and specify the arrangement of the items when we have not enough
  * of them to fill the whole minimum size.
@@ -324,9 +327,11 @@ fun LazyRow(
  * content after it has been clipped, which is not possible via [modifier] param. You can use it
  * to add a padding before the first item or after the last one. If you want to add a spacing
  * between each item use [verticalArrangement].
- * @param reverseLayout reverse the direction of scrolling and layout, when `true` items will be
- * composed from the bottom to the top and [LazyListState.firstVisibleItemIndex] == 0 will mean
- * we scrolled to the bottom.
+ * @param reverseLayout reverse the direction of scrolling and layout. When `true`, items are
+ * laid out in the reverse order and [LazyListState.firstVisibleItemIndex] == 0 means
+ * that column is scrolled to the bottom. Note that [reverseLayout] does not change the behavior of
+ * [verticalArrangement],
+ * e.g. with [Arrangement.Top] (top) 123### (bottom) becomes (top) 321### (bottom).
  * @param verticalArrangement The vertical arrangement of the layout's children. This allows
  * to add a spacing between items and specify the arrangement of the items when we have not enough
  * of them to fill the whole minimum size.

@@ -20,9 +20,8 @@ import android.app.PendingIntent
 import android.content.ComponentName
 import android.graphics.drawable.Icon
 import android.os.Build
+import androidx.annotation.ColorInt
 import androidx.annotation.RestrictTo
-import androidx.wear.tiles.proto.LayoutElementProto
-import androidx.wear.tiles.proto.ResourceProto
 import androidx.wear.tiles.LayoutElementBuilders
 import androidx.wear.tiles.ResourceBuilders
 import java.time.Instant
@@ -751,7 +750,8 @@ public class LongTextComplicationData internal constructor(
  * box.
  * @property contentDescription The content description field for accessibility.
  */
-public class RangedValueComplicationData internal constructor(
+public class RangedValueComplicationData @OptIn(ComplicationExperimental::class)
+internal constructor(
     public val value: Float,
     public val min: Float,
     public val max: Float,
@@ -762,7 +762,9 @@ public class RangedValueComplicationData internal constructor(
     tapAction: PendingIntent?,
     validTimeRange: TimeRange?,
     cachedWireComplicationData: WireComplicationData?,
-    dataSource: ComponentName?
+    dataSource: ComponentName?,
+    drawSegmented: Boolean,
+    @ColorInt colorRamp: ColorRamp?
 ) : ComplicationData(
     TYPE,
     tapAction = tapAction,
@@ -770,6 +772,56 @@ public class RangedValueComplicationData internal constructor(
     validTimeRange = validTimeRange ?: TimeRange.ALWAYS,
     dataSource = dataSource
 ) {
+    /**
+     * Optional hints that the ranged value indicator (typically a line or arc) should be drawn
+     * using segments, where one segment = 1 unit. Intended for integral ranged values E.g. number
+     * of cups of water drunk today.
+     */
+    @ComplicationExperimental
+    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
+    @get:ComplicationExperimental
+    @get:JvmName("isDrawSegmented")
+    val drawSegmented: Boolean = drawSegmented
+
+    /**
+     * Describes an optional simple linear color ramp to be applied when rendering the
+     * [RangedValueComplicationData] where [min] is rendered with [minColor] and [max] with
+     * [maxColor].
+     *
+     * This is a rendering hint that would override the normal watch face colors when there's a
+     * particular semantic meaning. E.g. red to blue for a ranged value representing temperature.
+     */
+    @ComplicationExperimental
+    public class ColorRamp(@ColorInt val minColor: Int, @ColorInt val maxColor: Int) {
+        override fun toString(): String {
+            return "ColorRamp(minColor=$minColor, maxColor=$maxColor)"
+        }
+
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (javaClass != other?.javaClass) return false
+
+            other as ColorRamp
+
+            if (minColor != other.minColor) return false
+            if (maxColor != other.maxColor) return false
+
+            return true
+        }
+
+        override fun hashCode(): Int {
+            var result = minColor
+            result = 31 * result + maxColor
+            return result
+        }
+    }
+
+    /** Optional hint to render the value with the specified [ColorRamp]. */
+    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
+    @get:ComplicationExperimental
+    @ComplicationExperimental
+    @ColorInt val colorRamp: ColorRamp? = colorRamp
+
     /**
      * Builder for [RangedValueComplicationData].
      *
@@ -794,6 +846,9 @@ public class RangedValueComplicationData internal constructor(
         private var text: ComplicationText? = null
         private var cachedWireComplicationData: WireComplicationData? = null
         private var dataSource: ComponentName? = null
+        private var drawSegmented = false
+        @OptIn(ComplicationExperimental::class)
+        @ColorInt private var colorRamp: ColorRamp? = null
 
         init {
             require(max != Float.MAX_VALUE) {
@@ -838,6 +893,25 @@ public class RangedValueComplicationData internal constructor(
             this.dataSource = dataSource
         }
 
+        /**
+         * Sets the optional hint that the ranged value indicator (typically a line or arc) should
+         * be drawn using segments, where one segment = 1 unit. Intended for integral ranged values
+         * E.g. number of cups of water drunk today.
+         */
+        @ComplicationExperimental
+        public fun setDrawSegmented(drawSegmented: Boolean): Builder = apply {
+            this.drawSegmented = drawSegmented
+        }
+
+        /**
+         * Sets an optional hint which suggests the renderer draws the complication using a
+         * [ColorRamp].
+         */
+        @ComplicationExperimental
+        public fun setColorRamp(colorRamp: ColorRamp?): Builder = apply {
+            this.colorRamp = colorRamp
+        }
+
         internal fun setCachedWireComplicationData(
             cachedWireComplicationData: WireComplicationData?
         ): Builder = apply {
@@ -845,6 +919,7 @@ public class RangedValueComplicationData internal constructor(
         }
 
         /** Builds the [RangedValueComplicationData]. */
+        @OptIn(ComplicationExperimental::class)
         public fun build(): RangedValueComplicationData =
             RangedValueComplicationData(
                 value,
@@ -857,7 +932,9 @@ public class RangedValueComplicationData internal constructor(
                 tapAction,
                 validTimeRange,
                 cachedWireComplicationData,
-                dataSource
+                dataSource,
+                drawSegmented,
+                colorRamp
             )
     }
 
@@ -872,6 +949,7 @@ public class RangedValueComplicationData internal constructor(
         }.build().also { cachedWireComplicationData = it }
     }
 
+    @OptIn(ComplicationExperimental::class)
     override fun fillWireComplicationDataBuilder(builder: WireComplicationDataBuilder) {
         builder.setRangedValue(value)
         builder.setRangedMinValue(min)
@@ -888,8 +966,14 @@ public class RangedValueComplicationData internal constructor(
         )
         setValidTimeRange(validTimeRange, builder)
         builder.setTapActionLostDueToSerialization(tapActionLostDueToSerialization)
+        builder.setDrawSegmented(drawSegmented)
+        colorRamp?.let {
+            builder.setRangedMinColor(it.minColor)
+            builder.setRangedMaxColor(it.maxColor)
+        }
     }
 
+    @OptIn(ComplicationExperimental::class)
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
@@ -907,10 +991,13 @@ public class RangedValueComplicationData internal constructor(
         if (tapAction != other.tapAction) return false
         if (validTimeRange != other.validTimeRange) return false
         if (dataSource != other.dataSource) return false
+        if (drawSegmented != other.drawSegmented) return false
+        if (colorRamp != other.colorRamp) return false
 
         return true
     }
 
+    @OptIn(ComplicationExperimental::class)
     override fun hashCode(): Int {
         var result = value.hashCode()
         result = 31 * result + min.hashCode()
@@ -923,9 +1010,12 @@ public class RangedValueComplicationData internal constructor(
         result = 31 * result + (tapAction?.hashCode() ?: 0)
         result = 31 * result + validTimeRange.hashCode()
         result = 31 * result + dataSource.hashCode()
+        result = 31 * result + drawSegmented.hashCode()
+        result = 31 * result + colorRamp.hashCode()
         return result
     }
 
+    @OptIn(ComplicationExperimental::class)
     override fun toString(): String {
         val valueString = if (WireComplicationData.shouldRedact()) {
             "REDACTED"
@@ -936,7 +1026,8 @@ public class RangedValueComplicationData internal constructor(
             "monochromaticImage=$monochromaticImage, title=$title, text=$text, " +
             "contentDescription=$contentDescription), " +
             "tapActionLostDueToSerialization=$tapActionLostDueToSerialization, " +
-            "tapAction=$tapAction, validTimeRange=$validTimeRange, dataSource=$dataSource)"
+            "tapAction=$tapAction, validTimeRange=$validTimeRange, dataSource=$dataSource, " +
+            "drawSegmented=$drawSegmented, colorRamp=$colorRamp)"
     }
 
     override fun hasPlaceholderFields() = value == PLACEHOLDER || text?.isPlaceholder() == true ||
@@ -1498,23 +1589,17 @@ constructor(
 
     /** The [LayoutElementBuilders.Layout] to be displayed when the device is ambient. */
     public val ambientLayout: LayoutElementBuilders.Layout by lazy {
-        LayoutElementBuilders.Layout.fromProto(
-            LayoutElementProto.Layout.parseFrom(ambientLayoutWireFormat)
-        )
+        LayoutElementBuilders.Layout.fromByteArray(ambientLayoutWireFormat)!!
     }
 
     /** The [LayoutElementBuilders.Layout] to be displayed when the device is interactive. */
     public val interactiveLayout: LayoutElementBuilders.Layout by lazy {
-        LayoutElementBuilders.Layout.fromProto(
-             LayoutElementProto.Layout.parseFrom(interactiveLayoutWireFormat)
-        )
+        LayoutElementBuilders.Layout.fromByteArray(interactiveLayoutWireFormat)!!
     }
 
     /** The [ResourceBuilders.Resources] for [ambientLayout] and [interactiveLayout]. */
     public val layoutResources: ResourceBuilders.Resources by lazy {
-        ResourceBuilders.Resources.fromProto(
-            ResourceProto.Resources.parseFrom(layoutResourcesWireFormat)
-        )
+        ResourceBuilders.Resources.fromByteArray(layoutResourcesWireFormat)!!
     }
 
     /**
@@ -1552,9 +1637,9 @@ constructor(
             resources: ResourceBuilders.Resources,
             contentDescription: ComplicationText
         ) : this(
-            ambientLayout.toProto().toByteArray(),
-            interactiveLayout.toProto().toByteArray(),
-            resources.toProto().toByteArray(),
+            ambientLayout.toByteArray(),
+            interactiveLayout.toByteArray(),
+            resources.toByteArray(),
             contentDescription
         )
 
@@ -2087,6 +2172,10 @@ internal fun WireComplicationData.toPlaceholderComplicationData(): ComplicationD
             setTitle(shortTitle?.toApiComplicationTextPlaceholderAware())
             setText(shortText?.toApiComplicationTextPlaceholderAware())
             setDataSource(dataSource)
+            setDrawSegmented(drawSegmented)
+            rangedMinColor?.let {
+                setColorRamp(RangedValueComplicationData.ColorRamp(it, rangedMaxColor!!))
+            }
         }.build()
 
     MonochromaticImageComplicationData.TYPE.toWireComplicationType() ->
@@ -2209,6 +2298,10 @@ public fun WireComplicationData.toApiComplicationData(): ComplicationData {
                 setText(shortText?.toApiComplicationText())
                 setCachedWireComplicationData(wireComplicationData)
                 setDataSource(dataSource)
+                setDrawSegmented(drawSegmented)
+                rangedMinColor?.let {
+                    setColorRamp(RangedValueComplicationData.ColorRamp(it, rangedMaxColor!!))
+                }
             }.build()
 
         MonochromaticImageComplicationData.TYPE.toWireComplicationType() ->

@@ -41,12 +41,11 @@ import androidx.wear.watchface.control.data.GetComplicationSlotMetadataParams
 import androidx.wear.watchface.control.data.GetUserStyleSchemaParams
 import androidx.wear.watchface.control.data.HeadlessWatchFaceInstanceParams
 import androidx.wear.watchface.ComplicationSlotBoundsType
-import androidx.wear.watchface.UserStyleFlavors
-import androidx.wear.watchface.WatchFaceFlavorsExperimental
 import androidx.wear.watchface.WatchFaceService
 import androidx.wear.watchface.XmlSchemaAndComplicationSlotsDefinition
 import androidx.wear.watchface.complications.data.ComplicationExperimental
 import androidx.wear.watchface.control.data.GetUserStyleFlavorsParams
+import androidx.wear.watchface.style.UserStyleFlavors
 import androidx.wear.watchface.style.UserStyleSchema
 import androidx.wear.watchface.style.UserStyleSetting.ComplicationSlotsUserStyleSetting
 import androidx.wear.watchface.style.UserStyleSetting.ComplicationSlotsUserStyleSetting.ComplicationSlotOverlay
@@ -242,7 +241,6 @@ public interface WatchFaceMetadataClient : AutoCloseable {
      * @throws [RuntimeException] if the watch face threw an exception while trying to service the
      * request or there was a communication problem with watch face process.
      */
-    @WatchFaceFlavorsExperimental
     public fun getUserStyleFlavors(): UserStyleFlavors
 }
 
@@ -395,13 +393,17 @@ internal class WatchFaceMetadataClientImpl internal constructor(
                     { it.id },
                     {
                         val perSlotBounds = HashMap<ComplicationType, RectF>()
+                        val perSlotMargins = HashMap<ComplicationType, RectF>()
                         for (i in it.complicationBoundsType.indices) {
-                            perSlotBounds[
-                                ComplicationType.fromWireType(it.complicationBoundsType[i])
-                            ] = it.complicationBounds[i]
+                            val type = ComplicationType.fromWireType(it.complicationBoundsType[i])
+                            perSlotBounds[type] = it.complicationBounds[i] ?: RectF()
+                            perSlotMargins[type] = it.complicationMargins?.get(i) ?: RectF()
                         }
                         ComplicationSlotMetadata(
-                            ComplicationSlotBounds.createFromPartialMap(perSlotBounds),
+                            ComplicationSlotBounds.createFromPartialMap(
+                                perSlotBounds,
+                                perSlotMargins
+                            ),
                             it.boundsType,
                             it.supportedTypes.map { ComplicationType.fromWireType(it) },
                             DefaultComplicationDataSourcePolicy(
@@ -441,7 +443,6 @@ internal class WatchFaceMetadataClientImpl internal constructor(
         }
     }
 
-    @OptIn(WatchFaceFlavorsExperimental::class)
     override fun getUserStyleFlavors(): UserStyleFlavors = callRemote {
         if (service.apiVersion >= 5) {
             UserStyleFlavors(
@@ -490,7 +491,6 @@ internal class XmlWatchFaceMetadataClientImpl(
             }
         )
 
-    @WatchFaceFlavorsExperimental
     override fun getUserStyleFlavors() =
         xmlSchemaAndComplicationSlotsDefinition.flavors ?: UserStyleFlavors()
 

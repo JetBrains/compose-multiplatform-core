@@ -240,7 +240,8 @@ internal class RecomposeScopeImpl(
         if (
             instances.isNotEmpty() &&
             instances.all { instance ->
-                instance is DerivedState<*> && trackedDependencies[instance] == instance.value
+                instance is DerivedState<*> &&
+                    trackedDependencies[instance] == instance.currentValue
             }
         )
             return false
@@ -286,6 +287,7 @@ internal class RecomposeScopeImpl(
                             if (remove) {
                                 composition.removeObservation(instance, this)
                                 (instance as? DerivedState<*>)?.let {
+                                    composition.removeDerivedStateObservation(it)
                                     trackedDependencies?.let { dependencies ->
                                         dependencies.remove(it)
                                         if (dependencies.size == 0) {

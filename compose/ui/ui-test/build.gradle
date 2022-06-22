@@ -16,6 +16,7 @@
 
 import androidx.build.AndroidXComposePlugin
 import androidx.build.LibraryType
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     id("AndroidXPlugin")
@@ -56,7 +57,7 @@ dependencies {
         implementation(project(":compose:ui:ui-util"))
         implementation("androidx.annotation:annotation:1.1.0")
         implementation("androidx.core:core-ktx:1.1.0")
-        implementation(libs.espressoCore)
+        implementation("androidx.test.espresso:espresso-core:3.3.0")
         implementation(libs.testMonitor)
 
         testImplementation(project(":compose:test-utils"))
@@ -108,7 +109,7 @@ if (AndroidXComposePlugin.isMultiplatformEnabled(project)) {
 
                 implementation("androidx.annotation:annotation:1.1.0")
                 implementation("androidx.core:core-ktx:1.1.0")
-                implementation(libs.espressoCore)
+                implementation("androidx.test.espresso:espresso-core:3.3.0")
                 implementation(libs.testMonitor)
             }
 
@@ -162,4 +163,12 @@ androidx {
     inceptionYear = "2019"
     description = "Compose testing library"
     legacyDisableKotlinStrictApiMode = true
+}
+
+tasks.withType(KotlinCompile).configureEach {
+    kotlinOptions {
+        freeCompilerArgs += [
+                "-Xjvm-default=all",
+        ]
+    }
 }

@@ -18,9 +18,9 @@ package androidx.compose.ui.test.junit4
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.LocalOverscrollConfiguration
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.gestures.FlingBehavior
-import androidx.compose.foundation.gestures.LocalOverScrollConfiguration
 import androidx.compose.foundation.gestures.ScrollScope
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -34,6 +34,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Button
 import androidx.compose.material.Text
+import androidx.compose.material.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.MutableState
@@ -48,11 +49,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertLeftPositionInRootIsEqualTo
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.runComposeUiTest
 import androidx.compose.ui.unit.dp
@@ -200,7 +203,7 @@ class RobolectricComposeTest {
         setContent {
             WithTouchSlop(touchSlop = touchSlop) {
                 // turn off visual overscroll for calculation correctness
-                CompositionLocalProvider(LocalOverScrollConfiguration provides null) {
+                CompositionLocalProvider(LocalOverscrollConfiguration provides null) {
                     Box(Modifier.fillMaxSize()) {
                         Column(
                             Modifier.requiredSize(200.dp).verticalScroll(
@@ -240,6 +243,21 @@ class RobolectricComposeTest {
         waitForIdle()
         val expectedFlingDistance = flingBehavior.totalDistance
         assertThat(scrollState.value).isEqualTo(expectedSwipeDistance + expectedFlingDistance)
+    }
+
+    // Regression test for b/227120770
+    @Test
+    fun testTextFieldInteraction() = runComposeUiTest {
+        val text = "a"
+        var updatedText = ""
+        setContent {
+            TextField(value = text, onValueChange = { updatedText = it })
+        }
+        onNodeWithText(text).assertIsDisplayed()
+        onNodeWithText(text).performTextInput("b")
+        runOnIdle {
+            assertThat(updatedText).isEqualTo("ab")
+        }
     }
 
     /**

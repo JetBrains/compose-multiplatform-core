@@ -20,6 +20,7 @@ import android.app.PendingIntent
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.graphics.Color
 import android.graphics.drawable.Icon
 import android.os.Build
 import android.util.Log
@@ -216,6 +217,7 @@ public class AsWireComplicationDataTest {
         )
     }
 
+    @OptIn(ComplicationExperimental::class)
     @Test
     public fun rangedValueComplicationData() {
         val data = RangedValueComplicationData.Builder(
@@ -224,6 +226,7 @@ public class AsWireComplicationDataTest {
         )
             .setTitle("battery".complicationText)
             .setDataSource(dataSourceA)
+            .setDrawSegmented(true)
             .build()
         ParcelableSubject.assertThat(data.asWireComplicationData())
             .hasSameSerializationAs(
@@ -234,6 +237,7 @@ public class AsWireComplicationDataTest {
                     .setShortTitle(WireComplicationText.plainText("battery"))
                     .setContentDescription(WireComplicationText.plainText("content description"))
                     .setDataSource(dataSourceA)
+                    .setDrawSegmented(true)
                     .build()
             )
         testRoundTripConversions(data)
@@ -252,6 +256,7 @@ public class AsWireComplicationDataTest {
         )
             .setTitle("battery".complicationText)
             .setDataSource(dataSourceA)
+            .setDrawSegmented(true)
             .build()
 
         val data3 = RangedValueComplicationData.Builder(
@@ -260,6 +265,7 @@ public class AsWireComplicationDataTest {
         )
             .setTitle("battery2".complicationText)
             .setDataSource(dataSourceB)
+            .setDrawSegmented(true)
             .build()
 
         assertThat(data).isEqualTo(data2)
@@ -273,7 +279,81 @@ public class AsWireComplicationDataTest {
                 "{mSurroundingText=content description, mTimeDependentText=null}), " +
                 "tapActionLostDueToSerialization=false, tapAction=null, validTimeRange=" +
                 "TimeRange(startDateTimeMillis=-1000000000-01-01T00:00:00Z, endDateTimeMillis=" +
-                "+1000000000-12-31T23:59:59.999999999Z), dataSource=ComponentInfo{com.pkg_a/com.a})"
+                "+1000000000-12-31T23:59:59.999999999Z), dataSource=" +
+                "ComponentInfo{com.pkg_a/com.a}, drawSegmented=true, colorRamp=null)"
+        )
+    }
+
+    @OptIn(ComplicationExperimental::class)
+    @Test
+    public fun rangedValueComplicationData_with_ColorRamp() {
+        val data = RangedValueComplicationData.Builder(
+            value = 95f, min = 0f, max = 100f,
+            contentDescription = "content description".complicationText
+        )
+            .setTitle("battery".complicationText)
+            .setDataSource(dataSourceA)
+            .setDrawSegmented(true)
+            .setColorRamp(RangedValueComplicationData.ColorRamp(Color.BLUE, Color.RED))
+            .build()
+        ParcelableSubject.assertThat(data.asWireComplicationData())
+            .hasSameSerializationAs(
+                WireComplicationDataBuilder(WireComplicationData.TYPE_RANGED_VALUE)
+                    .setRangedValue(95f)
+                    .setRangedMinValue(0f)
+                    .setRangedMaxValue(100f)
+                    .setShortTitle(WireComplicationText.plainText("battery"))
+                    .setContentDescription(WireComplicationText.plainText("content description"))
+                    .setDataSource(dataSourceA)
+                    .setDrawSegmented(true)
+                    .setRangedMinColor(Color.BLUE)
+                    .setRangedMaxColor(Color.RED)
+                    .build()
+            )
+        testRoundTripConversions(data)
+        val deserialized = serializeAndDeserialize(data) as RangedValueComplicationData
+        assertThat(deserialized.max).isEqualTo(100f)
+        assertThat(deserialized.min).isEqualTo(0f)
+        assertThat(deserialized.value).isEqualTo(95f)
+        assertThat(deserialized.contentDescription!!.getTextAt(resources, Instant.EPOCH))
+            .isEqualTo("content description")
+        assertThat(deserialized.title!!.getTextAt(resources, Instant.EPOCH))
+            .isEqualTo("battery")
+
+        val data2 = RangedValueComplicationData.Builder(
+            value = 95f, min = 0f, max = 100f,
+            contentDescription = "content description".complicationText
+        )
+            .setTitle("battery".complicationText)
+            .setDataSource(dataSourceA)
+            .setDrawSegmented(true)
+            .setColorRamp(RangedValueComplicationData.ColorRamp(Color.BLUE, Color.RED))
+            .build()
+
+        val data3 = RangedValueComplicationData.Builder(
+            value = 95f, min = 0f, max = 100f,
+            contentDescription = "content description2".complicationText
+        )
+            .setTitle("battery2".complicationText)
+            .setDataSource(dataSourceB)
+            .setDrawSegmented(true)
+            .setColorRamp(RangedValueComplicationData.ColorRamp(Color.BLUE, Color.RED))
+            .build()
+
+        assertThat(data).isEqualTo(data2)
+        assertThat(data).isNotEqualTo(data3)
+        assertThat(data.hashCode()).isEqualTo(data2.hashCode())
+        assertThat(data.hashCode()).isNotEqualTo(data3.hashCode())
+        assertThat(data.toString()).isEqualTo(
+            "RangedValueComplicationData(value=95.0, min=0.0, max=100.0, " +
+                "monochromaticImage=null, title=ComplicationText{mSurroundingText=battery, " +
+                "mTimeDependentText=null}, text=null, contentDescription=ComplicationText" +
+                "{mSurroundingText=content description, mTimeDependentText=null}), " +
+                "tapActionLostDueToSerialization=false, tapAction=null, validTimeRange=" +
+                "TimeRange(startDateTimeMillis=-1000000000-01-01T00:00:00Z, endDateTimeMillis=" +
+                "+1000000000-12-31T23:59:59.999999999Z), dataSource=" +
+                "ComponentInfo{com.pkg_a/com.a}, drawSegmented=true, colorRamp=ColorRamp(" +
+                "minColor=-16776961, maxColor=-65536))"
         )
     }
 
@@ -493,6 +573,7 @@ public class AsWireComplicationDataTest {
                                 .setRangedValue(95f)
                                 .setRangedMinValue(0f)
                                 .setRangedMaxValue(100f)
+                                .setDrawSegmented(false)
                                 .build()
                         )
                     )
@@ -561,7 +642,8 @@ public class AsWireComplicationDataTest {
                 "tapActionLostDueToSerialization=false, tapAction=null, validTimeRange=" +
                 "TimeRange(startDateTimeMillis=-1000000000-01-01T00:00:00Z, " +
                 "endDateTimeMillis=+1000000000-12-31T23:59:59.999999999Z), " +
-                "dataSource=null)], contentDescription=ComplicationText{mSurroundingText=, " +
+                "dataSource=null, drawSegmented=false, colorRamp=null)], " +
+                "contentDescription=ComplicationText{mSurroundingText=, " +
                 "mTimeDependentText=null}, tapActionLostDueToSerialization=false, " +
                 "tapAction=null, validTimeRange=TimeRange(startDateTimeMillis=" +
                 "-1000000000-01-01T00:00:00Z, endDateTimeMillis=+1000000000-12-31T23:59:" +
@@ -701,6 +783,7 @@ public class AsWireComplicationDataTest {
         )
     }
 
+    @OptIn(ComplicationExperimental::class)
     @Test
     public fun noDataComplicationData_rangedValue() {
         val data = NoDataComplicationData(
@@ -712,6 +795,7 @@ public class AsWireComplicationDataTest {
             )
                 .setText(ComplicationText.PLACEHOLDER)
                 .setDataSource(dataSourceA)
+                .setDrawSegmented(true)
                 .build()
         )
         ParcelableSubject.assertThat(data.asWireComplicationData())
@@ -727,6 +811,7 @@ public class AsWireComplicationDataTest {
                                 WireComplicationText.plainText("content description")
                             )
                             .setDataSource(dataSourceA)
+                            .setDrawSegmented(true)
                             .build()
                     )
                     .build()
@@ -745,6 +830,7 @@ public class AsWireComplicationDataTest {
             )
                 .setText(ComplicationText.PLACEHOLDER)
                 .setDataSource(dataSourceA)
+                .setDrawSegmented(true)
                 .build()
         )
         val data3 = NoDataComplicationData(
@@ -768,10 +854,93 @@ public class AsWireComplicationDataTest {
                 "mTimeDependentText=null}), tapActionLostDueToSerialization=false, tapAction=" +
                 "null, validTimeRange=TimeRange(startDateTimeMillis=-1000000000-01-01T00:00:00Z, " +
                 "endDateTimeMillis=+1000000000-12-31T23:59:59.999999999Z)," +
-                " dataSource=ComponentInfo{com.pkg_a/com.a}), " +
-                "tapActionLostDueToSerialization=false, tapAction=null, validTimeRange=" +
-                "TimeRange(startDateTimeMillis=-1000000000-01-01T00:00:00Z, endDateTimeMillis=" +
-                "+1000000000-12-31T23:59:59.999999999Z))"
+                " dataSource=ComponentInfo{com.pkg_a/com.a}, drawSegmented=true, " +
+                "colorRamp=null), tapActionLostDueToSerialization=false, tapAction=null, " +
+                "validTimeRange=TimeRange(startDateTimeMillis=-1000000000-01-01T00:00:00Z, " +
+                "endDateTimeMillis=+1000000000-12-31T23:59:59.999999999Z))"
+        )
+    }
+
+    @OptIn(ComplicationExperimental::class)
+    @Test
+    public fun noDataComplicationData_rangedValue_with_ColorRange() {
+        val data = NoDataComplicationData(
+            RangedValueComplicationData.Builder(
+                value = RangedValueComplicationData.PLACEHOLDER,
+                min = 0f,
+                max = 100f,
+                "content description".complicationText
+            )
+                .setText(ComplicationText.PLACEHOLDER)
+                .setDataSource(dataSourceA)
+                .setDrawSegmented(true)
+                .setColorRamp(RangedValueComplicationData.ColorRamp(Color.BLUE, Color.RED))
+                .build()
+        )
+        ParcelableSubject.assertThat(data.asWireComplicationData())
+            .hasSameSerializationAs(
+                WireComplicationDataBuilder(WireComplicationData.TYPE_NO_DATA)
+                    .setPlaceholder(
+                        WireComplicationDataBuilder(WireComplicationData.TYPE_RANGED_VALUE)
+                            .setRangedValue(RangedValueComplicationData.PLACEHOLDER)
+                            .setRangedMinValue(0f)
+                            .setRangedMaxValue(100f)
+                            .setShortText(ComplicationText.PLACEHOLDER.toWireComplicationText())
+                            .setContentDescription(
+                                WireComplicationText.plainText("content description")
+                            )
+                            .setDataSource(dataSourceA)
+                            .setDrawSegmented(true)
+                            .setRangedMinColor(Color.BLUE)
+                            .setRangedMaxColor(Color.RED)
+                            .build()
+                    )
+                    .build()
+            )
+        testRoundTripConversions(data)
+        val deserialized = serializeAndDeserialize(data) as NoDataComplicationData
+        assertThat(deserialized.contentDescription!!.getTextAt(resources, Instant.EPOCH))
+            .isEqualTo("content description")
+
+        val data2 = NoDataComplicationData(
+            RangedValueComplicationData.Builder(
+                value = RangedValueComplicationData.PLACEHOLDER,
+                min = 0f,
+                max = 100f,
+                "content description".complicationText
+            )
+                .setText(ComplicationText.PLACEHOLDER)
+                .setDataSource(dataSourceA)
+                .setDrawSegmented(true)
+                .setColorRamp(RangedValueComplicationData.ColorRamp(Color.BLUE, Color.RED))
+                .build()
+        )
+        val data3 = NoDataComplicationData(
+            RangedValueComplicationData.Builder(
+                value = RangedValueComplicationData.PLACEHOLDER,
+                min = 0f,
+                max = 100f,
+                "content description".complicationText
+            ).build()
+        )
+
+        assertThat(data).isEqualTo(data2)
+        assertThat(data).isNotEqualTo(data3)
+        assertThat(data.hashCode()).isEqualTo(data2.hashCode())
+        assertThat(data.hashCode()).isNotEqualTo(data3.hashCode())
+        assertThat(data.toString()).isEqualTo(
+            "NoDataComplicationData(placeholder=RangedValueComplicationData(" +
+                "value=3.4028235E38, min=0.0, max=100.0, monochromaticImage=null, title=null, " +
+                "text=ComplicationText{mSurroundingText=__placeholder__, mTimeDependentText=null" +
+                "}, contentDescription=ComplicationText{mSurroundingText=content description, " +
+                "mTimeDependentText=null}), tapActionLostDueToSerialization=false, tapAction=" +
+                "null, validTimeRange=TimeRange(startDateTimeMillis=-1000000000-01-01T00:00:00Z, " +
+                "endDateTimeMillis=+1000000000-12-31T23:59:59.999999999Z)," +
+                " dataSource=ComponentInfo{com.pkg_a/com.a}, drawSegmented=true, " +
+                "colorRamp=ColorRamp(minColor=-16776961, maxColor=-65536)), " +
+                "tapActionLostDueToSerialization=false, tapAction=null, " +
+                "validTimeRange=TimeRange(startDateTimeMillis=-1000000000-01-01T00:00:00Z, " +
+                "endDateTimeMillis=+1000000000-12-31T23:59:59.999999999Z))"
         )
     }
 
@@ -1041,6 +1210,22 @@ public class FromWireComplicationDataTest {
                 .setRangedMaxValue(100f)
                 .setShortTitle(WireComplicationText.plainText("battery"))
                 .setContentDescription(WireComplicationText.plainText("content description"))
+                .setDrawSegmented(false)
+                .build(),
+            ComplicationType.RANGED_VALUE
+        )
+    }
+
+    @Test
+    public fun rangedValueComplicationData_drawSegmented() {
+        assertRoundtrip(
+            WireComplicationDataBuilder(WireComplicationData.TYPE_RANGED_VALUE)
+                .setRangedValue(95f)
+                .setRangedMinValue(0f)
+                .setRangedMaxValue(100f)
+                .setShortTitle(WireComplicationText.plainText("battery"))
+                .setContentDescription(WireComplicationText.plainText("content description"))
+                .setDrawSegmented(true)
                 .build(),
             ComplicationType.RANGED_VALUE
         )
@@ -1189,6 +1374,30 @@ public class FromWireComplicationDataTest {
                         .setRangedMaxValue(100f)
                         .setShortTitle(WireComplicationText.plainText("battery"))
                         .setIcon(icon)
+                        .setDrawSegmented(false)
+                        .build()
+                )
+                .build(),
+            ComplicationType.NO_DATA
+        )
+    }
+
+    @Test
+    public fun noDataComplicationData_rangedValue_drawSegmented() {
+        val icon = Icon.createWithContentUri("someuri")
+        assertRoundtrip(
+            WireComplicationDataBuilder(WireComplicationData.TYPE_NO_DATA)
+                .setPlaceholder(
+                    WireComplicationDataBuilder(WireComplicationData.TYPE_RANGED_VALUE)
+                        .setContentDescription(
+                            WireComplicationText.plainText("content description")
+                        )
+                        .setRangedValue(75f)
+                        .setRangedMinValue(0f)
+                        .setRangedMaxValue(100f)
+                        .setShortTitle(WireComplicationText.plainText("battery"))
+                        .setIcon(icon)
+                        .setDrawSegmented(true)
                         .build()
                 )
                 .build(),
@@ -1597,6 +1806,7 @@ public class ValidTimeRangeTest {
                     .setRangedMaxValue(100f)
                     .setStartDateTimeMillis(testStartInstant.toEpochMilli())
                     .setEndDateTimeMillis(testEndDateInstant.toEpochMilli())
+                    .setDrawSegmented(false)
                     .build()
             )
     }
@@ -1711,6 +1921,7 @@ public class ValidTimeRangeTest {
             .setRangedValue(95f)
             .setRangedMinValue(0f)
             .setRangedMaxValue(100f)
+            .setDrawSegmented(false)
             .build()
 
         ParcelableSubject.assertThat(data.asWireComplicationData())
@@ -1780,6 +1991,7 @@ public class ValidTimeRangeTest {
                             .setRangedValue(95f)
                             .setRangedMinValue(0f)
                             .setRangedMaxValue(100f)
+                            .setDrawSegmented(false)
                             .build()
                     )
                     .build()
@@ -1903,6 +2115,7 @@ public class ValidTimeRangeTest {
             .setRangedValue(95f)
             .setRangedMinValue(0f)
             .setRangedMaxValue(100f)
+            .setDrawSegmented(false)
             .build()
 
         ParcelableSubject.assertThat(data.asWireComplicationData())
@@ -1998,7 +2211,8 @@ public class RedactionTest {
             "=REDACTED, mTimeDependentText=null}, text=ComplicationText{mSurroundingText=REDACTED" +
             ", mTimeDependentText=null}, contentDescription=ComplicationText{mSurroundingText=" +
             "REDACTED, mTimeDependentText=null}), tapActionLostDueToSerialization=false, " +
-            "tapAction=null, validTimeRange=TimeRange(REDACTED), dataSource=null)"
+            "tapAction=null, validTimeRange=TimeRange(REDACTED), dataSource=null, " +
+            "drawSegmented=false, colorRamp=null)"
         )
         assertThat(data.asWireComplicationData().toString()).isEqualTo(
             "ComplicationData{mType=5, mFields=REDACTED}"

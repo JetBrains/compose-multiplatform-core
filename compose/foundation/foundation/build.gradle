@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+
 import androidx.build.AndroidXComposePlugin
 import androidx.build.LibraryType
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
@@ -69,6 +70,9 @@ dependencies {
         androidTestImplementation(libs.dexmakerMockito)
         androidTestImplementation(libs.mockitoCore)
         androidTestImplementation(libs.mockitoKotlin)
+
+        lintChecks(project(":compose:foundation:foundation-lint"))
+        lintPublish(project(":compose:foundation:foundation-lint"))
 
         samples(project(":compose:foundation:foundation:foundation-samples"))
     }
@@ -168,4 +172,12 @@ androidx {
     inceptionYear = "2018"
     description = "Higher level abstractions of the Compose UI primitives. This library is design system agnostic, providing the high-level building blocks for both application and design-system developers"
     legacyDisableKotlinStrictApiMode = true
+}
+
+tasks.withType(KotlinCompile).configureEach {
+    kotlinOptions {
+        freeCompilerArgs += [
+                "-Xjvm-default=all",
+        ]
+    }
 }

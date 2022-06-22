@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.constrainHeight
 import androidx.compose.ui.unit.constrainWidth
 import androidx.compose.ui.util.fastForEach
 import kotlin.math.abs
+import kotlin.math.min
 import kotlin.math.roundToInt
 import kotlin.math.sign
 
@@ -207,7 +208,9 @@ internal fun measureLazyList(
         if (beforeContentPadding > 0) {
             for (i in visibleItems.indices) {
                 val size = visibleItems[i].sizeWithSpacings
-                if (size <= currentFirstItemScrollOffset && i != visibleItems.lastIndex) {
+                if (currentFirstItemScrollOffset != 0 && size <= currentFirstItemScrollOffset &&
+                    i != visibleItems.lastIndex
+                ) {
                     currentFirstItemScrollOffset -= size
                     firstItem = visibleItems[i + 1]
                 } else {
@@ -217,11 +220,13 @@ internal fun measureLazyList(
         }
 
         // Compose extra items before or after the visible items.
+        fun LazyListBeyondBoundsInfo.startIndex() = min(start, itemsCount - 1)
+        fun LazyListBeyondBoundsInfo.endIndex() = min(end, itemsCount - 1)
         val extraItemsBefore =
             if (beyondBoundsInfo.hasIntervals() &&
-                visibleItems.first().index > beyondBoundsInfo.start) {
+                visibleItems.first().index > beyondBoundsInfo.startIndex()) {
                 mutableListOf<LazyMeasuredItem>().apply {
-                    for (i in visibleItems.first().index - 1 downTo beyondBoundsInfo.start) {
+                    for (i in visibleItems.first().index - 1 downTo beyondBoundsInfo.startIndex()) {
                         add(itemProvider.getAndMeasure(DataIndex(i)))
                     }
                 }
@@ -230,9 +235,9 @@ internal fun measureLazyList(
             }
         val extraItemsAfter =
             if (beyondBoundsInfo.hasIntervals() &&
-                visibleItems.last().index < beyondBoundsInfo.end) {
+                visibleItems.last().index < beyondBoundsInfo.endIndex()) {
                 mutableListOf<LazyMeasuredItem>().apply {
-                    for (i in visibleItems.last().index until beyondBoundsInfo.end) {
+                    for (i in visibleItems.last().index until beyondBoundsInfo.endIndex()) {
                         add(itemProvider.getAndMeasure(DataIndex(i + 1)))
                     }
                 }
@@ -344,10 +349,13 @@ private fun calculateItemsOffsets(
 
     if (hasSpareSpace) {
         require(extraItemsBefore.isEmpty() && extraItemsAfter.isEmpty())
+
         val itemsCount = items.size
+        fun Int.reverseAware() =
+            if (!reverseLayout) this else itemsCount - this - 1
+
         val sizes = IntArray(itemsCount) { index ->
-            val reverseLayoutAwareIndex = if (!reverseLayout) index else itemsCount - index - 1
-            items[reverseLayoutAwareIndex].size
+            items[index.reverseAware()].size
         }
         val offsets = IntArray(itemsCount) { 0 }
         if (isVertical) {
@@ -360,16 +368,20 @@ private fun calculateItemsOffsets(
                 density.arrange(mainAxisLayoutSize, sizes, LayoutDirection.Ltr, offsets)
             }
         }
-        offsets.forEachIndexed { index, absoluteOffset ->
-            val reverseLayoutAwareIndex = if (!reverseLayout) index else itemsCount - index - 1
-            val item = items[reverseLayoutAwareIndex]
+
+        val reverseAwareOffsetIndices =
+            if (!reverseLayout) offsets.indices else offsets.indices.reversed()
+        for (index in reverseAwareOffsetIndices) {
+            val absoluteOffset = offsets[index]
+            // when reverseLayout == true, offsets are stored in the reversed order to items
+            val item = items[index.reverseAware()]
             val relativeOffset = if (reverseLayout) {
+                // inverse offset to align with scroll direction for positioning
                 mainAxisLayoutSize - absoluteOffset - item.size
             } else {
                 absoluteOffset
             }
-            val addIndex = if (reverseLayout) 0 else positionedItems.size
-            positionedItems.add(addIndex, item.position(relativeOffset, layoutWidth, layoutHeight))
+            positionedItems.add(item.position(relativeOffset, layoutWidth, layoutHeight))
         }
     } else {
         var currentMainAxis = itemsScrollOffset
