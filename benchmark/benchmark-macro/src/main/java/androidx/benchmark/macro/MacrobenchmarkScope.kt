@@ -215,10 +215,17 @@ public class MacrobenchmarkScope(
 
     /**
      * Force-stop the process being measured.
+     *
+     *@param useKillAll should be set to `true` for System apps or pre-installed apps.
      */
-    public fun killProcess() {
+    @JvmOverloads
+    public fun killProcess(useKillAll: Boolean = false) {
         Log.d(TAG, "Killing process $packageName")
-        device.executeShellCommand("am force-stop $packageName")
+        if (useKillAll) {
+            device.executeShellCommand("killall $packageName")
+        } else {
+            device.executeShellCommand("am force-stop $packageName")
+        }
     }
 
     /**

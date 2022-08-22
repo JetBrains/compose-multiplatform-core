@@ -19,48 +19,77 @@ package androidx.test.uiautomator;
 import android.graphics.Rect;
 import android.os.Build;
 import android.view.accessibility.AccessibilityNodeInfo;
+import android.view.accessibility.AccessibilityWindowInfo;
 
-/**
- * This class contains static helper methods to work with
- * {@link AccessibilityNodeInfo}
- */
+import androidx.annotation.DoNotInline;
+import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
+
+/** Static helper methods for working with {@link AccessibilityNodeInfo}s. */
 class AccessibilityNodeInfoHelper {
 
+    private AccessibilityNodeInfoHelper() {}
+
     /**
-     * Returns the node's bounds clipped to the size of the display
+     * Returns the visible bounds of an {@link AccessibilityNodeInfo}.
      *
-     * @param node
-     * @param width pixel width of the display
-     * @param height pixel height of the display
-     * @return null if node is null, else a Rect containing visible bounds
+     * @param node   node to analyze
+     * @param width  display width in pixels
+     * @param height display height in pixels
+     * @return {@link Rect} containing the visible bounds
      */
-    @SuppressWarnings("RectIntersectReturnValueIgnored")
-    static Rect getVisibleBoundsInScreen(AccessibilityNodeInfo node, int width, int height) {
-        if (node == null) {
-            return null;
-        }
-        // targeted node's bounds
-        Rect nodeRect = new Rect();
-        node.getBoundsInScreen(nodeRect);
+    @NonNull
+    static Rect getVisibleBoundsInScreen(@NonNull AccessibilityNodeInfo node, int width,
+            int height) {
+        Rect nodeBounds = new Rect();
+        node.getBoundsInScreen(nodeBounds);
 
-        Rect displayRect = new Rect();
-        displayRect.top = 0;
-        displayRect.left = 0;
-        displayRect.right = width;
-        displayRect.bottom = height;
+        // Trim portions that are outside the specified display bounds.
+        Rect displayBounds = new Rect(0, 0, width, height);
+        nodeBounds = intersect(nodeBounds, displayBounds);
 
-        nodeRect.intersect(displayRect);
-
-        // On platforms that give us access to the node's window
-        if (UiDevice.API_LEVEL_ACTUAL >= Build.VERSION_CODES.LOLLIPOP) {
-            // Trim any portion of the bounds that are outside the window
-            Rect window = new Rect();
-            if (node.getWindow() != null) {
-              node.getWindow().getBoundsInScreen(window);
-              nodeRect.intersect(window);
+        // Trim portions that are outside the window bounds on API 21+.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            Rect windowBounds = new Rect();
+            AccessibilityWindowInfo window = Api21Impl.getWindow(node);
+            if (window != null) {
+                Api21Impl.getBoundsInScreen(window, windowBounds);
+                nodeBounds = intersect(nodeBounds, windowBounds);
             }
         }
 
-        return nodeRect;
+        // Trim portions that are outside the first scrollable ancestor.
+        for (AccessibilityNodeInfo ancestor = node.getParent(); ancestor != null;
+                ancestor = ancestor.getParent()) {
+            if (ancestor.isScrollable()) {
+                Rect ancestorBounds = getVisibleBoundsInScreen(ancestor, width, height);
+                nodeBounds = intersect(nodeBounds, ancestorBounds);
+                break;
+            }
+        }
+
+        return nodeBounds;
+    }
+
+    /** Returns the intersection of two rectangles, or an empty rectangle if they do not overlap. */
+    private static Rect intersect(Rect first, Rect second) {
+        return first.intersect(second) ? first : new Rect();
+    }
+
+    @RequiresApi(21)
+    static class Api21Impl {
+        private Api21Impl() {
+        }
+
+        @DoNotInline
+        static void getBoundsInScreen(AccessibilityWindowInfo accessibilityWindowInfo,
+                Rect outBounds) {
+            accessibilityWindowInfo.getBoundsInScreen(outBounds);
+        }
+
+        @DoNotInline
+        static AccessibilityWindowInfo getWindow(AccessibilityNodeInfo accessibilityNodeInfo) {
+            return accessibilityNodeInfo.getWindow();
+        }
     }
 }

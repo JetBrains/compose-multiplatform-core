@@ -34,8 +34,6 @@ import org.jetbrains.kotlin.builtins.getReceiverTypeFromFunctionType
 import org.jetbrains.kotlin.builtins.getReturnTypeFromFunctionType
 import org.jetbrains.kotlin.builtins.getValueParameterTypesFromFunctionType
 import org.jetbrains.kotlin.descriptors.CallableMemberDescriptor
-import org.jetbrains.kotlin.descriptors.ClassDescriptor
-import org.jetbrains.kotlin.descriptors.ClassKind
 import org.jetbrains.kotlin.descriptors.DeclarationDescriptor
 import org.jetbrains.kotlin.descriptors.DeclarationDescriptorWithSource
 import org.jetbrains.kotlin.descriptors.DescriptorVisibilities
@@ -124,6 +122,7 @@ import org.jetbrains.kotlin.ir.types.classifierOrFail
 import org.jetbrains.kotlin.ir.types.defaultType
 import org.jetbrains.kotlin.ir.types.impl.IrSimpleTypeImpl
 import org.jetbrains.kotlin.ir.types.impl.IrStarProjectionImpl
+import org.jetbrains.kotlin.ir.types.isMarkedNullable
 import org.jetbrains.kotlin.ir.types.isNullable
 import org.jetbrains.kotlin.ir.types.isPrimitiveType
 import org.jetbrains.kotlin.ir.types.makeNullable
@@ -156,7 +155,6 @@ import org.jetbrains.kotlin.types.KotlinType
 import org.jetbrains.kotlin.util.OperatorNameConventions
 import org.jetbrains.kotlin.utils.DFS
 
-@Suppress("DEPRECATION")
 abstract class AbstractComposeLowering(
     val context: IrPluginContext,
     val symbolRemapper: DeepCopySymbolRemapper,
@@ -271,7 +269,7 @@ abstract class AbstractComposeLowering(
         when (this) {
             is IrSimpleType -> IrSimpleTypeImpl(
                 classifier,
-                hasQuestionMark,
+                isMarkedNullable(),
                 List(arguments.size) { IrStarProjectionImpl },
                 annotations,
                 abbreviation
@@ -364,10 +362,6 @@ abstract class AbstractComposeLowering(
         return context.irTrace[ComposeWritableSlices.IS_COMPOSABLE_SINGLETON_CLASS, this] == true
     }
 
-    protected val KotlinType.isEnum
-        get() =
-            (constructor.declarationDescriptor as? ClassDescriptor)?.kind == ClassKind.ENUM_CLASS
-
     fun Stability.irStableExpression(
         resolve: (IrTypeParameter) -> IrExpression? = { null }
     ): IrExpression? = when (this) {
@@ -401,9 +395,6 @@ abstract class AbstractComposeLowering(
         }
         is Stability.Unknown -> null
     }
-
-    fun KotlinType.isFinal(): Boolean = (constructor.declarationDescriptor as? ClassDescriptor)
-        ?.modality == Modality.FINAL
 
     @OptIn(ObsoleteDescriptorBasedAPI::class)
     private fun IrFunction.createParameterDeclarations() {
@@ -451,7 +442,6 @@ abstract class AbstractComposeLowering(
         body: IrBlockBodyBuilder.(IrFunction) -> Unit
     ) = irLambdaExpression(this.startOffset, this.endOffset, descriptor, type, body)
 
-    @OptIn(ObsoleteDescriptorBasedAPI::class)
     protected fun IrBuilderWithScope.irLambdaExpression(
         startOffset: Int,
         endOffset: Int,
@@ -599,7 +589,6 @@ abstract class AbstractComposeLowering(
         )
     }
 
-    @OptIn(ObsoleteDescriptorBasedAPI::class)
     protected fun irCall(
         symbol: IrFunctionSymbol,
         origin: IrStatementOrigin? = null,
@@ -624,11 +613,9 @@ abstract class AbstractComposeLowering(
         }
     }
 
-    @OptIn(ObsoleteDescriptorBasedAPI::class)
     protected fun IrType.binaryOperator(name: Name, paramType: IrType): IrFunctionSymbol =
         context.symbols.getBinaryOperator(name, this, paramType)
 
-    @OptIn(ObsoleteDescriptorBasedAPI::class)
     protected fun IrType.unaryOperator(name: Name): IrFunctionSymbol =
         context.symbols.getUnaryOperator(name, this)
 
@@ -826,7 +813,7 @@ abstract class AbstractComposeLowering(
         null
     )
 
-    @ObsoleteDescriptorBasedAPI
+    @OptIn(ObsoleteDescriptorBasedAPI::class)
     protected fun irForLoop(
         elementType: IrType,
         subject: IrExpression,
@@ -912,7 +899,6 @@ abstract class AbstractComposeLowering(
         )
     }
 
-    @ObsoleteDescriptorBasedAPI
     protected fun irTemporary(
         value: IrExpression,
         name: String,
@@ -1033,7 +1019,6 @@ abstract class AbstractComposeLowering(
         )
     }
 
-    @OptIn(ObsoleteDescriptorBasedAPI::class)
     protected fun irLambda(function: IrFunction, type: IrType): IrExpression {
         return irBlock(
             type,
@@ -1075,7 +1060,6 @@ abstract class AbstractComposeLowering(
         }
     }
 
-    @OptIn(ObsoleteDescriptorBasedAPI::class)
     fun IrExpression.isStatic(): Boolean {
         return when (this) {
             // A constant by definition is static
@@ -1091,8 +1075,7 @@ abstract class AbstractComposeLowering(
             is IrConstructorCall -> isStatic()
             is IrCall -> isStatic()
             is IrGetValue -> {
-                val owner = symbol.owner
-                when (owner) {
+                when (val owner = symbol.owner) {
                     is IrVariable -> {
                         // If we have an immutable variable whose initializer is also static,
                         // then we can determine that the variable reference is also static.
@@ -1117,7 +1100,7 @@ abstract class AbstractComposeLowering(
         return false
     }
 
-    @ObsoleteDescriptorBasedAPI
+    @OptIn(ObsoleteDescriptorBasedAPI::class)
     fun IrCall.isStatic(): Boolean {
         val function = symbol.owner
         val fqName = function.descriptor.fqNameSafe
@@ -1306,7 +1289,6 @@ fun IrFunction.composerParam(): IrValueParameter? {
 
 @OptIn(ObsoleteDescriptorBasedAPI::class)
 fun IrValueParameter.isComposerParam(): Boolean =
-    @Suppress("DEPRECATION")
     (descriptor as? ValueParameterDescriptor)?.isComposerParam() ?: false
 
 fun ValueParameterDescriptor.isComposerParam(): Boolean =
@@ -1316,15 +1298,13 @@ fun ValueParameterDescriptor.isComposerParam(): Boolean =
 fun IrPluginContext.function(arity: Int): IrClassSymbol =
     referenceClass(FqName("kotlin.Function$arity"))!!
 
-@ObsoleteDescriptorBasedAPI
 val DeclarationDescriptorWithSource.startOffset: Int? get() =
     (this.source as? PsiSourceElement)?.psi?.startOffset
 
-@ObsoleteDescriptorBasedAPI
 val DeclarationDescriptorWithSource.endOffset: Int? get() =
     (this.source as? PsiSourceElement)?.psi?.endOffset
 
-@ObsoleteDescriptorBasedAPI
+@OptIn(ObsoleteDescriptorBasedAPI::class)
 fun IrAnnotationContainer.hasAnnotationSafe(fqName: FqName): Boolean =
     annotations.any {
         // compiler helper getAnnotation fails during remapping in [ComposableTypeRemapper], so we

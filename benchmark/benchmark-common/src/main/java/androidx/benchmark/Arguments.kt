@@ -52,7 +52,7 @@ public object Arguments {
     }
 
     val enableCompilation: Boolean
-    val enablePackageReset: Boolean
+    val killProcessDelayMillis: Long
 
     // internal properties are microbenchmark only
     internal val outputEnable: Boolean
@@ -132,9 +132,6 @@ public object Arguments {
         enableCompilation =
             arguments.getBenchmarkArgument("compilation.enabled")?.toBoolean() ?: true
 
-        enablePackageReset =
-            arguments.getBenchmarkArgument("packageReset.enabled")?.toBoolean() ?: false
-
         _profiler = arguments.getProfiler(outputEnable)
         profilerSampleFrequency =
             arguments.getBenchmarkArgument("profiling.sampleFrequency")?.ifBlank { null }
@@ -152,5 +149,8 @@ public object Arguments {
             )
         }
         additionalTestOutputDir = arguments.getString("additionalTestOutputDir")
+
+        killProcessDelayMillis =
+            arguments.getBenchmarkArgument("killProcessDelayMillis")?.toLong() ?: 0L
     }
 }

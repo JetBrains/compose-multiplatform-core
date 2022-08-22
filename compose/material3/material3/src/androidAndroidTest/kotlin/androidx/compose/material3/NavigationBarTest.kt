@@ -17,6 +17,8 @@
 package androidx.compose.material3
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material3.tokens.NavigationBarTokens
@@ -32,6 +34,7 @@ import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertCountEquals
@@ -52,11 +55,13 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onParent
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.height
 import androidx.compose.ui.unit.width
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import com.google.common.truth.Truth
+import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -126,6 +131,56 @@ class NavigationBarTest {
     }
 
     @Test
+    fun navigationBarItem_clearsIconSemantics_whenLabelIsPresent() {
+        rule.setMaterialContent(lightColorScheme()) {
+            NavigationBar {
+                NavigationBarItem(
+                    modifier = Modifier.testTag("item1"),
+                    icon = {
+                        Icon(Icons.Filled.Favorite, "Favorite")
+                    },
+                    label = {
+                        Text("Favorite")
+                    },
+                    selected = true,
+                    alwaysShowLabel = false,
+                    onClick = {}
+                )
+                NavigationBarItem(
+                    modifier = Modifier.testTag("item2"),
+                    icon = {
+                        Icon(Icons.Filled.Favorite, "Favorite")
+                    },
+                    label = {
+                        Text("Favorite")
+                    },
+                    selected = false,
+                    alwaysShowLabel = false,
+                    onClick = {}
+                )
+                NavigationBarItem(
+                    modifier = Modifier.testTag("item3"),
+                    icon = {
+                        Icon(Icons.Filled.Favorite, "Favorite")
+                    },
+                    selected = false,
+                    onClick = {}
+                )
+            }
+        }
+
+        val node1 = rule.onNodeWithTag("item1").fetchSemanticsNode()
+        val node2 = rule.onNodeWithTag("item2").fetchSemanticsNode()
+        val node3 = rule.onNodeWithTag("item3").fetchSemanticsNode()
+
+        assertThat(node1.config.getOrNull(SemanticsProperties.ContentDescription)).isNull()
+        assertThat(node2.config.getOrNull(SemanticsProperties.ContentDescription))
+            .isEqualTo(listOf("Favorite"))
+        assertThat(node3.config.getOrNull(SemanticsProperties.ContentDescription))
+            .isEqualTo(listOf("Favorite"))
+    }
+
+    @Test
     fun navigationBar_size() {
         val height = NavigationBarTokens.ContainerHeight
         rule.setMaterialContentForSizeAssertions {
@@ -143,6 +198,22 @@ class NavigationBarTest {
         }
             .assertWidthIsEqualTo(rule.rootWidth())
             .assertHeightIsEqualTo(height)
+    }
+
+    @Test
+    fun navigationBar_respectContentPadding() {
+        rule.setMaterialContentForSizeAssertions {
+            NavigationBar(windowInsets = WindowInsets(17.dp, 17.dp, 17.dp, 17.dp)) {
+                Box(
+                    Modifier
+                        .fillMaxSize()
+                        .testTag("content")
+                )
+            }
+        }
+        rule.onNodeWithTag("content")
+            .assertLeftPositionInRootIsEqualTo(17.dp)
+            .assertTopPositionInRootIsEqualTo(17.dp)
     }
 
     @Test
@@ -215,20 +286,16 @@ class NavigationBarTest {
         val itemBounds = rule.onNodeWithTag("item").getUnclippedBoundsInRoot()
         val iconBounds = rule.onNodeWithTag("icon", useUnmergedTree = true)
             .getUnclippedBoundsInRoot()
-        val textBounds = rule.onNodeWithText("ItemText").getUnclippedBoundsInRoot()
+        val textBounds = rule.onNodeWithText("ItemText", useUnmergedTree = true)
+            .getUnclippedBoundsInRoot()
 
-        // Distance from the bottom to the text baseline, and from the top of the icon to the
-        // top of the item
+        // Distance from the bottom of the item to the text bottom, and from the top of the icon to
+        // the top of the item
         val verticalPadding = NavigationBarItemVerticalPadding
 
-        // Relative position of the baseline to the top of text
-        val relativeTextBaseline = rule.onNodeWithText("ItemText").getLastBaselinePosition()
-        // Absolute y position of the text baseline
-        val absoluteTextBaseline = textBounds.top + relativeTextBaseline
-
         val itemBottom = itemBounds.height + itemBounds.top
-        // Text baseline should be `verticalPadding` from the bottom of the item
-        absoluteTextBaseline.assertIsEqualTo(itemBottom - verticalPadding)
+        // Text bottom should be `verticalPadding` from the bottom of the item
+        textBounds.bottom.assertIsEqualTo(itemBottom - verticalPadding)
 
         rule.onNodeWithTag("icon", useUnmergedTree = true)
             // The icon should be centered in the item

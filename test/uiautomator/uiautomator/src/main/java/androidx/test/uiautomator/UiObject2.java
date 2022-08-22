@@ -16,6 +16,7 @@
 
 package androidx.test.uiautomator;
 
+import android.app.Service;
 import android.graphics.Point;
 import android.graphics.Rect;
 import android.hardware.display.DisplayManager;
@@ -29,6 +30,10 @@ import android.view.KeyEvent;
 import android.view.ViewConfiguration;
 import android.view.accessibility.AccessibilityNodeInfo;
 import android.view.accessibility.AccessibilityWindowInfo;
+
+import androidx.annotation.DoNotInline;
+import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -79,7 +84,8 @@ public class UiObject2 implements Searchable {
         mGestures = Gestures.getInstance(device);
         mGestureController = GestureController.getInstance(device);
         final DisplayManager dm =
-            mDevice.getInstrumentation().getContext().getSystemService(DisplayManager.class);
+                (DisplayManager) mDevice.getInstrumentation().getContext().getSystemService(
+                        Service.DISPLAY_SERVICE);
         final Display display = dm.getDisplay(getDisplayId());
         if (display == null) {
             // Display may be private virtual display. Fallback to default display density.
@@ -94,19 +100,15 @@ public class UiObject2 implements Searchable {
 
     /** {@inheritDoc} */
     @Override
-    @SuppressWarnings("EqualsGetClass")
     public boolean equals(Object object) {
         if (this == object) {
             return true;
         }
-        if (object == null) {
-            return false;
-        }
-        if (getClass() != object.getClass()) {
+        if (!(object instanceof UiObject2)) {
             return false;
         }
         try {
-            UiObject2 other = (UiObject2)object;
+            UiObject2 other = (UiObject2) object;
             return getAccessibilityNodeInfo().equals(other.getAccessibilityNodeInfo());
         } catch (StaleObjectException e) {
             return false;
@@ -204,7 +206,7 @@ public class UiObject2 implements Searchable {
      * Searches all elements under this object and returns the first object to match the criteria,
      * or null if no matching objects are found.
      */
-    @SuppressWarnings("MissingOverride")
+    @Override
     public UiObject2 findObject(BySelector selector) {
         AccessibilityNodeInfo node =
                 ByMatcher.findMatch(getDevice(), selector, getAccessibilityNodeInfo());
@@ -212,7 +214,7 @@ public class UiObject2 implements Searchable {
     }
 
     /** Searches all elements under this object and returns all objects that match the criteria. */
-    @SuppressWarnings("MissingOverride")
+    @Override
     public List<UiObject2> findObjects(BySelector selector) {
         List<UiObject2> ret = new ArrayList<UiObject2>();
         for (AccessibilityNodeInfo node :
@@ -228,9 +230,11 @@ public class UiObject2 implements Searchable {
     // Attribute accessors
 
     public int getDisplayId() {
-        final AccessibilityWindowInfo window = getAccessibilityNodeInfo().getWindow();
-        if (window != null && UiDevice.API_LEVEL_ACTUAL >= /* Build.VERSION_CODES.R */ 30) {
-            return window.getDisplayId();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            AccessibilityWindowInfo window = Api21Impl.getWindow(getAccessibilityNodeInfo());
+            if (window != null) {
+                return Api30Impl.getDisplayId(window);
+            }
         }
         return Display.DEFAULT_DISPLAY;
     }
@@ -266,55 +270,21 @@ public class UiObject2 implements Searchable {
         return false;
     }
 
-    /** Returns the visible bounds of {@code node} in screen coordinates. */
-    @SuppressWarnings("RectIntersectReturnValueIgnored")
-    private Rect getVisibleBounds(AccessibilityNodeInfo node) {
-        // Get the object bounds in screen coordinates
-        Rect ret = new Rect();
-        node.getBoundsInScreen(ret);
-
-        // Trim any portion of the bounds that are not on the screen
-        final int displayId = getDisplayId();
-        if (displayId == Display.DEFAULT_DISPLAY) {
-            final Rect screen =
-                new Rect(0, 0, getDevice().getDisplayWidth(), getDevice().getDisplayHeight());
-            ret.intersect(screen);
-        } else {
-            final DisplayManager dm =
-                mDevice.getInstrumentation().getContext().getSystemService(DisplayManager.class);
-            final Display display = dm.getDisplay(getDisplayId());
-            if (display != null) {
-                final Point size = new Point();
-                display.getRealSize(size);
-                final Rect screen = new Rect(0, 0, size.x, size.y);
-                ret.intersect(screen);
-            }
+    /** Returns the visible bounds of an {@link AccessibilityNodeInfo}. */
+    @NonNull
+    private Rect getVisibleBounds(@NonNull AccessibilityNodeInfo node) {
+        DisplayManager displayManager =
+                (DisplayManager) mDevice.getInstrumentation().getContext().getSystemService(
+                        Service.DISPLAY_SERVICE);
+        Display display = displayManager.getDisplay(getDisplayId());
+        if (display != null) {
+            Point displaySize = new Point();
+            display.getRealSize(displaySize);
+            return AccessibilityNodeInfoHelper.getVisibleBoundsInScreen(
+                    node, displaySize.x, displaySize.y);
         }
-
-        // On platforms that give us access to the node's window
-        if (UiDevice.API_LEVEL_ACTUAL >= Build.VERSION_CODES.LOLLIPOP) {
-            // Trim any portion of the bounds that are outside the window
-            Rect window = new Rect();
-            if (node.getWindow() != null) {
-                node.getWindow().getBoundsInScreen(window);
-                ret.intersect(window);
-            }
-        }
-
-        // Find the visible bounds of our first scrollable ancestor
-        AccessibilityNodeInfo ancestor = null;
-        for (ancestor = node.getParent(); ancestor != null; ancestor = ancestor.getParent()) {
-            // If this ancestor is scrollable
-            if (ancestor.isScrollable()) {
-                // Trim any portion of the bounds that are hidden by the non-visible portion of our
-                // ancestor
-                Rect ancestorRect = getVisibleBounds(ancestor);
-                ret.intersect(ancestorRect);
-                break;
-            }
-        }
-
-        return ret;
+        return AccessibilityNodeInfoHelper.getVisibleBoundsInScreen(
+                node, Integer.MAX_VALUE, Integer.MAX_VALUE);
     }
 
     /** Returns a point in the center of the visible bounds of this object. */
@@ -663,7 +633,7 @@ public class UiObject2 implements Searchable {
      * @return Whether the object can still scroll in the given direction.
      */
     public boolean fling(final Direction direction, final int speed) {
-        ViewConfiguration vc = ViewConfiguration.get(getDevice().getInstrumentation().getContext());
+        ViewConfiguration vc = ViewConfiguration.get(getDevice().getUiContext());
         if (speed < vc.getScaledMinimumFlingVelocity()) {
             throw new IllegalArgumentException("Speed is less than the minimum fling velocity");
         }
@@ -686,7 +656,6 @@ public class UiObject2 implements Searchable {
      * Set the text content by sending individual key codes.
      * @hide
      */
-    @SuppressWarnings("UndefinedEquals")
     public void legacySetText(String text) {
         AccessibilityNodeInfo node = getAccessibilityNodeInfo();
 
@@ -696,7 +665,7 @@ public class UiObject2 implements Searchable {
         }
 
         CharSequence currentText = node.getText();
-        if (!text.equals(currentText)) {
+        if (currentText == null || !text.contentEquals(currentText)) {
             InteractionController ic = getDevice().getInteractionController();
 
             // Long click left + center
@@ -716,7 +685,6 @@ public class UiObject2 implements Searchable {
     }
 
     /** Sets the text content if this object is an editable field. */
-    @SuppressWarnings("UndefinedEquals")
     public void setText(String text) {
         AccessibilityNodeInfo node = getAccessibilityNodeInfo();
 
@@ -726,8 +694,8 @@ public class UiObject2 implements Searchable {
         }
         Log.v(TAG, String.format("setText(text=\"%s\")", text));
 
-        if (UiDevice.API_LEVEL_ACTUAL > Build.VERSION_CODES.KITKAT) {
-            // do this for API Level above 19 (exclusive)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            // ACTION_SET_TEXT is added in API 21.
             Bundle args = new Bundle();
             args.putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, text);
             if (!node.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, args)) {
@@ -736,7 +704,7 @@ public class UiObject2 implements Searchable {
             }
         } else {
             CharSequence currentText = node.getText();
-            if (!text.equals(currentText)) {
+            if (currentText == null || !text.contentEquals(currentText)) {
                 // Give focus to the object. Expect this to fail if the object already has focus.
                 if (!node.performAction(AccessibilityNodeInfo.ACTION_FOCUS) && !node.isFocused()) {
                     // TODO: Decide if we should throw here
@@ -782,5 +750,27 @@ public class UiObject2 implements Searchable {
 
     UiDevice getDevice() {
         return mDevice;
+    }
+
+    @RequiresApi(21)
+    static class Api21Impl {
+        private Api21Impl() {
+        }
+
+        @DoNotInline
+        static AccessibilityWindowInfo getWindow(AccessibilityNodeInfo accessibilityNodeInfo) {
+            return accessibilityNodeInfo.getWindow();
+        }
+    }
+
+    @RequiresApi(30)
+    static class Api30Impl {
+        private Api30Impl() {
+        }
+
+        @DoNotInline
+        static int getDisplayId(AccessibilityWindowInfo accessibilityWindowInfo) {
+            return accessibilityWindowInfo.getDisplayId();
+        }
     }
 }

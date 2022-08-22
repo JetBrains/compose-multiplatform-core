@@ -116,11 +116,11 @@ fun SubcomposeLayout(
         update = {
             set(state, state.setRoot)
             set(compositionContext, state.setCompositionContext)
-            set(materialized, ComposeUiNode.SetModifier)
             set(measurePolicy, state.setMeasurePolicy)
             set(density, ComposeUiNode.SetDensity)
             set(layoutDirection, ComposeUiNode.SetLayoutDirection)
             set(viewConfiguration, ComposeUiNode.SetViewConfiguration)
+            set(materialized, ComposeUiNode.SetModifier)
         }
     )
     if (!currentComposer.skipping) {
@@ -571,6 +571,7 @@ internal class LayoutNodeSubcompositionsState(
             val node = root.foldedChildren[reusableNodesSectionStart]
             val nodeState = nodeToNodeState[node]!!
             nodeState.active = true
+            nodeState.forceRecompose = true
             Snapshot.sendApplyNotifications()
             node
         }

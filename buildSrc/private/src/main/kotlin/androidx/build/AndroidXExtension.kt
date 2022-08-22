@@ -17,6 +17,7 @@
 package androidx.build
 
 import androidx.build.checkapi.shouldConfigureApiTasks
+import com.android.build.gradle.internal.crash.afterEvaluate
 import groovy.lang.Closure
 import org.gradle.api.GradleException
 import org.gradle.api.Project
@@ -171,7 +172,7 @@ open class AndroidXExtension(val project: Project) {
         if (publish != Publish.UNSET) {
             publish.shouldPublish()
         } else if (type != LibraryType.UNSET) {
-            type.publishExtension.shouldPublishAny()
+            type.publish.shouldPublish()
         } else {
             false
         }
@@ -180,14 +181,22 @@ open class AndroidXExtension(val project: Project) {
         if (publish != Publish.UNSET) {
             publish.shouldRelease()
         } else if (type != LibraryType.UNSET) {
-            type.publishExtension.shouldReleaseAny()
+            type.publish.shouldRelease()
         } else {
             false
         }
 
+    internal fun ifReleasing(action: () -> Unit) {
+        project.afterEvaluate {
+            if (shouldRelease()) {
+                action()
+            }
+        }
+    }
+
     internal fun isPublishConfigured(): Boolean = (
             publish != Publish.UNSET ||
-            type.publishExtension.isPublishConfigured()
+            type.publish != Publish.UNSET
         )
 
     /**
@@ -202,7 +211,7 @@ open class AndroidXExtension(val project: Project) {
         set(value) {
             // don't disable multiplatform if it's already enabled, because sometimes it's enabled
             // through flags and we don't want setting `type =` to disable it accidentally.
-            if (value.publishExtension.shouldEnableMultiplatform()) {
+            if (value.shouldEnableMultiplatform()) {
                 multiplatform = true
             }
             field = value
@@ -214,13 +223,6 @@ open class AndroidXExtension(val project: Project) {
     var benchmarkRunAlsoInterpreted = false
 
     var bypassCoordinateValidation = false
-
-    /**
-     * Which KMP platforms are published by this project, as a list of artifact suffixes or an empty
-     * list for non-KMP projects.
-     */
-    val publishPlatforms: List<String>
-        get() = type.publishExtension.publishPlatforms
 
     /**
      * Whether this project uses KMP.
@@ -255,3 +257,5 @@ class License {
     var name: String? = null
     var url: String? = null
 }
+
+private fun LibraryType.shouldEnableMultiplatform() = this is LibraryType.KmpLibrary

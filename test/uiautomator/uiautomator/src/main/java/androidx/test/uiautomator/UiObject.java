@@ -26,6 +26,8 @@ import android.view.KeyEvent;
 import android.view.MotionEvent.PointerCoords;
 import android.view.accessibility.AccessibilityNodeInfo;
 
+import androidx.annotation.NonNull;
+
 /**
  * A UiObject is a representation of a view. It is not in any way directly bound to a
  * view as an object reference. A UiObject contains information to help it
@@ -350,56 +352,12 @@ public class UiObject {
                 rect.centerY(), rect.right - SWIPE_MARGIN_LIMIT, rect.centerY(), steps);
     }
 
-    /**
-     * Finds the visible bounds of a partially visible UI element
-     *
-     * @param node
-     * @return null if node is null, else a Rect containing visible bounds
-     */
-    @SuppressWarnings("RectIntersectReturnValueIgnored")
-    private Rect getVisibleBounds(AccessibilityNodeInfo node) {
-        if (node == null) {
-            return null;
-        }
-
-        // targeted node's bounds
+    /** Returns the visible bounds of an {@link AccessibilityNodeInfo}. */
+    @NonNull
+    private Rect getVisibleBounds(@NonNull AccessibilityNodeInfo node) {
         int w = getDevice().getDisplayWidth();
         int h = getDevice().getDisplayHeight();
-        Rect nodeRect = AccessibilityNodeInfoHelper.getVisibleBoundsInScreen(node, w, h);
-
-        // is the targeted node within a scrollable container?
-        AccessibilityNodeInfo scrollableParentNode = getScrollableParent(node);
-        if(scrollableParentNode == null) {
-            // nothing to adjust for so return the node's Rect as is
-            return nodeRect;
-        }
-
-        // Scrollable parent's visible bounds
-        Rect parentRect = AccessibilityNodeInfoHelper
-                .getVisibleBoundsInScreen(scrollableParentNode, w, h);
-        // adjust for partial clipping of targeted by parent node if required
-        nodeRect.intersect(parentRect);
-        return nodeRect;
-    }
-
-    /**
-     * Walks up the layout hierarchy to find a scrollable parent. A scrollable parent
-     * indicates that this node might be in a container where it is partially
-     * visible due to scrolling. In this case, its clickable center might not be visible and
-     * the click coordinates should be adjusted.
-     *
-     * @param node
-     * @return The accessibility node info.
-     */
-    private AccessibilityNodeInfo getScrollableParent(AccessibilityNodeInfo node) {
-        AccessibilityNodeInfo parent = node;
-        while(parent != null) {
-            parent = parent.getParent();
-            if (parent != null && parent.isScrollable()) {
-                return parent;
-            }
-        }
-        return null;
+        return AccessibilityNodeInfoHelper.getVisibleBoundsInScreen(node, w, h);
     }
 
     /**
@@ -661,8 +619,8 @@ public class UiObject {
             text = "";
         }
         Tracer.trace(text);
-        if (UiDevice.API_LEVEL_ACTUAL > Build.VERSION_CODES.KITKAT) {
-            // do this for API Level above 19 (exclusive)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            // ACTION_SET_TEXT is added in API 21.
             AccessibilityNodeInfo node = findAccessibilityNodeInfo(
                     mConfig.getWaitForSelectorTimeout());
             if (node == null) {
@@ -698,7 +656,7 @@ public class UiObject {
         CharSequence text = node.getText();
         // do nothing if already empty
         if (text != null && text.length() > 0) {
-            if (UiDevice.API_LEVEL_ACTUAL > Build.VERSION_CODES.KITKAT) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                 setText("");
             } else {
                 Bundle selectionArgs = new Bundle();
@@ -1080,7 +1038,6 @@ public class UiObject {
      *         <code>false</code> otherwise
      * @since API Level 18
      */
-    @SuppressWarnings("NarrowingCompoundAssignment")
     public boolean performTwoPointerGesture(Point startPoint1, Point startPoint2, Point endPoint1,
             Point endPoint2, int steps) {
 
@@ -1119,10 +1076,10 @@ public class UiObject {
             p2.size = 1;
             points2[i] = p2;
 
-            eventX1 += stepX1;
-            eventY1 += stepY1;
-            eventX2 += stepX2;
-            eventY2 += stepY2;
+            eventX1 = (int) (eventX1 + stepX1);
+            eventY1 = (int) (eventY1 + stepY1);
+            eventX2 = (int) (eventX2 + stepX2);
+            eventY2 = (int) (eventY2 + stepY2);
         }
 
         // ending pointers coordinates

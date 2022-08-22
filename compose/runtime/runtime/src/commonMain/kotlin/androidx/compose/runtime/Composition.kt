@@ -405,6 +405,12 @@ internal class CompositionImpl(
     internal val derivedStateDependencies get() = derivedStates.values.filterNotNull()
 
     /**
+     * Used for testing. Returns the conditional scopes being tracked by the composer
+     */
+    internal val conditionalScopes: List<RecomposeScopeImpl> get() =
+        conditionallyInvalidatedScopes.toList()
+
+    /**
      * A list of changes calculated by [Composer] to be applied to the [Applier] and the
      * [SlotTable] to reflect the result of composition. This is a list of lambdas that need to
      * be invoked in order to produce the desired effects.
@@ -537,14 +543,16 @@ internal class CompositionImpl(
             null -> {
                 // Do nothing, just start composing.
             }
-            PendingApplyNoModifications -> error("pending composition has not been applied")
+            PendingApplyNoModifications -> {
+                composeRuntimeError("pending composition has not been applied")
+            }
             is Set<*> -> {
                 addPendingInvalidationsLocked(toRecord as Set<Any>, forgetConditionalScopes = true)
             }
             is Array<*> -> for (changed in toRecord as Array<Set<Any>>) {
                 addPendingInvalidationsLocked(changed, forgetConditionalScopes = true)
             }
-            else -> error("corrupt pendingModifications drain: $pendingModifications")
+            else -> composeRuntimeError("corrupt pendingModifications drain: $pendingModifications")
         }
     }
 
@@ -560,10 +568,10 @@ internal class CompositionImpl(
             is Array<*> -> for (changed in toRecord as Array<Set<Any>>) {
                 addPendingInvalidationsLocked(changed, forgetConditionalScopes = false)
             }
-            null -> error(
+            null -> composeRuntimeError(
                 "calling recordModificationsOf and applyChanges concurrently is not supported"
             )
-            else -> error(
+            else -> composeRuntimeError(
                 "corrupt pendingModifications drain: $pendingModifications"
             )
         }
@@ -572,10 +580,12 @@ internal class CompositionImpl(
     override fun composeContent(content: @Composable () -> Unit) {
         // TODO: This should raise a signal to any currently running recompose calls
         // to halt and return
-        trackAbandonedValues {
+        guardChanges {
             synchronized(lock) {
                 drainPendingModificationsForCompositionLocked()
-                composer.composeContent(takeInvalidations(), content)
+                guardInvalidationsLocked { invalidations ->
+                    composer.composeContent(invalidations, content)
+                }
             }
         }
     }
@@ -691,6 +701,7 @@ internal class CompositionImpl(
 
     private fun cleanUpDerivedStateObservations() {
         derivedStates.removeValueIf { derivedValue -> derivedValue !in observations }
+        conditionallyInvalidatedScopes.removeValueIf { scope -> !scope.isConditional }
     }
 
     override fun recordReadOf(value: Any) {
@@ -703,7 +714,9 @@ internal class CompositionImpl(
                 // Record derived state dependency mapping
                 if (value is DerivedState<*>) {
                     derivedStates.removeScope(value)
-                    value.dependencies.forEach { dependency ->
+                    for (dependency in value.dependencies) {
+                        // skip over empty objects from dependency array
+                        if (dependency == null) break
                         derivedStates.add(dependency, value)
                     }
                 }
@@ -735,10 +748,12 @@ internal class CompositionImpl(
 
     override fun recompose(): Boolean = synchronized(lock) {
         drainPendingModificationsForCompositionLocked()
-        trackAbandonedValues {
-            composer.recompose(takeInvalidations()).also { shouldDrain ->
-                // Apply would normally do this for us; do it now if apply shouldn't happen.
-                if (!shouldDrain) drainPendingModificationsLocked()
+        guardChanges {
+            guardInvalidationsLocked { invalidations ->
+                composer.recompose(invalidations).also { shouldDrain ->
+                    // Apply would normally do this for us; do it now if apply shouldn't happen.
+                    if (!shouldDrain) drainPendingModificationsLocked()
+                }
             }
         }
     }
@@ -747,7 +762,7 @@ internal class CompositionImpl(
         references: List<Pair<MovableContentStateReference, MovableContentStateReference?>>
     ) {
         runtimeCheck(references.fastAll { it.first.composition == this })
-        trackAbandonedValues {
+        guardChanges {
             composer.insertMovableContentReferences(references)
         }
     }
@@ -803,28 +818,61 @@ internal class CompositionImpl(
 
     override fun applyChanges() {
         synchronized(lock) {
-            applyChangesInLocked(changes)
-            drainPendingModificationsLocked()
+            guardChanges {
+                applyChangesInLocked(changes)
+                drainPendingModificationsLocked()
+            }
         }
     }
 
     override fun applyLateChanges() {
         synchronized(lock) {
-            if (lateChanges.isNotEmpty()) {
-                applyChangesInLocked(lateChanges)
+            guardChanges {
+                if (lateChanges.isNotEmpty()) {
+                    applyChangesInLocked(lateChanges)
+                }
             }
         }
     }
 
     override fun changesApplied() {
         synchronized(lock) {
-            composer.changesApplied()
+            guardChanges {
+                composer.changesApplied()
 
-            // By this time all abandon objects should be notified that they have been abandoned.
-            if (this.abandonSet.isNotEmpty()) {
-                RememberEventDispatcher(abandonSet).dispatchAbandons()
+                // By this time all abandon objects should be notified that they have been abandoned.
+                if (this.abandonSet.isNotEmpty()) {
+                    RememberEventDispatcher(abandonSet).dispatchAbandons()
+                }
             }
         }
+    }
+
+    private inline fun <T> guardInvalidationsLocked(
+        block: (changes: IdentityArrayMap<RecomposeScopeImpl, IdentityArraySet<Any>?>) -> T
+    ): T {
+        val invalidations = takeInvalidations()
+        return try {
+            block(invalidations)
+        } catch (e: Exception) {
+            this.invalidations = invalidations
+            throw e
+        }
+    }
+
+    private inline fun <T> guardChanges(block: () -> T): T =
+        try {
+            trackAbandonedValues(block)
+        } catch (e: Exception) {
+            abandonChanges()
+            throw e
+        }
+
+    private fun abandonChanges() {
+        pendingModifications.set(null)
+        changes.clear()
+        lateChanges.clear()
+        abandonSet.clear()
     }
 
     override fun invalidateAll() {
@@ -836,6 +884,7 @@ internal class CompositionImpl(
     override fun verifyConsistent() {
         synchronized(lock) {
             if (!isComposing) {
+                composer.verifyConsistent()
                 slotTable.verifyWellFormed()
                 validateRecomposeScopeAnchors(slotTable)
             }
@@ -1085,6 +1134,16 @@ private class HotReloader {
         internal fun invalidateGroupsWithKey(key: Int) {
             return Recomposer.invalidateGroupsWithKey(key)
         }
+
+        @TestOnly
+        internal fun getCurrentErrors(): List<RecomposerErrorInfo> {
+            return Recomposer.getCurrentErrors()
+        }
+
+        @TestOnly
+        internal fun clearErrors() {
+            return Recomposer.clearErrors()
+        }
     }
 }
 
@@ -1100,6 +1159,22 @@ fun simulateHotReload(context: Any) = HotReloader.simulateHotReload(context)
 @TestOnly
 fun invalidateGroupsWithKey(key: Int) = HotReloader.invalidateGroupsWithKey(key)
 
+/**
+ * @suppress
+ */
+// suppressing for test-only api
+@Suppress("ListIterator")
+@TestOnly
+fun currentCompositionErrors(): List<Pair<Exception, Boolean>> =
+    HotReloader.getCurrentErrors()
+        .map { it.cause to it.recoverable }
+
+/**
+ * @suppress
+ */
+@TestOnly
+fun clearCompositionErrors() = HotReloader.clearErrors()
+
 private fun <K : Any, V : Any> IdentityArrayMap<K, IdentityArraySet<V>?>.addValue(
     key: K,
     value: V
@@ -1108,5 +1183,18 @@ private fun <K : Any, V : Any> IdentityArrayMap<K, IdentityArraySet<V>?>.addValu
         this[key]?.add(value)
     } else {
         this[key] = IdentityArraySet<V>().also { it.add(value) }
+    }
+}
+
+/**
+ * This is provided natively in API 26 and this should be removed if 26 is made the lowest API
+ * level supported
+ */
+private inline fun <E> HashSet<E>.removeValueIf(predicate: (E) -> Boolean) {
+    val iter = iterator()
+    while (iter.hasNext()) {
+        if (predicate(iter.next())) {
+            iter.remove()
+        }
     }
 }

@@ -75,8 +75,7 @@ class InteractionController {
     /**
      * Predicate for waiting for any of the events specified in the mask
      */
-    @SuppressWarnings("ClassCanBeStatic")
-    class WaitForAnyEventPredicate implements AccessibilityEventFilter {
+    static class WaitForAnyEventPredicate implements AccessibilityEventFilter {
         int mMask;
         WaitForAnyEventPredicate(int mask) {
             mMask = mask;
@@ -98,8 +97,7 @@ class InteractionController {
      * a ctor passed list with matching events. User of this predicate must recycle
      * all populated events in the events list.
      */
-    @SuppressWarnings("ClassCanBeStatic")
-    class EventCollectingPredicate implements AccessibilityEventFilter {
+    static class EventCollectingPredicate implements AccessibilityEventFilter {
         int mMask;
         List<AccessibilityEvent> mEventsList;
 
@@ -125,8 +123,7 @@ class InteractionController {
     /**
      * Predicate for waiting for every event specified in the mask to be matched at least once
      */
-    @SuppressWarnings("ClassCanBeStatic")
-    class WaitForAllEventPredicate implements AccessibilityEventFilter {
+    static class WaitForAllEventPredicate implements AccessibilityEventFilter {
         int mMask;
         WaitForAllEventPredicate(int mask) {
             mMask = mask;
@@ -346,7 +343,7 @@ class InteractionController {
                 AccessibilityEvent.TYPE_VIEW_SELECTED), timeout) != null;
     }
 
-    private boolean touchDown(int x, int y) {
+    boolean touchDown(int x, int y) {
         if (DEBUG) {
             Log.d(LOG_TAG, "touchDown (" + x + ", " + y + ")");
         }
@@ -355,7 +352,7 @@ class InteractionController {
         return injectEventSync(event);
     }
 
-    private boolean touchUp(int x, int y) {
+    boolean touchUp(int x, int y) {
         if (DEBUG) {
             Log.d(LOG_TAG, "touchUp (" + x + ", " + y + ")");
         }
@@ -474,12 +471,10 @@ class InteractionController {
      * @param drag when true, the swipe becomes a drag swipe
      * @return true if the swipe executed successfully
      */
-    @SuppressWarnings("UnusedVariable")
     public boolean swipe(int downX, int downY, int upX, int upY, int steps, boolean drag) {
-        boolean ret = false;
+        boolean ret;
         int swipeSteps = steps;
-        double xStep = 0;
-        double yStep = 0;
+        double xStep, yStep;
 
         // avoid a divide by zero
         if(swipeSteps == 0)
@@ -506,7 +501,7 @@ class InteractionController {
         if (drag)
             SystemClock.sleep(REGULAR_CLICK_LENGTH);
         ret &= touchUp(upX, upY);
-        return(ret);
+        return ret;
     }
 
     /**
@@ -515,12 +510,10 @@ class InteractionController {
      * @param segmentSteps steps to inject between two Points
      * @return true on success
      */
-    @SuppressWarnings("UnusedVariable")
     public boolean swipe(Point[] segments, int segmentSteps) {
-        boolean ret = false;
+        boolean ret;
         int swipeSteps = segmentSteps;
-        double xStep = 0;
-        double yStep = 0;
+        double xStep, yStep;
 
         // avoid a divide by zero
         if(segmentSteps == 0)
@@ -553,7 +546,7 @@ class InteractionController {
             }
         }
         ret &= touchUp(segments[segments.length - 1].x, segments[segments.length -1].y);
-        return(ret);
+        return ret;
     }
 
 
@@ -666,8 +659,7 @@ class InteractionController {
      */
     public boolean wakeDevice() throws RemoteException {
         if(!isScreenOn()) {
-            boolean supportsWakeButton = 
-                UiDevice.API_LEVEL_ACTUAL >= Build.VERSION_CODES.KITKAT_WATCH;
+            boolean supportsWakeButton = Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH;
             sendKey(supportsWakeButton ? KeyEvent.KEYCODE_WAKEUP : KeyEvent.KEYCODE_POWER, 0);
             return true;
         }
@@ -683,8 +675,7 @@ class InteractionController {
      */
     public boolean sleepDevice() throws RemoteException {
         if(isScreenOn()) {
-            boolean supportsSleepButton = 
-                UiDevice.API_LEVEL_ACTUAL >= Build.VERSION_CODES.KITKAT_WATCH;
+            boolean supportsSleepButton = Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH;
             sendKey(supportsSleepButton ? KeyEvent.KEYCODE_SLEEP : KeyEvent.KEYCODE_POWER, 0);
             return true;
         }
@@ -700,7 +691,7 @@ class InteractionController {
         return pm.isScreenOn();
     }
 
-    private boolean injectEventSync(InputEvent event) {
+    boolean injectEventSync(InputEvent event) {
         return getUiAutomation().injectInputEvent(event, true);
     }
 

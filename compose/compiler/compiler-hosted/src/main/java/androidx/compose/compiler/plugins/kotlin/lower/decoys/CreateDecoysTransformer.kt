@@ -28,7 +28,6 @@ import org.jetbrains.kotlin.backend.common.ir.remapTypeParameters
 import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
 import org.jetbrains.kotlin.backend.common.serialization.signature.IdSignatureSerializer
 import org.jetbrains.kotlin.ir.IrStatement
-import org.jetbrains.kotlin.ir.ObsoleteDescriptorBasedAPI
 import org.jetbrains.kotlin.ir.builders.declarations.IrFunctionBuilder
 import org.jetbrains.kotlin.ir.builders.declarations.buildConstructor
 import org.jetbrains.kotlin.ir.builders.declarations.buildFun
@@ -165,14 +164,12 @@ class CreateDecoysTransformer(
         }
     }
 
-    @OptIn(ObsoleteDescriptorBasedAPI::class)
     private fun IrFunction.decoyImplementationName(): Name {
         return dexSafeName(
             Name.identifier(name.asString() + IMPLEMENTATION_FUNCTION_SUFFIX)
         )
     }
 
-    @OptIn(ObsoleteDescriptorBasedAPI::class)
     private fun IrFunction.copyWithName(
         newName: Name,
         factory: (IrFunctionBuilder.() -> Unit) -> IrFunction = context.irFactory::buildFun
