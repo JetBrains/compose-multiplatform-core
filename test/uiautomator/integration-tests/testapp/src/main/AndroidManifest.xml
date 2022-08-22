@@ -27,6 +27,13 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity android:name=".BySelectorTestActivity"
+            android:exported="true"
+            android:theme="@android:style/Theme.Holo.NoActionBar">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+            </intent-filter>
+        </activity>
         <activity android:name=".BySelectorTestClazzActivity"
             android:exported="true"
             android:theme="@android:style/Theme.Holo.NoActionBar">
@@ -34,77 +41,151 @@
                 <action android:name="android.intent.action.MAIN" />
             </intent-filter>
         </activity>
-        <activity android:name=".BySelectorTestDescActivity"
+        <activity android:name=".ClearTextTestActivity"
             android:exported="true"
             android:theme="@android:style/Theme.Holo.NoActionBar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
             </intent-filter>
         </activity>
-        <activity android:name=".BySelectorTestResActivity"
+        <activity android:name=".ClickAndWaitTestActivity"
             android:exported="true"
             android:theme="@android:style/Theme.Holo.NoActionBar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
             </intent-filter>
         </activity>
-        <activity android:name=".BySelectorTestTextActivity"
+        <activity android:name=".ClickOnPositionTestActivity"
             android:exported="true"
             android:theme="@android:style/Theme.Holo.NoActionBar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
             </intent-filter>
         </activity>
-        <activity android:name=".BySelectorTestHasChildActivity"
+        <activity android:name=".ClickTestActivity"
             android:exported="true"
             android:theme="@android:style/Theme.Holo.NoActionBar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
             </intent-filter>
         </activity>
-        <activity android:name=".UiObject2TestClickActivity"
+        <activity android:name=".DragTestActivity"
             android:exported="true"
             android:theme="@android:style/Theme.Holo.NoActionBar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
             </intent-filter>
         </activity>
-        <activity android:name=".UiObject2TestClickAndWaitActivity"
+        <activity android:name=".IsEnabledTestActivity"
             android:exported="true"
             android:theme="@android:style/Theme.Holo.NoActionBar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
             </intent-filter>
         </activity>
-        <activity android:name=".UiObject2TestClickAndWaitConfirmActivity"
+        <activity android:name=".IsFocusedTestActivity"
             android:exported="true"
             android:theme="@android:style/Theme.Holo.NoActionBar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
             </intent-filter>
         </activity>
-        <activity android:name=".UiObject2TestLongClickActivity"
+        <activity android:name=".IsLongClickableTestActivity"
             android:exported="true"
             android:theme="@android:style/Theme.Holo.NoActionBar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
             </intent-filter>
         </activity>
-        <activity android:name=".UiObject2TestGetClassNameActivity"
+        <activity android:name=".IsSelectedTestActivity"
             android:exported="true"
             android:theme="@android:style/Theme.Holo.NoActionBar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
             </intent-filter>
         </activity>
-        <activity android:name=".UiObject2TestPinchActivity"
+        <activity android:name=".LongClickTestActivity"
             android:exported="true"
             android:theme="@android:style/Theme.Holo.NoActionBar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
             </intent-filter>
         </activity>
-        <activity android:name=".UiObject2TestVerticalScrollActivity"
+        <activity android:name=".ParentChildTestActivity"
+            android:exported="true"
+            android:theme="@android:style/Theme.Holo.NoActionBar">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+            </intent-filter>
+        </activity>
+        <activity android:name=".PictureInPictureTestActivity"
+            android:exported="true"
+            android:supportsPictureInPicture="true"
+            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation"
+            android:theme="@android:style/Theme.Holo.NoActionBar">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+            </intent-filter>
+        </activity>
+        <activity android:name=".PinchTestActivity"
+            android:exported="true"
+            android:theme="@android:style/Theme.Holo.NoActionBar">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+            </intent-filter>
+        </activity>
+        <activity android:name=".SplitScreenTestActivity"
+            android:exported="true"
+            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation"
+            android:theme="@android:style/Theme.Holo.NoActionBar">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+            </intent-filter>
+        </activity>
+        <activity android:name=".SwipeTestActivity"
+            android:exported="true"
+            android:theme="@android:style/Theme.Holo.NoActionBar">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+            </intent-filter>
+        </activity>
+        <activity android:name=".UiDeviceTestClickActivity"
+            android:exported="true"
+            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation"
+            android:theme="@android:style/Theme.Holo.NoActionBar">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+            </intent-filter>
+        </activity>
+        <activity android:name=".UiObject2TestFlingActivity"
+            android:exported="true"
+            android:theme="@android:style/Theme.Holo.NoActionBar">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+            </intent-filter>
+        </activity>
+        <activity android:name=".UntilTestActivity"
+            android:exported="true"
+            android:theme="@android:style/Theme.Holo.NoActionBar">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+            </intent-filter>
+        </activity>
+        <activity android:name=".VerticalScrollTestActivity"
+            android:exported="true"
+            android:theme="@android:style/Theme.Holo.NoActionBar">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+            </intent-filter>
+        </activity>
+        <activity android:name=".VisibleBoundsTestActivity"
+            android:exported="true"
+            android:theme="@android:style/Theme.Holo.NoActionBar">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+            </intent-filter>
+        </activity>
+        <activity android:name=".WaitTestActivity"
             android:exported="true"
             android:theme="@android:style/Theme.Holo.NoActionBar">
             <intent-filter>

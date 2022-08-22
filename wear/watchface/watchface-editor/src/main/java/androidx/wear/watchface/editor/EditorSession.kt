@@ -277,6 +277,7 @@ public interface EditorSession : AutoCloseable {
         }
 
         // Used by tests.
+        @Suppress("DEPRECATION")
         @Throws(TimeoutCancellationException::class)
         internal suspend fun createOnWatchEditorSessionImpl(
             activity: ComponentActivity,
@@ -809,7 +810,6 @@ internal class OnWatchFaceEditorSessionImpl(
             }
             ComplicationSlotState(
                 it.value.computeBounds(editorDelegate.screenBounds, type, applyMargins = false),
-                it.value.computeBounds(editorDelegate.screenBounds, type, applyMargins = true),
                 it.value.boundsType,
                 it.value.supportedTypes,
                 it.value.defaultDataSourcePolicy,
@@ -1083,6 +1083,7 @@ internal class ComplicationDataSourceChooserContract : ActivityResultContract<
         return intent
     }
 
+    @Suppress("DEPRECATION")
     override fun parseResult(resultCode: Int, intent: Intent?) = intent?.let {
         val extras = intent.extras?.let { extras ->
             Bundle(extras).apply { remove(EXTRA_PROVIDER_INFO) }

@@ -16,8 +16,9 @@
 
 package androidx.compose.ui.layout
 
+import androidx.compose.ui.node.LookaheadCapablePlaceable
 import androidx.compose.ui.unit.Constraints
-import kotlin.jvm.JvmDefaultWithCompatibility
+import androidx.compose.ui.internal.JvmDefaultWithCompatibility
 
 /**
  * The receiver scope of a layout's measure lambda. The return value of the
@@ -52,6 +53,7 @@ interface MeasureScope : IntrinsicMeasureScope {
             Placeable.PlacementScope.executeWithRtlMirroringValues(
                 width,
                 layoutDirection,
+                this@MeasureScope as? LookaheadCapablePlaceable,
                 placementBlock
             )
         }

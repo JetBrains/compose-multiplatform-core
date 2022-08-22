@@ -26,7 +26,6 @@ import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
 import org.jetbrains.kotlin.descriptors.ClassKind
 import org.jetbrains.kotlin.descriptors.DescriptorVisibilities
 import org.jetbrains.kotlin.ir.IrStatement
-import org.jetbrains.kotlin.ir.ObsoleteDescriptorBasedAPI
 import org.jetbrains.kotlin.ir.UNDEFINED_OFFSET
 import org.jetbrains.kotlin.ir.builders.declarations.IrFunctionBuilder
 import org.jetbrains.kotlin.ir.builders.declarations.addConstructor
@@ -240,7 +239,6 @@ open class LiveLiteralTransformer(
         putValueArgument(0, irConst(file))
     }
 
-    @OptIn(ObsoleteDescriptorBasedAPI::class)
     private fun irLiveLiteralGetter(
         key: String,
         literalValue: IrExpression,
@@ -394,7 +392,6 @@ open class LiveLiteralTransformer(
         }
     }
 
-    @OptIn(ObsoleteDescriptorBasedAPI::class)
     override fun visitConst(expression: IrConst<*>): IrExpression {
         when (expression.kind) {
             IrConstKind.Null -> return expression

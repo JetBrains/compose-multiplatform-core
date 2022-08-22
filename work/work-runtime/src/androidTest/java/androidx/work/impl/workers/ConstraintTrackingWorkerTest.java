@@ -81,6 +81,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
@@ -344,6 +345,7 @@ public class ConstraintTrackingWorkerTest extends DatabaseTest {
                         Collections.<String>emptyList(),
                         new WorkerParameters.RuntimeExtras(),
                         1,
+                        0,
                         executor,
                         mWorkTaskExecutor,
                         workerFactory,
@@ -364,7 +366,8 @@ public class ConstraintTrackingWorkerTest extends DatabaseTest {
                 mWorkTaskExecutor,
                 mForegroundProcessor,
                 mDatabase,
-                mDatabase.workSpecDao().getWorkSpec(mWork.getStringId())
+                mDatabase.workSpecDao().getWorkSpec(mWork.getStringId()),
+                new ArrayList<>()
         );
     }
 

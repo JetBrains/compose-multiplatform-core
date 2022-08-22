@@ -48,7 +48,6 @@ import androidx.work.impl.model.DependencyDao;
 import androidx.work.impl.model.WorkGenerationalId;
 import androidx.work.impl.model.WorkSpec;
 import androidx.work.impl.model.WorkSpecDao;
-import androidx.work.impl.model.WorkTagDao;
 import androidx.work.impl.utils.PackageManagerHelper;
 import androidx.work.impl.utils.SynchronousExecutor;
 import androidx.work.impl.utils.WorkForegroundRunnable;
@@ -97,7 +96,6 @@ public class WorkerWrapper implements Runnable {
     private WorkDatabase mWorkDatabase;
     private WorkSpecDao mWorkSpecDao;
     private DependencyDao mDependencyDao;
-    private WorkTagDao mWorkTagDao;
 
     private List<String> mTags;
     private String mWorkDescription;
@@ -128,7 +126,7 @@ public class WorkerWrapper implements Runnable {
         mWorkDatabase = builder.mWorkDatabase;
         mWorkSpecDao = mWorkDatabase.workSpecDao();
         mDependencyDao = mWorkDatabase.dependencyDao();
-        mWorkTagDao = mWorkDatabase.workTagDao();
+        mTags = builder.mTags;
     }
 
     @NonNull
@@ -143,9 +141,13 @@ public class WorkerWrapper implements Runnable {
     @WorkerThread
     @Override
     public void run() {
-        mTags = mWorkTagDao.getTagsForWorkSpecId(mWorkSpecId);
         mWorkDescription = createWorkDescription(mTags);
         runWorker();
+    }
+
+    @NonNull
+    public WorkSpec getWorkSpec() {
+        return mWorkSpec;
     }
 
     private void runWorker() {
@@ -228,6 +230,7 @@ public class WorkerWrapper implements Runnable {
                 mTags,
                 mRuntimeExtras,
                 mWorkSpec.runAttemptCount,
+                mWorkSpec.getGeneration(),
                 mConfiguration.getExecutor(),
                 mWorkTaskExecutor,
                 mConfiguration.getWorkerFactory(),
@@ -639,6 +642,7 @@ public class WorkerWrapper implements Runnable {
         @NonNull WorkDatabase mWorkDatabase;
         @NonNull WorkSpec mWorkSpec;
         List<Scheduler> mSchedulers;
+        private final List<String> mTags;
         @NonNull
         WorkerParameters.RuntimeExtras mRuntimeExtras = new WorkerParameters.RuntimeExtras();
 
@@ -647,13 +651,16 @@ public class WorkerWrapper implements Runnable {
                 @NonNull TaskExecutor workTaskExecutor,
                 @NonNull ForegroundProcessor foregroundProcessor,
                 @NonNull WorkDatabase database,
-                @NonNull WorkSpec workSpec) {
+                @NonNull WorkSpec workSpec,
+                @NonNull List<String> tags
+        ) {
             mAppContext = context.getApplicationContext();
             mWorkTaskExecutor = workTaskExecutor;
             mForegroundProcessor = foregroundProcessor;
             mConfiguration = configuration;
             mWorkDatabase = database;
             mWorkSpec = workSpec;
+            mTags = tags;
         }
 
         /**

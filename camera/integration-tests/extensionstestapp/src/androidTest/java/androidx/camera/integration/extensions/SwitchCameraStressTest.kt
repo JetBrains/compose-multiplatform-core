@@ -22,11 +22,16 @@ import android.content.Intent
 import androidx.camera.camera2.Camera2Config
 import androidx.camera.core.CameraSelector
 import androidx.camera.extensions.ExtensionMode
+import androidx.camera.integration.extensions.IntentExtraKey.INTENT_EXTRA_KEY_CAMERA_ID
+import androidx.camera.integration.extensions.IntentExtraKey.INTENT_EXTRA_KEY_DELETE_CAPTURED_IMAGE
+import androidx.camera.integration.extensions.IntentExtraKey.INTENT_EXTRA_KEY_EXTENSION_MODE
 import androidx.camera.integration.extensions.util.ExtensionsTestUtil
 import androidx.camera.integration.extensions.util.ExtensionsTestUtil.STRESS_TEST_OPERATION_REPEAT_COUNT
 import androidx.camera.testing.CameraUtil
 import androidx.camera.testing.CameraUtil.PreTestCameraIdList
 import androidx.camera.testing.CoreAppTestUtil
+import androidx.camera.testing.LabTestRule
+import androidx.camera.testing.StressTestRule
 import androidx.camera.testing.waitForIdle
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
@@ -37,10 +42,12 @@ import androidx.test.espresso.matcher.ViewMatchers
 import androidx.test.filters.LargeTest
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
+import androidx.test.uiautomator.UiDevice
 import androidx.testutils.RepeatRule
 import org.junit.After
 import org.junit.Assume.assumeTrue
 import org.junit.Before
+import org.junit.ClassRule
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -54,11 +61,15 @@ private const val BASIC_SAMPLE_PACKAGE = "androidx.camera.integration.extensions
 @LargeTest
 @RunWith(Parameterized::class)
 class SwitchCameraStressTest(private val extensionMode: Int) {
+    private val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
 
     @get:Rule
     val useCamera = CameraUtil.grantCameraPermissionAndPreTest(
         PreTestCameraIdList(Camera2Config.defaultConfig())
     )
+
+    @get:Rule
+    val labTest: LabTestRule = LabTestRule()
 
     @get:Rule
     val repeatRule = RepeatRule()
@@ -74,10 +85,12 @@ class SwitchCameraStressTest(private val extensionMode: Int) {
     private lateinit var takePictureIdlingResource: CountingIdlingResource
 
     companion object {
+        @ClassRule
+        @JvmField val stressTest = StressTestRule()
+
         @Parameterized.Parameters(name = "extensionMode = {0}")
         @JvmStatic
         fun parameters() = arrayOf(
-            ExtensionMode.NONE,
             ExtensionMode.BOKEH,
             ExtensionMode.HDR,
             ExtensionMode.NIGHT,
@@ -88,21 +101,29 @@ class SwitchCameraStressTest(private val extensionMode: Int) {
 
     @Before
     fun setUp() {
-        if (extensionMode != ExtensionMode.NONE) {
-            assumeTrue(ExtensionsTestUtil.isTargetDeviceAvailableForExtensions())
-        }
+        assumeTrue(ExtensionsTestUtil.isTargetDeviceAvailableForExtensions())
         // Clear the device UI and check if there is no dialog or lock screen on the top of the
         // window before starting the test.
         CoreAppTestUtil.prepareDeviceUI(InstrumentationRegistry.getInstrumentation())
+        // Use the natural orientation throughout these tests to ensure the activity isn't
+        // recreated unexpectedly. This will also freeze the sensors until
+        // mDevice.unfreezeRotation() in the tearDown() method. Any simulated rotations will be
+        // explicitly initiated from within the test.
+        device.setOrientationNatural()
     }
 
     @After
     fun tearDown() {
+        // Unfreeze rotation so the device can choose the orientation via its own policy. Be nice
+        // to other tests :)
+        device.unfreezeRotation()
+
         if (::activityScenario.isInitialized) {
             activityScenario.onActivity { it.finish() }
         }
     }
 
+    @LabTestRule.LabTestOnly
     @Test
     @RepeatRule.Repeat(times = ExtensionsTestUtil.STRESS_TEST_REPEAT_COUNT)
     fun switchCameraTenTimes_canCaptureImageInEachTime() {
@@ -130,6 +151,7 @@ class SwitchCameraStressTest(private val extensionMode: Int) {
         }
     }
 
+    @LabTestRule.LabTestOnly
     @Test
     @RepeatRule.Repeat(times = ExtensionsTestUtil.STRESS_TEST_REPEAT_COUNT)
     fun canCaptureImage_afterSwitchCameraTenTimes() {
@@ -156,18 +178,18 @@ class SwitchCameraStressTest(private val extensionMode: Int) {
     private fun launchActivityAndRetrieveIdlingResources() {
         val intent = ApplicationProvider.getApplicationContext<Context>().packageManager
             .getLaunchIntentForPackage(BASIC_SAMPLE_PACKAGE)?.apply {
-                putExtra(CameraExtensionsActivity.INTENT_EXTRA_CAMERA_ID, "0")
-                putExtra(CameraExtensionsActivity.INTENT_EXTRA_EXTENSION_MODE, extensionMode)
-                putExtra(CameraExtensionsActivity.INTENT_EXTRA_DELETE_CAPTURED_IMAGE, true)
+                putExtra(INTENT_EXTRA_KEY_CAMERA_ID, "0")
+                putExtra(INTENT_EXTRA_KEY_EXTENSION_MODE, extensionMode)
+                putExtra(INTENT_EXTRA_KEY_DELETE_CAPTURED_IMAGE, true)
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             }
 
         activityScenario = ActivityScenario.launch(intent)
 
         activityScenario.onActivity {
-            initializationIdlingResource = it.mInitializationIdlingResource
-            previewViewIdlingResource = it.mPreviewViewIdlingResource
-            takePictureIdlingResource = it.mTakePictureIdlingResource
+            initializationIdlingResource = it.initializationIdlingResource
+            previewViewIdlingResource = it.previewViewStreamingStateIdlingResource
+            takePictureIdlingResource = it.takePictureIdlingResource
         }
 
         // Waits for CameraExtensionsActivity's initialization to be complete

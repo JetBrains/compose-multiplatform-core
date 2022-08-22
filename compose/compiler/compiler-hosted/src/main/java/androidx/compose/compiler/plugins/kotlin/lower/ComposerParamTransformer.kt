@@ -93,7 +93,6 @@ import org.jetbrains.kotlin.resolve.DescriptorUtils
 import org.jetbrains.kotlin.resolve.multiplatform.findCompatibleExpectsForActual
 import org.jetbrains.kotlin.util.OperatorNameConventions
 
-@Suppress("DEPRECATION")
 class ComposerParamTransformer(
     context: IrPluginContext,
     symbolRemapper: DeepCopySymbolRemapper,
@@ -111,7 +110,6 @@ class ComposerParamTransformer(
 
     private var inlineLambdaInfo = ComposeInlineLambdaLocator(context)
 
-    @OptIn(ObsoleteDescriptorBasedAPI::class)
     override fun lower(module: IrModuleFragment) {
         currentModule = module
 
@@ -124,7 +122,6 @@ class ComposerParamTransformer(
         val typeRemapper = ComposerTypeRemapper(
             context,
             symbolRemapper,
-            typeTranslator,
             composerType
         )
         // for each declaration, we create a deepCopy transformer It is important here that we
@@ -133,8 +130,7 @@ class ComposerParamTransformer(
         val transformer = DeepCopyIrTreeWithSymbolsPreservingMetadata(
             context,
             symbolRemapper,
-            typeRemapper,
-            typeTranslator
+            typeRemapper
         ).also { typeRemapper.deepCopy = it }
         module.transformChildren(
             transformer,
@@ -278,7 +274,7 @@ class ComposerParamTransformer(
         endOffset: Int = UNDEFINED_OFFSET
     ): IrExpression {
         val classSymbol = classOrNull
-        if (this !is IrSimpleType || hasQuestionMark || !isInlineClassType()) {
+        if (this !is IrSimpleType || isMarkedNullable() || !isInlineClassType()) {
             return if (isMarkedNullable()) {
                 IrConstImpl.constNull(startOffset, endOffset, context.irBuiltIns.nothingNType)
             } else {
