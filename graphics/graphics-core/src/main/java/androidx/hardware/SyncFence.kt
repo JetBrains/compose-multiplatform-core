@@ -14,22 +14,6 @@
  * limitations under the License.
  */
 
-/*
- * Copyright 2022 The Android Open Source Project
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package androidx.hardware
 
 import android.os.Build
@@ -59,6 +43,8 @@ class SyncFence(private var fd: Int) : AutoCloseable {
      * Returns the time that the fence signaled in the [CLOCK_MONOTONIC] time domain.
      * This returns [SyncFence.SIGNAL_TIME_INVALID] if the SyncFence is invalid.
      */
+    // Relies on NDK APIs sync_file_info/sync_file_info_free which were introduced in API level 26
+    @RequiresApi(Build.VERSION_CODES.O)
     fun getSignalTime(): Long =
         if (isValid()) {
             nGetSignalTime(fd)
@@ -105,6 +91,10 @@ class SyncFence(private var fd: Int) : AutoCloseable {
     override fun close() {
         nClose(fd)
         fd = -1
+    }
+
+    protected fun finalize() {
+        close()
     }
 
     // SyncFence in the framework implements timeoutNanos as a long but

@@ -33,6 +33,9 @@ import kotlinx.coroutines.CoroutineScope
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public interface WatchFaceHostApi {
+    /** The [WatchFaceService.SystemTimeProvider]. */
+    public val systemTimeProvider: WatchFaceService.SystemTimeProvider
+
     /** Returns the watch face's [Context]. */
     public fun getContext(): Context
 
@@ -139,5 +142,9 @@ public interface WatchFaceHostApi {
     public fun onActionTimeTick() {}
 
     /** The engine must notify the system that the watch face's colors have changed. */
-    public fun notifySystemThatColorsChanged() {}
+    @OptIn(WatchFaceExperimental::class)
+    public fun onWatchFaceColorsChanged(watchFaceColors: WatchFaceColors?) {}
+
+    /** Requests the system to capture an updated preview image. */
+    public fun sendPreviewImageNeedsUpdateRequest() {}
 }

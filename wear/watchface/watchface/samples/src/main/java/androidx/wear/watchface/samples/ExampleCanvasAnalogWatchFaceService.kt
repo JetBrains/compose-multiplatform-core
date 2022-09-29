@@ -39,6 +39,8 @@ import androidx.wear.watchface.ComplicationSlotsManager
 import androidx.wear.watchface.DrawMode
 import androidx.wear.watchface.Renderer
 import androidx.wear.watchface.WatchFace
+import androidx.wear.watchface.WatchFaceColors
+import androidx.wear.watchface.WatchFaceExperimental
 import androidx.wear.watchface.WatchFaceService
 import androidx.wear.watchface.WatchFaceType
 import androidx.wear.watchface.WatchState
@@ -379,6 +381,7 @@ open class ExampleCanvasAnalogWatchFaceService : WatchFaceService() {
         )
 }
 
+@OptIn(WatchFaceExperimental::class)
 @Suppress("Deprecation")
 @RequiresApi(27)
 class ExampleAnalogWatchCanvasRenderer(
@@ -448,15 +451,15 @@ class ExampleAnalogWatchCanvasRenderer(
                         .value.toFloat()
                 hoursDrawFreq = (userStyle[hoursDrawFreqStyleSetting]!! as LongRangeOption)
                         .value.toInt()
+
+                watchfaceColors = WatchFaceColors(
+                    Color.valueOf(watchFaceColorStyle.activeStyle.primaryColor),
+                    Color.valueOf(watchFaceColorStyle.activeStyle.secondaryColor),
+                    Color.valueOf(Color.DKGRAY)
+                )
             }
         }
     }
-
-    override fun watchfaceColors() = WatchfaceColors(
-        Color.valueOf(watchFaceColorStyle.activeStyle.primaryColor),
-        Color.valueOf(watchFaceColorStyle.activeStyle.secondaryColor),
-        Color.valueOf(Color.DKGRAY)
-    )
 
     override fun render(canvas: Canvas, bounds: Rect, zonedDateTime: ZonedDateTime) {
         val style = if (renderParameters.drawMode == DrawMode.AMBIENT) {

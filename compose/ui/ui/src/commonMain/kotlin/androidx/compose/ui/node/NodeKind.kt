@@ -36,11 +36,11 @@ import androidx.compose.ui.modifier.ModifierLocalProvider
 import androidx.compose.ui.semantics.SemanticsModifier
 
 @JvmInline
-internal value class NodeKind<T>(val mask: Long) {
-    infix fun or(other: NodeKind<*>): Long = mask or other.mask
-    infix fun or(other: Long): Long = mask or other
+internal value class NodeKind<T>(val mask: Int) {
+    infix fun or(other: NodeKind<*>): Int = mask or other.mask
+    infix fun or(other: Int): Int = mask or other
 }
-internal infix fun Long.or(other: NodeKind<*>): Long = this or other.mask
+internal infix fun Int.or(other: NodeKind<*>): Int = this or other.mask
 
 // For a given NodeCoordinator, the "LayoutAware" nodes that it is concerned with should include
 // its own measureNode if the measureNode happens to implement LayoutAware. If the measureNode
@@ -48,7 +48,7 @@ internal infix fun Long.or(other: NodeKind<*>): Long = this or other.mask
 // below them.
 @OptIn(ExperimentalComposeUiApi::class)
 internal val NodeKind<*>.includeSelfInTraversal: Boolean get() {
-    return mask and Nodes.LayoutAware.mask != 0L
+    return mask and Nodes.LayoutAware.mask != 0
 }
 
 // Note that these don't inherit from Modifier.Node to allow for a single Modifier.Node
@@ -56,21 +56,22 @@ internal val NodeKind<*>.includeSelfInTraversal: Boolean get() {
 
 @OptIn(ExperimentalComposeUiApi::class)
 internal object Nodes {
-    val Layout = NodeKind<LayoutModifierNode>(0b1 shl 0)
-    val Draw = NodeKind<DrawModifierNode>(0b1 shl 1)
-    val Semantics = NodeKind<SemanticsModifierNode>(0b1 shl 2)
-    val PointerInput = NodeKind<PointerInputModifierNode>(0b1 shl 3)
-    val Locals = NodeKind<ModifierLocalNode>(0b1 shl 6)
-    val ParentData = NodeKind<ParentDataModifierNode>(0b1 shl 7)
-    val LayoutAware = NodeKind<LayoutAwareModifierNode>(0b1 shl 8)
-    val GlobalPositionAware = NodeKind<GlobalPositionAwareModifierNode>(0b1 shl 9)
-    val IntermediateMeasure = NodeKind<IntermediateLayoutModifierNode>(0b1 shl 10)
+    val Any = NodeKind<Modifier.Node>(0b1)
+    val Layout = NodeKind<LayoutModifierNode>(0b1 shl 1)
+    val Draw = NodeKind<DrawModifierNode>(0b1 shl 2)
+    val Semantics = NodeKind<SemanticsModifierNode>(0b1 shl 3)
+    val PointerInput = NodeKind<PointerInputModifierNode>(0b1 shl 4)
+    val Locals = NodeKind<ModifierLocalNode>(0b1 shl 5)
+    val ParentData = NodeKind<ParentDataModifierNode>(0b1 shl 6)
+    val LayoutAware = NodeKind<LayoutAwareModifierNode>(0b1 shl 7)
+    val GlobalPositionAware = NodeKind<GlobalPositionAwareModifierNode>(0b1 shl 8)
+    val IntermediateMeasure = NodeKind<IntermediateLayoutModifierNode>(0b1 shl 9)
     // ...
 }
 
 @OptIn(ExperimentalComposeUiApi::class)
-internal fun calculateNodeKindSetFrom(element: Modifier.Element): Long {
-    var mask = 0L
+internal fun calculateNodeKindSetFrom(element: Modifier.Element): Int {
+    var mask = Nodes.Any.mask
     if (element is LayoutModifier) {
         mask = mask or Nodes.Layout
     }
@@ -112,8 +113,8 @@ internal fun calculateNodeKindSetFrom(element: Modifier.Element): Long {
 }
 
 @OptIn(ExperimentalComposeUiApi::class)
-internal fun calculateNodeKindSetFrom(node: Modifier.Node): Long {
-    var mask = 0L
+internal fun calculateNodeKindSetFrom(node: Modifier.Node): Int {
+    var mask = Nodes.Any.mask
     if (node is LayoutModifierNode) {
         mask = mask or Nodes.Layout
     }

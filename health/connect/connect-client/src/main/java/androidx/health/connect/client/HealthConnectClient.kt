@@ -41,7 +41,6 @@ import androidx.health.connect.client.response.ReadRecordsResponse
 import androidx.health.connect.client.time.TimeRangeFilter
 import androidx.health.platform.client.HealthDataService
 import java.io.IOException
-import java.lang.IllegalStateException
 import kotlin.reflect.KClass
 
 /** Interface to access health and fitness records. */
@@ -52,7 +51,7 @@ interface HealthConnectClient {
 
     /**
      * Inserts one or more [Record] and returns newly assigned
-     * [androidx.health.connect.client.records.metadata.Metadata.uid] generated. Insertion of
+     * [androidx.health.connect.client.records.metadata.Metadata.id] generated. Insertion of
      * multiple [records] is executed in a transaction - if one fails, none is inserted.
      *
      * For example, to insert basic data like step counts:
@@ -66,9 +65,11 @@ interface HealthConnectClient {
      *
      * [androidx.health.connect.client.records.metadata.Metadata.clientRecordId] can be used to
      * deduplicate data with a client provided unique identifier. When a subsequent [insertRecords]
-     * is called with the same [androidx.health.connect.client.records.metadata.Metadata.clientRecordId],
-     * whichever [Record] with the higher [androidx.health.connect.client.records.metadata.Metadata.clientRecordVersion]
-     * takes precedence.
+     * is called with the same
+     * [androidx.health.connect.client.records.metadata.Metadata.clientRecordId], whichever [Record]
+     * with the higher
+     * [androidx.health.connect.client.records.metadata.Metadata.clientRecordVersion] takes
+     * precedence.
      *
      * @param records List of records to insert
      * @return List of unique identifiers in the order of inserted records.
@@ -100,7 +101,8 @@ interface HealthConnectClient {
      * @sample androidx.health.connect.client.samples.DeleteByUniqueIdentifier
      *
      * @param recordType Which type of [Record] to delete, such as `Steps::class`
-     * @param uidsList List of uids of [Record] to delete
+     * @param recordIdsList List of
+     * [androidx.health.connect.client.records.metadata.Metadata.id] of [Record] to delete
      * @param clientRecordIdsList List of client record IDs of [Record] to delete
      * @throws RemoteException For any IPC transportation failures. Deleting by invalid identifiers
      * such as a non-existing identifier or deleting the same record multiple times will result in
@@ -111,7 +113,7 @@ interface HealthConnectClient {
      */
     suspend fun deleteRecords(
         recordType: KClass<out Record>,
-        uidsList: List<String>,
+        recordIdsList: List<String>,
         clientRecordIdsList: List<String>,
     )
 
@@ -133,10 +135,11 @@ interface HealthConnectClient {
     suspend fun deleteRecords(recordType: KClass<out Record>, timeRangeFilter: TimeRangeFilter)
 
     /**
-     * Reads one [Record] point with its [recordType] and [uid].
+     * Reads one [Record] point with its [recordType] and [recordId].
      *
      * @param recordType Which type of [Record] to read, such as `Steps::class`
-     * @param uid Uid of [Record] to read
+     * @param recordId [androidx.health.connect.client.records.metadata.Metadata.id] of
+     * [Record] to read
      * @return The [Record] data point.
      * @throws RemoteException For any IPC transportation failures. Update with invalid identifiers
      * will result in IPC failure.
@@ -144,7 +147,10 @@ interface HealthConnectClient {
      * @throws IOException For any disk I/O issues.
      * @throws IllegalStateException If service is not available.
      */
-    suspend fun <T : Record> readRecord(recordType: KClass<T>, uid: String): ReadRecordResponse<T>
+    suspend fun <T : Record> readRecord(
+        recordType: KClass<T>,
+        recordId: String
+    ): ReadRecordResponse<T>
 
     /**
      * Retrieves a collection of [Record]s.
@@ -261,6 +267,57 @@ interface HealthConnectClient {
      * @see getChanges
      */
     suspend fun getChangesToken(request: ChangesTokenRequest): String
+
+    /**
+     * Registers the provided [notificationIntentAction] and [recordTypes] for data notifications.
+     *
+     * Health Connect will automatically broadcast notification messages to the client application
+     * with the action specified by [notificationIntentAction] argument. Messages are sent when the
+     * data specified by [recordTypes] is updated. Messages may not be sent immediately, but in
+     * batches.
+     *
+     * The client application must have a read permission granted for a [Record] in order to receive
+     * notifications for it.
+     *
+     * The client application must have a [BroadcastReceiver][android.content.BroadcastReceiver]
+     * registered, either in the `AndroidManifest.xml` file or at runtime. The registered
+     * `BroadcastReceiver` must have an [IntentFilter][android.content.IntentFilter] specified with
+     * the same action as in [notificationIntentAction] argument.
+     * [DataNotification][androidx.health.connect.client.datanotification.DataNotification] can be
+     * used to extract data from the received [Intent].
+     *
+     * @param notificationIntentAction an action to be used for broadcast messages.
+     * @param recordTypes specifies [Record] types of interest.
+     *
+     * @throws RemoteException For any IPC transportation failures.
+     * @throws SecurityException For requests with unpermitted access.
+     * @throws IOException For any disk I/O issues.
+     * @throws IllegalStateException If service is not available.
+     *
+     * @see unregisterFromDataNotifications
+     * @see androidx.health.connect.client.datanotification.DataNotification
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY) // Not yet ready for public
+    suspend fun registerForDataNotifications(
+        notificationIntentAction: String,
+        recordTypes: Iterable<KClass<out Record>>,
+    )
+
+    /**
+     * Unregisters the provided [notificationIntentAction] from data notifications.
+     *
+     * @param notificationIntentAction an action previously registered using
+     * [registerForDataNotifications] method.
+     *
+     * @throws RemoteException For any IPC transportation failures.
+     * @throws SecurityException For requests with unpermitted access.
+     * @throws IOException For any disk I/O issues.
+     * @throws IllegalStateException If service is not available.
+     *
+     * @see registerForDataNotifications
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY) // Not yet ready for public
+    suspend fun unregisterFromDataNotifications(notificationIntentAction: String)
 
     /**
      * Retrieves changes in Android Health Platform, from a specific point in time represented by

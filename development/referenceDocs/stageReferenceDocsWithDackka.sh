@@ -49,104 +49,8 @@ gbash::init_google "$@"
 # Each directory's spelling must match the library's directory in
 # frameworks/support.
 readonly javaLibraryDirsThatDontUseDackka=(
-  "android/support/v4"
-  "androidx/ads"
-  "androidx/appcompat"
-  "androidx/appsearch"
-  "androidx/biometric"
-  "androidx/browser"
-  "androidx/camera"
-  "androidx/car"
-  "androidx/concurrent"
-  "androidx/contentpager"
-  "androidx/cursoradapter"
-  "androidx/customview"
-  "androidx/datastore"
-  "androidx/documentfile"
-  "androidx/draganddrop"
-  "androidx/dynamicanimation"
-  "androidx/enterprise"
-  "androidx/exifinterface"
-  "androidx/gridlayout"
-  "androidx/heifwriter"
-  "androidx/hilt"
-  "androidx/leanback"
-  "androidx/media"
-  "androidx/media2"
-  "androidx/mediarouter"
-  "androidx/palette"
-  "androidx/percentlayout"
-  "androidx/preference"
-  "androidx/print"
-  "androidx/profileinstaller"
-  "androidx/recommendation"
-  "androidx/recyclerview"
-  "androidx/remotecallback"
-  "androidx/resourceinspection"
-  "androidx/room"
-  "androidx/security"
-  "androidx/slice"
-  "androidx/sqlite"
-  "androidx/startup"
-  "androidx/swiperefreshlayout"
-  "androidx/textclassifier"
-  "androidx/tracing"
-  "androidx/transition"
-  "androidx/tvprovider"
-  "androidx/versionedparcelable"
-  "androidx/webkit"
-  "androidx/work"
 )
 readonly kotlinLibraryDirsThatDontUseDackka=(
-  "android/support/v4"
-  "androidx/ads"
-  "androidx/appcompat"
-  "androidx/appsearch"
-  "androidx/benchmark"
-  "androidx/biometric"
-  "androidx/browser"
-  "androidx/camera"
-  "androidx/car"
-  "androidx/concurrent"
-  "androidx/contentpager"
-  "androidx/cursoradapter"
-  "androidx/customview"
-  "androidx/datastore"
-  "androidx/documentfile"
-  "androidx/dynamicanimation"
-  "androidx/draganddrop"
-  "androidx/enterprise"
-  "androidx/exifinterface"
-  "androidx/glance"
-  "androidx/gridlayout"
-  "androidx/heifwriter"
-  "androidx/hilt"
-  "androidx/leanback"
-  "androidx/media"
-  "androidx/media2"
-  "androidx/mediarouter"
-  "androidx/palette"
-  "androidx/percentlayout"
-  "androidx/preference"
-  "androidx/print"
-  "androidx/profileinstaller"
-  "androidx/recommendation"
-  "androidx/recyclerview"
-  "androidx/remotecallback"
-  "androidx/resourceinspection"
-  "androidx/room"
-  "androidx/security"
-  "androidx/slice"
-  "androidx/sqlite"
-  "androidx/startup"
-  "androidx/swiperefreshlayout"
-  "androidx/textclassifier"
-  "androidx/tracing"
-  "androidx/transition"
-  "androidx/tvprovider"
-  "androidx/versionedparcelable"
-  "androidx/webkit"
-  "androidx/work"
 )
 
 # Change directory to this script's location and store the directory
@@ -175,28 +79,24 @@ if [ "$FLAGS_sourceDir" == "" ]; then
 
   if (( FLAGS_useToT )); then
     printf "Downloading docs-tip-of-tree zip files \n"
-    androidxDoclavaZip="doclava-tip-of-tree-docs-${FLAGS_buildId}.zip"
     androidxDokkaZip="dokka-tip-of-tree-docs-${FLAGS_buildId}.zip"
     androidxDackkaZip="dackka-tip-of-tree-docs-${FLAGS_buildId}.zip"
   else
     printf "Downloading docs-public zip files \n"
-    androidxDoclavaZip="doclava-public-docs-${FLAGS_buildId}.zip"
     androidxDokkaZip="dokka-public-docs-${FLAGS_buildId}.zip"
     androidxDackkaZip="dackka-public-docs-${FLAGS_buildId}.zip"
   fi
 
   if (( "${FLAGS_buildId::1}" == "P" )); then
-    /google/data/ro/projects/android/fetch_artifact --bid $FLAGS_buildId --target androidx_incremental incremental/$androidxDoclavaZip
     /google/data/ro/projects/android/fetch_artifact --bid $FLAGS_buildId --target androidx_incremental incremental/$androidxDokkaZip
     /google/data/ro/projects/android/fetch_artifact --bid $FLAGS_buildId --target androidx_incremental incremental/$androidxDackkaZip
   else
-    /google/data/ro/projects/android/fetch_artifact --bid $FLAGS_buildId --target androidx $androidxDoclavaZip
     /google/data/ro/projects/android/fetch_artifact --bid $FLAGS_buildId --target androidx $androidxDokkaZip
     /google/data/ro/projects/android/fetch_artifact --bid $FLAGS_buildId --target androidx $androidxDackkaZip
   fi
 
   # Let's double check we succeeded before continuing
-  if [[ -f "$androidxDoclavaZip" ]] && [[ -f "$androidxDokkaZip" ]] && [[ -f "$androidxDackkaZip" ]]; then
+  if [[ -f "$androidxDokkaZip" ]] && [[ -f "$androidxDackkaZip" ]]; then
     echo "Download completed"
   else
     printf "\n"
@@ -210,7 +110,6 @@ if [ "$FLAGS_sourceDir" == "" ]; then
   printf "== Unzip the doc zip files \n"
   printf "=================================================================== \n"
 
-  unzip $androidxDoclavaZip -d $doclavaNewDir
   unzip $androidxDokkaZip -d $dokkaNewDir
   unzip $androidxDackkaZip -d $newDir
 else
@@ -218,7 +117,6 @@ else
   printf "== Copying doc sources from local directory $FLAGS_sourceDir \n"
   printf "=================================================================== \n"
 
-  cp -r "$FLAGS_sourceDir/javadoc/." $doclavaNewDir
   cp -r "$FLAGS_sourceDir/dokkaKotlinDocs/." $dokkaNewDir
   cp -r "$FLAGS_sourceDir/dackkaDocs/." $newDir
 
@@ -279,7 +177,7 @@ printf "=================================================================== \n"
 printf "== Create (if needed) and sync g4 workspace \n"
 printf "=================================================================== \n"
 
-client="$(p4 g4d -f androidx-ref-docs-stage)"
+client="$(p4 g4d -f androidx-ref-docs-stage --multichange)"
 cd "$client"
 
 # Revert all local changes to prevent merge conflicts when syncing.

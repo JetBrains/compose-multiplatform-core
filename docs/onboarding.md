@@ -7,8 +7,8 @@ make simple changes in Android Studio, and upload commits to Gerrit for review.
 
 This page does **not** cover best practices for the content of changes. Please
 see [Life of a Jetpack Feature](loaf.md) for details on developing and releasing
-a library, [API Guidelines](api_guidelines.md) for best practices regarding
-public APIs and an overview of the constraints placed on changes.
+a library, [API Guidelines](api_guidelines/index.md) for best practices
+regarding public APIs and an overview of the constraints placed on changes.
 
 ## Workstation setup {#setup}
 
@@ -366,7 +366,7 @@ example, if you are working on `core` module use:
 
 To make warnings fail your build (same as presubmit), use the `--strict` flag,
 which our gradlew expands into a few correctness-related flags including
-`-Pandroidx.allWarningsAsErrors`:
+`-Pandroidx.validateNoUnrecognizedMessages`:
 
 ```shell
 ./gradlew core:core:assemble --strict
@@ -389,10 +389,22 @@ shell script:
 
 ### Attaching a debugger to the build
 
-Gradle tasks, including building a module, may be run or debugged from Android
-Studio's `Gradle` pane by finding the task to be debugged -- for example,
-`androidx > androidx > appcompat > appcompat > build > assemble` --
-right-clicking on it, and then selecting `Debug...`.
+Gradle tasks, including building a module, may be run or debugged from within
+Android Studio. To start, you need to add the task as a run configuration: you
+can do this manually by adding the corresponding task by clicking on the run
+configuration dropdown, pressing
+[`Edit Configurations`](https://www.jetbrains.com/help/idea/run-debug-gradle.html),
+and adding the corresponding task.
+
+You can also run the task through the IDE from the terminal, by using the
+[`Run highlighted command using IDE`](https://blog.jetbrains.com/idea/2020/07/run-ide-features-from-the-terminal/)
+feature - type in the task you want to run in the in-IDE terminal, and
+`ctrl+enter` / `cmd+enter` to launch this through the IDE. This will
+automatically add the configuration to the run configuration menu - you can then
+cancel the task.
+
+Once the task has been added to the run configuration menu, you can start
+debugging as with any other task by pressing the `debug` button.
 
 Note that debugging will not be available until Gradle sync has completed.
 
@@ -496,6 +508,24 @@ Location of generated refdocs:
 *   docs-tip-of-tree:
     `{androidx-main}/out/androidx/docs-tip-of-tree/build/dackkaDocs`
 
+The generated docs are plain HTML pages with links that do not work locally.
+These issues are fixed when the docs are published to DAC, but to preview a
+local version of the docs with functioning links and CSS, run:
+
+```
+python3 development/offlinifyDocs/offlinify_dackka_docs.py
+```
+
+You will need to have the `bs4` Python package installed. The CSS used is not
+the same as what will be used when the docs are published.
+
+By default, this command converts the tip-of-tree docs for all libraries. To see
+more options, run:
+
+```
+python3 development/offlinifyDocs/offlinify_dackka_docs.py --help
+```
+
 #### Release docs
 
 To build API reference docs for published artifacts formatted for use on
@@ -574,10 +604,11 @@ version -- we record three different types of API surfaces.
 *   `<version>.txt`: Public API surface, tracked for compatibility
 *   `restricted_<version>.txt`: `@RestrictTo` API surface, tracked for
     compatibility where necessary (see
-    [Restricted APIs](api_guidelines.md#restricted-api))
+    [Restricted APIs](api_guidelines/index.md#restricted-api))
 *   `public_plus_experimental_<version>.txt`: Public API surface plus
     `@RequiresOptIn` experimental API surfaces used for documentation (see
-    [Experimental APIs](api_guidelines.md#experimental-api)) and API review
+    [Experimental APIs](api_guidelines/index.md#experimental-api)) and API
+    review
 
 ### Release notes & the `Relnote:` tag {#relnote}
 

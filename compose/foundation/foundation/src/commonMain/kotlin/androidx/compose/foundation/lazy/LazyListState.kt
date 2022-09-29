@@ -24,6 +24,7 @@ import androidx.compose.foundation.gestures.ScrollableState
 import androidx.compose.foundation.interaction.InteractionSource
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.lazy.layout.LazyLayoutPrefetchState
+import androidx.compose.foundation.lazy.layout.animateScrollToItem
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
@@ -87,6 +88,8 @@ class LazyListState constructor(
      */
     private val scrollPosition =
         LazyListScrollPosition(firstVisibleItemIndex, firstVisibleItemScrollOffset)
+
+    private val animateScrollScope = LazyListAnimateScrollScope(this)
 
     /**
      * The index of the first item that is visible.
@@ -338,8 +341,12 @@ class LazyListState constructor(
 
     private fun cancelPrefetchIfVisibleItemsChanged(info: LazyListLayoutInfo) {
         if (indexToPrefetch != -1 && info.visibleItemsInfo.isNotEmpty()) {
-            if (indexToPrefetch != info.visibleItemsInfo.first().index - 1 &&
-                indexToPrefetch != info.visibleItemsInfo.last().index + 1) {
+            val expectedPrefetchIndex = if (wasScrollingForward) {
+                info.visibleItemsInfo.last().index + 1
+            } else {
+                info.visibleItemsInfo.first().index - 1
+            }
+            if (indexToPrefetch != expectedPrefetchIndex) {
                 indexToPrefetch = -1
                 currentPrefetchHandle?.cancel()
                 currentPrefetchHandle = null
@@ -362,7 +369,7 @@ class LazyListState constructor(
         index: Int,
         scrollOffset: Int = 0
     ) {
-        doSmoothScrollToItem(index, scrollOffset)
+        animateScrollScope.animateScrollToItem(index, scrollOffset)
     }
 
     /**

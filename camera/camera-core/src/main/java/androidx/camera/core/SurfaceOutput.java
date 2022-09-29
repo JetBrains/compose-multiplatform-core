@@ -38,7 +38,7 @@ import java.util.concurrent.Executor;
  * lifecycle of the {@link Surface}.
  *
  * @hide
- * @see SurfaceEffect#onOutputSurface(SurfaceOutput)
+ * @see SurfaceProcessor#onOutputSurface(SurfaceOutput)
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public interface SurfaceOutput {
@@ -63,10 +63,10 @@ public interface SurfaceOutput {
      * This field indicates that what purpose the {@link Surface} will be used for.
      *
      * <ul>
-     * <li>{@link SurfaceEffect#PREVIEW} if the {@link Surface} will be used for {@link Preview}.
-     * <li>{@link SurfaceEffect#VIDEO_CAPTURE} if the {@link Surface} will be used for video
+     * <li>{@link SurfaceProcessor#PREVIEW} if the {@link Surface} will be used for {@link Preview}.
+     * <li>{@link SurfaceProcessor#VIDEO_CAPTURE} if the {@link Surface} will be used for video
      * capture.
-     * <li>{@link SurfaceEffect#PREVIEW} | {@link SurfaceEffect#VIDEO_CAPTURE} if the output
+     * <li>{@link SurfaceProcessor#PREVIEW} | {@link SurfaceProcessor#VIDEO_CAPTURE} if the output
      * {@link Surface} will be used for sharing a single stream for both preview and video capture.
      * </ul>
      */
@@ -83,6 +83,11 @@ public interface SurfaceOutput {
      * Gets the format of the {@link Surface}.
      */
     int getFormat();
+
+    /**
+     * Get the rotation degrees.
+     */
+    int getRotationDegrees();
 
     /**
      * Call this method to mark the {@link Surface} as no longer in use.
@@ -171,5 +176,17 @@ public interface SurfaceOutput {
                 @NonNull SurfaceOutput surfaceOutput) {
             return new AutoValue_SurfaceOutput_Event(code, surfaceOutput);
         }
+    }
+
+    /** OpenGL transformation options for SurfaceOutput. */
+    enum GlTransformOptions {
+        /** Apply only the value of {@link SurfaceTexture#getTransformMatrix(float[])}. */
+        USE_SURFACE_TEXTURE_TRANSFORM,
+
+        /**
+         * Discard the value of {@link SurfaceTexture#getTransformMatrix(float[])} and calculate
+         * the transform based on crop rect, rotation degrees and mirroring.
+         */
+        APPLY_CROP_ROTATE_AND_MIRRORING,
     }
 }

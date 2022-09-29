@@ -16,6 +16,7 @@
 
 package androidx.room.writer
 
+import androidx.room.compiler.codegen.toJavaPoet
 import androidx.room.ext.L
 import androidx.room.ext.RoomTypeNames
 import androidx.room.ext.T
@@ -40,16 +41,16 @@ class EntityUpsertionAdapterWriter private constructor(
 
     fun createConcrete(
         entity: ShortcutEntity,
-        classWriter: ClassWriter,
+        typeWriter: TypeWriter,
         dbParam: String
     ): CodeBlock {
         val upsertionAdapter = ParameterizedTypeName.get(
-            RoomTypeNames.UPSERTION_ADAPTER, pojo.typeName
+            RoomTypeNames.UPSERTION_ADAPTER, pojo.typeName.toJavaPoet()
         )
         val insertionHelper = EntityInsertionAdapterWriter.create(entity, "")
-            .createAnonymous(classWriter, dbParam)
+            .createAnonymous(typeWriter, dbParam)
         val updateHelper = EntityUpdateAdapterWriter.create(entity, "")
-            .createAnonymous(classWriter, dbParam)
+            .createAnonymous(typeWriter, dbParam)
         return CodeBlock.builder().add("new $T($L, $L)",
             upsertionAdapter, insertionHelper, updateHelper
         ).build()

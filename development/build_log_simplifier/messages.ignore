@@ -131,12 +131,16 @@ Downloading file\:\$SUPPORT\/gradle\/wrapper\/.*
 Daemon will be stopped at the end of the build
 # > Configure project :appsearch:appsearch\-local\-backend
 Configuration on demand is an incubating feature\.
+Calculating task graph as configuration cache cannot be reused because the set of Gradle properties has changed\.
 You are using legacy USE_ANDROIDX_REMOTE_BUILD_CACHE=true type, this cache has been turned down, so you are \*not\* using a remote cache\. Please move to the new cache using http://go/androidx\-dev\#remote\-build\-cache
 Configuration cache is an incubating feature\.
 # > Configure project :
 updated local\.properties
 # > Configure project :compose:test\-utils
 The following Kotlin source sets were configured but not added to any Kotlin compilation:
+\* iosArm[0-9]+Main
+\* iosSimulatorArm[0-9]+Main
+\* iosX[0-9]+Main
 \* androidAndroidTestRelease
 \* androidTestFixtures
 \* androidTestFixturesDebug
@@ -189,9 +193,10 @@ Html results of .* zipped into.*\.zip
 # https://youtrack.jetbrains.com/issue/KT-52694/
 \- Task `:listTaskOutputs` of type `androidx\.build\.ListTaskOutputsTask`: invocation of 'Task\.project' at execution time is unsupported\.
 See https://docs\.gradle\.org/[0-9]+\.[0-9]+.*/userguide/configuration_cache\.html\#config_cache:requirements:use_project_during_execution
+\- Task `:docs\-public:dokkaKotlinDocs` of type `org\.jetbrains\.dokka\.gradle\.DokkaAndroidTask`: invocation of 'Task\.project' at execution time is unsupported\.
+\- Task `:docs\-tip\-of\-tree:dokkaKotlinDocs` of type `org\.jetbrains\.dokka\.gradle\.DokkaAndroidTask`: invocation of 'Task\.project' at execution time is unsupported\.
 # https://youtrack.jetbrains.com/issue/KT-52694
 \- Task \`:[:A-Za-z0-9#\-]+` of type \`org\.jetbrains\.kotlin\.gradle\.tooling\.BuildKotlinToolingMetadataTask\$FromKotlinExtension\`\: invocation of \'Task\.project\' at execution time is unsupported\.
-\- Task `[^ ]*validateProperties` of type `[^ ]*ValidatePropertiesTask`: invocation of 'Task\.project' at execution time is unsupported\.
 plus [0-9]+ more problems\. Please see the report for details\.
 See the complete report at file://\$SUPPORT/build/reports/configuration\-cache/[^/]*/[^/]*/configuration\-cache\-report\.html
 See the complete report at file://\$OUT_DIR/androidx/build/reports/configuration\-cache/[^ ]*/[^ ]*/configuration\-cache\-report\.html
@@ -255,11 +260,14 @@ Found an unresolved type in androidx\.paging\.LivePagedListBuilder\$setCoroutine
 Found an unresolved type in androidx\.paging\.LivePagedListBuilder\$setInitialLoadKey\(androidx\.paging\.LivePagedListBuilder\.Key\) \(LivePagedListBuilder\.kt:[0-9]+\)
 Found an unresolved type in androidx\.paging\.LivePagedListBuilder\$setBoundaryCallback\(androidx\.paging\.PagedList\.BoundaryCallback\(\(androidx\.paging\.LivePagedListBuilder\.Value\)\)\) \(LivePagedListBuilder\.kt:[0-9]+\)
 Found an unresolved type in androidx\.paging\.LivePagedListBuilder\$setFetchExecutor\(java\.util\.concurrent\.Executor\) \(LivePagedListBuilder\.kt:[0-9]+\)
+Found an unresolved type in androidx\.constraintlayout\.compose\.DesignElements\$define\(kotlin\.String, kotlin\.Function[0-9]+\(\(kotlin\.String, \(\(, \)\), kotlin.Unit\)\)\) \(ConstraintLayout.kt:[0-9]+\)
 # > Task :docs-public:dackkaDocs
 ERROR: An attempt to write .*
 WARN: Unable to find what is referred to by
 # > Task :docs-tip-of-tree:dackkaDocs
 in DClass ComplicationSlot
+Did you make a typo\? Are you trying to refer to something not visible to users\? in declaration of ComplicationSlot in file \$OUT_DIR\/androidx\/docs\-public\/build\/unzippedSourcesForDackka\/androidx\/wear\/watchface\/ComplicationSlot\.kt at line [0-9]+\.
+Did you make a typo\? Are you trying to refer to something not visible to users\? in declaration of ComplicationSlot in file \$OUT_DIR\/androidx\/docs\-tip\-of\-tree\/build\/unzippedSourcesForDackka\/androidx\/wear\/watchface\/ComplicationSlot\.kt at line [0-9]+\.
 @param id,
 @param canvasComplicationFactory,
 @param supportedTypes,
@@ -269,8 +277,12 @@ in DClass ComplicationSlot
 \@param defaultPolicy
 @param complicationTapFilter
 in DClass UserStyle
+Did you make a typo\? Are you trying to refer to something not visible to users\? in declaration of UserStyle in file \$OUT_DIR\/androidx\/docs\-public\/build\/unzippedSourcesForDackka\/androidx\/wear\/watchface\/style\/CurrentUserStyleRepository\.kt at line [0-9]+\.
+Did you make a typo\? Are you trying to refer to something not visible to users\? in declaration of UserStyle in file \$OUT_DIR\/androidx\/docs\-tip\-of\-tree\/build\/unzippedSourcesForDackka\/androidx\/wear\/watchface\/style\/CurrentUserStyleRepository\.kt at line [0-9]+\.
 @param copySelectedOptions
 in DClass Builder
+Did you make a typo\? Are you trying to refer to something not visible to users\? in declaration of Builder in file \$OUT_DIR\/androidx\/docs\-public\/build\/unzippedSourcesForDackka\/androidx\/wear\/watchface\/ComplicationSlot\.kt at line [0-9]+\.
+Did you make a typo\? Are you trying to refer to something not visible to users\? in declaration of Builder in file \$OUT_DIR\/androidx\/docs\-tip\-of\-tree\/build\/unzippedSourcesForDackka\/androidx\/wear\/watchface\/ComplicationSlot\.kt at line [0-9]+\.
 Did you make a typo\? Are you trying to refer to something not visible to users\?
 WARNING: do not use 'an' before the exception type in an @throws statement\. This is against jdoc spec, will be an error in the next version of dackka, and your exception is not being linked and looks bad\. This was observed in Throws\(root=CustomDocTag\(children=\[P\(children=\[DocumentationLink\(dri=java\.lang/IllegalArgumentException///PointingToDeclaration/, children=\[Text\(body=IllegalArgumentException, children=\[\], params=\{\}\)\], params=\{\}\), Text\(body= if the property name or index is invalid\., children=\[\], params=\{\}\)\], params=\{\}\)\], params=\{\}, name=MARKDOWN_FILE\), name=an, exceptionAddress=null\)\.
 WARNING: do not use 'an' before the exception type in an @throws statement\. This is against jdoc spec, will be an error in the next version of dackka, and your exception is not being linked and looks bad\. This was observed in Throws\(root=CustomDocTag\(children=\[P\(children=\[DocumentationLink\(dri=kotlin/IllegalArgumentException///PointingToDeclaration/, children=\[Text\(body=IllegalArgumentException, children=\[\], params=\{\}\)\], params=\{href=\[IllegalArgumentException\]\}\), Text\(body= if address is invalid\., children=\[\], params=\{\}\)\], params=\{\}\)\], params=\{\}, name=MARKDOWN_FILE\), name=an, exceptionAddress=null\)\.
@@ -426,10 +438,7 @@ w: \$SUPPORT/compose/ui/ui/src/androidMain/kotlin/androidx/compose/ui/platform/A
 \(KonanProperies\) Downloading dependency: file:\.\./\.\./.*
 Please wait while Kotlin/Native compiler .* is being installed\.
 Unpack Kotlin/Native compiler to .*
-# Even though this log shows an http url, it is actually coming from konan prebuilts directory
-# In kotlin 1.7, we will be able to modify this URL hence this message will change to point
-# to the right location.
-Download https://download\.jetbrains\.com/kotlin/native/builds/.*
+Download file:\.\./\.\./.*
 Downloading native dependencies \(LLVM, sysroot etc\)\. This is a one\-time action performed only on the first run of the compiler\.
 Extracting dependency: .*\.konan/cache.*
 # New memory model does not work with compiler caches yet:
@@ -455,15 +464,16 @@ Set 'kapt\.include\.compile\.classpath=false' to disable discovery\.
 Run the build with '\-\-info' for more details\.
 # > Task :health:health-connect-client:testDebugUnitTest
 WARNING: An illegal reflective access operation has occurred
-WARNING: Illegal reflective access by org\.robolectric\.util\.ReflectionHelpers\$[0-9]+ \(file:\$CHECKOUT/prebuilts/androidx/external/org/robolectric/shadowapi/[0-9]+\.[0-9]+\.[0-9]+/shadowapi\-[0-9]+\.[0-9]+\.[0-9]+\.jar\) to field java\.io\.FileDescriptor\.fd
-WARNING: Please consider reporting this to the maintainers of org\.robolectric\.util\.ReflectionHelpers\$[0-9]+
+WARNING: Illegal reflective access by org\.robolectric\.util\.ReflectionHelpers\$[0-9]+ \(file:\$CHECKOUT/prebuilts/androidx/external/org/robolectric/shadowapi/.*/shadowapi\-.*\.jar\) to field java\.io\.FileDescriptor\.fd
+WARNING: Illegal reflective access by org\.robolectric\.util\.ReflectionHelpers \(file:\$CHECKOUT/prebuilts/androidx/external/org/robolectric/shadowapi/.*/shadowapi\-.*\.jar\) to method java\.lang\.Class\.getDeclaredFields0\(boolean\)
+WARNING: Please consider reporting this to the maintainers of org\.robolectric\.util\.ReflectionHelpers.*
 WARNING: Use \-\-illegal\-access=warn to enable warnings of further illegal reflective access operations
 WARNING: All illegal access operations will be denied in a future release
 # > Task :room:room-compiler-processing-testing:test
-WARNING: Illegal reflective access by androidx\.room\.compiler\.processing\.javac\.JavacProcessingEnvMessager\$Companion \(file:\$OUT_DIR/androidx/room/room\-compiler\-processing/build/libs/room\-compiler\-processing\-[0-9]+\.[0-9]+\.[0-9]+\-alpha[0-9]+\.jar\) to field com\.sun\.tools\.javac\.code\.Symbol\.owner
+WARNING: Illegal reflective access by androidx\.room\.compiler\.processing\.javac\.JavacProcessingEnvMessager\$Companion \(file:\$OUT_DIR/androidx/room/room\-compiler\-processing/build/(classes/kotlin/main/|libs/room\-compiler\-processing\-[0-9]+\.[0-9]+\.[0-9]+(\-(alpha|beta|rc)[0-9]+)?\.jar)\) to field com\.sun\.tools\.javac\.code\.Symbol\.owner
 WARNING: Please consider reporting this to the maintainers of androidx\.room\.compiler\.processing\.javac\.JavacProcessingEnvMessager\$Companion
 # > Task :room:room-compiler:test
-WARNING: Illegal reflective access by androidx\.room\.compiler\.processing\.javac\.JavacProcessingEnvMessager\$Companion \(file:\$OUT_DIR/androidx/room/room\-compiler\-processing/build/libs/room\-compiler\-processing\-[0-9]+\.[0-9]+\.[0-9]+\-alpha[0-9]+\.jar\) to field com\.sun\.tools\.javac\.code\.Symbol\$ClassSymbol\.classfile
+WARNING: Illegal reflective access by androidx\.room\.compiler\.processing\.javac\.JavacProcessingEnvMessager\$Companion \(file:\$OUT_DIR/androidx/room/room\-compiler\-processing/build/(classes/kotlin/main/|libs/room\-compiler\-processing\-[0-9]+\.[0-9]+\.[0-9]+(\-(alpha|beta|rc)[0-9]+)?\.jar)\) to field com\.sun\.tools\.javac\.code\.Symbol\$ClassSymbol\.classfile
 # > Task :room:room-compiler-processing:test
 WARNING: Illegal reflective access by org\.jetbrains\.kotlin\.kapt[0-9]+\.base\.javac\.KaptJavaFileManager \(file:\$CHECKOUT/prebuilts/androidx/external/org/jetbrains/kotlin/kotlin\-annotation\-processing\-embeddable/[0-9]+\.[0-9]+\.[0-9]+/kotlin\-annotation\-processing\-embeddable\-[0-9]+\.[0-9]+\.[0-9]+\.jar\) to method com\.sun\.tools\.javac\.file\.BaseFileManager\.handleOption\(com\.sun\.tools\.javac\.main\.Option,java\.lang\.String\)
 WARNING: Please consider reporting this to the maintainers of org\.jetbrains\.kotlin\.kapt[0-9]+\.base\.javac\.KaptJavaFileManager
@@ -476,4 +486,22 @@ WARNING: Please consider reporting this to the maintainers of androidx\.compose\
 # > Task :buildSrc-tests:test
 WARNING: Illegal reflective access using Lookup on org\.gradle\.internal\.classloader\.ClassLoaderUtils\$AbstractClassLoaderLookuper .* to class java\.lang\.ClassLoader
 WARNING: Please consider reporting this to the maintainers of org\.gradle\.internal\.classloader\.ClassLoaderUtils\$AbstractClassLoaderLookuper
-
+# AGP warning about API usage we have no control over
+Values of variant API AnnotationProcessorOptions\.arguments are queried and may return non final values, this is unsupported
+# AGP warning that will go away soon
+WARNING:Software Components will not be created automatically for Maven publishing from Android Gradle Plugin 8\.0\. To opt\-in to the future behavior, set the Gradle property android\.disableAutomaticComponentCreation=true in the `gradle\.properties` file or use the new publishing DSL\.
+# > Task :help
+Welcome to Gradle [0-9]+\.[0-9]+\.
+To run a build, run gradlew <task> \.\.\.
+To see a list of available tasks, run gradlew tasks
+To see more detail about a task, run gradlew help \-\-task <task>
+To see a list of command\-line options, run gradlew \-\-help
+For more detail on using Gradle, see https://docs\.gradle\.org/[0-9]+\.[0-9]+/userguide/command_line_interface\.html
+For troubleshooting, visit https://help\.gradle\.org
+# > Task :graphics:graphics-path:compileDebugKotlin
+w\: \$SUPPORT\/graphics\/graphics\-path\/src\/main\/java\/androidx\/graphics\/path\/Paths\.kt\: \([0-9]+\, [0-9]+\)\: Extension is shadowed by a member\: public open fun iterator\(\)\: PathIterator
+# > Task :core:core-splashscreen:core-splashscreen-samples:lintReportDebug
+Warning: Lint will treat :annotation:annotation as an external dependency and not analyze it\.
+Did you make a typo\? Are you trying to refer to something not visible to users\?
+\* Recommended Action: Apply the 'com\.android\.lint' plugin to java library project :annotation:annotation\. to enable lint to analyze those sources\.
+WARN: Sources for .+ is empty

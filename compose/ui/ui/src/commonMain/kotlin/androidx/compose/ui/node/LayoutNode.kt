@@ -410,6 +410,7 @@ internal class LayoutNode(
         if (parent != null) {
             parent.invalidateLayer()
             parent.invalidateMeasurements()
+            measuredByParent = UsageByParent.NotUsed
         }
         layoutDelegate.resetAlignmentLines()
         onDetach?.invoke(owner)
@@ -960,7 +961,16 @@ internal class LayoutNode(
     }
 
     private fun markNodeAndSubtreeAsPlaced() {
+        val wasPlaced = isPlaced
         isPlaced = true
+        if (!wasPlaced) {
+            // if the node was not placed previous remeasure request could have been ignored
+            if (measurePending) {
+                requestRemeasure(forceRequest = true)
+            } else if (lookaheadMeasurePending) {
+                requestLookaheadRemeasure(forceRequest = true)
+            }
+        }
         // invalidate all the nodes layers that were invalidated while the node was not placed
         forEachCoordinatorIncludingInner {
             if (it.lastLayerDrawingWasSkipped) {
@@ -1286,18 +1296,6 @@ internal class LayoutNode(
         }
     }
 
-    /**
-     * Comparator allowing to sort nodes by zIndex and placement order.
-     */
-    val ZComparator = Comparator<LayoutNode> { node1, node2 ->
-        if (node1.zIndex == node2.zIndex) {
-            // if zIndex is the same we use the placement order
-            node1.placeOrder.compareTo(node2.placeOrder)
-        } else {
-            node1.zIndex.compareTo(node2.zIndex)
-        }
-    }
-
     override val parentInfo: LayoutInfo?
         get() = parent
 
@@ -1337,6 +1335,18 @@ internal class LayoutNode(
                 get() = 16f
             override val minimumTouchTargetSize: DpSize
                 get() = DpSize.Zero
+        }
+
+        /**
+         * Comparator allowing to sort nodes by zIndex and placement order.
+         */
+        internal val ZComparator = Comparator<LayoutNode> { node1, node2 ->
+            if (node1.zIndex == node2.zIndex) {
+                // if zIndex is the same we use the placement order
+                node1.placeOrder.compareTo(node2.placeOrder)
+            } else {
+                node1.zIndex.compareTo(node2.zIndex)
+            }
         }
     }
 
