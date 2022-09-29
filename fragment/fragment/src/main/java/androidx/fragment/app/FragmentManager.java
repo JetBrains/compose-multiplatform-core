@@ -447,18 +447,27 @@ public abstract class FragmentManager implements FragmentResultOwner {
             new CopyOnWriteArrayList<>();
 
     private final Consumer<Configuration> mOnConfigurationChangedListener = newConfig -> {
-        dispatchConfigurationChanged(newConfig);
+        if (isParentAdded()) {
+            dispatchConfigurationChanged(newConfig, false);
+        }
     };
     private final Consumer<Integer> mOnTrimMemoryListener = level -> {
-        if (level == ComponentCallbacks2.TRIM_MEMORY_COMPLETE) {
-            dispatchLowMemory();
+        if (isParentAdded() && level == ComponentCallbacks2.TRIM_MEMORY_COMPLETE) {
+            dispatchLowMemory(false);
         }
     };
     private final Consumer<MultiWindowModeChangedInfo> mOnMultiWindowModeChangedListener =
-            info -> dispatchMultiWindowModeChanged(info.isInMultiWindowMode());
+            info -> {
+                if (isParentAdded()) {
+                    dispatchMultiWindowModeChanged(info.isInMultiWindowMode(), false);
+                }
+            };
     private final Consumer<PictureInPictureModeChangedInfo>
-            mOnPictureInPictureModeChangedListener = info -> dispatchPictureInPictureModeChanged(
-                    info.isInPictureInPictureMode());
+            mOnPictureInPictureModeChangedListener = info -> {
+                if (isParentAdded()) {
+                    dispatchPictureInPictureModeChanged(info.isInPictureInPictureMode(), false);
+                }
+            };
 
     private final MenuProvider mMenuProvider = new MenuProvider() {
         @Override
@@ -2979,34 +2988,71 @@ public abstract class FragmentManager implements FragmentResultOwner {
         execPendingActions(true);
     }
 
-    void dispatchMultiWindowModeChanged(boolean isInMultiWindowMode) {
+    void dispatchMultiWindowModeChanged(boolean isInMultiWindowMode, boolean recursive) {
+        if (recursive && mHost instanceof OnMultiWindowModeChangedProvider) {
+            throwException(new IllegalStateException("Do not call dispatchMultiWindowModeChanged() "
+                    + "on host. Host implements OnMultiWindowModeChangedProvider and automatically "
+                    + "dispatches multi-window mode changes to fragments."));
+        }
         for (Fragment f : mFragmentStore.getFragments()) {
             if (f != null) {
                 f.performMultiWindowModeChanged(isInMultiWindowMode);
+                if (recursive) {
+                    f.mChildFragmentManager.dispatchMultiWindowModeChanged(
+                            isInMultiWindowMode, true
+                    );
+                }
             }
         }
     }
 
-    void dispatchPictureInPictureModeChanged(boolean isInPictureInPictureMode) {
+    void dispatchPictureInPictureModeChanged(boolean isInPictureInPictureMode, boolean recursive) {
+        if (recursive && mHost instanceof OnPictureInPictureModeChangedProvider) {
+            throwException(new IllegalStateException("Do not call "
+                    + "dispatchPictureInPictureModeChanged() on host. Host implements "
+                    + "OnPictureInPictureModeChangedProvider and automatically dispatches "
+                    + "picture-in-picture mode changes to fragments."));
+        }
         for (Fragment f : mFragmentStore.getFragments()) {
             if (f != null) {
                 f.performPictureInPictureModeChanged(isInPictureInPictureMode);
+                if (recursive) {
+                    f.mChildFragmentManager.dispatchPictureInPictureModeChanged(
+                            isInPictureInPictureMode, true
+                    );
+                }
             }
         }
     }
 
-    void dispatchConfigurationChanged(@NonNull Configuration newConfig) {
+    void dispatchConfigurationChanged(@NonNull Configuration newConfig, boolean recursive) {
+        if (recursive && mHost instanceof OnConfigurationChangedProvider) {
+            throwException(new IllegalStateException("Do not call dispatchConfigurationChanged() "
+                    + "on host. Host implements OnConfigurationChangedProvider and automatically "
+                    + "dispatches configuration changes to fragments."));
+        }
         for (Fragment f : mFragmentStore.getFragments()) {
             if (f != null) {
                 f.performConfigurationChanged(newConfig);
+                if (recursive) {
+                    f.mChildFragmentManager.dispatchConfigurationChanged(newConfig, true);
+                }
             }
         }
     }
 
-    void dispatchLowMemory() {
+    void dispatchLowMemory(boolean recursive) {
+        if (recursive && mHost instanceof OnTrimMemoryProvider) {
+            throwException(new IllegalStateException("Do not call dispatchLowMemory() on host. "
+                    + "Host implements OnTrimMemoryProvider and automatically dispatches "
+                    + "low memory callbacks to fragments."));
+        }
         for (Fragment f : mFragmentStore.getFragments()) {
             if (f != null) {
                 f.performLowMemory();
+                if (recursive) {
+                    f.mChildFragmentManager.dispatchLowMemory(true);
+                }
             }
         }
     }
@@ -3314,6 +3360,14 @@ public abstract class FragmentManager implements FragmentResultOwner {
         if (f.mAdded && isMenuAvailable(f)) {
             mNeedMenuInvalidate = true;
         }
+    }
+
+    private boolean isParentAdded() {
+        // The root fragment manager is always considered added
+        if (mParent == null) {
+            return true;
+        }
+        return mParent.isAdded() && mParent.getParentFragmentManager().isParentAdded();
     }
 
     static int reverseTransit(int transit) {

@@ -89,7 +89,6 @@ class ViewPager2ActivityTest(private val lensFacing: Int, private val cameraXCon
     @get:Rule
     val cameraPipeConfigTestRule = CameraPipeConfigTestRule(
         active = cameraXConfig == CameraFragment.CAMERA_PIPE_IMPLEMENTATION_OPTION,
-        forAllTests = true,
     )
 
     @get:Rule
@@ -204,6 +203,7 @@ class ViewPager2ActivityTest(private val lensFacing: Int, private val cameraXCon
             ).apply {
                 putExtra(BaseActivity.INTENT_LENS_FACING, lensFacing)
                 putExtra(CameraFragment.KEY_CAMERA_IMPLEMENTATION, cameraXConfig)
+                putExtra(CameraFragment.KEY_CAMERA_IMPLEMENTATION_NO_HISTORY, true)
             }
             return ActivityScenario.launch<ViewPager2Activity>(intent)
         }

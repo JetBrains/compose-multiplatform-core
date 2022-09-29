@@ -50,10 +50,6 @@ public class WatchFaceControlTestService : Service() {
         @SuppressLint("NewApi")
         override fun createServiceStub(): IWatchFaceInstanceServiceStub =
             IWatchFaceInstanceServiceStub(this@WatchFaceControlTestService, MainScope())
-
-        init {
-            setContext(ApplicationProvider.getApplicationContext<Context>())
-        }
     }
 
     @SuppressLint("NewApi")
@@ -71,6 +67,7 @@ public class ListenableWatchFaceMetadataClientTest {
     private val context = ApplicationProvider.getApplicationContext<Context>()
 
     @Test
+    @Suppress("Deprecation") // userStyleSettings
     public fun getSchema() {
         val listenableFuture =
             ListenableWatchFaceMetadataClient.createImpl(

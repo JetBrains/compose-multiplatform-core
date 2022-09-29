@@ -27,6 +27,7 @@ import androidx.health.services.client.data.DataType.Companion.FLOORS_DAILY
 import androidx.health.services.client.data.DataType.Companion.STEPS_DAILY
 import androidx.health.services.client.data.DataType.Companion.FORMAT_BYTE_ARRAY
 import androidx.health.services.client.data.DataType.Companion.LOCATION
+import androidx.health.services.client.data.DataType.Companion.SKIN_TEMPERATURE
 import androidx.health.services.client.data.DataType.Companion.STEPS
 import androidx.health.services.client.data.DataType.Companion.SWIMMING_LAP_COUNT
 import androidx.health.services.client.data.DataType.TimeType.Companion.UNKNOWN
@@ -156,12 +157,12 @@ internal class DataTypeTest {
         val item2 = list[1]
         assertThat(item1.name).isEqualTo("new")
         assertThat(item1.timeType).isEqualTo(UNKNOWN)
-        assertThat(item1.valueClass).isEqualTo(ByteArray::class)
+        assertThat(item1.valueClass.kotlin).isEqualTo(ByteArray::class)
         assertThat(item1::class).isEqualTo(DeltaDataType::class)
         assertThat(item1.isAggregate).isFalse()
         assertThat(item2.name).isEqualTo("new")
         assertThat(item2.timeType).isEqualTo(UNKNOWN)
-        assertThat(item2.valueClass).isEqualTo(ByteArray::class)
+        assertThat(item2.valueClass.kotlin).isEqualTo(ByteArray::class)
         assertThat(item2::class).isEqualTo(AggregateDataType::class)
         assertThat(item2.isAggregate).isTrue()
     }
@@ -187,6 +188,7 @@ internal class DataTypeTest {
             remove(DISTANCE_DAILY)
             remove(FLOORS_DAILY)
             remove(STEPS_DAILY)
+            remove(SKIN_TEMPERATURE)
         }.map { it.name }
 
         assertThat(aggregateNames).containsExactlyElementsIn(deltaNames)

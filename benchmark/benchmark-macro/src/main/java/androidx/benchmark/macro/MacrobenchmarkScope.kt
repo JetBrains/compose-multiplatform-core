@@ -82,6 +82,7 @@ public class MacrobenchmarkScope(
         block: (Intent) -> Unit = {}
     ) {
         val intent = context.packageManager.getLaunchIntentForPackage(packageName)
+            ?: context.packageManager.getLeanbackLaunchIntentForPackage(packageName)
             ?: throw IllegalStateException("Unable to acquire intent for package $packageName")
 
         block(intent)
@@ -157,15 +158,10 @@ public class MacrobenchmarkScope(
         var lastFrameStats: List<FrameStatsResult> = emptyList()
         repeat(100) {
             lastFrameStats = getFrameStats()
-            if (lastFrameStats
-                .filter { it.uniqueName !in ignoredUniqueNames }
-                .any {
-                    val lastFrameTimestampNs = if (Build.VERSION.SDK_INT >= 29) {
-                        it.lastLaunchNs
-                    } else {
-                        it.lastFrameNs
-                    } ?: Long.MIN_VALUE
-                    lastFrameTimestampNs > preLaunchTimestampNs
+            if (lastFrameStats.any {
+                    it.uniqueName !in ignoredUniqueNames &&
+                        it.lastFrameNs != null &&
+                        it.lastFrameNs > preLaunchTimestampNs
                 }) {
                 return // success, launch observed!
             }

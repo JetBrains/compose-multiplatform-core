@@ -486,17 +486,15 @@ package androidx.glance.template {
   }
 
   public final class HeaderBlock {
-    ctor public HeaderBlock(androidx.glance.template.TemplateText text, optional androidx.glance.template.TemplateImageWithDescription? icon, optional androidx.glance.template.ActionBlock? actionBlock);
-    method public androidx.glance.template.ActionBlock? getActionBlock();
+    ctor public HeaderBlock(androidx.glance.template.TemplateText text, optional androidx.glance.template.TemplateImageWithDescription? icon);
     method public androidx.glance.template.TemplateImageWithDescription? getIcon();
     method public androidx.glance.template.TemplateText getText();
-    property public final androidx.glance.template.ActionBlock? actionBlock;
     property public final androidx.glance.template.TemplateImageWithDescription? icon;
     property public final androidx.glance.template.TemplateText text;
   }
 
   public final class ImageBlock {
-    ctor public ImageBlock(optional java.util.List<androidx.glance.template.TemplateImageWithDescription> images, optional int aspectRatio, optional int size, optional int priority);
+    ctor public ImageBlock(optional java.util.List<androidx.glance.template.TemplateImageWithDescription> images, optional int aspectRatio, optional int size, optional @IntRange(from=0L) int priority);
     method public int getAspectRatio();
     method public java.util.List<androidx.glance.template.TemplateImageWithDescription> getImages();
     method public int getPriority();
@@ -532,57 +530,37 @@ package androidx.glance.template {
   }
 
   public final class ListTemplateData {
-    ctor public ListTemplateData(optional androidx.glance.template.TemplateImageWithDescription? headerIcon, optional java.util.List<androidx.glance.template.ListTemplateItem> listContent, optional androidx.glance.template.TemplateText? header, optional androidx.glance.template.TemplateText? title, optional androidx.glance.template.TemplateButton? button, optional androidx.glance.unit.ColorProvider? backgroundColor, optional int listStyle);
-    method public androidx.glance.unit.ColorProvider? getBackgroundColor();
-    method public androidx.glance.template.TemplateButton? getButton();
-    method public androidx.glance.template.TemplateText? getHeader();
-    method public androidx.glance.template.TemplateImageWithDescription? getHeaderIcon();
+    ctor public ListTemplateData(optional androidx.glance.template.HeaderBlock? headerBlock, optional java.util.List<androidx.glance.template.ListTemplateItem> listContent, optional int listStyle);
+    method public androidx.glance.template.HeaderBlock? getHeaderBlock();
     method public java.util.List<androidx.glance.template.ListTemplateItem> getListContent();
     method public int getListStyle();
-    method public androidx.glance.template.TemplateText? getTitle();
-    property public final androidx.glance.unit.ColorProvider? backgroundColor;
-    property public final androidx.glance.template.TemplateButton? button;
-    property public final androidx.glance.template.TemplateText? header;
-    property public final androidx.glance.template.TemplateImageWithDescription? headerIcon;
+    property public final androidx.glance.template.HeaderBlock? headerBlock;
     property public final java.util.List<androidx.glance.template.ListTemplateItem> listContent;
     property public final int listStyle;
-    property public final androidx.glance.template.TemplateText? title;
   }
 
   public final class ListTemplateItem {
-    ctor public ListTemplateItem(androidx.glance.template.TemplateText title, optional androidx.glance.template.TemplateText? body, optional androidx.glance.template.TemplateText? label, optional androidx.glance.action.Action? action, optional androidx.glance.template.TemplateImageWithDescription? image, optional androidx.glance.template.TemplateButton? button);
-    method public androidx.glance.action.Action? getAction();
-    method public androidx.glance.template.TemplateText? getBody();
-    method public androidx.glance.template.TemplateButton? getButton();
-    method public androidx.glance.template.TemplateImageWithDescription? getImage();
-    method public androidx.glance.template.TemplateText? getLabel();
-    method public androidx.glance.template.TemplateText getTitle();
-    property public final androidx.glance.action.Action? action;
-    property public final androidx.glance.template.TemplateText? body;
-    property public final androidx.glance.template.TemplateButton? button;
-    property public final androidx.glance.template.TemplateImageWithDescription? image;
-    property public final androidx.glance.template.TemplateText? label;
-    property public final androidx.glance.template.TemplateText title;
+    ctor public ListTemplateItem(androidx.glance.template.TextBlock textBlock, optional androidx.glance.template.ImageBlock? imageBlock, optional androidx.glance.template.ActionBlock? actionBlock);
+    method public androidx.glance.template.ActionBlock? getActionBlock();
+    method public androidx.glance.template.ImageBlock? getImageBlock();
+    method public androidx.glance.template.TextBlock getTextBlock();
+    property public final androidx.glance.template.ActionBlock? actionBlock;
+    property public final androidx.glance.template.ImageBlock? imageBlock;
+    property public final androidx.glance.template.TextBlock textBlock;
   }
 
   public final class SingleEntityTemplateData {
-    ctor public SingleEntityTemplateData(optional boolean displayHeader, optional androidx.glance.template.TemplateImageWithDescription? headerIcon, optional androidx.glance.template.TemplateText? header, optional androidx.glance.template.TemplateText? text1, optional androidx.glance.template.TemplateText? text2, optional androidx.glance.template.TemplateText? text3, optional androidx.glance.template.TemplateButton? button, optional androidx.glance.template.TemplateImageWithDescription? image);
-    method public androidx.glance.template.TemplateButton? getButton();
+    ctor public SingleEntityTemplateData(optional boolean displayHeader, optional androidx.glance.template.HeaderBlock? headerBlock, optional androidx.glance.template.TextBlock? textBlock, optional androidx.glance.template.ImageBlock? imageBlock, optional androidx.glance.template.ActionBlock? actionBlock);
+    method public androidx.glance.template.ActionBlock? getActionBlock();
     method public boolean getDisplayHeader();
-    method public androidx.glance.template.TemplateText? getHeader();
-    method public androidx.glance.template.TemplateImageWithDescription? getHeaderIcon();
-    method public androidx.glance.template.TemplateImageWithDescription? getImage();
-    method public androidx.glance.template.TemplateText? getText1();
-    method public androidx.glance.template.TemplateText? getText2();
-    method public androidx.glance.template.TemplateText? getText3();
-    property public final androidx.glance.template.TemplateButton? button;
+    method public androidx.glance.template.HeaderBlock? getHeaderBlock();
+    method public androidx.glance.template.ImageBlock? getImageBlock();
+    method public androidx.glance.template.TextBlock? getTextBlock();
+    property public final androidx.glance.template.ActionBlock? actionBlock;
     property public final boolean displayHeader;
-    property public final androidx.glance.template.TemplateText? header;
-    property public final androidx.glance.template.TemplateImageWithDescription? headerIcon;
-    property public final androidx.glance.template.TemplateImageWithDescription? image;
-    property public final androidx.glance.template.TemplateText? text1;
-    property public final androidx.glance.template.TemplateText? text2;
-    property public final androidx.glance.template.TemplateText? text3;
+    property public final androidx.glance.template.HeaderBlock? headerBlock;
+    property public final androidx.glance.template.ImageBlock? imageBlock;
+    property public final androidx.glance.template.TextBlock? textBlock;
   }
 
   public abstract sealed class TemplateButton {
@@ -629,7 +607,7 @@ package androidx.glance.template {
   }
 
   public final class TextBlock {
-    ctor public TextBlock(androidx.glance.template.TemplateText text1, optional androidx.glance.template.TemplateText? text2, optional androidx.glance.template.TemplateText? text3, optional int priority);
+    ctor public TextBlock(androidx.glance.template.TemplateText text1, optional androidx.glance.template.TemplateText? text2, optional androidx.glance.template.TemplateText? text3, optional @IntRange(from=0L) int priority);
     method public int getPriority();
     method public androidx.glance.template.TemplateText getText1();
     method public androidx.glance.template.TemplateText? getText2();

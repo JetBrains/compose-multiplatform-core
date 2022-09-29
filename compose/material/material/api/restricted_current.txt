@@ -533,6 +533,9 @@ package androidx.compose.material {
   public final class SwipeableKt {
   }
 
+  public final class SwipeableV2Kt {
+  }
+
   @androidx.compose.runtime.Stable public interface SwitchColors {
     method @androidx.compose.runtime.Composable public androidx.compose.runtime.State<androidx.compose.ui.graphics.Color> thumbColor(boolean enabled, boolean checked);
     method @androidx.compose.runtime.Composable public androidx.compose.runtime.State<androidx.compose.ui.graphics.Color> trackColor(boolean enabled, boolean checked);
@@ -674,6 +677,22 @@ package androidx.compose.material {
 package androidx.compose.material.internal {
 
   public final class ExposedDropdownMenuPopupKt {
+  }
+
+}
+
+package androidx.compose.material.pullrefresh {
+
+  public final class PullRefreshIndicatorKt {
+  }
+
+  public final class PullRefreshIndicatorTransformKt {
+  }
+
+  public final class PullRefreshKt {
+  }
+
+  public final class PullRefreshStateKt {
   }
 
 }

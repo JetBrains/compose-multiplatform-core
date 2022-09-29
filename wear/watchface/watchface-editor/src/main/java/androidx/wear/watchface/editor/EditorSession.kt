@@ -37,6 +37,7 @@ import androidx.annotation.RestrictTo
 import androidx.annotation.UiThread
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.lifecycleScope
 import androidx.wear.watchface.complications.ComplicationDataSourceInfo
 import androidx.wear.watchface.complications.ComplicationDataSourceInfoRetriever
 import androidx.wear.watchface.complications.data.ComplicationData
@@ -66,7 +67,6 @@ import androidx.wear.watchface.style.UserStyleData
 import androidx.wear.watchface.style.UserStyleSchema
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.android.asCoroutineDispatcher
@@ -84,6 +84,8 @@ import java.lang.reflect.Proxy
 import java.time.Duration
 import java.time.Instant
 import kotlin.coroutines.resume
+
+private const val TAG = "EditorSession"
 
 /**
  * Interface for manipulating watch face state during a watch face editing session. The editor
@@ -286,51 +288,60 @@ public interface EditorSession : AutoCloseable {
         ): EditorSession = TraceEvent(
             "EditorSession.createOnWatchEditorSessionAsyncImpl"
         ).use {
-            val coroutineScope = CoroutineScope(Dispatchers.Main.immediate)
-            val editorRequest = editIntent.getParcelableExtra<ComponentName>(
-                Constants.EXTRA_WATCH_FACE_COMPONENT
-            )?.let {
-                EditorRequest(it, "", null)
-            } ?: EditorRequest.createFromIntent(editIntent)
-            // We need to respect the lifecycle and register the ActivityResultListener now.
-            val session = OnWatchFaceEditorSessionImpl(
-                activity,
-                editorRequest.watchFaceComponentName,
-                editorRequest.watchFaceId,
-                editorRequest.initialUserStyle,
-                complicationDataSourceInfoRetrieverProvider,
-                coroutineScope,
-                editorRequest.previewScreenshotParams
-            )
-            // But full initialization has to be deferred because
-            // [WatchFace.getOrCreateEditorDelegate] is async.
-            // Resolve only after init has been completed.
-            withContext(coroutineScope.coroutineContext) {
-                withTimeout(EDITING_SESSION_TIMEOUT.toMillis()) {
-                    session.setEditorDelegate(
-                        // Either create a delegate for a new headless client or await an
-                        // interactive one.
-                        if (editorRequest.headlessDeviceConfig != null) {
-                            WatchFace.createHeadlessSessionDelegate(
-                                editorRequest.watchFaceComponentName,
-                                HeadlessWatchFaceInstanceParams(
+            try {
+                val editorRequest = editIntent.getParcelableExtra<ComponentName>(
+                    Constants.EXTRA_WATCH_FACE_COMPONENT
+                )?.let {
+                    EditorRequest(it, "", null)
+                } ?: EditorRequest.createFromIntent(editIntent)
+                Log.d(
+                    TAG,
+                    "createOnWatchEditorSession ${editorRequest.watchFaceComponentName} " +
+                        "${editorRequest.watchFaceId}"
+                )
+                // We need to respect the lifecycle and register the ActivityResultListener now.
+                val session = OnWatchFaceEditorSessionImpl(
+                    activity,
+                    editorRequest.watchFaceComponentName,
+                    editorRequest.watchFaceId,
+                    editorRequest.initialUserStyle,
+                    complicationDataSourceInfoRetrieverProvider,
+                    activity.lifecycleScope,
+                    editorRequest.previewScreenshotParams
+                )
+                // But full initialization has to be deferred because
+                // [WatchFace.getOrCreateEditorDelegate] is async.
+                // Resolve only after init has been completed.
+                withContext(activity.lifecycleScope.coroutineContext) {
+                    withTimeout(EDITING_SESSION_TIMEOUT.toMillis()) {
+                        session.setEditorDelegate(
+                            // Either create a delegate for a new headless client or await an
+                            // interactive one.
+                            if (editorRequest.headlessDeviceConfig != null) {
+                                WatchFace.createHeadlessSessionDelegate(
                                     editorRequest.watchFaceComponentName,
-                                    editorRequest.headlessDeviceConfig.asWireDeviceConfig(),
-                                    activity.resources.displayMetrics.widthPixels,
-                                    activity.resources.displayMetrics.heightPixels,
-                                    editorRequest.watchFaceId.id
-                                ),
-                                activity
-                            )
-                        } else {
-                            WatchFace.getOrCreateEditorDelegate(
-                                editorRequest.watchFaceComponentName
-                            ).await()
-                        }
-                    )
-                    // Resolve only after init has been completed.
-                    session
+                                    HeadlessWatchFaceInstanceParams(
+                                        editorRequest.watchFaceComponentName,
+                                        editorRequest.headlessDeviceConfig.asWireDeviceConfig(),
+                                        activity.resources.displayMetrics.widthPixels,
+                                        activity.resources.displayMetrics.heightPixels,
+                                        editorRequest.watchFaceId.id
+                                    ),
+                                    activity
+                                )
+                            } else {
+                                WatchFace.getOrCreateEditorDelegate(
+                                    editorRequest.watchFaceComponentName
+                                ).await()
+                            }
+                        )
+                        // Resolve only after init has been completed.
+                        session
+                    }
                 }
+            } catch (e: Exception) {
+                Log.e(TAG, "createOnWatchEditorSessionImpl failed", e)
+                throw e
             }
         }
 
@@ -351,6 +362,10 @@ public interface EditorSession : AutoCloseable {
             headlessWatchFaceClient: HeadlessWatchFaceClient
         ): EditorSession = TraceEvent("EditorSession.createHeadlessEditorSession").use {
             EditorRequest.createFromIntent(editIntent).let {
+                Log.d(
+                    TAG,
+                    "createHeadlessEditorSession ${it.watchFaceComponentName} ${it.watchFaceId}"
+                )
                 HeadlessEditorSession(
                     activity,
                     headlessWatchFaceClient,
@@ -406,7 +421,7 @@ internal interface ComplicationDataSourceInfoRetrieverProvider {
 public abstract class BaseEditorSession internal constructor(
     private var activity: ComponentActivity?,
     private var complicationDataSourceInfoRetrieverProvider:
-        ComplicationDataSourceInfoRetrieverProvider?,
+    ComplicationDataSourceInfoRetrieverProvider?,
     public val coroutineScope: CoroutineScope,
     private val previewScreenshotParams: PreviewScreenshotParams?,
     internal val watchFaceIdInternal: WatchFaceId
@@ -430,8 +445,6 @@ public abstract class BaseEditorSession internal constructor(
     private companion object {
         /** Timeout for fetching ComplicationsPreviewData in [BaseEditorSession.close]. */
         private const val CLOSE_BROADCAST_TIMEOUT_MILLIS = 500L
-
-        private const val TAG = "BaseEditorSession"
     }
 
     init {
@@ -458,9 +471,9 @@ public abstract class BaseEditorSession internal constructor(
 
     private var chooseComplicationDataSource:
         ActivityResultLauncher<ComplicationDataSourceChooserRequest>? =
-            activity!!.registerForActivityResult(ComplicationDataSourceChooserContract()) {
-                onComplicationDataSourceChooserResult(it)
-            }
+        activity!!.registerForActivityResult(ComplicationDataSourceChooserContract()) {
+            onComplicationDataSourceChooserResult(it)
+        }
 
     // Fetches the current ComplicationSlotState for each complication.
     internal abstract fun fetchComplicationSlotsState(): Map<Int, ComplicationSlotState>
@@ -481,6 +494,7 @@ public abstract class BaseEditorSession internal constructor(
         complicationDataSourceChooserResult: ComplicationDataSourceChooserResult?
     ) {
         synchronized(this) {
+            Log.d(TAG, "onComplicationDataSourceChooserResult")
             val deferredResult = pendingComplicationDataSourceChooserResult
             pendingComplicationDataSourceChooserResult = null
             deferredResult
@@ -492,6 +506,7 @@ public abstract class BaseEditorSession internal constructor(
     ): ChosenComplicationDataSource? = TraceEvent(
         "BaseEditorSession.openComplicationDataSourceChooser $complicationSlotId"
     ).use {
+        Log.d(TAG, "openComplicationDataSourceChooser")
         requireNotClosed()
         require(
             !complicationSlotsState.value[complicationSlotId]!!
@@ -665,6 +680,9 @@ public abstract class BaseEditorSession internal constructor(
                     it.value.await() ?: EmptyComplicationData()
                 } ?: emptyMap()
                 deferredComplicationPreviewDataAvailable.complete(Unit)
+            } catch (e: Exception) {
+                Log.w(TAG, "fetchComplicationsData failed", e)
+                throw e
             } finally {
                 complicationDataSourceInfoRetriever.close()
             }
@@ -718,13 +736,13 @@ public abstract class BaseEditorSession internal constructor(
                     )
                 }
             } catch (e: TimeoutCancellationException) {
+                Log.w(TAG, "Ignoring exception in close", e)
                 // Ignore this, nothing we can do.
             }
 
             releaseResources()
             closed = true
             editorSessionTraceEvent.close()
-            coroutineScope.cancel()
             activity = null
             complicationDataSourceInfoRetrieverProvider = null
             chooseComplicationDataSource = null
@@ -740,7 +758,6 @@ public abstract class BaseEditorSession internal constructor(
         releaseResources()
         EditorService.globalEditorService.removeCloseCallback(closeCallback)
         editorSessionTraceEvent.close()
-        coroutineScope.cancel()
         activity?.finish()
         activity = null
         complicationDataSourceInfoRetrieverProvider = null
@@ -786,6 +803,10 @@ internal class OnWatchFaceEditorSessionImpl(
     watchFaceIdInternal
 ) {
     private lateinit var editorDelegate: WatchFace.EditorDelegate
+
+    private companion object {
+        private const val TAG = "OnWatchFaceEditorSessionImpl"
+    }
 
     override val userStyleSchema by lazy {
         requireNotClosed()
@@ -846,12 +867,19 @@ internal class OnWatchFaceEditorSessionImpl(
                         validateAndUpdateUserStyle(args[1] as UserStyle)
                     }
                 }
-                else -> {}
+                else -> {
+                    Log.e(
+                        TAG,
+                        "userStyle proxy encountered unexpected method name '${method.name}'" +
+                            " please check your proguard rules."
+                    )
+                }
             }
             result
         }
     } as MutableStateFlow<UserStyle>
 
+    @Suppress("Deprecation") // userStyleSettings
     internal fun validateAndUpdateUserStyle(userStyle: UserStyle) {
         for (userStyleSetting in userStyle.keys) {
             require(userStyleSchema.userStyleSettings.contains(userStyleSetting)) {

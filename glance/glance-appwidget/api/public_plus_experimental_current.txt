@@ -76,6 +76,7 @@ package androidx.glance.appwidget {
     method public androidx.glance.GlanceId getGlanceIdBy(int appWidgetId);
     method public androidx.glance.GlanceId? getGlanceIdBy(android.content.Intent configurationIntent);
     method public suspend <T extends androidx.glance.appwidget.GlanceAppWidget> Object? getGlanceIds(Class<T> provider, kotlin.coroutines.Continuation<? super java.util.List<? extends androidx.glance.GlanceId>>);
+    method public <T extends androidx.glance.appwidget.GlanceAppWidgetReceiver> boolean requestPinGlanceAppWidget(Class<T> receiver, optional androidx.glance.appwidget.GlanceAppWidget? preview, optional Object? previewState, optional android.app.PendingIntent? successCallback);
   }
 
   public final class GlanceAppWidgetManagerKt {
@@ -85,6 +86,11 @@ package androidx.glance.appwidget {
     ctor public GlanceAppWidgetReceiver();
     method public abstract androidx.glance.appwidget.GlanceAppWidget getGlanceAppWidget();
     property public abstract androidx.glance.appwidget.GlanceAppWidget glanceAppWidget;
+    field public static final String ACTION_DEBUG_UPDATE = "androidx.glance.appwidget.action.DEBUG_UPDATE";
+    field public static final androidx.glance.appwidget.GlanceAppWidgetReceiver.Companion Companion;
+  }
+
+  public static final class GlanceAppWidgetReceiver.Companion {
   }
 
   public final class GlanceAppWidgetReceiverKt {

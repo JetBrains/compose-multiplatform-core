@@ -17,6 +17,7 @@
 package androidx.car.app.hardware.common;
 
 import static androidx.annotation.RestrictTo.Scope.LIBRARY;
+import static androidx.car.app.hardware.climate.AutomotiveCarClimate.HVAC_ELECTRIC_DEFROSTER_ON_PROPERTY_ID;
 import static androidx.car.app.hardware.common.CarUnit.IMPERIAL_GALLON;
 import static androidx.car.app.hardware.common.CarUnit.LITER;
 import static androidx.car.app.hardware.common.CarUnit.MILLILITER;
@@ -77,6 +78,10 @@ public final class PropertyUtils {
     private static final String CAR_PERMISSION_VENDOR_EXTENSION =
             "android.car.permission.CAR_VENDOR_EXTENSION";
 
+    // System level permission in car-lib to access car climate.
+    private static final String CAR_PERMISSION_CLIMATE_CONTROL =
+            "android.car.permission.CONTROL_CAR_CLIMATE";
+
     // Index key is property id, value is the permission to read property.
     private static final SparseArray<String> PERMISSION_READ_PROPERTY = new SparseArray<String>() {
         {
@@ -112,6 +117,22 @@ public final class PropertyUtils {
             append(VehiclePropertyIds.PARKING_BRAKE_ON, Car.PERMISSION_POWERTRAIN);
             append(VehiclePropertyIds.PARKING_BRAKE_AUTO_APPLY, Car.PERMISSION_POWERTRAIN);
             append(VehiclePropertyIds.FUEL_VOLUME_DISPLAY_UNITS, Car.PERMISSION_READ_DISPLAY_UNITS);
+            append(VehiclePropertyIds.HVAC_POWER_ON, CAR_PERMISSION_CLIMATE_CONTROL);
+            append(VehiclePropertyIds.HVAC_AC_ON, CAR_PERMISSION_CLIMATE_CONTROL);
+            append(VehiclePropertyIds.HVAC_MAX_AC_ON, CAR_PERMISSION_CLIMATE_CONTROL);
+            append(VehiclePropertyIds.HVAC_TEMPERATURE_SET, CAR_PERMISSION_CLIMATE_CONTROL);
+            append(VehiclePropertyIds.HVAC_FAN_SPEED, CAR_PERMISSION_CLIMATE_CONTROL);
+            append(VehiclePropertyIds.HVAC_FAN_DIRECTION, CAR_PERMISSION_CLIMATE_CONTROL);
+            append(VehiclePropertyIds.HVAC_SEAT_TEMPERATURE, CAR_PERMISSION_CLIMATE_CONTROL);
+            append(VehiclePropertyIds.HVAC_SEAT_VENTILATION, CAR_PERMISSION_CLIMATE_CONTROL);
+            append(VehiclePropertyIds.HVAC_STEERING_WHEEL_HEAT, CAR_PERMISSION_CLIMATE_CONTROL);
+            append(VehiclePropertyIds.HVAC_RECIRC_ON, CAR_PERMISSION_CLIMATE_CONTROL);
+            append(VehiclePropertyIds.HVAC_AUTO_RECIRC_ON, CAR_PERMISSION_CLIMATE_CONTROL);
+            append(VehiclePropertyIds.HVAC_AUTO_ON, CAR_PERMISSION_CLIMATE_CONTROL);
+            append(VehiclePropertyIds.HVAC_DUAL_ON, CAR_PERMISSION_CLIMATE_CONTROL);
+            append(VehiclePropertyIds.HVAC_DEFROSTER, CAR_PERMISSION_CLIMATE_CONTROL);
+            append(VehiclePropertyIds.HVAC_MAX_DEFROST_ON, CAR_PERMISSION_CLIMATE_CONTROL);
+            append(HVAC_ELECTRIC_DEFROSTER_ON_PROPERTY_ID, CAR_PERMISSION_CLIMATE_CONTROL);
         }
     };
 
@@ -157,6 +178,22 @@ public final class PropertyUtils {
             append(VehiclePropertyIds.RANGE_REMAINING, CAR_PERMISSION_ADJUST_RANGE_REMAINING);
             append(VehiclePropertyIds.FUEL_VOLUME_DISPLAY_UNITS,
                     Car.PERMISSION_CONTROL_DISPLAY_UNITS + CAR_PERMISSION_VENDOR_EXTENSION);
+            append(VehiclePropertyIds.HVAC_POWER_ON, CAR_PERMISSION_CLIMATE_CONTROL);
+            append(VehiclePropertyIds.HVAC_AC_ON, CAR_PERMISSION_CLIMATE_CONTROL);
+            append(VehiclePropertyIds.HVAC_MAX_AC_ON, CAR_PERMISSION_CLIMATE_CONTROL);
+            append(VehiclePropertyIds.HVAC_TEMPERATURE_SET, CAR_PERMISSION_CLIMATE_CONTROL);
+            append(VehiclePropertyIds.HVAC_FAN_SPEED, CAR_PERMISSION_CLIMATE_CONTROL);
+            append(VehiclePropertyIds.HVAC_FAN_DIRECTION, CAR_PERMISSION_CLIMATE_CONTROL);
+            append(VehiclePropertyIds.HVAC_SEAT_TEMPERATURE, CAR_PERMISSION_CLIMATE_CONTROL);
+            append(VehiclePropertyIds.HVAC_SEAT_VENTILATION, CAR_PERMISSION_CLIMATE_CONTROL);
+            append(VehiclePropertyIds.HVAC_STEERING_WHEEL_HEAT, CAR_PERMISSION_CLIMATE_CONTROL);
+            append(VehiclePropertyIds.HVAC_RECIRC_ON, CAR_PERMISSION_CLIMATE_CONTROL);
+            append(VehiclePropertyIds.HVAC_AUTO_RECIRC_ON, CAR_PERMISSION_CLIMATE_CONTROL);
+            append(VehiclePropertyIds.HVAC_AUTO_ON, CAR_PERMISSION_CLIMATE_CONTROL);
+            append(VehiclePropertyIds.HVAC_DUAL_ON, CAR_PERMISSION_CLIMATE_CONTROL);
+            append(VehiclePropertyIds.HVAC_DEFROSTER, CAR_PERMISSION_CLIMATE_CONTROL);
+            append(VehiclePropertyIds.HVAC_MAX_DEFROST_ON, CAR_PERMISSION_CLIMATE_CONTROL);
+            append(HVAC_ELECTRIC_DEFROSTER_ON_PROPERTY_ID, CAR_PERMISSION_CLIMATE_CONTROL);
         }
     };
     private static final Set<Integer> ON_CHANGE_PROPERTIES =
@@ -436,6 +473,25 @@ public final class PropertyUtils {
                             (Integer) entry.getValue().second));
         }
         return carZoneSetsToIntegerValues;
+    }
+
+    /** Returns a map of min/max values in Float corresponding to a set of car zones.
+     *
+     * <p> The method is a utility to convert Pair<?, ?> to Pair<Float, Float>.
+     */
+    @NonNull
+    public static Map<Set<CarZone>, Pair<Float, Float>> getMinMaxProfileFloatMap(
+            @NonNull Map<Set<CarZone>, ? extends Pair<?, ?>> minMaxRange) {
+        Map<Set<CarZone>, Pair<Float, Float>>
+                carZoneSetsToFloatValues = new HashMap<>();
+        for (Map.Entry<Set<CarZone>, ? extends Pair<?, ?>> entry : requireNonNull(minMaxRange
+                .entrySet())) {
+            float min = (Float) entry.getValue().first;
+            float max = (Float) entry.getValue().second;
+            carZoneSetsToFloatValues.put(entry.getKey(),
+                    new Pair<>(min, max));
+        }
+        return carZoneSetsToFloatValues;
     }
 
     private PropertyUtils() {

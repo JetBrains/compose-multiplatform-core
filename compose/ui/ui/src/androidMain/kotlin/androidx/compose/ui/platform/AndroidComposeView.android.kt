@@ -67,10 +67,9 @@ import androidx.compose.ui.autofill.performAutofill
 import androidx.compose.ui.autofill.populateViewStructure
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusDirection.Companion.Down
-import androidx.compose.ui.focus.FocusDirection.Companion.In
+import androidx.compose.ui.focus.FocusDirection.Companion.Exit
 import androidx.compose.ui.focus.FocusDirection.Companion.Left
 import androidx.compose.ui.focus.FocusDirection.Companion.Next
-import androidx.compose.ui.focus.FocusDirection.Companion.Out
 import androidx.compose.ui.focus.FocusDirection.Companion.Previous
 import androidx.compose.ui.focus.FocusDirection.Companion.Right
 import androidx.compose.ui.focus.FocusDirection.Companion.Up
@@ -725,14 +724,16 @@ internal class AndroidComposeView(context: Context) :
      * from the hierarchy.
      */
     fun removeAndroidView(view: AndroidViewHolder) {
-        androidViewsHandler.removeView(view)
-        androidViewsHandler.layoutNodeToHolder.remove(
-            androidViewsHandler.holderToLayoutNode.remove(view)
-        )
-        ViewCompat.setImportantForAccessibility(
-            view,
-            ViewCompat.IMPORTANT_FOR_ACCESSIBILITY_AUTO
-        )
+        registerOnEndApplyChangesListener {
+            androidViewsHandler.removeViewInLayout(view)
+            androidViewsHandler.layoutNodeToHolder.remove(
+                androidViewsHandler.holderToLayoutNode.remove(view)
+            )
+            ViewCompat.setImportantForAccessibility(
+                view,
+                ViewCompat.IMPORTANT_FOR_ACCESSIBILITY_AUTO
+            )
+        }
     }
 
     /**
@@ -842,7 +843,7 @@ internal class AndroidComposeView(context: Context) :
                 wasMeasuredWithMultipleConstraints = true
             }
             measureAndLayoutDelegate.updateRootConstraints(constraints)
-            measureAndLayoutDelegate.measureAndLayout(resendMotionEventOnLayout)
+            measureAndLayoutDelegate.measureOnly()
             setMeasuredDimension(root.width, root.height)
             if (_androidViewsHandler != null) {
                 androidViewsHandler.measure(
@@ -865,6 +866,7 @@ internal class AndroidComposeView(context: Context) :
     }
 
     override fun onLayout(changed: Boolean, l: Int, t: Int, r: Int, b: Int) {
+        measureAndLayoutDelegate.measureAndLayout(resendMotionEventOnLayout)
         onMeasureConstraints = null
         // we postpone onPositioned callbacks until onLayout as LayoutCoordinates
         // are currently wrong if you try to get the global(activity) coordinates -
@@ -984,8 +986,8 @@ internal class AndroidComposeView(context: Context) :
             DirectionLeft -> Left
             DirectionUp -> Up
             DirectionDown -> Down
-            DirectionCenter, Enter, NumPadEnter -> In
-            Back, Escape -> Out
+            DirectionCenter, Enter, NumPadEnter -> FocusDirection.Enter
+            Back, Escape -> Exit
             else -> null
         }
     }

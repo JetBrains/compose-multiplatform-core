@@ -20,7 +20,6 @@ package androidx.glance.appwidget.template.demos
 
 import android.content.Context
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.graphics.Color
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.glance.GlanceComposable
@@ -37,24 +36,25 @@ import androidx.glance.appwidget.state.updateAppWidgetState
 import androidx.glance.appwidget.template.GlanceTemplateAppWidget
 import androidx.glance.appwidget.template.ListTemplate
 import androidx.glance.currentState
+import androidx.glance.template.ActionBlock
+import androidx.glance.template.HeaderBlock
+import androidx.glance.template.ImageBlock
 import androidx.glance.template.ListStyle
 import androidx.glance.template.ListTemplateData
 import androidx.glance.template.ListTemplateItem
 import androidx.glance.template.TemplateImageButton
 import androidx.glance.template.TemplateImageWithDescription
 import androidx.glance.template.TemplateText
+import androidx.glance.template.TextBlock
 import androidx.glance.template.TextType
-import androidx.glance.unit.ColorProvider
 
 /**
- * List demo with list items in full details and list header with action button using data and list
+ * List demo with list items in full details and list item action button using data and list
  * template from [BaseListDemoWidget].
  */
 class FullHeaderActionListDemoWidget : BaseListDemoWidget() {
     @Composable
-    override fun TemplateContent() = ListTemplateContent(ListStyle.Full, true, true, 1)
-
-    override fun headerButtonAction(): Action = actionRunCallback<ListAddButtonAction>()
+    override fun TemplateContent() = ListTemplateContent(ListStyle.Full, true)
 
     override fun itemSelectAction(params: ActionParameters): Action =
         actionRunCallback<ListTemplateItemAction>(params)
@@ -109,11 +109,6 @@ class BriefListReceiver : GlanceAppWidgetReceiver() {
  */
 abstract class BaseListDemoWidget : GlanceTemplateAppWidget() {
     /**
-     * Defines the handling of header button action.
-     */
-    open fun headerButtonAction(): Action = actionRunCallback<DefaultNoopAction>()
-
-    /**
      * Defines the handling of item select action.
      *
      * @param params action parameters for selection index
@@ -126,15 +121,13 @@ abstract class BaseListDemoWidget : GlanceTemplateAppWidget() {
      *
      * @param listStyle styling the list by [ListStyle] based data details
      * @param initialNumItems initial number of list items to generate in the demo
-     * @param showHeaderAction whether to show list header action button
      * @param showHeader whether to show list header as a whole
      */
     @Composable
     internal fun ListTemplateContent(
         listStyle: ListStyle,
         showHeader: Boolean = false,
-        showHeaderAction: Boolean = false,
-        initialNumItems: Int = 3,
+        initialNumItems: Int = MAX_ITEMS,
     ) {
         val state = currentState<Preferences>()
         val content = mutableListOf<ListTemplateItem>()
@@ -145,42 +138,53 @@ abstract class BaseListDemoWidget : GlanceTemplateAppWidget() {
             }
             content.add(
                 ListTemplateItem(
-                    title = TemplateText("Title Medium", TextType.Title),
-                    body = TemplateText(
-                        "Lorem ipsum dolor sit amet, consectetur adipiscing elit",
-                        TextType.Body
+                    textBlock = TextBlock(
+                        text1 = TemplateText("Title Medium", TextType.Title),
+                        text2 = if (listStyle == ListStyle.Full) TemplateText(
+                            "Lorem ipsum dolor sit amet, consectetur adipiscing elit",
+                            TextType.Body
+                        ) else null,
+                        text3 = if (listStyle == ListStyle.Full) TemplateText(
+                            label,
+                            TextType.Label
+                        ) else null,
+                        priority = 1,
                     ),
-                    label = TemplateText(label, TextType.Label),
-                    image = TemplateImageWithDescription(ImageProvider(R.drawable.compose), "$i"),
-                    button = TemplateImageButton(
-                        itemSelectAction(
-                            actionParametersOf(ClickedKey to i)
+                    imageBlock = ImageBlock(
+                        images = listOf(
+                            TemplateImageWithDescription(
+                                ImageProvider(R.drawable.compose),
+                                "$i"
+                            )
                         ),
-                        TemplateImageWithDescription(
-                            ImageProvider(R.drawable.ic_favorite),
-                            "button"
-                        )
+                        priority = 0, // ahead of textBlock
                     ),
-                    action = itemSelectAction(actionParametersOf(ClickedKey to i)),
+                    actionBlock = ActionBlock(
+                        actionButtons = listOf(
+                            TemplateImageButton(
+                                itemSelectAction(
+                                    actionParametersOf(ClickedKey to i)
+                                ),
+                                TemplateImageWithDescription(
+                                    ImageProvider(R.drawable.ic_favorite),
+                                    "button"
+                                )
+                            ),
+                        ),
+                    ),
                 )
             )
         }
         ListTemplate(
             ListTemplateData(
-                header = if (showHeader) TemplateText(
-                    "List Demo",
-                    TextType.Title
-                ) else null,
-                headerIcon = if (showHeader) TemplateImageWithDescription(
-                    ImageProvider(R.drawable.ic_widget),
-                    "Logo"
-                ) else null,
-                button = if (showHeader && showHeaderAction) TemplateImageButton(
-                    headerButtonAction(),
-                    TemplateImageWithDescription(ImageProvider(R.drawable.ic_add), "Add item")
+                headerBlock = if (showHeader) HeaderBlock(
+                    text = TemplateText("List Demo", TextType.Title),
+                    icon = TemplateImageWithDescription(
+                        ImageProvider(R.drawable.ic_widget),
+                        "Logo"
+                    ),
                 ) else null,
                 listContent = content,
-                backgroundColor = ColorProvider(Color(0xDDD7E8CD)),
                 listStyle = listStyle
             )
         )
@@ -193,26 +197,6 @@ class DefaultNoopAction : ActionCallback {
         glanceId: GlanceId,
         parameters: ActionParameters
     ) {
-    }
-}
-
-class ListAddButtonAction : ActionCallback {
-    override suspend fun onAction(
-        context: Context,
-        glanceId: GlanceId,
-        parameters: ActionParameters
-    ) {
-        updateAppWidgetState(context, glanceId) { prefs ->
-            var count = prefs[CountKey] ?: 1
-            if (count >= MAX_ITEMS) {
-                count = 0
-                if (prefs[ItemClickedKey] != 1) {
-                    prefs.minusAssign(ItemClickedKey)
-                }
-            }
-            prefs[CountKey] = ++count
-        }
-        FullHeaderActionListDemoWidget().update(context, glanceId)
     }
 }
 

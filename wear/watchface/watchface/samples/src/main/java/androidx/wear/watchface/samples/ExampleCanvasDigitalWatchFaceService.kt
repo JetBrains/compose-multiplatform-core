@@ -49,6 +49,8 @@ import androidx.wear.watchface.ComplicationSlotsManager
 import androidx.wear.watchface.DrawMode
 import androidx.wear.watchface.Renderer
 import androidx.wear.watchface.WatchFace
+import androidx.wear.watchface.WatchFaceColors
+import androidx.wear.watchface.WatchFaceExperimental
 import androidx.wear.watchface.WatchFaceService
 import androidx.wear.watchface.WatchFaceType
 import androidx.wear.watchface.WatchState
@@ -685,6 +687,7 @@ class ExampleCanvasDigitalWatchFaceService : WatchFaceService() {
     }
 }
 
+@OptIn(WatchFaceExperimental::class)
 @Suppress("Deprecation")
 @RequiresApi(27)
 class ExampleDigitalWatchCanvasRenderer(
@@ -813,6 +816,12 @@ class ExampleDigitalWatchCanvasRenderer(
                         context,
                         userStyle[colorStyleSetting]!!.toString()
                     )
+
+                watchfaceColors = WatchFaceColors(
+                    Color.valueOf(watchFaceColorStyle.activeStyle.primaryColor),
+                    Color.valueOf(watchFaceColorStyle.activeStyle.secondaryColor),
+                    Color.valueOf(Color.DKGRAY)
+                )
 
                 // Apply the userStyle to the complicationSlots. ComplicationDrawables for each
                 // of the styles are defined in XML so we need to replace the complication's
@@ -1031,12 +1040,6 @@ class ExampleDigitalWatchCanvasRenderer(
             }
         }
     }
-
-    override fun watchfaceColors() = WatchfaceColors(
-        Color.valueOf(watchFaceColorStyle.activeStyle.primaryColor),
-        Color.valueOf(watchFaceColorStyle.activeStyle.secondaryColor),
-        Color.valueOf(Color.DKGRAY)
-    )
 
     override fun renderHighlightLayer(canvas: Canvas, bounds: Rect, zonedDateTime: ZonedDateTime) {
         drawComplicationHighlights(canvas, zonedDateTime)

@@ -95,12 +95,10 @@ class TvLazyListState constructor(
      * be recomposed on every change causing potential performance issues.
      *
      * If you want to run some side effects like sending an analytics event or updating a state
-     * based on this value consider using "snapshotFlow":
-     * @sample androidx.compose.foundation.samples.UsingListScrollPositionForSideEffectSample
+     * based on this value consider using "snapshotFlow".
      *
      * If you need to use it in the composition then consider wrapping the calculation into a
-     * derived state in order to only have recompositions when the derived value changes:
-     * @sample androidx.compose.foundation.samples.UsingListScrollPositionInCompositionSample
+     * derived state in order to only have recompositions when the derived value changes.
      */
     val firstVisibleItemIndex: Int get() = scrollPosition.index.value
 
@@ -127,8 +125,7 @@ class TvLazyListState constructor(
      * Therefore, avoid using it in the composition.
      *
      * If you want to run some side effects like sending an analytics event or updating a state
-     * based on this value consider using "snapshotFlow":
-     * @sample androidx.compose.foundation.samples.UsingListLayoutInfoForSideEffectSample
+     * based on this value consider using "snapshotFlow"
      */
     val layoutInfo: TvLazyListLayoutInfo get() = layoutInfoState.value
 
@@ -368,6 +365,23 @@ class TvLazyListState constructor(
             result.firstVisibleItemScrollOffset != 0
 
         numMeasurePasses++
+
+        cancelPrefetchIfVisibleItemsChanged(result)
+    }
+
+    private fun cancelPrefetchIfVisibleItemsChanged(info: TvLazyListLayoutInfo) {
+        if (indexToPrefetch != -1 && info.visibleItemsInfo.isNotEmpty()) {
+            val expectedPrefetchIndex = if (wasScrollingForward) {
+                info.visibleItemsInfo.last().index + 1
+            } else {
+                info.visibleItemsInfo.first().index - 1
+            }
+            if (indexToPrefetch != expectedPrefetchIndex) {
+                indexToPrefetch = -1
+                currentPrefetchHandle?.cancel()
+                currentPrefetchHandle = null
+            }
+        }
     }
 
     /**

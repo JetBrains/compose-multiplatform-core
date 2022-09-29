@@ -16,6 +16,7 @@
 
 package androidx.graphics.surface
 
+import android.graphics.Rect
 import android.graphics.Region
 import android.hardware.HardwareBuffer
 import android.os.Build
@@ -128,23 +129,6 @@ internal class SurfaceControlV29 internal constructor(
         }
 
         /**
-         * See [SurfaceControlWrapper.Transaction.reparent]
-         */
-        override fun reparent(
-            surfaceControl: SurfaceControlImpl,
-            surfaceView: SurfaceView
-        ): SurfaceControlImpl.Transaction {
-            transaction.reparent(
-                surfaceControl.asWrapperSurfaceControl(),
-                SurfaceControlWrapper.Builder()
-                    .setParent(surfaceView.holder.surface)
-                    .setDebugName(surfaceView.toString())
-                    .build()
-            )
-            return this
-        }
-
-        /**
          * See [SurfaceControlWrapper.Transaction.setBuffer]
          */
         override fun setBuffer(
@@ -235,6 +219,56 @@ internal class SurfaceControlV29 internal constructor(
             alpha: Float
         ): SurfaceControlImpl.Transaction {
             transaction.setAlpha(surfaceControl.asWrapperSurfaceControl(), alpha)
+            return this
+        }
+
+        /**
+         * See [SurfaceControlWrapper.Transaction.setCrop]
+         */
+        @RequiresApi(Build.VERSION_CODES.S)
+        override fun setCrop(
+            surfaceControl: SurfaceControlImpl,
+            crop: Rect?
+        ): SurfaceControlImpl.Transaction {
+            transaction.setCrop(surfaceControl.asWrapperSurfaceControl(), crop)
+            return this
+        }
+
+        /**
+         * See [SurfaceControlWrapper.Transaction.setPosition]
+         */
+        @RequiresApi(Build.VERSION_CODES.S)
+        override fun setPosition(
+            surfaceControl: SurfaceControlImpl,
+            x: Float,
+            y: Float
+        ): SurfaceControlImpl.Transaction {
+            transaction.setPosition(surfaceControl.asWrapperSurfaceControl(), x, y)
+            return this
+        }
+
+        /**
+         * See [SurfaceControlWrapper.Transaction.setScale]
+         */
+        @RequiresApi(Build.VERSION_CODES.S)
+        override fun setScale(
+            surfaceControl: SurfaceControlImpl,
+            scaleX: Float,
+            scaleY: Float
+        ): SurfaceControlImpl.Transaction {
+            transaction.setScale(surfaceControl.asWrapperSurfaceControl(), scaleX, scaleY)
+            return this
+        }
+
+        /**
+         * See [SurfaceControlWrapper.Transaction.setBufferTransform]
+         */
+        @RequiresApi(Build.VERSION_CODES.S)
+        override fun setBufferTransform(
+            surfaceControl: SurfaceControlImpl,
+            transformation: Int
+        ): Transaction {
+            transaction.setBufferTransform(surfaceControl.asWrapperSurfaceControl(), transformation)
             return this
         }
 

@@ -25,17 +25,20 @@ import android.view.Surface
 import androidx.camera.camera2.pipe.CameraGraph
 import androidx.camera.camera2.pipe.CameraPipe
 import androidx.camera.camera2.pipe.CameraStream
-import androidx.camera.camera2.pipe.RequestProcessor
+import androidx.camera.camera2.pipe.CameraSurfaceManager
+import androidx.camera.camera2.pipe.CaptureSequenceProcessor
+import androidx.camera.camera2.pipe.Request
 import androidx.camera.camera2.pipe.StreamFormat
 import androidx.camera.camera2.pipe.StreamId
 import androidx.camera.camera2.pipe.config.Camera2ControllerScope
+import androidx.camera.camera2.pipe.config.CameraGraphScope
 import androidx.camera.camera2.pipe.config.CameraPipeModules
 import androidx.camera.camera2.pipe.config.SharedCameraGraphModules
-import androidx.camera.camera2.pipe.config.CameraGraphScope
 import androidx.camera.camera2.pipe.config.ThreadConfigModule
 import androidx.camera.camera2.pipe.graph.StreamGraphImpl
+import androidx.camera.camera2.pipe.testing.FakeCaptureSequence
+import androidx.camera.camera2.pipe.testing.FakeCaptureSequenceProcessor
 import androidx.camera.camera2.pipe.testing.FakeGraphProcessor
-import androidx.camera.camera2.pipe.testing.FakeRequestProcessor
 import androidx.camera.camera2.pipe.testing.RobolectricCameraPipeTestRunner
 import androidx.camera.camera2.pipe.testing.RobolectricCameras
 import androidx.test.core.app.ApplicationProvider
@@ -107,21 +110,24 @@ internal class CaptureSessionFactoryTest {
                 testCamera.cameraId
             ),
             mapOf(stream1.id to surface),
-            virtualSessionState = VirtualSessionState(
+            captureSessionState = CaptureSessionState(
                 FakeGraphProcessor(),
                 sessionFactory,
-                object : Camera2RequestProcessorFactory {
+                object : Camera2CaptureSequenceProcessorFactory {
                     override fun create(
                         session: CameraCaptureSessionWrapper,
                         surfaceMap: Map<StreamId, Surface>
-                    ): RequestProcessor = FakeRequestProcessor()
+                    ): CaptureSequenceProcessor<Request, FakeCaptureSequence> =
+                        FakeCaptureSequenceProcessor()
                 },
+                CameraSurfaceManager(),
                 this
             )
         )
 
         assertThat(pendingOutputs).isNotNull()
         assertThat(pendingOutputs).isEmpty()
+        surface.release()
     }
 }
 

@@ -19,6 +19,7 @@ import android.graphics.Canvas
 import android.graphics.Paint.FontMetricsInt
 import android.graphics.Path
 import android.graphics.RectF
+import android.os.Trace
 import android.text.BoringLayout
 import android.text.Layout
 import android.text.SpannableString
@@ -36,6 +37,8 @@ import androidx.compose.ui.text.android.LayoutCompat.ALIGN_NORMAL
 import androidx.compose.ui.text.android.LayoutCompat.ALIGN_OPPOSITE
 import androidx.compose.ui.text.android.LayoutCompat.ALIGN_RIGHT
 import androidx.compose.ui.text.android.LayoutCompat.BreakStrategy
+import androidx.compose.ui.text.android.LayoutCompat.LineBreakStyle
+import androidx.compose.ui.text.android.LayoutCompat.LineBreakWordStyle
 import androidx.compose.ui.text.android.LayoutCompat.DEFAULT_ALIGNMENT
 import androidx.compose.ui.text.android.LayoutCompat.DEFAULT_BREAK_STRATEGY
 import androidx.compose.ui.text.android.LayoutCompat.DEFAULT_HYPHENATION_FREQUENCY
@@ -43,6 +46,8 @@ import androidx.compose.ui.text.android.LayoutCompat.DEFAULT_INCLUDE_PADDING
 import androidx.compose.ui.text.android.LayoutCompat.DEFAULT_JUSTIFICATION_MODE
 import androidx.compose.ui.text.android.LayoutCompat.DEFAULT_LINESPACING_EXTRA
 import androidx.compose.ui.text.android.LayoutCompat.DEFAULT_LINESPACING_MULTIPLIER
+import androidx.compose.ui.text.android.LayoutCompat.DEFAULT_LINE_BREAK_STYLE
+import androidx.compose.ui.text.android.LayoutCompat.DEFAULT_LINE_BREAK_WORD_STYLE
 import androidx.compose.ui.text.android.LayoutCompat.DEFAULT_TEXT_DIRECTION
 import androidx.compose.ui.text.android.LayoutCompat.HyphenationFrequency
 import androidx.compose.ui.text.android.LayoutCompat.JustificationMode
@@ -114,6 +119,8 @@ class TextLayout constructor(
     val fallbackLineSpacing: Boolean = true,
     maxLines: Int = Int.MAX_VALUE,
     @BreakStrategy breakStrategy: Int = DEFAULT_BREAK_STRATEGY,
+    @LineBreakStyle lineBreakStyle: Int = DEFAULT_LINE_BREAK_STYLE,
+    @LineBreakWordStyle lineBreakWordStyle: Int = DEFAULT_LINE_BREAK_WORD_STYLE,
     @HyphenationFrequency hyphenationFrequency: Int = DEFAULT_HYPHENATION_FREQUENCY,
     @JustificationMode justificationMode: Int = DEFAULT_JUSTIFICATION_MODE,
     leftIndents: IntArray? = null,
@@ -200,6 +207,12 @@ class TextLayout constructor(
 
     val lineHeightSpans: Array<LineHeightStyleSpan>
 
+    /**
+     * Android Canvas object that overrides the `getClipBounds` method and delegates the rest
+     * to the Canvas object that it wraps. See [TextAndroidCanvas] for more details.
+     */
+    private val textCanvas = TextAndroidCanvas()
+
     init {
         val end = charSequence.length
         val frameworkTextDir = getTextDirectionHeuristic(textDirectionHeuristic)
@@ -214,47 +227,54 @@ class TextLayout constructor(
             false
         }
 
-        val boringMetrics = layoutIntrinsics.boringMetrics
+        Trace.beginSection("TextLayout:initLayout")
+        try {
+            val boringMetrics = layoutIntrinsics.boringMetrics
 
-        val widthInt = ceil(width).toInt()
-        layout = if (boringMetrics != null && layoutIntrinsics.maxIntrinsicWidth <= width &&
-            !hasBaselineShiftSpans
-        ) {
-            isBoringLayout = true
-            BoringLayoutFactory.create(
-                text = charSequence,
-                paint = textPaint,
-                width = widthInt,
-                metrics = boringMetrics,
-                alignment = frameworkAlignment,
-                includePadding = includePadding,
-                useFallbackLineSpacing = fallbackLineSpacing,
-                ellipsize = ellipsize,
-                ellipsizedWidth = widthInt
-            )
-        } else {
-            isBoringLayout = false
-            StaticLayoutFactory.create(
-                text = charSequence,
-                start = 0,
-                end = charSequence.length,
-                paint = textPaint,
-                width = widthInt,
-                textDir = frameworkTextDir,
-                alignment = frameworkAlignment,
-                maxLines = maxLines,
-                ellipsize = ellipsize,
-                ellipsizedWidth = ceil(width).toInt(),
-                lineSpacingMultiplier = lineSpacingMultiplier,
-                lineSpacingExtra = lineSpacingExtra,
-                justificationMode = justificationMode,
-                includePadding = includePadding,
-                useFallbackLineSpacing = fallbackLineSpacing,
-                breakStrategy = breakStrategy,
-                hyphenationFrequency = hyphenationFrequency,
-                leftIndents = leftIndents,
-                rightIndents = rightIndents
-            )
+            val widthInt = ceil(width).toInt()
+            layout = if (boringMetrics != null && layoutIntrinsics.maxIntrinsicWidth <= width &&
+                !hasBaselineShiftSpans
+            ) {
+                isBoringLayout = true
+                BoringLayoutFactory.create(
+                    text = charSequence,
+                    paint = textPaint,
+                    width = widthInt,
+                    metrics = boringMetrics,
+                    alignment = frameworkAlignment,
+                    includePadding = includePadding,
+                    useFallbackLineSpacing = fallbackLineSpacing,
+                    ellipsize = ellipsize,
+                    ellipsizedWidth = widthInt
+                )
+            } else {
+                isBoringLayout = false
+                StaticLayoutFactory.create(
+                    text = charSequence,
+                    start = 0,
+                    end = charSequence.length,
+                    paint = textPaint,
+                    width = widthInt,
+                    textDir = frameworkTextDir,
+                    alignment = frameworkAlignment,
+                    maxLines = maxLines,
+                    ellipsize = ellipsize,
+                    ellipsizedWidth = ceil(width).toInt(),
+                    lineSpacingMultiplier = lineSpacingMultiplier,
+                    lineSpacingExtra = lineSpacingExtra,
+                    justificationMode = justificationMode,
+                    includePadding = includePadding,
+                    useFallbackLineSpacing = fallbackLineSpacing,
+                    breakStrategy = breakStrategy,
+                    lineBreakStyle = lineBreakStyle,
+                    lineBreakWordStyle = lineBreakWordStyle,
+                    hyphenationFrequency = hyphenationFrequency,
+                    leftIndents = leftIndents,
+                    rightIndents = rightIndents
+                )
+            }
+        } finally {
+            Trace.endSection()
         }
 
         /* When ellipsis is false:
@@ -538,11 +558,6 @@ class TextLayout constructor(
     }
 
     /**
-     * @return true if the given line is ellipsized, else false.
-     */
-    fun isEllipsisApplied(lineIndex: Int): Boolean = layout.getEllipsisCount(lineIndex) > 0
-
-    /**
      * Fills the bounding boxes for characters within the [startOffset] (inclusive) and [endOffset]
      * (exclusive). The array is filled starting from [arrayStart] (inclusive). The coordinates are
      * in local text layout coordinates.
@@ -680,7 +695,8 @@ class TextLayout constructor(
             canvas.translate(0f, topPadding.toFloat())
         }
 
-        layout.draw(canvas)
+        textCanvas.setCanvas(canvas)
+        layout.draw(textCanvas)
 
         if (topPadding != 0) {
             canvas.translate(0f, -1 * topPadding.toFloat())
@@ -975,4 +991,4 @@ private fun TextLayout.getLineHeightSpans(): Array<LineHeightStyleSpan> {
     return lineHeightStyleSpans
 }
 
-internal fun Layout.isLineEllipsized(lineIndex: Int) = this.getEllipsisStart(lineIndex) != 0
+internal fun Layout.isLineEllipsized(lineIndex: Int) = this.getEllipsisCount(lineIndex) > 0

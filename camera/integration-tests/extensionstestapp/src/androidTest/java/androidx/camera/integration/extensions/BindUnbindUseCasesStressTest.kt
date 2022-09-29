@@ -28,13 +28,14 @@ import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageProxy
 import androidx.camera.core.Preview
+import androidx.camera.core.impl.utils.executor.CameraXExecutors
 import androidx.camera.extensions.ExtensionsManager
-import androidx.camera.integration.extensions.util.ExtensionsTestUtil
-import androidx.camera.integration.extensions.util.ExtensionsTestUtil.STRESS_TEST_OPERATION_REPEAT_COUNT
-import androidx.camera.integration.extensions.util.ExtensionsTestUtil.STRESS_TEST_REPEAT_COUNT
-import androidx.camera.integration.extensions.util.ExtensionsTestUtil.VERIFICATION_TARGET_IMAGE_ANALYSIS
-import androidx.camera.integration.extensions.util.ExtensionsTestUtil.VERIFICATION_TARGET_IMAGE_CAPTURE
-import androidx.camera.integration.extensions.util.ExtensionsTestUtil.VERIFICATION_TARGET_PREVIEW
+import androidx.camera.integration.extensions.util.CameraXExtensionsTestUtil
+import androidx.camera.integration.extensions.util.CameraXExtensionsTestUtil.STRESS_TEST_OPERATION_REPEAT_COUNT
+import androidx.camera.integration.extensions.util.CameraXExtensionsTestUtil.STRESS_TEST_REPEAT_COUNT
+import androidx.camera.integration.extensions.util.CameraXExtensionsTestUtil.VERIFICATION_TARGET_IMAGE_ANALYSIS
+import androidx.camera.integration.extensions.util.CameraXExtensionsTestUtil.VERIFICATION_TARGET_IMAGE_CAPTURE
+import androidx.camera.integration.extensions.util.CameraXExtensionsTestUtil.VERIFICATION_TARGET_PREVIEW
 import androidx.camera.integration.extensions.utils.CameraSelectorUtil
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.testing.CameraUtil
@@ -98,7 +99,7 @@ class BindUnbindUseCasesStressTest(
 
     @Before
     fun setUp(): Unit = runBlocking {
-        assumeTrue(ExtensionsTestUtil.isTargetDeviceAvailableForExtensions())
+        assumeTrue(CameraXExtensionsTestUtil.isTargetDeviceAvailableForExtensions())
         cameraProvider = ProcessCameraProvider.getInstance(context)[10000, TimeUnit.MILLISECONDS]
         extensionsManager = ExtensionsManager.getInstanceAsync(
             context,
@@ -144,7 +145,7 @@ class BindUnbindUseCasesStressTest(
         @JvmStatic
         @get:Parameterized.Parameters(name = "cameraId = {0}, extensionMode = {1}")
         val parameters: Collection<Array<Any>>
-            get() = ExtensionsTestUtil.getAllCameraIdExtensionModeCombinations()
+            get() = CameraXExtensionsTestUtil.getAllCameraIdExtensionModeCombinations()
     }
 
     @LabTestRule.LabTestOnly
@@ -175,7 +176,7 @@ class BindUnbindUseCasesStressTest(
     @RepeatRule.Repeat(times = STRESS_TEST_REPEAT_COUNT)
     fun bindUnbindUseCases_checkPreviewInEachTime_withPreviewImageCaptureImageAnalysis():
         Unit = runBlocking {
-        val imageAnalysis = ImageAnalysis.Builder().build()
+        val imageAnalysis = createImageAnalysis()
         assumeTrue(camera.isUseCasesCombinationSupported(preview, imageCapture, imageAnalysis))
         bindUseCases_checkOutput_thenUnbindAll_repeatedly(
             preview,
@@ -190,7 +191,7 @@ class BindUnbindUseCasesStressTest(
     @RepeatRule.Repeat(times = STRESS_TEST_REPEAT_COUNT)
     fun bindUnbindUseCases_checkImageCaptureInEachTime_withPreviewImageCaptureImageAnalysis():
         Unit = runBlocking {
-        val imageAnalysis = ImageAnalysis.Builder().build()
+        val imageAnalysis = createImageAnalysis()
         assumeTrue(camera.isUseCasesCombinationSupported(preview, imageCapture, imageAnalysis))
         bindUseCases_checkOutput_thenUnbindAll_repeatedly(
             preview,
@@ -205,7 +206,7 @@ class BindUnbindUseCasesStressTest(
     @RepeatRule.Repeat(times = STRESS_TEST_REPEAT_COUNT)
     fun bindUnbindUseCases_checkImageAnalysisInEachTime_withPreviewImageCaptureImageAnalysis():
         Unit = runBlocking {
-        val imageAnalysis = ImageAnalysis.Builder().build()
+        val imageAnalysis = createImageAnalysis()
         assumeTrue(camera.isUseCasesCombinationSupported(preview, imageCapture, imageAnalysis))
         bindUseCases_checkOutput_thenUnbindAll_repeatedly(
             preview,
@@ -313,7 +314,7 @@ class BindUnbindUseCasesStressTest(
     @RepeatRule.Repeat(times = STRESS_TEST_REPEAT_COUNT)
     fun checkPreview_afterBindUnbindUseCasesRepeatedly_withPreviewImageCaptureImageAnalysis():
         Unit = runBlocking {
-        val imageAnalysis = ImageAnalysis.Builder().build()
+        val imageAnalysis = createImageAnalysis()
         assumeTrue(camera.isUseCasesCombinationSupported(preview, imageCapture, imageAnalysis))
         bindUseCases_unbindAll_repeatedly_thenCheckOutput(
             preview,
@@ -328,7 +329,7 @@ class BindUnbindUseCasesStressTest(
     @RepeatRule.Repeat(times = STRESS_TEST_REPEAT_COUNT)
     fun checkImageCapture_afterBindUnbindUseCasesRepeatedly_withPreviewImageCaptureImageAnalysis():
         Unit = runBlocking {
-        val imageAnalysis = ImageAnalysis.Builder().build()
+        val imageAnalysis = createImageAnalysis()
         assumeTrue(camera.isUseCasesCombinationSupported(preview, imageCapture, imageAnalysis))
         bindUseCases_unbindAll_repeatedly_thenCheckOutput(
             preview,
@@ -343,7 +344,7 @@ class BindUnbindUseCasesStressTest(
     @RepeatRule.Repeat(times = STRESS_TEST_REPEAT_COUNT)
     fun checkImageAnalysis_afterBindUnbindUseCasesRepeatedly_withPreviewImageCaptureImageAnalysis():
         Unit = runBlocking {
-        val imageAnalysis = ImageAnalysis.Builder().build()
+        val imageAnalysis = createImageAnalysis()
         assumeTrue(camera.isUseCasesCombinationSupported(preview, imageCapture, imageAnalysis))
         bindUseCases_unbindAll_repeatedly_thenCheckOutput(
             preview,
@@ -425,6 +426,11 @@ class BindUnbindUseCasesStressTest(
             }
         }
     }
+
+    private fun createImageAnalysis() =
+        ImageAnalysis.Builder().build().also {
+            it.setAnalyzer(CameraXExecutors.directExecutor()) { image -> image.close() }
+        }
 
     private class PreviewFrameAvailableMonitor {
         private var isSurfaceTextureReleased = false

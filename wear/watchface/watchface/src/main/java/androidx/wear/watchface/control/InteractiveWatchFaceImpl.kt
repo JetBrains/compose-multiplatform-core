@@ -47,6 +47,7 @@ internal class InteractiveWatchFaceImpl(
     }
 
     private val uiThreadCoroutineScope = engine!!.uiThreadCoroutineScope
+    private val systemTimeProvider = engine!!.systemTimeProvider
 
     override fun getApiVersion() = IInteractiveWatchFace.API_VERSION
 
@@ -61,9 +62,7 @@ internal class InteractiveWatchFaceImpl(
                 TapEvent(
                     xPos,
                     yPos,
-                    Instant.ofEpochMilli(
-                        watchFaceImpl.systemTimeProvider.getSystemTimeMillis()
-                    )
+                    Instant.ofEpochMilli(systemTimeProvider.getSystemTimeMillis())
                 )
             )
         }
@@ -73,14 +72,27 @@ internal class InteractiveWatchFaceImpl(
 
     override fun unused20() {}
 
+    override fun addWatchFaceListener(listener: IWatchfaceListener) {
+        engine?.addWatchFaceListener(listener) ?: Log.w(
+            TAG,
+            "addWatchFaceListener ignored due to null engine"
+        )
+    }
+
+    override fun removeWatchFaceListener(listener: IWatchfaceListener) {
+        engine?.removeWatchFaceListener(listener) ?: Log.w(
+            TAG,
+            "removeWatchFaceListener ignored due to null engine"
+        )
+    }
+
     override fun getWatchFaceOverlayStyle(): WatchFaceOverlayStyleWireFormat? =
-        WatchFaceService.awaitDeferredWatchFaceAndComplicationManagerThenRunOnBinderThread(
+        WatchFaceService.awaitDeferredWatchFaceThenRunOnBinderThread(
             engine,
             "InteractiveWatchFaceImpl.getWatchFaceOverlayStyle"
-        ) { watchFaceInitDetails ->
-            WatchFaceOverlayStyleWireFormat(
-                watchFaceInitDetails.watchFace.overlayStyle.backgroundColor,
-                watchFaceInitDetails.watchFace.overlayStyle.foregroundColor
+        ) { WatchFaceOverlayStyleWireFormat(
+                it.overlayStyle.backgroundColor,
+                it.overlayStyle.foregroundColor
             )
         }
 
@@ -132,16 +144,16 @@ internal class InteractiveWatchFaceImpl(
         // Note this is a one way method called on a binder thread, so it shouldn't matter if we
         // block.
         runBlocking {
-            withContext(uiThreadCoroutineScope.coroutineContext) {
-                engine?.let {
-                    try {
+            try {
+                withContext(uiThreadCoroutineScope.coroutineContext) {
+                    engine?.let {
                         it.deferredWatchFaceImpl.await()
-                    } catch (e: Exception) {
-                        // deferredWatchFaceImpl may have completed with an exception. This will
-                        // have already been reported so we can ignore it.
                     }
                     InteractiveInstanceManager.releaseInstance(instanceId)
                 }
+            } catch (e: Exception) {
+                // deferredWatchFaceImpl may have completed with an exception. This will
+                // have already been reported so we can ignore it.
             }
         }
     }
@@ -179,17 +191,17 @@ internal class InteractiveWatchFaceImpl(
     }
 
     override fun getComplicationDetails(): List<IdAndComplicationStateWireFormat>? {
-        return WatchFaceService.awaitDeferredWatchFaceImplThenRunOnUiThreadBlocking(
+        return WatchFaceService.awaitDeferredEarlyInitDetailsThenRunOnBinderThread(
             engine,
             "InteractiveWatchFaceImpl.getComplicationDetails"
-        ) { watchFaceImpl -> watchFaceImpl.getComplicationState() }
+        ) { it.complicationSlotsManager.getComplicationsState(it.surfaceHolder.surfaceFrame) }
     }
 
     override fun getUserStyleSchema(): UserStyleSchemaWireFormat? {
-        return WatchFaceService.awaitDeferredWatchFaceImplThenRunOnUiThreadBlocking(
+        return WatchFaceService.awaitDeferredEarlyInitDetailsThenRunOnBinderThread(
             engine,
             "InteractiveWatchFaceImpl.getUserStyleSchema"
-        ) { watchFaceImpl -> watchFaceImpl.currentUserStyleRepository.schema.toWireFormat() }
+        ) { it.userStyleRepository.schema.toWireFormat() }
     }
 
     override fun bringAttentionToComplication(id: Int) {
@@ -206,9 +218,14 @@ internal class InteractiveWatchFaceImpl(
     fun onDestroy() {
         // Note this is almost certainly called on the ui thread, from release() above.
         runBlocking {
-            withContext(uiThreadCoroutineScope.coroutineContext) {
-                Log.d(TAG, "onDestroy id $instanceId")
-                engine = null
+            try {
+                withContext(uiThreadCoroutineScope.coroutineContext) {
+                    Log.d(TAG, "onDestroy id $instanceId")
+                    engine?.onEngineDetached()
+                    engine = null
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "onDestroy failed to call onEngineDetached", e)
             }
         }
     }
