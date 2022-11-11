@@ -16,6 +16,7 @@
 
 package androidx.camera.video
 
+import androidx.camera.testing.mocks.helpers.ArgumentCaptor as ArgumentCaptorCameraX
 import android.Manifest
 import android.annotation.SuppressLint
 import android.app.AppOpsManager
@@ -52,6 +53,9 @@ import androidx.camera.testing.GarbageCollectionUtil
 import androidx.camera.testing.LabTestRule
 import androidx.camera.testing.SurfaceTextureProvider
 import androidx.camera.testing.asFlow
+import androidx.camera.testing.mocks.MockConsumer
+import androidx.camera.testing.mocks.helpers.CallTimesAtLeast
+import androidx.camera.video.VideoRecordEvent.Finalize.ERROR_DURATION_LIMIT_REACHED
 import androidx.camera.video.VideoRecordEvent.Finalize.ERROR_FILE_SIZE_LIMIT_REACHED
 import androidx.camera.video.VideoRecordEvent.Finalize.ERROR_INVALID_OUTPUT_OPTIONS
 import androidx.camera.video.VideoRecordEvent.Finalize.ERROR_RECORDER_ERROR
@@ -257,7 +261,8 @@ class RecorderTest(
 
     @Test
     fun canRecordToFile() {
-        clearInvocations(videoRecordEventListener)
+        val videoRecordEventListener = MockConsumer<VideoRecordEvent>()
+
         invokeSurfaceRequest()
         val file = File.createTempFile("CameraX", ".tmp").apply { deleteOnExit() }
 
@@ -266,23 +271,30 @@ class RecorderTest(
                 .withAudioEnabled()
                 .start(CameraXExecutors.directExecutor(), videoRecordEventListener)
 
-        val inOrder = inOrder(videoRecordEventListener)
-        inOrder.verify(videoRecordEventListener, timeout(5000L))
-            .accept(any(VideoRecordEvent.Start::class.java))
-        inOrder.verify(videoRecordEventListener, timeout(15000L).atLeast(5))
-            .accept(any(VideoRecordEvent.Status::class.java))
+        videoRecordEventListener.verifyAcceptCall(VideoRecordEvent.Start::class.java,
+            true, 5000L)
+
+        videoRecordEventListener.verifyAcceptCall(VideoRecordEvent.Status::class.java,
+            true, 15000L, CallTimesAtLeast(5))
 
         recording.stopSafely()
 
-        inOrder.verify(videoRecordEventListener, timeout(FINALIZE_TIMEOUT))
-            .accept(any(VideoRecordEvent.Finalize::class.java))
+        videoRecordEventListener.verifyAcceptCall(VideoRecordEvent.Finalize::class.java,
+            true, FINALIZE_TIMEOUT)
 
         val uri = Uri.fromFile(file)
         checkFileHasAudioAndVideo(uri)
 
         // Check the output Uri from the finalize event match the Uri from the given file.
-        val captor = ArgumentCaptor.forClass(VideoRecordEvent::class.java)
-        verify(videoRecordEventListener, atLeastOnce()).accept(captor.capture())
+        val captor = ArgumentCaptorCameraX<VideoRecordEvent> { argument ->
+            VideoRecordEvent::class.java.isInstance(
+                argument
+            )
+        }
+
+        videoRecordEventListener.verifyAcceptCall(VideoRecordEvent::class.java, false,
+            CallTimesAtLeast(1), captor)
+
         val finalize = captor.value as VideoRecordEvent.Finalize
         assertThat(finalize.outputResults.outputUri).isEqualTo(uri)
 
@@ -414,7 +426,9 @@ class RecorderTest(
 
     @Test
     fun canPauseResume() {
-        clearInvocations(videoRecordEventListener)
+        val videoRecordEventListener =
+            MockConsumer<VideoRecordEvent>()
+
         invokeSurfaceRequest()
 
         val file = File.createTempFile("CameraX", ".tmp").apply { deleteOnExit() }
@@ -426,23 +440,23 @@ class RecorderTest(
 
         recording.pause()
 
-        val inOrder = inOrder(videoRecordEventListener)
-        inOrder.verify(videoRecordEventListener, timeout(5000L))
-            .accept(any(VideoRecordEvent.Pause::class.java))
+        videoRecordEventListener.verifyAcceptCall(VideoRecordEvent.Pause::class.java,
+            true, 5000L)
 
         recording.resume()
 
-        inOrder.verify(videoRecordEventListener, timeout(5000L))
-            .accept(any(VideoRecordEvent.Resume::class.java))
+        videoRecordEventListener.verifyAcceptCall(VideoRecordEvent.Resume::class.java,
+            true, 5000L)
+
         // Check there are data being encoded after resuming.
-        inOrder.verify(videoRecordEventListener, timeout(15000L).atLeast(5))
-            .accept(any(VideoRecordEvent.Status::class.java))
+        videoRecordEventListener.verifyAcceptCall(VideoRecordEvent.Status::class.java,
+            true, 15000L, CallTimesAtLeast(5))
 
         recording.stopSafely()
 
         // Wait for the recording to be finalized.
-        inOrder.verify(videoRecordEventListener, timeout(FINALIZE_TIMEOUT))
-            .accept(any(VideoRecordEvent.Finalize::class.java))
+        videoRecordEventListener.verifyAcceptCall(VideoRecordEvent.Finalize::class.java,
+            true, FINALIZE_TIMEOUT)
 
         checkFileHasAudioAndVideo(Uri.fromFile(file))
 
@@ -574,6 +588,38 @@ class RecorderTest(
     @Test
     fun setNegativeLocation() {
         runLocationTest(createLocation(-27.14394722411734, -109.33053675296067))
+    }
+
+    fun stop_withErrorWhenDurationLimitReached() {
+        clearInvocations(videoRecordEventListener)
+        invokeSurfaceRequest()
+        val durationLimitMs = 3000L
+        val durationTolerance = 50L
+        val file = File.createTempFile("CameraX", ".tmp").apply { deleteOnExit() }
+        val outputOptions = FileOutputOptions.Builder(file)
+            .setDurationLimit(durationLimitMs)
+            .build()
+
+        val recording = recorder
+            .prepareRecording(context, outputOptions)
+            .withAudioEnabled()
+            .start(CameraXExecutors.directExecutor(), videoRecordEventListener)
+
+        // The recording should be finalized after the specified duration limit plus some time
+        // for processing it.
+        verify(videoRecordEventListener, timeout(durationLimitMs + 2000L))
+            .accept(any(VideoRecordEvent.Finalize::class.java))
+
+        val captor = ArgumentCaptor.forClass(VideoRecordEvent.Finalize::class.java)
+        verify(videoRecordEventListener, atLeastOnce()).accept(captor.capture())
+
+        assertThat(captor.value.error).isEqualTo(ERROR_DURATION_LIMIT_REACHED)
+        assertThat(captor.value.recordingStats.recordedDurationNanos)
+            .isAtMost(TimeUnit.MILLISECONDS.toNanos(durationLimitMs + durationTolerance))
+        checkDurationAtMost(Uri.fromFile(file), durationLimitMs)
+
+        recording.stopSafely()
+        file.delete()
     }
 
     @Test
@@ -1003,7 +1049,9 @@ class RecorderTest(
 
     @Test
     fun canRecordWithoutAudio() {
-        clearInvocations(videoRecordEventListener)
+        val videoRecordEventListener =
+            MockConsumer<VideoRecordEvent>()
+
         invokeSurfaceRequest()
         val file = File.createTempFile("CameraX", ".tmp").apply { deleteOnExit() }
 
@@ -1011,15 +1059,22 @@ class RecorderTest(
             recorder.prepareRecording(context, FileOutputOptions.Builder(file).build())
                 .start(CameraXExecutors.directExecutor(), videoRecordEventListener)
 
-        val inOrder = inOrder(videoRecordEventListener)
-        inOrder.verify(videoRecordEventListener, timeout(5000L))
-            .accept(any(VideoRecordEvent.Start::class.java))
-        inOrder.verify(videoRecordEventListener, timeout(15000L).atLeast(5))
-            .accept(any(VideoRecordEvent.Status::class.java))
+        videoRecordEventListener.verifyAcceptCall(VideoRecordEvent.Start::class.java,
+            true, 5000L)
+
+        videoRecordEventListener.verifyAcceptCall(VideoRecordEvent.Status::class.java,
+            true, 15000L, CallTimesAtLeast(5))
 
         // Check the audio information reports state as disabled.
-        val captor = ArgumentCaptor.forClass(VideoRecordEvent::class.java)
-        verify(videoRecordEventListener, atLeastOnce()).accept(captor.capture())
+        val captor = ArgumentCaptorCameraX<VideoRecordEvent> { argument ->
+            VideoRecordEvent::class.java.isInstance(
+                argument
+            )
+        }
+
+        videoRecordEventListener.verifyAcceptCall(VideoRecordEvent::class.java,
+            false, CallTimesAtLeast(1), captor)
+
         assertThat(captor.value).isInstanceOf(VideoRecordEvent.Status::class.java)
         val status = captor.value as VideoRecordEvent.Status
         assertThat(status.recordingStats.audioStats.audioState)
@@ -1027,8 +1082,8 @@ class RecorderTest(
 
         recording.stopSafely()
 
-        verify(videoRecordEventListener, timeout(FINALIZE_TIMEOUT))
-            .accept(any(VideoRecordEvent.Finalize::class.java))
+        videoRecordEventListener.verifyAcceptCall(VideoRecordEvent.Finalize::class.java,
+            false, FINALIZE_TIMEOUT)
 
         checkFileAudio(Uri.fromFile(file), false)
         checkFileVideo(Uri.fromFile(file), true)
@@ -1244,6 +1299,20 @@ class RecorderTest(
         }
     }
 
+    private fun checkDurationAtMost(uri: Uri, duration: Long) {
+        MediaMetadataRetriever().apply {
+            try {
+                setDataSource(context, uri)
+                val durationFromFile = extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
+
+                assertThat(durationFromFile).isNotNull()
+                assertThat(durationFromFile!!.toLong()).isAtMost(duration)
+            } finally {
+                release()
+            }
+        }
+    }
+
     // It fails on devices with certain chipset if the codec is stopped when the camera is still
     // producing frames to the provided surface. This method first stop the camera from
     // producing frames then stops the recording safely on the problematic devices.
@@ -1272,18 +1341,23 @@ class RecorderTest(
             .setFileSizeLimit(fileSizeLimit)
             .build()
 
+        val videoRecordEventListener =
+            MockConsumer<VideoRecordEvent>()
+
         val recording = recorder
             .prepareRecording(context, outputOptions)
             .withAudioEnabled()
             .start(CameraXExecutors.directExecutor(), videoRecordEventListener)
 
-        verify(
-            videoRecordEventListener,
-            timeout(60000L)
-        ).accept(any(VideoRecordEvent.Finalize::class.java))
+        videoRecordEventListener.verifyAcceptCall(VideoRecordEvent.Finalize::class.java,
+            false, 60000L)
 
-        val captor = ArgumentCaptor.forClass(VideoRecordEvent::class.java)
-        verify(videoRecordEventListener, atLeastOnce()).accept(captor.capture())
+        val captor = ArgumentCaptorCameraX<VideoRecordEvent> {
+                argument -> VideoRecordEvent::class.java.isInstance(argument)
+        }
+
+        videoRecordEventListener.verifyAcceptCall(VideoRecordEvent::class.java,
+            false, CallTimesAtLeast(1), captor)
 
         assertThat(captor.value).isInstanceOf(VideoRecordEvent.Finalize::class.java)
         val finalize = captor.value as VideoRecordEvent.Finalize

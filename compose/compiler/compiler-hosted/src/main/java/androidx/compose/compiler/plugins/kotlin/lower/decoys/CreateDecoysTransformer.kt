@@ -16,15 +16,10 @@
 
 package androidx.compose.compiler.plugins.kotlin.lower.decoys
 
-import androidx.compose.compiler.plugins.kotlin.ComposeFqNames
 import androidx.compose.compiler.plugins.kotlin.ModuleMetrics
 import androidx.compose.compiler.plugins.kotlin.lower.ModuleLoweringPass
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
-import org.jetbrains.kotlin.backend.common.ir.addChild
-import org.jetbrains.kotlin.backend.common.ir.copyTo
-import org.jetbrains.kotlin.backend.common.ir.copyTypeParametersFrom
 import org.jetbrains.kotlin.backend.common.ir.moveBodyTo
-import org.jetbrains.kotlin.backend.common.ir.remapTypeParameters
 import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
 import org.jetbrains.kotlin.backend.common.serialization.signature.IdSignatureSerializer
 import org.jetbrains.kotlin.ir.IrStatement
@@ -36,7 +31,6 @@ import org.jetbrains.kotlin.ir.builders.irCall
 import org.jetbrains.kotlin.ir.builders.irReturn
 import org.jetbrains.kotlin.ir.declarations.IrConstructor
 import org.jetbrains.kotlin.ir.declarations.IrDeclarationContainer
-import org.jetbrains.kotlin.ir.declarations.IrDeclarationOrigin
 import org.jetbrains.kotlin.ir.declarations.IrDeclarationParent
 import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.declarations.IrModuleFragment
@@ -46,17 +40,15 @@ import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.expressions.IrExpressionBody
 import org.jetbrains.kotlin.ir.expressions.IrGetValue
 import org.jetbrains.kotlin.ir.expressions.impl.IrConstructorCallImpl
-import org.jetbrains.kotlin.ir.types.IrSimpleType
-import org.jetbrains.kotlin.ir.types.IrType
 import org.jetbrains.kotlin.ir.util.DeepCopySymbolRemapper
+import org.jetbrains.kotlin.ir.util.addChild
 import org.jetbrains.kotlin.ir.util.constructors
+import org.jetbrains.kotlin.ir.util.copyTo
+import org.jetbrains.kotlin.ir.util.copyTypeParametersFrom
 import org.jetbrains.kotlin.ir.util.defaultType
-import org.jetbrains.kotlin.ir.util.hasAnnotation
 import org.jetbrains.kotlin.ir.util.hasDefaultValue
-import org.jetbrains.kotlin.ir.util.isEnumClass
-import org.jetbrains.kotlin.ir.util.isLocal
-import org.jetbrains.kotlin.ir.util.parentAsClass
 import org.jetbrains.kotlin.ir.util.patchDeclarationParents
+import org.jetbrains.kotlin.ir.util.remapTypeParameters
 import org.jetbrains.kotlin.ir.visitors.IrElementTransformerVoid
 import org.jetbrains.kotlin.ir.visitors.transformChildrenVoid
 import org.jetbrains.kotlin.name.Name
@@ -100,28 +92,31 @@ class CreateDecoysTransformer(
     private val originalFunctions: MutableMap<IrFunction, IrDeclarationParent> = mutableMapOf()
 
     private val decoyAnnotation by lazy {
-        getTopLevelClass(DecoyFqNames.Decoy).owner
+        getTopLevelClass(DecoyClassIds.Decoy).owner
     }
 
     private val decoyImplementationAnnotation by lazy {
-        getTopLevelClass(DecoyFqNames.DecoyImplementation).owner
+        getTopLevelClass(DecoyClassIds.DecoyImplementation).owner
     }
 
     private val decoyImplementationDefaultsBitmaskAnnotation =
-        getTopLevelClass(DecoyFqNames.DecoyImplementationDefaultsBitMask).owner
+        getTopLevelClass(DecoyClassIds.DecoyImplementationDefaultsBitMask).owner
 
     private val decoyStub by lazy {
-        getInternalFunction("illegalDecoyCallException").owner
+        getTopLevelFunction(DecoyCallableIds.illegalDecoyCallException).owner
     }
 
     override fun lower(module: IrModuleFragment) {
         module.transformChildrenVoid()
+        updateParents()
+        module.patchDeclarationParents()
+    }
 
+    fun updateParents() {
         originalFunctions.forEach { (f, parent) ->
             (parent as? IrDeclarationContainer)?.addChild(f)
         }
-
-        module.patchDeclarationParents()
+        originalFunctions.clear()
     }
 
     override fun visitSimpleFunction(declaration: IrSimpleFunction): IrStatement {
@@ -189,7 +184,7 @@ class CreateDecoysTransformer(
             newFunction.overriddenSymbols = (original as IrSimpleFunction).overriddenSymbols
             newFunction.correspondingPropertySymbol = null
         }
-        newFunction.origin = IrDeclarationOrigin.DEFINED
+        newFunction.origin = original.origin
 
         // here generic value parameters will be applied
         newFunction.copyTypeParametersFrom(original)
@@ -300,38 +295,6 @@ class CreateDecoysTransformer(
                 )
                 it.putValueArgument(0, irConst(paramsWithDefaultsBitMask))
             }
-    }
-
-    private fun IrFunction.shouldBeRemapped(): Boolean =
-        !isLocalFunction() &&
-            !isEnumConstructor() &&
-            (hasComposableAnnotation() || hasComposableParameter())
-
-    private fun IrFunction.isLocalFunction(): Boolean =
-        origin == IrDeclarationOrigin.LOCAL_FUNCTION_FOR_LAMBDA ||
-            (isLocal && (this is IrSimpleFunction && !overridesComposable()))
-
-    private fun IrSimpleFunction.overridesComposable() =
-        overriddenSymbols.any {
-            it.owner.isDecoy() || it.owner.shouldBeRemapped()
-        }
-
-    private fun IrFunction.hasComposableParameter() =
-        valueParameters.any { it.type.hasComposable() } ||
-            extensionReceiverParameter?.type?.hasComposable() == true
-
-    private fun IrFunction.isEnumConstructor() =
-        this is IrConstructor && parentAsClass.isEnumClass
-
-    private fun IrType.hasComposable(): Boolean {
-        if (hasAnnotation(ComposeFqNames.Composable)) {
-            return true
-        }
-
-        return when (this) {
-            is IrSimpleType -> arguments.any { (it as? IrType)?.hasComposable() == true }
-            else -> false
-        }
     }
 
     companion object {

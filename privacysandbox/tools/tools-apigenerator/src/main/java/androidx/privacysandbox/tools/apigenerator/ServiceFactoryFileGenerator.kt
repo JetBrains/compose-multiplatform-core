@@ -16,77 +16,32 @@
 
 package androidx.privacysandbox.tools.apigenerator
 
-import androidx.privacysandbox.tools.core.model.AnnotatedInterface
+import androidx.privacysandbox.tools.core.generator.SpecNames.iBinderClassName
+import androidx.privacysandbox.tools.core.generator.addCommonSettings
+import androidx.privacysandbox.tools.core.generator.aidlInterfaceNameSpec
 import androidx.privacysandbox.tools.core.generator.build
+import androidx.privacysandbox.tools.core.generator.clientProxyNameSpec
+import androidx.privacysandbox.tools.core.model.AnnotatedInterface
 import com.squareup.kotlinpoet.ClassName
-import com.squareup.kotlinpoet.CodeBlock
 import com.squareup.kotlinpoet.FileSpec
 import com.squareup.kotlinpoet.FunSpec
-import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.ParameterSpec
 
-internal class ServiceFactoryFileGenerator(private val service: AnnotatedInterface) {
-    private val proxyTypeGenerator by lazy {
-        ClientProxyTypeGenerator(service)
-    }
+internal class ServiceFactoryFileGenerator {
 
-    fun generate(): FileSpec =
-        FileSpec.builder(service.packageName, "${service.name}Factory").build {
-            addImport("kotlinx.coroutines", "suspendCancellableCoroutine")
-            addImport("kotlin.coroutines", "resume")
-            addImport("kotlin.coroutines", "resumeWithException")
-            addKotlinDefaultImports(includeJvm = false, includeJs = false)
-
-            addFunction(generateFactoryFunction())
-
-            addType(proxyTypeGenerator.generate())
+    fun generate(service: AnnotatedInterface): FileSpec =
+        FileSpec.builder(service.type.packageName, "${service.type.simpleName}Factory").build {
+            addCommonSettings()
+            addFunction(generateFactoryFunction(service))
         }
 
-    private fun generateFactoryFunction() = FunSpec.builder("create${service.name}").build {
-        addModifiers(KModifier.SUSPEND)
-        addParameter(ParameterSpec("context", AndroidClassNames.context))
-        returns(ClassName(service.packageName, service.name))
-
-        addCode(CodeBlock.builder().build {
-            beginControlFlow("return suspendCancellableCoroutine")
-            addStatement("val sdkSandboxManager = context.getSystemService(%T::class.java)",
-                AndroidClassNames.sandboxManager)
-            addNamed("""
-                |sdkSandboxManager.loadSdk(
-                |    %sdkPackageName:S,
-                |    %bundle:T.EMPTY,
-                |    { obj: Runnable -> obj.run() },
-                |    object : %outcomeReceiver:T<%sandboxedSdk:T, %loadSdkException:T> {
-                |        override fun onResult(result: %sandboxedSdk:T) {
-                |            it.resume(%proxy:T(
-                |                %aidlInterface:T.Stub.asInterface(result.getInterface())))
-                |        }
-                |
-                |        override fun onError(error: %loadSdkException:T) {
-                |            it.resumeWithException(error)
-                |        }
-                |    })
-            """.trimMargin(),
-                mapOf(
-                    "sdkPackageName" to service.packageName,
-                    "proxy" to proxyTypeGenerator.className,
-                    "aidlInterface" to proxyTypeGenerator.remoteBinderClassName,
-                    "bundle" to AndroidClassNames.bundle,
-                    "outcomeReceiver" to AndroidClassNames.outcomeReceiver,
-                    "sandboxedSdk" to AndroidClassNames.sandboxedSdk,
-                    "loadSdkException" to AndroidClassNames.loadSdkException,
-                ))
-            endControlFlow()
-        })
-    }
-}
-
-private object AndroidClassNames {
-    val context = ClassName("android.content", "Context")
-    val bundle = ClassName("android.os", "Bundle")
-    val outcomeReceiver = ClassName("android.os", "OutcomeReceiver")
-    val sandboxManager =
-        ClassName("android.app.sdksandbox", "SdkSandboxManager")
-    val sandboxedSdk = ClassName("android.app.sdksandbox", "SandboxedSdk")
-    val loadSdkException = ClassName("android.app.sdksandbox", "LoadSdkException")
+    private fun generateFactoryFunction(service: AnnotatedInterface) =
+        FunSpec.builder("wrapTo${service.type.simpleName}").build {
+            addParameter(ParameterSpec("binder", iBinderClassName))
+            returns(ClassName(service.type.packageName, service.type.simpleName))
+            addStatement(
+                "return %T(%T.Stub.asInterface(binder))",
+                service.clientProxyNameSpec(), service.aidlInterfaceNameSpec()
+            )
+        }
 }

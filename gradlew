@@ -122,14 +122,18 @@ fi
 # setup from each lint module.
 export ANDROID_HOME="$APP_HOME/../../prebuilts/fullsdk-$plat"
 # override JAVA_HOME, because CI machines have it and it points to very old JDK
-export JAVA_HOME="$APP_HOME/../../prebuilts/jdk/jdk11/$plat-$platform_suffix"
+export JAVA_HOME="$APP_HOME/../../prebuilts/jdk/jdk17/$plat-$platform_suffix"
 export JAVA_TOOLS_JAR="$APP_HOME/../../prebuilts/jdk/jdk8/$plat-x86/lib/tools.jar"
 export STUDIO_GRADLE_JDK=$JAVA_HOME
 
 # Warn developers if they try to build top level project without the full checkout
-[ ! -d "$JAVA_HOME" ] && echo "You likely checked out the standalone AndroidX git project.
+[ ! -d "$JAVA_HOME" ] && echo "Failed to find: $JAVA_HOME
 
-This type of checkout only supports building a subset of projects, see CONTRIBUTING.md" && exit -1
+Typically, this means either:
+1. You are using the standalone AndroidX checkout, e.g. GitHub, which only supports
+   building a subset of projects. See CONTRIBUTING.md for details.
+2. You are using the repo checkout, but the last repo sync failed. Use repo status
+   to check for projects which are partially-synced, e.g. showing ***NO BRANCH***." && exit -1
 
 # ----------------------------------------------------------------------------
 

@@ -24,6 +24,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.glance.GlanceComposable
 import androidx.glance.GlanceId
+import androidx.glance.GlanceTheme
 import androidx.glance.ImageProvider
 import androidx.glance.action.Action
 import androidx.glance.action.ActionParameters
@@ -39,6 +40,7 @@ import androidx.glance.currentState
 import androidx.glance.template.ActionBlock
 import androidx.glance.template.HeaderBlock
 import androidx.glance.template.ImageBlock
+import androidx.glance.template.ImageSize
 import androidx.glance.template.ListStyle
 import androidx.glance.template.ListTemplateData
 import androidx.glance.template.ListTemplateItem
@@ -129,65 +131,68 @@ abstract class BaseListDemoWidget : GlanceTemplateAppWidget() {
         showHeader: Boolean = false,
         initialNumItems: Int = MAX_ITEMS,
     ) {
-        val state = currentState<Preferences>()
-        val content = mutableListOf<ListTemplateItem>()
-        for (i in 1..(state[CountKey] ?: initialNumItems)) {
-            var label = "Item $i"
-            if (state[ItemClickedKey] == i) {
-                label = "$label (selected)"
-            }
-            content.add(
-                ListTemplateItem(
-                    textBlock = TextBlock(
-                        text1 = TemplateText("Title Medium", TextType.Title),
-                        text2 = if (listStyle == ListStyle.Full) TemplateText(
-                            "Lorem ipsum dolor sit amet, consectetur adipiscing elit",
-                            TextType.Body
-                        ) else null,
-                        text3 = if (listStyle == ListStyle.Full) TemplateText(
-                            label,
-                            TextType.Label
-                        ) else null,
-                        priority = 1,
-                    ),
-                    imageBlock = ImageBlock(
-                        images = listOf(
-                            TemplateImageWithDescription(
-                                ImageProvider(R.drawable.compose),
-                                "$i"
-                            )
+        GlanceTheme {
+            val state = currentState<Preferences>()
+            val content = mutableListOf<ListTemplateItem>()
+            for (i in 1..(state[CountKey] ?: initialNumItems)) {
+                var label = "Item $i"
+                if (state[ItemClickedKey] == i) {
+                    label = "$label (selected)"
+                }
+                content.add(
+                    ListTemplateItem(
+                        textBlock = TextBlock(
+                            text1 = TemplateText("Title Medium", TextType.Title),
+                            text2 = if (listStyle == ListStyle.Full) TemplateText(
+                                "Lorem ipsum dolor sit amet, consectetur adipiscing elit",
+                                TextType.Body
+                            ) else null,
+                            text3 = if (listStyle == ListStyle.Full) TemplateText(
+                                label,
+                                TextType.Label
+                            ) else null,
+                            priority = 1,
                         ),
-                        priority = 0, // ahead of textBlock
-                    ),
-                    actionBlock = ActionBlock(
-                        actionButtons = listOf(
-                            TemplateImageButton(
-                                itemSelectAction(
-                                    actionParametersOf(ClickedKey to i)
-                                ),
+                        imageBlock = ImageBlock(
+                            images = listOf(
                                 TemplateImageWithDescription(
-                                    ImageProvider(R.drawable.ic_favorite),
-                                    "button"
+                                    ImageProvider(R.drawable.palm_leaf),
+                                    "$i"
                                 )
                             ),
+                            size = ImageSize.Medium,
+                            priority = 0, // ahead of textBlock
                         ),
-                    ),
+                        actionBlock = ActionBlock(
+                            actionButtons = listOf(
+                                TemplateImageButton(
+                                    itemSelectAction(
+                                        actionParametersOf(ClickedKey to i)
+                                    ),
+                                    TemplateImageWithDescription(
+                                        ImageProvider(R.drawable.ic_bookmark),
+                                        "button"
+                                    )
+                                ),
+                            ),
+                        ),
+                    )
+                )
+            }
+            ListTemplate(
+                ListTemplateData(
+                    headerBlock = if (showHeader) HeaderBlock(
+                        text = TemplateText("List Demo", TextType.Title),
+                        icon = TemplateImageWithDescription(
+                            ImageProvider(R.drawable.ic_widgets),
+                            "Logo"
+                        ),
+                    ) else null,
+                    listContent = content,
+                    listStyle = listStyle
                 )
             )
         }
-        ListTemplate(
-            ListTemplateData(
-                headerBlock = if (showHeader) HeaderBlock(
-                    text = TemplateText("List Demo", TextType.Title),
-                    icon = TemplateImageWithDescription(
-                        ImageProvider(R.drawable.ic_widget),
-                        "Logo"
-                    ),
-                ) else null,
-                listContent = content,
-                listStyle = listStyle
-            )
-        )
     }
 }
 

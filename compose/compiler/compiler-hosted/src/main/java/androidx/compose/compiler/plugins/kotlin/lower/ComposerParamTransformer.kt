@@ -26,10 +26,7 @@ import androidx.compose.compiler.plugins.kotlin.lower.decoys.isDecoy
 import androidx.compose.compiler.plugins.kotlin.lower.decoys.isDecoyImplementation
 import kotlin.math.min
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
-import org.jetbrains.kotlin.backend.common.ir.copyTo
-import org.jetbrains.kotlin.backend.common.ir.copyTypeParametersFrom
 import org.jetbrains.kotlin.backend.common.ir.moveBodyTo
-import org.jetbrains.kotlin.backend.common.ir.remapTypeParameters
 import org.jetbrains.kotlin.backend.jvm.ir.isInlineClassType
 import org.jetbrains.kotlin.descriptors.CallableDescriptor
 import org.jetbrains.kotlin.descriptors.Modality
@@ -73,9 +70,10 @@ import org.jetbrains.kotlin.ir.types.isPrimitiveType
 import org.jetbrains.kotlin.ir.types.makeNullable
 import org.jetbrains.kotlin.ir.util.DeepCopySymbolRemapper
 import org.jetbrains.kotlin.ir.util.constructors
+import org.jetbrains.kotlin.ir.util.copyTo
+import org.jetbrains.kotlin.ir.util.copyTypeParametersFrom
 import org.jetbrains.kotlin.ir.util.defaultType
 import org.jetbrains.kotlin.ir.util.explicitParameters
-import org.jetbrains.kotlin.ir.util.fileOrNull
 import org.jetbrains.kotlin.ir.util.findAnnotation
 import org.jetbrains.kotlin.ir.util.functions
 import org.jetbrains.kotlin.ir.util.getInlineClassUnderlyingType
@@ -83,10 +81,12 @@ import org.jetbrains.kotlin.ir.util.isFakeOverride
 import org.jetbrains.kotlin.ir.util.isVararg
 import org.jetbrains.kotlin.ir.util.module
 import org.jetbrains.kotlin.ir.util.patchDeclarationParents
+import org.jetbrains.kotlin.ir.util.remapTypeParameters
 import org.jetbrains.kotlin.ir.visitors.IrElementTransformerVoid
 import org.jetbrains.kotlin.ir.visitors.acceptVoid
 import org.jetbrains.kotlin.ir.visitors.transformChildrenVoid
 import org.jetbrains.kotlin.load.java.JvmAbi
+import org.jetbrains.kotlin.name.StandardClassIds
 import org.jetbrains.kotlin.platform.js.isJs
 import org.jetbrains.kotlin.platform.jvm.isJvm
 import org.jetbrains.kotlin.resolve.DescriptorUtils
@@ -164,15 +164,6 @@ class ComposerParamTransformer(
                 symbol.owner.lambdaInvokeWithComposerParam()
             }
             else -> (symbol.owner).withComposerParamIfNeeded()
-        }
-
-        // externally transformed functions are already remapped from decoys, so we only need to
-        // add the parameters to the call
-        if (!ownerFn.externallyTransformed()) {
-            if (!isComposableLambda && !transformedFunctionSet.contains(ownerFn))
-                return this
-            if (symbol.owner == ownerFn)
-                return this
         }
 
         return IrCallImpl(
@@ -402,7 +393,7 @@ class ComposerParamTransformer(
             fn.parent = parent
             fn.copyTypeParametersFrom(this)
 
-            fun IrType.remapTypeParameters() =
+            fun IrType.remapTypeParameters(): IrType =
                 remapTypeParameters(this@copy, fn)
 
             fn.returnType = returnType.remapTypeParameters()
@@ -439,7 +430,7 @@ class ComposerParamTransformer(
     }
 
     private fun jvmNameAnnotation(name: String): IrConstructorCall {
-        val jvmName = getTopLevelClass(DescriptorUtils.JVM_NAME)
+        val jvmName = getTopLevelClass(StandardClassIds.Annotations.JvmName)
         val ctor = jvmName.constructors.first { it.owner.isPrimary }
         val type = jvmName.createType(false, emptyList())
         return IrConstructorCallImpl(
@@ -672,5 +663,7 @@ class ComposerParamTransformer(
      * different module fragment with the same [ModuleDescriptor]
      */
     private fun IrFunction.externallyTransformed(): Boolean =
-        decoysEnabled && currentModule?.files?.contains(fileOrNull) != true
+        decoysEnabled && valueParameters.firstOrNull {
+            it.name == KtxNameConventions.COMPOSER_PARAMETER
+        } != null
 }

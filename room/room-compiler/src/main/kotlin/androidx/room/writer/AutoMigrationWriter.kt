@@ -22,7 +22,8 @@ import androidx.room.compiler.codegen.XCodeBlock
 import androidx.room.compiler.codegen.XFunSpec
 import androidx.room.compiler.codegen.XFunSpec.Builder.Companion.addStatement
 import androidx.room.compiler.codegen.XTypeSpec
-import androidx.room.compiler.codegen.addOriginatingElement
+import androidx.room.compiler.codegen.XTypeSpec.Builder.Companion.addOriginatingElement
+import androidx.room.compiler.codegen.XTypeSpec.Builder.Companion.addProperty
 import androidx.room.compiler.codegen.toXClassName
 import androidx.room.compiler.processing.XTypeElement
 import androidx.room.ext.RoomTypeNames
@@ -56,8 +57,8 @@ class AutoMigrationWriter(
 
             if (autoMigration.specClassName != null) {
                 builder.addProperty(
-                    typeName = RoomTypeNames.AUTO_MIGRATION_SPEC.toXClassName(),
                     name = "callback",
+                    typeName = RoomTypeNames.AUTO_MIGRATION_SPEC.toXClassName(),
                     visibility = VisibilityModifier.PRIVATE,
                     initExpr = if (!autoMigration.isSpecProvided) {
                         XCodeBlock.ofNewInstance(
@@ -101,7 +102,7 @@ class AutoMigrationWriter(
             language = codeLanguage,
             name = "migrate",
             visibility = VisibilityModifier.PUBLIC,
-            isOverridden = true,
+            isOverride = true,
         ).apply {
                 addParameter(
                     typeName = SupportDbTypeNames.DB.toXClassName(),

@@ -33,7 +33,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.util.Consumer;
-import androidx.window.core.ExperimentalWindowApi;
 import androidx.window.embedding.ActivityFilter;
 import androidx.window.embedding.ActivityRule;
 import androidx.window.embedding.EmbeddingRule;
@@ -49,13 +48,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import kotlin.OptIn;
-
 /**
  * Sample showcase of split activity rules. Allows the user to select some split configuration
  * options with checkboxes and launch activities with those options applied.
  */
-@OptIn(markerClass = ExperimentalWindowApi.class)
 public class SplitActivityBase extends AppCompatActivity
         implements CompoundButton.OnCheckedChangeListener {
 
@@ -202,12 +198,12 @@ public class SplitActivityBase extends AppCompatActivity
     }
 
     /** Gets the placeholder rule for the given activity. */
-    SplitPlaceholderRule getPlaceholderRule(Class<? extends Activity> a) {
+    SplitPlaceholderRule getPlaceholderRule(@NonNull Class<? extends Activity> a) {
         Set<EmbeddingRule> currentRules = mSplitController.getSplitRules();
         for (EmbeddingRule rule : currentRules) {
             if (rule instanceof SplitPlaceholderRule) {
                 for (ActivityFilter filter : ((SplitPlaceholderRule) rule).getFilters()) {
-                    if (filter.matchesClassName(a)) {
+                    if (filter.getComponentName().getClassName().equals(a.getName())) {
                         return (SplitPlaceholderRule) rule;
                     }
                 }
@@ -248,12 +244,9 @@ public class SplitActivityBase extends AppCompatActivity
     }
 
     /** Whether the given rule is for splitting the given activity with another. */
-    private boolean isRuleFor(
-            @Nullable Class<? extends Activity> a,
-            @NonNull ActivityRule config
-    ) {
+    private boolean isRuleFor(@NonNull Class<? extends Activity> a, @NonNull ActivityRule config) {
         for (ActivityFilter filter : config.getFilters()) {
-            if (filter.matchesClassNameOrWildCard(a)) {
+            if (filter.getComponentName().getClassName().equals(a.getName())) {
                 return true;
             }
         }

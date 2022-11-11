@@ -35,7 +35,6 @@ import androidx.room.processor.ProcessorErrors.TYPE_CONVERTER_UNBOUND_GENERIC
 import androidx.room.solver.types.CustomTypeConverterWrapper
 import androidx.room.vo.BuiltInConverterFlags
 import androidx.room.vo.CustomTypeConverter
-import java.util.LinkedHashSet
 
 /**
  * Processes classes that are referenced in TypeConverters annotations.
@@ -72,7 +71,8 @@ class CustomConverterProcessor(val context: Context, val element: XTypeElement) 
                 annotation.getAsAnnotationBox<BuiltInTypeConverters>("builtInTypeConverters").let {
                     BuiltInConverterFlags(
                         enums = it.value.enums,
-                        uuid = it.value.uuid
+                        uuid = it.value.uuid,
+                        byteBuffer = it.value.byteBuffer
                     )
                 }
             return ProcessResult(
@@ -133,7 +133,7 @@ class CustomConverterProcessor(val context: Context, val element: XTypeElement) 
         }
         return converterMethods.mapNotNull {
             processMethod(
-                container = element.type,
+                container = element,
                 isContainerKotlinObject = isKotlinObjectDeclaration,
                 methodElement = it,
                 isProvidedConverter = isProvidedConverter
@@ -142,12 +142,12 @@ class CustomConverterProcessor(val context: Context, val element: XTypeElement) 
     }
 
     private fun processMethod(
-        container: XType,
+        container: XTypeElement,
         methodElement: XMethodElement,
         isContainerKotlinObject: Boolean,
         isProvidedConverter: Boolean
     ): CustomTypeConverter? {
-        val asMember = methodElement.asMemberOf(container)
+        val asMember = methodElement.asMemberOf(container.type)
         val returnType = asMember.returnType
         val invalidReturnType = returnType.isInvalidReturnType()
         context.checker.check(
@@ -168,7 +168,7 @@ class CustomConverterProcessor(val context: Context, val element: XTypeElement) 
             return null
         }
         val param = params.map {
-            it.asMemberOf(container)
+            it.asMemberOf(container.type)
         }.first()
         context.checker.notUnbound(param.typeName, params[0], TYPE_CONVERTER_UNBOUND_GENERIC)
         return CustomTypeConverter(

@@ -145,7 +145,7 @@ class XTypeElementTest {
                 assertThat(it.superClass).isEqualTo(
                     invocation.processingEnv.requireType("foo.bar.AbstractClass")
                 )
-                assertThat(it.superTypes).containsExactly(
+                assertThat(it.type.superTypes).containsExactly(
                     invocation.processingEnv.requireType("foo.bar.AbstractClass"),
                     invocation.processingEnv.requireType("foo.bar.MyInterface")
                 )
@@ -160,7 +160,7 @@ class XTypeElementTest {
                 assertThat(it.superClass).isEqualTo(
                     invocation.processingEnv.requireType(JTypeName.OBJECT)
                 )
-                assertThat(it.superTypes).containsExactly(
+                assertThat(it.type.superTypes).containsExactly(
                     invocation.processingEnv.requireType(JTypeName.OBJECT)
                 )
                 assertThat(it.isAbstract()).isTrue()
@@ -171,7 +171,7 @@ class XTypeElementTest {
             }
             invocation.processingEnv.requireTypeElement("foo.bar.MyInterface").let {
                 assertThat(it.superClass).isNull()
-                assertThat(it.superTypes).containsExactly(
+                assertThat(it.type.superTypes).containsExactly(
                     invocation.processingEnv.requireType(JTypeName.OBJECT)
                 )
                 assertThat(it.isInterface()).isTrue()
@@ -181,7 +181,8 @@ class XTypeElementTest {
             }
             invocation.processingEnv.requireTypeElement("foo.bar.AnotherInterface").let {
                 assertThat(it.superClass).isNull()
-                assertThat(it.superTypes).containsExactly(
+                assertThat(it.type.superTypes).containsExactly(
+                    invocation.processingEnv.requireType("java.lang.Object"),
                     invocation.processingEnv.requireType("foo.bar.MyInterface")
                 )
                 assertThat(it.isInterface()).isTrue()
@@ -584,6 +585,15 @@ class XTypeElementTest {
                     .containsExactly(
                         "getX", "setX", "getY", "setY"
                     )
+                subject.getField("x").let { field ->
+                    assertThat(field.isFinal()).isFalse()
+                    // b/250567151: Remove exception for KSP + classes
+                    if (invocation.isKsp && pkg == "lib") {
+                        assertThat(field.isPrivate()).isTrue()
+                    } else {
+                        assertThat(field.isPrivate()).isFalse()
+                    }
+                }
             }
         }
     }
@@ -711,14 +721,26 @@ class XTypeElementTest {
             ).map {
                 invocation.processingEnv.requireTypeElement(it)
             }.forEach { subject ->
+                val methods = subject.getDeclaredMethods()
                 assertWithMessage(subject.qualifiedName)
                     .that(
-                        subject.getDeclaredMethods().map {
+                        methods.map {
                             it.jvmName
                         }
                     ).containsExactly(
                         "getMutable", "setMutable", "getImmutable"
                     )
+                methods.forEach {
+                    assertWithMessage("${subject.qualifiedName}.${it.jvmName}()")
+                        .that(it.isKotlinPropertyMethod())
+                        .apply {
+                            if (subject.name.contains("Kotlin")) {
+                                isTrue()
+                            } else {
+                                isFalse()
+                            }
+                        }
+                }
             }
         }
     }

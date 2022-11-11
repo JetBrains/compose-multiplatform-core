@@ -16,7 +16,7 @@
 
 package androidx.compose.compiler.plugins.kotlin
 
-import androidx.compose.compiler.plugins.kotlin.analysis.StabilityInferencer
+import androidx.compose.compiler.plugins.kotlin.analysis.stabilityOf
 import org.intellij.lang.annotations.Language
 import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.declarations.IrModuleFragment
@@ -28,7 +28,7 @@ import org.jetbrains.kotlin.ir.util.defaultType
 import org.jetbrains.kotlin.ir.util.statements
 import org.junit.Test
 
-class ClassStabilityTransformTests : ComposeIrTransformTest() {
+class ClassStabilityTransformTests : AbstractIrTransformTest() {
 
     @Test
     fun testEmptyClassIsStable() = assertStability(
@@ -782,7 +782,7 @@ class ClassStabilityTransformTests : ComposeIrTransformTest() {
                 %composer.skipToGroupEnd()
               }
               %composer.endRestartGroup()?.updateScope { %composer: Composer?, %force: Int ->
-                A(y, %composer, %changed or 0b0001, %default)
+                A(y, %composer, updateChangedFlags(%changed or 0b0001), %default)
               }
             }
         """
@@ -894,7 +894,7 @@ class ClassStabilityTransformTests : ComposeIrTransformTest() {
                 traceEventEnd()
               }
               %composer.endRestartGroup()?.updateScope { %composer: Composer?, %force: Int ->
-                A(y, %composer, %changed or 0b0001)
+                A(y, %composer, updateChangedFlags(%changed or 0b0001))
               }
             }
         """
@@ -933,7 +933,7 @@ class ClassStabilityTransformTests : ComposeIrTransformTest() {
                 traceEventEnd()
               }
               %composer.endRestartGroup()?.updateScope { %composer: Composer?, %force: Int ->
-                A(y, %composer, %changed or 0b0001)
+                A(y, %composer, updateChangedFlags(%changed or 0b0001))
               }
             }
         """
@@ -985,7 +985,7 @@ class ClassStabilityTransformTests : ComposeIrTransformTest() {
                 %composer.skipToGroupEnd()
               }
               %composer.endRestartGroup()?.updateScope { %composer: Composer?, %force: Int ->
-                B(value, %composer, %changed or 0b0001)
+                B(value, %composer, updateChangedFlags(%changed or 0b0001))
               }
             }
             @Composable
@@ -1006,7 +1006,7 @@ class ClassStabilityTransformTests : ComposeIrTransformTest() {
                 traceEventEnd()
               }
               %composer.endRestartGroup()?.updateScope { %composer: Composer?, %force: Int ->
-                X(items, itemContent, %composer, %changed or 0b0001)
+                X(items, itemContent, %composer, updateChangedFlags(%changed or 0b0001))
               }
             }
             @Composable
@@ -1021,7 +1021,7 @@ class ClassStabilityTransformTests : ComposeIrTransformTest() {
                 traceEventEnd()
               }
               %composer.endRestartGroup()?.updateScope { %composer: Composer?, %force: Int ->
-                C(items, %composer, %changed or 0b0001)
+                C(items, %composer, updateChangedFlags(%changed or 0b0001))
               }
             }
             internal object ComposableSingletons%TestKt {
@@ -1098,7 +1098,7 @@ class ClassStabilityTransformTests : ComposeIrTransformTest() {
                 traceEventEnd()
               }
               %composer.endRestartGroup()?.updateScope { %composer: Composer?, %force: Int ->
-                A(y, x, %composer, %changed or 0b0001)
+                A(y, x, %composer, updateChangedFlags(%changed or 0b0001))
               }
             }
             @Composable
@@ -1113,7 +1113,7 @@ class ClassStabilityTransformTests : ComposeIrTransformTest() {
                 traceEventEnd()
               }
               %composer.endRestartGroup()?.updateScope { %composer: Composer?, %force: Int ->
-                B(x, %composer, %changed or 0b0001)
+                B(x, %composer, updateChangedFlags(%changed or 0b0001))
               }
             }
         """
@@ -1151,7 +1151,7 @@ class ClassStabilityTransformTests : ComposeIrTransformTest() {
                 traceEventEnd()
               }
               %composer.endRestartGroup()?.updateScope { %composer: Composer?, %force: Int ->
-                A(y, x, %composer, %changed or 0b0001)
+                A(y, x, %composer, updateChangedFlags(%changed or 0b0001))
               }
             }
             @Composable
@@ -1166,7 +1166,7 @@ class ClassStabilityTransformTests : ComposeIrTransformTest() {
                 traceEventEnd()
               }
               %composer.endRestartGroup()?.updateScope { %composer: Composer?, %force: Int ->
-                B(x, %composer, %changed or 0b0001)
+                B(x, %composer, updateChangedFlags(%changed or 0b0001))
               }
             }
         """
@@ -1194,10 +1194,9 @@ class ClassStabilityTransformTests : ComposeIrTransformTest() {
         val files = listOf(
             sourceFile("Test.kt", source.replace('%', '$'))
         )
-        val irModule = JvmCompilation().compile(files)
+        val irModule = compileToIr(files)
         val irClass = irModule.files.last().declarations.first() as IrClass
-        val classStability = StabilityInferencer(pluginContext!!)
-            .stabilityOf(irClass.defaultType as IrType)
+        val classStability = stabilityOf(irClass.defaultType as IrType)
 
         assertEquals(
             stability,
@@ -1215,8 +1214,7 @@ class ClassStabilityTransformTests : ComposeIrTransformTest() {
     ) {
         val irModule = buildModule(externalSrc, classDefSrc, dumpClasses)
         val irClass = irModule.files.last().declarations.first() as IrClass
-        val classStability = StabilityInferencer(pluginContext!!)
-            .stabilityOf(irClass.defaultType as IrType)
+        val classStability = stabilityOf(irClass.defaultType as IrType)
 
         assertEquals(
             stability,
@@ -1253,7 +1251,7 @@ class ClassStabilityTransformTests : ComposeIrTransformTest() {
             is IrExpression -> lastStatement
             else -> error("unexpected statement: $lastStatement")
         }
-        val exprStability = StabilityInferencer(pluginContext!!).stabilityOf(irExpr)
+        val exprStability = stabilityOf(irExpr)
 
         assertEquals(
             stability,
@@ -1289,6 +1287,7 @@ class ClassStabilityTransformTests : ComposeIrTransformTest() {
             $externalSrc
         """.trimIndent()
 
+        val classesDirectory = tmpDir("kotlin-classes")
         classLoader(dependencySrc, dependencyFileName, dumpClasses)
             .allGeneratedFiles
             .also {
@@ -1318,7 +1317,7 @@ class ClassStabilityTransformTests : ComposeIrTransformTest() {
         val files = listOf(
             sourceFile("Test.kt", source.replace('%', '$'))
         )
-        return JvmCompilation().compile(files)
+        return compileToIr(files, additionalPaths = listOf(classesDirectory))
     }
 
     private fun assertTransform(

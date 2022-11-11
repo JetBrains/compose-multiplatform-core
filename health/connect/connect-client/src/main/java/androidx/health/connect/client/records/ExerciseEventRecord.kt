@@ -15,8 +15,8 @@
  */
 package androidx.health.connect.client.records
 
+import androidx.annotation.IntDef
 import androidx.annotation.RestrictTo
-import androidx.annotation.StringDef
 import androidx.health.connect.client.records.metadata.Metadata
 import java.time.Instant
 import java.time.ZoneOffset
@@ -28,18 +28,23 @@ import java.time.ZoneOffset
  * For pause events, resume state can be assumed from the end time of the pause or rest event.
  */
 public class ExerciseEventRecord(
+    override val startTime: Instant,
+    override val startZoneOffset: ZoneOffset?,
+    override val endTime: Instant,
+    override val endZoneOffset: ZoneOffset?,
     /**
      * Type of event. Required field. Allowed values: [EventType].
      *
      * @see EventType
      */
-    @property:EventTypes public val eventType: String,
-    override val startTime: Instant,
-    override val startZoneOffset: ZoneOffset?,
-    override val endTime: Instant,
-    override val endZoneOffset: ZoneOffset?,
+    @property:EventTypes public val eventType: Int,
     override val metadata: Metadata = Metadata.EMPTY,
 ) : IntervalRecord {
+
+    init {
+        require(startTime.isBefore(endTime)) { "startTime must be before endTime." }
+    }
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is ExerciseEventRecord) return false
@@ -55,8 +60,7 @@ public class ExerciseEventRecord(
     }
 
     override fun hashCode(): Int {
-        var result = 0
-        result = 31 * result + eventType.hashCode()
+        var result = eventType.hashCode()
         result = 31 * result + (startZoneOffset?.hashCode() ?: 0)
         result = 31 * result + endTime.hashCode()
         result = 31 * result + (endZoneOffset?.hashCode() ?: 0)
@@ -68,15 +72,15 @@ public class ExerciseEventRecord(
      * Types of exercise event. They can be either explicitly requested by a user or auto-detected
      * by a tracking app.
      */
-    public object EventType {
+    internal object EventType {
         /**
-         * Explicit pause during an workout, requested by the user (by clicking a pause button in
+         * Explicit pause during a workout, requested by the user (by clicking a pause button in
          * the session UI). Movement happening during pause should not contribute to session
          * metrics.
          */
         const val PAUSE = "pause"
         /**
-         * Auto-detected periods of rest during an workout. There should be no user movement
+         * Auto-detected periods of rest during a workout. There should be no user movement
          * detected during rest and any movement detected should finish rest event.
          */
         const val REST = "rest"
@@ -88,13 +92,32 @@ public class ExerciseEventRecord(
      * @suppress
      */
     @Retention(AnnotationRetention.SOURCE)
-    @StringDef(
+    @IntDef(
         value =
             [
-                EventType.PAUSE,
-                EventType.REST,
+                EVENT_TYPE_UNKNOWN,
+                EVENT_TYPE_PAUSE,
+                EVENT_TYPE_REST,
             ]
     )
     @RestrictTo(RestrictTo.Scope.LIBRARY)
     annotation class EventTypes
+
+    companion object {
+        const val EVENT_TYPE_UNKNOWN = 0
+        const val EVENT_TYPE_PAUSE = 1
+        const val EVENT_TYPE_REST = 2
+
+        @RestrictTo(RestrictTo.Scope.LIBRARY)
+        @JvmField
+        val EVENT_TYPE_STRING_TO_INT_MAP: Map<String, Int> =
+            mapOf(
+                EventType.PAUSE to EVENT_TYPE_PAUSE,
+                EventType.REST to EVENT_TYPE_REST,
+            )
+
+        @RestrictTo(RestrictTo.Scope.LIBRARY)
+        @JvmField
+        val EVENT_TYPE_INT_TO_STRING_MAP = EVENT_TYPE_STRING_TO_INT_MAP.reverse()
+    }
 }

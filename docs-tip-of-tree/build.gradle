@@ -42,6 +42,7 @@ dependencies {
     docs(project(":camera:camera-camera2"))
     docs(project(":camera:camera-core"))
     docs(project(":camera:camera-effects"))
+    docs(project(":camera:camera-effects-still-portrait"))
     docs(project(":camera:camera-extensions"))
     stubs(fileTree(dir: "../camera/camera-extensions-stub", include: ["camera-extensions-stub.jar"]))
     docs(project(":camera:camera-mlkit-vision"))
@@ -117,6 +118,7 @@ dependencies {
     docs(project(":core:core-google-shortcuts"))
     docs(project(":core:core-i18n"))
     docs(project(":core:core-ktx"))
+    docs(project(":core:core-location-altitude"))
     docs(project(":core:core-performance"))
     samples(project(":core:core-performance:core-performance-samples"))
     docs(project(":core:core-remoteviews"))
@@ -132,7 +134,6 @@ dependencies {
     docs(project(":customview:customview-poolingcontainer"))
     docs(project(":datastore:datastore"))
     docs(project(":datastore:datastore-core"))
-    docs(project(":datastore:datastore-multiprocess"))
     docs(project(":datastore:datastore-preferences"))
     docs(project(":datastore:datastore-preferences-core"))
     docs(project(":datastore:datastore-preferences-proto"))
@@ -175,6 +176,7 @@ dependencies {
     samples(project(":hilt:hilt-navigation-compose-samples"))
     docs(project(":hilt:hilt-navigation-fragment"))
     docs(project(":hilt:hilt-work"))
+    docs(project(":input:input-motionprediction"))
     docs(project(":interpolator:interpolator"))
     docs(project(":javascriptengine:javascriptengine"))
     docs(project(":metrics:metrics-performance"))
@@ -249,6 +251,9 @@ dependencies {
     docs(project(":privacysandbox:tools:tools-apicompiler"))
     docs(project(":privacysandbox:tools:tools-apigenerator"))
     docs(project(":privacysandbox:tools:tools-core"))
+    docs(project(":privacysandbox:ui:ui-client"))
+    docs(project(":privacysandbox:ui:ui-core"))
+    docs(project(":privacysandbox:ui:ui-provider"))
     docs(project(":profileinstaller:profileinstaller"))
     docs(project(":recommendation:recommendation"))
     docs(project(":recyclerview:recyclerview"))
@@ -337,6 +342,7 @@ dependencies {
     docs(project(":wear:watchface:watchface-style"))
     docs(project(":webkit:webkit"))
     docs(project(":window:window"))
+    docs(project(":window:window-core"))
     docs(project(":window:window-java"))
     docs(project(":window:window-rxjava2"))
     docs(project(":window:window-rxjava3"))
@@ -350,11 +356,4 @@ dependencies {
     docs(project(":work:work-rxjava2"))
     docs(project(":work:work-rxjava3"))
     docs(project(":work:work-testing"))
-}
-
-afterEvaluate {
-    // b/172817047 : exploratory workaround to avoid running two dokkaKotlinDocs tasks at once
-    tasks["dokkaKotlinDocs"].configure { task ->
-        task.mustRunAfter(":docs-public:dokkaKotlinDocs")
-    }
 }

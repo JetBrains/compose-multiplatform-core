@@ -16,6 +16,8 @@
 
 package androidx.room.solver.shortcut.binder
 
+import androidx.room.compiler.codegen.XPropertySpec
+import androidx.room.compiler.codegen.toJavaPoet
 import androidx.room.compiler.processing.XType
 import androidx.room.ext.CallableTypeSpecBuilder
 import androidx.room.solver.CodeGenScope
@@ -48,16 +50,17 @@ class CallableUpsertMethodBinder(
 
     override fun convertAndReturn(
         parameters: List<ShortcutQueryParameter>,
-        adapters: Map<String, Pair<FieldSpec, Any>>,
-        dbField: FieldSpec,
+        adapters: Map<String, Pair<XPropertySpec, Any>>,
+        dbProperty: XPropertySpec,
         scope: CodeGenScope
     ) {
+        val dbField = dbProperty.toJavaPoet()
         val adapterScope = scope.fork()
         val callableImpl = CallableTypeSpecBuilder(typeArg.typeName) {
             adapter?.createMethodBody(
                 parameters = parameters,
                 adapters = adapters,
-                dbField = dbField,
+                dbProperty = dbProperty,
                 scope = adapterScope
             )
             addCode(adapterScope.builder().build())

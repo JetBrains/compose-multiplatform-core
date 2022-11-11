@@ -154,8 +154,10 @@ import kotlinx.coroutines.launch
  * provided, there will be no cursor drawn
  * @param softWrap Whether the text should break at soft line breaks. If false, the glyphs in the
  * text will be positioned as if there was unlimited horizontal space.
- * @param maxLines The maximum height in terms of maximum number of visible lines. Should be
- * equal or greater than 1.
+ * @param maxLines The maximum height in terms of maximum number of visible lines. It is required
+ * that 1 <= [minLines] <= [maxLines].
+ * @param minLines The minimum height in terms of minimum number of visible lines. It is required
+ * that 1 <= [minLines] <= [maxLines].
  * @param imeOptions Contains different IME configuration options.
  * @param keyboardActions when the input service emits an IME action, the corresponding callback
  * is called. Note that this IME action may be different from what you specified in
@@ -185,6 +187,7 @@ internal fun CoreTextField(
     cursorBrush: Brush = SolidColor(Color.Unspecified),
     softWrap: Boolean = true,
     maxLines: Int = Int.MAX_VALUE,
+    minLines: Int = DefaultMinLines,
     imeOptions: ImeOptions = ImeOptions.Default,
     keyboardActions: KeyboardActions = KeyboardActions.Default,
     enabled: Boolean = true,
@@ -548,7 +551,11 @@ internal fun CoreTextField(
                 // min height is set for maxLines == 1 in order to prevent text cuts for single line
                 // TextFields
                 .heightIn(min = state.minHeightForSingleLineField)
-                .maxLinesHeight(maxLines, textStyle)
+                .heightInLines(
+                    textStyle = textStyle,
+                    minLines = minLines,
+                    maxLines = maxLines
+                )
                 .textFieldScroll(
                     scrollerPosition,
                     value,

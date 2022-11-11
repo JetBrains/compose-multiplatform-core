@@ -20,6 +20,7 @@ package androidx.camera.camera2.pipe.integration.adapter
 
 import android.annotation.SuppressLint
 import android.hardware.camera2.CameraCharacteristics
+import android.hardware.camera2.CameraMetadata
 import android.view.Surface
 import androidx.annotation.RequiresApi
 import androidx.camera.camera2.pipe.CameraPipe
@@ -28,6 +29,8 @@ import androidx.camera.camera2.pipe.integration.config.CameraConfig
 import androidx.camera.camera2.pipe.integration.config.CameraScope
 import androidx.camera.camera2.pipe.integration.impl.CameraCallbackMap
 import androidx.camera.camera2.pipe.integration.impl.CameraProperties
+import androidx.camera.camera2.pipe.integration.interop.Camera2CameraInfo
+import androidx.camera.camera2.pipe.integration.interop.ExperimentalCamera2Interop
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.CameraState
 import androidx.camera.core.ExposureState
@@ -60,6 +63,10 @@ class CameraInfoAdapter @Inject constructor(
     private val cameraCallbackMap: CameraCallbackMap,
 ) : CameraInfoInternal {
     private lateinit var camcorderProfileProviderAdapter: CamcorderProfileProviderAdapter
+    @OptIn(ExperimentalCamera2Interop::class)
+    internal val camera2CameraInfo: Camera2CameraInfo by lazy {
+        Camera2CameraInfo.create(cameraProperties)
+    }
 
     override fun getCameraId(): String = cameraConfig.cameraId.value
     override fun getLensFacing(): Int? =
@@ -114,8 +121,14 @@ class CameraInfoAdapter @Inject constructor(
     }
 
     override fun getTimebase(): Timebase {
-        Log.warn { "TODO: getTimebase are not yet supported." }
-        return Timebase.UPTIME
+        val timeSource = cameraProperties.metadata[
+            CameraCharacteristics.SENSOR_INFO_TIMESTAMP_SOURCE
+        ]!!
+        return when (timeSource) {
+            CameraMetadata.SENSOR_INFO_TIMESTAMP_SOURCE_REALTIME -> Timebase.REALTIME
+            CameraMetadata.SENSOR_INFO_TIMESTAMP_SOURCE_UNKNOWN -> Timebase.UPTIME
+            else -> Timebase.UPTIME
+        }
     }
 
     override fun toString(): String = "CameraInfoAdapter<$cameraConfig.cameraId>"

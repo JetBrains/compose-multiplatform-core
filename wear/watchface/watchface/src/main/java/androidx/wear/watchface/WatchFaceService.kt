@@ -16,6 +16,7 @@
 
 package androidx.wear.watchface
 
+import android.app.KeyguardManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
@@ -54,9 +55,11 @@ import androidx.annotation.VisibleForTesting
 import androidx.annotation.WorkerThread
 import androidx.versionedparcelable.ParcelUtils
 import androidx.wear.watchface.complications.SystemDataSources.DataSourceId
+import androidx.wear.watchface.complications.data.ComplicationPersistencePolicies
 import androidx.wear.watchface.complications.data.ComplicationData
 import androidx.wear.watchface.complications.data.ComplicationExperimental
 import androidx.wear.watchface.complications.data.ComplicationType
+import androidx.wear.watchface.complications.data.NoDataComplicationData
 import androidx.wear.watchface.complications.data.toApiComplicationData
 import androidx.wear.watchface.complications.data.toWireTypes
 import androidx.wear.watchface.control.HeadlessWatchFaceImpl
@@ -334,6 +337,7 @@ public abstract class WatchFaceService : WallpaperService() {
         /** The maximum reasonable wire size for an Icon in a [UserStyleSchema] in pixels. */
         @Px
         internal const val MAX_REASONABLE_SCHEMA_ICON_WIDTH = 400
+
         @Px
         internal const val MAX_REASONABLE_SCHEMA_ICON_HEIGHT = 400
 
@@ -806,7 +810,13 @@ public abstract class WatchFaceService : WallpaperService() {
             for (slot in complicationSlotsManager.complicationSlots) {
                 objectOutputStream.writeInt(slot.key)
                 objectOutputStream.writeObject(
-                    slot.value.complicationData.value.asWireComplicationData()
+                    if ((slot.value.complicationData.value.persistencePolicy and
+                            ComplicationPersistencePolicies.DO_NOT_PERSIST) != 0
+                    ) {
+                        NoDataComplicationData().asWireComplicationData()
+                    } else {
+                        slot.value.complicationData.value.asWireComplicationData()
+                    }
                 )
             }
             objectOutputStream.close()
@@ -1167,13 +1177,9 @@ public abstract class WatchFaceService : WallpaperService() {
             // assume we're not in ambient mode which should be correct most of the time.
             isAmbient.value = false
             isHeadless = headless
+            isLocked.value =
+                (getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager).isDeviceLocked
         }
-
-        // It's possible for two getOrCreateInteractiveWatchFaceClient calls to come in back to
-        // back for the same instance. If the second one specifies a UserStyle we need to apply it
-        // but if the instance isn't fully initialized we need to defer application to avoid
-        // blocking in getOrCreateInteractiveWatchFaceClient until the watch face is ready.
-        internal var pendingUserStyle: UserStyleWireFormat? = null
 
         /**
          * Whether or not we allow watch faces to animate. In some tests or for headless
@@ -1259,7 +1265,7 @@ public abstract class WatchFaceService : WallpaperService() {
 
         private val lock = Any()
 
-        /** Protected by [lock]. */
+        /** All members after this are protected by [lock]. */
         private val listeners = RemoteCallbackList<IWatchfaceListener>()
         private var lastWatchFaceColors: WatchFaceColors? = null
         private var lastPreviewImageNeedsUpdateRequest: String? = null
@@ -1436,26 +1442,34 @@ public abstract class WatchFaceService : WallpaperService() {
             }
         }
 
-        @UiThread
-        internal suspend fun setUserStyle(userStyle: UserStyleWireFormat): Unit = TraceEvent(
+        fun setUserStyle(userStyle: UserStyleWireFormat): Unit = TraceEvent(
             "EngineWrapper.setUserStyle"
         ).use {
-            setUserStyleImpl(deferredWatchFaceImpl.await(), userStyle)
+            uiThreadCoroutineScope.launch {
+                try {
+                    setUserStyleImpl(
+                        deferredEarlyInitDetails.await().userStyleRepository,
+                        userStyle
+                    )
+                } catch (e: Exception) {
+                    Log.e(TAG, "setUserStyle failed", e)
+                    throw e
+                }
+            }
         }
 
         @UiThread
         private fun setUserStyleImpl(
-            watchFaceImpl: WatchFaceImpl,
+            currentUserStyleRepository: CurrentUserStyleRepository,
             userStyle: UserStyleWireFormat
         ) {
-            watchFaceImpl.onSetStyleInternal(
-                UserStyle(UserStyleData(userStyle), watchFaceImpl.currentUserStyleRepository.schema)
+            currentUserStyleRepository.updateUserStyle(
+                UserStyle(UserStyleData(userStyle), currentUserStyleRepository.schema)
             )
 
             // Update direct boot params if we have any.
             val params = directBootParams ?: return
-            val currentStyle =
-                watchFaceImpl.currentUserStyleRepository.userStyle.value.toWireFormat()
+            val currentStyle = currentUserStyleRepository.userStyle.value.toWireFormat()
             if (params.userStyle.equals(currentStyle)) {
                 return
             }
@@ -2166,15 +2180,6 @@ public abstract class WatchFaceService : WallpaperService() {
                 // deferredWatchFaceImpl) occurs before initStyleAndComplications has
                 // executed. NB usually we won't have to wait at all.
                 initStyleAndComplicationsDone.await()
-
-                // Its possible a second getOrCreateInteractiveWatchFaceClient call came in before
-                // the watch face for the first one had finished initializing, in that case we want
-                // to apply the updated style. NB pendingUserStyle is accessed on the UiThread so
-                // there shouldn't be any problems with race conditions.
-                pendingUserStyle?.let {
-                    setUserStyleImpl(watchFaceImpl, it)
-                    pendingUserStyle = null
-                }
                 deferredWatchFaceImpl.complete(watchFaceImpl)
 
                 asyncWatchFaceConstructionPending = false
@@ -2657,7 +2662,10 @@ public abstract class WatchFaceService : WallpaperService() {
             writer.println("WatchFaceEngine:")
             writer.increaseIndent()
             when {
-                wslFlow.iWatchFaceServiceInitialized() -> writer.println("WSL style init flow")
+                wslFlow.iWatchFaceServiceInitialized() -> {
+                    writer.println("WSL style init flow")
+                    writer.println("watchFaceInitStarted=${wslFlow.watchFaceInitStarted}")
+                }
                 this.watchFaceCreatedOrPending() -> writer.println("Androidx style init flow")
                 isPreAndroidR() -> writer.println("Expecting WSL style init")
                 else -> writer.println("Expecting androidx style style init")
@@ -2676,7 +2684,6 @@ public abstract class WatchFaceService : WallpaperService() {
                 }
             }
             writer.println("createdBy=$createdBy")
-            writer.println("watchFaceInitStarted=$wslFlow.watchFaceInitStarted")
             writer.println("asyncWatchFaceConstructionPending=$asyncWatchFaceConstructionPending")
             writer.println(
                 "systemViewOfContentDescriptionLabelsIsStale=" +

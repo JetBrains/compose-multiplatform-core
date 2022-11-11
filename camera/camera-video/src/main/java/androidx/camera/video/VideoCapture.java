@@ -105,6 +105,7 @@ import androidx.camera.video.internal.compat.quirk.DeviceQuirks;
 import androidx.camera.video.internal.compat.quirk.ImageCaptureFailedWhenVideoCaptureIsBoundQuirk;
 import androidx.camera.video.internal.compat.quirk.PreviewDelayWhenVideoCaptureIsBoundQuirk;
 import androidx.camera.video.internal.compat.quirk.PreviewStretchWhenVideoCaptureIsBoundQuirk;
+import androidx.camera.video.internal.compat.quirk.VideoQualityQuirk;
 import androidx.camera.video.internal.config.MimeInfo;
 import androidx.camera.video.internal.encoder.InvalidConfigException;
 import androidx.camera.video.internal.encoder.VideoEncoderConfig;
@@ -152,12 +153,22 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
     private static final String SURFACE_UPDATE_KEY =
             "androidx.camera.video.VideoCapture.streamUpdate";
     private static final Defaults DEFAULT_CONFIG = new Defaults();
-    private static final boolean HAS_PREVIEW_STRETCH_QUIRK =
-            DeviceQuirks.get(PreviewStretchWhenVideoCaptureIsBoundQuirk.class) != null;
-    private static final boolean HAS_PREVIEW_DELAY_QUIRK =
-            DeviceQuirks.get(PreviewDelayWhenVideoCaptureIsBoundQuirk.class) != null;
-    private static final boolean HAS_IMAGE_CAPTURE_QUIRK =
-            DeviceQuirks.get(ImageCaptureFailedWhenVideoCaptureIsBoundQuirk.class) != null;
+    private static final boolean ENABLE_SURFACE_PROCESSING_BY_QUIRK;
+    private static final boolean USE_TEMPLATE_PREVIEW_BY_QUIRK;
+    static {
+        boolean hasPreviewStretchQuirk =
+                DeviceQuirks.get(PreviewStretchWhenVideoCaptureIsBoundQuirk.class) != null;
+        boolean hasPreviewDelayQuirk =
+                DeviceQuirks.get(PreviewDelayWhenVideoCaptureIsBoundQuirk.class) != null;
+        boolean hasImageCaptureFailedQuirk =
+                DeviceQuirks.get(ImageCaptureFailedWhenVideoCaptureIsBoundQuirk.class) != null;
+        boolean hasVideoQualityQuirkAndWorkaroundBySurfaceProcessing =
+                hasVideoQualityQuirkAndWorkaroundBySurfaceProcessing();
+        USE_TEMPLATE_PREVIEW_BY_QUIRK =
+                hasPreviewStretchQuirk || hasPreviewDelayQuirk || hasImageCaptureFailedQuirk;
+        ENABLE_SURFACE_PROCESSING_BY_QUIRK = hasPreviewDelayQuirk || hasImageCaptureFailedQuirk
+                || hasVideoQualityQuirkAndWorkaroundBySurfaceProcessing;
+    }
 
     @SuppressWarnings("WeakerAccess") // Synthetic access
     DeferrableSurface mDeferrableSurface;
@@ -177,6 +188,8 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
     private SurfaceProcessorNode mNode;
     @Nullable
     private VideoEncoderInfo mVideoEncoderInfo;
+    @Nullable
+    private Rect mCropRect;
 
     /**
      * Create a VideoCapture associated with the given {@link VideoOutput}.
@@ -305,7 +318,6 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
 
         mStreamInfo = fetchObservableValue(getOutput().getStreamInfo(),
                 StreamInfo.STREAM_INFO_ANY_INACTIVE);
-        mNode = createNodeIfNeeded();
         mSessionConfigBuilder = createPipeline(cameraId, config, finalSelectedResolution);
         applyStreamInfoToSessionConfigBuilder(mSessionConfigBuilder, mStreamInfo);
         updateSessionConfig(mSessionConfigBuilder.build());
@@ -352,13 +364,6 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
     @Override
     public void onDetached() {
         clearPipeline();
-
-        if (mNode != null) {
-            mNode.release();
-            mNode = null;
-        }
-
-        mVideoEncoderInfo = null;
     }
 
     /**
@@ -455,11 +460,16 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
         }
     }
 
-    @VisibleForTesting
     @NonNull
-    SettableSurface getCameraSettableSurface() {
+    private SettableSurface getCameraSettableSurface() {
         Preconditions.checkNotNull(mNode);
         return (SettableSurface) requireNonNull(mDeferrableSurface);
+    }
+
+    @VisibleForTesting
+    @Nullable
+    Rect getCropRect() {
+        return mCropRect;
     }
 
     /**
@@ -487,17 +497,23 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
         Threads.checkMainThread();
         CameraInternal camera = Preconditions.checkNotNull(getCamera());
 
+        // Currently, VideoCapture uses StreamInfo to handle requests for surface, so
+        // handleInvalidate() is not used. But if a different approach is asked in the future,
+        // handleInvalidate() can be used as an alternative.
+        Runnable onSurfaceInvalidated = this::notifyReset;
+
         // TODO(b/229410005): The expected FPS range will need to come from the camera rather
         //  than what is requested in the config. For now we use the default range of (30, 30)
         //  for behavioral consistency.
         Range<Integer> targetFpsRange = requireNonNull(
                 config.getTargetFramerate(Defaults.DEFAULT_FPS_RANGE));
+        Rect cropRect = requireNonNull(getCropRect(resolution));
         Timebase timebase;
+        mNode = createNodeIfNeeded(isCropNeeded(cropRect, resolution));
         if (mNode != null) {
             MediaSpec mediaSpec = requireNonNull(getMediaSpec());
-            Rect cropRect = requireNonNull(getCropRect(resolution));
             timebase = camera.getCameraInfoInternal().getTimebase();
-            cropRect = adjustCropRectIfNeeded(cropRect, resolution,
+            mCropRect = adjustCropRectIfNeeded(cropRect, resolution,
                     () -> getVideoEncoderInfo(config.getVideoEncoderInfoFinder(),
                             VideoCapabilities.from(camera.getCameraInfo()), timebase, mediaSpec,
                             resolution, targetFpsRange));
@@ -507,16 +523,25 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
                     ImageFormat.PRIVATE,
                     getSensorToBufferTransformMatrix(),
                     /*hasEmbeddedTransform=*/true,
-                    cropRect,
+                    mCropRect,
                     getRelativeRotation(camera),
-                    /*mirroring=*/false);
+                    /*mirroring=*/false,
+                    onSurfaceInvalidated);
             SurfaceEdge inputEdge = SurfaceEdge.create(singletonList(cameraSurface));
             SurfaceEdge outputEdge = mNode.transform(inputEdge);
             SettableSurface appSurface = outputEdge.getSurfaces().get(0);
             mSurfaceRequest = appSurface.createSurfaceRequest(camera, targetFpsRange);
             mDeferrableSurface = cameraSurface;
+            cameraSurface.getTerminationFuture().addListener(() -> {
+                // If camera surface is the latest one, it means this pipeline can be abandoned.
+                // Clear the pipeline in order to trigger the surface complete event to appSurface.
+                if (cameraSurface == mDeferrableSurface) {
+                    clearPipeline();
+                }
+            }, CameraXExecutors.mainThreadExecutor());
         } else {
-            mSurfaceRequest = new SurfaceRequest(resolution, camera, false, targetFpsRange);
+            mSurfaceRequest = new SurfaceRequest(resolution, camera, false, targetFpsRange,
+                    onSurfaceInvalidated);
             mDeferrableSurface = mSurfaceRequest.getDeferrableSurface();
             // When camera buffers from a REALTIME device are passed directly to a video encoder
             // from the camera, automatic compensation is done to account for differing timebases
@@ -524,6 +549,7 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
             // CameraMetadata#SENSOR_INFO_TIMESTAMP_SOURCE_REALTIME. So the timebase is always
             // UPTIME when encoder surface is directly sent to camera.
             timebase = Timebase.UPTIME;
+            mCropRect = cropRect;
         }
 
         config.getVideoOutput().onSurfaceRequested(mSurfaceRequest, timebase);
@@ -535,7 +561,7 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
         SessionConfig.Builder sessionConfigBuilder = SessionConfig.Builder.createFrom(config);
         sessionConfigBuilder.addErrorListener(
                 (sessionConfig, error) -> resetPipeline(cameraId, config, resolution));
-        if (HAS_PREVIEW_STRETCH_QUIRK || HAS_PREVIEW_DELAY_QUIRK || HAS_IMAGE_CAPTURE_QUIRK) {
+        if (USE_TEMPLATE_PREVIEW_BY_QUIRK) {
             sessionConfigBuilder.setTemplateType(CameraDevice.TEMPLATE_PREVIEW);
         }
 
@@ -553,7 +579,12 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
             mDeferrableSurface.close();
             mDeferrableSurface = null;
         }
-
+        if (mNode != null) {
+            mNode.release();
+            mNode = null;
+        }
+        mVideoEncoderInfo = null;
+        mCropRect = null;
         mSurfaceRequest = null;
         mStreamInfo = StreamInfo.STREAM_INFO_ANY_INACTIVE;
     }
@@ -697,9 +728,9 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
     }
 
     @Nullable
-    private SurfaceProcessorNode createNodeIfNeeded() {
-        if (mSurfaceProcessor != null || HAS_PREVIEW_DELAY_QUIRK || HAS_IMAGE_CAPTURE_QUIRK) {
-            Logger.d(TAG, "SurfaceEffect is enabled.");
+    private SurfaceProcessorNode createNodeIfNeeded(boolean isCropNeeded) {
+        if (mSurfaceProcessor != null || ENABLE_SURFACE_PROCESSING_BY_QUIRK || isCropNeeded) {
+            Logger.d(TAG, "Surface processing is enabled.");
             return new SurfaceProcessorNode(requireNonNull(getCamera()),
                     APPLY_CROP_ROTATE_AND_MIRRORING,
                     mSurfaceProcessor != null ? mSurfaceProcessor : new DefaultSurfaceProcessor());
@@ -1083,6 +1114,16 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
         }
 
         return ret;
+    }
+
+    private static boolean hasVideoQualityQuirkAndWorkaroundBySurfaceProcessing() {
+        List<VideoQualityQuirk> quirks = DeviceQuirks.getAll(VideoQualityQuirk.class);
+        for (VideoQualityQuirk quirk : quirks) {
+            if (quirk.workaroundBySurfaceProcessing()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static int getArea(@NonNull Size size) {

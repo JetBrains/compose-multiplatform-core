@@ -21,20 +21,21 @@ package androidx.camera.camera2.pipe.integration.adapter
 import androidx.annotation.RequiresApi
 import androidx.camera.camera2.pipe.CameraPipe
 import androidx.camera.camera2.pipe.core.Log.debug
-import androidx.camera.camera2.pipe.core.Log.warn
 import androidx.camera.camera2.pipe.integration.config.CameraConfig
 import androidx.camera.camera2.pipe.integration.config.CameraScope
 import androidx.camera.camera2.pipe.integration.impl.UseCaseManager
+import androidx.camera.camera2.pipe.integration.impl.UseCaseThreads
 import androidx.camera.core.UseCase
+import androidx.camera.core.impl.CameraConfigs
 import androidx.camera.core.impl.CameraControlInternal
 import androidx.camera.core.impl.CameraInfoInternal
 import androidx.camera.core.impl.CameraInternal
 import androidx.camera.core.impl.LiveDataObservable
 import androidx.camera.core.impl.Observable
-import androidx.camera.core.impl.utils.futures.Futures
 import com.google.common.util.concurrent.ListenableFuture
 import javax.inject.Inject
 import kotlinx.atomicfu.atomic
+import kotlinx.coroutines.launch
 
 internal val cameraAdapterIds = atomic(0)
 
@@ -46,9 +47,12 @@ class CameraInternalAdapter @Inject constructor(
     config: CameraConfig,
     private val useCaseManager: UseCaseManager,
     private val cameraInfo: CameraInfoInternal,
-    private val cameraController: CameraControlInternal
+    private val cameraController: CameraControlInternal,
+    private val threads: UseCaseThreads,
 ) : CameraInternal {
     private val cameraId = config.cameraId
+    private var coreCameraConfig: androidx.camera.core.impl.CameraConfig =
+        CameraConfigs.emptyConfig()
     private val debugId = cameraAdapterIds.incrementAndGet()
     private val cameraState = LiveDataObservable<CameraInternal.State>()
 
@@ -69,9 +73,8 @@ class CameraInternalAdapter @Inject constructor(
     }
 
     override fun release(): ListenableFuture<Void> {
-        warn { "$this#release is not yet implemented." }
-        // TODO: Determine what the correct way to invoke release is.
-        return Futures.immediateFuture(null)
+        // TODO(b/185207100): Implement when CameraState is ready.
+        return threads.scope.launch { useCaseManager.close() }.asListenableFuture()
     }
 
     override fun getCameraInfoInternal(): CameraInfoInternal = cameraInfo
@@ -102,6 +105,14 @@ class CameraInternalAdapter @Inject constructor(
 
     override fun onUseCaseInactive(useCase: UseCase) {
         useCaseManager.deactivate(useCase)
+    }
+
+    override fun getExtendedConfig(): androidx.camera.core.impl.CameraConfig {
+        return coreCameraConfig
+    }
+
+    override fun setExtendedConfig(cameraConfig: androidx.camera.core.impl.CameraConfig?) {
+        coreCameraConfig = cameraConfig ?: CameraConfigs.emptyConfig()
     }
 
     override fun toString(): String = "CameraInternalAdapter<$cameraId>"

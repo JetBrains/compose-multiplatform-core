@@ -279,7 +279,7 @@ public final class ImageCapture extends UseCase {
     @FlashMode
     private static final int DEFAULT_FLASH_MODE = FLASH_MODE_OFF;
 
-    boolean mUseProcessingPipeline = false;
+    boolean mUseProcessingPipeline = true;
 
     @SuppressWarnings("WeakerAccess") /* synthetic accessor */
     static final ExifRotationAvailability EXIF_ROTATION_AVAILABILITY =
@@ -364,6 +364,9 @@ public final class ImageCapture extends UseCase {
     // Synthetic access
     @SuppressWarnings("WeakerAccess")
     final Executor mSequentialIoExecutor;
+
+    @Nullable
+    private CameraEffect mCameraEffect;
 
     /**
      * Creates a new image capture use case from the given configuration.
@@ -1936,10 +1939,15 @@ public final class ImageCapture extends UseCase {
         checkMainThread();
         Log.d(TAG, String.format("createPipelineWithNode(cameraId: %s, resolution: %s)",
                 cameraId, resolution));
+
         checkState(mImagePipeline == null);
-        mImagePipeline = new ImagePipeline(config, resolution);
-        checkState(mTakePictureManager == null);
-        mTakePictureManager = new TakePictureManager(mImageCaptureControl, mImagePipeline);
+        mImagePipeline = new ImagePipeline(config, resolution, mCameraEffect);
+
+        if (mTakePictureManager == null) {
+            // mTakePictureManager is reused when the Surface is reset.
+            mTakePictureManager = new TakePictureManager(mImageCaptureControl);
+        }
+        mTakePictureManager.setImagePipeline(mImagePipeline);
 
         SessionConfig.Builder sessionConfigBuilder = mImagePipeline.createSessionConfigBuilder();
         if (Build.VERSION.SDK_INT >= 23 && getCaptureMode() == CAPTURE_MODE_ZERO_SHUTTER_LAG) {
@@ -1950,7 +1958,8 @@ public final class ImageCapture extends UseCase {
             //  to this use case so we don't need to do this check.
             if (isCurrentCamera(cameraId)) {
                 mTakePictureManager.pause();
-                // TODO: we might need to ask mImagePipeline to recreate camera Surface.
+                clearPipelineWithNode(/*keepTakePictureManager=*/ true);
+                mSessionConfigBuilder = createPipeline(cameraId, config, resolution);
                 updateSessionConfig(mSessionConfigBuilder.build());
                 notifyReset();
                 mTakePictureManager.resume();
@@ -2025,6 +2034,15 @@ public final class ImageCapture extends UseCase {
         return new Rect(0, 0, resolution.getWidth(), resolution.getHeight());
     }
 
+
+    /**
+     * Clears the pipeline without keeping the {@link TakePictureManager}.
+     */
+    @MainThread
+    private void clearPipelineWithNode() {
+        clearPipelineWithNode(/*keepTakePictureManager=*/false);
+    }
+
     /**
      * Clears the pipeline.
      *
@@ -2032,13 +2050,15 @@ public final class ImageCapture extends UseCase {
      * resources.
      */
     @MainThread
-    private void clearPipelineWithNode() {
+    private void clearPipelineWithNode(boolean keepTakePictureManager) {
         Log.d(TAG, "clearPipelineWithNode");
         checkMainThread();
         mImagePipeline.close();
         mImagePipeline = null;
-        mTakePictureManager.abortRequests();
-        mTakePictureManager = null;
+        if (!keepTakePictureManager) {
+            mTakePictureManager.abortRequests();
+            mTakePictureManager = null;
+        }
     }
 
     /**
@@ -2056,6 +2076,33 @@ public final class ImageCapture extends UseCase {
     @VisibleForTesting
     boolean isProcessingPipelineEnabled() {
         return mImagePipeline != null && mTakePictureManager != null;
+    }
+
+    /**
+     * @hide
+     */
+    @MainThread
+    @RestrictTo(Scope.LIBRARY_GROUP)
+    public void setEffect(@Nullable CameraEffect cameraEffect) {
+        checkMainThread();
+        mCameraEffect = cameraEffect;
+    }
+
+    /**
+     * @hide
+     */
+    @MainThread
+    @RestrictTo(Scope.LIBRARY_GROUP)
+    @Nullable
+    public CameraEffect getEffect() {
+        checkMainThread();
+        return mCameraEffect;
+    }
+
+    @VisibleForTesting
+    @NonNull
+    TakePictureManager getTakePictureManager() {
+        return mTakePictureManager;
     }
 
     // ===== New architecture end =====
@@ -3057,7 +3104,8 @@ public final class ImageCapture extends UseCase {
          * will be finally selected will depend on the camera device's hardware level and the
          * bound use cases combination. For more details see the guaranteed supported
          * configurations tables in {@link android.hardware.camera2.CameraDevice}'s
-         * <a href="https://developer.android.com/reference/android/hardware/camera2/CameraDevice#regular-capture">Regular capture</a> section.
+         * href="https://developer.android.com/reference/android/hardware/camera2/CameraDevice
+         * #regular-capture">Regular capture</a> section.
          *
          * @param resolution The target resolution to choose from supported output sizes list.
          * @return The current Builder.

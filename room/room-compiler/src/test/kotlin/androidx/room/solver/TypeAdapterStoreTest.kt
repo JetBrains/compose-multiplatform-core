@@ -20,22 +20,23 @@ import COMMON
 import androidx.paging.DataSource
 import androidx.paging.PagingSource
 import androidx.room.Dao
+import androidx.room.compiler.codegen.XCodeBlock
+import androidx.room.compiler.codegen.toJavaPoet
 import androidx.room.compiler.processing.XProcessingEnv
 import androidx.room.compiler.processing.XRawType
 import androidx.room.compiler.processing.isTypeElement
 import androidx.room.compiler.processing.util.Source
 import androidx.room.compiler.processing.util.XTestInvocation
 import androidx.room.compiler.processing.util.runProcessorTest
+import androidx.room.ext.CommonTypeNames
 import androidx.room.ext.GuavaUtilConcurrentTypeNames
-import androidx.room.ext.L
 import androidx.room.ext.LifecyclesTypeNames
 import androidx.room.ext.PagingTypeNames
 import androidx.room.ext.ReactiveStreamsTypeNames
-import androidx.room.ext.RoomTypeNames
+import androidx.room.ext.RoomTypeNames.ROOM_DB
 import androidx.room.ext.RoomTypeNames.STRING_UTIL
 import androidx.room.ext.RxJava2TypeNames
 import androidx.room.ext.RxJava3TypeNames
-import androidx.room.ext.T
 import androidx.room.ext.implementsEqualsAndHashcode
 import androidx.room.ext.typeName
 import androidx.room.parser.SQLTypeAffinity
@@ -61,6 +62,7 @@ import androidx.room.solver.shortcut.binderprovider.RxCallableDeleteOrUpdateMeth
 import androidx.room.solver.shortcut.binderprovider.RxCallableInsertMethodBinderProvider
 import androidx.room.solver.shortcut.binderprovider.RxCallableUpsertMethodBinderProvider
 import androidx.room.solver.types.BoxedPrimitiveColumnTypeAdapter
+import androidx.room.solver.types.ByteBufferColumnTypeAdapter
 import androidx.room.solver.types.CompositeAdapter
 import androidx.room.solver.types.CustomTypeConverterWrapper
 import androidx.room.solver.types.EnumColumnTypeAdapter
@@ -72,7 +74,6 @@ import androidx.room.testing.context
 import androidx.room.vo.BuiltInConverterFlags
 import androidx.room.vo.ReadQueryMethod
 import com.google.common.truth.Truth.assertThat
-import com.squareup.javapoet.CodeBlock
 import com.squareup.javapoet.TypeName
 import java.util.UUID
 import org.hamcrest.CoreMatchers.instanceOf
@@ -219,6 +220,24 @@ class TypeAdapterStoreTest {
             val adapter = store.findColumnTypeAdapter(enum, null, skipDefaultConverter = false)
             assertThat(adapter, notNullValue())
             assertThat(adapter, instanceOf(EnumColumnTypeAdapter::class.java))
+        }
+    }
+
+    @Test
+    fun testJavaLangByteBufferCompilesWithoutError() {
+        runProcessorTest { invocation ->
+            val store = TypeAdapterStore.create(
+                Context(invocation.processingEnv),
+                BuiltInConverterFlags.DEFAULT
+            )
+            val byteBufferType = invocation.processingEnv.requireType(CommonTypeNames.BYTE_BUFFER)
+            val adapter = store.findColumnTypeAdapter(
+                byteBufferType,
+                null,
+                skipDefaultConverter = false
+            )
+            assertThat(adapter, notNullValue())
+            assertThat(adapter, instanceOf(ByteBufferColumnTypeAdapter::class.java))
         }
     }
 
@@ -409,30 +428,36 @@ class TypeAdapterStoreTest {
                 null,
                 skipDefaultConverter = false
             )
-            assertThat(adapter, notNullValue())
+            assertThat(adapter).isNotNull()
 
             val bindScope = testCodeGenScope()
             adapter!!.bindToStmt("stmt", "41", "fooVar", bindScope)
-            assertThat(
-                bindScope.builder().build().toString().trim(),
-                `is`(
-                    """
-                final java.lang.String ${tmp(0)} = androidx.room.util.StringUtil.joinIntoString(fooVar);
+            val expectedAdapterCode = if (invocation.isKsp) {
+                """
+                stmt.bindString(41, ${tmp(0)});
+                """.trimIndent()
+            } else {
+                """
                 if (${tmp(0)} == null) {
                   stmt.bindNull(41);
                 } else {
                   stmt.bindString(41, ${tmp(0)});
                 }
-                    """.trimIndent()
-                )
+                """.trimIndent()
+            }
+            assertThat(bindScope.builder().build().toString().trim()).isEqualTo(
+                """
+                |final java.lang.String ${tmp(0)} = androidx.room.util.StringUtil.joinIntoString(fooVar);
+                |$expectedAdapterCode
+                """.trimMargin()
             )
 
             val converter = store.typeConverterStore.findTypeConverter(
                 binders[0].from,
                 invocation.context.COMMON_TYPES.STRING
             )
-            assertThat(converter, notNullValue())
-            assertThat(store.typeConverterStore.reverse(converter!!), `is`(binders[1]))
+            assertThat(converter).isNotNull()
+            assertThat(store.typeConverterStore.reverse(converter!!)).isEqualTo(binders[1])
         }
     }
 
@@ -1166,7 +1191,7 @@ class TypeAdapterStoreTest {
                 ).first()
             check(dao.isTypeElement())
             val dbType = invocation.context.processingEnv
-                .requireType(RoomTypeNames.ROOM_DB)
+                .requireType(ROOM_DB.toJavaPoet())
             val parser = DaoProcessor(
                 invocation.context,
                 dao, dbType, null,
@@ -1219,7 +1244,7 @@ class TypeAdapterStoreTest {
                 ).first()
             check(dao.isTypeElement())
             val dbType = invocation.context.processingEnv
-                .requireType(RoomTypeNames.ROOM_DB)
+                .requireType(ROOM_DB.toJavaPoet())
             val parser = DaoProcessor(
                 invocation.context,
                 dao, dbType, null,
@@ -1271,7 +1296,7 @@ class TypeAdapterStoreTest {
                 ).first()
             check(dao.isTypeElement())
             val dbType = invocation.context.processingEnv
-                .requireType(RoomTypeNames.ROOM_DB)
+                .requireType(ROOM_DB.toJavaPoet())
             val parser = DaoProcessor(
                 invocation.context,
                 dao, dbType, null,
@@ -1319,7 +1344,7 @@ class TypeAdapterStoreTest {
                 ).first()
             check(dao.isTypeElement())
             val dbType = invocation.context.processingEnv
-                .requireType(RoomTypeNames.ROOM_DB)
+                .requireType(ROOM_DB.toJavaPoet())
             val parser = DaoProcessor(
                 invocation.context,
                 dao, dbType, null,
@@ -1668,9 +1693,12 @@ class TypeAdapterStoreTest {
             listOfInts,
             invocation.context.COMMON_TYPES.STRING
         ) {
-            override fun buildStatement(inputVarName: String, scope: CodeGenScope): CodeBlock {
-                return CodeBlock.of(
-                    "$T.joinIntoString($L)", STRING_UTIL, inputVarName
+            override fun buildStatement(inputVarName: String, scope: CodeGenScope): XCodeBlock {
+                return XCodeBlock.of(
+                    scope.language,
+                    "%T.joinIntoString(%L)",
+                    STRING_UTIL.toJavaPoet(),
+                    inputVarName
                 )
             }
         }
@@ -1678,9 +1706,11 @@ class TypeAdapterStoreTest {
         val stringToIntListConverter = object : SingleStatementTypeConverter(
             invocation.context.COMMON_TYPES.STRING, listOfInts
         ) {
-            override fun buildStatement(inputVarName: String, scope: CodeGenScope): CodeBlock {
-                return CodeBlock.of(
-                    "$T.splitToIntList($L)", STRING_UTIL,
+            override fun buildStatement(inputVarName: String, scope: CodeGenScope): XCodeBlock {
+                return XCodeBlock.of(
+                    scope.language,
+                    "%T.splitToIntList(%L)",
+                    STRING_UTIL.toJavaPoet(),
                     inputVarName
                 )
             }
@@ -1693,13 +1723,18 @@ class TypeAdapterStoreTest {
         val tLong = env.requireType("java.lang.Long").makeNullable()
         return listOf(
             object : SingleStatementTypeConverter(tDate, tLong) {
-                override fun buildStatement(inputVarName: String, scope: CodeGenScope): CodeBlock {
-                    return CodeBlock.of("$L.time", inputVarName)
+                override fun buildStatement(inputVarName: String, scope: CodeGenScope): XCodeBlock {
+                    return XCodeBlock.of(scope.language, "%L.time", inputVarName)
                 }
             },
             object : SingleStatementTypeConverter(tLong, tDate) {
-                override fun buildStatement(inputVarName: String, scope: CodeGenScope): CodeBlock {
-                    return CodeBlock.of("new $T($L)", tDate.typeName, inputVarName)
+                override fun buildStatement(inputVarName: String, scope: CodeGenScope): XCodeBlock {
+                    return XCodeBlock.ofNewInstance(
+                        scope.language,
+                        tDate.asTypeName(),
+                        "%L",
+                        inputVarName
+                    )
                 }
             }
         )

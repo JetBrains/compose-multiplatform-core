@@ -25,6 +25,7 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Notification;
 import android.app.PendingIntent;
+import android.app.RemoteInput.Builder;
 import android.content.Context;
 import android.content.LocusId;
 import android.content.res.ColorStateList;
@@ -4224,9 +4225,7 @@ public class NotificationCompat {
              * where the platform doesn't support the MIME type, the original text provided in the
              * constructor will be used.
              *
-             * @param dataMimeType The MIME type of the content. See
-             * <a href="{@docRoot}notifications/messaging.html"> for the list of supported MIME
-             * types on Android and Android Wear.
+             * @param dataMimeType The MIME type of the content
              * @param dataUri The uri containing the content whose type is given by the MIME type.
              * <p class="note">
              * <ol>
@@ -5928,7 +5927,7 @@ public class NotificationCompat {
     /**
      * Helper class to add wearable extensions to notifications.
      * <p class="note"> See
-     * <a href="{@docRoot}wear/notifications/creating.html">Creating Notifications
+     * <a href="{@docRoot}training/wearables/notifications">Creating Notifications
      * for Android Wear</a> for more information on how to use this class.
      * <p>
      * To create a notification with wearable extensions:
@@ -6852,7 +6851,7 @@ public class NotificationCompat {
          * Sets the dismissal id for this notification. If a notification is posted with a
          * dismissal id, then when that notification is canceled, notifications on other wearables
          * and the paired Android phone having that same dismissal id will also be canceled. See
-         * <a href="{@docRoot}wear/notifications/index.html">Adding Wearable Features to
+         * <a href="{@docRoot}training/wearables/notifications/bridger">Adding Wearable Features to
          * Notifications</a> for more information.
          * @param dismissalId the dismissal id of the notification.
          * @return this object for method chaining
@@ -6873,8 +6872,8 @@ public class NotificationCompat {
         /**
          * Sets a bridge tag for this notification. A bridge tag can be set for notifications
          * posted from a phone to provide finer-grained control on what notifications are bridged
-         * to wearables. See <a href="{@docRoot}wear/notifications/index.html">Adding Wearable
-         * Features to Notifications</a> for more information.
+         * to wearables. See <a href="{@docRoot}training/wearables/notifications/bridger">Adding
+         * Wearable Features to Notifications</a> for more information.
          * @param bridgeTag the bridge tag of the notification.
          * @return this object for method chaining
          */
@@ -7134,13 +7133,14 @@ public class NotificationCompat {
             b.putParcelableArray(KEY_MESSAGES, messages);
             RemoteInput remoteInputCompat = uc.getRemoteInput();
             if (remoteInputCompat != null) {
-                android.app.RemoteInput remoteInput =
-                        Api20Impl.build(new android.app.RemoteInput.Builder(
-                                remoteInputCompat.getResultKey())
-                                .setLabel(remoteInputCompat.getLabel())
-                                .setChoices(remoteInputCompat.getChoices())
-                                .setAllowFreeFormInput(remoteInputCompat.getAllowFreeFormInput())
-                                .addExtras(remoteInputCompat.getExtras()));
+                android.app.RemoteInput.Builder builder = Api20Impl.createBuilder(
+                        remoteInputCompat.getResultKey());
+                Api20Impl.setLabel(builder, remoteInputCompat.getLabel());
+                Api20Impl.setChoices(builder, remoteInputCompat.getChoices());
+                Api20Impl.setAllowFreeFormInput(builder, remoteInputCompat.getAllowFreeFormInput());
+                Api20Impl.addExtras(builder, remoteInputCompat.getExtras());
+
+                android.app.RemoteInput remoteInput = Api20Impl.build(builder);
                 b.putParcelable(KEY_REMOTE_INPUT, remoteInput);
             }
             b.putParcelable(KEY_ON_REPLY, uc.getReplyPendingIntent());
@@ -7443,6 +7443,11 @@ public class NotificationCompat {
             }
 
             @DoNotInline
+            static android.app.RemoteInput.Builder createBuilder(String resultKey) {
+                return new android.app.RemoteInput.Builder(resultKey);
+            }
+
+            @DoNotInline
             static android.app.RemoteInput build(android.app.RemoteInput.Builder builder) {
                 return builder.build();
             }
@@ -7458,8 +7463,20 @@ public class NotificationCompat {
             }
 
             @DoNotInline
+            static android.app.RemoteInput.Builder setChoices(
+                    android.app.RemoteInput.Builder builder, CharSequence[] choices) {
+                return builder.setChoices(choices);
+            }
+
+            @DoNotInline
             static CharSequence getLabel(android.app.RemoteInput remoteInput) {
                 return remoteInput.getLabel();
+            }
+
+            @DoNotInline
+            static android.app.RemoteInput.Builder setLabel(android.app.RemoteInput.Builder builder,
+                    CharSequence label) {
+                return builder.setLabel(label);
             }
 
             @DoNotInline
@@ -7468,8 +7485,20 @@ public class NotificationCompat {
             }
 
             @DoNotInline
+            static android.app.RemoteInput.Builder setAllowFreeFormInput(
+                    android.app.RemoteInput.Builder builder, boolean allowFreeFormInput) {
+                return builder.setAllowFreeFormInput(allowFreeFormInput);
+            }
+
+            @DoNotInline
             static Bundle getExtras(android.app.RemoteInput remoteInput) {
                 return remoteInput.getExtras();
+            }
+
+            @DoNotInline
+            static android.app.RemoteInput.Builder addExtras(
+                    android.app.RemoteInput.Builder builder, android.os.Bundle extras) {
+                return builder.addExtras(extras);
             }
         }
 

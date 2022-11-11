@@ -178,7 +178,11 @@ removed when the bug is resolved.
 
 ### Delegating to API-specific implementations {#delegating-to-api-specific-implementations}
 
-#### SDK-dependent reflection
+#### SDK-dependent reflection {#sdk-reflection}
+
+Note: The
+[BanUncheckedReflection](https://cs.android.com/androidx/platform/frameworks/support/+/androidx-main:lint-checks/src/main/java/androidx/build/lint/BanUncheckedReflection.kt)
+lint check detects disallowed usages of reflection.
 
 Starting in API level 28, the platform restricts which
 [non-SDK interfaces](https://developer.android.com/distribute/best-practices/develop/restrictions-non-sdk-interfaces)
@@ -186,9 +190,13 @@ can be accessed via reflection by apps and libraries. As a general rule, you
 will **not** be able to use reflection to access hidden APIs on devices with
 `SDK_INT` greater than `Build.VERSION_CODES.P` (28).
 
-On earlier devices, reflection on hidden platform APIs is allowed **only** when
-an alternative public platform API exists in a later revision of the Android
-SDK. For example, the following implementation is allowed:
+In cases where a hidden API is a constant value, **do not** inline the value.
+Hidden APIs cannot be tested by CTS and carry no stability guarantees.
+
+On earlier devices or in cases where an API is marked with
+`@UnsupportedAppUsage`, reflection on hidden platform APIs is allowed **only**
+when an alternative public platform API exists in a later revision of the
+Android SDK. For example, the following implementation is allowed:
 
 ```java
 public AccessibilityDelegate getAccessibilityDelegate(View v) {

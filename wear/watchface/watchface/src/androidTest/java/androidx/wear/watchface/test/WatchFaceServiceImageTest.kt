@@ -41,10 +41,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.screenshot.AndroidXScreenshotTestRule
 import androidx.test.screenshot.assertAgainstGolden
-import androidx.wear.watchface.complications.SystemDataSources
-import androidx.wear.watchface.complications.data.ComplicationText
-import androidx.wear.watchface.complications.data.PlainComplicationText
-import androidx.wear.watchface.complications.data.ShortTextComplicationData
 import androidx.wear.watchface.ComplicationSlotsManager
 import androidx.wear.watchface.DrawMode
 import androidx.wear.watchface.MutableWatchState
@@ -55,10 +51,14 @@ import androidx.wear.watchface.TapType
 import androidx.wear.watchface.WatchFace
 import androidx.wear.watchface.WatchFaceService
 import androidx.wear.watchface.WatchState
+import androidx.wear.watchface.complications.SystemDataSources
+import androidx.wear.watchface.complications.data.ComplicationText
 import androidx.wear.watchface.complications.data.LongTextComplicationData
 import androidx.wear.watchface.complications.data.MonochromaticImage
 import androidx.wear.watchface.complications.data.NoDataComplicationData
+import androidx.wear.watchface.complications.data.PlainComplicationText
 import androidx.wear.watchface.complications.data.RangedValueComplicationData
+import androidx.wear.watchface.complications.data.ShortTextComplicationData
 import androidx.wear.watchface.complications.data.SmallImage
 import androidx.wear.watchface.complications.data.SmallImageType
 import androidx.wear.watchface.control.IInteractiveWatchFace
@@ -70,16 +70,23 @@ import androidx.wear.watchface.control.data.WatchFaceRenderParams
 import androidx.wear.watchface.data.DeviceConfig
 import androidx.wear.watchface.data.IdAndComplicationDataWireFormat
 import androidx.wear.watchface.data.WatchUiState
-import androidx.wear.watchface.samples.COLOR_STYLE_SETTING
-import androidx.wear.watchface.samples.EXAMPLE_CANVAS_WATCHFACE_LEFT_COMPLICATION_ID
-import androidx.wear.watchface.samples.EXAMPLE_CANVAS_WATCHFACE_RIGHT_COMPLICATION_ID
-import androidx.wear.watchface.samples.GREEN_STYLE
+import androidx.wear.watchface.samples.ExampleCanvasAnalogWatchFaceService.Companion.COLOR_STYLE_SETTING
+import androidx.wear.watchface.samples.ExampleCanvasAnalogWatchFaceService.Companion.EXAMPLE_CANVAS_WATCHFACE_LEFT_COMPLICATION_ID
+import androidx.wear.watchface.samples.ExampleCanvasAnalogWatchFaceService.Companion.EXAMPLE_CANVAS_WATCHFACE_RIGHT_COMPLICATION_ID
+import androidx.wear.watchface.samples.ExampleCanvasAnalogWatchFaceService.Companion.GREEN_STYLE
 import androidx.wear.watchface.style.CurrentUserStyleRepository
 import androidx.wear.watchface.style.UserStyleSchema
 import androidx.wear.watchface.style.WatchFaceLayer
 import androidx.wear.watchface.style.data.UserStyleWireFormat
 import com.google.common.truth.Truth.assertThat
+import java.time.Instant
+import java.time.ZoneId
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.android.asCoroutineDispatcher
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.fail
@@ -91,13 +98,6 @@ import org.junit.runner.RunWith
 import org.mockito.Mock
 import org.mockito.Mockito
 import org.mockito.MockitoAnnotations
-import java.time.Instant
-import java.time.ZoneId
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.TimeUnit
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.android.asCoroutineDispatcher
-import kotlinx.coroutines.launch
 
 private const val BITMAP_WIDTH = 400
 private const val BITMAP_HEIGHT = 400
@@ -270,6 +270,7 @@ public class WatchFaceServiceImageTest {
     private lateinit var engineWrapper: WatchFaceService.EngineWrapper
     private lateinit var interactiveWatchFaceInstance: IInteractiveWatchFace
 
+    @Suppress("DEPRECATION") // b/251211092
     @Before
     public fun setUp() {
         Assume.assumeTrue("This test suite assumes API 27", Build.VERSION.SDK_INT >= 27)
@@ -355,6 +356,7 @@ public class WatchFaceServiceImageTest {
                         ),
                         WatchUiState(false, 0),
                         UserStyleWireFormat(emptyMap()),
+                        null,
                         null
                     ),
                     object : IPendingInteractiveWatchFace.Stub() {
@@ -663,25 +665,25 @@ public class WatchFaceServiceImageTest {
             listOf(
                 IdAndComplicationDataWireFormat(
                     EXAMPLE_CANVAS_WATCHFACE_LEFT_COMPLICATION_ID,
-                        ShortTextComplicationData.Builder(
-                            PlainComplicationText.Builder("Test").build(),
-                            ComplicationText.EMPTY
-                        )
-                            .setSmallImage(smallImage)
-                            .build()
-                            .asWireComplicationData()
+                    ShortTextComplicationData.Builder(
+                        PlainComplicationText.Builder("Test").build(),
+                        ComplicationText.EMPTY
+                    )
+                        .setSmallImage(smallImage)
+                        .build()
+                        .asWireComplicationData()
                 ),
                 IdAndComplicationDataWireFormat(
                     EXAMPLE_CANVAS_WATCHFACE_RIGHT_COMPLICATION_ID,
-                        RangedValueComplicationData.Builder(
-                            25f,
-                            0f,
-                            100f,
-                            ComplicationText.EMPTY
-                        )
-                            .setSmallImage(smallImage)
-                            .build()
-                            .asWireComplicationData()
+                    RangedValueComplicationData.Builder(
+                        25f,
+                        0f,
+                        100f,
+                        ComplicationText.EMPTY
+                    )
+                        .setSmallImage(smallImage)
+                        .build()
+                        .asWireComplicationData()
                 )
             )
         )
@@ -924,6 +926,7 @@ public class WatchFaceServiceImageTest {
                 UserStyleWireFormat(
                     mapOf(COLOR_STYLE_SETTING to GREEN_STYLE.encodeToByteArray())
                 ),
+                null,
                 null
             ),
             null

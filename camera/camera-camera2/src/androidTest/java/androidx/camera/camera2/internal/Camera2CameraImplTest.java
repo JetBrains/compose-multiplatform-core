@@ -69,6 +69,9 @@ import androidx.camera.testing.fakes.FakeCamera;
 import androidx.camera.testing.fakes.FakeCameraInfoInternal;
 import androidx.camera.testing.fakes.FakeUseCase;
 import androidx.camera.testing.fakes.FakeUseCaseConfig;
+import androidx.camera.testing.mocks.MockObserver;
+import androidx.camera.testing.mocks.helpers.CallTimes;
+import androidx.camera.testing.mocks.helpers.CallTimesAtLeast;
 import androidx.core.os.HandlerCompat;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
@@ -531,12 +534,11 @@ public final class Camera2CameraImplTest {
 
     @Test
     public void cameraTransitionsThroughPendingState_whenNoCamerasAvailable() {
-        @SuppressWarnings("unchecked") // Cannot mock generic type inline
-        Observable.Observer<CameraInternal.State> mockObserver =
-                mock(Observable.Observer.class);
+        MockObserver<CameraInternal.State> mockObserver = new MockObserver<>();
 
         // Ensure real camera can't open due to max cameras being open
         Camera mockCamera = mock(Camera.class);
+
         mCameraStateRegistry.registerCamera(mockCamera, CameraXExecutors.directExecutor(),
                 () -> {
                 });
@@ -548,13 +550,13 @@ public final class Camera2CameraImplTest {
         mCamera2CameraImpl.open();
 
         // Ensure that the camera gets to a PENDING_OPEN state
-        verify(mockObserver, timeout(3000).atLeastOnce()).onNewData(
-                CameraInternal.State.PENDING_OPEN);
+        mockObserver.verifyOnNewDataCall(CameraInternal.State.PENDING_OPEN, 3000,
+                new CallTimesAtLeast(1));
 
         // Allow camera to be opened
         mCameraStateRegistry.markCameraState(mockCamera, CameraInternal.State.CLOSED);
 
-        verify(mockObserver, timeout(3000)).onNewData(CameraInternal.State.OPEN);
+        mockObserver.verifyOnNewDataCall(CameraInternal.State.OPEN, 3000);
 
         mCamera2CameraImpl.getCameraState().removeObserver(mockObserver);
     }
@@ -571,7 +573,6 @@ public final class Camera2CameraImplTest {
         assertThat(currentState).isEqualTo(CameraInternal.State.RELEASED);
     }
 
-    @SuppressWarnings("unchecked")
     @Test
     public void openNewCaptureSessionImmediateBeforePreviousCaptureSessionClosed()
             throws InterruptedException {
@@ -593,7 +594,8 @@ public final class Camera2CameraImplTest {
         // Wait for the secondary capture session is configured.
         assertTrue(mSessionStateCallback.waitForOnConfigured(1));
 
-        Observable.Observer<CameraInternal.State> mockObserver = mock(Observable.Observer.class);
+        MockObserver<CameraInternal.State> mockObserver = new MockObserver<>();
+
         mCamera2CameraImpl.getCameraState().addObserver(CameraXExecutors.directExecutor(),
                 mockObserver);
         mCamera2CameraImpl.detachUseCases(Arrays.asList(useCase2));
@@ -601,7 +603,8 @@ public final class Camera2CameraImplTest {
 
         // Wait for the CLOSED state. If the test fail, the CameraX might in wrong internal state,
         // and the Camera2CameraImpl#release() might stuck.
-        verify(mockObserver, timeout(4000).times(1)).onNewData(CameraInternal.State.CLOSED);
+        mockObserver.verifyOnNewDataCall(CameraInternal.State.CLOSED, 4000,
+                new CallTimes(1));
     }
 
     @Test

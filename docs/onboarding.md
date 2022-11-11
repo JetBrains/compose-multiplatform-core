@@ -110,7 +110,7 @@ The following command will check out the public main development branch:
 
 ```shell
 mkdir androidx-main && cd androidx-main
-repo init -u sso://android/platform/manifest \
+repo init -u https://android.googlesource.com/platform/manifest \
     -b androidx-main --partial-clone --clone-filter=blob:limit=10M
 repo sync -c -j8
 ```
@@ -184,10 +184,10 @@ time, and it can be
 allows you to explore all of the source code in the repository. Links to this
 URL may be shared on the public issue tracked and other external sites.
 
+### Custom search engine for `androidx-main` {#custom-search-engine}
+
 We recommend setting up a custom search engine in Chrome as a faster (and
 publicly-accessible) alternative to `cs/`.
-
-### Custom search engine for `androidx-main` {#custom-search-engine}
 
 1.  Open `chrome://settings/searchEngines`
 1.  Click the `Add` button
@@ -260,9 +260,9 @@ files, you can run `./studiow --clean main <project subset>` or `./studiow
 >     make sure that "Do not build Gradle task list during Gradle sync" is
 >     unchecked. (Note that unchecking this can reduce Studio's performance)
 
-### Enabling Compose @Preview annotation previews
+### Enabling Compose `@Preview` annotation previews
 
-Add the following dependencies to your project's `build.gradle`
+Add the following dependencies to your project's `build.gradle`:
 
 ```groovy
 dependencies {
@@ -271,7 +271,7 @@ dependencies {
 }
 ```
 
-then
+Then,
 [use it like you would on an external project](https://developer.android.com/jetpack/compose/tooling).
 
 ## Making changes {#changes}

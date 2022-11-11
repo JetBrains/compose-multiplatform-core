@@ -44,7 +44,7 @@ import androidx.glance.appwidget.R
 import androidx.glance.appwidget.TranslationContext
 import androidx.glance.appwidget.applyModifiers
 import androidx.glance.appwidget.insertView
-import androidx.glance.appwidget.unit.DayNightColorProvider
+import androidx.glance.color.DayNightColorProvider
 import androidx.glance.text.EmittableText
 import androidx.glance.text.FontStyle
 import androidx.glance.text.FontWeight
@@ -151,7 +151,6 @@ internal fun RemoteViews.setText(
                 setTextColor(resId, colorProvider.getColor(translationContext.context).toArgb())
             }
         }
-        null -> {}
         else -> Log.w(GlanceAppWidgetTag, "Unexpected text color: $colorProvider")
     }
 }

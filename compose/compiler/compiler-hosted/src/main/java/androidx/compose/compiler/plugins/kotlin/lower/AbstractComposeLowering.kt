@@ -16,14 +16,15 @@
 
 package androidx.compose.compiler.plugins.kotlin.lower
 
+import androidx.compose.compiler.plugins.kotlin.ComposeClassIds
 import androidx.compose.compiler.plugins.kotlin.ComposeFqNames
 import androidx.compose.compiler.plugins.kotlin.FunctionMetrics
 import androidx.compose.compiler.plugins.kotlin.KtxNameConventions
 import androidx.compose.compiler.plugins.kotlin.ModuleMetrics
 import androidx.compose.compiler.plugins.kotlin.analysis.ComposeWritableSlices
 import androidx.compose.compiler.plugins.kotlin.analysis.Stability
-import androidx.compose.compiler.plugins.kotlin.analysis.StabilityInferencer
 import androidx.compose.compiler.plugins.kotlin.analysis.knownStable
+import androidx.compose.compiler.plugins.kotlin.analysis.stabilityOf
 import androidx.compose.compiler.plugins.kotlin.irTrace
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
@@ -130,18 +131,20 @@ import org.jetbrains.kotlin.ir.types.toKotlinType
 import org.jetbrains.kotlin.ir.types.typeWith
 import org.jetbrains.kotlin.ir.util.DeepCopySymbolRemapper
 import org.jetbrains.kotlin.ir.util.SYNTHETIC_OFFSET
-import org.jetbrains.kotlin.ir.util.constructedClass
 import org.jetbrains.kotlin.ir.util.fqNameForIrSerialization
 import org.jetbrains.kotlin.ir.util.functions
 import org.jetbrains.kotlin.ir.util.getArguments
-import org.jetbrains.kotlin.ir.util.getPrimitiveArrayElementType
 import org.jetbrains.kotlin.ir.util.getPropertyGetter
+import org.jetbrains.kotlin.ir.util.hasAnnotation
 import org.jetbrains.kotlin.ir.util.isCrossinline
+import org.jetbrains.kotlin.ir.util.isFalseConst
 import org.jetbrains.kotlin.ir.util.isFunction
 import org.jetbrains.kotlin.ir.util.isNoinline
 import org.jetbrains.kotlin.ir.util.primaryConstructor
 import org.jetbrains.kotlin.ir.visitors.IrElementTransformerVoid
 import org.jetbrains.kotlin.load.kotlin.computeJvmDescriptor
+import org.jetbrains.kotlin.name.CallableId
+import org.jetbrains.kotlin.name.ClassId
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.platform.jvm.isJvm
@@ -170,22 +173,8 @@ abstract class AbstractComposeLowering(
 
     protected val builtIns = context.irBuiltIns
 
-    protected val stabilityInferencer = StabilityInferencer(context)
-
-    fun stabilityOf(expr: IrExpression) = stabilityInferencer.stabilityOf(expr)
-    fun stabilityOf(type: IrType) = stabilityInferencer.stabilityOf(type)
-    fun stabilityOf(cls: IrClass) = stabilityInferencer.stabilityOf(cls)
-
-    fun IrAnnotationContainer.hasStableMarker(): Boolean = with(stabilityInferencer) {
-        hasStableMarker()
-    }
-
-    fun IrAnnotationContainer.hasStableAnnotation(): Boolean = with(stabilityInferencer) {
-        hasStableAnnotation()
-    }
-
     private val _composerIrClass =
-        context.referenceClass(ComposeFqNames.Composer)?.owner
+        context.referenceClass(ComposeClassIds.Composer)?.owner
             ?: error("Cannot find the Composer class in the classpath")
 
     // this ensures that composer always references up-to-date composer class symbol
@@ -206,46 +195,31 @@ abstract class AbstractComposeLowering(
         return symbolRemapper.getReferencedConstructor(symbol)
     }
 
-    fun getTopLevelClass(fqName: FqName): IrClassSymbol {
-        return getTopLevelClassOrNull(fqName) ?: error("Class not found in the classpath: $fqName")
+    fun getTopLevelClass(classId: ClassId): IrClassSymbol {
+        return getTopLevelClassOrNull(classId)
+            ?: error("Class not found in the classpath: ${classId.asSingleFqName()}")
     }
 
-    fun getTopLevelClassOrNull(fqName: FqName): IrClassSymbol? {
-        return context.referenceClass(fqName)
+    fun getTopLevelClassOrNull(classId: ClassId): IrClassSymbol? {
+        return context.referenceClass(classId)
     }
 
-    fun getTopLevelFunction(fqName: FqName): IrFunctionSymbol {
-        return getTopLevelFunctionOrNull(fqName)
-            ?: error("Function not found in the classpath: $fqName")
+    fun getTopLevelFunction(callableId: CallableId): IrSimpleFunctionSymbol {
+        return getTopLevelFunctionOrNull(callableId)
+            ?: error("Function not found in the classpath: ${callableId.asSingleFqName()}")
     }
 
-    fun getTopLevelFunctionOrNull(fqName: FqName): IrFunctionSymbol? {
-        return context.referenceFunctions(fqName).firstOrNull()
+    fun getTopLevelFunctionOrNull(callableId: CallableId): IrSimpleFunctionSymbol? {
+        return context.referenceFunctions(callableId).firstOrNull()
     }
 
-    fun getTopLevelFunctions(fqName: FqName): List<IrSimpleFunctionSymbol> {
-        return context.referenceFunctions(fqName).toList()
+    fun getTopLevelFunctions(callableId: CallableId): List<IrSimpleFunctionSymbol> {
+        return context.referenceFunctions(callableId).toList()
     }
 
-    fun getInternalFunction(name: String) = getTopLevelFunction(
-        ComposeFqNames.internalFqNameFor(name)
-    )
-
-    fun getInternalProperty(name: String) = getTopLevelPropertyGetter(
-        ComposeFqNames.internalFqNameFor(name)
-    )
-
-    fun getInternalClass(name: String) = getTopLevelClass(
-        ComposeFqNames.internalFqNameFor(name)
-    )
-
-    fun getInternalClassOrNull(name: String) = getTopLevelClassOrNull(
-        ComposeFqNames.internalFqNameFor(name)
-    )
-
-    fun getTopLevelPropertyGetter(fqName: FqName): IrFunctionSymbol {
-        val propertySymbol = context.referenceProperties(fqName).firstOrNull()
-            ?: error("Property was not found $fqName")
+    fun getTopLevelPropertyGetter(callableId: CallableId): IrFunctionSymbol {
+        val propertySymbol = context.referenceProperties(callableId).firstOrNull()
+            ?: error("Property was not found ${callableId.asSingleFqName()}")
         return symbolRemapper.getReferencedFunction(
             propertySymbol.owner.getter!!.symbol
         )
@@ -813,26 +787,25 @@ abstract class AbstractComposeLowering(
         null
     )
 
-    @OptIn(ObsoleteDescriptorBasedAPI::class)
     protected fun irForLoop(
         elementType: IrType,
         subject: IrExpression,
         loopBody: (IrValueDeclaration) -> IrExpression
     ): IrStatement {
-        val primitiveType = subject.type.getPrimitiveArrayElementType()
-        val iteratorSymbol = primitiveType?.let {
-            context.symbols.primitiveIteratorsByType[it]
-        } ?: context.symbols.iterator
-        val unitType = context.irBuiltIns.unitType
-
         val getIteratorFunction = subject.type.classOrNull!!.owner.functions
             .single { it.name.asString() == "iterator" }
 
-        val iteratorType = iteratorSymbol.typeWith(elementType)
+        val iteratorSymbol = getIteratorFunction.returnType.classOrNull!!
+        val iteratorType = if (iteratorSymbol.owner.typeParameters.isNotEmpty()) {
+            iteratorSymbol.typeWith(elementType)
+        } else {
+            iteratorSymbol.defaultType
+        }
+
         val nextSymbol = iteratorSymbol.owner.functions
-            .single { it.descriptor.name.asString() == "next" }
+            .single { it.name.asString() == "next" }
         val hasNextSymbol = iteratorSymbol.owner.functions
-            .single { it.descriptor.name.asString() == "hasNext" }
+            .single { it.name.asString() == "hasNext" }
 
         val call = IrCallImpl(
             UNDEFINED_OFFSET,
@@ -854,14 +827,14 @@ abstract class AbstractComposeLowering(
             origin = IrDeclarationOrigin.FOR_LOOP_ITERATOR
         )
         return irBlock(
-            type = unitType,
+            type = builtIns.unitType,
             origin = IrStatementOrigin.FOR_LOOP,
             statements = listOf(
                 iteratorVar,
                 IrWhileLoopImpl(
                     UNDEFINED_OFFSET,
                     UNDEFINED_OFFSET,
-                    unitType,
+                    builtIns.unitType,
                     IrStatementOrigin.FOR_LOOP_INNER_WHILE
                 ).apply {
                     val loopVar = irTemporary(
@@ -887,7 +860,7 @@ abstract class AbstractComposeLowering(
                         dispatchReceiver = irGet(iteratorVar)
                     )
                     body = irBlock(
-                        type = unitType,
+                        type = builtIns.unitType,
                         origin = IrStatementOrigin.FOR_LOOP_INNER_WHILE,
                         statements = listOf(
                             loopVar,
@@ -1070,7 +1043,7 @@ abstract class AbstractComposeLowering(
             // type of that object is Stable. (`Modifier` for instance is a common example)
             is IrGetObjectValue -> {
                 if (symbol.owner.isCompanion) true
-                else stabilityOf(symbol.owner).knownStable()
+                else stabilityOf(type).knownStable()
             }
             is IrConstructorCall -> isStatic()
             is IrCall -> isStatic()
@@ -1130,8 +1103,8 @@ abstract class AbstractComposeLowering(
                     return true
                 }
 
-                val getterIsStable = prop.hasStableAnnotation() ||
-                    function.hasStableAnnotation()
+                val getterIsStable = prop.hasAnnotation(ComposeFqNames.Stable) ||
+                    function.hasAnnotation(ComposeFqNames.Stable)
 
                 if (
                     getterIsStable &&
@@ -1161,7 +1134,7 @@ abstract class AbstractComposeLowering(
                 // immutable operations so the overall result is static if the operands are
                 // also static
                 val isStableOperator = fqName.topLevelName() == "kotlin" ||
-                    function.hasStableAnnotation()
+                    function.hasAnnotation(ComposeFqNames.Stable)
 
                 val typeIsStable = stabilityOf(type).knownStable()
                 if (!typeIsStable) return false
@@ -1185,8 +1158,13 @@ abstract class AbstractComposeLowering(
                     ) {
                         return true
                     }
-                }
-                if (fqName == ComposeFqNames.composableLambda) {
+                } else if (fqName == ComposeFqNames.cache) {
+                    // If it is a call to cache then it is a transformed intrinsic call to
+                    // remember and we need to
+                    return valueArgumentsCount == 2 &&
+                        getValueArgument(0)?.isFalseConst() == true &&
+                        stabilityOf(type).knownStable()
+                } else if (fqName == ComposeFqNames.composableLambda) {
                     // calls to this function are generated by the compiler, and this
                     // function behaves similar to a remember call in that the result will
                     // _always_ be the same and the resulting type is _always_ stable, so
@@ -1198,7 +1176,7 @@ abstract class AbstractComposeLowering(
                 }
                 // normal function call. If the function is marked as Stable and the result
                 // is Stable, then the static-ness of it is the static-ness of its arguments
-                val isStable = symbol.owner.hasStableAnnotation()
+                val isStable = symbol.owner.hasAnnotation(ComposeFqNames.Stable)
                 if (!isStable) return false
 
                 val typeIsStable = stabilityOf(type).knownStable()
@@ -1295,8 +1273,10 @@ fun ValueParameterDescriptor.isComposerParam(): Boolean =
     name == KtxNameConventions.COMPOSER_PARAMETER &&
         type.constructor.declarationDescriptor?.fqNameSafe == ComposeFqNames.Composer
 
+// FIXME: There is a `functionN` factory in `IrBuiltIns`, but it currently produces unbound symbols.
+//        We can switch to this and remove this function once KT-54230 is fixed.
 fun IrPluginContext.function(arity: Int): IrClassSymbol =
-    referenceClass(FqName("kotlin.Function$arity"))!!
+    referenceClass(ClassId(FqName("kotlin"), Name.identifier("Function$arity")))!!
 
 val DeclarationDescriptorWithSource.startOffset: Int? get() =
     (this.source as? PsiSourceElement)?.psi?.startOffset

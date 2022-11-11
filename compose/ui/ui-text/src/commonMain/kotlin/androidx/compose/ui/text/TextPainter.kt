@@ -24,6 +24,7 @@ import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.DrawStyle
 import androidx.compose.ui.graphics.drawscope.DrawTransform
 import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.graphics.isUnspecified
@@ -56,22 +57,27 @@ object TextPainter {
             canvas.save()
             canvas.clipRect(bounds)
         }
+        val resolvedSpanStyle = resolveSpanStyleDefaults(
+            textLayoutResult.layoutInput.style.spanStyle
+        )
         try {
-            val brush = textLayoutResult.layoutInput.style.brush
+            val brush = resolvedSpanStyle.brush
             if (brush != null) {
                 textLayoutResult.multiParagraph.paint(
-                    canvas,
-                    brush,
-                    textLayoutResult.layoutInput.style.alpha,
-                    textLayoutResult.layoutInput.style.shadow,
-                    textLayoutResult.layoutInput.style.textDecoration
+                    canvas = canvas,
+                    brush = brush,
+                    alpha = resolvedSpanStyle.alpha,
+                    shadow = resolvedSpanStyle.shadow,
+                    decoration = resolvedSpanStyle.textDecoration,
+                    drawStyle = resolvedSpanStyle.drawStyle
                 )
             } else {
                 textLayoutResult.multiParagraph.paint(
-                    canvas,
-                    textLayoutResult.layoutInput.style.color,
-                    textLayoutResult.layoutInput.style.shadow,
-                    textLayoutResult.layoutInput.style.textDecoration
+                    canvas = canvas,
+                    color = resolvedSpanStyle.color,
+                    shadow = resolvedSpanStyle.shadow,
+                    decoration = resolvedSpanStyle.textDecoration,
+                    drawStyle = resolvedSpanStyle.drawStyle
                 )
             }
         } finally {
@@ -226,6 +232,7 @@ fun DrawScope.drawText(
  * transparent to fully opaque respectively
  * @param shadow The shadow effect applied on the text.
  * @param textDecoration The decorations to paint on the text (e.g., an underline).
+ * @param drawStyle Whether or not the text is stroked or filled in.
  *
  * @sample androidx.compose.ui.text.samples.DrawTextLayoutResultSample
  */
@@ -236,10 +243,12 @@ fun DrawScope.drawText(
     topLeft: Offset = Offset.Zero,
     alpha: Float = Float.NaN,
     shadow: Shadow? = null,
-    textDecoration: TextDecoration? = null
+    textDecoration: TextDecoration? = null,
+    drawStyle: DrawStyle? = null
 ) {
     val newShadow = shadow ?: textLayoutResult.layoutInput.style.shadow
     val newTextDecoration = textDecoration ?: textLayoutResult.layoutInput.style.textDecoration
+    val newDrawStyle = drawStyle ?: textLayoutResult.layoutInput.style.drawStyle
 
     withTransform({
         translate(topLeft.x, topLeft.y)
@@ -254,14 +263,16 @@ fun DrawScope.drawText(
                 brush,
                 if (!alpha.isNaN()) alpha else textLayoutResult.layoutInput.style.alpha,
                 newShadow,
-                newTextDecoration
+                newTextDecoration,
+                newDrawStyle
             )
         } else {
             textLayoutResult.multiParagraph.paint(
                 drawContext.canvas,
                 color.takeOrElse { textLayoutResult.layoutInput.style.color }.modulate(alpha),
                 newShadow,
-                newTextDecoration
+                newTextDecoration,
+                newDrawStyle
             )
         }
     }
@@ -280,6 +291,7 @@ fun DrawScope.drawText(
  * transparent to fully opaque respectively.
  * @param shadow The shadow effect applied on the text.
  * @param textDecoration The decorations to paint on the text (e.g., an underline).
+ * @param drawStyle Whether or not the text is stroked or filled in.
  *
  * @sample androidx.compose.ui.text.samples.DrawTextLayoutResultSample
  */
@@ -290,10 +302,12 @@ fun DrawScope.drawText(
     topLeft: Offset = Offset.Zero,
     alpha: Float = Float.NaN,
     shadow: Shadow? = null,
-    textDecoration: TextDecoration? = null
+    textDecoration: TextDecoration? = null,
+    drawStyle: DrawStyle? = null
 ) {
     val newShadow = shadow ?: textLayoutResult.layoutInput.style.shadow
     val newTextDecoration = textDecoration ?: textLayoutResult.layoutInput.style.textDecoration
+    val newDrawStyle = drawStyle ?: textLayoutResult.layoutInput.style.drawStyle
 
     withTransform({
         translate(topLeft.x, topLeft.y)
@@ -304,14 +318,16 @@ fun DrawScope.drawText(
             brush,
             if (!alpha.isNaN()) alpha else textLayoutResult.layoutInput.style.alpha,
             newShadow,
-            newTextDecoration
+            newTextDecoration,
+            newDrawStyle
         )
     }
 }
 
 private fun DrawTransform.clip(textLayoutResult: TextLayoutResult) {
     if (textLayoutResult.hasVisualOverflow &&
-        textLayoutResult.layoutInput.overflow != TextOverflow.Visible) {
+        textLayoutResult.layoutInput.overflow != TextOverflow.Visible
+    ) {
         clipRect(
             left = 0f,
             top = 0f,

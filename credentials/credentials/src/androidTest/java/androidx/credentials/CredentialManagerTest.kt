@@ -38,7 +38,7 @@ class CredentialManagerTest {
     }
 
     @Test
-    fun testCreateCredential() = runBlocking<Unit> {
+    fun createCredential() = runBlocking<Unit> {
         assertThrows<UnsupportedOperationException> {
             credentialManager.executeCreateCredential(
                 CreatePasswordRequest("test-user-id", "test-password")
@@ -47,12 +47,64 @@ class CredentialManagerTest {
     }
 
     @Test
-    fun testGetCredential() = runBlocking<Unit> {
+    fun getCredential() = runBlocking<Unit> {
         val request = GetCredentialRequest.Builder()
             .addGetCredentialOption(GetPasswordOption())
             .build()
         assertThrows<UnsupportedOperationException> {
             credentialManager.executeGetCredential(request)
+        }
+    }
+
+    @Test
+    fun testClearCredentialSession() = runBlocking<Unit> {
+        assertThrows<UnsupportedOperationException> {
+            credentialManager.clearCredentialSession()
+        }
+    }
+
+    @Test
+    fun testCreateCredentialAsyc() {
+        assertThrows<UnsupportedOperationException> {
+            credentialManager.executeCreateCredentialAsync(
+                request = CreatePasswordRequest("test-user-id", "test-password"),
+                activity = null,
+                cancellationSignal = null,
+                executor = Runnable::run,
+                callback = object : CredentialManagerCallback<CreateCredentialResponse> {
+                    override fun onResult(result: CreateCredentialResponse) {}
+                }
+            )
+        }
+    }
+
+    @Test
+    fun testGetCredentialAsyc() {
+        assertThrows<UnsupportedOperationException> {
+            credentialManager.executeGetCredentialAsync(
+                request = GetCredentialRequest.Builder()
+                    .addGetCredentialOption(GetPasswordOption())
+                    .build(),
+                activity = null,
+                cancellationSignal = null,
+                executor = Runnable::run,
+                callback = object : CredentialManagerCallback<GetCredentialResponse> {
+                    override fun onResult(result: GetCredentialResponse) {}
+                }
+            )
+        }
+    }
+
+    @Test
+    fun testClearCredentialSessionAsync() {
+        assertThrows<UnsupportedOperationException> {
+            credentialManager.clearCredentialSessionAsync(
+                cancellationSignal = null,
+                executor = Runnable::run,
+                callback = object : CredentialManagerCallback<Void> {
+                    override fun onResult(result: Void) {}
+                }
+            )
         }
     }
 }

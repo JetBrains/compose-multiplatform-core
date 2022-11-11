@@ -64,17 +64,15 @@ class StartupTimingMetricTest {
     fun startup() {
         assumeTrue(isAbiSupported())
         val packageName = "androidx.benchmark.integration.macrobenchmark.target"
+        val intent =
+            Intent("androidx.benchmark.integration.macrobenchmark.target.TRIVIAL_STARTUP_ACTIVITY")
         val scope = MacrobenchmarkScope(packageName = packageName, launchWithClearTask = true)
         val iterationResult = measureStartup(packageName, StartupMode.COLD) {
             // Simulate a cold start
             scope.killProcess()
             scope.dropKernelPageCache()
             scope.pressHome()
-            scope.startActivityAndWait {
-                it.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                it.action =
-                    "androidx.benchmark.integration.macrobenchmark.target.TRIVIAL_STARTUP_ACTIVITY"
-            }
+            scope.startActivityAndWait(intent)
         }
 
         assertEquals(
@@ -129,10 +127,18 @@ class StartupTimingMetricTest {
                 scope.startActivityAndWait(launchIntent)
             }
 
-            if (delayMs > 0) {
+            if (useInAppNav) {
+                // in app nav destinations always have different strings to differentiate
+                // vs the first activity's strings to prevent races
+                awaitActivityText(
+                    if (delayMs > 0) {
+                        ConfigurableActivity.INNER_ACTIVITY_FULLY_DRAWN_TEXT
+                    } else {
+                        ConfigurableActivity.INNER_ACTIVITY_TEXT
+                    }
+                )
+            } else if (delayMs > 0) {
                 awaitActivityText(ConfigurableActivity.FULLY_DRAWN_TEXT)
-            } else if (useInAppNav) {
-                awaitActivityText(ConfigurableActivity.INNER_ACTIVITY_TEXT)
             }
         }
 
@@ -275,7 +281,7 @@ internal fun measureStartup(
     val metric = StartupTimingMetric()
     metric.configure(packageName)
     val tracePath = PerfettoCaptureWrapper().record(
-        benchmarkName = packageName,
+        fileLabel = packageName,
         // note - packageName may be this package, so we convert to set then list to make unique
         // and on API 23 and below, we use reflection to trace instead within this process
         appTagPackages = if (Build.VERSION.SDK_INT >= 24 && packageName != Packages.TEST) {

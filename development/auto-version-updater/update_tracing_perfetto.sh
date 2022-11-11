@@ -30,15 +30,15 @@ function do_update() {
     # update version in code
     cd "$ANDROIDX_CHECKOUT"
     echo_colour "Updating version in code..."
-    sed -r -i "" "s/tracingPerfettoVersion = \"$CURRENT_VERSION\"/tracingPerfettoVersion = \"$NEW_VERSION\"/" \
+    sed -r -i"" "s/tracingPerfettoVersion = \"$CURRENT_VERSION\"/tracingPerfettoVersion = \"$NEW_VERSION\"/" \
       benchmark/benchmark-macro/src/androidTest/java/androidx/benchmark/macro/perfetto/PerfettoSdkHandshakeTest.kt
-    sed -r -i "" "s/TRACING_PERFETTO = \"$CURRENT_VERSION\"/TRACING_PERFETTO = \"$NEW_VERSION\"/" \
+    sed -r -i"" "s/TRACING_PERFETTO = \"$CURRENT_VERSION\"/TRACING_PERFETTO = \"$NEW_VERSION\"/" \
       libraryversions.toml
-    sed -r -i "" "s/#define VERSION \"$CURRENT_VERSION\"/#define VERSION \"$NEW_VERSION\"/" \
+    sed -r -i"" "s/#define VERSION \"$CURRENT_VERSION\"/#define VERSION \"$NEW_VERSION\"/" \
       tracing/tracing-perfetto-binary/src/main/cpp/tracing_perfetto.cc
-    sed -r -i "" "s/const val libraryVersion = \"$CURRENT_VERSION\"/const val libraryVersion = \"$NEW_VERSION\"/" \
+    sed -r -i"" "s/const val libraryVersion = \"$CURRENT_VERSION\"/const val libraryVersion = \"$NEW_VERSION\"/" \
       tracing/tracing-perfetto/src/androidTest/java/androidx/tracing/perfetto/jni/test/PerfettoNativeTest.kt
-    sed -r -i "" "s/const val version = \"$CURRENT_VERSION\"/const val version = \"$NEW_VERSION\"/" \
+    sed -r -i"" "s/const val version = \"$CURRENT_VERSION\"/const val version = \"$NEW_VERSION\"/" \
       tracing/tracing-perfetto/src/main/java/androidx/tracing/perfetto/jni/PerfettoNative.kt
     echo_colour "Updating version in code... ✓"
 
@@ -62,7 +62,7 @@ function do_update() {
         cd "$dst_dir"
         checksum=$(unzip -cxqq "*tracing*binary*$NEW_VERSION*.aar" "**/$arch/libtracing_perfetto.so" | shasum -a256 | awk '{print $1}')
         cd "$ANDROIDX_CHECKOUT"
-        sed -r -i "" "s/\"$arch\" to \"[a-z0-9]{64}\"/\"$arch\" to \"$checksum\"/" \
+        sed -r -i"" "s/\"$arch\" to \"[a-z0-9]{64}\"/\"$arch\" to \"$checksum\"/" \
           tracing/tracing-perfetto/src/main/java/androidx/tracing/perfetto/jni/PerfettoNative.kt
     done
     echo_colour "Updating binary checksums... ✓"
