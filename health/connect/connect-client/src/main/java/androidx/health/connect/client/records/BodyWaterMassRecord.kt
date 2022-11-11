@@ -18,6 +18,7 @@ package androidx.health.connect.client.records
 import androidx.annotation.RestrictTo
 import androidx.health.connect.client.records.metadata.Metadata
 import androidx.health.connect.client.units.Mass
+import androidx.health.connect.client.units.kilograms
 import java.time.Instant
 import java.time.ZoneOffset
 
@@ -26,15 +27,16 @@ import java.time.ZoneOffset
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 public class BodyWaterMassRecord(
-    /** Mass in [Mass] unit. Required field. Valid range: 0-1000 kilograms. */
-    public val mass: Mass,
     override val time: Instant,
     override val zoneOffset: ZoneOffset?,
+    /** Mass in [Mass] unit. Required field. Valid range: 0-1000 kilograms. */
+    public val mass: Mass,
     override val metadata: Metadata = Metadata.EMPTY,
 ) : InstantaneousRecord {
 
     init {
         mass.requireNotLess(other = mass.zero(), name = "mass")
+        mass.requireNotMore(other = MAX_BODY_WATER_MASS, name = "mass")
     }
 
     /*
@@ -61,5 +63,9 @@ public class BodyWaterMassRecord(
         result = 31 * result + (zoneOffset?.hashCode() ?: 0)
         result = 31 * result + metadata.hashCode()
         return result
+    }
+
+    private companion object {
+        private val MAX_BODY_WATER_MASS = 1000.kilograms
     }
 }

@@ -24,7 +24,7 @@ import org.jetbrains.kotlin.ir.expressions.IrGetValue
 import org.jetbrains.kotlin.ir.visitors.IrElementVisitorVoid
 import org.junit.Test
 
-class ComposerParamTransformTests : ComposeIrTransformTest() {
+class ComposerParamTransformTests : AbstractIrTransformTest() {
     private fun composerParam(
         @Language("kotlin")
         source: String,
@@ -249,7 +249,7 @@ class ComposerParamTransformTests : ComposeIrTransformTest() {
                 traceEventEnd()
               }
               %composer.endRestartGroup()?.updateScope { %composer: Composer?, %force: Int ->
-                VarArgsFirst(*foo, %composer, %changed or 0b0001)
+                VarArgsFirst(*foo, %composer, updateChangedFlags(%changed or 0b0001))
               }
             }
             @Composable
@@ -271,7 +271,7 @@ class ComposerParamTransformTests : ComposeIrTransformTest() {
                 %composer.skipToGroupEnd()
               }
               %composer.endRestartGroup()?.updateScope { %composer: Composer?, %force: Int ->
-                VarArgsCaller(%composer, %changed or 0b0001)
+                VarArgsCaller(%composer, updateChangedFlags(%changed or 0b0001))
               }
             }
         """
@@ -501,7 +501,7 @@ class ComposerParamTransformTests : ComposeIrTransformTest() {
                   sourceInformation(%composer, "C(Wrapper)<block(...>:Test.kt#2487m")
                   val %dirty = %changed
                   if (%changed and 0b1110 === 0) {
-                    %dirty = %dirty or if (%composer.changed(block)) 0b0100 else 0b0010
+                    %dirty = %dirty or if (%composer.changedInstance(block)) 0b0100 else 0b0010
                   }
                   if (%dirty and 0b1011 !== 0b0010 || !%composer.skipping) {
                     if (isTraceInProgress()) {
@@ -515,7 +515,7 @@ class ComposerParamTransformTests : ComposeIrTransformTest() {
                     %composer.skipToGroupEnd()
                   }
                   %composer.endRestartGroup()?.updateScope { %composer: Composer?, %force: Int ->
-                    Wrapper(block, %composer, %changed or 0b0001)
+                    Wrapper(block, %composer, updateChangedFlags(%changed or 0b0001))
                   }
                 }
                 @Composable
@@ -538,7 +538,7 @@ class ComposerParamTransformTests : ComposeIrTransformTest() {
                     %composer.skipToGroupEnd()
                   }
                   %composer.endRestartGroup()?.updateScope { %composer: Composer?, %force: Int ->
-                    Leaf(text, %composer, %changed or 0b0001)
+                    Leaf(text, %composer, updateChangedFlags(%changed or 0b0001))
                   }
                 }
                 @Composable
@@ -577,7 +577,7 @@ class ComposerParamTransformTests : ComposeIrTransformTest() {
                     %composer.skipToGroupEnd()
                   }
                   %composer.endRestartGroup()?.updateScope { %composer: Composer?, %force: Int ->
-                    Test(value, %composer, %changed or 0b0001)
+                    Test(value, %composer, updateChangedFlags(%changed or 0b0001))
                   }
                 }
             """,
@@ -648,7 +648,7 @@ class ComposerParamTransformTests : ComposeIrTransformTest() {
                   sourceInformation(%composer, "C(composeVector)<emit>:Test.kt#2487m")
                   val %dirty = %changed
                   if (%changed and 0b1110 === 0) {
-                    %dirty = %dirty or if (%composer.changed(composable)) 0b0100 else 0b0010
+                    %dirty = %dirty or if (%composer.changedInstance(composable)) 0b0100 else 0b0010
                   }
                   if (%dirty and 0b1011 !== 0b0010 || !%composer.skipping) {
                     if (isTraceInProgress()) {
@@ -680,7 +680,7 @@ class ComposerParamTransformTests : ComposeIrTransformTest() {
                     %composer.skipToGroupEnd()
                   }
                   %composer.endRestartGroup()?.updateScope { %composer: Composer?, %force: Int ->
-                    composeVector(composable, %composer, %changed or 0b0001)
+                    composeVector(composable, %composer, updateChangedFlags(%changed or 0b0001))
                   }
                 }
                 @Composable

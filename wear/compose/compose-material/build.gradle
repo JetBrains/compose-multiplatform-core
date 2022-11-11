@@ -24,10 +24,10 @@ plugins {
     id("AndroidXComposePlugin")
 }
 
+// Disable multi-platform.
 AndroidXComposePlugin.applyAndConfigureKotlinPlugin(project)
 
 dependencies {
-
     if(!AndroidXComposePlugin.isMultiplatformEnabled(project)) {
         api(project(":compose:foundation:foundation"))
         api(project(":compose:ui:ui"))

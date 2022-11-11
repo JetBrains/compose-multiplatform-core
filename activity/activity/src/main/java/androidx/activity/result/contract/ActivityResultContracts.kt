@@ -34,7 +34,6 @@ import androidx.activity.result.contract.ActivityResultContracts.GetMultipleCont
 import androidx.activity.result.contract.ActivityResultContracts.StartIntentSenderForResult.Companion.ACTION_INTENT_SENDER_REQUEST
 import androidx.activity.result.contract.ActivityResultContracts.StartIntentSenderForResult.Companion.EXTRA_SEND_INTENT_EXCEPTION
 import androidx.annotation.CallSuper
-import androidx.annotation.DoNotInline
 import androidx.annotation.RequiresApi
 import androidx.core.content.ContextCompat
 
@@ -735,15 +734,14 @@ class ActivityResultContracts private constructor() {
         }
 
         @CallSuper
+        @SuppressLint("NewApi", "ClassVerificationFailure")
         override fun createIntent(context: Context, input: PickVisualMediaRequest): Intent {
             // Check to see if the photo picker is available
             return if (PickVisualMedia.isPhotoPickerAvailable()) {
                 Intent(MediaStore.ACTION_PICK_IMAGES).apply {
                     type = PickVisualMedia.getVisualMimeType(input.mediaType)
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                        require(maxItems <= Api33Impl.getPickImagesMaxLimit()) {
-                            "Max items must be less or equals MediaStore.getPickImagesMaxLimit()"
-                        }
+                    require(maxItems <= MediaStore.getPickImagesMaxLimit()) {
+                        "Max items must be less or equals MediaStore.getPickImagesMaxLimit()"
                     }
 
                     putExtra(MediaStore.EXTRA_PICK_IMAGES_MAX, maxItems)
@@ -786,21 +784,12 @@ class ActivityResultContracts private constructor() {
              *
              * @see MediaStore.EXTRA_PICK_IMAGES_MAX
              */
-            internal fun getMaxItems() = if (PickVisualMedia.isPhotoPickerAvailable() &&
-                Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                Api33Impl.getPickImagesMaxLimit()
+            @SuppressLint("NewApi", "ClassVerificationFailure")
+            internal fun getMaxItems() = if (PickVisualMedia.isPhotoPickerAvailable()) {
+                MediaStore.getPickImagesMaxLimit()
             } else {
                 Integer.MAX_VALUE
             }
-        }
-    }
-
-    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-    internal object Api33Impl {
-
-        @DoNotInline
-        fun getPickImagesMaxLimit(): Int {
-            return MediaStore.getPickImagesMaxLimit()
         }
     }
 }

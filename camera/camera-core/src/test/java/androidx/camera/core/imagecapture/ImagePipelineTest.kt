@@ -40,9 +40,11 @@ import androidx.camera.core.imagecapture.Utils.ROTATION_DEGREES
 import androidx.camera.core.imagecapture.Utils.SENSOR_TO_BUFFER
 import androidx.camera.core.imagecapture.Utils.SIZE
 import androidx.camera.core.imagecapture.Utils.WIDTH
+import androidx.camera.core.imagecapture.Utils.createCameraCaptureResultImageInfo
 import androidx.camera.core.imagecapture.Utils.injectRotationOptionQuirk
 import androidx.camera.core.impl.CaptureConfig
 import androidx.camera.core.impl.CaptureConfig.OPTION_ROTATION
+import androidx.camera.core.impl.ImageCaptureConfig
 import androidx.camera.core.impl.ImageInputConfig
 import androidx.camera.core.impl.utils.executor.CameraXExecutors.mainThreadExecutor
 import androidx.camera.core.internal.IoConfig.OPTION_IO_EXECUTOR
@@ -50,6 +52,7 @@ import androidx.camera.testing.TestImageUtil.createJpegBytes
 import androidx.camera.testing.TestImageUtil.createJpegFakeImageProxy
 import androidx.camera.testing.fakes.FakeImageInfo
 import androidx.camera.testing.fakes.FakeImageReaderProxy
+import androidx.camera.testing.fakes.GrayscaleImageEffect
 import com.google.common.truth.Truth.assertThat
 import org.junit.After
 import org.junit.Before
@@ -77,6 +80,7 @@ class ImagePipelineTest {
     }
 
     private lateinit var imagePipeline: ImagePipeline
+    private lateinit var imageCaptureConfig: ImageCaptureConfig
 
     @Before
     fun setUp() {
@@ -86,12 +90,29 @@ class ImagePipelineTest {
         }
         builder.mutableConfig.insertOption(OPTION_IO_EXECUTOR, mainThreadExecutor())
         builder.mutableConfig.insertOption(ImageInputConfig.OPTION_INPUT_FORMAT, ImageFormat.JPEG)
-        imagePipeline = ImagePipeline(builder.useCaseConfig, SIZE)
+        imageCaptureConfig = builder.useCaseConfig
+        imagePipeline = ImagePipeline(imageCaptureConfig, SIZE)
     }
 
     @After
     fun tearDown() {
         imagePipeline.close()
+    }
+
+    @Test
+    fun createPipelineWithoutEffect_processingNodeHasNoEffect() {
+        assertThat(imagePipeline.processingNode.mImageProcessor).isNull()
+    }
+
+    @Test
+    fun createPipelineWithEffect_processingNodeContainsEffect() {
+        assertThat(
+            ImagePipeline(
+                imageCaptureConfig,
+                SIZE,
+                GrayscaleImageEffect()
+            ).processingNode.mImageProcessor
+        ).isNotNull()
     }
 
     @Test
@@ -242,9 +263,10 @@ class ImagePipelineTest {
             IN_MEMORY_REQUEST, CALLBACK
         ).second!!
         val jpegBytes = createJpegBytes(WIDTH, HEIGHT)
-        val imageInfo = FakeImageInfo().apply {
-            this.setTag(processingRequest.tagBundleKey, processingRequest.stageIds.single())
-        }
+        val imageInfo = createCameraCaptureResultImageInfo(
+            processingRequest.tagBundleKey,
+            processingRequest.stageIds.single()
+        )
         val image = createJpegFakeImageProxy(imageInfo, jpegBytes)
 
         // Act: send processing request and the image.
@@ -269,7 +291,7 @@ class ImagePipelineTest {
         for (i in 0 until MAX_IMAGES) {
             val imageInfo = FakeImageInfo()
             imageReaderProxy.triggerImageAvailable(imageInfo.tagBundle, 0)
-            imagePipeline.captureNode.mSafeCloseImageReaderProxy.acquireNextImage()
+            imagePipeline.captureNode.mSafeCloseImageReaderProxy!!.acquireNextImage()
                 ?.let { images.add(it) }
         }
 

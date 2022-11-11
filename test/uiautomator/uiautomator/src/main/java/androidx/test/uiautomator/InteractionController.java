@@ -17,11 +17,9 @@
 package androidx.test.uiautomator;
 
 import android.accessibilityservice.AccessibilityService;
-import android.app.Instrumentation;
 import android.app.Service;
 import android.app.UiAutomation;
 import android.app.UiAutomation.AccessibilityEventFilter;
-import android.content.Context;
 import android.graphics.Point;
 import android.os.Build;
 import android.os.PowerManager;
@@ -59,7 +57,7 @@ class InteractionController {
     private final KeyCharacterMap mKeyCharacterMap =
             KeyCharacterMap.load(KeyCharacterMap.VIRTUAL_KEYBOARD);
 
-    private final Instrumentation mInstrumentation;
+    private final UiDevice mDevice;
 
     private static final long REGULAR_CLICK_LENGTH = 100;
 
@@ -68,8 +66,8 @@ class InteractionController {
     // Inserted after each motion event injection.
     private static final int MOTION_EVENT_INJECTION_DELAY_MILLIS = 5;
 
-    public InteractionController(Instrumentation instrumentation) {
-        mInstrumentation = instrumentation;
+    InteractionController(UiDevice device) {
+        mDevice = device;
     }
 
     /**
@@ -687,7 +685,8 @@ class InteractionController {
      * @return true if the screen is ON else false
      */
     public boolean isScreenOn() {
-        PowerManager pm = (PowerManager)getContext().getSystemService(Service.POWER_SERVICE);
+        PowerManager pm = (PowerManager) mDevice.getInstrumentation().getContext().getSystemService(
+                Service.POWER_SERVICE);
         return pm.isScreenOn();
     }
 
@@ -721,7 +720,6 @@ class InteractionController {
      *        path. Each {@link PointerCoords} in an array constitute a point on a pointer's path.
      * @return <code>true</code> if all points on all paths are injected successfully, <code>false
      *        </code>otherwise
-     * @since API Level 18
      */
     public boolean performMultiPointerGesture(PointerCoords[] ... touches) {
         boolean ret = true;
@@ -805,7 +803,6 @@ class InteractionController {
      * Simulates a short press on the Recent Apps button.
      *
      * @return true if successful, else return false
-     * @since API Level 18
      */
     public boolean toggleRecentApps() {
         return getUiAutomation().performGlobalAction(AccessibilityService.GLOBAL_ACTION_RECENTS);
@@ -815,7 +812,6 @@ class InteractionController {
      * Opens the notification shade
      *
      * @return true if successful, else return false
-     * @since API Level 18
      */
     public boolean openNotification() {
         return getUiAutomation().performGlobalAction(AccessibilityService.GLOBAL_ACTION_NOTIFICATIONS);
@@ -825,7 +821,6 @@ class InteractionController {
      * Opens the quick settings shade
      *
      * @return true if successful, else return false
-     * @since API Level 18
      */
     public boolean openQuickSettings() {
         return getUiAutomation().performGlobalAction(AccessibilityService.GLOBAL_ACTION_QUICK_SETTINGS);
@@ -851,14 +846,6 @@ class InteractionController {
     }
 
     UiAutomation getUiAutomation() {
-        return UiDevice.getUiAutomation(getInstrumentation());
-    }
-
-    Context getContext() {
-        return getInstrumentation().getContext();
-    }
-
-    Instrumentation getInstrumentation() {
-        return mInstrumentation;
+        return mDevice.getUiAutomation();
     }
 }

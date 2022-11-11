@@ -26,8 +26,11 @@ import static androidx.camera.video.internal.encoder.EncoderImpl.InternalState.R
 import static androidx.camera.video.internal.encoder.EncoderImpl.InternalState.STARTED;
 import static androidx.camera.video.internal.encoder.EncoderImpl.InternalState.STOPPING;
 
+import static java.util.Objects.requireNonNull;
+
 import android.annotation.SuppressLint;
 import android.media.MediaCodec;
+import android.media.MediaCodec.BufferInfo;
 import android.media.MediaCodecInfo;
 import android.media.MediaFormat;
 import android.os.Bundle;
@@ -144,28 +147,29 @@ public class EncoderImpl implements Encoder {
     private static final Range<Long> NO_RANGE = Range.create(NO_LIMIT_LONG, NO_LIMIT_LONG);
     private static final long STOP_TIMEOUT_MS = 1000L;
     private static final long TIMESTAMP_ANY = -1;
+    private static final int FAKE_BUFFER_INDEX = -9999;
 
-    @SuppressWarnings("WeakerAccess") /* synthetic accessor */
+    @SuppressWarnings("WeakerAccess") // synthetic accessor
     final String mTag;
-    @SuppressWarnings("WeakerAccess") /* synthetic accessor */
+    @SuppressWarnings("WeakerAccess") // synthetic accessor
     final Object mLock = new Object();
-    @SuppressWarnings("WeakerAccess") /* synthetic accessor */
+    @SuppressWarnings("WeakerAccess") // synthetic accessor
     final boolean mIsVideoEncoder;
     private final MediaFormat mMediaFormat;
-    @SuppressWarnings("WeakerAccess") /* synthetic accessor */
+    @SuppressWarnings("WeakerAccess") // synthetic accessor
     final MediaCodec mMediaCodec;
-    @SuppressWarnings("WeakerAccess") /* synthetic accessor */
+    @SuppressWarnings("WeakerAccess") // synthetic accessor
     final EncoderInput mEncoderInput;
     private final EncoderInfo mEncoderInfo;
-    @SuppressWarnings("WeakerAccess") /* synthetic accessor */
+    @SuppressWarnings("WeakerAccess") // synthetic accessor
     final Executor mEncoderExecutor;
     private final ListenableFuture<Void> mReleasedFuture;
     private final Completer<Void> mReleasedCompleter;
-    @SuppressWarnings("WeakerAccess") /* synthetic accessor */
+    @SuppressWarnings("WeakerAccess") // synthetic accessor
     final Queue<Integer> mFreeInputBufferIndexQueue = new ArrayDeque<>();
     private final Queue<Completer<InputBuffer>> mAcquisitionQueue = new ArrayDeque<>();
     private final Set<InputBuffer> mInputBufferSet = new HashSet<>();
-    @SuppressWarnings("WeakerAccess") /* synthetic accessor */
+    @SuppressWarnings("WeakerAccess") // synthetic accessor
     final Set<EncodedDataImpl> mEncodedDataSet = new HashSet<>();
     /*
      * mActivePauseResumeTimeRanges is a queue used to track all active pause/resume time ranges.
@@ -173,34 +177,35 @@ public class EncoderImpl implements Encoder {
      * range, so this range is still needed to check for later output buffers. The first element
      * in the queue is the oldest range and the last element is the newest.
      */
-    @SuppressWarnings("WeakerAccess") /* synthetic accessor */
+    @SuppressWarnings("WeakerAccess") // synthetic accessor
     final Deque<Range<Long>> mActivePauseResumeTimeRanges = new ArrayDeque<>();
     final Timebase mInputTimebase;
     final TimeProvider mTimeProvider = new SystemTimeProvider();
 
-    @SuppressWarnings("WeakerAccess") /* synthetic accessor */
+    @SuppressWarnings("WeakerAccess") // synthetic accessor
     @GuardedBy("mLock")
     EncoderCallback mEncoderCallback = EncoderCallback.EMPTY;
-    @SuppressWarnings("WeakerAccess") /* synthetic accessor */
+    @SuppressWarnings("WeakerAccess") // synthetic accessor
     @GuardedBy("mLock")
     Executor mEncoderCallbackExecutor = CameraXExecutors.directExecutor();
-    @SuppressWarnings("WeakerAccess") /* synthetic accessor */
+    @SuppressWarnings("WeakerAccess") // synthetic accessor
     InternalState mState;
-    @SuppressWarnings("WeakerAccess") /* synthetic accessor */
+    @SuppressWarnings("WeakerAccess") // synthetic accessor
     Range<Long> mStartStopTimeRangeUs = NO_RANGE;
-    @SuppressWarnings("WeakerAccess") /* synthetic accessor */
+    @SuppressWarnings("WeakerAccess") // synthetic accessor
     long mTotalPausedDurationUs = 0L;
-    @SuppressWarnings("WeakerAccess") /* synthetic accessor */
+    @SuppressWarnings("WeakerAccess") // synthetic accessor
     boolean mPendingCodecStop = false;
     // The data timestamp that an encoding stops at. If this timestamp is null, it means the
     // encoding hasn't receiving enough data to be stopped.
-    @SuppressWarnings("WeakerAccess") /* synthetic accessor */
+    @SuppressWarnings("WeakerAccess") // synthetic accessor
     Long mLastDataStopTimestamp = null;
-    @SuppressWarnings("WeakerAccess") /* synthetic accessor */
+    @SuppressWarnings("WeakerAccess") // synthetic accessor
     Future<?> mStopTimeoutFuture = null;
 
     private boolean mIsFlushedAfterEndOfStream = false;
     private boolean mSourceStoppedSignalled = false;
+    boolean mMediaCodecEosSignalled = false;
 
     final EncoderFinder mEncoderFinder = new EncoderFinder();
 
@@ -271,6 +276,7 @@ public class EncoderImpl implements Encoder {
         mMediaCodec.reset();
         mIsFlushedAfterEndOfStream = false;
         mSourceStoppedSignalled = false;
+        mMediaCodecEosSignalled = false;
         mPendingCodecStop = false;
         if (mStopTimeoutFuture != null) {
             mStopTimeoutFuture.cancel(true);
@@ -306,6 +312,7 @@ public class EncoderImpl implements Encoder {
      * released. It can call {@link #pause} to pause the encoding after started. If the encoder is
      * in paused state, then calling this method will resume the encoding.
      */
+    @SuppressWarnings("StatementWithEmptyBody") // to better organize the logic and comments
     @Override
     public void start() {
         final long startTriggerTimeUs = generatePresentationTimeUs();
@@ -314,8 +321,7 @@ public class EncoderImpl implements Encoder {
                 case CONFIGURED:
                     mLastDataStopTimestamp = null;
 
-                    final long startTimeUs = startTriggerTimeUs;
-                    Logger.d(mTag, "Start on " + DebugUtils.readableUs(startTimeUs));
+                    Logger.d(mTag, "Start on " + DebugUtils.readableUs(startTriggerTimeUs));
                     try {
                         if (mIsFlushedAfterEndOfStream) {
                             // If the codec is flushed after an end-of-stream, it was never
@@ -323,7 +329,7 @@ public class EncoderImpl implements Encoder {
                             // before starting it again.
                             reset();
                         }
-                        mStartStopTimeRangeUs = Range.create(startTimeUs, NO_LIMIT_LONG);
+                        mStartStopTimeRangeUs = Range.create(startTriggerTimeUs, NO_LIMIT_LONG);
                         mMediaCodec.start();
                     } catch (MediaCodec.CodecException e) {
                         handleEncodeError(e);
@@ -345,14 +351,14 @@ public class EncoderImpl implements Encoder {
                             pauseRange != null && pauseRange.getUpper() == NO_LIMIT_LONG,
                             "There should be a \"pause\" before \"resume\"");
                     final long pauseTimeUs = pauseRange.getLower();
-                    final long resumeTimeUs = startTriggerTimeUs;
-                    mActivePauseResumeTimeRanges.addLast(Range.create(pauseTimeUs, resumeTimeUs));
+                    mActivePauseResumeTimeRanges.addLast(
+                            Range.create(pauseTimeUs, startTriggerTimeUs));
                     // Do not update total paused duration here since current output buffer may
                     // still before the pause range.
 
-                    Logger.d(mTag, "Resume on " + DebugUtils.readableUs(resumeTimeUs)
+                    Logger.d(mTag, "Resume on " + DebugUtils.readableUs(startTriggerTimeUs)
                             + "\nPaused duration = " + DebugUtils.readableUs(
-                            (resumeTimeUs - pauseTimeUs))
+                            (startTriggerTimeUs - pauseTimeUs))
                     );
 
                     if (!mIsVideoEncoder && DeviceQuirks.get(
@@ -496,7 +502,7 @@ public class EncoderImpl implements Encoder {
         });
     }
 
-    @SuppressWarnings("WeakerAccess") /* synthetic accessor */
+    @SuppressWarnings("WeakerAccess") // synthetic accessor
     @ExecutedBy("mEncoderExecutor")
     void signalCodecStop() {
         if (mEncoderInput instanceof ByteBufferInput) {
@@ -511,6 +517,9 @@ public class EncoderImpl implements Encoder {
         } else if (mEncoderInput instanceof SurfaceInput) {
             try {
                 mMediaCodec.signalEndOfInputStream();
+                // On some devices, MediaCodec#signalEndOfInputStream() doesn't work.
+                // See b/255209101.
+                mMediaCodecEosSignalled = true;
             } catch (MediaCodec.CodecException e) {
                 handleEncodeError(e);
             }
@@ -540,9 +549,9 @@ public class EncoderImpl implements Encoder {
                     break;
                 case STARTED:
                     // Create and insert a pause/resume range.
-                    final long pauseTimeUs = pauseTriggerTimeUs;
-                    Logger.d(mTag, "Pause on " + DebugUtils.readableUs(pauseTimeUs));
-                    mActivePauseResumeTimeRanges.addLast(Range.create(pauseTimeUs, NO_LIMIT_LONG));
+                    Logger.d(mTag, "Pause on " + DebugUtils.readableUs(pauseTriggerTimeUs));
+                    mActivePauseResumeTimeRanges.addLast(
+                            Range.create(pauseTriggerTimeUs, NO_LIMIT_LONG));
                     setState(PAUSED);
                     break;
                 case PENDING_RELEASE:
@@ -678,7 +687,7 @@ public class EncoderImpl implements Encoder {
         mState = state;
     }
 
-    @SuppressWarnings("WeakerAccess") /* synthetic accessor */
+    @SuppressWarnings("WeakerAccess") // synthetic accessor
     @ExecutedBy("mEncoderExecutor")
     void setMediaCodecPaused(boolean paused) {
         Bundle bundle = new Bundle();
@@ -686,7 +695,7 @@ public class EncoderImpl implements Encoder {
         mMediaCodec.setParameters(bundle);
     }
 
-    @SuppressWarnings("WeakerAccess") /* synthetic accessor */
+    @SuppressWarnings("WeakerAccess") // synthetic accessor
     @ExecutedBy("mEncoderExecutor")
     void requestKeyFrameToMediaCodec() {
         Bundle bundle = new Bundle();
@@ -734,13 +743,13 @@ public class EncoderImpl implements Encoder {
                 }, mEncoderExecutor);
     }
 
-    @SuppressWarnings("WeakerAccess") /* synthetic accessor */
+    @SuppressWarnings("WeakerAccess") // synthetic accessor
     @ExecutedBy("mEncoderExecutor")
     void handleEncodeError(@NonNull MediaCodec.CodecException e) {
         handleEncodeError(EncodeException.ERROR_CODEC, e.getMessage(), e);
     }
 
-    @SuppressWarnings("WeakerAccess") /* synthetic accessor */
+    @SuppressWarnings("WeakerAccess") // synthetic accessor
     @ExecutedBy("mEncoderExecutor")
     void handleEncodeError(@EncodeException.ErrorType int error, @Nullable String message,
             @Nullable Throwable throwable) {
@@ -760,6 +769,7 @@ public class EncoderImpl implements Encoder {
                 stopMediaCodec(() -> notifyError(error, message, throwable));
                 break;
             case ERROR:
+                //noinspection ConstantConditions
                 Logger.w(mTag, "Get more than one error: " + message + "(" + error + ")",
                         throwable);
                 break;
@@ -769,7 +779,7 @@ public class EncoderImpl implements Encoder {
         }
     }
 
-    @SuppressWarnings("WeakerAccess") /* synthetic accessor */
+    @SuppressWarnings("WeakerAccess") // synthetic accessor
     void notifyError(@EncodeException.ErrorType int error, @Nullable String message,
             @Nullable Throwable throwable) {
         EncoderCallback callback;
@@ -786,7 +796,7 @@ public class EncoderImpl implements Encoder {
         }
     }
 
-    @SuppressWarnings("WeakerAccess") /* synthetic accessor */
+    @SuppressWarnings("WeakerAccess") // synthetic accessor
     @ExecutedBy("mEncoderExecutor")
     void stopMediaCodec(@Nullable Runnable afterStop) {
         /*
@@ -812,12 +822,12 @@ public class EncoderImpl implements Encoder {
                 Logger.d(mTag, "encoded data and input buffers are returned");
             }
             if (mEncoderInput instanceof SurfaceInput && !mSourceStoppedSignalled) {
-                // For a SurfaceInput, the codec is in control of dequeuing buffers from the
-                // underlying BufferQueue. If we stop the codec, then it will stop dequeuing buffers
-                // and the BufferQueue may run out of input buffers, causing the camera pipeline
-                // to stall. Instead of stopping, we will flush the codec. Since the codec is
-                // operating in asynchronous mode, this will cause the codec to continue to
-                // discard buffers. We should have already received the end-of-stream signal on
+                // For a SurfaceInput, the codec is in control of de-queuing buffers from the
+                // underlying BufferQueue. If we stop the codec, then it will stop de-queuing
+                // buffers and the BufferQueue may run out of input buffers, causing the camera
+                // pipeline to stall. Instead of stopping, we will flush the codec. Since the
+                // codec is operating in asynchronous mode, this will cause the codec to continue
+                // to discard buffers. We should have already received the end-of-stream signal on
                 // an output buffer at this point, so those buffers are not needed anyways. We will
                 // defer resetting the codec until just before starting the codec again.
                 mMediaCodec.flush();
@@ -836,7 +846,7 @@ public class EncoderImpl implements Encoder {
         }, mEncoderExecutor);
     }
 
-    @SuppressWarnings("WeakerAccess") /* synthetic accessor */
+    @SuppressWarnings("WeakerAccess") // synthetic accessor
     @ExecutedBy("mEncoderExecutor")
     void handleStopped() {
         if (mState == PENDING_RELEASE) {
@@ -859,7 +869,7 @@ public class EncoderImpl implements Encoder {
         }
     }
 
-    @SuppressWarnings("WeakerAccess") /* synthetic accessor */
+    @SuppressWarnings("WeakerAccess") // synthetic accessor
     @ExecutedBy("mEncoderExecutor")
     void updateTotalPausedDuration(long bufferPresentationTimeUs) {
         while (!mActivePauseResumeTimeRanges.isEmpty()) {
@@ -876,9 +886,9 @@ public class EncoderImpl implements Encoder {
         }
     }
 
-    @SuppressWarnings("WeakerAccess") /* synthetic accessor */
+    @SuppressWarnings("WeakerAccess") // synthetic accessor
     @ExecutedBy("mEncoderExecutor")
-    long getAdjustedTimeUs(@NonNull MediaCodec.BufferInfo bufferInfo) {
+    long getAdjustedTimeUs(@NonNull BufferInfo bufferInfo) {
         long adjustedTimeUs;
         if (mTotalPausedDurationUs > 0L) {
             adjustedTimeUs = bufferInfo.presentationTimeUs - mTotalPausedDurationUs;
@@ -888,7 +898,7 @@ public class EncoderImpl implements Encoder {
         return adjustedTimeUs;
     }
 
-    @SuppressWarnings("WeakerAccess") /* synthetic accessor */
+    @SuppressWarnings("WeakerAccess") // synthetic accessor
     @ExecutedBy("mEncoderExecutor")
     boolean isInPauseRange(long timeUs) {
         for (Range<Long> range : mActivePauseResumeTimeRanges) {
@@ -903,7 +913,7 @@ public class EncoderImpl implements Encoder {
         return false;
     }
 
-    @SuppressWarnings("WeakerAccess") /* synthetic accessor */
+    @SuppressWarnings("WeakerAccess") // synthetic accessor
     @ExecutedBy("mEncoderExecutor")
     @NonNull
     ListenableFuture<InputBuffer> acquireInputBuffer() {
@@ -940,12 +950,12 @@ public class EncoderImpl implements Encoder {
         }
     }
 
-    @SuppressWarnings("WeakerAccess") /* synthetic accessor */
+    @SuppressWarnings("WeakerAccess") // synthetic accessor
     @ExecutedBy("mEncoderExecutor")
     void matchAcquisitionsAndFreeBufferIndexes() {
         while (!mAcquisitionQueue.isEmpty() && !mFreeInputBufferIndexQueue.isEmpty()) {
-            Completer<InputBuffer> completer = mAcquisitionQueue.poll();
-            int bufferIndex = mFreeInputBufferIndexQueue.poll();
+            Completer<InputBuffer> completer = requireNonNull(mAcquisitionQueue.poll());
+            int bufferIndex = requireNonNull(mFreeInputBufferIndexQueue.poll());
 
             InputBufferImpl inputBuffer;
             try {
@@ -971,22 +981,22 @@ public class EncoderImpl implements Encoder {
                 : new AudioEncoderInfoImpl(codecInfo, mime);
     }
 
-    @SuppressWarnings("WeakerAccess") /* synthetic accessor */
+    @SuppressWarnings("WeakerAccess") // synthetic accessor
     long generatePresentationTimeUs() {
         return mTimeProvider.uptimeUs();
     }
 
-    @SuppressWarnings("WeakerAccess") /* synthetic accessor */
-    static boolean isKeyFrame(@NonNull MediaCodec.BufferInfo bufferInfo) {
+    @SuppressWarnings("WeakerAccess") // synthetic accessor
+    static boolean isKeyFrame(@NonNull BufferInfo bufferInfo) {
         return (bufferInfo.flags & MediaCodec.BUFFER_FLAG_KEY_FRAME) != 0;
     }
 
-    @SuppressWarnings("WeakerAccess") /* synthetic accessor */
-    static boolean isEndOfStream(@NonNull MediaCodec.BufferInfo bufferInfo) {
+    @SuppressWarnings("WeakerAccess") // synthetic accessor
+    static boolean hasEndOfStreamFlag(@NonNull BufferInfo bufferInfo) {
         return (bufferInfo.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0;
     }
 
-    @SuppressWarnings("WeakerAccess") /* synthetic accessor */
+    @SuppressWarnings("WeakerAccess") // synthetic accessor
     @RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
     class MediaCodecCallback extends MediaCodec.Callback {
         @Nullable
@@ -1001,7 +1011,7 @@ public class EncoderImpl implements Encoder {
          * The last sent presentation time of BufferInfo. The value could be adjusted by total
          * pause duration.
          */
-        private long mLastSentPresentationTimeUs = 0L;
+        private long mLastSentAdjustedTimeUs = 0L;
         private boolean mIsOutputBufferInPauseState = false;
         private boolean mIsKeyFrameRequired = false;
 
@@ -1045,7 +1055,7 @@ public class EncoderImpl implements Encoder {
 
         @Override
         public void onOutputBufferAvailable(@NonNull MediaCodec mediaCodec, int index,
-                @NonNull MediaCodec.BufferInfo bufferInfo) {
+                @NonNull BufferInfo bufferInfo) {
             mEncoderExecutor.execute(() -> {
                 switch (mState) {
                     case STARTED:
@@ -1079,33 +1089,25 @@ public class EncoderImpl implements Encoder {
                             if (!mHasFirstData) {
                                 mHasFirstData = true;
                             }
-                            long adjustedTimeUs = getAdjustedTimeUs(bufferInfo);
-                            if (bufferInfo.presentationTimeUs != adjustedTimeUs) {
-                                // If adjusted time <= last sent time, the buffer should have been
-                                // detected and dropped in checkBufferInfo().
-                                Preconditions.checkState(
-                                        adjustedTimeUs > mLastSentPresentationTimeUs);
-                                bufferInfo.presentationTimeUs = adjustedTimeUs;
-                                if (DEBUG) {
-                                    Logger.d(mTag, "Adjust bufferInfo.presentationTimeUs to "
-                                            + DebugUtils.readableUs(adjustedTimeUs));
-                                }
-                            }
-                            mLastSentPresentationTimeUs = bufferInfo.presentationTimeUs;
+                            BufferInfo outBufferInfo = resolveOutputBufferInfo(bufferInfo);
+                            mLastSentAdjustedTimeUs = outBufferInfo.presentationTimeUs;
                             try {
                                 EncodedDataImpl encodedData = new EncodedDataImpl(mediaCodec, index,
-                                        bufferInfo);
+                                        outBufferInfo);
                                 sendEncodedData(encodedData, encoderCallback, executor);
                             } catch (MediaCodec.CodecException e) {
                                 handleEncodeError(e);
                                 return;
                             }
                         } else {
-                            try {
-                                mMediaCodec.releaseOutputBuffer(index, false);
-                            } catch (MediaCodec.CodecException e) {
-                                handleEncodeError(e);
-                                return;
+                            // Not necessary to return fake buffer
+                            if (index != FAKE_BUFFER_INDEX) {
+                                try {
+                                    mMediaCodec.releaseOutputBuffer(index, false);
+                                } catch (MediaCodec.CodecException e) {
+                                    handleEncodeError(e);
+                                    return;
+                                }
                             }
                         }
 
@@ -1134,6 +1136,26 @@ public class EncoderImpl implements Encoder {
                         throw new IllegalStateException("Unknown state: " + mState);
                 }
             });
+        }
+
+        @ExecutedBy("mEncoderExecutor")
+        @NonNull
+        private BufferInfo resolveOutputBufferInfo(@NonNull BufferInfo bufferInfo) {
+            long adjustedTimeUs = getAdjustedTimeUs(bufferInfo);
+            if (bufferInfo.presentationTimeUs == adjustedTimeUs) {
+                return bufferInfo;
+            }
+
+            // If adjusted time <= last sent time, the buffer should have been detected and
+            // dropped in checkBufferInfo().
+            Preconditions.checkState(adjustedTimeUs > mLastSentAdjustedTimeUs);
+            if (DEBUG) {
+                Logger.d(mTag, "Adjust bufferInfo.presentationTimeUs to "
+                        + DebugUtils.readableUs(adjustedTimeUs));
+            }
+            BufferInfo newBufferInfo = new BufferInfo();
+            newBufferInfo.set(bufferInfo.offset, bufferInfo.size, adjustedTimeUs, bufferInfo.flags);
+            return newBufferInfo;
         }
 
         @ExecutedBy("mEncoderExecutor")
@@ -1168,12 +1190,12 @@ public class EncoderImpl implements Encoder {
         }
 
         /**
-         * Checks the {@link android.media.MediaCodec.BufferInfo} and updates related states.
+         * Checks the {@link BufferInfo} and updates related states.
          *
          * @return {@code true} if the buffer is valid, otherwise {@code false}.
          */
         @ExecutedBy("mEncoderExecutor")
-        private boolean checkBufferInfo(@NonNull MediaCodec.BufferInfo bufferInfo) {
+        private boolean checkBufferInfo(@NonNull BufferInfo bufferInfo) {
             if (mHasEndData) {
                 Logger.d(mTag, "Drop buffer by already reach end of stream.");
                 return false;
@@ -1228,7 +1250,7 @@ public class EncoderImpl implements Encoder {
             }
 
             // We should check if the adjusted time is valid. see b/189114207.
-            if (getAdjustedTimeUs(bufferInfo) <= mLastSentPresentationTimeUs) {
+            if (getAdjustedTimeUs(bufferInfo) <= mLastSentAdjustedTimeUs) {
                 Logger.d(mTag, "Drop buffer by adjusted time is less than the last sent time.");
                 if (mIsVideoEncoder && isKeyFrame(bufferInfo)) {
                     mIsKeyFrameRequired = true;
@@ -1253,8 +1275,20 @@ public class EncoderImpl implements Encoder {
         }
 
         @ExecutedBy("mEncoderExecutor")
+        private boolean isEndOfStream(@NonNull BufferInfo bufferInfo) {
+            return hasEndOfStreamFlag(bufferInfo) || isEosSignalledAndStopTimeReached(bufferInfo);
+        }
+
+        @ExecutedBy("mEncoderExecutor")
+        private boolean isEosSignalledAndStopTimeReached(@NonNull BufferInfo bufferInfo) {
+            return mMediaCodecEosSignalled
+                    && bufferInfo.presentationTimeUs > mStartStopTimeRangeUs.getUpper();
+        }
+
+        @SuppressWarnings("StatementWithEmptyBody") // to better organize the logic and comments
+        @ExecutedBy("mEncoderExecutor")
         private boolean updatePauseRangeStateAndCheckIfBufferPaused(
-                @NonNull MediaCodec.BufferInfo bufferInfo) {
+                @NonNull BufferInfo bufferInfo) {
             updateTotalPausedDuration(bufferInfo.presentationTimeUs);
             boolean isInPauseRange = isInPauseRange(bufferInfo.presentationTimeUs);
             if (!mIsOutputBufferInPauseState && isInPauseRange) {
@@ -1372,7 +1406,7 @@ public class EncoderImpl implements Encoder {
         }
     }
 
-    @SuppressWarnings("WeakerAccess") /* synthetic accessor */
+    @SuppressWarnings("WeakerAccess") // synthetic accessor
     @RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
     class SurfaceInput implements Encoder.SurfaceInput {
 
@@ -1468,7 +1502,7 @@ public class EncoderImpl implements Encoder {
         }
     }
 
-    @SuppressWarnings("WeakerAccess") /* synthetic accessor */
+    @SuppressWarnings("WeakerAccess") // synthetic accessor
     class ByteBufferInput implements Encoder.ByteBufferInput {
 
         private final Map<Observer<? super State>, Executor> mStateObservers =

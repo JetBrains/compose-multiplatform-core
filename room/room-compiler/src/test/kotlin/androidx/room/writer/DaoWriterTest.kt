@@ -18,11 +18,12 @@ package androidx.room.writer
 
 import COMMON
 import androidx.room.compiler.codegen.CodeLanguage
+import androidx.room.compiler.codegen.toJavaPoet
 import androidx.room.compiler.processing.XTypeElement
 import androidx.room.compiler.processing.util.Source
 import androidx.room.compiler.processing.util.XTestInvocation
 import androidx.room.compiler.processing.util.runProcessorTest
-import androidx.room.ext.RoomTypeNames
+import androidx.room.ext.RoomTypeNames.ROOM_DB
 import androidx.room.processor.DaoProcessor
 import androidx.room.testing.context
 import createVerifierFromEntitiesAndViews
@@ -46,10 +47,11 @@ class DaoWriterTest {
                 qName = "foo.bar.ComplexDao"
             )
         ) {
+            val backendFolder = backendFolder(it)
             it.assertCompilationResult {
                 generatedSource(
                     loadTestSource(
-                        fileName = "daoWriter/output/ComplexDao.java",
+                        fileName = "daoWriter/output/$backendFolder/ComplexDao.java",
                         qName = "foo.bar.ComplexDao_Impl"
                     )
                 )
@@ -76,10 +78,11 @@ class DaoWriterTest {
                 qName = "foo.bar.WriterDao"
             )
         ) {
+            val backendFolder = backendFolder(it)
             it.assertCompilationResult {
                 generatedSource(
                     loadTestSource(
-                        fileName = "daoWriter/output/WriterDao.java",
+                        fileName = "daoWriter/output/$backendFolder/WriterDao.java",
                         qName = "foo.bar.WriterDao_Impl"
                     )
                 )
@@ -95,10 +98,11 @@ class DaoWriterTest {
                 qName = "foo.bar.DeletionDao"
             )
         ) {
+            val backendFolder = backendFolder(it)
             it.assertCompilationResult {
                 generatedSource(
                     loadTestSource(
-                        fileName = "daoWriter/output/DeletionDao.java",
+                        fileName = "daoWriter/output/$backendFolder/DeletionDao.java",
                         qName = "foo.bar.DeletionDao_Impl"
                     )
                 )
@@ -114,10 +118,11 @@ class DaoWriterTest {
                 qName = "foo.bar.UpdateDao"
             )
         ) {
+            val backendFolder = backendFolder(it)
             it.assertCompilationResult {
                 generatedSource(
                     loadTestSource(
-                        fileName = "daoWriter/output/UpdateDao.java",
+                        fileName = "daoWriter/output/$backendFolder/UpdateDao.java",
                         qName = "foo.bar.UpdateDao_Impl"
                     )
                 )
@@ -133,10 +138,11 @@ class DaoWriterTest {
                 qName = "foo.bar.UpsertDao"
             )
         ) {
+            val backendFolder = backendFolder(it)
             it.assertCompilationResult {
                 generatedSource(
                     loadTestSource(
-                        fileName = "daoWriter/output/UpsertDao.java",
+                        fileName = "daoWriter/output/$backendFolder/UpsertDao.java",
                         qName = "foo.bar.UpsertDao_Impl"
                     )
                 )
@@ -168,7 +174,7 @@ class DaoWriterTest {
                         androidx.room.Database::class.qualifiedName!!
                     ).filterIsInstance<XTypeElement>().firstOrNull()
                     ?: invocation.context.processingEnv
-                        .requireTypeElement(RoomTypeNames.ROOM_DB)
+                        .requireTypeElement(ROOM_DB.toJavaPoet())
                 val dbType = db.type
                 val dbVerifier = createVerifierFromEntitiesAndViews(invocation)
                 invocation.context.attachDatabaseVerifier(dbVerifier)
@@ -187,4 +193,7 @@ class DaoWriterTest {
             handler(invocation)
         }
     }
+
+    private fun backendFolder(invocation: XTestInvocation) =
+        invocation.processingEnv.backend.name.lowercase()
 }

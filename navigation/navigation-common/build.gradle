@@ -42,11 +42,12 @@ dependencies {
     testImplementation(project(":navigation:navigation-testing"))
     testImplementation("androidx.arch.core:core-testing:2.1.0")
     testImplementation(libs.junit)
-    testImplementation(libs.mockitoCore)
+    testImplementation(libs.mockitoCore4)
     testImplementation(libs.truth)
     testImplementation(libs.kotlinStdlib)
     testImplementation(libs.kotlinCoroutinesTest)
 
+    androidTestImplementation(libs.kotlinTestJunit)
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.testCore)
     androidTestImplementation(libs.testRunner)

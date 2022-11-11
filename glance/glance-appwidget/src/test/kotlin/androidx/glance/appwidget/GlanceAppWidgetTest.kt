@@ -36,7 +36,8 @@ import androidx.glance.LocalSize
 import androidx.glance.text.Text
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
-import com.nhaarman.mockitokotlin2.mock
+import org.mockito.kotlin.mock
+import kotlin.test.assertIs
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.TestScope
@@ -46,7 +47,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
-import kotlin.test.assertIs
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
@@ -97,7 +97,7 @@ class GlanceAppWidgetTest {
 
         val view = context.applyRemoteViews(rv)
         assertIs<TextView>(view)
-        assertThat(view.text).isEqualTo("40.0.dp x 50.0.dp")
+        assertThat(view.text.toString()).isEqualTo("40.0.dp x 50.0.dp")
     }
 
     @Test
@@ -121,7 +121,7 @@ class GlanceAppWidgetTest {
 
         val view = context.applyRemoteViews(rv)
         assertIs<TextView>(view)
-        assertThat(view.text).isEqualTo("FOUND")
+        assertThat(view.text.toString()).isEqualTo("FOUND")
     }
 
     @Test
@@ -144,7 +144,7 @@ class GlanceAppWidgetTest {
 
         val view = context.applyRemoteViews(rv)
         assertIs<TextView>(view)
-        assertThat(view.text).isEqualTo("AppWidgetId(appWidgetId=1)")
+        assertThat(view.text.toString()).isEqualTo("AppWidgetId(appWidgetId=1)")
     }
 
     @Test
@@ -176,7 +176,7 @@ class GlanceAppWidgetTest {
 
         val view = context.applyRemoteViews(rv)
         assertIs<TextView>(view)
-        assertThat(view.text).isEqualTo("40.0.dp x 50.0.dp")
+        assertThat(view.text.toString()).isEqualTo("40.0.dp x 50.0.dp")
     }
 
     @Config(sdk = [30])
@@ -201,11 +201,11 @@ class GlanceAppWidgetTest {
 
         val portraitView = createPortraitContext().applyRemoteViews(rv)
         assertIs<TextView>(portraitView)
-        assertThat(portraitView.text).isEqualTo("50.0.dp x 100.0.dp")
+        assertThat(portraitView.text.toString()).isEqualTo("50.0.dp x 100.0.dp")
 
         val landscapeView = createLandscapeContext().applyRemoteViews(rv)
         assertIs<TextView>(landscapeView)
-        assertThat(landscapeView.text).isEqualTo("100.0.dp x 50.0.dp")
+        assertThat(landscapeView.text.toString()).isEqualTo("100.0.dp x 50.0.dp")
     }
 
     @Config(sdk = [30])
@@ -237,11 +237,11 @@ class GlanceAppWidgetTest {
 
         val portraitView = createPortraitContext().applyRemoteViews(rv)
         assertIs<TextView>(portraitView)
-        assertThat(portraitView.text).isEqualTo("60.0.dp x 80.0.dp")
+        assertThat(portraitView.text.toString()).isEqualTo("60.0.dp x 80.0.dp")
 
         val landscapeView = createLandscapeContext().applyRemoteViews(rv)
         assertIs<TextView>(landscapeView)
-        assertThat(landscapeView.text).isEqualTo("100.0.dp x 70.0.dp")
+        assertThat(landscapeView.text.toString()).isEqualTo("100.0.dp x 70.0.dp")
     }
 
     @Test
@@ -273,11 +273,11 @@ class GlanceAppWidgetTest {
 
             val portraitView = createPortraitContext().applyRemoteViews(rv)
             assertIs<TextView>(portraitView)
-            assertThat(portraitView.text).isEqualTo("40.0.dp x 50.0.dp")
+            assertThat(portraitView.text.toString()).isEqualTo("40.0.dp x 50.0.dp")
 
             val landscapeView = createLandscapeContext().applyRemoteViews(rv)
             assertIs<TextView>(landscapeView)
-            assertThat(landscapeView.text).isEqualTo("40.0.dp x 50.0.dp")
+            assertThat(landscapeView.text.toString()).isEqualTo("40.0.dp x 50.0.dp")
         }
     }
 
@@ -307,16 +307,15 @@ class GlanceAppWidgetTest {
 
         val portraitView = createPortraitContext().applyRemoteViews(rv)
         assertIs<TextView>(portraitView)
-        assertThat(portraitView.text).isEqualTo("60.0.dp x 80.0.dp")
+        assertThat(portraitView.text.toString()).isEqualTo("60.0.dp x 80.0.dp")
 
         val landscapeView = createLandscapeContext().applyRemoteViews(rv)
         assertIs<TextView>(landscapeView)
-        assertThat(landscapeView.text).isEqualTo("60.0.dp x 80.0.dp")
+        assertThat(landscapeView.text.toString()).isEqualTo("60.0.dp x 80.0.dp")
     }
 
     @Test
     fun appWidgetMinSize_noResizing() {
-        val composer = SampleGlanceAppWidget { }
         val appWidgetManager = mock<AppWidgetManager> {
             on { getAppWidgetInfo(1) }.thenReturn(
                 appWidgetProviderInfo {
@@ -329,13 +328,12 @@ class GlanceAppWidgetTest {
             )
         }
 
-        assertThat(composer.appWidgetMinSize(displayMetrics, appWidgetManager, 1))
+        assertThat(appWidgetMinSize(displayMetrics, appWidgetManager, 1))
             .isEqualTo(DpSize(50.dp, 50.dp))
     }
 
     @Test
     fun appWidgetMinSize_horizontalResizing() {
-        val composer = SampleGlanceAppWidget { }
         val appWidgetManager = mock<AppWidgetManager> {
             on { getAppWidgetInfo(1) }.thenReturn(
                 appWidgetProviderInfo {
@@ -348,13 +346,12 @@ class GlanceAppWidgetTest {
             )
         }
 
-        assertThat(composer.appWidgetMinSize(displayMetrics, appWidgetManager, 1))
+        assertThat(appWidgetMinSize(displayMetrics, appWidgetManager, 1))
             .isEqualTo(DpSize(40.dp, 50.dp))
     }
 
     @Test
     fun appWidgetMinSize_verticalResizing() {
-        val composer = SampleGlanceAppWidget { }
         val appWidgetManager = mock<AppWidgetManager> {
             on { getAppWidgetInfo(1) }.thenReturn(
                 appWidgetProviderInfo {
@@ -367,13 +364,12 @@ class GlanceAppWidgetTest {
             )
         }
 
-        assertThat(composer.appWidgetMinSize(displayMetrics, appWidgetManager, 1))
+        assertThat(appWidgetMinSize(displayMetrics, appWidgetManager, 1))
             .isEqualTo(DpSize(50.dp, 30.dp))
     }
 
     @Test
     fun appWidgetMinSize_bigMinResize() {
-        val composer = SampleGlanceAppWidget { }
         val appWidgetManager = mock<AppWidgetManager> {
             on { getAppWidgetInfo(1) }.thenReturn(
                 appWidgetProviderInfo {
@@ -386,7 +382,7 @@ class GlanceAppWidgetTest {
             )
         }
 
-        assertThat(composer.appWidgetMinSize(displayMetrics, appWidgetManager, 1))
+        assertThat(appWidgetMinSize(displayMetrics, appWidgetManager, 1))
             .isEqualTo(DpSize(50.dp, 50.dp))
     }
 
@@ -452,30 +448,6 @@ class GlanceAppWidgetTest {
         )
     }
 
-    private fun optionsBundleOf(sizes: List<DpSize>): Bundle {
-        require(sizes.isNotEmpty()) { "There must be at least one size" }
-        val (minSize, maxSize) = sizes.fold(sizes[0] to sizes[0]) { acc, s ->
-            DpSize(min(acc.first.width, s.width), min(acc.first.height, s.height)) to
-                DpSize(max(acc.second.width, s.width), max(acc.second.height, s.height))
-        }
-        return Bundle().apply {
-            putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, minSize.width.value.toInt())
-            putInt(
-                AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT,
-                minSize.height.value.toInt()
-            )
-            putInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH, maxSize.width.value.toInt())
-            putInt(
-                AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT,
-                maxSize.height.value.toInt()
-            )
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                val sizeList = sizes.map { it.toSizeF() }.toArrayList()
-                putParcelableArrayList(AppWidgetManager.OPTION_APPWIDGET_SIZES, sizeList)
-            }
-        }
-    }
-
     private fun createPortraitContext() =
         makeOrientationContext(Configuration.ORIENTATION_PORTRAIT)
 
@@ -495,6 +467,30 @@ class GlanceAppWidgetTest {
         @Composable
         override fun Content() {
             ui()
+        }
+    }
+}
+
+internal fun optionsBundleOf(sizes: List<DpSize>): Bundle {
+    require(sizes.isNotEmpty()) { "There must be at least one size" }
+    val (minSize, maxSize) = sizes.fold(sizes[0] to sizes[0]) { acc, s ->
+        DpSize(min(acc.first.width, s.width), min(acc.first.height, s.height)) to
+            DpSize(max(acc.second.width, s.width), max(acc.second.height, s.height))
+    }
+    return Bundle().apply {
+        putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, minSize.width.value.toInt())
+        putInt(
+            AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT,
+            minSize.height.value.toInt()
+        )
+        putInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH, maxSize.width.value.toInt())
+        putInt(
+            AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT,
+            maxSize.height.value.toInt()
+        )
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val sizeList = sizes.map { it.toSizeF() }.toArrayList()
+            putParcelableArrayList(AppWidgetManager.OPTION_APPWIDGET_SIZES, sizeList)
         }
     }
 }

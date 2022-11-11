@@ -799,6 +799,20 @@ public class AccessibilityNodeInfoCompat {
             }
             return true;
         }
+
+        @NonNull
+        @Override
+        public String toString() {
+            StringBuilder builder = new StringBuilder();
+            builder.append("AccessibilityActionCompat: ");
+            // Mirror AccessibilityNodeInfoCompat.toString's action string.
+            String actionName = getActionSymbolicName(mId);
+            if (actionName.equals("ACTION_UNKNOWN") && getLabel() != null) {
+                actionName = getLabel().toString();
+            }
+            builder.append(actionName);
+            return builder.toString();
+        }
     }
 
     /**
@@ -810,6 +824,10 @@ public class AccessibilityNodeInfoCompat {
      * collection with several rows, several columns, and is not hierarchical;
      * A vertical tree is a hierarchical collection with one column and
      * as many rows as the first level children.
+     * </p>
+     * <p>
+     * To be a valid list, a collection has 1 row and any number of columns or 1 column and any
+     * number of rows.
      * </p>
      */
     public static class CollectionInfoCompat {
@@ -1238,11 +1256,6 @@ public class AccessibilityNodeInfoCompat {
          * <p>
          *   <strong>Note:</strong> This api can only be called from
          *   {@link android.accessibilityservice.AccessibilityService}.
-         * </p>
-         * <p>
-         *   <strong>Note:</strong> It is a client responsibility to recycle the
-         *     received info by calling {@link AccessibilityNodeInfo#recycle()}
-         *     to avoid creating of multiple instances.
          * </p>
          * <p>
          * Compatibility:
@@ -1991,11 +2004,6 @@ public class AccessibilityNodeInfoCompat {
 
     /**
      * Get the child at given index.
-     * <p>
-     * <strong>Note:</strong> It is a client responsibility to recycle the
-     * received info by calling {@link AccessibilityNodeInfoCompat#recycle()} to
-     * avoid creating of multiple instances.
-     * </p>
      *
      * @param index The child index.
      * @return The child node.
@@ -2246,11 +2254,6 @@ public class AccessibilityNodeInfoCompat {
      * Finds {@link android.view.accessibility.AccessibilityNodeInfo}s by text. The match
      * is case insensitive containment. The search is relative to this info i.e. this
      * info is the root of the traversed tree.
-     * <p>
-     * <strong>Note:</strong> It is a client responsibility to recycle the
-     * received info by calling {@link android.view.accessibility.AccessibilityNodeInfo#recycle()}
-     * to avoid creating of multiple instances.
-     * </p>
      *
      * @param text The searched text.
      * @return A list of node info.
@@ -2268,11 +2271,6 @@ public class AccessibilityNodeInfoCompat {
 
     /**
      * Gets the parent.
-     * <p>
-     * <strong>Note:</strong> It is a client responsibility to recycle the
-     * received info by calling {@link android.view.accessibility.AccessibilityNodeInfo#recycle()}
-     * to avoid creating of multiple instances.
-     * </p>
      *
      * @return The parent.
      */
@@ -3054,10 +3052,10 @@ public class AccessibilityNodeInfoCompat {
      * <strong>Note:</strong> You must not touch the object after calling this function.
      *
      * @throws IllegalStateException If the info is already recycled.
+     * @deprecated Accessibility Object recycling is no longer necessary or functional.
      */
-    public void recycle() {
-        mInfo.recycle();
-    }
+    @Deprecated
+    public void recycle() { }
 
     /**
      * Sets the fully qualified resource name of the source view's id.
@@ -3465,11 +3463,6 @@ public class AccessibilityNodeInfoCompat {
     /**
      * Gets the node info for which the view represented by this info serves as
      * a label for accessibility purposes.
-     * <p>
-     *   <strong>Note:</strong> It is a client responsibility to recycle the
-     *     received info by calling {@link AccessibilityNodeInfoCompat#recycle()}
-     *     to avoid creating of multiple instances.
-     * </p>
      *
      * @return The labeled info.
      */
@@ -3521,11 +3514,6 @@ public class AccessibilityNodeInfoCompat {
     /**
      * Gets the node info which serves as the label of the view represented by
      * this info for accessibility purposes.
-     * <p>
-     *   <strong>Note:</strong> It is a client responsibility to recycle the
-     *     received info by calling {@link AccessibilityNodeInfoCompat#recycle()}
-     *     to avoid creating of multiple instances.
-     * </p>
      *
      * @return The label.
      */
@@ -3572,11 +3560,6 @@ public class AccessibilityNodeInfoCompat {
      * For example, if the target application's package is "foo.bar" and the id
      * resource name is "baz", the fully qualified resource id is "foo.bar:id/baz".
      *
-     * <p>
-     *   <strong>Note:</strong> It is a client responsibility to recycle the
-     *     received info by calling {@link AccessibilityNodeInfoCompat#recycle()}
-     *     to avoid creating of multiple instances.
-     * </p>
      * <p>
      *   <strong>Note:</strong> The primary usage of this API is for UI test automation
      *   and in order to report the fully qualified view id if an
@@ -4224,8 +4207,7 @@ public class AccessibilityNodeInfoCompat {
      * Refreshes this info with the latest state of the view it represents.
      * <p>
      * <strong>Note:</strong> If this method returns false this info is obsolete
-     * since it represents a view that is no longer in the view tree and should
-     * be recycled.
+     * since it represents a view that is no longer in the view tree.
      * </p>
      * @return Whether the refresh succeeded.
      */
@@ -4439,7 +4421,7 @@ public class AccessibilityNodeInfoCompat {
         return (extras.getInt(BOOLEAN_PROPERTY_KEY, 0) & property) == property;
     }
 
-    private static String getActionSymbolicName(int action) {
+    static String getActionSymbolicName(int action) {
         switch (action) {
             case ACTION_FOCUS:
                 return "ACTION_FOCUS";

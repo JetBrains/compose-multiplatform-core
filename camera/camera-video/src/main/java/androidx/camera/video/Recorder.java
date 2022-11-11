@@ -16,6 +16,7 @@
 
 package androidx.camera.video;
 
+import static androidx.camera.video.VideoRecordEvent.Finalize.ERROR_DURATION_LIMIT_REACHED;
 import static androidx.camera.video.VideoRecordEvent.Finalize.ERROR_ENCODING_FAILED;
 import static androidx.camera.video.VideoRecordEvent.Finalize.ERROR_FILE_SIZE_LIMIT_REACHED;
 import static androidx.camera.video.VideoRecordEvent.Finalize.ERROR_INVALID_OUTPUT_OPTIONS;
@@ -73,7 +74,6 @@ import androidx.camera.core.internal.utils.RingBuffer;
 import androidx.camera.video.StreamInfo.StreamState;
 import androidx.camera.video.internal.AudioSource;
 import androidx.camera.video.internal.AudioSourceAccessException;
-import androidx.camera.video.internal.ResourceCreationException;
 import androidx.camera.video.internal.compat.Api26Impl;
 import androidx.camera.video.internal.compat.quirk.DeactivateEncoderSurfaceBeforeStopEncoderQuirk;
 import androidx.camera.video.internal.compat.quirk.DeviceQuirks;
@@ -220,9 +220,13 @@ public final class Recorder implements VideoOutput {
          */
         ACTIVE,
         /**
-         * The audio source or the audio encoder encountered errors.
+         * The audio encoder encountered errors.
          */
-        ERROR
+        ERROR_ENCODER,
+        /**
+         * The audio source encountered errors.
+         */
+        ERROR_SOURCE,
     }
 
     /**
@@ -372,12 +376,18 @@ public final class Recorder implements VideoOutput {
     long mRecordingDurationNs = 0L;
     @VisibleForTesting
     @SuppressWarnings("WeakerAccess") /* synthetic accessor */
-    long mFirstRecordingVideoDataTimeUs = 0L;
+    long mFirstRecordingVideoDataTimeUs = Long.MAX_VALUE;
     @VisibleForTesting
     @SuppressWarnings("WeakerAccess") /* synthetic accessor */
-    long mFirstRecordingAudioDataTimeUs = 0L;
+    long mFirstRecordingAudioDataTimeUs = Long.MAX_VALUE;
+    @SuppressWarnings("WeakerAccess") /* synthetic accessor */
+    long mPreviousRecordingVideoDataTimeUs = Long.MAX_VALUE;
+    @SuppressWarnings("WeakerAccess") /* synthetic accessor */
+    long mPreviousRecordingAudioDataTimeUs = Long.MAX_VALUE;
     @SuppressWarnings("WeakerAccess") /* synthetic accessor */
     long mFileSizeLimitInBytes = OutputOptions.FILE_SIZE_UNLIMITED;
+    @SuppressWarnings("WeakerAccess") /* synthetic accessor */
+    long mDurationLimitNs = OutputOptions.DURATION_UNLIMITED;
     @SuppressWarnings("WeakerAccess") /* synthetic accessor */
     @VideoRecordError
     int mRecordingStopError = ERROR_UNKNOWN;
@@ -1109,13 +1119,13 @@ public final class Recorder implements VideoOutput {
     /**
      * Setup audio related resources.
      *
-     * @throws ResourceCreationException if the necessary resource for audio to work failed to be
-     * setup.
+     * @throws AudioSourceAccessException if the audio source failed to be setup.
+     * @throws InvalidConfigException if the audio encoder failed to be setup.
      */
     @RequiresPermission(Manifest.permission.RECORD_AUDIO)
     @ExecutedBy("mSequentialExecutor")
     private void setupAudio(@NonNull RecordingRecord recordingToStart)
-            throws ResourceCreationException {
+            throws AudioSourceAccessException, InvalidConfigException {
         MediaSpec mediaSpec = getObservableData(mMediaSpec);
         // Resolve the audio mime info
         MimeInfo audioMimeInfo = resolveAudioMimeInfo(mediaSpec, mResolvedCamcorderProfile);
@@ -1124,26 +1134,18 @@ public final class Recorder implements VideoOutput {
         // Select and create the audio source
         AudioSource.Settings audioSourceSettings =
                 resolveAudioSourceSettings(audioMimeInfo, mediaSpec.getAudioSpec());
-        try {
-            if (mAudioSource != null) {
-                releaseCurrentAudioSource();
-            }
-            // TODO: set audioSourceTimebase to AudioSource. Currently AudioSource hard code
-            //  AudioTimestamp.TIMEBASE_MONOTONIC.
-            mAudioSource = setupAudioSource(recordingToStart, audioSourceSettings);
-            Logger.d(TAG, String.format("Set up new audio source: 0x%x", mAudioSource.hashCode()));
-        } catch (AudioSourceAccessException e) {
-            throw new ResourceCreationException(e);
+        if (mAudioSource != null) {
+            releaseCurrentAudioSource();
         }
+        // TODO: set audioSourceTimebase to AudioSource. Currently AudioSource hard code
+        //  AudioTimestamp.TIMEBASE_MONOTONIC.
+        mAudioSource = setupAudioSource(recordingToStart, audioSourceSettings);
+        Logger.d(TAG, String.format("Set up new audio source: 0x%x", mAudioSource.hashCode()));
 
         // Select and create the audio encoder
         AudioEncoderConfig audioEncoderConfig = resolveAudioEncoderConfig(audioMimeInfo,
                 audioSourceTimebase, audioSourceSettings, mediaSpec.getAudioSpec());
-        try {
-            mAudioEncoder = mAudioEncoderFactory.createEncoder(mExecutor, audioEncoderConfig);
-        } catch (InvalidConfigException e) {
-            throw new ResourceCreationException(e);
-        }
+        mAudioEncoder = mAudioEncoderFactory.createEncoder(mExecutor, audioEncoderConfig);
 
         // Connect the audio source to the audio encoder
         Encoder.EncoderInput bufferProvider = mAudioEncoder.getInput();
@@ -1158,11 +1160,8 @@ public final class Recorder implements VideoOutput {
     private AudioSource setupAudioSource(@NonNull RecordingRecord recordingToStart,
             @NonNull AudioSource.Settings audioSourceSettings)
             throws AudioSourceAccessException {
-
-        AudioSource audioSource = recordingToStart.performOneTimeAudioSourceCreation(
-                audioSourceSettings, AUDIO_EXECUTOR);
-
-        return audioSource;
+        return recordingToStart.performOneTimeAudioSourceCreation(audioSourceSettings,
+                AUDIO_EXECUTOR);
     }
 
     private void releaseCurrentAudioSource() {
@@ -1207,7 +1206,7 @@ public final class Recorder implements VideoOutput {
             mVideoEncoder = mVideoEncoderFactory.createEncoder(mExecutor, config);
         } catch (InvalidConfigException e) {
             Logger.e(TAG, "Unable to initialize video encoder.", e);
-            onEncoderSetupError(new ResourceCreationException(e));
+            onEncoderSetupError(e);
             return;
         }
 
@@ -1473,11 +1472,21 @@ public final class Recorder implements VideoOutput {
             mFileSizeLimitInBytes = OutputOptions.FILE_SIZE_UNLIMITED;
         }
 
+        if (recordingToStart.getOutputOptions().getDurationLimit() > 0) {
+            mDurationLimitNs = TimeUnit.MILLISECONDS.toNanos(
+                    recordingToStart.getOutputOptions().getDurationLimit());
+            Logger.d(TAG, "Duration limit in nanoseconds: " + mDurationLimitNs);
+        } else {
+            mDurationLimitNs = OutputOptions.DURATION_UNLIMITED;
+        }
+
         mInProgressRecording = recordingToStart;
 
         // Configure audio based on the current audio state.
         switch (mAudioState) {
-            case ERROR:
+            case ERROR_ENCODER:
+                // Fall-through
+            case ERROR_SOURCE:
                 // Fall-through
             case ACTIVE:
                 // Fall-through
@@ -1497,9 +1506,15 @@ public final class Recorder implements VideoOutput {
                     try {
                         setupAudio(recordingToStart);
                         setAudioState(AudioState.ACTIVE);
-                    } catch (ResourceCreationException e) {
+                    } catch (AudioSourceAccessException | InvalidConfigException e) {
                         Logger.e(TAG, "Unable to create audio resource with error: ", e);
-                        setAudioState(AudioState.ERROR);
+                        AudioState audioState;
+                        if (e instanceof InvalidConfigException) {
+                            audioState = AudioState.ERROR_ENCODER;
+                        } else {
+                            audioState = AudioState.ERROR_SOURCE;
+                        }
+                        setAudioState(audioState);
                         mAudioErrorCause = e;
                     }
                 }
@@ -1623,7 +1638,11 @@ public final class Recorder implements VideoOutput {
                                 // If the audio source or encoder encounters error, update the
                                 // status event to notify users. Then continue recording without
                                 // audio data.
-                                setAudioState(AudioState.ERROR);
+                                if (throwable instanceof EncodeException) {
+                                    setAudioState(AudioState.ERROR_ENCODER);
+                                } else {
+                                    setAudioState(AudioState.ERROR_SOURCE);
+                                }
                                 mAudioErrorCause = throwable;
                                 updateInProgressStatusEvent();
                                 completer.set(null);
@@ -1748,6 +1767,7 @@ public final class Recorder implements VideoOutput {
                 CameraXExecutors.directExecutor());
     }
 
+    @ExecutedBy("mSequentialExecutor")
     @SuppressWarnings("WeakerAccess") /* synthetic accessor */
     void writeVideoData(@NonNull EncodedData encodedData,
             @NonNull RecordingRecord recording) {
@@ -1767,22 +1787,46 @@ public final class Recorder implements VideoOutput {
             return;
         }
 
+        long newRecordingDurationNs = 0L;
+        long currentPresentationTimeUs = encodedData.getPresentationTimeUs();
+
+        if (mFirstRecordingVideoDataTimeUs == Long.MAX_VALUE) {
+            mFirstRecordingVideoDataTimeUs = currentPresentationTimeUs;
+            Logger.d(TAG, String.format("First video time: %d (%s)", mFirstRecordingVideoDataTimeUs,
+                    readableUs(mFirstRecordingVideoDataTimeUs)));
+        } else {
+            newRecordingDurationNs = TimeUnit.MICROSECONDS.toNanos(
+                    currentPresentationTimeUs - Math.min(mFirstRecordingVideoDataTimeUs,
+                            mFirstRecordingAudioDataTimeUs));
+            Preconditions.checkState(mPreviousRecordingVideoDataTimeUs != Long.MAX_VALUE, "There "
+                    + "should be a previous data for adjusting the duration.");
+            // We currently don't send an additional empty buffer (bufferInfo.size = 0) with
+            // MediaCodec.BUFFER_FLAG_END_OF_STREAM to let the muxer know the duration of the
+            // last data, so it will be assumed to have the same duration as the data before it. So
+            // add the estimated value to the duration to ensure the final duration will not
+            // exceed the limit.
+            long adjustedDurationNs = newRecordingDurationNs + TimeUnit.MICROSECONDS.toNanos(
+                    currentPresentationTimeUs - mPreviousRecordingVideoDataTimeUs);
+            if (mDurationLimitNs != OutputOptions.DURATION_UNLIMITED
+                    && adjustedDurationNs > mDurationLimitNs) {
+                Logger.d(TAG, String.format("Video data reaches duration limit %d > %d",
+                        adjustedDurationNs, mDurationLimitNs));
+                onInProgressRecordingInternalError(recording, ERROR_DURATION_LIMIT_REACHED, null);
+                return;
+            }
+        }
+
         mMediaMuxer.writeSampleData(mVideoTrackIndex, encodedData.getByteBuffer(),
                 encodedData.getBufferInfo());
 
         mRecordingBytes = newRecordingBytes;
-
-        if (mFirstRecordingVideoDataTimeUs == 0L) {
-            mFirstRecordingVideoDataTimeUs = encodedData.getPresentationTimeUs();
-            Logger.d(TAG, String.format("First video time: %d (%s)", mFirstRecordingVideoDataTimeUs,
-                    readableUs(mFirstRecordingVideoDataTimeUs)));
-        }
-        mRecordingDurationNs = TimeUnit.MICROSECONDS.toNanos(
-                encodedData.getPresentationTimeUs() - mFirstRecordingVideoDataTimeUs);
+        mRecordingDurationNs = newRecordingDurationNs;
+        mPreviousRecordingVideoDataTimeUs = currentPresentationTimeUs;
 
         updateInProgressStatusEvent();
     }
 
+    @ExecutedBy("mSequentialExecutor")
     @SuppressWarnings("WeakerAccess") /* synthetic accessor */
     void writeAudioData(@NonNull EncodedData encodedData,
             @NonNull RecordingRecord recording) {
@@ -1798,17 +1842,40 @@ public final class Recorder implements VideoOutput {
             return;
         }
 
+        long newRecordingDurationNs = 0L;
+        long currentPresentationTimeUs = encodedData.getPresentationTimeUs();
+        if (mFirstRecordingAudioDataTimeUs == Long.MAX_VALUE) {
+            mFirstRecordingAudioDataTimeUs = currentPresentationTimeUs;
+            Logger.d(TAG, String.format("First audio time: %d (%s)", mFirstRecordingAudioDataTimeUs,
+                    readableUs(mFirstRecordingAudioDataTimeUs)));
+        } else {
+            newRecordingDurationNs = TimeUnit.MICROSECONDS.toNanos(
+                    currentPresentationTimeUs - Math.min(mFirstRecordingVideoDataTimeUs,
+                            mFirstRecordingAudioDataTimeUs));
+            Preconditions.checkState(mPreviousRecordingAudioDataTimeUs != Long.MAX_VALUE, "There "
+                    + "should be a previous data for adjusting the duration.");
+            // We currently don't send an additional empty buffer (bufferInfo.size = 0) with
+            // MediaCodec.BUFFER_FLAG_END_OF_STREAM to let the muxer know the duration of the
+            // last data, so it will be assumed to have the same duration as the data before it. So
+            // add the estimated value to the duration to ensure the final duration will not
+            // exceed the limit.
+            long adjustedDurationNs = newRecordingDurationNs + TimeUnit.MICROSECONDS.toNanos(
+                    currentPresentationTimeUs - mPreviousRecordingAudioDataTimeUs);
+            if (mDurationLimitNs != OutputOptions.DURATION_UNLIMITED
+                    && adjustedDurationNs > mDurationLimitNs) {
+                Logger.d(TAG, String.format("Audio data reaches duration limit %d > %d",
+                        adjustedDurationNs, mDurationLimitNs));
+                onInProgressRecordingInternalError(recording, ERROR_DURATION_LIMIT_REACHED, null);
+                return;
+            }
+        }
+
         mMediaMuxer.writeSampleData(mAudioTrackIndex,
                 encodedData.getByteBuffer(),
                 encodedData.getBufferInfo());
 
         mRecordingBytes = newRecordingBytes;
-
-        if (mFirstRecordingAudioDataTimeUs == 0L) {
-            mFirstRecordingAudioDataTimeUs = encodedData.getPresentationTimeUs();
-            Logger.d(TAG, String.format("First audio time: %d (%s)", mFirstRecordingAudioDataTimeUs,
-                    readableUs(mFirstRecordingAudioDataTimeUs)));
-        }
+        mPreviousRecordingAudioDataTimeUs = currentPresentationTimeUs;
     }
 
     @ExecutedBy("mSequentialExecutor")
@@ -1955,8 +2022,10 @@ public final class Recorder implements VideoOutput {
                 } else {
                     return AudioStats.AUDIO_STATE_ACTIVE;
                 }
-            case ERROR:
+            case ERROR_ENCODER:
                 return AudioStats.AUDIO_STATE_ENCODER_ERROR;
+            case ERROR_SOURCE:
+                return AudioStats.AUDIO_STATE_SOURCE_ERROR;
             case IDLING:
                 // AudioStats should not be produced when audio is in IDLING state.
                 break;
@@ -2031,8 +2100,10 @@ public final class Recorder implements VideoOutput {
         mOutputUri = Uri.EMPTY;
         mRecordingBytes = 0L;
         mRecordingDurationNs = 0L;
-        mFirstRecordingVideoDataTimeUs = 0L;
-        mFirstRecordingAudioDataTimeUs = 0L;
+        mFirstRecordingVideoDataTimeUs = Long.MAX_VALUE;
+        mFirstRecordingAudioDataTimeUs = Long.MAX_VALUE;
+        mPreviousRecordingVideoDataTimeUs = Long.MAX_VALUE;
+        mPreviousRecordingAudioDataTimeUs = Long.MAX_VALUE;
         mRecordingStopError = ERROR_UNKNOWN;
         mRecordingStopErrorCause = null;
         mAudioErrorCause = null;
@@ -2051,7 +2122,9 @@ public final class Recorder implements VideoOutput {
                 setAudioState(AudioState.IDLING);
                 mAudioSource.stop();
                 break;
-            case ERROR:
+            case ERROR_ENCODER:
+                // Fall-through
+            case ERROR_SOURCE:
                 // Reset audio state to INITIALIZING if the audio encoder encountered error, so
                 // that it can be setup again when the next recording with audio enabled is started.
                 setAudioState(AudioState.INITIALIZING);
@@ -2431,7 +2504,7 @@ public final class Recorder implements VideoOutput {
 
     @SuppressWarnings("WeakerAccess") /* synthetic accessor */
     @ExecutedBy("mSequentialExecutor")
-    void setAudioState(AudioState audioState) {
+    void setAudioState(@NonNull AudioState audioState) {
         Logger.d(TAG, "Transitioning audio state: " + mAudioState + " --> " + audioState);
         mAudioState = audioState;
     }

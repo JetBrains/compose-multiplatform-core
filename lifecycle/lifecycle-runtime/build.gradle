@@ -21,7 +21,7 @@ dependencies {
     implementation("androidx.arch.core:core-runtime:2.1.0")
 
     testImplementation(libs.junit)
-    testImplementation(libs.mockitoCore)
+    testImplementation(libs.mockitoCore4)
 
     androidTestImplementation(libs.junit)
     androidTestImplementation(libs.testExtJunit)
@@ -35,7 +35,7 @@ dependencies {
         // this syntax is a temporary workout to allow project dependency on cross-project-set
         // i.e. COMPOSE + MAIN project sets
         // update syntax when b/239979823 is fixed
-        implementation("androidx.lifecycle:lifecycle-runtime-compose:{androidx.LibraryVersions.LIFECYCLE}")
+        implementation("androidx.lifecycle:lifecycle-runtime-compose:${androidx.LibraryVersions.LIFECYCLE}")
     }
 }
 

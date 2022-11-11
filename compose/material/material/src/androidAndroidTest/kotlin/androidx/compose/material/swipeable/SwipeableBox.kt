@@ -70,11 +70,11 @@ internal fun SwipeableBox(
             )
             .swipeAnchors(
                 state = swipeableState,
-                possibleStates = possibleStates,
+                possibleValues = possibleStates,
                 calculateAnchor = calculateAnchor
             )
             .offset {
-                val currentOffset = swipeableState.offset.value.roundToInt()
+                val currentOffset = (swipeableState.offset ?: 0f).roundToInt()
                 val x = if (orientation == Orientation.Horizontal) currentOffset else 0
                 val y = if (orientation == Orientation.Vertical) currentOffset else 0
                 IntOffset(x, y)

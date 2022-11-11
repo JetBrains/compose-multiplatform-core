@@ -240,6 +240,7 @@ internal abstract class NodeCoordinator(
         }
         layoutNode.owner?.onLayoutChange(layoutNode)
         measuredSize = IntSize(width, height)
+        graphicsLayerScope.size = measuredSize.toSize()
         visitNodes(Nodes.Draw) {
             it.onMeasureResultChanged()
         }
@@ -255,11 +256,13 @@ internal abstract class NodeCoordinator(
         get() {
             var data: Any? = null
             val thisNode = tail
-            with(layoutNode.density) {
-                layoutNode.nodes.tailToHead {
-                    if (it === thisNode) return@tailToHead
-                    if (it.isKind(Nodes.ParentData) && it is ParentDataModifierNode) {
-                        data = with(it) { modifyParentData(data) }
+            if (layoutNode.nodes.has(Nodes.ParentData)) {
+                with(layoutNode.density) {
+                    layoutNode.nodes.tailToHead {
+                        if (it === thisNode) return@tailToHead
+                        if (it.isKind(Nodes.ParentData) && it is ParentDataModifierNode) {
+                            data = with(it) { modifyParentData(data) }
+                        }
                     }
                 }
             }
@@ -309,15 +312,6 @@ internal abstract class NodeCoordinator(
                 }
             }
         }
-    }
-
-    /**
-     * An initialization function that is called when the [NodeCoordinator] is initially created,
-     * and also called when the [NodeCoordinator] is re-used.
-     */
-    // TODO(lmr): we should try and get rid of this since it isn't always needed!
-    fun onInitialize() {
-        layer?.invalidate()
     }
 
     /**
@@ -446,6 +440,7 @@ internal abstract class NodeCoordinator(
             val layerBlock = requireNotNull(layerBlock)
             graphicsLayerScope.reset()
             graphicsLayerScope.graphicsDensity = layoutNode.density
+            graphicsLayerScope.size = size.toSize()
             snapshotObserver.observeReads(this, onCommitAffectingLayerParams) {
                 layerBlock.invoke(graphicsLayerScope)
             }
@@ -469,6 +464,7 @@ internal abstract class NodeCoordinator(
                 shape = graphicsLayerScope.shape,
                 clip = graphicsLayerScope.clip,
                 renderEffect = graphicsLayerScope.renderEffect,
+                compositingStrategy = graphicsLayerScope.compositingStrategy,
                 layoutDirection = layoutNode.layoutDirection,
                 density = layoutNode.density
             )

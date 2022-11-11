@@ -24,10 +24,13 @@ import androidx.health.connect.client.records.BasalMetabolicRateRecord
 import androidx.health.connect.client.records.BloodGlucoseRecord
 import androidx.health.connect.client.records.BloodPressureRecord
 import androidx.health.connect.client.records.BodyFatRecord
+import androidx.health.connect.client.records.BodyTemperatureMeasurementLocation
 import androidx.health.connect.client.records.BodyTemperatureRecord
 import androidx.health.connect.client.records.BodyWaterMassRecord
 import androidx.health.connect.client.records.BoneMassRecord
 import androidx.health.connect.client.records.CervicalMucusRecord
+import androidx.health.connect.client.records.CervicalMucusRecord.Companion.APPEARANCE_INT_TO_STRING_MAP
+import androidx.health.connect.client.records.CervicalMucusRecord.Companion.SENSATION_INT_TO_STRING_MAP
 import androidx.health.connect.client.records.CyclingPedalingCadenceRecord
 import androidx.health.connect.client.records.DistanceRecord
 import androidx.health.connect.client.records.ElevationGainedRecord
@@ -49,7 +52,9 @@ import androidx.health.connect.client.records.HeartRateVariabilityTinnRecord
 import androidx.health.connect.client.records.HeightRecord
 import androidx.health.connect.client.records.HipCircumferenceRecord
 import androidx.health.connect.client.records.HydrationRecord
+import androidx.health.connect.client.records.IntermenstrualBleedingRecord
 import androidx.health.connect.client.records.LeanBodyMassRecord
+import androidx.health.connect.client.records.MealType
 import androidx.health.connect.client.records.MenstruationFlowRecord
 import androidx.health.connect.client.records.NutritionRecord
 import androidx.health.connect.client.records.OvulationTestRecord
@@ -62,6 +67,7 @@ import androidx.health.connect.client.records.SeriesRecord
 import androidx.health.connect.client.records.SexualActivityRecord
 import androidx.health.connect.client.records.SleepSessionRecord
 import androidx.health.connect.client.records.SleepStageRecord
+import androidx.health.connect.client.records.SleepStageRecord.Companion.STAGE_TYPE_INT_TO_STRING_MAP
 import androidx.health.connect.client.records.SpeedRecord
 import androidx.health.connect.client.records.StepsCadenceRecord
 import androidx.health.connect.client.records.StepsRecord
@@ -81,7 +87,12 @@ fun Record.toProto(): DataProto.DataPoint =
                 .setDataType(protoDataType("BasalBodyTemperature"))
                 .apply {
                     putValues("temperature", doubleVal(temperature.inCelsius))
-                    measurementLocation?.let { putValues("measurementLocation", enumVal(it)) }
+                    enumValFromInt(
+                            measurementLocation,
+                            BodyTemperatureMeasurementLocation
+                                .MEASUREMENT_LOCATION_INT_TO_STRING_MAP,
+                        )
+                        ?.let { putValues("measurementLocation", it) }
                 }
                 .build()
         is BasalMetabolicRateRecord ->
@@ -94,9 +105,19 @@ fun Record.toProto(): DataProto.DataPoint =
                 .setDataType(protoDataType("BloodGlucose"))
                 .apply {
                     putValues("level", doubleVal(level.inMillimolesPerLiter))
-                    specimenSource?.let { putValues("specimenSource", enumVal(it)) }
-                    mealType?.let { putValues("mealType", enumVal(it)) }
-                    relationToMeal?.let { putValues("relationToMeal", enumVal(it)) }
+                    enumValFromInt(
+                            specimenSource,
+                            BloodGlucoseRecord.SPECIMEN_SOURCE_INT_TO_STRING_MAP
+                        )
+                        ?.let { putValues("specimenSource", it) }
+                    enumValFromInt(mealType, MealType.MEAL_TYPE_INT_TO_STRING_MAP)?.let {
+                        putValues("mealType", it)
+                    }
+                    enumValFromInt(
+                            relationToMeal,
+                            BloodGlucoseRecord.RELATION_TO_MEAL_INT_TO_STRING_MAP,
+                        )
+                        ?.let { putValues("relationToMeal", it) }
                 }
                 .build()
         is BloodPressureRecord ->
@@ -105,8 +126,16 @@ fun Record.toProto(): DataProto.DataPoint =
                 .apply {
                     putValues("systolic", doubleVal(systolic.inMillimetersOfMercury))
                     putValues("diastolic", doubleVal(diastolic.inMillimetersOfMercury))
-                    bodyPosition?.let { putValues("bodyPosition", enumVal(it)) }
-                    measurementLocation?.let { putValues("measurementLocation", enumVal(it)) }
+                    enumValFromInt(
+                            bodyPosition,
+                            BloodPressureRecord.BODY_POSITION_INT_TO_STRING_MAP
+                        )
+                        ?.let { putValues("bodyPosition", it) }
+                    enumValFromInt(
+                            measurementLocation,
+                            BloodPressureRecord.MEASUREMENT_LOCATION_INT_TO_STRING_MAP
+                        )
+                        ?.let { putValues("measurementLocation", it) }
                 }
                 .build()
         is BodyFatRecord ->
@@ -119,7 +148,12 @@ fun Record.toProto(): DataProto.DataPoint =
                 .setDataType(protoDataType("BodyTemperature"))
                 .apply {
                     putValues("temperature", doubleVal(temperature.inCelsius))
-                    measurementLocation?.let { putValues("measurementLocation", enumVal(it)) }
+                    enumValFromInt(
+                            measurementLocation,
+                            BodyTemperatureMeasurementLocation
+                                .MEASUREMENT_LOCATION_INT_TO_STRING_MAP,
+                        )
+                        ?.let { putValues("measurementLocation", it) }
                 }
                 .build()
         is BodyWaterMassRecord ->
@@ -136,8 +170,12 @@ fun Record.toProto(): DataProto.DataPoint =
             instantaneousProto()
                 .setDataType(protoDataType("CervicalMucus"))
                 .apply {
-                    appearance?.let { putValues("texture", enumVal(it)) }
-                    sensation?.let { putValues("amount", enumVal(it)) }
+                    enumValFromInt(appearance, APPEARANCE_INT_TO_STRING_MAP)?.let {
+                        putValues("texture", it)
+                    }
+                    enumValFromInt(sensation, SENSATION_INT_TO_STRING_MAP)?.let {
+                        putValues("amount", it)
+                    }
                 }
                 .build()
         is CyclingPedalingCadenceRecord ->
@@ -209,6 +247,8 @@ fun Record.toProto(): DataProto.DataPoint =
                 .setDataType(protoDataType("HeartRateVariabilityTinn"))
                 .apply { putValues("heartRateVariability", doubleVal(heartRateVariabilityMillis)) }
                 .build()
+        is IntermenstrualBleedingRecord ->
+            instantaneousProto().setDataType(protoDataType("IntermenstrualBleeding")).build()
         is LeanBodyMassRecord ->
             instantaneousProto()
                 .setDataType(protoDataType("LeanBodyMass"))
@@ -217,12 +257,20 @@ fun Record.toProto(): DataProto.DataPoint =
         is MenstruationFlowRecord ->
             instantaneousProto()
                 .setDataType(protoDataType("Menstruation"))
-                .apply { flow?.let { putValues("flow", enumVal(it)) } }
+                .apply {
+                    enumValFromInt(flow, MenstruationFlowRecord.FLOW_TYPE_INT_TO_STRING_MAP)?.let {
+                        putValues("flow", it)
+                    }
+                }
                 .build()
         is OvulationTestRecord ->
             instantaneousProto()
                 .setDataType(protoDataType("OvulationTest"))
-                .apply { putValues("result", enumVal(result)) }
+                .apply {
+                    enumValFromInt(result, OvulationTestRecord.RESULT_INT_TO_STRING_MAP)?.let {
+                        putValues("result", it)
+                    }
+                }
                 .build()
         is OxygenSaturationRecord ->
             instantaneousProto()
@@ -249,7 +297,13 @@ fun Record.toProto(): DataProto.DataPoint =
         is SexualActivityRecord ->
             instantaneousProto()
                 .setDataType(protoDataType("SexualActivity"))
-                .apply { protectionUsed?.let { putValues("protectionUsed", enumVal(it)) } }
+                .apply {
+                    enumValFromInt(
+                            protectionUsed,
+                            SexualActivityRecord.PROTECTION_USED_INT_TO_STRING_MAP
+                        )
+                        ?.let { putValues("protectionUsed", it) }
+                }
                 .build()
         is SpeedRecord ->
             toProto(dataTypeName = "SpeedSeries") { sample ->
@@ -270,7 +324,11 @@ fun Record.toProto(): DataProto.DataPoint =
                 .setDataType(protoDataType("Vo2Max"))
                 .apply {
                     putValues("vo2", doubleVal(vo2MillilitersPerMinuteKilogram))
-                    measurementMethod?.let { putValues("measurementMethod", enumVal(it)) }
+                    enumValFromInt(
+                            measurementMethod,
+                            Vo2MaxRecord.MEASUREMENT_METHOD_INT_TO_STRING_MAP
+                        )
+                        ?.let { putValues("measurementMethod", it) }
                 }
                 .build()
         is WaistCircumferenceRecord ->
@@ -291,7 +349,10 @@ fun Record.toProto(): DataProto.DataPoint =
         is ExerciseEventRecord ->
             intervalProto()
                 .setDataType(protoDataType("ActivityEvent"))
-                .apply { putValues("eventType", enumVal(eventType)) }
+                .apply {
+                    enumValFromInt(eventType, ExerciseEventRecord.EVENT_TYPE_INT_TO_STRING_MAP)
+                        ?.let { putValues("eventType", it) }
+                }
                 .build()
         is ExerciseLapRecord ->
             intervalProto()
@@ -306,7 +367,13 @@ fun Record.toProto(): DataProto.DataPoint =
             intervalProto()
                 .setDataType(protoDataType("ActivitySession"))
                 .apply {
-                    putValues("activityType", enumVal(exerciseType))
+                    val exerciseType =
+                        enumValFromInt(
+                            exerciseType,
+                            ExerciseSessionRecord.EXERCISE_TYPE_INT_TO_STRING_MAP
+                        )
+                            ?: enumVal("workout")
+                    putValues("activityType", exerciseType)
                     title?.let { putValues("title", stringVal(it)) }
                     notes?.let { putValues("notes", stringVal(it)) }
                 }
@@ -461,7 +528,9 @@ fun Record.toProto(): DataProto.DataPoint =
                     if (zinc != null) {
                         putValues("zinc", doubleVal(zinc.inGrams))
                     }
-                    mealType?.let { putValues("mealType", enumVal(it)) }
+                    enumValFromInt(mealType, MealType.MEAL_TYPE_INT_TO_STRING_MAP)?.let {
+                        putValues("mealType", it)
+                    }
                     name?.let { putValues("name", stringVal(it)) }
                 }
                 .build()
@@ -470,7 +539,11 @@ fun Record.toProto(): DataProto.DataPoint =
                 .setDataType(protoDataType("Repetitions"))
                 .apply {
                     putValues("count", longVal(count))
-                    putValues("type", enumVal(type))
+                    enumValFromInt(
+                            type,
+                            ExerciseRepetitionsRecord.REPETITION_TYPE_INT_TO_STRING_MAP
+                        )
+                        ?.let { putValues("type", it) }
                 }
                 .build()
         is SleepSessionRecord ->
@@ -484,7 +557,11 @@ fun Record.toProto(): DataProto.DataPoint =
         is SleepStageRecord ->
             intervalProto()
                 .setDataType(protoDataType("SleepStage"))
-                .apply { putValues("stage", enumVal(stage)) }
+                .apply {
+                    enumValFromInt(stage, STAGE_TYPE_INT_TO_STRING_MAP)?.let {
+                        putValues("stage", it)
+                    }
+                }
                 .build()
         is StepsRecord ->
             intervalProto()
@@ -498,7 +575,10 @@ fun Record.toProto(): DataProto.DataPoint =
                     if (count > 0) {
                         putValues("count", longVal(count))
                     }
-                    putValues("type", enumVal(type))
+                    val swimmingType =
+                        enumValFromInt(type, SwimmingStrokesRecord.SWIMMING_TYPE_INT_TO_STRING_MAP)
+                            ?: enumVal(SwimmingStrokesRecord.SwimmingType.OTHER)
+                    putValues("type", swimmingType)
                 }
                 .build()
         is TotalCaloriesBurnedRecord ->

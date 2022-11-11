@@ -16,6 +16,7 @@
 
 package androidx.compose.compiler.plugins.kotlin
 
+import org.intellij.lang.annotations.Language
 import org.junit.Test
 
 class ControlFlowTransformTests : AbstractControlFlowTransformTests() {
@@ -219,6 +220,727 @@ class ControlFlowTransformTests : AbstractControlFlowTransformTests() {
         """
     )
 
+    private fun verifyInlineReturn(
+        @Language("kotlin")
+        source: String,
+        expectedTransformed: String,
+    ) = verifyComposeIrTransform(
+        """
+            import androidx.compose.runtime.Composable
+            $source
+        """,
+        expectedTransformed,
+        """
+            import androidx.compose.runtime.Composable
+
+            @Composable
+            fun A() { }
+
+            @Composable
+            fun Text(text: String) { }
+
+            @Composable
+            inline fun Wrapper(content: @Composable () -> Unit) = content()
+
+            @Composable
+            inline fun M1(content: @Composable () -> Unit) = Wrapper {
+                content()
+            }
+
+            @Composable
+            inline fun M2(content: @Composable () -> Unit) = Wrapper {
+                Wrapper {
+                    content()
+                }
+            }
+
+            @Composable
+            inline fun M3(content: @Composable () -> Unit) = Wrapper {
+                Wrapper {
+                    Wrapper {
+                        content()
+                    }
+                }
+            }
+        """.trimIndent()
+    )
+
+    @Test
+    fun testInline_CM3_RFun() = verifyInlineReturn(
+        """
+            @Composable
+            fun Test(condition: Boolean) {
+                A()
+                M3 {
+                    A()
+                    if (condition) {
+                        return
+                    }
+                    A()
+                }
+                A()
+            }
+
+        """,
+        """
+            @Composable
+            fun Test(condition: Boolean, %composer: Composer?, %changed: Int) {
+              %composer = %composer.startRestartGroup(<>)
+              sourceInformation(%composer, "C(Test)<A()>,<M3>,<A()>:Test.kt")
+              val tmp0_marker = %composer.currentMarker
+              val %dirty = %changed
+              if (%changed and 0b1110 === 0) {
+                %dirty = %dirty or if (%composer.changed(condition)) 0b0100 else 0b0010
+              }
+              if (%dirty and 0b1011 !== 0b0010 || !%composer.skipping) {
+                if (isTraceInProgress()) {
+                  traceEventStart(<>, %changed, -1, <>)
+                }
+                A(%composer, 0)
+                M3({ %composer: Composer?, %changed: Int ->
+                  %composer.startReplaceableGroup(<>)
+                  sourceInformation(%composer, "C<A()>,<A()>:Test.kt")
+                  if (%changed and 0b1011 !== 0b0010 || !%composer.skipping) {
+                    A(%composer, 0)
+                    if (condition) {
+                      %composer.endToMarker(tmp0_marker)
+                      if (isTraceInProgress()) {
+                        traceEventEnd()
+                      }
+                      %composer.endRestartGroup()?.updateScope { %composer: Composer?, %force: Int ->
+                        Test(condition, %composer, updateChangedFlags(%changed or 0b0001))
+                      }
+                      return
+                    }
+                    A(%composer, 0)
+                  } else {
+                    %composer.skipToGroupEnd()
+                  }
+                  %composer.endReplaceableGroup()
+                }, %composer, 0)
+                A(%composer, 0)
+                if (isTraceInProgress()) {
+                  traceEventEnd()
+                }
+              } else {
+                %composer.skipToGroupEnd()
+              }
+              %composer.endRestartGroup()?.updateScope { %composer: Composer?, %force: Int ->
+                Test(condition, %composer, updateChangedFlags(%changed or 0b0001))
+              }
+            }
+        """
+    )
+
+    @Test
+    fun testInline_CM3_RFun_CM3_RFun() = verifyInlineReturn(
+        """
+            @Composable
+            fun Test(a: Boolean, b: Boolean) {
+                A()
+                M3 {
+                    A()
+                    if (a) {
+                        return
+                    }
+                    A()
+                }
+                M3 {
+                    A()
+                    if (b) {
+                        return
+                    }
+                    A()
+                }
+                A()
+            }
+
+        """,
+        """
+            @Composable
+            fun Test(a: Boolean, b: Boolean, %composer: Composer?, %changed: Int) {
+              %composer = %composer.startRestartGroup(<>)
+              sourceInformation(%composer, "C(Test)<A()>,<M3>,<M3>,<A()>:Test.kt")
+              val tmp0_marker = %composer.currentMarker
+              val %dirty = %changed
+              if (%changed and 0b1110 === 0) {
+                %dirty = %dirty or if (%composer.changed(a)) 0b0100 else 0b0010
+              }
+              if (%changed and 0b01110000 === 0) {
+                %dirty = %dirty or if (%composer.changed(b)) 0b00100000 else 0b00010000
+              }
+              if (%dirty and 0b01011011 !== 0b00010010 || !%composer.skipping) {
+                if (isTraceInProgress()) {
+                  traceEventStart(<>, %changed, -1, <>)
+                }
+                A(%composer, 0)
+                M3({ %composer: Composer?, %changed: Int ->
+                  %composer.startReplaceableGroup(<>)
+                  sourceInformation(%composer, "C<A()>,<A()>:Test.kt")
+                  if (%changed and 0b1011 !== 0b0010 || !%composer.skipping) {
+                    A(%composer, 0)
+                    if (a) {
+                      %composer.endToMarker(tmp0_marker)
+                      if (isTraceInProgress()) {
+                        traceEventEnd()
+                      }
+                      %composer.endRestartGroup()?.updateScope { %composer: Composer?, %force: Int ->
+                        Test(a, b, %composer, updateChangedFlags(%changed or 0b0001))
+                      }
+                      return
+                    }
+                    A(%composer, 0)
+                  } else {
+                    %composer.skipToGroupEnd()
+                  }
+                  %composer.endReplaceableGroup()
+                }, %composer, 0)
+                M3({ %composer: Composer?, %changed: Int ->
+                  %composer.startReplaceableGroup(<>)
+                  sourceInformation(%composer, "C<A()>,<A()>:Test.kt")
+                  if (%changed and 0b1011 !== 0b0010 || !%composer.skipping) {
+                    A(%composer, 0)
+                    if (b) {
+                      %composer.endToMarker(tmp0_marker)
+                      if (isTraceInProgress()) {
+                        traceEventEnd()
+                      }
+                      %composer.endRestartGroup()?.updateScope { %composer: Composer?, %force: Int ->
+                        Test(a, b, %composer, updateChangedFlags(%changed or 0b0001))
+                      }
+                      return
+                    }
+                    A(%composer, 0)
+                  } else {
+                    %composer.skipToGroupEnd()
+                  }
+                  %composer.endReplaceableGroup()
+                }, %composer, 0)
+                A(%composer, 0)
+                if (isTraceInProgress()) {
+                  traceEventEnd()
+                }
+              } else {
+                %composer.skipToGroupEnd()
+              }
+              %composer.endRestartGroup()?.updateScope { %composer: Composer?, %force: Int ->
+                Test(a, b, %composer, updateChangedFlags(%changed or 0b0001))
+              }
+            }
+        """
+    )
+
+    @Test
+    fun testInline_CM3_RM3() = verifyInlineReturn(
+        """
+            @Composable
+            fun Test(condition: Boolean) {
+                A()
+                M3 {
+                    A()
+                    if (condition) {
+                        return@M3
+                    }
+                    A()
+                }
+                A()
+            }
+
+        """,
+        """
+            @Composable
+            fun Test(condition: Boolean, %composer: Composer?, %changed: Int) {
+              %composer = %composer.startRestartGroup(<>)
+              sourceInformation(%composer, "C(Test)<A()>,<M3>,<A()>:Test.kt")
+              val %dirty = %changed
+              if (%changed and 0b1110 === 0) {
+                %dirty = %dirty or if (%composer.changed(condition)) 0b0100 else 0b0010
+              }
+              if (%dirty and 0b1011 !== 0b0010 || !%composer.skipping) {
+                if (isTraceInProgress()) {
+                  traceEventStart(<>, %changed, -1, <>)
+                }
+                A(%composer, 0)
+                val tmp0_marker = %composer.currentMarker
+                M3({ %composer: Composer?, %changed: Int ->
+                  %composer.startReplaceableGroup(<>)
+                  sourceInformation(%composer, "C<A()>,<A()>:Test.kt")
+                  if (%changed and 0b1011 !== 0b0010 || !%composer.skipping) {
+                    A(%composer, 0)
+                    if (condition) {
+                      %composer.endToMarker(tmp0_marker)
+                    }
+                    A(%composer, 0)
+                  } else {
+                    %composer.skipToGroupEnd()
+                  }
+                  %composer.endReplaceableGroup()
+                }, %composer, 0)
+                A(%composer, 0)
+                if (isTraceInProgress()) {
+                  traceEventEnd()
+                }
+              } else {
+                %composer.skipToGroupEnd()
+              }
+              %composer.endRestartGroup()?.updateScope { %composer: Composer?, %force: Int ->
+                Test(condition, %composer, updateChangedFlags(%changed or 0b0001))
+              }
+            }
+        """
+    )
+
+    @Test
+    fun testInline_Lambda() = verifyComposeIrTransform(
+        """
+            fun Test(condition: Boolean) {
+                T {
+                    compose {
+                        M1 {
+                            if (condition) return@compose
+                        }
+                    }
+                }
+            }
+        """,
+        """
+            fun Test(condition: Boolean) {
+              T {
+                %this%T.compose(composableLambdaInstance(<>, true) { %composer: Composer?, %changed: Int ->
+                  sourceInformation(%composer, "C<M1>:Test.kt")
+                  val tmp0_marker = %composer.currentMarker
+                  if (%changed and 0b1011 !== 0b0010 || !%composer.skipping) {
+                    if (isTraceInProgress()) {
+                      traceEventStart(<>, %changed, -1, <>)
+                    }
+                    M1({ %composer: Composer?, %changed: Int ->
+                      %composer.startReplaceableGroup(<>)
+                      sourceInformation(%composer, "C:Test.kt")
+                      if (%changed and 0b1011 !== 0b0010 || !%composer.skipping) {
+                        if (condition) {
+                          %composer.endToMarker(tmp0_marker)
+                          if (isTraceInProgress()) {
+                            traceEventEnd()
+                          }
+                        }
+                      } else {
+                        %composer.skipToGroupEnd()
+                      }
+                      %composer.endReplaceableGroup()
+                    }, %composer, 0)
+                    if (isTraceInProgress()) {
+                      traceEventEnd()
+                    }
+                  } else {
+                    %composer.skipToGroupEnd()
+                  }
+                }
+                )
+              }
+            }
+        """,
+        """
+            import androidx.compose.runtime.*
+
+            class Scope {
+                fun compose(block: @Composable () -> Unit) { }
+            }
+
+            fun T(block: suspend Scope.() -> Unit) { }
+
+            @Composable
+            inline fun M1(block: @Composable () -> Unit) { block() }
+
+            @Composable
+            fun Text(text: String) { }
+        """
+    )
+
+    @Test
+    fun testInline_M3_M1_Return_M1() = verifyInlineReturn(
+        """
+            @Composable
+            fun Test_M3_M1_Return_M1(condition: Boolean) {
+                A()
+                M3 {
+                    A()
+                    M1 {
+                        if (condition) {
+                            return@M1
+                        }
+                    }
+                    A()
+                }
+                A()
+            }
+        """,
+        """
+            @Composable
+            fun Test_M3_M1_Return_M1(condition: Boolean, %composer: Composer?, %changed: Int) {
+              %composer = %composer.startRestartGroup(<>)
+              sourceInformation(%composer, "C(Test_M3_M1_Return_M1)<A()>,<M3>,<A()>:Test.kt")
+              val %dirty = %changed
+              if (%changed and 0b1110 === 0) {
+                %dirty = %dirty or if (%composer.changed(condition)) 0b0100 else 0b0010
+              }
+              if (%dirty and 0b1011 !== 0b0010 || !%composer.skipping) {
+                if (isTraceInProgress()) {
+                  traceEventStart(<>, %changed, -1, <>)
+                }
+                A(%composer, 0)
+                M3({ %composer: Composer?, %changed: Int ->
+                  %composer.startReplaceableGroup(<>)
+                  sourceInformation(%composer, "C<A()>,<M1>,<A()>:Test.kt")
+                  if (%changed and 0b1011 !== 0b0010 || !%composer.skipping) {
+                    A(%composer, 0)
+                    val tmp0_marker = %composer.currentMarker
+                    M1({ %composer: Composer?, %changed: Int ->
+                      %composer.startReplaceableGroup(<>)
+                      sourceInformation(%composer, "C:Test.kt")
+                      if (%changed and 0b1011 !== 0b0010 || !%composer.skipping) {
+                        if (condition) {
+                          %composer.endToMarker(tmp0_marker)
+                        }
+                      } else {
+                        %composer.skipToGroupEnd()
+                      }
+                      %composer.endReplaceableGroup()
+                    }, %composer, 0)
+                    A(%composer, 0)
+                  } else {
+                    %composer.skipToGroupEnd()
+                  }
+                  %composer.endReplaceableGroup()
+                }, %composer, 0)
+                A(%composer, 0)
+                if (isTraceInProgress()) {
+                  traceEventEnd()
+                }
+              } else {
+                %composer.skipToGroupEnd()
+              }
+              %composer.endRestartGroup()?.updateScope { %composer: Composer?, %force: Int ->
+                Test_M3_M1_Return_M1(condition, %composer, updateChangedFlags(%changed or 0b0001))
+              }
+            }
+        """
+    )
+
+    @Test
+    fun testInline_M3_M1_Return_M3() = verifyInlineReturn(
+        """
+            @Composable
+            fun Test_M3_M1_Return_M3(condition: Boolean) {
+                A()
+                M3 {
+                    A()
+                    M1 {
+                        if (condition) {
+                            return@M3
+                        }
+                    }
+                    A()
+                }
+                A()
+            }
+        """,
+        """
+            @Composable
+            fun Test_M3_M1_Return_M3(condition: Boolean, %composer: Composer?, %changed: Int) {
+              %composer = %composer.startRestartGroup(<>)
+              sourceInformation(%composer, "C(Test_M3_M1_Return_M3)<A()>,<M3>,<A()>:Test.kt")
+              val %dirty = %changed
+              if (%changed and 0b1110 === 0) {
+                %dirty = %dirty or if (%composer.changed(condition)) 0b0100 else 0b0010
+              }
+              if (%dirty and 0b1011 !== 0b0010 || !%composer.skipping) {
+                if (isTraceInProgress()) {
+                  traceEventStart(<>, %changed, -1, <>)
+                }
+                A(%composer, 0)
+                val tmp0_marker = %composer.currentMarker
+                M3({ %composer: Composer?, %changed: Int ->
+                  %composer.startReplaceableGroup(<>)
+                  sourceInformation(%composer, "C<A()>,<M1>,<A()>:Test.kt")
+                  if (%changed and 0b1011 !== 0b0010 || !%composer.skipping) {
+                    A(%composer, 0)
+                    M1({ %composer: Composer?, %changed: Int ->
+                      %composer.startReplaceableGroup(<>)
+                      sourceInformation(%composer, "C:Test.kt")
+                      if (%changed and 0b1011 !== 0b0010 || !%composer.skipping) {
+                        if (condition) {
+                          %composer.endToMarker(tmp0_marker)
+                        }
+                      } else {
+                        %composer.skipToGroupEnd()
+                      }
+                      %composer.endReplaceableGroup()
+                    }, %composer, 0)
+                    A(%composer, 0)
+                  } else {
+                    %composer.skipToGroupEnd()
+                  }
+                  %composer.endReplaceableGroup()
+                }, %composer, 0)
+                A(%composer, 0)
+                if (isTraceInProgress()) {
+                  traceEventEnd()
+                }
+              } else {
+                %composer.skipToGroupEnd()
+              }
+              %composer.endRestartGroup()?.updateScope { %composer: Composer?, %force: Int ->
+                Test_M3_M1_Return_M3(condition, %composer, updateChangedFlags(%changed or 0b0001))
+              }
+            }
+        """
+    )
+
+    @Test
+    fun testInline_M1_W_Return_Func() = verifyInlineReturn(
+        """
+            @Composable
+            fun testInline_M1_W_Return_Func(condition: Boolean) {
+                A()
+                M1 {
+                    A()
+                    while(true) {
+                        A()
+                        if (condition) {
+                            return
+                        }
+                        A()
+                    }
+                    A()
+                }
+                A()
+            }
+
+        """,
+        """
+            @Composable
+            fun testInline_M1_W_Return_Func(condition: Boolean, %composer: Composer?, %changed: Int) {
+              %composer = %composer.startRestartGroup(<>)
+              sourceInformation(%composer, "C(testInline_M1_W_Return_Func)<A()>,<M1>,<A()>:Test.kt")
+              val tmp0_marker = %composer.currentMarker
+              val %dirty = %changed
+              if (%changed and 0b1110 === 0) {
+                %dirty = %dirty or if (%composer.changed(condition)) 0b0100 else 0b0010
+              }
+              if (%dirty and 0b1011 !== 0b0010 || !%composer.skipping) {
+                if (isTraceInProgress()) {
+                  traceEventStart(<>, %changed, -1, <>)
+                }
+                A(%composer, 0)
+                M1({ %composer: Composer?, %changed: Int ->
+                  %composer.startReplaceableGroup(<>)
+                  sourceInformation(%composer, "C<A()>,<A()>:Test.kt")
+                  if (%changed and 0b1011 !== 0b0010 || !%composer.skipping) {
+                    A(%composer, 0)
+                    %composer.startReplaceableGroup(<>)
+                    sourceInformation(%composer, "*<A()>,<A()>")
+                    while (true) {
+                      A(%composer, 0)
+                      if (condition) {
+                        %composer.endToMarker(tmp0_marker)
+                        if (isTraceInProgress()) {
+                          traceEventEnd()
+                        }
+                        %composer.endRestartGroup()?.updateScope { %composer: Composer?, %force: Int ->
+                          testInline_M1_W_Return_Func(condition, %composer, updateChangedFlags(%changed or 0b0001))
+                        }
+                        return
+                      }
+                      A(%composer, 0)
+                    }
+                    %composer.endReplaceableGroup()
+                    A(%composer, 0)
+                  } else {
+                    %composer.skipToGroupEnd()
+                  }
+                  %composer.endReplaceableGroup()
+                }, %composer, 0)
+                A(%composer, 0)
+                if (isTraceInProgress()) {
+                  traceEventEnd()
+                }
+              } else {
+                %composer.skipToGroupEnd()
+              }
+              %composer.endRestartGroup()?.updateScope { %composer: Composer?, %force: Int ->
+                testInline_M1_W_Return_Func(condition, %composer, updateChangedFlags(%changed or 0b0001))
+              }
+            }
+        """
+    )
+
+    @Test
+    fun testInline_CM3_Return_M3_CM3_Return_M3() = verifyInlineReturn(
+        """
+            @Composable
+            fun testInline_M1_W_Return_Func(condition: Boolean) {
+                A()
+                M3 {
+                    A()
+                    if (condition) {
+                        return@M3
+                    }
+                    A()
+                }
+                M3 {
+                    A()
+                    if (condition) {
+                        return@M3
+                    }
+                    A()
+                }
+                A()
+            }
+
+        """,
+        """
+            @Composable
+            fun testInline_M1_W_Return_Func(condition: Boolean, %composer: Composer?, %changed: Int) {
+              %composer = %composer.startRestartGroup(<>)
+              sourceInformation(%composer, "C(testInline_M1_W_Return_Func)<A()>,<M3>,<M3>,<A()>:Test.kt")
+              val %dirty = %changed
+              if (%changed and 0b1110 === 0) {
+                %dirty = %dirty or if (%composer.changed(condition)) 0b0100 else 0b0010
+              }
+              if (%dirty and 0b1011 !== 0b0010 || !%composer.skipping) {
+                if (isTraceInProgress()) {
+                  traceEventStart(<>, %changed, -1, <>)
+                }
+                A(%composer, 0)
+                val tmp0_marker = %composer.currentMarker
+                M3({ %composer: Composer?, %changed: Int ->
+                  %composer.startReplaceableGroup(<>)
+                  sourceInformation(%composer, "C<A()>,<A()>:Test.kt")
+                  if (%changed and 0b1011 !== 0b0010 || !%composer.skipping) {
+                    A(%composer, 0)
+                    if (condition) {
+                      %composer.endToMarker(tmp0_marker)
+                    }
+                    A(%composer, 0)
+                  } else {
+                    %composer.skipToGroupEnd()
+                  }
+                  %composer.endReplaceableGroup()
+                }, %composer, 0)
+                val tmp1_marker = %composer.currentMarker
+                M3({ %composer: Composer?, %changed: Int ->
+                  %composer.startReplaceableGroup(<>)
+                  sourceInformation(%composer, "C<A()>,<A()>:Test.kt")
+                  if (%changed and 0b1011 !== 0b0010 || !%composer.skipping) {
+                    A(%composer, 0)
+                    if (condition) {
+                      %composer.endToMarker(tmp1_marker)
+                    }
+                    A(%composer, 0)
+                  } else {
+                    %composer.skipToGroupEnd()
+                  }
+                  %composer.endReplaceableGroup()
+                }, %composer, 0)
+                A(%composer, 0)
+                if (isTraceInProgress()) {
+                  traceEventEnd()
+                }
+              } else {
+                %composer.skipToGroupEnd()
+              }
+              %composer.endRestartGroup()?.updateScope { %composer: Composer?, %force: Int ->
+                testInline_M1_W_Return_Func(condition, %composer, updateChangedFlags(%changed or 0b0001))
+              }
+            }
+        """
+    )
+
+    @Test
+    fun test_CM1_CCM1_RetFun(): Unit = verifyInlineReturn(
+        """
+            @Composable
+            fun test_CM1_CCM1_RetFun(condition: Boolean) {
+                Text("Root - before")
+                M1 {
+                    Text("M1 - begin")
+                    if (condition) {
+                        Text("if - begin")
+                        M1 {
+                            Text("In CCM1")
+                            return@test_CM1_CCM1_RetFun
+                        }
+                    }
+                    Text("M1 - end")
+                }
+                Text("Root - end")
+            }
+
+        """,
+        """
+            @Composable
+            fun test_CM1_CCM1_RetFun(condition: Boolean, %composer: Composer?, %changed: Int) {
+              %composer = %composer.startRestartGroup(<>)
+              sourceInformation(%composer, "C(test_CM1_CCM1_RetFun)<Text("...>,<M1>,<Text("...>:Test.kt")
+              val tmp0_marker = %composer.currentMarker
+              val %dirty = %changed
+              if (%changed and 0b1110 === 0) {
+                %dirty = %dirty or if (%composer.changed(condition)) 0b0100 else 0b0010
+              }
+              if (%dirty and 0b1011 !== 0b0010 || !%composer.skipping) {
+                if (isTraceInProgress()) {
+                  traceEventStart(<>, %changed, -1, <>)
+                }
+                Text("Root - before", %composer, 0b0110)
+                M1({ %composer: Composer?, %changed: Int ->
+                  %composer.startReplaceableGroup(<>)
+                  sourceInformation(%composer, "C<Text("...>,<Text("...>:Test.kt")
+                  if (%changed and 0b1011 !== 0b0010 || !%composer.skipping) {
+                    Text("M1 - begin", %composer, 0b0110)
+                    %composer.startReplaceableGroup(<>)
+                    sourceInformation(%composer, "<Text("...>,<M1>")
+                    if (condition) {
+                      Text("if - begin", %composer, 0b0110)
+                      M1({ %composer: Composer?, %changed: Int ->
+                        %composer.startReplaceableGroup(<>)
+                        sourceInformation(%composer, "C<Text("...>:Test.kt")
+                        if (%changed and 0b1011 !== 0b0010 || !%composer.skipping) {
+                          Text("In CCM1", %composer, 0b0110)
+                          %composer.endToMarker(tmp0_marker)
+                          if (isTraceInProgress()) {
+                            traceEventEnd()
+                          }
+                          %composer.endRestartGroup()?.updateScope { %composer: Composer?, %force: Int ->
+                            test_CM1_CCM1_RetFun(condition, %composer, updateChangedFlags(%changed or 0b0001))
+                          }
+                          return
+                        } else {
+                          %composer.skipToGroupEnd()
+                        }
+                        %composer.endReplaceableGroup()
+                      }, %composer, 0)
+                    }
+                    %composer.endReplaceableGroup()
+                    Text("M1 - end", %composer, 0b0110)
+                  } else {
+                    %composer.skipToGroupEnd()
+                  }
+                  %composer.endReplaceableGroup()
+                }, %composer, 0)
+                Text("Root - end", %composer, 0b0110)
+                if (isTraceInProgress()) {
+                  traceEventEnd()
+                }
+              } else {
+                %composer.skipToGroupEnd()
+              }
+              %composer.endRestartGroup()?.updateScope { %composer: Composer?, %force: Int ->
+                test_CM1_CCM1_RetFun(condition, %composer, updateChangedFlags(%changed or 0b0001))
+              }
+            }
+        """
+    )
+
     @Test
     fun testInlineReturnLabel(): Unit = controlFlow(
         """
@@ -246,11 +968,13 @@ class ControlFlowTransformTests : AbstractControlFlowTransformTests() {
               if (isTraceInProgress()) {
                 traceEventStart(<>, %changed, -1, <>)
               }
+              val tmp0_marker = %composer.currentMarker
               FakeBox({ %composer: Composer?, %changed: Int ->
                 %composer.startReplaceableGroup(<>)
                 sourceInformation(%composer, "C<A()>:Test.kt")
                 if (%changed and 0b1011 !== 0b0010 || !%composer.skipping) {
                   if (condition) {
+                    %composer.endToMarker(tmp0_marker)
                   }
                   A(%composer, 0)
                 } else {
@@ -271,6 +995,295 @@ class ControlFlowTransformTests : AbstractControlFlowTransformTests() {
               content(%composer, 0b1110 and %changed)
               %composer.endReplaceableGroup()
             }
+        """
+    )
+
+    @Test // regression 255350755
+    fun testEnsureEarlyExitInNonInline_NormalComposable() = controlFlow(
+        """
+            object obj {
+                val condition = true
+            }
+
+            @Composable
+            fun Test(condition: Boolean) {
+                if (condition) return
+                with (obj) {
+                    if (condition) return
+                }
+                A()
+            }
+        """,
+        """
+            @StabilityInferred(parameters = 0)
+            object obj {
+              val condition: Boolean = true
+              static val %stable: Int = 0
+            }
+            @Composable
+            fun Test(condition: Boolean, %composer: Composer?, %changed: Int) {
+              %composer = %composer.startRestartGroup(<>)
+              sourceInformation(%composer, "C(Test)<A()>:Test.kt")
+              val tmp0_marker = %composer.currentMarker
+              val %dirty = %changed
+              if (%changed and 0b1110 === 0) {
+                %dirty = %dirty or if (%composer.changed(condition)) 0b0100 else 0b0010
+              }
+              if (%dirty and 0b1011 !== 0b0010 || !%composer.skipping) {
+                if (isTraceInProgress()) {
+                  traceEventStart(<>, %changed, -1, <>)
+                }
+                if (condition) {
+                  if (isTraceInProgress()) {
+                    traceEventEnd()
+                  }
+                  %composer.endRestartGroup()?.updateScope { %composer: Composer?, %force: Int ->
+                    Test(condition, %composer, updateChangedFlags(%changed or 0b0001))
+                  }
+                  return
+                }
+                with(obj) {
+                  if (condition) {
+                    %composer.endToMarker(tmp0_marker)
+                    if (isTraceInProgress()) {
+                      traceEventEnd()
+                    }
+                    %composer.endRestartGroup()?.updateScope { %composer: Composer?, %force: Int ->
+                      Test(condition, %composer, updateChangedFlags(%changed or 0b0001))
+                    }
+                    return
+                  }
+                }
+                A(%composer, 0)
+                if (isTraceInProgress()) {
+                  traceEventEnd()
+                }
+              } else {
+                %composer.skipToGroupEnd()
+              }
+              %composer.endRestartGroup()?.updateScope { %composer: Composer?, %force: Int ->
+                Test(condition, %composer, updateChangedFlags(%changed or 0b0001))
+              }
+            }
+        """
+    )
+
+    @Test // regression 255350755
+    fun testEnsureEarlyExitInNonInline_ReadOnlyComposable() = controlFlow(
+        """
+            import androidx.compose.runtime.currentComposer
+
+            object obj {
+                val condition = false
+            }
+
+            @Composable
+            @ReadOnlyComposable
+            fun Calculate(condition: Boolean): Boolean {
+                if (condition) return false
+
+                with (obj) {
+                    if (condition) return false
+                    return currentComposer.inserting
+                }
+            }
+        """,
+        """
+            @StabilityInferred(parameters = 0)
+            object obj {
+              val condition: Boolean = false
+              static val %stable: Int = 0
+            }
+            @Composable
+            @ReadOnlyComposable
+            fun Calculate(condition: Boolean, %composer: Composer?, %changed: Int): Boolean {
+              sourceInformationMarkerStart(%composer, <>, "C(Calculate):Test.kt")
+              val tmp1_marker = %composer.currentMarker
+              if (isTraceInProgress()) {
+                traceEventStart(<>, %changed, -1, <>)
+              }
+              if (condition) {
+                val tmp0_return = false
+                sourceInformationMarkerEnd(%composer)
+                return tmp0_return
+              }
+              with(obj) {
+                if (condition) {
+                  val tmp0_return = false
+                  %composer.endToMarker(tmp1_marker)
+                  sourceInformationMarkerEnd(%composer)
+                  return tmp0_return
+                }
+                val tmp1_return = %composer.inserting
+                %composer.endToMarker(tmp1_marker)
+                sourceInformationMarkerEnd(%composer)
+                return tmp1_return
+              }
+              if (isTraceInProgress()) {
+                traceEventEnd()
+              }
+              sourceInformationMarkerEnd(%composer)
+            }
+        """
+    )
+
+    @Test // regression 255350755
+    fun testEnsureEarlyExitInInline_Labeled() = controlFlow(
+        """
+            @Composable
+            fun Test(condition: Boolean) {
+                IW iw@ {
+                    if (condition) return@iw
+                    A()
+                }
+            }
+        """,
+        """
+            @Composable
+            fun Test(condition: Boolean, %composer: Composer?, %changed: Int) {
+              %composer = %composer.startRestartGroup(<>)
+              sourceInformation(%composer, "C(Test)<IW>:Test.kt")
+              val %dirty = %changed
+              if (%changed and 0b1110 === 0) {
+                %dirty = %dirty or if (%composer.changed(condition)) 0b0100 else 0b0010
+              }
+              if (%dirty and 0b1011 !== 0b0010 || !%composer.skipping) {
+                if (isTraceInProgress()) {
+                  traceEventStart(<>, %changed, -1, <>)
+                }
+                val tmp0_marker = %composer.currentMarker
+                IW({ %composer: Composer?, %changed: Int ->
+                  %composer.startReplaceableGroup(<>)
+                  sourceInformation(%composer, "C<A()>:Test.kt")
+                  if (%changed and 0b1011 !== 0b0010 || !%composer.skipping) {
+                    if (condition) {
+                      %composer.endToMarker(tmp0_marker)
+                    }
+                    A(%composer, 0)
+                  } else {
+                    %composer.skipToGroupEnd()
+                  }
+                  %composer.endReplaceableGroup()
+                }, %composer, 0)
+                if (isTraceInProgress()) {
+                  traceEventEnd()
+                }
+              } else {
+                %composer.skipToGroupEnd()
+              }
+              %composer.endRestartGroup()?.updateScope { %composer: Composer?, %force: Int ->
+                Test(condition, %composer, updateChangedFlags(%changed or 0b0001))
+              }
+            }
+        """
+    )
+
+    @Test
+    fun testEnsureRuntimeTestWillCompile_CL() = ensureSetup {
+        classLoader(
+            """
+            import androidx.compose.runtime.Composable
+
+            @Composable
+            fun test_CM1_RetFun(condition: Boolean) {
+                Text("Root - before")
+                M1 {
+                    Text("M1 - before")
+                    if (condition) return
+                    Text("M1 - after")
+                }
+                Text("Root - after")
+            }
+            @Composable
+            inline fun InlineWrapper(content: @Composable () -> Unit) = content()
+
+            @Composable
+            inline fun M1(content: @Composable () -> Unit) = InlineWrapper { content() }
+
+            @Composable
+            fun Text(value: String) { }
+            """,
+            "Test.kt"
+        )
+    }
+
+    @Test // regression 255350755
+    fun testEnsureRuntimeTestWillCompile_CG() = verifyComposeIrTransform(
+        """
+            import androidx.compose.runtime.Composable
+
+            @Composable
+            fun test_CM1_RetFun(condition: Boolean) {
+                Text("Root - before")
+                M1 {
+                    Text("M1 - before")
+                    if (condition) return
+                    Text("M1 - after")
+                }
+                Text("Root - after")
+            }
+
+        """,
+        """
+            @Composable
+            fun test_CM1_RetFun(condition: Boolean, %composer: Composer?, %changed: Int) {
+              %composer = %composer.startRestartGroup(<>)
+              sourceInformation(%composer, "C(test_CM1_RetFun)<Text("...>,<M1>,<Text("...>:Test.kt")
+              val tmp0_marker = %composer.currentMarker
+              val %dirty = %changed
+              if (%changed and 0b1110 === 0) {
+                %dirty = %dirty or if (%composer.changed(condition)) 0b0100 else 0b0010
+              }
+              if (%dirty and 0b1011 !== 0b0010 || !%composer.skipping) {
+                if (isTraceInProgress()) {
+                  traceEventStart(<>, %changed, -1, <>)
+                }
+                Text("Root - before", %composer, 0b0110)
+                M1({ %composer: Composer?, %changed: Int ->
+                  %composer.startReplaceableGroup(<>)
+                  sourceInformation(%composer, "C<Text("...>,<Text("...>:Test.kt")
+                  if (%changed and 0b1011 !== 0b0010 || !%composer.skipping) {
+                    Text("M1 - before", %composer, 0b0110)
+                    if (condition) {
+                      %composer.endToMarker(tmp0_marker)
+                      if (isTraceInProgress()) {
+                        traceEventEnd()
+                      }
+                      %composer.endRestartGroup()?.updateScope { %composer: Composer?, %force: Int ->
+                        test_CM1_RetFun(condition, %composer, updateChangedFlags(%changed or 0b0001))
+                      }
+                      return
+                    }
+                    Text("M1 - after", %composer, 0b0110)
+                  } else {
+                    %composer.skipToGroupEnd()
+                  }
+                  %composer.endReplaceableGroup()
+                }, %composer, 0)
+                Text("Root - after", %composer, 0b0110)
+                if (isTraceInProgress()) {
+                  traceEventEnd()
+                }
+              } else {
+                %composer.skipToGroupEnd()
+              }
+              %composer.endRestartGroup()?.updateScope { %composer: Composer?, %force: Int ->
+                test_CM1_RetFun(condition, %composer, updateChangedFlags(%changed or 0b0001))
+              }
+            }
+        """,
+        extra = """
+            import androidx.compose.runtime.Composable
+            import androidx.compose.runtime.NonRestartableComposable
+
+            @Composable
+            inline fun InlineWrapper(content: @Composable () -> Unit) = content()
+
+            @Composable
+            inline fun M1(content: @Composable () -> Unit) = InlineWrapper { content() }
+
+            @Composable @NonRestartableComposable
+            fun Text(value: String) { }
         """
     )
 
@@ -1414,7 +2427,7 @@ class ControlFlowTransformTests : AbstractControlFlowTransformTests() {
                     traceEventEnd()
                   }
                   %composer.endRestartGroup()?.updateScope { %composer: Composer?, %force: Int ->
-                    Example(items, %composer, %changed or 0b0001)
+                    Example(items, %composer, updateChangedFlags(%changed or 0b0001))
                   }
                   return
                 } else {
@@ -1429,7 +2442,7 @@ class ControlFlowTransformTests : AbstractControlFlowTransformTests() {
                 traceEventEnd()
               }
               %composer.endRestartGroup()?.updateScope { %composer: Composer?, %force: Int ->
-                Example(items, %composer, %changed or 0b0001)
+                Example(items, %composer, updateChangedFlags(%changed or 0b0001))
               }
             }
         """
@@ -2660,6 +3673,7 @@ class ControlFlowTransformTests : AbstractControlFlowTransformTests() {
             fun WithReturn(%composer: Composer?, %changed: Int) {
               %composer.startReplaceableGroup(<>)
               sourceInformation(%composer, "C(WithReturn)<A()>:Test.kt")
+              val tmp0_marker = %composer.currentMarker
               if (isTraceInProgress()) {
                 traceEventStart(<>, %changed, -1, <>)
               }
@@ -2667,7 +3681,7 @@ class ControlFlowTransformTests : AbstractControlFlowTransformTests() {
               sourceInformation(%composer, "*<A()>")
               run {
                 A(%composer, 0)
-                %composer.endReplaceableGroup()
+                %composer.endToMarker(tmp0_marker)
                 if (isTraceInProgress()) {
                   traceEventEnd()
                 }
@@ -2773,7 +3787,7 @@ class ControlFlowTransformTests : AbstractControlFlowTransformTests() {
                 %composer.skipToGroupEnd()
               }
               %composer.endRestartGroup()?.updateScope { %composer: Composer?, %force: Int ->
-                Example(x, %composer, %changed or 0b0001)
+                Example(x, %composer, updateChangedFlags(%changed or 0b0001))
               }
             }
         """
@@ -2820,7 +3834,7 @@ class ControlFlowTransformTests : AbstractControlFlowTransformTests() {
                 %composer.skipToGroupEnd()
               }
               %composer.endRestartGroup()?.updateScope { %composer: Composer?, %force: Int ->
-                Example(x, %composer, %changed or 0b0001)
+                Example(x, %composer, updateChangedFlags(%changed or 0b0001))
               }
             }
         """
@@ -2842,15 +3856,16 @@ class ControlFlowTransformTests : AbstractControlFlowTransformTests() {
             @Composable
             fun <T> provided(value: T, %composer: Composer?, %changed: Int): State<T> {
               %composer.startReplaceableGroup(<>)
-              sourceInformation(%composer, "C(provided)*<rememb...>:Test.kt")
+              sourceInformation(%composer, "C(provided):Test.kt")
               if (isTraceInProgress()) {
                 traceEventStart(<>, %changed, -1, <>)
               }
-              val tmp0 = remember({
+              val tmp0 = %composer.cache(false) {
                 mutableStateOf(
                   value = value
                 )
-              }, %composer, 0).apply {
+              }
+              .apply {
                 %this%apply.value = value
               }
               if (isTraceInProgress()) {
@@ -2928,7 +3943,7 @@ class ControlFlowTransformTests : AbstractControlFlowTransformTests() {
                 %composer.skipToGroupEnd()
               }
               %composer.endRestartGroup()?.updateScope { %composer: Composer?, %force: Int ->
-                Test(%composer, %changed or 0b0001)
+                Test(%composer, updateChangedFlags(%changed or 0b0001))
               }
             }
             internal object ComposableSingletons%TestKt {
@@ -2986,7 +4001,7 @@ class ControlFlowTransformTests : AbstractControlFlowTransformTests() {
                 %composer.skipToGroupEnd()
               }
               %composer.endRestartGroup()?.updateScope { %composer: Composer?, %force: Int ->
-                Test(%composer, %changed or 0b0001)
+                Test(%composer, updateChangedFlags(%changed or 0b0001))
               }
             }
         """
@@ -3024,7 +4039,7 @@ class ControlFlowTransformTests : AbstractControlFlowTransformTests() {
                 %composer.skipToGroupEnd()
               }
               %composer.endRestartGroup()?.updateScope { %composer: Composer?, %force: Int ->
-                Test(%composer, %changed or 0b0001)
+                Test(%composer, updateChangedFlags(%changed or 0b0001))
               }
             }
             internal object ComposableSingletons%TestKt {
@@ -3098,7 +4113,7 @@ class ControlFlowTransformTests : AbstractControlFlowTransformTests() {
                 %composer.skipToGroupEnd()
               }
               %composer.endRestartGroup()?.updateScope { %composer: Composer?, %force: Int ->
-                Test(value, %composer, %changed or 0b0001)
+                Test(value, %composer, updateChangedFlags(%changed or 0b0001))
               }
             }
         """
@@ -3285,7 +4300,7 @@ class ControlFlowTransformTests : AbstractControlFlowTransformTests() {
                 %composer.skipToGroupEnd()
               }
               %composer.endRestartGroup()?.updateScope { %composer: Composer?, %force: Int ->
-                Test01(p0, p1, p2, p3, %composer, %changed or 0b0001)
+                Test01(p0, p1, p2, p3, %composer, updateChangedFlags(%changed or 0b0001))
               }
             }
             @Composable
@@ -3320,7 +4335,7 @@ class ControlFlowTransformTests : AbstractControlFlowTransformTests() {
                 %composer.skipToGroupEnd()
               }
               %composer.endRestartGroup()?.updateScope { %composer: Composer?, %force: Int ->
-                Test02(p0, p1, p3, p2, %composer, %changed or 0b0001)
+                Test02(p0, p1, p3, p2, %composer, updateChangedFlags(%changed or 0b0001))
               }
             }
             @Composable
@@ -3355,7 +4370,7 @@ class ControlFlowTransformTests : AbstractControlFlowTransformTests() {
                 %composer.skipToGroupEnd()
               }
               %composer.endRestartGroup()?.updateScope { %composer: Composer?, %force: Int ->
-                Test03(p0, p2, p1, p3, %composer, %changed or 0b0001)
+                Test03(p0, p2, p1, p3, %composer, updateChangedFlags(%changed or 0b0001))
               }
             }
             @Composable
@@ -3390,7 +4405,7 @@ class ControlFlowTransformTests : AbstractControlFlowTransformTests() {
                 %composer.skipToGroupEnd()
               }
               %composer.endRestartGroup()?.updateScope { %composer: Composer?, %force: Int ->
-                Test04(p0, p2, p3, p1, %composer, %changed or 0b0001)
+                Test04(p0, p2, p3, p1, %composer, updateChangedFlags(%changed or 0b0001))
               }
             }
             @Composable
@@ -3425,7 +4440,7 @@ class ControlFlowTransformTests : AbstractControlFlowTransformTests() {
                 %composer.skipToGroupEnd()
               }
               %composer.endRestartGroup()?.updateScope { %composer: Composer?, %force: Int ->
-                Test05(p0, p3, p1, p2, %composer, %changed or 0b0001)
+                Test05(p0, p3, p1, p2, %composer, updateChangedFlags(%changed or 0b0001))
               }
             }
             @Composable
@@ -3460,7 +4475,7 @@ class ControlFlowTransformTests : AbstractControlFlowTransformTests() {
                 %composer.skipToGroupEnd()
               }
               %composer.endRestartGroup()?.updateScope { %composer: Composer?, %force: Int ->
-                Test06(p0, p3, p2, p1, %composer, %changed or 0b0001)
+                Test06(p0, p3, p2, p1, %composer, updateChangedFlags(%changed or 0b0001))
               }
             }
             @Composable
@@ -3495,7 +4510,7 @@ class ControlFlowTransformTests : AbstractControlFlowTransformTests() {
                 %composer.skipToGroupEnd()
               }
               %composer.endRestartGroup()?.updateScope { %composer: Composer?, %force: Int ->
-                Test07(p1, p0, p2, p3, %composer, %changed or 0b0001)
+                Test07(p1, p0, p2, p3, %composer, updateChangedFlags(%changed or 0b0001))
               }
             }
             @Composable
@@ -3530,7 +4545,7 @@ class ControlFlowTransformTests : AbstractControlFlowTransformTests() {
                 %composer.skipToGroupEnd()
               }
               %composer.endRestartGroup()?.updateScope { %composer: Composer?, %force: Int ->
-                Test08(p1, p0, p3, p2, %composer, %changed or 0b0001)
+                Test08(p1, p0, p3, p2, %composer, updateChangedFlags(%changed or 0b0001))
               }
             }
             @Composable
@@ -3565,7 +4580,7 @@ class ControlFlowTransformTests : AbstractControlFlowTransformTests() {
                 %composer.skipToGroupEnd()
               }
               %composer.endRestartGroup()?.updateScope { %composer: Composer?, %force: Int ->
-                Test09(p1, p2, p0, p3, %composer, %changed or 0b0001)
+                Test09(p1, p2, p0, p3, %composer, updateChangedFlags(%changed or 0b0001))
               }
             }
             @Composable
@@ -3600,7 +4615,7 @@ class ControlFlowTransformTests : AbstractControlFlowTransformTests() {
                 %composer.skipToGroupEnd()
               }
               %composer.endRestartGroup()?.updateScope { %composer: Composer?, %force: Int ->
-                Test00(p1, p2, p3, p0, %composer, %changed or 0b0001)
+                Test00(p1, p2, p3, p0, %composer, updateChangedFlags(%changed or 0b0001))
               }
             }
             @Composable
@@ -3635,7 +4650,7 @@ class ControlFlowTransformTests : AbstractControlFlowTransformTests() {
                 %composer.skipToGroupEnd()
               }
               %composer.endRestartGroup()?.updateScope { %composer: Composer?, %force: Int ->
-                Test11(p1, p3, p0, p2, %composer, %changed or 0b0001)
+                Test11(p1, p3, p0, p2, %composer, updateChangedFlags(%changed or 0b0001))
               }
             }
             @Composable
@@ -3670,7 +4685,7 @@ class ControlFlowTransformTests : AbstractControlFlowTransformTests() {
                 %composer.skipToGroupEnd()
               }
               %composer.endRestartGroup()?.updateScope { %composer: Composer?, %force: Int ->
-                Test12(p1, p3, p2, p0, %composer, %changed or 0b0001)
+                Test12(p1, p3, p2, p0, %composer, updateChangedFlags(%changed or 0b0001))
               }
             }
             @Composable
@@ -3705,7 +4720,7 @@ class ControlFlowTransformTests : AbstractControlFlowTransformTests() {
                 %composer.skipToGroupEnd()
               }
               %composer.endRestartGroup()?.updateScope { %composer: Composer?, %force: Int ->
-                Test13(p2, p0, p1, p3, %composer, %changed or 0b0001)
+                Test13(p2, p0, p1, p3, %composer, updateChangedFlags(%changed or 0b0001))
               }
             }
             @Composable
@@ -3740,7 +4755,7 @@ class ControlFlowTransformTests : AbstractControlFlowTransformTests() {
                 %composer.skipToGroupEnd()
               }
               %composer.endRestartGroup()?.updateScope { %composer: Composer?, %force: Int ->
-                Test14(p2, p0, p3, p1, %composer, %changed or 0b0001)
+                Test14(p2, p0, p3, p1, %composer, updateChangedFlags(%changed or 0b0001))
               }
             }
             @Composable
@@ -3775,7 +4790,7 @@ class ControlFlowTransformTests : AbstractControlFlowTransformTests() {
                 %composer.skipToGroupEnd()
               }
               %composer.endRestartGroup()?.updateScope { %composer: Composer?, %force: Int ->
-                Test15(p2, p1, p0, p3, %composer, %changed or 0b0001)
+                Test15(p2, p1, p0, p3, %composer, updateChangedFlags(%changed or 0b0001))
               }
             }
             @Composable
@@ -3810,7 +4825,7 @@ class ControlFlowTransformTests : AbstractControlFlowTransformTests() {
                 %composer.skipToGroupEnd()
               }
               %composer.endRestartGroup()?.updateScope { %composer: Composer?, %force: Int ->
-                Test16(p2, p1, p3, p0, %composer, %changed or 0b0001)
+                Test16(p2, p1, p3, p0, %composer, updateChangedFlags(%changed or 0b0001))
               }
             }
             @Composable
@@ -3845,7 +4860,7 @@ class ControlFlowTransformTests : AbstractControlFlowTransformTests() {
                 %composer.skipToGroupEnd()
               }
               %composer.endRestartGroup()?.updateScope { %composer: Composer?, %force: Int ->
-                Test17(p2, p3, p0, p1, %composer, %changed or 0b0001)
+                Test17(p2, p3, p0, p1, %composer, updateChangedFlags(%changed or 0b0001))
               }
             }
             @Composable
@@ -3880,7 +4895,7 @@ class ControlFlowTransformTests : AbstractControlFlowTransformTests() {
                 %composer.skipToGroupEnd()
               }
               %composer.endRestartGroup()?.updateScope { %composer: Composer?, %force: Int ->
-                Test18(p2, p3, p1, p0, %composer, %changed or 0b0001)
+                Test18(p2, p3, p1, p0, %composer, updateChangedFlags(%changed or 0b0001))
               }
             }
             @Composable
@@ -3915,7 +4930,7 @@ class ControlFlowTransformTests : AbstractControlFlowTransformTests() {
                 %composer.skipToGroupEnd()
               }
               %composer.endRestartGroup()?.updateScope { %composer: Composer?, %force: Int ->
-                Test19(p3, p0, p1, p2, %composer, %changed or 0b0001)
+                Test19(p3, p0, p1, p2, %composer, updateChangedFlags(%changed or 0b0001))
               }
             }
             @Composable
@@ -3950,7 +4965,7 @@ class ControlFlowTransformTests : AbstractControlFlowTransformTests() {
                 %composer.skipToGroupEnd()
               }
               %composer.endRestartGroup()?.updateScope { %composer: Composer?, %force: Int ->
-                Test20(p3, p0, p2, p1, %composer, %changed or 0b0001)
+                Test20(p3, p0, p2, p1, %composer, updateChangedFlags(%changed or 0b0001))
               }
             }
             @Composable
@@ -3985,7 +5000,7 @@ class ControlFlowTransformTests : AbstractControlFlowTransformTests() {
                 %composer.skipToGroupEnd()
               }
               %composer.endRestartGroup()?.updateScope { %composer: Composer?, %force: Int ->
-                Test21(p3, p1, p0, p2, %composer, %changed or 0b0001)
+                Test21(p3, p1, p0, p2, %composer, updateChangedFlags(%changed or 0b0001))
               }
             }
             @Composable
@@ -4020,7 +5035,7 @@ class ControlFlowTransformTests : AbstractControlFlowTransformTests() {
                 %composer.skipToGroupEnd()
               }
               %composer.endRestartGroup()?.updateScope { %composer: Composer?, %force: Int ->
-                Test22(p3, p1, p2, p0, %composer, %changed or 0b0001)
+                Test22(p3, p1, p2, p0, %composer, updateChangedFlags(%changed or 0b0001))
               }
             }
             @Composable
@@ -4055,7 +5070,7 @@ class ControlFlowTransformTests : AbstractControlFlowTransformTests() {
                 %composer.skipToGroupEnd()
               }
               %composer.endRestartGroup()?.updateScope { %composer: Composer?, %force: Int ->
-                Test23(p3, p2, p0, p1, %composer, %changed or 0b0001)
+                Test23(p3, p2, p0, p1, %composer, updateChangedFlags(%changed or 0b0001))
               }
             }
             @Composable
@@ -4090,7 +5105,7 @@ class ControlFlowTransformTests : AbstractControlFlowTransformTests() {
                 %composer.skipToGroupEnd()
               }
               %composer.endRestartGroup()?.updateScope { %composer: Composer?, %force: Int ->
-                Test24(p3, p2, p1, p0, %composer, %changed or 0b0001)
+                Test24(p3, p2, p1, p0, %composer, updateChangedFlags(%changed or 0b0001))
               }
             }
         """
@@ -4135,7 +5150,7 @@ class ControlFlowTransformTests : AbstractControlFlowTransformTests() {
                 %composer.skipToGroupEnd()
               }
               %composer.endRestartGroup()?.updateScope { %composer: Composer?, %force: Int ->
-                Test(value, %composer, %changed or 0b0001)
+                Test(value, %composer, updateChangedFlags(%changed or 0b0001))
               }
             }
         """,
@@ -4180,7 +5195,7 @@ class ControlFlowTransformTests : AbstractControlFlowTransformTests() {
                 %composer.skipToGroupEnd()
               }
               %composer.endRestartGroup()?.updateScope { %composer: Composer?, %force: Int ->
-                Test(%composer, %changed or 0b0001)
+                Test(%composer, updateChangedFlags(%changed or 0b0001))
               }
             }
         """,
@@ -4305,7 +5320,7 @@ class ControlFlowTransformTests : AbstractControlFlowTransformTests() {
                 %composer.skipToGroupEnd()
               }
               %composer.endRestartGroup()?.updateScope { %composer: Composer?, %force: Int ->
-                Test(%composer, %changed or 0b0001)
+                Test(%composer, updateChangedFlags(%changed or 0b0001))
               }
             }
             internal object ComposableSingletons%TestKt {
@@ -4426,7 +5441,7 @@ class ControlFlowTransformTests : AbstractControlFlowTransformTests() {
                 %composer.skipToGroupEnd()
               }
               %composer.endRestartGroup()?.updateScope { %composer: Composer?, %force: Int ->
-                Test(%composer, %changed or 0b0001)
+                Test(%composer, updateChangedFlags(%changed or 0b0001))
               }
             }
         """,
@@ -4554,7 +5569,7 @@ class ControlFlowTransformTests : AbstractControlFlowTransformTests() {
                 %composer.skipToGroupEnd()
               }
               %composer.endRestartGroup()?.updateScope { %composer: Composer?, %force: Int ->
-                Test(%composer, %changed or 0b0001)
+                Test(%composer, updateChangedFlags(%changed or 0b0001))
               }
             }
         """,
@@ -4573,8 +5588,6 @@ class ControlFlowTransformTests : AbstractControlFlowTransformTests() {
     @Test
     fun testReadOnlyComposableWithEarlyReturn() = controlFlow(
         source = """
-            import androidx.compose.runtime.ReadOnlyComposable
-
             @ReadOnlyComposable
             @Composable
             fun getSomeValue(a: Int): Int {
@@ -4656,7 +5669,7 @@ class ControlFlowTransformTests : AbstractControlFlowTransformTests() {
                 %composer.skipToGroupEnd()
               }
               %composer.endRestartGroup()?.updateScope { %composer: Composer?, %force: Int ->
-                AttemptedToRealizeGroupTwice(%composer, %changed or 0b0001)
+                AttemptedToRealizeGroupTwice(%composer, updateChangedFlags(%changed or 0b0001))
               }
             }
         """,
@@ -4706,7 +5719,7 @@ class ControlFlowTransformTests : AbstractControlFlowTransformTests() {
             @Composable
             fun Test(start: Int, end: Int, %composer: Composer?, %changed: Int) {
               %composer = %composer.startRestartGroup(<>)
-              sourceInformation(%composer, "C(Test)P(1)<rememb...>,*<get(bK...>:Test.kt")
+              sourceInformation(%composer, "C(Test)P(1)*<get(bK...>:Test.kt")
               val %dirty = %changed
               if (%changed and 0b1110 === 0) {
                 %dirty = %dirty or if (%composer.changed(start)) 0b0100 else 0b0010
@@ -4718,9 +5731,9 @@ class ControlFlowTransformTests : AbstractControlFlowTransformTests() {
                 if (isTraceInProgress()) {
                   traceEventStart(<>, %changed, -1, <>)
                 }
-                val a = remember({
+                val a = %composer.cache(false) {
                   A()
-                }, %composer, 0)
+                }
                 val tmp0_iterator = start until end.iterator()
                 while (tmp0_iterator.hasNext()) {
                   val i = tmp0_iterator.next()
@@ -4739,7 +5752,7 @@ class ControlFlowTransformTests : AbstractControlFlowTransformTests() {
                 %composer.skipToGroupEnd()
               }
               %composer.endRestartGroup()?.updateScope { %composer: Composer?, %force: Int ->
-                Test(start, end, %composer, %changed or 0b0001)
+                Test(start, end, %composer, updateChangedFlags(%changed or 0b0001))
               }
             }
         """
@@ -4839,7 +5852,7 @@ class ControlFlowTransformTests : AbstractControlFlowTransformTests() {
                 %composer.skipToGroupEnd()
               }
               %composer.endRestartGroup()?.updateScope { %composer: Composer?, %force: Int ->
-                ArrayConstructorTest(n, %composer, %changed or 0b0001)
+                ArrayConstructorTest(n, %composer, updateChangedFlags(%changed or 0b0001))
               }
             }
         """

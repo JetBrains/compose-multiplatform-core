@@ -41,6 +41,9 @@ open class AndroidXExtension(val project: Project) {
         val content = project.providers.fileContents(toml)
         val composeCustomVersion = project.providers.environmentVariable("COMPOSE_CUSTOM_VERSION")
         val composeCustomGroup = project.providers.environmentVariable("COMPOSE_CUSTOM_GROUP")
+        val useMultiplatformVersions = project.provider {
+            Multiplatform.isKotlinNativeEnabled(project)
+        }
 
         val serviceProvider = project.gradle.sharedServices.registerIfAbsent(
             "libraryVersionsService",
@@ -49,6 +52,7 @@ open class AndroidXExtension(val project: Project) {
             spec.parameters.tomlFile = content.asText
             spec.parameters.composeCustomVersion = composeCustomVersion
             spec.parameters.composeCustomGroup = composeCustomGroup
+            spec.parameters.useMultiplatformGroupVersions = useMultiplatformVersions
         }
         LibraryGroups = serviceProvider.get().libraryGroups
         LibraryVersions = serviceProvider.get().libraryVersions
@@ -209,14 +213,6 @@ open class AndroidXExtension(val project: Project) {
     var runApiTasks: RunApiTasks = RunApiTasks.Auto
         get() = if (field == RunApiTasks.Auto && type != LibraryType.UNSET) type.checkApi else field
     var type: LibraryType = LibraryType.UNSET
-        set(value) {
-            // don't disable multiplatform if it's already enabled, because sometimes it's enabled
-            // through flags and we don't want setting `type =` to disable it accidentally.
-            if (value.shouldEnableMultiplatform()) {
-                multiplatform = true
-            }
-            field = value
-        }
     var failOnDeprecationWarnings = true
 
     var legacyDisableKotlinStrictApiMode = false
@@ -224,15 +220,6 @@ open class AndroidXExtension(val project: Project) {
     var benchmarkRunAlsoInterpreted = false
 
     var bypassCoordinateValidation = false
-
-    /**
-     * Whether this project uses KMP.
-     */
-    private var multiplatform: Boolean = false
-        set(value) {
-            Multiplatform.setEnabledForProject(project, value)
-            field = value
-        }
 
     fun shouldEnforceKotlinStrictApiMode(): Boolean {
         return !legacyDisableKotlinStrictApiMode &&
@@ -262,5 +249,3 @@ class License {
     var name: String? = null
     var url: String? = null
 }
-
-private fun LibraryType.shouldEnableMultiplatform() = this is LibraryType.KmpLibrary

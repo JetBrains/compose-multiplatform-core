@@ -61,14 +61,12 @@ public fun Modifier.scrollAway(
     scrollState: LazyListState,
     itemIndex: Int = 0,
     offset: Dp = 0.dp,
-): Modifier {
-    val targetItem = scrollState.layoutInfo.visibleItemsInfo.find { it.index == itemIndex }
-    return if (targetItem != null) {
-        scrollAway { -targetItem.offset - offset.toPx() }
-    } else {
-        ignore()
+): Modifier =
+    scrollAway(itemIndex < scrollState.layoutInfo.totalItemsCount) {
+        scrollState.layoutInfo.visibleItemsInfo.find { it.index == itemIndex }?.let {
+            -it.offset - offset.toPx()
+        }
     }
-}
 
 /**
  * Scroll an item vertically in/out of view based on a [ScalingLazyListState].
@@ -84,55 +82,54 @@ public fun Modifier.scrollAway(
     scrollState: ScalingLazyListState,
     itemIndex: Int = 1,
     offset: Dp = 0.dp,
-): Modifier {
-    val targetItem = scrollState.layoutInfo.visibleItemsInfo.find { it.index == itemIndex }
-    return if (targetItem != null) {
-        scrollAway { -targetItem.offset - offset.toPx() }
-    } else {
-        ignore()
+): Modifier =
+    scrollAway(itemIndex < scrollState.layoutInfo.totalItemsCount) {
+        scrollState.layoutInfo.visibleItemsInfo.find { it.index == itemIndex }?.let {
+            -it.offset - offset.toPx()
+        }
     }
-}
 
-private fun Modifier.scrollAway(yPxFn: Density.() -> Float): Modifier = this.then(
-    object : LayoutModifier {
-        override fun MeasureScope.measure(
-            measurable: Measurable,
-            constraints: Constraints
-        ): MeasureResult {
-            val placeable = measurable.measure(constraints)
-            return layout(placeable.width, placeable.height) {
+private fun Modifier.scrollAway(valid: Boolean = true, yPxFn: Density.() -> Float?): Modifier =
+    this.then(
+        object : LayoutModifier {
+            override fun MeasureScope.measure(
+                measurable: Measurable,
+                constraints: Constraints
+            ): MeasureResult {
+                val placeable = measurable.measure(constraints)
                 val yPx = yPxFn()
-                val progress: Float = (yPx / maxScrollOut.toPx()).coerceIn(0f, 1f)
-                val motionFraction: Float = lerp(minMotionOut, maxMotionOut, progress)
-                val offsetY = -(maxOffset.toPx() * progress).toInt()
+                if (!valid) {
+                    // For invalid inputs, don't scroll the content away - just show it.
+                    return layout(placeable.width, placeable.height) {
+                        placeable.placeRelative(0, 0)
+                    }
+                } else if (yPx == null) {
+                    // For valid inputs, but no y offset provided, hide the content.
+                    return object : MeasureResult {
+                        override val width = 0
+                        override val height = 0
+                        override val alignmentLines = mapOf<AlignmentLine, Int>()
+                        override fun placeChildren() {}
+                    }
+                } else {
+                    // Valid input and a y offset is provided - apply fade, scale and offset.
+                    return layout(placeable.width, placeable.height) {
+                        val progress: Float = (yPx / maxScrollOut.toPx()).coerceIn(0f, 1f)
+                        val motionFraction: Float = lerp(minMotionOut, maxMotionOut, progress)
+                        val offsetY = -(maxOffset.toPx() * progress).toInt()
 
-                placeable.placeWithLayer(0, offsetY) {
-                    alpha = motionFraction
-                    scaleX = motionFraction
-                    scaleY = motionFraction
-                    transformOrigin = TransformOrigin(pivotFractionX = 0.5f, pivotFractionY = 0.0f)
+                        placeable.placeWithLayer(0, offsetY) {
+                            alpha = motionFraction
+                            scaleX = motionFraction
+                            scaleY = motionFraction
+                            transformOrigin =
+                                TransformOrigin(pivotFractionX = 0.5f, pivotFractionY = 0.0f)
+                        }
+                    }
                 }
             }
         }
-    }
-)
-
-// Trivial modifier that neither measures nor places the content.
-private fun Modifier.ignore(): Modifier = this.then(
-    object : LayoutModifier {
-        override fun MeasureScope.measure(
-            measurable: Measurable,
-            constraints: Constraints
-        ): MeasureResult {
-            return object : MeasureResult {
-                override val width = 0
-                override val height = 0
-                override val alignmentLines = mapOf<AlignmentLine, Int>()
-                override fun placeChildren() {}
-            }
-        }
-    }
-)
+    )
 
 // The scroll motion effects take place between 0dp and 36dp.
 internal val maxScrollOut = 36.dp

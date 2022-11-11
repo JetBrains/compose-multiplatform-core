@@ -23,7 +23,7 @@ plugins {
 }
 
 dependencies {
-    api("androidx.security:security-crypto:1.1.0-alpha03")
+    api(project(":security:security-crypto"))
 
     api(libs.kotlinStdlib)
     androidTestImplementation(libs.junit)
@@ -36,7 +36,7 @@ dependencies {
 
 android {
     defaultConfig {
-        minSdkVersion 23
+        minSdkVersion 21
     }
     namespace "androidx.security.ktx"
 }

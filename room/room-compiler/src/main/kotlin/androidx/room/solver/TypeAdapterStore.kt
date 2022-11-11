@@ -16,6 +16,7 @@
 
 package androidx.room.solver
 
+import androidx.annotation.VisibleForTesting
 import androidx.room.compiler.processing.XType
 import androidx.room.compiler.processing.isArray
 import androidx.room.compiler.processing.isEnum
@@ -24,6 +25,7 @@ import androidx.room.ext.CollectionTypeNames.INT_SPARSE_ARRAY
 import androidx.room.ext.CollectionTypeNames.LONG_SPARSE_ARRAY
 import androidx.room.ext.CommonTypeNames
 import androidx.room.ext.GuavaBaseTypeNames
+import androidx.room.ext.isByteBuffer
 import androidx.room.ext.isEntityElement
 import androidx.room.ext.isNotByte
 import androidx.room.ext.isNotKotlinUnit
@@ -77,7 +79,7 @@ import androidx.room.solver.query.result.QueryResultAdapter
 import androidx.room.solver.query.result.QueryResultBinder
 import androidx.room.solver.query.result.RowAdapter
 import androidx.room.solver.query.result.SingleColumnRowAdapter
-import androidx.room.solver.query.result.SingleEntityQueryResultAdapter
+import androidx.room.solver.query.result.SingleItemQueryResultAdapter
 import androidx.room.solver.query.result.SingleNamedColumnRowAdapter
 import androidx.room.solver.shortcut.binder.DeleteOrUpdateMethodBinder
 import androidx.room.solver.shortcut.binder.InsertOrUpsertMethodBinder
@@ -112,7 +114,6 @@ import androidx.room.vo.BuiltInConverterFlags
 import androidx.room.vo.MapInfo
 import androidx.room.vo.ShortcutQueryParameter
 import androidx.room.vo.isEnabled
-import com.google.common.annotations.VisibleForTesting
 import com.google.common.collect.ImmutableList
 import com.google.common.collect.ImmutableListMultimap
 import com.google.common.collect.ImmutableMap
@@ -132,7 +133,7 @@ class TypeAdapterStore private constructor(
      * first type adapter has the highest priority
      */
     private val columnTypeAdapters: List<ColumnTypeAdapter>,
-    @VisibleForTesting
+    @get:VisibleForTesting
     internal val typeConverterStore: TypeConverterStore,
     private val builtInConverterFlags: BuiltInConverterFlags
 ) {
@@ -180,7 +181,6 @@ class TypeAdapterStore private constructor(
                 .forEach(::addColumnAdapter)
             StringColumnTypeAdapter.create(context.processingEnv).forEach(::addColumnAdapter)
             ByteArrayColumnTypeAdapter.create(context.processingEnv).forEach(::addColumnAdapter)
-            ByteBufferColumnTypeAdapter.create(context.processingEnv).forEach(::addColumnAdapter)
             PrimitiveBooleanToIntConverter.create(context.processingEnv).forEach(::addTypeConverter)
             // null aware converter is able to automatically null wrap converters so we don't
             // need this as long as we are running in KSP
@@ -370,9 +370,11 @@ class TypeAdapterStore private constructor(
         val typeElement = type.typeElement
         return when {
             builtInConverterFlags.enums.isEnabled() &&
-                typeElement?.isEnum() == true -> EnumColumnTypeAdapter(typeElement)
+                typeElement?.isEnum() == true -> EnumColumnTypeAdapter(typeElement, type)
             builtInConverterFlags.uuid.isEnabled() &&
                 type.isUUID() -> UuidColumnTypeAdapter(type)
+            builtInConverterFlags.byteBuffer.isEnabled() &&
+                type.isByteBuffer() -> ByteBufferColumnTypeAdapter(type)
             else -> null
         }
     }
@@ -482,7 +484,7 @@ class TypeAdapterStore private constructor(
             return ArrayQueryResultAdapter(rowAdapter)
         } else if (typeMirror.typeArguments.isEmpty()) {
             val rowAdapter = findRowAdapter(typeMirror, query) ?: return null
-            return SingleEntityQueryResultAdapter(rowAdapter)
+            return SingleItemQueryResultAdapter(rowAdapter)
         } else if (typeMirror.rawType.typeName == GuavaBaseTypeNames.OPTIONAL) {
             // Handle Guava Optional by unpacking its generic type argument and adapting that.
             // The Optional adapter will reappend the Optional type.
@@ -492,7 +494,7 @@ class TypeAdapterStore private constructor(
             val rowAdapter = findRowAdapter(typeArg.makeNullable(), query) ?: return null
             return GuavaOptionalQueryResultAdapter(
                 typeArg = typeArg,
-                resultAdapter = SingleEntityQueryResultAdapter(rowAdapter)
+                resultAdapter = SingleItemQueryResultAdapter(rowAdapter)
             )
         } else if (typeMirror.rawType.typeName == CommonTypeNames.OPTIONAL) {
             // Handle java.util.Optional similarly.
@@ -502,7 +504,7 @@ class TypeAdapterStore private constructor(
             val rowAdapter = findRowAdapter(typeArg.makeNullable(), query) ?: return null
             return OptionalQueryResultAdapter(
                 typeArg = typeArg,
-                resultAdapter = SingleEntityQueryResultAdapter(rowAdapter)
+                resultAdapter = SingleItemQueryResultAdapter(rowAdapter)
             )
         } else if (typeMirror.isTypeOf(ImmutableList::class)) {
             val typeArg = typeMirror.typeArguments.first().extendsBoundOrSelf()
@@ -848,7 +850,7 @@ class TypeAdapterStore private constructor(
             val typeArg = typeMirror.typeArguments.first().extendsBoundOrSelf()
             // An adapter for the collection type arg wrapped in the built-in collection adapter.
             val wrappedCollectionAdapter = findStatementValueBinder(typeArg, null)?.let {
-                CollectionQueryParameterAdapter(it)
+                CollectionQueryParameterAdapter(it, typeMirror.nullability)
             }
             // An adapter for the collection itself, likely a user provided type converter for the
             // collection.
@@ -866,7 +868,7 @@ class TypeAdapterStore private constructor(
         } else if (typeMirror.isArray() && typeMirror.componentType.isNotByte()) {
             val component = typeMirror.componentType
             val binder = findStatementValueBinder(component, null) ?: return null
-            return ArrayQueryParameterAdapter(binder)
+            return ArrayQueryParameterAdapter(binder, typeMirror.nullability)
         } else {
             val binder = findStatementValueBinder(typeMirror, null) ?: return null
             return BasicQueryParameterAdapter(binder)

@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 #
 # Copyright (C) 2020 The Android Open Source Project
 #
@@ -35,6 +35,8 @@ COMPOSE_VERSION_REL = './compose/runtime/runtime/src/commonMain/kotlin/androidx/
 COMPOSE_VERSION_FP = os.path.join(FRAMEWORKS_SUPPORT_FP, COMPOSE_VERSION_REL)
 VERSION_CHECKER_REL = './compose/compiler/compiler-hosted/src/main/java/androidx/compose/compiler/plugins/kotlin/VersionChecker.kt'
 VERSION_CHECKER_FP = os.path.join(FRAMEWORKS_SUPPORT_FP, VERSION_CHECKER_REL)
+VERSION_UPDATER_REL = './development/auto-version-updater'
+VERSION_UPDATER_FP = os.path.join(FRAMEWORKS_SUPPORT_FP, VERSION_UPDATER_REL)
 PREBUILTS_ANDROIDX_INTERNAL_REL = '../../prebuilts/androidx/internal'
 PREBUILTS_ANDROIDX_INTERNAL_FP = os.path.join(FRAMEWORKS_SUPPORT_FP, PREBUILTS_ANDROIDX_INTERNAL_REL)
 
@@ -195,7 +197,7 @@ def should_update_artifact_version_in_library_versions_toml(old_version, new_ver
         True if should update version, false otherwise.
     """
     # If we hit a artifact ID we should not update, just return.
-    artifact_ids_to_not_update = ["tracing-perfetto", "tracing-perfetto-binary", "tracing-perfetto-common"]
+    artifact_ids_to_not_update = [] # empty list as of now
     if artifact_id in artifact_ids_to_not_update: return False
     return new_version == get_higher_version(old_version, new_version)
 
@@ -243,6 +245,29 @@ def increment_version_within_minor_version(version):
     return new_version
 
 
+def get_library_constants_in_library_versions_toml(group_id, artifact_id):
+    """Gets the constants for a library in libraryversions.toml.
+
+    Args:
+        group_id: group_id of the existing library
+        artifact_id: artifact_id of the existing library
+
+    Returns:
+        A touple of the group_id constant and the artifact_id constant
+    """
+    group_id_variable_name = group_id.replace("androidx.","").replace(".","_").upper()
+    artifact_id_variable_name = artifact_id.replace("androidx.","").replace("-","_").upper()
+    # Special case Compose because it uses the same version variable.
+    if (group_id_variable_name.startswith("COMPOSE") and
+        group_id_variable_name != "COMPOSE_MATERIAL3"):
+            group_id_variable_name = "COMPOSE"
+    # Special case Compose runtime tracing
+    if group_id == "androidx.compose.runtime" and artifact_id == "runtime-tracing":
+        group_id_variable_name = "COMPOSE_RUNTIME_TRACING"
+        artifact_id_variable_name = "COMPOSE_RUNTIME_TRACING"
+    return (group_id_variable_name, artifact_id_variable_name)
+
+
 def update_versions_in_library_versions_toml(group_id, artifact_id, old_version):
     """Updates the versions in the libraryversions.toml file.
 
@@ -257,13 +282,9 @@ def update_versions_in_library_versions_toml(group_id, artifact_id, old_version)
     Returns:
         True if the version was updated, false otherwise.
     """
-    group_id_variable_name = group_id.replace("androidx.","").replace(".","_").upper()
-    artifact_id_variable_name = artifact_id.replace("androidx.","").replace("-","_").upper()
+    (group_id_variable_name, artifact_id_variable_name
+    ) = get_library_constants_in_library_versions_toml(group_id, artifact_id)
     new_version = increment_version(old_version)
-    # Special case Compose because it uses the same version variable.
-    if (group_id_variable_name.startswith("COMPOSE") and
-        group_id_variable_name != "COMPOSE_MATERIAL3"):
-            group_id_variable_name = "COMPOSE"
 
     # Open toml file
     library_versions = toml.load(LIBRARY_VERSIONS_FP)
@@ -440,30 +461,28 @@ def update_tracing_perfetto_version(old_version):
     Args:
         old_version: old version of the existing library
     Returns:
-        `True` if the version was updated, `False` otherwise.
+        Nothing
     """
     new_version = increment_version(old_version)
-    cmd = "update_tracing_perfetto.sh %s %s %s" % (FRAMEWORKS_SUPPORT_FP, old_version, new_version)
+    cmd = "./update_tracing_perfetto.sh %s %s %s" % (FRAMEWORKS_SUPPORT_FP, old_version, new_version)
     try:
-        subprocess.check_output(cmd, stderr=subprocess.STDOUT, shell=True)
-    except subprocess.CalledProcessError:
-        print_e("FAIL: Error while running: '%s'" % cmd)
-        return False
-    return True
+        print("Updating tracing-perfetto, this can take a while...")
+        subprocess.check_output(cmd, cwd=VERSION_UPDATER_FP, stderr=subprocess.STDOUT, shell=True)
+        print("Updated tracing-perfetto.")
+    except subprocess.CalledProcessError as e:
+        print_e("FAIL: Error '%s' while running: '%s'" % (e.output, cmd))
+        sys.exit(1)
 
 def commit_updates(release_date):
-    should_upload = False
     for dir in [FRAMEWORKS_SUPPORT_FP, PREBUILTS_ANDROIDX_INTERNAL_FP]:
-        subprocess.check_call("cd %s && git add ." % dir)
+        subprocess.check_call(["git", "add", "."], cwd=dir, stderr=subprocess.STDOUT)
         # ensure that we've actually made a change:
-        staged_changes = subprocess.check_output("cd %s && git diff --cached" % dir, stderr=subprocess.STDOUT, shell=True)
+        staged_changes = subprocess.check_output(["git", "diff", "--cached"], cwd=dir, stderr=subprocess.STDOUT)
         if not staged_changes:
             continue
-        msg = "'Update versions for release id %s\n\nThis commit was generated from the command:\n%s\n\n%s'" % (release_date, " ".join(sys.argv), "Test: ./gradlew checkApi")
-        subprocess.check_call("cd %s && git commit -m \"%s\"" % (dir, msg))
-        should_upload = True
-    if should_upload:
-        subprocess.check_output('repo upload --cbr -t -y --label Presubmit-Ready+1', stderr=subprocess.STDOUT, shell=True)
+        msg = "Update versions for release id %s\n\nThis commit was generated from the command:\n%s\n\n%s" % (release_date, " ".join(sys.argv), "Test: ./gradlew checkApi")
+        subprocess.check_call(["git", "commit", "-m", msg], cwd=dir, stderr=subprocess.STDOUT)
+        subprocess.check_call(["repo", "upload", ".", "--cbr", "-t", "-y", "--label", "Presubmit-Ready+1"], cwd=dir, stderr=subprocess.STDOUT)
 
 def main(args):
     # Parse arguments and check for existence of build ID or file
@@ -473,6 +492,7 @@ def main(args):
         sys.exit(1)
     release_json_object = getJetpadRelease(args.date, False)
     non_updated_libraries = []
+    tracing_perfetto_updated = False
     for group_id in release_json_object["modules"]:
         for artifact in release_json_object["modules"][group_id]:
             updated = False
@@ -488,8 +508,12 @@ def main(args):
                                                artifact["artifactId"],
                                                artifact["version"])
             if (group_id == "androidx.tracing" and
-                    artifact["artifactId"] == "tracing-perfetto"):
-                updated = update_tracing_perfetto_version(artifact["version"])
+                    artifact["artifactId"].startswith("tracing-perfetto")):
+                if tracing_perfetto_updated:
+                    updated = True
+                else:
+                    update_tracing_perfetto_version(artifact["version"])
+                    tracing_perfetto_updated = True
 
             if not updated:
                 non_updated_libraries.append("%s:%s:%s" % (group_id,
@@ -511,3 +535,4 @@ def main(args):
 
 if __name__ == '__main__':
     main(sys.argv)
+

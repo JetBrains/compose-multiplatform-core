@@ -140,28 +140,31 @@ public fun Picker(
                 }
             }.then(
                 if (!readOnly && gradientRatio > 0.0f) {
-                    Modifier
-                        .drawWithContent {
-                            drawContent()
-                            drawGradient(gradientColor, gradientRatio)
-                        }
-                        // b/223386180 - add padding when drawing rectangles to
-                        // prevent jitter on screen.
-                        .padding(vertical = 1.dp)
-                        .align(Alignment.Center)
-                } else if (readOnly) {
+                        Modifier
+                            .drawWithContent {
+                                drawContent()
+                                drawGradient(gradientColor, gradientRatio)
+                            }
+                            // b/223386180 - add padding when drawing rectangles to
+                            // prevent jitter on screen.
+                            .padding(vertical = 1.dp)
+                            .align(Alignment.Center)
+                    } else if (readOnly) {
                     Modifier
                         .drawWithContent {
                             drawContent()
                             val visibleItems =
                                 state.scalingLazyListState.layoutInfo.visibleItemsInfo
-                            val centerItem =
-                                visibleItems.find { info ->
-                                    info.index == state.scalingLazyListState.centerItemIndex
-                                } ?: visibleItems[visibleItems.size / 2]
-                            val shimHeight = (size.height - centerItem.unadjustedSize.toFloat() -
-                                separation.toPx()) / 2.0f
-                            drawShim(gradientColor, shimHeight)
+                            if (visibleItems.isNotEmpty()) {
+                                val centerItem =
+                                    visibleItems.find { info ->
+                                        info.index == state.scalingLazyListState.centerItemIndex
+                                    } ?: visibleItems[visibleItems.size / 2]
+                                val shimHeight =
+                                    (size.height - centerItem.unadjustedSize.toFloat() -
+                                        separation.toPx()) / 2.0f
+                                drawShim(gradientColor, shimHeight)
+                            }
                         }
                         // b/223386180 - add padding when drawing rectangles to
                         // prevent jitter on screen.
@@ -185,7 +188,8 @@ public fun Picker(
             verticalArrangement = Arrangement.spacedBy(
                 space = separation
             ),
-            flingBehavior = flingBehavior
+            flingBehavior = flingBehavior,
+            autoCentering = AutoCenteringParams(itemIndex = 0)
         )
         if (readOnly && readOnlyLabel != null) {
             readOnlyLabel()
@@ -320,9 +324,14 @@ public fun rememberPickerState(
     initialNumberOfOptions: Int,
     initiallySelectedOption: Int = 0,
     repeatItems: Boolean = true
-): PickerState = rememberSaveable(saver = PickerState.Saver) {
-    PickerState(initialNumberOfOptions, initiallySelectedOption, repeatItems)
-}
+): PickerState = rememberSaveable(
+        initialNumberOfOptions,
+        initiallySelectedOption,
+        repeatItems,
+        saver = PickerState.Saver
+    ) {
+        PickerState(initialNumberOfOptions, initiallySelectedOption, repeatItems)
+    }
 
 /**
  * A state object that can be hoisted to observe item selection.
@@ -424,7 +433,6 @@ public class PickerState constructor(
                 )
             },
             restore = { saved ->
-                @Suppress("UNCHECKED_CAST")
                 PickerState(
                     initialNumberOfOptions = saved[0] as Int,
                     initiallySelectedOption = saved[1] as Int,

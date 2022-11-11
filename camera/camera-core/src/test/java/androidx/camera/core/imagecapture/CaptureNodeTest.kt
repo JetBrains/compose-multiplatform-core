@@ -18,15 +18,18 @@ package androidx.camera.core.imagecapture
 
 import android.graphics.ImageFormat
 import android.os.Build
+import android.os.Looper.getMainLooper
 import android.util.Size
 import androidx.camera.core.ImageProxy
 import androidx.camera.core.imagecapture.Utils.createCaptureBundle
 import androidx.camera.core.imagecapture.Utils.createFakeImage
 import com.google.common.truth.Truth.assertThat
+import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 
@@ -58,10 +61,32 @@ class CaptureNodeTest {
         }
     }
 
+    @After
+    fun tearDown() {
+        captureNode.release()
+    }
+
+    @Test
+    fun release_imageReaderNotClosedUntilTermination() {
+        // Arrange: increment the DeferrableSurface's use count to prevent it from being terminated.
+        captureNode.inputEdge.surface.incrementUseCount()
+        // Act: release.
+        captureNode.release()
+        shadowOf(getMainLooper()).idle()
+        // Assert: ImageReader is not closed.
+        assertThat(captureNode.mSafeCloseImageReaderProxy!!.isClosed).isFalse()
+
+        // Act: decrease the use count. Now the DeferrableSurface will terminate.
+        captureNode.inputEdge.surface.decrementUseCount()
+        shadowOf(getMainLooper()).idle()
+        // Assert: ImageReader is closed.
+        assertThat(captureNode.mSafeCloseImageReaderProxy!!.isClosed).isTrue()
+    }
+
     @Test
     fun transform_verifyInputSurface() {
         assertThat(captureNodeIn.surface.surface.get())
-            .isEqualTo(captureNode.mSafeCloseImageReaderProxy.surface)
+            .isEqualTo(captureNode.mSafeCloseImageReaderProxy!!.surface)
     }
 
     @Test

@@ -27,7 +27,6 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.util.Consumer
-import androidx.window.core.ExperimentalWindowApi
 import androidx.window.embedding.ActivityFilter
 import androidx.window.embedding.EmbeddingRule
 import androidx.window.embedding.SplitController
@@ -46,7 +45,6 @@ import androidx.window.sample.util.PictureInPictureUtil.startPictureInPicture
  * split and PiP configuration options with checkboxes and launch activities with those options
  * applied.
  */
-@OptIn(ExperimentalWindowApi::class)
 abstract class SplitPipActivityBase : AppCompatActivity(), CompoundButton.OnCheckedChangeListener,
     View.OnClickListener, RadioGroup.OnCheckedChangeListener {
 
@@ -225,7 +223,7 @@ abstract class SplitPipActivityBase : AppCompatActivity(), CompoundButton.OnChec
             return false
         }
         for (filter in rule.filters) {
-            if (filter.matchesClassName(SplitPipActivityB::class.java)) {
+            if (filter.componentName.className == SplitPipActivityB::class.java.name) {
                 return true
             }
         }
