@@ -39,6 +39,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.yield
 import org.junit.After
 import org.junit.Assert.fail
+import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -105,6 +106,7 @@ class InvalidationTrackerFlowTest : TestDatabaseTest() {
         channel.cancel()
     }
 
+    @Ignore // b/268534919
     @Test
     fun emitOnceForMultipleTablesInTransaction(): Unit = runBlocking {
         val results = mutableListOf<Set<String>>()
@@ -167,7 +169,7 @@ class InvalidationTrackerFlowTest : TestDatabaseTest() {
         booksDao.addBooks(TestUtil.BOOK_1)
 
         val channel = database.invalidationTrackerFlow("book")
-            .map { booksDao.allBooks }
+            .map { booksDao.getAllBooks() }
             .produceIn(this)
 
         assertThat(channel.receive()).containsExactly(TestUtil.BOOK_1)

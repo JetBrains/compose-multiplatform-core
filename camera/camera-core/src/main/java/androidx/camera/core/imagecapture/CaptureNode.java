@@ -16,6 +16,7 @@
 
 package androidx.camera.core.imagecapture;
 
+import static androidx.camera.core.ImageCapture.ERROR_CAPTURE_FAILED;
 import static androidx.camera.core.impl.utils.Threads.checkMainThread;
 import static androidx.camera.core.impl.utils.executor.CameraXExecutors.mainThreadExecutor;
 import static androidx.core.util.Preconditions.checkState;
@@ -33,13 +34,18 @@ import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.VisibleForTesting;
 import androidx.camera.core.ForwardingImageProxy;
+import androidx.camera.core.ImageCaptureException;
 import androidx.camera.core.ImageProxy;
+import androidx.camera.core.Logger;
 import androidx.camera.core.MetadataImageReader;
 import androidx.camera.core.SafeCloseImageReaderProxy;
 import androidx.camera.core.impl.CameraCaptureCallback;
 import androidx.camera.core.impl.DeferrableSurface;
 import androidx.camera.core.impl.ImageReaderProxy;
 import androidx.camera.core.impl.ImmediateSurface;
+import androidx.camera.core.impl.utils.executor.CameraXExecutors;
+import androidx.camera.core.impl.utils.futures.FutureCallback;
+import androidx.camera.core.impl.utils.futures.Futures;
 import androidx.camera.core.processing.Edge;
 import androidx.camera.core.processing.Node;
 
@@ -61,6 +67,8 @@ import java.util.Set;
 @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
 class CaptureNode implements Node<CaptureNode.In, CaptureNode.Out> {
 
+    private static final String TAG = "CaptureNode";
+
     // TODO: we might need to calculate this number dynamically based on on many frames are
     //  needed by the post-processing. e.g. night mode might need to merge 10+ frames. 4 images
     //  should be enough for now.
@@ -69,8 +77,7 @@ class CaptureNode implements Node<CaptureNode.In, CaptureNode.Out> {
 
     @NonNull
     private final Set<Integer> mPendingStageIds = new HashSet<>();
-    private final Set<ImageProxy> mPendingImages = new HashSet<>();
-    private ProcessingRequest mCurrentRequest = null;
+    ProcessingRequest mCurrentRequest = null;
 
     @Nullable
     SafeCloseImageReaderProxy mSafeCloseImageReaderProxy;
@@ -96,9 +103,22 @@ class CaptureNode implements Node<CaptureNode.In, CaptureNode.Out> {
         inputEdge.setSurface(requireNonNull(metadataImageReader.getSurface()));
 
         // Listen to the input edges.
-        metadataImageReader.setOnImageAvailableListener(imageReader -> onImageProxyAvailable(
-                requireNonNull(imageReader.acquireNextImage())), mainThreadExecutor());
+        metadataImageReader.setOnImageAvailableListener(imageReader -> {
+            try {
+                ImageProxy image = imageReader.acquireLatestImage();
+                if (image != null) {
+                    onImageProxyAvailable(image);
+                } else {
+                    sendCaptureError(new ImageCaptureException(ERROR_CAPTURE_FAILED, "Failed to "
+                            + "acquire latest image", null));
+                }
+            } catch (IllegalStateException e) {
+                sendCaptureError(new ImageCaptureException(ERROR_CAPTURE_FAILED, "Failed to "
+                        + "acquire latest image", e));
+            }
+        }, mainThreadExecutor());
         inputEdge.getRequestEdge().setListener(this::onRequestAvailable);
+        inputEdge.getErrorEdge().setListener(this::sendCaptureError);
 
         mOutputEdge = Out.of(inputEdge.getFormat());
         return mOutputEdge;
@@ -109,8 +129,8 @@ class CaptureNode implements Node<CaptureNode.In, CaptureNode.Out> {
     void onImageProxyAvailable(@NonNull ImageProxy imageProxy) {
         checkMainThread();
         if (mCurrentRequest == null) {
-            // Request has not arrived yet. Track the image and match later.
-            mPendingImages.add(imageProxy);
+            Logger.d(TAG, "Discarding ImageProxy which was inadvertently acquired: " + imageProxy);
+            imageProxy.close();
         } else {
             // Match image and send it downstream.
             matchAndPropagateImage(imageProxy);
@@ -125,14 +145,15 @@ class CaptureNode implements Node<CaptureNode.In, CaptureNode.Out> {
                 "Received an unexpected stage id" + stageId);
         mPendingStageIds.remove(stageId);
 
-        if (mPendingStageIds.isEmpty()) {
-            // The capture is complete. Let the pipeline know it can take another picture.
-            mCurrentRequest.onImageCaptured();
-            mCurrentRequest = null;
-        }
-
         // Send the image downstream.
         requireNonNull(mOutputEdge).getImageEdge().accept(imageProxy);
+
+        if (mPendingStageIds.isEmpty()) {
+            // The capture is complete. Let the pipeline know it can take another picture.
+            ProcessingRequest request = mCurrentRequest;
+            mCurrentRequest = null;
+            request.onImageCaptured();
+        }
     }
 
     @VisibleForTesting
@@ -152,12 +173,28 @@ class CaptureNode implements Node<CaptureNode.In, CaptureNode.Out> {
 
         // Send the request downstream.
         requireNonNull(mOutputEdge).getRequestEdge().accept(request);
+        Futures.addCallback(request.getCaptureFuture(), new FutureCallback<Void>() {
+            @Override
+            public void onSuccess(@Nullable Void result) {
+                // Do nothing
+            }
 
-        // Match pending images and send them downstream.
-        for (ImageProxy imageProxy : mPendingImages) {
-            matchAndPropagateImage(imageProxy);
+            @Override
+            public void onFailure(@NonNull Throwable t) {
+                checkMainThread();
+                if (request == mCurrentRequest) {
+                    mCurrentRequest = null;
+                }
+            }
+        }, CameraXExecutors.directExecutor());
+    }
+
+    @MainThread
+    void sendCaptureError(@NonNull ImageCaptureException e) {
+        checkMainThread();
+        if (mCurrentRequest != null) {
+            mCurrentRequest.onCaptureFailure(e);
         }
-        mPendingImages.clear();
     }
 
     @MainThread
@@ -226,6 +263,12 @@ class CaptureNode implements Node<CaptureNode.In, CaptureNode.Out> {
         abstract Edge<ProcessingRequest> getRequestEdge();
 
         /**
+         * Edge that accepts {@link ImageCaptureException}.
+         */
+        @NonNull
+        abstract Edge<ImageCaptureException> getErrorEdge();
+
+        /**
          * Edge that accepts the image frames.
          *
          * <p>The value will be used in a capture request sent to the camera.
@@ -255,7 +298,7 @@ class CaptureNode implements Node<CaptureNode.In, CaptureNode.Out> {
 
         @NonNull
         static In of(Size size, int format) {
-            return new AutoValue_CaptureNode_In(size, format, new Edge<>());
+            return new AutoValue_CaptureNode_In(size, format, new Edge<>(), new Edge<>());
         }
     }
 

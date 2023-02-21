@@ -101,7 +101,6 @@ dependencies {
     implementation(libs.kspApi)
     shadowed(libs.antlr4)
     implementation(libs.sqliteJdbc)
-    implementation(libs.kotlinMetadataJvm)
     implementation(libs.apacheCommonsCodec)
     implementation(libs.intellijAnnotations)
     testImplementation(libs.truth)
@@ -281,7 +280,6 @@ tasks.findByName("sourceJar").dependsOn(generateAntlrTask)
 tasks.withType(KotlinCompile).configureEach {
     kotlinOptions {
         freeCompilerArgs += [
-                "-Xjvm-default=all",
                 "-opt-in=kotlin.contracts.ExperimentalContracts",
                 "-opt-in=androidx.room.compiler.processing.ExperimentalProcessingApi",
                 "-opt-in=com.squareup.kotlinpoet.javapoet.KotlinPoetJavaPoetPreview"
@@ -301,7 +299,6 @@ tasks.withType(Test).configureEach {
 androidx {
     name = "Android Room Compiler"
     type = LibraryType.ANNOTATION_PROCESSOR
-    mavenGroup = LibraryGroups.ROOM
     inceptionYear = "2017"
     description = "Android Room annotation processor"
 }

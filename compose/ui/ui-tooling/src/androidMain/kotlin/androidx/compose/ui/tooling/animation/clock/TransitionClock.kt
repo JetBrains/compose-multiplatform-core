@@ -16,14 +16,15 @@
 
 package androidx.compose.ui.tooling.animation.clock
 
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.Transition
 import androidx.compose.animation.tooling.ComposeAnimatedProperty
 import androidx.compose.animation.tooling.TransitionInfo
-import androidx.compose.ui.tooling.animation.TransitionComposeAnimation
+import androidx.compose.ui.tooling.animation.TransitionBasedAnimation
 import androidx.compose.ui.tooling.animation.states.TargetState
 
 /**
- * [ComposeAnimationClock] for [Transition] animations.
+ * [ComposeAnimationClock] for [Transition] and [AnimatedContent] animations.
  * This clock also controls extension functions such as:
  * * Transition.AnimatedVisibility
  * * Transition.Crossfade
@@ -33,9 +34,10 @@ import androidx.compose.ui.tooling.animation.states.TargetState
  *  @sample androidx.compose.animation.samples.AnimatedVisibilityLazyColumnSample
  *  @sample androidx.compose.animation.samples.CrossfadeSample
  *  @sample androidx.compose.animation.samples.TransitionExtensionAnimatedContentSample
+ *  @sample androidx.compose.animation.samples.AnimateIncrementDecrementSample
  */
-internal class TransitionClock<T>(override val animation: TransitionComposeAnimation<T>) :
-    ComposeAnimationClock<TransitionComposeAnimation<T>, TargetState<T>> {
+internal class TransitionClock<T>(override val animation: TransitionBasedAnimation<T>) :
+    ComposeAnimationClock<TransitionBasedAnimation<T>, TargetState<T>> {
 
     override var state = TargetState(
         animation.animationObject.currentState,
@@ -46,9 +48,10 @@ internal class TransitionClock<T>(override val animation: TransitionComposeAnima
             setClockTime(0)
         }
 
-    @Suppress("UNCHECKED_CAST")
     override fun setStateParameters(par1: Any, par2: Any?) {
-        state = TargetState(par1 as T, par2 as T)
+        parseParametersToValue(state.initial, par1, par2)?.let {
+            state = it
+        }
     }
 
     override fun getAnimatedProperties(): List<ComposeAnimatedProperty> {
@@ -58,7 +61,7 @@ internal class TransitionClock<T>(override val animation: TransitionComposeAnima
             val value = it.value
             value ?: return@mapNotNull null
             ComposeAnimatedProperty(it.label, value)
-        }
+        }.filter { !IGNORE_TRANSITIONS.contains(it.label) }
     }
 
     override fun getMaxDurationPerIteration(): Long {
@@ -73,7 +76,7 @@ internal class TransitionClock<T>(override val animation: TransitionComposeAnima
         val transition = animation.animationObject
         return transition.allAnimations().map {
             it.createTransitionInfo(stepMillis)
-        }
+        }.filter { !IGNORE_TRANSITIONS.contains(it.label) }
     }
 
     override fun setClockTime(animationTimeNanos: Long) {

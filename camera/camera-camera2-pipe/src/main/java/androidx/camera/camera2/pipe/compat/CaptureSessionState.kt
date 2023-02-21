@@ -26,12 +26,12 @@ import androidx.camera.camera2.pipe.CameraSurfaceManager
 import androidx.camera.camera2.pipe.StreamId
 import androidx.camera.camera2.pipe.core.Debug
 import androidx.camera.camera2.pipe.core.Log
+import androidx.camera.camera2.pipe.core.TimeSource
 import androidx.camera.camera2.pipe.core.TimestampNs
 import androidx.camera.camera2.pipe.core.Timestamps
 import androidx.camera.camera2.pipe.core.Timestamps.formatMs
 import androidx.camera.camera2.pipe.graph.GraphListener
 import androidx.camera.camera2.pipe.graph.GraphRequestProcessor
-import java.io.Closeable
 import java.util.Collections.synchronizedMap
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CoroutineScope
@@ -45,9 +45,9 @@ internal val captureSessionDebugIds = atomic(0)
  * it to the [GraphListener].
  *
  * After this object is created, it waits for:
- *  - A valid CameraDevice via [cameraDevice]
- *  - A valid map of Surfaces via [configureSurfaceMap]
- * Once these objects are available, it will create the [CameraCaptureSession].
+ * - A valid CameraDevice via [cameraDevice]
+ * - A valid map of Surfaces via [configureSurfaceMap] Once these objects are available, it will
+ *   create the [CameraCaptureSession].
  *
  * If at any time this object is put into a COSING or CLOSED state the session will either never be
  * created, or if the session has already been created, it will be de-referenced and ignored. This
@@ -56,11 +56,13 @@ internal val captureSessionDebugIds = atomic(0)
  *
  * This class is thread safe.
  */
+@RequiresApi(21)
 internal class CaptureSessionState(
     private val graphListener: GraphListener,
     private val captureSessionFactory: CaptureSessionFactory,
     private val captureSequenceProcessorFactory: Camera2CaptureSequenceProcessorFactory,
     private val cameraSurfaceManager: CameraSurfaceManager,
+    private val timeSource: TimeSource,
     private val scope: CoroutineScope
 ) : CameraCaptureSessionWrapper.StateCallback {
     private val debugId = captureSessionDebugIds.incrementAndGet()
@@ -74,16 +76,17 @@ internal class CaptureSessionState(
     private var _cameraDevice: CameraDeviceWrapper? = null
     var cameraDevice: CameraDeviceWrapper?
         get() = synchronized(lock) { _cameraDevice }
-        set(value) = synchronized(lock) {
-            if (state == State.CLOSING || state == State.CLOSED) {
-                return
-            }
+        set(value) =
+            synchronized(lock) {
+                if (state == State.CLOSING || state == State.CLOSED) {
+                    return
+                }
 
-            _cameraDevice = value
-            if (value != null) {
-                scope.launch { tryCreateCaptureSession() }
+                _cameraDevice = value
+                if (value != null) {
+                    scope.launch { tryCreateCaptureSession() }
+                }
             }
-        }
 
     @GuardedBy("lock")
     private var cameraCaptureSession: ConfiguredCameraCaptureSession? = null
@@ -109,7 +112,7 @@ internal class CaptureSessionState(
     private var _surfaceMap: Map<StreamId, Surface>? = null
 
     @GuardedBy("lock")
-    private val _surfaceTokenMap: MutableMap<Surface, Closeable> = mutableMapOf()
+    private val _surfaceTokenMap: MutableMap<Surface, AutoCloseable> = mutableMapOf()
     fun configureSurfaceMap(surfaces: Map<StreamId, Surface>) {
         synchronized(lock) {
             if (state == State.CLOSING || state == State.CLOSED) {
@@ -195,12 +198,13 @@ internal class CaptureSessionState(
             }
 
             if (cameraCaptureSession == null && session != null) {
-                captureSession = ConfiguredCameraCaptureSession(
-                    session,
-                    GraphRequestProcessor.from(
-                        captureSequenceProcessorFactory.create(session, activeSurfaceMap)
+                captureSession =
+                    ConfiguredCameraCaptureSession(
+                        session,
+                        GraphRequestProcessor.from(
+                            captureSequenceProcessorFactory.create(session, activeSurfaceMap)
+                        )
                     )
-                )
                 cameraCaptureSession = captureSession
             } else {
                 captureSession = cameraCaptureSession
@@ -223,7 +227,7 @@ internal class CaptureSessionState(
         synchronized(lock) {
             captureSession?.let {
                 Log.info {
-                    val duration = Timestamps.now() - sessionCreatingTimestamp!!
+                    val duration = Timestamps.now(timeSource) - sessionCreatingTimestamp!!
                     "Configured $this in ${duration.formatMs()}"
                 }
 
@@ -304,11 +308,12 @@ internal class CaptureSessionState(
     }
 
     private fun finalizeSession() {
-        val tokenList = synchronized(lock) {
-            val tokens = _surfaceTokenMap.values.toList()
-            _surfaceTokenMap.clear()
-            tokens
-        }
+        val tokenList =
+            synchronized(lock) {
+                val tokens = _surfaceTokenMap.values.toList()
+                _surfaceTokenMap.clear()
+                tokens
+            }
         tokenList.forEach { it.close() }
     }
 
@@ -324,7 +329,7 @@ internal class CaptureSessionState(
 
         if (captureSession != null && pendingOutputs != null && pendingSurfaces != null) {
             Debug.traceStart { "$this#finalizeOutputConfigurations" }
-            val finalizedStartTime = Timestamps.now()
+            val finalizedStartTime = Timestamps.now(timeSource)
             for ((streamId, outputConfig) in pendingOutputs) {
                 // TODO: Consider adding support for experimental libraries on older devices.
 
@@ -343,7 +348,7 @@ internal class CaptureSessionState(
                 if (state == State.CREATED) {
                     activeSurfaceMap.putAll(pendingSurfaces)
                     Log.info {
-                        val finalizationTime = Timestamps.now() - finalizedStartTime
+                        val finalizationTime = Timestamps.now(timeSource) - finalizedStartTime
                         "Finalized ${pendingOutputs.map { it.key }} for $this in " +
                             finalizationTime.formatMs()
                     }
@@ -373,7 +378,7 @@ internal class CaptureSessionState(
             }
 
             state = State.CREATING
-            sessionCreatingTimestamp = Timestamps.now()
+            sessionCreatingTimestamp = Timestamps.now(timeSource)
         }
 
         // Create the capture session and return a Map of StreamId -> OutputConfiguration for any
@@ -382,11 +387,10 @@ internal class CaptureSessionState(
             "Creating CameraCaptureSession from ${device?.cameraId} using $this with $surfaces"
         }
 
-        val deferred = Debug.trace(
-            "CameraDevice-${device?.cameraId?.value}#createCaptureSession"
-        ) {
-            captureSessionFactory.create(device!!, surfaces!!, this)
-        }
+        val deferred =
+            Debug.trace("CameraDevice-${device?.cameraId?.value}#createCaptureSession") {
+                captureSessionFactory.create(device!!, surfaces!!, this)
+            }
 
         synchronized(lock) {
             if (state == State.CLOSING || state == State.CLOSED) {
@@ -404,9 +408,7 @@ internal class CaptureSessionState(
                 }
                 pendingOutputMap = deferred
 
-                val availableDeferredSurfaces = _surfaceMap?.filter {
-                    deferred.containsKey(it.key)
-                }
+                val availableDeferredSurfaces = _surfaceMap?.filter { deferred.containsKey(it.key) }
 
                 if (availableDeferredSurfaces != null &&
                     availableDeferredSurfaces.size == deferred.size

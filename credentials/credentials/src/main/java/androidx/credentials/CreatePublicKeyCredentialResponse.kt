@@ -18,16 +18,14 @@ package androidx.credentials
 
 import android.os.Bundle
 import androidx.annotation.VisibleForTesting
+import androidx.credentials.internal.FrameworkClassParsingException
 
 /**
  * A response of a public key credential (passkey) flow.
  *
  * @property registrationResponseJson the public key credential registration response in JSON format
- * @throws NullPointerException If [registrationResponseJson] is null. This is handled by the Kotlin
- * runtime
+ * @throws NullPointerException If [registrationResponseJson] is null
  * @throws IllegalArgumentException If [registrationResponseJson] is blank
- *
- * @hide
  */
 class CreatePublicKeyCredentialResponse(
     val registrationResponseJson: String
@@ -52,6 +50,17 @@ class CreatePublicKeyCredentialResponse(
             val bundle = Bundle()
             bundle.putString(BUNDLE_KEY_REGISTRATION_RESPONSE_JSON, registrationResponseJson)
             return bundle
+        }
+
+        @JvmStatic
+        internal fun createFrom(data: Bundle): CreatePublicKeyCredentialResponse {
+            try {
+                val registrationResponseJson =
+                    data.getString(BUNDLE_KEY_REGISTRATION_RESPONSE_JSON)
+                return CreatePublicKeyCredentialResponse(registrationResponseJson!!)
+            } catch (e: Exception) {
+                throw FrameworkClassParsingException()
+            }
         }
     }
 }

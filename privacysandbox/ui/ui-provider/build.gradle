@@ -24,7 +24,15 @@ plugins {
 
 dependencies {
     api(libs.kotlinStdlib)
-    // Add dependencies here
+    implementation project(path: ':privacysandbox:ui:ui-core')
+    implementation project(path: ':annotation:annotation')
+    androidTestImplementation(libs.junit)
+    androidTestImplementation(libs.kotlinStdlib)
+    androidTestImplementation(libs.testExtJunit)
+    androidTestImplementation(libs.testCore)
+    androidTestImplementation(libs.testRunner)
+    androidTestImplementation(libs.testRules)
+    androidTestImplementation(libs.truth)
 }
 
 android {
@@ -34,7 +42,6 @@ android {
 androidx {
     name = "androidx.privacysandbox.ui:ui-provider"
     type = LibraryType.PUBLISHED_LIBRARY
-    mavenGroup = LibraryGroups.PRIVACYSANDBOX_UI
     inceptionYear = "2022"
     description = "lets an SdkRuntime aware SDK share UI with a client application."
 }

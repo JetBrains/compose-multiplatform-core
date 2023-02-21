@@ -23,7 +23,7 @@ import androidx.room.compiler.processing.XProcessingEnv
 import androidx.room.compiler.processing.XProcessingEnvConfig
 import androidx.room.compiler.processing.XType
 import androidx.room.compiler.processing.XTypeElement
-import androidx.room.compiler.processing.javac.kotlin.KmType
+import androidx.room.compiler.processing.javac.kotlin.KmTypeContainer
 import com.google.auto.common.GeneratedAnnotations
 import com.google.auto.common.MoreTypes
 import java.util.Locale
@@ -139,16 +139,25 @@ internal class JavacProcessingEnv(
             check(it is JavacType)
             it.typeMirror
         }.toTypedArray()
-        check(
-            types.all {
-                it is JavacType
-            }
-        )
         return wrap<JavacDeclaredType>(
             typeMirror = typeUtils.getDeclaredType(type.element, *args),
             // type elements cannot have nullability hence we don't synthesize anything here
             kotlinType = null,
             elementNullability = type.element.nullability
+        )
+    }
+
+    override fun getWildcardType(consumerSuper: XType?, producerExtends: XType?): XType {
+        check(consumerSuper == null || producerExtends == null) {
+            "Cannot supply both super and extends bounds."
+        }
+        return wrap(
+            typeMirror = typeUtils.getWildcardType(
+                (producerExtends as? JavacType)?.typeMirror,
+                (consumerSuper as? JavacType)?.typeMirror,
+            ),
+            kotlinType = null,
+            elementNullability = null
         )
     }
 
@@ -165,7 +174,7 @@ internal class JavacProcessingEnv(
      */
     inline fun <reified T : JavacType> wrap(
         typeMirror: TypeMirror,
-        kotlinType: KmType?,
+        kotlinType: KmTypeContainer?,
         elementNullability: XNullability?
     ): T {
         return when (typeMirror.kind) {
@@ -213,6 +222,29 @@ internal class JavacProcessingEnv(
                         JavacDeclaredType(
                             env = this,
                             typeMirror = MoreTypes.asDeclared(typeMirror)
+                        )
+                    }
+                }
+            TypeKind.TYPEVAR ->
+                when {
+                    kotlinType != null -> {
+                        JavacTypeVariableType(
+                            env = this,
+                            typeMirror = MoreTypes.asTypeVariable(typeMirror),
+                            kotlinType = kotlinType
+                        )
+                    }
+                    elementNullability != null -> {
+                        JavacTypeVariableType(
+                            env = this,
+                            typeMirror = MoreTypes.asTypeVariable(typeMirror),
+                            nullability = elementNullability
+                        )
+                    }
+                    else -> {
+                        JavacTypeVariableType(
+                            env = this,
+                            typeMirror = MoreTypes.asTypeVariable(typeMirror)
                         )
                     }
                 }

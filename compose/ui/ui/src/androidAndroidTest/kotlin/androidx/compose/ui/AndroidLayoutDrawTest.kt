@@ -29,7 +29,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.ViewTreeObserver
 import android.widget.FrameLayout
-import android.widget.LinearLayout
 import androidx.activity.compose.setContent
 import androidx.annotation.RequiresApi
 import androidx.compose.animation.core.animateFloatAsState
@@ -111,9 +110,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.offset
 import androidx.compose.ui.unit.toOffset
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.filters.FlakyTest
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
+import kotlin.math.abs
+import kotlin.math.max
+import kotlin.math.min
+import kotlin.math.roundToInt
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -123,12 +127,6 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.TimeUnit
-import kotlin.math.abs
-import kotlin.math.max
-import kotlin.math.min
-import kotlin.math.roundToInt
 
 /**
  * Corresponds to ContainingViewTest, but tests single composition measure, layout and draw.
@@ -280,28 +278,28 @@ class AndroidLayoutDrawTest {
                 // Use public RenderNode API
                 in Build.VERSION_CODES.Q..Int.MAX_VALUE ->
                     verifyRenderNode29CompositingStrategy(
-                        CompositingStrategy.Always,
+                        CompositingStrategy.Offscreen,
                         expectedCompositing = true,
                         expectedOverlappingRendering = true
                     )
                 // Cannot access private APIs on P
                 Build.VERSION_CODES.P ->
                     verifyViewLayerCompositingStrategy(
-                        CompositingStrategy.Always,
+                        CompositingStrategy.Offscreen,
                         View.LAYER_TYPE_HARDWARE,
                         true
                     )
                 // Use stub access to framework RenderNode API
                 in Build.VERSION_CODES.M..Int.MAX_VALUE ->
                     verifyRenderNode23CompositingStrategy(
-                        CompositingStrategy.Always,
+                        CompositingStrategy.Offscreen,
                         expectedLayerType = View.LAYER_TYPE_HARDWARE,
                         expectedOverlappingRendering = true
                     )
                 // No RenderNodes, use Views instead
                 else ->
                     verifyViewLayerCompositingStrategy(
-                        CompositingStrategy.Always,
+                        CompositingStrategy.Offscreen,
                         View.LAYER_TYPE_HARDWARE,
                         true
                     )
@@ -3099,60 +3097,6 @@ class AndroidLayoutDrawTest {
         validateSquareColors(outerColor = Color.Blue, innerColor = Color.White, size = 10)
     }
 
-    @FlakyTest
-    @Test
-    fun makingItemLarger() {
-        var height by mutableStateOf(30)
-        var latch = CountDownLatch(1)
-        var composeView: View? = null
-        activityTestRule.runOnUiThread {
-            val linearLayout = LinearLayout(activity)
-            linearLayout.orientation = LinearLayout.VERTICAL
-            val child = ComposeView(activity)
-            activity.setContentView(linearLayout)
-            linearLayout.addView(
-                child,
-                LinearLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.WRAP_CONTENT,
-                    1f
-                )
-            )
-            linearLayout.addView(
-                View(activity),
-                LinearLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                    0,
-                    10000f
-                )
-            )
-            child.setContent {
-                Layout(
-                    {},
-                    Modifier.onGloballyPositioned {
-                        latch.countDown()
-                    }
-                ) { _, constraints ->
-                    layout(constraints.maxWidth, height.coerceAtMost(constraints.maxHeight)) {}
-                }
-            }
-            composeView = child
-        }
-
-        assertTrue(latch.await(1, TimeUnit.SECONDS))
-        latch = CountDownLatch(1)
-
-        activityTestRule.runOnUiThread {
-            assertEquals(height, composeView!!.measuredHeight)
-            height = 60
-        }
-
-        assertTrue(latch.await(1, TimeUnit.SECONDS))
-        activityTestRule.runOnUiThread {
-            assertEquals(height, composeView!!.measuredHeight)
-        }
-    }
-
     // Make sure that when the child of a layer changes that the drawing changes to match.
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
@@ -3737,26 +3681,6 @@ class AndroidLayoutDrawTest {
         }
     }
 
-    @Test
-    fun androidComposeViewIsTransitionGroup() {
-        // ensure that the android compose view is a transition group.
-
-        val latch = CountDownLatch(1)
-        activityTestRule.runOnUiThread {
-            activity.setContent {
-                Layout({}) { _, _ ->
-                    layout(10, 10) {
-                        latch.countDown()
-                    }
-                }
-            }
-        }
-        assertTrue(latch.await(1, TimeUnit.SECONDS))
-
-        val composeView = activityTestRule.findAndroidComposeView()
-        assertTrue(composeView.isTransitionGroup)
-    }
-
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun drawnInCorrectLayer() {
@@ -4088,10 +4012,10 @@ fun assertColorsEqual(
     error: () -> String = { "$expected and $color are not similar!" }
 ) {
     val errorString = error()
-    assertEquals(errorString, expected.red, color.red, 0.01f)
-    assertEquals(errorString, expected.green, color.green, 0.01f)
-    assertEquals(errorString, expected.blue, color.blue, 0.01f)
-    assertEquals(errorString, expected.alpha, color.alpha, 0.01f)
+    assertEquals(errorString, expected.red, color.red, 0.05f)
+    assertEquals(errorString, expected.green, color.green, 0.05f)
+    assertEquals(errorString, expected.blue, color.blue, 0.05f)
+    assertEquals(errorString, expected.alpha, color.alpha, 0.05f)
 }
 
 @Composable

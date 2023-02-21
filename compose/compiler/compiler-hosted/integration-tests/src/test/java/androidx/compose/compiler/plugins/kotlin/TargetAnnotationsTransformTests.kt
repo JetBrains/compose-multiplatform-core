@@ -232,14 +232,9 @@ class TargetAnnotationsTransformTests : AbstractIrTransformTest() {
               traceEventStart(<>, %changed, -1, <>)
             }
             InlineRow({ %composer: Composer?, %changed: Int ->
-              %composer.startReplaceableGroup(<>)
-              sourceInformation(%composer, "C<Text("...>:Test.kt")
-              if (%changed and 0b1011 !== 0b0010 || !%composer.skipping) {
-                Text("test", %composer, 0b0110)
-              } else {
-                %composer.skipToGroupEnd()
-              }
-              %composer.endReplaceableGroup()
+              sourceInformationMarkerStart(%composer, <>, "C<Text("...>:Test.kt")
+              Text("test", %composer, 0b0110)
+              sourceInformationMarkerEnd(%composer)
             }, %composer, 0)
             if (isTraceInProgress()) {
               traceEventEnd()
@@ -518,6 +513,7 @@ class TargetAnnotationsTransformTests : AbstractIrTransformTest() {
         """
     )
 
+    @Test
     fun testLetIt() = verifyComposeIrTransform(
         """
         import androidx.compose.runtime.*
@@ -908,20 +904,15 @@ class TargetAnnotationsTransformTests : AbstractIrTransformTest() {
         @ComposableInferredTarget(scheme = "[androidx.compose.ui.UiComposable[androidx.compose.ui.UiComposable]]")
         fun LocalBox(modifier: Modifier?, content: @[ExtensionFunctionType] Function3<LocalBoxScope, Composer, Int, Unit>, %composer: Composer?, %changed: Int, %default: Int) {
           %composer.startReplaceableGroup(<>)
-          sourceInformation(%composer, "C(LocalBox)P(1)<Layout...>:Test.kt")
+          sourceInformation(%composer, "CC(LocalBox)P(1)<Layout...>:Test.kt")
           if (%default and 0b0001 !== 0) {
             modifier = Companion
           }
           val tmp0_measurePolicy = localBoxMeasurePolicy
           Layout({ %composer: Composer?, %changed: Int ->
-            %composer.startReplaceableGroup(<>)
-            sourceInformation(%composer, "C<conten...>:Test.kt")
-            if (%changed and 0b1011 !== 0b0010 || !%composer.skipping) {
-              content(LocalBoxScopeInstance, %composer, 0b0110 or 0b01110000 and %changed)
-            } else {
-              %composer.skipToGroupEnd()
-            }
-            %composer.endReplaceableGroup()
+            sourceInformationMarkerStart(%composer, <>, "C<conten...>:Test.kt")
+            content(LocalBoxScopeInstance, %composer, 0b0110 or 0b01110000 and %changed)
+            sourceInformationMarkerEnd(%composer)
           }, modifier, tmp0_measurePolicy, %composer, 0b000110000000 or 0b01110000 and %changed shl 0b0011, 0)
           %composer.endReplaceableGroup()
         }
@@ -989,14 +980,9 @@ class TargetAnnotationsTransformTests : AbstractIrTransformTest() {
               traceEventStart(<>, %changed, -1, <>)
             }
             Layout({ %composer: Composer?, %changed: Int ->
-              %composer.startReplaceableGroup(<>)
-              sourceInformation(%composer, "C:Test.kt")
-              if (%changed and 0b1011 !== 0b0010 || !%composer.skipping) {
-                Unit
-              } else {
-                %composer.skipToGroupEnd()
-              }
-              %composer.endReplaceableGroup()
+              sourceInformationMarkerStart(%composer, <>, "C:Test.kt")
+              Unit
+              sourceInformationMarkerEnd(%composer)
             }, null, class <no name provided> : MeasurePolicy {
               override fun measure(%this%Layout: MeasureScope, <anonymous parameter 0>: List<Measurable>, <anonymous parameter 1>: Constraints): MeasureResult {
                 return error("")
@@ -1073,7 +1059,7 @@ class TargetAnnotationsTransformTests : AbstractIrTransformTest() {
             }
             BasicText(AnnotatedString(
               text = "Some text"
-            ), null, null, null, <unsafe-coerce>(0), false, 0, 0, null, %composer, 0, 0b000111111110)
+            ), null, null, null, <unsafe-coerce>(0), false, 0, 0, null, %composer, 0b0110, 0b000111111110)
             if (isTraceInProgress()) {
               traceEventEnd()
             }

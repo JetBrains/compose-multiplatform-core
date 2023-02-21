@@ -16,7 +16,6 @@
 package androidx.health.connect.client.permission
 
 import androidx.health.connect.client.RECORD_CLASSES
-import androidx.health.connect.client.records.ExerciseRouteRecord
 import androidx.health.connect.client.records.Record
 import androidx.health.connect.client.records.StepsRecord
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -29,60 +28,58 @@ import org.junit.runner.RunWith
 class HealthPermissionTest {
 
     @Test
-    fun createReadPermission() {
-        val permission = HealthPermission.createReadPermission(StepsRecord::class)
+    fun createReadPermissionLegacy() {
+        val permission = HealthPermission.createReadPermissionLegacy(StepsRecord::class)
         assertThat(permission.accessType).isEqualTo(AccessTypes.READ)
         assertThat(permission.recordType).isEqualTo(StepsRecord::class)
     }
 
     @Test
-    fun createWritePermission() {
-        val permission = HealthPermission.createWritePermission(StepsRecord::class)
+    fun createWritePermissionLegacy() {
+        val permission = HealthPermission.createWritePermissionLegacy(StepsRecord::class)
         assertThat(permission.accessType).isEqualTo(AccessTypes.WRITE)
         assertThat(permission.recordType).isEqualTo(StepsRecord::class)
     }
 
     @Test
-    fun createReadPermissionInternal() {
-        val permission = HealthPermission.createReadPermissionInternal(StepsRecord::class)
+    fun createReadPermission() {
+        val permission = HealthPermission.getReadPermission(StepsRecord::class)
         assertThat(permission).isEqualTo(HealthPermission.READ_STEPS)
     }
 
     @Test
-    fun createReadPermissionInternal_everyRecord() {
-        RECORD_CLASSES.filterNot { it == ExerciseRouteRecord::class }
-            .forEach {
-                val permission = HealthPermission.createReadPermissionInternal(it)
-                assertThat(permission).isNotNull()
-            }
-    }
-
-    @Test
-    fun createReadPermissionInternal_invalidRecord_isNull() {
-        assertThrows(IllegalArgumentException::class.java) {
-            HealthPermission.createReadPermissionInternal(Record::class)
+    fun createReadPermission_everyRecord() {
+        RECORD_CLASSES.forEach {
+            val permission = HealthPermission.getReadPermission(it)
+            assertThat(permission).isNotNull()
         }
     }
 
     @Test
-    fun createWritePermissionInternal() {
-        val permission = HealthPermission.createWritePermissionInternal(StepsRecord::class)
+    fun createReadPermission_invalidRecord_isNull() {
+        assertThrows(IllegalArgumentException::class.java) {
+            HealthPermission.getReadPermission(Record::class)
+        }
+    }
+
+    @Test
+    fun createWritePermission() {
+        val permission = HealthPermission.getWritePermission(StepsRecord::class)
         assertThat(permission).isEqualTo(HealthPermission.WRITE_STEPS)
     }
 
     @Test
-    fun createWritePermissionInternal_everyRecord() {
-        RECORD_CLASSES.filterNot { it == ExerciseRouteRecord::class }
-            .forEach {
-                val permission = HealthPermission.createWritePermissionInternal(it)
-                assertThat(permission).isNotNull()
-            }
+    fun createWritePermission_everyRecord() {
+        RECORD_CLASSES.forEach {
+            val permission = HealthPermission.getWritePermission(it)
+            assertThat(permission).isNotNull()
+        }
     }
 
     @Test
-    fun createWritePermissionInternal_invalidRecord_isNull() {
+    fun createWritePermission_invalidRecord_isNull() {
         assertThrows(IllegalArgumentException::class.java) {
-            HealthPermission.createWritePermissionInternal(Record::class)
+            HealthPermission.getWritePermission(Record::class)
         }
     }
 }

@@ -25,11 +25,13 @@ import androidx.room.compiler.codegen.XPropertySpec
 import androidx.room.compiler.codegen.XTypeName
 import androidx.room.compiler.codegen.XTypeSpec
 import com.squareup.kotlinpoet.javapoet.JTypeSpec
+import javax.lang.model.element.Modifier
 
 internal class JavaTypeSpec(
     private val _className: XClassName?,
     internal val actual: JTypeSpec
 ) : JavaLang(), XTypeSpec {
+    override fun toString() = actual.toString()
 
     override val className: XClassName
         get() {
@@ -69,12 +71,18 @@ internal class JavaTypeSpec(
             actual.addType(typeSpec.actual)
         }
 
+        override fun setPrimaryConstructor(functionSpec: XFunSpec) = addFunction(functionSpec)
+
         override fun setVisibility(visibility: VisibilityModifier) {
             actual.addModifiers(visibility.toJavaVisibilityModifier())
         }
 
         override fun build(): XTypeSpec {
             return JavaTypeSpec(className, actual.build())
+        }
+
+        override fun addAbstractModifier(): XTypeSpec.Builder = apply {
+            actual.addModifiers(Modifier.ABSTRACT)
         }
     }
 }

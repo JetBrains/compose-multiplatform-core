@@ -34,8 +34,10 @@ dependencies {
     testImplementation(libs.testRules)
     testImplementation(libs.robolectric)
     testImplementation(libs.mockitoCore4)
+    testImplementation(libs.mockitoKotlin4)
     testImplementation(libs.truth)
     testImplementation(libs.junit)
+    testImplementation(libs.kotlinTest)
 }
 
 android {
@@ -49,15 +51,11 @@ android {
     // Use Robolectric 4.+
     testOptions.unitTests.includeAndroidResources = true
     namespace "androidx.wear.watchface.complications.datasource"
-    kotlinOptions {
-        freeCompilerArgs += ["-Xjvm-default=all"]
-    }
 }
 
 androidx {
     name = "Android Wear Complications Data Source"
     publish = Publish.SNAPSHOT_AND_RELEASE
-    mavenGroup = LibraryGroups.WEAR_WATCHFACE
     inceptionYear = "2020"
     description = "Android Wear Complications Data Source"
 }

@@ -110,7 +110,7 @@ class TraceInformationTest : AbstractIrTransformTest() {
             @ComposableInferredTarget(scheme = "[0[0]]")
             fun Wrapper(content: Function2<Composer, Int, Unit>, %composer: Composer?, %changed: Int) {
               %composer.startReplaceableGroup(<>)
-              sourceInformation(%composer, "C(Wrapper)<conten...>:Test.kt")
+              sourceInformation(%composer, "CC(Wrapper)<conten...>:Test.kt")
               content(%composer, 0b1110 and %changed)
               %composer.endReplaceableGroup()
             }
@@ -129,25 +129,20 @@ class TraceInformationTest : AbstractIrTransformTest() {
                 }
                 A(%composer, 0)
                 Wrapper({ %composer: Composer?, %changed: Int ->
-                  %composer.startReplaceableGroup(<>)
-                  sourceInformation(%composer, "C<A()>,<A()>:Test.kt")
-                  if (%changed and 0b1011 !== 0b0010 || !%composer.skipping) {
-                    A(%composer, 0)
-                    if (!condition) {
-                      %composer.endToMarker(tmp0_marker)
-                      if (isTraceInProgress()) {
-                        traceEventEnd()
-                      }
-                      %composer.endRestartGroup()?.updateScope { %composer: Composer?, %force: Int ->
-                        Test(condition, %composer, updateChangedFlags(%changed or 0b0001))
-                      }
-                      return
+                  sourceInformationMarkerStart(%composer, <>, "C<A()>,<A()>:Test.kt")
+                  A(%composer, 0)
+                  if (!condition) {
+                    %composer.endToMarker(tmp0_marker)
+                    if (isTraceInProgress()) {
+                      traceEventEnd()
                     }
-                    A(%composer, 0)
-                  } else {
-                    %composer.skipToGroupEnd()
+                    %composer.endRestartGroup()?.updateScope { %composer: Composer?, %force: Int ->
+                      Test(condition, %composer, updateChangedFlags(%changed or 0b0001))
+                    }
+                    return
                   }
-                  %composer.endReplaceableGroup()
+                  A(%composer, 0)
+                  sourceInformationMarkerEnd(%composer)
                 }, %composer, 0)
                 A(%composer, 0)
                 if (isTraceInProgress()) {

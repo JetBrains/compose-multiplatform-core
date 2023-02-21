@@ -22,6 +22,8 @@ import static android.view.ViewGroup.LayoutParams.WRAP_CONTENT;
 import static androidx.recyclerview.widget.LinearLayoutManager.HORIZONTAL;
 import static androidx.recyclerview.widget.LinearLayoutManager.VERTICAL;
 
+import static com.google.common.truth.Truth.assertThat;
+
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -1294,6 +1296,19 @@ public class LinearLayoutManagerTest extends BaseLinearLayoutManagerTest {
 
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.LOLLIPOP)
     @Test
+    public void onInitializeAccessibilityNodeInfo_classNameAdded()
+            throws Throwable {
+        setupByConfig(new Config(VERTICAL, false, false).adapter(new TestAdapter(0)), false);
+        final AccessibilityNodeInfoCompat nodeInfo = AccessibilityNodeInfoCompat.obtain();
+
+        mActivityRule.runOnUiThread(
+                () -> mRecyclerView.getLayoutManager().onInitializeAccessibilityNodeInfo(nodeInfo));
+
+        assertEquals(nodeInfo.getClassName(), "android.widget.ListView");
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.LOLLIPOP)
+    @Test
     public void onInitializeAccessibilityNodeInfo_addActionScrollToPosition_notAddedWithEmptyList()
             throws Throwable {
         setupByConfig(new Config(VERTICAL, false, false).adapter(new TestAdapter(0)), false);
@@ -1472,5 +1487,23 @@ public class LinearLayoutManagerTest extends BaseLinearLayoutManagerTest {
 
     private void assertFirstItemIsAtTop() {
         assertEquals(((TextView) mLayoutManager.getChildAt(0)).getText(), "Item (1)");
+    }
+
+    @Test
+    public void onInitializeAccessibilityNodeInfo_noAdapter() throws Throwable {
+        mRecyclerView = inflateWrappedRV();
+        mLayoutManager = new WrappedLinearLayoutManager(
+                getActivity(), LinearLayoutManager.VERTICAL, false);
+        mRecyclerView.setLayoutManager(mLayoutManager);
+
+        AccessibilityNodeInfoCompat nodeInfo = AccessibilityNodeInfoCompat.obtain();
+        mActivityRule.runOnUiThread(() -> {
+            mLayoutManager.onInitializeAccessibilityNodeInfo(mRecyclerView.mRecycler,
+                    mRecyclerView.mState, nodeInfo);
+        });
+
+        assertThat(nodeInfo.getActionList()).doesNotContain(
+                AccessibilityNodeInfoCompat.AccessibilityActionCompat.ACTION_SCROLL_TO_POSITION);
+
     }
 }

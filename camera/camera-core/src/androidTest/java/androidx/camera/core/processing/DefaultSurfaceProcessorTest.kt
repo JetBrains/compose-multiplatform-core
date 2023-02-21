@@ -22,10 +22,8 @@ import android.hardware.camera2.CameraDevice.TEMPLATE_PREVIEW
 import android.util.Size
 import android.view.Surface
 import androidx.camera.core.CameraEffect
-import androidx.camera.core.SurfaceOutput.GlTransformOptions.USE_SURFACE_TEXTURE_TRANSFORM
 import androidx.camera.core.SurfaceRequest
 import androidx.camera.core.impl.DeferrableSurface
-import androidx.camera.core.impl.ImageFormatConstants
 import androidx.camera.core.impl.utils.executor.CameraXExecutors
 import androidx.camera.testing.CameraUtil
 import androidx.camera.testing.HandlerUtil
@@ -304,7 +302,7 @@ class DefaultSurfaceProcessorTest {
     }
 
     private fun createInputSurfaceRequest(): SurfaceRequest {
-        return SurfaceRequest(Size(WIDTH, HEIGHT), fakeCamera, false) {}.apply {
+        return SurfaceRequest(Size(WIDTH, HEIGHT), fakeCamera) {}.apply {
             inputSurfaceRequestsToClose.add(this)
         }
     }
@@ -313,9 +311,7 @@ class DefaultSurfaceProcessorTest {
         SurfaceOutputImpl(
             surface,
             CameraEffect.PREVIEW,
-            ImageFormatConstants.INTERNAL_DEFINED_IMAGE_FORMAT_PRIVATE,
             Size(WIDTH, HEIGHT),
-            USE_SURFACE_TEXTURE_TRANSFORM,
             Size(WIDTH, HEIGHT),
             Rect(0, 0, WIDTH, HEIGHT),
             /*rotationDegrees=*/0,

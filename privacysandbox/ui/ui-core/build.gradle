@@ -24,17 +24,26 @@ plugins {
 
 dependencies {
     api(libs.kotlinStdlib)
-    // Add dependencies here
+    implementation 'androidx.annotation:annotation:1.5.0'
+    androidTestImplementation(libs.junit)
+    androidTestImplementation(libs.kotlinStdlib)
+    androidTestImplementation(libs.testExtJunit)
+    androidTestImplementation(libs.testCore)
+    androidTestImplementation(libs.testRunner)
+    androidTestImplementation(libs.testRules)
+    androidTestImplementation(libs.truth)
 }
 
 android {
     namespace "androidx.privacysandbox.ui.core"
+    buildFeatures {
+        aidl = true
+    }
 }
 
 androidx {
     name = "androidx.privacysandbox.ui:ui-core"
     type = LibraryType.PUBLISHED_LIBRARY
-    mavenGroup = LibraryGroups.PRIVACYSANDBOX_UI
     inceptionYear = "2022"
     description = "contains core definitions for the privacysandbox ui library."
 }

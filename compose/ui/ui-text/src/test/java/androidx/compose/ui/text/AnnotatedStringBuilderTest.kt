@@ -184,10 +184,10 @@ class AnnotatedStringBuilderTest {
         val text = "a"
         val annotatedString = AnnotatedString(
             text = text,
-            spanStyles = listOf(
+            spanStylesOrNull = listOf(
                 text.inclusiveRangeOf('a', 'a', item = SpanStyle(color = Color.Red))
             ),
-            paragraphStyles = listOf(
+            paragraphStylesOrNull = listOf(
                 text.inclusiveRangeOf('a', 'a', item = ParagraphStyle(lineHeight = 20.sp))
             ),
             annotations = listOf(
@@ -222,8 +222,8 @@ class AnnotatedStringBuilderTest {
         )
         val appendedAnnotatedString = AnnotatedString(
             text = appendedText,
-            spanStyles = appendedSpanStyles,
-            paragraphStyles = appendedParagraphStyles,
+            spanStylesOrNull = appendedSpanStyles,
+            paragraphStylesOrNull = appendedParagraphStyles,
             annotations = appendedAnnotations
         )
 
@@ -847,6 +847,35 @@ class AnnotatedStringBuilderTest {
         assertThat(stringAnnotations.first()).isEqualTo(
             Range(annotation, 0, text.length, tag)
         )
+    }
+
+    @Test
+    fun hasStringAnnotationTrue() {
+        val text = "Test"
+        val annotation = "Annotation"
+        val tag = "tag"
+        val buildResult = AnnotatedString.Builder().apply {
+            pushStringAnnotation(tag, annotation)
+            append(text)
+            pop()
+        }.toAnnotatedString()
+
+        assertThat(buildResult.hasStringAnnotations(tag, 0, text.length)).isTrue()
+    }
+
+    @Test
+    fun hasStringAnnotationFalse() {
+        val text = "Test"
+        val annotation = "Annotation"
+        val tag = "tag"
+        val buildResult = AnnotatedString.Builder().apply {
+            pushStringAnnotation(tag, annotation)
+            append(text)
+            pop()
+            append(text)
+        }.toAnnotatedString()
+
+        assertThat(buildResult.hasStringAnnotations(tag, text.length, buildResult.length)).isFalse()
     }
 
     @Test

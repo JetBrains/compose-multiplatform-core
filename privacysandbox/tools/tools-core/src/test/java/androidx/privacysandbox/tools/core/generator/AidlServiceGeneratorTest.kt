@@ -22,6 +22,7 @@ import androidx.privacysandbox.tools.core.model.Parameter
 import androidx.privacysandbox.tools.core.model.ParsedApi
 import androidx.privacysandbox.tools.core.model.Type
 import androidx.privacysandbox.tools.core.model.Types
+import androidx.privacysandbox.tools.core.model.Types.asNullable
 import androidx.privacysandbox.tools.testing.loadFilesFromDirectory
 import com.google.common.truth.Truth.assertThat
 import java.io.File
@@ -59,11 +60,23 @@ class AidlServiceGeneratorTest {
                             isSuspend = true,
                         ),
                         Method(
+                            name = "suspendMethodWithLists",
+                            parameters = listOf(Parameter("l", Types.list(Types.int))),
+                            returnType = Types.list(Types.string),
+                            isSuspend = true,
+                        ),
+                        Method(
+                            name = "suspendMethodWithNullables",
+                            parameters = listOf(Parameter("maybeInt", Types.int.asNullable())),
+                            returnType = Types.string.asNullable(),
+                            isSuspend = true,
+                        ),
+                        Method(
                             name = "methodWithoutReturnValue",
                             parameters = listOf(),
                             returnType = Types.unit,
                             isSuspend = false,
-                        )
+                        ),
                     )
                 )
             )
@@ -73,6 +86,7 @@ class AidlServiceGeneratorTest {
         assertThat(javaGeneratedSources.map { it.packageName to it.interfaceName })
             .containsExactly(
                 "com.mysdk" to "IMySdk",
+                "com.mysdk" to "IListStringTransactionCallback",
                 "com.mysdk" to "IStringTransactionCallback",
                 "com.mysdk" to "IUnitTransactionCallback",
                 "com.mysdk" to "ICancellationSignal",

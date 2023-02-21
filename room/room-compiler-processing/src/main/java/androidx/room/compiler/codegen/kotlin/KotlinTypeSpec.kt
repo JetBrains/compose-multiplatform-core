@@ -24,12 +24,14 @@ import androidx.room.compiler.codegen.XFunSpec
 import androidx.room.compiler.codegen.XPropertySpec
 import androidx.room.compiler.codegen.XTypeName
 import androidx.room.compiler.codegen.XTypeSpec
+import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.javapoet.KTypeSpec
 
 internal class KotlinTypeSpec(
     private val _className: XClassName?,
     internal val actual: KTypeSpec
 ) : KotlinLang(), XTypeSpec {
+    override fun toString() = actual.toString()
 
     override val className: XClassName
         get() {
@@ -69,8 +71,20 @@ internal class KotlinTypeSpec(
             actual.addType(typeSpec.actual)
         }
 
+        override fun setPrimaryConstructor(functionSpec: XFunSpec) = apply {
+            require(functionSpec is KotlinFunSpec)
+            actual.primaryConstructor(functionSpec.actual)
+            functionSpec.actual.delegateConstructorArguments.forEach {
+                actual.addSuperclassConstructorParameter(it)
+            }
+        }
+
         override fun setVisibility(visibility: VisibilityModifier) {
             actual.addModifiers(visibility.toKotlinVisibilityModifier())
+        }
+
+        override fun addAbstractModifier(): XTypeSpec.Builder = apply {
+            actual.addModifiers(KModifier.ABSTRACT)
         }
 
         override fun build(): XTypeSpec {

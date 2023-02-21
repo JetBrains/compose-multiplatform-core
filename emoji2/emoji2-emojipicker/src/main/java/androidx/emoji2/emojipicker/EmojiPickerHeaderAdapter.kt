@@ -17,59 +17,65 @@
 package androidx.emoji2.emojipicker
 
 import android.content.Context
-import android.content.res.TypedArray
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
+import android.view.accessibility.AccessibilityEvent
 import android.widget.ImageView
-import androidx.annotation.DrawableRes
+import androidx.core.view.ViewCompat
 import androidx.recyclerview.widget.RecyclerView.Adapter
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
 
 /** RecyclerView adapter for emoji header.  */
 internal class EmojiPickerHeaderAdapter(
-    context: Context
+    context: Context,
+    private val emojiPickerItems: EmojiPickerItems,
+    private val onHeaderIconClicked: (Int) -> Unit,
 ) : Adapter<ViewHolder>() {
-    @DrawableRes
-    private val categoryIconIds: IntArray
-    private val layoutInflater: LayoutInflater
-    private val context: Context
+    private val layoutInflater: LayoutInflater = LayoutInflater.from(context)
 
-    init {
-        this.context = context
-        this.categoryIconIds = getEmojiCategoryIconIds(context)
-        layoutInflater = LayoutInflater.from(context)
-    }
+    var selectedGroupIndex: Int = 0
+        set(value) {
+            if (value == field) return
+            notifyItemChanged(field)
+            notifyItemChanged(value)
+            field = value
+        }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         return object : ViewHolder(
             layoutInflater.inflate(
                 R.layout.header_icon_holder, parent,
-                /* attachToRoot= */ false
+                /* attachToRoot = */ false
             )
         ) {}
     }
 
     override fun onBindViewHolder(viewHolder: ViewHolder, i: Int) {
-        val headerIconView: ImageView =
-            viewHolder.itemView.findViewById(R.id.emoji_picker_header_icon)
-        headerIconView.setImageDrawable(context.getDrawable(categoryIconIds[i]))
+        val isItemSelected = i == selectedGroupIndex
+        val headerIcon = ViewCompat.requireViewById<ImageView>(
+            viewHolder.itemView,
+            R.id.emoji_picker_header_icon
+        ).apply {
+            setImageDrawable(context.getDrawable(emojiPickerItems.getHeaderIconId(i)))
+            setOnClickListener { onHeaderIconClicked(i) }
+            isSelected = isItemSelected
+            contentDescription = emojiPickerItems.getHeaderIconDescription(i)
+        }
+        if (isItemSelected) {
+            headerIcon.post {
+                headerIcon.sendAccessibilityEvent(AccessibilityEvent.TYPE_VIEW_HOVER_ENTER)
+            }
+        }
+
+        ViewCompat.requireViewById<View>(viewHolder.itemView, R.id.emoji_picker_header_underline)
+            .apply {
+                visibility = if (isItemSelected) View.VISIBLE else View.GONE
+                isSelected = isItemSelected
+            }
     }
 
     override fun getItemCount(): Int {
-        return categoryIconIds.size
-    }
-
-    @DrawableRes
-    private fun getEmojiCategoryIconIds(
-        context: Context
-    ): IntArray {
-        val typedArray: TypedArray =
-            context.resources.obtainTypedArray(R.array.emoji_categories_icons)
-        @DrawableRes val iconIds = IntArray(typedArray.length())
-        for (i in 0 until typedArray.length()) {
-            iconIds[i] = typedArray.getResourceId(i, 0)
-        }
-        typedArray.recycle()
-        return iconIds
+        return emojiPickerItems.numGroups
     }
 }

@@ -27,10 +27,10 @@ import androidx.room.compiler.codegen.XPropertySpec
 import androidx.room.compiler.codegen.XTypeName
 import androidx.room.compiler.codegen.XTypeSpec
 import androidx.room.compiler.codegen.XTypeSpec.Builder.Companion.addOriginatingElement
-import androidx.room.compiler.codegen.asClassName
 import androidx.room.compiler.processing.XElement
 import androidx.room.compiler.processing.XMethodElement
 import androidx.room.compiler.processing.XType
+import androidx.room.ext.CommonTypeNames
 import androidx.room.ext.RoomMemberNames
 import androidx.room.ext.RoomTypeNames
 import androidx.room.ext.RoomTypeNames.DELETE_OR_UPDATE_ADAPTER
@@ -58,8 +58,6 @@ import androidx.room.vo.TransactionMethod
 import androidx.room.vo.UpdateMethod
 import androidx.room.vo.UpsertionMethod
 import androidx.room.vo.WriteQueryMethod
-import java.util.Arrays
-import java.util.Collections
 import java.util.Locale
 
 /**
@@ -126,7 +124,13 @@ class DaoWriter(
 
         builder.apply {
             addOriginatingElement(dbElement)
-            setVisibility(VisibilityModifier.PUBLIC)
+            setVisibility(
+                if (dao.element.isInternal()) {
+                    VisibilityModifier.INTERNAL
+                } else {
+                    VisibilityModifier.PUBLIC
+                }
+            )
             if (dao.element.isInterface()) {
                 addSuperinterface(dao.typeName)
             } else {
@@ -134,7 +138,7 @@ class DaoWriter(
             }
             addProperty(dbProperty)
 
-            addFunction(
+            setPrimaryConstructor(
                 createConstructor(
                     shortcutMethods,
                     dao.constructorParamType != null
@@ -191,7 +195,7 @@ class DaoWriter(
             if (requiredTypeConverters.isEmpty()) {
                 when (language) {
                     CodeLanguage.JAVA ->
-                        addStatement("return %T.emptyList()", Collections::class.asClassName())
+                        addStatement("return %T.emptyList()", CommonTypeNames.COLLECTIONS)
                     CodeLanguage.KOTLIN ->
                         addStatement("return emptyList()")
                 }
@@ -203,7 +207,7 @@ class DaoWriter(
                 when (language) {
                     CodeLanguage.JAVA ->
                         addStatement("return %T.asList($placeholders)",
-                            Arrays::class.asClassName(),
+                            CommonTypeNames.ARRAYS,
                             *requiredTypeConvertersLiterals
                         )
                     CodeLanguage.KOTLIN ->
@@ -227,8 +231,8 @@ class DaoWriter(
             },
         ).apply {
             returns(
-                List::class.asClassName().parametrizedBy(
-                    Class::class.asClassName().parametrizedBy(XTypeName.ANY_WILDCARD)
+                CommonTypeNames.LIST.parametrizedBy(
+                    CommonTypeNames.JAVA_CLASS.parametrizedBy(XTypeName.ANY_WILDCARD)
                 )
             )
             addCode(body)
@@ -698,7 +702,7 @@ class DaoWriter(
     }
 
     class PreparedStatementProperty(val method: QueryMethod) : SharedPropertySpec(
-        baseName = "preparedStmtOf${method.element.jvmName.capitalize(Locale.US)}",
+        baseName = "preparedStmtOf${method.element.name.capitalize(Locale.US)}",
         type = SHARED_SQLITE_STMT
     ) {
         override fun prepare(writer: TypeWriter, builder: XPropertySpec.Builder) {

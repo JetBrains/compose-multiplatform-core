@@ -39,8 +39,8 @@ import java.io.File;
 @LargeTest
 public class ProcessGlobalConfigActivityTestAppTest {
     @Rule
-    public ActivityScenarioRule<MainActivity> mRule =
-            new ActivityScenarioRule<>(MainActivity.class);
+    public ActivityScenarioRule<ProcessGlobalConfigActivity> mRule =
+            new ActivityScenarioRule<>(ProcessGlobalConfigActivity.class);
 
     @Before
     public void setUp() {
@@ -52,15 +52,33 @@ public class ProcessGlobalConfigActivityTestAppTest {
     @Test
     public void testSetDataDirectorySuffix() throws Throwable {
         final String dataDirPrefix = "app_webview_";
-        final String dataDirSuffix = "per_process_webview_data_0";
-
-        WebkitTestHelpers.clickMenuListItemWithString(
-                R.string.process_global_config_activity_title);
-        Thread.sleep(1000);
-
+        final String dataDirSuffix = "per_process_webview_data_test";
         File file = new File(ContextCompat.getDataDir(ApplicationProvider.getApplicationContext()),
                 dataDirPrefix + dataDirSuffix);
 
+        // Ensures WebView directory created during earlier tests runs are purged.
+        deleteDirectory(file);
+        // This should ideally be an assumption, but we want a stronger signal to ensure the test
+        // does not silently stop working.
+        if (file.exists()) {
+            throw new RuntimeException("WebView Directory exists before test despite attempt to "
+                    + "delete it");
+        }
+        WebkitTestHelpers.clickMenuListItemWithString(
+                R.string.data_directory_suffix_activity_title);
+        // We need to wait for the WebView to finish loading on a different process.
+        Thread.sleep(5000);
+
         assertTrue(file.exists());
+    }
+
+    private static boolean deleteDirectory(File directoryToBeDeleted) {
+        File[] allContents = directoryToBeDeleted.listFiles();
+        if (allContents != null) {
+            for (File file : allContents) {
+                deleteDirectory(file);
+            }
+        }
+        return directoryToBeDeleted.delete();
     }
 }

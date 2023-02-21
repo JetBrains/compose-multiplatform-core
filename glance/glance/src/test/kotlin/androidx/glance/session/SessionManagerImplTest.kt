@@ -19,7 +19,9 @@
 package androidx.glance.session
 
 import android.content.Context
+import androidx.compose.runtime.Composable
 import androidx.glance.EmittableWithChildren
+import androidx.glance.GlanceComposable
 import androidx.test.core.app.ApplicationProvider
 import androidx.work.CoroutineWorker
 import androidx.work.WorkManager
@@ -36,6 +38,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 class SessionManagerImplTest {
     private val key = "KEY"
@@ -44,11 +47,16 @@ class SessionManagerImplTest {
             TODO("Not yet implemented")
         }
 
-        override suspend fun provideGlance(context: Context, setContent: SetContentFn) {
+        override fun provideGlance(
+            context: Context
+        ): @Composable @GlanceComposable () -> Unit {
             TODO("Not yet implemented")
         }
 
-        override suspend fun processEmittableTree(context: Context, root: EmittableWithChildren) {
+        override suspend fun processEmittableTree(
+            context: Context,
+            root: EmittableWithChildren
+        ): Boolean {
             TODO("Not yet implemented")
         }
 

@@ -16,6 +16,7 @@
 
 package androidx.privacysandbox.tools.apicompiler
 
+import androidx.privacysandbox.tools.testing.allTestLibraryStubs
 import androidx.privacysandbox.tools.testing.CompilationTestHelper
 import androidx.room.compiler.processing.util.Source
 import androidx.room.compiler.processing.util.compiler.TestCompilationResult
@@ -28,7 +29,7 @@ import androidx.room.compiler.processing.util.compiler.TestCompilationResult
  */
 fun compileWithPrivacySandboxKspCompiler(
     sources: List<Source>,
-    platformStubs: PlatformStubs = PlatformStubs.API_33,
+    addLibraryStubs: Boolean = true,
     extraProcessorOptions: Map<String, String> = mapOf(),
 ): TestCompilationResult {
     val provider = PrivacySandboxKspCompiler.Provider()
@@ -41,118 +42,9 @@ fun compileWithPrivacySandboxKspCompiler(
     }
 
     return CompilationTestHelper.compileAll(
-        sources + platformStubs.sources,
+        if (addLibraryStubs) sources + allTestLibraryStubs
+        else sources,
         symbolProcessorProviders = listOf(provider),
         processorOptions = processorOptions,
     )
 }
-
-enum class PlatformStubs(val sources: List<Source>) {
-    API_33(syntheticApi33PrivacySandboxStubs),
-    SDK_RUNTIME_LIBRARY(syntheticSdkRuntimeLibraryStubs),
-}
-
-// SDK Runtime library is not available in AndroidX prebuilts, so while that's the case we use fake
-// stubs to run our compilation tests.
-private val syntheticSdkRuntimeLibraryStubs = listOf(
-    Source.kotlin(
-        "androidx/privacysandbox/sdkruntime/core/SandboxedSdkCompat.kt", """
-        |package androidx.privacysandbox.sdkruntime.core
-        |
-        |import android.os.IBinder
-        |
-        |@Suppress("UNUSED_PARAMETER")
-        |sealed class SandboxedSdkCompat {
-        |    abstract fun getInterface(): IBinder?
-        |
-        |    companion object {
-        |        fun create(binder: IBinder): SandboxedSdkCompat = throw RuntimeException("Stub!")
-        |    }
-        |}
-        |""".trimMargin()
-    ),
-    Source.kotlin(
-        "androidx/privacysandbox/sdkruntime/core/SandboxedSdkProviderCompat.kt", """
-        |package androidx.privacysandbox.sdkruntime.core
-        |
-        |import android.content.Context
-        |import android.os.Bundle
-        |import android.view.View
-        |
-        |@Suppress("UNUSED_PARAMETER")
-        |abstract class SandboxedSdkProviderCompat {
-        |   var context: Context? = null
-        |       private set
-        |   fun attachContext(context: Context): Unit = throw RuntimeException("Stub!")
-        |
-        |   abstract fun onLoadSdk(params: Bundle): SandboxedSdkCompat
-        |
-        |   open fun beforeUnloadSdk() {}
-        |
-        |   abstract fun getView(
-        |       windowContext: Context,
-        |       params: Bundle,
-        |       width: Int,
-        |       height: Int
-        |   ): View
-        |}
-        |""".trimMargin()
-    )
-)
-
-// PrivacySandbox platform APIs are not available in AndroidX prebuilts nor are they stable, so
-// while that's the case we use fake stubs to run our compilation tests.
-val syntheticApi33PrivacySandboxStubs = listOf(
-    Source.java(
-        "android.app.sdksandbox.SandboxedSdk", """
-        |package android.app.sdksandbox;
-        |
-        |import android.os.IBinder;
-        |
-        |public final class SandboxedSdk {
-        |    public SandboxedSdk(IBinder sdkInterface) {}
-        |    public IBinder getInterface() { throw new RuntimeException("Stub!"); }
-        |}
-        |""".trimMargin()
-    ),
-    Source.java(
-        "android.app.sdksandbox.SandboxedSdkProvider", """
-        |package android.app.sdksandbox;
-        |
-        |import android.content.Context;
-        |import android.os.Bundle;
-        |import android.view.View;
-        |
-        |public abstract class SandboxedSdkProvider {
-        |    public final void attachContext(Context context) {
-        |        throw new RuntimeException("Stub!");
-        |    }
-        |    public final Context getContext() {
-        |        throw new RuntimeException("Stub!");
-        |    }
-        |    public abstract SandboxedSdk onLoadSdk(Bundle params)
-        |        throws LoadSdkException;
-        |
-        |    public void beforeUnloadSdk() {}
-        |
-        |    public abstract View getView(
-        |        Context windowContext, Bundle params, int width, int height);
-        |}
-        |""".trimMargin()
-    ),
-    Source.java(
-        "android.app.sdksandbox.LoadSdkException", """
-        |package android.app.sdksandbox;
-        |
-        |@SuppressWarnings("serial")
-        |public final class LoadSdkException extends Exception {}
-        |""".trimMargin()
-    ),
-    Source.java(
-        "android.app.sdksandbox.SandboxedSdkContext", """
-        |package android.app.sdksandbox;
-        |
-        |public final class SandboxedSdkContext {}
-        |""".trimMargin()
-    ),
-)

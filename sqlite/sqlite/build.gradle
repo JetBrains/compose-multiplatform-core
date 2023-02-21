@@ -33,15 +33,11 @@ dependencies {
 
 android {
     namespace "androidx.sqlite.db"
-    kotlinOptions {
-        freeCompilerArgs += ["-Xjvm-default=all"]
-    }
 }
 
 androidx {
     name = "Android DB"
     publish = Publish.SNAPSHOT_AND_RELEASE
-    mavenGroup = LibraryGroups.SQLITE
     inceptionYear = "2017"
     description = "Android DB"
 }

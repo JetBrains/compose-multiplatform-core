@@ -24,15 +24,17 @@ plugins {
 
 dependencies {
     api(libs.kotlinStdlib)
+    implementation(libs.constraintLayout)
     implementation(libs.kotlinCoroutinesCore)
     implementation("androidx.core:core-ktx:1.8.0")
     implementation project(path: ':emoji2:emoji2')
     implementation project(path: ':core:core')
-    implementation 'androidx.recyclerview:recyclerview:1.2.1'
+    implementation(libs.kotlinCoroutinesGuava)
     implementation 'androidx.appcompat:appcompat:1.5.1'
-    implementation 'androidx.tracing:tracing-ktx:1.0.0'
-    implementation 'androidx.test.ext:junit-ktx:1.1.3'
+    implementation 'androidx.recyclerview:recyclerview:1.2.1'
 
+    androidTestImplementation(libs.bundles.espressoContrib, excludes.espresso)
+    androidTestImplementation(libs.espressoCore, excludes.espresso)
     androidTestImplementation(libs.testCore)
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.testRunner)
@@ -59,7 +61,7 @@ android {
 androidx {
     name = "androidx.emoji2:emoji2-emojipicker"
     type = LibraryType.PUBLISHED_LIBRARY
-    mavenGroup = LibraryGroups.EMOJI2
+    mavenVersion = LibraryVersions.EMOJI2_QUARANTINE
     inceptionYear = "2022"
     description = "This library provides the latest emoji support and emoji picker UI to input " +
             "emoji in current and older devices"

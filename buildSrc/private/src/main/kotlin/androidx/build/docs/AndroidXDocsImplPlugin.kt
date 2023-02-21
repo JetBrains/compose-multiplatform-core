@@ -34,6 +34,8 @@ import com.android.build.gradle.LibraryPlugin
 import com.google.gson.GsonBuilder
 import java.io.File
 import java.io.FileNotFoundException
+import java.time.Duration
+import java.time.LocalDateTime
 import javax.inject.Inject
 import org.gradle.api.DefaultTask
 import org.gradle.api.Plugin
@@ -54,9 +56,10 @@ import org.gradle.api.file.FileSystemOperations
 import org.gradle.api.file.RegularFile
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.plugins.JavaBasePlugin
-import org.gradle.api.provider.ListProperty
+import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.CacheableTask
+import org.gradle.api.tasks.Classpath
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.OutputFile
@@ -435,7 +438,12 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
             task.destinationFile.set(getMetadataRegularFile(project))
         }
 
+        val metricsDirectory = project.buildDir
+        val metricsFile = File(metricsDirectory, "build-metrics.json")
+        val projectName = project.name
+
         val dackkaTask = project.tasks.register("docs", DackkaTask::class.java) { task ->
+            var taskStartTime: LocalDateTime? = null
             task.apply {
                 dependsOn(unzipJvmSourcesTask)
                 dependsOn(unzipSamplesTask)
@@ -458,11 +466,24 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
                 excludedPackagesForJava = hiddenPackagesJava
                 excludedPackagesForKotlin = emptySet()
                 libraryMetadataFile.set(getMetadataRegularFile(project))
-                showLibraryMetadata = true
                 projectStructureMetadataFile = mergedProjectMetadata
                 // See go/dackka-source-link for details on this link.
                 baseSourceLink = "https://cs.android.com/search?" +
                     "q=file:%s+class:%s&ss=androidx/platform/frameworks/support"
+                annotationsNotToDisplay = hiddenAnnotations
+                annotationsNotToDisplayJava = hiddenAnnotationsJava
+                annotationsNotToDisplayKotlin = hiddenAnnotationsKotlin
+                task.doFirst {
+                    taskStartTime = LocalDateTime.now()
+                }
+                task.doLast {
+                    val taskEndTime = LocalDateTime.now()
+                    val duration = Duration.between(taskStartTime, taskEndTime).toMillis()
+                    metricsDirectory.mkdirs()
+                    metricsFile.writeText(
+                        "{ \"${projectName}_docs_execution_duration\": $duration }"
+                    )
+                }
             }
         }
 
@@ -596,6 +617,36 @@ private val hiddenPackagesJava = setOf(
     "androidx.*glance.*",
 )
 
+// List of annotations which should not be displayed in the docs
+private val hiddenAnnotations: List<String> = listOf(
+    // This information is compose runtime implementation details; not useful for most, those who
+    // would want it should look at source
+    "androidx.compose.runtime.Stable",
+    "androidx.compose.runtime.Immutable",
+    "androidx.compose.runtime.ReadOnlyComposable",
+    // This opt-in requirement is non-propagating so developers don't need to know about it
+    // https://kotlinlang.org/docs/opt-in-requirements.html#non-propagating-opt-in
+    "androidx.annotation.OptIn",
+    "kotlin.OptIn",
+    // This annotation is used mostly in paging, and was removed at the request of the paging team
+    "androidx.annotation.CheckResult",
+    // This annotation is generated upstream. Dokka uses it for signature serialization. It doesn't
+    // seem useful for developers
+    "kotlin.ParameterName",
+    // This annotations is not useful for developers but right now is @ShowAnnotation?
+    "kotlin.js.JsName",
+    // This annotation is intended to target the compiler and is general not useful for devs.
+    "java.lang.Override"
+)
+
+// Annotations which should not be displayed in the Kotlin docs, in addition to hiddenAnnotations
+private val hiddenAnnotationsKotlin: List<String> = listOf(
+    "kotlin.ExtensionFunctionType"
+)
+
+// Annotations which should not be displayed in the Java docs, in addition to hiddenAnnotations
+private val hiddenAnnotationsJava: List<String> = emptyList()
+
 /**
  * Data class that matches JSON structure of kotlin source set metadata
  */
@@ -612,8 +663,8 @@ data class SourceSetMetadata(
 @CacheableTask
 abstract class UnzipMultiplatformSourcesTask() : DefaultTask() {
 
-    @get:InputFiles @get:PathSensitive(PathSensitivity.RELATIVE)
-    abstract val inputJars: ListProperty<File>
+    @get:Classpath
+    abstract val inputJars: Property<FileCollection>
 
     @OutputDirectory
     lateinit var metadataOutput: File

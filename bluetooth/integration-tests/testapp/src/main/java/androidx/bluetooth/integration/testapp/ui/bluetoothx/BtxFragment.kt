@@ -16,23 +16,44 @@
 
 package androidx.bluetooth.integration.testapp.ui.bluetoothx
 
+import android.annotation.SuppressLint
+import android.bluetooth.le.AdvertiseData
+import android.bluetooth.le.AdvertiseSettings
+import android.bluetooth.le.ScanResult
+import android.bluetooth.le.ScanSettings
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 
-import androidx.bluetooth.core.BluetoothManager
 import androidx.bluetooth.integration.testapp.R
 import androidx.bluetooth.integration.testapp.databinding.FragmentBtxBinding
+import androidx.bluetooth.integration.testapp.experimental.AdvertiseResult
+import androidx.bluetooth.integration.testapp.experimental.BluetoothLe
+import androidx.bluetooth.integration.testapp.experimental.GattServerCallback
+import androidx.bluetooth.integration.testapp.ui.common.ScanResultAdapter
+import androidx.bluetooth.integration.testapp.ui.framework.FwkFragment
 import androidx.fragment.app.Fragment
-import androidx.navigation.fragment.findNavController
+import androidx.lifecycle.ViewModelProvider
+
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 
 class BtxFragment : Fragment() {
 
     companion object {
         const val TAG = "BtxFragment"
     }
+
+    private var scanResultAdapter: ScanResultAdapter? = null
+
+    private lateinit var bluetoothLe: BluetoothLe
+
+    private lateinit var btxViewModel: BtxViewModel
 
     private var _binding: FragmentBtxBinding? = null
 
@@ -44,6 +65,12 @@ class BtxFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
+        Log.d(
+            TAG, "onCreateView() called with: inflater = $inflater, " +
+                "container = $container, savedInstanceState = $savedInstanceState"
+        )
+        btxViewModel = ViewModelProvider(this).get(BtxViewModel::class.java)
+
         _binding = FragmentBtxBinding.inflate(inflater, container, false)
         return binding.root
     }
@@ -51,39 +78,223 @@ class BtxFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        binding.buttonPrevious.setOnClickListener {
-            findNavController().navigate(R.id.action_BtxFragment_to_FwkFragment)
-        }
+        bluetoothLe = BluetoothLe(requireContext())
+
+        scanResultAdapter = ScanResultAdapter { scanResult -> scanResultOnClick(scanResult) }
+        binding.recyclerView.adapter = scanResultAdapter
 
         binding.buttonScan.setOnClickListener {
-            scan()
+            if (scanJob?.isActive == true) {
+                scanJob?.cancel()
+                binding.buttonScan.text = getString(R.string.scan_using_btx)
+            } else {
+                startScan()
+            }
+        }
+
+        binding.switchAdvertise.setOnCheckedChangeListener { _, isChecked ->
+            if (isChecked) startAdvertise()
+            else advertiseJob?.cancel()
+        }
+
+        binding.switchGattServer.setOnCheckedChangeListener { _, isChecked ->
+            if (isChecked) openGattServer()
+            else gattServerJob?.cancel()
         }
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
+        scanJob?.cancel()
+        advertiseJob?.cancel()
+        gattServerJob?.cancel()
     }
 
-    private fun scan() {
-        Log.d(TAG, "scan() called")
+    private val scanScope = CoroutineScope(Dispatchers.Main + Job())
+    private var scanJob: Job? = null
 
-        val bluetoothManager = BluetoothManager(requireContext())
+    private fun startScan() {
+        Log.d(TAG, "startScan() called")
 
-        @Suppress("UNUSED_VARIABLE")
-        // TODO(ofy) Use below
-        val bluetoothAdapter = bluetoothManager.getAdapter()
+        val scanSettings = ScanSettings.Builder()
+            .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
+            .build()
 
-        // TODO(ofy) Convert to BluetoothX classes
-//        val bleScanner = bluetoothAdapter?.bluetoothLeScanner
-//
-//        val scanSettings = ScanSettings.Builder()
-//            .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
-//            .build()
-//
-//        bleScanner?.startScan(null, scanSettings, scanCallback)
-//
-//        Toast.makeText(context, getString(R.string.scan_start_message), Toast.LENGTH_LONG)
-//            .show()
+        scanJob = scanScope.launch {
+            Toast.makeText(context, getString(R.string.scan_start_message), Toast.LENGTH_SHORT)
+                .show()
+
+            binding.buttonScan.text = getString(R.string.stop_scanning)
+
+            bluetoothLe.scan(scanSettings)
+                .collect {
+                    Log.d(TAG, "ScanResult collected: $it")
+
+                    btxViewModel.scanResults[it.device.address] = it
+                    scanResultAdapter?.submitList(btxViewModel.scanResults.values.toMutableList())
+                    scanResultAdapter?.notifyItemInserted(btxViewModel.scanResults.size)
+                }
+        }
+    }
+
+    private fun scanResultOnClick(scanResult: ScanResult) {
+        Log.d(TAG, "scanResultOnClick() called with: scanResult = $scanResult")
+    }
+
+    private val advertiseScope = CoroutineScope(Dispatchers.Main + Job())
+    private var advertiseJob: Job? = null
+
+    // Permissions are handled by MainActivity requestBluetoothPermissions
+    @SuppressLint("MissingPermission")
+    private fun startAdvertise() {
+        Log.d(TAG, "startAdvertise() called")
+
+        val advertiseSettings = AdvertiseSettings.Builder()
+            .setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_LOW_LATENCY)
+            .setTimeout(0)
+            .build()
+
+        val advertiseData = AdvertiseData.Builder()
+            .addServiceUuid(FwkFragment.ServiceUUID)
+            .setIncludeDeviceName(true)
+            .build()
+
+        advertiseJob = advertiseScope.launch {
+            bluetoothLe.advertise(advertiseSettings, advertiseData)
+                .collect {
+                    Log.d(TAG, "advertiseResult received: $it")
+
+                    when (it) {
+                        AdvertiseResult.ADVERTISE_STARTED -> {
+                            Toast.makeText(
+                                context,
+                                getString(R.string.advertise_start_message), Toast.LENGTH_SHORT
+                            )
+                                .show()
+                        }
+                        AdvertiseResult.ADVERTISE_FAILED_ALREADY_STARTED -> TODO()
+                        AdvertiseResult.ADVERTISE_FAILED_DATA_TOO_LARGE -> TODO()
+                        AdvertiseResult.ADVERTISE_FAILED_FEATURE_UNSUPPORTED -> TODO()
+                        AdvertiseResult.ADVERTISE_FAILED_INTERNAL_ERROR -> TODO()
+                        AdvertiseResult.ADVERTISE_FAILED_TOO_MANY_ADVERTISERS -> TODO()
+                    }
+                }
+        }
+    }
+
+    private val gattServerScope = CoroutineScope(Dispatchers.Main + Job())
+    private var gattServerJob: Job? = null
+
+    // Permissions are handled by MainActivity requestBluetoothPermissions
+    @SuppressLint("MissingPermission")
+    private fun openGattServer() {
+        Log.d(TAG, "openGattServer() called")
+
+        gattServerJob = gattServerScope.launch {
+            bluetoothLe.gattServer().collect { gattServerCallback ->
+                when (gattServerCallback) {
+                    is GattServerCallback.OnCharacteristicReadRequest -> {
+                        val onCharacteristicReadRequest:
+                            GattServerCallback.OnCharacteristicReadRequest = gattServerCallback
+                        Log.d(
+                            TAG,
+                            "openGattServer() called with: " +
+                                "onCharacteristicReadRequest = $onCharacteristicReadRequest"
+                        )
+                    }
+                    is GattServerCallback.OnCharacteristicWriteRequest -> {
+                        val onCharacteristicWriteRequest:
+                            GattServerCallback.OnCharacteristicWriteRequest = gattServerCallback
+                        Log.d(
+                            TAG,
+                            "openGattServer() called with: " +
+                                "onCharacteristicWriteRequest = $onCharacteristicWriteRequest"
+                        )
+                    }
+                    is GattServerCallback.OnConnectionStateChange -> {
+                        val onConnectionStateChange:
+                            GattServerCallback.OnConnectionStateChange = gattServerCallback
+                        Log.d(
+                            TAG,
+                            "openGattServer() called with: " +
+                                "onConnectionStateChange = $onConnectionStateChange"
+                        )
+                    }
+                    is GattServerCallback.OnDescriptorReadRequest -> {
+                        val onDescriptorReadRequest:
+                            GattServerCallback.OnDescriptorReadRequest = gattServerCallback
+                        Log.d(
+                            TAG,
+                            "openGattServer() called with: " +
+                                "onDescriptorReadRequest = $onDescriptorReadRequest"
+                        )
+                    }
+                    is GattServerCallback.OnDescriptorWriteRequest -> {
+                        val onDescriptorWriteRequest:
+                            GattServerCallback.OnDescriptorWriteRequest = gattServerCallback
+                        Log.d(
+                            TAG,
+                            "openGattServer() called with: " +
+                                "onDescriptorWriteRequest = $onDescriptorWriteRequest"
+                        )
+                    }
+                    is GattServerCallback.OnExecuteWrite -> {
+                        val onExecuteWrite:
+                            GattServerCallback.OnExecuteWrite = gattServerCallback
+                        Log.d(
+                            TAG,
+                            "openGattServer() called with: " +
+                                "onExecuteWrite = $onExecuteWrite"
+                        )
+                    }
+                    is GattServerCallback.OnMtuChanged -> {
+                        val onMtuChanged:
+                            GattServerCallback.OnMtuChanged = gattServerCallback
+                        Log.d(
+                            TAG,
+                            "openGattServer() called with: " +
+                                "onMtuChanged = $onMtuChanged"
+                        )
+                    }
+                    is GattServerCallback.OnNotificationSent -> {
+                        val onNotificationSent:
+                            GattServerCallback.OnNotificationSent = gattServerCallback
+                        Log.d(
+                            TAG,
+                            "openGattServer() called with: " +
+                                "onNotificationSent = $onNotificationSent"
+                        )
+                    }
+                    is GattServerCallback.OnPhyRead -> {
+                        val onPhyRead:
+                            GattServerCallback.OnPhyRead = gattServerCallback
+                        Log.d(
+                            TAG,
+                            "openGattServer() called with: " +
+                                "onPhyRead = $onPhyRead"
+                        )
+                    }
+                    is GattServerCallback.OnPhyUpdate -> {
+                        val onPhyUpdate:
+                            GattServerCallback.OnPhyUpdate = gattServerCallback
+                        Log.d(
+                            TAG,
+                            "openGattServer() called with: " +
+                                "onPhyUpdate = $onPhyUpdate"
+                        )
+                    }
+                    is GattServerCallback.OnServiceAdded -> {
+                        val onServiceAdded:
+                            GattServerCallback.OnServiceAdded = gattServerCallback
+                        Log.d(
+                            TAG,
+                            "openGattServer() called with: " +
+                                "onServiceAdded = $onServiceAdded"
+                        )
+                    }
+                }
+            }
+        }
     }
 }

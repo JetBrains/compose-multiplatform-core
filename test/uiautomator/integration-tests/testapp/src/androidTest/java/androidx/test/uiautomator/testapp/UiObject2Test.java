@@ -31,10 +31,12 @@ import android.view.ViewConfiguration;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.filters.SdkSuppress;
 import androidx.test.uiautomator.By;
+import androidx.test.uiautomator.BySelector;
 import androidx.test.uiautomator.Direction;
 import androidx.test.uiautomator.UiObject2;
 import androidx.test.uiautomator.Until;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.HashSet;
@@ -55,7 +57,8 @@ public class UiObject2Test extends BaseTest {
         assertEquals("sample_text", object.getText());
         object.clear();
         // Verify the text field does not have txt after clear()
-        assertNull(object.getText());
+        BySelector emptyText = By.res(TEST_APP, "edit_text").text("");
+        assertTrue(mDevice.wait(Until.hasObject(emptyText), TIMEOUT_MS));
     }
 
     @Test
@@ -155,6 +158,7 @@ public class UiObject2Test extends BaseTest {
                 TIMEOUT_MS));
     }
 
+    @Ignore // b/266617335
     @Test
     @SdkSuppress(minSdkVersion = 24)
     public void testDrag_dest() {
@@ -260,7 +264,7 @@ public class UiObject2Test extends BaseTest {
         UiObject2 nestedObject = mDevice.findObject(By.res(TEST_APP, "nested_elements"));
         List<UiObject2> children = nestedObject.getChildren();
         assertEquals(2, children.size());
-        Set<String> childrenClassNames = new HashSet<String>();
+        Set<String> childrenClassNames = new HashSet<>();
         childrenClassNames.add(children.get(0).getClassName());
         childrenClassNames.add(children.get(1).getClassName());
         assertTrue(childrenClassNames.contains("android.widget.TextView"));
@@ -398,6 +402,7 @@ public class UiObject2Test extends BaseTest {
         UiObject2 checkBox = mDevice.findObject(By.res(TEST_APP, "check_box"));
         assertFalse(checkBox.isChecked());
         checkBox.click();
+        checkBox.wait(Until.checked(true), TIMEOUT_MS);
         assertTrue(checkBox.isChecked());
     }
 
@@ -442,6 +447,7 @@ public class UiObject2Test extends BaseTest {
         assertFalse(textView.isFocused());
         UiObject2 button = mDevice.findObject(By.res(TEST_APP, "button"));
         button.click();
+        textView.wait(Until.focused(true), TIMEOUT_MS);
         assertTrue(textView.isFocused());
     }
 
@@ -473,9 +479,11 @@ public class UiObject2Test extends BaseTest {
     public void testIsSelected() {
         launchTestActivity(IsSelectedTestActivity.class);
 
+        UiObject2 textView = mDevice.findObject(By.res(TEST_APP, "selected_target"));
+        assertFalse(textView.isSelected());
         UiObject2 button = mDevice.findObject(By.res(TEST_APP, "selected_button"));
         button.click();
-        UiObject2 textView = mDevice.findObject(By.res(TEST_APP, "selected_target"));
+        textView.wait(Until.selected(true), TIMEOUT_MS);
         assertTrue(textView.isSelected());
     }
 
@@ -518,6 +526,7 @@ public class UiObject2Test extends BaseTest {
                 + "but got [%f]", scaleValueAfterPinch), scaleValueAfterPinch < 1f);
     }
 
+    @Ignore // b/266617335
     @Test
     public void testPinchOpen() {
         launchTestActivity(PinchTestActivity.class);
@@ -544,6 +553,7 @@ public class UiObject2Test extends BaseTest {
                 + "but got [%f]", scaleValueAfterPinch), scaleValueAfterPinch > 1f);
     }
 
+    @Ignore // b/266617335
     @Test
     public void testSwipe() {
         launchTestActivity(SwipeTestActivity.class);
@@ -590,7 +600,7 @@ public class UiObject2Test extends BaseTest {
                 IllegalStateException.class,
                 () -> textView.getText()
         );
-        assertEquals("This object has already been recycled", e.getMessage());
+        assertEquals("This object has already been recycled.", e.getMessage());
     }
 
     @Test
@@ -624,6 +634,7 @@ public class UiObject2Test extends BaseTest {
         assertTrue(mDevice.hasObject(By.res(TEST_APP, "bottom_text")));
     }
 
+    @Ignore // b/266617335
     @Test
     public void testFling_direction() {
         launchTestActivity(FlingTestActivity.class);
@@ -674,6 +685,7 @@ public class UiObject2Test extends BaseTest {
                 () -> flingRegion.fling(Direction.DOWN, speed));
     }
 
+    @Ignore // b/267208902
     @Test
     public void testSetGestureMargin() {
         launchTestActivity(PinchTestActivity.class);
@@ -681,13 +693,15 @@ public class UiObject2Test extends BaseTest {
         UiObject2 pinchArea = mDevice.findObject(By.res(TEST_APP, "pinch_area"));
         UiObject2 scaleText = pinchArea.findObject(By.res(TEST_APP, "scale_factor"));
 
+        Rect pinchAreaBounds = pinchArea.getVisibleBounds();
+
         // Set the gesture's margins to a large number (greater than the width or height of the UI
         // object's visible bounds).
         // The gesture's bounds cannot form a rectangle and no action can be performed.
-        pinchArea.setGestureMargin(1_000);
+        pinchArea.setGestureMargin(Math.max(pinchAreaBounds.height(), pinchAreaBounds.width()) * 2);
         pinchArea.pinchClose(1f);
         scaleText.wait(Until.textNotEquals("1.0f"), TIMEOUT_MS);
-        float scaleValueAfterPinch = Float.valueOf(scaleText.getText());
+        float scaleValueAfterPinch = Float.parseFloat(scaleText.getText());
         assertEquals(String.format("Expected scale value to be equal to 1f after pinchClose(), "
                 + "but got [%f]", scaleValueAfterPinch), 1f, scaleValueAfterPinch, 0f);
 
@@ -697,11 +711,12 @@ public class UiObject2Test extends BaseTest {
         pinchArea.setGestureMargin(1);
         pinchArea.pinchClose(1f);
         scaleText.wait(Until.textNotEquals("1.0f"), TIMEOUT_MS);
-        scaleValueAfterPinch = Float.valueOf(scaleText.getText());
+        scaleValueAfterPinch = Float.parseFloat(scaleText.getText());
         assertTrue(String.format("Expected scale value to be less than 1f after pinchClose(), "
                 + "but got [%f]", scaleValueAfterPinch), scaleValueAfterPinch < 1f);
     }
 
+    @Ignore // b/266617335
     @Test
     public void testSetGestureMargins() {
         launchTestActivity(PinchTestActivity.class);
@@ -709,13 +724,16 @@ public class UiObject2Test extends BaseTest {
         UiObject2 pinchArea = mDevice.findObject(By.res(TEST_APP, "pinch_area"));
         UiObject2 scaleText = pinchArea.findObject(By.res(TEST_APP, "scale_factor"));
 
+        Rect pinchAreaBounds = pinchArea.getVisibleBounds();
+
         // Set the gesture's margins to large numbers (greater than the width or height of the UI
         // object's visible bounds).
         // The gesture's bounds cannot form a rectangle and no action can be performed.
-        pinchArea.setGestureMargins(1, 1, 1_000, 1_000);
+        pinchArea.setGestureMargins(1, 1, pinchAreaBounds.width() * 2,
+                pinchAreaBounds.height() * 2);
         pinchArea.pinchClose(1f);
         scaleText.wait(Until.textNotEquals("1.0f"), TIMEOUT_MS);
-        float scaleValueAfterPinch = Float.valueOf(scaleText.getText());
+        float scaleValueAfterPinch = Float.parseFloat(scaleText.getText());
         assertEquals(String.format("Expected scale value to be equal to 1f after pinchClose(), "
                 + "but got [%f]", scaleValueAfterPinch), 1f, scaleValueAfterPinch, 0f);
 
@@ -725,7 +743,7 @@ public class UiObject2Test extends BaseTest {
         pinchArea.setGestureMargins(1, 1, 1, 1);
         pinchArea.pinchClose(1f);
         scaleText.wait(Until.textNotEquals("1.0f"), TIMEOUT_MS);
-        scaleValueAfterPinch = Float.valueOf(scaleText.getText());
+        scaleValueAfterPinch = Float.parseFloat(scaleText.getText());
         assertTrue(String.format("Expected scale value to be less than 1f after pinchClose(), "
                 + "but got [%f]", scaleValueAfterPinch), scaleValueAfterPinch < 1f);
     }
@@ -739,7 +757,8 @@ public class UiObject2Test extends BaseTest {
         assertEquals("sample_text", object.getText());
         object.setText("new_text");
         // Verify the text field has "new_text" after setText()
-        assertEquals("new_text", object.getText());
+        BySelector updatedText = By.res(TEST_APP, "edit_text").text("new_text");
+        assertTrue(mDevice.wait(Until.hasObject(updatedText), TIMEOUT_MS));
     }
 
     /* Helper method to get a point inside the object. */

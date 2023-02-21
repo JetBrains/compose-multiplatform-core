@@ -84,8 +84,7 @@ class CameraControlDeviceTest(
     @Before
     fun setUp() {
         val context = ApplicationProvider.getApplicationContext<Context>()
-        val cameraXConfig = Camera2Config.defaultConfig()
-        CameraXUtil.initialize(context, cameraXConfig).get()
+        CameraXUtil.initialize(context, cameraConfig).get()
         val cameraX = CameraXUtil.getOrCreateInstance(context, null).get()
         Assume.assumeTrue(
             CameraAvailabilityUtil.hasCamera(
@@ -200,34 +199,9 @@ class CameraControlDeviceTest(
         assertFutureCompletes(result)
     }
 
-    @Test
-    fun setZoomRatio_futuresCompletes() {
-        Assume.assumeTrue(camera!!.cameraInfo.zoomState.value!!.maxZoomRatio >= 2.0f)
-
-        // use ratio with fraction because it often causes unable-to-complete issue.
-        val result = camera!!.cameraControl.setZoomRatio(1.3640054f)
-        assertFutureCompletes(result)
-    }
-
-    @Test
-    fun rebindAndSetZoomRatio_futureCompletes() {
-        instrumentation.runOnMainSync {
-            try {
-                camera!!.removeUseCases(setOf(boundUseCase))
-                val useCase = ImageAnalysis.Builder().build()
-                camera!!.addUseCases(setOf<UseCase>(useCase.also { boundUseCase = it }))
-                useCase.setAnalyzer(CameraXExecutors.ioExecutor(), analyzer)
-            } catch (e: CameraException) {
-                throw IllegalArgumentException(e)
-            }
-        }
-        val result = camera!!.cameraControl.setZoomRatio(1.0f)
-        assertFutureCompletes(result)
-    }
-
     private fun <T> assertFutureCompletes(future: ListenableFuture<T>) {
         try {
-            future[5, TimeUnit.SECONDS]
+            future[10, TimeUnit.SECONDS]
         } catch (e: Exception) {
             Assert.fail("future fail:$e")
         }

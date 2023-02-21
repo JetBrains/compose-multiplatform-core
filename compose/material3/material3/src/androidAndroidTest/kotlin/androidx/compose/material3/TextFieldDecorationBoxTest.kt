@@ -20,6 +20,7 @@ import android.os.Build
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.BasicTextField
@@ -384,7 +385,9 @@ class TextFieldDecorationBoxTest {
                 // to account for edge pixels
                 if (it.x in 2..(textFieldWidth - 2) && it.y in 2..(borderWidth - 2)) {
                     Color.Red
-                } else null
+                } else {
+                    null
+                }
             }
     }
 
@@ -439,8 +442,51 @@ class TextFieldDecorationBoxTest {
                     it.y in (textFieldHeight - borderWidth + 2)..(textFieldHeight - 2)
                 ) {
                     Color.Red
-                } else null
+                } else {
+                    null
+                }
             }
+    }
+
+    @Test
+    fun textFieldBox_overridePadding_unfocusedState_withoutLabel_withPlaceholder() {
+        val placeholderDimension = 50.dp
+        val verticalPadding = 10.dp
+        val value = ""
+        var size: IntSize? = null
+
+        rule.setMaterialContent(lightColorScheme()) {
+            CompositionLocalProvider(LocalDensity provides Density) {
+                val interactionSource = remember { MutableInteractionSource() }
+                val singleLine = false
+                BasicTextField(
+                    value = value,
+                    onValueChange = {},
+                    modifier = Modifier.onSizeChanged { size = it },
+                    singleLine = singleLine,
+                    interactionSource = interactionSource
+                ) {
+                    TextFieldDecorationBox(
+                        value = value,
+                        innerTextField = it,
+                        enabled = true,
+                        visualTransformation = VisualTransformation.None,
+                        interactionSource = interactionSource,
+                        singleLine = singleLine,
+                        placeholder = { Spacer(Modifier.size(placeholderDimension)) },
+                        contentPadding = PaddingValues(vertical = verticalPadding)
+                    )
+                }
+            }
+        }
+
+        rule.runOnIdle {
+            with(Density) {
+                assertThat(size).isNotNull()
+                assertThat(size!!.height).isEqualTo(
+                    (placeholderDimension + verticalPadding * 2).roundToPx())
+            }
+        }
     }
 
     @Test

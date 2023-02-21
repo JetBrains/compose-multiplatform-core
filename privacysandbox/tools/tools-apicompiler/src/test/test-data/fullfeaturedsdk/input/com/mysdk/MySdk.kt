@@ -4,6 +4,7 @@ import androidx.privacysandbox.tools.PrivacySandboxCallback
 import androidx.privacysandbox.tools.PrivacySandboxInterface
 import androidx.privacysandbox.tools.PrivacySandboxService
 import androidx.privacysandbox.tools.PrivacySandboxValue
+import androidx.privacysandbox.ui.core.SandboxedUiAdapter
 
 @PrivacySandboxService
 interface MySdk {
@@ -20,6 +21,12 @@ interface MySdk {
     suspend fun getMyInterface(input: MyInterface): MyInterface
 
     fun mutateMySecondInterface(input: MySecondInterface)
+
+    suspend fun handleNullablePrimitives(x: Int?, y: Int?): String?
+
+    suspend fun handleNullableValues(maybeRequest: Request?): Response?
+
+    suspend fun handleNullableInterfaces(maybeCallback: MyCallback?): MyInterface?
 }
 
 @PrivacySandboxInterface
@@ -34,15 +41,48 @@ interface MyInterface {
 }
 
 @PrivacySandboxInterface
+interface MyUiInterface : SandboxedUiAdapter {
+    fun doSomethingForUi(x: Int, y: Int)
+}
+
+@PrivacySandboxInterface
 interface MySecondInterface {
-    fun doMoreStuff(x: Int)
+    suspend fun doIntStuff(x: List<Int>): List<Int>
+
+    suspend fun doCharStuff(x: List<Char>): List<Char>
+
+    suspend fun doFloatStuff(x: List<Float>): List<Float>
+
+    suspend fun doLongStuff(x: List<Long>): List<Long>
+
+    suspend fun doDoubleStuff(x: List<Double>): List<Double>
+
+    suspend fun doBooleanStuff(x: List<Boolean>): List<Boolean>
+
+    suspend fun doShortStuff(x: List<Short>): List<Short>
+
+    suspend fun doStringStuff(x: List<String>): List<String>
+
+    suspend fun doValueStuff(x: List<Request>): List<Response>
 }
 
 @PrivacySandboxValue
-data class Request(val query: String, val myInterface: MyInterface)
+data class Request(
+    val query: String,
+    val extraValues: List<InnerValue>,
+    val maybeValue: InnerValue?,
+    val myInterface: MyInterface
+)
 
 @PrivacySandboxValue
-data class Response(val response: String, val mySecondInterface: MySecondInterface)
+data class InnerValue(val numbers: List<Int>, val maybeNumber: Int?)
+
+@PrivacySandboxValue
+data class Response(
+    val response: String,
+    val mySecondInterface: MySecondInterface,
+    val maybeOtherInterface: MySecondInterface
+)
 
 @PrivacySandboxCallback
 interface MyCallback {

@@ -39,10 +39,12 @@ import androidx.camera.core.impl.ImageInputConfig
 import androidx.camera.core.impl.ImmediateSurface
 import androidx.camera.core.impl.MutableOptionsBundle
 import androidx.camera.core.impl.SessionConfig
+import androidx.camera.core.impl.StreamSpec
 import androidx.camera.core.impl.UseCaseConfig
 import androidx.camera.core.impl.UseCaseConfig.OPTION_SESSION_CONFIG_UNPACKER
 import androidx.camera.core.impl.UseCaseConfigFactory
 import androidx.camera.core.impl.utils.executor.CameraXExecutors
+import kotlin.math.min
 
 private val DEFAULT_PREVIEW_SIZE = Size(0, 0)
 
@@ -55,9 +57,10 @@ private val DEFAULT_PREVIEW_SIZE = Size(0, 0)
 class MeteringRepeating(
     private val cameraProperties: CameraProperties,
     config: MeteringRepeatingConfig,
+    private val displayInfoManager: DisplayInfoManager
 ) : UseCase(config) {
 
-    private val meteringSurfaceSize = cameraProperties.getMinimumPreviewSize()
+    private val meteringSurfaceSize = getProperPreviewSize()
 
     private val deferrableSurfaceLock = Any()
 
@@ -65,17 +68,18 @@ class MeteringRepeating(
     private var deferrableSurface: DeferrableSurface? = null
 
     override fun getDefaultConfig(applyDefaultConfig: Boolean, factory: UseCaseConfigFactory) =
-        Builder(cameraProperties).useCaseConfig
+        Builder(cameraProperties, displayInfoManager).useCaseConfig
 
-    override fun getUseCaseConfigBuilder(config: Config) = Builder(cameraProperties)
+    override fun getUseCaseConfigBuilder(config: Config) =
+        Builder(cameraProperties, displayInfoManager)
 
-    override fun onSuggestedResolutionUpdated(suggestedResolution: Size): Size {
+    override fun onSuggestedStreamSpecUpdated(suggestedStreamSpec: StreamSpec): StreamSpec {
         updateSessionConfig(createPipeline().build())
         notifyActive()
-        return meteringSurfaceSize
+        return StreamSpec.builder(meteringSurfaceSize).build()
     }
 
-    override fun onDetached() {
+    override fun onUnbind() {
         synchronized(deferrableSurfaceLock) {
             deferrableSurface?.close()
             deferrableSurface = null
@@ -84,9 +88,9 @@ class MeteringRepeating(
 
     /** Sets up the use case's session configuration, mainly its [DeferrableSurface]. */
     fun setupSession() {
-        // The suggested resolution passed to `updateSuggestedResolution` doesn't matter since
+        // The suggested stream spec passed to `updateSuggestedStreamSpec` doesn't matter since
         // this use case uses the min preview size.
-        updateSuggestedResolution(DEFAULT_PREVIEW_SIZE)
+        updateSuggestedStreamSpec(StreamSpec.builder(DEFAULT_PREVIEW_SIZE).build())
     }
 
     private fun createPipeline(): SessionConfig.Builder {
@@ -120,28 +124,57 @@ class MeteringRepeating(
             }
     }
 
-    private fun CameraProperties.getMinimumPreviewSize(): Size {
-        val map = metadata[CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP]
-        if (map == null) {
+    private fun CameraProperties.getOutputSizes(): Array<Size>? {
+        val map = metadata[CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP] ?: run {
             error { "Can not retrieve SCALER_STREAM_CONFIGURATION_MAP." }
-            return DEFAULT_PREVIEW_SIZE
+            return null
         }
 
-        val outputSizes = if (Build.VERSION.SDK_INT < 23) {
+        return if (Build.VERSION.SDK_INT < 23) {
             // ImageFormat.PRIVATE is only public after Android level 23. Therefore, use
             // SurfaceTexture.class to get the supported output sizes before Android level 23.
             map.getOutputSizes(SurfaceTexture::class.java)
         } else {
             map.getOutputSizes(ImageFormat.PRIVATE)
         }
+    }
+
+    private fun getProperPreviewSize(): Size {
+        val outputSizes = cameraProperties.getOutputSizes()
 
         if (outputSizes == null) {
             error { "Can not get output size list." }
             return DEFAULT_PREVIEW_SIZE
         }
 
-        check(outputSizes.isNotEmpty()) { "Output sizes empty" }
-        return outputSizes.minWithOrNull { size1, size2 -> size1.area().compareTo(size2.area()) }!!
+        if (outputSizes.isEmpty()) {
+            error { "Output sizes empty" }
+            return DEFAULT_PREVIEW_SIZE
+        }
+
+        // TODO(b/256805716): get supported output sizes handling quirks.
+
+        outputSizes.sortBy { size -> size.width.toLong() * size.height.toLong() }
+
+        // Find maximum supported resolution that is <= min(VGA, display resolution)
+        // Using minimum supported size could cause some issue on certain devices.
+        val previewSize = displayInfoManager.previewSize
+        val maxSizeProduct =
+            min(640L * 480L, previewSize.width.toLong() * previewSize.height.toLong())
+
+        var previousSize: Size? = null
+        for (outputSize in outputSizes) {
+            val product = outputSize.width.toLong() * outputSize.height.toLong()
+            if (product == maxSizeProduct) {
+                return outputSize
+            } else if (product > maxSizeProduct) {
+                return previousSize ?: break // fallback to minimum size.
+            }
+            previousSize = outputSize
+        }
+
+        // If not found, return the minimum size.
+        return outputSizes[0]
     }
 
     class MeteringRepeatingConfig : UseCaseConfig<MeteringRepeating>, ImageInputConfig {
@@ -157,7 +190,10 @@ class MeteringRepeating(
         override fun getInputFormat() = ImageFormatConstants.INTERNAL_DEFINED_IMAGE_FORMAT_PRIVATE
     }
 
-    class Builder(private val cameraProperties: CameraProperties) :
+    class Builder(
+        private val cameraProperties: CameraProperties,
+        private val displayInfoManager: DisplayInfoManager
+    ) :
         UseCaseConfig.Builder<MeteringRepeating, MeteringRepeatingConfig, Builder> {
 
         override fun getMutableConfig() = MutableOptionsBundle.create()
@@ -184,8 +220,10 @@ class MeteringRepeating(
 
         override fun setZslDisabled(disabled: Boolean) = this
 
+        override fun setHighResolutionDisabled(disabled: Boolean) = this
+
         override fun build(): MeteringRepeating {
-            return MeteringRepeating(cameraProperties, useCaseConfig)
+            return MeteringRepeating(cameraProperties, useCaseConfig, displayInfoManager)
         }
     }
 }

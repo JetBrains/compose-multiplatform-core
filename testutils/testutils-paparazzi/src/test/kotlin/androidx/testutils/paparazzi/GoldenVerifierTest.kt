@@ -60,9 +60,22 @@ class GoldenVerifierTest {
     }
 
     @Test
+    fun `removes special characters in file names`() {
+        createGolden("circle")
+        // Test that createGolden/goldenFile match naming in verifier
+        goldenVerifier().assertMatchesGolden(snapshot(), loadTestImage("circle"))
+
+        assertEquals(
+            goldenFile().name,
+            "androidx_testutils_paparazzi_GoldenVerifierTest_" +
+                "removes_special_characters_in_file_names_paparazzi.png"
+        )
+    }
+
+    @Test
     fun `writes report on success`() {
         createGolden("circle")
-        goldenVerifier().assertSimilarToGolden(testId(), loadTestImage("circle"))
+        goldenVerifier().assertMatchesGolden(snapshot(), loadTestImage("circle"))
 
         val proto = reportProto()
         assertEquals(Status.PASSED, proto.result)
@@ -75,14 +88,14 @@ class GoldenVerifierTest {
     @Test
     fun `writes actual image on success`() {
         createGolden("circle")
-        goldenVerifier().assertSimilarToGolden(testId(), loadTestImage("circle"))
+        goldenVerifier().assertMatchesGolden(snapshot(), loadTestImage("circle"))
         assertEquals(loadTestImage("circle"), reportFile("actual.png").readImage())
     }
 
     @Test
     fun `writes expected image on success`() {
         createGolden("circle")
-        goldenVerifier().assertSimilarToGolden(testId(), loadTestImage("circle"))
+        goldenVerifier().assertMatchesGolden(snapshot(), loadTestImage("circle"))
         assertEquals(loadTestImage("circle"), reportFile("expected.png").readImage())
     }
 
@@ -98,18 +111,18 @@ class GoldenVerifierTest {
     fun `asserts on failure`() {
         createGolden("star")
         val message = "Actual image differs from golden image: 17837 of 65536 pixels different. " +
-            "To update the golden image, copy ${reportFile("actual.png")} to ${goldenFile()} and " +
-            "commit the updated golden image."
+            "To update golden images for this test module, run ./gradlew :updateGolden " +
+            "-Pandroidx.ignoreTestFailures=true."
 
         assertFailsWithMessage(message) {
-            goldenVerifier().assertSimilarToGolden(testId(), loadTestImage("circle"))
+            goldenVerifier().assertMatchesGolden(snapshot(), loadTestImage("circle"))
         }
     }
 
     @Test
     fun `writes result proto on failure`() {
         createGolden("star")
-        assertFails { goldenVerifier().assertSimilarToGolden(testId(), loadTestImage("circle")) }
+        assertFails { goldenVerifier().assertMatchesGolden(snapshot(), loadTestImage("circle")) }
 
         val proto = reportProto()
         assertEquals(Status.FAILED, proto.result)
@@ -122,21 +135,21 @@ class GoldenVerifierTest {
     @Test
     fun `writes actual image on failure`() {
         createGolden("star")
-        assertFails { goldenVerifier().assertSimilarToGolden(testId(), loadTestImage("circle")) }
+        assertFails { goldenVerifier().assertMatchesGolden(snapshot(), loadTestImage("circle")) }
         assertEquals(loadTestImage("circle"), reportFile("actual.png").readImage())
     }
 
     @Test
     fun `writes expected image on failure`() {
         createGolden("star")
-        assertFails { goldenVerifier().assertSimilarToGolden(testId(), loadTestImage("circle")) }
+        assertFails { goldenVerifier().assertMatchesGolden(snapshot(), loadTestImage("circle")) }
         assertEquals(loadTestImage("star"), reportFile("expected.png").readImage())
     }
 
     @Test
     fun `writes diff image on failure`() {
         createGolden("star")
-        assertFails { goldenVerifier().assertSimilarToGolden(testId(), loadTestImage("circle")) }
+        assertFails { goldenVerifier().assertMatchesGolden(snapshot(), loadTestImage("circle")) }
         assertEquals(loadTestImage("PixelPerfect_diff"), reportFile("diff.png").readImage())
     }
 
@@ -153,11 +166,11 @@ class GoldenVerifierTest {
     fun `asserts on size mismatch`() {
         createGolden("horizontal_rectangle")
         val message = "Actual image has different dimensions than golden image. Actual: 72x128. " +
-            "Golden: 128x72. To update the golden image, copy ${reportFile("actual.png")} to " +
-            "${goldenFile()} and commit the updated golden image."
+            "Golden: 128x72. To update golden images for this test module, run ./gradlew " +
+            ":updateGolden -Pandroidx.ignoreTestFailures=true."
 
         assertFailsWithMessage(message) {
-            goldenVerifier().assertSimilarToGolden(testId(), loadTestImage("vertical_rectangle"))
+            goldenVerifier().assertMatchesGolden(snapshot(), loadTestImage("vertical_rectangle"))
         }
     }
 
@@ -165,7 +178,7 @@ class GoldenVerifierTest {
     fun `writes result proto for size mismatch`() {
         createGolden("horizontal_rectangle")
         assertFails {
-            goldenVerifier().assertSimilarToGolden(testId(), loadTestImage("vertical_rectangle"))
+            goldenVerifier().assertMatchesGolden(snapshot(), loadTestImage("vertical_rectangle"))
         }
 
         val proto = reportProto()
@@ -180,7 +193,7 @@ class GoldenVerifierTest {
     fun `writes actual image for size mismatch`() {
         createGolden("horizontal_rectangle")
         assertFails {
-            goldenVerifier().assertSimilarToGolden(testId(), loadTestImage("vertical_rectangle"))
+            goldenVerifier().assertMatchesGolden(snapshot(), loadTestImage("vertical_rectangle"))
         }
 
         assertEquals(loadTestImage("vertical_rectangle"), reportFile("actual.png").readImage())
@@ -190,7 +203,7 @@ class GoldenVerifierTest {
     fun `writes expected image for size mismatch`() {
         createGolden("horizontal_rectangle")
         assertFails {
-            goldenVerifier().assertSimilarToGolden(testId(), loadTestImage("vertical_rectangle"))
+            goldenVerifier().assertMatchesGolden(snapshot(), loadTestImage("vertical_rectangle"))
         }
 
         assertEquals(loadTestImage("horizontal_rectangle"), reportFile("expected.png").readImage())
@@ -207,17 +220,18 @@ class GoldenVerifierTest {
 
     @Test
     fun `asserts on missing golden`() {
-        val message = "Expected golden image for ${testId()} does not exist. To create it, copy " +
-            "${reportFile("actual.png")} to ${goldenFile()} and commit the new golden image."
+        val message = "Expected golden image for test \"asserts on missing golden\" does not " +
+            "exist. Run ./gradlew :updateGolden -Pandroidx.ignoreTestFailures=true to create it " +
+            "and update all golden images for this test module."
 
         assertFailsWithMessage(message) {
-            goldenVerifier().assertSimilarToGolden(testId(), loadTestImage("circle"))
+            goldenVerifier().assertMatchesGolden(snapshot(), loadTestImage("circle"))
         }
     }
 
     @Test
     fun `writes result proto for missing golden`() {
-        assertFails { goldenVerifier().assertSimilarToGolden(testId(), loadTestImage("circle")) }
+        assertFails { goldenVerifier().assertMatchesGolden(snapshot(), loadTestImage("circle")) }
 
         val proto = reportProto()
         assertEquals(Status.MISSING_GOLDEN, proto.result)
@@ -229,7 +243,7 @@ class GoldenVerifierTest {
 
     @Test
     fun `writes actual image for missing golden`() {
-        assertFails { goldenVerifier().assertSimilarToGolden(testId(), loadTestImage("circle")) }
+        assertFails { goldenVerifier().assertMatchesGolden(snapshot(), loadTestImage("circle")) }
         assertEquals(loadTestImage("circle"), reportFile("actual.png").readImage())
     }
 
@@ -238,6 +252,15 @@ class GoldenVerifierTest {
         val analysis = goldenVerifier().analyze(null, loadTestImage("circle"))
         assertIs<GoldenVerifier.AnalysisResult.MissingGolden>(analysis)
         assertEquals(loadTestImage("circle"), analysis.actual)
+    }
+
+    @Test
+    fun `ensures single snapshot per method`() {
+        val verifier = goldenVerifier()
+        createGolden("circle")
+
+        verifier.assertMatchesGolden(snapshot(), loadTestImage("circle"))
+        assertFails { verifier.assertMatchesGolden(snapshot(), loadTestImage("circle")) }
     }
 
     private fun goldenVerifier() = GoldenVerifier(
@@ -274,7 +297,7 @@ class GoldenVerifierTest {
             .copyTo(goldenFile().apply { parentFile!!.mkdirs() }.outputStream())
 
     /** Relative path to golden image for this test. */
-    private fun goldenPath() = "$modulePath/${testId()}_paparazzi.png"
+    private fun goldenPath() = "$modulePath/${testName()}_paparazzi.png"
 
     /** Resolve the file path for a golden image for this test under [goldenDirectory]. */
     private fun goldenFile() = goldenDirectory.root.resolve(goldenPath()).canonicalFile
@@ -289,13 +312,14 @@ class GoldenVerifierTest {
 
     /** Resolve the file path for a report file with provided [suffix] under [reportDirectory]. */
     private fun reportFile(suffix: String) =
-        reportDirectory.root.resolve("${testId()}_$suffix").canonicalFile
+        reportDirectory.root.resolve("${testName()}_$suffix").canonicalFile
 
     /** Convenience function to read an image from a file. */
     private fun File.readImage() = ImageIO.read(this)
 
-    /** Fully qualified test ID for this test. */
-    private fun testId() = "${this::class.qualifiedName!!}_${testName.methodName}"
+    /** Fully qualified test ID with special characters replaced for this test. */
+    private fun testName() = "${this::class.qualifiedName!!}_${testName.methodName}"
+        .replace(Regex("\\W+"), "_")
 
     /** Load a test image from resources. */
     private fun loadTestImage(name: String) =

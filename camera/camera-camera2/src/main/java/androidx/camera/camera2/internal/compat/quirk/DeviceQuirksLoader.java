@@ -83,6 +83,12 @@ public class DeviceQuirksLoader {
         if (ZslDisablerQuirk.load()) {
             quirks.add(new ZslDisablerQuirk());
         }
+        if (ExtraSupportedOutputSizeQuirk.load()) {
+            quirks.add(new ExtraSupportedOutputSizeQuirk());
+        }
+        if (InvalidVideoProfilesQuirk.load()) {
+            quirks.add(new InvalidVideoProfilesQuirk());
+        }
 
         return quirks;
     }

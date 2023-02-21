@@ -16,17 +16,24 @@
 
 package androidx.compose.material.swipeable
 
+import androidx.compose.animation.core.AnimationSpec
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.material.AutoTestFrameClock
 import androidx.compose.material.ExperimentalMaterialApi
+import androidx.compose.material.SwipeableV2Defaults
 import androidx.compose.material.SwipeableV2State
 import androidx.compose.material.fixedPositionalThreshold
 import androidx.compose.material.fractionalPositionalThreshold
 import androidx.compose.material.swipeable.TestState.A
 import androidx.compose.material.swipeable.TestState.B
 import androidx.compose.material.swipeable.TestState.C
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.testutils.WithTouchSlop
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.test.TouchInjectionScope
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performTouchInput
@@ -42,6 +49,8 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import com.google.common.truth.Truth.assertThat
 import kotlin.math.abs
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.junit.Rule
 import org.junit.Test
@@ -56,104 +65,174 @@ class SwipeableV2GestureTest {
     val rule = createComposeRule()
 
     @Test
-    fun swipeable_swipe_horizontal() = directionalSwipeTest(
-        SwipeableTestState(initialState = A),
-        orientation = Orientation.Horizontal,
-        verify = verifyOffsetMatchesAnchor()
-    )
+    fun swipeable_swipe_horizontal() {
+        val state = SwipeableTestState(initialState = A)
+        val anchors = mapOf(
+            A to 0f,
+            B to 250f,
+            C to 500f
+        )
 
-    @Test
-    fun swipeable_swipe_vertical() = directionalSwipeTest(
-        SwipeableTestState(initialState = A),
-        orientation = Orientation.Vertical,
-        verify = verifyOffsetMatchesAnchor()
-    )
-
-    @Test
-    fun swipeable_swipe_disabled_horizontal() = directionalSwipeTest(
-        SwipeableTestState(initialState = A),
-        orientation = Orientation.Horizontal,
-        enabled = false,
-        verify = verifyOffset0(),
-    )
-
-    @Test
-    fun swipeable_swipe_disabled_vertical(): Unit = directionalSwipeTest(
-        SwipeableTestState(initialState = A),
-        orientation = Orientation.Vertical,
-        enabled = false,
-        verify = verifyOffset0(),
-    )
-
-    @Test
-    fun swipeable_swipe_reverse_direction_horizontal() = directionalSwipeTest(
-        SwipeableTestState(initialState = A),
-        orientation = Orientation.Horizontal,
-        verify = verifyOffsetMatchesAnchor()
-    )
-
-    private fun verifyOffset0() = { state: SwipeableV2State<TestState>, _: TestState ->
-        assertThat(state.offset).isEqualTo(0f)
-    }
-
-    private fun verifyOffsetMatchesAnchor() =
-        { state: SwipeableV2State<TestState>, target: TestState ->
-            val swipeableSizePx = with(rule.density) { swipeableSize.toPx() }
-            val targetOffset = when (target) {
-                A -> 0f
-                B -> swipeableSizePx / 2
-                C -> swipeableSizePx
-            }
-            assertThat(state.offset).isEqualTo(targetOffset)
-        }
-
-    private fun directionalSwipeTest(
-        state: SwipeableV2State<TestState>,
-        orientation: Orientation,
-        enabled: Boolean = true,
-        reverseDirection: Boolean = false,
-        swipeForward: TouchInjectionScope.(end: Float) -> Unit = {
-            if (orientation == Orientation.Horizontal) swipeRight(endX = it)
-            else swipeDown(endY = it)
-        },
-        swipeBackward: TouchInjectionScope.(end: Float) -> Unit = {
-            if (orientation == Orientation.Horizontal) swipeLeft(endX = it) else swipeUp(endY = it)
-        },
-        verify: (state: SwipeableV2State<TestState>, target: TestState) -> Unit,
-    ) {
         rule.setContent {
-            SwipeableBox(state, orientation, enabled = enabled, reverseDirection = reverseDirection)
+            CompositionLocalProvider(LocalDensity provides NoOpDensity) {
+                WithTouchSlop(0f) {
+                    SwipeableBox(
+                        swipeableState = state,
+                        orientation = Orientation.Horizontal,
+                        anchors = anchors
+                    )
+                }
+            }
         }
 
-        rule.onNodeWithTag(swipeableTestTag)
-            .performTouchInput { swipeForward(endEdge(orientation) / 2) }
-        rule.waitForIdle()
-        verify(state, B)
+        assertThat(state.currentValue).isEqualTo(A)
 
         rule.onNodeWithTag(swipeableTestTag)
-            .performTouchInput { swipeForward(endEdge(orientation)) }
+            .performTouchInput { swipeRight(endX = right / 2) }
         rule.waitForIdle()
-        verify(state, C)
+
+        assertThat(state.currentValue).isEqualTo(B)
+        assertThat(state.offset).isEqualTo(anchors.getValue(B))
 
         rule.onNodeWithTag(swipeableTestTag)
-            .performTouchInput { swipeBackward(endEdge(orientation) / 2) }
+            .performTouchInput { swipeRight(startX = right / 2, endX = right) }
         rule.waitForIdle()
-        verify(state, B)
+        assertThat(state.currentValue).isEqualTo(C)
+        assertThat(state.offset).isEqualTo(anchors.getValue(C))
 
         rule.onNodeWithTag(swipeableTestTag)
-            .performTouchInput { swipeBackward(startEdge(orientation)) }
+            .performTouchInput { swipeLeft(endX = right / 2) }
         rule.waitForIdle()
-        verify(state, A)
+
+        assertThat(state.currentValue).isEqualTo(B)
+        assertThat(state.offset).isEqualTo(anchors.getValue(B))
+
+        rule.onNodeWithTag(swipeableTestTag)
+            .performTouchInput { swipeLeft(startX = right / 2) }
+        rule.waitForIdle()
+
+        assertThat(state.currentValue).isEqualTo(A)
+        assertThat(state.offset).isEqualTo(anchors.getValue(A))
     }
 
     @Test
-    fun swipeable_positionalThresholds_fractional_targetState() = fractionalThresholdsTest(0.5f)
+    fun swipeable_swipe_vertical() {
+        val state = SwipeableTestState(initialState = A)
+        val anchors = mapOf(
+            A to 0f,
+            B to 250f,
+            C to 500f
+        )
+
+        rule.setContent {
+            CompositionLocalProvider(LocalDensity provides NoOpDensity) {
+                WithTouchSlop(0f) {
+                    SwipeableBox(
+                        swipeableState = state,
+                        orientation = Orientation.Vertical,
+                        anchors = anchors
+                    )
+                }
+            }
+        }
+
+        assertThat(state.currentValue).isEqualTo(A)
+
+        rule.onNodeWithTag(swipeableTestTag)
+            .performTouchInput { swipeDown(startY = top, endY = bottom / 2) }
+        rule.waitForIdle()
+
+        assertThat(state.currentValue).isEqualTo(B)
+        assertThat(state.offset).isEqualTo(anchors.getValue(B))
+
+        rule.onNodeWithTag(swipeableTestTag)
+            .performTouchInput { swipeDown(startY = bottom / 2, endY = bottom) }
+        rule.waitForIdle()
+        assertThat(state.currentValue).isEqualTo(C)
+        assertThat(state.offset).isEqualTo(anchors.getValue(C))
+
+        rule.onNodeWithTag(swipeableTestTag)
+            .performTouchInput { swipeUp(startY = bottom, endY = bottom / 2) }
+        rule.waitForIdle()
+
+        assertThat(state.currentValue).isEqualTo(B)
+        assertThat(state.offset).isEqualTo(anchors.getValue(B))
+
+        rule.onNodeWithTag(swipeableTestTag)
+            .performTouchInput { swipeUp(startY = bottom / 2, endY = top) }
+        rule.waitForIdle()
+
+        assertThat(state.currentValue).isEqualTo(A)
+        assertThat(state.offset).isEqualTo(anchors.getValue(A))
+    }
 
     @Test
-    fun swipeable_positionalThresholds_fractional_negativeThreshold_targetState() =
-        fractionalThresholdsTest(-0.5f)
+    fun swipeable_swipe_disabled_horizontal() {
+        val state = SwipeableTestState(initialState = A)
+        val anchors = mapOf(
+            A to 0f,
+            B to 250f,
+            C to 500f
+        )
 
-    private fun fractionalThresholdsTest(positionalThreshold: Float) {
+        rule.setContent {
+            CompositionLocalProvider(LocalDensity provides NoOpDensity) {
+                WithTouchSlop(0f) {
+                    SwipeableBox(
+                        swipeableState = state,
+                        orientation = Orientation.Horizontal,
+                        anchors = anchors,
+                        enabled = false
+                    )
+                }
+            }
+        }
+
+        assertThat(state.currentValue).isEqualTo(A)
+
+        rule.onNodeWithTag(swipeableTestTag)
+            .performTouchInput { swipeRight(startX = left, endX = right) }
+        rule.waitForIdle()
+
+        assertThat(state.currentValue).isEqualTo(A)
+        assertThat(state.offset).isZero()
+    }
+
+    @Test
+    fun swipeable_swipe_disabled_vertical() {
+        val state = SwipeableTestState(initialState = A)
+        val anchors = mapOf(
+            A to 0f,
+            B to 250f,
+            C to 500f
+        )
+
+        rule.setContent {
+            CompositionLocalProvider(LocalDensity provides NoOpDensity) {
+                WithTouchSlop(0f) {
+                    SwipeableBox(
+                        swipeableState = state,
+                        orientation = Orientation.Vertical,
+                        anchors = anchors,
+                        enabled = false
+                    )
+                }
+            }
+        }
+
+        assertThat(state.currentValue).isEqualTo(A)
+
+        rule.onNodeWithTag(swipeableTestTag)
+            .performTouchInput { swipeDown(startY = top, endY = bottom) }
+        rule.waitForIdle()
+
+        assertThat(state.currentValue).isEqualTo(A)
+        assertThat(state.offset).isZero()
+    }
+
+    @Test
+    fun swipeable_positionalThresholds_fractional_targetState() {
+        val positionalThreshold = 0.5f
         val absThreshold = abs(positionalThreshold)
         val state = SwipeableTestState(
             initialState = A,
@@ -177,6 +256,7 @@ class SwipeableV2GestureTest {
         assertThat(state.targetValue).isEqualTo(B)
 
         runBlocking(AutoTestFrameClock()) { state.settle(velocity = 0f) }
+        rule.waitForIdle()
 
         assertThat(state.currentValue).isEqualTo(B)
         assertThat(state.targetValue).isEqualTo(B)
@@ -194,19 +274,65 @@ class SwipeableV2GestureTest {
         assertThat(state.targetValue).isEqualTo(A)
 
         runBlocking(AutoTestFrameClock()) { state.settle(velocity = 0f) }
+        rule.waitForIdle()
 
         assertThat(state.currentValue).isEqualTo(A)
         assertThat(state.targetValue).isEqualTo(A)
     }
 
     @Test
-    fun swipeable_positionalThresholds_fixed_targetState() = fixedThresholdsTest(56.dp)
+    fun swipeable_positionalThresholds_fractional_negativeThreshold_targetState() {
+        val positionalThreshold = -0.5f
+        val absThreshold = abs(positionalThreshold)
+        val state = SwipeableTestState(
+            initialState = A,
+            positionalThreshold = fractionalPositionalThreshold(positionalThreshold)
+        )
+        rule.setContent { SwipeableBox(state) }
+
+        val positionOfA = state.anchors.getValue(A)
+        val positionOfB = state.anchors.getValue(B)
+        val distance = abs(positionOfA - positionOfB)
+        state.dispatchRawDelta(positionOfA + distance * (absThreshold * 0.9f))
+        rule.waitForIdle()
+
+        assertThat(state.currentValue).isEqualTo(A)
+        assertThat(state.targetValue).isEqualTo(A)
+
+        state.dispatchRawDelta(distance * 0.2f)
+        rule.waitForIdle()
+
+        assertThat(state.currentValue).isEqualTo(A)
+        assertThat(state.targetValue).isEqualTo(B)
+
+        runBlocking(AutoTestFrameClock()) { state.settle(velocity = 0f) }
+        rule.waitForIdle()
+
+        assertThat(state.currentValue).isEqualTo(B)
+        assertThat(state.targetValue).isEqualTo(B)
+
+        state.dispatchRawDelta(-distance * (absThreshold * 0.9f))
+        rule.waitForIdle()
+
+        assertThat(state.currentValue).isEqualTo(B)
+        assertThat(state.targetValue).isEqualTo(B)
+
+        state.dispatchRawDelta(-distance * 0.2f)
+        rule.waitForIdle()
+
+        assertThat(state.currentValue).isEqualTo(B)
+        assertThat(state.targetValue).isEqualTo(A)
+
+        runBlocking(AutoTestFrameClock()) { state.settle(velocity = 0f) }
+        rule.waitForIdle()
+
+        assertThat(state.currentValue).isEqualTo(A)
+        assertThat(state.targetValue).isEqualTo(A)
+    }
 
     @Test
-    fun swipeable_positionalThresholds_fixed_negativeThreshold_targetState() =
-        fixedThresholdsTest((-56).dp)
-
-    private fun fixedThresholdsTest(positionalThreshold: Dp) {
+    fun swipeable_positionalThresholds_fixed_targetState() {
+        val positionalThreshold = 56.dp
         val absThreshold = with(rule.density) { abs(positionalThreshold.toPx()) }
         val state = SwipeableTestState(
             initialState = A,
@@ -231,6 +357,7 @@ class SwipeableV2GestureTest {
         assertThat(state.targetValue).isEqualTo(B)
 
         runBlocking(AutoTestFrameClock()) { state.settle(velocity = 0f) }
+        rule.waitForIdle()
 
         assertThat(state.currentValue).isEqualTo(B)
         assertThat(state.targetValue).isEqualTo(B)
@@ -250,6 +377,60 @@ class SwipeableV2GestureTest {
         assertThat(state.targetValue).isEqualTo(A)
 
         runBlocking(AutoTestFrameClock()) { state.settle(velocity = 0f) }
+        rule.waitForIdle()
+
+        assertThat(state.currentValue).isEqualTo(A)
+        assertThat(state.targetValue).isEqualTo(A)
+    }
+
+    @Test
+    fun swipeable_positionalThresholds_fixed_negativeThreshold_targetState() {
+        val positionalThreshold = (-56).dp
+        val absThreshold = with(rule.density) { abs(positionalThreshold.toPx()) }
+        val state = SwipeableTestState(
+            initialState = A,
+            positionalThreshold = fixedPositionalThreshold(positionalThreshold)
+        )
+        rule.setContent { SwipeableBox(state) }
+
+        val initialOffset = state.requireOffset()
+
+        // Swipe towards B, close before threshold
+        state.dispatchRawDelta(initialOffset + (absThreshold * 0.9f))
+        rule.waitForIdle()
+
+        assertThat(state.currentValue).isEqualTo(A)
+        assertThat(state.targetValue).isEqualTo(A)
+
+        // Swipe towards B, close after threshold
+        state.dispatchRawDelta(absThreshold * 0.2f)
+        rule.waitForIdle()
+
+        assertThat(state.currentValue).isEqualTo(A)
+        assertThat(state.targetValue).isEqualTo(B)
+
+        runBlocking(AutoTestFrameClock()) { state.settle(velocity = 0f) }
+        rule.waitForIdle()
+
+        assertThat(state.currentValue).isEqualTo(B)
+        assertThat(state.targetValue).isEqualTo(B)
+
+        // Swipe towards A, close before threshold
+        state.dispatchRawDelta(-(absThreshold * 0.9f))
+        rule.waitForIdle()
+
+        assertThat(state.currentValue).isEqualTo(B)
+        assertThat(state.targetValue).isEqualTo(B)
+
+        // Swipe towards A, close after threshold
+        state.dispatchRawDelta(-(absThreshold * 0.2f))
+        rule.waitForIdle()
+
+        assertThat(state.currentValue).isEqualTo(B)
+        assertThat(state.targetValue).isEqualTo(A)
+
+        runBlocking(AutoTestFrameClock()) { state.settle(velocity = 0f) }
+        rule.waitForIdle()
 
         assertThat(state.currentValue).isEqualTo(A)
         assertThat(state.targetValue).isEqualTo(A)
@@ -260,19 +441,18 @@ class SwipeableV2GestureTest {
         runBlocking(AutoTestFrameClock()) {
             val velocity = 100.dp
             val velocityPx = with(rule.density) { velocity.toPx() }
-            val state = with(rule) {
-                SwipeableTestState(
-                    initialState = A,
-                    anchors = mapOf(
-                        A to 0f,
-                        B to 100f,
-                        C to 200f
-                    ),
-                    velocityThreshold = velocity / 2
-                )
-            }
+            val state = SwipeableTestState(
+                initialState = A,
+                anchors = mapOf(
+                    A to 0f,
+                    B to 100f,
+                    C to 200f
+                ),
+                velocityThreshold = velocity / 2
+            )
             state.dispatchRawDelta(60f)
             state.settle(velocityPx)
+            rule.waitForIdle()
             assertThat(state.currentValue).isEqualTo(B)
         }
 
@@ -341,22 +521,111 @@ class SwipeableV2GestureTest {
         assertThat(state.currentValue).isEqualTo(A)
     }
 
+    @Test
+    fun swipeable_dragBeyondBounds_clampsAndSwipesBack() {
+        val anchors = mapOf(
+            A to 0f,
+            C to 500f
+        )
+        val state = SwipeableTestState(
+            initialState = A,
+            velocityThreshold = 0.dp
+        )
+        rule.setContent {
+            SwipeableBox(
+                state,
+                calculateAnchor = { state, _ ->
+                    anchors[state]
+                }
+            )
+        }
+
+        val overdrag = 100f
+        val maxBound = state.anchors.getValue(C)
+
+        rule.onNodeWithTag(swipeableTestTag)
+            .performTouchInput {
+                down(Offset(0f, 0f))
+                moveBy(Offset(x = maxBound + overdrag, y = 0f))
+                moveBy(Offset(x = -overdrag, y = 0f))
+            }
+
+        rule.waitForIdle()
+
+        // If we have not correctly coerced our drag deltas, its internal offset would be the
+        // max bound + overdrag. If it is coerced correctly, it will not move past the max bound.
+        // This means that once we swipe back by the amount of overdrag, we should end up at the
+        // max bound - overdrag.
+        assertThat(state.requireOffset()).isEqualTo(maxBound - overdrag)
+    }
+
+    @Test
+    fun swipeable_animationCancelledByDrag_resetsTargetValueToClosest() {
+        rule.mainClock.autoAdvance = false
+        val animationDurationMillis = 500
+        val offsetAtB = animationDurationMillis / 2f
+        val offsetAtC = animationDurationMillis.toFloat()
+        val anchors = mapOf(
+            A to 0f,
+            B to offsetAtB,
+            C to offsetAtC
+        )
+        val state = SwipeableTestState(
+            initialState = A,
+            animationSpec = tween(animationDurationMillis, easing = LinearEasing),
+            positionalThreshold = fractionalPositionalThreshold(0.5f)
+        )
+        lateinit var scope: CoroutineScope
+        rule.setContent {
+            WithTouchSlop(touchSlop = 0f) {
+                scope = rememberCoroutineScope()
+                SwipeableBox(
+                    swipeableState = state,
+                    orientation = Orientation.Horizontal,
+                    calculateAnchor = { state, _ ->
+                        anchors[state]
+                    }
+                )
+            }
+        }
+
+        assertThat(state.currentValue).isEqualTo(A)
+        assertThat(state.targetValue).isEqualTo(A)
+
+        scope.launch { state.animateTo(C) }
+
+        rule.mainClock.advanceTimeUntil {
+            state.requireOffset() > abs(state.requireOffset() - offsetAtB)
+        } // Advance until our closest anchor is B
+        assertThat(state.targetValue).isEqualTo(C)
+
+        rule.onNodeWithTag(swipeableTestTag)
+            .performTouchInput {
+                down(Offset.Zero)
+            }
+
+        assertThat(state.targetValue).isEqualTo(B) // B is the closest now so we should target it
+    }
+
     private fun SwipeableTestState(
         initialState: TestState,
         density: Density = rule.density,
-        positionalThreshold: Density.(distance: Float) -> Float = { 56f },
+        positionalThreshold: Density.(distance: Float) -> Float = { 56.dp.toPx() },
         velocityThreshold: Dp = 125.dp,
-        anchors: Map<TestState, Float>? = null
+        anchors: Map<TestState, Float>? = null,
+        animationSpec: AnimationSpec<Float> = SwipeableV2Defaults.AnimationSpec
     ) = SwipeableV2State(
         initialValue = initialState,
         positionalThreshold = positionalThreshold,
         velocityThreshold = velocityThreshold,
-        density = density
-    ).apply { if (anchors != null) updateAnchors(anchors) }
+        animationSpec = animationSpec
+    ).apply {
+        if (anchors != null) updateAnchors(anchors)
+        this.density = density
+    }
+}
 
-    private fun TouchInjectionScope.endEdge(orientation: Orientation) =
-        if (orientation == Orientation.Horizontal) right else bottom
-
-    private fun TouchInjectionScope.startEdge(orientation: Orientation) =
-        if (orientation == Orientation.Horizontal) left else top
+private val NoOpDensity = object : Density {
+    override val density = 1f
+    override val fontScale = 1f
 }

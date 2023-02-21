@@ -21,6 +21,14 @@ package androidx.glance {
     method @androidx.compose.runtime.Composable public static void Button(String text, kotlin.jvm.functions.Function0<kotlin.Unit> onClick, optional androidx.glance.GlanceModifier modifier, optional boolean enabled, optional androidx.glance.text.TextStyle? style, optional androidx.glance.ButtonColors colors, optional int maxLines);
   }
 
+  public final class ColorFilter {
+    field public static final androidx.glance.ColorFilter.Companion Companion;
+  }
+
+  public static final class ColorFilter.Companion {
+    method public androidx.glance.ColorFilter tint(androidx.glance.unit.ColorProvider colorProvider);
+  }
+
   public final class CombinedGlanceModifier implements androidx.glance.GlanceModifier {
     ctor public CombinedGlanceModifier(androidx.glance.GlanceModifier outer, androidx.glance.GlanceModifier inner);
     method public boolean all(kotlin.jvm.functions.Function1<? super androidx.glance.GlanceModifier.Element,java.lang.Boolean> predicate);
@@ -30,8 +38,8 @@ package androidx.glance {
   }
 
   public final class CompositionLocalsKt {
-    method @androidx.compose.runtime.Composable public static inline <reified T> T! currentState();
-    method @androidx.compose.runtime.Composable public static inline <reified T> T! currentState(androidx.datastore.preferences.core.Preferences.Key<T> key);
+    method @androidx.compose.runtime.Composable public static inline <reified T> T? currentState();
+    method @androidx.compose.runtime.Composable public static inline <reified T> T? currentState(androidx.datastore.preferences.core.Preferences.Key<T> key);
     method public static androidx.compose.runtime.ProvidableCompositionLocal<android.content.Context> getLocalContext();
     method public static androidx.compose.runtime.ProvidableCompositionLocal<androidx.glance.GlanceId> getLocalGlanceId();
     method public static androidx.compose.runtime.ProvidableCompositionLocal<androidx.compose.ui.unit.DpSize> getLocalSize();
@@ -48,7 +56,7 @@ package androidx.glance {
   public interface GlanceId {
   }
 
-  @androidx.compose.runtime.Stable public interface GlanceModifier {
+  @androidx.compose.runtime.Stable @kotlin.jvm.JvmDefaultWithCompatibility public interface GlanceModifier {
     method public boolean all(kotlin.jvm.functions.Function1<? super androidx.glance.GlanceModifier.Element,java.lang.Boolean> predicate);
     method public boolean any(kotlin.jvm.functions.Function1<? super androidx.glance.GlanceModifier.Element,java.lang.Boolean> predicate);
     method public <R> R! foldIn(R? initial, kotlin.jvm.functions.Function2<? super R,? super androidx.glance.GlanceModifier.Element,? extends R> operation);
@@ -64,14 +72,11 @@ package androidx.glance {
     method public <R> R! foldOut(R? initial, kotlin.jvm.functions.Function2<? super androidx.glance.GlanceModifier.Element,? super R,? extends R> operation);
   }
 
-  public static interface GlanceModifier.Element extends androidx.glance.GlanceModifier {
+  @kotlin.jvm.JvmDefaultWithCompatibility public static interface GlanceModifier.Element extends androidx.glance.GlanceModifier {
     method public default boolean all(kotlin.jvm.functions.Function1<? super androidx.glance.GlanceModifier.Element,java.lang.Boolean> predicate);
     method public default boolean any(kotlin.jvm.functions.Function1<? super androidx.glance.GlanceModifier.Element,java.lang.Boolean> predicate);
     method public default <R> R! foldIn(R? initial, kotlin.jvm.functions.Function2<? super R,? super androidx.glance.GlanceModifier.Element,? extends R> operation);
     method public default <R> R! foldOut(R? initial, kotlin.jvm.functions.Function2<? super androidx.glance.GlanceModifier.Element,? super R,? extends R> operation);
-  }
-
-  @androidx.glance.GlanceComposable public final class GlanceNodeKt {
   }
 
   public final class GlanceTheme {
@@ -85,16 +90,13 @@ package androidx.glance {
   }
 
   public final class ImageKt {
-    method @androidx.compose.runtime.Composable public static void Image(androidx.glance.ImageProvider provider, String? contentDescription, optional androidx.glance.GlanceModifier modifier, optional int contentScale);
+    method @androidx.compose.runtime.Composable public static void Image(androidx.glance.ImageProvider provider, String? contentDescription, optional androidx.glance.GlanceModifier modifier, optional int contentScale, optional androidx.glance.ColorFilter? colorFilter);
     method public static androidx.glance.ImageProvider ImageProvider(@DrawableRes int resId);
     method public static androidx.glance.ImageProvider ImageProvider(android.graphics.Bitmap bitmap);
     method @RequiresApi(android.os.Build.VERSION_CODES.M) public static androidx.glance.ImageProvider ImageProvider(android.graphics.drawable.Icon icon);
   }
 
   public interface ImageProvider {
-  }
-
-  public final class UtilsKt {
   }
 
   public enum Visibility {
@@ -165,7 +167,7 @@ package androidx.glance.action {
   public final class StartActivityActionKt {
     method public static androidx.glance.action.Action actionStartActivity(android.content.ComponentName componentName, optional androidx.glance.action.ActionParameters parameters);
     method public static <T extends android.app.Activity> androidx.glance.action.Action actionStartActivity(Class<T> activity, optional androidx.glance.action.ActionParameters parameters);
-    method public static inline <reified T extends android.app.Activity> androidx.glance.action.Action! actionStartActivity(optional androidx.glance.action.ActionParameters parameters);
+    method public static inline <reified T extends android.app.Activity> androidx.glance.action.Action actionStartActivity(optional androidx.glance.action.ActionParameters parameters);
   }
 
 }
@@ -415,9 +417,6 @@ package androidx.glance.semantics {
 
 package androidx.glance.session {
 
-  public final class SessionKt {
-  }
-
   public final class SessionManagerKt {
   }
 
@@ -580,14 +579,12 @@ package androidx.glance.template {
   }
 
   public final class SingleEntityTemplateData {
-    ctor public SingleEntityTemplateData(optional boolean displayHeader, optional androidx.glance.template.HeaderBlock? headerBlock, optional androidx.glance.template.TextBlock? textBlock, optional androidx.glance.template.ImageBlock? imageBlock, optional androidx.glance.template.ActionBlock? actionBlock);
+    ctor public SingleEntityTemplateData(optional androidx.glance.template.HeaderBlock? headerBlock, optional androidx.glance.template.TextBlock? textBlock, optional androidx.glance.template.ImageBlock? imageBlock, optional androidx.glance.template.ActionBlock? actionBlock);
     method public androidx.glance.template.ActionBlock? getActionBlock();
-    method public boolean getDisplayHeader();
     method public androidx.glance.template.HeaderBlock? getHeaderBlock();
     method public androidx.glance.template.ImageBlock? getImageBlock();
     method public androidx.glance.template.TextBlock? getTextBlock();
     property public final androidx.glance.template.ActionBlock? actionBlock;
-    property public final boolean displayHeader;
     property public final androidx.glance.template.HeaderBlock? headerBlock;
     property public final androidx.glance.template.ImageBlock? imageBlock;
     property public final androidx.glance.template.TextBlock? textBlock;

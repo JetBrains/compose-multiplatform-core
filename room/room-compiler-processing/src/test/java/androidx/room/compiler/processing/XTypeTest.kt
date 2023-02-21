@@ -16,6 +16,7 @@
 
 package androidx.room.compiler.processing
 
+import androidx.room.compiler.codegen.XClassName
 import androidx.room.compiler.codegen.XTypeName.Companion.UNAVAILABLE_KTYPE_NAME
 import androidx.room.compiler.processing.ksp.ERROR_JTYPE_NAME
 import androidx.room.compiler.processing.ksp.ERROR_KTYPE_NAME
@@ -23,10 +24,13 @@ import androidx.room.compiler.processing.util.Source
 import androidx.room.compiler.processing.util.XTestInvocation
 import androidx.room.compiler.processing.util.asJClassName
 import androidx.room.compiler.processing.util.asKClassName
+import androidx.room.compiler.processing.util.compileFiles
 import androidx.room.compiler.processing.util.dumpToString
+import androidx.room.compiler.processing.util.getDeclaredField
 import androidx.room.compiler.processing.util.getDeclaredMethodByJvmName
 import androidx.room.compiler.processing.util.getField
 import androidx.room.compiler.processing.util.getMethodByJvmName
+import androidx.room.compiler.processing.util.isCollection
 import androidx.room.compiler.processing.util.javaElementUtils
 import androidx.room.compiler.processing.util.kspResolver
 import androidx.room.compiler.processing.util.runKspTest
@@ -1191,6 +1195,7 @@ class XTypeTest {
             }
         }
 
+        val step = TypeArgumentProcessingStep()
         runProcessorTest(
             sources = listOf(Source.java(
                 "test.Foo",
@@ -1202,11 +1207,24 @@ class XTypeTest {
                 @interface Inspect {}
                 """.trimIndent()
             )),
-            createProcessingStep = { TypeArgumentProcessingStep() }
-        ) { result ->
-            result.hasError()
-            result.hasErrorCount(1)
-            result.hasErrorContaining("cannot find symbol")
+        ) { invocation ->
+            val elements =
+                step.annotations()
+                    .associateWith { annotation ->
+                        invocation.roundEnv.getElementsAnnotatedWith(annotation)
+                            .filterIsInstance<XTypeElement>()
+                            .toSet()
+                    }
+            step.process(
+                env = invocation.processingEnv,
+                elementsByAnnotation = elements,
+                isLastRound = false
+            )
+            invocation.assertCompilationResult {
+                hasError()
+                hasErrorCount(1)
+                hasErrorContaining("cannot find symbol")
+            }
         }
 
         runProcessorTest(
@@ -1221,7 +1239,7 @@ class XTypeTest {
             kotlincArguments = listOf(
                 "-P", "plugin:org.jetbrains.kotlin.kapt3:correctErrorTypes=true"
             ),
-            createProcessingStep = { TypeArgumentProcessingStep() }
+            createProcessingSteps = { listOf(TypeArgumentProcessingStep()) }
         ) { result ->
             result.hasError()
             result.hasErrorCount(1)
@@ -1280,7 +1298,7 @@ class XTypeTest {
                 @interface Inspect {}
                 """.trimIndent()
             )),
-            createProcessingStep = { WildcardProcessingStep() }
+            createProcessingSteps = { listOf(WildcardProcessingStep()) }
         ) { result ->
             result.hasError()
             result.hasErrorCount(1)
@@ -1300,11 +1318,323 @@ class XTypeTest {
             kotlincArguments = listOf(
                 "-P", "plugin:org.jetbrains.kotlin.kapt3:correctErrorTypes=true"
             ),
-            createProcessingStep = { WildcardProcessingStep() }
+            createProcessingSteps = { listOf(WildcardProcessingStep()) }
         ) { result ->
             result.hasError()
             result.hasErrorCount(1)
             result.hasErrorContaining("Unresolved reference")
         }
+    }
+
+    @Test
+    fun getWildcardType() {
+        fun XTestInvocation.checkType() {
+            val usageElement = processingEnv.requireTypeElement("test.Usage")
+            val fooElement = processingEnv.requireTypeElement("test.Foo")
+            val barType = processingEnv.requireType("test.Bar")
+
+            // Test a manually constructed Foo<Bar>
+            val fooBarType = processingEnv.getDeclaredType(fooElement, barType)
+            val fooBarUsageType = usageElement.getDeclaredField("fooBar").type
+            assertThat(fooBarType.asTypeName()).isEqualTo(fooBarUsageType.asTypeName())
+
+            // Test a manually constructed Foo<? extends Bar>
+            val fooExtendsBarType = processingEnv.getDeclaredType(
+                fooElement,
+                processingEnv.getWildcardType(producerExtends = barType)
+            )
+            val fooExtendsBarUsageType = usageElement.getDeclaredField("fooExtendsBar").type
+            assertThat(fooExtendsBarType.asTypeName())
+                .isEqualTo(fooExtendsBarUsageType.asTypeName())
+
+            // Test a manually constructed Foo<? super Bar>
+            val fooSuperBarType = processingEnv.getDeclaredType(
+                fooElement,
+                processingEnv.getWildcardType(consumerSuper = barType)
+            )
+            val fooSuperBarUsageType = usageElement.getDeclaredField("fooSuperBar").type
+            assertThat(fooSuperBarType.asTypeName()).isEqualTo(fooSuperBarUsageType.asTypeName())
+
+            // Test a manually constructed Foo<?>
+            val fooUnboundedType = processingEnv.getDeclaredType(
+                fooElement,
+                processingEnv.getWildcardType()
+            )
+            val fooUnboundedUsageType = usageElement.getDeclaredField("fooUnbounded").type
+            assertThat(fooUnboundedType.asTypeName()).isEqualTo(fooUnboundedUsageType.asTypeName())
+        }
+
+        runProcessorTest(listOf(Source.java(
+            "test.Foo",
+            """
+            package test;
+            class Usage {
+              Foo<?> fooUnbounded;
+              Foo<Bar> fooBar;
+              Foo<? extends Bar> fooExtendsBar;
+              Foo<? super Bar> fooSuperBar;
+            }
+            interface Foo<T> {}
+            interface Bar {}
+            """.trimIndent()
+        ))) { it.checkType() }
+
+        runProcessorTest(listOf(Source.kotlin(
+            "test.Usage.kt",
+            """
+            package test
+            class Usage {
+              val fooUnbounded: Foo<*> = TODO()
+              val fooBar: Foo<Bar> = TODO()
+              val fooExtendsBar: Foo<out Bar> = TODO()
+              val fooSuperBar: Foo<in Bar> = TODO()
+            }
+            interface Foo<T>
+            interface Bar
+            """.trimIndent()
+        ))) { it.checkType() }
+    }
+
+    @Test
+    fun isTypeVariable() {
+        val javaSubject = Source.java(
+            "test.JavaFoo",
+            """
+            package test;
+            class JavaFoo<T> {
+                T field;
+                T method(T param) {
+                    return null;
+                }
+            }
+            """.trimIndent()
+        )
+        val javaImplSubject = Source.java(
+            "test.JavaFooImpl",
+            """
+            package test;
+            class JavaFooImpl extends JavaFoo<String> {
+            }
+            """.trimIndent()
+        )
+        val kotlinSubject = Source.kotlin(
+            "Foo.kt",
+            """
+            package test
+            open class KotlinFoo<T> {
+                val field: T = TODO();
+                fun method(param: T): T {
+                    TODO()
+                }
+            }
+
+            class KotlinFooImpl : KotlinFoo<String>()
+            """.trimIndent()
+        )
+        runProcessorTest(
+            sources = listOf(javaSubject, javaImplSubject, kotlinSubject)
+        ) { invocation ->
+            listOf("test.JavaFoo", "test.KotlinFoo").forEach { fqn ->
+                val typeElement = invocation.processingEnv.requireTypeElement(fqn)
+                typeElement.getDeclaredField("field").let {
+                    assertThat(it.type.isTypeVariable()).isTrue()
+                    val asMemberOf =
+                        it.asMemberOf(invocation.processingEnv.requireType(fqn + "Impl"))
+                    assertThat(asMemberOf.isTypeVariable()).isFalse()
+                }
+                typeElement.getDeclaredMethodByJvmName("method").let {
+                    assertThat(it.returnType.isTypeVariable()).isTrue()
+                    assertThat(it.parameters.single().type.isTypeVariable()).isTrue()
+                    val asMemberOf =
+                        it.asMemberOf(invocation.processingEnv.requireType(fqn + "Impl"))
+                    assertThat(asMemberOf.returnType.isTypeVariable()).isFalse()
+                    assertThat(asMemberOf.parameterTypes.single().isTypeVariable()).isFalse()
+                }
+            }
+        }
+    }
+
+    @Test
+    fun typeParameter_extendBound() {
+        val src = Source.kotlin(
+            "Foo.kt",
+            """
+            class Foo<E> {
+                fun justOneGeneric(): E = TODO()
+                fun listOfGeneric(): List<E> = TODO()
+            }
+            """.trimIndent()
+        )
+        runProcessorTest(
+            sources = listOf(src)
+        ) {
+            val fooTypeElement = it.processingEnv.requireTypeElement("Foo")
+            fooTypeElement.getMethodByJvmName("justOneGeneric").returnType.let { type ->
+                assertThat(type.extendsBound()).isNull()
+            }
+            fooTypeElement.getMethodByJvmName("listOfGeneric").returnType.let { type ->
+                assertThat(type.extendsBound()).isNull()
+                type.typeArguments.forEach { typeArg ->
+                    assertThat(typeArg.extendsBound()).isNull()
+                }
+            }
+        }
+    }
+
+    @Test
+    fun missingTypes_names() {
+        val src = Source.kotlin(
+            "Foo.kt",
+            """
+            package test
+
+            class Foo {
+              fun bar(missing: MissingType) = TODO()
+              fun barQualified(missing: bar.MissingType) = TODO()
+            }
+            """.trimIndent()
+        )
+        runProcessorTest(
+            sources = listOf(src),
+            kotlincArguments = listOf(
+                "-P", "plugin:org.jetbrains.kotlin.kapt3:correctErrorTypes=true"
+            ),
+        ) {
+            val fooTypeElement = it.processingEnv.requireTypeElement("test.Foo")
+            fooTypeElement.getMethodByJvmName("bar").parameters.single().let { param ->
+                if (it.isKsp) {
+                    // TODO(b/248552462): KSP doesn't expose simple names on error types, see:
+                    //  https://github.com/google/ksp/issues/1232
+                    assertThat(param.type.asTypeName())
+                        .isEqualTo(XClassName.get("error", "NonExistentClass"))
+                } else {
+                    assertThat(param.type.asTypeName())
+                        .isEqualTo(XClassName.get("", "MissingType"))
+                }
+            }
+            fooTypeElement.getMethodByJvmName("barQualified").parameters.single().let { param ->
+                if (it.isKsp) {
+                    // TODO(b/248552462): KSP doesn't expose simple names on error types, see:
+                    //  https://github.com/google/ksp/issues/1232
+                    assertThat(param.type.asTypeName())
+                        .isEqualTo(XClassName.get("error", "NonExistentClass"))
+                } else {
+                    assertThat(param.type.asTypeName())
+                        .isEqualTo(XClassName.get("", "bar.MissingType"))
+                }
+            }
+            it.assertCompilationResult { hasErrorContaining("Unresolved reference: MissingType") }
+        }
+    }
+
+    @Test
+    fun hasAnnotationWithPackage() {
+        val kotlinSrc = Source.kotlin(
+            "KotlinClass.kt",
+            """
+            package foo.bar
+            interface KotlinInterface
+            open class KotlinBase
+            @Target(AnnotationTarget.TYPE)
+            annotation class KotlinAnnotation {
+                @Target(AnnotationTarget.TYPE)
+                annotation class KotlinNestedAnnotation
+            }
+            class KotlinClass : @KotlinAnnotation.KotlinNestedAnnotation KotlinBase(),
+                    @KotlinAnnotation KotlinInterface {
+                inner class KotlinInner : @KotlinAnnotation KotlinInterface
+                class KotlinNested : @KotlinAnnotation KotlinInterface
+            }
+            """.trimIndent()
+        )
+        // KSP can't read nested annotations in Java sources if the filename does not match
+        // the outer class.
+        val javaAnnotationSource = Source.java(
+            "foo.bar.JavaAnnotation",
+            """
+            package foo.bar;
+            import java.lang.annotation.ElementType;
+            import java.lang.annotation.Target;
+            @Target(ElementType.TYPE_USE)
+            @interface JavaAnnotation {
+                @Target(ElementType.TYPE_USE)
+                @interface JavaNestedAnnotation {}
+            }
+            """.trimIndent()
+        )
+        val javaSrc = Source.java(
+            "foo.bar.JavaClass",
+            """
+            package foo.bar;
+            interface JavaInterface {}
+            class JavaBase {}
+            class JavaClass extends @JavaAnnotation.JavaNestedAnnotation JavaBase
+                implements @JavaAnnotation JavaInterface {}
+            """.trimIndent()
+        )
+        fun checkKotlin(invocation: XTestInvocation) {
+            val kotlinTypeElement = invocation.processingEnv.requireTypeElement(
+                "foo.bar.KotlinClass")
+            kotlinTypeElement.superInterfaces.single().let {
+                assertThat(it.getAllAnnotations().single().typeElement.packageName)
+                        .isEqualTo("foo.bar")
+                assertThat(it.getAllAnnotations().single().typeElement.qualifiedName)
+                    .isEqualTo("foo.bar.KotlinAnnotation")
+
+                assertThat(it.hasAnnotationWithPackage("foo.bar.KotlinAnnotation")).isFalse()
+                assertThat(it.hasAnnotationWithPackage("foo.bar")).isTrue()
+                assertThat(it.hasAnnotationWithPackage("foo")).isFalse()
+            }
+            kotlinTypeElement.superClass!!.let {
+                assertThat(it.getAllAnnotations().single().typeElement.packageName)
+                    .isEqualTo("foo.bar")
+                assertThat(it.getAllAnnotations().single().typeElement.qualifiedName)
+                    .isEqualTo("foo.bar.KotlinAnnotation.KotlinNestedAnnotation")
+
+                assertThat(it.getAllAnnotations().single().typeElement.packageName)
+                    .isEqualTo("foo.bar")
+                assertThat(it.getAllAnnotations().single().typeElement.qualifiedName)
+                    .isEqualTo("foo.bar.KotlinAnnotation.KotlinNestedAnnotation")
+            }
+        }
+        fun checkJava(invocation: XTestInvocation) {
+            val javaTypeElement = invocation.processingEnv.requireTypeElement(
+                "foo.bar.JavaClass")
+            javaTypeElement.superInterfaces.first().let {
+                assertThat(it.getAllAnnotations().single().typeElement.packageName)
+                    .isEqualTo("foo.bar")
+                assertThat(it.getAllAnnotations().single().typeElement.qualifiedName)
+                    .isEqualTo("foo.bar.JavaAnnotation")
+
+                assertThat(it.hasAnnotationWithPackage("foo.bar.JavaClass")).isFalse()
+                assertThat(it.hasAnnotationWithPackage("foo.bar")).isTrue()
+                assertThat(it.hasAnnotationWithPackage("foo")).isFalse()
+            }
+            javaTypeElement.superClass!!.let {
+                assertThat(it.getAllAnnotations().single().typeElement.packageName)
+                    .isEqualTo("foo.bar")
+                assertThat(it.getAllAnnotations().single().typeElement.qualifiedName)
+                    .isEqualTo("foo.bar.JavaAnnotation.JavaNestedAnnotation")
+
+                assertThat(it.hasAnnotationWithPackage("foo.bar.JavaClass")).isFalse()
+                assertThat(it.hasAnnotationWithPackage("foo.bar")).isTrue()
+                assertThat(it.hasAnnotationWithPackage("foo")).isFalse()
+            }
+        }
+        runProcessorTest(
+            sources = listOf(kotlinSrc, javaAnnotationSource, javaSrc),
+            handler = {
+                checkKotlin(it)
+                checkJava(it)
+            }
+        )
+        runProcessorTest(
+            classpath = compileFiles(listOf(kotlinSrc)),
+            handler = {
+                // We can't see type annotations from precompiled Java classes. Skipping it
+                // for now: https://github.com/google/ksp/issues/1296
+                checkKotlin(it)
+            }
+        )
     }
 }

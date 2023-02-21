@@ -24,10 +24,12 @@ import static org.junit.Assert.assertTrue;
 import android.graphics.Point;
 import android.graphics.Rect;
 
+import androidx.test.filters.FlakyTest;
 import androidx.test.filters.SdkSuppress;
 import androidx.test.uiautomator.UiObject;
 import androidx.test.uiautomator.UiSelector;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 public class UiObjectTest extends BaseTest {
@@ -117,6 +119,7 @@ public class UiObjectTest extends BaseTest {
         assertTrue(expectedDragDest.waitForExists(TIMEOUT_MS));
     }
 
+    @Ignore // b/266617747
     @Test
     public void testSwipeUp() throws Exception {
         launchTestActivity(SwipeTestActivity.class);
@@ -138,6 +141,7 @@ public class UiObjectTest extends BaseTest {
         assertTrue(expectedSwipeRegion.waitForExists(TIMEOUT_MS));
     }
 
+    @Ignore // b/266617747
     @Test
     public void testSwipeDown() throws Exception {
         launchTestActivity(SwipeTestActivity.class);
@@ -157,6 +161,7 @@ public class UiObjectTest extends BaseTest {
         assertTrue(expectedSwipeRegion.waitForExists(TIMEOUT_MS));
     }
 
+    @FlakyTest(bugId = 242761733)
     @Test
     public void testSwipeLeft() throws Exception {
         launchTestActivity(SwipeTestActivity.class);
@@ -176,6 +181,7 @@ public class UiObjectTest extends BaseTest {
         assertTrue(expectedSwipeRegion.waitForExists(TIMEOUT_MS));
     }
 
+    @Ignore // b/266617747
     @Test
     public void testSwipeRight() throws Exception {
         launchTestActivity(SwipeTestActivity.class);
@@ -552,6 +558,7 @@ public class UiObjectTest extends BaseTest {
     }
 
     @Test
+    @SdkSuppress(minSdkVersion = 23) // Bounds include invisible regions prior to API 23.
     public void testGetBounds() throws Exception {
         launchTestActivity(VisibleBoundsTestActivity.class);
 
@@ -635,6 +642,8 @@ public class UiObjectTest extends BaseTest {
         UiObject expectedScaleText = mDevice.findObject(new UiSelector().resourceId(TEST_APP + ":id"
                 + "/scale_factor").text("1.0f"));
 
+        assertTrue(pinchArea.pinchOut(0, 10));
+        assertFalse(expectedScaleText.waitUntilGone(TIMEOUT_MS));
         assertTrue(pinchArea.pinchOut(100, 10));
         assertTrue(expectedScaleText.waitUntilGone(TIMEOUT_MS));
         float scaleValueAfterPinch = Float.parseFloat(scaleText.getText());
@@ -655,6 +664,8 @@ public class UiObjectTest extends BaseTest {
         UiObject expectedScaleText = mDevice.findObject(new UiSelector().resourceId(TEST_APP + ":id"
                 + "/scale_factor").text("1.0f"));
 
+        assertTrue(pinchArea.pinchIn(0, 10));
+        assertFalse(expectedScaleText.waitUntilGone(TIMEOUT_MS));
         assertTrue(pinchArea.pinchIn(100, 10));
         assertTrue(expectedScaleText.waitUntilGone(TIMEOUT_MS));
         float scaleValueAfterPinch = Float.parseFloat(scaleText.getText());
@@ -674,6 +685,10 @@ public class UiObjectTest extends BaseTest {
         assertUiObjectNotFound(() -> noNode.pinchIn(100, 10));
         assertThrows(IllegalStateException.class, () -> smallArea.pinchOut(100, 10));
         assertThrows(IllegalStateException.class, () -> smallArea.pinchIn(100, 10));
+        assertThrows(IllegalArgumentException.class, () -> smallArea.pinchOut(-1, 10));
+        assertThrows(IllegalArgumentException.class, () -> smallArea.pinchOut(101, 10));
+        assertThrows(IllegalArgumentException.class, () -> smallArea.pinchIn(-1, 10));
+        assertThrows(IllegalArgumentException.class, () -> smallArea.pinchIn(101, 10));
     }
 
     @Test

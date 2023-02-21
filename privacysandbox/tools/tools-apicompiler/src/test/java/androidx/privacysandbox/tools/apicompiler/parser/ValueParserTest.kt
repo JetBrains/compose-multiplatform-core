@@ -25,6 +25,7 @@ import androidx.privacysandbox.tools.core.model.Parameter
 import androidx.privacysandbox.tools.core.model.ParsedApi
 import androidx.privacysandbox.tools.core.model.Type
 import androidx.privacysandbox.tools.core.model.Types
+import androidx.privacysandbox.tools.core.model.Types.asNullable
 import androidx.privacysandbox.tools.core.model.ValueProperty
 import androidx.room.compiler.processing.util.Source
 import com.google.common.truth.Truth.assertThat
@@ -47,12 +48,12 @@ class ValueParserTest {
                         suspend fun doStuff(request: MySdkRequest): MySdkResponse
                     }
                     @PrivacySandboxValue
-                    data class MySdkRequest(val id: Int, val message: String)
+                    data class MySdkRequest(val id: Int, val message: String?)
                     @PrivacySandboxValue
                     data class MySdkResponse(
                         val magicPayload: MagicPayload, val isTrulyMagic: Boolean)
                     @PrivacySandboxValue
-                    data class MagicPayload(val magicNumber: Long)
+                    data class MagicPayload(val magicList: List<Long>)
                 """
         )
         assertThat(parseSources(source)).isEqualTo(
@@ -77,7 +78,7 @@ class ValueParserTest {
                         type = Type(packageName = "com.mysdk", simpleName = "MySdkRequest"),
                         properties = listOf(
                             ValueProperty("id", Types.int),
-                            ValueProperty("message", Types.string),
+                            ValueProperty("message", Types.string.asNullable()),
                         )
                     ),
                     AnnotatedValue(
@@ -92,9 +93,7 @@ class ValueParserTest {
                     ),
                     AnnotatedValue(
                         type = Type(packageName = "com.mysdk", simpleName = "MagicPayload"),
-                        properties = listOf(
-                            ValueProperty("magicNumber", Types.long),
-                        )
+                        properties = listOf(ValueProperty("magicList", Types.list(Types.long)))
                     ),
                 )
             )
@@ -161,24 +160,13 @@ class ValueParserTest {
     }
 
     @Test
-    fun dataClassWithNullableProperty_fails() {
-        val dataClass = annotatedValue(
-            "data class MySdkRequest(val id: Int, val data: String?)"
-        )
-        checkSourceFails(dataClass)
-            .containsExactlyErrors(
-                "Error in com.mysdk.MySdkRequest.data: nullable types are not supported."
-            )
-    }
-
-    @Test
     fun dataClassWithInvalidPropertyType_fails() {
         val dataClass = annotatedValue(
             "data class MySdkRequest(val foo: IntArray)"
         )
         checkSourceFails(dataClass)
             .containsExactlyErrors(
-                "Error in com.mysdk.MySdkRequest.foo: only primitives, data classes " +
+                "Error in com.mysdk.MySdkRequest.foo: only primitives, lists, data classes " +
                     "annotated with @PrivacySandboxValue and interfaces annotated with " +
                     "@PrivacySandboxInterface are supported as properties."
             )

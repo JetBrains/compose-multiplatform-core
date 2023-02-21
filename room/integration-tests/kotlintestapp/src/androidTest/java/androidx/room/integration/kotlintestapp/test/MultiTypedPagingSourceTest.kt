@@ -23,12 +23,13 @@ import androidx.room.InvalidationTracker
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.androidx.room.integration.kotlintestapp.testutil.ItemStore
-import androidx.room.androidx.room.integration.kotlintestapp.testutil.PagingEntityDao
 import androidx.room.androidx.room.integration.kotlintestapp.testutil.PagingDb
 import androidx.room.androidx.room.integration.kotlintestapp.testutil.PagingEntity
+import androidx.room.androidx.room.integration.kotlintestapp.testutil.PagingEntityDao
 import androidx.room.awaitPendingRefresh
 import androidx.sqlite.db.SimpleSQLiteQuery
 import androidx.test.core.app.ApplicationProvider
+import androidx.test.filters.FlakyTest
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SmallTest
 import androidx.testutils.FilteringExecutor
@@ -47,6 +48,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.junit.After
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
@@ -100,7 +102,7 @@ class MultiTypedPagingSourceTest(
     fun loadEverything() {
         // open db
         val items = createItems(startId = 15, count = 50)
-        db.dao.insert(items)
+        db.getDao().insert(items)
         runTest {
             val initialLoad = itemStore.awaitInitialLoad()
             assertThat(
@@ -131,12 +133,12 @@ class MultiTypedPagingSourceTest(
     fun loadEverything_inReverse() {
         // open db
         val items = createItems(startId = 0, count = 100)
-        db.dao.insert(items)
+        db.getDao().insert(items)
         val pager = Pager(
             config = CONFIG,
             initialKey = 98
         ) {
-            db.dao.loadItems()
+            db.getDao().loadItems()
         }
         runTest(pager) {
             val initialLoad = itemStore.awaitInitialLoad()
@@ -170,13 +172,13 @@ class MultiTypedPagingSourceTest(
     @Test
     fun keyTooLarge_returnLastPage() {
         val items = createItems(startId = 0, count = 50)
-        db.dao.insert(items)
+        db.getDao().insert(items)
 
         val pager = Pager(
             config = CONFIG,
             initialKey = 80
         ) {
-            db.dao.loadItems()
+            db.getDao().loadItems()
         }
         runTest(pager = pager) {
             val initialLoad = itemStore.awaitInitialLoad()
@@ -200,7 +202,7 @@ class MultiTypedPagingSourceTest(
     @Test
     fun jumping() {
         val items = createItems(startId = 0, count = 200)
-        db.dao.insert(items)
+        db.getDao().insert(items)
 
         val config = PagingConfig(
             pageSize = 3,
@@ -211,7 +213,7 @@ class MultiTypedPagingSourceTest(
         val pager = Pager(
             config = config,
         ) {
-            db.dao.loadItems()
+            db.getDao().loadItems()
         }
         runTest(pager = pager) {
             val initialLoad = itemStore.awaitInitialLoad()
@@ -246,12 +248,12 @@ class MultiTypedPagingSourceTest(
     @Test
     fun prependWithDelayedInvalidation() {
         val items = createItems(startId = 0, count = 90)
-        db.dao.insert(items)
+        db.getDao().insert(items)
 
         val pager = Pager(
             config = CONFIG,
             initialKey = 20,
-            pagingSourceFactory = { db.dao.loadItems().also { pagingSources.add(it) } }
+            pagingSourceFactory = { db.getDao().loadItems().also { pagingSources.add(it) } }
         )
 
         runTest(pager) {
@@ -271,7 +273,7 @@ class MultiTypedPagingSourceTest(
             queryExecutor.filterFunction = { runnable ->
                 runnable !== db.invalidationTracker.refreshRunnable
             }
-            db.dao.deleteItems(
+            db.getDao().deleteItems(
                 items.subList(0, 60).map { it.id }
             )
             // make sure invalidation requests a refresh
@@ -339,15 +341,16 @@ class MultiTypedPagingSourceTest(
         }
     }
 
+    @Ignore // b/260592924
     @Test
     fun prependWithBlockingObserver() {
         val items = createItems(startId = 0, count = 90)
-        db.dao.insert(items)
+        db.getDao().insert(items)
 
         val pager = Pager(
             config = CONFIG,
             initialKey = 20,
-            pagingSourceFactory = { db.dao.loadItems().also { pagingSources.add(it) } }
+            pagingSourceFactory = { db.getDao().loadItems().also { pagingSources.add(it) } }
         )
 
         // to block the PagingSource's observer, this observer needs to be registered first
@@ -376,7 +379,7 @@ class MultiTypedPagingSourceTest(
             )
             assertThat(db.invalidationTracker.pendingRefresh.get()).isFalse()
 
-            db.dao.deleteItems(
+            db.getDao().deleteItems(
                 items.subList(0, 60).map { it.id }
             )
 
@@ -408,10 +411,11 @@ class MultiTypedPagingSourceTest(
         }
     }
 
+    @FlakyTest(bugId = 261205680)
     @Test
     fun appendWithDelayedInvalidation() {
         val items = createItems(startId = 0, count = 90)
-        db.dao.insert(items)
+        db.getDao().insert(items)
         runTest {
             val initialLoad = itemStore.awaitInitialLoad()
             assertThat(
@@ -428,7 +432,7 @@ class MultiTypedPagingSourceTest(
             queryExecutor.filterFunction = { runnable ->
                 runnable !== db.invalidationTracker.refreshRunnable
             }
-            db.dao.deleteItems(
+            db.getDao().deleteItems(
                 items.subList(0, 80).map { it.id }
             )
             // make sure invalidation requests a refresh
@@ -509,7 +513,7 @@ class MultiTypedPagingSourceTest(
             assertThat(itemStore.peekItems()).isEmpty()
 
             val entity = PagingEntity(id = 1, value = "foo")
-            db.dao.insert(entity)
+            db.getDao().insert(entity)
             itemStore.awaitGeneration(2)
             itemStore.awaitInitialLoad()
             assertThat(itemStore.peekItems()).containsExactly(entity)
@@ -520,7 +524,9 @@ class MultiTypedPagingSourceTest(
         pager: Pager<Int, PagingEntity> =
             Pager(
                 config = CONFIG,
-                pagingSourceFactory = { pagingSourceFactory(db.dao).also { pagingSources.add(it) } }
+                pagingSourceFactory = {
+                    pagingSourceFactory(db.getDao()).also { pagingSources.add(it) }
+                }
             ),
         block: suspend () -> Unit
     ) {
@@ -578,7 +584,7 @@ class MultiTypedPagingSourceTestWithRawQuery(
     fun loadEverythingRawQuery() {
         // open db
         val items = createItems(startId = 15, count = 50)
-        db.dao.insert(items)
+        db.getDao().insert(items)
         val query = SimpleSQLiteQuery(
             "SELECT * FROM PagingEntity ORDER BY id ASC"
         )
@@ -611,12 +617,12 @@ class MultiTypedPagingSourceTestWithRawQuery(
     fun loadEverythingRawQuery_inReverse() {
         // open db
         val items = createItems(startId = 0, count = 100)
-        db.dao.insert(items)
+        db.getDao().insert(items)
         val query = SimpleSQLiteQuery(
             "SELECT * FROM PagingEntity ORDER BY id ASC"
         )
         val pager = Pager(config = CONFIG, initialKey = 98) {
-            pagingSourceFactoryRaw(db.dao, query)
+            pagingSourceFactoryRaw(db.getDao(), query)
         }
         runTest(query, pager) {
             val initialLoad = itemStore.awaitInitialLoad()
@@ -648,7 +654,7 @@ class MultiTypedPagingSourceTestWithRawQuery(
     @Test
     fun rawQuery_userSuppliedLimitOffset() {
         val items = createItems(startId = 15, count = 70)
-        db.dao.insert(items)
+        db.getDao().insert(items)
 
         val query = SimpleSQLiteQuery(
             "SELECT * FROM PagingEntity ORDER BY id ASC LIMIT 30 OFFSET 5"
@@ -687,7 +693,7 @@ class MultiTypedPagingSourceTestWithRawQuery(
     @Test
     fun rawQuery_multipleArguments() {
         val items = createItems(startId = 0, count = 80)
-        db.dao.insert(items)
+        db.getDao().insert(items)
         val query = SimpleSQLiteQuery(
             "SELECT * " +
                 "FROM PagingEntity " +
@@ -730,7 +736,7 @@ class MultiTypedPagingSourceTestWithRawQuery(
         pager: Pager<Int, PagingEntity> =
             Pager(
                 config = CONFIG,
-                pagingSourceFactory = { pagingSourceFactoryRaw(db.dao, query) }
+                pagingSourceFactory = { pagingSourceFactoryRaw(db.getDao(), query) }
             ),
         block: suspend () -> Unit
     ) {

@@ -107,43 +107,82 @@ object Shell {
             }
     }
 
+    /**
+     * Get a checksum for a given path
+     *
+     * Note: Does not check for stderr, as this method is used during ShellImpl init, so stderr not
+     * yet available
+     */
     @RequiresApi(21)
-    fun chmodExecutable(absoluteFilePath: String) {
-        // use unsafe commands, as this is used in Shell.executeScript
+    internal fun getChecksum(path: String): String {
+        val sum = if (Build.VERSION.SDK_INT >= 23) {
+            ShellImpl.executeCommandUnsafe("md5sum $path").substringBefore(" ")
+        } else {
+            // this isn't good, but it's good enough for API 22
+            val result = ShellImpl.executeCommandUnsafe("ls -l $path")
+            if (result.isBlank()) "" else result.split(Regex("\\s+"))[3]
+        }
+        check(sum.isNotBlank()) {
+            "Checksum for $path was blank"
+        }
+        return sum
+    }
+
+    /**
+     * Copy file and make executable
+     *
+     * Note: this operation does checksum validation of dst, since it's used during setup of the
+     * shell script used to capture stderr, so stderr isn't available.
+     */
+    @RequiresApi(21)
+    private fun moveToTmpAndMakeExecutable(src: String, dst: String) {
+        ShellImpl.executeCommandUnsafe("cp $src $dst")
         if (Build.VERSION.SDK_INT >= 23) {
-            ShellImpl.executeCommandUnsafe("chmod +x $absoluteFilePath")
+            ShellImpl.executeCommandUnsafe("chmod +x $dst")
         } else {
             // chmod with support for +x only added in API 23
             // While 777 is technically more permissive, this is only used for scripts and temporary
             // files in tests, so we don't worry about permissions / access here
-            ShellImpl.executeCommandUnsafe("chmod 777 $absoluteFilePath")
+            ShellImpl.executeCommandUnsafe("chmod 777 $dst")
         }
-    }
 
-    @RequiresApi(21)
-    fun moveToTmpAndMakeExecutable(src: String, dst: String) {
-        ShellImpl.executeCommandUnsafe("cp $src $dst")
-        chmodExecutable(dst)
+        // validate checksums instead of checking stderr, since it's not yet safe to
+        // read from stderr. This detects the problem where root left a stale executable
+        // that can't be modified by shell at the dst path
+        val srcSum = getChecksum(src)
+        val dstSum = getChecksum(dst)
+        if (srcSum != dstSum) {
+            throw IllegalStateException("Failed to verify copied executable $dst, " +
+                "md5 sums $srcSum, $dstSum don't match. Check if root owns" +
+                " $dst and if so, delete it with `adb root`-ed shell session.")
+        }
     }
 
     /**
      * Writes the inputStream to an executable file with the given name in `/data/local/tmp`
+     *
+     * Note: this operation does not validate command success, since it's used during setup of shell
+     * scripting code used to parse stderr. This means callers should validate.
      */
     @RequiresApi(21)
     fun createRunnableExecutable(name: String, inputStream: InputStream): String {
         // dirUsableByAppAndShell is writable, but we can't execute there (as of Q),
         // so we copy to /data/local/tmp
-        val externalDir = Outputs.dirUsableByAppAndShell
         val writableExecutableFile = File.createTempFile(
             /* prefix */ "temporary_$name",
             /* suffix */ null,
-            /* directory */ externalDir
+            /* directory */ Outputs.dirUsableByAppAndShell
         )
         val runnableExecutablePath = "/data/local/tmp/$name"
 
         try {
             writableExecutableFile.outputStream().use {
                 inputStream.copyTo(it)
+            }
+            if (Outputs.forceFilesForShellAccessible) {
+                // executable must be readable by shell to be moved, and for some reason
+                // doesn't inherit shell readability from dirUsableByAppAndShell
+                writableExecutableFile.setReadable(true, false)
             }
             moveToTmpAndMakeExecutable(
                 src = writableExecutableFile.absolutePath,
@@ -259,6 +298,18 @@ object Shell {
                 .start()
                 .getOutputAndClose()
         }
+    }
+
+    /**
+     * Direct execution of executeShellCommand which doesn't account for scripting functionality,
+     * and doesn't capture stderr.
+     *
+     * Only use this function if you do not care about failure / errors.
+     */
+    @RequiresApi(21)
+    @CheckResult
+    fun executeCommandCaptureStdoutOnly(command: String): String {
+        return ShellImpl.executeCommandUnsafe(command)
     }
 
     /**
@@ -440,6 +491,15 @@ object Shell {
     fun pathExists(absoluteFilePath: String): Boolean {
         return ShellImpl.executeCommandUnsafe("ls $absoluteFilePath").trim() == absoluteFilePath
     }
+
+    @RequiresApi(21)
+    fun amBroadcast(broadcastArguments: String): Int? {
+        // unsafe here for perf, since we validate the return value so we don't need to check stderr
+        return ShellImpl.executeCommandUnsafe("am broadcast $broadcastArguments")
+            .substringAfter("Broadcast completed: result=")
+            .trim()
+            .toIntOrNull()
+    }
 }
 
 @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
@@ -467,7 +527,8 @@ private object ShellImpl {
         // These variables are used in executeCommand and executeScript, so we keep them as var
         // instead of val and use a separate initializer
         isSessionRooted = executeCommandUnsafe("id").contains("uid=0(root)")
-        // use a script below, since `su` command failure is unrecoverable on some API levels
+        // use a script below, since direct `su` command failure brings down this process
+        // on some API levels (and can fail even on userdebug builds)
         isSuAvailable = createShellScript(
             script = "su root id",
             stdin = null
@@ -505,6 +566,12 @@ private object ShellImpl {
         // so we copy to /data/local/tmp
         val externalDir = Outputs.dirUsableByAppAndShell
         val scriptContentFile = File.createTempFile("temporaryScript", null, externalDir)
+
+        if (Outputs.forceFilesForShellAccessible) {
+            // script content must be readable by shell, and for some reason doesn't
+            // inherit shell readability from dirUsableByAppAndShell
+            scriptContentFile.setReadable(true, false)
+        }
 
         // only create/read/delete stdin/stderr files if they are needed
         val stdinFile = stdin?.run {

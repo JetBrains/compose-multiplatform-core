@@ -23,6 +23,7 @@ import androidx.glance.EmittableWithChildren
 import androidx.glance.layout.fillMaxWidth
 import androidx.glance.layout.wrapContentHeight
 import androidx.annotation.RequiresApi
+import androidx.compose.runtime.key
 import androidx.compose.ui.unit.Dp
 import androidx.glance.Emittable
 
@@ -61,7 +62,6 @@ internal fun applyVerticalGridScope(
     alignment: Alignment,
     content: LazyVerticalGridScope.() -> Unit
 ): @Composable () -> Unit {
-    var nextImplicitItemId = ReservedItemIdRangeEnd
     val itemList = mutableListOf<Pair<Long?, @Composable LazyItemScope.() -> Unit>>()
     val listScopeImpl = object : LazyVerticalGridScope {
         override fun item(itemId: Long, content: @Composable LazyItemScope.() -> Unit) {
@@ -87,9 +87,9 @@ internal fun applyVerticalGridScope(
     }
     listScopeImpl.apply(content)
     return {
-        itemList.forEach { (itemId, composable) ->
-            val id = itemId.takeIf {
-              it != LazyVerticalGridScope.UnspecifiedItemId } ?: nextImplicitItemId--
+        itemList.forEachIndexed { index, (itemId, composable) ->
+            val id = itemId.takeIf { it != LazyVerticalGridScope.UnspecifiedItemId }
+                ?: (ReservedItemIdRangeEnd - index)
             check(id != LazyVerticalGridScope.UnspecifiedItemId) {
                 "Implicit list item ids exhausted."
             }
@@ -106,16 +106,21 @@ private fun LazyVerticalGridItem(
     alignment: Alignment,
     content: @Composable () -> Unit
 ) {
-    GlanceNode(
-        factory = ::EmittableLazyVerticalGridListItem,
-        update = {
-            this.set(itemId) { this.itemId = it }
-            this.set(alignment) { this.alignment = it }
-        },
-        content = content
-    )
+    // We wrap LazyVerticalGridItem in the key composable to ensure that lambda actions declared
+    // within each item's scope will get a unique ID based on the currentCompositeKeyHash.
+    key(itemId) {
+        GlanceNode(
+            factory = ::EmittableLazyVerticalGridListItem,
+            update = {
+                this.set(itemId) { this.itemId = it }
+                this.set(alignment) { this.alignment = it }
+            },
+            content = content
+        )
+    }
 }
 
+@JvmDefaultWithCompatibility
 /**
  * Receiver scope which is used by [LazyColumn].
  */

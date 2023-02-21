@@ -102,6 +102,7 @@ import androidx.test.espresso.action.Press
 import androidx.test.espresso.action.Swipe
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
+import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
 import kotlin.math.abs
@@ -114,6 +115,7 @@ import kotlinx.coroutines.withContext
 import org.hamcrest.CoreMatchers.allOf
 import org.hamcrest.CoreMatchers.instanceOf
 import org.junit.After
+import org.junit.Assert
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -2340,6 +2342,7 @@ class ScrollableTest {
         }
     }
 
+    @SdkSuppress(maxSdkVersion = 32) // b/268753157
     @Test
     fun offsetsScrollable_velocityCalculationShouldConsiderLocalPositions() {
         // arrange
@@ -2509,6 +2512,33 @@ class ScrollableTest {
         }
     }
 
+    @Test
+    fun scrollable_noMomentum_shouldChangeScrollStateAfterRelease() {
+        val scrollState = ScrollState(0)
+        val delta = 10f
+        var touchSlop = 0f
+        setScrollableContent {
+            touchSlop = LocalViewConfiguration.current.touchSlop
+            Modifier.scrollable(scrollState, Orientation.Vertical)
+        }
+        var previousScrollValue = 0
+        rule.onNodeWithTag(scrollableBoxTag).performTouchInput {
+            down(center)
+            // generate various move events
+            repeat(30) {
+                moveBy(Offset(0f, delta), delayMillis = 8L)
+                previousScrollValue += delta.toInt()
+            }
+            // stop for a moment
+            advanceEventTime(3000L)
+            up()
+        }
+
+        rule.runOnIdle {
+            Assert.assertEquals((previousScrollValue - touchSlop).toInt(), scrollState.value)
+        }
+    }
+
     private fun setScrollableContent(scrollableModifierFactory: @Composable () -> Modifier) {
         rule.setContentAndGetScope {
             Box {
@@ -2522,33 +2552,6 @@ class ScrollableTest {
             }
         }
     }
-}
-
-@OptIn(ExperimentalFoundationApi::class)
-private val NoOpOverscrollEffect = object : OverscrollEffect {
-
-    override fun consumePreScroll(
-        scrollDelta: Offset,
-        source: NestedScrollSource
-    ): Offset = Offset.Zero
-
-    override fun consumePostScroll(
-        initialDragDelta: Offset,
-        overscrollDelta: Offset,
-        source: NestedScrollSource
-    ) {
-    }
-
-    override suspend fun consumePreFling(velocity: Velocity): Velocity = Velocity.Zero
-
-    override suspend fun consumePostFling(velocity: Velocity) {}
-
-    override var isEnabled: Boolean = false
-
-    override val isInProgress: Boolean
-        get() = false
-
-    override val effectModifier: Modifier get() = Modifier
 }
 
 // Very low tolerance on the difference
@@ -2569,7 +2572,7 @@ internal suspend fun savePointerInputEvents(
                         val currentEvent = awaitPointerEvent().changes
                             .firstOrNull()
 
-                        if (currentEvent != null && !currentEvent.changedToUpIgnoreConsumed()) {
+                        if (currentEvent != null) {
                             currentEvent.historical.fastForEach {
                                 tracker.addPosition(it.uptimeMillis, it.position)
                             }
@@ -2636,4 +2639,4 @@ private fun espressoSwipe(
     )
 }
 
-private class TestScrollMotionDurationScale(override val scaleFactor: Float) : MotionDurationScale
+internal class TestScrollMotionDurationScale(override val scaleFactor: Float) : MotionDurationScale

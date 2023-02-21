@@ -27,7 +27,7 @@ package androidx.camera.video {
   @RequiresApi(21) public static final class FileDescriptorOutputOptions.Builder {
     ctor public FileDescriptorOutputOptions.Builder(android.os.ParcelFileDescriptor);
     method public androidx.camera.video.FileDescriptorOutputOptions build();
-    method public androidx.camera.video.FileDescriptorOutputOptions.Builder setDurationLimit(@IntRange(from=0) long);
+    method public androidx.camera.video.FileDescriptorOutputOptions.Builder setDurationLimitMillis(@IntRange(from=0) long);
     method public androidx.camera.video.FileDescriptorOutputOptions.Builder setFileSizeLimit(@IntRange(from=0) long);
     method public androidx.camera.video.FileDescriptorOutputOptions.Builder setLocation(android.location.Location?);
   }
@@ -39,7 +39,7 @@ package androidx.camera.video {
   @RequiresApi(21) public static final class FileOutputOptions.Builder {
     ctor public FileOutputOptions.Builder(java.io.File);
     method public androidx.camera.video.FileOutputOptions build();
-    method public androidx.camera.video.FileOutputOptions.Builder setDurationLimit(@IntRange(from=0) long);
+    method public androidx.camera.video.FileOutputOptions.Builder setDurationLimitMillis(@IntRange(from=0) long);
     method public androidx.camera.video.FileOutputOptions.Builder setFileSizeLimit(@IntRange(from=0) long);
     method public androidx.camera.video.FileOutputOptions.Builder setLocation(android.location.Location?);
   }
@@ -55,13 +55,13 @@ package androidx.camera.video {
     ctor public MediaStoreOutputOptions.Builder(android.content.ContentResolver, android.net.Uri);
     method public androidx.camera.video.MediaStoreOutputOptions build();
     method public androidx.camera.video.MediaStoreOutputOptions.Builder setContentValues(android.content.ContentValues);
-    method public androidx.camera.video.MediaStoreOutputOptions.Builder setDurationLimit(@IntRange(from=0) long);
+    method public androidx.camera.video.MediaStoreOutputOptions.Builder setDurationLimitMillis(@IntRange(from=0) long);
     method public androidx.camera.video.MediaStoreOutputOptions.Builder setFileSizeLimit(@IntRange(from=0) long);
     method public androidx.camera.video.MediaStoreOutputOptions.Builder setLocation(android.location.Location?);
   }
 
   @RequiresApi(21) public abstract class OutputOptions {
-    method @IntRange(from=0) public long getDurationLimit();
+    method @IntRange(from=0) public long getDurationLimitMillis();
     method @IntRange(from=0) public long getFileSizeLimit();
     method public android.location.Location? getLocation();
     field public static final int DURATION_UNLIMITED = 0; // 0x0
@@ -98,8 +98,10 @@ package androidx.camera.video {
   }
 
   @RequiresApi(21) public final class Recorder implements androidx.camera.video.VideoOutput {
+    method public int getAspectRatio();
     method public java.util.concurrent.Executor? getExecutor();
     method public androidx.camera.video.QualitySelector getQualitySelector();
+    method public int getTargetVideoEncodingBitRate();
     method public void onSurfaceRequested(androidx.camera.core.SurfaceRequest);
     method public androidx.camera.video.PendingRecording prepareRecording(android.content.Context, androidx.camera.video.FileOutputOptions);
     method @RequiresApi(26) public androidx.camera.video.PendingRecording prepareRecording(android.content.Context, androidx.camera.video.FileDescriptorOutputOptions);
@@ -110,8 +112,10 @@ package androidx.camera.video {
   @RequiresApi(21) public static final class Recorder.Builder {
     ctor public Recorder.Builder();
     method public androidx.camera.video.Recorder build();
+    method public androidx.camera.video.Recorder.Builder setAspectRatio(int);
     method public androidx.camera.video.Recorder.Builder setExecutor(java.util.concurrent.Executor);
     method public androidx.camera.video.Recorder.Builder setQualitySelector(androidx.camera.video.QualitySelector);
+    method public androidx.camera.video.Recorder.Builder setTargetVideoEncodingBitRate(@IntRange(from=1) int);
   }
 
   @RequiresApi(21) public final class Recording implements java.lang.AutoCloseable {

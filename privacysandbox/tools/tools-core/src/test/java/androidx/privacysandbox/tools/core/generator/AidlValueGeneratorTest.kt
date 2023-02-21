@@ -23,6 +23,7 @@ import androidx.privacysandbox.tools.core.model.Parameter
 import androidx.privacysandbox.tools.core.model.ParsedApi
 import androidx.privacysandbox.tools.core.model.Type
 import androidx.privacysandbox.tools.core.model.Types
+import androidx.privacysandbox.tools.core.model.Types.asNullable
 import androidx.privacysandbox.tools.core.model.ValueProperty
 import androidx.privacysandbox.tools.testing.loadFilesFromDirectory
 import com.google.common.truth.Truth.assertThat
@@ -41,13 +42,15 @@ class AidlValueGeneratorTest {
                 ValueProperty("intProperty", Types.int),
                 ValueProperty("booleanProperty", Types.boolean),
                 ValueProperty("longProperty", Types.long),
+                ValueProperty("maybeFloatProperty", Types.float.asNullable()),
             )
         )
         val outerValue = AnnotatedValue(
             Type(packageName = "com.mysdk", simpleName = "OuterValue"),
             listOf(
                 ValueProperty("innerValue", innerValue.type),
-                ValueProperty("anotherInnerValue", innerValue.type),
+                ValueProperty("innerValueList", Types.list(innerValue.type)),
+                ValueProperty("maybeInnerValue", innerValue.type.asNullable()),
             )
         )
 
@@ -68,6 +71,22 @@ class AidlValueGeneratorTest {
                                 Parameter("inputValue", outerValue.type)
                             ),
                             returnType = Types.unit,
+                            isSuspend = true,
+                        ),
+                        Method(
+                            name = "suspendMethodWithListsOfValues",
+                            parameters = listOf(
+                                Parameter("inputValues", Types.list(outerValue.type))
+                            ),
+                            returnType = Types.list(outerValue.type),
+                            isSuspend = true,
+                        ),
+                        Method(
+                            name = "suspendMethodWithNullableValues",
+                            parameters = listOf(
+                                Parameter("maybeValue", outerValue.type.asNullable())
+                            ),
+                            returnType = outerValue.type.asNullable(),
                             isSuspend = true,
                         ),
                         Method(
@@ -95,6 +114,7 @@ class AidlValueGeneratorTest {
                 "com.mysdk" to "ParcelableInnerValue",
                 "com.mysdk" to "IUnitTransactionCallback",
                 "com.mysdk" to "IOuterValueTransactionCallback",
+                "com.mysdk" to "IListOuterValueTransactionCallback",
                 "com.mysdk" to "ICancellationSignal",
                 "com.mysdk" to "PrivacySandboxThrowableParcel",
                 "com.mysdk" to "ParcelableStackFrame",

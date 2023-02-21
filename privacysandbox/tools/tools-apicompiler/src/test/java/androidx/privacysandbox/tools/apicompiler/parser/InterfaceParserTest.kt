@@ -24,6 +24,7 @@ import androidx.privacysandbox.tools.core.model.Parameter
 import androidx.privacysandbox.tools.core.model.ParsedApi
 import androidx.privacysandbox.tools.core.model.Types
 import androidx.privacysandbox.tools.core.model.Type
+import androidx.privacysandbox.tools.core.model.Types.asNullable
 import androidx.room.compiler.processing.util.Source
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
@@ -42,7 +43,8 @@ class InterfaceParserTest {
                     import androidx.privacysandbox.tools.PrivacySandboxService
                     @PrivacySandboxService
                     interface MySdk {
-                        suspend fun doStuff(x: Int, y: Int): String
+                        suspend fun doStuff(x: Int, y: Int?): String
+                        suspend fun processList(list: List<Int>): List<String>
                         fun doMoreStuff()
                     }
                 """,
@@ -61,10 +63,21 @@ class InterfaceParserTest {
                                         type = Types.int,
                                     ), Parameter(
                                         name = "y",
-                                        type = Types.int,
+                                        type = Types.int.asNullable(),
                                     )
                                 ),
                                 returnType = Types.string,
+                                isSuspend = true,
+                            ),
+                            Method(
+                                name = "processList",
+                                parameters = listOf(
+                                    Parameter(
+                                        name = "list",
+                                        type = Types.list(Types.int),
+                                    )
+                                ),
+                                returnType = Types.list(Types.string),
                                 isSuspend = true,
                             ), Method(
                                 name = "doMoreStuff",
@@ -73,6 +86,64 @@ class InterfaceParserTest {
                                 isSuspend = false,
                             )
                         )
+                    )
+                )
+            )
+        )
+    }
+
+    @Test
+    fun parseInterfaceInheritance_ok() {
+        val serviceSource =
+            Source.kotlin(
+                "com/mysdk/MySdk.kt",
+                """
+                    package com.mysdk
+                    import androidx.privacysandbox.tools.PrivacySandboxService
+                    @PrivacySandboxService
+                    interface MySdk {
+                        suspend fun doStuff(): MyUiInterface
+                    }
+                """
+            )
+        val interfaceSource =
+            Source.kotlin(
+                "com/mysdk/MyUiInterface.kt",
+                """
+                    |package com.mysdk
+                    |import androidx.privacysandbox.tools.PrivacySandboxInterface
+                    |import androidx.privacysandbox.ui.core.SandboxedUiAdapter as SUiAdapter
+                    |
+                    |@PrivacySandboxInterface
+                    |interface MyUiInterface : SUiAdapter {
+                    |}
+                """.trimMargin()
+            )
+        assertThat(parseSources(serviceSource, interfaceSource)).isEqualTo(
+            ParsedApi(
+                services = setOf(
+                    AnnotatedInterface(
+                        type = Type(packageName = "com.mysdk", simpleName = "MySdk"),
+                        methods = listOf(
+                            Method(
+                                name = "doStuff",
+                                parameters = listOf(),
+                                returnType = Type(
+                                    packageName = "com.mysdk",
+                                    simpleName = "MyUiInterface"
+                                ),
+                                isSuspend = true,
+                            ),
+                        )
+                    )
+                ),
+                interfaces = setOf(
+                    AnnotatedInterface(
+                        type = Type(packageName = "com.mysdk", simpleName = "MyUiInterface"),
+                        superTypes = listOf(
+                            Types.sandboxedUiAdapter,
+                        ),
+                        methods = listOf()
                     )
                 )
             )
@@ -189,6 +260,49 @@ class InterfaceParserTest {
     }
 
     @Test
+    fun interfaceInheritance_fails() {
+        val source = Source.kotlin(
+            "com/mysdk/MySdk.kt", """
+                    package com.mysdk
+                    import androidx.privacysandbox.tools.PrivacySandboxService
+
+                    interface FooInterface {}
+
+                    @PrivacySandboxService
+                    interface MySdk : FooInterface {
+                        suspend fun foo(): Int
+                    }"""
+        )
+        checkSourceFails(source).containsExactlyErrors(
+            "Error in com.mysdk.MySdk: annotated interface inherits prohibited types (" +
+                "FooInterface)."
+        )
+    }
+
+    @Test
+    fun interfaceInheritsManyInterfaces_fails() {
+        val source = Source.kotlin(
+            "com/mysdk/MySdk.kt", """
+                    package com.mysdk
+                    import androidx.privacysandbox.tools.PrivacySandboxService
+
+                    interface A {}
+                    interface B {}
+                    interface C {}
+                    interface D {}
+
+                    @PrivacySandboxService
+                    interface MySdk : B, C, D, A {
+                        suspend fun foo(): Int
+                    }"""
+        )
+        checkSourceFails(source).containsExactlyErrors(
+            "Error in com.mysdk.MySdk: annotated interface inherits prohibited types (A, B, C, " +
+                "...)."
+        )
+    }
+
+    @Test
     fun methodWithImplementation_fails() {
         checkSourceFails(serviceMethod("suspend fun foo(): Int = 1")).containsExactlyErrors(
             "Error in com.mysdk.MySdk.foo: method cannot have default implementation."
@@ -210,7 +324,7 @@ class InterfaceParserTest {
     }
 
     @Test
-    fun parameterWitDefaultValue_fails() {
+    fun parameterWithDefaultValue_fails() {
         checkSourceFails(serviceMethod("suspend fun foo(x: Int = 5)")).containsExactlyErrors(
             "Error in com.mysdk.MySdk.foo: parameters cannot have default values."
         )
@@ -220,9 +334,18 @@ class InterfaceParserTest {
     fun parameterWithGenerics_fails() {
         checkSourceFails(serviceMethod("suspend fun foo(x: MutableList<Int>)"))
             .containsExactlyErrors(
-                "Error in com.mysdk.MySdk.foo: only primitives, data classes annotated with " +
-                    "@PrivacySandboxValue and interfaces annotated with @PrivacySandboxCallback " +
-                    "or @PrivacySandboxInterface are supported as parameter types."
+                "Error in com.mysdk.MySdk.foo: only primitives, lists, data classes annotated " +
+                    "with @PrivacySandboxValue and interfaces annotated with " +
+                    "@PrivacySandboxCallback or @PrivacySandboxInterface are supported as " +
+                    "parameter types."
+            )
+    }
+
+    @Test
+    fun listParameterWithNonInvariantTypeArgument_fails() {
+        checkSourceFails(serviceMethod("suspend fun foo(x: List<in Int>)"))
+            .containsExactlyErrors(
+                "Error in com.mysdk.MySdk.foo: only invariant type arguments are supported."
             )
     }
 
@@ -230,9 +353,10 @@ class InterfaceParserTest {
     fun parameterLambda_fails() {
         checkSourceFails(serviceMethod("suspend fun foo(x: (Int) -> Int)"))
             .containsExactlyErrors(
-                "Error in com.mysdk.MySdk.foo: only primitives, data classes annotated with " +
-                    "@PrivacySandboxValue and interfaces annotated with @PrivacySandboxCallback " +
-                    "or @PrivacySandboxInterface are supported as parameter types."
+                "Error in com.mysdk.MySdk.foo: only primitives, lists, data classes annotated " +
+                    "with @PrivacySandboxValue and interfaces annotated with " +
+                    "@PrivacySandboxCallback or @PrivacySandboxInterface are supported as " +
+                    "parameter types."
             )
     }
 
@@ -251,18 +375,10 @@ class InterfaceParserTest {
                 """
         )
         checkSourceFails(source).containsExactlyErrors(
-            "Error in com.mysdk.MySdk.foo: only primitives, data classes annotated with " +
+            "Error in com.mysdk.MySdk.foo: only primitives, lists, data classes annotated with " +
                 "@PrivacySandboxValue and interfaces annotated with @PrivacySandboxInterface are " +
                 "supported as return types."
         )
-    }
-
-    @Test
-    fun nullableParameter_fails() {
-        checkSourceFails(serviceMethod("suspend fun foo(x: Int?)"))
-            .containsError(
-                "Error in com.mysdk.MySdk.foo: nullable types are not supported."
-            )
     }
 
     @Test
@@ -361,12 +477,14 @@ class InterfaceParserTest {
                                         name = "request",
                                         type = Type(
                                             packageName = "com.mysdk",
-                                            simpleName = "MyInterface"),
+                                            simpleName = "MyInterface"
+                                        ),
                                     )
                                 ),
                                 returnType = Type(
                                     packageName = "com.mysdk",
-                                    simpleName = "MyInterface"),
+                                    simpleName = "MyInterface"
+                                ),
                                 isSuspend = true,
                             ),
                         )

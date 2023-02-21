@@ -844,6 +844,15 @@ package androidx.car.app.media {
 
 }
 
+package androidx.car.app.mediaextensions {
+
+  public final class MetadataExtras {
+    field public static final String KEY_DESCRIPTION_LINK_MEDIA_ID = "androidx.car.app.mediaextensions.KEY_DESCRIPTION_LINK_MEDIA_ID";
+    field public static final String KEY_SUBTITLE_LINK_MEDIA_ID = "androidx.car.app.mediaextensions.KEY_SUBTITLE_LINK_MEDIA_ID";
+  }
+
+}
+
 package androidx.car.app.messaging {
 
   @androidx.car.app.annotations.ExperimentalCarApi public class MessagingServiceConstants {
@@ -870,7 +879,18 @@ package androidx.car.app.messaging.model {
     method public androidx.car.app.messaging.model.CarMessage.Builder setSender(androidx.core.app.Person);
   }
 
+  @androidx.car.app.annotations.CarProtocol @androidx.car.app.annotations.ExperimentalCarApi public interface ConversationCallback {
+    method public void onMarkAsRead();
+    method public void onTextReply(String);
+  }
+
+  @androidx.car.app.annotations.CarProtocol @androidx.car.app.annotations.ExperimentalCarApi @androidx.car.app.annotations.RequiresCarApi(6) public interface ConversationCallbackDelegate {
+    method public void sendMarkAsRead(androidx.car.app.OnDoneCallback);
+    method public void sendTextReply(String, androidx.car.app.OnDoneCallback);
+  }
+
   @androidx.car.app.annotations.CarProtocol @androidx.car.app.annotations.ExperimentalCarApi @androidx.car.app.annotations.RequiresCarApi(6) public class ConversationItem implements androidx.car.app.model.Item {
+    method public androidx.car.app.messaging.model.ConversationCallbackDelegate getConversationCallbackDelegate();
     method public androidx.car.app.model.CarIcon? getIcon();
     method public String getId();
     method public java.util.List<androidx.car.app.messaging.model.CarMessage!> getMessages();
@@ -881,6 +901,7 @@ package androidx.car.app.messaging.model {
   public static final class ConversationItem.Builder {
     ctor public ConversationItem.Builder();
     method public androidx.car.app.messaging.model.ConversationItem build();
+    method public androidx.car.app.messaging.model.ConversationItem.Builder setConversationCallback(androidx.car.app.messaging.model.ConversationCallback);
     method public androidx.car.app.messaging.model.ConversationItem.Builder setGroupConversation(boolean);
     method public androidx.car.app.messaging.model.ConversationItem.Builder setIcon(androidx.car.app.model.CarIcon);
     method public androidx.car.app.messaging.model.ConversationItem.Builder setId(String);
@@ -1033,7 +1054,7 @@ package androidx.car.app.model {
     method public double getLongitude();
   }
 
-  @Keep @androidx.car.app.annotations.CarProtocol public class CarSpan extends android.text.style.CharacterStyle {
+  @androidx.car.app.annotations.CarProtocol public class CarSpan extends android.text.style.CharacterStyle {
     ctor public CarSpan();
     method public void updateDrawState(android.text.TextPaint);
   }
@@ -1125,6 +1146,7 @@ package androidx.car.app.model {
 
   @androidx.car.app.annotations.CarProtocol public final class GridTemplate implements androidx.car.app.model.Template {
     method public androidx.car.app.model.ActionStrip? getActionStrip();
+    method @androidx.car.app.annotations.ExperimentalCarApi @androidx.car.app.annotations.RequiresCarApi(6) public java.util.List<androidx.car.app.model.Action!> getActions();
     method public androidx.car.app.model.Action? getHeaderAction();
     method public androidx.car.app.model.ItemList? getSingleList();
     method public androidx.car.app.model.CarText? getTitle();
@@ -1133,6 +1155,7 @@ package androidx.car.app.model {
 
   public static final class GridTemplate.Builder {
     ctor public GridTemplate.Builder();
+    method @androidx.car.app.annotations.ExperimentalCarApi @androidx.car.app.annotations.RequiresCarApi(6) public androidx.car.app.model.GridTemplate.Builder addAction(androidx.car.app.model.Action);
     method public androidx.car.app.model.GridTemplate build();
     method public androidx.car.app.model.GridTemplate.Builder setActionStrip(androidx.car.app.model.ActionStrip);
     method public androidx.car.app.model.GridTemplate.Builder setHeaderAction(androidx.car.app.model.Action);
@@ -1199,6 +1222,7 @@ package androidx.car.app.model {
 
   @androidx.car.app.annotations.CarProtocol public final class ListTemplate implements androidx.car.app.model.Template {
     method public androidx.car.app.model.ActionStrip? getActionStrip();
+    method @androidx.car.app.annotations.ExperimentalCarApi @androidx.car.app.annotations.RequiresCarApi(6) public java.util.List<androidx.car.app.model.Action!> getActions();
     method public androidx.car.app.model.Action? getHeaderAction();
     method public java.util.List<androidx.car.app.model.SectionedItemList!> getSectionedLists();
     method public androidx.car.app.model.ItemList? getSingleList();
@@ -1209,6 +1233,7 @@ package androidx.car.app.model {
 
   public static final class ListTemplate.Builder {
     ctor public ListTemplate.Builder();
+    method @androidx.car.app.annotations.ExperimentalCarApi @androidx.car.app.annotations.RequiresCarApi(6) public androidx.car.app.model.ListTemplate.Builder addAction(androidx.car.app.model.Action);
     method public androidx.car.app.model.ListTemplate.Builder addSectionedList(androidx.car.app.model.SectionedItemList);
     method public androidx.car.app.model.ListTemplate build();
     method @androidx.car.app.annotations.ExperimentalCarApi public androidx.car.app.model.ListTemplate.Builder clearSectionedLists();
@@ -1393,7 +1418,7 @@ package androidx.car.app.model {
   }
 
   @androidx.car.app.annotations.CarProtocol public final class Row implements androidx.car.app.model.Item {
-    method @androidx.car.app.annotations.ExperimentalCarApi public java.util.List<androidx.car.app.model.Action!> getActions();
+    method @androidx.car.app.annotations.ExperimentalCarApi @androidx.car.app.annotations.RequiresCarApi(6) public java.util.List<androidx.car.app.model.Action!> getActions();
     method public androidx.car.app.model.CarIcon? getImage();
     method public androidx.car.app.model.Metadata? getMetadata();
     method @androidx.car.app.annotations.ExperimentalCarApi @androidx.car.app.annotations.RequiresCarApi(6) public int getNumericDecoration();
@@ -1414,7 +1439,7 @@ package androidx.car.app.model {
 
   public static final class Row.Builder {
     ctor public Row.Builder();
-    method @androidx.car.app.annotations.ExperimentalCarApi public androidx.car.app.model.Row.Builder addAction(androidx.car.app.model.Action);
+    method @androidx.car.app.annotations.ExperimentalCarApi @androidx.car.app.annotations.RequiresCarApi(6) public androidx.car.app.model.Row.Builder addAction(androidx.car.app.model.Action);
     method public androidx.car.app.model.Row.Builder addText(CharSequence);
     method public androidx.car.app.model.Row.Builder addText(androidx.car.app.model.CarText);
     method public androidx.car.app.model.Row build();

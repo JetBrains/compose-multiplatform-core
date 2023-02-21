@@ -130,7 +130,6 @@ if(AndroidXComposePlugin.isMultiplatformEnabled(project)) {
 androidx {
     name = "Compose Layouts"
     type = LibraryType.PUBLISHED_LIBRARY
-    mavenGroup = LibraryGroups.COMPOSE_FOUNDATION
     inceptionYear = "2019"
     description = "Compose layout implementations"
     legacyDisableKotlinStrictApiMode = true
@@ -138,12 +137,4 @@ androidx {
 
 android {
     namespace "androidx.compose.foundation.layout"
-}
-
-tasks.withType(KotlinCompile).configureEach {
-    kotlinOptions {
-        freeCompilerArgs += [
-                "-Xjvm-default=all"
-        ]
-    }
 }

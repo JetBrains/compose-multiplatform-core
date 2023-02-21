@@ -18,6 +18,7 @@ package androidx.credentials
 
 import android.os.Bundle
 import androidx.annotation.VisibleForTesting
+import androidx.credentials.internal.FrameworkClassParsingException
 
 /**
  * Represents the user's passkey credential granted by the user for app sign-in.
@@ -25,11 +26,8 @@ import androidx.annotation.VisibleForTesting
  * @property authenticationResponseJson the public key credential authentication response in
  * JSON format that follows the standard webauthn json format shown at
  * [this w3c link](https://w3c.github.io/webauthn/#dictdef-authenticationresponsejson)
- * @throws NullPointerException If [authenticationResponseJson] is null. This is handled by the
- * kotlin runtime
+ * @throws NullPointerException If [authenticationResponseJson] is null
  * @throws IllegalArgumentException If [authenticationResponseJson] is empty
- *
- * @hide
  */
 class PublicKeyCredential constructor(
     val authenticationResponseJson: String
@@ -42,13 +40,20 @@ class PublicKeyCredential constructor(
         require(authenticationResponseJson.isNotEmpty()) {
             "authentication response JSON must not be empty" }
     }
+
+    /** @hide */
     companion object {
-        /** The type value for public key credential related operations. */
+        /**
+         * The type value for public key credential related operations.
+         *
+         * @hide
+         */
         const val TYPE_PUBLIC_KEY_CREDENTIAL: String =
             "androidx.credentials.TYPE_PUBLIC_KEY_CREDENTIAL"
-
+        /** The Bundle key value for the public key credential subtype (privileged or regular). */
+        internal const val BUNDLE_KEY_SUBTYPE = "androidx.credentials.BUNDLE_KEY_SUBTYPE"
         @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
-        const val BUNDLE_KEY_AUTHENTICATION_RESPONSE_JSON =
+        internal const val BUNDLE_KEY_AUTHENTICATION_RESPONSE_JSON =
             "androidx.credentials.BUNDLE_KEY_AUTHENTICATION_RESPONSE_JSON"
 
         @JvmStatic
@@ -56,6 +61,17 @@ class PublicKeyCredential constructor(
             val bundle = Bundle()
             bundle.putString(BUNDLE_KEY_AUTHENTICATION_RESPONSE_JSON, authenticationResponseJson)
             return bundle
+        }
+
+        @JvmStatic
+        internal fun createFrom(data: Bundle): PublicKeyCredential {
+            try {
+                val authenticationResponseJson =
+                    data.getString(BUNDLE_KEY_AUTHENTICATION_RESPONSE_JSON)
+                return PublicKeyCredential(authenticationResponseJson!!)
+            } catch (e: Exception) {
+                throw FrameworkClassParsingException()
+            }
         }
     }
 }

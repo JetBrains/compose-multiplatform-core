@@ -34,7 +34,11 @@ interface XFunSpec : TargetLanguage {
 
     interface Builder : TargetLanguage {
 
-        fun addAnnotation(annotation: XAnnotationSpec)
+        val name: String
+
+        fun addAnnotation(annotation: XAnnotationSpec): Builder
+
+        fun addAbstractModifier(): Builder
 
         // TODO(b/247247442): Maybe make a XParameterSpec ?
         fun addParameter(
@@ -135,7 +139,11 @@ interface XFunSpec : TargetLanguage {
                     KotlinFunSpec.Builder(
                         name,
                         FunSpec.constructorBuilder().apply {
-                            addModifiers(visibility.toKotlinVisibilityModifier())
+                            // Workaround for the unreleased fix in
+                            // https://github.com/square/kotlinpoet/pull/1342
+                            if (visibility != VisibilityModifier.PUBLIC) {
+                                addModifiers(visibility.toKotlinVisibilityModifier())
+                            }
                         }
                     )
                 }

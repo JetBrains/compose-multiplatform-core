@@ -17,41 +17,132 @@
 package androidx.credentials
 
 import android.os.Bundle
-import androidx.annotation.VisibleForTesting
+import androidx.annotation.RequiresApi
+import androidx.credentials.PublicKeyCredential.Companion.BUNDLE_KEY_SUBTYPE
+import androidx.credentials.internal.FrameworkClassParsingException
+import org.json.JSONObject
 
 /**
  * A request to register a passkey from the user's public key credential provider.
  *
- * @property requestJson the request in JSON format
- * @property allowHybrid defines whether hybrid credentials are allowed to fulfill this request,
- * true by default
- * @throws NullPointerException If [requestJson] or [allowHybrid] is null. This is handled by the
- * Kotlin runtime
- * @throws IllegalArgumentException If [requestJson] is empty
- *
- * @hide
+ * @property requestJson the request in JSON format in the [standard webauthn web json](https://w3c.github.io/webauthn/#dictdef-publickeycredentialcreationoptionsjson).
+ * @property preferImmediatelyAvailableCredentials true if you prefer the operation to return
+ * immediately when there is no available passkey registration offering instead of falling back to
+ * discovering remote options, and false (default) otherwise
  */
-class CreatePublicKeyCredentialRequest @JvmOverloads constructor(
-    requestJson: String,
-    @get:JvmName("allowHybrid")
-    val allowHybrid: Boolean = true
-) : CreatePublicKeyCredentialBaseRequest(
-    requestJson,
-    PublicKeyCredential.TYPE_PUBLIC_KEY_CREDENTIAL,
-    toBundle(requestJson, allowHybrid),
-    false,
+class CreatePublicKeyCredentialRequest private constructor(
+    val requestJson: String,
+    @get:JvmName("preferImmediatelyAvailableCredentials")
+    val preferImmediatelyAvailableCredentials: Boolean,
+    displayInfo: DisplayInfo,
+) : CreateCredentialRequest(
+    type = PublicKeyCredential.TYPE_PUBLIC_KEY_CREDENTIAL,
+    credentialData = toCredentialDataBundle(requestJson, preferImmediatelyAvailableCredentials),
+    // The whole request data should be passed during the query phase.
+    candidateQueryData = toCredentialDataBundle(requestJson, preferImmediatelyAvailableCredentials),
+    isSystemProviderRequired = false,
+    displayInfo,
 ) {
+
+    /**
+     * Constructs a [CreatePublicKeyCredentialRequest] to register a passkey from the user's public key credential provider.
+     *
+     * @param requestJson the privileged request in JSON format in the [standard webauthn web json](https://w3c.github.io/webauthn/#dictdef-publickeycredentialcreationoptionsjson).
+     * @param preferImmediatelyAvailableCredentials true if you prefer the operation to return
+     * immediately when there is no available passkey registration offering instead of falling back to
+     * discovering remote options, and false (default) otherwise
+     * @throws NullPointerException If [requestJson] is null
+     * @throws IllegalArgumentException If [requestJson] is empty, or if it doesn't have a valid
+     * `user.name` defined according to the [webauthn spec](https://w3c.github.io/webauthn/#dictdef-publickeycredentialcreationoptionsjson)
+     */
+    @JvmOverloads constructor(
+        requestJson: String,
+        preferImmediatelyAvailableCredentials: Boolean = false
+    ) : this(requestJson, preferImmediatelyAvailableCredentials, getRequestDisplayInfo(requestJson))
+
+    init {
+        require(requestJson.isNotEmpty()) { "requestJson must not be empty" }
+    }
+
     /** @hide */
     companion object {
-        @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
-        const val BUNDLE_KEY_ALLOW_HYBRID = "androidx.credentials.BUNDLE_KEY_ALLOW_HYBRID"
+        internal const val BUNDLE_KEY_PREFER_IMMEDIATELY_AVAILABLE_CREDENTIALS =
+            "androidx.credentials.BUNDLE_KEY_PREFER_IMMEDIATELY_AVAILABLE_CREDENTIALS"
+        internal const val BUNDLE_KEY_REQUEST_JSON = "androidx.credentials.BUNDLE_KEY_REQUEST_JSON"
+        internal const val BUNDLE_VALUE_SUBTYPE_CREATE_PUBLIC_KEY_CREDENTIAL_REQUEST =
+            "androidx.credentials.BUNDLE_VALUE_SUBTYPE_CREATE_PUBLIC_KEY_CREDENTIAL_REQUEST"
 
         @JvmStatic
-        internal fun toBundle(requestJson: String, allowHybrid: Boolean): Bundle {
+        internal fun getRequestDisplayInfo(requestJson: String): DisplayInfo {
+            return try {
+                val json = JSONObject(requestJson)
+                val user = json.getJSONObject("user")
+                val userName = user.getString("name")
+                val displayName: String? =
+                    if (user.isNull("displayName")) null else user.getString("displayName")
+                DisplayInfo(userName, displayName)
+            } catch (e: Exception) {
+                throw IllegalArgumentException("user.name must be defined in requestJson")
+            }
+        }
+
+        @JvmStatic
+        internal fun toCredentialDataBundle(
+            requestJson: String,
+            preferImmediatelyAvailableCredentials: Boolean
+        ): Bundle {
             val bundle = Bundle()
+            bundle.putString(
+                BUNDLE_KEY_SUBTYPE,
+                BUNDLE_VALUE_SUBTYPE_CREATE_PUBLIC_KEY_CREDENTIAL_REQUEST
+            )
             bundle.putString(BUNDLE_KEY_REQUEST_JSON, requestJson)
-            bundle.putBoolean(BUNDLE_KEY_ALLOW_HYBRID, allowHybrid)
+            bundle.putBoolean(
+                BUNDLE_KEY_PREFER_IMMEDIATELY_AVAILABLE_CREDENTIALS,
+                preferImmediatelyAvailableCredentials
+            )
             return bundle
+        }
+
+        @JvmStatic
+        internal fun toCandidateDataBundle(
+            requestJson: String,
+            preferImmediatelyAvailableCredentials: Boolean
+        ): Bundle {
+            val bundle = Bundle()
+            bundle.putString(
+                BUNDLE_KEY_SUBTYPE,
+                BUNDLE_VALUE_SUBTYPE_CREATE_PUBLIC_KEY_CREDENTIAL_REQUEST
+            )
+            bundle.putString(BUNDLE_KEY_REQUEST_JSON, requestJson)
+            bundle.putBoolean(
+                BUNDLE_KEY_PREFER_IMMEDIATELY_AVAILABLE_CREDENTIALS,
+                preferImmediatelyAvailableCredentials
+            )
+            return bundle
+        }
+
+        @Suppress("deprecation") // bundle.get() used for boolean value to prevent default
+        // boolean value from being returned.
+        @JvmStatic
+        @RequiresApi(23)
+        internal fun createFrom(data: Bundle): CreatePublicKeyCredentialRequest {
+            try {
+                val requestJson = data.getString(BUNDLE_KEY_REQUEST_JSON)
+                val preferImmediatelyAvailableCredentials =
+                    data.get(BUNDLE_KEY_PREFER_IMMEDIATELY_AVAILABLE_CREDENTIALS)
+                val displayInfo = DisplayInfo.parseFromCredentialDataBundle(data)
+                return if (displayInfo == null) CreatePublicKeyCredentialRequest(
+                    requestJson!!,
+                    (preferImmediatelyAvailableCredentials!!) as Boolean
+                ) else CreatePublicKeyCredentialRequest(
+                    requestJson!!,
+                    (preferImmediatelyAvailableCredentials!!) as Boolean,
+                    displayInfo
+                )
+            } catch (e: Exception) {
+                throw FrameworkClassParsingException()
+            }
         }
     }
 }

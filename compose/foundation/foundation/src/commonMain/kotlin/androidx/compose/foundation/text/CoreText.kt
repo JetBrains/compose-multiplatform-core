@@ -36,6 +36,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerHoverIcon
@@ -437,22 +438,32 @@ internal class TextController(val state: TextState) : RememberObserver {
             state.layoutResult?.let {
                 state.drawScopeInvalidation
                 val selection = selectionRegistrar?.subselections?.get(state.selectableId)
+                val lastVisibleOffset = state.selectable?.getLastVisibleOffset() ?: 0
 
                 if (selection != null) {
                     val start = if (!selection.handlesCrossed) {
                         selection.start.offset
                     } else {
                         selection.end.offset
-                    }
+                    }.coerceIn(0, lastVisibleOffset)
+                    // selection path should end at the last visible character.
                     val end = if (!selection.handlesCrossed) {
                         selection.end.offset
                     } else {
                         selection.start.offset
-                    }
+                    }.coerceIn(0, lastVisibleOffset)
 
                     if (start != end) {
                         val selectionPath = it.multiParagraph.getPathForRange(start, end)
-                        drawPath(selectionPath, state.selectionBackgroundColor)
+                        // clip selection path drawing so that it doesn't overflow, unless
+                        // overflow is also TextOverflow.Visible
+                        if (it.layoutInput.overflow == TextOverflow.Visible) {
+                            drawPath(selectionPath, state.selectionBackgroundColor)
+                        } else {
+                            clipRect {
+                                drawPath(selectionPath, state.selectionBackgroundColor)
+                            }
+                        }
                     }
                 }
                 drawIntoCanvas { canvas ->
@@ -501,6 +512,8 @@ internal class TextController(val state: TextState) : RememberObserver {
             // initial style and minLines, and then never got updates to those values. Here it gets
             // created every time it's read, i.e. every recomposition, so it will always have the
             // latest values.
+            // Also, there is no need to pass state.textDelegate.maxLines here as it is passed to
+            // MultiParagraph computation anyway.
             .heightInLines(state.textDelegate.style, state.textDelegate.minLines)
             .then(semanticsModifier)
             .then(selectionModifiers)

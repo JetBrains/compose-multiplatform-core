@@ -38,7 +38,7 @@ import androidx.compose.ui.platform.ComposeView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
-import androidx.lifecycle.ViewTreeLifecycleOwner
+import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.savedstate.SavedStateRegistry
 import androidx.savedstate.SavedStateRegistryController
 import androidx.savedstate.SavedStateRegistryOwner
@@ -568,11 +568,11 @@ class Paparazzi @JvmOverloads constructor(
       val compositionInvalidations = recomposer.javaClass
         .getDeclaredField("compositionInvalidations")
         .apply { isAccessible = true }
-        .get(recomposer) as MutableList<*>
+        .get(recomposer) as MutableCollection<*>
       val snapshotInvalidations = recomposer.javaClass
         .getDeclaredField("snapshotInvalidations")
         .apply { isAccessible = true }
-        .get(recomposer) as MutableList<*>
+        .get(recomposer) as MutableCollection<*>
       compositionInvalidations.clear()
       snapshotInvalidations.clear()
       applyObservers.clear()
@@ -602,7 +602,8 @@ class Paparazzi @JvmOverloads constructor(
     private val lifecycleRegistry: LifecycleRegistry = LifecycleRegistry(this)
     private val savedStateRegistryController = SavedStateRegistryController.create(this)
 
-    override fun getLifecycle(): Lifecycle = lifecycleRegistry
+    override val lifecycle: Lifecycle
+      get() = lifecycleRegistry
     override val savedStateRegistry: SavedStateRegistry =
       savedStateRegistryController.savedStateRegistry
 
@@ -611,7 +612,7 @@ class Paparazzi @JvmOverloads constructor(
         val owner = PaparazziComposeOwner()
         owner.savedStateRegistryController.performRestore(null)
         owner.lifecycleRegistry.currentState = Lifecycle.State.CREATED
-        ViewTreeLifecycleOwner.set(view, owner)
+        view.setViewTreeLifecycleOwner(owner)
         view.setViewTreeSavedStateRegistryOwner(owner)
       }
     }

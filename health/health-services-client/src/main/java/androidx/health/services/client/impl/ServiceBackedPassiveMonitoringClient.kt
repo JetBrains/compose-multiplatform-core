@@ -17,10 +17,10 @@
 package androidx.health.services.client.impl
 
 import android.content.Context
-import android.os.RemoteException
 import androidx.annotation.RestrictTo
 import androidx.annotation.VisibleForTesting
 import androidx.core.content.ContextCompat
+import androidx.health.services.client.HealthServicesException
 import androidx.health.services.client.PassiveListenerCallback
 import androidx.health.services.client.PassiveListenerService
 import androidx.health.services.client.PassiveMonitoringClient
@@ -82,9 +82,9 @@ public class ServiceBackedPassiveMonitoringClient(
                         StatusCallback(resultFuture)
                     )
                 } else {
-                    resultFuture.setException(
-                        RemoteException("DataType for the requested passive goal is not tracked")
-                    )
+                    resultFuture.setException(HealthServicesException(
+                            "DataType for the requested passive goal is not tracked"
+                        ))
                 }
             },
             /* minApiVersion= */ 4
@@ -119,7 +119,9 @@ public class ServiceBackedPassiveMonitoringClient(
                     )
                 } else {
                     result.setException(
-                        RemoteException("DataType for the requested passive goal is not tracked")
+                        HealthServicesException(
+                            "DataType for the requested passive goal is not tracked"
+                        )
                     )
                 }
             }

@@ -19,10 +19,11 @@ package androidx.room.solver.types
 import androidx.room.compiler.codegen.CodeLanguage
 import androidx.room.compiler.codegen.XCodeBlock
 import androidx.room.compiler.codegen.XFunSpec
-import androidx.room.compiler.codegen.asClassName
 import androidx.room.compiler.processing.XEnumTypeElement
 import androidx.room.compiler.processing.XNullability
 import androidx.room.compiler.processing.XType
+import androidx.room.ext.CommonTypeNames
+import androidx.room.ext.ExceptionTypeNames
 import androidx.room.parser.SQLTypeAffinity.TEXT
 import androidx.room.solver.CodeGenScope
 import androidx.room.writer.TypeWriter
@@ -118,7 +119,7 @@ class EnumColumnTypeAdapter(
                             }
                             addStatement(
                                 "default: throw new %T(%S + %L)",
-                                ILLEGAL_ARG_EXCEPTION,
+                                ExceptionTypeNames.ILLEGAL_ARG_EXCEPTION,
                                 ENUM_TO_STRING_ERROR_MSG,
                                 paramName
                             )
@@ -131,7 +132,9 @@ class EnumColumnTypeAdapter(
                             enumTypeElement.entries.map { it.name }.forEach { enumConstantName ->
                                 addStatement(
                                     "%T.%L -> %S",
-                                    out.asTypeName(), enumConstantName, enumConstantName
+                                    enumTypeElement.asClassName(),
+                                    enumConstantName,
+                                    enumConstantName
                                 )
                             }
                             endControlFlow()
@@ -139,9 +142,9 @@ class EnumColumnTypeAdapter(
                     }
                 }.build()
                 builder.apply {
-                    returns(String::class.asClassName().copy(nullable = false))
+                    returns(CommonTypeNames.STRING.copy(nullable = false))
                     addParameter(
-                        out.asTypeName().copy(nullable = false),
+                        enumTypeElement.asClassName(),
                         paramName
                     )
                     addCode(body)
@@ -174,12 +177,14 @@ class EnumColumnTypeAdapter(
                             enumTypeElement.entries.map { it.name }.forEach { enumConstantName ->
                                 addStatement(
                                     "case %S: return %T.%L",
-                                    enumConstantName, out.asTypeName(), enumConstantName
+                                    enumConstantName,
+                                    enumTypeElement.asClassName(),
+                                    enumConstantName
                                 )
                             }
                             addStatement(
                                 "default: throw new %T(%S + %L)",
-                                ILLEGAL_ARG_EXCEPTION,
+                                ExceptionTypeNames.ILLEGAL_ARG_EXCEPTION,
                                 STRING_TO_ENUM_ERROR_MSG,
                                 paramName
                             )
@@ -191,12 +196,14 @@ class EnumColumnTypeAdapter(
                             enumTypeElement.entries.map { it.name }.forEach { enumConstantName ->
                                 addStatement(
                                     "%S -> %T.%L",
-                                    enumConstantName, out.asTypeName(), enumConstantName
+                                    enumConstantName,
+                                    enumTypeElement.asClassName(),
+                                    enumConstantName
                                 )
                             }
                             addStatement(
                                 "else -> throw %T(%S + %L)",
-                                ILLEGAL_ARG_EXCEPTION,
+                                ExceptionTypeNames.ILLEGAL_ARG_EXCEPTION,
                                 STRING_TO_ENUM_ERROR_MSG,
                                 paramName
                             )
@@ -205,9 +212,9 @@ class EnumColumnTypeAdapter(
                     }
                 }.build()
                 builder.apply {
-                    returns(out.asTypeName().copy(nullable = false))
+                    returns(enumTypeElement.asClassName())
                     addParameter(
-                        String::class.asClassName().copy(nullable = false),
+                        CommonTypeNames.STRING.copy(nullable = false),
                         paramName
                     )
                     addCode(body)
@@ -218,7 +225,6 @@ class EnumColumnTypeAdapter(
     }
 
     companion object {
-        private val ILLEGAL_ARG_EXCEPTION = IllegalArgumentException::class.asClassName()
         private const val ENUM_TO_STRING_ERROR_MSG =
             "Can't convert enum to string, unknown enum value: "
         private const val STRING_TO_ENUM_ERROR_MSG =

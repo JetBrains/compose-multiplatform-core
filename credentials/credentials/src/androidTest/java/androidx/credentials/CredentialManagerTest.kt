@@ -16,10 +16,24 @@
 
 package androidx.credentials
 
+import android.app.Activity
+import android.os.Looper
+import androidx.credentials.exceptions.ClearCredentialException
+import androidx.credentials.exceptions.ClearCredentialProviderConfigurationException
+import androidx.credentials.exceptions.CreateCredentialException
+import androidx.credentials.exceptions.CreateCredentialProviderConfigurationException
+import androidx.credentials.exceptions.GetCredentialException
+import androidx.credentials.exceptions.GetCredentialProviderConfigurationException
+import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.testutils.assertThrows
+import com.google.common.truth.Truth.assertThat
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Executor
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicReference
 import kotlinx.coroutines.runBlocking
 import org.junit.Before
 import org.junit.Test
@@ -38,73 +52,152 @@ class CredentialManagerTest {
     }
 
     @Test
-    fun createCredential() = runBlocking<Unit> {
-        assertThrows<UnsupportedOperationException> {
-            credentialManager.executeCreateCredential(
-                CreatePasswordRequest("test-user-id", "test-password")
-            )
+    fun createCredential_throws() = runBlocking<Unit> {
+        if (Looper.myLooper() == null) {
+            Looper.prepare()
         }
+        if (!isPostFrameworkApiLevel()) {
+            assertThrows<CreateCredentialProviderConfigurationException> {
+                credentialManager.createCredential(
+                    CreatePasswordRequest("test-user-id", "test-password"),
+                    Activity()
+                )
+            }
+        }
+        // TODO("Add manifest tests and possibly further separate these tests by API Level
+        //  - maybe a rule perhaps?")
     }
 
     @Test
-    fun getCredential() = runBlocking<Unit> {
+    fun getCredential_throws() = runBlocking<Unit> {
+        if (Looper.myLooper() == null) {
+            Looper.prepare()
+        }
         val request = GetCredentialRequest.Builder()
-            .addGetCredentialOption(GetPasswordOption())
+            .addCredentialOption(GetPasswordOption())
             .build()
-        assertThrows<UnsupportedOperationException> {
-            credentialManager.executeGetCredential(request)
+
+        if (!isPostFrameworkApiLevel()) {
+            assertThrows<GetCredentialProviderConfigurationException> {
+                credentialManager.getCredential(request, Activity())
+            }
         }
+        // TODO("Add manifest tests and possibly further separate these tests by API Level
+        //  - maybe a rule perhaps?")
     }
 
     @Test
-    fun testClearCredentialSession() = runBlocking<Unit> {
-        assertThrows<UnsupportedOperationException> {
-            credentialManager.clearCredentialSession()
+    fun testClearCredentialSession_throws() = runBlocking<Unit> {
+        if (Looper.myLooper() == null) {
+            Looper.prepare()
         }
+
+        if (!isPostFrameworkApiLevel()) {
+            assertThrows<ClearCredentialProviderConfigurationException> {
+                credentialManager.clearCredentialState(ClearCredentialStateRequest())
+            }
+        }
+        // TODO("Add manifest tests and possibly further separate these tests by API Level
+        //  - maybe a rule perhaps?")
     }
 
     @Test
-    fun testCreateCredentialAsyc() {
-        assertThrows<UnsupportedOperationException> {
-            credentialManager.executeCreateCredentialAsync(
-                request = CreatePasswordRequest("test-user-id", "test-password"),
-                activity = null,
-                cancellationSignal = null,
-                executor = Runnable::run,
-                callback = object : CredentialManagerCallback<CreateCredentialResponse> {
+    fun testCreateCredentialAsyc_successCallbackThrows() {
+        if (Looper.myLooper() == null) {
+            Looper.prepare()
+        }
+        val latch = CountDownLatch(1)
+        val loadedResult: AtomicReference<CreateCredentialException> = AtomicReference()
+        val activityScenario = ActivityScenario.launch(
+            TestActivity::class.java
+        )
+
+        activityScenario.onActivity { activity ->
+            credentialManager.createCredentialAsync(
+                CreatePasswordRequest("test-user-id", "test-password"),
+                activity,
+                null, Executor { obj: Runnable -> obj.run() },
+                object : CredentialManagerCallback<CreateCredentialResponse,
+                    CreateCredentialException> {
                     override fun onResult(result: CreateCredentialResponse) {}
-                }
+                    override fun onError(e: CreateCredentialException) {
+                        loadedResult.set(e)
+                        latch.countDown()
+                    }
+                })
+        }
+
+        latch.await(100L, TimeUnit.MILLISECONDS)
+        if (!isPostFrameworkApiLevel()) {
+            assertThat(loadedResult.get().javaClass).isEqualTo(
+                CreateCredentialProviderConfigurationException::class.java
             )
         }
+        // TODO("Add manifest tests and possibly further separate these tests by API Level
+        //  - maybe a rule perhaps?")
     }
 
     @Test
-    fun testGetCredentialAsyc() {
-        assertThrows<UnsupportedOperationException> {
-            credentialManager.executeGetCredentialAsync(
-                request = GetCredentialRequest.Builder()
-                    .addGetCredentialOption(GetPasswordOption())
-                    .build(),
-                activity = null,
-                cancellationSignal = null,
-                executor = Runnable::run,
-                callback = object : CredentialManagerCallback<GetCredentialResponse> {
-                    override fun onResult(result: GetCredentialResponse) {}
+    fun testGetCredentialAsyc_successCallbackThrows() {
+        if (Looper.myLooper() == null) {
+            Looper.prepare()
+        }
+        val latch = CountDownLatch(1)
+        val loadedResult: AtomicReference<GetCredentialException> = AtomicReference()
+
+        credentialManager.getCredentialAsync(
+            request = GetCredentialRequest.Builder()
+                .addCredentialOption(GetPasswordOption())
+                .build(),
+            activity = Activity(),
+            cancellationSignal = null,
+            executor = Runnable::run,
+            callback = object : CredentialManagerCallback<GetCredentialResponse,
+                GetCredentialException> {
+                override fun onResult(result: GetCredentialResponse) {}
+                override fun onError(e: GetCredentialException) {
+                    loadedResult.set(e)
+                    latch.countDown()
                 }
+            }
+        )
+
+        latch.await(100L, TimeUnit.MILLISECONDS)
+        if (!isPostFrameworkApiLevel()) {
+            assertThat(loadedResult.get().javaClass).isEqualTo(
+                GetCredentialProviderConfigurationException::class.java
             )
         }
+        // TODO("Add manifest tests and possibly further separate these tests - maybe a rule
+        //  perhaps?")
     }
 
     @Test
-    fun testClearCredentialSessionAsync() {
-        assertThrows<UnsupportedOperationException> {
-            credentialManager.clearCredentialSessionAsync(
-                cancellationSignal = null,
-                executor = Runnable::run,
-                callback = object : CredentialManagerCallback<Void> {
-                    override fun onResult(result: Void) {}
-                }
-            )
+    fun testClearCredentialSessionAsync_throws() {
+        if (Looper.myLooper() == null) {
+            Looper.prepare()
         }
+        if (isPostFrameworkApiLevel()) {
+            return // TODO(Support!)
+        }
+        val latch = CountDownLatch(1)
+        val loadedResult: AtomicReference<ClearCredentialException> = AtomicReference()
+
+        credentialManager.clearCredentialStateAsync(
+            ClearCredentialStateRequest(),
+            null, Executor { obj: Runnable -> obj.run() },
+            object : CredentialManagerCallback<Void?, ClearCredentialException> {
+                override fun onError(e: ClearCredentialException) {
+                    loadedResult.set(e)
+                    latch.countDown()
+                }
+                override fun onResult(result: Void?) {}
+            })
+
+        latch.await(100L, TimeUnit.MILLISECONDS)
+        assertThat(loadedResult.get().type).isEqualTo(
+            ClearCredentialProviderConfigurationException
+            .TYPE_CLEAR_CREDENTIAL_PROVIDER_CONFIGURATION_EXCEPTION)
+        // TODO(Add manifest tests and split this once postU is implemented for clearCreds")
     }
 }

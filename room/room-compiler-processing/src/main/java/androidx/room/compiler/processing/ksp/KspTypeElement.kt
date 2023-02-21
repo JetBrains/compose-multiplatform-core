@@ -121,6 +121,13 @@ internal sealed class KspTypeElement(
         }
     }
 
+    @Deprecated(
+        "Use asClassName().toJavaPoet() to be clear the name is for JavaPoet.",
+        replaceWith = ReplaceWith(
+            "asClassName().toJavaPoet()",
+            "androidx.room.compiler.codegen.toJavaPoet"
+        )
+    )
     override val className: ClassName by lazy {
         xClassName.java
     }
@@ -359,6 +366,16 @@ internal sealed class KspTypeElement(
         ): KspTypeElement {
             return when (ksClassDeclaration.classKind) {
                 ClassKind.ENUM_CLASS -> KspEnumTypeElement(env, ksClassDeclaration)
+                ClassKind.ENUM_ENTRY -> {
+                    val enclosingEnumTypeElement =
+                        create(env, ksClassDeclaration.parentDeclaration as KSClassDeclaration)
+                    check(enclosingEnumTypeElement is KspEnumTypeElement) {
+                        "Internal error. The parent declaration of $ksClassDeclaration should " +
+                            "have been wrapped in a KspEnumTypeElement but was " +
+                            enclosingEnumTypeElement::class
+                    }
+                    KspEnumEntry(env, ksClassDeclaration, enclosingEnumTypeElement)
+                }
                 else -> DefaultKspTypeElement(env, ksClassDeclaration)
             }
         }

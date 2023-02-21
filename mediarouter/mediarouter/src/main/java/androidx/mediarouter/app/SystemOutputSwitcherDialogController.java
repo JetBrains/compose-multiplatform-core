@@ -63,6 +63,14 @@ public final class SystemOutputSwitcherDialogController {
     /**
      * Shows the system output switcher dialog.
      *
+     * <p>The appearance and precise behaviour of the system output switcher dialog
+     * may vary across different devices, OS versions, and form factors,
+     * but the basic functionality stays the same.
+     *
+     * <p>See
+     * <a href="https://developer.android.com/guide/topics/media/media-routing#output-switcher">
+     * Output Switcher documentation</a> for more details.
+     *
      * @param context Android context
      * @return {@code true} if the dialog was shown successfully and {@code false} otherwise
      */
@@ -150,7 +158,6 @@ public final class SystemOutputSwitcherDialogController {
         Intent intent = new Intent(Settings.ACTION_BLUETOOTH_SETTINGS)
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK)
                 .putExtra("EXTRA_CONNECTION_ONLY", true)
-                .putExtra("EXTRA_CLOSE_ON_CONNECT", true)
                 .putExtra("android.bluetooth.devicepicker.extra.FILTER_TYPE", 1);
 
         PackageManager packageManager = context.getPackageManager();

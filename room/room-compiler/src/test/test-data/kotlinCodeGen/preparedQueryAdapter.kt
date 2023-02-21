@@ -12,8 +12,10 @@ import kotlin.collections.List
 import kotlin.jvm.JvmStatic
 
 @Generated(value = ["androidx.room.RoomProcessor"])
-@Suppress(names = ["unchecked", "deprecation"])
-public class MyDao_Impl : MyDao {
+@Suppress(names = ["UNCHECKED_CAST", "DEPRECATION"])
+public class MyDao_Impl(
+    __db: RoomDatabase,
+) : MyDao {
     private val __db: RoomDatabase
 
     private val __preparedStmtOfInsertEntity: SharedSQLiteStatement
@@ -23,8 +25,7 @@ public class MyDao_Impl : MyDao {
     private val __preparedStmtOfUpdateEntityReturnInt: SharedSQLiteStatement
 
     private val __preparedStmtOfDeleteEntity: SharedSQLiteStatement
-
-    public constructor(__db: RoomDatabase) {
+    init {
         this.__db = __db
         this.__preparedStmtOfInsertEntity = object : SharedSQLiteStatement(__db) {
             public override fun createQuery(): String {

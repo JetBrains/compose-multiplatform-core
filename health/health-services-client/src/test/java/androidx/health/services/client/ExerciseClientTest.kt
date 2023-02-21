@@ -35,6 +35,7 @@ import androidx.health.services.client.data.ExerciseTrackedStatus
 import androidx.health.services.client.data.ExerciseType
 import androidx.health.services.client.data.ExerciseTypeCapabilities
 import androidx.health.services.client.data.ExerciseUpdate
+import androidx.health.services.client.data.GolfExerciseTypeConfig
 import androidx.health.services.client.data.WarmUpConfig
 import androidx.health.services.client.impl.IExerciseApiService
 import androidx.health.services.client.impl.IExerciseUpdateListener
@@ -46,11 +47,13 @@ import androidx.health.services.client.impl.internal.IStatusCallback
 import androidx.health.services.client.impl.ipc.ClientConfiguration
 import androidx.health.services.client.impl.ipc.internal.ConnectionManager
 import androidx.health.services.client.impl.request.AutoPauseAndResumeConfigRequest
+import androidx.health.services.client.impl.request.BatchingModeConfigRequest
 import androidx.health.services.client.impl.request.CapabilitiesRequest
 import androidx.health.services.client.impl.request.ExerciseGoalRequest
 import androidx.health.services.client.impl.request.FlushRequest
 import androidx.health.services.client.impl.request.PrepareExerciseRequest
 import androidx.health.services.client.impl.request.StartExerciseRequest
+import androidx.health.services.client.impl.request.UpdateExerciseTypeConfigRequest
 import androidx.health.services.client.impl.response.AvailabilityResponse
 import androidx.health.services.client.impl.response.ExerciseCapabilitiesResponse
 import androidx.health.services.client.impl.response.ExerciseInfoResponse
@@ -59,6 +62,7 @@ import com.google.common.collect.ImmutableMap
 import com.google.common.collect.ImmutableSet
 import com.google.common.truth.Truth
 import java.util.concurrent.CancellationException
+import kotlin.test.assertFailsWith
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
@@ -127,7 +131,7 @@ class ExerciseClientTest {
 
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     @Test
-    fun callbackShouldMatchRequested_justSampleType_prepareExerciseSynchronously_ThrowsException() =
+    fun prepareExerciseSynchronously_ThrowsException() =
         runTest {
             launch {
                 val warmUpConfig = WarmUpConfig(
@@ -136,18 +140,43 @@ class ExerciseClientTest {
                 )
                 var exception: Exception? = null
                 client.setUpdateCallback(callback)
-                // Mocking the calling app already has an active exercise in
-                // progress or if it does not have the required permissions
+                // Mocking the calling app already has an active exercise in progress
                 service.throwException = true
 
                 try {
                     client.prepareExercise(warmUpConfig)
-                } catch (e: RemoteException) {
+                } catch (e: HealthServicesException) {
                     exception = e
                 }
 
                 Truth.assertThat(exception).isNotNull()
-                Truth.assertThat(exception).isInstanceOf(RemoteException::class.java)
+                Truth.assertThat(exception).isInstanceOf(HealthServicesException::class.java)
+            }
+            advanceMainLooperIdle()
+        }
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    @Test
+    fun prepareExerciseSynchronously_ThrowsSecurityException() =
+        runTest {
+            launch {
+                val warmUpConfig = WarmUpConfig(
+                    ExerciseType.WALKING,
+                    setOf(DataType.HEART_RATE_BPM),
+                )
+                var exception: Exception? = null
+                client.setUpdateCallback(callback)
+                // Mocking the calling app does not have the required permissions
+                service.callingAppHasPermissions = false
+
+                try {
+                    client.prepareExercise(warmUpConfig)
+                } catch (e: SecurityException) {
+                    exception = e
+                }
+
+                Truth.assertThat(exception).isNotNull()
+                Truth.assertThat(exception).isInstanceOf(SecurityException::class.java)
             }
             advanceMainLooperIdle()
         }
@@ -235,6 +264,34 @@ class ExerciseClientTest {
         }
         advanceMainLooperIdle()
     }
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    @Test
+    fun startExerciseSynchronously_ThrowsSecurityException() =
+        runTest {
+            launch {
+                val exerciseConfig = ExerciseConfig(
+                    ExerciseType.WALKING,
+                    setOf(DataType.HEART_RATE_BPM, DataType.HEART_RATE_BPM_STATS),
+                    isAutoPauseAndResumeEnabled = false,
+                    isGpsEnabled = false
+                )
+                var exception: Exception? = null
+                client.setUpdateCallback(callback)
+                // Mocking the calling app does not have the required permissions
+                service.callingAppHasPermissions = false
+
+                try {
+                    client.startExercise(exerciseConfig)
+                } catch (e: SecurityException) {
+                    exception = e
+                }
+
+                Truth.assertThat(exception).isNotNull()
+                Truth.assertThat(exception).isInstanceOf(SecurityException::class.java)
+            }
+            advanceMainLooperIdle()
+        }
 
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     @Test
@@ -514,7 +571,7 @@ class ExerciseClientTest {
             service.throwException = true
             try {
                 client.getCurrentExerciseInfo()
-            } catch (e: RemoteException) {
+            } catch (e: HealthServicesException) {
                 isException = true
             }
         }
@@ -644,6 +701,73 @@ class ExerciseClientTest {
             .isEqualTo(passiveMonitoringCapabilities.toString())
     }
 
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    @Test
+    fun getCapabilitiesSynchronously_cancelled() = runTest {
+        var isCancellationException = false
+        val deferred = async {
+            client.getCapabilities()
+        }
+        val cancellationDeferred = async {
+            deferred.cancel(CancellationException())
+        }
+        try {
+            deferred.await()
+        } catch (e: CancellationException) {
+            isCancellationException = true
+        }
+        cancellationDeferred.await()
+
+        Truth.assertThat(isCancellationException).isTrue()
+    }
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    @Test
+    fun getCapabilitiesSynchronously_Exception() = runTest {
+        var isExceptionCaught = false
+        val deferred = async {
+            service.setException()
+            try {
+                client.getCapabilities()
+            } catch (e: HealthServicesException) {
+                isExceptionCaught = true
+            }
+        }
+        advanceMainLooperIdle()
+        deferred.await()
+
+        Truth.assertThat(isExceptionCaught).isTrue()
+    }
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    @Test
+    fun updateExerciseTypeConfigForActiveExercise() = runTest {
+        service.exerciseConfig = ExerciseConfig.builder(ExerciseType.GOLF).build()
+        val exerciseTypeConfig =
+            GolfExerciseTypeConfig(GolfExerciseTypeConfig
+                .GolfShotTrackingPlaceInfo.GOLF_SHOT_TRACKING_PLACE_INFO_FAIRWAY)
+        val request =
+            UpdateExerciseTypeConfigRequest(
+                CLIENT_CONFIGURATION.servicePackageName, exerciseTypeConfig
+            )
+        val statusCallback = IStatusCallback.Default()
+
+        service.updateExerciseTypeConfigForActiveExercise(request, statusCallback)
+
+        Truth.assertThat(service.exerciseConfig?.exerciseTypeConfig).isEqualTo(exerciseTypeConfig)
+    }
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    @Test
+    fun overrideBatchingModesForActiveExercise_notImplementedError() = runTest {
+        var request: BatchingModeConfigRequest?
+        request = null
+        assertFailsWith(
+            exceptionClass = NotImplementedError::class,
+            block = { service.overrideBatchingModesForActiveExercise(request, null) }
+        )
+    }
+
     class FakeExerciseUpdateCallback : ExerciseUpdateCallback {
         val availabilities = mutableMapOf<DataType<*, *>, Availability>()
         val registrationFailureThrowables = mutableListOf<Throwable>()
@@ -682,6 +806,7 @@ class ExerciseClientTest {
         override fun getApiVersion(): Int = 12
         val goals = mutableListOf<ExerciseGoal<*>>()
         var throwException = false
+        var callingAppHasPermissions = true
         val registerGetCapabilitiesRequests = mutableListOf<CapabilitiesRequest>()
 
         override fun prepareExercise(
@@ -690,8 +815,10 @@ class ExerciseClientTest {
         ) {
             if (throwException) {
                 statusCallback.onFailure("Remote Exception")
-            } else {
+            } else if (callingAppHasPermissions) {
                 statusCallbackAction.invoke(statusCallback)
+            } else {
+                statusCallback.onFailure("Missing permissions")
             }
         }
 
@@ -699,10 +826,14 @@ class ExerciseClientTest {
             startExerciseRequest: StartExerciseRequest?,
             statusCallback: IStatusCallback?
         ) {
-            exerciseConfig = startExerciseRequest?.exerciseConfig
-            exerciseConfig?.exerciseGoals?.let { goals.addAll(it) }
-            statusCallbackAction.invoke(statusCallback)
-            testExerciseStates = TestExerciseStates.STARTED
+            if (callingAppHasPermissions) {
+                exerciseConfig = startExerciseRequest?.exerciseConfig
+                exerciseConfig?.exerciseGoals?.let { goals.addAll(it) }
+                statusCallbackAction.invoke(statusCallback)
+                testExerciseStates = TestExerciseStates.STARTED
+            } else {
+                statusCallback?.onFailure("Missing permissions")
+            }
         }
 
         override fun pauseExercise(packageName: String?, statusCallback: IStatusCallback?) {
@@ -799,6 +930,13 @@ class ExerciseClientTest {
             throw NotImplementedError()
         }
 
+        override fun overrideBatchingModesForActiveExercise(
+            batchingModeConfigRequest: BatchingModeConfigRequest?,
+            statuscallback: IStatusCallback?
+        ) {
+            throw NotImplementedError()
+        }
+
         override fun getCapabilities(request: CapabilitiesRequest): ExerciseCapabilitiesResponse {
             if (throwException) {
                 throw RemoteException("Remote Exception")
@@ -853,6 +991,18 @@ class ExerciseClientTest {
         override fun flushExercise(request: FlushRequest, statusCallback: IStatusCallback?) {
             registerFlushRequests += request
             statusCallbackAction.invoke(statusCallback)
+        }
+
+        override fun updateExerciseTypeConfigForActiveExercise(
+            updateExerciseTypeConfigRequest: UpdateExerciseTypeConfigRequest,
+            statuscallback: IStatusCallback
+        ) {
+            val newExerciseTypeConfig = updateExerciseTypeConfigRequest.exerciseTypeConfig
+            val newExerciseConfig =
+                ExerciseConfig.builder(
+                    exerciseConfig!!.exerciseType
+                ).setExerciseTypeConfig(newExerciseTypeConfig).build()
+            this.exerciseConfig = newExerciseConfig
         }
 
         fun setException() {

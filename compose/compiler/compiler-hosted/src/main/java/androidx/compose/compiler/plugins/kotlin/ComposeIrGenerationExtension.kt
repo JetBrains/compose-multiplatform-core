@@ -49,7 +49,7 @@ class ComposeIrGenerationExtension(
     @Suppress("unused") private val liveLiteralsV2Enabled: Boolean = false,
     private val generateFunctionKeyMetaClasses: Boolean = false,
     private val sourceInformationEnabled: Boolean = true,
-    private val intrinsicRememberEnabled: Boolean = true,
+    private val intrinsicRememberEnabled: Boolean = false,
     private val decoysEnabled: Boolean = false,
     private val metricsDestination: String? = null,
     private val reportsDestination: String? = null,
@@ -197,7 +197,8 @@ class ComposeIrGenerationExtension(
                 pluginContext,
                 symbolRemapper,
                 metrics,
-                idSignatureBuilder!!
+                idSignatureBuilder!!,
+                decoysEnabled
             ).lower(moduleFragment)
         }
 

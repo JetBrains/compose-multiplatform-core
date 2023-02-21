@@ -20,7 +20,7 @@ import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProviderInfo
 import android.content.Context
 import android.widget.TextView
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Recomposer
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.glance.Emittable
@@ -28,9 +28,9 @@ import androidx.glance.GlanceModifier
 import androidx.glance.action.ActionModifier
 import androidx.glance.action.LambdaAction
 import androidx.glance.layout.EmittableBox
+import androidx.glance.state.ConfigManager
 import androidx.glance.state.GlanceStateDefinition
 import androidx.glance.state.PreferencesGlanceStateDefinition
-import androidx.glance.state.ConfigManager
 import androidx.glance.text.EmittableText
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
@@ -45,6 +45,7 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertThrows
 import org.junit.Before
 import org.junit.Test
+import org.junit.Ignore
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows
@@ -54,7 +55,7 @@ import org.robolectric.Shadows
 class AppWidgetSessionTest {
 
     private val id = AppWidgetId(123)
-    private val widget = SampleGlanceAppWidget {}
+    private val widget = TestWidget {}
     private val context = ApplicationProvider.getApplicationContext<Context>()
     private val defaultOptions =
         optionsBundleOf(listOf(DpSize(100.dp, 50.dp), DpSize(50.dp, 100.dp)))
@@ -75,12 +76,20 @@ class AppWidgetSessionTest {
     }
 
     @Test
-    fun provideGlanceCallsSetContent() = runTest {
-        var wasCalled = false
-        session.provideGlance(context) {
-            wasCalled = true
-        }
-        assertThat(wasCalled).isTrue()
+    fun provideGlanceRunsGlance() = runTest {
+        runTestingComposition(session.provideGlance(context))
+        assertThat(widget.provideGlanceCalled.get()).isTrue()
+    }
+
+    @Ignore("b/266518169")
+    @Test
+    fun provideGlanceEmitsIgnoreResultForNullContent() = runTest {
+        // The session starts out with null content, so we can check that here.
+        val root = runCompositionUntil(
+            { state, _ -> state == Recomposer.State.Idle },
+            session.provideGlance(context)
+        )
+        assertThat(root.shouldIgnoreResult()).isTrue()
     }
 
     @Test
@@ -96,6 +105,16 @@ class AppWidgetSessionTest {
             val text = assertIs<TextView>(it)
             assertThat(text.text).isEqualTo("hello")
         }
+    }
+
+    @Test
+    fun processEmittableTree_ignoresResult() = runTest {
+        val root = RemoteViewsRoot(maxDepth = 1).apply {
+            children += EmittableIgnoreResult()
+        }
+
+        session.processEmittableTree(context, root)
+        assertThat(session.lastRemoteViews).isNull()
     }
 
     @Test
@@ -182,15 +201,6 @@ class AppWidgetSessionTest {
         session.receiveEvents(context) {}
         assertTrue(didRunFirst)
         assertTrue(didRunSecond)
-    }
-
-    private class SampleGlanceAppWidget(
-        val ui: @Composable () -> Unit,
-    ) : GlanceAppWidget() {
-        @Composable
-        override fun Content() {
-            ui()
-        }
     }
 
     private class TestGlanceState : ConfigManager {

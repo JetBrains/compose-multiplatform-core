@@ -76,7 +76,7 @@ class StringColumnTypeAdapter private constructor(
                 )
             } else {
                 listOf(
-                    StringColumnTypeAdapter(stringType)
+                    StringColumnTypeAdapter(stringType.makeNullable())
                 )
             }
         }

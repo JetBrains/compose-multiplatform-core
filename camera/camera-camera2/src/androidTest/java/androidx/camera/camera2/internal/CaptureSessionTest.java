@@ -16,6 +16,8 @@
 
 package androidx.camera.camera2.internal;
 
+import static android.os.Build.VERSION.SDK_INT;
+
 import static com.google.common.truth.Truth.assertThat;
 
 import static junit.framework.TestCase.assertTrue;
@@ -72,20 +74,14 @@ import androidx.camera.core.impl.CameraCaptureCallbacks;
 import androidx.camera.core.impl.CameraCaptureResult;
 import androidx.camera.core.impl.CaptureConfig;
 import androidx.camera.core.impl.DeferrableSurface;
-import androidx.camera.core.impl.ImageAnalysisConfig;
-import androidx.camera.core.impl.ImageCaptureConfig;
 import androidx.camera.core.impl.ImmediateSurface;
 import androidx.camera.core.impl.MutableOptionsBundle;
-import androidx.camera.core.impl.PreviewConfig;
 import androidx.camera.core.impl.Quirks;
 import androidx.camera.core.impl.SessionConfig;
-import androidx.camera.core.impl.UseCaseConfig;
-import androidx.camera.core.impl.VideoCaptureConfig;
 import androidx.camera.core.impl.utils.executor.CameraXExecutors;
 import androidx.camera.core.impl.utils.futures.FutureCallback;
 import androidx.camera.core.impl.utils.futures.Futures;
 import androidx.camera.testing.CameraUtil;
-import androidx.camera.testing.fakes.FakeUseCaseConfig;
 import androidx.concurrent.futures.CallbackToFutureAdapter;
 import androidx.core.os.HandlerCompat;
 import androidx.test.core.app.ApplicationProvider;
@@ -103,14 +99,15 @@ import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestRule;
+import org.junit.runner.Description;
 import org.junit.runner.RunWith;
+import org.junit.runners.model.Statement;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.mockito.Mockito;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -155,9 +152,28 @@ public final class CaptureSessionTest {
     private final List<DeferrableSurface> mDeferrableSurfaces = new ArrayList<>();
 
     @Rule
-    public TestRule mUseCamera = CameraUtil.grantCameraPermissionAndPreTest(
-            new CameraUtil.PreTestCameraIdList(Camera2Config.defaultConfig())
-    );
+    public TestRule getUseCameraRule() {
+        if (SDK_INT >= 19) {
+            return CameraUtil.grantCameraPermissionAndPreTest(
+                    new CameraUtil.PreTestCameraIdList(Camera2Config.defaultConfig())
+            );
+        } else {
+            // Camera2Config.defaultConfig() requires API 19, so returning
+            // a noop rule so it doesn't crash when run on API <19
+            return new NoopRule();
+        }
+    }
+
+    public static class NoopRule implements TestRule {
+        @NonNull
+        @Override
+        public Statement apply(@NonNull Statement base, @NonNull Description description) {
+            return new Statement() {
+                @Override
+                public void evaluate() {}
+            };
+        }
+    }
 
     @BeforeClass
     public static void setUpClass() {
@@ -277,7 +293,7 @@ public final class CaptureSessionTest {
     }
 
     // Set stream use case is not supported before API 33
-    @SdkSuppress(maxSdkVersion = 32)
+    @SdkSuppress(maxSdkVersion = 32, minSdkVersion = 21)
     @Test
     public void setStreamUseCaseNotSupported() {
         ImageReader imageReader0 = ImageReader.newInstance(640, 480, ImageFormat.YUV_420_888, 2);
@@ -302,112 +318,6 @@ public final class CaptureSessionTest {
                 CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_PREVIEW);
         assertTrue(outputConfigurationCompat.getStreamUseCase()
                 == CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_PREVIEW);
-    }
-
-    @SdkSuppress(maxSdkVersion = 32)
-    @Test
-    public void getStreamUseCaseFromUseCaseConfigsNotSupported() {
-        Collection<UseCaseConfig<?>> useCaseConfigs = new ArrayList<>();
-        useCaseConfigs.add(new FakeUseCaseConfig.Builder().getUseCaseConfig());
-        assertTrue(StreamUseCaseUtil.getStreamUseCaseFromUseCaseConfigs(useCaseConfigs,
-                new ArrayList<>())
-                == OutputConfigurationCompat.STREAM_USE_CASE_NONE);
-    }
-
-    @SdkSuppress(minSdkVersion = 33)
-    @Test
-    public void getStreamUseCaseFromUseCaseConfigsEmptyUseCase() {
-        Collection<UseCaseConfig<?>> useCaseConfigs = new ArrayList<>();
-        assertTrue(StreamUseCaseUtil.getStreamUseCaseFromUseCaseConfigs(useCaseConfigs,
-                new ArrayList<>())
-                == CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_DEFAULT);
-    }
-
-    @SdkSuppress(minSdkVersion = 33)
-    @Test
-    public void getStreamUseCaseFromUseCaseConfigsNoPreview() {
-        Collection<UseCaseConfig<?>> useCaseConfigs = new ArrayList<>();
-        useCaseConfigs.add(new FakeUseCaseConfig.Builder().getUseCaseConfig());
-        assertTrue(StreamUseCaseUtil.getStreamUseCaseFromUseCaseConfigs(useCaseConfigs,
-                new ArrayList<>())
-                == CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_DEFAULT);
-    }
-
-    @SdkSuppress(minSdkVersion = 33)
-    @Test
-    public void getStreamUseCaseFromUseCaseConfigsPreview() {
-        Collection<UseCaseConfig<?>> useCaseConfigs = new ArrayList<>();
-        PreviewConfig previewConfig = new PreviewConfig(MutableOptionsBundle.create());
-        useCaseConfigs.add(previewConfig);
-        assertTrue(StreamUseCaseUtil.getStreamUseCaseFromUseCaseConfigs(useCaseConfigs,
-                new ArrayList<>())
-                == CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_PREVIEW);
-    }
-
-    @SdkSuppress(minSdkVersion = 33)
-    @Test
-    public void getStreamUseCaseFromUseCaseConfigsZSL() {
-        Collection<UseCaseConfig<?>> useCaseConfigs = new ArrayList<>();
-        PreviewConfig previewConfig = new PreviewConfig(MutableOptionsBundle.create());
-        useCaseConfigs.add(previewConfig);
-        Collection<SessionConfig> sessionConfigs = new ArrayList<>();
-        sessionConfigs.add(new SessionConfig.Builder().setTemplateType(
-                CameraDevice.TEMPLATE_ZERO_SHUTTER_LAG).build());
-        assertTrue(StreamUseCaseUtil.getStreamUseCaseFromUseCaseConfigs(useCaseConfigs,
-                sessionConfigs)
-                == CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_DEFAULT);
-    }
-
-    @SdkSuppress(minSdkVersion = 33)
-    @Test
-    public void getStreamUseCaseFromUseCaseConfigsAnalysis() {
-        Collection<UseCaseConfig<?>> useCaseConfigs = new ArrayList<>();
-        PreviewConfig previewConfig = new PreviewConfig(MutableOptionsBundle.create());
-        useCaseConfigs.add(previewConfig);
-        ImageAnalysisConfig analysisConfig = new ImageAnalysisConfig(MutableOptionsBundle.create());
-        useCaseConfigs.add(analysisConfig);
-        assertTrue(StreamUseCaseUtil.getStreamUseCaseFromUseCaseConfigs(useCaseConfigs,
-                new ArrayList<>())
-                == CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_DEFAULT);
-    }
-
-    @SdkSuppress(minSdkVersion = 33)
-    @Test
-    public void getStreamUseCaseFromUseCaseConfigsImageCapture() {
-        Collection<UseCaseConfig<?>> useCaseConfigs = new ArrayList<>();
-        ImageCaptureConfig imageCaptureConfig = new ImageCaptureConfig(
-                MutableOptionsBundle.create());
-        useCaseConfigs.add(imageCaptureConfig);
-        assertTrue(StreamUseCaseUtil.getStreamUseCaseFromUseCaseConfigs(useCaseConfigs,
-                new ArrayList<>())
-                == CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_STILL_CAPTURE);
-    }
-
-    @SdkSuppress(minSdkVersion = 33)
-    @Test
-    public void getStreamUseCaseFromUseCaseConfigsVideoCapture() {
-        Collection<UseCaseConfig<?>> useCaseConfigs = new ArrayList<>();
-        VideoCaptureConfig videoCaptureConfig =
-                new VideoCaptureConfig(MutableOptionsBundle.create());
-        useCaseConfigs.add(videoCaptureConfig);
-        assertTrue(StreamUseCaseUtil.getStreamUseCaseFromUseCaseConfigs(useCaseConfigs,
-                new ArrayList<>())
-                == CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_VIDEO_RECORD);
-    }
-
-    @SdkSuppress(minSdkVersion = 33)
-    @Test
-    public void getStreamUseCaseFromUseCaseConfigsVideoAndImageCapture() {
-        Collection<UseCaseConfig<?>> useCaseConfigs = new ArrayList<>();
-        VideoCaptureConfig videoCaptureConfig =
-                new VideoCaptureConfig(MutableOptionsBundle.create());
-        useCaseConfigs.add(videoCaptureConfig);
-        ImageCaptureConfig imageCaptureConfig = new ImageCaptureConfig(
-                MutableOptionsBundle.create());
-        useCaseConfigs.add(imageCaptureConfig);
-        assertTrue(StreamUseCaseUtil.getStreamUseCaseFromUseCaseConfigs(useCaseConfigs,
-                new ArrayList<>())
-                == CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_PREVIEW_VIDEO_STILL);
     }
 
     // Sharing surface of YUV format is supported since API 28

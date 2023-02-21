@@ -19,9 +19,15 @@ package androidx.privacysandbox.tools.core.validator
 import androidx.privacysandbox.tools.core.model.AnnotatedInterface
 import androidx.privacysandbox.tools.core.model.AnnotatedValue
 import androidx.privacysandbox.tools.core.model.ParsedApi
+import androidx.privacysandbox.tools.core.model.Type
 import androidx.privacysandbox.tools.core.model.Types
+import androidx.privacysandbox.tools.core.model.Types.asNonNull
 
 class ModelValidator private constructor(val api: ParsedApi) {
+    private val values = api.values.map(AnnotatedValue::type)
+    private val interfaces = api.interfaces.map(AnnotatedInterface::type)
+    private val callbacks = api.callbacks.map(AnnotatedInterface::type)
+
     private val errors: MutableList<String> = mutableListOf()
 
     companion object {
@@ -61,33 +67,24 @@ class ModelValidator private constructor(val api: ParsedApi) {
     }
 
     private fun validateServiceAndInterfaceMethods() {
-        val allowedParameterTypes =
-            (api.values.map(AnnotatedValue::type) +
-                api.callbacks.map(AnnotatedInterface::type) +
-                api.interfaces.map(AnnotatedInterface::type) +
-                Types.primitiveTypes).toSet()
-        val allowedReturnValueTypes =
-            (api.values.map(AnnotatedValue::type) +
-                api.interfaces.map(AnnotatedInterface::type) +
-                Types.primitiveTypes).toSet()
-
         val annotatedInterfaces = api.services + api.interfaces
         for (annotatedInterface in annotatedInterfaces) {
             for (method in annotatedInterface.methods) {
-                if (method.parameters.any { !allowedParameterTypes.contains(it.type) }) {
+                if (method.parameters.any { !(isValidInterfaceParameterType(it.type)) }) {
                     errors.add(
                         "Error in ${annotatedInterface.type.qualifiedName}.${method.name}: " +
-                            "only primitives, data classes annotated with @PrivacySandboxValue " +
-                            "and interfaces annotated with @PrivacySandboxCallback or " +
-                            "@PrivacySandboxInterface are supported as parameter types."
+                            "only primitives, lists, data classes annotated with " +
+                            "@PrivacySandboxValue and interfaces annotated with " +
+                            "@PrivacySandboxCallback or @PrivacySandboxInterface are supported " +
+                            "as parameter types."
                     )
                 }
-                if (!allowedReturnValueTypes.contains(method.returnType)) {
+                if (!isValidInterfaceReturnType(method.returnType)) {
                     errors.add(
                         "Error in ${annotatedInterface.type.qualifiedName}.${method.name}: " +
-                            "only primitives, data classes annotated with @PrivacySandboxValue " +
-                            "and interfaces annotated with @PrivacySandboxInterface are " +
-                            "supported as return types."
+                            "only primitives, lists, data classes annotated with " +
+                            "@PrivacySandboxValue and interfaces annotated with " +
+                            "@PrivacySandboxInterface are supported as return types."
                     )
                 }
             }
@@ -95,17 +92,12 @@ class ModelValidator private constructor(val api: ParsedApi) {
     }
 
     private fun validateValuePropertyTypes() {
-        val allowedValuePropertyTypes =
-            (api.values.map(AnnotatedValue::type) +
-                api.interfaces.map(AnnotatedInterface::type) +
-                Types.primitiveTypes).toSet()
-
         for (value in api.values) {
             for (property in value.properties) {
-                if (!allowedValuePropertyTypes.contains(property.type)) {
+                if (!isValidValuePropertyType(property.type)) {
                     errors.add(
                         "Error in ${value.type.qualifiedName}.${property.name}: " +
-                            "only primitives, data classes annotated with " +
+                            "only primitives, lists, data classes annotated with " +
                             "@PrivacySandboxValue and interfaces annotated with " +
                             "@PrivacySandboxInterface are supported as properties."
                     )
@@ -115,17 +107,12 @@ class ModelValidator private constructor(val api: ParsedApi) {
     }
 
     private fun validateCallbackMethods() {
-        val allowedParameterTypes =
-            (api.values.map(AnnotatedValue::type) +
-                api.interfaces.map(AnnotatedInterface::type) +
-                Types.primitiveTypes).toSet()
-
         for (callback in api.callbacks) {
             for (method in callback.methods) {
-                if (method.parameters.any { !allowedParameterTypes.contains(it.type) }) {
+                if (method.parameters.any { !isValidCallbackParameterType(it.type) }) {
                     errors.add(
                         "Error in ${callback.type.qualifiedName}.${method.name}: " +
-                            "only primitives, data classes annotated with " +
+                            "only primitives, lists, data classes annotated with " +
                             "@PrivacySandboxValue and interfaces annotated with " +
                             "@PrivacySandboxInterface are supported as callback parameter types."
                     )
@@ -138,6 +125,32 @@ class ModelValidator private constructor(val api: ParsedApi) {
                 }
             }
         }
+    }
+
+    private fun isValidInterfaceParameterType(type: Type) =
+        isValue(type) || isInterface(type) || isPrimitive(type) || isList(type) || isCallback(type)
+    private fun isValidInterfaceReturnType(type: Type) =
+        isValue(type) || isInterface(type) || isPrimitive(type) || isList(type)
+    private fun isValidValuePropertyType(type: Type) =
+        isValue(type) || isInterface(type) || isPrimitive(type) || isList(type)
+    private fun isValidCallbackParameterType(type: Type) =
+        isValue(type) || isInterface(type) || isPrimitive(type) || isList(type)
+
+    private fun isValue(type: Type) = values.contains(type.asNonNull())
+    private fun isInterface(type: Type) = interfaces.contains(type.asNonNull())
+    private fun isCallback(type: Type) = callbacks.contains(type.asNonNull())
+    private fun isPrimitive(type: Type) = Types.primitiveTypes.contains(type.asNonNull())
+    private fun isList(type: Type): Boolean {
+        if (type.qualifiedName == "kotlin.collections.List") {
+            require(type.typeParameters.size == 1) {
+                "List type should have one type parameter, found ${type.typeParameters}."
+            }
+            if (type.isNullable) {
+                errors.add("Nullable lists are not supported")
+            }
+            return type.typeParameters[0].let { isValue(it) || isPrimitive(it) }
+        }
+        return false
     }
 }
 

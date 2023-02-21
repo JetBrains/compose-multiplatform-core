@@ -15,7 +15,7 @@ interface IComplicationProvider {
     /**
      * API version number. This should be incremented every time a new method is added.
      */
-    const int API_VERSION = 2;
+    const int API_VERSION = 3;
 
     /**
      * Called when a complication data update is requested for the given complication id.
@@ -132,4 +132,35 @@ interface IComplicationProvider {
      * @since API version 2.
      */
     ComplicationData onSynchronousComplicationRequest(int complicationInstanceId, int type) = 7;
+
+    /**
+     * Same as {@link #onUpdate}, but specifies isForSafeWatchFace.
+     *
+     * @param complicationInstanceId The system's id for the updated complication which is a unique
+     * value for the tuple [Watch face ComponentName, complication slot ID].
+     * @param type The type of complication requested
+     * @param isForSafeWatchFace Whether this request is on behalf of a safe watchface as defined by
+     * the data source. Must be one of {@link #IS_SAFE_FOR_WATCHFACE_NULL},
+     * {@link #IS_SAFE_FOR_WATCHFACE_TRUE} or {@link #IS_SAFE_FOR_WATCHFACE_FALSE}.
+     * @param manager The binder for IComplicationManager
+     * @since API version 3.
+     */
+    void onUpdate2(int complicationInstanceId, int type, int isForSafeWatchFace,
+        IBinder manager) = 8;
+
+    /**
+     * Same as {@link #onSynchronousComplicationRequest2}, but specifies isForSafeWatchFace.
+     *
+     * @param complicationInstanceId The system's id for the requested complication which is a
+     * unique value for the tuple [Watch face ComponentName, complication slot ID].
+     * @param isForSafeWatchFace Whether this request is on behalf of a safe watchface as defined by
+     * the data source. Must be one of {@link #IS_SAFE_FOR_WATCHFACE_NULL},
+     * {@link #IS_SAFE_FOR_WATCHFACE_TRUE} or {@link #IS_SAFE_FOR_WATCHFACE_FALSE}.
+     * @param type The type of complication requested
+     * unique value for the tuple [Watch face ComponentName, complication slot ID].
+     * @return The updated ComplicationData or null if no update is necessary
+     * @since API version 3.
+     */
+    ComplicationData onSynchronousComplicationRequest2(int complicationInstanceId,
+        int isForSafeWatchFace, int type) = 9;
 }

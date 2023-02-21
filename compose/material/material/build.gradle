@@ -21,6 +21,7 @@ plugins {
     id("AndroidXPlugin")
     id("com.android.library")
     id("AndroidXComposePlugin")
+    id("AndroidXPaparazziPlugin")
 }
 
 AndroidXComposePlugin.applyAndConfigureKotlinPlugin(project)
@@ -47,8 +48,8 @@ dependencies {
 
         // TODO: remove next 3 dependencies when b/202810604 is fixed
         implementation("androidx.savedstate:savedstate:1.1.0")
-        implementation("androidx.lifecycle:lifecycle-runtime:2.3.0")
-        implementation("androidx.lifecycle:lifecycle-viewmodel:2.3.0")
+        implementation("androidx.lifecycle:lifecycle-runtime:2.5.1")
+        implementation(project(":lifecycle:lifecycle-viewmodel"))
 
         testImplementation(libs.testRules)
         testImplementation(libs.testRunner)
@@ -106,8 +107,8 @@ if(AndroidXComposePlugin.isMultiplatformEnabled(project)) {
 
                 // TODO: remove next 3 dependencies when b/202810604 is fixed
                 implementation("androidx.savedstate:savedstate:1.1.0")
-                implementation("androidx.lifecycle:lifecycle-runtime:2.3.0")
-                implementation("androidx.lifecycle:lifecycle-viewmodel:2.3.0")
+                implementation("androidx.lifecycle:lifecycle-runtime:2.5.1")
+                implementation("androidx.lifecycle:lifecycle-viewmodel:2.5.1")
             }
 
             desktopMain.dependencies {
@@ -156,7 +157,6 @@ if(AndroidXComposePlugin.isMultiplatformEnabled(project)) {
 androidx {
     name = "Compose Material Components"
     type = LibraryType.PUBLISHED_LIBRARY
-    mavenGroup = LibraryGroups.COMPOSE_MATERIAL
     inceptionYear = "2018"
     description = "Compose Material Design Components library"
     legacyDisableKotlinStrictApiMode = true

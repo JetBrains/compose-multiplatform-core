@@ -29,27 +29,16 @@ import androidx.health.connect.client.records.CervicalMucusRecord
 import androidx.health.connect.client.records.CyclingPedalingCadenceRecord
 import androidx.health.connect.client.records.DistanceRecord
 import androidx.health.connect.client.records.ElevationGainedRecord
-import androidx.health.connect.client.records.ExerciseEventRecord
-import androidx.health.connect.client.records.ExerciseLapRecord
-import androidx.health.connect.client.records.ExerciseRepetitionsRecord
 import androidx.health.connect.client.records.ExerciseSessionRecord
 import androidx.health.connect.client.records.FloorsClimbedRecord
 import androidx.health.connect.client.records.HeartRateRecord
-import androidx.health.connect.client.records.HeartRateVariabilityDifferentialIndexRecord
 import androidx.health.connect.client.records.HeartRateVariabilityRmssdRecord
-import androidx.health.connect.client.records.HeartRateVariabilitySRecord
-import androidx.health.connect.client.records.HeartRateVariabilitySd2Record
-import androidx.health.connect.client.records.HeartRateVariabilitySdannRecord
-import androidx.health.connect.client.records.HeartRateVariabilitySdnnIndexRecord
-import androidx.health.connect.client.records.HeartRateVariabilitySdnnRecord
-import androidx.health.connect.client.records.HeartRateVariabilitySdsdRecord
-import androidx.health.connect.client.records.HeartRateVariabilityTinnRecord
 import androidx.health.connect.client.records.HeightRecord
-import androidx.health.connect.client.records.HipCircumferenceRecord
 import androidx.health.connect.client.records.HydrationRecord
 import androidx.health.connect.client.records.IntermenstrualBleedingRecord
 import androidx.health.connect.client.records.LeanBodyMassRecord
 import androidx.health.connect.client.records.MenstruationFlowRecord
+import androidx.health.connect.client.records.MenstruationPeriodRecord
 import androidx.health.connect.client.records.NutritionRecord
 import androidx.health.connect.client.records.OvulationTestRecord
 import androidx.health.connect.client.records.OxygenSaturationRecord
@@ -63,10 +52,8 @@ import androidx.health.connect.client.records.SleepStageRecord
 import androidx.health.connect.client.records.SpeedRecord
 import androidx.health.connect.client.records.StepsCadenceRecord
 import androidx.health.connect.client.records.StepsRecord
-import androidx.health.connect.client.records.SwimmingStrokesRecord
 import androidx.health.connect.client.records.TotalCaloriesBurnedRecord
 import androidx.health.connect.client.records.Vo2MaxRecord
-import androidx.health.connect.client.records.WaistCircumferenceRecord
 import androidx.health.connect.client.records.WeightRecord
 import androidx.health.connect.client.records.WheelchairPushesRecord
 import kotlin.reflect.KClass
@@ -88,10 +75,11 @@ internal constructor(
          * Creates [HealthPermission] to read provided [recordType], such as `Steps::class`.
          *
          * @return Permission object to use with
-         * [androidx.health.connect.client.PermissionController].
+         *   [androidx.health.connect.client.PermissionController].
          */
+        @RestrictTo(RestrictTo.Scope.LIBRARY) // To be deleted.
         @JvmStatic
-        public fun createReadPermission(recordType: KClass<out Record>): HealthPermission {
+        public fun createReadPermissionLegacy(recordType: KClass<out Record>): HealthPermission {
             return HealthPermission(recordType, AccessTypes.READ)
         }
 
@@ -102,9 +90,8 @@ internal constructor(
          * @return Permission to use with [androidx.health.connect.client.PermissionController].
          * @throws IllegalArgumentException if the given record type is invalid.
          */
-        @RestrictTo(RestrictTo.Scope.LIBRARY) // Not yet ready for public
         @JvmStatic
-        public fun createReadPermissionInternal(recordType: KClass<out Record>): String {
+        public fun getReadPermission(recordType: KClass<out Record>): String {
             if (RECORD_TYPE_TO_PERMISSION[recordType] == null) {
                 throw IllegalArgumentException(
                     "Given recordType is not valid : $recordType.simpleName"
@@ -118,8 +105,9 @@ internal constructor(
          *
          * @return Permission to use with [androidx.health.connect.client.PermissionController].
          */
+        @RestrictTo(RestrictTo.Scope.LIBRARY) // To be deleted.
         @JvmStatic
-        public fun createWritePermission(recordType: KClass<out Record>): HealthPermission {
+        public fun createWritePermissionLegacy(recordType: KClass<out Record>): HealthPermission {
             return HealthPermission(recordType, AccessTypes.WRITE)
         }
 
@@ -128,12 +116,11 @@ internal constructor(
          * `Steps::class`.
          *
          * @return Permission object to use with
-         * [androidx.health.connect.client.PermissionController].
+         *   [androidx.health.connect.client.PermissionController].
          * @throws IllegalArgumentException if the given record type is invalid.
          */
-        @RestrictTo(RestrictTo.Scope.LIBRARY) // Not yet ready for public
         @JvmStatic
-        public fun createWritePermissionInternal(recordType: KClass<out Record>): String {
+        public fun getWritePermission(recordType: KClass<out Record>): String {
             if (RECORD_TYPE_TO_PERMISSION[recordType] == null) {
                 throw IllegalArgumentException(
                     "Given recordType is not valid : $recordType.simpleName"
@@ -143,193 +130,138 @@ internal constructor(
         }
 
         // Read permissions for ACTIVITY.
-        @RestrictTo(RestrictTo.Scope.LIBRARY)
-        const val READ_ACTIVE_CALORIES_BURNED =
+        internal const val READ_ACTIVE_CALORIES_BURNED =
             "android.permission.health.READ_ACTIVE_CALORIES_BURNED"
-        @RestrictTo(RestrictTo.Scope.LIBRARY)
-        const val READ_DISTANCE = "android.permission.health.READ_DISTANCE"
-        @RestrictTo(RestrictTo.Scope.LIBRARY)
-        const val READ_ELEVATION_GAINED = "android.permission.health.READ_ELEVATION_GAINED"
-        @RestrictTo(RestrictTo.Scope.LIBRARY)
-        const val READ_EXERCISE = "android.permission.health.READ_EXERCISE"
-        @RestrictTo(RestrictTo.Scope.LIBRARY)
-        const val READ_FLOORS_CLIMBED = "android.permission.health.READ_FLOORS_CLIMBED"
-        @RestrictTo(RestrictTo.Scope.LIBRARY)
-        const val READ_STEPS = "android.permission.health.READ_STEPS"
-        @RestrictTo(RestrictTo.Scope.LIBRARY)
-        const val READ_TOTAL_CALORIES_BURNED =
+        internal const val READ_DISTANCE = "android.permission.health.READ_DISTANCE"
+        internal const val READ_ELEVATION_GAINED = "android.permission.health.READ_ELEVATION_GAINED"
+        internal const val READ_EXERCISE = "android.permission.health.READ_EXERCISE"
+        internal const val READ_FLOORS_CLIMBED = "android.permission.health.READ_FLOORS_CLIMBED"
+        internal const val READ_STEPS = "android.permission.health.READ_STEPS"
+        internal const val READ_TOTAL_CALORIES_BURNED =
             "android.permission.health.READ_TOTAL_CALORIES_BURNED"
-        @RestrictTo(RestrictTo.Scope.LIBRARY)
-        const val READ_VO2_MAX = "android.permission.health.READ_VO2_MAX"
-        @RestrictTo(RestrictTo.Scope.LIBRARY)
-        const val READ_WHEELCHAIR_PUSHES = "android.permission.health.READ_WHEELCHAIR_PUSHES"
-        @RestrictTo(RestrictTo.Scope.LIBRARY)
-        const val READ_POWER = "android.permission.health.READ_POWER"
-        @RestrictTo(RestrictTo.Scope.LIBRARY)
-        const val READ_SPEED = "android.permission.health.READ_SPEED"
+        internal const val READ_VO2_MAX = "android.permission.health.READ_VO2_MAX"
+        internal const val READ_WHEELCHAIR_PUSHES =
+            "android.permission.health.READ_WHEELCHAIR_PUSHES"
+        internal const val READ_POWER = "android.permission.health.READ_POWER"
+        internal const val READ_SPEED = "android.permission.health.READ_SPEED"
 
         // Read permissions for BODY_MEASUREMENTS.
+        internal const val READ_BASAL_METABOLIC_RATE =
+            "android.permission.health.READ_BASAL_METABOLIC_RATE"
+        internal const val READ_BODY_FAT = "android.permission.health.READ_BODY_FAT"
+        internal const val READ_BODY_WATER_MASS = "android.permission.health.READ_BODY_WATER_MASS"
+        internal const val READ_BONE_MASS = "android.permission.health.READ_BONE_MASS"
+        internal const val READ_HEIGHT = "android.permission.health.READ_HEIGHT"
         @RestrictTo(RestrictTo.Scope.LIBRARY)
-        const val READ_BASAL_METABOLIC_RATE = "android.permission.health.READ_BASAL_METABOLIC_RATE"
+        internal const val READ_HIP_CIRCUMFERENCE =
+            "android.permission.health.READ_HIP_CIRCUMFERENCE"
+        internal const val READ_LEAN_BODY_MASS = "android.permission.health.READ_LEAN_BODY_MASS"
         @RestrictTo(RestrictTo.Scope.LIBRARY)
-        const val READ_BODY_FAT = "android.permission.health.READ_BODY_FAT"
-        @RestrictTo(RestrictTo.Scope.LIBRARY)
-        const val READ_BODY_WATER_MASS = "android.permission.health.READ_BODY_WATER_MASS"
-        @RestrictTo(RestrictTo.Scope.LIBRARY)
-        const val READ_BONE_MASS = "android.permission.health.READ_BONE_MASS"
-        @RestrictTo(RestrictTo.Scope.LIBRARY)
-        const val READ_HEIGHT = "android.permission.health.READ_HEIGHT"
-        @RestrictTo(RestrictTo.Scope.LIBRARY)
-        const val READ_HIP_CIRCUMFERENCE = "android.permission.health.READ_HIP_CIRCUMFERENCE"
-        @RestrictTo(RestrictTo.Scope.LIBRARY)
-        const val READ_LEAN_BODY_MASS = "android.permission.health.READ_LEAN_BODY_MASS"
-        @RestrictTo(RestrictTo.Scope.LIBRARY)
-        const val READ_WAIST_CIRCUMFERENCE = "android.permission.health.READ_WAIST_CIRCUMFERENCE"
-        @RestrictTo(RestrictTo.Scope.LIBRARY)
-        const val READ_WEIGHT = "android.permission.health.READ_WEIGHT"
+        internal const val READ_WAIST_CIRCUMFERENCE =
+            "android.permission.health.READ_WAIST_CIRCUMFERENCE"
+        internal const val READ_WEIGHT = "android.permission.health.READ_WEIGHT"
 
         // Read permissions for CYCLE_TRACKING.
+        internal const val READ_CERVICAL_MUCUS = "android.permission.health.READ_CERVICAL_MUCUS"
         @RestrictTo(RestrictTo.Scope.LIBRARY)
-        const val READ_CERVICAL_MUCUS = "android.permission.health.READ_CERVICAL_MUCUS"
-        @RestrictTo(RestrictTo.Scope.LIBRARY)
-        const val READ_MENSTRUATION = "android.permission.health.READ_MENSTRUATION"
-        @RestrictTo(RestrictTo.Scope.LIBRARY)
-        const val READ_OVULATION_TEST = "android.permission.health.READ_OVULATION_TEST"
-        @RestrictTo(RestrictTo.Scope.LIBRARY)
-        const val READ_SEXUAL_ACTIVITY = "android.permission.health.READ_SEXUAL_ACTIVITY"
+        internal const val READ_INTERMENSTRUAL_BLEEDING =
+            "android.permission.health.READ_INTERMENSTRUAL_BLEEDING"
+        internal const val READ_MENSTRUATION = "android.permission.health.READ_MENSTRUATION"
+        internal const val READ_OVULATION_TEST = "android.permission.health.READ_OVULATION_TEST"
+        internal const val READ_SEXUAL_ACTIVITY = "android.permission.health.READ_SEXUAL_ACTIVITY"
 
         // Read permissions for NUTRITION.
-        @RestrictTo(RestrictTo.Scope.LIBRARY)
-        const val READ_HYDRATION = "android.permission.health.READ_HYDRATION"
-        @RestrictTo(RestrictTo.Scope.LIBRARY)
-        const val READ_NUTRITION = "android.permission.health.READ_NUTRITION"
+        internal const val READ_HYDRATION = "android.permission.health.READ_HYDRATION"
+        internal const val READ_NUTRITION = "android.permission.health.READ_NUTRITION"
 
         // Read permissions for SLEEP.
-        @RestrictTo(RestrictTo.Scope.LIBRARY)
-        const val READ_SLEEP = "android.permission.health.READ_SLEEP"
+        internal const val READ_SLEEP = "android.permission.health.READ_SLEEP"
 
         // Read permissions for VITALS.
-        @RestrictTo(RestrictTo.Scope.LIBRARY)
-        const val READ_BASAL_BODY_TEMPERATURE =
+        internal const val READ_BASAL_BODY_TEMPERATURE =
             "android.permission.health.READ_BASAL_BODY_TEMPERATURE"
-        @RestrictTo(RestrictTo.Scope.LIBRARY)
-        const val READ_BLOOD_GLUCOSE = "android.permission.health.READ_BLOOD_GLUCOSE"
-        @RestrictTo(RestrictTo.Scope.LIBRARY)
-        const val READ_BLOOD_PRESSURE = "android.permission.health.READ_BLOOD_PRESSURE"
-        @RestrictTo(RestrictTo.Scope.LIBRARY)
-        const val READ_BODY_TEMPERATURE = "android.permission.health.READ_BODY_TEMPERATURE"
-        @RestrictTo(RestrictTo.Scope.LIBRARY)
-        const val READ_HEART_RATE = "android.permission.health.READ_HEART_RATE"
-        @RestrictTo(RestrictTo.Scope.LIBRARY)
-        const val READ_HEART_RATE_VARIABILITY =
+        internal const val READ_BLOOD_GLUCOSE = "android.permission.health.READ_BLOOD_GLUCOSE"
+        internal const val READ_BLOOD_PRESSURE = "android.permission.health.READ_BLOOD_PRESSURE"
+        internal const val READ_BODY_TEMPERATURE = "android.permission.health.READ_BODY_TEMPERATURE"
+        internal const val READ_HEART_RATE = "android.permission.health.READ_HEART_RATE"
+        internal const val READ_HEART_RATE_VARIABILITY =
             "android.permission.health.READ_HEART_RATE_VARIABILITY"
-        @RestrictTo(RestrictTo.Scope.LIBRARY)
-        const val READ_INTERMENSTRUAL_BLEEDING =
-            "android.permission.health.READ_INTERMENSTRUAL_BLEEDING"
-        @RestrictTo(RestrictTo.Scope.LIBRARY)
-        const val READ_OXYGEN_SATURATION = "android.permission.health.READ_OXYGEN_SATURATION"
-        @RestrictTo(RestrictTo.Scope.LIBRARY)
-        const val READ_RESPIRATORY_RATE = "android.permission.health.READ_RESPIRATORY_RATE"
-        @RestrictTo(RestrictTo.Scope.LIBRARY)
-        const val READ_RESTING_HEART_RATE = "android.permission.health.READ_RESTING_HEART_RATE"
+        internal const val READ_OXYGEN_SATURATION =
+            "android.permission.health.READ_OXYGEN_SATURATION"
+        internal const val READ_RESPIRATORY_RATE = "android.permission.health.READ_RESPIRATORY_RATE"
+        internal const val READ_RESTING_HEART_RATE =
+            "android.permission.health.READ_RESTING_HEART_RATE"
 
         // Write permissions for ACTIVITY.
-        @RestrictTo(RestrictTo.Scope.LIBRARY)
-        const val WRITE_ACTIVE_CALORIES_BURNED =
+        internal const val WRITE_ACTIVE_CALORIES_BURNED =
             "android.permission.health.WRITE_ACTIVE_CALORIES_BURNED"
-        @RestrictTo(RestrictTo.Scope.LIBRARY)
-        const val WRITE_DISTANCE = "android.permission.health.WRITE_DISTANCE"
-        @RestrictTo(RestrictTo.Scope.LIBRARY)
-        const val WRITE_ELEVATION_GAINED = "android.permission.health.WRITE_ELEVATION_GAINED"
-        @RestrictTo(RestrictTo.Scope.LIBRARY)
-        const val WRITE_EXERCISE = "android.permission.health.WRITE_EXERCISE"
-        @RestrictTo(RestrictTo.Scope.LIBRARY)
-        const val WRITE_FLOORS_CLIMBED = "android.permission.health.WRITE_FLOORS_CLIMBED"
-        @RestrictTo(RestrictTo.Scope.LIBRARY)
-        const val WRITE_STEPS = "android.permission.health.WRITE_STEPS"
-        @RestrictTo(RestrictTo.Scope.LIBRARY)
-        const val WRITE_TOTAL_CALORIES_BURNED =
+        internal const val WRITE_DISTANCE = "android.permission.health.WRITE_DISTANCE"
+        internal const val WRITE_ELEVATION_GAINED =
+            "android.permission.health.WRITE_ELEVATION_GAINED"
+        internal const val WRITE_EXERCISE = "android.permission.health.WRITE_EXERCISE"
+        internal const val WRITE_FLOORS_CLIMBED = "android.permission.health.WRITE_FLOORS_CLIMBED"
+        internal const val WRITE_STEPS = "android.permission.health.WRITE_STEPS"
+        internal const val WRITE_TOTAL_CALORIES_BURNED =
             "android.permission.health.WRITE_TOTAL_CALORIES_BURNED"
-        @RestrictTo(RestrictTo.Scope.LIBRARY)
-        const val WRITE_VO2_MAX = "android.permission.health.WRITE_VO2_MAX"
-        @RestrictTo(RestrictTo.Scope.LIBRARY)
-        const val WRITE_WHEELCHAIR_PUSHES = "android.permission.health.WRITE_WHEELCHAIR_PUSHES"
-        @RestrictTo(RestrictTo.Scope.LIBRARY)
-        const val WRITE_POWER = "android.permission.health.WRITE_POWER"
-        @RestrictTo(RestrictTo.Scope.LIBRARY)
-        const val WRITE_SPEED = "android.permission.health.WRITE_SPEED"
+        internal const val WRITE_VO2_MAX = "android.permission.health.WRITE_VO2_MAX"
+        internal const val WRITE_WHEELCHAIR_PUSHES =
+            "android.permission.health.WRITE_WHEELCHAIR_PUSHES"
+        internal const val WRITE_POWER = "android.permission.health.WRITE_POWER"
+        internal const val WRITE_SPEED = "android.permission.health.WRITE_SPEED"
 
         // Write permissions for BODY_MEASUREMENTS.
-        @RestrictTo(RestrictTo.Scope.LIBRARY)
-        const val WRITE_BASAL_METABOLIC_RATE =
+        internal const val WRITE_BASAL_METABOLIC_RATE =
             "android.permission.health.WRITE_BASAL_METABOLIC_RATE"
+        internal const val WRITE_BODY_FAT = "android.permission.health.WRITE_BODY_FAT"
+        internal const val WRITE_BODY_WATER_MASS = "android.permission.health.WRITE_BODY_WATER_MASS"
+        internal const val WRITE_BONE_MASS = "android.permission.health.WRITE_BONE_MASS"
+        internal const val WRITE_HEIGHT = "android.permission.health.WRITE_HEIGHT"
         @RestrictTo(RestrictTo.Scope.LIBRARY)
-        const val WRITE_BODY_FAT = "android.permission.health.WRITE_BODY_FAT"
+        internal const val WRITE_HIP_CIRCUMFERENCE =
+            "android.permission.health.WRITE_HIP_CIRCUMFERENCE"
+        internal const val WRITE_LEAN_BODY_MASS = "android.permission.health.WRITE_LEAN_BODY_MASS"
         @RestrictTo(RestrictTo.Scope.LIBRARY)
-        const val WRITE_BODY_WATER_MASS = "android.permission.health.WRITE_BODY_WATER_MASS"
-        @RestrictTo(RestrictTo.Scope.LIBRARY)
-        const val WRITE_BONE_MASS = "android.permission.health.WRITE_BONE_MASS"
-        @RestrictTo(RestrictTo.Scope.LIBRARY)
-        const val WRITE_HEIGHT = "android.permission.health.WRITE_HEIGHT"
-        @RestrictTo(RestrictTo.Scope.LIBRARY)
-        const val WRITE_HIP_CIRCUMFERENCE = "android.permission.health.WRITE_HIP_CIRCUMFERENCE"
-        @RestrictTo(RestrictTo.Scope.LIBRARY)
-        const val WRITE_INTERMENSTRUAL_BLEEDING =
-            "android.permission.health.WRITE_INTERMENSTRUAL_BLEEDING"
-        @RestrictTo(RestrictTo.Scope.LIBRARY)
-        const val WRITE_LEAN_BODY_MASS = "android.permission.health.WRITE_LEAN_BODY_MASS"
-        @RestrictTo(RestrictTo.Scope.LIBRARY)
-        const val WRITE_WAIST_CIRCUMFERENCE = "android.permission.health.WRITE_WAIST_CIRCUMFERENCE"
-        @RestrictTo(RestrictTo.Scope.LIBRARY)
-        const val WRITE_WEIGHT = "android.permission.health.WRITE_WEIGHT"
+        internal const val WRITE_WAIST_CIRCUMFERENCE =
+            "android.permission.health.WRITE_WAIST_CIRCUMFERENCE"
+        internal const val WRITE_WEIGHT = "android.permission.health.WRITE_WEIGHT"
 
         // Write permissions for CYCLE_TRACKING.
+        internal const val WRITE_CERVICAL_MUCUS = "android.permission.health.WRITE_CERVICAL_MUCUS"
         @RestrictTo(RestrictTo.Scope.LIBRARY)
-        const val WRITE_CERVICAL_MUCUS = "android.permission.health.WRITE_CERVICAL_MUCUS"
-        @RestrictTo(RestrictTo.Scope.LIBRARY)
-        const val WRITE_MENSTRUATION = "android.permission.health.WRITE_MENSTRUATION"
-        @RestrictTo(RestrictTo.Scope.LIBRARY)
-        const val WRITE_OVULATION_TEST = "android.permission.health.WRITE_OVULATION_TEST"
-        @RestrictTo(RestrictTo.Scope.LIBRARY)
-        const val WRITE_SEXUAL_ACTIVITY = "android.permission.health.WRITE_SEXUAL_ACTIVITY"
+        internal const val WRITE_INTERMENSTRUAL_BLEEDING =
+            "android.permission.health.WRITE_INTERMENSTRUAL_BLEEDING"
+        internal const val WRITE_MENSTRUATION = "android.permission.health.WRITE_MENSTRUATION"
+        internal const val WRITE_OVULATION_TEST = "android.permission.health.WRITE_OVULATION_TEST"
+        internal const val WRITE_SEXUAL_ACTIVITY = "android.permission.health.WRITE_SEXUAL_ACTIVITY"
 
         // Write permissions for NUTRITION.
-        @RestrictTo(RestrictTo.Scope.LIBRARY)
-        const val WRITE_HYDRATION = "android.permission.health.WRITE_HYDRATION"
-        @RestrictTo(RestrictTo.Scope.LIBRARY)
-        const val WRITE_NUTRITION = "android.permission.health.WRITE_NUTRITION"
+        internal const val WRITE_HYDRATION = "android.permission.health.WRITE_HYDRATION"
+        internal const val WRITE_NUTRITION = "android.permission.health.WRITE_NUTRITION"
 
         // Write permissions for SLEEP.
-        @RestrictTo(RestrictTo.Scope.LIBRARY)
-        const val WRITE_SLEEP = "android.permission.health.WRITE_SLEEP"
+        internal const val WRITE_SLEEP = "android.permission.health.WRITE_SLEEP"
 
         // Write permissions for VITALS.
-        @RestrictTo(RestrictTo.Scope.LIBRARY)
-        const val WRITE_BASAL_BODY_TEMPERATURE =
+        internal const val WRITE_BASAL_BODY_TEMPERATURE =
             "android.permission.health.WRITE_BASAL_BODY_TEMPERATURE"
-        @RestrictTo(RestrictTo.Scope.LIBRARY)
-        const val WRITE_BLOOD_GLUCOSE = "android.permission.health.WRITE_BLOOD_GLUCOSE"
-        @RestrictTo(RestrictTo.Scope.LIBRARY)
-        const val WRITE_BLOOD_PRESSURE = "android.permission.health.WRITE_BLOOD_PRESSURE"
-        @RestrictTo(RestrictTo.Scope.LIBRARY)
-        const val WRITE_BODY_TEMPERATURE = "android.permission.health.WRITE_BODY_TEMPERATURE"
-        @RestrictTo(RestrictTo.Scope.LIBRARY)
-        const val WRITE_HEART_RATE = "android.permission.health.WRITE_HEART_RATE"
-        @RestrictTo(RestrictTo.Scope.LIBRARY)
-        const val WRITE_HEART_RATE_VARIABILITY =
+        internal const val WRITE_BLOOD_GLUCOSE = "android.permission.health.WRITE_BLOOD_GLUCOSE"
+        internal const val WRITE_BLOOD_PRESSURE = "android.permission.health.WRITE_BLOOD_PRESSURE"
+        internal const val WRITE_BODY_TEMPERATURE =
+            "android.permission.health.WRITE_BODY_TEMPERATURE"
+        internal const val WRITE_HEART_RATE = "android.permission.health.WRITE_HEART_RATE"
+        internal const val WRITE_HEART_RATE_VARIABILITY =
             "android.permission.health.WRITE_HEART_RATE_VARIABILITY"
-        @RestrictTo(RestrictTo.Scope.LIBRARY)
-        const val WRITE_OXYGEN_SATURATION = "android.permission.health.WRITE_OXYGEN_SATURATION"
-        @RestrictTo(RestrictTo.Scope.LIBRARY)
-        const val WRITE_RESPIRATORY_RATE = "android.permission.health.WRITE_RESPIRATORY_RATE"
-        @RestrictTo(RestrictTo.Scope.LIBRARY)
-        const val WRITE_RESTING_HEART_RATE = "android.permission.health.WRITE_RESTING_HEART_RATE"
+        internal const val WRITE_OXYGEN_SATURATION =
+            "android.permission.health.WRITE_OXYGEN_SATURATION"
+        internal const val WRITE_RESPIRATORY_RATE =
+            "android.permission.health.WRITE_RESPIRATORY_RATE"
+        internal const val WRITE_RESTING_HEART_RATE =
+            "android.permission.health.WRITE_RESTING_HEART_RATE"
 
-        private const val READ_PERMISSION_PREFIX = "android.permission.health.READ_"
+        internal const val READ_PERMISSION_PREFIX = "android.permission.health.READ_"
+        internal const val WRITE_PERMISSION_PREFIX = "android.permission.health.WRITE_"
 
-        private const val WRITE_PERMISSION_PREFIX = "android.permission.health.WRITE_"
-
-        private val RECORD_TYPE_TO_PERMISSION =
+        internal val RECORD_TYPE_TO_PERMISSION =
             mapOf<KClass<out Record>, String>(
                 ActiveCaloriesBurnedRecord::class to
                     READ_ACTIVE_CALORIES_BURNED.substringAfter(READ_PERMISSION_PREFIX),
@@ -354,42 +286,22 @@ internal constructor(
                 DistanceRecord::class to READ_DISTANCE.substringAfter(READ_PERMISSION_PREFIX),
                 ElevationGainedRecord::class to
                     READ_ELEVATION_GAINED.substringAfter(READ_PERMISSION_PREFIX),
-                ExerciseEventRecord::class to READ_EXERCISE.substringAfter(READ_PERMISSION_PREFIX),
-                ExerciseLapRecord::class to READ_EXERCISE.substringAfter(READ_PERMISSION_PREFIX),
-                ExerciseRepetitionsRecord::class to
-                    READ_EXERCISE.substringAfter(READ_PERMISSION_PREFIX),
                 ExerciseSessionRecord::class to
                     READ_EXERCISE.substringAfter(READ_PERMISSION_PREFIX),
                 FloorsClimbedRecord::class to
                     READ_FLOORS_CLIMBED.substringAfter(READ_PERMISSION_PREFIX),
                 HeartRateRecord::class to READ_HEART_RATE.substringAfter(READ_PERMISSION_PREFIX),
-                HeartRateVariabilityDifferentialIndexRecord::class to
-                    READ_HEART_RATE_VARIABILITY.substringAfter(READ_PERMISSION_PREFIX),
                 HeartRateVariabilityRmssdRecord::class to
                     READ_HEART_RATE_VARIABILITY.substringAfter(READ_PERMISSION_PREFIX),
-                HeartRateVariabilitySd2Record::class to
-                    READ_HEART_RATE_VARIABILITY.substringAfter(READ_PERMISSION_PREFIX),
-                HeartRateVariabilitySdannRecord::class to
-                    READ_HEART_RATE_VARIABILITY.substringAfter(READ_PERMISSION_PREFIX),
-                HeartRateVariabilitySdnnIndexRecord::class to
-                    READ_HEART_RATE_VARIABILITY.substringAfter(READ_PERMISSION_PREFIX),
-                HeartRateVariabilitySdnnRecord::class to
-                    READ_HEART_RATE_VARIABILITY.substringAfter(READ_PERMISSION_PREFIX),
-                HeartRateVariabilitySdsdRecord::class to
-                    READ_HEART_RATE_VARIABILITY.substringAfter(READ_PERMISSION_PREFIX),
-                HeartRateVariabilitySRecord::class to
-                    READ_HEART_RATE_VARIABILITY.substringAfter(READ_PERMISSION_PREFIX),
-                HeartRateVariabilityTinnRecord::class to
-                    READ_HEART_RATE_VARIABILITY.substringAfter(READ_PERMISSION_PREFIX),
                 HeightRecord::class to READ_HEIGHT.substringAfter(READ_PERMISSION_PREFIX),
-                HipCircumferenceRecord::class to
-                    READ_HIP_CIRCUMFERENCE.substringAfter(READ_PERMISSION_PREFIX),
                 HydrationRecord::class to READ_HYDRATION.substringAfter(READ_PERMISSION_PREFIX),
                 IntermenstrualBleedingRecord::class to
                     READ_INTERMENSTRUAL_BLEEDING.substringAfter(READ_PERMISSION_PREFIX),
                 LeanBodyMassRecord::class to
                     READ_LEAN_BODY_MASS.substringAfter(READ_PERMISSION_PREFIX),
                 MenstruationFlowRecord::class to
+                    READ_MENSTRUATION.substringAfter(READ_PERMISSION_PREFIX),
+                MenstruationPeriodRecord::class to
                     READ_MENSTRUATION.substringAfter(READ_PERMISSION_PREFIX),
                 NutritionRecord::class to READ_NUTRITION.substringAfter(READ_PERMISSION_PREFIX),
                 OvulationTestRecord::class to
@@ -408,13 +320,9 @@ internal constructor(
                 SpeedRecord::class to READ_SPEED.substringAfter(READ_PERMISSION_PREFIX),
                 StepsCadenceRecord::class to READ_STEPS.substringAfter(READ_PERMISSION_PREFIX),
                 StepsRecord::class to READ_STEPS.substringAfter(READ_PERMISSION_PREFIX),
-                SwimmingStrokesRecord::class to
-                    READ_EXERCISE.substringAfter(READ_PERMISSION_PREFIX),
                 TotalCaloriesBurnedRecord::class to
                     READ_TOTAL_CALORIES_BURNED.substringAfter(READ_PERMISSION_PREFIX),
                 Vo2MaxRecord::class to READ_VO2_MAX.substringAfter(READ_PERMISSION_PREFIX),
-                WaistCircumferenceRecord::class to
-                    READ_WAIST_CIRCUMFERENCE.substringAfter(READ_PERMISSION_PREFIX),
                 WeightRecord::class to READ_WEIGHT.substringAfter(READ_PERMISSION_PREFIX),
                 WheelchairPushesRecord::class to
                     READ_WHEELCHAIR_PUSHES.substringAfter(READ_PERMISSION_PREFIX),

@@ -27,7 +27,9 @@ import androidx.camera.core.imagecapture.Utils.ROTATION_DEGREES
 import androidx.camera.core.imagecapture.Utils.SENSOR_TO_BUFFER
 import androidx.camera.core.imagecapture.Utils.WIDTH
 import androidx.camera.core.imagecapture.Utils.createProcessingRequest
+import androidx.camera.core.impl.utils.executor.CameraXExecutors.isSequentialExecutor
 import androidx.camera.core.impl.utils.executor.CameraXExecutors.mainThreadExecutor
+import androidx.camera.core.impl.utils.futures.Futures
 import androidx.camera.testing.TestImageUtil.createJpegBytes
 import androidx.camera.testing.TestImageUtil.createJpegFakeImageProxy
 import androidx.camera.testing.fakes.FakeImageInfo
@@ -40,6 +42,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
+import org.robolectric.util.ReflectionHelpers.setStaticField
 
 /**
  * Unit tests for [ProcessingNode].
@@ -71,7 +74,8 @@ class ProcessingNodeTest {
             ROTATION_DEGREES,
             /*jpegQuality=*/100,
             SENSOR_TO_BUFFER,
-            callback
+            callback,
+            Futures.immediateFuture(null)
         )
 
         // Act: process the request.
@@ -99,5 +103,15 @@ class ProcessingNodeTest {
         // Assert: receives a process failure.
         assertThat(takePictureCallback.processFailure)
             .isInstanceOf(ImageCaptureException::class.java)
+    }
+
+    @Test
+    fun singleExecutorForLowMemoryQuirkEnabled() {
+        listOf("sm-a520w", "motog3").forEach { model ->
+            setStaticField(Build::class.java, "MODEL", model)
+            assertThat(
+                isSequentialExecutor(ProcessingNode(mainThreadExecutor()).mBlockingExecutor)
+            ).isTrue()
+        }
     }
 }

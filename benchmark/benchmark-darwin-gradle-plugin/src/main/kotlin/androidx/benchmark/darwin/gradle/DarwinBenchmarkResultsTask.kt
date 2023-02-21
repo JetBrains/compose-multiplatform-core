@@ -17,7 +17,7 @@
 package androidx.benchmark.darwin.gradle
 
 import androidx.benchmark.darwin.gradle.skia.Metrics
-import androidx.benchmark.darwin.gradle.xcode.Models
+import androidx.benchmark.darwin.gradle.xcode.GsonHelpers
 import androidx.benchmark.darwin.gradle.xcode.XcResultParser
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
@@ -25,7 +25,9 @@ import javax.inject.Inject
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.provider.Property
 import org.gradle.api.tasks.CacheableTask
+import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputDirectory
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputFile
@@ -41,6 +43,10 @@ abstract class DarwinBenchmarkResultsTask @Inject constructor(
     @get:InputDirectory
     @get:PathSensitive(PathSensitivity.RELATIVE)
     abstract val xcResultPath: DirectoryProperty
+
+    @get:Input
+    @get:Optional
+    abstract val referenceSha: Property<String>
 
     @get:OutputFile
     abstract val outputFile: RegularFileProperty
@@ -66,8 +72,8 @@ abstract class DarwinBenchmarkResultsTask @Inject constructor(
             }
         }
         val (record, summaries) = parser.parseResults()
-        val metrics = Metrics.buildMetrics(record, summaries)
-        val output = Models.gsonBuilder()
+        val metrics = Metrics.buildMetrics(record, summaries, referenceSha.orNull)
+        val output = GsonHelpers.gsonBuilder()
             .setPrettyPrinting()
             .create()
             .toJson(metrics)

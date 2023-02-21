@@ -20,16 +20,19 @@ import android.content.Context
 import android.media.MediaCodec
 import android.media.MediaCodecInfo
 import androidx.camera.camera2.Camera2Config
+import androidx.camera.camera2.pipe.integration.CameraPipeConfig
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.CameraSelector.DEFAULT_BACK_CAMERA
 import androidx.camera.core.CameraSelector.DEFAULT_FRONT_CAMERA
-import androidx.camera.core.impl.CamcorderProfileProxy
+import androidx.camera.core.CameraXConfig
+import androidx.camera.core.impl.EncoderProfilesProxy.VideoProfileProxy
+import androidx.camera.testing.CameraPipeConfigTestRule
 import androidx.camera.testing.CameraUtil
 import androidx.camera.testing.CameraXUtil
+import androidx.camera.video.internal.VideoValidatedEncoderProfilesProxy
 import androidx.camera.video.internal.compat.quirk.DeviceQuirks
 import androidx.camera.video.internal.compat.quirk.MediaCodecInfoReportIncorrectInfoQuirk
 import androidx.test.core.app.ApplicationProvider
-import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
 import com.google.common.collect.Range
@@ -38,8 +41,10 @@ import java.util.concurrent.TimeUnit
 import org.junit.After
 import org.junit.Assume.assumeTrue
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
 
 /**
  * Test used to find out compatibility issue.
@@ -51,13 +56,25 @@ import org.junit.runner.RunWith
  * add the device to the relevant quirk to pass the test.
  */
 @SmallTest
-@RunWith(AndroidJUnit4::class)
+@RunWith(Parameterized::class)
 @SdkSuppress(minSdkVersion = 21)
-class DeviceCompatibilityTest {
+class DeviceCompatibilityTest(
+    private val implName: String,
+    private val cameraConfig: CameraXConfig,
+) {
 
     private val context: Context = ApplicationProvider.getApplicationContext()
-    private val cameraConfig = Camera2Config.defaultConfig()
     private val zeroRange by lazy { android.util.Range.create(0, 0) }
+
+    @get:Rule
+    val cameraPipeConfigTestRule = CameraPipeConfigTestRule(
+        active = implName == CameraPipeConfig::class.simpleName,
+    )
+
+    @get:Rule
+    val cameraRule = CameraUtil.grantCameraPermissionAndPreTest(
+        CameraUtil.PreTestCameraIdList(cameraConfig)
+    )
 
     @Before
     fun setup() {
@@ -70,11 +87,11 @@ class DeviceCompatibilityTest {
     }
 
     @Test
-    fun mediaCodecInfoShouldSupportCamcorderProfileSizes() {
+    fun mediaCodecInfoShouldSupportEncoderProfilesSizes() {
         assumeTrue(DeviceQuirks.get(MediaCodecInfoReportIncorrectInfoQuirk::class.java) == null)
 
         // Arrange: Collect all supported profiles from default back/front camera.
-        val supportedProfiles = mutableListOf<CamcorderProfileProxy>()
+        val supportedProfiles = mutableListOf<VideoValidatedEncoderProfilesProxy>()
         supportedProfiles.addAll(getSupportedProfiles(DEFAULT_BACK_CAMERA))
         supportedProfiles.addAll(getSupportedProfiles(DEFAULT_FRONT_CAMERA))
         assumeTrue(supportedProfiles.isNotEmpty())
@@ -83,7 +100,11 @@ class DeviceCompatibilityTest {
             // Arrange: Find the codec and its video capabilities.
             // If mime is null, skip the test instead of failing it since this isn't the purpose
             // of the test.
-            val mime = profile.videoCodecMimeType ?: return@forEach
+            val videoProfile = profile.defaultVideoProfile
+            val mime = videoProfile.mediaType
+            if (mime == VideoProfileProxy.MEDIA_TYPE_NONE) {
+                return@forEach
+            }
             val capabilities = MediaCodec.createEncoderByType(mime).let { codec ->
                 try {
                     codec.codecInfo.getCapabilitiesForType(mime).videoCapabilities
@@ -93,7 +114,7 @@ class DeviceCompatibilityTest {
             }
 
             // Act.
-            val (width, height) = profile.videoFrameWidth to profile.videoFrameHeight
+            val (width, height) = videoProfile.width to videoProfile.height
             val supportedWidths = capabilities.supportedWidths
             val supportedHeights = capabilities.supportedHeights
             val supportedWidthsForHeight = capabilities.getWidthsForHeightQuietly(height)
@@ -112,11 +133,16 @@ class DeviceCompatibilityTest {
         }
     }
 
-    private fun getSupportedProfiles(cameraSelector: CameraSelector): List<CamcorderProfileProxy> {
+    private fun getSupportedProfiles(
+        cameraSelector: CameraSelector
+    ): List<VideoValidatedEncoderProfilesProxy> {
+        if (!CameraUtil.hasCameraWithLensFacing(cameraSelector.lensFacing!!)) {
+            return emptyList()
+        }
         val cameraInfo = CameraUtil.createCameraUseCaseAdapter(context, cameraSelector).cameraInfo
         val videoCapabilities = VideoCapabilities.from(cameraInfo)
         return videoCapabilities.supportedQualities
-            .mapNotNull { videoCapabilities.getProfile(it) }
+            .mapNotNull { videoCapabilities.getProfiles(it) }
     }
 
     private fun android.util.Range<Int>.toClosed() = Range.closed(lower, upper)
@@ -137,5 +163,14 @@ class DeviceCompatibilityTest {
         } catch (e: IllegalArgumentException) {
             zeroRange
         }
+    }
+
+    companion object {
+        @JvmStatic
+        @Parameterized.Parameters(name = "{0}")
+        fun data() = listOf(
+            arrayOf(Camera2Config::class.simpleName, Camera2Config.defaultConfig()),
+            arrayOf(CameraPipeConfig::class.simpleName, CameraPipeConfig.defaultConfig())
+        )
     }
 }

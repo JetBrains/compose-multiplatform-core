@@ -27,17 +27,30 @@ import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.MemberName
 import com.squareup.kotlinpoet.ParameterSpec
+import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeName
 import com.squareup.kotlinpoet.TypeSpec
 
 /** [ParameterSpec] equivalent to this parameter. */
 fun Parameter.poetSpec(): ParameterSpec {
-    return ParameterSpec.builder(name, type.poetSpec()).build()
+    return ParameterSpec.builder(name, type.poetTypeName()).build()
 }
 
-/** [TypeName] equivalent to this parameter. */
-fun Type.poetSpec() = ClassName(packageName, simpleName)
+/** [TypeName] equivalent to this type. */
+fun Type.poetTypeName(): TypeName {
+    val typeName =
+        if (typeParameters.isEmpty())
+            poetClassName()
+        else
+            poetClassName().parameterizedBy(typeParameters.map { it.poetTypeName() })
+    if (isNullable)
+        return typeName.copy(nullable = true)
+    return typeName
+}
+
+/** [ClassName] equivalent to this type. */
+fun Type.poetClassName() = ClassName(packageName, simpleName)
 
 fun AnnotatedValue.converterNameSpec() =
     ClassName(type.packageName, "${type.simpleName}Converter")

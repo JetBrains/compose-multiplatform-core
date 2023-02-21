@@ -20,10 +20,10 @@ package androidx.camera.camera2.pipe.integration.impl
 
 import android.hardware.camera2.CameraDevice
 import android.hardware.camera2.CaptureRequest
-import android.hardware.camera2.params.MeteringRectangle
 import androidx.annotation.RequiresApi
 import androidx.camera.camera2.pipe.CameraGraph
-import androidx.camera.camera2.pipe.Result3A
+import androidx.camera.camera2.pipe.GraphState.GraphStateStopped
+import androidx.camera.camera2.pipe.RequestTemplate
 import androidx.camera.camera2.pipe.core.Log.debug
 import androidx.camera.camera2.pipe.integration.adapter.SessionConfigAdapter
 import androidx.camera.camera2.pipe.integration.config.UseCaseCameraScope
@@ -35,8 +35,10 @@ import dagger.Binds
 import dagger.Module
 import javax.inject.Inject
 import kotlinx.atomicfu.atomic
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 
 internal val useCaseCameraIds = atomic(0)
@@ -46,6 +48,13 @@ internal const val defaultTemplate = CameraDevice.TEMPLATE_PREVIEW
 interface UseCaseCamera {
     // UseCases
     var runningUseCases: Set<UseCase>
+
+    interface RunningUseCasesChangeListener {
+        /**
+         * Invoked when value of [UseCaseCamera.runningUseCases] has been changed.
+         */
+        fun onRunningUseCasesChanged()
+    }
 
     // RequestControl of the UseCaseCamera
     val requestControl: UseCaseCameraRequestControl
@@ -62,13 +71,6 @@ interface UseCaseCamera {
         priority: Config.OptionPriority = defaultOptionPriority,
     ): Deferred<Unit>
 
-    // 3A
-    suspend fun startFocusAndMeteringAsync(
-        aeRegions: List<MeteringRectangle>,
-        afRegions: List<MeteringRectangle>,
-        awbRegions: List<MeteringRectangle>
-    ): Deferred<Result3A>
-
     // Lifecycle
     fun close(): Job
 }
@@ -76,8 +78,11 @@ interface UseCaseCamera {
 /**
  * API for interacting with a [CameraGraph] that has been configured with a set of [UseCase]'s
  */
+@RequiresApi(21)
 @UseCaseCameraScope
+@Suppress("PLATFORM_CLASS_MAPPED_TO_KOTLIN") // Java version required for Dagger
 class UseCaseCameraImpl @Inject constructor(
+    private val controls: java.util.Set<UseCaseCameraControl>,
     private val useCaseGraphConfig: UseCaseGraphConfig,
     private val useCases: java.util.ArrayList<UseCase>,
     private val useCaseSurfaceManager: UseCaseSurfaceManager,
@@ -85,6 +90,7 @@ class UseCaseCameraImpl @Inject constructor(
     override val requestControl: UseCaseCameraRequestControl,
 ) : UseCaseCamera {
     private val debugId = useCaseCameraIds.incrementAndGet()
+    private val closed = atomic(false)
 
     override var runningUseCases = setOf<UseCase>()
         set(value) {
@@ -101,26 +107,42 @@ class UseCaseCameraImpl @Inject constructor(
                     }.build()
                 )
             }
+
+            controls.forEach { control ->
+                if (control is UseCaseCamera.RunningUseCasesChangeListener) {
+                    control.onRunningUseCasesChanged()
+                }
+            }
         }
 
     init {
         debug { "Configured $this for $useCases" }
-    }
-
-    override fun close(): Job {
-        return threads.scope.launch {
-            debug { "Closing $this" }
-            useCaseGraphConfig.graph.close()
-            useCaseSurfaceManager.stopAsync().await()
+        useCaseGraphConfig.apply {
+            cameraStateAdapter.onGraphUpdated(graph)
+        }
+        threads.scope.launch {
+            useCaseGraphConfig.apply {
+                graph.graphState.collect {
+                    cameraStateAdapter.onGraphStateUpdated(graph, it)
+                    if (closed.value && it is GraphStateStopped) {
+                        cancel()
+                    }
+                }
+            }
         }
     }
 
-    override suspend fun startFocusAndMeteringAsync(
-        aeRegions: List<MeteringRectangle>,
-        afRegions: List<MeteringRectangle>,
-        awbRegions: List<MeteringRectangle>
-    ): Deferred<Result3A> =
-        requestControl.startFocusAndMeteringAsync(aeRegions, afRegions, awbRegions)
+    override fun close(): Job {
+        return if (closed.compareAndSet(expect = false, update = true)) {
+            threads.scope.launch {
+                debug { "Closing $this" }
+                useCaseGraphConfig.graph.close()
+                useCaseSurfaceManager.stopAsync().await()
+            }
+        } else {
+            CompletableDeferred(Unit)
+        }
+    }
 
     override fun <T> setParameterAsync(
         key: CaptureRequest.Key<T>,
@@ -134,6 +156,24 @@ class UseCaseCameraImpl @Inject constructor(
     ): Deferred<Unit> = requestControl.addParametersAsync(
         values = values,
         optionPriority = priority
+    )
+
+    private fun UseCaseCameraRequestControl.setSessionConfigAsync(
+        sessionConfig: SessionConfig
+    ): Deferred<Unit> = setConfigAsync(
+        type = UseCaseCameraRequestControl.Type.SESSION_CONFIG,
+        config = sessionConfig.implementationOptions,
+        tags = sessionConfig.repeatingCaptureConfig.tagBundle.toMap(),
+        listeners = setOf(
+            CameraCallbackMap.createFor(
+                sessionConfig.repeatingCameraCaptureCallbacks,
+                threads.backgroundExecutor
+            )
+        ),
+        template = RequestTemplate(sessionConfig.repeatingCaptureConfig.templateType),
+        streams = useCaseGraphConfig.getStreamIdsFromSurfaces(
+            sessionConfig.repeatingCaptureConfig.surfaces
+        ),
     )
 
     override fun toString(): String = "UseCaseCamera-$debugId"
