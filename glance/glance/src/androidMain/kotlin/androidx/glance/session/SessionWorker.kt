@@ -25,15 +25,11 @@ import androidx.glance.Applier
 import androidx.glance.EmittableWithChildren
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
-import kotlin.coroutines.resume
-import kotlinx.coroutines.CancellableContinuation
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.suspendCancellableCoroutine
-import kotlinx.coroutines.withContext
 
 /**
  * [SessionWorker] handles composition for a particular Glanceable.
@@ -67,36 +63,32 @@ internal class SessionWorker(
         GlobalSnapshotManager.ensureStarted()
         val root = session.createRootEmittable()
         val recomposer = Recomposer(coroutineContext)
-        val composition = Composition(Applier(root), recomposer)
-        val contentReady = MutableStateFlow(false)
+        val composition = Composition(Applier(root), recomposer).apply {
+            setContent(session.provideGlance(applicationContext))
+        }
         val uiReady = MutableStateFlow(false)
-        var contentCoroutine: CancellableContinuation<Unit>? = null
-        launch {
-            session.provideGlance(applicationContext) { content ->
-                contentCoroutine?.cancel()
-                suspendCancellableCoroutine { co ->
-                    contentCoroutine = co
-                    composition.setContent(content)
-                    contentReady.tryEmit(true)
-                }
-            }
+
+        launch(frameClock) {
+            recomposer.runRecomposeAndApplyChanges()
         }
         launch {
-            contentReady.first { it }
-            withContext(frameClock) { recomposer.runRecomposeAndApplyChanges() }
-        }
-        launch {
-            contentReady.first { it }
+            var lastRecomposeCount = recomposer.changeCount
             recomposer.currentState.collect { state ->
                 if (DEBUG) Log.d(TAG, "Recomposer(${session.key}): currentState=$state")
                 when (state) {
                     Recomposer.State.Idle -> {
-                        if (DEBUG) Log.d(TAG, "UI tree ready (${session.key})")
-                        session.processEmittableTree(
-                            applicationContext,
-                            root.copy() as EmittableWithChildren
-                        )
-                        uiReady.emit(true)
+                        // Only update the session when a change has actually occurred. The
+                        // Recomposer may sometimes wake up due to changes in other compositions.
+                        // Also update the session if we have not sent an initial tree yet.
+                        if (recomposer.changeCount > lastRecomposeCount || !uiReady.value) {
+                            if (DEBUG) Log.d(TAG, "UI tree updated (${session.key})")
+                            val processed = session.processEmittableTree(
+                                applicationContext,
+                                root.copy() as EmittableWithChildren
+                            )
+                            if (!uiReady.value && processed) uiReady.emit(true)
+                        }
+                        lastRecomposeCount = recomposer.changeCount
                     }
                     Recomposer.State.ShutDown -> cancel()
                     else -> {}
@@ -104,6 +96,7 @@ internal class SessionWorker(
             }
         }
 
+        // Wait until the Emittable tree has been processed at least once before receiving events.
         uiReady.first { it }
         session.receiveEvents(applicationContext) {
             if (DEBUG) Log.d(TAG, "processing event for ${session.key}")
@@ -111,7 +104,6 @@ internal class SessionWorker(
         }
 
         composition.dispose()
-        contentCoroutine?.resume(Unit)
         frameClock.stopInteractive()
         recomposer.close()
         recomposer.join()

@@ -17,12 +17,12 @@
 package androidx.compose.material3
 
 import android.os.Build
-import androidx.annotation.RequiresApi
-import androidx.compose.material3.internal.CalendarModelImpl
-import androidx.compose.material3.internal.LegacyCalendarModelImpl
 import androidx.test.filters.MediumTest
+import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
 import java.util.Locale
+import org.junit.After
+import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
@@ -30,12 +30,23 @@ import org.junit.runners.Parameterized
 @MediumTest
 @RunWith(Parameterized::class)
 @OptIn(ExperimentalMaterial3Api::class)
-@RequiresApi(Build.VERSION_CODES.O)
 internal class CalendarModelTest(private val model: CalendarModel) {
+
+    private lateinit var defaultLocale: Locale
+
+    @Before
+    fun before() {
+        defaultLocale = Locale.getDefault()
+    }
+
+    @After
+    fun after() {
+        Locale.setDefault(defaultLocale)
+    }
 
     @Test
     fun dateCreation() {
-        val date = model.getDate(January2022Millis) // 1/1/2022
+        val date = model.getCanonicalDate(January2022Millis) // 1/1/2022
         assertThat(date.year).isEqualTo(2022)
         assertThat(date.month).isEqualTo(1)
         assertThat(date.dayOfMonth).isEqualTo(1)
@@ -43,10 +54,20 @@ internal class CalendarModelTest(private val model: CalendarModel) {
     }
 
     @Test
+    fun dateCreation_withRounding() {
+        val date = model.getCanonicalDate(January2022Millis + 30000) // 1/1/2022 + 30000 millis
+        assertThat(date.year).isEqualTo(2022)
+        assertThat(date.month).isEqualTo(1)
+        assertThat(date.dayOfMonth).isEqualTo(1)
+        // Check that the milliseconds represent the start of the day.
+        assertThat(date.utcTimeMillis).isEqualTo(January2022Millis)
+    }
+
+    @Test
     fun dateRestore() {
         val date =
             CalendarDate(year = 2022, month = 1, dayOfMonth = 1, utcTimeMillis = January2022Millis)
-        assertThat(model.getDate(date.utcTimeMillis)).isEqualTo(date)
+        assertThat(model.getCanonicalDate(date.utcTimeMillis)).isEqualTo(date)
     }
 
     @Test
@@ -58,6 +79,15 @@ internal class CalendarModelTest(private val model: CalendarModel) {
         val monthFromYearMonth = model.getMonth(year = 2022, month = 1)
         assertThat(monthFromDate).isEqualTo(monthFromMilli)
         assertThat(monthFromDate).isEqualTo(monthFromYearMonth)
+    }
+
+    @Test
+    fun monthCreation_withRounding() {
+        val date =
+            CalendarDate(year = 2022, month = 1, dayOfMonth = 1, utcTimeMillis = January2022Millis)
+        val monthFromDate = model.getMonth(date)
+        val monthFromMilli = model.getMonth(January2022Millis + 10000)
+        assertThat(monthFromDate).isEqualTo(monthFromMilli)
     }
 
     @Test
@@ -87,9 +117,22 @@ internal class CalendarModelTest(private val model: CalendarModel) {
     fun formatDate() {
         val date =
             CalendarDate(year = 2022, month = 1, dayOfMonth = 1, utcTimeMillis = January2022Millis)
-        val month = model.plusMonths(model.getMonth(date), 2)
-        assertThat(model.format(date, "MM/dd/yyyy")).isEqualTo("01/01/2022")
-        assertThat(model.format(month, "MM/dd/yyyy")).isEqualTo("03/01/2022")
+        assertThat(model.formatWithSkeleton(date, "yMMMd")).isEqualTo("Jan 1, 2022")
+        assertThat(model.formatWithSkeleton(date, "dMMMy")).isEqualTo("Jan 1, 2022")
+        assertThat(model.formatWithSkeleton(date, "yMMMMEEEEd"))
+            .isEqualTo("Saturday, January 1, 2022")
+        // Check that the direct formatting is equal to the one the model does.
+        assertThat(model.formatWithSkeleton(date, "yMMMd")).isEqualTo(date.format(model, "yMMMd"))
+    }
+
+    @Test
+    fun formatMonth() {
+        val month = model.getMonth(year = 2022, month = 3)
+        assertThat(model.formatWithSkeleton(month, "yMMMM")).isEqualTo("March 2022")
+        assertThat(model.formatWithSkeleton(month, "MMMMy")).isEqualTo("March 2022")
+        // Check that the direct formatting is equal to the one the model does.
+        assertThat(model.formatWithSkeleton(month, "yMMMM"))
+            .isEqualTo(month.format(model, "yMMMM"))
     }
 
     @Test
@@ -108,30 +151,60 @@ internal class CalendarModelTest(private val model: CalendarModel) {
     }
 
     @Test
+    fun dateInputFormat() {
+        Locale.setDefault(Locale.US)
+        assertThat(model.getDateInputFormat().patternWithDelimiters).isEqualTo("MM/dd/yyyy")
+        assertThat(model.getDateInputFormat().patternWithoutDelimiters).isEqualTo("MMddyyyy")
+        assertThat(model.getDateInputFormat().delimiter).isEqualTo('/')
+
+        Locale.setDefault(Locale.CHINA)
+        assertThat(model.getDateInputFormat().patternWithDelimiters).isEqualTo("yyyy/MM/dd")
+        assertThat(model.getDateInputFormat().patternWithoutDelimiters).isEqualTo("yyyyMMdd")
+        assertThat(model.getDateInputFormat().delimiter).isEqualTo('/')
+
+        Locale.setDefault(Locale.UK)
+        assertThat(model.getDateInputFormat().patternWithDelimiters).isEqualTo("dd/MM/yyyy")
+        assertThat(model.getDateInputFormat().patternWithoutDelimiters).isEqualTo("ddMMyyyy")
+        assertThat(model.getDateInputFormat().delimiter).isEqualTo('/')
+
+        Locale.setDefault(Locale.KOREA)
+        assertThat(model.getDateInputFormat().patternWithDelimiters).isEqualTo("yyyy.MM.dd")
+        assertThat(model.getDateInputFormat().patternWithoutDelimiters).isEqualTo("yyyyMMdd")
+        assertThat(model.getDateInputFormat().delimiter).isEqualTo('.')
+
+        Locale.setDefault(Locale("es", "CL"))
+        assertThat(model.getDateInputFormat().patternWithDelimiters).isEqualTo("dd-MM-yyyy")
+        assertThat(model.getDateInputFormat().patternWithoutDelimiters).isEqualTo("ddMMyyyy")
+        assertThat(model.getDateInputFormat().delimiter).isEqualTo('-')
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+    @Test
     fun equalModelsOutput() {
         // Note: This test ignores the parameters and just runs a few equality tests for the output.
         // It will execute twice, but that should to tolerable :)
         val newModel = CalendarModelImpl()
         val legacyModel = LegacyCalendarModelImpl()
 
-        val date = newModel.getDate(January2022Millis) // 1/1/2022
-        val legacyDate = legacyModel.getDate(January2022Millis)
+        val date = newModel.getCanonicalDate(January2022Millis) // 1/1/2022
+        val legacyDate = legacyModel.getCanonicalDate(January2022Millis)
         val month = newModel.getMonth(date)
         val legacyMonth = legacyModel.getMonth(date)
 
         assertThat(newModel.today).isEqualTo(legacyModel.today)
         assertThat(month).isEqualTo(legacyMonth)
+        assertThat(newModel.getDateInputFormat()).isEqualTo(legacyModel.getDateInputFormat())
         assertThat(newModel.plusMonths(month, 3)).isEqualTo(legacyModel.plusMonths(month, 3))
         assertThat(date).isEqualTo(legacyDate)
         assertThat(newModel.getDayOfWeek(date)).isEqualTo(legacyModel.getDayOfWeek(date))
-        assertThat(newModel.format(date, "MMM d, yyyy")).isEqualTo(
-            legacyModel.format(
+        assertThat(newModel.formatWithSkeleton(date, "MMM d, yyyy")).isEqualTo(
+            legacyModel.formatWithSkeleton(
                 date,
                 "MMM d, yyyy"
             )
         )
-        assertThat(newModel.format(month, "MMM yyyy")).isEqualTo(
-            legacyModel.format(
+        assertThat(newModel.formatWithSkeleton(month, "MMM yyyy")).isEqualTo(
+            legacyModel.formatWithSkeleton(
                 month,
                 "MMM yyyy"
             )
@@ -141,10 +214,15 @@ internal class CalendarModelTest(private val model: CalendarModel) {
     internal companion object {
         @Parameterized.Parameters(name = "{0}")
         @JvmStatic
-        fun parameters() = arrayOf(
-            CalendarModelImpl(),
-            LegacyCalendarModelImpl()
-        )
+        fun parameters() =
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                arrayOf(
+                    CalendarModelImpl(),
+                    LegacyCalendarModelImpl()
+                )
+            } else {
+                arrayOf(LegacyCalendarModelImpl())
+            }
     }
 }
 

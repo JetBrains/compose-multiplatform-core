@@ -17,8 +17,12 @@
 package androidx.credentials.playservices
 
 import android.app.Activity
+import android.content.Context
 import android.os.CancellationSignal
 import android.util.Log
+import androidx.credentials.ClearCredentialStateRequest
+import androidx.annotation.RestrictTo
+import androidx.annotation.VisibleForTesting
 import androidx.credentials.CreateCredentialRequest
 import androidx.credentials.CreateCredentialResponse
 import androidx.credentials.CreatePasswordRequest
@@ -27,7 +31,16 @@ import androidx.credentials.CredentialManagerCallback
 import androidx.credentials.CredentialProvider
 import androidx.credentials.GetCredentialRequest
 import androidx.credentials.GetCredentialResponse
+import androidx.credentials.exceptions.ClearCredentialException
+import androidx.credentials.exceptions.ClearCredentialUnknownException
+import androidx.credentials.exceptions.CreateCredentialException
+import androidx.credentials.exceptions.GetCredentialException
+import androidx.credentials.playservices.controllers.BeginSignIn.CredentialProviderBeginSignInController
 import androidx.credentials.playservices.controllers.CreatePassword.CredentialProviderCreatePasswordController
+import androidx.credentials.playservices.controllers.CreatePublicKeyCredential.CredentialProviderCreatePublicKeyCredentialController
+import com.google.android.gms.auth.api.identity.Identity
+import com.google.android.gms.common.ConnectionResult
+import com.google.android.gms.common.GoogleApiAvailability
 import java.util.concurrent.Executor
 
 /**
@@ -37,53 +50,121 @@ import java.util.concurrent.Executor
  * @hide
  */
 @Suppress("deprecation")
-class CredentialProviderPlayServicesImpl : CredentialProvider {
+class CredentialProviderPlayServicesImpl(private val context: Context) : CredentialProvider {
+
+    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+    @set:RestrictTo(RestrictTo.Scope.TESTS)
+    var googleApiAvailability = GoogleApiAvailability.getInstance()
     override fun onGetCredential(
         request: GetCredentialRequest,
-        activity: Activity?,
+        activity: Activity,
         cancellationSignal: CancellationSignal?,
         executor: Executor,
-        callback: CredentialManagerCallback<GetCredentialResponse>
+        callback: CredentialManagerCallback<GetCredentialResponse, GetCredentialException>
     ) {
-        if (cancellationSignal != null) {
-            Log.i(TAG, "onCreateCredential cancellationSignal not used")
-            TODO("Use Cancel Operations Properly")
-        }
-        TODO("Not yet implemented")
+        if (cancellationReviewer(cancellationSignal)) { return }
+        CredentialProviderBeginSignInController(activity).invokePlayServices(
+            request, callback, executor, cancellationSignal)
     }
 
+    @SuppressWarnings("deprecated")
     override fun onCreateCredential(
         request: CreateCredentialRequest,
-        activity: Activity?,
+        activity: Activity,
         cancellationSignal: CancellationSignal?,
         executor: Executor,
-        callback: CredentialManagerCallback<CreateCredentialResponse>
+        callback: CredentialManagerCallback<CreateCredentialResponse, CreateCredentialException>
     ) {
-        if (cancellationSignal != null) {
-            Log.i(TAG, "onCreateCredential cancellationSignal not used")
-            TODO("Use Cancel Operations Properly")
-        }
-        val fragmentManager: android.app.FragmentManager = activity!!.fragmentManager
-        // TODO("Manage Fragment Lifecycle and Fragment Manager Properly")
-        if (request is CreatePasswordRequest) {
-            CredentialProviderCreatePasswordController.getInstance(
-                fragmentManager).invokePlayServices(
-                request,
-                callback,
-                executor)
-        } else if (request is CreatePublicKeyCredentialRequest) {
-            TODO("Not yet implemented")
-        } else {
-            throw UnsupportedOperationException(
-                "Unsupported request; not password or publickeycredential")
+        if (cancellationReviewer(cancellationSignal)) { return }
+        when (request) {
+            is CreatePasswordRequest -> {
+                CredentialProviderCreatePasswordController.getInstance(
+                    activity).invokePlayServices(
+                    request,
+                    callback,
+                    executor,
+                    cancellationSignal)
+            }
+            is CreatePublicKeyCredentialRequest -> {
+                CredentialProviderCreatePublicKeyCredentialController.getInstance(
+                    activity).invokePlayServices(
+                    request,
+                    callback,
+                    executor,
+                    cancellationSignal)
+            }
+            else -> {
+                throw UnsupportedOperationException(
+                    "Create Credential request is unsupported, not password or " +
+                        "publickeycredential")
+            }
         }
     }
-
     override fun isAvailableOnDevice(): Boolean {
-        TODO("Not yet implemented")
+        val resultCode = isGooglePlayServicesAvailable(context)
+        return resultCode == ConnectionResult.SUCCESS
+    }
+
+    // https://developers.google.com/android/reference/com/google/android/gms/common/ConnectionResult
+    // TODO(Most codes indicate failure, but two indicate retry-ability - look into handling.)
+    private fun isGooglePlayServicesAvailable(context: Context): Int {
+        return googleApiAvailability.isGooglePlayServicesAvailable(context)
+    }
+
+    override fun onClearCredential(
+        request: ClearCredentialStateRequest,
+        cancellationSignal: CancellationSignal?,
+        executor: Executor,
+        callback: CredentialManagerCallback<Void?, ClearCredentialException>
+    ) {
+        if (cancellationReviewer(cancellationSignal)) {
+            return
+        }
+        Identity.getSignInClient(context)
+            .signOut()
+            .addOnSuccessListener {
+                var isCanceled = false
+                cancellationSignal?.let {
+                    isCanceled = cancellationSignal.isCanceled
+                }
+                if (!isCanceled) {
+                    Log.i(TAG, "During clear credential, signed out successfully!")
+                    executor.execute { callback.onResult(null) }
+                }
+            }
+            .addOnFailureListener { e ->
+                run {
+                    var isCanceled = false
+                    cancellationSignal?.let {
+                        isCanceled = cancellationSignal.isCanceled
+                    }
+                    if (!isCanceled) {
+                        Log.w(TAG, "During clear credential sign out failed with $e")
+                        executor.execute {
+                            callback.onError(ClearCredentialUnknownException(e.message))
+                        }
+                    }
+                }
+            }
     }
 
     companion object {
         private val TAG = CredentialProviderPlayServicesImpl::class.java.name
+
+        internal fun cancellationReviewer(
+            cancellationSignal: CancellationSignal?
+        ): Boolean {
+            if (cancellationSignal != null) {
+                if (cancellationSignal.isCanceled) {
+                    Log.i(TAG, "the flow has been canceled")
+                    // TODO("See if there's a better way to message pass to avoid if statements")
+                    // TODO("And to use a single listener instead")
+                    return true
+                }
+            } else {
+                Log.i(TAG, "No cancellationSignal found")
+            }
+            return false
+        }
     }
 }

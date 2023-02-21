@@ -17,6 +17,7 @@
 package androidx.credentials
 
 import android.os.Bundle
+import androidx.credentials.CredentialOption.Companion.createFrom
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
 import com.google.common.truth.Truth.assertThat
@@ -44,22 +45,25 @@ class GetPublicKeyCredentialOptionTest {
     }
 
     @Test
-    fun constructor_setsAllowHybridToTrueByDefault() {
+    fun constructor_setPreferImmediatelyAvailableCredentialsToFalseByDefault() {
         val getPublicKeyCredentialOpt = GetPublicKeyCredentialOption(
             "JSON"
         )
-        val allowHybridActual = getPublicKeyCredentialOpt.allowHybrid
-        assertThat(allowHybridActual).isTrue()
+        val preferImmediatelyAvailableCredentialsActual =
+            getPublicKeyCredentialOpt.preferImmediatelyAvailableCredentials
+        assertThat(preferImmediatelyAvailableCredentialsActual).isFalse()
     }
 
     @Test
-    fun constructor_setsAllowHybridFalse() {
-        val allowHybridExpected = false
+    fun constructor_setPreferImmediatelyAvailableCredentialsTrue() {
+        val preferImmediatelyAvailableCredentialsExpected = true
         val getPublicKeyCredentialOpt = GetPublicKeyCredentialOption(
-            "JSON", allowHybridExpected
+            "JSON", preferImmediatelyAvailableCredentialsExpected
         )
-        val allowHybridActual = getPublicKeyCredentialOpt.allowHybrid
-        assertThat(allowHybridActual).isEqualTo(allowHybridExpected)
+        val preferImmediatelyAvailableCredentialsActual =
+            getPublicKeyCredentialOpt.preferImmediatelyAvailableCredentials
+        assertThat(preferImmediatelyAvailableCredentialsActual)
+            .isEqualTo(preferImmediatelyAvailableCredentialsExpected)
     }
 
     @Test
@@ -73,21 +77,48 @@ class GetPublicKeyCredentialOptionTest {
     @Test
     fun getter_frameworkProperties_success() {
         val requestJsonExpected = "{\"hi\":{\"there\":{\"lol\":\"Value\"}}}"
-        val allowHybridExpected = false
+        val preferImmediatelyAvailableCredentialsExpected = false
         val expectedData = Bundle()
         expectedData.putString(
-            GetPublicKeyCredentialBaseOption.BUNDLE_KEY_REQUEST_JSON,
+            PublicKeyCredential.BUNDLE_KEY_SUBTYPE,
+            GetPublicKeyCredentialOption.BUNDLE_VALUE_SUBTYPE_GET_PUBLIC_KEY_CREDENTIAL_OPTION
+        )
+        expectedData.putString(
+            GetPublicKeyCredentialOption.BUNDLE_KEY_REQUEST_JSON,
             requestJsonExpected
         )
         expectedData.putBoolean(
-            GetPublicKeyCredentialOption.BUNDLE_KEY_ALLOW_HYBRID,
-            allowHybridExpected
+            GetPublicKeyCredentialOption.BUNDLE_KEY_PREFER_IMMEDIATELY_AVAILABLE_CREDENTIALS,
+            preferImmediatelyAvailableCredentialsExpected
         )
 
-        val option = GetPublicKeyCredentialOption(requestJsonExpected, allowHybridExpected)
+        val option = GetPublicKeyCredentialOption(
+            requestJsonExpected, preferImmediatelyAvailableCredentialsExpected
+        )
 
         assertThat(option.type).isEqualTo(PublicKeyCredential.TYPE_PUBLIC_KEY_CREDENTIAL)
-        assertThat(equals(option.data, expectedData)).isTrue()
-        assertThat(option.requireSystemProvider).isFalse()
+        assertThat(equals(option.requestData, expectedData)).isTrue()
+        assertThat(equals(option.candidateQueryData, expectedData)).isTrue()
+        assertThat(option.isSystemProviderRequired).isFalse()
+    }
+
+    @Test
+    fun frameworkConversion_success() {
+        val option = GetPublicKeyCredentialOption("json", true)
+
+        val convertedOption = createFrom(
+            option.type,
+            option.requestData,
+            option.candidateQueryData,
+            option.isSystemProviderRequired
+        )
+
+        assertThat(convertedOption).isInstanceOf(
+            GetPublicKeyCredentialOption::class.java
+        )
+        val convertedSubclassOption = convertedOption as GetPublicKeyCredentialOption
+        assertThat(convertedSubclassOption.requestJson).isEqualTo(option.requestJson)
+        assertThat(convertedSubclassOption.preferImmediatelyAvailableCredentials)
+            .isEqualTo(option.preferImmediatelyAvailableCredentials)
     }
 }

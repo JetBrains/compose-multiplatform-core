@@ -21,6 +21,21 @@ import org.gradle.api.GradleException
 import org.gradle.api.Project
 
 /**
+ * Whether to enable constraints for projects in same-version groups
+ *
+ * This is expected to be true during builds that publish artifacts externally
+ * This is expected to be false during most other builds because:
+ *   Developers may be interested in including only a subset of projects in ANDROIDX_PROJECTS to
+ *     make Studio run more quickly.
+ *   If a build contains only a subset of projects, we cannot necessarily add constraints between
+ *     all pairs of projects in the same group.
+ *   We want most builds to have high remote cache usage, so we want constraints to be
+ *     similar across most builds
+ * See go/androidx-group-constraints for more information
+ */
+const val ADD_GROUP_CONSTRAINTS = "androidx.constraints"
+
+/**
  * Setting this property makes Test tasks succeed even if there
  * are some failing tests. Useful when running tests in CI where build
  * passes test results as XML to test reporter.
@@ -136,7 +151,13 @@ const val ALLOW_MISSING_LINT_CHECKS_PROJECT = "androidx.allow.missing.lint"
  */
 const val XCODEGEN_DOWNLOAD_URI = "androidx.benchmark.darwin.xcodeGenDownloadUri"
 
+/**
+ * If true, don't restrict usage of compileSdk property.
+ */
+const val ALLOW_CUSTOM_COMPILE_SDK = "androidx.allowCustomCompileSdk"
+
 val ALL_ANDROIDX_PROPERTIES = setOf(
+    ADD_GROUP_CONSTRAINTS,
     ALTERNATIVE_PROJECT_URL,
     VERSION_EXTRA_CHECK_ENABLED,
     VALIDATE_PROJECT_STRUCTURE,
@@ -162,8 +183,16 @@ val ALL_ANDROIDX_PROPERTIES = setOf(
     KMP_GITHUB_BUILD,
     ENABLED_KMP_TARGET_PLATFORMS,
     ALLOW_MISSING_LINT_CHECKS_PROJECT,
-    XCODEGEN_DOWNLOAD_URI
+    XCODEGEN_DOWNLOAD_URI,
+    ALLOW_CUSTOM_COMPILE_SDK
 )
+
+/**
+ * Whether to enable constraints for projects in same-version groups
+ * See the property definition for more details
+ */
+fun Project.shouldAddGroupConstraints(): Boolean =
+    findBooleanProperty(ADD_GROUP_CONSTRAINTS) ?: false
 
 /**
  * Returns alternative project url that will be used as "url" property
@@ -249,5 +278,11 @@ fun Project.usingMaxDepVersions(): Boolean {
  */
 fun Project.allowMissingLintProject() =
     findBooleanProperty(ALLOW_MISSING_LINT_CHECKS_PROJECT) ?: false
+
+/**
+ * Whether libraries are allowed to customize the value of the compileSdk property.
+ */
+fun Project.isCustomCompileSdkAllowed(): Boolean =
+    findBooleanProperty(ALLOW_CUSTOM_COMPILE_SDK) ?: true
 
 fun Project.findBooleanProperty(propName: String) = (findProperty(propName) as? String)?.toBoolean()

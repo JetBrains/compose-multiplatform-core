@@ -45,9 +45,8 @@ class RawQueryMethodProcessor(
             ProcessorErrors.MISSING_RAWQUERY_ANNOTATION
         )
 
-        val returnTypeName = returnType.typeName
         context.checker.notUnbound(
-            returnTypeName, executableElement,
+            returnType, executableElement,
             ProcessorErrors.CANNOT_USE_UNBOUND_GENERICS_IN_QUERY_METHODS
         )
 
@@ -78,7 +77,6 @@ class RawQueryMethodProcessor(
         val inTransaction = executableElement.hasAnnotation(Transaction::class)
         val rawQueryMethod = RawQueryMethod(
             element = executableElement,
-            name = executableElement.jvmName,
             observedTableNames = observedTableNames,
             returnType = returnType,
             runtimeQueryParam = runtimeQueryParam,
@@ -125,7 +123,9 @@ class RawQueryMethodProcessor(
                     if (tableNames.isEmpty()) {
                         context.logger.e(
                             executableElement,
-                            ProcessorErrors.rawQueryBadEntity(it.type.typeName)
+                            ProcessorErrors.rawQueryBadEntity(
+                                it.type.asTypeName().toString(context.codeLanguage)
+                            )
                         )
                     }
                     tableNames

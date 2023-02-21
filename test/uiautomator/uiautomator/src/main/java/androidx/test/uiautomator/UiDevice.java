@@ -56,8 +56,10 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -69,8 +71,7 @@ import java.util.concurrent.TimeoutException;
  * such as pressing the d-pad or pressing the Home and Menu buttons.
  */
 public class UiDevice implements Searchable {
-
-    private static final String LOG_TAG = UiDevice.class.getSimpleName();
+    private static final String TAG = UiDevice.class.getSimpleName();
 
     // Use a short timeout after HOME or BACK key presses, as no events might be generated if
     // already on the home page or if there is nothing to go back to.
@@ -93,7 +94,7 @@ public class UiDevice implements Searchable {
     private final Map<Integer, Context> mUiContexts = new HashMap<>();
 
     // Track registered UiWatchers, and whether currently in a UiWatcher execution.
-    private final Map<String, UiWatcher> mWatchers = new HashMap<>();
+    private final Map<String, UiWatcher> mWatchers = new LinkedHashMap<>();
     private final List<String> mWatchersTriggers = new ArrayList<>();
     private boolean mInWatcherContext = false;
 
@@ -140,14 +141,18 @@ public class UiDevice implements Searchable {
     @SuppressLint("UnknownNullness") // Avoid unnecessary null checks from nullable testing APIs.
     public UiObject2 findObject(@NonNull BySelector selector) {
         AccessibilityNodeInfo node = ByMatcher.findMatch(this, selector, getWindowRoots());
-        return node != null ? new UiObject2(this, selector, node) : null;
+        if (node == null) {
+            Log.d(TAG, String.format("Node not found with selector: %s.", selector));
+            return null;
+        }
+        return new UiObject2(this, selector, node);
     }
 
     /** Returns all objects that match the {@code selector} criteria. */
     @Override
     @NonNull
     public List<UiObject2> findObjects(@NonNull BySelector selector) {
-        List<UiObject2> ret = new ArrayList<UiObject2>();
+        List<UiObject2> ret = new ArrayList<>();
         for (AccessibilityNodeInfo node : ByMatcher.findMatches(this, selector, getWindowRoots())) {
             ret.add(new UiObject2(this, selector, node));
         }
@@ -159,12 +164,13 @@ public class UiDevice implements Searchable {
     /**
      * Waits for given the {@code condition} to be met.
      *
-     * @param condition The {@link SearchCondition} to evaluate.
+     * @param condition The {@link Condition} to evaluate.
      * @param timeout Maximum amount of time to wait in milliseconds.
      * @return The final result returned by the {@code condition}, or null if the {@code condition}
      * was not met before the {@code timeout}.
      */
-    public <U> U wait(@NonNull SearchCondition<U> condition, long timeout) {
+    public <U> U wait(@NonNull Condition<? super UiDevice, U> condition, long timeout) {
+        Log.d(TAG, String.format("Waiting %dms for %s.", timeout, condition));
         return mWaitMixin.wait(condition, timeout);
     }
 
@@ -179,11 +185,14 @@ public class UiDevice implements Searchable {
     public <U> U performActionAndWait(@NonNull Runnable action,
             @NonNull EventCondition<U> condition, long timeout) {
         AccessibilityEvent event = null;
+        Log.d(TAG, String.format("Performing action %s and waiting %dms for %s.", action, timeout,
+                condition));
         try {
             event = getUiAutomation().executeAndWaitForEvent(
-                action, new EventForwardingFilter(condition), timeout);
+                    action, condition, timeout);
         } catch (TimeoutException e) {
             // Ignore
+            Log.w(TAG, String.format("Timed out waiting %dms on the condition.", timeout));
         }
 
         if (event != null) {
@@ -191,22 +200,6 @@ public class UiDevice implements Searchable {
         }
 
         return condition.getResult();
-    }
-
-    /** Proxy class which acts as an {@link AccessibilityEventFilter} and forwards calls to an
-     * {@link EventCondition} instance. */
-    private static class EventForwardingFilter implements AccessibilityEventFilter {
-        private EventCondition<?> mCondition;
-
-        public EventForwardingFilter(EventCondition<?> condition) {
-            mCondition = condition;
-        }
-
-        @Override
-        public boolean accept(AccessibilityEvent event) {
-            // Guard against nulls
-            return Boolean.TRUE.equals(mCondition.apply(event));
-        }
     }
 
     /**
@@ -218,8 +211,25 @@ public class UiDevice implements Searchable {
      * and searching the hierarchy inefficient are removed.
      *
      * @param compressed true to enable compression; else, false to disable
+     * @deprecated Typo in function name, should use {@link #setCompressedLayoutHierarchy(boolean)}
+     * instead.
      */
+    @Deprecated
     public void setCompressedLayoutHeirarchy(boolean compressed) {
+        this.setCompressedLayoutHierarchy(compressed);
+    }
+
+    /**
+     * Enables or disables layout hierarchy compression.
+     *
+     * If compression is enabled, the layout hierarchy derived from the Accessibility
+     * framework will only contain nodes that are important for uiautomator
+     * testing. Any unnecessary surrounding layout nodes that make viewing
+     * and searching the hierarchy inefficient are removed.
+     *
+     * @param compressed true to enable compression; else, false to disable
+     */
+    public void setCompressedLayoutHierarchy(boolean compressed) {
         mCompressed = compressed;
         mCachedServiceFlags = -1; // Reset cached accessibility service flags to force an update.
     }
@@ -263,7 +273,6 @@ public class UiDevice implements Searchable {
      */
     @NonNull
     public Point getDisplaySizeDp() {
-        Tracer.trace();
         Display display = getDefaultDisplay();
         Point p = new Point();
         display.getRealSize(p);
@@ -286,7 +295,6 @@ public class UiDevice implements Searchable {
      */
     @NonNull
     public String getProductName() {
-        Tracer.trace();
         return Build.PRODUCT;
     }
 
@@ -306,7 +314,6 @@ public class UiDevice implements Searchable {
      */
     @SuppressLint("UnknownNullness") // Avoid unnecessary null checks from nullable testing APIs.
     public String getLastTraversedText() {
-        Tracer.trace();
         return getQueryController().getLastTraversedText();
     }
 
@@ -315,7 +322,7 @@ public class UiDevice implements Searchable {
      * See {@link #getLastTraversedText()}.
      */
     public void clearLastTraversedText() {
-        Tracer.trace();
+        Log.d(TAG, "Clearing last traversed text.");
         getQueryController().clearLastTraversedText();
     }
 
@@ -324,8 +331,8 @@ public class UiDevice implements Searchable {
      * @return true if successful, else return false
      */
     public boolean pressMenu() {
-        Tracer.trace();
         waitForIdle();
+        Log.d(TAG, "Pressing menu button.");
         return getInteractionController().sendKeyAndWaitForEvent(
                 KeyEvent.KEYCODE_MENU, 0, AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED,
                 KEY_PRESS_EVENT_TIMEOUT);
@@ -336,8 +343,8 @@ public class UiDevice implements Searchable {
      * @return true if successful, else return false
      */
     public boolean pressBack() {
-        Tracer.trace();
         waitForIdle();
+        Log.d(TAG, "Pressing back button.");
         return getInteractionController().sendKeyAndWaitForEvent(
                 KeyEvent.KEYCODE_BACK, 0, AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED,
                 KEY_PRESS_EVENT_TIMEOUT);
@@ -348,8 +355,8 @@ public class UiDevice implements Searchable {
      * @return true if successful, else return false
      */
     public boolean pressHome() {
-        Tracer.trace();
         waitForIdle();
+        Log.d(TAG, "Pressing home button.");
         return getInteractionController().sendKeyAndWaitForEvent(
                 KeyEvent.KEYCODE_HOME, 0, AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED,
                 KEY_PRESS_EVENT_TIMEOUT);
@@ -360,7 +367,6 @@ public class UiDevice implements Searchable {
      * @return true if successful, else return false
      */
     public boolean pressSearch() {
-        Tracer.trace();
         return pressKeyCode(KeyEvent.KEYCODE_SEARCH);
     }
 
@@ -369,7 +375,6 @@ public class UiDevice implements Searchable {
      * @return true if successful, else return false
      */
     public boolean pressDPadCenter() {
-        Tracer.trace();
         return pressKeyCode(KeyEvent.KEYCODE_DPAD_CENTER);
     }
 
@@ -378,7 +383,6 @@ public class UiDevice implements Searchable {
      * @return true if successful, else return false
      */
     public boolean pressDPadDown() {
-        Tracer.trace();
         return pressKeyCode(KeyEvent.KEYCODE_DPAD_DOWN);
     }
 
@@ -387,7 +391,6 @@ public class UiDevice implements Searchable {
      * @return true if successful, else return false
      */
     public boolean pressDPadUp() {
-        Tracer.trace();
         return pressKeyCode(KeyEvent.KEYCODE_DPAD_UP);
     }
 
@@ -396,7 +399,6 @@ public class UiDevice implements Searchable {
      * @return true if successful, else return false
      */
     public boolean pressDPadLeft() {
-        Tracer.trace();
         return pressKeyCode(KeyEvent.KEYCODE_DPAD_LEFT);
     }
 
@@ -405,7 +407,6 @@ public class UiDevice implements Searchable {
      * @return true if successful, else return false
      */
     public boolean pressDPadRight() {
-        Tracer.trace();
         return pressKeyCode(KeyEvent.KEYCODE_DPAD_RIGHT);
     }
 
@@ -414,7 +415,6 @@ public class UiDevice implements Searchable {
      * @return true if successful, else return false
      */
     public boolean pressDelete() {
-        Tracer.trace();
         return pressKeyCode(KeyEvent.KEYCODE_DEL);
     }
 
@@ -423,7 +423,6 @@ public class UiDevice implements Searchable {
      * @return true if successful, else return false
      */
     public boolean pressEnter() {
-        Tracer.trace();
         return pressKeyCode(KeyEvent.KEYCODE_ENTER);
     }
 
@@ -434,9 +433,7 @@ public class UiDevice implements Searchable {
      * @return true if successful, else return false
      */
     public boolean pressKeyCode(int keyCode) {
-        Tracer.trace(keyCode);
-        waitForIdle();
-        return getInteractionController().sendKey(keyCode, 0);
+        return pressKeyCode(keyCode, 0);
     }
 
     /**
@@ -448,9 +445,44 @@ public class UiDevice implements Searchable {
      * @return true if successful, else return false
      */
     public boolean pressKeyCode(int keyCode, int metaState) {
-        Tracer.trace(keyCode, metaState);
+        return pressKeyCodes(new int[]{keyCode}, metaState);
+    }
+
+    /**
+     * Presses one or more keys.
+     * <br/>
+     * For example, you can simulate taking a screenshot on the device by pressing both the
+     * power and volume down keys.
+     * <pre>{@code pressKeyCodes(new int[]{KeyEvent.KEYCODE_POWER, KeyEvent.KEYCODE_VOLUME_DOWN})}
+     * </pre>
+     *
+     * @see KeyEvent
+     * @param keyCodes array of key codes.
+     * @return true if successful, else return false
+     */
+    public boolean pressKeyCodes(@NonNull int[] keyCodes) {
+        return pressKeyCodes(keyCodes, 0);
+    }
+
+    /**
+     * Presses one or more keys.
+     * <br/>
+     * For example, you can simulate taking a screenshot on the device by pressing both the
+     * power and volume down keys.
+     * <pre>{@code pressKeyCodes(new int[]{KeyEvent.KEYCODE_POWER, KeyEvent.KEYCODE_VOLUME_DOWN})}
+     * </pre>
+     *
+     * @see KeyEvent
+     * @param keyCodes array of key codes.
+     * @param metaState an integer in which each bit set to 1 represents a pressed meta key
+     * @return true if successful, else return false
+     */
+    public boolean pressKeyCodes(@NonNull int[] keyCodes, int metaState) {
         waitForIdle();
-        return getInteractionController().sendKey(keyCode, metaState);
+        Log.d(TAG, String.format("Pressing keycodes %s with modifier %d.",
+                Arrays.toString(keyCodes),
+                metaState));
+        return getInteractionController().sendKeys(keyCodes, metaState);
     }
 
     /**
@@ -460,8 +492,8 @@ public class UiDevice implements Searchable {
      * @throws RemoteException
      */
     public boolean pressRecentApps() throws RemoteException {
-        Tracer.trace();
         waitForIdle();
+        Log.d(TAG, "Pressing recent apps button.");
         return getInteractionController().toggleRecentApps();
     }
 
@@ -471,8 +503,8 @@ public class UiDevice implements Searchable {
      * @return true if successful, else return false
      */
     public boolean openNotification() {
-        Tracer.trace();
         waitForIdle();
+        Log.d(TAG, "Opening notification.");
         return  getInteractionController().openNotification();
     }
 
@@ -482,8 +514,8 @@ public class UiDevice implements Searchable {
      * @return true if successful, else return false
      */
     public boolean openQuickSettings() {
-        Tracer.trace();
         waitForIdle();
+        Log.d(TAG, "Opening quick settings.");
         return getInteractionController().openQuickSettings();
     }
 
@@ -493,7 +525,6 @@ public class UiDevice implements Searchable {
      * @return width in pixels or zero on failure
      */
     public int getDisplayWidth() {
-        Tracer.trace();
         Display display = getDefaultDisplay();
         Point p = new Point();
         display.getRealSize(p);
@@ -506,7 +537,6 @@ public class UiDevice implements Searchable {
      * @return height in pixels or zero on failure
      */
     public int getDisplayHeight() {
-        Tracer.trace();
         Display display = getDefaultDisplay();
         Point p = new Point();
         display.getRealSize(p);
@@ -521,10 +551,12 @@ public class UiDevice implements Searchable {
      * @return true if the click succeeded else false
      */
     public boolean click(int x, int y) {
-        Tracer.trace(x, y);
         if (x >= getDisplayWidth() || y >= getDisplayHeight()) {
+            Log.w(TAG, String.format("Cannot click. Point (%d, %d) is outside display (%d, %d).",
+                    x, y, getDisplayWidth(), getDisplayHeight()));
             return false;
         }
+        Log.d(TAG, String.format("Clicking on (%d, %d).", x, y));
         return getInteractionController().clickNoSync(x, y);
     }
 
@@ -541,7 +573,8 @@ public class UiDevice implements Searchable {
      * @return false if the operation fails or the coordinates are invalid
      */
     public boolean swipe(int startX, int startY, int endX, int endY, int steps) {
-        Tracer.trace(startX, startY, endX, endY, steps);
+        Log.d(TAG, String.format("Swiping from (%d, %d) to (%d, %d) in %d steps.", startX, startY,
+                endX, endY, steps));
         return getInteractionController()
                 .swipe(startX, startY, endX, endY, steps);
     }
@@ -561,7 +594,8 @@ public class UiDevice implements Searchable {
      * or the coordinates are invalid
      */
     public boolean drag(int startX, int startY, int endX, int endY, int steps) {
-        Tracer.trace(startX, startY, endX, endY, steps);
+        Log.d(TAG, String.format("Dragging from (%d, %d) to (%d, %d) in %d steps.", startX, startY,
+                endX, endY, steps));
         return getInteractionController()
                 .swipe(startX, startY, endX, endY, steps, true);
     }
@@ -575,7 +609,8 @@ public class UiDevice implements Searchable {
      * @return true on success
      */
     public boolean swipe(@NonNull Point[] segments, int segmentSteps) {
-        Tracer.trace(segments, segmentSteps);
+        Log.d(TAG, String.format("Swiping between %s in %d steps.", Arrays.toString(segments),
+                segmentSteps * (segments.length - 1)));
         return getInteractionController().swipe(segments, segmentSteps);
     }
 
@@ -584,7 +619,6 @@ public class UiDevice implements Searchable {
      * Default wait timeout is 10 seconds
      */
     public void waitForIdle() {
-        Tracer.trace();
         getQueryController().waitForIdle();
     }
 
@@ -593,7 +627,6 @@ public class UiDevice implements Searchable {
      * @param timeout in milliseconds
      */
     public void waitForIdle(long timeout) {
-        Tracer.trace(timeout);
         getQueryController().waitForIdle(timeout);
     }
 
@@ -605,7 +638,6 @@ public class UiDevice implements Searchable {
     @Deprecated
     @SuppressLint("UnknownNullness") // Avoid unnecessary null checks from nullable testing APIs.
     public String getCurrentActivityName() {
-        Tracer.trace();
         return getQueryController().getCurrentActivityName();
     }
 
@@ -615,7 +647,6 @@ public class UiDevice implements Searchable {
      */
     @SuppressLint("UnknownNullness") // Avoid unnecessary null checks from nullable testing APIs.
     public String getCurrentPackageName() {
-        Tracer.trace();
         return getQueryController().getCurrentPackageName();
     }
 
@@ -627,7 +658,7 @@ public class UiDevice implements Searchable {
      * @param watcher {@link UiWatcher}
      */
     public void registerWatcher(@Nullable String name, @Nullable UiWatcher watcher) {
-        Tracer.trace(name, watcher);
+        Log.d(TAG, String.format("Registering watcher %s.", name));
         if (mInWatcherContext) {
             throw new IllegalStateException("Cannot register new watcher from within another");
         }
@@ -641,7 +672,7 @@ public class UiDevice implements Searchable {
      * @param name used to register the UiWatcher
      */
     public void removeWatcher(@Nullable String name) {
-        Tracer.trace(name);
+        Log.d(TAG, String.format("Removing watcher %s.", name));
         if (mInWatcherContext) {
             throw new IllegalStateException("Cannot remove a watcher from within another");
         }
@@ -653,7 +684,6 @@ public class UiDevice implements Searchable {
      * See {@link #registerWatcher(String, UiWatcher)}
      */
     public void runWatchers() {
-        Tracer.trace();
         if (mInWatcherContext) {
             return;
         }
@@ -667,7 +697,7 @@ public class UiDevice implements Searchable {
                         setWatcherTriggered(watcherName);
                     }
                 } catch (Exception e) {
-                    Log.e(LOG_TAG, "Exceuting watcher: " + watcherName, e);
+                    Log.e(TAG, String.format("Failed to execute watcher %s.", watcherName), e);
                 } finally {
                     mInWatcherContext = false;
                 }
@@ -682,7 +712,7 @@ public class UiDevice implements Searchable {
      * See {@link #registerWatcher(String, UiWatcher)}
      */
     public void resetWatcherTriggers() {
-        Tracer.trace();
+        Log.d(TAG, "Resetting all watchers.");
         mWatchersTriggers.clear();
     }
 
@@ -697,7 +727,6 @@ public class UiDevice implements Searchable {
      * @return true if triggered else false
      */
     public boolean hasWatcherTriggered(@Nullable String watcherName) {
-        Tracer.trace(watcherName);
         return mWatchersTriggers.contains(watcherName);
     }
 
@@ -708,7 +737,6 @@ public class UiDevice implements Searchable {
      * See {@link #hasWatcherTriggered(String)}
      */
     public boolean hasAnyWatcherTriggered() {
-        Tracer.trace();
         return mWatchersTriggers.size() > 0;
     }
 
@@ -717,7 +745,6 @@ public class UiDevice implements Searchable {
      * @param watcherName
      */
     private void setWatcherTriggered(String watcherName) {
-        Tracer.trace(watcherName);
         if (!hasWatcherTriggered(watcherName)) {
             mWatchersTriggers.add(watcherName);
         }
@@ -729,7 +756,6 @@ public class UiDevice implements Searchable {
      * @return true if it is in natural orientation
      */
     public boolean isNaturalOrientation() {
-        Tracer.trace();
         waitForIdle();
         int ret = getDisplayRotation();
         return ret == UiAutomation.ROTATION_FREEZE_0 ||
@@ -740,7 +766,6 @@ public class UiDevice implements Searchable {
      * Returns the current rotation of the display, as defined in {@link Surface}
      */
     public int getDisplayRotation() {
-        Tracer.trace();
         waitForIdle();
         return getDefaultDisplay().getRotation();
     }
@@ -751,7 +776,7 @@ public class UiDevice implements Searchable {
      * @throws RemoteException
      */
     public void freezeRotation() throws RemoteException {
-        Tracer.trace();
+        Log.d(TAG, "Freezing rotation.");
         getInteractionController().freezeRotation();
     }
 
@@ -762,7 +787,7 @@ public class UiDevice implements Searchable {
      * @throws RemoteException
      */
     public void unfreezeRotation() throws RemoteException {
-        Tracer.trace();
+        Log.d(TAG, "Unfreezing rotation.");
         getInteractionController().unfreezeRotation();
     }
 
@@ -775,7 +800,7 @@ public class UiDevice implements Searchable {
      * @throws RemoteException
      */
     public void setOrientationLeft() throws RemoteException {
-        Tracer.trace();
+        Log.d(TAG, "Setting orientation to left.");
         getInteractionController().setRotationLeft();
         waitForIdle(); // we don't need to check for idle on entry for this. We'll sync on exit
     }
@@ -789,7 +814,7 @@ public class UiDevice implements Searchable {
      * @throws RemoteException
      */
     public void setOrientationRight() throws RemoteException {
-        Tracer.trace();
+        Log.d(TAG, "Setting orientation to right.");
         getInteractionController().setRotationRight();
         waitForIdle(); // we don't need to check for idle on entry for this. We'll sync on exit
     }
@@ -803,7 +828,7 @@ public class UiDevice implements Searchable {
      * @throws RemoteException
      */
     public void setOrientationNatural() throws RemoteException {
-        Tracer.trace();
+        Log.d(TAG, "Setting orientation to natural.");
         getInteractionController().setRotationNatural();
         waitForIdle(); // we don't need to check for idle on entry for this. We'll sync on exit
     }
@@ -817,7 +842,7 @@ public class UiDevice implements Searchable {
      * @throws RemoteException
      */
     public void wakeUp() throws RemoteException {
-        Tracer.trace();
+        Log.d(TAG, "Turning on screen.");
         if(getInteractionController().wakeDevice()) {
             // sync delay to allow the window manager to start accepting input
             // after the device is awakened.
@@ -832,7 +857,6 @@ public class UiDevice implements Searchable {
      * @throws RemoteException
      */
     public boolean isScreenOn() throws RemoteException {
-        Tracer.trace();
         return getInteractionController().isScreenOn();
     }
 
@@ -843,7 +867,7 @@ public class UiDevice implements Searchable {
      * @throws RemoteException
      */
     public void sleep() throws RemoteException {
-        Tracer.trace();
+        Log.d(TAG, "Turning off screen.");
         getInteractionController().sleepDevice();
     }
 
@@ -857,7 +881,6 @@ public class UiDevice implements Searchable {
      */
     @Deprecated
     public void dumpWindowHierarchy(@NonNull String fileName) {
-        Tracer.trace(fileName);
 
         File dumpFile = new File(fileName);
         if (!dumpFile.isAbsolute()) {
@@ -906,33 +929,30 @@ public class UiDevice implements Searchable {
      *         window does not have the specified package name
      */
     public boolean waitForWindowUpdate(@Nullable String packageName, long timeout) {
-        Tracer.trace(packageName, timeout);
         if (packageName != null) {
             if (!packageName.equals(getCurrentPackageName())) {
+                Log.w(TAG, String.format("Skipping wait as package %s does not match current "
+                        + "window %s.", packageName, getCurrentPackageName()));
                 return false;
             }
         }
-        Runnable emptyRunnable = new Runnable() {
-            @Override
-            public void run() {
+        Runnable emptyRunnable = () -> {};
+        AccessibilityEventFilter checkWindowUpdate = t -> {
+            if (t.getEventType() == AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED) {
+                return packageName == null || (t.getPackageName() != null
+                        && packageName.contentEquals(t.getPackageName()));
             }
+            return false;
         };
-        AccessibilityEventFilter checkWindowUpdate = new AccessibilityEventFilter() {
-            @Override
-            public boolean accept(AccessibilityEvent t) {
-                if (t.getEventType() == AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED) {
-                    return packageName == null || (t.getPackageName() != null
-                            && packageName.contentEquals(t.getPackageName()));
-                }
-                return false;
-            }
-        };
+        Log.d(TAG, String.format("Waiting %dms for window update of package %s.", timeout,
+                packageName));
         try {
             getUiAutomation().executeAndWaitForEvent(emptyRunnable, checkWindowUpdate, timeout);
         } catch (TimeoutException e) {
+            Log.w(TAG, String.format("Timed out waiting %dms on window update.", timeout));
             return false;
         } catch (Exception e) {
-            Log.e(LOG_TAG, "waitForWindowUpdate: general exception from bridge", e);
+            Log.e(TAG, "Failed to wait for window update.", e);
             return false;
         }
         return true;
@@ -948,7 +968,6 @@ public class UiDevice implements Searchable {
      * @return true if screen shot is created successfully, false otherwise
      */
     public boolean takeScreenshot(@NonNull File storePath) {
-        Tracer.trace(storePath);
         return takeScreenshot(storePath, 1.0f, 90);
     }
 
@@ -963,9 +982,11 @@ public class UiDevice implements Searchable {
      * @return true if screen shot is created successfully, false otherwise
      */
     public boolean takeScreenshot(@NonNull File storePath, float scale, int quality) {
-        Tracer.trace(storePath, scale, quality);
+        Log.d(TAG, String.format("Taking screenshot (scale=%f, quality=%d) and storing at %s.",
+                scale, quality, storePath));
         Bitmap screenshot = getUiAutomation().takeScreenshot();
         if (screenshot == null) {
+            Log.w(TAG, "Failed to take screenshot.");
             return false;
         }
         try (BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(storePath))) {
@@ -976,7 +997,7 @@ public class UiDevice implements Searchable {
             bos.flush();
             return true;
         } catch (IOException ioe) {
-            Log.e(LOG_TAG, "failed to save screen shot to file", ioe);
+            Log.e(TAG, "Failed to save screenshot.", ioe);
             return false;
         } finally {
             screenshot.recycle();
@@ -1022,6 +1043,7 @@ public class UiDevice implements Searchable {
     @RequiresApi(21)
     @NonNull
     public String executeShellCommand(@NonNull String cmd) throws IOException {
+        Log.d(TAG, String.format("Executing shell command: %s", cmd));
         try (ParcelFileDescriptor pfd = Api21Impl.executeShellCommand(getUiAutomation(), cmd);
              FileInputStream fis = new ParcelFileDescriptor.AutoCloseInputStream(pfd)) {
             byte[] buf = new byte[512];
@@ -1038,22 +1060,19 @@ public class UiDevice implements Searchable {
         return mDisplayManager.getDisplay(Display.DEFAULT_DISPLAY);
     }
 
-    private List<AccessibilityWindowInfo> getWindows() {
+    @RequiresApi(21)
+    private List<AccessibilityWindowInfo> getWindows(UiAutomation uiAutomation) {
         // Support multi-display searches for API level 30 and up.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             final List<AccessibilityWindowInfo> windowList = new ArrayList<>();
             final SparseArray<List<AccessibilityWindowInfo>> allWindows =
-                    Api30Impl.getWindowsOnAllDisplays(getUiAutomation());
+                    Api30Impl.getWindowsOnAllDisplays(uiAutomation);
             for (int index = 0; index < allWindows.size(); index++) {
                 windowList.addAll(allWindows.valueAt(index));
             }
             return windowList;
         }
-        // Support multi-window searches for API level 21 and up.
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            return Api21Impl.getWindows(getUiAutomation());
-        }
-        return new ArrayList<>();
+        return Api21Impl.getWindows(uiAutomation);
     }
 
     /** Returns a list containing the root {@link AccessibilityNodeInfo}s for each active window */
@@ -1061,25 +1080,27 @@ public class UiDevice implements Searchable {
         waitForIdle();
 
         Set<AccessibilityNodeInfo> roots = new HashSet<>();
+        UiAutomation uiAutomation = getUiAutomation();
 
-        // Start with the active window, which seems to sometimes be missing from the list returned
-        // by the UiAutomation.
-        AccessibilityNodeInfo activeRoot = getUiAutomation().getRootInActiveWindow();
+        // Ensure the active window root is included.
+        AccessibilityNodeInfo activeRoot = uiAutomation.getRootInActiveWindow();
         if (activeRoot != null) {
             roots.add(activeRoot);
+        } else {
+            Log.w(TAG, "Active window root not found.");
         }
-
+        // Support multi-window searches for API level 21 and up.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            for (final AccessibilityWindowInfo window : getWindows()) {
+            for (final AccessibilityWindowInfo window : getWindows(uiAutomation)) {
                 final AccessibilityNodeInfo root = Api21Impl.getRoot(window);
                 if (root == null) {
-                    Log.w(LOG_TAG, "Skipping null root node for window: " + window);
+                    Log.w(TAG, "Skipping null root node for window: " + window);
                     continue;
                 }
                 roots.add(root);
             }
         }
-        return roots.toArray(new AccessibilityNodeInfo[roots.size()]);
+        return roots.toArray(new AccessibilityNodeInfo[0]);
     }
 
     Instrumentation getInstrumentation() {
@@ -1107,7 +1128,7 @@ public class UiDevice implements Searchable {
             uiAutomation = Api24Impl.getUiAutomation(getInstrumentation(), flags);
         } else {
             if (flags != Configurator.DEFAULT_UIAUTOMATION_FLAGS) {
-                Log.w(LOG_TAG, "UiAutomation flags not supported prior to API 24");
+                Log.w(TAG, "UiAutomation flags not supported prior to API 24");
             }
             uiAutomation = getInstrumentation().getUiAutomation();
         }
@@ -1115,7 +1136,10 @@ public class UiDevice implements Searchable {
         // Verify and update the accessibility service flags if necessary. These might get reset
         // if the underlying UiAutomationConnection is recreated.
         AccessibilityServiceInfo serviceInfo = uiAutomation.getServiceInfo();
-        if (serviceInfo.flags != mCachedServiceFlags) {
+        if (serviceInfo == null) {
+            Log.w(TAG, "Cannot verify accessibility service flags. "
+                    + "Multi-window support (searching non-active windows) may be disabled.");
+        } else if (serviceInfo.flags != mCachedServiceFlags) {
             // Enable multi-window support for API 21+.
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                 serviceInfo.flags |= AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS;
@@ -1126,7 +1150,7 @@ public class UiDevice implements Searchable {
             } else {
                 serviceInfo.flags |= AccessibilityServiceInfo.FLAG_INCLUDE_NOT_IMPORTANT_VIEWS;
             }
-            Log.d(LOG_TAG,
+            Log.d(TAG,
                     String.format("Setting accessibility service flags: %d", serviceInfo.flags));
             uiAutomation.setServiceInfo(serviceInfo);
             mCachedServiceFlags = serviceInfo.flags;

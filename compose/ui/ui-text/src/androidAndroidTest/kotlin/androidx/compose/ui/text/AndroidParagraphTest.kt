@@ -29,6 +29,7 @@ import android.text.style.RelativeSizeSpan
 import android.text.style.ScaleXSpan
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.graphics.Color
@@ -66,6 +67,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextGeometricTransform
 import androidx.compose.ui.text.style.TextIndent
+import androidx.compose.ui.text.style.TextMotion
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.em
@@ -1379,17 +1381,35 @@ AndroidParagraphTest {
     @Test
     fun testTextStyle_letterSpacingInSp_appliedAsSpan() {
         val letterSpacing = 5f
-        val text = "abc"
+        val annotatedText = buildAnnotatedString {
+            pushStyle(SpanStyle(fontWeight = FontWeight.W800))
+            append("abc")
+            pop()
+        }
         val paragraph = simpleParagraph(
-            text = text,
+            text = annotatedText.text,
+            spanStyles = annotatedText.spanStyles,
             style = TextStyle(letterSpacing = letterSpacing.sp),
             width = 0.0f
         )
 
         assertThat(paragraph.charSequence)
-            .hasSpan(LetterSpacingSpanPx::class, 0, text.length) {
+            .hasSpan(LetterSpacingSpanPx::class, 0, annotatedText.length) {
                 it.letterSpacing == letterSpacing
             }
+    }
+
+    @Test
+    fun testTextStyle_letterSpacingInSp_noSpan_whenNoAnnoattions() {
+        val letterSpacing = 5f
+        val annotatedText = "abc"
+        val paragraph = simpleParagraph(
+            text = annotatedText,
+            style = TextStyle(letterSpacing = letterSpacing.sp),
+            width = 0.0f
+        )
+
+        assertThat(paragraph.charSequence).doesNotHaveSpan(LetterSpacingSpanPx::class)
     }
 
     @Test
@@ -1619,6 +1639,19 @@ AndroidParagraphTest {
         paragraph.paint(canvas, drawStyle = null)
         assertThat(paragraph.textPaint.style).isEqualTo(Paint.Style.STROKE)
         assertThat(paragraph.textPaint.strokeWidth).isEqualTo(8f)
+    }
+
+    @Test
+    fun testPaint_cannot_change_blendMode_permanently() {
+        val paragraph = simpleParagraph(
+            text = "",
+            width = 0.0f
+        )
+        assertThat(paragraph.textPaint.blendMode).isEqualTo(BlendMode.SrcOver)
+
+        val canvas = Canvas(android.graphics.Canvas())
+        paragraph.paint(canvas, blendMode = BlendMode.Multiply)
+        assertThat(paragraph.textPaint.blendMode).isEqualTo(BlendMode.SrcOver)
     }
 
     @SdkSuppress(minSdkVersion = 29)
@@ -2013,6 +2046,40 @@ AndroidParagraphTest {
         val bitmapNoSpan = paragraph2.bitmap(textDecoration = TextDecoration.Underline)
 
         assertThat(bitmapWithSpan).isEqualToBitmap(bitmapNoSpan)
+    }
+
+    @OptIn(ExperimentalTextApi::class)
+    @Test
+    fun textMotionStatic_setsCorrectFlagsOnTextPaint() {
+        val textMotion = TextMotion.Static
+        val text = "abc"
+        val paragraph = simpleParagraph(
+            text = text,
+            style = TextStyle(textMotion = textMotion),
+            width = Float.MAX_VALUE
+        )
+
+        assertThat(paragraph.textPaint.flags and TextPaint.LINEAR_TEXT_FLAG).isEqualTo(0)
+        assertThat(paragraph.textPaint.flags and TextPaint.SUBPIXEL_TEXT_FLAG).isEqualTo(0)
+        assertThat(paragraph.textPaint.hinting).isEqualTo(TextPaint.HINTING_ON)
+    }
+
+    @OptIn(ExperimentalTextApi::class)
+    @Test
+    fun textMotionAnimated_setsCorrectFlagsOnTextPaint() {
+        val textMotion = TextMotion.Animated
+        val text = "abc"
+        val paragraph = simpleParagraph(
+            text = text,
+            style = TextStyle(textMotion = textMotion),
+            width = Float.MAX_VALUE
+        )
+
+        assertThat(paragraph.textPaint.flags and TextPaint.LINEAR_TEXT_FLAG)
+            .isEqualTo(TextPaint.LINEAR_TEXT_FLAG)
+        assertThat(paragraph.textPaint.flags and TextPaint.SUBPIXEL_TEXT_FLAG)
+            .isEqualTo(TextPaint.SUBPIXEL_TEXT_FLAG)
+        assertThat(paragraph.textPaint.hinting).isEqualTo(TextPaint.HINTING_OFF)
     }
 
     private fun simpleParagraph(

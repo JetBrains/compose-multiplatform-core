@@ -34,12 +34,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
-// TODO: Provide M3 ListItem doc link when available
 /**
- * Material Design list item.
+ * <a href="https://m3.material.io/components/lists/overview" class="external" target="_blank">Material Design list item.</a>
  *
  * Lists are continuous, vertical indexes of text or images.
  *
@@ -68,7 +68,6 @@ import androidx.compose.ui.unit.dp
  * @param shadowElevation the shadow elevation of this list item
  */
 @Composable
-@ExperimentalMaterial3Api
 fun ListItem(
     headlineText: @Composable () -> Unit,
     modifier: Modifier = Modifier,
@@ -261,9 +260,8 @@ fun ListItem(
 }
 
 // TODO(b/233782301): Complete 3-line list item
-// TODO: Provide M3 ListItem asset and doc link when available
 /**
- * Material Design list item.
+ * <a href="https://m3.material.io/components/lists/overview" class="external" target="_blank">Material Design list item.</a>
  *
  * Lists are continuous, vertical indexes of text or images. For more opinionated List Items,
  * consider using another overload
@@ -277,7 +275,6 @@ fun ListItem(
  * @param content the content to be displayed in the middle section of this list item
  */
 @Composable
-@ExperimentalMaterial3Api
 private fun ListItem(
     modifier: Modifier = Modifier,
     shape: Shape = ListItemDefaults.shape,
@@ -299,8 +296,9 @@ private fun ListItem(
     ) {
         Row(
             modifier = Modifier
-            .heightIn(min = minHeight)
-            .padding(paddingValues),
+                .heightIn(min = minHeight)
+                .padding(paddingValues)
+                .semantics(mergeDescendants = true) {},
             content = content
         )
     }
@@ -366,7 +364,6 @@ private fun trailingContent(
 /**
  * Contains the default values used by list items.
  */
-@ExperimentalMaterial3Api
 object ListItemDefaults {
     /** The default elevation of a list item */
     val Elevation: Dp = ListTokens.ListItemContainerElevation
@@ -430,7 +427,6 @@ object ListItemDefaults {
  *
  * - See [ListItemDefaults.colors] for the default colors used in a [ListItem].
  */
-@ExperimentalMaterial3Api
 @Immutable
 class ListItemColors internal constructor(
     private val containerColor: Color,

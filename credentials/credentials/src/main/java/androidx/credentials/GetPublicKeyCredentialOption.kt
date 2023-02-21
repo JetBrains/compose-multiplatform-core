@@ -17,41 +17,70 @@
 package androidx.credentials
 
 import android.os.Bundle
-import androidx.annotation.VisibleForTesting
+import androidx.credentials.internal.FrameworkClassParsingException
 
 /**
  * A request to get passkeys from the user's public key credential provider.
  *
- * @property requestJson the request in JSON format
- * @property allowHybrid defines whether hybrid credentials are allowed to fulfill this request,
- * true by default
- * @throws NullPointerException If [requestJson] or [allowHybrid] is null. It is handled by the
- * Kotlin runtime
+ * @property requestJson the request in JSON format in the standard webauthn web json
+ * shown [here](https://w3c.github.io/webauthn/#dictdef-publickeycredentialrequestoptionsjson).
+ * @property preferImmediatelyAvailableCredentials true if you prefer the operation to return
+ * immediately when there is no available credential instead of falling back to discovering remote
+ * credentials, and false (default) otherwise
+ * @throws NullPointerException If [requestJson] is null
  * @throws IllegalArgumentException If [requestJson] is empty
- *
- * @hide
  */
 class GetPublicKeyCredentialOption @JvmOverloads constructor(
-    requestJson: String,
-    @get:JvmName("allowHybrid")
-    val allowHybrid: Boolean = true,
-) : GetPublicKeyCredentialBaseOption(
-    requestJson,
-    PublicKeyCredential.TYPE_PUBLIC_KEY_CREDENTIAL,
-    toBundle(requestJson, allowHybrid),
-    false
+    val requestJson: String,
+    @get:JvmName("preferImmediatelyAvailableCredentials")
+    val preferImmediatelyAvailableCredentials: Boolean = false,
+) : CredentialOption(
+    type = PublicKeyCredential.TYPE_PUBLIC_KEY_CREDENTIAL,
+    requestData = toRequestDataBundle(requestJson, preferImmediatelyAvailableCredentials),
+    candidateQueryData = toRequestDataBundle(requestJson, preferImmediatelyAvailableCredentials),
+    isSystemProviderRequired = false
 ) {
+    init {
+        require(requestJson.isNotEmpty()) { "requestJson must not be empty" }
+    }
+
     /** @hide */
     companion object {
-        @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
-        const val BUNDLE_KEY_ALLOW_HYBRID = "androidx.credentials.BUNDLE_KEY_ALLOW_HYBRID"
+        internal const val BUNDLE_KEY_PREFER_IMMEDIATELY_AVAILABLE_CREDENTIALS =
+            "androidx.credentials.BUNDLE_KEY_PREFER_IMMEDIATELY_AVAILABLE_CREDENTIALS"
+        internal const val BUNDLE_KEY_REQUEST_JSON = "androidx.credentials.BUNDLE_KEY_REQUEST_JSON"
+        internal const val BUNDLE_VALUE_SUBTYPE_GET_PUBLIC_KEY_CREDENTIAL_OPTION =
+            "androidx.credentials.BUNDLE_VALUE_SUBTYPE_GET_PUBLIC_KEY_CREDENTIAL_OPTION"
 
         @JvmStatic
-        internal fun toBundle(requestJson: String, allowHybrid: Boolean): Bundle {
+        internal fun toRequestDataBundle(
+            requestJson: String,
+            preferImmediatelyAvailableCredentials: Boolean
+        ): Bundle {
             val bundle = Bundle()
+            bundle.putString(
+                PublicKeyCredential.BUNDLE_KEY_SUBTYPE,
+                BUNDLE_VALUE_SUBTYPE_GET_PUBLIC_KEY_CREDENTIAL_OPTION
+            )
             bundle.putString(BUNDLE_KEY_REQUEST_JSON, requestJson)
-            bundle.putBoolean(BUNDLE_KEY_ALLOW_HYBRID, allowHybrid)
+            bundle.putBoolean(BUNDLE_KEY_PREFER_IMMEDIATELY_AVAILABLE_CREDENTIALS,
+                preferImmediatelyAvailableCredentials)
             return bundle
+        }
+
+        @Suppress("deprecation") // bundle.get() used for boolean value to prevent default
+                                         // boolean value from being returned.
+        @JvmStatic
+        internal fun createFrom(data: Bundle): GetPublicKeyCredentialOption {
+            try {
+                val requestJson = data.getString(BUNDLE_KEY_REQUEST_JSON)
+                val preferImmediatelyAvailableCredentials =
+                    data.get(BUNDLE_KEY_PREFER_IMMEDIATELY_AVAILABLE_CREDENTIALS)
+                return GetPublicKeyCredentialOption(requestJson!!,
+                    (preferImmediatelyAvailableCredentials!!) as Boolean)
+            } catch (e: Exception) {
+                throw FrameworkClassParsingException()
+            }
         }
     }
 }

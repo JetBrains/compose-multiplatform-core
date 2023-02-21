@@ -16,9 +16,7 @@
 
 package androidx.room.solver.query.result
 
-import androidx.room.compiler.codegen.toJavaPoet
 import androidx.room.compiler.processing.XType
-import androidx.room.ext.L
 import androidx.room.parser.ParsedQuery
 import androidx.room.processor.Context
 import androidx.room.processor.ProcessorErrors
@@ -70,14 +68,18 @@ class PojoRowAdapter(
             if (nonNulls.isNotEmpty()) {
                 context.logger.e(
                     ProcessorErrors.pojoMissingNonNull(
-                        pojoTypeName = pojo.typeName.toJavaPoet(),
+                        pojoTypeName = pojo.typeName.toString(context.codeLanguage),
                         missingPojoFields = nonNulls.map { it.name },
                         allQueryColumns = info.columns.map { it.name }
                     )
                 )
             }
             if (matchedFields.isEmpty()) {
-                context.logger.e(ProcessorErrors.cannotFindQueryResultAdapter(out.typeName))
+                context.logger.e(
+                    ProcessorErrors.cannotFindQueryResultAdapter(
+                        out.asTypeName().toString(context.codeLanguage)
+                    )
+                )
             }
         } else {
             matchedFields = remainingFields.map { it }
@@ -121,16 +123,16 @@ class PojoRowAdapter(
     private fun emitRelationCollectorsReady(cursorVarName: String, scope: CodeGenScope) {
         if (relationCollectors.isNotEmpty()) {
             relationCollectors.forEach { it.writeInitCode(scope) }
-            scope.builder().apply {
-                beginControlFlow("while ($L.moveToNext())", cursorVarName).apply {
+            scope.builder.apply {
+                beginControlFlow("while (%L.moveToNext())", cursorVarName).apply {
                     relationCollectors.forEach {
                         it.writeReadParentKeyCode(cursorVarName, fieldsWithIndices, scope)
                     }
                 }
                 endControlFlow()
+                addStatement("%L.moveToPosition(-1)", cursorVarName)
             }
-            scope.builder().addStatement("$L.moveToPosition(-1)", cursorVarName)
-            relationCollectors.forEach { it.writeCollectionCode(scope) }
+            relationCollectors.forEach { it.writeFetchRelationCall(scope) }
         }
     }
 

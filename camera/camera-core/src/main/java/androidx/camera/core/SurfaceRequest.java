@@ -61,7 +61,28 @@ import java.util.concurrent.atomic.AtomicReference;
  * <p>Contains requirements for surface characteristics along with methods for completing the
  * request and listening for request cancellation.
  *
- * @see Preview.SurfaceProvider#onSurfaceRequested(SurfaceRequest)
+ * <p>Acts as a bridge between the surface provider and the surface requester. The diagram below
+ * describes how it works:
+ * <ol>
+ * <li>The surface provider gives a reference to surface requester for providing {@link Surface}
+ * (e.g. {@link Preview#setSurfaceProvider(Preview.SurfaceProvider)}).
+ * <li>The surface requester uses the reference to send a {@code SurfaceRequest} to get a
+ * {@link Surface} (e.g. {@link Preview.SurfaceProvider#onSurfaceRequested(SurfaceRequest)}).
+ * <li>The surface provider can use {@link #provideSurface(Surface, Executor, Consumer)} to provide
+ * a {@link Surface} or inform the surface requester no {@link Surface} will be provided with
+ * {@link #willNotProvideSurface()}. If a {@link Surface} is provided, the connection between
+ * surface provider and surface requester is established.
+ * <li>If the connection is established, the surface requester can get the {@link Surface} through
+ * {@link #getDeferrableSurface()} and start to send frame data.
+ * <li>If for some reason the provided {@link Surface} is no longer valid (e.g. when the
+ * SurfaceView destroys its surface due to page being slid out in ViewPager2), the surface
+ * provider can use {@link #invalidate()} method to inform the surface requester and the
+ * established connection will be closed.
+ * <li>The surface requester will re-send a new {@code SurfaceRequest} to establish a new
+ * connection.
+ * </ol>
+ *
+ * <img src="/images/reference/androidx/camera/camera-core/surface_request_work_flow.svg"/>
  */
 @RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public final class SurfaceRequest {
@@ -71,8 +92,6 @@ public final class SurfaceRequest {
 
     @Nullable
     private final Range<Integer> mExpectedFrameRate;
-    private final boolean mRGBA8888Required;
-
     private final CameraInternal mCamera;
 
     // For the camera to retrieve the surface from the user
@@ -114,9 +133,8 @@ public final class SurfaceRequest {
     public SurfaceRequest(
             @NonNull Size resolution,
             @NonNull CameraInternal camera,
-            boolean isRGBA8888Required,
             @NonNull Runnable onInvalidated) {
-        this(resolution, camera, isRGBA8888Required, /*expectedFrameRate=*/null, onInvalidated);
+        this(resolution, camera, /*expectedFrameRate=*/null, onInvalidated);
     }
 
     /**
@@ -129,13 +147,11 @@ public final class SurfaceRequest {
     public SurfaceRequest(
             @NonNull Size resolution,
             @NonNull CameraInternal camera,
-            boolean isRGBA8888Required,
             @Nullable Range<Integer> expectedFrameRate,
             @NonNull Runnable onInvalidated) {
         super();
         mResolution = resolution;
         mCamera = camera;
-        mRGBA8888Required = isRGBA8888Required;
         mExpectedFrameRate = expectedFrameRate;
 
         // To ensure concurrency and ordering, operations are chained. Completion can only be
@@ -269,6 +285,20 @@ public final class SurfaceRequest {
     }
 
     /**
+     * Returns whether this surface request has been serviced.
+     *
+     * <p>A surface request is considered serviced if
+     * {@link #provideSurface(Surface, Executor, Consumer)} or {@link #willNotProvideSurface()}
+     * has been called.
+     *
+     * @hide
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public boolean isServiced() {
+        return mSurfaceFuture.isDone();
+    }
+
+    /**
      * Returns the resolution of the requested {@link Surface}.
      *
      * <p>The surface which fulfills this request must have the resolution specified here in
@@ -321,17 +351,6 @@ public final class SurfaceRequest {
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public CameraInternal getCamera() {
         return mCamera;
-    }
-
-    /**
-     * Returns whether a surface of RGBA_8888 pixel format is required.
-     *
-     * @return true if a surface of RGBA_8888 pixel format is required.
-     * @hide
-     */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public boolean isRGBA8888Required() {
-        return mRGBA8888Required;
     }
 
     /**
@@ -461,7 +480,7 @@ public final class SurfaceRequest {
     }
 
     /**
-     * Invalidate the previously provided {@link Surface} to provide a new {@link Surface}.
+     * Invalidates the previously provided {@link Surface} to provide a new {@link Surface}.
      *
      * <p>Call this method to inform the surface requester that the previously provided
      * {@link Surface} is no longer valid (e.g. when the SurfaceView destroys its surface due to
@@ -481,15 +500,12 @@ public final class SurfaceRequest {
      * the surface requester to re-send a {@link SurfaceRequest}.
      *
      * <p>Since calling this method also means that the {@link SurfaceRequest} will not be
-     * fulfilled, if the {@link SurfaceRequest} is not completed, it will be completed as if
-     * calling {@link #willNotProvideSurface()}.
+     * fulfilled, if the {@link SurfaceRequest} has not responded, it will respond as if calling
+     * {@link #willNotProvideSurface()}.
      *
      * @return true if the provided {@link Surface} is invalidated or false if it was already
      * invalidated.
-     *
-     * @hide
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public boolean invalidate() {
         willNotProvideSurface();
         return mSurfaceRecreationCompleter.set(null);
@@ -858,6 +874,29 @@ public final class SurfaceRequest {
         public abstract int getTargetRotation();
 
         /**
+         * Whether the {@link Surface} contains the camera transform.
+         *
+         * <p>The {@link Surface} may contain a transformation, which will be used by Android
+         * components such as {@link TextureView} and {@link SurfaceView} to transform the output.
+         * The app may need to handle the transformation differently based on whether this value
+         * exists.
+         *
+         * <ul>
+         * <li>If the producer is the camera, then the {@link Surface} will contain a
+         * transformation that represents the camera orientation. In that case, this method will
+         * return {@code true}.
+         * <li>If the producer is not the camera, for example, if the stream has been edited by
+         * CameraX, then the {@link Surface} will not contain any transformation. In that case,
+         * this method will return {@code false}.
+         * </ul>
+         *
+         * @return true if the producer writes the camera transformation to the {@link Surface}.
+         * @hide
+         */
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+        public abstract boolean hasCameraTransform();
+
+        /**
          * Creates new {@link TransformationInfo}
          *
          * <p> Internally public to be used in view artifact tests.
@@ -868,9 +907,10 @@ public final class SurfaceRequest {
         @NonNull
         public static TransformationInfo of(@NonNull Rect cropRect,
                 @ImageOutputConfig.RotationDegreesValue int rotationDegrees,
-                @ImageOutputConfig.OptionalRotationValue int targetRotation) {
+                @ImageOutputConfig.OptionalRotationValue int targetRotation,
+                boolean hasCameraTransform) {
             return new AutoValue_SurfaceRequest_TransformationInfo(cropRect, rotationDegrees,
-                    targetRotation);
+                    targetRotation, hasCameraTransform);
         }
 
         // Hides public constructor.

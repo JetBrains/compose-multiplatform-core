@@ -5,6 +5,7 @@ import androidx.room.RoomDatabase
 import androidx.sqlite.db.SupportSQLiteStatement
 import java.lang.Class
 import javax.`annotation`.processing.Generated
+import kotlin.Array
 import kotlin.Long
 import kotlin.String
 import kotlin.Suppress
@@ -13,15 +14,16 @@ import kotlin.collections.List
 import kotlin.jvm.JvmStatic
 
 @Generated(value = ["androidx.room.RoomProcessor"])
-@Suppress(names = ["unchecked", "deprecation"])
-public class MyDao_Impl : MyDao {
+@Suppress(names = ["UNCHECKED_CAST", "DEPRECATION"])
+public class MyDao_Impl(
+    __db: RoomDatabase,
+) : MyDao {
     private val __db: RoomDatabase
 
     private val __insertionAdapterOfMyEntity: EntityInsertionAdapter<MyEntity>
 
     private val __upsertionAdapterOfMyEntity: EntityUpsertionAdapter<MyEntity>
-
-    public constructor(__db: RoomDatabase) {
+    init {
         this.__db = __db
         this.__insertionAdapterOfMyEntity = object : EntityInsertionAdapter<MyEntity>(__db) {
             public override fun createQuery(): String =
@@ -116,6 +118,32 @@ public class MyDao_Impl : MyDao {
         __db.beginTransaction()
         try {
             val _result: List<Long> = __upsertionAdapterOfMyEntity.upsertAndReturnIdsList(items)
+            __db.setTransactionSuccessful()
+            return _result
+        } finally {
+            __db.endTransaction()
+        }
+    }
+
+    public override fun upsertEntityListAndReturnRowIdsArray(items: List<MyEntity>): Array<Long> {
+        __db.assertNotSuspendingTransaction()
+        __db.beginTransaction()
+        try {
+            val _result: Array<Long> = (__upsertionAdapterOfMyEntity.upsertAndReturnIdsArrayBox(items)) as
+                Array<Long>
+            __db.setTransactionSuccessful()
+            return _result
+        } finally {
+            __db.endTransaction()
+        }
+    }
+
+    public override fun upsertEntityListAndReturnRowIdsOutArray(items: List<MyEntity>):
+        Array<out Long> {
+        __db.assertNotSuspendingTransaction()
+        __db.beginTransaction()
+        try {
+            val _result: Array<out Long> = __upsertionAdapterOfMyEntity.upsertAndReturnIdsArrayBox(items)
             __db.setTransactionSuccessful()
             return _result
         } finally {

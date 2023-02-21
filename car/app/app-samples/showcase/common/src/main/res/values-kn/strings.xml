@@ -257,6 +257,24 @@
     <string name="sign_in_complete_text" msgid="8423984266325680606">"ನೀವು ಸೈನ್ ಇನ್ ಮಾಡಿದ್ದೀರಿ!"</string>
     <string name="sign_in_complete_title" msgid="8919868148773983428">"ಸೈನ್ ಇನ್ ಪೂರ್ಣಗೊಂಡಿದೆ"</string>
     <string name="sign_in_template_demo_title" msgid="6052035424941410249">"ಟೆಂಪ್ಲೇಟ್ ಡೆಮೋಗೆ ಸೈನ್-ಇನ್ ಮಾಡಿ"</string>
+    <!-- no translation found for tab_template_layouts_demo_title (6529681462424538165) -->
+    <skip />
+    <!-- no translation found for tab_template_demo_title (7587839101813629975) -->
+    <skip />
+    <!-- no translation found for tab_title_message (5266710951630087246) -->
+    <skip />
+    <!-- no translation found for tab_title_pane (2520606145526537263) -->
+    <skip />
+    <!-- no translation found for tab_title_list (5104962518489668123) -->
+    <skip />
+    <!-- no translation found for tab_title_grid (5268168907976325154) -->
+    <skip />
+    <!-- no translation found for tab_title_search (1892925693146631173) -->
+    <skip />
+    <!-- no translation found for tab_template_loading_demo_title (4638051615030345574) -->
+    <skip />
+    <!-- no translation found for tab_template_no_tabs_demo_title (6907466201298082309) -->
+    <skip />
     <string name="images_unknown_host_error" msgid="3180661817432720076">"ಅಪರಿಚಿತ ಹೋಸ್ಟ್‌ಗಾಗಿ ಚಿತ್ರಗಳನ್ನು ಪ್ರದರ್ಶಿಸಲಾಗುವುದಿಲ್ಲ"</string>
     <string name="icon_title_prefix" msgid="8487026131229541244">"ಐಕಾನ್"</string>
     <string name="content_provider_icons_demo_title" msgid="5708602618664311097">"ವಿಷಯ ಪೂರೈಕೆದಾರರ ಐಕಾನ್‌ಗಳ ಡೆಮೋ"</string>
@@ -344,4 +362,9 @@
     <string name="loading_toggle_disabled" msgid="7689738885077382673">"ಲೋಡ್ ಮಾಡುವಿಕೆಯನ್ನು ನಿಷ್ಕ್ರಿಯಗೊಳಿಸಲಾಗಿದೆ"</string>
     <string name="loading_screen" msgid="4771507490730308794">"ಸ್ಕ್ರೀನ್ ಅನ್ನು ಲೋಡ್ ಮಾಡಲಾಗುತ್ತಿದೆ"</string>
     <string name="vector_toggle_details" msgid="1301305340033556819">"ಬಣ್ಣವನ್ನು ಸೇರಿಸಲು/ತೆಗೆಯಲು ಟಾಗಲ್ ಮಾಡಿ"</string>
+    <string name="map_template_toggle_demo_title" msgid="6510798293640092611">"ಟಾಗಲ್‌ಗಳಿರುವ ನಕ್ಷೆ ಟೆಂಪ್ಲೇಟ್"</string>
+    <string name="avoid_tolls_row_title" msgid="5194057244144831024">"ಟೋಲ್ ಮಾರ್ಗಗಳು ಬೇಡ"</string>
+    <string name="route_options_demo_title" msgid="4599699012716426514">"ಮಾರ್ಗ ಆಯ್ಕೆಗಳು"</string>
+    <string name="avoid_highways_row_title" msgid="4711913426200490304">"ಹೆದ್ದಾರಿಗಳ ಪ್ರಯಾಣ ಬೇಡ"</string>
+    <string name="avoid_ferries_row_title" msgid="8232883866013711974">"ಹಡಗು ಪ್ರಯಾಣ ಬೇಡ"</string>
 </resources>

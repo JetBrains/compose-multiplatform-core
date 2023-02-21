@@ -19,6 +19,7 @@ package androidx.emoji2.emojipicker
 import android.content.Context
 import androidx.emoji2.emojipicker.utils.FileCache
 import androidx.test.core.app.ApplicationProvider
+import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertFalse
@@ -57,7 +58,7 @@ class BundledEmojiListLoaderTest {
         BundledEmojiListLoader.load(context)
 
         val cacheFileName = fileCache.emojiPickerCacheDir.listFiles()!![0].listFiles()!![0].name
-        val emptyDefaultValue = listOf<BundledEmojiListLoader.EmojiData>()
+        val emptyDefaultValue = listOf<EmojiViewItem>()
         // Read from cache instead of using default value
         var output = fileCache.getOrPut(cacheFileName) { emptyDefaultValue }
         assertTrue(output.isNotEmpty())
@@ -69,6 +70,7 @@ class BundledEmojiListLoaderTest {
     }
 
     @Test
+    @SdkSuppress(minSdkVersion = 24)
     fun testGetEmojiVariantsLookup_loaded() = runBlocking {
         // delete cache and load again
         FileCache.getInstance(context).emojiPickerCacheDir.deleteRecursively()

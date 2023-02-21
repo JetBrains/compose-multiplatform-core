@@ -18,10 +18,13 @@ package androidx.compose.material3
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.ReadOnlyComposable
 
 @Immutable
-@kotlin.jvm.JvmInline
-internal value class Strings private constructor(@Suppress("unused") private val value: Int) {
+@JvmInline
+internal value class Strings private constructor(
+    @Suppress("unused") private val value: Int
+) {
     companion object {
         val NavigationMenu = Strings(0)
         val CloseDrawer = Strings(1)
@@ -33,8 +36,57 @@ internal value class Strings private constructor(@Suppress("unused") private val
         val Dialog = Strings(7)
         val MenuExpanded = Strings(8)
         val MenuCollapsed = Strings(9)
+        val SnackbarDismiss = Strings(10)
+        val SearchBarSearch = Strings(11)
+        val SuggestionsAvailable = Strings(12)
+        val DatePickerTitle = Strings(13)
+        val DatePickerHeadline = Strings(14)
+        val DatePickerYearPickerPaneTitle = Strings(15)
+        val DatePickerSwitchToYearSelection = Strings(16)
+        val DatePickerSwitchToDaySelection = Strings(17)
+        val DatePickerSwitchToNextMonth = Strings(18)
+        val DatePickerSwitchToPreviousMonth = Strings(19)
+        val DatePickerNavigateToYearDescription = Strings(20)
+        val DatePickerHeadlineDescription = Strings(21)
+        val DatePickerNoSelectionDescription = Strings(22)
+        val DatePickerTodayDescription = Strings(23)
+        val DatePickerScrollToShowLaterYears = Strings(24)
+        val DatePickerScrollToShowEarlierYears = Strings(25)
+        val DateInputTitle = Strings(26)
+        val DateInputHeadline = Strings(27)
+        val DateInputLabel = Strings(28)
+        val DateInputHeadlineDescription = Strings(29)
+        val DateInputNoInputDescription = Strings(30)
+        val DateInputInvalidNotAllowed = Strings(31)
+        val DateInputInvalidForPattern = Strings(32)
+        val DateInputInvalidYearRange = Strings(33)
+        val DatePickerSwitchToCalendarMode = Strings(34)
+        val DatePickerSwitchToInputMode = Strings(35)
+        val DateRangePickerTitle = Strings(36)
+        val DateRangePickerStartHeadline = Strings(37)
+        val DateRangePickerEndHeadline = Strings(38)
+        val DateRangePickerScrollToShowNextMonth = Strings(39)
+        val DateRangePickerScrollToShowPreviousMonth = Strings(40)
+        val DateRangeInputTitle = Strings(41)
+        val DateRangeInputInvalidRangeInput = Strings(42)
+        val TooltipLongPressLabel = Strings(43)
+        val TimePickerAM = Strings(44)
+        val TimePickerPM = Strings(45)
+        val TimePickerPeriodToggle = Strings(46)
+        val TimePickerHourSelection = Strings(47)
+        val TimePickerMinuteSelection = Strings(48)
+        val TimePickerHourSuffix = Strings(49)
+        val TimePicker24HourSuffix = Strings(50)
+        val TimePickerMinuteSuffix = Strings(51)
+        val TimePickerHour = Strings(52)
+        val TimePickerMinute = Strings(53)
     }
 }
 
 @Composable
+@ReadOnlyComposable
 internal expect fun getString(string: Strings): String
+
+@Composable
+@ReadOnlyComposable
+internal expect fun getString(string: Strings, vararg formatArgs: Any): String

@@ -16,28 +16,41 @@
 
 package androidx.compose.material.swipeable
 
+import androidx.compose.animation.core.FloatSpringSpec
 import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.SwipeableV2State
+import androidx.compose.material.fractionalPositionalThreshold
 import androidx.compose.material.rememberSwipeableV2State
+import androidx.compose.material.swipeAnchors
 import androidx.compose.material.swipeable.TestState.A
 import androidx.compose.material.swipeable.TestState.B
 import androidx.compose.material.swipeable.TestState.C
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.testutils.WithTouchSlop
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeDown
 import androidx.compose.ui.test.swipeUp
+import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
+import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -91,6 +104,18 @@ class SwipeableV2StateTest {
         rule.waitForIdle()
         assertThat(state.targetValue).isEqualTo(B)
 
+        // Assert that swipe below threshold upward settles at current state
+        rule.onNodeWithTag(swipeableTestTag)
+            .performTouchInput { swipeUp(endY = bottom * 0.95f, durationMillis = 1000) }
+        rule.waitForIdle()
+        assertThat(state.targetValue).isEqualTo(B)
+
+        // Assert that swipe below threshold downward settles at current state
+        rule.onNodeWithTag(swipeableTestTag)
+            .performTouchInput { swipeDown(endY = bottom * 0.05f) }
+        rule.waitForIdle()
+        assertThat(state.targetValue).isEqualTo(B)
+
         rule.onNodeWithTag(swipeableTestTag)
             .performTouchInput { swipeDown(endY = bottom * 0.9f) }
         rule.waitForIdle()
@@ -106,13 +131,17 @@ class SwipeableV2StateTest {
     fun swipeable_targetState_updatedWithAnimation() {
         rule.mainClock.autoAdvance = false
         val animationDuration = 300
+        val frameLengthMillis = 16L
         lateinit var state: SwipeableV2State<TestState>
         lateinit var scope: CoroutineScope
         rule.setContent {
-            state = rememberSwipeableV2State(
-                initialValue = A,
-                animationSpec = tween(animationDuration, easing = LinearEasing)
-            )
+            state = remember {
+                SwipeableV2State(
+                    initialValue = A,
+                    animationSpec = tween(animationDuration, easing = LinearEasing),
+                    positionalThreshold = fractionalPositionalThreshold(0.5f)
+                )
+            }
             scope = rememberCoroutineScope()
             SwipeableBox(
                 swipeableState = state,
@@ -124,7 +153,7 @@ class SwipeableV2StateTest {
         scope.launch {
             state.animateTo(targetValue = B)
         }
-        rule.mainClock.advanceTimeBy((animationDuration * 0.6).toLong())
+        rule.mainClock.advanceTimeBy(1 * frameLengthMillis)
 
         assertWithMessage("Current state")
             .that(state.currentValue)
@@ -133,7 +162,8 @@ class SwipeableV2StateTest {
             .that(state.targetValue)
             .isEqualTo(B)
 
-        rule.mainClock.advanceTimeBy((animationDuration * 0.4).toLong())
+        rule.mainClock.autoAdvance = true
+        rule.waitForIdle()
 
         assertWithMessage("Current state")
             .that(state.currentValue)
@@ -282,5 +312,133 @@ class SwipeableV2StateTest {
         }
 
         assertThat(exception).isNull()
+    }
+
+    @Test
+    fun swipeable_animateTo_animatesBeyondBounds() {
+        rule.mainClock.autoAdvance = false
+        val minBound = 0f
+        val maxBound = 500f
+        val anchors = mapOf(
+            A to minBound,
+            C to maxBound
+        )
+
+        val animationSpec = FloatSpringSpec(dampingRatio = Spring.DampingRatioHighBouncy)
+        val animationDuration = animationSpec.getDurationNanos(
+            initialValue = minBound,
+            targetValue = maxBound,
+            initialVelocity = 0f
+        ).let { TimeUnit.NANOSECONDS.toMillis(it) }
+
+        lateinit var state: SwipeableV2State<TestState>
+        lateinit var scope: CoroutineScope
+
+        rule.setContent {
+            scope = rememberCoroutineScope()
+            state = rememberSwipeableV2State(
+                initialValue = A,
+                animationSpec = animationSpec
+            )
+            SwipeableBox(
+                state,
+                calculateAnchor = { state, _ -> anchors[state] }
+            )
+        }
+        scope.launch {
+            state.animateTo(C)
+        }
+        var highestOffset = 0f
+        for (i in 0..animationDuration step 16) {
+            highestOffset = state.requireOffset()
+            rule.mainClock.advanceTimeBy(16)
+        }
+        assertThat(highestOffset).isGreaterThan(anchors.getValue(C))
+    }
+
+    @Test
+    fun swipeable_bounds_minBoundIsSmallestAnchor() {
+        var minBound = 0f
+        var maxBound = 500f
+        var anchors = mapOf(
+            A to minBound,
+            B to maxBound / 2,
+            C to maxBound
+        )
+        val state = SwipeableV2State(initialValue = A)
+        var size by mutableStateOf(100.dp)
+
+        rule.setContent {
+            Box(
+                Modifier
+                    .size(size)
+                    .swipeAnchors(
+                        state = state,
+                        possibleValues = anchors.keys,
+                        calculateAnchor = { state, _ -> anchors[state] }
+                    )
+            )
+        }
+
+        assertThat(state.minOffset).isEqualTo(minBound)
+        assertThat(state.maxOffset).isEqualTo(maxBound)
+
+        minBound *= 3
+        maxBound *= 10
+        anchors = mapOf(
+            A to minBound,
+            C to maxBound
+        )
+        size = 200.dp
+        rule.waitForIdle()
+
+        assertThat(state.minOffset).isEqualTo(minBound)
+        assertThat(state.maxOffset).isEqualTo(maxBound)
+    }
+
+    @Test
+    fun swipeable_targetNotInAnchors_animateTo_updatesCurrentValue() {
+        val state = SwipeableV2State(initialValue = A)
+        assertThat(state.anchors).isEmpty()
+        assertThat(state.currentValue).isEqualTo(A)
+        runBlocking { state.animateTo(B) }
+        assertThat(state.currentValue).isEqualTo(B)
+    }
+
+    @Test
+    fun swipeable_targetNotInAnchors_snapTo_updatesCurrentValue() {
+        val state = SwipeableV2State(initialValue = A)
+        assertThat(state.anchors).isEmpty()
+        assertThat(state.currentValue).isEqualTo(A)
+        runBlocking { state.snapTo(B) }
+        assertThat(state.currentValue).isEqualTo(B)
+    }
+
+    @Test
+    fun swipeable_updateAnchors_initialUpdate_initialValueInAnchors_shouldntUpdate() {
+        val state = SwipeableV2State(initialValue = A)
+        val anchors = mapOf(A to 200f, C to 300f)
+        val shouldInvokeChangeHandler = state.updateAnchors(anchors)
+        assertThat(shouldInvokeChangeHandler).isFalse()
+    }
+
+    @Test
+    fun swipeable_updateAnchors_initialUpdate_initialValueNotInAnchors_shouldUpdate() {
+        val state = SwipeableV2State(initialValue = A)
+        val anchors = mapOf(B to 200f, C to 300f)
+        val shouldInvokeChangeHandler = state.updateAnchors(anchors)
+        assertThat(shouldInvokeChangeHandler).isTrue()
+    }
+
+    @Test
+    fun swipeable_updateAnchors_updateExistingAnchors_shouldUpdate() {
+        val state = SwipeableV2State(initialValue = A)
+        val anchors = mapOf(A to 0f, B to 200f, C to 300f)
+
+        var shouldInvokeChangeHandler = state.updateAnchors(anchors)
+        assertThat(shouldInvokeChangeHandler).isFalse()
+
+        shouldInvokeChangeHandler = state.updateAnchors(mapOf(A to 100f, B to 500f, C to 700f))
+        assertThat(shouldInvokeChangeHandler).isTrue()
     }
 }

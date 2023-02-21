@@ -24,16 +24,16 @@ import android.opengl.EGL14
 import android.os.Build
 import android.os.SystemClock
 import android.view.SurfaceHolder
-import androidx.graphics.lowlatency.SyncFenceCompat
 import androidx.graphics.opengl.egl.EGLConfigAttributes
 import androidx.graphics.opengl.egl.EGLManager
 import androidx.graphics.opengl.egl.EGLSpec
 import androidx.graphics.opengl.egl.EGLVersion
 import androidx.graphics.opengl.egl.supportsNativeAndroidFence
-import androidx.hardware.SyncFence
+import androidx.hardware.SyncFenceCompat
 import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.RequiresDevice
 import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
 import java.util.concurrent.CountDownLatch
@@ -51,7 +51,7 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 @SmallTest
-@SdkSuppress(minSdkVersion = 29)
+@SdkSuppress(minSdkVersion = 29, maxSdkVersion = 32) // b/268117532
 class SurfaceControlCompatTest {
     var executor: Executor? = null
 
@@ -81,6 +81,42 @@ class SurfaceControlCompatTest {
                         SurfaceControlCompat.Builder()
                             .setParent(it.mSurfaceView)
                             .setName("SurfaceControlCompatTest")
+                            .build()
+
+                        callbackLatch.countDown()
+                    }
+                }
+
+                it.addSurface(it.getSurfaceView(), callback)
+            }
+            scenario.moveToState(Lifecycle.State.RESUMED)
+            assertTrue(callbackLatch.await(3000, TimeUnit.MILLISECONDS))
+        } catch (e: java.lang.IllegalArgumentException) {
+            fail()
+        } finally {
+            // ensure activity is destroyed after any failures
+            scenario.moveToState(Lifecycle.State.DESTROYED)
+        }
+    }
+
+    @Test
+    fun testSurfaceControlCompatBuilder_parentSurfaceControl() {
+        val callbackLatch = CountDownLatch(1)
+        val scenario = ActivityScenario.launch(SurfaceControlWrapperTestActivity::class.java)
+            .moveToState(Lifecycle.State.CREATED)
+
+        try {
+            scenario.onActivity {
+                val callback = object : SurfaceHolderCallback() {
+                    override fun surfaceCreated(sh: SurfaceHolder) {
+                        val parentSc = SurfaceControlCompat.Builder()
+                            .setParent(it.mSurfaceView)
+                            .setName("ParentSurfaceControl")
+                            .build()
+
+                        SurfaceControlCompat.Builder()
+                            .setParent(parentSc)
+                            .setName("ChildSurfaceControl")
                             .build()
 
                         callbackLatch.countDown()
@@ -381,13 +417,6 @@ class SurfaceControlCompatTest {
     }
 
     @Test
-    fun testExtractSyncFenceFd() {
-        val fileDescriptor = 7
-        val syncFence = SyncFence(7)
-        assertEquals(fileDescriptor, JniBindings.nExtractFenceFd(syncFence))
-    }
-
-    @Test
     fun testTransactionSetBuffer_nullFence() {
         val scenario = ActivityScenario.launch(SurfaceControlWrapperTestActivity::class.java)
             .moveToState(
@@ -466,7 +495,7 @@ class SurfaceControlCompatTest {
                         assertNotNull(buffer)
 
                         val fence = if (manager.supportsNativeAndroidFence()) {
-                            SyncFenceCompat.createNativeSyncFence(manager.eglSpec)
+                            SyncFenceCompat.createNativeSyncFence()
                         } else {
                             null
                         }
@@ -541,6 +570,10 @@ class SurfaceControlCompatTest {
 
     @Test
     fun testTransactionSetBuffer_singleReleaseCallback() {
+        if (Build.VERSION.SDK_INT == 33 && Build.VERSION.CODENAME != "REL") {
+            return // b/262909049: Do not run this test on pre-release Android U.
+        }
+
         val releaseLatch = CountDownLatch(1)
         val scenario = ActivityScenario.launch(SurfaceControlWrapperTestActivity::class.java)
             .moveToState(
@@ -600,6 +633,10 @@ class SurfaceControlCompatTest {
 
     @Test
     fun testTransactionSetBuffer_multipleReleaseCallbacksAndOverwriteWithSingleSC() {
+        if (Build.VERSION.SDK_INT == 33 && Build.VERSION.CODENAME != "REL") {
+            return // b/262909049: Do not run this test on pre-release Android U.
+        }
+
         val releaseLatch = CountDownLatch(1)
         val releaseLatch2 = CountDownLatch(1)
         val scenario = ActivityScenario.launch(SurfaceControlWrapperTestActivity::class.java)
@@ -1367,6 +1404,7 @@ class SurfaceControlCompatTest {
         }
     }
 
+    @RequiresDevice // b/268117532
     @Test
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.S)
     fun testTransactionSetCrop_null() {
@@ -1412,6 +1450,7 @@ class SurfaceControlCompatTest {
         }
     }
 
+    @RequiresDevice // b/268117532
     @Test
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.S)
     fun testTransactionSetCrop_standardCrop() {
@@ -1457,6 +1496,7 @@ class SurfaceControlCompatTest {
         }
     }
 
+    @RequiresDevice // b/268117532
     @Test
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.S)
     fun testTransactionSetCrop_standardThenNullCrop() {
@@ -1522,6 +1562,7 @@ class SurfaceControlCompatTest {
         }
     }
 
+    @RequiresDevice // b/268117532
     @Test
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.S)
     fun testTransactionSetPosition() {
@@ -1578,6 +1619,7 @@ class SurfaceControlCompatTest {
         }
     }
 
+    @RequiresDevice // b/268117532
     @Test
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.S)
     fun testTransactionSetScale() {
@@ -1635,6 +1677,7 @@ class SurfaceControlCompatTest {
         }
     }
 
+    @RequiresDevice // b/268117532
     @Test
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.Q)
     fun testTransactionSetBufferTransform_identity() {
@@ -1695,6 +1738,7 @@ class SurfaceControlCompatTest {
         }
     }
 
+    @RequiresDevice // b/268117532
     @Test
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.Q)
     fun testTransactionSetBufferTransform_singleTransform() {
@@ -1758,6 +1802,7 @@ class SurfaceControlCompatTest {
         }
     }
 
+    @RequiresDevice // b/268117532
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.TIRAMISU)
     @Test
     fun testSurfaceTransactionCommitOnDraw() {

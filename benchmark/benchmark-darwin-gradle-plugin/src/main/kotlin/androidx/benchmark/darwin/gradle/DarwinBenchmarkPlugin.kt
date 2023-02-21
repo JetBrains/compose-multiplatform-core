@@ -76,6 +76,9 @@ class DarwinBenchmarkPlugin : Plugin<Project> {
             project.layout.buildDirectory.dir("$name.xcresult")
         }
 
+        // Configure the XCode Build Service so we don't run too many benchmarks at the same time.
+        project.configureXCodeBuildService()
+
         val fetchXCodeGenTask = project.tasks.register(
             FETCH_XCODEGEN_TASK, FetchXCodeGenTask::class.java
         ) {
@@ -90,12 +93,18 @@ class DarwinBenchmarkPlugin : Plugin<Project> {
             it.yamlFile.set(extension.xcodeGenConfigFile)
             it.projectName.set(extension.xcodeProjectName)
             it.xcProjectPath.set(xcodeProjectPath)
-            it.infoPlistPath.set(project.layout.buildDirectory.file("Info.plist"))
         }
 
         val runDarwinBenchmarks = project.tasks.register(
             RUN_DARWIN_BENCHMARKS_TASK, RunDarwinBenchmarksTask::class.java
         ) {
+            val sharedService =
+                project
+                    .gradle
+                    .sharedServices
+                    .registrations.getByName(XCodeBuildService.XCODE_BUILD_SERVICE_NAME)
+                    .service
+            it.usesService(sharedService)
             it.xcodeProjectPath.set(generateXCodeProjectTask.flatMap { task ->
                 task.xcProjectPath
             })
@@ -108,9 +117,12 @@ class DarwinBenchmarkPlugin : Plugin<Project> {
         project.tasks.register(
             DARWIN_BENCHMARK_RESULTS_TASK, DarwinBenchmarkResultsTask::class.java
         ) {
+            it.group = "Verification"
+            it.description = "Run Kotlin Multiplatform Benchmarks for Darwin"
             it.xcResultPath.set(runDarwinBenchmarks.flatMap { task ->
                 task.xcResultPath
             })
+            it.referenceSha.set(extension.referenceSha)
             val resultFileName = "${extension.xcodeProjectName.get()}-benchmark-result.json"
             it.outputFile.set(
                 project.layout.buildDirectory.file(
@@ -152,6 +164,7 @@ class DarwinBenchmarkPlugin : Plugin<Project> {
         const val DIST_DIR = "DIST_DIR"
         const val LIBRARY_METRICS = "librarymetrics"
         const val DARWIN_BENCHMARKS_DIR = "darwinBenchmarks"
+
         // Gradle Properties
         const val XCODEGEN_DOWNLOAD_URI = "androidx.benchmark.darwin.xcodeGenDownloadUri"
 

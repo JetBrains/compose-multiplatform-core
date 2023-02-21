@@ -19,7 +19,8 @@ package androidx.privacysandbox.tools.apicompiler.parser
 import androidx.privacysandbox.tools.core.model.AnnotatedInterface
 import androidx.privacysandbox.tools.core.model.Method
 import androidx.privacysandbox.tools.core.model.Parameter
-import androidx.privacysandbox.tools.core.model.Type
+import androidx.privacysandbox.tools.core.model.Types.any
+import androidx.privacysandbox.tools.core.model.Types.sandboxedUiAdapter
 import com.google.devtools.ksp.getDeclaredFunctions
 import com.google.devtools.ksp.getDeclaredProperties
 import com.google.devtools.ksp.isPublic
@@ -27,14 +28,16 @@ import com.google.devtools.ksp.processing.KSPLogger
 import com.google.devtools.ksp.symbol.ClassKind
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
-import com.google.devtools.ksp.symbol.KSType
 import com.google.devtools.ksp.symbol.KSValueParameter
 import com.google.devtools.ksp.symbol.Modifier
-import com.google.devtools.ksp.symbol.Nullability
 
-internal class InterfaceParser(private val logger: KSPLogger) {
+internal class InterfaceParser(
+    private val logger: KSPLogger,
+    private val typeParser: TypeParser,
+) {
     private val validInterfaceModifiers = setOf(Modifier.PUBLIC)
     private val validMethodModifiers = setOf(Modifier.PUBLIC, Modifier.SUSPEND)
+    private val validInterfaceSuperTypes = setOf(sandboxedUiAdapter)
 
     fun parseInterface(interfaceDeclaration: KSClassDeclaration): AnnotatedInterface {
         check(interfaceDeclaration.classKind == ClassKind.INTERFACE) {
@@ -47,13 +50,15 @@ internal class InterfaceParser(private val logger: KSPLogger) {
         }
         if (interfaceDeclaration.getDeclaredProperties().any()) {
             logger.error(
-                "Error in $name: annotated interfaces cannot declare properties.")
+                "Error in $name: annotated interfaces cannot declare properties."
+            )
         }
         if (interfaceDeclaration.declarations.filterIsInstance<KSClassDeclaration>()
                 .any(KSClassDeclaration::isCompanionObject)
         ) {
             logger.error(
-                "Error in $name: annotated interfaces cannot declare companion objects.")
+                "Error in $name: annotated interfaces cannot declare companion objects."
+            )
         }
         val invalidModifiers =
             interfaceDeclaration.modifiers.filterNot(validInterfaceModifiers::contains)
@@ -72,10 +77,23 @@ internal class InterfaceParser(private val logger: KSPLogger) {
                 })."
             )
         }
+        val superTypes = interfaceDeclaration.superTypes.map {
+            typeParser.parseFromDeclaration(it.resolve().declaration)
+        }.filterNot { it == any }.toList()
+        val invalidSuperTypes =
+            superTypes.filterNot { validInterfaceSuperTypes.contains(it) }
+        if (invalidSuperTypes.isNotEmpty()) {
+            logger.error(
+                "Error in $name: annotated interface inherits prohibited types (${
+                    superTypes.map { it.simpleName }.sorted().joinToString(limit = 3)
+                })."
+            )
+        }
 
         val methods = interfaceDeclaration.getDeclaredFunctions().map(::parseMethod).toList()
         return AnnotatedInterface(
-            type = Converters.typeFromDeclaration(interfaceDeclaration),
+            type = typeParser.parseFromDeclaration(interfaceDeclaration),
+            superTypes = superTypes,
             methods = methods,
         )
     }
@@ -102,7 +120,7 @@ internal class InterfaceParser(private val logger: KSPLogger) {
         if (method.returnType == null) {
             logger.error("Error in $name: failed to resolve return type.")
         }
-        val returnType = parseType(method, method.returnType!!.resolve())
+        val returnType = typeParser.parseFromTypeReference(method.returnType!!, name)
 
         val parameters =
             method.parameters.map { parameter -> parseParameter(method, parameter) }.toList()
@@ -128,15 +146,7 @@ internal class InterfaceParser(private val logger: KSPLogger) {
 
         return Parameter(
             name = parameter.name!!.getFullName(),
-            type = parseType(method, parameter.type.resolve()),
+            type = typeParser.parseFromTypeReference(parameter.type, name),
         )
-    }
-
-    private fun parseType(method: KSFunctionDeclaration, type: KSType): Type {
-        val name = method.qualifiedName?.getFullName() ?: method.simpleName.getFullName()
-        if (type.nullability == Nullability.NULLABLE) {
-            logger.error("Error in $name: nullable types are not supported.")
-        }
-        return Converters.typeFromDeclaration(type.declaration)
     }
 }

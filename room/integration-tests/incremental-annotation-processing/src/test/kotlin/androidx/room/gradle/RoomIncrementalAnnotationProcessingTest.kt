@@ -212,6 +212,14 @@ class RoomIncrementalAnnotationProcessingTest(
                 $processorConfiguration "androidx.room:room-compiler:$roomVersion"
             }
 
+            tasks.withType(
+                org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+            ).configureEach {
+                kotlinOptions {
+                    jvmTarget = "1.8"
+                }
+            }
+
             class SchemaLocationArgumentProvider implements CommandLineArgumentProvider {
 
                 @OutputDirectory
@@ -236,6 +244,11 @@ class RoomIncrementalAnnotationProcessingTest(
                 compilerArgumentProvider new SchemaLocationArgumentProvider(file('$GEN_RES_DIR'))
                         }
                     }
+                }
+
+                compileOptions {
+                  sourceCompatibility = JavaVersion.VERSION_1_8
+                  targetCompatibility = JavaVersion.VERSION_1_8
                 }
             }
             $kspArgumentsBlock
@@ -447,13 +460,13 @@ class RoomIncrementalAnnotationProcessingTest(
         //   - Irrelevant files should not be recompiled (if Room is incremental)
         if (withIncrementalRoom) {
             assertChangedFiles(
+                classSrcDao1,
                 classSrcDatabase1,
                 classSrcEntity1,
                 classGenDatabase1,
-                classGenDao1
+                classGenDao1,
             )
             assertUnchangedFiles(
-                classSrcDao1, // Gradle detects that this file is not relevant to the change
                 classSrcDatabase2,
                 classSrcDao2,
                 classSrcEntity2,

@@ -202,10 +202,13 @@ public class TakePictureManager implements OnImageCloseListener, TakePictureRequ
 
         // Send requests.
         Pair<CameraRequest, ProcessingRequest> requests =
-                mImagePipeline.createRequests(request, requestWithCallback);
+                mImagePipeline.createRequests(request, requestWithCallback,
+                        requestWithCallback.getCaptureFuture());
         CameraRequest cameraRequest = requireNonNull(requests.first);
         ProcessingRequest processingRequest = requireNonNull(requests.second);
-        submitCameraRequest(cameraRequest, () -> mImagePipeline.postProcess(processingRequest));
+        mImagePipeline.submitProcessingRequest(processingRequest);
+        ListenableFuture<Void> captureRequestFuture = submitCameraRequest(cameraRequest);
+        requestWithCallback.setCaptureRequestFuture(captureRequestFuture);
     }
 
     /**
@@ -234,33 +237,40 @@ public class TakePictureManager implements OnImageCloseListener, TakePictureRequ
      * <p>Flash is locked/unlocked during the flight of a {@link CameraRequest}.
      */
     @MainThread
-    private void submitCameraRequest(
-            @NonNull CameraRequest cameraRequest,
-            @NonNull Runnable successRunnable) {
+    private ListenableFuture<Void> submitCameraRequest(
+            @NonNull CameraRequest cameraRequest) {
         checkMainThread();
         mImageCaptureControl.lockFlashMode();
-        ListenableFuture<Void> submitRequestFuture =
+        ListenableFuture<Void> captureRequestFuture =
                 mImageCaptureControl.submitStillCaptureRequests(cameraRequest.getCaptureConfigs());
-        Futures.addCallback(submitRequestFuture, new FutureCallback<Void>() {
+        Futures.addCallback(captureRequestFuture, new FutureCallback<Void>() {
             @Override
             public void onSuccess(@Nullable Void result) {
-                successRunnable.run();
                 mImageCaptureControl.unlockFlashMode();
             }
 
             @Override
             public void onFailure(@NonNull Throwable throwable) {
-                if (throwable instanceof ImageCaptureException) {
-                    cameraRequest.onCaptureFailure((ImageCaptureException) throwable);
+                if (cameraRequest.isAborted()) {
+                    // When the pipeline is recreated, the in-flight request is aborted and
+                    // retried. On legacy devices, the camera may return CancellationException
+                    // for the aborted request which causes the retried request to fail. Return
+                    // early if the request has been aborted.
+                    return;
                 } else {
-                    cameraRequest.onCaptureFailure(new ImageCaptureException(
-                            ERROR_CAPTURE_FAILED,
-                            "Failed to submit capture request",
-                            throwable));
+                    if (throwable instanceof ImageCaptureException) {
+                        mImagePipeline.notifyCaptureError((ImageCaptureException) throwable);
+                    } else {
+                        mImagePipeline.notifyCaptureError(new ImageCaptureException(
+                                ERROR_CAPTURE_FAILED,
+                                "Failed to submit capture request",
+                                throwable));
+                    }
                 }
                 mImageCaptureControl.unlockFlashMode();
             }
         }, mainThreadExecutor());
+        return captureRequestFuture;
     }
 
     @VisibleForTesting

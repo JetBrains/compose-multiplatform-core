@@ -22,4 +22,13 @@ import android.os.Bundle
 class CreatePasswordResponse : CreateCredentialResponse(
     PasswordCredential.TYPE_PASSWORD_CREDENTIAL,
     Bundle(),
-)
+) {
+    /** @hide */
+    companion object {
+        @Suppress("UNUSED_PARAMETER")
+        @JvmStatic
+        internal fun createFrom(data: Bundle): CreatePasswordResponse {
+            return CreatePasswordResponse()
+        }
+    }
+}

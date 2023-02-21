@@ -29,6 +29,7 @@ import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -340,7 +341,7 @@ constructor(
      *
      * @sample androidx.paging.samples.loadStateFlowSample
      */
-    val loadStateFlow: Flow<CombinedLoadStates> = differBase.loadStateFlow
+    val loadStateFlow: Flow<CombinedLoadStates> = differBase.loadStateFlow.filterNotNull()
 
     /**
      * A hot [Flow] that emits after the pages presented to the UI are updated, even if the
@@ -433,11 +434,9 @@ constructor(
                 }
 
                 override fun log(level: Int, message: String, tr: Throwable?) {
-                    when {
-                        tr != null && level == Log.DEBUG -> Log.d(LOG_TAG, message, tr)
-                        tr != null && level == Log.VERBOSE -> Log.v(LOG_TAG, message, tr)
-                        level == Log.DEBUG -> Log.d(LOG_TAG, message)
-                        level == Log.VERBOSE -> Log.v(LOG_TAG, message)
+                    when (level) {
+                        Log.DEBUG -> Log.d(LOG_TAG, message, tr)
+                        Log.VERBOSE -> Log.v(LOG_TAG, message, tr)
                         else -> {
                             throw IllegalArgumentException(
                                 "debug level $level is requested but Paging only supports " +

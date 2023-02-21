@@ -25,7 +25,7 @@ import androidx.window.extensions.embedding.ActivityEmbeddingComponent
  */
 internal interface EmbeddingInterfaceCompat {
 
-    fun setSplitRules(rules: Set<EmbeddingRule>)
+    fun setRules(rules: Set<EmbeddingRule>)
 
     fun setEmbeddingCallback(embeddingCallback: EmbeddingCallbackInterface)
 
@@ -34,4 +34,12 @@ internal interface EmbeddingInterfaceCompat {
     }
 
     fun isActivityEmbedded(activity: Activity): Boolean
+
+    fun setSplitAttributesCalculator(
+        calculator: (SplitAttributesCalculatorParams) -> SplitAttributes
+    )
+
+    fun clearSplitAttributesCalculator()
+
+    fun isSplitAttributesCalculatorSupported(): Boolean
 }

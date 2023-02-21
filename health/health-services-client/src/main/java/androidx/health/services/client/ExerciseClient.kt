@@ -16,6 +16,7 @@
 
 package androidx.health.services.client
 
+import androidx.health.services.client.data.BatchingMode
 import androidx.health.services.client.data.DataPoint
 import androidx.health.services.client.data.DataType
 import androidx.health.services.client.data.ExerciseCapabilities
@@ -25,11 +26,13 @@ import androidx.health.services.client.data.ExerciseInfo
 import androidx.health.services.client.data.ExerciseState
 import androidx.health.services.client.data.ExerciseEndReason
 import androidx.health.services.client.data.ExerciseType
+import androidx.health.services.client.data.ExerciseTypeConfig
 import androidx.health.services.client.data.ExerciseUpdate
 import androidx.health.services.client.data.WarmUpConfig
 import com.google.common.util.concurrent.ListenableFuture
 import java.util.concurrent.Executor
 
+@JvmDefaultWithCompatibility
 /** Client which provides a way to subscribe to the health data of a device during an exercise. */
 public interface ExerciseClient {
     /**
@@ -76,12 +79,12 @@ public interface ExerciseClient {
      * [getCurrentExerciseInfoAsync] (described below) to check if they or another app has an active
      * exercise in-progress.
      *
-     * If the client fails to maintain a live [ExerciseUpdateCallback] for at least five minutes
-     * during the duration of the exercise, Health Services can decide to terminate the exercise. If
-     * this occurs, clients can expect to receive an [ExerciseUpdate] with [ExerciseState.ENDED]
-     * along with the reason [ExerciseEndReason.AUTO_END_MISSING_LISTENER] to the
-     * [ExerciseUpdateCallback] indicating that their exercise has been automatically ended due to
-     * the lack of callback.
+     * The exercise will be terminated and clients can expect to receive an [ExerciseUpdate] with
+     * [ExerciseState.ENDED] along with the reason [ExerciseEndReason.AUTO_END_MISSING_LISTENER]
+     * (indicating that their exercise has been automatically ended due to the lack of callback) if
+     * there is ever a five minute period where no [ExerciseUpdateCallback] is registered. A notable
+     * example is if the process with the registered [ExerciseUpdateCallback] dies and does not
+     * re-register the [ExerciseUpdateCallback] within five minutes.
      *
      * Clients should only request [ExerciseType]s, [DataType]s, goals, and auto-pause enabled that
      * matches the [ExerciseCapabilities] returned by [getCapabilitiesAsync] since Health Services
@@ -271,6 +274,18 @@ public interface ExerciseClient {
     ): ListenableFuture<Void>
 
     /**
+     * Sets the batching mode for the current exercise.
+     *
+     * @param batchingModes [BatchingMode] overrides for exercise updates. Passing an empty set will
+     * clear all existing overrides.
+     * @return a [ListenableFuture] that completes once the override has completed. This returned
+     * [ListenableFuture] fails if an exercise is not active for this app.
+     */
+    public fun overrideBatchingModesForActiveExerciseAsync(
+        batchingModes: Set<BatchingMode>
+    ): ListenableFuture<Void>
+
+    /**
      * Returns the [ExerciseCapabilities] of this client for the device.
      *
      * This can be used to determine what [ExerciseType]s and [DataType]s this device supports.
@@ -281,4 +296,18 @@ public interface ExerciseClient {
      * @return a [ListenableFuture] containing the [ExerciseCapabilities] for this device
      */
     public fun getCapabilitiesAsync(): ListenableFuture<ExerciseCapabilities>
+
+    /**
+     * Updates the configurable exercise type attributes for the current exercise.
+     *
+     * This can be used to update the configurable attributes for the ongoing exercise, as defined
+     * in [ExerciseTypeConfig]. Minimum Exercise API version for this function is 3.
+     *
+     * @param exerciseTypeConfig a configuration containing the new values for the configurable
+     * attributes
+     * @return a [ListenableFuture] that completes when the configuration has been updated.
+     */
+    public fun updateExerciseTypeConfigAsync(
+        exerciseTypeConfig: ExerciseTypeConfig
+    ): ListenableFuture<Void>
 }

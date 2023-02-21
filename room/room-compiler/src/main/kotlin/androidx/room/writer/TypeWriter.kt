@@ -26,11 +26,11 @@ import androidx.room.compiler.codegen.XTypeSpec
 import androidx.room.compiler.codegen.XTypeSpec.Builder.Companion.apply
 import androidx.room.compiler.processing.XProcessingEnv
 import androidx.room.compiler.processing.writeTo
-import androidx.room.ext.S
 import androidx.room.solver.CodeGenScope
 import com.squareup.kotlinpoet.javapoet.JAnnotationSpec
+import com.squareup.kotlinpoet.javapoet.JClassName
 import com.squareup.kotlinpoet.javapoet.KAnnotationSpec
-import com.squareup.kotlinpoet.javapoet.toKClassName
+import com.squareup.kotlinpoet.javapoet.KClassName
 import kotlin.reflect.KClass
 
 /**
@@ -77,19 +77,18 @@ abstract class TypeWriter(val codeLanguage: CodeLanguage) {
     }
 
     private fun addSuppressWarnings(builder: XTypeSpec.Builder) {
-        val suppressionKeys = arrayOf("unchecked", "deprecation")
         builder.apply(
             javaTypeBuilder = {
                 addAnnotation(
                     com.squareup.javapoet.AnnotationSpec.builder(SuppressWarnings::class.java)
-                        .addMember("value", "{$S, $S}", *suppressionKeys)
+                        .addMember("value", "{\$S, \$S}", "unchecked", "deprecation")
                         .build()
                 )
             },
             kotlinTypeBuilder = {
                 addAnnotation(
                     com.squareup.kotlinpoet.AnnotationSpec.builder(Suppress::class)
-                        .addMember("names = [%S, %S]", *suppressionKeys)
+                        .addMember("names = [%S, %S]", "UNCHECKED_CAST", "DEPRECATION")
                         .build()
                 )
             }
@@ -101,18 +100,19 @@ abstract class TypeWriter(val codeLanguage: CodeLanguage) {
         processingEnv: XProcessingEnv
     ) {
         processingEnv.findGeneratedAnnotation()?.let {
+            val annotationName = it.asClassName().canonicalName
             val memberValue = RoomProcessor::class.java.canonicalName
             adapterTypeSpecBuilder.apply(
                 javaTypeBuilder = {
                     addAnnotation(
-                        JAnnotationSpec.builder(it.className)
-                            .addMember("value", "$S", memberValue)
+                        JAnnotationSpec.builder(JClassName.bestGuess(annotationName))
+                            .addMember("value", "\$S", memberValue)
                             .build()
                     )
                 },
                 kotlinTypeBuilder = {
                     addAnnotation(
-                        KAnnotationSpec.builder(it.className.toKClassName())
+                        KAnnotationSpec.builder(KClassName.bestGuess(annotationName))
                             .addMember("value = [%S]", memberValue)
                             .build()
                     )

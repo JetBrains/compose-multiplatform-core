@@ -21,7 +21,6 @@ import androidx.room.compiler.codegen.XTypeName
 import androidx.room.compiler.processing.XEnumEntry
 import androidx.room.compiler.processing.XEnumTypeElement
 import androidx.room.compiler.processing.XFieldElement
-import androidx.room.compiler.processing.XHasModifiers
 import androidx.room.compiler.processing.XMemberContainer
 import androidx.room.compiler.processing.XMethodElement
 import androidx.room.compiler.processing.XNullability
@@ -30,7 +29,7 @@ import androidx.room.compiler.processing.XTypeParameterElement
 import androidx.room.compiler.processing.collectAllMethods
 import androidx.room.compiler.processing.collectFieldsIncludingPrivateSupers
 import androidx.room.compiler.processing.filterMethodsByConfig
-import androidx.room.compiler.processing.javac.kotlin.KotlinMetadataElement
+import androidx.room.compiler.processing.javac.kotlin.KmClassContainer
 import androidx.room.compiler.processing.util.MemoizedSequence
 import com.google.auto.common.MoreElements
 import com.google.auto.common.MoreTypes
@@ -38,13 +37,14 @@ import com.squareup.javapoet.ClassName
 import com.squareup.kotlinpoet.javapoet.JClassName
 import javax.lang.model.element.ElementKind
 import javax.lang.model.element.TypeElement
+import javax.lang.model.type.DeclaredType
 import javax.lang.model.type.TypeKind
 import javax.lang.model.util.ElementFilter
 
 internal sealed class JavacTypeElement(
     env: JavacProcessingEnv,
     override val element: TypeElement
-) : JavacElement(env, element), XTypeElement, XHasModifiers by JavacHasModifiers(element) {
+) : JavacElement(env, element), XTypeElement {
 
     override val name: String
         get() = element.simpleName.toString()
@@ -53,14 +53,21 @@ internal sealed class JavacTypeElement(
     override val packageName: String
         get() = MoreElements.getPackage(element).qualifiedName.toString()
 
-    val kotlinMetadata by lazy {
-        KotlinMetadataElement.createFor(element)
+    override val kotlinMetadata by lazy {
+        KmClassContainer.createFor(env, element)
     }
 
     override val qualifiedName by lazy {
         element.qualifiedName.toString()
     }
 
+    @Deprecated(
+        "Use asClassName().toJavaPoet() to be clear the name is for JavaPoet.",
+        replaceWith = ReplaceWith(
+            "asClassName().toJavaPoet()",
+            "androidx.room.compiler.codegen.toJavaPoet"
+        )
+    )
     override val className: ClassName by lazy {
         xClassName.java
     }
@@ -80,8 +87,8 @@ internal sealed class JavacTypeElement(
 
     override val typeParameters: List<XTypeParameterElement> by lazy {
         element.typeParameters.mapIndexed { index, typeParameter ->
-            val typeArgument = kotlinMetadata?.kmType?.typeArguments?.get(index)
-            JavacTypeParameterElement(env, this, typeParameter, typeArgument)
+            val typeParameterMetadata = kotlinMetadata?.typeParameters?.get(index)
+            JavacTypeParameterElement(env, this, typeParameter, typeParameterMetadata)
         }
     }
 
@@ -145,7 +152,7 @@ internal sealed class JavacTypeElement(
     }
 
     override fun findPrimaryConstructor(): JavacConstructorElement? {
-        val primarySignature = kotlinMetadata?.findPrimaryConstructorSignature() ?: return null
+        val primarySignature = kotlinMetadata?.primaryConstructorSignature ?: return null
         return getConstructors().firstOrNull {
             primarySignature == it.descriptor
         }
@@ -188,7 +195,7 @@ internal sealed class JavacTypeElement(
     override val type: JavacDeclaredType by lazy {
         env.wrap(
             typeMirror = element.asType(),
-            kotlinType = kotlinMetadata?.kmType,
+            kotlinType = kotlinMetadata?.type,
             elementNullability = element.nullability
         )
     }
@@ -212,11 +219,15 @@ internal sealed class JavacTypeElement(
     }
 
     override val superInterfaces by lazy {
+        val superTypesFromKotlinMetadata = kotlinMetadata?.superTypes
+            ?.associateBy { it.className } ?: emptyMap()
         element.interfaces.map {
+            check(it is DeclaredType)
+            val interfaceName = ClassName.get(MoreElements.asType(it.asElement()))
             val element = MoreTypes.asTypeElement(it)
             env.wrap<JavacType>(
                 typeMirror = it,
-                kotlinType = KotlinMetadataElement.createFor(element)?.kmType,
+                kotlinType = superTypesFromKotlinMetadata[interfaceName.canonicalName()],
                 elementNullability = element.nullability
             )
         }

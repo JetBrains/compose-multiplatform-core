@@ -21,6 +21,7 @@ import androidx.compose.foundation.AutoTestFrameClock
 import androidx.compose.foundation.VelocityTrackerCalculationThreshold
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -720,9 +721,9 @@ class LazyListTest(orientation: Orientation) : BaseLazyListTestWithOrientation(o
 
         // and has no children
         rule.onNodeWithTag("1")
-            .assertDoesNotExist()
+            .assertIsNotPlaced()
         rule.onNodeWithTag("2")
-            .assertDoesNotExist()
+            .assertIsNotPlaced()
     }
 
     @Test
@@ -1999,6 +2000,7 @@ class LazyListTest(orientation: Orientation) : BaseLazyListTestWithOrientation(o
             .assertStartPositionInRootIsEqualTo(0.dp)
     }
 
+    @SdkSuppress(maxSdkVersion = 32) // b/269178188
     @Test
     fun assertVelocityCalculationIsSimilar_witHistoricalValues() {
         // arrange
@@ -2035,7 +2037,7 @@ class LazyListTest(orientation: Orientation) : BaseLazyListTestWithOrientation(o
 
         // assert
         rule.runOnIdle {
-            val diff = abs((velocity - tracker.calculateVelocity()).y)
+            val diff = abs((velocity - tracker.calculateVelocity()).toFloat())
             assertThat(diff).isLessThan(VelocityTrackerCalculationThreshold)
         }
         tracker.resetTracking()
@@ -2046,7 +2048,7 @@ class LazyListTest(orientation: Orientation) : BaseLazyListTestWithOrientation(o
 
         // assert
         rule.runOnIdle {
-            val diff = abs((velocity - tracker.calculateVelocity()).y)
+            val diff = abs((velocity - tracker.calculateVelocity()).toFloat())
             assertThat(diff).isLessThan(VelocityTrackerCalculationThreshold)
         }
     }
@@ -2144,6 +2146,67 @@ class LazyListTest(orientation: Orientation) : BaseLazyListTestWithOrientation(o
         rule.onNodeWithTag("item")
             .assertMainAxisSizeIsEqualTo(with(rule.density) { (100 * 0.95f).roundToInt().toDp() })
             .assertCrossAxisSizeIsEqualTo(0.dp)
+    }
+
+    @Test
+    fun fillingFullSize_nextItemIsNotComposed() {
+        val state = LazyListState()
+        state.prefetchingEnabled = false
+        val itemSizePx = 5f
+        val itemSize = with(rule.density) { itemSizePx.toDp() }
+        rule.setContentWithTestViewConfiguration {
+            LazyColumnOrRow(
+                Modifier
+                    .testTag(LazyListTag)
+                    .mainAxisSize(itemSize),
+                state = state
+            ) {
+                items(3) { index ->
+                    Box(fillParentMaxMainAxis().crossAxisSize(1.dp).testTag("$index"))
+                }
+            }
+        }
+
+        repeat(3) { index ->
+            rule.onNodeWithTag("$index")
+                .assertIsDisplayed()
+            rule.onNodeWithTag("${index + 1}")
+                .assertDoesNotExist()
+            rule.runOnIdle {
+                runBlocking {
+                    state.scrollBy(itemSizePx)
+                }
+            }
+        }
+    }
+
+    @Test
+    fun fillingFullSize_crossAxisSizeOfVisibleItemIsUsed() {
+        val state = LazyListState()
+        val itemSizePx = 5f
+        val itemSize = with(rule.density) { itemSizePx.toDp() }
+        rule.setContentWithTestViewConfiguration {
+            LazyColumnOrRow(
+                Modifier
+                    .testTag(LazyListTag)
+                    .mainAxisSize(itemSize),
+                state = state
+            ) {
+                items(5) { index ->
+                    Box(fillParentMaxMainAxis().crossAxisSize(index.dp))
+                }
+            }
+        }
+
+        repeat(5) { index ->
+            rule.onNodeWithTag(LazyListTag)
+                .assertCrossAxisSizeIsEqualTo(index.dp)
+            rule.runOnIdle {
+                runBlocking {
+                    state.scrollBy(itemSizePx)
+                }
+            }
+        }
     }
 
     // ********************* END OF TESTS *********************

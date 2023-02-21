@@ -73,12 +73,21 @@ interface XPropertySpec : TargetLanguage {
                 )
             }
         }
-    }
-}
 
-// TODO(b/127483380): Temporary API for XPoet migration.
-// @Deprecated("Temporary API for XPoet migration.")
-fun XPropertySpec.toJavaPoet(): FieldSpec {
-    check(this is JavaPropertySpec)
-    return this.actual
+        fun XPropertySpec.Builder.apply(
+            javaFieldBuilder: com.squareup.javapoet.FieldSpec.Builder.() -> Unit,
+            kotlinPropertyBuilder: com.squareup.kotlinpoet.PropertySpec.Builder.() -> Unit,
+        ): XPropertySpec.Builder = apply {
+            when (language) {
+                CodeLanguage.JAVA -> {
+                    check(this is JavaPropertySpec.Builder)
+                    this.actual.javaFieldBuilder()
+                }
+                CodeLanguage.KOTLIN -> {
+                    check(this is KotlinPropertySpec.Builder)
+                    this.actual.kotlinPropertyBuilder()
+                }
+            }
+        }
+    }
 }

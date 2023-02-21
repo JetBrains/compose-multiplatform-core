@@ -25,7 +25,7 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.autofill.Autofill
 import androidx.compose.ui.autofill.AutofillTree
-import androidx.compose.ui.focus.FocusManager
+import androidx.compose.ui.focus.FocusOwner
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.hapticfeedback.HapticFeedback
@@ -280,9 +280,7 @@ class ModifierLocalConsumerEntityTest {
 
     private fun changeModifier(modifier: Modifier) {
         with(layoutNode) {
-            if (isAttached) { forEachNodeCoordinator { it.detach() } }
             this.modifier = modifier
-            if (isAttached) { forEachNodeCoordinator { it.attach() } }
             owner?.onEndApplyChanges()
         }
     }
@@ -314,9 +312,13 @@ class ModifierLocalConsumerEntityTest {
             layoutNode: LayoutNode,
             affectsLookahead: Boolean,
             forceRequest: Boolean
-        ) {}
-        override fun onAttach(node: LayoutNode) = node.forEachNodeCoordinator { it.attach() }
-        override fun onDetach(node: LayoutNode) = node.forEachNodeCoordinator { it.detach() }
+        ) {
+        }
+
+        override fun onAttach(node: LayoutNode) =
+            node.forEachNodeCoordinator { it.onLayoutNodeAttach() }
+
+        override fun onDetach(node: LayoutNode) {}
 
         override val root: LayoutNode
             get() = TODO("Not yet implemented")
@@ -340,7 +342,7 @@ class ModifierLocalConsumerEntityTest {
             get() = TODO("Not yet implemented")
         override val pointerIconService: PointerIconService
             get() = TODO("Not yet implemented")
-        override val focusManager: FocusManager
+        override val focusOwner: FocusOwner
             get() = TODO("Not yet implemented")
         override val windowInfo: WindowInfo
             get() = TODO("Not yet implemented")

@@ -22,6 +22,7 @@ import androidx.privacysandbox.tools.core.model.Method
 import androidx.privacysandbox.tools.core.model.Parameter
 import androidx.privacysandbox.tools.core.model.ParsedApi
 import androidx.privacysandbox.tools.core.model.Type
+import androidx.privacysandbox.tools.core.model.Types
 import androidx.privacysandbox.tools.core.model.ValueProperty
 import androidx.privacysandbox.tools.core.validator.ModelValidator
 import java.nio.file.Path
@@ -55,6 +56,7 @@ internal object ApiStubParser {
 
     private fun parseInterface(service: KmClass, annotationName: String): AnnotatedInterface {
         val type = parseClassName(service.name)
+        val superTypes = service.supertypes.map(this::parseType).filterNot { it == Types.any }
 
         if (!Flag.Class.IS_INTERFACE(service.flags)) {
             throw PrivacySandboxParsingException(
@@ -65,7 +67,8 @@ internal object ApiStubParser {
 
         return AnnotatedInterface(
             type = type,
-            service.functions.map(this::parseMethod),
+            superTypes = superTypes,
+            methods = service.functions.map(this::parseMethod),
         )
     }
 
@@ -78,10 +81,21 @@ internal object ApiStubParser {
                     "@PrivacySandboxValue."
             )
         }
-        return AnnotatedValue(
-            type,
-            value.properties.map { parseProperty(type, it) },
-        )
+        return AnnotatedValue(type, parseProperties(type, value))
+    }
+
+    /** Parses properties and sorts them based on the order of constructor parameters. */
+    private fun parseProperties(
+        type: Type,
+        valueClass: KmClass
+    ): List<ValueProperty> {
+        // TODO: handle multiple constructors.
+        if (valueClass.constructors.size != 1) {
+            throw PrivacySandboxParsingException("Multiple constructors for values not supported.")
+        }
+        val parsedProperties = valueClass.properties.map { parseProperty(type, it) }
+        val propertiesByName = parsedProperties.associateBy { it.name }
+        return valueClass.constructors[0].valueParameters.map { propertiesByName[it.name]!! }
     }
 
     private fun parseProperty(containerType: Type, property: KmProperty): ValueProperty {
@@ -106,13 +120,19 @@ internal object ApiStubParser {
 
     private fun parseType(type: KmType): Type {
         val classifier = type.classifier
+        val isNullable = Flag.Type.IS_NULLABLE(type.flags)
         if (classifier !is KmClassifier.Class) {
             throw PrivacySandboxParsingException("Unsupported type in API description: $type")
         }
-        return parseClassName(classifier.name)
+        val typeArguments = type.arguments.map { parseType(it.type!!) }
+        return parseClassName(classifier.name, typeArguments, isNullable)
     }
 
-    private fun parseClassName(className: ClassName): Type {
+    private fun parseClassName(
+        className: ClassName,
+        typeArguments: List<Type> = emptyList(),
+        isNullable: Boolean = false
+    ): Type {
         // Package names are separated with slashes and nested classes are separated with dots.
         // (e.g com/example/OuterClass.InnerClass).
         val (packageName, simpleName) = className.split('/').run {
@@ -126,7 +146,7 @@ internal object ApiStubParser {
             )
         }
 
-        return Type(packageName, simpleName)
+        return Type(packageName, simpleName, typeArguments, isNullable)
     }
 
     private fun validate(api: ParsedApi) {

@@ -46,6 +46,8 @@ public class UiScrollable extends UiCollection {
 
     private double mSwipeDeadZonePercentage = DEFAULT_SWIPE_DEADZONE_PCT;
 
+    private final Configurator mConfig = Configurator.getInstance();
+
     /**
      * Constructor.
      *
@@ -86,17 +88,14 @@ public class UiScrollable extends UiCollection {
      * @return true if found else false
      */
     protected boolean exists(@NonNull UiSelector selector) {
-        if(getQueryController().findAccessibilityNodeInfo(selector) != null) {
-            return true;
-        }
-        return false;
+        return getQueryController().findAccessibilityNodeInfo(selector) != null;
     }
 
     /**
      * Searches for a child element in the present scrollable container.
      * The search first looks for a child element that matches the selector
      * you provided, then looks for the content-description in its children elements.
-     * If both search conditions are fulfilled, the method returns a {@ link UiObject}
+     * If both search conditions are fulfilled, the method returns a {@link UiObject}
      * representing the element matching the selector (not the child element in its
      * subhierarchy containing the content-description). By default, this method performs a
      * scroll search.
@@ -120,7 +119,7 @@ public class UiScrollable extends UiCollection {
      * Searches for a child element in the present scrollable container.
      * The search first looks for a child element that matches the selector
      * you provided, then looks for the content-description in its children elements.
-     * If both search conditions are fulfilled, the method returns a {@ link UiObject}
+     * If both search conditions are fulfilled, the method returns a {@link UiObject}
      * representing the element matching the selector (not the child element in its
      * subhierarchy containing the content-description).
      *
@@ -166,7 +165,7 @@ public class UiScrollable extends UiCollection {
      * Searches for a child element in the present scrollable
      * container. The search first looks for a child element that matches the
      * selector you provided, then looks for the text in its children elements.
-     * If both search conditions are fulfilled, the method returns a {@ link UiObject}
+     * If both search conditions are fulfilled, the method returns a {@link UiObject}
      * representing the element matching the selector (not the child element in its
      * subhierarchy containing the text). By default, this method performs a
      * scroll search.
@@ -188,7 +187,7 @@ public class UiScrollable extends UiCollection {
      * Searches for a child element in the present scrollable container. The
      * search first looks for a child element that matches the
      * selector you provided, then looks for the text in its children elements.
-     * If both search conditions are fulfilled, the method returns a {@ link UiObject}
+     * If both search conditions are fulfilled, the method returns a {@link UiObject}
      * representing the element matching the selector (not the child element in its
      * subhierarchy containing the text).
      *
@@ -393,12 +392,12 @@ public class UiScrollable extends UiCollection {
      * @return true if scrolled, false if can't scroll anymore
      */
     public boolean scrollForward(int steps) throws UiObjectNotFoundException {
-        AccessibilityNodeInfo node = findAccessibilityNodeInfo(WAIT_FOR_SELECTOR_TIMEOUT);
+        AccessibilityNodeInfo node = findAccessibilityNodeInfo(
+                mConfig.getWaitForSelectorTimeout());
         if(node == null) {
             throw new UiObjectNotFoundException(getSelector().toString());
         }
-        Rect rect = new Rect();
-        node.getBoundsInScreen(rect);
+        Rect rect = getVisibleBounds(node);
 
         int downX = 0;
         int downY = 0;
@@ -467,12 +466,12 @@ public class UiScrollable extends UiCollection {
      * @return true if scrolled, false if can't scroll anymore
      */
     public boolean scrollBackward(int steps) throws UiObjectNotFoundException {
-        AccessibilityNodeInfo node = findAccessibilityNodeInfo(WAIT_FOR_SELECTOR_TIMEOUT);
+        AccessibilityNodeInfo node = findAccessibilityNodeInfo(
+                mConfig.getWaitForSelectorTimeout());
         if (node == null) {
             throw new UiObjectNotFoundException(getSelector().toString());
         }
-        Rect rect = new Rect();
-        node.getBoundsInScreen(rect);
+        Rect rect = getVisibleBounds(node);
 
         int downX = 0;
         int downY = 0;
@@ -508,17 +507,18 @@ public class UiScrollable extends UiCollection {
      * left-most edge for horizontal controls. Make sure to take into account
      * devices configured with right-to-left languages like Arabic and Hebrew.
      *
+     * @param maxSwipes maximum number of scrolls allowed
      * @param steps use steps to control the speed, so that it may be a scroll, or fling
-     * @return true on scrolled else false
+     * @return true if beginning reached within maxSwipes
      */
     public boolean scrollToBeginning(int maxSwipes, int steps) throws UiObjectNotFoundException {
         // protect against potential hanging and return after preset attempts
         for(int x = 0; x < maxSwipes; x++) {
             if(!scrollBackward(steps)) {
-                break;
+                return true;
             }
         }
-        return true;
+        return false;
     }
 
     /**
@@ -527,8 +527,8 @@ public class UiScrollable extends UiCollection {
      * left-most edge for horizontal controls. Make sure to take into account
      * devices configured with right-to-left languages like Arabic and Hebrew.
      *
-     * @param maxSwipes
-     * @return true on scrolled else false
+     * @param maxSwipes maximum number of scrolls allowed
+     * @return true if beginning reached within maxSwipes
      */
     public boolean scrollToBeginning(int maxSwipes) throws UiObjectNotFoundException {
         return scrollToBeginning(maxSwipes, SCROLL_STEPS);
@@ -540,8 +540,8 @@ public class UiScrollable extends UiCollection {
      * the left-most edge for horizontal controls. Make sure to take into
      * account devices configured with right-to-left languages like Arabic and Hebrew.
      *
-     * @param maxSwipes
-     * @return true on scrolled else false
+     * @param maxSwipes maximum number of flings allowed
+     * @return true if beginning reached within maxSwipes
      */
     public boolean flingToBeginning(int maxSwipes) throws UiObjectNotFoundException {
         return scrollToBeginning(maxSwipes, FLING_STEPS);
@@ -553,17 +553,18 @@ public class UiScrollable extends UiCollection {
      * horizontal controls. Make sure to take into account devices configured with
      * right-to-left languages like Arabic and Hebrew.
      *
+     * @param maxSwipes maximum number of scrolls allowed
      * @param steps use steps to control the speed, so that it may be a scroll, or fling
-     * @return true on scrolled else false
+     * @return true if end reached within maxSwipes
      */
     public boolean scrollToEnd(int maxSwipes, int steps) throws UiObjectNotFoundException {
         // protect against potential hanging and return after preset attempts
         for(int x = 0; x < maxSwipes; x++) {
             if(!scrollForward(steps)) {
-                break;
+                return true;
             }
         }
-        return true;
+        return false;
     }
 
     /**
@@ -572,8 +573,8 @@ public class UiScrollable extends UiCollection {
      * horizontal controls. Make sure to take into account devices configured with
      * right-to-left languages like Arabic and Hebrew.
      *
-     * @param maxSwipes
-     * @return true on scrolled, else false
+     * @param maxSwipes maximum number of scrolls allowed
+     * @return true if end reached within maxSwipes
      */
     public boolean scrollToEnd(int maxSwipes) throws UiObjectNotFoundException {
         return scrollToEnd(maxSwipes, SCROLL_STEPS);
@@ -585,8 +586,8 @@ public class UiScrollable extends UiCollection {
      * the right-most edge for horizontal controls. Make sure to take into
      * account devices configured with right-to-left languages like Arabic and Hebrew.
      *
-     * @param maxSwipes
-     * @return true on scrolled, else false
+     * @param maxSwipes maximum number of flings allowed
+     * @return true if end reached within maxSwipes
      */
     public boolean flingToEnd(int maxSwipes) throws UiObjectNotFoundException {
         return scrollToEnd(maxSwipes, FLING_STEPS);

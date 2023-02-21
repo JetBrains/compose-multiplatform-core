@@ -1,7 +1,7 @@
 // Signature format: 4.0
 package androidx.health.services.client {
 
-  public interface ExerciseClient {
+  @kotlin.jvm.JvmDefaultWithCompatibility public interface ExerciseClient {
     method public com.google.common.util.concurrent.ListenableFuture<java.lang.Void> addGoalToActiveExerciseAsync(androidx.health.services.client.data.ExerciseGoal<?> exerciseGoal);
     method public com.google.common.util.concurrent.ListenableFuture<java.lang.Void> clearUpdateCallbackAsync(androidx.health.services.client.ExerciseUpdateCallback callback);
     method public com.google.common.util.concurrent.ListenableFuture<java.lang.Void> endExerciseAsync();
@@ -10,6 +10,7 @@ package androidx.health.services.client {
     method public com.google.common.util.concurrent.ListenableFuture<androidx.health.services.client.data.ExerciseInfo> getCurrentExerciseInfoAsync();
     method public com.google.common.util.concurrent.ListenableFuture<java.lang.Void> markLapAsync();
     method public com.google.common.util.concurrent.ListenableFuture<java.lang.Void> overrideAutoPauseAndResumeForActiveExerciseAsync(boolean enabled);
+    method public com.google.common.util.concurrent.ListenableFuture<java.lang.Void> overrideBatchingModesForActiveExerciseAsync(java.util.Set<androidx.health.services.client.data.BatchingMode> batchingModes);
     method public com.google.common.util.concurrent.ListenableFuture<java.lang.Void> pauseExerciseAsync();
     method public com.google.common.util.concurrent.ListenableFuture<java.lang.Void> prepareExerciseAsync(androidx.health.services.client.data.WarmUpConfig configuration);
     method public com.google.common.util.concurrent.ListenableFuture<java.lang.Void> removeGoalFromActiveExerciseAsync(androidx.health.services.client.data.ExerciseGoal<?> exerciseGoal);
@@ -17,22 +18,24 @@ package androidx.health.services.client {
     method public void setUpdateCallback(androidx.health.services.client.ExerciseUpdateCallback callback);
     method public void setUpdateCallback(java.util.concurrent.Executor executor, androidx.health.services.client.ExerciseUpdateCallback callback);
     method public com.google.common.util.concurrent.ListenableFuture<java.lang.Void> startExerciseAsync(androidx.health.services.client.data.ExerciseConfig configuration);
+    method public com.google.common.util.concurrent.ListenableFuture<java.lang.Void> updateExerciseTypeConfigAsync(androidx.health.services.client.data.ExerciseTypeConfig exerciseTypeConfig);
   }
 
   public final class ExerciseClientExtensionKt {
-    method @kotlin.jvm.Throws(exceptionClasses=android.os.RemoteException::class) public static suspend Object? addGoalToActiveExercise(androidx.health.services.client.ExerciseClient, androidx.health.services.client.data.ExerciseGoal<?> exerciseGoal, kotlin.coroutines.Continuation<? super java.lang.Void>) throws android.os.RemoteException;
-    method @kotlin.jvm.Throws(exceptionClasses=android.os.RemoteException::class) public static suspend Object? clearUpdateCallback(androidx.health.services.client.ExerciseClient, androidx.health.services.client.ExerciseUpdateCallback callback, kotlin.coroutines.Continuation<? super java.lang.Void>) throws android.os.RemoteException;
-    method @kotlin.jvm.Throws(exceptionClasses=android.os.RemoteException::class) public static suspend Object? endExercise(androidx.health.services.client.ExerciseClient, kotlin.coroutines.Continuation<? super java.lang.Void>) throws android.os.RemoteException;
-    method @kotlin.jvm.Throws(exceptionClasses=android.os.RemoteException::class) public static suspend Object? flush(androidx.health.services.client.ExerciseClient, kotlin.coroutines.Continuation<? super java.lang.Void>) throws android.os.RemoteException;
-    method @kotlin.jvm.Throws(exceptionClasses=android.os.RemoteException::class) public static suspend Object? getCapabilities(androidx.health.services.client.ExerciseClient, kotlin.coroutines.Continuation<? super androidx.health.services.client.data.ExerciseCapabilities>) throws android.os.RemoteException;
-    method @kotlin.jvm.Throws(exceptionClasses=android.os.RemoteException::class) public static suspend Object? getCurrentExerciseInfo(androidx.health.services.client.ExerciseClient, kotlin.coroutines.Continuation<? super androidx.health.services.client.data.ExerciseInfo>) throws android.os.RemoteException;
-    method @kotlin.jvm.Throws(exceptionClasses=android.os.RemoteException::class) public static suspend Object? markLap(androidx.health.services.client.ExerciseClient, kotlin.coroutines.Continuation<? super java.lang.Void>) throws android.os.RemoteException;
-    method @kotlin.jvm.Throws(exceptionClasses=android.os.RemoteException::class) public static suspend Object? overrideAutoPauseAndResumeForActiveExercise(androidx.health.services.client.ExerciseClient, boolean enabled, kotlin.coroutines.Continuation<? super java.lang.Void>) throws android.os.RemoteException;
-    method @kotlin.jvm.Throws(exceptionClasses=android.os.RemoteException::class) public static suspend Object? pauseExercise(androidx.health.services.client.ExerciseClient, kotlin.coroutines.Continuation<? super java.lang.Void>) throws android.os.RemoteException;
-    method @kotlin.jvm.Throws(exceptionClasses=android.os.RemoteException::class) public static suspend Object? prepareExercise(androidx.health.services.client.ExerciseClient, androidx.health.services.client.data.WarmUpConfig configuration, kotlin.coroutines.Continuation<? super java.lang.Void>) throws android.os.RemoteException;
-    method @kotlin.jvm.Throws(exceptionClasses=android.os.RemoteException::class) public static suspend Object? removeGoalFromActiveExercise(androidx.health.services.client.ExerciseClient, androidx.health.services.client.data.ExerciseGoal<?> exerciseGoal, kotlin.coroutines.Continuation<? super java.lang.Void>) throws android.os.RemoteException;
-    method @kotlin.jvm.Throws(exceptionClasses=android.os.RemoteException::class) public static suspend Object? resumeExercise(androidx.health.services.client.ExerciseClient, kotlin.coroutines.Continuation<? super java.lang.Void>) throws android.os.RemoteException;
-    method @kotlin.jvm.Throws(exceptionClasses=android.os.RemoteException::class) public static suspend Object? startExercise(androidx.health.services.client.ExerciseClient, androidx.health.services.client.data.ExerciseConfig configuration, kotlin.coroutines.Continuation<? super java.lang.Void>) throws android.os.RemoteException;
+    method @kotlin.jvm.Throws(exceptionClasses=HealthServicesException::class) public static suspend Object? addGoalToActiveExercise(androidx.health.services.client.ExerciseClient, androidx.health.services.client.data.ExerciseGoal<?> exerciseGoal, kotlin.coroutines.Continuation<? super java.lang.Void>) throws androidx.health.services.client.HealthServicesException;
+    method @kotlin.jvm.Throws(exceptionClasses=HealthServicesException::class) public static suspend Object? clearUpdateCallback(androidx.health.services.client.ExerciseClient, androidx.health.services.client.ExerciseUpdateCallback callback, kotlin.coroutines.Continuation<? super java.lang.Void>) throws androidx.health.services.client.HealthServicesException;
+    method @kotlin.jvm.Throws(exceptionClasses=HealthServicesException::class) public static suspend Object? endExercise(androidx.health.services.client.ExerciseClient, kotlin.coroutines.Continuation<? super java.lang.Void>) throws androidx.health.services.client.HealthServicesException;
+    method @kotlin.jvm.Throws(exceptionClasses=HealthServicesException::class) public static suspend Object? flush(androidx.health.services.client.ExerciseClient, kotlin.coroutines.Continuation<? super java.lang.Void>) throws androidx.health.services.client.HealthServicesException;
+    method @kotlin.jvm.Throws(exceptionClasses=HealthServicesException::class) public static suspend Object? getCapabilities(androidx.health.services.client.ExerciseClient, kotlin.coroutines.Continuation<? super androidx.health.services.client.data.ExerciseCapabilities>) throws androidx.health.services.client.HealthServicesException;
+    method @kotlin.jvm.Throws(exceptionClasses=HealthServicesException::class) public static suspend Object? getCurrentExerciseInfo(androidx.health.services.client.ExerciseClient, kotlin.coroutines.Continuation<? super androidx.health.services.client.data.ExerciseInfo>) throws androidx.health.services.client.HealthServicesException;
+    method @kotlin.jvm.Throws(exceptionClasses=HealthServicesException::class) public static suspend Object? markLap(androidx.health.services.client.ExerciseClient, kotlin.coroutines.Continuation<? super java.lang.Void>) throws androidx.health.services.client.HealthServicesException;
+    method @kotlin.jvm.Throws(exceptionClasses=HealthServicesException::class) public static suspend Object? overrideAutoPauseAndResumeForActiveExercise(androidx.health.services.client.ExerciseClient, boolean enabled, kotlin.coroutines.Continuation<? super java.lang.Void>) throws androidx.health.services.client.HealthServicesException;
+    method @kotlin.jvm.Throws(exceptionClasses=HealthServicesException::class) public static suspend Object? pauseExercise(androidx.health.services.client.ExerciseClient, kotlin.coroutines.Continuation<? super java.lang.Void>) throws androidx.health.services.client.HealthServicesException;
+    method @kotlin.jvm.Throws(exceptionClasses=HealthServicesException::class) public static suspend Object? prepareExercise(androidx.health.services.client.ExerciseClient, androidx.health.services.client.data.WarmUpConfig configuration, kotlin.coroutines.Continuation<? super kotlin.Unit>) throws androidx.health.services.client.HealthServicesException;
+    method @kotlin.jvm.Throws(exceptionClasses=HealthServicesException::class) public static suspend Object? removeGoalFromActiveExercise(androidx.health.services.client.ExerciseClient, androidx.health.services.client.data.ExerciseGoal<?> exerciseGoal, kotlin.coroutines.Continuation<? super java.lang.Void>) throws androidx.health.services.client.HealthServicesException;
+    method @kotlin.jvm.Throws(exceptionClasses=HealthServicesException::class) public static suspend Object? resumeExercise(androidx.health.services.client.ExerciseClient, kotlin.coroutines.Continuation<? super java.lang.Void>) throws androidx.health.services.client.HealthServicesException;
+    method @kotlin.jvm.Throws(exceptionClasses=HealthServicesException::class) public static suspend Object? startExercise(androidx.health.services.client.ExerciseClient, androidx.health.services.client.data.ExerciseConfig configuration, kotlin.coroutines.Continuation<? super kotlin.Unit>) throws androidx.health.services.client.HealthServicesException;
+    method @kotlin.jvm.Throws(exceptionClasses=HealthServicesException::class) public static suspend Object? updateExerciseTypeConfig(androidx.health.services.client.ExerciseClient, androidx.health.services.client.data.ExerciseTypeConfig exerciseTypeConfig, kotlin.coroutines.Continuation<? super java.lang.Void>) throws androidx.health.services.client.HealthServicesException;
   }
 
   public interface ExerciseUpdateCallback {
@@ -57,7 +60,15 @@ package androidx.health.services.client {
     property public abstract androidx.health.services.client.PassiveMonitoringClient passiveMonitoringClient;
   }
 
-  public interface MeasureCallback {
+  public final class HealthServicesException extends java.lang.Exception {
+    ctor public HealthServicesException(String message);
+  }
+
+  public final class ListenableFutureExtensionKt {
+    method @kotlin.jvm.Throws(exceptionClasses=HealthServicesException::class) public static suspend <T> Object? awaitWithException(com.google.common.util.concurrent.ListenableFuture<T>, kotlin.coroutines.Continuation<? super T>) throws androidx.health.services.client.HealthServicesException;
+  }
+
+  @kotlin.jvm.JvmDefaultWithCompatibility public interface MeasureCallback {
     method public void onAvailabilityChanged(androidx.health.services.client.data.DeltaDataType<?,?> dataType, androidx.health.services.client.data.Availability availability);
     method public void onDataReceived(androidx.health.services.client.data.DataPointContainer data);
     method public default void onRegistered();
@@ -72,11 +83,11 @@ package androidx.health.services.client {
   }
 
   public final class MeasureClientExtensionKt {
-    method @kotlin.jvm.Throws(exceptionClasses=android.os.RemoteException::class) public static suspend Object? getCapabilities(androidx.health.services.client.MeasureClient, kotlin.coroutines.Continuation<? super androidx.health.services.client.data.MeasureCapabilities>) throws android.os.RemoteException;
-    method @kotlin.jvm.Throws(exceptionClasses=android.os.RemoteException::class) public static suspend Object? unregisterMeasureCallback(androidx.health.services.client.MeasureClient, androidx.health.services.client.data.DeltaDataType<?,?> dataType, androidx.health.services.client.MeasureCallback callback, kotlin.coroutines.Continuation<? super java.lang.Void>) throws android.os.RemoteException;
+    method @kotlin.jvm.Throws(exceptionClasses=HealthServicesException::class) public static suspend Object? getCapabilities(androidx.health.services.client.MeasureClient, kotlin.coroutines.Continuation<? super androidx.health.services.client.data.MeasureCapabilities>) throws androidx.health.services.client.HealthServicesException;
+    method @kotlin.jvm.Throws(exceptionClasses=HealthServicesException::class) public static suspend Object? unregisterMeasureCallback(androidx.health.services.client.MeasureClient, androidx.health.services.client.data.DeltaDataType<?,?> dataType, androidx.health.services.client.MeasureCallback callback, kotlin.coroutines.Continuation<? super java.lang.Void>) throws androidx.health.services.client.HealthServicesException;
   }
 
-  public interface PassiveListenerCallback {
+  @kotlin.jvm.JvmDefaultWithCompatibility public interface PassiveListenerCallback {
     method public default void onGoalCompleted(androidx.health.services.client.data.PassiveGoal goal);
     method public default void onHealthEventReceived(androidx.health.services.client.data.HealthEvent event);
     method public default void onNewDataPointsReceived(androidx.health.services.client.data.DataPointContainer dataPoints);
@@ -107,11 +118,11 @@ package androidx.health.services.client {
   }
 
   public final class PassiveMonitoringClientExtensionKt {
-    method @kotlin.jvm.Throws(exceptionClasses=android.os.RemoteException::class) public static suspend Object? clearPassiveListenerCallback(androidx.health.services.client.PassiveMonitoringClient, kotlin.coroutines.Continuation<? super java.lang.Void>) throws android.os.RemoteException;
-    method @kotlin.jvm.Throws(exceptionClasses=android.os.RemoteException::class) public static suspend Object? clearPassiveListenerService(androidx.health.services.client.PassiveMonitoringClient, kotlin.coroutines.Continuation<? super java.lang.Void>) throws android.os.RemoteException;
-    method @kotlin.jvm.Throws(exceptionClasses=android.os.RemoteException::class) public static suspend Object? flush(androidx.health.services.client.PassiveMonitoringClient, kotlin.coroutines.Continuation<? super java.lang.Void>) throws android.os.RemoteException;
-    method @kotlin.jvm.Throws(exceptionClasses=android.os.RemoteException::class) public static suspend Object? getCapabilities(androidx.health.services.client.PassiveMonitoringClient, kotlin.coroutines.Continuation<? super androidx.health.services.client.data.PassiveMonitoringCapabilities>) throws android.os.RemoteException;
-    method @kotlin.jvm.Throws(exceptionClasses=android.os.RemoteException::class) public static suspend Object? setPassiveListenerService(androidx.health.services.client.PassiveMonitoringClient, Class<? extends androidx.health.services.client.PassiveListenerService> service, androidx.health.services.client.data.PassiveListenerConfig config, kotlin.coroutines.Continuation<? super java.lang.Void>) throws android.os.RemoteException;
+    method @kotlin.jvm.Throws(exceptionClasses=HealthServicesException::class) public static suspend Object? clearPassiveListenerCallback(androidx.health.services.client.PassiveMonitoringClient, kotlin.coroutines.Continuation<? super java.lang.Void>) throws androidx.health.services.client.HealthServicesException;
+    method @kotlin.jvm.Throws(exceptionClasses=HealthServicesException::class) public static suspend Object? clearPassiveListenerService(androidx.health.services.client.PassiveMonitoringClient, kotlin.coroutines.Continuation<? super java.lang.Void>) throws androidx.health.services.client.HealthServicesException;
+    method @kotlin.jvm.Throws(exceptionClasses=HealthServicesException::class) public static suspend Object? flush(androidx.health.services.client.PassiveMonitoringClient, kotlin.coroutines.Continuation<? super java.lang.Void>) throws androidx.health.services.client.HealthServicesException;
+    method @kotlin.jvm.Throws(exceptionClasses=HealthServicesException::class) public static suspend Object? getCapabilities(androidx.health.services.client.PassiveMonitoringClient, kotlin.coroutines.Continuation<? super androidx.health.services.client.data.PassiveMonitoringCapabilities>) throws androidx.health.services.client.HealthServicesException;
+    method @kotlin.jvm.Throws(exceptionClasses=HealthServicesException::class) public static suspend Object? setPassiveListenerService(androidx.health.services.client.PassiveMonitoringClient, Class<? extends androidx.health.services.client.PassiveListenerService> service, androidx.health.services.client.data.PassiveListenerConfig config, kotlin.coroutines.Continuation<? super java.lang.Void>) throws androidx.health.services.client.HealthServicesException;
   }
 
 }
@@ -122,13 +133,21 @@ package androidx.health.services.client.data {
     ctor public AggregateDataType(String name, androidx.health.services.client.data.DataType.TimeType timeType, Class<T> valueClass);
   }
 
-  public interface Availability {
+  @kotlin.jvm.JvmDefaultWithCompatibility public interface Availability {
     method public int getId();
     property public abstract int id;
     field public static final androidx.health.services.client.data.Availability.Companion Companion;
   }
 
   public static final class Availability.Companion {
+  }
+
+  public final class BatchingMode {
+    field public static final androidx.health.services.client.data.BatchingMode.Companion Companion;
+    field public static final androidx.health.services.client.data.BatchingMode HEART_RATE_5_SECONDS;
+  }
+
+  public static final class BatchingMode.Companion {
   }
 
   public final class ComparisonType {
@@ -297,30 +316,39 @@ package androidx.health.services.client.data {
   }
 
   public final class ExerciseCapabilities {
+    ctor public ExerciseCapabilities(java.util.Map<androidx.health.services.client.data.ExerciseType,androidx.health.services.client.data.ExerciseTypeCapabilities> typeToCapabilities, optional java.util.Set<androidx.health.services.client.data.BatchingMode> supportedBatchingModeOverrides);
     ctor public ExerciseCapabilities(java.util.Map<androidx.health.services.client.data.ExerciseType,androidx.health.services.client.data.ExerciseTypeCapabilities> typeToCapabilities);
     method public java.util.Set<androidx.health.services.client.data.ExerciseType> getAutoPauseAndResumeEnabledExercises();
     method public androidx.health.services.client.data.ExerciseTypeCapabilities getExerciseTypeCapabilities(androidx.health.services.client.data.ExerciseType exercise);
+    method public java.util.Set<androidx.health.services.client.data.BatchingMode> getSupportedBatchingModeOverrides();
     method public java.util.Set<androidx.health.services.client.data.ExerciseType> getSupportedExerciseTypes();
     method public java.util.Map<androidx.health.services.client.data.ExerciseType,androidx.health.services.client.data.ExerciseTypeCapabilities> getTypeToCapabilities();
     property public final java.util.Set<androidx.health.services.client.data.ExerciseType> autoPauseAndResumeEnabledExercises;
+    property public final java.util.Set<androidx.health.services.client.data.BatchingMode> supportedBatchingModeOverrides;
     property public final java.util.Set<androidx.health.services.client.data.ExerciseType> supportedExerciseTypes;
     property public final java.util.Map<androidx.health.services.client.data.ExerciseType,androidx.health.services.client.data.ExerciseTypeCapabilities> typeToCapabilities;
   }
 
   public final class ExerciseConfig {
+    ctor public ExerciseConfig(androidx.health.services.client.data.ExerciseType exerciseType, java.util.Set<? extends androidx.health.services.client.data.DataType<?,?>> dataTypes, boolean isAutoPauseAndResumeEnabled, boolean isGpsEnabled, optional java.util.List<? extends androidx.health.services.client.data.ExerciseGoal<?>> exerciseGoals, optional android.os.Bundle exerciseParams, optional @FloatRange(from=0.0) float swimmingPoolLengthMeters, optional androidx.health.services.client.data.ExerciseTypeConfig? exerciseTypeConfig, optional java.util.Set<androidx.health.services.client.data.BatchingMode> batchingModeOverrides);
+    ctor public ExerciseConfig(androidx.health.services.client.data.ExerciseType exerciseType, java.util.Set<? extends androidx.health.services.client.data.DataType<?,?>> dataTypes, boolean isAutoPauseAndResumeEnabled, boolean isGpsEnabled, optional java.util.List<? extends androidx.health.services.client.data.ExerciseGoal<?>> exerciseGoals, optional android.os.Bundle exerciseParams, optional @FloatRange(from=0.0) float swimmingPoolLengthMeters, optional androidx.health.services.client.data.ExerciseTypeConfig? exerciseTypeConfig);
     ctor public ExerciseConfig(androidx.health.services.client.data.ExerciseType exerciseType, java.util.Set<? extends androidx.health.services.client.data.DataType<?,?>> dataTypes, boolean isAutoPauseAndResumeEnabled, boolean isGpsEnabled, optional java.util.List<? extends androidx.health.services.client.data.ExerciseGoal<?>> exerciseGoals, optional android.os.Bundle exerciseParams, optional @FloatRange(from=0.0) float swimmingPoolLengthMeters);
     method public static androidx.health.services.client.data.ExerciseConfig.Builder builder(androidx.health.services.client.data.ExerciseType exerciseType);
+    method public java.util.Set<androidx.health.services.client.data.BatchingMode> getBatchingModeOverrides();
     method public java.util.Set<androidx.health.services.client.data.DataType<?,?>> getDataTypes();
     method public java.util.List<androidx.health.services.client.data.ExerciseGoal<?>> getExerciseGoals();
     method public android.os.Bundle getExerciseParams();
     method public androidx.health.services.client.data.ExerciseType getExerciseType();
+    method public androidx.health.services.client.data.ExerciseTypeConfig? getExerciseTypeConfig();
     method public float getSwimmingPoolLengthMeters();
     method public boolean isAutoPauseAndResumeEnabled();
     method public boolean isGpsEnabled();
+    property public final java.util.Set<androidx.health.services.client.data.BatchingMode> batchingModeOverrides;
     property public final java.util.Set<androidx.health.services.client.data.DataType<?,?>> dataTypes;
     property public final java.util.List<androidx.health.services.client.data.ExerciseGoal<?>> exerciseGoals;
     property public final android.os.Bundle exerciseParams;
     property public final androidx.health.services.client.data.ExerciseType exerciseType;
+    property public final androidx.health.services.client.data.ExerciseTypeConfig? exerciseTypeConfig;
     property public final boolean isAutoPauseAndResumeEnabled;
     property public final boolean isGpsEnabled;
     property public final float swimmingPoolLengthMeters;
@@ -331,9 +359,11 @@ package androidx.health.services.client.data {
   public static final class ExerciseConfig.Builder {
     ctor public ExerciseConfig.Builder(androidx.health.services.client.data.ExerciseType exerciseType);
     method public androidx.health.services.client.data.ExerciseConfig build();
+    method public androidx.health.services.client.data.ExerciseConfig.Builder setBatchingModeOverrides(java.util.Set<androidx.health.services.client.data.BatchingMode> batchingModeOverrides);
     method public androidx.health.services.client.data.ExerciseConfig.Builder setDataTypes(java.util.Set<? extends androidx.health.services.client.data.DataType<?,?>> dataTypes);
     method public androidx.health.services.client.data.ExerciseConfig.Builder setExerciseGoals(java.util.List<? extends androidx.health.services.client.data.ExerciseGoal<?>> exerciseGoals);
     method public androidx.health.services.client.data.ExerciseConfig.Builder setExerciseParams(android.os.Bundle exerciseParams);
+    method public androidx.health.services.client.data.ExerciseConfig.Builder setExerciseTypeConfig(androidx.health.services.client.data.ExerciseTypeConfig? exerciseTypeConfig);
     method public androidx.health.services.client.data.ExerciseConfig.Builder setIsAutoPauseAndResumeEnabled(boolean isAutoPauseAndResumeEnabled);
     method public androidx.health.services.client.data.ExerciseConfig.Builder setIsGpsEnabled(boolean isGpsEnabled);
     method public androidx.health.services.client.data.ExerciseConfig.Builder setSwimmingPoolLengthMeters(float swimmingPoolLength);
@@ -556,6 +586,13 @@ package androidx.health.services.client.data {
     property public final boolean supportsAutoPauseAndResume;
   }
 
+  public abstract class ExerciseTypeConfig {
+    field public static final androidx.health.services.client.data.ExerciseTypeConfig.Companion Companion;
+  }
+
+  public static final class ExerciseTypeConfig.Companion {
+  }
+
   public final class ExerciseUpdate {
     method public java.time.Duration getActiveDurationAtDataPoint(androidx.health.services.client.data.IntervalDataPoint<?> dataPoint);
     method public java.time.Duration getActiveDurationAtDataPoint(androidx.health.services.client.data.SampleDataPoint<?> dataPoint);
@@ -586,6 +623,25 @@ package androidx.health.services.client.data {
   }
 
   public static final class ExerciseUpdate.Companion {
+  }
+
+  public final class GolfExerciseTypeConfig extends androidx.health.services.client.data.ExerciseTypeConfig {
+    ctor public GolfExerciseTypeConfig(optional androidx.health.services.client.data.GolfExerciseTypeConfig.GolfShotTrackingPlaceInfo golfShotTrackingPlaceInfo);
+    method public androidx.health.services.client.data.GolfExerciseTypeConfig.GolfShotTrackingPlaceInfo getGolfShotTrackingPlaceInfo();
+    property public final androidx.health.services.client.data.GolfExerciseTypeConfig.GolfShotTrackingPlaceInfo golfShotTrackingPlaceInfo;
+  }
+
+  public static final class GolfExerciseTypeConfig.GolfShotTrackingPlaceInfo {
+    method public int getPlaceInfoId();
+    property public final int placeInfoId;
+    field public static final androidx.health.services.client.data.GolfExerciseTypeConfig.GolfShotTrackingPlaceInfo.Companion Companion;
+    field public static final androidx.health.services.client.data.GolfExerciseTypeConfig.GolfShotTrackingPlaceInfo GOLF_SHOT_TRACKING_PLACE_INFO_FAIRWAY;
+    field public static final androidx.health.services.client.data.GolfExerciseTypeConfig.GolfShotTrackingPlaceInfo GOLF_SHOT_TRACKING_PLACE_INFO_PUTTING_GREEN;
+    field public static final androidx.health.services.client.data.GolfExerciseTypeConfig.GolfShotTrackingPlaceInfo GOLF_SHOT_TRACKING_PLACE_INFO_TEE_BOX;
+    field public static final androidx.health.services.client.data.GolfExerciseTypeConfig.GolfShotTrackingPlaceInfo GOLF_SHOT_TRACKING_PLACE_INFO_UNSPECIFIED;
+  }
+
+  public static final class GolfExerciseTypeConfig.GolfShotTrackingPlaceInfo.Companion {
   }
 
   public final class HealthEvent {

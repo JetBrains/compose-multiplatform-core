@@ -23,7 +23,6 @@ import androidx.wear.watchface.complications.data.ColorRamp
 import androidx.wear.watchface.complications.data.ComplicationData
 import androidx.wear.watchface.complications.data.ComplicationType
 import androidx.wear.watchface.complications.data.RangedValueComplicationData
-import androidx.wear.watchface.complications.data.RangedValueTypes
 import androidx.wear.watchface.complications.datasource.ComplicationDataSourceService
 import androidx.wear.watchface.complications.datasource.ComplicationRequest
 
@@ -37,12 +36,13 @@ class NonInterpolatedColorRampDataSourceService : ComplicationDataSourceService(
     ) {
         listener.onComplicationData(
             RangedValueComplicationData.Builder(
-                value = 75f,
-                min = 0.0f,
-                max = 100.0f,
-                plainText("Example")
-            ).setText(plainText("Example"))
-                .setValueType(RangedValueTypes.SCORE)
+                    value = 75f,
+                    min = 0.0f,
+                    max = 100.0f,
+                    plainText("Example")
+                )
+                .setText(plainText("Example"))
+                .setValueType(RangedValueComplicationData.TYPE_RATING)
                 .setColorRamp(
                     ColorRamp(
                         intArrayOf(Color.GREEN, Color.YELLOW, Color.RED),
@@ -53,23 +53,24 @@ class NonInterpolatedColorRampDataSourceService : ComplicationDataSourceService(
         )
     }
 
-    override fun getPreviewData(type: ComplicationType): ComplicationData? = when (type) {
-        ComplicationType.RANGED_VALUE ->
-            RangedValueComplicationData.Builder(
-                value = 10f,
-                min = 0.0f,
-                max = 100.0f,
-                plainText("Example")
-            ).setText(plainText("Example"))
-                .setValueType(RangedValueTypes.SCORE)
-                .setColorRamp(
-                    ColorRamp(
-                        intArrayOf(Color.GREEN, Color.YELLOW, Color.RED),
-                        interpolated = false
+    override fun getPreviewData(type: ComplicationType): ComplicationData? =
+        when (type) {
+            ComplicationType.RANGED_VALUE ->
+                RangedValueComplicationData.Builder(
+                        value = 10f,
+                        min = 0.0f,
+                        max = 100.0f,
+                        plainText("Example")
                     )
-                )
-                .build()
-
-        else -> null
-    }
+                    .setText(plainText("Example"))
+                    .setValueType(RangedValueComplicationData.TYPE_RATING)
+                    .setColorRamp(
+                        ColorRamp(
+                            intArrayOf(Color.GREEN, Color.YELLOW, Color.RED),
+                            interpolated = false
+                        )
+                    )
+                    .build()
+            else -> null
+        }
 }

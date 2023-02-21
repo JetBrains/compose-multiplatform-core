@@ -56,6 +56,7 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Scaffold
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
+import androidx.compose.material.TriStateCheckbox
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Done
 import androidx.compose.runtime.Composable
@@ -69,6 +70,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -128,6 +130,13 @@ fun AnimatedContentPreview() {
             Text(text = "Count: $targetCount")
         }
     }
+}
+
+@Preview
+@Composable
+fun AnimatedContentAndTransitionPreview() {
+    AnimatedContentPreview()
+    TransitionPreview()
 }
 
 @OptIn(ExperimentalAnimationApi::class)
@@ -317,6 +326,13 @@ fun AnimateContentSizePreview() {
 
 @Preview
 @Composable
+fun AnimateContentSizeAndTransitionPreview() {
+    AnimateContentSizePreview()
+    TransitionPreview()
+}
+
+@Preview
+@Composable
 fun TargetBasedAnimationPreview() {
     val anim = remember {
         TargetBasedAnimation(
@@ -336,6 +352,13 @@ fun TargetBasedAnimationPreview() {
         } while (playTime < 1_000_000L)
     }
     Box { Text(text = "Play time $playTime") }
+}
+
+@Preview
+@Composable
+fun TargetBasedAndTransitionPreview() {
+    TargetBasedAnimationPreview()
+    TransitionPreview()
 }
 
 @Preview
@@ -361,6 +384,13 @@ fun DecayAnimationPreview() {
 
 @Preview
 @Composable
+fun DecayAndTransitionPreview() {
+    DecayAnimationPreview()
+    TransitionPreview()
+}
+
+@Preview
+@Composable
 fun InfiniteTransitionPreview() {
     val infiniteTransition = rememberInfiniteTransition()
     Row {
@@ -368,6 +398,13 @@ fun InfiniteTransitionPreview() {
         infiniteTransition.PulsingDot(StartOffset(150, StartOffsetType.FastForward))
         infiniteTransition.PulsingDot(StartOffset(300, StartOffsetType.FastForward))
     }
+}
+
+@Preview
+@Composable
+fun InfiniteAndTransitionPreview() {
+    InfiniteTransitionPreview()
+    TransitionPreview()
 }
 
 @Composable
@@ -387,4 +424,11 @@ fun InfiniteTransition.PulsingDot(startOffset: StartOffset) {
             }
             .background(Color.Gray, shape = CircleShape)
     )
+}
+
+@Preview
+@Composable
+fun MaterialPreview() {
+    val state = remember { mutableStateOf(ToggleableState.On) }.value
+    TriStateCheckbox(state, {})
 }

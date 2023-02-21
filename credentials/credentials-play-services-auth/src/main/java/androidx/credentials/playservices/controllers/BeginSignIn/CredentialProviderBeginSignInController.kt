@@ -16,14 +16,37 @@
 
 package androidx.credentials.playservices.controllers.BeginSignIn
 
+import android.app.Activity
 import android.content.Intent
+import android.os.Bundle
+import android.os.CancellationSignal
+import android.os.Handler
+import android.os.Looper
+import android.os.ResultReceiver
 import android.util.Log
+import androidx.annotation.VisibleForTesting
+import androidx.credentials.Credential
 import androidx.credentials.CredentialManagerCallback
 import androidx.credentials.GetCredentialRequest
 import androidx.credentials.GetCredentialResponse
+import androidx.credentials.PasswordCredential
+import androidx.credentials.PublicKeyCredential
+import androidx.credentials.exceptions.GetCredentialCancellationException
+import androidx.credentials.exceptions.GetCredentialException
+import androidx.credentials.exceptions.GetCredentialInterruptedException
+import androidx.credentials.exceptions.GetCredentialUnknownException
+import androidx.credentials.playservices.CredentialProviderPlayServicesImpl
+import androidx.credentials.playservices.HiddenActivity
+import androidx.credentials.playservices.controllers.BeginSignIn.BeginSignInControllerUtility.Companion.constructBeginSignInRequest
+import androidx.credentials.playservices.controllers.CreatePublicKeyCredential.PublicKeyCredentialControllerUtility
+import androidx.credentials.playservices.controllers.CredentialProviderBaseController
 import androidx.credentials.playservices.controllers.CredentialProviderController
 import com.google.android.gms.auth.api.identity.BeginSignInRequest
+import com.google.android.gms.auth.api.identity.Identity
 import com.google.android.gms.auth.api.identity.SignInCredential
+import com.google.android.gms.common.api.ApiException
+import com.google.android.gms.common.api.CommonStatusCodes
+import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import java.util.concurrent.Executor
 
 /**
@@ -32,85 +55,203 @@ import java.util.concurrent.Executor
  * @hide
  */
 @Suppress("deprecation")
-class CredentialProviderBeginSignInController : CredentialProviderController<
-    GetCredentialRequest,
-    BeginSignInRequest,
-    SignInCredential,
-    GetCredentialResponse>() {
+class CredentialProviderBeginSignInController(private val activity: Activity) :
+    CredentialProviderController<
+        GetCredentialRequest,
+        BeginSignInRequest,
+        SignInCredential,
+        GetCredentialResponse,
+        GetCredentialException>(activity) {
 
     /**
      * The callback object state, used in the protected handleResponse method.
      */
-    private lateinit var callback: CredentialManagerCallback<GetCredentialResponse>
+    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+    lateinit var callback: CredentialManagerCallback<GetCredentialResponse,
+        GetCredentialException>
+
     /**
      * The callback requires an executor to invoke it.
      */
-    private lateinit var executor: Executor
+    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+    lateinit var executor: Executor
+
+    /**
+     * The cancellation signal, which is shuttled around to stop the flow at any moment prior to
+     * returning data.
+     */
+    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+    private var cancellationSignal: CancellationSignal? = null
+
+    private val resultReceiver = object : ResultReceiver(
+        Handler(Looper.getMainLooper())
+    ) {
+        public override fun onReceiveResult(
+            resultCode: Int,
+            resultData: Bundle
+        ) {
+            if (maybeReportErrorFromResultReceiver(
+                    resultData,
+                    CredentialProviderBaseController
+                        .Companion::getCredentialExceptionTypeToException,
+                    executor = executor, callback = callback, cancellationSignal
+                )
+            ) return
+            handleResponse(
+                resultData.getInt(ACTIVITY_REQUEST_CODE_TAG), resultCode,
+                resultData.getParcelable(RESULT_DATA_TAG)
+            )
+        }
+    }
 
     override fun invokePlayServices(
         request: GetCredentialRequest,
-        callback: CredentialManagerCallback<GetCredentialResponse>,
-        executor: Executor
+        callback: CredentialManagerCallback<GetCredentialResponse, GetCredentialException>,
+        executor: Executor,
+        cancellationSignal: CancellationSignal?
     ) {
-        TODO("Not yet implemented")
+        this.cancellationSignal = cancellationSignal
+        this.callback = callback
+        this.executor = executor
+
+        if (CredentialProviderPlayServicesImpl.cancellationReviewer(cancellationSignal)) {
+            return
+        }
+
+        val convertedRequest: BeginSignInRequest = this.convertRequestToPlayServices(request)
+        val hiddenIntent = Intent(activity, HiddenActivity::class.java)
+        hiddenIntent.putExtra(REQUEST_TAG, convertedRequest)
+        generateHiddenActivityIntent(resultReceiver, hiddenIntent, BEGIN_SIGN_IN_TAG)
+        activity.startActivity(hiddenIntent)
     }
 
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        handleResponse(requestCode, resultCode, data)
+    internal fun handleResponse(uniqueRequestCode: Int, resultCode: Int, data: Intent?) {
+        if (uniqueRequestCode != CONTROLLER_REQUEST_CODE) {
+            Log.w(
+                TAG,
+                "Returned request code $CONTROLLER_REQUEST_CODE which " +
+                    " does not match what was given $uniqueRequestCode"
+            )
+            return
+        }
+        if (maybeReportErrorResultCodeGet(resultCode, TAG,
+                { s, f -> cancelOrCallbackExceptionOrResult(s, f) }, { e ->
+                    this.executor.execute {
+                        this.callback.onError(e)
+                    }
+                }, cancellationSignal
+            )
+        ) return
+        try {
+            val signInCredential = Identity.getSignInClient(activity)
+                .getSignInCredentialFromIntent(data)
+            val response = convertResponseToCredentialManager(signInCredential)
+            cancelOrCallbackExceptionOrResult(cancellationSignal) {
+                this.executor.execute {
+                    this.callback.onResult(response)
+                }
+            }
+        } catch (e: ApiException) {
+            var exception: GetCredentialException = GetCredentialUnknownException(e.message)
+            if (e.statusCode == CommonStatusCodes.CANCELED) {
+                exception = GetCredentialCancellationException(e.message)
+            } else if (e.statusCode in retryables) {
+                exception = GetCredentialInterruptedException(e.message)
+            }
+            cancelOrCallbackExceptionOrResult(cancellationSignal) {
+                executor.execute {
+                    callback.onError(exception)
+                }
+            }
+            return
+        } catch (e: GetCredentialException) {
+            cancelOrCallbackExceptionOrResult(cancellationSignal) {
+                executor.execute {
+                    callback.onError(e)
+                }
+            }
+        }
     }
 
-    private fun handleResponse(uniqueRequestCode: Int, resultCode: Int, data: Intent?) {
-        Log.i(TAG, "$uniqueRequestCode $resultCode $data")
-        TODO("Not yet implemented")
+    @VisibleForTesting(otherwise = VisibleForTesting.PROTECTED)
+    public override fun convertRequestToPlayServices(request: GetCredentialRequest):
+        BeginSignInRequest {
+        return constructBeginSignInRequest(request)
     }
 
-    override fun convertToPlayServices(request: GetCredentialRequest): BeginSignInRequest {
-        TODO("Not yet implemented")
+    @VisibleForTesting(otherwise = VisibleForTesting.PROTECTED)
+    public override fun convertResponseToCredentialManager(response: SignInCredential):
+        GetCredentialResponse {
+        var cred: Credential? = null
+        if (response.password != null) {
+            cred = PasswordCredential(response.id, response.password!!)
+        } else if (response.googleIdToken != null) {
+            cred = createGoogleIdCredential(response)
+        } else if (response.publicKeyCredential != null) {
+            try {
+                cred = PublicKeyCredential(
+                    PublicKeyCredentialControllerUtility.toAssertPasskeyResponse(response)
+                )
+            } catch (t: Throwable) {
+                throw GetCredentialUnknownException(t.message)
+            }
+        } else {
+            Log.w(TAG, "Credential returned but no google Id or password or passkey found")
+        }
+        if (cred == null) {
+            throw GetCredentialUnknownException(
+                "When attempting to convert get response, " +
+                    "null credential found"
+            )
+        }
+        return GetCredentialResponse(cred)
     }
 
-    override fun convertToCredentialProvider(response: SignInCredential): GetCredentialResponse {
-        TODO("Not yet implemented")
+    private fun createGoogleIdCredential(response: SignInCredential): GoogleIdTokenCredential {
+        var cred = GoogleIdTokenCredential.Builder().setId(response.id)
+            .setIdToken(response.googleIdToken!!)
+
+        if (response.displayName != null) {
+            cred.setDisplayName(response.displayName)
+        }
+
+        if (response.givenName != null) {
+            cred.setGivenName(response.givenName)
+        }
+
+        if (response.familyName != null) {
+            cred.setFamilyName(response.familyName)
+        }
+
+        if (response.phoneNumber != null) {
+            cred.setPhoneNumber(response.phoneNumber)
+        }
+
+        if (response.profilePictureUri != null) {
+            cred.setProfilePictureUri(response.profilePictureUri.toString())
+        }
+
+        return cred.build()
     }
 
     companion object {
         private val TAG = CredentialProviderBeginSignInController::class.java.name
-        private const val REQUEST_CODE_BEGIN_SIGN_IN: Int = 1
-        // TODO("Ensure this works with the lifecycle")
+        private var controller: CredentialProviderBeginSignInController? = null
 
         /**
-         * This finds a past version of the BeginSignInController if it exists, otherwise
-         * it generates a new instance.
+         * This finds a past version of the [CredentialProviderBeginSignInController] if it exists,
+         * otherwise it generates a new instance.
          *
-         * @param fragmentManager a fragment manager pulled from an android activity
-         * @return a credential provider controller for a specific credential request
+         * @param activity the calling activity for this controller
+         * @return a credential provider controller for a specific begin sign in credential request
          */
         @JvmStatic
-        fun getInstance(fragmentManager: android.app.FragmentManager):
+        fun getInstance(activity: Activity):
             CredentialProviderBeginSignInController {
-            var controller = findPastController(REQUEST_CODE_BEGIN_SIGN_IN, fragmentManager)
             if (controller == null) {
-                controller = CredentialProviderBeginSignInController()
-                fragmentManager.beginTransaction().add(controller,
-                    REQUEST_CODE_BEGIN_SIGN_IN.toString())
-                    .commitAllowingStateLoss()
-                fragmentManager.executePendingTransactions()
+                controller = CredentialProviderBeginSignInController(activity)
             }
-            return controller
-        }
-
-        internal fun findPastController(
-            requestCode: Int,
-            fragmentManager: android.app.FragmentManager
-        ): CredentialProviderBeginSignInController? {
-            try {
-                return fragmentManager.findFragmentByTag(requestCode.toString())
-                    as CredentialProviderBeginSignInController?
-            } catch (e: Exception) {
-                Log.i(TAG, "Old fragment found of different type - replacement required")
-                // TODO("Ensure this is well tested for fragment issues")
-                return null
-            }
+            return controller!!
         }
     }
 }

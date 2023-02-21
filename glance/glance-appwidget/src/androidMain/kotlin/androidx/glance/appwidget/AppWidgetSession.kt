@@ -16,7 +16,6 @@
 
 package androidx.glance.appwidget
 
-import android.appwidget.AppWidgetManager
 import android.content.Context
 import android.os.Bundle
 import android.util.Log
@@ -24,10 +23,15 @@ import android.widget.RemoteViews
 import androidx.annotation.VisibleForTesting
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.neverEqualPolicy
+import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.unit.DpSize
-import androidx.datastore.preferences.core.emptyPreferences
 import androidx.glance.EmittableWithChildren
 import androidx.glance.GlanceComposable
 import androidx.glance.LocalContext
@@ -35,11 +39,9 @@ import androidx.glance.LocalGlanceId
 import androidx.glance.LocalState
 import androidx.glance.action.LambdaAction
 import androidx.glance.session.Session
-import androidx.glance.session.SetContentFn
 import androidx.glance.state.ConfigManager
 import androidx.glance.state.GlanceState
-import androidx.glance.state.PreferencesGlanceStateDefinition
-import java.util.concurrent.CancellationException
+import kotlinx.coroutines.CancellationException
 
 /**
  * A session that composes UI for a single app widget.
@@ -68,50 +70,54 @@ internal class AppWidgetSession(
         const val DEBUG = false
     }
 
-    private val glanceState = mutableStateOf(emptyPreferences(), neverEqualPolicy())
+    private val glanceState = mutableStateOf<Any?>(null, neverEqualPolicy())
     private val options = mutableStateOf(Bundle(), neverEqualPolicy())
     private var lambdas = mapOf<String, List<LambdaAction>>()
     @VisibleForTesting
     internal var lastRemoteViews: RemoteViews? = null
+        private set
 
     override fun createRootEmittable() = RemoteViewsRoot(MaxComposeTreeDepth)
 
-    override suspend fun provideGlance(
-        context: Context,
-        setContent: SetContentFn,
-    ) {
-        val manager = context.appWidgetManager
-        val minSize = appWidgetMinSize(
-            context.resources.displayMetrics,
-            manager,
-            id.appWidgetId
-        )
-        options.value = initialOptions ?: manager.getAppWidgetOptions(id.appWidgetId)!!
-        glanceState.value =
-            configManager.getValue(context, PreferencesGlanceStateDefinition, key)
-
-        val scope = AppWidgetProviderScope { content: @Composable @GlanceComposable () -> Unit ->
-            setContent {
-                CompositionLocalProvider(
-                    LocalContext provides context,
-                    LocalGlanceId provides id,
-                    LocalAppWidgetOptions provides options.value,
-                    LocalState provides glanceState.value,
-                ) {
-                    ForEachSize(widget.sizeMode, minSize, content)
-                }
+    override fun provideGlance(context: Context): @Composable @GlanceComposable () -> Unit = {
+        CompositionLocalProvider(
+            LocalContext provides context,
+            LocalGlanceId provides id,
+            LocalAppWidgetOptions provides options.value,
+            LocalState provides glanceState.value,
+        ) {
+            val manager = remember { context.appWidgetManager }
+            val minSize = remember {
+                appWidgetMinSize(
+                    context.resources.displayMetrics,
+                    manager,
+                    id.appWidgetId
+                )
             }
-        }
-
-        widget.apply {
-            scope.provideGlance(context, id)
+            val configIsReady by produceState(false) {
+                options.value = initialOptions ?: manager.getAppWidgetOptions(id.appWidgetId)
+                widget.stateDefinition?.let {
+                    glanceState.value =
+                        configManager.getValue(context, it, key)
+                }
+                value = true
+            }
+            remember { widget.runGlance(context, id) }
+                .collectAsState(null)
+                .takeIf { configIsReady }
+                ?.value?.let { ForEachSize(widget.sizeMode, minSize, it) }
+                ?: IgnoreResult()
+            // The following line ensures that when glanceState is updated, it increases the
+            // Recomposer.changeCount and triggers processEmittableTree.
+            SideEffect { glanceState.value }
         }
     }
 
     override suspend fun processEmittableTree(
         context: Context,
         root: EmittableWithChildren
-    ) {
+    ): Boolean {
+        if (root.shouldIgnoreResult()) return false
         root as RemoteViewsRoot
         val layoutConfig = LayoutConfiguration.load(context, id.appWidgetId)
         val appWidgetManager = context.appWidgetManager
@@ -146,14 +152,19 @@ internal class AppWidgetSession(
             layoutConfig.save()
             Tracing.endGlanceAppWidgetUpdate()
         }
+        return true
     }
 
     override suspend fun processEvent(context: Context, event: Any) {
         when (event) {
             is UpdateGlanceState -> {
                 if (DEBUG) Log.i(TAG, "Received UpdateGlanceState event for session($key)")
-                glanceState.value =
-                    configManager.getValue(context, PreferencesGlanceStateDefinition, key)
+                val newGlanceState = widget.stateDefinition?.let {
+                    configManager.getValue(context, it, key)
+                }
+                Snapshot.withMutableSnapshot {
+                    glanceState.value = newGlanceState
+                }
             }
             is UpdateAppWidgetOptions -> {
                 if (DEBUG) {
@@ -163,15 +174,15 @@ internal class AppWidgetSession(
                             "for session($key)"
                     )
                 }
-                options.value = event.newOptions
+                Snapshot.withMutableSnapshot {
+                    options.value = event.newOptions
+                }
             }
             is RunLambda -> {
-                Log.i(TAG, "Received RunLambda(${event.key}) action for session($key)")
-                lambdas[event.key]?.map { it.block() }
-                    ?: Log.w(
-                        TAG,
-                        "Triggering Action(${event.key}) for session($key) failed"
-                    )
+                if (DEBUG) Log.i(TAG, "Received RunLambda(${event.key}) action for session($key)")
+                Snapshot.withMutableSnapshot {
+                    lambdas[event.key]?.forEach { it.block() }
+                } ?: Log.w(TAG, "Triggering Action(${event.key}) for session($key) failed")
             }
             else -> {
                 throw IllegalArgumentException(
@@ -193,23 +204,11 @@ internal class AppWidgetSession(
         sendEvent(RunLambda(key))
     }
 
-    // Action types that this session supports.
+    // Event types that this session supports.
     @VisibleForTesting
     internal object UpdateGlanceState
     @VisibleForTesting
     internal class UpdateAppWidgetOptions(val newOptions: Bundle)
     @VisibleForTesting
     internal class RunLambda(val key: String)
-
-    private val Context.appWidgetManager: AppWidgetManager
-        get() = this.getSystemService(Context.APPWIDGET_SERVICE) as AppWidgetManager
 }
-
-internal fun createUniqueRemoteUiName(appWidgetId: Int) = "appWidget-$appWidgetId"
-internal fun AppWidgetId.toSessionKey() = createUniqueRemoteUiName(appWidgetId)
-
-/**
- * Maximum depth for a composition. Although there is no hard limit, this should avoid deep
- * recursions, which would create [RemoteViews] too large to be sent.
- */
-private const val MaxComposeTreeDepth = 50

@@ -43,16 +43,16 @@ import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.layout.LayoutInfo
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalFontFamilyResolver
 import androidx.compose.ui.platform.LocalFontLoader
 import androidx.compose.ui.platform.ViewRootForTest
 import androidx.compose.ui.text.font.createFontFamilyResolver
-import androidx.compose.ui.tooling.animation.AnimateXAsStateComposeAnimation
 import androidx.compose.ui.tooling.animation.AnimationSearch
 import androidx.compose.ui.tooling.animation.PreviewAnimationClock
-import androidx.compose.ui.tooling.animation.UnsupportedComposeAnimation
 import androidx.compose.ui.tooling.data.Group
+import androidx.compose.ui.tooling.data.NodeGroup
 import androidx.compose.ui.tooling.data.SourceLocation
 import androidx.compose.ui.tooling.data.UiToolingDataApi
 import androidx.compose.ui.tooling.data.asTree
@@ -64,8 +64,8 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleRegistry
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
-import androidx.lifecycle.ViewTreeLifecycleOwner
-import androidx.lifecycle.ViewTreeViewModelStoreOwner
+import androidx.lifecycle.setViewTreeLifecycleOwner
+import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.SavedStateRegistry
 import androidx.savedstate.SavedStateRegistryController
 import androidx.savedstate.SavedStateRegistryOwner
@@ -91,7 +91,8 @@ data class ViewInfo(
     val lineNumber: Int,
     val bounds: IntRect,
     val location: SourceLocation?,
-    val children: List<ViewInfo>
+    val children: List<ViewInfo>,
+    val layoutInfo: Any?
 ) {
     fun hasBounds(): Boolean = bounds.bottom != 0 && bounds.right != 0
 
@@ -203,6 +204,8 @@ internal class ComposeViewAdapter : FrameLayout {
      */
     private var onDraw = {}
 
+    internal var stitchTrees = true
+
     private val debugBoundsPaint = Paint().apply {
         pathEffect = DashPathEffect(floatArrayOf(5f, 10f, 15f, 20f), 0f)
         style = Paint.Style.STROKE
@@ -223,11 +226,6 @@ internal class ComposeViewAdapter : FrameLayout {
         init(attrs)
     }
 
-    private fun walkTable(viewInfo: ViewInfo, indent: Int = 0) {
-        Log.d(TAG, ("|  ".repeat(indent)) + "|-$viewInfo")
-        viewInfo.children.forEach { walkTable(it, indent + 1) }
-    }
-
     private val Group.fileName: String
         get() = location?.sourceFile ?: ""
 
@@ -244,10 +242,16 @@ internal class ComposeViewAdapter : FrameLayout {
      * Returns true if this [Group] has no source position information and no children
      */
     private fun Group.isNullGroup(): Boolean =
-        hasNullSourcePosition() && children.isEmpty()
+        hasNullSourcePosition() &&
+            children.isEmpty() &&
+            ((this as? NodeGroup)?.node as? LayoutInfo) == null
 
     private fun Group.toViewInfo(): ViewInfo {
-        if (children.size == 1 && hasNullSourcePosition()) {
+        val layoutInfo = ((this as? NodeGroup)?.node as? LayoutInfo)
+
+        if (children.size == 1 &&
+            hasNullSourcePosition() &&
+            layoutInfo == null) {
             // There is no useful information in this intermediate node, remove.
             return children.single().toViewInfo()
         }
@@ -262,7 +266,8 @@ internal class ComposeViewAdapter : FrameLayout {
             location?.lineNumber ?: -1,
             box,
             location,
-            childrenViewInfo
+            childrenViewInfo,
+            layoutInfo
         )
     }
 
@@ -270,12 +275,18 @@ internal class ComposeViewAdapter : FrameLayout {
      * Processes the recorded slot table and re-generates the [viewInfos] attribute.
      */
     private fun processViewInfos() {
-        viewInfos = slotTableRecord.store.map { it.asTree() }.map { it.toViewInfo() }.toList()
+        val newViewInfos = slotTableRecord
+            .store
+            .map { it.asTree().toViewInfo() }
+            .toList()
+
+        viewInfos = if (stitchTrees)
+            stitchTrees(newViewInfos)
+        else newViewInfos
 
         if (debugViewInfos) {
-            viewInfos.forEach {
-                walkTable(it)
-            }
+            val debugString = viewInfos.toDebugString()
+            Log.d(TAG, debugString)
         }
     }
 
@@ -296,75 +307,22 @@ internal class ComposeViewAdapter : FrameLayout {
     }
 
     override fun onAttachedToWindow() {
-        ViewTreeLifecycleOwner.set(composeView.rootView, FakeSavedStateRegistryOwner)
+        composeView.rootView.setViewTreeLifecycleOwner(FakeSavedStateRegistryOwner)
         super.onAttachedToWindow()
     }
 
     /**
      * Finds all animations defined in the Compose tree where the root is the
-     * `@Composable` being previewed. We only return animations defined in the user code, i.e.
-     * the ones we've got source information for.
+     * `@Composable` being previewed.
      */
-    @Suppress("UNCHECKED_CAST")
     private fun findAndTrackAnimations() {
         val slotTrees = slotTableRecord.store.map { it.asTree() }
-        val transitionSearch = AnimationSearch.TransitionSearch { clock.trackTransition(it) }
-        val animatedContentSearch =
-            AnimationSearch.AnimatedContentSearch { clock.trackAnimatedContent(it) }
-        val animatedVisibilitySearch = AnimationSearch.AnimatedVisibilitySearch {
-            clock.trackAnimatedVisibility(it, ::requestLayout)
-        }
-        // All supported animations.
-        fun supportedSearch() = setOf(
-            transitionSearch,
-            animatedVisibilitySearch,
-        )
-
-        fun unsupportedSearch() = if (UnsupportedComposeAnimation.apiAvailable) setOf(
-            animatedContentSearch,
-            AnimationSearch.AnimateContentSizeSearch { clock.trackAnimateContentSize(it) },
-            AnimationSearch.TargetBasedSearch { clock.trackTargetBasedAnimations(it) },
-            AnimationSearch.DecaySearch { clock.trackDecayAnimations(it) },
-            AnimationSearch.InfiniteTransitionSearch { clock.trackInfiniteTransition(it) }
-        ) else emptyList()
-
-        fun animateXAsStateSearch() =
-            if (AnimateXAsStateComposeAnimation.apiAvailable)
-                setOf(AnimationSearch.AnimateXAsStateSearch { clock.trackAnimateXAsState(it) })
-            else emptyList()
-
-        // All unsupported animations, if API is available.
-        val extraSearch = unsupportedSearch() + animateXAsStateSearch()
-
-        // Animations to track in PreviewAnimationClock.
-        val setToTrack = supportedSearch() + extraSearch
-
-        // Animations to search. animatedContentSearch is included even if it's not going to be
-        // tracked as it should be excluded from transitionSearch.
-        val setToSearch = setToTrack + setOf(animatedContentSearch)
-
-        // Check all the slot tables, since some animations might not be present in the same
-        // table as the one containing the `@Composable` being previewed, e.g. when they're
-        // defined using sub-composition.
-        slotTrees.forEach { tree ->
-            val groupsWithLocation = tree.findAll { it.location != null }
-            setToSearch.forEach { it.addAnimations(groupsWithLocation) }
-
-            // Remove all AnimatedVisibility parent transitions from the transitions list,
-            // otherwise we'd duplicate them in the Android Studio Animation Preview because we
-            // will track them separately.
-            transitionSearch.animations.removeAll(animatedVisibilitySearch.animations)
-
-            // Remove all AnimatedContent parent transitions from the transitions list, so we can
-            // ignore these animations while support is not added to Animation Preview.
-            transitionSearch.animations.removeAll(animatedContentSearch.animations)
-        }
-
-        hasAnimations = setToTrack.any { it.hasAnimations() }
-
-        // Make the `PreviewAnimationClock` track all the transitions found.
-        if (::clock.isInitialized) {
-            setToTrack.forEach { it.track() }
+        AnimationSearch(::clock, ::requestLayout).let {
+            it.findAll(slotTrees)
+            hasAnimations = it.hasAnimations
+            if (::clock.isInitialized) {
+                it.trackAll()
+            }
         }
     }
 
@@ -438,7 +396,7 @@ internal class ComposeViewAdapter : FrameLayout {
         invalidate()
     }
 
-    override fun dispatchDraw(canvas: Canvas?) {
+    override fun dispatchDraw(canvas: Canvas) {
         super.dispatchDraw(canvas)
 
         if (forceCompositionInvalidation) invalidateComposition()
@@ -452,7 +410,7 @@ internal class ComposeViewAdapter : FrameLayout {
             .flatMap { listOf(it) + it.allChildren() }
             .forEach {
                 if (it.hasBounds()) {
-                    canvas?.apply {
+                    canvas.apply {
                         val pxBounds = android.graphics.Rect(
                             it.bounds.left,
                             it.bounds.top,
@@ -615,9 +573,9 @@ internal class ComposeViewAdapter : FrameLayout {
 
     private fun init(attrs: AttributeSet) {
         // ComposeView and lifecycle initialization
-        ViewTreeLifecycleOwner.set(this, FakeSavedStateRegistryOwner)
+        setViewTreeLifecycleOwner(FakeSavedStateRegistryOwner)
         setViewTreeSavedStateRegistryOwner(FakeSavedStateRegistryOwner)
-        ViewTreeViewModelStoreOwner.set(this, FakeViewModelStoreOwner)
+        setViewTreeViewModelStoreOwner(FakeViewModelStoreOwner)
         addView(composeView)
 
         val composableName = attrs.getAttributeValue(TOOLS_NS_URI, "composableName") ?: return
@@ -684,24 +642,25 @@ internal class ComposeViewAdapter : FrameLayout {
         override val savedStateRegistry: SavedStateRegistry
             get() = controller.savedStateRegistry
 
-        override fun getLifecycle(): Lifecycle = lifecycleRegistry
+        override val lifecycle: LifecycleRegistry
+            get() = lifecycleRegistry
     }
 
     private val FakeViewModelStoreOwner = object : ViewModelStoreOwner {
-        private val viewModelStore = ViewModelStore()
+        private val vmStore = ViewModelStore()
 
-        override fun getViewModelStore() = viewModelStore
+        override val viewModelStore = vmStore
     }
 
     private val FakeOnBackPressedDispatcherOwner = object : OnBackPressedDispatcherOwner {
-        private val onBackPressedDispatcher = OnBackPressedDispatcher()
+        override val onBackPressedDispatcher = OnBackPressedDispatcher()
 
-        override fun getOnBackPressedDispatcher() = onBackPressedDispatcher
-        override fun getLifecycle() = FakeSavedStateRegistryOwner.lifecycleRegistry
+        override val lifecycle: LifecycleRegistry
+            get() = FakeSavedStateRegistryOwner.lifecycleRegistry
     }
 
     private val FakeActivityResultRegistryOwner = object : ActivityResultRegistryOwner {
-        private val activityResultRegistry = object : ActivityResultRegistry() {
+        override val activityResultRegistry = object : ActivityResultRegistry() {
             override fun <I : Any?, O : Any?> onLaunch(
                 requestCode: Int,
                 contract: ActivityResultContract<I, O>,
@@ -711,7 +670,5 @@ internal class ComposeViewAdapter : FrameLayout {
                 throw IllegalStateException("Calling launch() is not supported in Preview")
             }
         }
-
-        override fun getActivityResultRegistry(): ActivityResultRegistry = activityResultRegistry
     }
 }

@@ -72,10 +72,9 @@ internal fun LazyStaggeredGrid(
         orientation,
         verticalArrangement,
         horizontalArrangement,
-        slotSizesSums,
-        overscrollEffect
+        slotSizesSums
     )
-    val semanticState = rememberLazyStaggeredGridSemanticState(state, itemProvider, reverseLayout)
+    val semanticState = rememberLazyStaggeredGridSemanticState(state, reverseLayout)
 
     ScrollPositionUpdater(itemProvider, state)
 
@@ -101,7 +100,8 @@ internal fun LazyStaggeredGrid(
                 itemProvider = itemProvider,
                 state = semanticState,
                 orientation = orientation,
-                userScrollEnabled = userScrollEnabled
+                userScrollEnabled = userScrollEnabled,
+                reverseScrolling = reverseLayout
             ),
         prefetchState = state.prefetchState,
         itemProvider = itemProvider,

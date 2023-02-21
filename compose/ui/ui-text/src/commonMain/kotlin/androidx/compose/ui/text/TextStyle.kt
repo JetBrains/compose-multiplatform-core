@@ -37,6 +37,7 @@ import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.text.style.TextForegroundStyle
 import androidx.compose.ui.text.style.TextGeometricTransform
 import androidx.compose.ui.text.style.TextIndent
+import androidx.compose.ui.text.style.TextMotion
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.TextUnit
 
@@ -71,36 +72,12 @@ class TextStyle internal constructor(
         )
     )
 
-    /**
-     * Styling configuration for a `Text`.
-     *
-     * @sample androidx.compose.ui.text.samples.TextStyleSample
-     *
-     * @param color The text color.
-     * @param fontSize The size of glyphs to use when painting the text. This
-     * may be [TextUnit.Unspecified] for inheriting from another [TextStyle].
-     * @param fontWeight The typeface thickness to use when painting the text (e.g., bold).
-     * @param fontStyle The typeface variant to use when drawing the letters (e.g., italic).
-     * @param fontSynthesis Whether to synthesize font weight and/or style when the requested weight
-     * or style cannot be found in the provided font family.
-     * @param fontFamily The font family to be used when rendering the text.
-     * @param fontFeatureSettings The advanced typography settings provided by font. The format is
-     * the same as the CSS font-feature-settings attribute:
-     * https://www.w3.org/TR/css-fonts-3/#font-feature-settings-prop
-     * @param letterSpacing The amount of space to add between each letter.
-     * @param baselineShift The amount by which the text is shifted up from the current baseline.
-     * @param textGeometricTransform The geometric transformation applied the text.
-     * @param localeList The locale list used to select region-specific glyphs.
-     * @param background The background color for the text.
-     * @param textDecoration The decorations to paint on the text (e.g., an underline).
-     * @param shadow The shadow effect applied on the text.
-     * @param textAlign The alignment of the text within the lines of the paragraph.
-     * @param textDirection The algorithm to be used to resolve the final text and paragraph
-     * direction: Left To Right or Right To Left. If no value is provided the system will use the
-     * [LayoutDirection] as the primary signal.
-     * @param lineHeight Line height for the [Paragraph] in [TextUnit] unit, e.g. SP or EM.
-     * @param textIndent The indentation of the paragraph.
-     */
+    @Deprecated(
+        "TextStyle constructors that do not take new stable parameters " +
+            "like LineHeightStyle, LineBreak, Hyphens are deprecated. Please use the new stable " +
+            "constructor.",
+        level = DeprecationLevel.HIDDEN
+    )
     @OptIn(ExperimentalTextApi::class)
     constructor(
         color: Color = Color.Unspecified,
@@ -137,7 +114,8 @@ class TextStyle internal constructor(
             background = background,
             textDecoration = textDecoration,
             shadow = shadow,
-            platformStyle = null
+            platformStyle = null,
+            drawStyle = null
         ),
         ParagraphStyle(
             textAlign = textAlign,
@@ -147,47 +125,18 @@ class TextStyle internal constructor(
             platformStyle = null,
             lineHeightStyle = null,
             lineBreak = null,
-            hyphens = null
+            hyphens = null,
+            textMotion = null
         ),
         platformStyle = null
     )
 
-    /**
-     * Styling configuration for a `Text`.
-     *
-     * @sample androidx.compose.ui.text.samples.TextStyleSample
-     *
-     * @param color The text color.
-     * @param fontSize The size of glyphs to use when painting the text. This
-     * may be [TextUnit.Unspecified] for inheriting from another [TextStyle].
-     * @param fontWeight The typeface thickness to use when painting the text (e.g., bold).
-     * @param fontStyle The typeface variant to use when drawing the letters (e.g., italic).
-     * @param fontSynthesis Whether to synthesize font weight and/or style when the requested weight
-     * or style cannot be found in the provided font family.
-     * @param fontFamily The font family to be used when rendering the text.
-     * @param fontFeatureSettings The advanced typography settings provided by font. The format is
-     * the same as the CSS font-feature-settings attribute:
-     * https://www.w3.org/TR/css-fonts-3/#font-feature-settings-prop
-     * @param letterSpacing The amount of space to add between each letter.
-     * @param baselineShift The amount by which the text is shifted up from the current baseline.
-     * @param textGeometricTransform The geometric transformation applied the text.
-     * @param localeList The locale list used to select region-specific glyphs.
-     * @param background The background color for the text.
-     * @param textDecoration The decorations to paint on the text (e.g., an underline).
-     * @param shadow The shadow effect applied on the text.
-     * @param textAlign The alignment of the text within the lines of the paragraph.
-     * @param textDirection The algorithm to be used to resolve the final text and paragraph
-     * direction: Left To Right or Right To Left. If no value is provided the system will use the
-     * [LayoutDirection] as the primary signal.
-     * @param lineHeight Line height for the [Paragraph] in [TextUnit] unit, e.g. SP or EM.
-     * @param textIndent The indentation of the paragraph.
-     * @param platformStyle Platform specific [TextStyle] parameters.
-     * @param lineHeightStyle the configuration for line height such as vertical alignment of the
-     * line, whether to apply additional space as a result of line height to top of first line top
-     * and bottom of last line. The configuration is applied only when a [lineHeight] is defined.
-     * When null, [LineHeightStyle.Default] is used.
-     */
-    // TODO(b/246715337, b/245939557): Deprecate this when Hyphens and LineBreak are stable
+    @Deprecated(
+        "TextStyle constructors that do not take new stable parameters " +
+            "like LineHeightStyle, LineBreak, Hyphens are deprecated. Please use the new stable " +
+            "constructor.",
+        level = DeprecationLevel.HIDDEN
+    )
     @OptIn(ExperimentalTextApi::class)
     constructor(
         color: Color = Color.Unspecified,
@@ -226,7 +175,8 @@ class TextStyle internal constructor(
             background = background,
             textDecoration = textDecoration,
             shadow = shadow,
-            platformStyle = platformStyle?.spanStyle
+            platformStyle = platformStyle?.spanStyle,
+            drawStyle = null
         ),
         ParagraphStyle(
             textAlign = textAlign,
@@ -236,7 +186,99 @@ class TextStyle internal constructor(
             platformStyle = platformStyle?.paragraphStyle,
             lineHeightStyle = lineHeightStyle,
             lineBreak = null,
-            hyphens = null
+            hyphens = null,
+            textMotion = null
+        ),
+        platformStyle = platformStyle
+    )
+
+    /**
+     * Styling configuration for a `Text`.
+     *
+     * @sample androidx.compose.ui.text.samples.TextStyleSample
+     *
+     * @param color The text color.
+     * @param fontSize The size of glyphs to use when painting the text. This
+     * may be [TextUnit.Unspecified] for inheriting from another [TextStyle].
+     * @param fontWeight The typeface thickness to use when painting the text (e.g., bold).
+     * @param fontStyle The typeface variant to use when drawing the letters (e.g., italic).
+     * @param fontSynthesis Whether to synthesize font weight and/or style when the requested weight
+     * or style cannot be found in the provided font family.
+     * @param fontFamily The font family to be used when rendering the text.
+     * @param fontFeatureSettings The advanced typography settings provided by font. The format is
+     * the same as the CSS font-feature-settings attribute:
+     * https://www.w3.org/TR/css-fonts-3/#font-feature-settings-prop
+     * @param letterSpacing The amount of space to add between each letter.
+     * @param baselineShift The amount by which the text is shifted up from the current baseline.
+     * @param textGeometricTransform The geometric transformation applied the text.
+     * @param localeList The locale list used to select region-specific glyphs.
+     * @param background The background color for the text.
+     * @param textDecoration The decorations to paint on the text (e.g., an underline).
+     * @param shadow The shadow effect applied on the text.
+     * @param textAlign The alignment of the text within the lines of the paragraph.
+     * @param textDirection The algorithm to be used to resolve the final text and paragraph
+     * direction: Left To Right or Right To Left. If no value is provided the system will use the
+     * [LayoutDirection] as the primary signal.
+     * @param lineHeight Line height for the [Paragraph] in [TextUnit] unit, e.g. SP or EM.
+     * @param textIndent The indentation of the paragraph.
+     * @param platformStyle Platform specific [TextStyle] parameters.
+     * @param lineHeightStyle the configuration for line height such as vertical alignment of the
+     * line, whether to apply additional space as a result of line height to top of first line top
+     * and bottom of last line. The configuration is applied only when a [lineHeight] is defined.
+     * When null, [LineHeightStyle.Default] is used.
+     * @param lineBreak The line breaking configuration for the text.
+     * @param hyphens The configuration of hyphenation.
+     */
+    constructor(
+        color: Color = Color.Unspecified,
+        fontSize: TextUnit = TextUnit.Unspecified,
+        fontWeight: FontWeight? = null,
+        fontStyle: FontStyle? = null,
+        fontSynthesis: FontSynthesis? = null,
+        fontFamily: FontFamily? = null,
+        fontFeatureSettings: String? = null,
+        letterSpacing: TextUnit = TextUnit.Unspecified,
+        baselineShift: BaselineShift? = null,
+        textGeometricTransform: TextGeometricTransform? = null,
+        localeList: LocaleList? = null,
+        background: Color = Color.Unspecified,
+        textDecoration: TextDecoration? = null,
+        shadow: Shadow? = null,
+        textAlign: TextAlign? = null,
+        textDirection: TextDirection? = null,
+        lineHeight: TextUnit = TextUnit.Unspecified,
+        textIndent: TextIndent? = null,
+        platformStyle: PlatformTextStyle? = null,
+        lineHeightStyle: LineHeightStyle? = null,
+        lineBreak: LineBreak? = null,
+        hyphens: Hyphens? = null
+    ) : this(
+        SpanStyle(
+            color = color,
+            fontSize = fontSize,
+            fontWeight = fontWeight,
+            fontStyle = fontStyle,
+            fontSynthesis = fontSynthesis,
+            fontFamily = fontFamily,
+            fontFeatureSettings = fontFeatureSettings,
+            letterSpacing = letterSpacing,
+            baselineShift = baselineShift,
+            textGeometricTransform = textGeometricTransform,
+            localeList = localeList,
+            background = background,
+            textDecoration = textDecoration,
+            shadow = shadow,
+            platformStyle = platformStyle?.spanStyle
+        ),
+        ParagraphStyle(
+            textAlign = textAlign,
+            textDirection = textDirection,
+            lineHeight = lineHeight,
+            textIndent = textIndent,
+            platformStyle = platformStyle?.paragraphStyle,
+            lineHeightStyle = lineHeightStyle,
+            lineBreak = lineBreak,
+            hyphens = hyphens
         ),
         platformStyle = platformStyle
     )
@@ -279,6 +321,7 @@ class TextStyle internal constructor(
      * When null, [LineHeightStyle.Default] is used.
      * @param lineBreak The line breaking configuration for the text.
      * @param hyphens The configuration of hyphenation.
+     * @param textMotion Text character placement, whether to optimize for animated or static text.
      */
     @ExperimentalTextApi
     constructor(
@@ -304,7 +347,8 @@ class TextStyle internal constructor(
         platformStyle: PlatformTextStyle? = null,
         lineHeightStyle: LineHeightStyle? = null,
         lineBreak: LineBreak? = null,
-        hyphens: Hyphens? = null
+        hyphens: Hyphens? = null,
+        textMotion: TextMotion? = null,
     ) : this(
         SpanStyle(
             color = color,
@@ -332,7 +376,8 @@ class TextStyle internal constructor(
             platformStyle = platformStyle?.paragraphStyle,
             lineHeightStyle = lineHeightStyle,
             lineBreak = lineBreak,
-            hyphens = hyphens
+            hyphens = hyphens,
+            textMotion = textMotion
         ),
         platformStyle = platformStyle
     )
@@ -378,6 +423,7 @@ class TextStyle internal constructor(
      * and bottom of last line. The configuration is applied only when a [lineHeight] is defined.
      * @param lineBreak The line breaking configuration for the text.
      * @param hyphens The configuration of hyphenation.
+     * @param textMotion Text character placement, whether to optimize for animated or static text.
      */
     @ExperimentalTextApi
     constructor(
@@ -404,7 +450,8 @@ class TextStyle internal constructor(
         platformStyle: PlatformTextStyle? = null,
         lineHeightStyle: LineHeightStyle? = null,
         lineBreak: LineBreak? = null,
-        hyphens: Hyphens? = null
+        hyphens: Hyphens? = null,
+        textMotion: TextMotion? = null
     ) : this(
         SpanStyle(
             brush = brush,
@@ -433,7 +480,8 @@ class TextStyle internal constructor(
             platformStyle = platformStyle?.paragraphStyle,
             lineHeightStyle = lineHeightStyle,
             lineBreak = lineBreak,
-            hyphens = hyphens
+            hyphens = hyphens,
+            textMotion = textMotion
         ),
         platformStyle = platformStyle
     )
@@ -506,6 +554,12 @@ class TextStyle internal constructor(
     @Stable
     operator fun plus(other: SpanStyle): TextStyle = this.merge(other)
 
+    @Deprecated(
+        "TextStyle copy constructors that do not take new stable parameters " +
+            "like LineHeightStyle, LineBreak, Hyphens are deprecated. Please use the new stable " +
+            "copy constructor.",
+        level = DeprecationLevel.HIDDEN
+    )
     @OptIn(ExperimentalTextApi::class)
     fun copy(
         color: Color = this.spanStyle.color,
@@ -558,13 +612,19 @@ class TextStyle internal constructor(
                 platformStyle = this.paragraphStyle.platformStyle,
                 lineHeightStyle = this.lineHeightStyle,
                 lineBreak = this.lineBreak,
-                hyphens = this.hyphens
+                hyphens = this.hyphens,
+                textMotion = this.textMotion
             ),
             platformStyle = this.platformStyle
         )
     }
 
-    // TODO(b/246715337, b/245939557): Deprecate this when Hyphens and LineBreak are stable
+    @Deprecated(
+        "TextStyle copy constructors that do not take new stable parameters " +
+            "like LineHeightStyle, LineBreak, Hyphens are deprecated. Please use the new stable " +
+            "copy constructor.",
+        level = DeprecationLevel.HIDDEN
+    )
     @OptIn(ExperimentalTextApi::class)
     fun copy(
         color: Color = this.spanStyle.color,
@@ -608,7 +668,8 @@ class TextStyle internal constructor(
                 background = background,
                 textDecoration = textDecoration,
                 shadow = shadow,
-                platformStyle = platformStyle?.spanStyle
+                platformStyle = platformStyle?.spanStyle,
+                drawStyle = this.spanStyle.drawStyle
             ),
             paragraphStyle = ParagraphStyle(
                 textAlign = textAlign,
@@ -618,7 +679,71 @@ class TextStyle internal constructor(
                 platformStyle = platformStyle?.paragraphStyle,
                 lineHeightStyle = lineHeightStyle,
                 lineBreak = this.lineBreak,
-                hyphens = this.hyphens
+                hyphens = this.hyphens,
+                textMotion = this.textMotion
+            ),
+            platformStyle = platformStyle
+        )
+    }
+
+    @OptIn(ExperimentalTextApi::class)
+    fun copy(
+        color: Color = this.spanStyle.color,
+        fontSize: TextUnit = this.spanStyle.fontSize,
+        fontWeight: FontWeight? = this.spanStyle.fontWeight,
+        fontStyle: FontStyle? = this.spanStyle.fontStyle,
+        fontSynthesis: FontSynthesis? = this.spanStyle.fontSynthesis,
+        fontFamily: FontFamily? = this.spanStyle.fontFamily,
+        fontFeatureSettings: String? = this.spanStyle.fontFeatureSettings,
+        letterSpacing: TextUnit = this.spanStyle.letterSpacing,
+        baselineShift: BaselineShift? = this.spanStyle.baselineShift,
+        textGeometricTransform: TextGeometricTransform? = this.spanStyle.textGeometricTransform,
+        localeList: LocaleList? = this.spanStyle.localeList,
+        background: Color = this.spanStyle.background,
+        textDecoration: TextDecoration? = this.spanStyle.textDecoration,
+        shadow: Shadow? = this.spanStyle.shadow,
+        textAlign: TextAlign? = this.paragraphStyle.textAlign,
+        textDirection: TextDirection? = this.paragraphStyle.textDirection,
+        lineHeight: TextUnit = this.paragraphStyle.lineHeight,
+        textIndent: TextIndent? = this.paragraphStyle.textIndent,
+        platformStyle: PlatformTextStyle? = this.platformStyle,
+        lineHeightStyle: LineHeightStyle? = this.paragraphStyle.lineHeightStyle,
+        lineBreak: LineBreak? = this.paragraphStyle.lineBreak,
+        hyphens: Hyphens? = this.paragraphStyle.hyphens
+    ): TextStyle {
+        return TextStyle(
+            spanStyle = SpanStyle(
+                textForegroundStyle = if (color == this.spanStyle.color) {
+                    spanStyle.textForegroundStyle
+                } else {
+                    TextForegroundStyle.from(color)
+                },
+                fontSize = fontSize,
+                fontWeight = fontWeight,
+                fontStyle = fontStyle,
+                fontSynthesis = fontSynthesis,
+                fontFamily = fontFamily,
+                fontFeatureSettings = fontFeatureSettings,
+                letterSpacing = letterSpacing,
+                baselineShift = baselineShift,
+                textGeometricTransform = textGeometricTransform,
+                localeList = localeList,
+                background = background,
+                textDecoration = textDecoration,
+                shadow = shadow,
+                platformStyle = platformStyle?.spanStyle,
+                drawStyle = this.drawStyle
+            ),
+            paragraphStyle = ParagraphStyle(
+                textAlign = textAlign,
+                textDirection = textDirection,
+                lineHeight = lineHeight,
+                textIndent = textIndent,
+                platformStyle = platformStyle?.paragraphStyle,
+                lineHeightStyle = lineHeightStyle,
+                lineBreak = lineBreak,
+                hyphens = hyphens,
+                textMotion = this.textMotion
             ),
             platformStyle = platformStyle
         )
@@ -648,7 +773,8 @@ class TextStyle internal constructor(
         platformStyle: PlatformTextStyle? = this.platformStyle,
         lineHeightStyle: LineHeightStyle? = this.paragraphStyle.lineHeightStyle,
         lineBreak: LineBreak? = this.paragraphStyle.lineBreak,
-        hyphens: Hyphens? = this.paragraphStyle.hyphens
+        hyphens: Hyphens? = this.paragraphStyle.hyphens,
+        textMotion: TextMotion? = this.paragraphStyle.textMotion,
     ): TextStyle {
         return TextStyle(
             spanStyle = SpanStyle(
@@ -681,7 +807,8 @@ class TextStyle internal constructor(
                 platformStyle = platformStyle?.paragraphStyle,
                 lineHeightStyle = lineHeightStyle,
                 lineBreak = lineBreak,
-                hyphens = hyphens
+                hyphens = hyphens,
+                textMotion = textMotion
             ),
             platformStyle = platformStyle
         )
@@ -712,7 +839,8 @@ class TextStyle internal constructor(
         platformStyle: PlatformTextStyle? = this.platformStyle,
         lineHeightStyle: LineHeightStyle? = this.paragraphStyle.lineHeightStyle,
         lineBreak: LineBreak? = this.paragraphStyle.lineBreak,
-        hyphens: Hyphens? = this.paragraphStyle.hyphens
+        hyphens: Hyphens? = this.paragraphStyle.hyphens,
+        textMotion: TextMotion? = this.paragraphStyle.textMotion,
     ): TextStyle {
         return TextStyle(
             spanStyle = SpanStyle(
@@ -742,7 +870,8 @@ class TextStyle internal constructor(
                 platformStyle = platformStyle?.paragraphStyle,
                 lineHeightStyle = lineHeightStyle,
                 lineBreak = lineBreak,
-                hyphens = hyphens
+                hyphens = hyphens,
+                textMotion = textMotion
             ),
             platformStyle = platformStyle
         )
@@ -883,18 +1012,20 @@ class TextStyle internal constructor(
     /**
      * The hyphens configuration of the paragraph.
      */
-    @ExperimentalTextApi
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-    @get:ExperimentalTextApi
     val hyphens: Hyphens? get() = this.paragraphStyle.hyphens
 
     /**
      * The line breaking configuration of the paragraph.
      */
+    val lineBreak: LineBreak? get() = this.paragraphStyle.lineBreak
+
+    /**
+     * Text character placement configuration, whether to optimize for animated or static text.
+     */
     @ExperimentalTextApi
     @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
     @get:ExperimentalTextApi
-    val lineBreak: LineBreak? get() = this.paragraphStyle.lineBreak
+    val textMotion: TextMotion? get() = this.paragraphStyle.textMotion
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -966,7 +1097,8 @@ class TextStyle internal constructor(
             "platformStyle=$platformStyle, " +
             "lineHeightStyle=$lineHeightStyle, " +
             "lineBreak=$lineBreak, " +
-            "hyphens=$hyphens" +
+            "hyphens=$hyphens, " +
+            "textMotion=$textMotion" +
             ")"
     }
 

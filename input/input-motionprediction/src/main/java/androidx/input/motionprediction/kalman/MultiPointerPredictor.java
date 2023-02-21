@@ -36,7 +36,7 @@ public class MultiPointerPredictor implements KalmanPredictor {
     private static final String TAG = "MultiPointerPredictor";
     private static final boolean DEBUG_PREDICTION = Log.isLoggable(TAG, Log.DEBUG);
 
-    private SparseArray<SinglePointerPredictor> mPredictorMap = new SparseArray<>();
+    private final SparseArray<SinglePointerPredictor> mPredictorMap = new SparseArray<>();
     private int mPredictionTargetMs = 0;
     private int mReportRateMs = 0;
 
@@ -117,7 +117,8 @@ public class MultiPointerPredictor implements KalmanPredictor {
         final int pointerCount = mPredictorMap.size();
         // Shortcut for likely case where only zero or one pointer is on the screen
         // this logic exists only to make sure logic when one pointer is on screen then
-        // there is no performance degradation of using MultiPointerPredictor vs KalmanInkPredictor
+        // there is no performance degradation of using MultiPointerPredictor vs
+        // SinglePointerPredictor
         // TODO: verify performance is not degraded by removing this shortcut logic.
         if (pointerCount == 0) {
             if (DEBUG_PREDICTION) {

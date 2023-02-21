@@ -28,6 +28,7 @@ import androidx.compose.runtime.State
 import androidx.compose.ui.tooling.data.CallGroup
 import androidx.compose.ui.tooling.data.Group
 import androidx.compose.ui.tooling.data.UiToolingDataApi
+import androidx.compose.ui.tooling.findAll
 import androidx.compose.ui.tooling.firstOrNull
 import kotlin.reflect.KClass
 import kotlin.reflect.safeCast
@@ -37,6 +38,7 @@ private const val ANIMATED_CONTENT = "AnimatedContent"
 private const val ANIMATED_VISIBILITY = "AnimatedVisibility"
 private const val ANIMATE_VALUE_AS_STATE = "animateValueAsState"
 private const val REMEMBER = "remember"
+private const val REMEMBER_INFINITE_TRANSITION = "rememberInfiniteTransition"
 private const val REMEMBER_UPDATED_STATE = "rememberUpdatedState"
 private const val SIZE_ANIMATION_MODIFIER = "androidx.compose.animation.SizeAnimationModifier"
 
@@ -56,9 +58,102 @@ private inline fun <reified T> Collection<Group>.findRememberedData(): List<T> {
     }
 }
 
+@OptIn(UiToolingDataApi::class)
+private inline fun <reified T> Group.findData(includeGrandchildren: Boolean = false): T? {
+    // Search in self data and children data
+    val dataToSearch = data + children.let {
+        if (includeGrandchildren) (it + it.flatMap { child -> child.children }) else it
+    }.flatMap { it.data }
+    return dataToSearch.firstOrNull { data ->
+        data is T
+    } as? T
+}
+
 /** Contains tree parsers for different animation types. */
 @OptIn(UiToolingDataApi::class)
-internal class AnimationSearch {
+internal class AnimationSearch(
+    private val clock: () -> PreviewAnimationClock,
+    private val onSeek: () -> Unit
+) {
+    private val transitionSearch = TransitionSearch { clock().trackTransition(it) }
+    private val animatedContentSearch =
+        AnimatedContentSearch { clock().trackAnimatedContent(it) }
+    private val animatedVisibilitySearch = AnimatedVisibilitySearch {
+        clock().trackAnimatedVisibility(it, onSeek)
+    }
+
+    private fun animateXAsStateSearch() =
+        if (AnimateXAsStateComposeAnimation.apiAvailable)
+            setOf(AnimateXAsStateSearch { clock().trackAnimateXAsState(it) })
+        else emptyList()
+
+    private fun infiniteTransitionSearch() =
+        if (InfiniteTransitionComposeAnimation.apiAvailable)
+            setOf(InfiniteTransitionSearch {
+                clock().trackInfiniteTransition(it)
+            })
+        else emptySet()
+
+    /** All supported animations. */
+    private fun supportedSearch() = setOf(
+        transitionSearch,
+        animatedVisibilitySearch,
+    ) + animateXAsStateSearch() + infiniteTransitionSearch() +
+        (if (AnimatedContentComposeAnimation.apiAvailable)
+            setOf(animatedContentSearch) else emptySet())
+
+    private fun unsupportedSearch() = if (UnsupportedComposeAnimation.apiAvailable) setOf(
+        AnimateContentSizeSearch { clock().trackAnimateContentSize(it) },
+        TargetBasedSearch { clock().trackTargetBasedAnimations(it) },
+        DecaySearch { clock().trackDecayAnimations(it) }
+    ) else emptyList()
+
+    /** All supported animations. */
+    private val supportedSearch = supportedSearch()
+
+    /** Animations to track in PreviewAnimationClock. */
+    private val setToTrack = supportedSearch + unsupportedSearch()
+
+    /**
+     * Animations to search. animatedContentSearch is included even if it's not going to be
+     * tracked as it should be excluded from transitionSearch.
+     */
+    private val setToSearch = setToTrack + setOf(animatedContentSearch)
+
+    /**
+     * If non of supported animations are detected, unsupported animations should not be
+     * available either.
+     */
+    val hasAnimations: Boolean
+        get() = supportedSearch.any { it.hasAnimations() }
+
+    /**
+     * Finds all animations defined in the Compose tree where the root is the
+     * `@Composable` being previewed.
+     */
+    fun findAll(slotTrees: Collection<Group>) {
+        // Check all the slot tables, since some animations might not be present in the same
+        // table as the one containing the `@Composable` being previewed, e.g. when they're
+        // defined using sub-composition.
+        slotTrees.forEach { tree ->
+            val groupsWithLocation = tree.findAll { it.location != null }
+            setToSearch.forEach { it.addAnimations(groupsWithLocation) }
+            // Remove all AnimatedVisibility parent transitions from the transitions list,
+            // otherwise we'd duplicate them in the Android Studio Animation Preview because we
+            // will track them separately.
+            transitionSearch.animations.removeAll(animatedVisibilitySearch.animations)
+            // Remove all AnimatedContent parent transitions from the transitions list, so we can
+            // ignore these animations while support is not added to Animation Preview.
+            transitionSearch.animations.removeAll(animatedContentSearch.animations)
+        }
+    }
+
+    /** Make the [clock] track all the animations found. */
+    fun trackAll() {
+        if (hasAnimations) {
+            setToTrack.forEach { it.track() }
+        }
+    }
 
     /** Search for animations with type [T]. */
     open class Search<T : Any>(private val trackAnimation: (T) -> Unit) {
@@ -96,8 +191,39 @@ internal class AnimationSearch {
     class DecaySearch(trackAnimation: (DecayAnimation<*, *>) -> Unit) :
         RememberSearch<DecayAnimation<*, *>>(DecayAnimation::class, trackAnimation)
 
-    class InfiniteTransitionSearch(trackAnimation: (InfiniteTransition) -> Unit) :
-        RememberSearch<InfiniteTransition>(InfiniteTransition::class, trackAnimation)
+    data class InfiniteTransitionSearchInfo(
+        val infiniteTransition: InfiniteTransition,
+        val toolingState: ToolingState<Long>
+    )
+
+    class InfiniteTransitionSearch(trackAnimation: (InfiniteTransitionSearchInfo) -> Unit) :
+        Search<InfiniteTransitionSearchInfo>(trackAnimation) {
+
+        override fun addAnimations(groupsWithLocation: Collection<Group>) {
+            animations.addAll(findAnimations(groupsWithLocation))
+        }
+
+        private fun findAnimations(groupsWithLocation: Collection<Group>):
+            List<InfiniteTransitionSearchInfo> {
+            val groups =
+                groupsWithLocation.filter { group -> group.name == REMEMBER_INFINITE_TRANSITION }
+                    .filterIsInstance<CallGroup>()
+
+            return groups.mapNotNull {
+                val infiniteTransition = it.findData<InfiniteTransition>()
+                val toolingOverride = it.findData<MutableState<State<Long>?>>(true)
+                if (infiniteTransition != null && toolingOverride != null) {
+                    if (toolingOverride.value == null) {
+                        toolingOverride.value = ToolingState(0L)
+                    }
+                    InfiniteTransitionSearchInfo(
+                        infiniteTransition,
+                        toolingOverride.value as ToolingState<Long>
+                    )
+                } else null
+            }
+        }
+    }
 
     data class AnimateXAsStateSearchInfo<T, V : AnimationVector>(
         val animatable: Animatable<T, V>,

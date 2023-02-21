@@ -24,6 +24,7 @@ import androidx.room.SkipQueryVerification
 import androidx.room.Transaction
 import androidx.room.Update
 import androidx.room.Upsert
+import androidx.room.compiler.codegen.CodeLanguage
 import androidx.room.compiler.processing.XConstructorElement
 import androidx.room.compiler.processing.XMethodElement
 import androidx.room.compiler.processing.XType
@@ -92,6 +93,12 @@ class DaoProcessor(
                         method,
                         ProcessorErrors.JVM_NAME_ON_OVERRIDDEN_METHOD
                     )
+                }
+                if (
+                    context.codeLanguage == CodeLanguage.KOTLIN &&
+                    method.isKotlinPropertyMethod()
+                ) {
+                    context.logger.e(method, ProcessorErrors.KOTLIN_PROPERTY_OVERRIDE)
                 }
                 if (method.hasAnnotation(Query::class)) {
                     Query::class
@@ -223,9 +230,8 @@ class DaoProcessor(
             null
         }
 
-        val type = declaredType.typeName
         context.checker.notUnbound(
-            type, element,
+            declaredType, element,
             ProcessorErrors.CANNOT_USE_UNBOUND_GENERICS_IN_DAO_CLASSES
         )
 
@@ -256,7 +262,7 @@ class DaoProcessor(
             context.logger.e(
                 element,
                 ProcessorErrors.daoMustHaveMatchingConstructor(
-                    element.qualifiedName, dbType.typeName.toString()
+                    element.qualifiedName, dbType.asTypeName().toString(context.codeLanguage)
                 )
             )
         }

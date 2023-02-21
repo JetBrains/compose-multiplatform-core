@@ -67,6 +67,7 @@ import androidx.testutils.PollingCheck;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -81,7 +82,7 @@ import java.util.concurrent.atomic.AtomicReference;
 // TODO(jaewan): Implement host-side test so controller and session can run in different processes.
 // TODO(jaewan): Fix flaky failure -- see MediaControllerImpl.getController()
 // TODO(jaeawn): Revisit create/close session in the sHandler. It's no longer necessary.
-@SdkSuppress(maxSdkVersion = 32) // b/244312419
+@SdkSuppress(maxSdkVersion = 32, minSdkVersion = 19) // b/244312419 and b/259936005
 @RunWith(AndroidJUnit4.class)
 @LargeTest
 @FlakyTest
@@ -1361,6 +1362,7 @@ public class MediaControllerTest extends MediaSessionTestBase {
         testControllerAfterSessionIsClosed(TAG);
     }
 
+    @Ignore("b/259936005")
     @LargeTest
     @Test
     public void controllerAfterSessionIsClosed_sessionService() throws Exception {

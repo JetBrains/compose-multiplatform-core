@@ -34,6 +34,19 @@ public class GetPasswordOptionJavaTest {
         GetPasswordOption option = new GetPasswordOption();
 
         assertThat(option.getType()).isEqualTo(PasswordCredential.TYPE_PASSWORD_CREDENTIAL);
-        assertThat(TestUtilsKt.equals(option.getData(), Bundle.EMPTY)).isTrue();
+        assertThat(TestUtilsKt.equals(option.getRequestData(), Bundle.EMPTY)).isTrue();
+        assertThat(TestUtilsKt.equals(option.getRequestData(), Bundle.EMPTY)).isTrue();
+        assertThat(option.isSystemProviderRequired()).isFalse();
+    }
+
+    @Test
+    public void frameworkConversion_success() {
+        GetPasswordOption option = new GetPasswordOption();
+
+        CredentialOption convertedOption = CredentialOption.createFrom(
+                option.getType(), option.getRequestData(), option.getCandidateQueryData(),
+                option.isSystemProviderRequired());
+
+        assertThat(convertedOption).isInstanceOf(GetPasswordOption.class);
     }
 }

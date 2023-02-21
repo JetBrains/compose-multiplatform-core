@@ -18,68 +18,23 @@ package androidx.constraintlayout.compose
 
 import androidx.annotation.FloatRange
 import androidx.annotation.IntRange
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.RememberObserver
-import androidx.compose.runtime.currentRecomposeScope
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.snapshots.SnapshotStateObserver
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.core.parser.CLArray
 import androidx.constraintlayout.core.parser.CLContainer
 import androidx.constraintlayout.core.parser.CLNumber
 import androidx.constraintlayout.core.parser.CLObject
 import androidx.constraintlayout.core.parser.CLString
-import androidx.constraintlayout.core.state.CorePixelDp
 import kotlin.properties.ObservableProperty
 import kotlin.reflect.KProperty
 
 @ExperimentalMotionApi
-@Composable
 fun Transition(
     from: String = "start",
     to: String = "end",
     transitionContent: TransitionScope.() -> Unit
 ): Transition {
-    val dpToPixel = with(LocalDensity.current) { 1.dp.toPx() }
-    val transitionScope = remember(from, to) { TransitionScope(from, to) }
-    val snapshotObserver = remember {
-        // We use a Snapshot observer to know when state within the DSL has changed and recompose
-        // the transition object
-        SnapshotStateObserver {
-            it()
-        }
-    }
-    remember {
-        object : RememberObserver {
-            override fun onAbandoned() {
-                // TODO: Investigate if we need to do something here
-            }
-
-            override fun onForgotten() {
-                snapshotObserver.stop()
-                snapshotObserver.clear()
-            }
-
-            override fun onRemembered() {
-                snapshotObserver.start()
-            }
-        }
-    }
-    snapshotObserver.observeReads(currentRecomposeScope, {
-        it.invalidate()
-    }) {
-        transitionScope.reset()
-        // Observe state changes within the DSL, to know when to invalidate and update the
-        // Transition
-        transitionScope.transitionContent()
-    }
-    return remember {
-        TransitionImpl(
-            transitionScope.getObject(),
-            CorePixelDp { dpValue -> dpValue * dpToPixel }
-        )
-    }
+    val transitionScope = TransitionScope(from, to)
+    transitionScope.transitionContent()
+    return TransitionImpl(transitionScope.getObject())
 }
 
 @ExperimentalMotionApi
@@ -446,6 +401,8 @@ class Arc internal constructor(val name: String) {
         val StartVertical = Arc("startVertical")
         val StartHorizontal = Arc("startHorizontal")
         val Flip = Arc("flip")
+        val Below = Arc("below")
+        val Above = Arc("above")
     }
 }
 

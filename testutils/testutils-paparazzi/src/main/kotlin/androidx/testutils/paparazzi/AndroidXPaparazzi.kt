@@ -23,13 +23,22 @@ import com.android.ide.common.rendering.api.SessionParams.RenderingMode
 import java.io.File
 
 /**
- * Creates a [Paparazzi] test rule configured from system properties for AndroidX tests.
+ * Creates a [Paparazzi] test rule configured from system properties for AndroidX tests with the
+ * `AndroidXPaparazziPlugin` Gradle plugin applied.
+ *
+ * Golden images used with this framework are expected to have a one-to-one relationship to test
+ * functions. This helps ensure isolation between test functions and facilitates updating golden
+ * images programmatically via the `:updateGolden` Gradle task or CI.
+ *
+ * To this end, golden images are named by the qualified name of their test function, instead of
+ * a secondary identifier. Additionally, the returned [Paparazzi] instance will enforce a limit of
+ * one snapshot per test function.
  */
 fun androidxPaparazzi(
     deviceConfig: DeviceConfig = DeviceConfig.PIXEL_6.copy(softButtons = false),
     theme: String = "android:Theme.Material.NoActionBar.Fullscreen",
     renderingMode: RenderingMode = RenderingMode.SHRINK,
-    imageDiffer: ImageDiffer = ImageDiffer.PixelPerfect
+    imageDiffer: ImageDiffer = ImageDiffer.MSSIMMatcher
 ) = Paparazzi(
     deviceConfig = deviceConfig,
     theme = theme,
@@ -51,7 +60,7 @@ fun androidxPaparazzi(
 )
 
 /** Package name used for resolving system properties */
-private const val PACKAGE_NAME = "androidx.testutils.paparazzi"
+internal const val PACKAGE_NAME = "androidx.testutils.paparazzi"
 
 /** Name of the internal Gradle plugin */
 private const val PLUGIN_NAME = "AndroidXPaparazziPlugin"

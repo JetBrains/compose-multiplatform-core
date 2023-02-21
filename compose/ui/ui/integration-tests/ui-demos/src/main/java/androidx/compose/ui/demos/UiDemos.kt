@@ -73,6 +73,7 @@ import androidx.compose.ui.demos.viewinterop.BottomSheetFragmentNestedScrollInte
 import androidx.compose.ui.demos.viewinterop.ComplexTouchInterop
 import androidx.compose.ui.demos.viewinterop.ComposeInAndroidCoordinatorLayout
 import androidx.compose.ui.demos.viewinterop.ComposeInAndroidDemos
+import androidx.compose.ui.demos.viewinterop.ComposeInSwipeToRefreshLayout
 import androidx.compose.ui.demos.viewinterop.ComposeViewComposeNestedInterop
 import androidx.compose.ui.demos.viewinterop.EditTextInteropDemo
 import androidx.compose.ui.demos.viewinterop.FocusTransferDemo
@@ -191,6 +192,10 @@ private val NestedScrollInteropDemos = DemoCategory(
             ComposeInAndroidCoordinatorLayout::class
         ),
         ActivityDemo(
+            "Compose -> Sliding Pane",
+            ComposeInSwipeToRefreshLayout::class
+        ),
+        ActivityDemo(
             "(Collaborating) View -> Compose -> View",
             ViewComposeViewNestedScrollInteropDemo::class
         ),
@@ -228,6 +233,17 @@ private val ModifierDemos = DemoCategory(
     )
 )
 
+val AccessibilityDemos = DemoCategory(
+    "Accessibility",
+    listOf(
+        ComposableDemo("Scaffold Top Bar") { ScaffoldSample() },
+        ComposableDemo("Scaffold with Scrolling") { ScaffoldSampleScroll() },
+        ComposableDemo("Simple Top Bar with Scrolling") { ScrollingColumnDemo() },
+        ComposableDemo("Nested Containers—True") { NestedContainersTrueDemo() },
+        ComposableDemo("Nested Containers—False") { NestedContainersFalseDemo() }
+    )
+)
+
 val CoreDemos = DemoCategory(
     "Framework",
     listOf(
@@ -243,6 +259,7 @@ val CoreDemos = DemoCategory(
         GestureDemos,
         ViewInteropDemos,
         ComposableDemo("Software Keyboard Controller") { SoftwareKeyboardControllerDemo() },
-        RecyclerViewDemos
+        RecyclerViewDemos,
+        AccessibilityDemos
     )
 )

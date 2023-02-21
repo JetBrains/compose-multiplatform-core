@@ -48,11 +48,18 @@ dependencies {
 androidx {
     name = "AndroidX Compose Material3 Components Samples"
     type = LibraryType.SAMPLES
-    mavenGroup = LibraryGroups.COMPOSE_MATERIAL3
     inceptionYear = "2021"
     description = "Contains the sample code for the AndroidX Compose Material You components."
 }
 
 android {
     namespace "androidx.compose.material3.samples"
+}
+
+// Workaround for https://github.com/gradle/gradle/issues/19882
+configurations.all {
+    resolutionStrategy.dependencySubstitution {
+        substitute(module("androidx.lifecycle:lifecycle-common-java8:")).
+                using project(":lifecycle:lifecycle-common-java8")
+    }
 }

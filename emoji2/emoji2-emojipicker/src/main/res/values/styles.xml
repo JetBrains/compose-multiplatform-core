@@ -16,15 +16,9 @@
 
 <resources>
 
-    <style name="EmojiPickerStyleHeaderIcon">
-        <item name="android:tint">@drawable/icon_tint_selector</item>
+    <style name="VariantPopupAnimation">
+        <item name="android:windowEnterAnimation">@anim/slide_up_and_fade_in</item>
+        <item name="android:windowExitAnimation">@anim/slide_down_and_fade_out</item>
     </style>
 
-    <style name="EmojiPickerStyleCategoryEmptyHintText">
-        <item name="android:textColor">?attr/EmojiPickerColorCategoryEmptyHintText</item>
-    </style>
-
-    <style name="EmojiPickerCategoryContainer">
-        <item name="android:layout_marginBottom">8dp</item>
-    </style>
 </resources>

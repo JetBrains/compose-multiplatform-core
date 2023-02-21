@@ -36,12 +36,13 @@ dependencies {
     implementation("androidx.compose.runtime:runtime:1.2.1")
     implementation("androidx.compose.ui:ui:1.2.1")
     implementation("androidx.compose.ui:ui-text:1.2.1")
+    implementation(project(":compose:ui:ui-tooling-preview"))
+    debugImplementation(project(":compose:ui:ui-tooling"))
 }
 
 androidx {
     name = "AndroidX Compose UI Foundational Component Samples"
     type = LibraryType.SAMPLES
-    mavenGroup = LibraryGroups.COMPOSE_FOUNDATION
     inceptionYear = "2019"
     description = "Contains the sample code for the Androidx Compose UI Foundational Components"
 }

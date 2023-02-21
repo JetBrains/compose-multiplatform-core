@@ -64,26 +64,29 @@ object FunSpecHelper {
     ): FunSpec.Builder {
         return FunSpec.builder(executableElement.name).apply {
             addModifiers(KModifier.OVERRIDE)
-            if (executableElement.isPublic()) {
-                addModifiers(KModifier.PUBLIC)
+            if (executableElement.isInternal()) {
+                addModifiers(KModifier.INTERNAL)
             } else if (executableElement.isProtected()) {
                 addModifiers(KModifier.PROTECTED)
+            } else if (executableElement.isPublic()) {
+                addModifiers(KModifier.PUBLIC)
             }
             if (executableElement.isSuspendFunction()) {
                 addModifiers(KModifier.SUSPEND)
             }
             // TODO(b/251316420): Add type variable names
             val isVarArgs = executableElement.isVarArgs()
-            resolvedType.parameterTypes.let {
+            val parameterTypes = resolvedType.parameterTypes.let {
                 // Drop the synthetic Continuation param of suspend functions, always at the last
                 // position.
                 // TODO(b/254135327): Revisit with the introduction of a target language.
                 if (resolvedType.isSuspendFunction()) it.dropLast(1) else it
-            }.forEachIndexed { index, paramType ->
+            }
+            parameterTypes.forEachIndexed { index, paramType ->
                 val typeName: XTypeName
                 val modifiers: Array<KModifier>
                 // TODO(b/253268357): In Kotlin the vararg is not always the last param
-                if (isVarArgs && index == resolvedType.parameterTypes.size - 1) {
+                if (isVarArgs && index == parameterTypes.size - 1) {
                     typeName = (paramType as XArrayType).componentType.asTypeName()
                     modifiers = arrayOf(KModifier.VARARG)
                 } else {

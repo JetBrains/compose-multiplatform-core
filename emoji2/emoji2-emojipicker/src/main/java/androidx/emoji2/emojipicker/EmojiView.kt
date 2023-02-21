@@ -26,15 +26,19 @@ import android.text.Layout
 import android.text.Spanned
 import android.text.StaticLayout
 import android.text.TextPaint
+import android.util.AttributeSet
 import android.util.TypedValue
 import android.view.View
 import androidx.annotation.RequiresApi
 import androidx.core.graphics.applyCanvas
+import androidx.emoji2.text.EmojiCompat
 
 /**
  * A customized view to support drawing emojis asynchronously.
  */
-internal class EmojiView(context: Context) : View(context) {
+internal class EmojiView @JvmOverloads constructor(context: Context, attrs: AttributeSet? = null) :
+    View(context, attrs) {
+
     companion object {
         private const val EMOJI_DRAW_TEXT_SIZE_SP = 30
     }
@@ -53,13 +57,14 @@ internal class EmojiView(context: Context) : View(context) {
     }
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
-        val size = MeasureSpec.getSize(widthMeasureSpec)
+        val size =
+            minOf(MeasureSpec.getSize(widthMeasureSpec), MeasureSpec.getSize(heightMeasureSpec))
         setMeasuredDimension(size, size)
     }
 
-    override fun draw(canvas: Canvas?) {
+    override fun draw(canvas: Canvas) {
         super.draw(canvas)
-        canvas?.run {
+        canvas.run {
             save()
             scale(
                 width.toFloat() / offscreenCanvasBitmap.width,
@@ -73,31 +78,37 @@ internal class EmojiView(context: Context) : View(context) {
     var emoji: CharSequence? = null
         set(value) {
             field = value
-            offscreenCanvasBitmap.eraseColor(Color.TRANSPARENT)
             if (value != null) {
                 post {
-                    drawEmoji(value)
+                    if (value == this.emoji) {
+                        drawEmoji(
+                            if (EmojiPickerView.emojiCompatLoaded)
+                                EmojiCompat.get().process(value) ?: value else value
+                        )
+                        contentDescription = value
+                    }
                     invalidate()
                 }
+            } else {
+                offscreenCanvasBitmap.eraseColor(Color.TRANSPARENT)
             }
         }
 
     private fun drawEmoji(emoji: CharSequence) {
-        if (emoji == this.emoji) {
-            offscreenCanvasBitmap.applyCanvas {
-                if (emoji is Spanned) {
-                    createStaticLayout(emoji, width).draw(this)
-                } else {
-                    val textWidth = textPaint.measureText(emoji, 0, emoji.length)
-                    drawText(
-                        emoji,
-                        /* start = */ 0,
-                        /* end = */ emoji.length,
-                        /* x = */ (width - textWidth) / 2,
-                        /* y = */ -textPaint.fontMetrics.top,
-                        textPaint,
-                    )
-                }
+        offscreenCanvasBitmap.eraseColor(Color.TRANSPARENT)
+        offscreenCanvasBitmap.applyCanvas {
+            if (emoji is Spanned) {
+                createStaticLayout(emoji, width).draw(this)
+            } else {
+                val textWidth = textPaint.measureText(emoji, 0, emoji.length)
+                drawText(
+                    emoji,
+                    /* start = */ 0,
+                    /* end = */ emoji.length,
+                    /* x = */ (width - textWidth) / 2,
+                    /* y = */ -textPaint.fontMetrics.top,
+                    textPaint,
+                )
             }
         }
     }

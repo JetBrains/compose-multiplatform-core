@@ -35,7 +35,7 @@
     <string name="unchecked_action_title" msgid="802503415474307811">"Белгиси алынды"</string>
     <string name="on_action_title" msgid="4129601573763429611">"Күйүк"</string>
     <string name="off_action_title" msgid="8669201170189204848">"Өчүк"</string>
-    <string name="settings_action_title" msgid="8616900063253887861">"Жөндөөлөр"</string>
+    <string name="settings_action_title" msgid="8616900063253887861">"Параметрлер"</string>
     <string name="accept_action_title" msgid="4899660585470647578">"Кабыл алуу"</string>
     <string name="reject_action_title" msgid="6730366705938402668">"Четке кагуу"</string>
     <string name="ok_action_title" msgid="7128494973966098611">"Макул"</string>
@@ -63,7 +63,7 @@
     <string name="third_item_checked_toast_msg" msgid="3022450599567347361">"Үчүнчү нерсе текшерилди"</string>
     <string name="fifth_item_checked_toast_msg" msgid="1627599668504718594">"Бешинчи элемент текшерилди"</string>
     <string name="sixth_item_toast_msg" msgid="6117028866385793707">"Алтынчы нерсе чыкылдатылды"</string>
-    <string name="settings_toast_msg" msgid="7697794473002342727">"Жөндөөлөр чыкылдатылды"</string>
+    <string name="settings_toast_msg" msgid="7697794473002342727">"Параметрлер чыкылдатылды"</string>
     <string name="parked_toast_msg" msgid="2532422265890824446">"Токтотулган аракети"</string>
     <string name="more_toast_msg" msgid="5938288138225509885">"Дагы чыкылдатылган"</string>
     <string name="commute_toast_msg" msgid="4112684360647638688">"Өтүү баскычы басылды"</string>
@@ -257,6 +257,24 @@
     <string name="sign_in_complete_text" msgid="8423984266325680606">"Сиз кирдиңиз!"</string>
     <string name="sign_in_complete_title" msgid="8919868148773983428">"Кирүү аягына чыкты"</string>
     <string name="sign_in_template_demo_title" msgid="6052035424941410249">"Үлгүнүн демо версиясына кирүү"</string>
+    <!-- no translation found for tab_template_layouts_demo_title (6529681462424538165) -->
+    <skip />
+    <!-- no translation found for tab_template_demo_title (7587839101813629975) -->
+    <skip />
+    <!-- no translation found for tab_title_message (5266710951630087246) -->
+    <skip />
+    <!-- no translation found for tab_title_pane (2520606145526537263) -->
+    <skip />
+    <!-- no translation found for tab_title_list (5104962518489668123) -->
+    <skip />
+    <!-- no translation found for tab_title_grid (5268168907976325154) -->
+    <skip />
+    <!-- no translation found for tab_title_search (1892925693146631173) -->
+    <skip />
+    <!-- no translation found for tab_template_loading_demo_title (4638051615030345574) -->
+    <skip />
+    <!-- no translation found for tab_template_no_tabs_demo_title (6907466201298082309) -->
+    <skip />
     <string name="images_unknown_host_error" msgid="3180661817432720076">"Сүрөттөрдү белгисиз башкы түйүн үчүн көрсөтүүгө болбойт"</string>
     <string name="icon_title_prefix" msgid="8487026131229541244">"Сүрөтчө"</string>
     <string name="content_provider_icons_demo_title" msgid="5708602618664311097">"Материалдар менен камсыздоочунун сүрөтчөсүнүн демосу"</string>
@@ -344,4 +362,9 @@
     <string name="loading_toggle_disabled" msgid="7689738885077382673">"Жүктөө токтотулду"</string>
     <string name="loading_screen" msgid="4771507490730308794">"Жүктөлүп жаткан экран"</string>
     <string name="vector_toggle_details" msgid="1301305340033556819">"Түстү кошуу/өчүрүү которгучу"</string>
+    <string name="map_template_toggle_demo_title" msgid="6510798293640092611">"Которгучтары бар картанын үлгүсү"</string>
+    <string name="avoid_tolls_row_title" msgid="5194057244144831024">"Акы алынуучу жолдордон тышкары"</string>
+    <string name="route_options_demo_title" msgid="4599699012716426514">"Багыт параметрлери"</string>
+    <string name="avoid_highways_row_title" msgid="4711913426200490304">"Магистралдардан тышкары"</string>
+    <string name="avoid_ferries_row_title" msgid="8232883866013711974">"Паромдон тышкары"</string>
 </resources>

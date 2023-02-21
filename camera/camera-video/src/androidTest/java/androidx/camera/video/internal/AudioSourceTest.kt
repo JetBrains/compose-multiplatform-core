@@ -24,6 +24,7 @@ import androidx.camera.video.internal.encoder.FakeInputBuffer
 import androidx.camera.video.internal.encoder.noInvocation
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
+import androidx.test.filters.RequiresDevice
 import androidx.test.filters.SdkSuppress
 import androidx.test.rule.GrantPermissionRule
 import java.util.concurrent.Callable
@@ -88,6 +89,7 @@ class AudioSourceTest {
         }
     }
 
+    @RequiresDevice // b/264902324
     @Test
     fun canRestartAudioSource() {
         for (i in 0..2) {
@@ -106,6 +108,7 @@ class AudioSourceTest {
         }
     }
 
+    @RequiresDevice // b/264902324
     @Test
     fun bufferProviderStateChange_acquireBufferOrNot() {
         // Arrange.
@@ -127,6 +130,7 @@ class AudioSourceTest {
         }
     }
 
+    @RequiresDevice // b/264902324
     @Test
     fun canResetBufferProvider_beforeStarting() {
         // Arrange
@@ -146,6 +150,7 @@ class AudioSourceTest {
         verify(localBufferFactoryInvocations, timeout(10000L).atLeast(3)).call()
     }
 
+    @RequiresDevice // b/264902324
     @Test
     fun canResetBufferProvider_afterStarting() {
         // Arrange

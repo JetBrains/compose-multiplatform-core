@@ -38,10 +38,12 @@ import androidx.compose.runtime.mock.compositionTest
 import androidx.compose.runtime.mock.contact
 import androidx.compose.runtime.mock.expectChanges
 import androidx.compose.runtime.mock.expectNoChanges
+import androidx.compose.runtime.mock.frameDelayMillis
 import androidx.compose.runtime.mock.revalidate
 import androidx.compose.runtime.mock.skip
 import androidx.compose.runtime.mock.validate
 import androidx.compose.runtime.snapshots.Snapshot
+import kotlin.coroutines.CoroutineContext
 import kotlin.random.Random
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -53,7 +55,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.TestCoroutineScheduler
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withContext
 
 @Composable
 fun Container(content: @Composable () -> Unit) = content()
@@ -3009,7 +3013,8 @@ class CompositionTests {
                 assertEquals(1, applier.insertCount, "expected setup node not inserted")
                 shouldEmitNode = false
                 Snapshot.sendApplyNotifications()
-                testScheduler.advanceUntilIdle()
+                // Only advance one frame since the next frame will be automatically scheduled.
+                testScheduler.advanceTimeByFrame(coroutineContext)
                 assertEquals(1, stateMutatedOnRemove.value, "observable removals performed")
                 // Only two composition passes should have been performed by this point; a state
                 // invalidation in the applier should not be picked up or acted upon until after
@@ -3308,7 +3313,56 @@ class CompositionTests {
 
         revalidate()
     }
+
+    @Test // regression test for 267586102
+    fun test_remember_in_a_loop() = compositionTest {
+        var i1 = 0
+        var i2 = 0
+        var i3 = 0
+        var recomposeCounter = 0
+        var scope: RecomposeScope? = null
+
+        val content: @Composable SomeUnstableClass.() -> Unit = {
+            for (index in 0 until recomposeCounter) {
+                remember(this) { index }
+            }
+            scope = currentRecomposeScope
+            // these remembered values are not expected to change, BUT they change on recompositions
+            i1 = remember(this) { 1 }
+            i2 = remember(this) { 2 }
+            i3 = remember(this) { 3 }
+            recomposeCounter++
+        }
+
+        compose {
+            content(SomeUnstableClass())
+        }
+        advance()
+
+        assertEquals(1, i1)
+        assertEquals(2, i2)
+        assertEquals(3, i3)
+        assertEquals(1, recomposeCounter)
+
+        scope!!.invalidate()
+        advance()
+
+        assertEquals(2, recomposeCounter)
+        assertEquals(1, i1)
+        assertEquals(2, i2)
+        assertEquals(3, i3)
+
+        scope!!.invalidate()
+        advance()
+
+        assertEquals(3, recomposeCounter)
+        assertEquals(1, i1)
+        assertEquals(2, i2)
+        assertEquals(3, i3)
+    }
 }
+
+class SomeUnstableClass(val a: Any = "abc")
 
 @Composable
 fun test_CM1_RetFun(condition: Boolean) {
@@ -3436,18 +3490,32 @@ fun testDeferredSubcomposition(block: @Composable () -> Unit): () -> Unit {
 internal suspend fun <R> localRecomposerTest(
     block: CoroutineScope.(Recomposer) -> R
 ) = coroutineScope {
-    val contextWithClock = coroutineContext + TestMonotonicFrameClock(this)
-    val recomposer = Recomposer(contextWithClock)
-    launch(contextWithClock) {
-        recomposer.runRecomposeAndApplyChanges()
+    withContext(TestMonotonicFrameClock(this)) {
+        val recomposer = Recomposer(coroutineContext)
+        launch {
+            recomposer.runRecomposeAndApplyChanges()
+        }
+        block(recomposer)
+        // This call doesn't need to be in a finally; everything it does will be torn down
+        // in exceptional cases by the coroutineScope failure
+        recomposer.cancel()
     }
-    block(recomposer)
-    // This call doesn't need to be in a finally; everything it does will be torn down
-    // in exceptional cases by the coroutineScope failure
-    recomposer.cancel()
 }
 
-@Composable fun Wrap(content: @Composable () -> Unit) {
+/**
+ * Advances this scheduler by exactly one frame, as defined by the [TestMonotonicFrameClock] in
+ * [context].
+ */
+@OptIn(ExperimentalCoroutinesApi::class)
+private fun TestCoroutineScheduler.advanceTimeByFrame(context: CoroutineContext) {
+    val testClock = context[MonotonicFrameClock] as TestMonotonicFrameClock
+    advanceTimeBy(testClock.frameDelayMillis)
+    // advanceTimeBy doesn't run tasks at exactly frameDelayMillis.
+    runCurrent()
+}
+
+@Composable
+fun Wrap(content: @Composable () -> Unit) {
     content()
 }
 

@@ -19,6 +19,8 @@ package androidx.compose.ui.text
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.geometry.isUnspecified
+import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.graphics.Color
@@ -26,16 +28,19 @@ import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.DrawStyle
 import androidx.compose.ui.graphics.drawscope.DrawTransform
+import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.graphics.isUnspecified
 import androidx.compose.ui.graphics.takeOrElse
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.style.TextForegroundStyle.Unspecified
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.style.modulate
 import androidx.compose.ui.unit.Constraints
-import androidx.compose.ui.unit.IntSize
 import kotlin.math.ceil
 import kotlin.math.roundToInt
+
+internal val DefaultTextBlendMode = BlendMode.SrcOver
 
 object TextPainter {
 
@@ -57,27 +62,40 @@ object TextPainter {
             canvas.save()
             canvas.clipRect(bounds)
         }
-        val resolvedSpanStyle = resolveSpanStyleDefaults(
-            textLayoutResult.layoutInput.style.spanStyle
-        )
+
+        /* inline resolveSpanStyleDefaults to avoid an allocation in draw */
+        val style = textLayoutResult.layoutInput.style.spanStyle
+        val textDecoration = style.textDecoration ?: TextDecoration.None
+        val shadow = style.shadow ?: Shadow.None
+        val drawStyle = style.drawStyle ?: Fill
         try {
-            val brush = resolvedSpanStyle.brush
+            val brush = style.brush
             if (brush != null) {
+                val alpha = if (style.textForegroundStyle !== Unspecified) {
+                    style.textForegroundStyle.alpha
+                } else {
+                    1.0f
+                }
                 textLayoutResult.multiParagraph.paint(
                     canvas = canvas,
                     brush = brush,
-                    alpha = resolvedSpanStyle.alpha,
-                    shadow = resolvedSpanStyle.shadow,
-                    decoration = resolvedSpanStyle.textDecoration,
-                    drawStyle = resolvedSpanStyle.drawStyle
+                    alpha = alpha,
+                    shadow = shadow,
+                    decoration = textDecoration,
+                    drawStyle = drawStyle
                 )
             } else {
+                val color = if (style.textForegroundStyle !== Unspecified) {
+                    style.textForegroundStyle.color
+                } else {
+                    Color.Black
+                }
                 textLayoutResult.multiParagraph.paint(
                     canvas = canvas,
-                    color = resolvedSpanStyle.color,
-                    shadow = resolvedSpanStyle.shadow,
-                    decoration = resolvedSpanStyle.textDecoration,
-                    drawStyle = resolvedSpanStyle.drawStyle
+                    color = color,
+                    shadow = shadow,
+                    decoration = textDecoration,
+                    drawStyle = drawStyle
                 )
             }
         } finally {
@@ -115,10 +133,13 @@ object TextPainter {
  * skipped during layout and replaced with [Placeholder]. It's required that the range of each
  * [Placeholder] doesn't cross paragraph boundary, otherwise [IllegalArgumentException] is
  * thrown.
- * @param maxSize how wide and tall the text is allowed to be. [IntSize.width] will define the width
- * of the text. [IntSize.height] helps defining the number of lines that fit if [softWrap] is
- * enabled and [overflow] is [TextOverflow.Ellipsis]. Otherwise, [IntSize.height] either defines
- * where the text is clipped ([TextOverflow.Clip]) or becomes no-op.
+ * @param size how wide and tall the text should be. If left [Size.Unspecified] as its default
+ * value, text will be forced to fit inside the total drawing area from where it's placed.
+ * If size is specified, [Size.width] will define the width of the text. [Size.height] helps
+ * defining the number of lines that fit if [softWrap] is enabled and [overflow] is
+ * [TextOverflow.Ellipsis]. Otherwise, [Size.height] either defines where the text is clipped
+ * ([TextOverflow.Clip]) or becomes no-op.
+ * @param blendMode Blending algorithm to be applied to the text
  *
  * @see TextMeasurer
  */
@@ -132,10 +153,8 @@ fun DrawScope.drawText(
     softWrap: Boolean = true,
     maxLines: Int = Int.MAX_VALUE,
     placeholders: List<AnnotatedString.Range<Placeholder>> = emptyList(),
-    maxSize: IntSize = IntSize(
-        width = ceil(this.size.width - topLeft.x).roundToInt(),
-        height = ceil(this.size.height - topLeft.y).roundToInt()
-    )
+    size: Size = Size.Unspecified,
+    blendMode: BlendMode = DrawScope.DefaultBlendMode
 ) {
     val textLayoutResult = textMeasurer.measure(
         text = text,
@@ -144,7 +163,7 @@ fun DrawScope.drawText(
         softWrap = softWrap,
         maxLines = maxLines,
         placeholders = placeholders,
-        constraints = Constraints(maxWidth = maxSize.width, maxHeight = maxSize.height),
+        constraints = textLayoutConstraints(size, topLeft),
         layoutDirection = layoutDirection,
         density = this
     )
@@ -153,7 +172,10 @@ fun DrawScope.drawText(
         translate(topLeft.x, topLeft.y)
         clip(textLayoutResult)
     }) {
-        textLayoutResult.multiParagraph.paint(drawContext.canvas)
+        textLayoutResult.multiParagraph.paint(
+            canvas = drawContext.canvas,
+            blendMode = blendMode
+        )
     }
 }
 
@@ -179,10 +201,13 @@ fun DrawScope.drawText(
  * @param maxLines An optional maximum number of lines for the text to span, wrapping if
  * necessary. If the text exceeds the given number of lines, it will be truncated according to
  * [overflow] and [softWrap]. If it is not null, then it must be greater than zero.
- * @param maxSize how wide and tall the text is allowed to be. [IntSize.width] will define the width
- * of the text. [IntSize.height] helps defining the number of lines that fit if [softWrap] is
- * enabled and [overflow] is [TextOverflow.Ellipsis]. Otherwise, [IntSize.height] either defines
- * where the text is clipped ([TextOverflow.Clip]) or becomes no-op.
+ * @param size how wide and tall the text should be. If left [Size.Unspecified] as its default
+ * value, text will be forced to fit inside the total drawing area from where it's placed.
+ * If size is specified, [Size.width] will define the width of the text. [Size.height] helps
+ * defining the number of lines that fit if [softWrap] is enabled and [overflow] is
+ * [TextOverflow.Ellipsis]. Otherwise, [Size.height] either defines where the text is clipped
+ * ([TextOverflow.Clip]) or becomes no-op.
+ * @param blendMode Blending algorithm to be applied to the text
  *
  * @see TextMeasurer
  */
@@ -195,10 +220,8 @@ fun DrawScope.drawText(
     overflow: TextOverflow = TextOverflow.Clip,
     softWrap: Boolean = true,
     maxLines: Int = Int.MAX_VALUE,
-    maxSize: IntSize = IntSize(
-        width = ceil(this.size.width - topLeft.x).roundToInt(),
-        height = ceil(this.size.height - topLeft.y).roundToInt()
-    )
+    size: Size = Size.Unspecified,
+    blendMode: BlendMode = DrawScope.DefaultBlendMode
 ) {
     val textLayoutResult = textMeasurer.measure(
         text = AnnotatedString(text),
@@ -206,7 +229,7 @@ fun DrawScope.drawText(
         overflow = overflow,
         softWrap = softWrap,
         maxLines = maxLines,
-        constraints = Constraints(maxWidth = maxSize.width, maxHeight = maxSize.height),
+        constraints = textLayoutConstraints(size, topLeft),
         layoutDirection = layoutDirection,
         density = this
     )
@@ -215,7 +238,10 @@ fun DrawScope.drawText(
         translate(topLeft.x, topLeft.y)
         clip(textLayoutResult)
     }) {
-        textLayoutResult.multiParagraph.paint(drawContext.canvas)
+        textLayoutResult.multiParagraph.paint(
+            canvas = drawContext.canvas,
+            blendMode = blendMode
+        )
     }
 }
 
@@ -233,6 +259,7 @@ fun DrawScope.drawText(
  * @param shadow The shadow effect applied on the text.
  * @param textDecoration The decorations to paint on the text (e.g., an underline).
  * @param drawStyle Whether or not the text is stroked or filled in.
+ * @param blendMode Blending algorithm to be applied to the text
  *
  * @sample androidx.compose.ui.text.samples.DrawTextLayoutResultSample
  */
@@ -244,7 +271,8 @@ fun DrawScope.drawText(
     alpha: Float = Float.NaN,
     shadow: Shadow? = null,
     textDecoration: TextDecoration? = null,
-    drawStyle: DrawStyle? = null
+    drawStyle: DrawStyle? = null,
+    blendMode: BlendMode = DrawScope.DefaultBlendMode
 ) {
     val newShadow = shadow ?: textLayoutResult.layoutInput.style.shadow
     val newTextDecoration = textDecoration ?: textLayoutResult.layoutInput.style.textDecoration
@@ -264,7 +292,8 @@ fun DrawScope.drawText(
                 if (!alpha.isNaN()) alpha else textLayoutResult.layoutInput.style.alpha,
                 newShadow,
                 newTextDecoration,
-                newDrawStyle
+                newDrawStyle,
+                blendMode
             )
         } else {
             textLayoutResult.multiParagraph.paint(
@@ -272,7 +301,8 @@ fun DrawScope.drawText(
                 color.takeOrElse { textLayoutResult.layoutInput.style.color }.modulate(alpha),
                 newShadow,
                 newTextDecoration,
-                newDrawStyle
+                newDrawStyle,
+                blendMode
             )
         }
     }
@@ -292,6 +322,7 @@ fun DrawScope.drawText(
  * @param shadow The shadow effect applied on the text.
  * @param textDecoration The decorations to paint on the text (e.g., an underline).
  * @param drawStyle Whether or not the text is stroked or filled in.
+ * @param blendMode Blending algorithm to be applied to the text
  *
  * @sample androidx.compose.ui.text.samples.DrawTextLayoutResultSample
  */
@@ -303,7 +334,8 @@ fun DrawScope.drawText(
     alpha: Float = Float.NaN,
     shadow: Shadow? = null,
     textDecoration: TextDecoration? = null,
-    drawStyle: DrawStyle? = null
+    drawStyle: DrawStyle? = null,
+    blendMode: BlendMode = DrawScope.DefaultBlendMode
 ) {
     val newShadow = shadow ?: textLayoutResult.layoutInput.style.shadow
     val newTextDecoration = textDecoration ?: textLayoutResult.layoutInput.style.textDecoration
@@ -319,7 +351,8 @@ fun DrawScope.drawText(
             if (!alpha.isNaN()) alpha else textLayoutResult.layoutInput.style.alpha,
             newShadow,
             newTextDecoration,
-            newDrawStyle
+            newDrawStyle,
+            blendMode
         )
     }
 }
@@ -335,4 +368,38 @@ private fun DrawTransform.clip(textLayoutResult: TextLayoutResult) {
             bottom = textLayoutResult.size.height.toFloat()
         )
     }
+}
+
+/**
+ * Converts given size and placement preferences to Constraints for measuring text layout.
+ */
+private fun DrawScope.textLayoutConstraints(
+    size: Size,
+    topLeft: Offset
+): Constraints {
+    val minWidth: Int
+    val maxWidth: Int
+    val isWidthNaN = size.isUnspecified || size.width.isNaN()
+    if (isWidthNaN) {
+        minWidth = 0
+        maxWidth = ceil(this.size.width - topLeft.x).roundToInt()
+    } else {
+        val fixedWidth = ceil(size.width).roundToInt()
+        minWidth = fixedWidth
+        maxWidth = fixedWidth
+    }
+
+    val minHeight: Int
+    val maxHeight: Int
+    val isHeightNaN = size.isUnspecified || size.height.isNaN()
+    if (isHeightNaN) {
+        minHeight = 0
+        maxHeight = ceil(this.size.height - topLeft.y).roundToInt()
+    } else {
+        val fixedHeight = ceil(size.height).roundToInt()
+        minHeight = fixedHeight
+        maxHeight = fixedHeight
+    }
+
+    return Constraints(minWidth, maxWidth, minHeight, maxHeight)
 }

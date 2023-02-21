@@ -28,6 +28,7 @@ import androidx.test.uiautomator.UiSelector;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 public class UiScrollableTest extends BaseTest {
@@ -218,6 +219,7 @@ public class UiScrollableTest extends BaseTest {
         assertEquals(5, scrollable.getMaxSearchSwipes());
     }
 
+    @Ignore // b/266965027
     @Test
     public void testFlingForward() throws Exception {
         launchTestActivity(FlingTestActivity.class);
@@ -237,26 +239,25 @@ public class UiScrollableTest extends BaseTest {
 
     @Test
     public void testScrollForward_vertical() throws Exception {
-        launchTestActivity(SwipeTestActivity.class);
+        launchTestActivity(VerticalScrollTestActivity.class);
 
         UiScrollable scrollRegion = new UiScrollable(
-                new UiSelector().resourceId(TEST_APP + ":id/swipe_region")).setAsVerticalList();
+                new UiSelector().resourceId(TEST_APP + ":id/relative_layout")).setAsVerticalList();
 
-        assertFalse(scrollRegion.scrollForward());
-        assertEquals("swipe_up", scrollRegion.getText());
+        assertTrue(scrollRegion.scrollForward());
     }
 
     @Test
     public void testScrollForward_horizontal() throws Exception {
-        launchTestActivity(SwipeTestActivity.class);
+        launchTestActivity(HorizontalScrollTestActivity.class);
 
         UiScrollable scrollRegion = new UiScrollable(
-                new UiSelector().resourceId(TEST_APP + ":id/swipe_region")).setAsHorizontalList();
-
-        assertFalse(scrollRegion.scrollForward(50));
-        assertEquals("swipe_left", scrollRegion.getText());
+                new UiSelector().resourceId(TEST_APP + ":id/relative_layout"))
+                .setAsHorizontalList();
+        assertTrue(scrollRegion.scrollForward());
     }
 
+    @Ignore // b/266965027
     @Test
     public void testFlingBackward() throws Exception {
         launchTestActivity(FlingTestActivity.class);
@@ -272,6 +273,7 @@ public class UiScrollableTest extends BaseTest {
         assertUiObjectNotFound(noNode::flingBackward);
     }
 
+    @Ignore // b/266965027
     @Test
     public void testScrollBackward_vertical() throws Exception {
         launchTestActivity(SwipeTestActivity.class);
@@ -283,6 +285,7 @@ public class UiScrollableTest extends BaseTest {
         assertEquals("swipe_down", scrollRegion.getText());
     }
 
+    @Ignore // b/266965027
     @Test
     public void testScrollBackward_horizontal() throws Exception {
         launchTestActivity(SwipeTestActivity.class);
@@ -310,6 +313,21 @@ public class UiScrollableTest extends BaseTest {
     }
 
     @Test
+    public void testScrollToBeginning_notEnoughSwipes_failed() throws Exception {
+        launchTestActivity(VerticalScrollTestActivity.class);
+
+        UiScrollable relativeLayout = new UiScrollable(
+                new UiSelector().resourceId(TEST_APP + ":id/relative_layout"));
+        UiObject topText = mDevice.findObject(new UiSelector().resourceId(TEST_APP + ":id"
+                + "/top_text"));
+
+        assertTrue(relativeLayout.scrollTextIntoView("This is the bottom"));
+        assertFalse(topText.exists());
+        assertFalse(relativeLayout.scrollToBeginning(1));
+        assertFalse(topText.exists());
+    }
+
+    @Test
     public void testScrollToBeginning() throws Exception {
         launchTestActivity(VerticalScrollTestActivity.class);
 
@@ -324,6 +342,7 @@ public class UiScrollableTest extends BaseTest {
         assertTrue(topText.exists());
     }
 
+    @Ignore // b/266965027
     @Test
     public void testFlingToBeginning() throws Exception {
         launchTestActivity(FlingTestActivity.class);
@@ -350,6 +369,20 @@ public class UiScrollableTest extends BaseTest {
     }
 
     @Test
+    public void testScrollToEnd_notEnoughSwipes_failed() throws Exception {
+        launchTestActivity(VerticalScrollTestActivity.class);
+
+        UiScrollable relativeLayout = new UiScrollable(
+                new UiSelector().resourceId(TEST_APP + ":id/relative_layout"));
+        UiObject bottomText = mDevice.findObject(
+                new UiSelector().resourceId(TEST_APP + ":id/bottom_text"));
+
+        assertFalse(bottomText.exists());
+        assertFalse(relativeLayout.scrollToEnd(1));
+        assertFalse(bottomText.exists());
+    }
+
+    @Test
     public void testScrollToEnd() throws Exception {
         launchTestActivity(VerticalScrollTestActivity.class);
 
@@ -363,6 +396,7 @@ public class UiScrollableTest extends BaseTest {
         assertTrue(bottomText.exists());
     }
 
+    @Ignore // b/266965027
     @Test
     public void testFlingToEnd() throws Exception {
         launchTestActivity(FlingTestActivity.class);

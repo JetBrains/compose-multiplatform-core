@@ -32,9 +32,7 @@ import org.jetbrains.kotlin.ir.expressions.IrConst
 import org.jetbrains.kotlin.ir.expressions.IrConstructorCall
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.expressions.IrGetValue
-import org.jetbrains.kotlin.ir.symbols.IrClassSymbol
 import org.jetbrains.kotlin.ir.symbols.IrClassifierSymbol
-import org.jetbrains.kotlin.ir.symbols.IrScriptSymbol
 import org.jetbrains.kotlin.ir.symbols.IrTypeParameterSymbol
 import org.jetbrains.kotlin.ir.types.IrDynamicType
 import org.jetbrains.kotlin.ir.types.IrErrorType
@@ -47,6 +45,7 @@ import org.jetbrains.kotlin.ir.types.IrTypeProjection
 import org.jetbrains.kotlin.ir.types.classOrNull
 import org.jetbrains.kotlin.ir.types.classifierOrFail
 import org.jetbrains.kotlin.ir.types.classifierOrNull
+import org.jetbrains.kotlin.ir.types.getClass
 import org.jetbrains.kotlin.ir.types.isAny
 import org.jetbrains.kotlin.ir.types.isNullable
 import org.jetbrains.kotlin.ir.types.isPrimitiveType
@@ -55,7 +54,6 @@ import org.jetbrains.kotlin.ir.types.isUnit
 import org.jetbrains.kotlin.ir.types.makeNotNull
 import org.jetbrains.kotlin.ir.util.defaultType
 import org.jetbrains.kotlin.ir.util.findAnnotation
-import org.jetbrains.kotlin.ir.util.fqNameForIrSerialization
 import org.jetbrains.kotlin.ir.util.fqNameWhenAvailable
 import org.jetbrains.kotlin.ir.util.getInlineClassUnderlyingType
 import org.jetbrains.kotlin.ir.util.hasAnnotation
@@ -65,6 +63,7 @@ import org.jetbrains.kotlin.ir.util.isFinalClass
 import org.jetbrains.kotlin.ir.util.isFunctionOrKFunction
 import org.jetbrains.kotlin.ir.util.isInterface
 import org.jetbrains.kotlin.ir.util.isTypeParameter
+import org.jetbrains.kotlin.ir.util.kotlinFqName
 
 sealed class Stability {
     // class Foo(val bar: Int)
@@ -229,39 +228,6 @@ private fun IrAnnotationContainer.stabilityParamBitmask(): Int? =
         ?.getValueArgument(0) as? IrConst<*>
         )?.value as? Int
 
-// TODO: FunctionReference
-private val stableBuiltinTypes = mapOf(
-    "kotlin.Pair" to 0b11,
-    "kotlin.Triple" to 0b111,
-    "kotlin.Comparator" to 0,
-    "kotlin.Result" to 0b1,
-    "kotlin.ranges.ClosedRange" to 0b1,
-    "kotlin.ranges.ClosedFloatingPointRange" to 0b1,
-    // Guava
-    "com.google.common.collect.ImmutableList" to 0b1,
-    "com.google.common.collect.ImmutableEnumMap" to 0b11,
-    "com.google.common.collect.ImmutableMap" to 0b11,
-    "com.google.common.collect.ImmutableEnumSet" to 0b1,
-    "com.google.common.collect.ImmutableSet" to 0b1,
-    // Kotlinx immutable
-    "kotlinx.collections.immutable.ImmutableList" to 0b1,
-    "kotlinx.collections.immutable.ImmutableSet" to 0b1,
-    "kotlinx.collections.immutable.ImmutableMap" to 0b11,
-    // Dagger
-    "dagger.Lazy" to 0b1,
-)
-
-// TODO: buildList, buildMap, buildSet, etc.
-private val stableProducingFunctions = mapOf(
-    "kotlin.collections.CollectionsKt.emptyList" to 0,
-    "kotlin.collections.CollectionsKt.listOf" to 0b1,
-    "kotlin.collections.CollectionsKt.listOfNotNull" to 0b1,
-    "kotlin.collections.MapsKt.mapOf" to 0b11,
-    "kotlin.collections.MapsKt.emptyMap" to 0,
-    "kotlin.collections.SetsKt.setOf" to 0b1,
-    "kotlin.collections.SetsKt.emptySet" to 0,
-)
-
 fun stabilityOf(irType: IrType): Stability =
     stabilityOf(irType, emptyMap(), emptySet())
 
@@ -287,8 +253,8 @@ private fun stabilityOf(
         val fqName = declaration.fqNameWhenAvailable?.toString() ?: ""
         val stability: Stability
         val mask: Int
-        if (stableBuiltinTypes.contains(fqName)) {
-            mask = stableBuiltinTypes[fqName] ?: 0
+        if (KnownStableConstructs.stableTypes.contains(fqName)) {
+            mask = KnownStableConstructs.stableTypes[fqName] ?: 0
             stability = Stability.Stable
         } else {
             mask = declaration.stabilityParamBitmask() ?: return Stability.Unstable
@@ -337,7 +303,7 @@ private fun stabilityOf(
 
 private fun canInferStability(declaration: IrClass): Boolean {
     val fqName = declaration.fqNameWhenAvailable?.toString() ?: ""
-    return stableBuiltinTypes.contains(fqName) ||
+    return KnownStableConstructs.stableTypes.contains(fqName) ||
         declaration.origin == IrDeclarationOrigin.IR_EXTERNAL_DECLARATION_STUB
 }
 
@@ -397,11 +363,20 @@ private fun stabilityOf(
             substitutions,
             currentlyAnalyzing
         )
-        type.isInlineClassType() -> stabilityOf(
-            type.getInlinedClass()!!,
-            substitutions,
-            currentlyAnalyzing
-        )
+        type.isInlineClassType() -> {
+            val inlineClassDeclaration = type.getClass()
+                ?: error("Failed to resolve the class definition of inline type $type")
+
+            if (inlineClassDeclaration.hasStableMarker()) {
+                Stability.Stable
+            } else {
+                stabilityOf(
+                    type = getInlineClassUnderlyingType(inlineClassDeclaration),
+                    substitutions = substitutions,
+                    currentlyAnalyzing = currentlyAnalyzing
+                )
+            }
+        }
         type is IrSimpleType -> {
             stabilityOf(
                 type.classifier,
@@ -429,9 +404,9 @@ private fun IrSimpleType.substitutionMap(): Map<IrTypeParameterSymbol, IrTypeArg
 
 private fun stabilityOf(expr: IrCall, baseStability: Stability): Stability {
     val function = expr.symbol.owner
-    val fqName = function.fqNameForIrSerialization
+    val fqName = function.kotlinFqName
 
-    return when (val mask = stableProducingFunctions[fqName.asString()]) {
+    return when (val mask = KnownStableConstructs.stableFunctions[fqName.asString()]) {
         null -> baseStability
         0 -> Stability.Stable
         else -> Stability.Combined(
@@ -474,21 +449,3 @@ fun stabilityOf(expr: IrExpression): Stability {
         else -> stability
     }
 }
-
-private fun IrType.getInlinedClass(): IrClass? {
-    val erased = erase(this) ?: return null
-    if (this is IrSimpleType && isInlineClassType()) {
-        val fieldType = getInlineClassUnderlyingType(erased)
-        return fieldType.getInlinedClass()
-    }
-    return erased
-}
-
-// From Kotin's InlineClasses.kt
-private tailrec fun erase(type: IrType): IrClass? =
-    when (val classifier = type.classifierOrFail) {
-        is IrClassSymbol -> classifier.owner
-        is IrScriptSymbol -> null // TODO: check if correct
-        is IrTypeParameterSymbol -> erase(classifier.owner.superTypes.first())
-        else -> error(classifier)
-    }

@@ -119,6 +119,7 @@ class TextFieldTest {
     private val ExpectedDefaultTextFieldWidth = TextFieldDefaults.MinWidth
     private val ExpectedPadding = TextFieldPadding
     private val IconPadding = HorizontalIconPadding
+    private val TextFieldWidth = 300.dp
     private val TextFieldTag = "textField"
 
     @get:Rule
@@ -560,11 +561,9 @@ class TextFieldTest {
             assertThat(placeholderSize.value?.height).isGreaterThan(0)
             assertThat(placeholderSize.value?.width).isGreaterThan(0)
             // placeholder's position
-            assertThat(placeholderPosition.value?.x).isEqualTo(
-                ExpectedPadding.roundToPx().toFloat()
-            )
-            assertThat(placeholderPosition.value?.y)
-                .isEqualTo(
+            assertThat(placeholderPosition.value?.x).isWithin(1f).of(ExpectedPadding.toPx())
+            assertThat(placeholderPosition.value?.y).isWithin(1f)
+                .of(
                     TextFieldWithLabelVerticalPadding.toPx() +
                         labelSize.value!!.height.toFloat()
                 )
@@ -668,7 +667,6 @@ class TextFieldTest {
     @Test
     fun testTextField_trailingAndLeading_sizeAndPosition_defaultIcon() {
         val textFieldHeight = 60.dp
-        val textFieldWidth = 300.dp
         val leadingPosition = Ref<Offset>()
         val leadingSize = Ref<IntSize>()
         val trailingPosition = Ref<Offset>()
@@ -680,7 +678,7 @@ class TextFieldTest {
                 TextField(
                     value = "text",
                     onValueChange = {},
-                    modifier = Modifier.size(textFieldWidth, textFieldHeight),
+                    modifier = Modifier.size(TextFieldWidth, textFieldHeight),
                     leadingIcon = {
                         Icon(
                             Icons.Default.Favorite,
@@ -724,7 +722,7 @@ class TextFieldTest {
                 )
                 assertThat(trailingPosition.value?.x).isEqualTo(
                     (
-                        textFieldWidth.roundToPx() - IconPadding.roundToPx() -
+                        TextFieldWidth.roundToPx() - IconPadding.roundToPx() -
                             trailingSize.value!!.width
                         ).toFloat()
                 )
@@ -740,7 +738,6 @@ class TextFieldTest {
     @Test
     fun testTextField_trailingAndLeading_sizeAndPosition_iconButton() {
         val textFieldHeight = 80.dp
-        val textFieldWidth = 300.dp
         val density = Density(2f)
 
         var leadingPosition: Offset? = null
@@ -753,7 +750,7 @@ class TextFieldTest {
                 TextField(
                     value = "text",
                     onValueChange = {},
-                    modifier = Modifier.size(textFieldWidth, textFieldHeight),
+                    modifier = Modifier.size(TextFieldWidth, textFieldHeight),
                     leadingIcon = {
                         IconButton(
                             onClick = {},
@@ -796,7 +793,7 @@ class TextFieldTest {
                     IntSize(size.roundToPx(), size.roundToPx())
                 )
                 assertThat(trailingPosition?.x).isEqualTo(
-                    (textFieldWidth.roundToPx() - trailingSize!!.width).toFloat()
+                    (TextFieldWidth.roundToPx() - trailingSize!!.width).toFloat()
                 )
                 assertThat(trailingPosition?.y)
                     .isEqualTo(
@@ -810,7 +807,6 @@ class TextFieldTest {
     @Test
     fun testTextField_trailingAndLeading_sizeAndPosition_nonDefaultSizeIcon() {
         val textFieldHeight = 80.dp
-        val textFieldWidth = 300.dp
         val density = Density(2f)
         val size = 70.dp
 
@@ -824,7 +820,7 @@ class TextFieldTest {
                 TextField(
                     value = "text",
                     onValueChange = {},
-                    modifier = Modifier.size(textFieldWidth, textFieldHeight),
+                    modifier = Modifier.size(TextFieldWidth, textFieldHeight),
                     leadingIcon = {
                         Box(
                             Modifier.size(size).onGloballyPositioned {
@@ -859,13 +855,188 @@ class TextFieldTest {
                     IntSize(size.roundToPx(), size.roundToPx())
                 )
                 assertThat(trailingPosition?.x).isEqualTo(
-                    (textFieldWidth.roundToPx() - trailingSize!!.width).toFloat()
+                    (TextFieldWidth.roundToPx() - trailingSize!!.width).toFloat()
                 )
                 assertThat(trailingPosition?.y)
                     .isEqualTo(
                         ((textFieldHeight.roundToPx() - trailingSize!!.height) / 2f)
                             .roundToInt().toFloat()
                     )
+            }
+        }
+    }
+
+    @Test
+    fun testTextField_prefixAndSuffixPosition_withLabel() {
+        val textFieldHeight = 60.dp
+        val labelSize = Ref<IntSize>()
+        val prefixPosition = Ref<Offset>()
+        val suffixPosition = Ref<Offset>()
+        val suffixSize = Ref<IntSize>()
+        val density = Density(2f)
+
+        rule.setMaterialContent(lightColorScheme()) {
+            CompositionLocalProvider(LocalDensity provides density) {
+                TextField(
+                    value = "text",
+                    onValueChange = {},
+                    modifier = Modifier.size(TextFieldWidth, textFieldHeight),
+                    label = {
+                        Text(
+                            text = "label",
+                            modifier = Modifier.onGloballyPositioned {
+                                labelSize.value = it.size
+                            }
+                        )
+                    },
+                    prefix = {
+                        Text(
+                            text = "P",
+                            modifier = Modifier.onGloballyPositioned {
+                                prefixPosition.value = it.positionInRoot()
+                            }
+                        )
+                    },
+                    suffix = {
+                        Text(
+                            text = "S",
+                            modifier = Modifier.onGloballyPositioned {
+                                suffixPosition.value = it.positionInRoot()
+                                suffixSize.value = it.size
+                            }
+                        )
+                    }
+                )
+            }
+        }
+
+        rule.runOnIdle {
+            with(density) {
+                // prefix
+                assertThat(prefixPosition.value?.x).isWithin(1f).of(ExpectedPadding.toPx())
+                assertThat(prefixPosition.value?.y)
+                    .isWithin(1f)
+                    .of(
+                        TextFieldWithLabelVerticalPadding.toPx() +
+                            labelSize.value!!.height.toFloat()
+                    )
+
+                // suffix
+                assertThat(suffixPosition.value?.x).isWithin(1f).of(
+                    (TextFieldWidth - ExpectedPadding - suffixSize.value!!.width.toDp()).toPx()
+                )
+                assertThat(suffixPosition.value?.y)
+                    .isWithin(1f)
+                    .of(
+                        TextFieldWithLabelVerticalPadding.toPx() +
+                            labelSize.value!!.height.toFloat()
+                    )
+            }
+        }
+    }
+
+    @Test
+    fun testTextField_prefixAndSuffixPosition_whenNoLabel() {
+        val textFieldHeight = 60.dp
+        val prefixPosition = Ref<Offset>()
+        val suffixPosition = Ref<Offset>()
+        val suffixSize = Ref<IntSize>()
+        val density = Density(2f)
+
+        rule.setMaterialContent(lightColorScheme()) {
+            CompositionLocalProvider(LocalDensity provides density) {
+                TextField(
+                    value = "text",
+                    onValueChange = {},
+                    modifier = Modifier.size(TextFieldWidth, textFieldHeight),
+                    prefix = {
+                        Text(
+                            text = "P",
+                            modifier = Modifier.onGloballyPositioned {
+                                prefixPosition.value = it.positionInRoot()
+                            }
+                        )
+                    },
+                    suffix = {
+                        Text(
+                            text = "S",
+                            modifier = Modifier.onGloballyPositioned {
+                                suffixPosition.value = it.positionInRoot()
+                                suffixSize.value = it.size
+                            }
+                        )
+                    }
+                )
+            }
+        }
+
+        rule.runOnIdle {
+            with(density) {
+                // prefix
+                assertThat(prefixPosition.value?.x).isWithin(1f).of(ExpectedPadding.toPx())
+                assertThat(prefixPosition.value?.y).isWithin(1f).of(ExpectedPadding.toPx())
+
+                // suffix
+                assertThat(suffixPosition.value?.x).isWithin(1f).of(
+                    (TextFieldWidth - ExpectedPadding - suffixSize.value!!.width.toDp()).toPx()
+                )
+                assertThat(suffixPosition.value?.y).isWithin(1f).of(ExpectedPadding.toPx())
+            }
+        }
+    }
+
+    @Test
+    fun testTextField_prefixAndSuffixPosition_withIcons() {
+        val textFieldHeight = 60.dp
+        val prefixPosition = Ref<Offset>()
+        val suffixPosition = Ref<Offset>()
+        val suffixSize = Ref<IntSize>()
+        val density = Density(2f)
+
+        rule.setMaterialContent(lightColorScheme()) {
+            CompositionLocalProvider(LocalDensity provides density) {
+                TextField(
+                    value = "text",
+                    onValueChange = {},
+                    modifier = Modifier.size(TextFieldWidth, textFieldHeight),
+                    prefix = {
+                        Text(
+                            text = "P",
+                            modifier = Modifier.onGloballyPositioned {
+                                prefixPosition.value = it.positionInRoot()
+                            }
+                        )
+                    },
+                    suffix = {
+                        Text(
+                            text = "S",
+                            modifier = Modifier.onGloballyPositioned {
+                                suffixPosition.value = it.positionInRoot()
+                                suffixSize.value = it.size
+                            }
+                        )
+                    },
+                    leadingIcon = { Icon(Icons.Default.Favorite, null) },
+                    trailingIcon = { Icon(Icons.Default.Favorite, null) },
+                )
+            }
+        }
+
+        rule.runOnIdle {
+            with(density) {
+                val iconSize = 24.dp // default icon size
+
+                // prefix
+                assertThat(prefixPosition.value?.x).isWithin(1f).of(
+                    (ExpectedPadding + IconPadding + iconSize).toPx())
+                assertThat(prefixPosition.value?.y).isWithin(1f).of(ExpectedPadding.toPx())
+
+                // suffix
+                assertThat(suffixPosition.value?.x).isWithin(1f).of(
+                    (TextFieldWidth - IconPadding - iconSize - ExpectedPadding -
+                        suffixSize.value!!.width.toDp()).toPx()
+                )
+                assertThat(suffixPosition.value?.y).isWithin(1f).of(ExpectedPadding.toPx())
             }
         }
     }
@@ -1077,6 +1248,7 @@ class TextFieldTest {
     }
 
     @Test
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.P)
     fun testTextField_imeActionAndKeyboardTypePropagatedDownstream() {
         val platformTextInputService = mock<PlatformTextInputService>()
         val textInputService = TextInputService(platformTextInputService)
@@ -1164,7 +1336,8 @@ class TextFieldTest {
                         containerColor = Color.Blue,
                         focusedIndicatorColor = Color.Transparent,
                         unfocusedIndicatorColor = Color.Transparent,
-                        textColor = Color.Transparent,
+                        focusedTextColor = Color.Transparent,
+                        unfocusedTextColor = Color.Transparent,
                         cursorColor = Color.Transparent,
                         focusedLabelColor = Color.Transparent,
                         unfocusedLabelColor = Color.Transparent

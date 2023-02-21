@@ -24,6 +24,7 @@ import androidx.room.compiler.processing.isArray
 import androidx.room.compiler.processing.tryBox
 import androidx.room.compiler.processing.tryUnbox
 import com.google.devtools.ksp.KspExperimental
+import com.google.devtools.ksp.symbol.KSAnnotation
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSType
 import com.google.devtools.ksp.symbol.KSTypeArgument
@@ -46,13 +47,13 @@ import kotlin.reflect.KClass
  * Similarly, we may not be able to get a [KSType] (e.g. if it resolves to error).
  */
 internal abstract class KspType(
-    val env: KspProcessingEnv,
+    env: KspProcessingEnv,
     val ksType: KSType,
     /**
      * Type resolver to convert KSType into its JVM representation.
      */
     protected val jvmTypeResolver: KspJvmTypeResolver?
-) : XType, XEquality {
+) : KspAnnotated(env), XType, XEquality {
     override val rawType by lazy {
         KspRawType(this)
     }
@@ -95,7 +96,7 @@ internal abstract class KspType(
     }
 
     override val superTypes: List<XType> by lazy {
-        if (typeName == TypeName.OBJECT) {
+        if (xTypeName == XTypeName.ANY_OBJECT) {
             // The object class doesn't have any supertypes.
             return@lazy emptyList<XType>()
         }
@@ -175,9 +176,7 @@ internal abstract class KspType(
         if (env.resolver.isJavaRawType(ksType)) {
             emptyList()
         } else {
-            ksType.arguments.mapIndexed { index, arg ->
-                env.wrap(ksType.declaration.typeParameters[index], arg)
-            }
+            ksType.arguments.map { env.wrap(it) }
         }
     }
 
@@ -214,6 +213,8 @@ internal abstract class KspType(
             else -> "null"
         }
     }
+
+    override fun annotations(): Sequence<KSAnnotation> = ksType.annotations
 
     override fun isNone(): Boolean {
         // even void is converted to Unit so we don't have none type in KSP
