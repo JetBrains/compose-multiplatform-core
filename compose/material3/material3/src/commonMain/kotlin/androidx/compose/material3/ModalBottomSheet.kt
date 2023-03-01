@@ -32,7 +32,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.SheetValue.Expanded
-import androidx.compose.material3.SheetValue.Collapsed
+import androidx.compose.material3.SheetValue.PartiallyExpanded
 import androidx.compose.material3.SheetValue.Hidden
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -47,16 +47,13 @@ import androidx.compose.ui.graphics.isSpecified
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.collapse
-import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.dismiss
 import androidx.compose.ui.semantics.expand
-import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Popup
 import kotlin.math.max
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -95,7 +92,7 @@ import kotlinx.coroutines.launch
 fun ModalBottomSheet(
     onDismissRequest: () -> Unit,
     modifier: Modifier = Modifier,
-    sheetState: SheetState = rememberSheetState(),
+    sheetState: SheetState = rememberModalBottomSheetState(),
     shape: Shape = BottomSheetDefaults.ExpandedShape,
     containerColor: Color = BottomSheetDefaults.ContainerColor,
     contentColor: Color = contentColorFor(containerColor),
@@ -105,29 +102,47 @@ fun ModalBottomSheet(
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val scope = rememberCoroutineScope()
+    val animateToDismiss: () -> Unit = {
+        if (sheetState.swipeableState.confirmValueChange(Hidden)) {
+            scope.launch { sheetState.hide() }.invokeOnCompletion {
+                if (!sheetState.isVisible) {
+                    onDismissRequest()
+                }
+            }
+        }
+    }
+    val settleToDismiss: (velocity: Float) -> Unit = {
+        scope.launch { sheetState.settle(it) }.invokeOnCompletion {
+            if (!sheetState.isVisible) onDismissRequest()
+        }
+    }
 
     // Callback that is invoked when the anchors have changed.
     val anchorChangeHandler = remember(sheetState, scope) {
         ModalBottomSheetAnchorChangeHandler(
             state = sheetState,
             animateTo = { target, velocity ->
-                scope.launch { sheetState.swipeableState.animateTo(target, velocity = velocity) }
+                scope.launch { sheetState.animateTo(target, velocity = velocity) }
             },
-            snapTo = { target -> scope.launch { sheetState.swipeableState.snapTo(target) } }
+            snapTo = { target -> scope.launch { sheetState.snapTo(target) } }
         )
     }
     val systemBarHeight = WindowInsets.systemBarsForVisualComponents.getBottom(LocalDensity.current)
 
-    Popup {
+    ModalBottomSheetPopup(
+        onDismissRequest = {
+            if (sheetState.currentValue == Expanded && sheetState.hasPartiallyExpandedState) {
+                scope.launch { sheetState.partialExpand() }
+            } else { // Is expanded without collapsed state or is collapsed.
+                scope.launch { sheetState.hide() }.invokeOnCompletion { onDismissRequest() }
+            }
+        }
+    ) {
         BoxWithConstraints(Modifier.fillMaxSize()) {
             val fullHeight = constraints.maxHeight
             Scrim(
                 color = scrimColor,
-                onDismissRequest = {
-                    scope.launch { sheetState.hide() }.invokeOnCompletion {
-                        if (!sheetState.isVisible) { onDismissRequest() }
-                    }
-                },
+                onDismissRequest = animateToDismiss,
                 visible = sheetState.targetValue != Hidden
             )
             Surface(
@@ -144,20 +159,22 @@ fun ModalBottomSheet(
                         )
                     }
                     .nestedScroll(
-                        remember(sheetState.swipeableState, Orientation.Vertical) {
+                        remember(sheetState) {
                             ConsumeSwipeWithinBottomSheetBoundsNestedScrollConnection(
-                                state = sheetState.swipeableState,
-                                orientation = Orientation.Vertical
+                                sheetState = sheetState,
+                                orientation = Orientation.Vertical,
+                                onFling = settleToDismiss
                             )
                         }
                     )
                     .modalBottomSheetSwipeable(
                         sheetState = sheetState,
-                        scope = scope,
-                        onDismissRequest = onDismissRequest,
                         anchorChangeHandler = anchorChangeHandler,
                         screenHeight = fullHeight.toFloat(),
                         bottomPadding = systemBarHeight.toFloat(),
+                        onDragStopped = {
+                            settleToDismiss(it)
+                        },
                     ),
                 shape = shape,
                 color = containerColor,
@@ -166,7 +183,36 @@ fun ModalBottomSheet(
             ) {
                 Column(Modifier.fillMaxWidth()) {
                     if (dragHandle != null) {
-                        Box(Modifier.align(Alignment.CenterHorizontally)) {
+                        Box(Modifier
+                            .align(Alignment.CenterHorizontally)
+                            .semantics {
+                                // Provides semantics to interact with the bottomsheet based on its
+                                // current value.
+                                with(sheetState) {
+                                    dismiss {
+                                        animateToDismiss()
+                                        true
+                                    }
+                                    if (currentValue == PartiallyExpanded) {
+                                        expand {
+                                            if (swipeableState.confirmValueChange(Expanded)) {
+                                                scope.launch { sheetState.expand() }
+                                            }
+                                            true
+                                        }
+                                    } else if (hasPartiallyExpandedState) {
+                                        collapse {
+                                            if (
+                                                swipeableState.confirmValueChange(PartiallyExpanded)
+                                            ) {
+                                                scope.launch { partialExpand() }
+                                            }
+                                            true
+                                        }
+                                    }
+                                }
+                            }
+                        ) {
                             dragHandle()
                         }
                     }
@@ -182,13 +228,27 @@ fun ModalBottomSheet(
     }
 }
 
+/**
+ * Create and [remember] a [SheetState] for [ModalBottomSheet].
+ *
+ * @param skipPartiallyExpanded Whether the partially expanded state, if the sheet is tall enough,
+ * should be skipped. If true, the sheet will always expand to the [Expanded] state and move to the
+ * [Hidden] state when hiding the sheet, either programmatically or by user interaction.
+ * @param confirmValueChange Optional callback invoked to confirm or veto a pending state change.
+ */
+@Composable
+@ExperimentalMaterial3Api
+fun rememberModalBottomSheetState(
+    skipPartiallyExpanded: Boolean = false,
+    confirmValueChange: (SheetValue) -> Boolean = { true },
+) = rememberSheetState(skipPartiallyExpanded, confirmValueChange, Hidden)
+
 @Composable
 private fun Scrim(
     color: Color,
     onDismissRequest: () -> Unit,
     visible: Boolean
 ) {
-    val sheetDescription = getString(Strings.CloseSheet)
     if (color.isSpecified) {
         val alpha by animateFloatAsState(
             targetValue = if (visible) 1f else 0f,
@@ -200,11 +260,7 @@ private fun Scrim(
                     detectTapGestures {
                         onDismissRequest()
                     }
-                }
-                .semantics(mergeDescendants = true) {
-                    contentDescription = sheetDescription
-                    onClick { onDismissRequest(); true }
-                }
+                }.clearAndSetSemantics {}
         } else {
             Modifier
         }
@@ -221,66 +277,35 @@ private fun Scrim(
 @ExperimentalMaterial3Api
 private fun Modifier.modalBottomSheetSwipeable(
     sheetState: SheetState,
-    scope: CoroutineScope,
-    onDismissRequest: () -> Unit,
     anchorChangeHandler: AnchorChangeHandler<SheetValue>,
     screenHeight: Float,
     bottomPadding: Float,
+    onDragStopped: CoroutineScope.(velocity: Float) -> Unit,
 ) = draggable(
-    state = sheetState.swipeableState.draggableState,
-    orientation = Orientation.Vertical,
-    enabled = sheetState.isVisible,
-    startDragImmediately = sheetState.swipeableState.isAnimationRunning,
-    onDragStopped = { velocity ->
-        try {
-            sheetState.settle(velocity)
-        } finally {
-            if (!sheetState.isVisible) onDismissRequest()
-        }
-    }
-).swipeAnchors(
-    state = sheetState.swipeableState,
-    anchorChangeHandler = anchorChangeHandler,
-    possibleValues = setOf(Hidden, Collapsed, Expanded),
-) { value, sheetSize ->
-    when (value) {
-        Hidden -> screenHeight + bottomPadding
-        Collapsed -> when {
-            sheetSize.height < screenHeight / 2 -> null
-            sheetState.skipCollapsed -> null
-            else -> sheetSize.height / 2f
-        }
-        Expanded -> if (sheetSize.height != 0) {
-            max(0f, screenHeight - sheetSize.height)
-        } else null
-    }
-}.semantics {
-    if (sheetState.isVisible) {
-        dismiss {
-            if (sheetState.swipeableState.confirmValueChange(Hidden)) {
-                scope.launch { sheetState.hide() }.invokeOnCompletion {
-                    if (!sheetState.isVisible) { onDismissRequest() }
+            state = sheetState.swipeableState.draggableState,
+            orientation = Orientation.Vertical,
+            enabled = sheetState.isVisible,
+            startDragImmediately = sheetState.swipeableState.isAnimationRunning,
+            onDragStopped = onDragStopped
+        )
+        .swipeAnchors(
+            state = sheetState.swipeableState,
+            anchorChangeHandler = anchorChangeHandler,
+            possibleValues = setOf(Hidden, PartiallyExpanded, Expanded),
+        ) { value, sheetSize ->
+            when (value) {
+                Hidden -> screenHeight + bottomPadding
+                PartiallyExpanded -> when {
+                    sheetSize.height < screenHeight / 2 -> null
+                    sheetState.skipPartiallyExpanded -> null
+                    else -> sheetSize.height / 2f
                 }
-            }
-            true
-        }
-        if (sheetState.swipeableState.currentValue == Collapsed) {
-            expand {
-                if (sheetState.swipeableState.confirmValueChange(Expanded)) {
-                    scope.launch { sheetState.expand() }
-                }
-                true
-            }
-        } else if (sheetState.hasCollapsedState) {
-            collapse {
-                if (sheetState.swipeableState.confirmValueChange(Collapsed)) {
-                    scope.launch { sheetState.collapse() }
-                }
-                true
+
+                Expanded -> if (sheetSize.height != 0) {
+                    max(0f, screenHeight - sheetSize.height)
+                } else null
             }
         }
-    }
-}
 
 @ExperimentalMaterial3Api
 private fun ModalBottomSheetAnchorChangeHandler(
@@ -291,9 +316,9 @@ private fun ModalBottomSheetAnchorChangeHandler(
     val previousTargetOffset = previousAnchors[previousTarget]
     val newTarget = when (previousTarget) {
         Hidden -> Hidden
-        Collapsed, Expanded -> {
-            val hasCollapsedState = newAnchors.containsKey(Collapsed)
-            val newTarget = if (hasCollapsedState) Collapsed
+        PartiallyExpanded, Expanded -> {
+            val hasPartiallyExpandedState = newAnchors.containsKey(PartiallyExpanded)
+            val newTarget = if (hasPartiallyExpandedState) PartiallyExpanded
             else if (newAnchors.containsKey(Expanded)) Expanded else Hidden
             newTarget
         }
@@ -310,4 +335,7 @@ private fun ModalBottomSheetAnchorChangeHandler(
     }
 }
 
-private val BottomSheetMaxWidth = 640.dp
+internal expect fun ModalBottomSheetPopup(
+    onDismissRequest: () -> Unit,
+    content: @Composable () -> Unit
+)

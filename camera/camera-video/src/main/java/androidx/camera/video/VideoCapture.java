@@ -17,6 +17,7 @@
 package androidx.camera.video;
 
 import static androidx.camera.core.CameraEffect.VIDEO_CAPTURE;
+import static androidx.camera.core.impl.ImageFormatConstants.INTERNAL_DEFINED_IMAGE_FORMAT_PRIVATE;
 import static androidx.camera.core.impl.ImageOutputConfig.OPTION_CUSTOM_ORDERED_RESOLUTIONS;
 import static androidx.camera.core.impl.ImageOutputConfig.OPTION_DEFAULT_RESOLUTION;
 import static androidx.camera.core.impl.ImageOutputConfig.OPTION_MAX_RESOLUTION;
@@ -397,7 +398,7 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
             } else {
                 surfaceRequest.updateTransformationInfo(
                         SurfaceRequest.TransformationInfo.of(cropRect, relativeRotation,
-                                targetRotation, getHasCameraTransform()));
+                                targetRotation, cameraInternal.getHasTransform()));
             }
         }
     }
@@ -456,16 +457,27 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
                 videoCapabilities, mediaSpec, resolution, targetFpsRange);
         mCropRect = calculateCropRect(resolution, videoEncoderInfo);
         mNode = createNodeIfNeeded(isCropNeeded(mCropRect, resolution));
+        // Choose Timebase based on the whether the buffer is copied.
         Timebase timebase;
+        if (mNode != null || !camera.getHasTransform()) {
+            timebase = camera.getCameraInfoInternal().getTimebase();
+        } else {
+            // When camera buffers from a REALTIME device are passed directly to a video encoder
+            // from the camera, automatic compensation is done to account for differing timebases
+            // of the audio and camera subsystems. See the document of
+            // CameraMetadata#SENSOR_INFO_TIMESTAMP_SOURCE_REALTIME. So the timebase is always
+            // UPTIME when encoder surface is directly sent to camera.
+            timebase = Timebase.UPTIME;
+        }
         if (mNode != null) {
             // Make sure the previously created camera edge is cleared before creating a new one.
             checkState(mCameraEdge == null);
-            timebase = camera.getCameraInfoInternal().getTimebase();
             SurfaceEdge cameraEdge = new SurfaceEdge(
                     VIDEO_CAPTURE,
+                    INTERNAL_DEFINED_IMAGE_FORMAT_PRIVATE,
                     streamSpec,
                     getSensorToBufferTransformMatrix(),
-                    getHasCameraTransform(),
+                    camera.getHasTransform(),
                     mCropRect,
                     getRelativeRotation(camera),
                     /*mirroring=*/false);
@@ -494,12 +506,6 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
             mSurfaceRequest = new SurfaceRequest(resolution, camera, targetFpsRange,
                     onSurfaceInvalidated);
             mDeferrableSurface = mSurfaceRequest.getDeferrableSurface();
-            // When camera buffers from a REALTIME device are passed directly to a video encoder
-            // from the camera, automatic compensation is done to account for differing timebases
-            // of the audio and camera subsystems. See the document of
-            // CameraMetadata#SENSOR_INFO_TIMESTAMP_SOURCE_REALTIME. So the timebase is always
-            // UPTIME when encoder surface is directly sent to camera.
-            timebase = Timebase.UPTIME;
         }
 
         config.getVideoOutput().onSurfaceRequested(mSurfaceRequest, timebase);
@@ -597,14 +603,7 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
         private static final VideoCaptureConfig<?> DEFAULT_CONFIG;
 
         private static final Function<VideoEncoderConfig, VideoEncoderInfo>
-                DEFAULT_VIDEO_ENCODER_INFO_FINDER = encoderConfig -> {
-                    try {
-                        return VideoEncoderInfoImpl.from(encoderConfig);
-                    } catch (InvalidConfigException e) {
-                        Logger.w(TAG, "Unable to find VideoEncoderInfo", e);
-                        return null;
-                    }
-                };
+                DEFAULT_VIDEO_ENCODER_INFO_FINDER = createFinder();
 
         static final Range<Integer> DEFAULT_FPS_RANGE = new Range<>(30, 30);
 
@@ -614,6 +613,18 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
                     .setVideoEncoderInfoFinder(DEFAULT_VIDEO_ENCODER_INFO_FINDER);
 
             DEFAULT_CONFIG = builder.getUseCaseConfig();
+        }
+
+        @NonNull
+        private static Function<VideoEncoderConfig, VideoEncoderInfo> createFinder() {
+            return encoderConfig -> {
+                try {
+                    return VideoEncoderInfoImpl.from(encoderConfig);
+                } catch (InvalidConfigException e) {
+                    Logger.w(TAG, "Unable to find VideoEncoderInfo", e);
+                    return null;
+                }
+            };
         }
 
         @NonNull

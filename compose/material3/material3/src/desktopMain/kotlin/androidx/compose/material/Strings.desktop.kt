@@ -66,8 +66,10 @@ internal actual fun getString(string: Strings): String {
         Strings.DateRangePickerEndHeadline -> "End date"
         Strings.DateRangePickerScrollToShowNextMonth -> "Scroll to show the next month"
         Strings.DateRangePickerScrollToShowPreviousMonth -> "Scroll to show the previous month"
+        Strings.DateRangePickerDayInRange -> "In range"
         Strings.DateRangeInputTitle -> "Enter dates"
         Strings.DateRangeInputInvalidRangeInput -> "Invalid date range input"
+        Strings.BottomSheetDragHandleDescription -> "Drag Handle"
         Strings.TooltipLongPressLabel -> "Show tooltip"
         Strings.TimePickerAM -> "AM"
         Strings.TimePickerPM -> "PM"
@@ -79,6 +81,7 @@ internal actual fun getString(string: Strings): String {
         Strings.TimePicker24HourSuffix -> "%1$ hours"
         Strings.TimePickerMinute -> "Minute"
         Strings.TimePickerHour -> "Hour"
+        Strings.TooltipPaneDescription -> "Tooltip"
         else -> ""
     }
 }

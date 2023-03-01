@@ -17,10 +17,14 @@
 package androidx.wear.watchface.client
 
 import android.graphics.Bitmap
+import android.os.Build
 import android.os.Handler
 import android.os.HandlerThread
+import android.os.IBinder
 import android.os.RemoteException
 import android.support.wearable.watchface.SharedMemoryImage
+import android.view.SurfaceControlViewHost
+import android.view.SurfaceView
 import androidx.annotation.AnyThread
 import androidx.annotation.IntDef
 import androidx.annotation.Px
@@ -83,6 +87,38 @@ public object DisconnectReasons {
 }
 
 /**
+ * Intended for use by watch face editors, a RemoteWatchFaceViewHost allows the watch face to send
+ * a [SurfaceControlViewHost.SurfacePackage] to the client, which the client can attach to a
+ * [SurfaceView] with [SurfaceView.setChildSurfacePackage]. The client can request an updated
+ * screen shot by calling [renderWatchFace].
+ */
+public interface RemoteWatchFaceViewHost : AutoCloseable {
+    /**
+     * Renders the watchface into the view associated with [surfacePackage].
+     *
+     * @param renderParameters The [RenderParameters] to draw with.
+     * @param instant The [Instant] render with.
+     * @param userStyle Optional [UserStyle] to render with, if null the current style is used.
+     * @param idAndComplicationData Map of complication ids to [ComplicationData] to render with, or
+     *   if null then the existing complication data if any is used.
+     */
+    @Throws(RemoteException::class)
+    public fun renderWatchFace(
+        renderParameters: RenderParameters,
+        instant: Instant,
+        userStyle: UserStyle?,
+        idAndComplicationData: Map<Int, ComplicationData>?,
+    )
+
+    /**
+     * The [SurfaceControlViewHost.SurfacePackage] the client should attach to a [SurfaceView] via
+     * [SurfaceView.setChildSurfacePackage]. The watch face will render into this view when
+     * [renderWatchFace] is called.
+     */
+    val surfacePackage: SurfaceControlViewHost.SurfacePackage
+}
+
+/**
  * Controls a stateful remote interactive watch face. Typically this will be used for the current
  * active watch face.
  *
@@ -102,7 +138,8 @@ public interface InteractiveWatchFaceClient : AutoCloseable {
     public fun updateComplicationData(slotIdToComplicationData: Map<Int, ComplicationData>)
 
     /**
-     * Renders the watchface to a shared memory backed [Bitmap] with the given settings.
+     * Renders the watchface to a shared memory backed [Bitmap] with the given settings. Note this
+     * will be fairly slow since either software canvas or glReadPixels will be invoked.
      *
      * @param renderParameters The [RenderParameters] to draw with.
      * @param instant The [Instant] render with.
@@ -120,6 +157,37 @@ public interface InteractiveWatchFaceClient : AutoCloseable {
         userStyle: UserStyle?,
         idAndComplicationData: Map<Int, ComplicationData>?
     ): Bitmap
+
+    /** Whether or not the watch face supports [RemoteWatchFaceViewHost]. */
+    public val isRemoteWatchFaceViewHostSupported: Boolean
+        @get:JvmName("isRemoteWatchFaceViewHostSupported")
+        get() = false
+
+    /**
+     * Constructs a [RemoteWatchFaceViewHost] whose [RemoteWatchFaceViewHost.surfacePackage] can be
+     * attached to a [SurfaceView] owned by the client with [SurfaceView.setChildSurfacePackage].
+     * The watch face will render into this view upon demand (see
+     * [RemoteWatchFaceViewHost.renderWatchFace]).
+     *
+     * This is more efficient than calling [renderWatchFaceToBitmap] multiple times, although there
+     * is some overhead (memory and cpu) to setting up a RemoteWatchFaceViewHost.
+     *
+     * Requires the watchface to be compiled with a compatible library, to check if that's the case
+     * use [isRemoteWatchFaceViewHostSupported].
+     *
+     * @param hostToken The return value of [View.getHostToken()]
+     * @param width The width of the view in pixels
+     * @param height The height of the view in pixels
+     * @return The [RemoteWatchFaceViewHost] or null if the client has already been closed or if the
+     * watch face is not compatible.
+     */
+    @Throws(RemoteException::class)
+    @RequiresApi(Build.VERSION_CODES.R)
+    public fun createRemoteWatchFaceViewHost(
+        hostToken: IBinder,
+        @Px width: Int,
+        @Px height: Int
+    ): RemoteWatchFaceViewHost? = null
 
     /** The UTC reference preview time for this watch face in milliseconds since the epoch. */
     @get:Throws(RemoteException::class) public val previewReferenceInstant: Instant
@@ -148,7 +216,9 @@ public interface InteractiveWatchFaceClient : AutoCloseable {
     /**
      * Renames this instance to [newInstanceId] (must be unique, usually this would be different
      * from the old ID but that's not a requirement). Sets the current [UserStyle] represented as a
-     * [UserStyleData> and clears any complication data. Setting the new UserStyle may have a side effect of enabling or disabling complicationSlots, which will be visible via [ComplicationSlotState.isEnabled].
+     * [UserStyleData> and clears any complication data. Setting the new UserStyle may have a side
+     * effect of enabling or disabling complicationSlots, which will be visible via
+     * [ComplicationSlotState.isEnabled].
      */
     @Throws(RemoteException::class)
     public fun updateWatchFaceInstance(newInstanceId: String, userStyle: UserStyleData)
@@ -441,6 +511,50 @@ internal constructor(
                 )
             )
         }
+
+    override val isRemoteWatchFaceViewHostSupported = iInteractiveWatchFace.apiVersion >= 9
+
+    @RequiresApi(Build.VERSION_CODES.R)
+    override fun createRemoteWatchFaceViewHost(
+        hostToken: IBinder,
+        @Px width: Int,
+        @Px height: Int
+    ): RemoteWatchFaceViewHost? {
+        if (iInteractiveWatchFace.apiVersion < 8) {
+            throw UnsupportedOperationException()
+        }
+        val remoteWatchFaceView =
+            iInteractiveWatchFace.createRemoteWatchFaceView(hostToken, width, height) ?: return null
+        return object : RemoteWatchFaceViewHost {
+            override fun renderWatchFace(
+                renderParameters: RenderParameters,
+                instant: Instant,
+                userStyle: UserStyle?,
+                idAndComplicationData: Map<Int, ComplicationData>?
+            ) {
+                remoteWatchFaceView.renderWatchFace(
+                    WatchFaceRenderParams(
+                        renderParameters.toWireFormat(),
+                        instant.toEpochMilli(),
+                        userStyle?.toWireFormat(),
+                        idAndComplicationData?.map {
+                            IdAndComplicationDataWireFormat(
+                                it.key,
+                                it.value.asWireComplicationData()
+                            )
+                        }
+                    )
+                )
+            }
+
+            override val surfacePackage: SurfaceControlViewHost.SurfacePackage
+                get() = remoteWatchFaceView.surfacePackage
+
+            override fun close() {
+                remoteWatchFaceView.close()
+            }
+        }
+    }
 
     override val previewReferenceInstant: Instant
         get() = Instant.ofEpochMilli(iInteractiveWatchFace.previewReferenceTimeMillis)

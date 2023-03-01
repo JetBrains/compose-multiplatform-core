@@ -27,6 +27,7 @@ import android.os.IBinder
 import android.os.Looper
 import android.os.RemoteException
 import android.support.wearable.complications.ComplicationData as WireComplicationData
+import android.os.Bundle
 import android.support.wearable.complications.ComplicationProviderInfo
 import android.support.wearable.complications.IComplicationManager
 import android.support.wearable.complications.IComplicationProvider
@@ -34,6 +35,7 @@ import androidx.annotation.IntDef
 import androidx.annotation.MainThread
 import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
+import androidx.annotation.VisibleForTesting
 import androidx.wear.watchface.complications.data.ComplicationData
 import androidx.wear.watchface.complications.data.ComplicationDataExpressionEvaluator
 import androidx.wear.watchface.complications.data.ComplicationDataExpressionEvaluator.Companion.hasExpression
@@ -74,8 +76,7 @@ constructor(
     complicationInstanceId: Int,
     complicationType: ComplicationType,
     immediateResponseRequired: Boolean,
-    @IsForSafeWatchFace
-    isForSafeWatchFace: Int
+    @IsForSafeWatchFace isForSafeWatchFace: Int
 ) {
     /** Constructs a [ComplicationRequest] without setting [isForSafeWatchFace]. */
     @Suppress("NewApi")
@@ -136,8 +137,8 @@ constructor(
 }
 
 /**
- * Defines constants that describe whether or not the watch face the complication is being
- * requested for is deemed to be safe. I.e. if its in the list defined by the
+ * Defines constants that describe whether or not the watch face the complication is being requested
+ * for is deemed to be safe. I.e. if its in the list defined by the
  * [ComplicationDataSourceService.METADATA_KEY_SAFE_WATCH_FACES] meta data in the
  * [ComplicationDataSourceService]'s manifest.
  */
@@ -155,7 +156,7 @@ public object TargetWatchFaceSafety {
     /**
      * The watch face is a member of the list defined by the [ComplicationDataSourceService]'s
      * [ComplicationDataSourceService.METADATA_KEY_SAFE_WATCH_FACES] meta data in its manifest.
-     **/
+     */
     public const val SAFE: Int = 1
 
     /**
@@ -168,11 +169,8 @@ public object TargetWatchFaceSafety {
 /** @hide */
 @IntDef(
     flag = true, // This is a flag to allow for future expansion.
-    value = [
-        TargetWatchFaceSafety.UNKNOWN,
-        TargetWatchFaceSafety.SAFE,
-        TargetWatchFaceSafety.UNSAFE
-    ]
+    value =
+        [TargetWatchFaceSafety.UNKNOWN, TargetWatchFaceSafety.SAFE, TargetWatchFaceSafety.UNSAFE]
 )
 public annotation class IsForSafeWatchFace
 
@@ -281,6 +279,17 @@ public abstract class ComplicationDataSourceService : Service() {
     internal val mainThreadCoroutineScope by lazy {
         CoroutineScope(mainThreadHandler.asCoroutineDispatcher())
     }
+
+    /**
+     * Equivalent to [Build.VERSION.SDK_INT], but allows override for any platform-independent
+     * versioning.
+     *
+     * This is meant to only be used in androidTest, which only support testing on one SDK. In
+     * Robolectric tests use `@Config(sdk = [Build.VERSION_CODES.*])`.
+     *
+     * Note that this cannot override platform-dependent versioning, which means inconsistency.
+     */
+    @VisibleForTesting internal open val wearPlatformVersion = Build.VERSION.SDK_INT
 
     /* @hide */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
@@ -436,8 +445,8 @@ public abstract class ComplicationDataSourceService : Service() {
             onUpdate2(
                 complicationInstanceId,
                 type,
-                isForSafeWatchFace = TargetWatchFaceSafety.UNKNOWN,
-                manager
+                manager,
+                bundle = null
             )
         }
 
@@ -445,9 +454,12 @@ public abstract class ComplicationDataSourceService : Service() {
         override fun onUpdate2(
             complicationInstanceId: Int,
             type: Int,
-            @IsForSafeWatchFace isForSafeWatchFace: Int,
-            manager: IBinder
+            manager: IBinder,
+            bundle: Bundle?
         ) {
+            val isForSafeWatchFace = bundle?.getInt(
+                IComplicationProvider.BUNDLE_KEY_IS_SAFE_FOR_WATCHFACE
+            ) ?: TargetWatchFaceSafety.UNKNOWN
             val expectedDataType = fromWireType(type)
             val iComplicationManager = IComplicationManager.Stub.asInterface(manager)
             mainThreadHandler.post {
@@ -548,7 +560,8 @@ public abstract class ComplicationDataSourceService : Service() {
                             lastExpressionEvaluator?.close() // Cancelling any previous evaluation.
                             if (
                                 // Will be evaluated by the platform.
-                                Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU ||
+                                // TODO(b/257422920): Set this to the exact platform version.
+                                wearPlatformVersion >= Build.VERSION_CODES.TIRAMISU + 1 ||
                                     // When no update is needed, the data is going to be null.
                                     this == null
                             ) {
@@ -650,20 +663,21 @@ public abstract class ComplicationDataSourceService : Service() {
             }
         }
 
-        override fun onSynchronousComplicationRequest(
-            complicationInstanceId: Int,
-            type: Int
-        ) = onSynchronousComplicationRequest2(
-            complicationInstanceId,
-            isForSafeWatchFace = TargetWatchFaceSafety.UNKNOWN,
-            type
-        )
+        override fun onSynchronousComplicationRequest(complicationInstanceId: Int, type: Int) =
+            onSynchronousComplicationRequest2(
+                complicationInstanceId,
+                type,
+                bundle = null
+            )
 
         override fun onSynchronousComplicationRequest2(
             complicationInstanceId: Int,
-            @IsForSafeWatchFace isForSafeWatchFace: Int,
-            type: Int
+            type: Int,
+            bundle: Bundle?
         ): android.support.wearable.complications.ComplicationData? {
+            val isForSafeWatchFace = bundle?.getInt(
+                IComplicationProvider.BUNDLE_KEY_IS_SAFE_FOR_WATCHFACE
+            ) ?: TargetWatchFaceSafety.UNKNOWN
             val expectedDataType = fromWireType(type)
             val complicationType = fromWireType(type)
             val latch = CountDownLatch(1)

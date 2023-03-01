@@ -27,8 +27,6 @@ import androidx.appactions.interaction.capabilities.core.task.AppEntityResolver;
 import androidx.appactions.interaction.capabilities.core.task.EntitySearchResult;
 import androidx.appactions.interaction.capabilities.core.task.InventoryResolver;
 import androidx.appactions.interaction.capabilities.core.task.ValidationResult;
-import androidx.appactions.interaction.capabilities.core.task.ValueListListener;
-import androidx.appactions.interaction.capabilities.core.task.ValueListener;
 import androidx.appactions.interaction.capabilities.core.testing.spec.SettableFutureWrapper;
 import androidx.appactions.interaction.capabilities.core.values.SearchAction;
 import androidx.appactions.interaction.proto.CurrentValue;
@@ -47,8 +45,9 @@ import org.junit.runners.JUnit4;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Optional;
+import java.util.Map;
 import java.util.function.Consumer;
 
 @RunWith(JUnit4.class)
@@ -79,13 +78,9 @@ public final class TaskSlotProcessorTest {
     private <T> GenericResolverInternal<T> createValueResolver(
             ValidationResult validationResult, Consumer<T> valueConsumer) {
         return GenericResolverInternal.fromValueListener(
-                new ValueListener<T>() {
-                    @NonNull
-                    @Override
-                    public ListenableFuture<ValidationResult> onReceived(T value) {
-                        valueConsumer.accept(value);
-                        return Futures.immediateFuture(validationResult);
-                    }
+                value -> {
+                    valueConsumer.accept(value);
+                    return Futures.immediateFuture(validationResult);
                 });
     }
 
@@ -97,13 +92,9 @@ public final class TaskSlotProcessorTest {
     private <T> GenericResolverInternal<T> createValueListResolver(
             ValidationResult validationResult, Consumer<List<T>> valueConsumer) {
         return GenericResolverInternal.fromValueListListener(
-                new ValueListListener<T>() {
-                    @NonNull
-                    @Override
-                    public ListenableFuture<ValidationResult> onReceived(List<T> value) {
-                        valueConsumer.accept(value);
-                        return Futures.immediateFuture(validationResult);
-                    }
+                value -> {
+                    valueConsumer.accept(value);
+                    return Futures.immediateFuture(validationResult);
                 });
     }
 
@@ -121,9 +112,10 @@ public final class TaskSlotProcessorTest {
                         return Futures.immediateFuture(validationResult);
                     }
 
+                    @NonNull
                     @Override
                     public ListenableFuture<EntitySearchResult<T>> lookupAndRender(
-                            SearchAction<T> searchAction) {
+                            @NonNull SearchAction<T> searchAction) {
                         appSearchConsumer.accept(searchAction);
                         return Futures.immediateFuture(appSearchResult);
                     }
@@ -132,16 +124,15 @@ public final class TaskSlotProcessorTest {
 
     @Test
     public void processSlot_singleValue_accepted() throws Exception {
-        TaskParamRegistry paramRegistry =
-                TaskParamRegistry.builder()
-                        .addTaskParameter(
-                                "singularValue",
-                                (paramValue) -> false,
-                                createValueResolver(ValidationResult.newAccepted()),
-                                Optional.empty(),
-                                Optional.empty(),
-                                TypeConverters::toStringValue)
-                        .build();
+        TaskParamBinding<String> binding = new TaskParamBinding<>(
+                "singularValue",
+                (paramValue) -> false,
+                createValueResolver(ValidationResult.newAccepted()),
+                TypeConverters::toStringValue,
+                null,
+                null);
+        Map<String, TaskParamBinding<?>> taskParamMap = new HashMap<>();
+        taskParamMap.put("singularValue", binding);
         List<ParamValue> args =
                 Collections.singletonList(
                         ParamValue.newBuilder().setIdentifier("testValue").build());
@@ -150,7 +141,7 @@ public final class TaskSlotProcessorTest {
                 TaskSlotProcessor.processSlot(
                                 "singularValue",
                                 TaskCapabilityUtils.paramValuesToCurrentValue(args, Status.PENDING),
-                                paramRegistry,
+                                taskParamMap,
                                 Runnable::run)
                         .get();
 
@@ -163,16 +154,15 @@ public final class TaskSlotProcessorTest {
 
     @Test
     public void processSlot_singleValue_rejected() throws Exception {
-        TaskParamRegistry paramRegistry =
-                TaskParamRegistry.builder()
-                        .addTaskParameter(
-                                "singularValue",
-                                (paramValue) -> false,
-                                createValueResolver(ValidationResult.newRejected()),
-                                Optional.empty(),
-                                Optional.empty(),
-                                TypeConverters::toStringValue)
-                        .build();
+        TaskParamBinding<String> binding = new TaskParamBinding<>(
+                "singularValue",
+                (paramValue) -> false,
+                createValueResolver(ValidationResult.newRejected()),
+                TypeConverters::toStringValue,
+                null,
+                null);
+        Map<String, TaskParamBinding<?>> taskParamMap = new HashMap<>();
+        taskParamMap.put("singularValue", binding);
         List<ParamValue> args =
                 Collections.singletonList(
                         ParamValue.newBuilder().setIdentifier("testValue").build());
@@ -181,7 +171,7 @@ public final class TaskSlotProcessorTest {
                 TaskSlotProcessor.processSlot(
                                 "singularValue",
                                 TaskCapabilityUtils.paramValuesToCurrentValue(args, Status.PENDING),
-                                paramRegistry,
+                                taskParamMap,
                                 Runnable::run)
                         .get();
 
@@ -195,17 +185,16 @@ public final class TaskSlotProcessorTest {
     @Test
     public void processSlot_repeatedValue_accepted() throws Exception {
         SettableFutureWrapper<List<String>> lastReceivedArgs = new SettableFutureWrapper<>();
-        TaskParamRegistry paramRegistry =
-                TaskParamRegistry.builder()
-                        .addTaskParameter(
-                                "repeatedValue",
-                                (paramValue) -> false,
-                                createValueListResolver(ValidationResult.newAccepted(),
-                                        lastReceivedArgs::set),
-                                Optional.empty(),
-                                Optional.empty(),
-                                TypeConverters::toStringValue)
-                        .build();
+        TaskParamBinding<String> binding = new TaskParamBinding<>(
+                "repeatedValue",
+                (paramValue) -> false,
+                createValueListResolver(
+                        ValidationResult.newAccepted(), lastReceivedArgs::set),
+                TypeConverters::toStringValue,
+                null,
+                null);
+        Map<String, TaskParamBinding<?>> taskParamMap = new HashMap<>();
+        taskParamMap.put("repeatedValue", binding);
         List<ParamValue> args =
                 Arrays.asList(
                         ParamValue.newBuilder().setIdentifier("testValue1").build(),
@@ -215,7 +204,7 @@ public final class TaskSlotProcessorTest {
                 TaskSlotProcessor.processSlot(
                                 "repeatedValue",
                                 TaskCapabilityUtils.paramValuesToCurrentValue(args, Status.PENDING),
-                                paramRegistry,
+                                taskParamMap,
                                 Runnable::run)
                         .get();
 
@@ -232,17 +221,16 @@ public final class TaskSlotProcessorTest {
     @Test
     public void processSlot_repeatedValue_rejected() throws Exception {
         SettableFutureWrapper<List<String>> lastReceivedArgs = new SettableFutureWrapper<>();
-        TaskParamRegistry paramRegistry =
-                TaskParamRegistry.builder()
-                        .addTaskParameter(
-                                "repeatedValue",
-                                (paramValue) -> false,
-                                createValueListResolver(ValidationResult.newRejected(),
-                                        lastReceivedArgs::set),
-                                Optional.empty(),
-                                Optional.empty(),
-                                TypeConverters::toStringValue)
-                        .build();
+        TaskParamBinding<String> binding = new TaskParamBinding<>(
+                "repeatedValue",
+                (paramValue) -> false,
+                createValueListResolver(
+                        ValidationResult.newRejected(), lastReceivedArgs::set),
+                TypeConverters::toStringValue,
+                null,
+                null);
+        Map<String, TaskParamBinding<?>> taskParamMap = new HashMap<>();
+        taskParamMap.put("repeatedValue", binding);
         List<ParamValue> args =
                 Arrays.asList(
                         ParamValue.newBuilder().setIdentifier("testValue1").build(),
@@ -252,7 +240,7 @@ public final class TaskSlotProcessorTest {
                 TaskSlotProcessor.processSlot(
                                 "repeatedValue",
                                 TaskCapabilityUtils.paramValuesToCurrentValue(args, Status.PENDING),
-                                paramRegistry,
+                                taskParamMap,
                                 Runnable::run)
                         .get();
 
@@ -271,18 +259,17 @@ public final class TaskSlotProcessorTest {
             throws Exception {
         SettableFutureWrapper<String> onReceivedCb = new SettableFutureWrapper<>();
         SettableFutureWrapper<List<String>> renderCb = new SettableFutureWrapper<>();
-        TaskParamRegistry paramRegistry =
-                TaskParamRegistry.builder()
-                        .addTaskParameter(
-                                "assistantDrivenSlot",
-                                (paramValue) -> !paramValue.hasIdentifier(),
-                                createAssistantDisambigResolver(
-                                        ValidationResult.newAccepted(), onReceivedCb::set,
-                                        renderCb::set),
-                                Optional.empty(),
-                                Optional.empty(),
-                                TypeConverters::toStringValue)
-                        .build();
+        TaskParamBinding<String> binding = new TaskParamBinding<>(
+                "assistantDrivenSlot",
+                (paramValue) -> !paramValue.hasIdentifier(),
+                createAssistantDisambigResolver(
+                        ValidationResult.newAccepted(), onReceivedCb::set,
+                        renderCb::set),
+                TypeConverters::toStringValue,
+                null,
+                null);
+        Map<String, TaskParamBinding<?>> taskParamMap = new HashMap<>();
+        taskParamMap.put("assistantDrivenSlot", binding);
         CurrentValue previouslyAccepted =
                 CurrentValue.newBuilder()
                         .setStatus(Status.ACCEPTED)
@@ -309,7 +296,7 @@ public final class TaskSlotProcessorTest {
                                 .build());
 
         SlotProcessingResult result =
-                TaskSlotProcessor.processSlot("assistantDrivenSlot", values, paramRegistry,
+                TaskSlotProcessor.processSlot("assistantDrivenSlot", values, taskParamMap,
                                 Runnable::run)
                         .get();
 
@@ -341,30 +328,28 @@ public final class TaskSlotProcessorTest {
                         onReceivedCb::set,
                         entitySearchResult, // app-grounding returns REJECTED in all cases
                         appSearchCb::set);
-        TaskParamRegistry paramRegistry =
-                TaskParamRegistry.builder()
-                        .addTaskParameter(
-                                "appDrivenSlot",
-                                (paramValue) -> true, // always invoke app-grounding in all cases
-                                resolver,
-                                Optional.of((unused) -> Entity.getDefaultInstance()),
-                                Optional.of(
-                                        (unused) ->
-                                                SearchAction.<String>newBuilder()
-                                                        .setQuery("A")
-                                                        .setObject("nested")
-                                                        .build()),
-                                TypeConverters::toStringValue) // Not invoked
-                        .build();
+        TaskParamBinding<String> binding = new TaskParamBinding<>(
+                "appDrivenSlot",
+                (paramValue) -> true, // always invoke app-grounding in all cases
+                resolver,
+                TypeConverters::toStringValue, // Not invoked
+                (unused) -> Entity.getDefaultInstance(),
+                (unused) ->
+                        SearchAction.<String>newBuilder()
+                                .setQuery("A")
+                                .setObject("nested")
+                                .build());
+        Map<String, TaskParamBinding<?>> taskParamMap = new HashMap<>();
+        taskParamMap.put("appDrivenSlot", binding);
         List<CurrentValue> values =
-                Arrays.asList(
+                Collections.singletonList(
                         CurrentValue.newBuilder()
                                 .setStatus(Status.PENDING)
                                 .setValue(buildSearchActionParamValue("A"))
                                 .build());
 
         SlotProcessingResult result =
-                TaskSlotProcessor.processSlot("appDrivenSlot", values, paramRegistry,
+                TaskSlotProcessor.processSlot("appDrivenSlot", values, taskParamMap,
                         Runnable::run).get();
 
         assertThat(result.isSuccessful()).isFalse();

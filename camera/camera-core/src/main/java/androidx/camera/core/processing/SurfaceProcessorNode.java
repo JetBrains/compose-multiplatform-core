@@ -52,7 +52,6 @@ import androidx.core.util.Preconditions;
 import com.google.auto.value.AutoValue;
 import com.google.common.util.concurrent.ListenableFuture;
 
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -118,7 +117,7 @@ public class SurfaceProcessorNode implements
         for (OutConfig config : input.getOutConfigs()) {
             mOutput.put(config, transformSingleOutput(inputSurface, config));
         }
-        sendSurfaceRequest(inputSurface, mOutput.values());
+        sendSurfaceRequest(inputSurface, mOutput);
         sendSurfaceOutputs(inputSurface, mOutput);
         return mOutput;
     }
@@ -141,7 +140,7 @@ public class SurfaceProcessorNode implements
 
         // The aspect ratio of the output must match the aspect ratio of the crop rect. Otherwise
         // the output will be stretched.
-        Size rotatedCropSize = getRotatedSize(outConfig.getCropRect(), rotationDegrees);
+        Size rotatedCropSize = getRotatedSize(cropRect, rotationDegrees);
         checkArgument(isAspectRatioMatchingWithRoundingError(rotatedCropSize, outConfig.getSize()));
 
         StreamSpec streamSpec = StreamSpec.builder(outConfig.getSize())
@@ -150,6 +149,7 @@ public class SurfaceProcessorNode implements
 
         outputSurface = new SurfaceEdge(
                 outConfig.getTargets(),
+                outConfig.getFormat(),
                 streamSpec,
                 sensorToBufferTransform,
                 // The Surface transform cannot be carried over during buffer copy.
@@ -166,7 +166,7 @@ public class SurfaceProcessorNode implements
      * Creates {@link SurfaceRequest} and send it to {@link SurfaceProcessor}.
      */
     private void sendSurfaceRequest(@NonNull SurfaceEdge input,
-            @NonNull Collection<SurfaceEdge> outputs) {
+            @NonNull Map<OutConfig, SurfaceEdge> outputs) {
         SurfaceRequest surfaceRequest = input.createSurfaceRequest(mCameraInternal);
         setUpRotationUpdates(
                 surfaceRequest,
@@ -199,9 +199,11 @@ public class SurfaceProcessorNode implements
             Map.Entry<OutConfig, SurfaceEdge> output) {
         ListenableFuture<SurfaceOutput> future = output.getValue().createSurfaceOutputFuture(
                 input.getStreamSpec().getResolution(),
+                output.getKey().getFormat(),
                 output.getKey().getCropRect(),
                 input.getRotationDegrees(),
-                output.getKey().getMirroring());
+                output.getKey().getMirroring(),
+                mCameraInternal);
         Futures.addCallback(future, new FutureCallback<SurfaceOutput>() {
             @Override
             public void onSuccess(@Nullable SurfaceOutput output) {
@@ -237,20 +239,20 @@ public class SurfaceProcessorNode implements
      */
     void setUpRotationUpdates(
             @NonNull SurfaceRequest inputSurfaceRequest,
-            @NonNull Collection<SurfaceEdge> outputs,
+            @NonNull Map<OutConfig, SurfaceEdge> outputs,
             int rotatedDegrees) {
         inputSurfaceRequest.setTransformationInfoListener(mainThreadExecutor(), info -> {
-            for (SurfaceEdge output : outputs) {
+            for (Map.Entry<OutConfig, SurfaceEdge> output : outputs.entrySet()) {
                 // To obtain the rotation degrees delta, the rotation performed by the node must be
                 // eliminated.
                 int rotationDegrees = info.getRotationDegrees() - rotatedDegrees;
-                if (output.getMirroring()) {
+                if (output.getKey().getMirroring()) {
                     // The order of transformation is cropping -> rotation -> mirroring. To
                     // change the rotation, one must consider the mirroring.
                     rotationDegrees = -rotationDegrees;
                 }
                 rotationDegrees = within360(rotationDegrees);
-                output.setRotationDegrees(rotationDegrees);
+                output.getValue().setRotationDegrees(rotationDegrees);
             }
         });
     }
@@ -346,6 +348,12 @@ public class SurfaceProcessorNode implements
         abstract int getTargets();
 
         /**
+         * The format of the output stream.
+         */
+        @CameraEffect.Formats
+        abstract int getFormat();
+
+        /**
          * How the input should be cropped.
          */
         @NonNull
@@ -370,21 +378,24 @@ public class SurfaceProcessorNode implements
          * <p>The result is an output edge with the input's transformation applied.
          */
         @NonNull
-        public static OutConfig of(@NonNull SurfaceEdge surface) {
-            return of(surface.getTargets(),
-                    surface.getCropRect(),
-                    getRotatedSize(surface.getCropRect(), surface.getRotationDegrees()),
-                    surface.getMirroring());
+        public static OutConfig of(@NonNull SurfaceEdge inputEdge) {
+            return of(inputEdge.getTargets(),
+                    inputEdge.getFormat(),
+                    inputEdge.getCropRect(),
+                    getRotatedSize(inputEdge.getCropRect(), inputEdge.getRotationDegrees()),
+                    inputEdge.getMirroring());
         }
 
         /**
          * Creates an {@link OutConfig} instance with custom transformations.
          */
         @NonNull
-        public static OutConfig of(int targets, @NonNull Rect cropRect, @NonNull Size size,
-                boolean mirroring) {
-            return new AutoValue_SurfaceProcessorNode_OutConfig(randomUUID(), targets, cropRect,
-                    size, mirroring);
+        public static OutConfig of(@CameraEffect.Targets int targets,
+                @CameraEffect.Formats int format,
+                @NonNull Rect cropRect,
+                @NonNull Size size, boolean mirroring) {
+            return new AutoValue_SurfaceProcessorNode_OutConfig(randomUUID(), targets, format,
+                    cropRect, size, mirroring);
         }
     }
 }

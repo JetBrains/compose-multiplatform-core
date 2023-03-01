@@ -16,6 +16,7 @@
 
 package androidx.camera.core.processing
 
+import android.graphics.ImageFormat
 import android.graphics.Matrix
 import android.graphics.Rect
 import android.graphics.SurfaceTexture
@@ -24,11 +25,15 @@ import android.os.Looper.getMainLooper
 import android.util.Range
 import android.util.Size
 import android.view.Surface
+import androidx.camera.core.CameraEffect.IMAGE_CAPTURE
 import androidx.camera.core.CameraEffect.PREVIEW
 import androidx.camera.core.CameraEffect.VIDEO_CAPTURE
 import androidx.camera.core.SurfaceRequest
 import androidx.camera.core.SurfaceRequest.TransformationInfo
+import androidx.camera.core.impl.ImageFormatConstants.INTERNAL_DEFINED_IMAGE_FORMAT_PRIVATE
+import androidx.camera.core.impl.ImmediateSurface
 import androidx.camera.core.impl.StreamSpec
+import androidx.camera.core.impl.utils.TransformUtils
 import androidx.camera.core.impl.utils.TransformUtils.is90or270
 import androidx.camera.core.impl.utils.TransformUtils.rectToSize
 import androidx.camera.core.impl.utils.TransformUtils.rotateSize
@@ -36,6 +41,7 @@ import androidx.camera.core.impl.utils.TransformUtils.sizeToRect
 import androidx.camera.core.impl.utils.executor.CameraXExecutors.mainThreadExecutor
 import androidx.camera.core.processing.SurfaceProcessorNode.OutConfig
 import androidx.camera.testing.fakes.FakeCamera
+import androidx.camera.testing.fakes.FakeImageReaderProxy
 import androidx.camera.testing.fakes.FakeSurfaceProcessorInternal
 import com.google.common.truth.Truth.assertThat
 import org.junit.After
@@ -110,11 +116,61 @@ class SurfaceProcessorNodeTest {
     }
 
     @Test
+    fun configureJpegOutput_returnsJpegFormat() {
+        // Arrange: configure node to produce JPEG output.
+        createSurfaceProcessorNode()
+        val inputEdge = SurfaceEdge(
+            PREVIEW,
+            INTERNAL_DEFINED_IMAGE_FORMAT_PRIVATE,
+            StreamSpec.builder(INPUT_SIZE).build(),
+            Matrix.IDENTITY_MATRIX,
+            true,
+            PREVIEW_CROP_RECT,
+            0,
+            false
+        )
+        val outConfig = OutConfig.of(
+            IMAGE_CAPTURE,
+            ImageFormat.JPEG,
+            inputEdge.cropRect,
+            TransformUtils.getRotatedSize(inputEdge.cropRect, inputEdge.rotationDegrees),
+            inputEdge.mirroring
+        )
+        nodeInput = SurfaceProcessorNode.In.of(inputEdge, listOf(outConfig))
+        // Act.
+        val out = node.transform(nodeInput)
+        shadowOf(getMainLooper()).idle()
+        // Assert: the output is JPEG format.
+        val outEdge = out[outConfig]!!
+        assertThat(outEdge.format).isEqualTo(ImageFormat.JPEG)
+        // Act: provides a JPEG Surface.
+        val imageReader = FakeImageReaderProxy.newInstance(
+            INPUT_SIZE.width,
+            INPUT_SIZE.height,
+            ImageFormat.JPEG,
+            1,
+            0
+        )
+        val outputDeferrableSurface = ImmediateSurface(
+            imageReader.surface!!,
+            Size(PREVIEW_CROP_RECT.width(), PREVIEW_CROP_RECT.height()),
+            ImageFormat.JPEG
+        )
+        outEdge.setProvider(outputDeferrableSurface)
+        shadowOf(getMainLooper()).idle()
+        // Assert: SurfaceProcessor receives a JPEG SurfaceOutput.
+        val imageCaptureOutput = surfaceProcessorInternal.surfaceOutputs[IMAGE_CAPTURE]!!
+        assertThat(imageCaptureOutput.format).isEqualTo(ImageFormat.JPEG)
+        imageReader.close()
+    }
+
+    @Test
     fun identicalOutConfigs_returnDifferentEdges() {
         // Arrange: create 2 OutConfig with identical values
         createSurfaceProcessorNode()
         val inputEdge = SurfaceEdge(
             PREVIEW,
+            INTERNAL_DEFINED_IMAGE_FORMAT_PRIVATE,
             StreamSpec.builder(INPUT_SIZE).build(),
             Matrix.IDENTITY_MATRIX,
             true,
@@ -124,9 +180,9 @@ class SurfaceProcessorNodeTest {
         )
         val outConfig1 = OutConfig.of(inputEdge)
         val outConfig2 = OutConfig.of(inputEdge)
-        val input = SurfaceProcessorNode.In.of(inputEdge, listOf(outConfig1, outConfig2))
+        nodeInput = SurfaceProcessorNode.In.of(inputEdge, listOf(outConfig1, outConfig2))
         // Act.
-        val output = node.transform(input)
+        val output = node.transform(nodeInput)
         // Assert: there are two outputs
         assertThat(output).hasSize(2)
         // Cleanup
@@ -283,6 +339,43 @@ class SurfaceProcessorNodeTest {
     }
 
     @Test
+    fun setRotationAndMirroringToInput_applyCropRotateAndMirroring_rotationIsPropagated() {
+        // Arrange.
+        createSurfaceProcessorNode()
+        createInputEdge(previewRotationDegrees = 90, mirroring = true)
+        val inputSurface = nodeInput.surfaceEdge
+        val nodeOutput = node.transform(nodeInput)
+        provideSurfaces(nodeOutput)
+        shadowOf(getMainLooper()).idle()
+
+        // Act: update rotation degrees
+        inputSurface.rotationDegrees = 270
+        shadowOf(getMainLooper()).idle()
+
+        // Assert: surfaceOutput of SurfaceProcessor will consume the initial rotation degrees and
+        // output surface will receive the remaining degrees.
+        val previewSurfaceOutput =
+            surfaceProcessorInternal.surfaceOutputs[PREVIEW]!! as SurfaceOutputImpl
+        assertThat(previewSurfaceOutput.rotationDegrees).isEqualTo(90)
+        assertThat(previewTransformInfo.rotationDegrees).isEqualTo(180)
+        assertThat(previewSurfaceOutput.inputSize).isEqualTo(INPUT_SIZE)
+        assertThat(previewSurfaceOutput.mirroring).isTrue()
+        val videoSurfaceOutput =
+            surfaceProcessorInternal.surfaceOutputs[VIDEO_CAPTURE]!! as SurfaceOutputImpl
+        assertThat(videoSurfaceOutput.rotationDegrees).isEqualTo(90)
+        assertThat(videoTransformInfo.rotationDegrees).isEqualTo(180)
+        assertThat(videoSurfaceOutput.inputSize).isEqualTo(INPUT_SIZE)
+        assertThat(videoSurfaceOutput.mirroring).isTrue()
+
+        // Act: update rotation degrees
+        inputSurface.rotationDegrees = 180
+        shadowOf(getMainLooper()).idle()
+        // Assert: video rotation is the same as preview and are compensated by mirroring.
+        assertThat(previewTransformInfo.rotationDegrees).isEqualTo(270)
+        assertThat(videoTransformInfo.rotationDegrees).isEqualTo(270)
+    }
+
+    @Test
     fun provideSurfaceToOutput_surfaceIsPropagatedE2E() {
         // Arrange.
         createSurfaceProcessorNode()
@@ -323,7 +416,7 @@ class SurfaceProcessorNodeTest {
     private fun createInputEdge(
         previewTarget: Int = PREVIEW,
         previewSize: Size = INPUT_SIZE,
-        sensorToBufferTransform: android.graphics.Matrix = android.graphics.Matrix(),
+        sensorToBufferTransform: Matrix = Matrix(),
         hasCameraTransform: Boolean = true,
         previewCropRect: Rect = PREVIEW_CROP_RECT,
         previewRotationDegrees: Int = ROTATION_DEGREES,
@@ -333,6 +426,7 @@ class SurfaceProcessorNodeTest {
     ) {
         val inputEdge = SurfaceEdge(
             previewTarget,
+            INTERNAL_DEFINED_IMAGE_FORMAT_PRIVATE,
             StreamSpec.builder(previewSize).setExpectedFrameRateRange(frameRateRange).build(),
             sensorToBufferTransform,
             hasCameraTransform,
@@ -342,6 +436,7 @@ class SurfaceProcessorNodeTest {
         )
         videoOutConfig = OutConfig.of(
             VIDEO_CAPTURE,
+            INTERNAL_DEFINED_IMAGE_FORMAT_PRIVATE,
             VIDEO_CROP_RECT,
             videoOutputSize,
             true

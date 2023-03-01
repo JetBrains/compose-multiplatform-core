@@ -144,11 +144,17 @@ internal actual fun getString(string: Strings): String {
         Strings.DateRangePickerScrollToShowPreviousMonth -> resources.getString(
             androidx.compose.material3.R.string.date_range_picker_scroll_to_previous_month
         )
+        Strings.DateRangePickerDayInRange -> resources.getString(
+            androidx.compose.material3.R.string.date_range_picker_day_in_range
+        )
         Strings.DateRangeInputTitle -> resources.getString(
             androidx.compose.material3.R.string.date_range_input_title
         )
         Strings.DateRangeInputInvalidRangeInput -> resources.getString(
             androidx.compose.material3.R.string.date_range_input_invalid_range_input
+        )
+        Strings.BottomSheetDragHandleDescription -> resources.getString(
+            androidx.compose.material3.R.string.bottom_sheet_drag_handle_description
         )
         Strings.TooltipLongPressLabel -> resources.getString(
             androidx.compose.material3.R.string.tooltip_long_press_label
@@ -173,6 +179,8 @@ internal actual fun getString(string: Strings): String {
             androidx.compose.material3.R.string.time_picker_hour)
         Strings.TimePickerMinute -> resources.getString(
             androidx.compose.material3.R.string.time_picker_minute)
+        Strings.TooltipPaneDescription -> resources.getString(
+            androidx.compose.material3.R.string.tooltip_pane_description)
         else -> ""
     }
 }

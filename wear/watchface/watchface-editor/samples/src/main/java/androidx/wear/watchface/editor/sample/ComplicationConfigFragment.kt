@@ -36,7 +36,6 @@ import androidx.wear.watchface.editor.ChosenComplicationDataSource
 import androidx.wear.watchface.style.WatchFaceLayer
 import androidx.wear.widget.SwipeDismissFrameLayout
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 
 /** This fragment lets the user select a non-background complication to configure. */
@@ -84,8 +83,8 @@ internal class ConfigView(
             // TODO(alexclarke): This button is a Rect which makes the tap animation look bad.
             if (
                 entry.value.fixedComplicationDataSource ||
-                    !entry.value.isEnabled ||
-                    entry.key == watchFaceConfigActivity.editorSession.backgroundComplicationSlotId
+                !entry.value.isEnabled ||
+                entry.key == watchFaceConfigActivity.editorSession.backgroundComplicationSlotId
             ) {
                 // Do not create a button for fixed complicationSlots, disabled complicationSlots,
                 // or background complicationSlots.
