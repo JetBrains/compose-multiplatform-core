@@ -44,6 +44,7 @@ import androidx.compose.ui.test.isFocused
 import androidx.compose.ui.test.isNotSelected
 import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.isSelected
+import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
@@ -72,7 +73,6 @@ import org.mockito.quality.Strictness
 @OptIn(ExperimentalMaterial3Api::class)
 @MediumTest
 @RunWith(AndroidJUnit4::class)
-
 class TimePickerTest {
 
     @get:Rule
@@ -418,5 +418,99 @@ class TimePickerTest {
 
         // Value didn't change
         assertThat(state.hour).isEqualTo(22)
+    }
+
+    @Test
+    fun timeInput_24Hour_noAmPm_Toggle() {
+        val state = TimePickerState(initialHour = 22, initialMinute = 23, is24Hour = true)
+
+        rule.setMaterialContent(lightColorScheme()) {
+            TimeInput(state)
+        }
+
+        rule.onNodeWithText("PM").assertDoesNotExist()
+
+        rule.onNodeWithText("AM").assertDoesNotExist()
+    }
+
+    @Test
+    @OptIn(ExperimentalComposeUiApi::class, ExperimentalTestApi::class)
+    fun timeInput_24Hour_writeAfternoonHour() {
+        val state = TimePickerState(initialHour = 10, initialMinute = 23, is24Hour = true)
+
+        rule.setMaterialContent(lightColorScheme()) {
+            TimeInput(state)
+        }
+
+        rule.onNodeWithText("10")
+            .performKeyInput {
+                pressKey(Key.Two)
+                pressKey(Key.Two)
+            }
+
+        assertThat(state.hour).isEqualTo(22)
+    }
+
+    @Test
+    fun state_restoresTimePickerState() {
+        val restorationTester = StateRestorationTester(rule)
+        var state: TimePickerState?
+        restorationTester.setContent {
+            state = rememberTimePickerState(initialHour = 14, initialMinute = 54, is24Hour = true)
+        }
+
+        state = null
+
+        restorationTester.emulateSavedInstanceStateRestore()
+
+        rule.runOnIdle {
+            assertThat(state?.hour).isEqualTo(14)
+            assertThat(state?.minute).isEqualTo(54)
+            assertThat(state?.is24hour).isTrue()
+        }
+    }
+
+    @Test
+    fun clockFace_24Hour_everyValue() {
+        val state = TimePickerState(initialHour = 10, initialMinute = 23, is24Hour = true)
+
+        rule.setMaterialContent(lightColorScheme()) {
+            ClockFace(state, TimePickerDefaults.colors())
+        }
+
+        repeat(24) { number ->
+            rule.onNodeWithText(number.toString()).performClick()
+            rule.runOnIdle {
+                state.selection = Selection.Hour
+                assertThat(state.hour).isEqualTo(number)
+            }
+        }
+    }
+
+    @Test
+    fun clockFace_12Hour_everyValue() {
+        val state = TimePickerState(initialHour = 0, initialMinute = 0, is24Hour = false)
+
+        rule.setMaterialContent(lightColorScheme()) {
+            ClockFace(state, TimePickerDefaults.colors())
+        }
+
+        repeat(24) { number ->
+            if (number >= 12) {
+                state.isAfternoonToggle = true
+            }
+
+            val hour = when {
+                number == 0 -> 12
+                number > 12 -> number - 12
+                else -> number
+            }
+
+            rule.onNodeWithText("$hour").performClick()
+            rule.runOnIdle {
+                state.selection = Selection.Hour
+                assertThat(state.hour).isEqualTo(number)
+            }
+        }
     }
 }

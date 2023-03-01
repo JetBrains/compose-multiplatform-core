@@ -77,7 +77,6 @@ import kotlinx.coroutines.withContext
 import org.junit.After
 import org.junit.Assert.assertThrows
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
@@ -159,7 +158,8 @@ class FocusMeteringControlTest {
             // "IllegalStateException: Dispatchers.Main is used concurrently with setting it"
             fakeUseCaseThreads.scope.cancel()
             fakeUseCaseThreads.sequentialScope.cancel()
-        } catch (_: Exception) {}
+        } catch (_: Exception) {
+        }
     }
 
     @Test
@@ -607,7 +607,7 @@ class FocusMeteringControlTest {
     }
 
     @Test
-    fun startFocusMetering_AfLocked_completesWithFocusFalse() {
+    fun startFocusMetering_AfLocked_completesWithFocusTrue() {
         fakeRequestControl.focusMeteringResult = CompletableDeferred(
             Result3A(
                 status = Result3A.Status.OK,
@@ -645,7 +645,6 @@ class FocusMeteringControlTest {
     }
 
     @Test
-    @Ignore("b/263323720: When AfState is null, it means AF is not supported")
     fun startFocusMetering_AfStateIsNull_completesWithFocusTrue() {
         fakeRequestControl.focusMeteringResult = CompletableDeferred(
             Result3A(
@@ -668,7 +667,6 @@ class FocusMeteringControlTest {
     }
 
     @Test
-    @Ignore("b/263323720: When AF is not supported, focus should be reported as successful")
     fun startFocusMeteringAfRequested_CameraNotSupportAfAuto_CompletesWithTrue() {
         // Use camera which does not support AF_AUTO
         focusMeteringControl = initFocusMeteringControl(CAMERA_ID_2)
@@ -686,31 +684,31 @@ class FocusMeteringControlTest {
     @Test
     fun startFocusMetering_cancelledBeforeCompletion_failsWithOperationCanceledOperation() =
         runBlocking {
-        // Arrange. Set a delay CompletableDeferred
-        fakeRequestControl.focusMeteringResult = CompletableDeferred<Result3A>().apply {
-            async(Dispatchers.Default) {
-                delay(500)
-                complete(
-                    Result3A(
-                        status = Result3A.Status.OK,
-                        frameMetadata = FakeFrameMetadata(
-                            extraMetadata = mapOf(
-                                CONTROL_AF_STATE to CONTROL_AF_STATE_FOCUSED_LOCKED
+            // Arrange. Set a delay CompletableDeferred
+            fakeRequestControl.focusMeteringResult = CompletableDeferred<Result3A>().apply {
+                async(Dispatchers.Default) {
+                    delay(500)
+                    complete(
+                        Result3A(
+                            status = Result3A.Status.OK,
+                            frameMetadata = FakeFrameMetadata(
+                                extraMetadata = mapOf(
+                                    CONTROL_AF_STATE to CONTROL_AF_STATE_FOCUSED_LOCKED
+                                )
                             )
                         )
                     )
-                )
+                }
             }
+            val action = FocusMeteringAction.Builder(point1).build()
+            val future = focusMeteringControl.startFocusAndMetering(action)
+
+            // Act.
+            focusMeteringControl.cancelFocusAndMeteringAsync()
+
+            // Assert.
+            assertFutureFailedWithOperationCancellation(future)
         }
-        val action = FocusMeteringAction.Builder(point1).build()
-        val future = focusMeteringControl.startFocusAndMetering(action)
-
-        // Act.
-        focusMeteringControl.cancelFocusAndMeteringAsync()
-
-        // Assert.
-        assertFutureFailedWithOperationCancellation(future)
-    }
 
     @Test
     fun startThenCancelThenStart_previous2FuturesFailsWithOperationCanceled() {
@@ -773,7 +771,7 @@ class FocusMeteringControlTest {
         val action = FocusMeteringAction.Builder(point1).build()
 
         val result = focusMeteringControl.startFocusAndMetering(action).apply {
-           get(3, TimeUnit.SECONDS)
+            get(3, TimeUnit.SECONDS)
         }
 
         // Act. Cancel it and then ensure the returned ListenableFuture still completes.
@@ -835,7 +833,18 @@ class FocusMeteringControlTest {
     @Test
     fun startFocusMetering_morePointsThanSupported_futureCompletes() {
         // Camera 0 supports only 3 AF, 3 AE, 1 AWB regions, here we try to have 1 AE region, 2 AWB
-        // regions. It should still complete the future.
+        // regions. It should still complete the future, even though focus is not locked.
+        fakeRequestControl.focusMeteringResult = CompletableDeferred(
+            Result3A(
+                status = Result3A.Status.OK,
+                frameMetadata = FakeFrameMetadata(
+                    extraMetadata = mapOf(
+                        CONTROL_AF_STATE to CONTROL_AF_STATE_NOT_FOCUSED_LOCKED
+                    )
+                )
+            )
+        )
+
         val action = FocusMeteringAction.Builder(
             point1,
             FocusMeteringAction.FLAG_AE or FocusMeteringAction.FLAG_AWB
@@ -1104,6 +1113,58 @@ class FocusMeteringControlTest {
         assertThat(
             state3AControl.preferredFocusMode
         ).isEqualTo(null)
+    }
+
+    @Test
+    fun startFocusMetering_submitFailed_failsWithOperationCanceledOperation() = runBlocking {
+        fakeRequestControl.focusMeteringResult = CompletableDeferred(
+            Result3A(
+                status = Result3A.Status.SUBMIT_FAILED,
+                frameMetadata = null,
+            )
+        )
+
+        val result = focusMeteringControl.startFocusAndMetering(
+            FocusMeteringAction.Builder(point1).build()
+        )
+
+        assertFutureFailedWithOperationCancellation(result)
+    }
+
+    @Test
+    fun startFocusMetering_noAfPoint_futureCompletesWithFocusUnsuccessful() {
+        val focusMeteringControl = initFocusMeteringControl(CAMERA_ID_1)
+        val action = FocusMeteringAction.Builder(
+            point1,
+            FocusMeteringAction.FLAG_AE or FocusMeteringAction.FLAG_AWB
+        ).build()
+        val future = focusMeteringControl.startFocusAndMetering(action)
+
+        assertFutureFocusCompleted(future, false)
+    }
+
+    @Test
+    fun startFocusMetering_frameMetadataNullWithOkStatus_futureCompletesWithFocusSuccessful() {
+        /**
+         * According to [Controller3A.lock3A] method documentation,
+         * if the operation is not supported by the camera device, then this method returns early
+         * with Result3A made of 'OK' status and 'null' metadata.
+         */
+        fakeRequestControl.focusMeteringResult = CompletableDeferred(
+            Result3A(
+                status = Result3A.Status.OK,
+                frameMetadata = null,
+            )
+        )
+
+        val focusMeteringControl = initFocusMeteringControl(CAMERA_ID_0)
+        val future = focusMeteringControl.startFocusAndMetering(
+            FocusMeteringAction.Builder(
+                point1
+            ).build()
+        )
+
+        assertFutureFocusCompleted(future, false)
     }
 
     // TODO: Port the following tests once their corresponding logics have been implemented.

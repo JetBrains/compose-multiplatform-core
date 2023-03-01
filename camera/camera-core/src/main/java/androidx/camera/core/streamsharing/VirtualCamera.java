@@ -125,7 +125,6 @@ class VirtualCamera implements CameraInternal {
 
     void bindChildren() {
         for (UseCase useCase : mChildren) {
-            useCase.setHasCameraTransform(false);
             useCase.bindToCamera(this, null,
                     useCase.getDefaultConfig(true, mUseCaseConfigFactory));
         }
@@ -168,6 +167,7 @@ class VirtualCamera implements CameraInternal {
             boolean mirroring = useCase instanceof Preview && isFrontFacing();
             outConfigs.put(useCase, OutConfig.of(
                     target,
+                    INTERNAL_DEFINED_IMAGE_FORMAT_PRIVATE, // TODO: use JPEG for ImageCapture
                     cameraEdge.getCropRect(),
                     rectToSize(cameraEdge.getCropRect()),
                     mirroring));
@@ -262,6 +262,12 @@ class VirtualCamera implements CameraInternal {
     }
 
     // --- Forward parent camera properties and events ---
+
+    @Override
+    public boolean getHasTransform() {
+        return false;
+    }
+
     @NonNull
     @Override
     public CameraControlInternal getCameraControlInternal() {

@@ -18,6 +18,7 @@ package androidx.wear.watchface.control
 
 import android.os.Build
 import android.os.Bundle
+import android.os.IBinder
 import android.support.wearable.watchface.accessibility.ContentDescriptionLabel
 import android.util.Log
 import androidx.annotation.RequiresApi
@@ -105,6 +106,20 @@ internal class InteractiveWatchFaceImpl(
             "InteractiveWatchFaceImpl.renderWatchFaceToBitmap"
         ) { watchFaceImpl ->
             watchFaceImpl.renderWatchFaceToBitmap(params)
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.R)
+    override fun createRemoteWatchFaceView(
+        hostToken: IBinder,
+        width: Int,
+        height: Int
+    ): IRemoteWatchFaceView? {
+        return WatchFaceService.awaitDeferredWatchFaceImplThenRunOnUiThreadBlocking(
+            engine,
+            "InteractiveWatchFaceImpl.createRemoteWatchFaceView"
+        ) { watchFaceImpl ->
+            watchFaceImpl.createRemoteWatchFaceView(hostToken, width, height)
         }
     }
 

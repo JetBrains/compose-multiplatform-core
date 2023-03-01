@@ -141,7 +141,7 @@ package androidx.wear.watchface {
   }
 
   public enum DrawMode {
-    method public static androidx.wear.watchface.DrawMode valueOf(String name) throws java.lang.IllegalArgumentException;
+    method public static androidx.wear.watchface.DrawMode valueOf(String value) throws java.lang.IllegalArgumentException, java.lang.NullPointerException;
     method public static androidx.wear.watchface.DrawMode[] values();
     enum_constant public static final androidx.wear.watchface.DrawMode AMBIENT;
     enum_constant public static final androidx.wear.watchface.DrawMode INTERACTIVE;
@@ -217,6 +217,7 @@ package androidx.wear.watchface {
     method public final void sendPreviewImageNeedsUpdateRequest();
     method public final void setAdditionalContentDescriptionLabels(java.util.Collection<kotlin.Pair<java.lang.Integer,androidx.wear.watchface.ContentDescriptionLabel>>);
     method public final void setInteractiveDrawModeUpdateDelayMillis(long);
+    method protected final void setSurfaceHolder(android.view.SurfaceHolder);
     method @androidx.wear.watchface.WatchFaceExperimental public final void setWatchfaceColors(androidx.wear.watchface.WatchFaceColors?);
     method @UiThread public boolean shouldAnimate();
     property public final java.util.Collection<kotlin.Pair<java.lang.Integer,androidx.wear.watchface.ContentDescriptionLabel>> additionalContentDescriptionLabels;

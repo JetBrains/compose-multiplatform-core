@@ -17,6 +17,7 @@
 package androidx.camera.core;
 
 import static androidx.camera.core.CameraEffect.PREVIEW;
+import static androidx.camera.core.impl.ImageFormatConstants.INTERNAL_DEFINED_IMAGE_FORMAT_PRIVATE;
 import static androidx.camera.core.impl.ImageInputConfig.OPTION_INPUT_FORMAT;
 import static androidx.camera.core.impl.ImageOutputConfig.OPTION_APP_TARGET_ROTATION;
 import static androidx.camera.core.impl.ImageOutputConfig.OPTION_CUSTOM_ORDERED_RESOLUTIONS;
@@ -71,7 +72,6 @@ import androidx.camera.core.impl.CaptureConfig;
 import androidx.camera.core.impl.Config;
 import androidx.camera.core.impl.ConfigProvider;
 import androidx.camera.core.impl.DeferrableSurface;
-import androidx.camera.core.impl.ImageFormatConstants;
 import androidx.camera.core.impl.ImageOutputConfig;
 import androidx.camera.core.impl.MutableConfig;
 import androidx.camera.core.impl.MutableOptionsBundle;
@@ -259,12 +259,13 @@ public final class Preview extends UseCase {
         checkState(mCameraEdge == null);
         mCameraEdge = new SurfaceEdge(
                 PREVIEW,
+                INTERNAL_DEFINED_IMAGE_FORMAT_PRIVATE,
                 streamSpec,
                 new Matrix(),
-                getHasCameraTransform(),
+                camera.getHasTransform(),
                 requireNonNull(getCropRect(streamSpec.getResolution())),
                 getRelativeRotation(camera, camera.isFrontFacing()),
-                shouldMirror());
+                shouldMirror(camera));
         mCameraEdge.addOnInvalidatedListener(this::notifyReset);
         SurfaceProcessorNode.OutConfig outConfig = SurfaceProcessorNode.OutConfig.of(mCameraEdge);
         SurfaceProcessorNode.In nodeInput = SurfaceProcessorNode.In.of(mCameraEdge,
@@ -297,13 +298,11 @@ public final class Preview extends UseCase {
         }
     }
 
-    private boolean shouldMirror() {
-        boolean isFrontCamera = requireNonNull(getCamera()).getCameraInfoInternal().getLensFacing()
-                == CameraSelector.LENS_FACING_FRONT;
+    private boolean shouldMirror(@NonNull CameraInternal camera) {
         // Since PreviewView cannot mirror, we will always mirror preview stream during buffer
         // copy. If there has been a buffer copy, it means it's already mirrored. Otherwise,
         // mirror it for the front camera.
-        return getHasCameraTransform() && isFrontCamera;
+        return camera.getHasTransform() && camera.isFrontFacing();
     }
 
     /**
@@ -400,7 +399,7 @@ public final class Preview extends UseCase {
                         cropRect,
                         getRelativeRotation(cameraInternal, cameraInternal.isFrontFacing()),
                         getAppTargetRotation(),
-                        getHasCameraTransform()));
+                        cameraInternal.getHasTransform()));
             } else {
                 mCameraEdge.setRotationDegrees(
                         getRelativeRotation(cameraInternal, cameraInternal.isFrontFacing()));
@@ -570,7 +569,7 @@ public final class Preview extends UseCase {
     protected UseCaseConfig<?> onMergeConfig(@NonNull CameraInfoInternal cameraInfo,
             @NonNull UseCaseConfig.Builder<?, ?, ?> builder) {
         builder.getMutableConfig().insertOption(OPTION_INPUT_FORMAT,
-                ImageFormatConstants.INTERNAL_DEFINED_IMAGE_FORMAT_PRIVATE);
+                INTERNAL_DEFINED_IMAGE_FORMAT_PRIVATE);
 
         // Merges Preview's default max resolution setting when resolution selector is used
         ResolutionSelector resolutionSelector =

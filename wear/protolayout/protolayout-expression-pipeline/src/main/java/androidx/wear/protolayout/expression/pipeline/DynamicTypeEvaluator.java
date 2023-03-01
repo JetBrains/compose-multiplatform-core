@@ -44,9 +44,9 @@ import androidx.wear.protolayout.expression.pipeline.FloatNodes.DynamicAnimatedF
 import androidx.wear.protolayout.expression.pipeline.FloatNodes.FixedFloatNode;
 import androidx.wear.protolayout.expression.pipeline.FloatNodes.Int32ToFloatNode;
 import androidx.wear.protolayout.expression.pipeline.FloatNodes.StateFloatNode;
-import androidx.wear.protolayout.expression.pipeline.Int32Nodes.AnimatableFixedInt32Node;
 import androidx.wear.protolayout.expression.pipeline.InstantNodes.FixedInstantNode;
 import androidx.wear.protolayout.expression.pipeline.InstantNodes.PlatformTimeSourceNode;
+import androidx.wear.protolayout.expression.pipeline.Int32Nodes.AnimatableFixedInt32Node;
 import androidx.wear.protolayout.expression.pipeline.Int32Nodes.ArithmeticInt32Node;
 import androidx.wear.protolayout.expression.pipeline.Int32Nodes.DynamicAnimatedInt32Node;
 import androidx.wear.protolayout.expression.pipeline.Int32Nodes.FixedInt32Node;
@@ -94,8 +94,8 @@ import java.util.concurrent.Executor;
  * <p>Data source can include animations which will then emit value transitions.
  *
  * <p>In order to evaluate dynamic types, the caller needs to add any number of pending dynamic
- * types with {@link #bind} methods and then call {@link #processPendingBindings()} to start
- * evaluation on those dynamic types. Starting evaluation can be done for batches of dynamic types.
+ * types with {@link #bind} methods and then call {@link BoundDynamicType#startEvaluation()} on each
+ * of them to start evaluation. Starting evaluation can be done for batches of dynamic types.
  *
  * <p>It's the callers responsibility to destroy those dynamic types after use, with {@link
  * BoundDynamicType#close()}.
@@ -113,8 +113,6 @@ public class DynamicTypeEvaluator implements AutoCloseable {
     @NonNull private final ObservableStateStore mStateStore;
     private final boolean mEnableAnimations;
     @NonNull private final QuotaManager mAnimationQuotaManager;
-    @NonNull private final List<DynamicDataNode<?>> mDynamicTypeNodes = new ArrayList<>();
-    private final Handler mUiHandler;
 
     @NonNull
     private static final QuotaManager DISABLED_ANIMATIONS_QUOTA_MANAGER =
@@ -204,8 +202,8 @@ public class DynamicTypeEvaluator implements AutoCloseable {
             boolean enableAnimations,
             @NonNull QuotaManager animationQuotaManager) {
         this.mSensorGateway = sensorGateway;
-        mUiHandler = new Handler(Looper.getMainLooper());
-        Executor uiExecutor = new MainThreadExecutor(mUiHandler);
+        Handler uiHandler = new Handler(Looper.getMainLooper());
+        MainThreadExecutor uiExecutor = new MainThreadExecutor(uiHandler);
         if (this.mSensorGateway != null) {
             if (platformDataSourcesInitiallyEnabled) {
                 this.mSensorGateway.enableUpdates();
@@ -218,7 +216,7 @@ public class DynamicTypeEvaluator implements AutoCloseable {
             this.mSensorGatewayDataSource = null;
         }
 
-        this.mTimeGateway = new TimeGatewayImpl(mUiHandler, platformDataSourcesInitiallyEnabled);
+        this.mTimeGateway = new TimeGatewayImpl(uiHandler, platformDataSourcesInitiallyEnabled);
         this.mTimeDataSource = new EpochTimePlatformDataSource(uiExecutor, mTimeGateway);
 
         this.mEnableAnimations = enableAnimations;
@@ -227,82 +225,37 @@ public class DynamicTypeEvaluator implements AutoCloseable {
     }
 
     /**
-     * Starts evaluating all stored pending dynamic types.
-     *
-     * <p>This needs to be called when new pending dynamic types are added via any {@code bind}
-     * method, either when one or a batch is added.
-     *
-     * <p>Any pending dynamic type will be initialized for evaluation. All other already initialized
-     * dynamic types will remain unaffected.
-     *
-     * <p>It's the callers responsibility to destroy those dynamic types after use, with {@link
-     * BoundDynamicType#close()}.
-     *
-     * @hide
-     */
-    @UiThread
-    @RestrictTo(Scope.LIBRARY_GROUP)
-    public void processPendingBindings() {
-        processBindings(mDynamicTypeNodes);
-
-        // This method empties the array with dynamic type nodes.
-        clearDynamicTypesArray();
-    }
-
-    @UiThread
-    private static void processBindings(List<DynamicDataNode<?>> bindings) {
-        preInitNodes(bindings);
-        initNodes(bindings);
-    }
-
-    /**
-     * Removes any stored pending bindings by clearing the list that stores them. Note that this
-     * doesn't destroy them.
-     */
-    @UiThread
-    private void clearDynamicTypesArray() {
-        mDynamicTypeNodes.clear();
-    }
-
-    /** This should be called before initNodes() */
-    @UiThread
-    private static void preInitNodes(List<DynamicDataNode<?>> bindings) {
-        bindings.stream()
-                .filter(n -> n instanceof DynamicDataSourceNode)
-                .forEach(n -> ((DynamicDataSourceNode<?>) n).preInit());
-    }
-
-    @UiThread
-    private static void initNodes(List<DynamicDataNode<?>> bindings) {
-        bindings.stream()
-                .filter(n -> n instanceof DynamicDataSourceNode)
-                .forEach(n -> ((DynamicDataSourceNode<?>) n).init());
-    }
-
-    /**
      * Adds dynamic type from the given {@link DynamicBuilders.DynamicString} for evaluation.
-     * Evaluation will start immediately.
+     *
+     * <p>Evaluation of this dynamic type will start when {@link BoundDynamicType#startEvaluation()}
+     * is called on the returned object.
+     *
+     * <p>Results of evaluation will be sent through the given {@link DynamicTypeValueReceiver}
+     * on the given {@link Executor}.
      *
      * @param stringSource The given String dynamic type that should be evaluated.
+     * @param locale The locale used for the given String source.
+     * @param executor The Executor to run the consumer on.
      * @param consumer The registered consumer for results of the evaluation. It will be called from
      *     UI thread.
-     * @param locale The locale used for the given String source.
      */
     @NonNull
     public BoundDynamicType bind(
             @NonNull DynamicBuilders.DynamicString stringSource,
             @NonNull ULocale locale,
+            @NonNull Executor executor,
             @NonNull DynamicTypeValueReceiver<String> consumer) {
-        List<DynamicDataNode<?>> resultBuilder = new ArrayList<>();
-        bindRecursively(stringSource.toDynamicStringProto(), consumer, locale, resultBuilder);
-        mUiHandler.post(() -> processBindings(resultBuilder));
-        return new BoundDynamicTypeImpl(resultBuilder);
+        return bind(
+                stringSource.toDynamicStringProto(),
+                locale,
+                new DynamicTypeValueReceiverOnExecutor<>(executor, consumer));
     }
 
     /**
      * Adds pending dynamic type from the given {@link DynamicString} for future evaluation.
      *
-     * <p>Evaluation of this dynamic type will start when {@link #processPendingBindings} is called.
+     * <p>Evaluation of this dynamic type will start when {@link BoundDynamicType#startEvaluation()}
+     * is called on the returned object.
      *
      * @param stringSource The given String dynamic type that should be evaluated.
      * @param consumer The registered consumer for results of the evaluation. It will be called from
@@ -318,33 +271,38 @@ public class DynamicTypeEvaluator implements AutoCloseable {
             @NonNull DynamicTypeValueReceiver<String> consumer) {
         List<DynamicDataNode<?>> resultBuilder = new ArrayList<>();
         bindRecursively(stringSource, consumer, locale, resultBuilder);
-        mDynamicTypeNodes.addAll(resultBuilder);
         return new BoundDynamicTypeImpl(resultBuilder);
     }
 
     /**
      * Adds dynamic type from the given {@link DynamicBuilders.DynamicInt32} for evaluation.
-     * Evaluation will start immediately.
+     *
+     * <p>Evaluation of this dynamic type will start when {@link BoundDynamicType#startEvaluation()}
+     * is called on the returned object.
+     *
+     * <p>Results of evaluation will be sent through the given {@link DynamicTypeValueReceiver}
+     * on the given {@link Executor}.
      *
      * @param int32Source The given integer dynamic type that should be evaluated.
+     * @param executor The Executor to run the consumer on.
      * @param consumer The registered consumer for results of the evaluation. It will be called from
      *     UI thread.
      */
     @NonNull
     public BoundDynamicType bind(
             @NonNull DynamicBuilders.DynamicInt32 int32Source,
+            @NonNull Executor executor,
             @NonNull DynamicTypeValueReceiver<Integer> consumer) {
-        List<DynamicDataNode<?>> resultBuilder = new ArrayList<>();
-        bindRecursively(
-                int32Source.toDynamicInt32Proto(), consumer, resultBuilder, Optional.empty());
-        mUiHandler.post(() -> processBindings(resultBuilder));
-        return new BoundDynamicTypeImpl(resultBuilder);
+        return bind(
+                int32Source.toDynamicInt32Proto(),
+                new DynamicTypeValueReceiverOnExecutor<>(executor, consumer));
     }
 
     /**
      * Adds pending dynamic type from the given {@link DynamicInt32} for future evaluation.
      *
-     * <p>Evaluation of this dynamic type will start when {@link #processPendingBindings} is called.
+     * <p>Evaluation of this dynamic type will start when {@link BoundDynamicType#startEvaluation()}
+     * is called on the returned object.
      *
      * @param int32Source The given integer dynamic type that should be evaluated.
      * @param consumer The registered consumer for results of the evaluation. It will be called from
@@ -358,12 +316,18 @@ public class DynamicTypeEvaluator implements AutoCloseable {
             @NonNull DynamicTypeValueReceiver<Integer> consumer) {
         List<DynamicDataNode<?>> resultBuilder = new ArrayList<>();
         bindRecursively(int32Source, consumer, resultBuilder, Optional.empty());
-        mDynamicTypeNodes.addAll(resultBuilder);
         return new BoundDynamicTypeImpl(resultBuilder);
     }
 
     /**
      * Adds pending expression from the given {@link DynamicInt32} for future evaluation.
+     *
+     * <p>Evaluation of this dynamic type will start when {@link BoundDynamicType#startEvaluation()}
+     * is called on the returned object.
+     *
+     * <p>While the {@link BoundDynamicType} is not destroyed with {@link BoundDynamicType#close()}
+     * by caller, results of evaluation will be sent through the given {@link
+     * DynamicTypeValueReceiver}.
      *
      * @param int32Source The given integer dynamic type that should be evaluated.
      * @param consumer The registered consumer for results of the evaluation. It will be called from
@@ -380,33 +344,38 @@ public class DynamicTypeEvaluator implements AutoCloseable {
             int animationFallbackValue) {
         List<DynamicDataNode<?>> resultBuilder = new ArrayList<>();
         bindRecursively(int32Source, consumer, resultBuilder, Optional.of(animationFallbackValue));
-        mDynamicTypeNodes.addAll(resultBuilder);
         return new BoundDynamicTypeImpl(resultBuilder);
     }
 
     /**
      * Adds dynamic type from the given {@link DynamicBuilders.DynamicFloat} for evaluation.
-     * Evaluation will start immediately.
+     *
+     * <p>Evaluation of this dynamic type will start when {@link BoundDynamicType#startEvaluation()}
+     * is called on the returned object.
+     *
+     * <p>Results of evaluation will be sent through the given {@link DynamicTypeValueReceiver}
+     * on the given {@link Executor}.
      *
      * @param floatSource The given float dynamic type that should be evaluated.
+     * @param executor The Executor to run the consumer on.
      * @param consumer The registered consumer for results of the evaluation. It will be called from
      *     UI thread.
      */
     @NonNull
     public BoundDynamicType bind(
             @NonNull DynamicBuilders.DynamicFloat floatSource,
+            @NonNull Executor executor,
             @NonNull DynamicTypeValueReceiver<Float> consumer) {
-        List<DynamicDataNode<?>> resultBuilder = new ArrayList<>();
-        bindRecursively(
-                floatSource.toDynamicFloatProto(), consumer, resultBuilder, Optional.empty());
-        mUiHandler.post(() -> processBindings(resultBuilder));
-        return new BoundDynamicTypeImpl(resultBuilder);
+        return bind(
+                floatSource.toDynamicFloatProto(),
+                new DynamicTypeValueReceiverOnExecutor<>(executor, consumer));
     }
 
     /**
      * Adds pending dynamic type from the given {@link DynamicFloat} for future evaluation.
      *
-     * <p>Evaluation of this dynamic type will start when {@link #processPendingBindings} is called.
+     * <p>Evaluation of this dynamic type will start when {@link BoundDynamicType#startEvaluation()}
+     * is called on the returned object.
      *
      * @param floatSource The given float dynamic type that should be evaluated.
      * @param consumer The registered consumer for results of the evaluation. It will be called from
@@ -423,14 +392,14 @@ public class DynamicTypeEvaluator implements AutoCloseable {
             float animationFallbackValue) {
         List<DynamicDataNode<?>> resultBuilder = new ArrayList<>();
         bindRecursively(floatSource, consumer, resultBuilder, Optional.of(animationFallbackValue));
-        mDynamicTypeNodes.addAll(resultBuilder);
         return new BoundDynamicTypeImpl(resultBuilder);
     }
 
     /**
      * Adds pending dynamic type from the given {@link DynamicFloat} for future evaluation.
      *
-     * <p>Evaluation of this dynamic type will start when {@link #processPendingBindings} is called.
+     * <p>Evaluation of this dynamic type will start when {@link BoundDynamicType#startEvaluation()}
+     * is called on the returned object.
      *
      * @param floatSource The given float dynamic type that should be evaluated.
      * @param consumer The registered consumer for results of the evaluation. It will be called from
@@ -443,33 +412,38 @@ public class DynamicTypeEvaluator implements AutoCloseable {
             @NonNull DynamicFloat floatSource, @NonNull DynamicTypeValueReceiver<Float> consumer) {
         List<DynamicDataNode<?>> resultBuilder = new ArrayList<>();
         bindRecursively(floatSource, consumer, resultBuilder, Optional.empty());
-        mDynamicTypeNodes.addAll(resultBuilder);
         return new BoundDynamicTypeImpl(resultBuilder);
     }
 
     /**
      * Adds dynamic type from the given {@link DynamicBuilders.DynamicColor} for evaluation.
-     * Evaluation will start immediately.
+     *
+     * <p>Evaluation of this dynamic type will start when {@link BoundDynamicType#startEvaluation()}
+     * is called on the returned object.
+     *
+     * <p>Results of evaluation will be sent through the given {@link DynamicTypeValueReceiver}
+     * on the given {@link Executor}.
      *
      * @param colorSource The given color dynamic type that should be evaluated.
+     * @param executor The Executor to run the consumer on.
      * @param consumer The registered consumer for results of the evaluation. It will be called from
      *     UI thread.
      */
     @NonNull
     public BoundDynamicType bind(
             @NonNull DynamicBuilders.DynamicColor colorSource,
+            @NonNull Executor executor,
             @NonNull DynamicTypeValueReceiver<Integer> consumer) {
-        List<DynamicDataNode<?>> resultBuilder = new ArrayList<>();
-        bindRecursively(
-                colorSource.toDynamicColorProto(), consumer, resultBuilder, Optional.empty());
-        mUiHandler.post(() -> processBindings(resultBuilder));
-        return new BoundDynamicTypeImpl(resultBuilder);
+        return bind(
+                colorSource.toDynamicColorProto(),
+                new DynamicTypeValueReceiverOnExecutor<>(executor, consumer));
     }
 
     /**
      * Adds pending dynamic type from the given {@link DynamicColor} for future evaluation.
      *
-     * <p>Evaluation of this dynamic type will start when {@link #processPendingBindings} is called.
+     * <p>Evaluation of this dynamic type will start when {@link BoundDynamicType#startEvaluation()}
+     * is called on the returned object.
      *
      * @param colorSource The given color dynamic type that should be evaluated.
      * @param consumer The registered consumer for results of the evaluation. It will be called from
@@ -483,14 +457,14 @@ public class DynamicTypeEvaluator implements AutoCloseable {
             @NonNull DynamicTypeValueReceiver<Integer> consumer) {
         List<DynamicDataNode<?>> resultBuilder = new ArrayList<>();
         bindRecursively(colorSource, consumer, resultBuilder, Optional.empty());
-        mDynamicTypeNodes.addAll(resultBuilder);
         return new BoundDynamicTypeImpl(resultBuilder);
     }
 
     /**
      * Adds pending dynamic type from the given {@link DynamicColor} for future evaluation.
      *
-     * <p>Evaluation of this dynamic type will start when {@link #processPendingBindings} is called.
+     * <p>Evaluation of this dynamic type will start when {@link BoundDynamicType#startEvaluation()}
+     * is called on the returned object.
      *
      * @param colorSource The given color dynamic type that should be evaluated.
      * @param consumer The registered consumer for results of the evaluation. It will be called from
@@ -507,85 +481,96 @@ public class DynamicTypeEvaluator implements AutoCloseable {
             int animationFallbackValue) {
         List<DynamicDataNode<?>> resultBuilder = new ArrayList<>();
         bindRecursively(colorSource, consumer, resultBuilder, Optional.of(animationFallbackValue));
-        mDynamicTypeNodes.addAll(resultBuilder);
         return new BoundDynamicTypeImpl(resultBuilder);
     }
 
     /**
      * Adds dynamic type from the given {@link DynamicBuilders.DynamicDuration} for evaluation.
-     * Evaluation will start immediately.
+     *
+     * <p>Evaluation of this dynamic type will start when {@link BoundDynamicType#startEvaluation()}
+     * is called on the returned object.
+     *
+     * <p>Results of evaluation will be sent through the given {@link DynamicTypeValueReceiver}
+     * on the given {@link Executor}.
      *
      * @param durationSource The given duration dynamic type that should be evaluated.
+     * @param executor The Executor to run the consumer on.
      * @param consumer The registered consumer for results of the evaluation. It will be called from
-     * UI thread.
+     *     UI thread.
      */
     @NonNull
     public BoundDynamicType bind(
-        @NonNull DynamicBuilders.DynamicDuration durationSource,
-        @NonNull DynamicTypeValueReceiver<Duration> consumer) {
-        List<DynamicDataNode<?>> resultBuilder = new ArrayList<>();
-        bindRecursively(durationSource.toDynamicDurationProto(), consumer, resultBuilder);
-        processBindings(resultBuilder);
-        return new BoundDynamicTypeImpl(resultBuilder);
+            @NonNull DynamicBuilders.DynamicDuration durationSource,
+            @NonNull Executor executor,
+            @NonNull DynamicTypeValueReceiver<Duration> consumer) {
+        return bind(
+                durationSource.toDynamicDurationProto(),
+                new DynamicTypeValueReceiverOnExecutor<>(executor, consumer));
     }
 
     /**
      * Adds pending dynamic type from the given {@link DynamicDuration} for future evaluation.
      *
-     * <p>Evaluation of this dynamic type will start when {@link #processPendingBindings} is called.
+     * <p>Evaluation of this dynamic type will start when {@link BoundDynamicType#startEvaluation()}
+     * is called on the returned object.
      *
      * @param durationSource The given durations dynamic type that should be evaluated.
      * @param consumer The registered consumer for results of the evaluation. It will be called from
-     * UI thread.
+     *     UI thread.
      * @hide
      */
     @NonNull
     @RestrictTo(Scope.LIBRARY_GROUP)
     public BoundDynamicType bind(
-        @NonNull DynamicDuration durationSource,
-        @NonNull DynamicTypeValueReceiver<Duration> consumer) {
+            @NonNull DynamicDuration durationSource,
+            @NonNull DynamicTypeValueReceiver<Duration> consumer) {
         List<DynamicDataNode<?>> resultBuilder = new ArrayList<>();
         bindRecursively(durationSource, consumer, resultBuilder);
-        mDynamicTypeNodes.addAll(resultBuilder);
         return new BoundDynamicTypeImpl(resultBuilder);
     }
 
     /**
      * Adds dynamic type from the given {@link DynamicBuilders.DynamicInstant} for evaluation.
-     * Evaluation will start immediately.
+     *
+     * <p>Evaluation of this dynamic type will start when {@link BoundDynamicType#startEvaluation()}
+     * is called on the returned object.
+     *
+     * <p>Results of evaluation will be sent through the given {@link DynamicTypeValueReceiver}
+     * on the given {@link Executor}.
      *
      * @param instantSource The given instant dynamic type that should be evaluated.
+     * @param executor The Executor to run the consumer on.
      * @param consumer The registered consumer for results of the evaluation. It will be called from
-     * UI thread.
+     *     UI thread.
      */
     @NonNull
     public BoundDynamicType bind(
-        @NonNull DynamicBuilders.DynamicInstant instantSource,
-        @NonNull DynamicTypeValueReceiver<Instant> consumer) {
-        List<DynamicDataNode<?>> resultBuilder = new ArrayList<>();
-        bindRecursively(instantSource.toDynamicInstantProto(), consumer, resultBuilder);
-        processBindings(resultBuilder);
-        return new BoundDynamicTypeImpl(resultBuilder);
+            @NonNull DynamicBuilders.DynamicInstant instantSource,
+            @NonNull Executor executor,
+            @NonNull DynamicTypeValueReceiver<Instant> consumer) {
+        return bind(
+                instantSource.toDynamicInstantProto(),
+                new DynamicTypeValueReceiverOnExecutor<>(executor, consumer));
     }
 
     /**
      * Adds pending dynamic type from the given {@link DynamicInstant} for future evaluation.
      *
-     * <p>Evaluation of this dynamic type will start when {@link #processPendingBindings} is called.
+     * <p>Evaluation of this dynamic type will start when {@link BoundDynamicType#startEvaluation()}
+     * is called on the returned object.
      *
      * @param instantSource The given instant dynamic type that should be evaluated.
      * @param consumer The registered consumer for results of the evaluation. It will be called from
-     * UI thread.
+     *     UI thread.
      * @hide
      */
     @NonNull
     @RestrictTo(Scope.LIBRARY_GROUP)
     public BoundDynamicType bind(
-        @NonNull DynamicInstant instantSource,
-        @NonNull DynamicTypeValueReceiver<Instant> consumer) {
+            @NonNull DynamicInstant instantSource,
+            @NonNull DynamicTypeValueReceiver<Instant> consumer) {
         List<DynamicDataNode<?>> resultBuilder = new ArrayList<>();
         bindRecursively(instantSource, consumer, resultBuilder);
-        mDynamicTypeNodes.addAll(resultBuilder);
         return new BoundDynamicTypeImpl(resultBuilder);
     }
 
@@ -593,24 +578,29 @@ public class DynamicTypeEvaluator implements AutoCloseable {
      * Adds dynamic type from the given {@link DynamicBuilders.DynamicBool} for evaluation.
      * Evaluation will start immediately.
      *
+     * <p>Results of evaluation will be sent through the given {@link DynamicTypeValueReceiver}
+     * on the given {@link Executor}.
+     *
      * @param boolSource The given boolean dynamic type that should be evaluated.
+     * @param executor The Executor to run the consumer on.
      * @param consumer The registered consumer for results of the evaluation. It will be called from
      *     UI thread.
      */
     @NonNull
     public BoundDynamicType bind(
             @NonNull DynamicBuilders.DynamicBool boolSource,
+            @NonNull Executor executor,
             @NonNull DynamicTypeValueReceiver<Boolean> consumer) {
-        List<DynamicDataNode<?>> resultBuilder = new ArrayList<>();
-        bindRecursively(boolSource.toDynamicBoolProto(), consumer, resultBuilder);
-        mUiHandler.post(() -> processBindings(resultBuilder));
-        return new BoundDynamicTypeImpl(resultBuilder);
+        return bind(
+                boolSource.toDynamicBoolProto(),
+                new DynamicTypeValueReceiverOnExecutor<>(executor, consumer));
     }
 
     /**
      * Adds pending dynamic type from the given {@link DynamicBool} for future evaluation.
      *
-     * <p>Evaluation of this dynamic type will start when {@link #processPendingBindings} is called.
+     * <p>Evaluation of this dynamic type will start when {@link BoundDynamicType#startEvaluation()}
+     * is called on the returned object.
      *
      * @param boolSource The given boolean dynamic type that should be evaluated.
      * @param consumer The registered consumer for results of the evaluation. It will be called from
@@ -623,14 +613,13 @@ public class DynamicTypeEvaluator implements AutoCloseable {
             @NonNull DynamicBool boolSource, @NonNull DynamicTypeValueReceiver<Boolean> consumer) {
         List<DynamicDataNode<?>> resultBuilder = new ArrayList<>();
         bindRecursively(boolSource, consumer, resultBuilder);
-        mDynamicTypeNodes.addAll(resultBuilder);
         return new BoundDynamicTypeImpl(resultBuilder);
     }
 
     /**
-     * Same as {@link #bind(DynamicBuilders.DynamicString, ULocale, DynamicTypeValueReceiver)}, but
-     * instead of returning one {@link BoundDynamicType}, all {@link DynamicDataNode} produced by
-     * evaluating given dynamic type are added to the given list.
+     * Same as {@link #bind}, but instead of returning one {@link BoundDynamicType}, all
+     * {@link DynamicDataNode} produced by evaluating given dynamic type are added to the given
+     * list.
      */
     private void bindRecursively(
             @NonNull DynamicString stringSource,
@@ -725,9 +714,9 @@ public class DynamicTypeEvaluator implements AutoCloseable {
     }
 
     /**
-     * Same as {@link #bind(DynamicBuilders.DynamicInt32, DynamicTypeValueReceiver)}, but instead of
-     * returning one {@link BoundDynamicType}, all {@link DynamicDataNode} produced by evaluating
-     * given dynamic type are added to the given list.
+     * Same as {@link #bind}, but instead of returning one {@link BoundDynamicType}, all
+     * {@link DynamicDataNode} produced by evaluating given dynamic type are added to the given
+     * list.
      */
     private void bindRecursively(
             @NonNull DynamicInt32 int32Source,
@@ -741,7 +730,8 @@ public class DynamicTypeEvaluator implements AutoCloseable {
                 node = new FixedInt32Node(int32Source.getFixed(), consumer);
                 break;
             case PLATFORM_SOURCE:
-                node = new PlatformInt32SourceNode(
+                node =
+                        new PlatformInt32SourceNode(
                                 int32Source.getPlatformSource(),
                                 mSensorGatewayDataSource,
                                 consumer);
@@ -809,34 +799,36 @@ public class DynamicTypeEvaluator implements AutoCloseable {
                     break;
                 }
             case DURATION_PART:
-            {
-                GetDurationPartOpNode durationPartOpNode =
-                    new GetDurationPartOpNode(int32Source.getDurationPart(), consumer);
-                node = durationPartOpNode;
+                {
+                    GetDurationPartOpNode durationPartOpNode =
+                            new GetDurationPartOpNode(int32Source.getDurationPart(), consumer);
+                    node = durationPartOpNode;
 
-                bindRecursively(
-                    int32Source.getDurationPart().getInput(),
-                    durationPartOpNode.getIncomingCallback(),
-                    resultBuilder);
-                break;
-            }
+                    bindRecursively(
+                            int32Source.getDurationPart().getInput(),
+                            durationPartOpNode.getIncomingCallback(),
+                            resultBuilder);
+                    break;
+                }
             case ANIMATABLE_FIXED:
                 if (!mEnableAnimations && animationFallbackValue.isPresent()) {
                     // Just assign static value if animations are disabled.
                     node =
                             new FixedInt32Node(
-                                    FixedInt32.newBuilder().setValue(
-                                            animationFallbackValue.get()).build(), consumer);
+                                    FixedInt32.newBuilder()
+                                            .setValue(animationFallbackValue.get())
+                                            .build(),
+                                    consumer);
 
                 } else {
-                    // We don't have to check if enableAnimations is true, because if it's false
-                    // and we didn't
-                    // have static value set, constructor has put QuotaManager that don't have
-                    // any quota, so
-                    // animations won't be played and they would jump to the end value.
+                    // We don't have to check if enableAnimations is true, because if it's false and
+                    // we didn't have static value set, constructor has put QuotaManager that don't
+                    // have any quota, so animations won't be played and they would jump to the end
+                    // value.
                     node =
                             new AnimatableFixedInt32Node(
-                                    int32Source.getAnimatableFixed(), consumer,
+                                    int32Source.getAnimatableFixed(),
+                                    consumer,
                                     mAnimationQuotaManager);
                 }
                 break;
@@ -845,18 +837,21 @@ public class DynamicTypeEvaluator implements AutoCloseable {
                     // Just assign static value if animations are disabled.
                     node =
                             new FixedInt32Node(
-                                    FixedInt32.newBuilder().setValue(
-                                            animationFallbackValue.get()).build(), consumer);
+                                    FixedInt32.newBuilder()
+                                            .setValue(animationFallbackValue.get())
+                                            .build(),
+                                    consumer);
 
                 } else {
-                    // We don't have to check if enableAnimations is true, because if it's false
-                    // and we didn't
-                    // have static value set, constructor has put QuotaManager that don't have
-                    // any quota, so
-                    // animations won't be played and they would jump to the end value.
+                    // We don't have to check if enableAnimations is true, because if it's false and
+                    // we didn't have static value set, constructor has put QuotaManager that don't
+                    // have any quota, so animations won't be played and they would jump to the end
+                    // value.
                     AnimatableDynamicInt32 dynamicNode = int32Source.getAnimatableDynamic();
                     DynamicAnimatedInt32Node animationNode =
-                            new DynamicAnimatedInt32Node(consumer, dynamicNode.getAnimationSpec(),
+                            new DynamicAnimatedInt32Node(
+                                    consumer,
+                                    dynamicNode.getAnimationSpec(),
                                     mAnimationQuotaManager);
                     node = animationNode;
 
@@ -877,14 +872,14 @@ public class DynamicTypeEvaluator implements AutoCloseable {
     }
 
     /**
-     * Same as {@link #bind(DynamicBuilders.DynamicDuration, DynamicTypeValueReceiver)}, but instead
-     * of returning one {@link BoundDynamicType}, all {@link DynamicDataNode} produced by evaluating
-     * given dynamic type are added to the given list.
+     * Same as {@link #bind}, but instead of returning one {@link BoundDynamicType}, all
+     * {@link DynamicDataNode} produced by evaluating given dynamic type are added to the given
+     * list.
      */
     private void bindRecursively(
-        @NonNull DynamicDuration durationSource,
-        @NonNull DynamicTypeValueReceiver<Duration> consumer,
-        @NonNull List<DynamicDataNode<?>> resultBuilder) {
+            @NonNull DynamicDuration durationSource,
+            @NonNull DynamicTypeValueReceiver<Duration> consumer,
+            @NonNull List<DynamicDataNode<?>> resultBuilder) {
         DynamicDataNode<?> node;
 
         switch (durationSource.getInnerCase()) {
@@ -910,14 +905,14 @@ public class DynamicTypeEvaluator implements AutoCloseable {
     }
 
     /**
-     * Same as {@link #bind(DynamicBuilders.DynamicInstant, DynamicTypeValueReceiver)}, but instead
-     * of returning one {@link BoundDynamicType}, all {@link DynamicDataNode} produced by evaluating
-     * given dynamic type are added to the given list.
+     * Same as {@link #bind}, but instead of returning one {@link BoundDynamicType}, all
+     * {@link DynamicDataNode} produced by evaluating given dynamic type are added to the given
+     * list.
      */
     private void bindRecursively(
-        @NonNull DynamicInstant instantSource,
-        @NonNull DynamicTypeValueReceiver<Instant> consumer,
-        @NonNull List<DynamicDataNode<?>> resultBuilder) {
+            @NonNull DynamicInstant instantSource,
+            @NonNull DynamicTypeValueReceiver<Instant> consumer,
+            @NonNull List<DynamicDataNode<?>> resultBuilder) {
         DynamicDataNode<?> node;
 
         switch (instantSource.getInnerCase()) {
@@ -938,9 +933,9 @@ public class DynamicTypeEvaluator implements AutoCloseable {
     }
 
     /**
-     * Same as {@link #bind(DynamicBuilders.DynamicFloat, DynamicTypeValueReceiver)}, but instead of
-     * returning one {@link BoundDynamicType}, all {@link DynamicDataNode} produced by evaluating
-     * given dynamic type are added to the given list.
+     * Same as {@link #bind}, but instead of returning one {@link BoundDynamicType}, all
+     * {@link DynamicDataNode} produced by evaluating given dynamic type are added to the given
+     * list.
      */
     private void bindRecursively(
             @NonNull DynamicFloat floatSource,
@@ -1075,9 +1070,9 @@ public class DynamicTypeEvaluator implements AutoCloseable {
     }
 
     /**
-     * Same as {@link #bind(DynamicBuilders.DynamicColor, DynamicTypeValueReceiver)}, but instead of
-     * returning one {@link BoundDynamicType}, all {@link DynamicDataNode} produced by evaluating
-     * given dynamic type are added to the given list.
+     * Same as {@link #bind}, but instead of returning one {@link BoundDynamicType}, all
+     * {@link DynamicDataNode} produced by evaluating given dynamic type are added to the given
+     * list.
      */
     private void bindRecursively(
             @NonNull DynamicColor colorSource,
@@ -1158,9 +1153,9 @@ public class DynamicTypeEvaluator implements AutoCloseable {
     }
 
     /**
-     * Same as {@link #bind(DynamicBuilders.DynamicBool, DynamicTypeValueReceiver)}, but instead of
-     * returning one {@link BoundDynamicType}, all {@link DynamicDataNode} produced by evaluating
-     * given dynamic type are added to the given list.
+     * Same as {@link #bind}, but instead of returning one {@link BoundDynamicType}, all
+     * {@link DynamicDataNode} produced by evaluating given dynamic type are added to the given
+     * list.
      */
     private void bindRecursively(
             @NonNull DynamicBool boolSource,
@@ -1281,6 +1276,41 @@ public class DynamicTypeEvaluator implements AutoCloseable {
             mTimeGateway.close();
         } catch (RuntimeException ex) {
             Log.e(TAG, "Error while cleaning up time gateway", ex);
+        }
+    }
+
+    /**
+     * Wraps {@link DynamicTypeValueReceiver} and executes its methods on the given
+     * {@link Executor}.
+     */
+    private static class DynamicTypeValueReceiverOnExecutor<T>
+            implements DynamicTypeValueReceiver<T> {
+
+        @NonNull private final Executor mExecutor;
+        @NonNull private final DynamicTypeValueReceiver<T> mConsumer;
+
+        DynamicTypeValueReceiverOnExecutor(
+                @NonNull Executor executor, @NonNull DynamicTypeValueReceiver<T> consumer) {
+            this.mConsumer = consumer;
+            this.mExecutor = executor;
+        }
+
+        @Override
+        @SuppressWarnings("ExecutorTaskName")
+        public void onPreUpdate() {
+            mExecutor.execute(mConsumer::onPreUpdate);
+        }
+
+        @Override
+        @SuppressWarnings("ExecutorTaskName")
+        public void onData(@NonNull T newData) {
+            mExecutor.execute(() -> mConsumer.onData(newData));
+        }
+
+        @Override
+        @SuppressWarnings("ExecutorTaskName")
+        public void onInvalidated() {
+            mExecutor.execute(mConsumer::onInvalidated);
         }
     }
 }

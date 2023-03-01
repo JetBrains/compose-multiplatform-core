@@ -116,6 +116,11 @@ public interface HeadlessWatchFaceClient : AutoCloseable {
         slotIdToComplicationData: Map<Int, ComplicationData>?
     ): Bitmap
 
+    /** Whether or not the watch face supports [renderWatchFaceToSurface]. */
+    public val isRenderWatchFaceToSurfaceSupported: Boolean
+        @get:JvmName("isRenderWatchFaceToSurfaceSupported")
+        get() = false
+
     /**
      * Renders the [androidx.wear.watchface.ComplicationSlot] to a shared memory backed [Bitmap]
      * with the given settings.
@@ -239,6 +244,8 @@ internal constructor(private val iHeadlessWatchFace: IHeadlessWatchFace) : Headl
                 )
             )
         }
+
+    override val isRenderWatchFaceToSurfaceSupported = iHeadlessWatchFace.apiVersion >= 4
 
     @RequiresApi(27)
     override fun renderComplicationToBitmap(

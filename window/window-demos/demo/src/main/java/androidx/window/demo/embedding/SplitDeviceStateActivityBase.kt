@@ -27,28 +27,33 @@ import android.widget.CompoundButton
 import android.widget.RadioGroup
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat
-import androidx.core.util.Consumer
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.window.core.ExperimentalWindowApi
+import androidx.window.demo.R
+import androidx.window.demo.databinding.ActivitySplitDeviceStateLayoutBinding
 import androidx.window.embedding.EmbeddingRule
+import androidx.window.embedding.RuleController
 import androidx.window.embedding.SplitAttributes
+import androidx.window.embedding.SplitAttributes.SplitType.Companion.SPLIT_TYPE_EXPAND
+import androidx.window.embedding.SplitAttributes.SplitType.Companion.SPLIT_TYPE_EQUAL
 import androidx.window.embedding.SplitController
+import androidx.window.embedding.SplitController.SplitSupportStatus.Companion.SPLIT_AVAILABLE
 import androidx.window.embedding.SplitInfo
 import androidx.window.embedding.SplitPairFilter
 import androidx.window.embedding.SplitPairRule
-import androidx.window.demo.R
-import androidx.window.demo.databinding.ActivitySplitDeviceStateLayoutBinding
-import androidx.window.embedding.RuleController
-import androidx.window.embedding.SplitController.SplitSupportStatus.Companion.SPLIT_AVAILABLE
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
+@OptIn(ExperimentalWindowApi::class)
 open class SplitDeviceStateActivityBase : AppCompatActivity(), View.OnClickListener,
     RadioGroup.OnCheckedChangeListener, CompoundButton.OnCheckedChangeListener,
     AdapterView.OnItemSelectedListener {
 
     private lateinit var splitController: SplitController
     private lateinit var ruleController: RuleController
-
-    private val splitStateChangeListener = SplitStateChangeListener()
 
     private lateinit var splitPairRule: SplitPairRule
     private var shouldReverseContainerPosition = false
@@ -65,7 +70,6 @@ open class SplitDeviceStateActivityBase : AppCompatActivity(), View.OnClickListe
     /** The last selected split rule id. */
     private var lastCheckedRuleId = 0
 
-    @OptIn(ExperimentalWindowApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         viewBinding = ActivitySplitDeviceStateLayoutBinding.inflate(layoutInflater)
@@ -127,20 +131,19 @@ open class SplitDeviceStateActivityBase : AppCompatActivity(), View.OnClickListe
             viewBinding.errorMessageTextView.text = "SplitAttributesCalculator is not supported!"
             animationBgColorDropdown.isEnabled = false
         }
-    }
 
-    override fun onStart() {
-        super.onStart()
-        splitController.addSplitListener(
-            this,
-            ContextCompat.getMainExecutor(this),
-            splitStateChangeListener
-        )
-    }
-
-    override fun onStop() {
-        super.onStop()
-        splitController.removeSplitListener(splitStateChangeListener)
+        lifecycleScope.launch {
+            // The block passed to repeatOnLifecycle is executed when the lifecycle
+            // is at least STARTED and is cancelled when the lifecycle is STOPPED.
+            // It automatically restarts the block when the lifecycle is STARTED again.
+            lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                splitController.splitInfoList(this@SplitDeviceStateActivityBase)
+                    .collect { newSplitInfos ->
+                        updateSplitAttributesText(newSplitInfos)
+                        updateRadioGroupAndCheckBoxFromRule()
+                    }
+            }
+        }
     }
 
     override fun onClick(button: View) {
@@ -261,7 +264,7 @@ open class SplitDeviceStateActivityBase : AppCompatActivity(), View.OnClickListe
         )
         splitPairFilters.add(splitPairFilter)
         val defaultSplitAttributes = SplitAttributes.Builder()
-            .setSplitType(SplitAttributes.SplitType.splitEqually())
+            .setSplitType(SPLIT_TYPE_EQUAL)
             .setLayoutDirection(SplitAttributes.LayoutDirection.LOCALE)
             .setAnimationBackgroundColor(demoActivityEmbeddingController.animationBackgroundColor)
             .build()
@@ -306,18 +309,9 @@ open class SplitDeviceStateActivityBase : AppCompatActivity(), View.OnClickListe
         ruleController.addRule(splitPairRule)
     }
 
-    /** Updates split attributes when receives callback from the extension. */
-    inner class SplitStateChangeListener : Consumer<List<SplitInfo>> {
-        override fun accept(newSplitInfos: List<SplitInfo>) {
-            updateSplitAttributesText(newSplitInfos)
-            updateRadioGroupAndCheckBoxFromRule()
-        }
-    }
-
-    @OptIn(ExperimentalWindowApi::class)
-    fun updateSplitAttributesText(newSplitInfos: List<SplitInfo>) {
+    private suspend fun updateSplitAttributesText(newSplitInfos: List<SplitInfo>) {
         var splitAttributes: SplitAttributes = SplitAttributes.Builder()
-            .setSplitType(SplitAttributes.SplitType.expandContainers())
+            .setSplitType(SPLIT_TYPE_EXPAND)
             .build()
         var suggestToFinishItself = false
         val isCallbackSupported = splitController.isSplitAttributesCalculatorSupported()
@@ -326,8 +320,7 @@ open class SplitDeviceStateActivityBase : AppCompatActivity(), View.OnClickListe
             if (info.contains(this@SplitDeviceStateActivityBase)) {
                 splitAttributes = info.splitAttributes
                 if (componentName == activityB &&
-                    splitAttributes.splitType
-                        is SplitAttributes.SplitType.ExpandContainersSplitType
+                    splitAttributes.splitType == SPLIT_TYPE_EXPAND
                 ) {
                     // We don't put any functionality on activity B. Suggest users to finish the
                     // activity if it fills the host task.
@@ -336,12 +329,12 @@ open class SplitDeviceStateActivityBase : AppCompatActivity(), View.OnClickListe
                 break
             }
         }
-        runOnUiThread {
+        withContext(Dispatchers.Main) {
             viewBinding.activityPairSplitAttributesTextView.text =
                 resources.getString(R.string.current_split_attributes) + splitAttributes
             if (!isCallbackSupported) {
                 // Don't update the error message if the callback is not supported.
-                return@runOnUiThread
+                return@withContext
             }
             viewBinding.errorMessageTextView.text =
                 if (suggestToFinishItself) {
@@ -352,7 +345,7 @@ open class SplitDeviceStateActivityBase : AppCompatActivity(), View.OnClickListe
         }
     }
 
-    fun updateRadioGroupAndCheckBoxFromRule() {
+    private fun updateRadioGroupAndCheckBoxFromRule() {
         val splitPairRule = ruleController.getRules().firstOrNull { rule ->
             isRuleForSplitActivityA(rule)
         } ?: return
