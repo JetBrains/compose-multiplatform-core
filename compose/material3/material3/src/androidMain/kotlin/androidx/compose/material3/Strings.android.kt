@@ -156,6 +156,15 @@ internal actual fun getString(string: Strings): String {
         Strings.BottomSheetDragHandleDescription -> resources.getString(
             androidx.compose.material3.R.string.bottom_sheet_drag_handle_description
         )
+        Strings.BottomSheetPartialExpandDescription -> resources.getString(
+            androidx.compose.material3.R.string.bottom_sheet_collapse_description
+        )
+        Strings.BottomSheetDismissDescription -> resources.getString(
+            androidx.compose.material3.R.string.bottom_sheet_dismiss_description
+        )
+        Strings.BottomSheetExpandDescription -> resources.getString(
+            androidx.compose.material3.R.string.bottom_sheet_expand_description
+        )
         Strings.TooltipLongPressLabel -> resources.getString(
             androidx.compose.material3.R.string.tooltip_long_press_label
         )
@@ -179,6 +188,10 @@ internal actual fun getString(string: Strings): String {
             androidx.compose.material3.R.string.time_picker_hour)
         Strings.TimePickerMinute -> resources.getString(
             androidx.compose.material3.R.string.time_picker_minute)
+        Strings.TimePickerHourTextField -> resources.getString(
+            androidx.compose.material3.R.string.time_picker_hour_text_field)
+        Strings.TimePickerMinuteTextField -> resources.getString(
+            androidx.compose.material3.R.string.time_picker_minute_text_field)
         Strings.TooltipPaneDescription -> resources.getString(
             androidx.compose.material3.R.string.tooltip_pane_description)
         else -> ""

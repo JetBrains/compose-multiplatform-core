@@ -49,6 +49,12 @@ class Configuration internal constructor(builder: Builder) {
     val taskExecutor: Executor
 
     /**
+     * The [Clock] used by [WorkManager] to calculate schedules and perform book-keeping.
+     */
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    val clock: Clock
+
+    /**
      * The [WorkerFactory] used by [WorkManager] to create [ListenableWorker]s
      */
     val workerFactory: WorkerFactory
@@ -84,7 +90,6 @@ class Configuration internal constructor(builder: Builder) {
 
     /**
      * The minimum logging level, corresponding to the constants found in [android.util.Log]
-     * @hide
      */
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     val minimumLoggingLevel: Int
@@ -122,7 +127,6 @@ class Configuration internal constructor(builder: Builder) {
     /**
      * The maximum number of system requests which can be enqueued by [WorkManager]
      * when using [android.app.job.JobScheduler] or [android.app.AlarmManager]
-     * @hide
      */
     @get:IntRange(from = MIN_SCHEDULER_LIMIT.toLong(), to = Scheduler.MAX_SCHEDULER_LIMIT.toLong())
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
@@ -130,7 +134,6 @@ class Configuration internal constructor(builder: Builder) {
 
     /**
      * @return `true` If the default task [Executor] is being used
-     * @hide
      */
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     val isUsingDefaultTaskExecutor: Boolean
@@ -142,6 +145,7 @@ class Configuration internal constructor(builder: Builder) {
         // So this should not be a single threaded executor. Writes will still be serialized
         // as this will be wrapped with an SerialExecutor.
         taskExecutor = builder.taskExecutor ?: createDefaultExecutor(isTaskExecutor = true)
+        clock = builder.clock ?: SystemClock()
         workerFactory = builder.workerFactory ?: WorkerFactory.getDefaultWorkerFactory()
         inputMergerFactory = builder.inputMergerFactory ?: NoOpInputMergerFactory
         runnableScheduler = builder.runnableScheduler ?: DefaultRunnableScheduler()
@@ -168,6 +172,7 @@ class Configuration internal constructor(builder: Builder) {
         internal var workerFactory: WorkerFactory? = null
         internal var inputMergerFactory: InputMergerFactory? = null
         internal var taskExecutor: Executor? = null
+        internal var clock: Clock? = null
         internal var runnableScheduler: RunnableScheduler? = null
         internal var initializationExceptionHandler: Consumer<Throwable>? = null
         internal var schedulingExceptionHandler: Consumer<Throwable>? = null
@@ -188,7 +193,6 @@ class Configuration internal constructor(builder: Builder) {
          * template.
          *
          * @param configuration An existing [Configuration] to use as a template
-         * @hide
          */
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         constructor(configuration: Configuration) {
@@ -198,6 +202,7 @@ class Configuration internal constructor(builder: Builder) {
             workerFactory = configuration.workerFactory
             inputMergerFactory = configuration.inputMergerFactory
             taskExecutor = configuration.taskExecutor
+            clock = configuration.clock
             loggingLevel = configuration.minimumLoggingLevel
             minJobSchedulerId = configuration.minJobSchedulerId
             maxJobSchedulerId = configuration.maxJobSchedulerId
@@ -255,6 +260,18 @@ class Configuration internal constructor(builder: Builder) {
          */
         fun setTaskExecutor(taskExecutor: Executor): Builder {
             this.taskExecutor = taskExecutor
+            return this
+        }
+
+        /**
+         * Sets a [Clock] for WorkManager to calculate schedules and perform book-keeping.
+         *
+         * @param clock The [Clock] to use
+         * @return This [Builder] instance
+         */
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+        fun setClock(clock: Clock): Builder {
+            this.clock = clock
             return this
         }
 

@@ -48,7 +48,6 @@ import java.util.Set;
 public class UiObject2Test extends BaseTest {
     private static final int TIMEOUT_MS = 10_000;
     private static final int SPEED_MS = 100;
-    private static final int SCROLL_MARGIN = 50;
 
     @Test
     public void testClear() {
@@ -160,7 +159,6 @@ public class UiObject2Test extends BaseTest {
                 TIMEOUT_MS));
     }
 
-    @Ignore // b/266617335
     @Test
     @SdkSuppress(minSdkVersion = 24)
     public void testDrag_dest() {
@@ -175,7 +173,6 @@ public class UiObject2Test extends BaseTest {
         assertEquals("drag_received", dragDestination.getText());
     }
 
-    @Ignore // b/270210522
     @Test
     @SdkSuppress(minSdkVersion = 24)
     public void testDrag_destAndSpeed() {
@@ -509,7 +506,7 @@ public class UiObject2Test extends BaseTest {
 
         UiObject2 pinchArea = mDevice.findObject(By.res(TEST_APP, "pinch_area"));
         UiObject2 scaleText = pinchArea.findObject(By.res(TEST_APP, "scale_factor"));
-        pinchArea.pinchClose(1f);
+        pinchArea.pinchClose(0.75f);
         scaleText.wait(Until.textNotEquals("1.0f"), TIMEOUT_MS);
         float scaleValueAfterPinch = Float.parseFloat(scaleText.getText());
         assertTrue(String.format("Expected scale value to be less than 1f after pinchClose(), "
@@ -529,7 +526,6 @@ public class UiObject2Test extends BaseTest {
                 + "but got [%f]", scaleValueAfterPinch), scaleValueAfterPinch < 1f);
     }
 
-    @Ignore // b/266617335
     @Test
     public void testPinchOpen() {
         launchTestActivity(PinchTestActivity.class);
@@ -562,7 +558,6 @@ public class UiObject2Test extends BaseTest {
         launchTestActivity(SwipeTestActivity.class);
 
         UiObject2 swipeRegion = mDevice.findObject(By.res(TEST_APP, "swipe_region"));
-        swipeRegion.setGestureMargin(SCROLL_MARGIN);
 
         swipeRegion.swipe(Direction.LEFT, 0.9f);
         assertTrue(swipeRegion.wait(Until.textEquals("swipe_left"), TIMEOUT_MS));
@@ -613,11 +608,10 @@ public class UiObject2Test extends BaseTest {
 
         // Scroll down to bottom where is two-screen-height distant from the top.
         UiObject2 scrollView = mDevice.findObject(By.res(TEST_APP, "scroll_view"));
-        scrollView.setGestureMargin(SCROLL_MARGIN); // Avoid touching too close to the edges.
 
         Rect bounds = scrollView.getVisibleBounds();
         float percent =
-                (float) (mDevice.getDisplayHeight() * 2 / (bounds.height() - 2 * SCROLL_MARGIN));
+                (float) (mDevice.getDisplayHeight() * 2 / (bounds.height() - 100));
         scrollView.scroll(Direction.DOWN, percent);
 
         assertTrue(mDevice.hasObject(By.res(TEST_APP, "bottom_text")));
@@ -630,7 +624,6 @@ public class UiObject2Test extends BaseTest {
 
         // Scroll until end (scroll method returns false).
         UiObject2 scrollView = mDevice.findObject(By.res(TEST_APP, "scroll_view"));
-        scrollView.setGestureMargin(SCROLL_MARGIN); // Avoid touching too close to the edges.
         while (scrollView.scroll(Direction.DOWN, 1.0f)) {
             // Continue until bottom.
         }
@@ -645,7 +638,6 @@ public class UiObject2Test extends BaseTest {
 
         // Scroll until end
         UiObject2 scrollView = mDevice.findObject(By.res(TEST_APP, "scroll_view"));
-        scrollView.setGestureMargin(SCROLL_MARGIN); // Avoid touching too close to the edges.
         assertNotNull(scrollView.scrollUntil(Direction.DOWN,
                 Until.findObject(By.res(TEST_APP, "bottom_text"))));
         assertTrue(mDevice.hasObject(By.res(TEST_APP, "bottom_text")));
@@ -658,7 +650,6 @@ public class UiObject2Test extends BaseTest {
         assertFalse(mDevice.hasObject(By.res(TEST_APP, "bottom_text")));
 
         UiObject2 scrollView = mDevice.findObject(By.res(TEST_APP, "scroll_view"));
-        scrollView.setGestureMargin(SCROLL_MARGIN); // Avoid touching too close to the edges.
         // fail to find text that doesn't exist.
         assertNull(scrollView.scrollUntil(Direction.DOWN,
                 Until.findObject(By.res(TEST_APP, "nonexistent_text"))));
@@ -673,7 +664,6 @@ public class UiObject2Test extends BaseTest {
         assertFalse(mDevice.hasObject(By.res(TEST_APP, "bottom_text")));
 
         UiObject2 scrollView = mDevice.findObject(By.res(TEST_APP, "scroll_view"));
-        scrollView.setGestureMargin(SCROLL_MARGIN); // Avoid touching too close to the edges.
         // Scroll for the event condition that occurs early before scrolling to the end.
         Integer result = scrollView.scrollUntil(Direction.DOWN,
                 new EventCondition<Integer>() {
@@ -704,7 +694,6 @@ public class UiObject2Test extends BaseTest {
         assertFalse(mDevice.hasObject(By.res(TEST_APP, "bottom_text")));
 
         UiObject2 scrollView = mDevice.findObject(By.res(TEST_APP, "scroll_view"));
-        scrollView.setGestureMargin(SCROLL_MARGIN); // Avoid touching too close to the edges.
         // Scroll for the event condition that doesn't occur.
         Integer result = scrollView.scrollUntil(Direction.DOWN,
                 new EventCondition<Integer>() {
@@ -733,9 +722,7 @@ public class UiObject2Test extends BaseTest {
     public void testFling_direction() {
         launchTestActivity(FlingTestActivity.class);
 
-        // Avoid touching too close to the edges.
         UiObject2 flingRegion = mDevice.findObject(By.res(TEST_APP, "fling_region"));
-        flingRegion.setGestureMargin(SCROLL_MARGIN);
 
         // No fling yet.
         assertEquals("no_fling", flingRegion.getText());
@@ -750,9 +737,7 @@ public class UiObject2Test extends BaseTest {
     public void testFling_directionAndSpeed() {
         launchTestActivity(FlingTestActivity.class);
 
-        // Avoid touching too close to the edges.
         UiObject2 flingRegion = mDevice.findObject(By.res(TEST_APP, "fling_region"));
-        flingRegion.setGestureMargin(SCROLL_MARGIN);
 
         // No fling yet.
         assertEquals("no_fling", flingRegion.getText());

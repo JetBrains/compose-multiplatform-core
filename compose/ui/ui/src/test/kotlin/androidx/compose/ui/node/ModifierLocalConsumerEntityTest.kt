@@ -41,7 +41,6 @@ import androidx.compose.ui.platform.ClipboardManager
 import androidx.compose.ui.platform.TextToolbar
 import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.platform.WindowInfo
-import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.PlatformTextInputPluginRegistry
@@ -50,6 +49,9 @@ import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import com.google.common.truth.Truth.assertThat
+import java.util.concurrent.Executors
+import kotlin.coroutines.CoroutineContext
+import kotlinx.coroutines.asCoroutineDispatcher
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
@@ -295,6 +297,8 @@ class ModifierLocalConsumerEntityTest {
         override val snapshotObserver: OwnerSnapshotObserver = OwnerSnapshotObserver { it.invoke() }
 
         override val modifierLocalManager: ModifierLocalManager = ModifierLocalManager(this)
+        override val coroutineContext: CoroutineContext =
+            Executors.newFixedThreadPool(3).asCoroutineDispatcher()
 
         override fun registerOnEndApplyChangesListener(listener: () -> Unit) {
             listeners += listener
@@ -342,7 +346,6 @@ class ModifierLocalConsumerEntityTest {
             get() = TODO("Not yet implemented")
         override val textInputService: TextInputService
             get() = TODO("Not yet implemented")
-        @OptIn(ExperimentalTextApi::class)
         override val platformTextInputPluginRegistry: PlatformTextInputPluginRegistry
             get() = TODO("Not yet implemented")
         override val pointerIconService: PointerIconService
@@ -396,7 +399,7 @@ class ModifierLocalConsumerEntityTest {
             TODO("Not yet implemented")
         }
 
-        override fun forceMeasureTheSubtree(layoutNode: LayoutNode) =
+        override fun forceMeasureTheSubtree(layoutNode: LayoutNode, affectsLookahead: Boolean) =
             TODO("Not yet implemented")
         override fun onSemanticsChange() =
             TODO("Not yet implemented")

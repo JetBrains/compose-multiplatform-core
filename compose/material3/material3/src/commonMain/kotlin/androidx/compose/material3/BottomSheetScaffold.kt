@@ -39,6 +39,7 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.collapse
+import androidx.compose.ui.semantics.dismiss
 import androidx.compose.ui.semantics.expand
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
@@ -74,6 +75,7 @@ import kotlinx.coroutines.launch
  * children. Defaults to the matching content color for [sheetContainerColor], or if that is
  * not a color from the theme, this will keep the same content color set above the bottom sheet.
  * @param sheetTonalElevation the tonal elevation of the bottom sheet
+ * @param sheetShadowElevation the shadow elevation of the bottom sheet
  * @param sheetDragHandle optional visual marker to pull the scaffold's bottom sheet
  * @param sheetSwipeEnabled whether the sheet swiping is enabled and should react to the user's
  * input
@@ -101,6 +103,7 @@ fun BottomSheetScaffold(
     sheetContainerColor: Color = BottomSheetDefaults.ContainerColor,
     sheetContentColor: Color = contentColorFor(sheetContainerColor),
     sheetTonalElevation: Dp = BottomSheetDefaults.Elevation,
+    sheetShadowElevation: Dp = BottomSheetDefaults.Elevation,
     sheetDragHandle: @Composable (() -> Unit)? = { BottomSheetDefaults.DragHandle() },
     sheetSwipeEnabled: Boolean = true,
     topBar: @Composable (() -> Unit)? = null,
@@ -109,32 +112,34 @@ fun BottomSheetScaffold(
     contentColor: Color = contentColorFor(containerColor),
     content: @Composable (PaddingValues) -> Unit
 ) {
-    Surface(modifier = modifier, color = containerColor, contentColor = contentColor) {
-        BottomSheetScaffoldLayout(
-            topBar = topBar,
-            body = content,
-            snackbarHost = {
-                snackbarHost(scaffoldState.snackbarHostState)
-            },
-            sheetPeekHeight = sheetPeekHeight,
-            sheetOffset = { scaffoldState.bottomSheetState.requireOffset() },
-            sheetState = scaffoldState.bottomSheetState,
-            bottomSheet = { layoutHeight ->
-                StandardBottomSheet(
-                    state = scaffoldState.bottomSheetState,
-                    peekHeight = sheetPeekHeight,
-                    sheetSwipeEnabled = sheetSwipeEnabled,
-                    layoutHeight = layoutHeight.toFloat(),
-                    shape = sheetShape,
-                    containerColor = sheetContainerColor,
-                    contentColor = sheetContentColor,
-                    tonalElevation = sheetTonalElevation,
-                    dragHandle = sheetDragHandle,
-                    content = sheetContent
-                )
-            }
-        )
-    }
+    BottomSheetScaffoldLayout(
+        modifier = modifier,
+        topBar = topBar,
+        body = content,
+        snackbarHost = {
+            snackbarHost(scaffoldState.snackbarHostState)
+        },
+        sheetPeekHeight = sheetPeekHeight,
+        sheetOffset = { scaffoldState.bottomSheetState.requireOffset() },
+        sheetState = scaffoldState.bottomSheetState,
+        containerColor = containerColor,
+        contentColor = contentColor,
+        bottomSheet = { layoutHeight ->
+            StandardBottomSheet(
+                state = scaffoldState.bottomSheetState,
+                peekHeight = sheetPeekHeight,
+                sheetSwipeEnabled = sheetSwipeEnabled,
+                layoutHeight = layoutHeight.toFloat(),
+                shape = sheetShape,
+                containerColor = sheetContainerColor,
+                contentColor = sheetContentColor,
+                tonalElevation = sheetTonalElevation,
+                shadowElevation = sheetShadowElevation,
+                dragHandle = sheetDragHandle,
+                content = sheetContent
+            )
+        }
+    )
 }
 
 /**
@@ -175,15 +180,17 @@ fun rememberBottomSheetScaffoldState(
  * Create and [remember] a [SheetState] for [BottomSheetScaffold].
  *
  * @param initialValue the initial value of the state. Should be either [PartiallyExpanded] or
- * [Expanded]
+ * [Expanded] if [skipHiddenState] is true
  * @param confirmValueChange optional callback invoked to confirm or veto a pending state change
+ * @param [skipHiddenState] whether Hidden state is skipped for [BottomSheetScaffold]
  */
 @Composable
 @ExperimentalMaterial3Api
 fun rememberStandardBottomSheetState(
     initialValue: SheetValue = PartiallyExpanded,
     confirmValueChange: (SheetValue) -> Boolean = { true },
-) = rememberSheetState(false, confirmValueChange, initialValue)
+    skipHiddenState: Boolean = true,
+) = rememberSheetState(false, confirmValueChange, initialValue, skipHiddenState)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -196,6 +203,7 @@ private fun StandardBottomSheet(
     containerColor: Color,
     contentColor: Color,
     tonalElevation: Dp,
+    shadowElevation: Dp,
     dragHandle: @Composable (() -> Unit)?,
     content: @Composable ColumnScope.() -> Unit
 ) {
@@ -229,7 +237,7 @@ private fun StandardBottomSheet(
                     ConsumeSwipeWithinBottomSheetBoundsNestedScrollConnection(
                         sheetState = state,
                         orientation = orientation,
-                        onFling = {}
+                        onFling = { scope.launch { state.settle(it) } }
                     )
                 }
             )
@@ -244,37 +252,52 @@ private fun StandardBottomSheet(
                 anchorChangeHandler = anchorChangeHandler
             ) { value, sheetSize ->
                 when (value) {
-                    PartiallyExpanded -> layoutHeight - peekHeightPx
+                    PartiallyExpanded -> if (state.skipPartiallyExpanded)
+                        null else layoutHeight - peekHeightPx
                     Expanded -> if (sheetSize.height == peekHeightPx.roundToInt()) {
                         null
                     } else {
                         max(0f, layoutHeight - sheetSize.height)
                     }
-
-                    Hidden -> null
+                    Hidden -> if (state.skipHiddenState) null else layoutHeight
                 }
             },
         shape = shape,
         color = containerColor,
         contentColor = contentColor,
-        tonalElevation = tonalElevation
+        tonalElevation = tonalElevation,
+        shadowElevation = shadowElevation,
     ) {
         Column(Modifier.fillMaxWidth()) {
             if (dragHandle != null) {
+                val partialExpandActionLabel =
+                    getString(Strings.BottomSheetPartialExpandDescription)
+                val dismissActionLabel = getString(Strings.BottomSheetDismissDescription)
+                val expandActionLabel = getString(Strings.BottomSheetExpandDescription)
                 Box(Modifier
                     .align(CenterHorizontally)
-                    .semantics {
+                    .semantics(mergeDescendants = true) {
                         with(state) {
                             // Provides semantics to interact with the bottomsheet if there is more
                             // than one anchor to swipe to and swiping is enabled.
                             if (swipeableState.anchors.size > 1 && sheetSwipeEnabled) {
                                 if (currentValue == PartiallyExpanded) {
                                     if (swipeableState.confirmValueChange(Expanded)) {
-                                        expand { scope.launch { expand() }; true }
+                                        expand(expandActionLabel) {
+                                            scope.launch { expand() }; true
+                                        }
                                     }
                                 } else {
                                     if (swipeableState.confirmValueChange(PartiallyExpanded)) {
-                                        collapse { scope.launch { partialExpand() }; true }
+                                        collapse(partialExpandActionLabel) {
+                                            scope.launch { partialExpand() }; true
+                                        }
+                                    }
+                                }
+                                if (!state.skipHiddenState) {
+                                    dismiss(dismissActionLabel) {
+                                        scope.launch { hide() }
+                                        true
                                     }
                                 }
                             }
@@ -292,6 +315,7 @@ private fun StandardBottomSheet(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun BottomSheetScaffoldLayout(
+    modifier: Modifier,
     topBar: @Composable (() -> Unit)?,
     body: @Composable (innerPadding: PaddingValues) -> Unit,
     bottomSheet: @Composable (layoutHeight: Int) -> Unit,
@@ -299,6 +323,8 @@ private fun BottomSheetScaffoldLayout(
     sheetPeekHeight: Dp,
     sheetOffset: () -> Float,
     sheetState: SheetState,
+    containerColor: Color,
+    contentColor: Color,
 ) {
     SubcomposeLayout { constraints ->
         val layoutWidth = constraints.maxWidth
@@ -319,7 +345,11 @@ private fun BottomSheetScaffoldLayout(
 
         val bodyConstraints = looseConstraints.copy(maxHeight = layoutHeight - topBarHeight)
         val bodyPlaceable = subcompose(BottomSheetScaffoldLayoutSlot.Body) {
-            body(PaddingValues(bottom = sheetPeekHeight))
+            Surface(
+                modifier = modifier,
+                color = containerColor,
+                contentColor = contentColor,
+            ) { body(PaddingValues(bottom = sheetPeekHeight)) }
         }[0].measure(bodyConstraints)
 
         val snackbarPlaceable = subcompose(BottomSheetScaffoldLayoutSlot.Snackbar, snackbarHost)[0]

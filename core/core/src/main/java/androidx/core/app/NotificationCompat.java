@@ -719,12 +719,10 @@ public class NotificationCompat {
     /**
      * Maximum number of (generic) action buttons in a notification (contextual action buttons are
      * handled separately).
-     * @hide
      */
     @RestrictTo(LIBRARY_GROUP_PREFIX)
     public static final int MAX_ACTION_BUTTONS = 3;
 
-    /** @hide */
     @RestrictTo(LIBRARY_GROUP_PREFIX)
     @IntDef({AudioManager.STREAM_VOICE_CALL, AudioManager.STREAM_SYSTEM, AudioManager.STREAM_RING,
             AudioManager.STREAM_MUSIC, AudioManager.STREAM_ALARM, AudioManager.STREAM_NOTIFICATION,
@@ -732,7 +730,6 @@ public class NotificationCompat {
     @Retention(RetentionPolicy.SOURCE)
     public @interface StreamType {}
 
-    /** @hide */
     @RestrictTo(LIBRARY_GROUP_PREFIX)
     @Retention(SOURCE)
     @IntDef({VISIBILITY_PUBLIC, VISIBILITY_PRIVATE, VISIBILITY_SECRET})
@@ -862,7 +859,6 @@ public class NotificationCompat {
      */
     public static final String CATEGORY_MISSED_CALL = "missed_call";
 
-    /** @hide */
     @Retention(RetentionPolicy.SOURCE)
     @RestrictTo(LIBRARY_GROUP_PREFIX)
     @IntDef({BADGE_ICON_NONE, BADGE_ICON_SMALL, BADGE_ICON_LARGE})
@@ -884,7 +880,6 @@ public class NotificationCompat {
      */
     public static final int BADGE_ICON_LARGE = Notification.BADGE_ICON_LARGE;
 
-    /** @hide */
     @Retention(RetentionPolicy.SOURCE)
     @RestrictTo(LIBRARY_GROUP_PREFIX)
     @IntDef({GROUP_ALERT_ALL, GROUP_ALERT_SUMMARY, GROUP_ALERT_CHILDREN})
@@ -929,7 +924,6 @@ public class NotificationCompat {
      */
     public static final String GROUP_KEY_SILENT = "silent";
 
-    /** @hide */
     @Retention(RetentionPolicy.SOURCE)
     @RestrictTo(LIBRARY_GROUP_PREFIX)
     @IntDef({FOREGROUND_SERVICE_DEFAULT,
@@ -1011,15 +1005,12 @@ public class NotificationCompat {
         // All these variables are declared public/hidden so they can be accessed by a builder
         // extender.
 
-        /** @hide */
         @RestrictTo(LIBRARY_GROUP_PREFIX)
         public Context mContext;
 
-        /** @hide */
         @RestrictTo(LIBRARY_GROUP_PREFIX)
         public ArrayList<Action> mActions = new ArrayList<>();
 
-        /** @hide */
         @RestrictTo(LIBRARY_GROUP_PREFIX)
         @NonNull
         public ArrayList<Person> mPersonList = new ArrayList<>();
@@ -1034,7 +1025,7 @@ public class NotificationCompat {
         PendingIntent mContentIntent;
         PendingIntent mFullScreenIntent;
         RemoteViews mTickerView;
-        Bitmap mLargeIcon;
+        IconCompat mLargeIcon;
         CharSequence mContentInfo;
         int mNumber;
         int mPriority;
@@ -1589,39 +1580,25 @@ public class NotificationCompat {
         }
 
         /**
-         * Set the large icon that is shown in the notification.
+         * Sets the large icon that is shown in the notification. Icons will be scaled on versions
+         * before API 27. Starting in API 27, the framework does this automatically.
          */
         public @NonNull Builder setLargeIcon(@Nullable Bitmap icon) {
-            mLargeIcon = reduceLargeIconSize(icon);
+            mLargeIcon = icon == null ? null : IconCompat.createWithBitmap(
+             reduceLargeIconSize(mContext, icon));
             return this;
         }
 
         /**
-         * Reduce the size of a notification icon if it's overly large. The framework does
-         * this automatically starting from API 27.
+         * Sets the large icon that is shown in the notification. Starting in API 27, the framework
+         * scales icons automatically. Before API 27, for safety, {@code #reduceLargeIconSize}
+         * should be called on bitmaps before putting them in an {@code Icon} and passing them
+         * into this function.
          */
-        private @Nullable Bitmap reduceLargeIconSize(@Nullable Bitmap icon) {
-            if (icon == null || Build.VERSION.SDK_INT >= 27) {
-                return icon;
-            }
-
-            Resources res = mContext.getResources();
-            int maxWidth =
-                    res.getDimensionPixelSize(R.dimen.compat_notification_large_icon_max_width);
-            int maxHeight =
-                    res.getDimensionPixelSize(R.dimen.compat_notification_large_icon_max_height);
-            if (icon.getWidth() <= maxWidth && icon.getHeight() <= maxHeight) {
-                return icon;
-            }
-
-            double scale = Math.min(
-                    maxWidth / (double) Math.max(1, icon.getWidth()),
-                    maxHeight / (double) Math.max(1, icon.getHeight()));
-            return Bitmap.createScaledBitmap(
-                    icon,
-                    (int) Math.ceil(icon.getWidth() * scale),
-                    (int) Math.ceil(icon.getHeight() * scale),
-                    true /* filtered */);
+        @RequiresApi(23)
+        public @NonNull Builder setLargeIcon(@Nullable Icon icon) {
+            mLargeIcon = icon == null ? null : IconCompat.createFromIcon(icon);
+            return this;
         }
 
         /**
@@ -2559,7 +2536,6 @@ public class NotificationCompat {
         }
 
         /**
-         * @hide
          */
         @RestrictTo(LIBRARY_GROUP_PREFIX)
         public RemoteViews getContentView() {
@@ -2567,7 +2543,6 @@ public class NotificationCompat {
         }
 
         /**
-         * @hide
          */
         @RestrictTo(LIBRARY_GROUP_PREFIX)
         public RemoteViews getBigContentView() {
@@ -2575,7 +2550,6 @@ public class NotificationCompat {
         }
 
         /**
-         * @hide
          */
         @RestrictTo(LIBRARY_GROUP_PREFIX)
         public RemoteViews getHeadsUpContentView() {
@@ -2585,7 +2559,6 @@ public class NotificationCompat {
         /**
          * return when if it is showing or 0 otherwise
          *
-         * @hide
          */
         @RestrictTo(LIBRARY_GROUP_PREFIX)
         public long getWhenIfShowing() {
@@ -2595,7 +2568,6 @@ public class NotificationCompat {
         /**
          * @return the priority set on the notification
          *
-         * @hide
          */
         @RestrictTo(LIBRARY_GROUP_PREFIX)
         public int getPriority() {
@@ -2605,7 +2577,6 @@ public class NotificationCompat {
         /**
          * @return the foreground service behavior defined for the notification
          *
-         * @hide
          */
         @RestrictTo(LIBRARY_GROUP_PREFIX)
         public int getForegroundServiceBehavior() {
@@ -2615,7 +2586,6 @@ public class NotificationCompat {
         /**
          * @return the color of the notification
          *
-         * @hide
          */
         @ColorInt
         @RestrictTo(LIBRARY_GROUP_PREFIX)
@@ -2626,7 +2596,6 @@ public class NotificationCompat {
         /**
          * @return the {@link BubbleMetadata} of the notification
          *
-         * @hide
          */
         @RestrictTo(LIBRARY_GROUP_PREFIX)
         public @Nullable BubbleMetadata getBubbleMetadata() {
@@ -2725,7 +2694,6 @@ public class NotificationCompat {
      */
     public static abstract class Style {
         /**
-         * @hide
          */
         @RestrictTo(LIBRARY_GROUP_PREFIX)
         protected Builder mBuilder;
@@ -2758,7 +2726,6 @@ public class NotificationCompat {
         }
 
         /**
-         * @hide
          */
         @Nullable
         @RestrictTo(LIBRARY_GROUP_PREFIX)
@@ -2771,14 +2738,12 @@ public class NotificationCompat {
          * Applies the compat style data to the framework {@link Notification} in a backwards
          * compatible way. All other data should be stored within the Notification's extras.
          *
-         * @hide
          */
         @RestrictTo(LIBRARY_GROUP_PREFIX)
         public void apply(NotificationBuilderWithBuilderAccessor builder) {
         }
 
         /**
-         * @hide
          * @return Whether custom content views are displayed inline in the style
          */
         @RestrictTo(LIBRARY_GROUP_PREFIX)
@@ -2787,7 +2752,6 @@ public class NotificationCompat {
         }
 
         /**
-         * @hide
          */
         @RestrictTo(LIBRARY_GROUP_PREFIX)
         public RemoteViews makeContentView(NotificationBuilderWithBuilderAccessor builder) {
@@ -2795,7 +2759,6 @@ public class NotificationCompat {
         }
 
         /**
-         * @hide
          */
         @RestrictTo(LIBRARY_GROUP_PREFIX)
         public RemoteViews makeBigContentView(NotificationBuilderWithBuilderAccessor builder) {
@@ -2803,7 +2766,6 @@ public class NotificationCompat {
         }
 
         /**
-         * @hide
          */
         @RestrictTo(LIBRARY_GROUP_PREFIX)
         public RemoteViews makeHeadsUpContentView(NotificationBuilderWithBuilderAccessor builder) {
@@ -2819,7 +2781,6 @@ public class NotificationCompat {
          * Moreover, recovering builders and styles is only supported at API 19 and above, no
          * implementation is required for current BigTextStyle, BigPictureStyle, or InboxStyle.
          *
-         * @hide
          */
         @RestrictTo(LIBRARY_GROUP_PREFIX)
         public void addCompatExtras(@NonNull Bundle extras) {
@@ -2836,7 +2797,6 @@ public class NotificationCompat {
         }
 
         /**
-         * @hide
          */
         @RestrictTo(LIBRARY_GROUP_PREFIX)
         protected void restoreFromCompatExtras(@NonNull Bundle extras) {
@@ -2848,7 +2808,6 @@ public class NotificationCompat {
         }
 
         /**
-         * @hide
          */
         @RestrictTo(LIBRARY_GROUP_PREFIX)
         protected void clearCompatExtraKeys(@NonNull Bundle extras) {
@@ -2858,7 +2817,6 @@ public class NotificationCompat {
         }
 
         /**
-         * @hide
          */
         @RestrictTo(LIBRARY_GROUP_PREFIX)
         @Nullable
@@ -2963,7 +2921,6 @@ public class NotificationCompat {
         }
 
         /**
-         * @hide
          */
         @RestrictTo(LIBRARY_GROUP_PREFIX)
         @NonNull
@@ -2995,7 +2952,8 @@ public class NotificationCompat {
                 // to hide it here.
                 if (Build.VERSION.SDK_INT >= 16) {
                     contentView.setViewVisibility(R.id.icon, View.VISIBLE);
-                    contentView.setImageViewBitmap(R.id.icon, mBuilder.mLargeIcon);
+                    contentView.setImageViewBitmap(R.id.icon,
+                            createColoredBitmap(mBuilder.mLargeIcon, Color.TRANSPARENT));
                 } else {
                     contentView.setViewVisibility(R.id.icon, View.GONE);
                 }
@@ -3044,7 +3002,8 @@ public class NotificationCompat {
                 showLine3 = true;
             }
             // If there is a large icon we have a right side
-            boolean hasRightSide = !(Build.VERSION.SDK_INT >= 21) && mBuilder.mLargeIcon != null;
+            boolean hasRightSide =
+                    !(Build.VERSION.SDK_INT >= 21) && mBuilder.mLargeIcon != null;
             if (mBuilder.mContentInfo != null) {
                 contentView.setTextViewText(R.id.info, mBuilder.mContentInfo);
                 contentView.setViewVisibility(R.id.info, View.VISIBLE);
@@ -3119,7 +3078,6 @@ public class NotificationCompat {
          * Create a bitmap using the given icon together with a color filter created from the given
          * color.
          *
-         * @hide
          */
         @RestrictTo(LIBRARY_GROUP_PREFIX)
         public Bitmap createColoredBitmap(int iconId, int color) {
@@ -3169,7 +3127,6 @@ public class NotificationCompat {
         }
 
         /**
-         * @hide
          */
         @RestrictTo(LIBRARY_GROUP_PREFIX)
         public void buildIntoRemoteViews(RemoteViews outerView,
@@ -3367,7 +3324,6 @@ public class NotificationCompat {
         }
 
         /**
-         * @hide
          */
         @RestrictTo(LIBRARY_GROUP_PREFIX)
         @Override
@@ -3377,7 +3333,6 @@ public class NotificationCompat {
         }
 
         /**
-         * @hide
          */
         @RestrictTo(LIBRARY_GROUP_PREFIX)
         @Override
@@ -3431,7 +3386,6 @@ public class NotificationCompat {
         }
 
         /**
-         * @hide
          */
         @RestrictTo(LIBRARY_GROUP_PREFIX)
         @Override
@@ -3448,7 +3402,6 @@ public class NotificationCompat {
         }
 
         /**
-         * @hide
          */
         @RestrictTo(LIBRARY_GROUP_PREFIX)
         @Nullable
@@ -3481,7 +3434,6 @@ public class NotificationCompat {
         }
 
         /**
-         * @hide
          */
         @Override
         @RestrictTo(LIBRARY_GROUP_PREFIX)
@@ -3658,7 +3610,6 @@ public class NotificationCompat {
         }
 
         /**
-         * @hide
          */
         @RestrictTo(LIBRARY_GROUP_PREFIX)
         @Override
@@ -3668,7 +3619,6 @@ public class NotificationCompat {
         }
 
         /**
-         * @hide
          */
         @RestrictTo(LIBRARY_GROUP_PREFIX)
         @Override
@@ -3685,7 +3635,6 @@ public class NotificationCompat {
         }
 
         /**
-         * @hide
          */
         @RestrictTo(LIBRARY_GROUP_PREFIX)
         @Override
@@ -3696,7 +3645,6 @@ public class NotificationCompat {
         }
 
         /**
-         * @hide
          */
         @RestrictTo(LIBRARY_GROUP_PREFIX)
         @Override
@@ -3712,7 +3660,6 @@ public class NotificationCompat {
         }
 
         /**
-         * @hide
          */
         @Override
         @RestrictTo(LIBRARY_GROUP_PREFIX)
@@ -4044,7 +3991,6 @@ public class NotificationCompat {
         }
 
         /**
-         * @hide
          */
         @RestrictTo(LIBRARY_GROUP_PREFIX)
         @Override
@@ -4054,7 +4000,6 @@ public class NotificationCompat {
         }
 
         /**
-         * @hide
          */
         @RestrictTo(LIBRARY_GROUP_PREFIX)
         @Override
@@ -4226,7 +4171,6 @@ public class NotificationCompat {
         }
 
         /**
-         * @hide
          */
         @RestrictTo(LIBRARY_GROUP_PREFIX)
         @Override
@@ -4263,7 +4207,6 @@ public class NotificationCompat {
         }
 
         /**
-         * @hide
          */
         @Override
         @RestrictTo(LIBRARY_GROUP_PREFIX)
@@ -4337,12 +4280,14 @@ public class NotificationCompat {
              * where the platform doesn't support the MIME type, the original text provided in the
              * constructor will be used.
              *
-             * @param dataMimeType The MIME type of the content
+             * @param dataMimeType The MIME type of the content. See
+             * {@link android.graphics.ImageDecoder#isMimeTypeSupported(String)}
+             * for a list of supported image MIME types.
              * @param dataUri The uri containing the content whose type is given by the MIME type.
              * <p class="note">
+             * Notification Listeners including the System UI need permission to access the
+             * data the Uri points to. The recommended ways to do this are:
              * <ol>
-             *   <li>Notification Listeners including the System UI need permission to access the
-             *       data the Uri points to. The recommended ways to do this are:</li>
              *   <li>Store the data in your own ContentProvider, making sure that other apps have
              *       the correct permission to access your provider. The preferred mechanism for
              *       providing access is to use per-URI permissions which are temporary and only
@@ -4518,7 +4463,6 @@ public class NotificationCompat {
             /**
              * Converts this compat {@link Message} to the base Android framework
              * {@link Notification.MessagingStyle.Message}.
-             * @hide
              */
             @RestrictTo(LIBRARY_GROUP_PREFIX)
             @NonNull
@@ -4718,7 +4662,6 @@ public class NotificationCompat {
                 "androidx.core.app.NotificationCompat$CallStyle";
 
         /**
-         * @hide
          */
         @RestrictTo(LIBRARY_GROUP_PREFIX)
         @Retention(RetentionPolicy.SOURCE)
@@ -4939,7 +4882,6 @@ public class NotificationCompat {
         }
 
         /**
-         * @hide
          */
         @RestrictTo(LIBRARY_GROUP_PREFIX)
         @Override
@@ -4951,7 +4893,6 @@ public class NotificationCompat {
 
 
         /**
-         * @hide
          */
         @RestrictTo(LIBRARY_GROUP_PREFIX)
         @Override
@@ -4987,7 +4928,6 @@ public class NotificationCompat {
         }
 
         /**
-         * @hide
          */
         @RestrictTo(LIBRARY_GROUP_PREFIX)
         @Override
@@ -5028,7 +4968,6 @@ public class NotificationCompat {
         }
 
         /**
-         * @hide
          */
         @RestrictTo(LIBRARY_GROUP_PREFIX)
         @Override
@@ -5038,7 +4977,6 @@ public class NotificationCompat {
         }
 
         /**
-         * @hide
          */
         @RestrictTo(LIBRARY_GROUP_PREFIX)
         @Override
@@ -5231,7 +5169,6 @@ public class NotificationCompat {
          * the correct place.  This returns the correct result even if the system actions have
          * already been added, and even if more actions were added since then.
          *
-         * @hide
          */
         @RestrictTo(LIBRARY_GROUP_PREFIX)
         @NonNull
@@ -5614,7 +5551,6 @@ public class NotificationCompat {
         }
 
         /**
-         * @hide
          */
         @RestrictTo(LIBRARY_GROUP_PREFIX)
         @Override
@@ -5624,7 +5560,6 @@ public class NotificationCompat {
         }
 
         /**
-         * @hide
          */
         @RestrictTo(LIBRARY_GROUP_PREFIX)
         @Override
@@ -5642,7 +5577,6 @@ public class NotificationCompat {
         }
 
         /**
-         * @hide
          */
         @RestrictTo(LIBRARY_GROUP_PREFIX)
         @Override
@@ -5656,7 +5590,6 @@ public class NotificationCompat {
         }
 
         /**
-         * @hide
          */
         @Override
         @RestrictTo(LIBRARY_GROUP_PREFIX)
@@ -5738,7 +5671,6 @@ public class NotificationCompat {
         }
 
         /**
-         * @hide
          */
         @RestrictTo(LIBRARY_GROUP_PREFIX)
         @Override
@@ -5748,7 +5680,6 @@ public class NotificationCompat {
         }
 
         /**
-         * @hide
          */
         @RestrictTo(LIBRARY_GROUP_PREFIX)
         @Override
@@ -5757,7 +5688,6 @@ public class NotificationCompat {
         }
 
         /**
-         * @hide
          */
         @RestrictTo(LIBRARY_GROUP_PREFIX)
         @Override
@@ -5770,7 +5700,6 @@ public class NotificationCompat {
         }
 
         /**
-         * @hide
          */
         @RestrictTo(LIBRARY_GROUP_PREFIX)
         @Override
@@ -5787,7 +5716,6 @@ public class NotificationCompat {
         }
 
         /**
-         * @hide
          */
         @RestrictTo(LIBRARY_GROUP_PREFIX)
         @Override
@@ -5808,7 +5736,6 @@ public class NotificationCompat {
         }
 
         /**
-         * @hide
          */
         @RestrictTo(LIBRARY_GROUP_PREFIX)
         @Override
@@ -6234,7 +6161,6 @@ public class NotificationCompat {
             /**
              * Creates a {@link Builder} from an {@link android.app.Notification.Action}.
              *
-             * @hide
              */
             @RestrictTo(LIBRARY_GROUP_PREFIX)
             @RequiresApi(19)
@@ -7992,13 +7918,11 @@ public class NotificationCompat {
      * to access values.
      */
     public static final class CarExtender implements Extender {
-        /** @hide **/
         @RestrictTo(LIBRARY_GROUP_PREFIX)
         static final String EXTRA_CAR_EXTENDER = "android.car.EXTENSIONS";
         private static final String EXTRA_LARGE_ICON = "large_icon";
         private static final String EXTRA_CONVERSATION = "car_conversation";
         private static final String EXTRA_COLOR = "app_color";
-        /** @hide **/
         @RestrictTo(LIBRARY_GROUP_PREFIX)
         static final String EXTRA_INVISIBLE_ACTIONS = "invisible_actions";
 
@@ -8507,6 +8431,210 @@ public class NotificationCompat {
     }
 
     /**
+     * Helper class to add Android TV extensions to notifications.
+     * <p>
+     * To create a notification with a TV extension:
+     * <ol>
+     *  <li>Create an {@link NotificationCompat.Builder}, setting any desired properties.
+     *  <li>Create a {@link TvExtender}.
+     *  <li>Set TV-specific properties using the {@code set} methods of
+     *  {@link TvExtender}.
+     *  <li>Call {@link NotificationCompat.Builder#extend(NotificationCompat.Extender)}
+     *  to apply the extension to a notification.
+     * </ol>
+     *
+     * <pre class="prettyprint">
+     * Notification notification = new NotificationCompat.Builder(context)
+     *         ...
+     *         .extend(new TvExtender()
+     *                 .setChannelId("channel id"))
+     *         .build();
+     * NotificationManagerCompat.from(mContext).notify(0, notification);
+     * </pre>
+     *
+     * <p>TV extensions can be accessed on an existing notification by using the
+     * {@code TvExtender(Notification)} constructor, and then using the {@code get} methods
+     * to access values.
+     *
+     * <p>Note that prior to {@link Build.VERSION_CODES#O} this field has no effect.
+     */
+    public static final class TvExtender implements Extender {
+        private static final String TAG = "TvExtender";
+
+        /** @hide **/
+        @RestrictTo(LIBRARY_GROUP_PREFIX)
+        static final String EXTRA_TV_EXTENDER = "android.tv.EXTENSIONS";
+
+        /** @hide **/
+        @RestrictTo(LIBRARY_GROUP_PREFIX)
+        private static final String EXTRA_FLAGS = "flags";
+
+        static final String EXTRA_CONTENT_INTENT = "content_intent";
+        static final String EXTRA_DELETE_INTENT = "delete_intent";
+        static final String EXTRA_CHANNEL_ID = "channel_id";
+        static final String EXTRA_SUPPRESS_SHOW_OVER_APPS = "suppressShowOverApps";
+
+        // Flags bitwise-ored to mFlags
+        private static final int FLAG_AVAILABLE_ON_TV = 0x1;
+
+        private int mFlags;
+        private String mChannelId;
+        private PendingIntent mContentIntent;
+        private PendingIntent mDeleteIntent;
+        private boolean mSuppressShowOverApps;
+
+        /**
+         * Create a {@link TvExtender} with default options.
+         */
+        public TvExtender() {
+            mFlags = FLAG_AVAILABLE_ON_TV;
+        }
+
+        /**
+         * Create a {@link TvExtender} from the TvExtender options of an existing Notification.
+         *
+         * @param notif The notification from which to copy options.
+         */
+        public TvExtender(@NonNull Notification notif) {
+            // TvExtender was introduced in API level 26; note that before API level 26, the extras
+            // added by TvExtender are not expected to be used; thus, we avoid setting them to save
+            // memory.
+            if (Build.VERSION.SDK_INT < 26) {
+                return;
+            }
+
+            Bundle tvBundle = notif.extras == null
+                    ? null : notif.extras.getBundle(EXTRA_TV_EXTENDER);
+            if (tvBundle != null) {
+                mFlags = tvBundle.getInt(EXTRA_FLAGS);
+                mChannelId = tvBundle.getString(EXTRA_CHANNEL_ID);
+                mSuppressShowOverApps = tvBundle.getBoolean(EXTRA_SUPPRESS_SHOW_OVER_APPS);
+                mContentIntent = (PendingIntent) tvBundle.getParcelable(EXTRA_CONTENT_INTENT);
+                mDeleteIntent = (PendingIntent) tvBundle.getParcelable(EXTRA_DELETE_INTENT);
+            }
+        }
+
+        /**
+         * Apply a TV extension to a notification that is being built. This is typically called by
+         * the
+         * {@link androidx.core.app.NotificationCompat.Builder#extend(NotificationCompat.Extender)}
+         * method of {@link NotificationCompat.Builder}.
+         */
+        @Override
+        @NonNull
+        public NotificationCompat.Builder extend(@NonNull NotificationCompat.Builder builder) {
+            // TvExtender was introduced in API level 26; note that before API level 26, the extras
+            // added by TvExtender are not expected to be used; thus, we avoid setting them to save
+            // memory.
+            if (Build.VERSION.SDK_INT < 26) {
+                return builder;
+            }
+
+            Bundle tvExtensions = new Bundle();
+
+            tvExtensions.putInt(EXTRA_FLAGS, mFlags);
+            tvExtensions.putString(EXTRA_CHANNEL_ID, mChannelId);
+            tvExtensions.putBoolean(EXTRA_SUPPRESS_SHOW_OVER_APPS, mSuppressShowOverApps);
+            if (mContentIntent != null) {
+                tvExtensions.putParcelable(EXTRA_CONTENT_INTENT, mContentIntent);
+            }
+
+            if (mDeleteIntent != null) {
+                tvExtensions.putParcelable(EXTRA_DELETE_INTENT, mDeleteIntent);
+            }
+
+            // Extras was added in API level 19.
+            builder.getExtras().putBundle(EXTRA_TV_EXTENDER, tvExtensions);
+            return builder;
+        }
+
+        /**
+         * Returns true if this notification should be shown on TV. This method return true
+         * if the notification was extended with a TvExtender.
+         */
+        public boolean isAvailableOnTv() {
+            return (mFlags & FLAG_AVAILABLE_ON_TV) != 0;
+        }
+
+        /**
+         * Specifies the channel the notification should be delivered on when shown on TV.
+         * It can be different from the channel that the notification is delivered to when
+         * posting on a non-TV device.
+         *
+         * @param channelId The channelId to use in the tv notification.
+         * @return The object for method chaining.
+         */
+        public @NonNull TvExtender setChannelId(@Nullable String channelId) {
+            mChannelId = channelId;
+            return this;
+        }
+
+        /**
+         * Returns the id of the channel this notification posts to on TV.
+         */
+        public @Nullable String getChannelId() {
+            return mChannelId;
+        }
+
+        /**
+         * Supplies a {@link PendingIntent} to be sent when the notification is selected on TV.
+         * If provided, it is used instead of the content intent specified
+         * at the level of Notification.
+         */
+        public @NonNull TvExtender setContentIntent(@Nullable PendingIntent intent) {
+            mContentIntent = intent;
+            return this;
+        }
+
+        /**
+         * Returns the TV-specific content intent.  If this method returns null, the
+         * main content intent on the notification should be used.
+         *
+         * @see {@link Notification#contentIntent}
+         */
+        public @Nullable PendingIntent getContentIntent() {
+            return mContentIntent;
+        }
+
+        /**
+         * Supplies a {@link PendingIntent} to send when the notification is cleared explicitly
+         * by the user on TV.  If provided, it is used instead of the delete intent specified
+         * at the level of Notification.
+         */
+        public @NonNull TvExtender setDeleteIntent(@Nullable PendingIntent intent) {
+            mDeleteIntent = intent;
+            return this;
+        }
+
+        /**
+         * Returns the TV-specific delete intent.  If this method returns null, the
+         * main delete intent on the notification should be used.
+         *
+         * @see {@link Notification#deleteIntent}
+         */
+        public @Nullable PendingIntent getDeleteIntent() {
+            return mDeleteIntent;
+        }
+
+        /**
+         * Specifies whether this notification should suppress showing a message over top of apps
+         * outside of the launcher.
+         */
+        public @NonNull TvExtender setSuppressShowOverApps(boolean suppress) {
+            mSuppressShowOverApps = suppress;
+            return this;
+        }
+
+        /**
+         * Returns true if this notification should not show messages over top of apps
+         * outside of the launcher.
+         */
+        public boolean isSuppressShowOverApps() {
+            return mSuppressShowOverApps;
+        }
+    }
+
+    /**
      * Encapsulates the information needed to display a notification as a bubble.
      *
      * <p>A bubble is used to display app content in a floating window over the existing
@@ -8651,7 +8779,6 @@ public class NotificationCompat {
             return (mFlags & FLAG_SUPPRESS_NOTIFICATION) != 0;
         }
 
-        /** @hide */
         @RestrictTo(LIBRARY_GROUP_PREFIX)
         public void setFlags(int flags) {
             mFlags = flags;
@@ -9449,7 +9576,6 @@ public class NotificationCompat {
         }
     }
 
-    /** @hide */
     @RestrictTo(LIBRARY_GROUP_PREFIX)
     static boolean getHighPriority(@NonNull Notification notification) {
         return (notification.flags & Notification.FLAG_HIGH_PRIORITY) != 0;
@@ -9600,6 +9726,36 @@ public class NotificationCompat {
         } else {
             return false;
         }
+    }
+
+    /**
+     * Reduces the size of a provided {@code icon} if it's larger than the maximum allowed
+     * for a notification large icon; returns the resized icon. Note that the framework does this
+     * scaling automatically starting from API 27.
+     */
+    public static @Nullable Bitmap reduceLargeIconSize(@NonNull Context context,
+            @Nullable Bitmap icon) {
+        if (icon == null || Build.VERSION.SDK_INT >= 27) {
+            return icon;
+        }
+
+        Resources res = context.getResources();
+        int maxWidth =
+                res.getDimensionPixelSize(R.dimen.compat_notification_large_icon_max_width);
+        int maxHeight =
+                res.getDimensionPixelSize(R.dimen.compat_notification_large_icon_max_height);
+        if (icon.getWidth() <= maxWidth && icon.getHeight() <= maxHeight) {
+            return icon;
+        }
+
+        double scale = Math.min(
+                maxWidth / (double) Math.max(1, icon.getWidth()),
+                maxHeight / (double) Math.max(1, icon.getHeight()));
+        return Bitmap.createScaledBitmap(
+                icon,
+                (int) Math.ceil(icon.getWidth() * scale),
+                (int) Math.ceil(icon.getHeight() * scale),
+                true /* filtered */);
     }
 
     /** @deprecated This type should not be instantiated as it contains only static methods. */

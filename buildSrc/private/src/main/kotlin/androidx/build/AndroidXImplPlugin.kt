@@ -19,7 +19,6 @@ package androidx.build
 import androidx.benchmark.gradle.BenchmarkPlugin
 import androidx.build.AndroidXImplPlugin.Companion.TASK_TIMEOUT_MINUTES
 import androidx.build.Release.DEFAULT_PUBLISH_CONFIG
-import androidx.build.SupportConfig.BUILD_TOOLS_VERSION
 import androidx.build.SupportConfig.COMPILE_SDK_VERSION
 import androidx.build.SupportConfig.DEFAULT_MIN_SDK_VERSION
 import androidx.build.SupportConfig.INSTRUMENTATION_RUNNER
@@ -35,6 +34,7 @@ import androidx.build.docs.AndroidXKmpDocsImplPlugin
 import androidx.build.gradle.isRoot
 import androidx.build.license.configureExternalDependencyLicenseCheck
 import androidx.build.resources.configurePublicResourcesStub
+import androidx.build.sbom.validateAllArchiveInputsRecognized
 import androidx.build.studio.StudioTask
 import androidx.build.testConfiguration.addAppApkToTestConfigGeneration
 import androidx.build.testConfiguration.addToTestZips
@@ -53,8 +53,6 @@ import com.android.build.gradle.LibraryPlugin
 import com.android.build.gradle.TestExtension
 import com.android.build.gradle.TestPlugin
 import com.android.build.gradle.TestedExtension
-import com.android.build.gradle.internal.tasks.AnalyticsRecordingTask
-import com.android.build.gradle.internal.tasks.CheckAarMetadataTask
 import com.android.build.gradle.internal.tasks.ListingFileRedirectTask
 import java.io.File
 import java.time.Duration
@@ -64,6 +62,7 @@ import javax.inject.Inject
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.JavaVersion.VERSION_11
+import org.gradle.api.JavaVersion.VERSION_17
 import org.gradle.api.JavaVersion.VERSION_1_8
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -156,6 +155,7 @@ class AndroidXImplPlugin @Inject constructor(val componentFactory: SoftwareCompo
         }
         project.configureConstraintsWithinGroup(extension)
         project.validateProjectParser(extension)
+        project.validateAllArchiveInputsRecognized()
     }
 
     private fun Project.registerProjectOrArtifact() {
@@ -276,10 +276,12 @@ class AndroidXImplPlugin @Inject constructor(val componentFactory: SoftwareCompo
     ) {
         project.afterEvaluate {
             project.tasks.withType(KotlinCompile::class.java).configureEach { task ->
-                if (extension.type.compilationTarget == CompilationTarget.HOST &&
+                if (extension.type == LibraryType.COMPILER_PLUGIN) {
+                    task.kotlinOptions.jvmTarget = "11"
+                } else if (extension.type.compilationTarget == CompilationTarget.HOST &&
                     extension.type != LibraryType.ANNOTATION_PROCESSOR_UTILS
                 ) {
-                    task.kotlinOptions.jvmTarget = "11"
+                    task.kotlinOptions.jvmTarget = "17"
                 } else {
                     task.kotlinOptions.jvmTarget = "1.8"
                 }
@@ -291,14 +293,6 @@ class AndroidXImplPlugin @Inject constructor(val componentFactory: SoftwareCompo
                     kotlinCompilerArgs += "-Xjvm-default=all"
                 }
                 task.kotlinOptions.freeCompilerArgs += kotlinCompilerArgs
-            }
-
-            // If no one else is going to register a source jar, then we should.
-            // This cross-plugin hands-off logic shouldn't be necessary once we clean up sourceSet
-            // logic (b/235828421)
-            if (!project.plugins.hasPlugin(LibraryPlugin::class.java) &&
-                !project.plugins.hasPlugin(JavaPlugin::class.java)) {
-                project.configureSourceJarForJava()
             }
 
             val isAndroidProject = project.plugins.hasPlugin(LibraryPlugin::class.java) ||
@@ -486,35 +480,35 @@ class AndroidXImplPlugin @Inject constructor(val componentFactory: SoftwareCompo
             androidXExtension
         )
 
-        // Disable AAR verification when we're forcing max dep versions.
-        if (project.usingMaxDepVersions()) {
-            project.tasks.withType(CheckAarMetadataTask::class.java).configureEach { task ->
-                task.enabled = false
-            }
-        }
-
         project.addToProjectMap(androidXExtension)
     }
 
     private fun configureWithJavaPlugin(project: Project, extension: AndroidXExtension) {
         project.configureErrorProneForJava()
-        project.configureSourceJarForJava()
 
         // Force Java 1.8 source- and target-compatibility for all Java libraries.
         val javaExtension = project.extensions.getByType<JavaPluginExtension>()
         project.afterEvaluate {
-            if (extension.type.compilationTarget == CompilationTarget.HOST &&
-                extension.type != LibraryType.ANNOTATION_PROCESSOR_UTILS
-            ) {
+            if (extension.type == LibraryType.COMPILER_PLUGIN) {
                 javaExtension.apply {
                     sourceCompatibility = VERSION_11
                     targetCompatibility = VERSION_11
+                }
+            } else if (extension.type.compilationTarget == CompilationTarget.HOST &&
+                extension.type != LibraryType.ANNOTATION_PROCESSOR_UTILS
+            ) {
+                javaExtension.apply {
+                    sourceCompatibility = VERSION_17
+                    targetCompatibility = VERSION_17
                 }
             } else {
                 javaExtension.apply {
                     sourceCompatibility = VERSION_1_8
                     targetCompatibility = VERSION_1_8
                 }
+            }
+            if (!project.plugins.hasPlugin(KotlinBasePluginWrapper::class.java)) {
+                project.configureSourceJarForJava()
             }
         }
 
@@ -606,7 +600,7 @@ class AndroidXImplPlugin @Inject constructor(val componentFactory: SoftwareCompo
         }
 
         compileSdkVersion(COMPILE_SDK_VERSION)
-        buildToolsVersion = BUILD_TOOLS_VERSION
+        buildToolsVersion = SupportConfig.buildToolsVersion(project)
         defaultConfig.targetSdk = TARGET_SDK_VERSION
         ndkVersion = SupportConfig.NDK_VERSION
 
@@ -711,12 +705,6 @@ class AndroidXImplPlugin @Inject constructor(val componentFactory: SoftwareCompo
         // lives alongside the project's buildDir.
         externalNativeBuild.cmake.buildStagingDirectory =
             File(project.buildDir, "../nativeBuildStaging")
-
-        // disable analytics recording
-        // It's always out-of-date, and we don't release any apps in this repo
-        project.tasks.withType(AnalyticsRecordingTask::class.java).configureEach { task ->
-            task.enabled = false
-        }
     }
 
     /**
@@ -879,10 +867,17 @@ class AndroidXImplPlugin @Inject constructor(val componentFactory: SoftwareCompo
     private fun Project.configureConstraintsWithinGroup(
         extension: AndroidXExtension
     ) {
-        if (!project.shouldAddGroupConstraints()) {
+        if (!project.shouldAddGroupConstraints().get()) {
             return
         }
         project.afterEvaluate {
+            if (project.hasKotlinNativeTarget().get()) {
+                // KMP plugin cannot handle constraints properly for native targets
+                // b/274786186, YT: KT-57531
+                // It is expected to be fixed in Kotlin 1.9 after which, we should remove this check
+                return@afterEvaluate
+            }
+
             // make sure that the project has a group
             val projectGroup = extension.mavenGroup
             if (projectGroup == null)
@@ -905,6 +900,11 @@ class AndroidXImplPlugin @Inject constructor(val componentFactory: SoftwareCompo
             val constraints = project.dependencies.constraints
             val allProjectsExist = buildContainsAllStandardProjects()
             for (otherProject in otherProjectsInSameGroup) {
+	        val otherGradlePath = otherProject.gradlePath
+                if (otherGradlePath == ":compose:ui:ui-android-stubs") {
+                    // exemption for library that doesn't truly get published: b/168127161
+                    continue
+                }
                 // We only enable constraints for builds that we intend to be able to publish from.
                 //   If a project isn't included in a build we intend to be able to publish from,
                 //   the project isn't going to be published.
@@ -912,7 +912,6 @@ class AndroidXImplPlugin @Inject constructor(val componentFactory: SoftwareCompo
                 //   The KMP project subset enabled by androidx_multiplatform_mac.sh contains
                 //   :benchmark:benchmark-common but not :benchmark:benchmark-benchmark
                 //   This is ok because we don't intend to publish that artifact from that build
-                val otherGradlePath = otherProject.gradlePath
                 val otherProjectShouldExist =
                     allProjectsExist || findProject(otherGradlePath) != null
                 if (!otherProjectShouldExist) {
@@ -941,6 +940,35 @@ class AndroidXImplPlugin @Inject constructor(val componentFactory: SoftwareCompo
                     constraintConfiguration.name,
                     dependencyConstraint
                 )
+            }
+
+            // disallow duplicate constraints
+            project.configurations.all { config ->
+                // find all constraints contributed by this Configuration and its ancestors
+                val configurationConstraints: MutableSet<String> = mutableSetOf()
+                config.hierarchy.forEach { parentConfig ->
+                    parentConfig.dependencyConstraints.configureEach { dependencyConstraint ->
+                        dependencyConstraint.apply {
+                            if (
+                                versionConstraint.requiredVersion != "" &&
+                                versionConstraint.requiredVersion != "unspecified"
+                            ) {
+                                val key =
+                                    "${dependencyConstraint.group}:${dependencyConstraint.name}"
+                                if (configurationConstraints.contains(key)) {
+                                    throw GradleException(
+                                        "Constraint on $key was added multiple times in " +
+                                        "$config (version = " +
+                                        "${versionConstraint.requiredVersion}).\n\n" +
+                                        "This is unnecessary and can also trigger " +
+                                        "https://github.com/gradle/gradle/issues/24037 in " +
+                                        "builds trying to use the resulting artifacts.")
+                                }
+                                configurationConstraints.add(key)
+                            }
+                        }
+                    }
+                }
             }
         }
     }

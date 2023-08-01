@@ -16,41 +16,29 @@
 
 package androidx.baselineprofile.gradle.utils
 
+import com.android.build.api.AndroidPluginVersion
 import com.android.build.api.variant.AndroidComponentsExtension
 import org.gradle.api.GradleException
 import org.gradle.api.Project
 
-private val gradleSyncProps by lazy {
-    listOf(
-        "android.injected.build.model.v2",
-        "android.injected.build.model.only",
-        "android.injected.build.model.only.advanced",
-    )
-}
-
-internal fun Project.isGradleSyncRunning() =
-    gradleSyncProps.any { it in properties && properties[it].toString().toBoolean() }
-
-internal fun Project.checkAgpVersion() {
-    val extension = project.extensions.findByType(AndroidComponentsExtension::class.java)
-        ?: if (!isGradleSyncRunning()) {
-            throw GradleException(
-                """
-                    The module $name does not have a registered `AndroidComponentsExtension`. This can
-                    only happen if this is not an Android module. Please review your build.gradle to
-                    ensure this plugin is applied to the correct module.
-                """.trimIndent()
-            )
-        } else return
-
-    val agpVersion = extension.pluginVersion
-    if (agpVersion < MIN_AGP_VERSION_REQUIRED || agpVersion > MAX_AGP_VERSION_REQUIRED) {
-        throw GradleException(
+internal fun Project.agpVersion(): AndroidPluginVersion {
+    return project
+        .extensions
+        .findByType(AndroidComponentsExtension::class.java)
+        ?.pluginVersion
+        ?: throw GradleException(
+            // This can happen only if the plugin is not applied to an android module.
             """
-            This version of the Baseline Profile Gradle Plugin only works with Android Gradle plugin
-            between versions $MIN_AGP_VERSION_REQUIRED and $MAX_AGP_VERSION_REQUIRED. Current version
-            is $agpVersion."
+        The module $name does not have a registered `AndroidComponentsExtension`. This can only
+        happen if this is not an Android module. Please review your build.gradle to ensure this
+        plugin is applied to the correct module.
             """.trimIndent()
         )
-    }
+}
+
+internal enum class AgpFeature(internal val version: AndroidPluginVersion) {
+
+    TEST_MODULE_SUPPORTS_MULTIPLE_BUILD_TYPES(
+        AndroidPluginVersion(8, 1, 0).alpha(7)
+    );
 }

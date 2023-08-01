@@ -16,139 +16,119 @@
 
 package androidx.baselineprofile.gradle.wrapper
 
-import androidx.testutils.gradle.ProjectSetupRule
+import androidx.baselineprofile.gradle.utils.BaselineProfileProjectSetupRule
+import androidx.baselineprofile.gradle.utils.Module
 import com.google.common.truth.IterableSubject
 import com.google.common.truth.Truth.assertThat
-import org.gradle.testkit.runner.GradleRunner
-import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 
 @RunWith(JUnit4::class)
 class BaselineProfileWrapperPluginTest {
 
-    private val rootFolder = TemporaryFolder().also { it.create() }
-
     @get:Rule
-    val projectSetup = ProjectSetupRule(rootFolder.root)
+    val projectSetup = BaselineProfileProjectSetupRule()
 
-    // This additional application project setup is needed to test `com.android.test`, because this
-    // requires specifying `targetProjectPath` with a valid `com.android.application` module.
-    @get:Rule
-    val applicationProjectSetup = ProjectSetupRule(rootFolder.root)
-
-    private lateinit var moduleName: String
-    private lateinit var applicationModuleName: String
-    private lateinit var gradleRunner: GradleRunner
-
-    @Before
-    fun setUp() {
-        moduleName = projectSetup.rootDir.relativeTo(rootFolder.root).name
-        applicationModuleName = applicationProjectSetup.rootDir.relativeTo(rootFolder.root).name
-
-        rootFolder.newFile("settings.gradle").writeText(
+    @Test
+    fun testWrapperGeneratingForApplication() {
+        projectSetup.consumer.setBuildGradle(
             """
-            include '$moduleName'
-            include '$applicationModuleName'
-        """.trimIndent()
-        )
-        gradleRunner = GradleRunner.create()
-            .withProjectDir(projectSetup.rootDir)
-            .withPluginClasspath()
-    }
-
-    @Test
-    fun testWrapperAppliedToLibraryModule() {
-        setupProjectAndAssertOnPrintPluginsOutput(
-            buildGradleContent = """
-                plugins {
-                    id("com.android.library")
-                    id("androidx.baselineprofile")
-                }
-                android {
-                    namespace 'com.example.namespace'
-                }
-            """.trimIndent()
-        ) {
-            contains("class $CLASS_CONSUMER_PLUGIN")
-        }
-    }
-
-    @Test
-    fun testWrapperAppliedToApplicationModule() {
-        setupProjectAndAssertOnPrintPluginsOutput(
-            buildGradleContent = """
                 plugins {
                     id("com.android.application")
                     id("androidx.baselineprofile")
                 }
-                android {
-                    namespace 'com.example.namespace'
-                }
+                android { namespace 'com.example.namespace.test' }
+                dependencies { baselineProfile(project(":${projectSetup.producer.name}")) }
+
+                $taskPrintPlugins
             """.trimIndent()
-        ) {
-            containsAtLeast(
-                "class $CLASS_CONSUMER_PLUGIN",
-                "class $CLASS_APP_TARGET_PLUGIN"
-            )
-        }
-    }
-
-    @Test
-    fun testWrapperAppliedToTestModule() {
-        applicationProjectSetup.writeDefaultBuildGradle(
-            prefix = """
-                plugins {
-                    id("com.android.application")
-                    id("androidx.baselineprofile")
-                }
-                android {
-                    namespace 'com.example.namespace.test'
-                }
-            """.trimIndent(),
-            suffix = ""
         )
-
-        setupProjectAndAssertOnPrintPluginsOutput(
-            buildGradleContent = """
+        projectSetup.producer.setBuildGradle(
+            """
                 plugins {
                     id("com.android.test")
                     id("androidx.baselineprofile")
                 }
                 android {
-                    targetProjectPath = ":$applicationModuleName"
+                    targetProjectPath = ":${projectSetup.consumer.name}"
                     namespace 'com.example.namespace.test'
                 }
+
+                $taskPrintPlugins
             """.trimIndent()
-        ) {
-            contains(
-                "class $CLASS_PRODUCER_PLUGIN"
-            )
+        )
+
+        projectSetup.consumer.printPluginsAndAssertOutput {
+            contains("class $CLASS_APP_TARGET_PLUGIN")
+            contains("class $CLASS_CONSUMER_PLUGIN")
+        }
+        projectSetup.producer.printPluginsAndAssertOutput {
+            contains("class $CLASS_PRODUCER_PLUGIN")
         }
     }
 
-    private fun setupProjectAndAssertOnPrintPluginsOutput(
-        buildGradleContent: String,
-        assertBlock: IterableSubject.() -> (Unit)
-    ) {
-        projectSetup.writeDefaultBuildGradle(
-            prefix = """
-                $buildGradleContent
+    @Test
+    fun testWrapperGeneratingForLibraries() {
+        projectSetup.appTarget.setBuildGradle(
+            """
+                plugins {
+                    id("com.android.application")
+                    id("androidx.baselineprofile")
+                }
+                android { namespace 'com.example.namespace.test' }
 
                 $taskPrintPlugins
-            """.trimIndent(),
-            suffix = ""
+            """.trimIndent()
+        )
+        projectSetup.consumer.setBuildGradle(
+            """
+                plugins {
+                    id("com.android.library")
+                    id("androidx.baselineprofile")
+                }
+                android { namespace 'com.example.namespace.test' }
+                dependencies { baselineProfile(project(":${projectSetup.producer.name}")) }
+
+                $taskPrintPlugins
+            """.trimIndent()
+        )
+        projectSetup.producer.setBuildGradle(
+            """
+                plugins {
+                    id("com.android.test")
+                    id("androidx.baselineprofile")
+                }
+                android {
+                    targetProjectPath = ":${projectSetup.consumer.name}"
+                    namespace 'com.example.namespace.test'
+                }
+
+                $taskPrintPlugins
+            """.trimIndent()
         )
 
+        projectSetup.appTarget.printPluginsAndAssertOutput {
+            contains("class $CLASS_APP_TARGET_PLUGIN")
+            contains("class $CLASS_CONSUMER_PLUGIN")
+        }
+        projectSetup.producer.printPluginsAndAssertOutput {
+            contains("class $CLASS_PRODUCER_PLUGIN")
+        }
+        projectSetup.consumer.printPluginsAndAssertOutput {
+            contains("class $CLASS_CONSUMER_PLUGIN")
+        }
+    }
+
+    private fun Module.printPluginsAndAssertOutput(
+        assertBlock: IterableSubject.() -> (Unit)
+    ) {
         val output = gradleRunner
             .withArguments("printPlugins", "--stacktrace")
             .build()
             .output
             .lines()
-
         assertBlock(assertThat(output))
     }
 }
@@ -161,7 +141,8 @@ private const val CLASS_PRODUCER_PLUGIN =
     "androidx.baselineprofile.gradle.producer.BaselineProfileProducerPlugin"
 
 private val taskPrintPlugins = """
-tasks.register("printPlugins") {
-    project.plugins.each { println(it.class) }
+tasks.register("printPlugins", PrintTask) { t ->
+    def pluginsList = project.plugins.collect { it.class.toString() }.join("\n")
+    t.text.set(pluginsList)
 }
 """.trimIndent()

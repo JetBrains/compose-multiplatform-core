@@ -54,8 +54,10 @@
     <string name="date_range_picker_day_in_range" msgid="9048690781645835833">"Хүрээнд байгаа"</string>
     <string name="date_range_input_title" msgid="2366412111888449406">"Огноо оруулах"</string>
     <string name="date_range_input_invalid_range_input" msgid="1891592555781755601">"Хугацааны интервалын оролт буруу байна"</string>
-    <!-- no translation found for bottom_sheet_drag_handle_description (7772321844937772780) -->
-    <skip />
+    <string name="bottom_sheet_drag_handle_description" msgid="7772321844937772780">"Чирэх бариул"</string>
+    <string name="bottom_sheet_collapse_description" msgid="6128938260108474660">"Доод хүснэгтийг хураах"</string>
+    <string name="bottom_sheet_dismiss_description" msgid="1918297411568599192">"Доод хүснэгтийг хаах"</string>
+    <string name="bottom_sheet_expand_description" msgid="4324434199045499117">"Доод хүснэгтийг дэлгэх"</string>
     <string name="tooltip_pane_description" msgid="8191239805703103845">"Зөвлөмж"</string>
     <string name="tooltip_long_press_label" msgid="2732804537909054941">"Зөвлөмж харуулах"</string>
     <string name="time_picker_pm" msgid="2232702812657998674">"ҮХ"</string>
@@ -68,4 +70,6 @@
     <string name="time_picker_minute_suffix" msgid="3206486707779478173">"%1$d минут"</string>
     <string name="time_picker_minute" msgid="6116528647594005945">"Минут"</string>
     <string name="time_picker_hour" msgid="7241191970823415723">"Цаг"</string>
+    <string name="time_picker_minute_text_field" msgid="994099543833979061">"минутын турш"</string>
+    <string name="time_picker_hour_text_field" msgid="5298761125390275834">"цагийн турш"</string>
 </resources>

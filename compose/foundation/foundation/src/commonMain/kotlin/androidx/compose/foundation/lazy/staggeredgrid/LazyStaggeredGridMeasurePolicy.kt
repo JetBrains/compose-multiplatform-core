@@ -33,8 +33,8 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.constrainHeight
 import androidx.compose.ui.unit.constrainWidth
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-@ExperimentalFoundationApi
 internal fun rememberStaggeredGridMeasurePolicy(
     state: LazyStaggeredGridState,
     itemProvider: LazyStaggeredGridItemProvider,
@@ -43,7 +43,7 @@ internal fun rememberStaggeredGridMeasurePolicy(
     orientation: Orientation,
     mainAxisSpacing: Dp,
     crossAxisSpacing: Dp,
-    slotSizesSums: Density.(Constraints) -> IntArray
+    slots: Density.(Constraints) -> LazyStaggeredGridSlots
 ): LazyLayoutMeasureScope.(Constraints) -> LazyStaggeredGridMeasureResult = remember(
     state,
     itemProvider,
@@ -52,20 +52,23 @@ internal fun rememberStaggeredGridMeasurePolicy(
     orientation,
     mainAxisSpacing,
     crossAxisSpacing,
-    slotSizesSums
+    slots
 ) {
     { constraints ->
         checkScrollableContainerConstraints(
             constraints,
             orientation
         )
-        val resolvedSlotSums = slotSizesSums(this, constraints)
+        val resolvedSlots = slots(this, constraints)
         val isVertical = orientation == Orientation.Vertical
 
         // setup information for prefetch
-        state.laneWidthsPrefixSum = resolvedSlotSums
+        state.slots = resolvedSlots
         state.isVertical = isVertical
         state.spanProvider = itemProvider.spanProvider
+
+        // ensure scroll position is up to date
+        state.updateScrollPositionIfTheFirstItemWasMoved(itemProvider)
 
         // setup measure
         val beforeContentPadding = contentPadding.beforePadding(
@@ -96,13 +99,12 @@ internal fun rememberStaggeredGridMeasurePolicy(
         measureStaggeredGrid(
             state = state,
             itemProvider = itemProvider,
-            resolvedSlotSums = resolvedSlotSums,
+            resolvedSlots = resolvedSlots,
             constraints = constraints.copy(
                 minWidth = constraints.constrainWidth(horizontalPadding),
                 minHeight = constraints.constrainHeight(verticalPadding)
             ),
             mainAxisSpacing = mainAxisSpacing.roundToPx(),
-            crossAxisSpacing = crossAxisSpacing.roundToPx(),
             contentOffset = contentOffset,
             mainAxisAvailableSize = mainAxisAvailableSize,
             isVertical = isVertical,

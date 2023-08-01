@@ -1362,7 +1362,7 @@ internal open class Measurer(
         state.mParent.height.apply(state, root, ConstraintWidget.VERTICAL)
         // Build constraint set and apply it to the state.
         state.rootIncomingConstraints = constraints
-        state.isLtr = layoutDirection == LayoutDirection.Ltr
+        state.isRtl = layoutDirection == LayoutDirection.Rtl
         resetMeasureState()
         if (constraintSet.isDirty(measurables)) {
             state.reset()
@@ -1654,6 +1654,12 @@ internal fun Placeable.PlacementScope.placeWithFrameTransform(
     frame: WidgetFrame,
     offset: IntOffset = IntOffset.Zero
 ) {
+    if (frame.visibility == ConstraintWidget.GONE) {
+        if (DEBUG) {
+            Log.d("CCL", "Widget: ${frame.id} is Gone. Skipping placement.")
+        }
+        return
+    }
     if (frame.isDefaultTransform) {
         val x = frame.left - offset.x
         val y = frame.top - offset.y

@@ -33,13 +33,13 @@ import androidx.compose.ui.focus.FocusStateImpl.Captured
 import androidx.compose.ui.focus.FocusStateImpl.Inactive
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.input.key.KeyEvent
-import androidx.compose.ui.input.key.KeyInputModifierNode
 import androidx.compose.ui.input.rotary.RotaryScrollEvent
 import androidx.compose.ui.node.DelegatableNode
 import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.node.NodeKind
 import androidx.compose.ui.node.Nodes
 import androidx.compose.ui.node.ancestors
+import androidx.compose.ui.node.dispatchForKind
 import androidx.compose.ui.node.nearestAncestor
 import androidx.compose.ui.node.visitLocalChildren
 import androidx.compose.ui.platform.InspectorInfo
@@ -53,7 +53,6 @@ import androidx.compose.ui.util.fastForEachReversed
  */
 internal class FocusOwnerImpl(onRequestApplyChangesListener: (() -> Unit) -> Unit) : FocusOwner {
 
-    @OptIn(ExperimentalComposeUiApi::class)
     internal var rootFocusNode = FocusTargetModifierNode()
 
     private val focusInvalidationManager = FocusInvalidationManager(onRequestApplyChangesListener)
@@ -63,7 +62,6 @@ internal class FocusOwnerImpl(onRequestApplyChangesListener: (() -> Unit) -> Uni
      * list that contains the modifiers required by the focus system. (Eg, a root focus modifier).
      */
     // TODO(b/168831247): return an empty Modifier when there are no focusable children.
-    @OptIn(ExperimentalComposeUiApi::class)
     override val modifier: Modifier = object : ModifierNodeElement<FocusTargetModifierNode>() {
         override fun create() = rootFocusNode
 
@@ -89,7 +87,6 @@ internal class FocusOwnerImpl(onRequestApplyChangesListener: (() -> Unit) -> Uni
     override fun takeFocus() {
         // If the focus state is not Inactive, it indicates that the focus state is already
         // set (possibly by dispatchWindowFocusChanged). So we don't update the state.
-        @OptIn(ExperimentalComposeUiApi::class)
         if (rootFocusNode.focusStateImpl == Inactive) {
             rootFocusNode.focusStateImpl = Active
             // TODO(b/152535715): propagate focus to children based on child focusability.
@@ -104,7 +101,6 @@ internal class FocusOwnerImpl(onRequestApplyChangesListener: (() -> Unit) -> Uni
      * all the focus modifiers in the component hierarchy.
      */
     override fun releaseFocus() {
-        @OptIn(ExperimentalComposeUiApi::class)
         rootFocusNode.clearFocus(forced = true, refreshFocusEvents = true)
     }
 
@@ -183,28 +179,38 @@ internal class FocusOwnerImpl(onRequestApplyChangesListener: (() -> Unit) -> Uni
     /**
      * Dispatches a key event through the compose hierarchy.
      */
-    @OptIn(ExperimentalComposeUiApi::class)
     override fun dispatchKeyEvent(keyEvent: KeyEvent): Boolean {
         val activeFocusTarget = rootFocusNode.findActiveFocusNode()
         checkNotNull(activeFocusTarget) {
             "Event can't be processed because we do not have an active focus target."
         }
         val focusedKeyInputNode = activeFocusTarget.lastLocalKeyInputNode()
-            ?: activeFocusTarget.nearestAncestor(Nodes.KeyInput)
+            ?: activeFocusTarget.nearestAncestor(Nodes.KeyInput)?.node
 
         focusedKeyInputNode?.traverseAncestors(
             type = Nodes.KeyInput,
             onPreVisit = { if (it.onPreKeyEvent(keyEvent)) return true },
             onVisit = { if (it.onKeyEvent(keyEvent)) return true }
         )
+        return false
+    }
 
+    @OptIn(ExperimentalComposeUiApi::class)
+    override fun dispatchInterceptedSoftKeyboardEvent(keyEvent: KeyEvent): Boolean {
+        val focusedSoftKeyboardInterceptionNode = rootFocusNode.findActiveFocusNode()
+            ?.nearestAncestor(Nodes.SoftKeyboardKeyInput)
+
+        focusedSoftKeyboardInterceptionNode?.traverseAncestors(
+            type = Nodes.SoftKeyboardKeyInput,
+            onPreVisit = { if (it.onPreInterceptKeyBeforeSoftKeyboard(keyEvent)) return true },
+            onVisit = { if (it.onInterceptKeyBeforeSoftKeyboard(keyEvent)) return true }
+        )
         return false
     }
 
     /**
      * Dispatches a rotary scroll event through the compose hierarchy.
      */
-    @OptIn(ExperimentalComposeUiApi::class)
     override fun dispatchRotaryEvent(event: RotaryScrollEvent): Boolean {
         val focusedRotaryInputNode = rootFocusNode.findActiveFocusNode()
             ?.nearestAncestor(Nodes.RotaryInput)
@@ -218,31 +224,27 @@ internal class FocusOwnerImpl(onRequestApplyChangesListener: (() -> Unit) -> Uni
         return false
     }
 
-    @OptIn(ExperimentalComposeUiApi::class)
     override fun scheduleInvalidation(node: FocusTargetModifierNode) {
         focusInvalidationManager.scheduleInvalidation(node)
     }
 
-    @OptIn(ExperimentalComposeUiApi::class)
     override fun scheduleInvalidation(node: FocusEventModifierNode) {
         focusInvalidationManager.scheduleInvalidation(node)
     }
 
-    @OptIn(ExperimentalComposeUiApi::class)
     override fun scheduleInvalidation(node: FocusPropertiesModifierNode) {
         focusInvalidationManager.scheduleInvalidation(node)
     }
 
-    @ExperimentalComposeUiApi
-    private inline fun <reified T : DelegatableNode> T.traverseAncestors(
+    private inline fun <reified T : DelegatableNode> DelegatableNode.traverseAncestors(
         type: NodeKind<T>,
         onPreVisit: (T) -> Unit,
         onVisit: (T) -> Unit
     ) {
         val ancestors = ancestors(type)
         ancestors?.fastForEachReversed(onPreVisit)
-        onPreVisit(this)
-        onVisit(this)
+        node.dispatchForKind(type, onPreVisit)
+        node.dispatchForKind(type, onVisit)
         ancestors?.fastForEach(onVisit)
     }
 
@@ -250,17 +252,14 @@ internal class FocusOwnerImpl(onRequestApplyChangesListener: (() -> Unit) -> Uni
      * Searches for the currently focused item, and returns its coordinates as a rect.
      */
     override fun getFocusRect(): Rect? {
-        @OptIn(ExperimentalComposeUiApi::class)
         return rootFocusNode.findActiveFocusNode()?.focusRect()
     }
 
-    @OptIn(ExperimentalComposeUiApi::class)
-    private fun DelegatableNode.lastLocalKeyInputNode(): KeyInputModifierNode? {
-        var focusedKeyInputNode: KeyInputModifierNode? = null
+    private fun DelegatableNode.lastLocalKeyInputNode(): Modifier.Node? {
+        var focusedKeyInputNode: Modifier.Node? = null
         visitLocalChildren(Nodes.FocusTarget or Nodes.KeyInput) { modifierNode ->
             if (modifierNode.isKind(Nodes.FocusTarget)) return focusedKeyInputNode
 
-            check(modifierNode is KeyInputModifierNode)
             focusedKeyInputNode = modifierNode
         }
         return focusedKeyInputNode
@@ -271,7 +270,6 @@ internal class FocusOwnerImpl(onRequestApplyChangesListener: (() -> Unit) -> Uni
     //  will then pass focus to other views, and ultimately return back to this compose view.
     private fun wrapAroundFocus(focusDirection: FocusDirection): Boolean {
         // Wrap is not supported when this sub-hierarchy doesn't have focus.
-        @OptIn(ExperimentalComposeUiApi::class)
         if (!rootFocusNode.focusState.hasFocus || rootFocusNode.focusState.isFocused) return false
 
         // Next and Previous wraps around.
@@ -279,7 +277,6 @@ internal class FocusOwnerImpl(onRequestApplyChangesListener: (() -> Unit) -> Uni
             Next, Previous -> {
                 // Clear Focus to send focus the root node.
                 clearFocus(force = false)
-                @OptIn(ExperimentalComposeUiApi::class)
                 if (!rootFocusNode.focusState.isFocused) return false
 
                 // Wrap around by calling moveFocus after the root gains focus.

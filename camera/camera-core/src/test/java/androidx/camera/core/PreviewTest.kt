@@ -30,6 +30,7 @@ import androidx.camera.core.CameraEffect.IMAGE_CAPTURE
 import androidx.camera.core.CameraEffect.PREVIEW
 import androidx.camera.core.CameraEffect.VIDEO_CAPTURE
 import androidx.camera.core.CameraSelector.LENS_FACING_FRONT
+import androidx.camera.core.MirrorMode.MIRROR_MODE_ON_FRONT_ONLY
 import androidx.camera.core.SurfaceRequest.TransformationInfo
 import androidx.camera.core.impl.CameraFactory
 import androidx.camera.core.impl.CameraThreadConfig
@@ -43,6 +44,7 @@ import androidx.camera.core.impl.utils.executor.CameraXExecutors
 import androidx.camera.core.impl.utils.executor.CameraXExecutors.mainThreadExecutor
 import androidx.camera.core.internal.CameraUseCaseAdapter
 import androidx.camera.core.internal.utils.SizeUtil
+import androidx.camera.core.resolutionselector.ResolutionSelector
 import androidx.camera.testing.CameraUtil
 import androidx.camera.testing.CameraXUtil
 import androidx.camera.testing.fakes.FakeAppConfig
@@ -201,6 +203,26 @@ class PreviewTest {
     }
 
     @Test
+    fun surfaceRequestFrameRateRange_isUnspecified() {
+        // Target frame rate range isn't specified, so SurfaceRequest
+        // expected frame rate range should be unspecified.
+        assertThat(bindToLifecycleAndGetSurfaceRequest().expectedFrameRate).isEqualTo(
+            SurfaceRequest.FRAME_RATE_RANGE_UNSPECIFIED
+        )
+    }
+
+    @Test
+    fun defaultMirrorModeIsOnFrontOnly() {
+        val preview = Preview.Builder().build()
+        assertThat(preview.mirrorModeInternal).isEqualTo(MIRROR_MODE_ON_FRONT_ONLY)
+    }
+
+    @Test(expected = UnsupportedOperationException::class)
+    fun setMirrorMode_throwException() {
+        Preview.Builder().setMirrorMode(MIRROR_MODE_ON_FRONT_ONLY)
+    }
+
+    @Test
     fun setTargetRotation_rotationIsChanged() {
         // Arrange.
         val preview = Preview.Builder().setTargetRotation(Surface.ROTATION_0).build()
@@ -217,7 +239,7 @@ class PreviewTest {
         // Arrange: attach Preview without a SurfaceProvider.
         // Build and bind use case.
         val sessionOptionUnpacker =
-            { _: UseCaseConfig<*>?, _: SessionConfig.Builder? -> }
+            { _: Size, _: UseCaseConfig<*>?, _: SessionConfig.Builder? -> }
         val preview = Preview.Builder()
             .setTargetRotation(Surface.ROTATION_0)
             .setSessionOptionUnpacker(sessionOptionUnpacker)
@@ -403,7 +425,7 @@ class PreviewTest {
     }
 
     @Test
-    fun noCameraTransform_rotationDegreesFlipped() {
+    fun noCameraTransform_rotationDegreesIsZero() {
         // Act: create preview with hasCameraTransform == false
         frontCamera.hasTransform = false
         val preview = createPreview(
@@ -411,8 +433,8 @@ class PreviewTest {
             frontCamera,
             targetRotation = Surface.ROTATION_90
         )
-        // Assert: rotationDegrees is flipped
-        assertThat(preview.cameraEdge.rotationDegrees).isEqualTo(270)
+        // Assert: rotationDegrees is 0.
+        assertThat(preview.cameraEdge.rotationDegrees).isEqualTo(0)
     }
 
     @Test
@@ -499,7 +521,7 @@ class PreviewTest {
     fun setTargetRotation_transformationInfoUpdated() {
         // Arrange: set up preview and verify target rotation in TransformationInfo.
         val sessionOptionUnpacker =
-            { _: UseCaseConfig<*>?, _: SessionConfig.Builder? -> }
+            { _: Size, _: UseCaseConfig<*>?, _: SessionConfig.Builder? -> }
         val preview = Preview.Builder()
             .setTargetRotation(Surface.ROTATION_0)
             .setSessionOptionUnpacker(sessionOptionUnpacker)
@@ -532,7 +554,7 @@ class PreviewTest {
     fun setSurfaceProviderAfterAttachment_receivesSurfaceProviderCallbacks() {
         // Arrange: attach Preview without a SurfaceProvider.
         val sessionOptionUnpacker =
-            { _: UseCaseConfig<*>?, _: SessionConfig.Builder? -> }
+            { _: Size, _: UseCaseConfig<*>?, _: SessionConfig.Builder? -> }
         val preview = Preview.Builder()
             .setTargetRotation(Surface.ROTATION_0)
             .setSessionOptionUnpacker(sessionOptionUnpacker)
@@ -585,7 +607,7 @@ class PreviewTest {
     fun setSurfaceProviderAfterDetach_receivesSurfaceRequestAfterAttach() {
         // Arrange: attach Preview without a SurfaceProvider.
         val sessionOptionUnpacker =
-            { _: UseCaseConfig<*>?, _: SessionConfig.Builder? -> }
+            { _: Size, _: UseCaseConfig<*>?, _: SessionConfig.Builder? -> }
         val preview = Preview.Builder()
             .setTargetRotation(Surface.ROTATION_0)
             .setSessionOptionUnpacker(sessionOptionUnpacker)
@@ -618,6 +640,7 @@ class PreviewTest {
         assertThat(receivedAfterAttach).isTrue()
     }
 
+    @Suppress("DEPRECATION") // test for legacy resolution API
     @Test
     fun throwException_whenSetBothTargetResolutionAndAspectRatio() {
         Assert.assertThrows(IllegalArgumentException::class.java) {
@@ -626,6 +649,7 @@ class PreviewTest {
         }
     }
 
+    @Suppress("DEPRECATION") // test for legacy resolution API
     @Test
     fun throwException_whenSetTargetResolutionWithResolutionSelector() {
         Assert.assertThrows(IllegalArgumentException::class.java) {
@@ -635,6 +659,7 @@ class PreviewTest {
         }
     }
 
+    @Suppress("DEPRECATION") // test for legacy resolution API
     @Test
     fun throwException_whenSetTargetAspectRatioWithResolutionSelector() {
         Assert.assertThrows(IllegalArgumentException::class.java) {
@@ -656,7 +681,7 @@ class PreviewTest {
         TransformationInfo> {
         // Arrange.
         val sessionOptionUnpacker =
-            { _: UseCaseConfig<*>?, _: SessionConfig.Builder? -> }
+            { _: Size, _: UseCaseConfig<*>?, _: SessionConfig.Builder? -> }
         val preview = Preview.Builder()
             .setTargetRotation(Surface.ROTATION_0)
             .setSessionOptionUnpacker(sessionOptionUnpacker)

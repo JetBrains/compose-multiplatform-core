@@ -19,6 +19,7 @@ package androidx.compose.ui.semantics
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.BasicText
@@ -30,9 +31,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.MeasurePolicy
 import androidx.compose.ui.layout.SubcomposeLayout
+import androidx.compose.ui.node.DelegatingNode
+import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.platform.InspectableValue
 import androidx.compose.ui.platform.ValueElement
 import androidx.compose.ui.platform.isDebugInspectorInfoEnabled
@@ -50,6 +54,7 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastMap
@@ -303,6 +308,23 @@ class SemanticsTests {
     }
 
     @Test
+    fun higherUpSemanticsOverridePropertiesOfLowerSemanticsOnSameNode() {
+        rule.setContent {
+            Box(Modifier
+                .testTag("tag")
+                .semantics { contentDescription = "high" }
+                .semantics { contentDescription = "low" }
+            )
+        }
+
+        rule
+            .onNodeWithTag("tag")
+            .assert(
+                SemanticsMatcher.expectValue(SemanticsProperties.ContentDescription, listOf("high"))
+            )
+    }
+
+    @Test
     fun replacedChildren_includeFakeNodes() {
         val tag = "tag1"
         rule.setContent {
@@ -330,6 +352,32 @@ class SemanticsTests {
         val children = node.children
         assertThat(children.count()).isEqualTo(1)
         assertThat(children.last().isFake).isFalse()
+    }
+
+    @Test
+    fun fakeSemanticsNode_usesValuesFromParent() {
+        val tag = "tag1"
+        rule.setContent {
+            SimpleTestLayout(
+                Modifier
+                    .offset(10.dp, 10.dp)
+                    .clickable(role = Role.Button, onClick = {})
+                    .testTag(tag)
+            ) {
+                BasicText("text")
+            }
+        }
+
+        val node = rule.onNodeWithTag(tag, true).fetchSemanticsNode()
+        val fakeNode = node.replacedChildren.first { it.isFake }
+
+        // Ensure that the fake node uses the properties of the parent.
+        assertThat(fakeNode.size).isNotEqualTo(IntSize.Zero)
+        assertThat(fakeNode.boundsInRoot).isNotEqualTo(Rect.Zero)
+        assertThat(fakeNode.positionInRoot).isNotEqualTo(Offset.Zero)
+        assertThat(fakeNode.boundsInWindow).isNotEqualTo(Rect.Zero)
+        assertThat(fakeNode.positionInWindow).isNotEqualTo(Offset.Zero)
+        assertThat(fakeNode.isTransparent).isFalse()
     }
 
     @Test
@@ -839,6 +887,52 @@ class SemanticsTests {
             root.children[1].config.getOrNull(SemanticsProperties.TestTag)
         )
     }
+
+    @Test
+    fun delegatedSemanticsPropertiesGetRead() {
+        val node = object : DelegatingNode() {
+            val inner = delegate(SemanticsMod {
+                contentDescription = "hello world"
+            })
+        }
+
+        rule.setContent {
+            Box(
+                Modifier
+                    .testTag(TestTag)
+                    .elementFor(node)
+            )
+        }
+
+        rule
+            .onNodeWithTag(TestTag)
+            .assertContentDescriptionEquals("hello world")
+    }
+
+    @Test
+    fun multipleDelegatesGetCombined() {
+        val node = object : DelegatingNode() {
+            val a = delegate(SemanticsMod {
+                contentDescription = "hello world"
+            })
+            val b = delegate(SemanticsMod {
+                testProperty = "bar"
+            })
+        }
+
+        rule.setContent {
+            Box(
+                Modifier
+                    .testTag(TestTag)
+                    .elementFor(node)
+            )
+        }
+
+        rule
+            .onNodeWithTag(TestTag)
+            .assertContentDescriptionEquals("hello world")
+            .assertTestPropertyEquals("bar")
+    }
 }
 
 private fun SemanticsNodeInteraction.assertDoesNotHaveProperty(property: SemanticsPropertyKey<*>) {
@@ -848,9 +942,9 @@ private fun SemanticsNodeInteraction.assertDoesNotHaveProperty(property: Semanti
 private val TestProperty = SemanticsPropertyKey<String>("TestProperty") { parent, child ->
     if (parent == null) child else "$parent, $child"
 }
-private var SemanticsPropertyReceiver.testProperty by TestProperty
+internal var SemanticsPropertyReceiver.testProperty by TestProperty
 
-private fun SemanticsNodeInteraction.assertTestPropertyEquals(value: String) = assert(
+internal fun SemanticsNodeInteraction.assertTestPropertyEquals(value: String) = assert(
     SemanticsMatcher.expectValue(TestProperty, value)
 )
 
@@ -947,3 +1041,24 @@ private fun SimpleSubcomposeLayout(
 }
 
 private enum class TestSlot { First, Second }
+
+internal fun SemanticsMod(
+    mergeDescendants: Boolean = false,
+    properties: SemanticsPropertyReceiver.() -> Unit
+): CoreSemanticsModifierNode {
+    return CoreSemanticsModifierNode(
+        SemanticsConfiguration().apply {
+            isMergingSemanticsOfDescendants = mergeDescendants
+            properties()
+        }
+    )
+}
+
+internal fun Modifier.elementFor(node: Modifier.Node): Modifier {
+    return this then NodeElement(node)
+}
+
+internal data class NodeElement(val node: Modifier.Node) : ModifierNodeElement<Modifier.Node>() {
+    override fun create(): Modifier.Node = node
+    override fun update(node: Modifier.Node): Modifier.Node = node
+}

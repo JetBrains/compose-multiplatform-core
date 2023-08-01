@@ -31,7 +31,6 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * @hide
  */
 @RestrictTo(LIBRARY)
 public class SinglePointerPredictor implements KalmanPredictor {
@@ -60,9 +59,6 @@ public class SinglePointerPredictor implements KalmanPredictor {
 
     // Minimum number of Kalman filter samples needed for predicting the next point
     private static final int MIN_KALMAN_FILTER_ITERATIONS = 4;
-
-    // Target time in milliseconds to predict.
-    private float mPredictionTargetMs = 0.0f;
 
     // The Kalman filter is tuned to smooth noise while maintaining fast reaction to direction
     // changes. The stronger the filter, the smoother the prediction result will be, at the
@@ -149,23 +145,6 @@ public class SinglePointerPredictor implements KalmanPredictor {
     }
 
     @Override
-    public int getPredictionTarget() {
-        // Prediction target should always be an int, so no precision lost in the cast
-        return (int) mPredictionTargetMs;
-    }
-
-    @Override
-    public void setPredictionTarget(int predictionTargetMillis) {
-        if (predictionTargetMillis < 0) {
-            predictionTargetMillis = 0;
-        }
-        mPredictionTargetMs = predictionTargetMillis;
-        if (mReportRates == null) {
-            mExpectedPredictionSampleSize = (int) Math.ceil(mPredictionTargetMs / mReportRateMs);
-        }
-    }
-
-    @Override
     public void setReportRate(int reportRateMs) {
         if (reportRateMs <= 0) {
             throw new IllegalArgumentException(
@@ -173,8 +152,6 @@ public class SinglePointerPredictor implements KalmanPredictor {
         }
         mReportRateMs = reportRateMs;
         mReportRates = null;
-
-        mExpectedPredictionSampleSize = (int) Math.ceil(mPredictionTargetMs / mReportRateMs);
     }
 
     @Override
@@ -206,7 +183,11 @@ public class SinglePointerPredictor implements KalmanPredictor {
     }
 
     @Override
-    public @Nullable MotionEvent predict() {
+    public @Nullable MotionEvent predict(int predictionTargetMs) {
+        if (mReportRates == null) {
+            mExpectedPredictionSampleSize = (int) Math.ceil(predictionTargetMs / mReportRateMs);
+        }
+
         if (mExpectedPredictionSampleSize == -1
                 && mKalman.getNumIterations() < MIN_KALMAN_FILTER_ITERATIONS) {
             return null;
@@ -237,7 +218,7 @@ public class SinglePointerPredictor implements KalmanPredictor {
 
         // Project physical state of the pen into the future.
         int predictionTargetInSamples =
-                (int) Math.ceil(mPredictionTargetMs / mReportRateMs * confidenceFactor);
+                (int) Math.ceil(predictionTargetMs / mReportRateMs * confidenceFactor);
 
         // Normally this should always be false as confidenceFactor should be less than 1.0
         if (mExpectedPredictionSampleSize != -1

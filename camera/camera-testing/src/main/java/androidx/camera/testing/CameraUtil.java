@@ -555,7 +555,6 @@ public final class CameraUtil {
      * @param context        The context used to initialize CameraX
      * @param cameraCoordinator The camera coordinator for concurrent cameras.
      * @param cameraSelector The selector to select cameras with.
-     * @hide
      */
     @RestrictTo(RestrictTo.Scope.TESTS)
     @NonNull
@@ -591,7 +590,6 @@ public final class CameraUtil {
      *
      * @param context        The context used to initialize CameraX
      * @param cameraSelector The selector to select cameras with.
-     * @hide
      */
     @RestrictTo(RestrictTo.Scope.TESTS)
     @NonNull
@@ -617,7 +615,6 @@ public final class CameraUtil {
      * @param context        The context used to initialize CameraX
      * @param cameraSelector The selector to select cameras with.
      * @param useCases       The UseCases to attach to the CameraUseCaseAdapter.
-     * @hide
      */
     @RestrictTo(RestrictTo.Scope.TESTS)
     @NonNull
@@ -1043,6 +1040,7 @@ public final class CameraUtil {
     public static TestRule grantCameraPermissionAndPreTest(@Nullable PreTestCamera cameraTestRule,
             @Nullable PreTestCameraIdList cameraIdListTestRule) {
         RuleChain rule = RuleChain.outerRule(GrantPermissionRule.grant(Manifest.permission.CAMERA));
+        rule = rule.around(new IgnoreProblematicDeviceRule());
         if (cameraIdListTestRule != null) {
             rule = rule.around(cameraIdListTestRule);
         }

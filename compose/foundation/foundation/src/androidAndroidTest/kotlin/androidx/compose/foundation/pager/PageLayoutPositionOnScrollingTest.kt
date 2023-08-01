@@ -31,15 +31,14 @@ import org.junit.runners.Parameterized
 @OptIn(ExperimentalFoundationApi::class)
 @LargeTest
 @RunWith(Parameterized::class)
-internal class PageLayoutPositionOnScrollingTest(
+class PageLayoutPositionOnScrollingTest(
     val config: ParamConfig
 ) : BasePagerTest(config) {
 
     @Test
     fun swipeForwardAndBackward_verifyPagesAreLaidOutCorrectly() {
         // Arrange
-        val state = PagerState()
-        createPager(state = state, modifier = Modifier.fillMaxSize())
+        createPager(modifier = Modifier.fillMaxSize())
         val delta = pagerSize * 0.4f * scrollForwardSign
 
         // Act and Assert - forward

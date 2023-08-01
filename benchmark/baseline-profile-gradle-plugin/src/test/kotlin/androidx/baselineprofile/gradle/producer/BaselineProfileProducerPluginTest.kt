@@ -16,86 +16,149 @@
 
 package androidx.baselineprofile.gradle.producer
 
-import androidx.testutils.gradle.ProjectSetupRule
+import androidx.baselineprofile.gradle.utils.BaselineProfileProjectSetupRule
+import androidx.baselineprofile.gradle.utils.TEST_AGP_VERSION_8_0_0
+import androidx.baselineprofile.gradle.utils.TEST_AGP_VERSION_8_1_0
+import androidx.baselineprofile.gradle.utils.TEST_AGP_VERSION_ALL
+import androidx.baselineprofile.gradle.utils.VariantProfile
+import androidx.baselineprofile.gradle.utils.build
+import androidx.baselineprofile.gradle.utils.buildAndFailAndAssertThatOutput
+import androidx.baselineprofile.gradle.utils.require
 import com.google.common.truth.Truth.assertThat
-import org.gradle.testkit.runner.GradleRunner
-import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
+import org.junit.runners.Parameterized
 
 @RunWith(JUnit4::class)
-class BaselineProfileProducerPluginTest {
-
-    // Unit test will be minimal because the producer plugin is applied to an android test module,
-    // that requires a working target application. Testing will be covered only by integration tests.
-
-    private val rootFolder = TemporaryFolder().also { it.create() }
+class BaselineProfileProducerPluginTestWithAgp80 {
 
     @get:Rule
-    val producerProjectSetup = ProjectSetupRule(rootFolder.root)
+    val projectSetup = BaselineProfileProjectSetupRule(
+        forceAgpVersion = TEST_AGP_VERSION_8_0_0
+    )
 
-    @get:Rule
-    val appTargetProjectSetup = ProjectSetupRule(rootFolder.root)
-
-    private lateinit var producerModuleName: String
-    private lateinit var appTargetModuleName: String
-    private lateinit var gradleRunner: GradleRunner
-
-    @Before
-    fun setUp() {
-        producerModuleName = producerProjectSetup.rootDir.relativeTo(rootFolder.root).name
-        appTargetModuleName = appTargetProjectSetup.rootDir.relativeTo(rootFolder.root).name
-
-        rootFolder.newFile("settings.gradle").writeText(
-            """
-            include '$producerModuleName'
-            include '$appTargetModuleName'
-        """.trimIndent()
-        )
-        gradleRunner = GradleRunner.create()
-            .withProjectDir(producerProjectSetup.rootDir)
-            .withPluginClasspath()
-    }
+    private val emptyReleaseVariantProfile = VariantProfile(
+        flavor = null,
+        buildType = "release",
+        profileFileLines = mapOf()
+    )
 
     @Test
     fun verifyTasksWithAndroidTestPlugin() {
-        appTargetProjectSetup.writeDefaultBuildGradle(
-            prefix = """
-                plugins {
-                    id("com.android.application")
-                    id("androidx.baselineprofile.apptarget")
-                }
-                android {
-                    namespace 'com.example.namespace'
-                }
-            """.trimIndent(),
-            suffix = ""
-        )
-        producerProjectSetup.writeDefaultBuildGradle(
-            prefix = """
-                plugins {
-                    id("com.android.test")
-                    id("androidx.baselineprofile.producer")
-                }
-                android {
-                    targetProjectPath = ":$appTargetModuleName"
-                    namespace 'com.example.namespace.test'
-                }
-                tasks.register("mergeNonMinifiedReleaseTestResultProtos") { println("Stub") }
-            """.trimIndent(),
-            suffix = ""
+        projectSetup.appTarget.setup()
+        projectSetup.producer.setup(
+            variantProfiles = listOf(emptyReleaseVariantProfile),
+            targetProject = projectSetup.appTarget
         )
 
-        gradleRunner
-            .withArguments("tasks", "--stacktrace")
-            .build()
-            .output
-            .let {
-                assertThat(it).contains("connectedNonMinifiedReleaseAndroidTest - ")
-                assertThat(it).contains("collectNonMinifiedReleaseBaselineProfile - ")
+        projectSetup.producer.gradleRunner.build("tasks") {
+            val notFound = it.lines().require(
+                "connectedNonMinifiedReleaseAndroidTest - ",
+                "collectNonMinifiedReleaseBaselineProfile - "
+            )
+            assertThat(notFound).isEmpty()
+        }
+    }
+}
+
+@RunWith(JUnit4::class)
+class BaselineProfileProducerPluginTestWithAgp81 {
+
+    @get:Rule
+    val projectSetup = BaselineProfileProjectSetupRule(
+        forceAgpVersion = TEST_AGP_VERSION_8_1_0
+    )
+
+    private val emptyReleaseVariantProfile = VariantProfile(
+        flavor = null,
+        buildType = "release",
+        profileFileLines = mapOf()
+    )
+
+    @Test
+    fun verifyTasksWithAndroidTestPlugin() {
+        projectSetup.appTarget.setup()
+        projectSetup.producer.setup(
+            variantProfiles = listOf(emptyReleaseVariantProfile),
+            targetProject = projectSetup.appTarget
+        )
+
+        projectSetup.producer.gradleRunner.build("tasks") {
+            val notFound = it.lines().require(
+                "connectedNonMinifiedReleaseAndroidTest - ",
+                "connectedBenchmarkReleaseAndroidTest - ",
+                "collectNonMinifiedReleaseBaselineProfile - "
+            )
+            assertThat(notFound).isEmpty()
+        }
+    }
+}
+
+@RunWith(Parameterized::class)
+class BaselineProfileProducerPluginTest(agpVersion: String?) {
+
+    companion object {
+        @Parameterized.Parameters(name = "agpVersion={0}")
+        @JvmStatic
+        fun parameters() = TEST_AGP_VERSION_ALL
+    }
+
+    @get:Rule
+    val projectSetup = BaselineProfileProjectSetupRule(forceAgpVersion = agpVersion)
+
+    private val emptyReleaseVariantProfile = VariantProfile(
+        flavor = null,
+        buildType = "release",
+        profileFileLines = mapOf()
+    )
+
+    @Test
+    fun nonExistingManagedDeviceShouldThrowError() {
+        projectSetup.appTarget.setup()
+        projectSetup.producer.setup(
+            variantProfiles = listOf(emptyReleaseVariantProfile),
+            targetProject = projectSetup.appTarget,
+            managedDevices = listOf(),
+            baselineProfileBlock = """
+                managedDevices = ["nonExisting"]
+            """.trimIndent()
+        )
+
+        projectSetup.producer.gradleRunner.buildAndFailAndAssertThatOutput("tasks") {
+            contains("It wasn't possible to determine the test task for managed device")
+        }
+    }
+
+    @Test
+    fun existingManagedDeviceShouldCreateCollectTaskDependingOnManagedDeviceTask() {
+        projectSetup.appTarget.setup()
+        projectSetup.producer.setup(
+            variantProfiles = listOf(emptyReleaseVariantProfile),
+            targetProject = projectSetup.appTarget,
+            managedDevices = listOf("somePixelDevice"),
+            baselineProfileBlock = """
+                managedDevices = ["somePixelDevice"]
+            """.trimIndent()
+        )
+
+        projectSetup
+            .producer
+            .gradleRunner
+            .build(
+                "collectNonMinifiedReleaseBaselineProfile",
+                "--dry-run"
+            ) {
+                val appTargetName = projectSetup.appTarget.name
+                val producerName = projectSetup.producer.name
+                val notFound = it.lines().require(
+                    ":$appTargetName:packageNonMinifiedRelease",
+                    ":$producerName:somePixelDeviceNonMinifiedReleaseAndroidTest",
+                    ":$producerName:connectedNonMinifiedReleaseAndroidTest",
+                    ":$producerName:collectNonMinifiedReleaseBaselineProfile"
+                )
+                assertThat(notFound).isEmpty()
             }
     }
 }

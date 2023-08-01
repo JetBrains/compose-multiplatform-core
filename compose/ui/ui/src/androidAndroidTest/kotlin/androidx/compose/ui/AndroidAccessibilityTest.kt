@@ -165,13 +165,13 @@ import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
-import com.nhaarman.mockitokotlin2.argThat
-import com.nhaarman.mockitokotlin2.atLeastOnce
-import com.nhaarman.mockitokotlin2.doReturn
-import com.nhaarman.mockitokotlin2.eq
-import com.nhaarman.mockitokotlin2.spy
-import com.nhaarman.mockitokotlin2.times
-import com.nhaarman.mockitokotlin2.verify
+import org.mockito.kotlin.argThat
+import org.mockito.kotlin.atLeastOnce
+import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.spy
+import org.mockito.kotlin.times
+import org.mockito.kotlin.verify
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import org.junit.Assert.assertEquals
@@ -551,13 +551,12 @@ class AndroidAccessibilityTest {
             )
         )
         if (Build.VERSION.SDK_INT >= 26) {
-            assertEquals(
-                listOf(
+            assertThat(accessibilityNodeInfo.availableExtraData)
+                .containsExactly(
+                    "androidx.compose.ui.semantics.id",
                     AccessibilityNodeInfo.EXTRA_DATA_TEXT_CHARACTER_LOCATION_KEY,
                     "androidx.compose.ui.semantics.testTag"
-                ),
-                accessibilityNodeInfo.availableExtraData
-            )
+                )
         }
     }
 
@@ -1865,6 +1864,26 @@ class AndroidAccessibilityTest {
         )
         val testTagData = info.extras.getCharSequence(testTagKey)
         assertEquals(tag, testTagData.toString())
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+    @Suppress("DEPRECATION")
+    fun getSemanticsNodeIdFromExtraData() {
+        container.setContent { BasicText("texy") }
+        val textNode = rule.onNodeWithText("texy").fetchSemanticsNode()
+        @Suppress("DEPRECATION") val info = AccessibilityNodeInfo.obtain()
+        val argument = Bundle()
+
+        val idKey = "androidx.compose.ui.semantics.id"
+        provider.addExtraDataToAccessibilityNodeInfo(
+            textNode.id,
+            info,
+            idKey,
+            argument
+        )
+
+        assertEquals(textNode.id, info.extras.getInt(idKey))
     }
 
     @Test
@@ -3752,8 +3771,8 @@ class AndroidAccessibilityTest {
         assertNotNull("Button has no children", lastChild)
         assertTrue("Last child should be fake Button role node", lastChild!!.isFake)
         assertEquals(
+            Role.Button,
             lastChild.unmergedConfig.getOrNull(SemanticsProperties.Role),
-            Role.Button
         )
     }
 

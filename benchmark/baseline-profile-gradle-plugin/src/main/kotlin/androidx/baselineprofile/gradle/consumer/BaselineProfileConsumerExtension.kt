@@ -16,43 +16,195 @@
 
 package androidx.baselineprofile.gradle.consumer
 
+import javax.inject.Inject
 import org.gradle.api.Action
+import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.Project
+import org.gradle.api.model.ObjectFactory
 
 /**
  * Allows specifying settings for the Baseline Profile Consumer Plugin.
  */
-open class BaselineProfileConsumerExtension {
+abstract class BaselineProfileConsumerExtension @Inject constructor(
+    objectFactory: ObjectFactory
+) : BaselineProfileVariantConfiguration {
 
     companion object {
-
         private const val EXTENSION_NAME = "baselineProfile"
 
-        internal fun registerExtension(project: Project): BaselineProfileConsumerExtension {
-            val ext = project.extensions.findByType(BaselineProfileConsumerExtension::class.java)
+        internal fun register(project: Project): BaselineProfileConsumerExtension {
+            val ext = project
+                .extensions
+                .findByType(BaselineProfileConsumerExtension::class.java)
             if (ext != null) {
                 return ext
             }
             return project
-                .extensions.create(EXTENSION_NAME, BaselineProfileConsumerExtension::class.java)
+                .extensions
+                .create(EXTENSION_NAME, BaselineProfileConsumerExtension::class.java)
         }
     }
 
-    /**
-     * Enables on-demand baseline profile generation. Baseline profiles can be generated
-     * periodically or on-demand. Setting this flag to true will enable on-demand generation.
-     * When on-demand generation is enabled the baseline profile is regenerated before building the
-     * release build type. Note that in on-demand mode the baseline profile file is NOT saved in
-     * `src/<variant>/generated/baselineProfiles` folder, as opposite to the periodic generation
-     * where the latest baseline profile is always stored in the sources.
-     */
-    var onDemandGeneration = false
+    val variants: NamedDomainObjectContainer<BaselineProfileVariantConfigurationImpl> =
+        objectFactory.domainObjectContainer(BaselineProfileVariantConfigurationImpl::class.java)
+
+    // Shortcut to access the "main" variant.
+    private val main: BaselineProfileVariantConfiguration = variants.create("main") {
+
+        // These are the default global settings.
+        it.mergeIntoMain = null
+        it.baselineProfileOutputDir = "generated/baselineProfiles"
+        it.enableR8BaselineProfileRewrite = false
+        it.saveInSrc = true
+        it.automaticGenerationDuringBuild = false
+    }
 
     /**
-     * Specifies the output directory for generated baseline profile when [onDemandGeneration] is
-     * off. Note that the dir specified here is created in the `src/<variant>/` folder.
+     * Controls the global [BaselineProfileVariantConfiguration.enableR8BaselineProfileRewrite].
+     * Note that this value is overridden by per variant configurations.
      */
-    var baselineProfileOutputDir = "generated/baselineProfiles"
+    override var enableR8BaselineProfileRewrite: Boolean?
+        get() = main.enableR8BaselineProfileRewrite
+        set(value) {
+            main.enableR8BaselineProfileRewrite = value
+        }
+
+    /**
+     * Controls the global [BaselineProfileVariantConfiguration.saveInSrc].
+     * Note that this value is overridden by per variant configurations.
+     */
+    override var saveInSrc: Boolean?
+        get() = main.saveInSrc
+        set(value) {
+            main.saveInSrc = value
+        }
+
+    /**
+     * Controls the global [BaselineProfileVariantConfiguration.automaticGenerationDuringBuild].
+     * Note that this value is overridden by per variant configurations.
+     */
+    override var automaticGenerationDuringBuild: Boolean?
+        get() = main.automaticGenerationDuringBuild
+        set(value) {
+            main.automaticGenerationDuringBuild = value
+        }
+
+    /**
+     * Controls the global [BaselineProfileVariantConfiguration.baselineProfileOutputDir].
+     * Note that this value is overridden by per variant configurations.
+     */
+    override var baselineProfileOutputDir: String?
+        get() = main.baselineProfileOutputDir
+        set(value) {
+            main.baselineProfileOutputDir = value
+        }
+
+    /**
+     * Controls the global [BaselineProfileVariantConfiguration.mergeIntoMain].
+     * Note that this value is overridden by per variant configurations.
+     */
+    override var mergeIntoMain: Boolean?
+        get() = main.mergeIntoMain
+        set(value) {
+            main.mergeIntoMain = value
+        }
+
+    /**
+     * Applies the global [BaselineProfileVariantConfiguration.filter].
+     * This function is just a shortcut for `baselineProfiles.variants.main.filters { }`
+     */
+    override fun filter(action: FilterRules.() -> (Unit)) = main.filter(action)
+
+    /**
+     * Applies the global [BaselineProfileVariantConfiguration.filter].
+     * This function is just a shortcut for `baselineProfiles.variants.main.filters { }`
+     */
+    override fun filter(action: Action<FilterRules>) = main.filter(action)
+
+    /**
+     * Applies global dependencies for baseline profiles. This has the same effect of defining
+     * a baseline profile dependency in the dependency block. For example:
+     * ```
+     * dependencies {
+     *     baselineProfile(project(":baseline-profile"))
+     * }
+     * ```
+     */
+    override fun from(project: Project, variantName: String?) = main.from(project, variantName)
+
+    fun variants(
+        action: Action<NamedDomainObjectContainer<BaselineProfileVariantConfigurationImpl>>
+    ) {
+        action.execute(variants)
+    }
+
+    fun variants(
+        action: NamedDomainObjectContainer<out BaselineProfileVariantConfigurationImpl>.() -> Unit
+    ) {
+        action.invoke(variants)
+    }
+}
+
+abstract class BaselineProfileVariantConfigurationImpl(val name: String) :
+    BaselineProfileVariantConfiguration {
+
+    internal val filters = FilterRules()
+    internal val dependencies = mutableListOf<Pair<Project, String?>>()
+
+    /**
+     * @inheritDoc
+     */
+    override fun filter(action: FilterRules.() -> (Unit)) = action.invoke(filters)
+
+    /**
+     * @inheritDoc
+     */
+    override fun filter(action: Action<FilterRules>) = action.execute(filters)
+
+    /**
+     * @inheritDoc
+     */
+    override fun from(project: Project, variantName: String?) {
+        dependencies.add(Pair(project, variantName))
+    }
+}
+
+/**
+ * Defines the configuration properties that each variant of a consumer module offers. Note that
+ * also [BaselineProfileConsumerExtension] is an implementation of this interface and it's simply
+ * a proxy to the `main` variant.
+ */
+interface BaselineProfileVariantConfiguration {
+
+    /**
+     * Enables R8 to rewrite the incoming human readable baseline profile rules to account for
+     * synthetics, so they are preserved after optimizations by R8.
+     * TODO: This feature is experimental and currently not working properly.
+     *  https://issuetracker.google.com/issue?id=271172067.
+     */
+    var enableR8BaselineProfileRewrite: Boolean?
+
+    /**
+     * Specifies whether generated baseline profiles should be stored in the src folder.
+     * When this flag is set to true, the generated baseline profiles are stored in
+     * `src/<variant>/generated/baselineProfiles`.
+     */
+    var saveInSrc: Boolean?
+
+    /**
+     * Specifies whether baseline profiles should be regenerated when building, for example, during
+     * a full release build for distribution. When set to true a new profile is generated as part
+     * of building the release build. This including rebuilding the non minified release, running
+     * the baseline profile tests and ultimately building the release build.
+     */
+    var automaticGenerationDuringBuild: Boolean?
+
+    /**
+     * Specifies the output directory for generated baseline profiles when
+     * [BaselineProfileVariantConfiguration.saveInSrc] is `true`.
+     * Note that the dir specified here is created in the `src/<variant>/` folder.
+     */
+    var baselineProfileOutputDir: String?
 
     /**
      * Specifies if baseline profile files should be merged into a single one when generating for
@@ -63,11 +215,11 @@ open class BaselineProfileConsumerExtension {
      *      `src/<variant>/generated/baselineProfiles`'.
      *  If this is not specified, by default it will be true for library modules and false for
      *  application modules.
-     *  Note that when generation is onDemand the output folder is always in the build output
-     *  folder but this setting still determines whether the profile included in the built apk or
-     *  aar is merged into a single one.
+     *  Note that when `saveInSrc` is false the output folder is in the build output folder but
+     *  this setting still determines whether the profile included in the built apk or
+     *  aar includes all the variant profiles.
      */
-    var mergeIntoMain: Boolean? = null
+    var mergeIntoMain: Boolean?
 
     /**
      * Specifies a filtering rule to decide which profiles rules should be included in this
@@ -101,24 +253,8 @@ open class BaselineProfileConsumerExtension {
      *          exclude "com.somelibrary.widget.grid.debug.**"
      *     }
      * ```
-     *
-     * Filters also support variants and they can be expressed as follows:
-     * ```
-     *     filter { include "com.somelibrary.*" }
-     *     filter("free") { include "com.somelibrary.*" }
-     *     filter("paid") { include "com.somelibrary.*" }
-     *     filter("release") { include "com.somelibrary.*" }
-     *     filter("freeRelease") { include "com.somelibrary.*" }
-     * ```
-     * Filter block without specifying a variant applies to `main`, i.e. all the variants.
-     * Note that when a variant matches multiple filter blocks, all the filters will be merged.
-     * For example with `filter { ... }`, `filter("free") { ... }` and `filter("release") { ... }`
-     * all the blocks will be evaluated for variant `freeRelease` but only `main` and `release` for
-     * variant `paidRelease`.
      */
-    @JvmOverloads
-    fun filter(variant: String = "main", action: FilterRules.() -> (Unit)) = action
-        .invoke(filterRules.computeIfAbsent(variant) { FilterRules() })
+    fun filter(action: FilterRules.() -> (Unit))
 
     /**
      * Specifies a filtering rule to decide which profiles rules should be included in this
@@ -152,30 +288,46 @@ open class BaselineProfileConsumerExtension {
      *          exclude "com.somelibrary.widget.text.debug.**"
      *     }
      * ```
-     *
-     * Filters also support variants and they can be expressed as follows:
-     * ```
-     *     filter { include "com.somelibrary.*" }
-     *     filter("free") { include "com.somelibrary.*" }
-     *     filter("paid") { include "com.somelibrary.*" }
-     *     filter("release") { include "com.somelibrary.*" }
-     *     filter("freeRelease") { include "com.somelibrary.*" }
-     * ```
-     * Filter block without specifying a variant applies to `main`, i.e. all the variants.
-     * Note that when a variant matches multiple filter blocks, all the filters will be merged.
-     * For example with `filter { ... }`, `filter("free") { ... }` and `filter("release") { ... }`
-     * all the blocks will be evaluated for variant `freeRelease` but only `main` and `release` for
-     * variant `paidRelease`.
      */
-    @JvmOverloads
-    fun filter(variant: String = "main", action: Action<FilterRules>) = action
-        .execute(filterRules.computeIfAbsent(variant) { FilterRules() })
+    fun filter(action: Action<FilterRules>)
 
-    internal val filterRules = mutableMapOf<String, FilterRules>()
+    /**
+     * Allows to specify a target `com.android.test` module that has the `androidx.baselineprofile`
+     * plugin, and that can provide a baseline profile for this module. For example
+     * ```
+     * baselineProfile {
+     *     variants {
+     *         freeRelease {
+     *             from(project(":baseline-profile"))
+     *         }
+     *     }
+     * }
+     * ```
+     */
+    fun from(project: Project) = from(project, null)
+
+    /**
+     * Allows to specify a target `com.android.test` module that has the `androidx.baselineprofile`
+     * plugin, and that can provide a baseline profile for this module. The [variantName] can
+     * directly map to a test variant, to fetch a baseline profile for a different variant.
+     * For example it's possible to use a `paidRelease` baseline profile for `freeRelease` variant.
+     * ```
+     * baselineProfile {
+     *     variants {
+     *         freeRelease {
+     *             from(project(":baseline-profile"), "paidRelease")
+     *         }
+     *     }
+     * }
+     * ```
+     */
+    fun from(project: Project, variantName: String?)
 }
 
 class FilterRules {
+
     internal val rules = mutableListOf<Pair<RuleType, String>>()
+
     fun include(pkg: String) = rules.add(Pair(RuleType.INCLUDE, pkg))
     fun exclude(pkg: String) = rules.add(Pair(RuleType.EXCLUDE, pkg))
 }

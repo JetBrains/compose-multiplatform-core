@@ -1,4 +1,3 @@
-
 /*
  * Copyright 2023 The Android Open Source Project
  *
@@ -17,43 +16,47 @@
 
 package androidx.appactions.interaction.capabilities.core.impl
 
-import androidx.annotation.NonNull
 import androidx.annotation.RestrictTo
-import androidx.appactions.interaction.capabilities.core.ActionExecutor
+import androidx.appactions.interaction.capabilities.core.CapabilityExecutor
 import androidx.appactions.interaction.capabilities.core.ExecutionResult
-import androidx.appactions.interaction.capabilities.core.impl.concurrent.FutureCallback
-import androidx.appactions.interaction.capabilities.core.impl.concurrent.Futures
 import androidx.appactions.interaction.capabilities.core.impl.spec.ActionSpec
-import androidx.appactions.interaction.proto.AppActionsContext.AppAction
-import androidx.appactions.interaction.proto.FulfillmentRequest.Fulfillment.FulfillmentValue
+import androidx.appactions.interaction.proto.AppActionsContext.AppDialogState
 import androidx.appactions.interaction.proto.FulfillmentResponse
 import androidx.appactions.interaction.proto.ParamValue
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
 
 /**
- * ActionCapabilitySession implementation for executing single-turn fulfillment requests.
+ * CapabilitySession implementation for executing single-turn fulfillment requests.
  *
- * @hide
+ * @suppress
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 internal class SingleTurnCapabilitySession<
-    ArgumentT,
+    ArgumentsT,
     OutputT,
     >(
-    val actionSpec: ActionSpec<*, ArgumentT, OutputT>,
-    val actionExecutor: ActionExecutor<ArgumentT, OutputT>,
-) : ActionCapabilitySession {
-    override val state: AppAction
+    override val sessionId: String,
+    private val actionSpec: ActionSpec<*, ArgumentsT, OutputT>,
+    private val capabilityExecutor: CapabilityExecutor<ArgumentsT, OutputT>,
+    private val mutex: Mutex,
+    private val scope: CoroutineScope = CoroutineScope(Dispatchers.Default),
+) : CapabilitySession {
+    override val state: AppDialogState
         get() {
             throw UnsupportedOperationException()
         }
-    override val status: ActionCapabilitySession.Status
+    override val isActive: Boolean
         get() {
             throw UnsupportedOperationException()
         }
+
+    override val uiHandle: Any = capabilityExecutor.uiHandle
 
     override fun destroy() {}
-
-    override val uiHandle: Any = actionExecutor
 
     // single-turn capability does not have touch events
     override fun setTouchEventCallback(callback: TouchEventCallback) {
@@ -61,34 +64,25 @@ internal class SingleTurnCapabilitySession<
     }
 
     override fun execute(
-        @NonNull argumentsWrapper: ArgumentsWrapper,
-        @NonNull callback: CallbackInternal,
+        argumentsWrapper: ArgumentsWrapper,
+        callback: CallbackInternal,
     ) {
-        val paramValuesMap: Map<String, List<ParamValue>> = argumentsWrapper.paramValues().entries
-            .associate {
-                    entry: Map.Entry<String, List<FulfillmentValue>> ->
-                Pair(
-                    entry.key,
-                    entry.value.mapNotNull {
-                            fulfillmentValue: FulfillmentValue ->
-                        fulfillmentValue.getValue()
-                    },
-                )
+        val paramValuesMap: Map<String, List<ParamValue>> =
+            argumentsWrapper.paramValues.mapValues { entry -> entry.value.mapNotNull { it.value } }
+        val arguments = actionSpec.buildArguments(paramValuesMap)
+        scope.launch(start = CoroutineStart.UNDISPATCHED) {
+            try {
+                mutex.lock(owner = this@SingleTurnCapabilitySession)
+                UiHandleRegistry.registerUiHandle(uiHandle, sessionId)
+                val output = capabilityExecutor.onExecute(arguments)
+                callback.onSuccess(convertToFulfillmentResponse(output))
+            } catch (t: Throwable) {
+                callback.onError(ErrorStatusInternal.CANCELLED)
+            } finally {
+                UiHandleRegistry.unregisterUiHandle(uiHandle)
+                mutex.unlock(owner = this@SingleTurnCapabilitySession)
             }
-        val argument = actionSpec.buildArgument(paramValuesMap)
-        Futures.addCallback(
-            actionExecutor.executeAsync(argument),
-            object : FutureCallback<ExecutionResult<OutputT>> {
-                override fun onSuccess(executionResult: ExecutionResult<OutputT>) {
-                    callback.onSuccess(convertToFulfillmentResponse(executionResult))
-                }
-
-                override fun onFailure(t: Throwable) {
-                    callback.onError(ErrorStatusInternal.CANCELLED)
-                }
-            },
-            Runnable::run,
-        )
+        }
     }
 
     /** Converts typed {@link ExecutionResult} to {@link FulfillmentResponse} proto. */
@@ -96,9 +90,8 @@ internal class SingleTurnCapabilitySession<
         executionResult: ExecutionResult<OutputT>,
     ): FulfillmentResponse {
         val fulfillmentResponseBuilder =
-            FulfillmentResponse.newBuilder()
-                .setStartDictation(executionResult.startDictation)
-        executionResult.output?.let { it ->
+            FulfillmentResponse.newBuilder().setStartDictation(executionResult.shouldStartDictation)
+        executionResult.output?.let {
             fulfillmentResponseBuilder.setExecutionOutput(
                 actionSpec.convertOutputToProto(it),
             )

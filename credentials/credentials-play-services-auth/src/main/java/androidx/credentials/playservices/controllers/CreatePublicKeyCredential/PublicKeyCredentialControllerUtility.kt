@@ -20,6 +20,8 @@ import android.util.Base64
 import android.util.Log
 import androidx.credentials.CreatePublicKeyCredentialRequest
 import androidx.credentials.GetPublicKeyCredentialOption
+import androidx.credentials.exceptions.CreateCredentialCancellationException
+import androidx.credentials.exceptions.CreateCredentialException
 import androidx.credentials.exceptions.domerrors.AbortError
 import androidx.credentials.exceptions.domerrors.ConstraintError
 import androidx.credentials.exceptions.domerrors.DataError
@@ -33,7 +35,6 @@ import androidx.credentials.exceptions.domerrors.SecurityError
 import androidx.credentials.exceptions.domerrors.TimeoutError
 import androidx.credentials.exceptions.domerrors.UnknownError
 import androidx.credentials.exceptions.publickeycredential.CreatePublicKeyCredentialDomException
-import androidx.credentials.exceptions.publickeycredential.CreatePublicKeyCredentialException
 import com.google.android.gms.auth.api.identity.BeginSignInRequest
 import com.google.android.gms.auth.api.identity.SignInCredential
 import com.google.android.gms.fido.common.Transport
@@ -70,7 +71,7 @@ class PublicKeyCredentialControllerUtility {
 
     companion object {
 
-        // TODO("Make string constants for keys to the json")
+        // TODO(b/262924507) : Make string constants for keys to the json
 
         /**
          * This function converts a request json to a PublicKeyCredentialCreationOptions, where
@@ -106,7 +107,7 @@ class PublicKeyCredentialControllerUtility {
         fun toCreatePasskeyResponseJson(cred: PublicKeyCredential): String {
             val json = JSONObject()
             val authenticatorResponse = cred.response
-            // TODO("Ask why it is missing conditional mediation available")
+            // TODO(b/262924507) : Look for FIDO changes in conditional mediation available
             if (authenticatorResponse is AuthenticatorAttestationResponse) {
                 val responseJson = JSONObject()
                 responseJson.put(
@@ -205,7 +206,7 @@ class PublicKeyCredentialControllerUtility {
                         "userHandle", b64Encode(authenticatorResponse.userHandle!!)
                     )
                 }
-                // TODO("attestation object is missing in fido impl")
+                // TODO(b/262924507) : attestation object missing in fido impl
                 json.put("response", responseJson)
             } else {
                 Log.e(
@@ -228,8 +229,9 @@ class PublicKeyCredentialControllerUtility {
          */
         fun convertToPlayAuthPasskeyRequest(request: GetPublicKeyCredentialOption):
             BeginSignInRequest.PasskeysRequestOptions {
-            // TODO : Make sure this is in compliance with w3
-            // TODO : Improve codebase readability as done here (readable error capture + docs/etc)
+            // TODO(b/262924507) : Make sure this is in compliance with w3 as impl continues
+            // TODO(b/262924507) : Improve codebase readability as done here
+            //  (readable error capture + docs/etc)
             val json = JSONObject(request.requestJson)
             val rpId = json.optString("rpId", "")
             if (rpId.isEmpty()) {
@@ -261,18 +263,30 @@ class PublicKeyCredentialControllerUtility {
          */
         fun publicKeyCredentialResponseContainsError(
             cred: PublicKeyCredential
-        ): CreatePublicKeyCredentialException? {
+        ): CreateCredentialException? {
             val authenticatorResponse: AuthenticatorResponse = cred.response
             if (authenticatorResponse is AuthenticatorErrorResponse) {
                 val code = authenticatorResponse.errorCode
                 var exceptionError = orderedErrorCodeToExceptions[code]
                 var msg = authenticatorResponse.errorMessage
-                val exception: CreatePublicKeyCredentialDomException
+                val exception: CreateCredentialException
                 if (exceptionError == null) {
                     exception = CreatePublicKeyCredentialDomException(
                         UnknownError(), "unknown fido gms exception - $msg"
                     )
-                } else { exception = CreatePublicKeyCredentialDomException(exceptionError, msg) }
+                } else {
+                    // This fix is quite fragile because it relies on that the fido module
+                    // does not change its error message, but is the only viable solution
+                    // because there's no other differentiator.
+                    if (code == ErrorCode.CONSTRAINT_ERR &&
+                        msg?.contains("Unable to get sync account") == true
+                    ) {
+                        exception = CreateCredentialCancellationException(
+                            "Passkey registration was cancelled by the user.")
+                    } else {
+                        exception = CreatePublicKeyCredentialDomException(exceptionError, msg)
+                    }
+                }
                 return exception
             }
             return null
@@ -335,7 +349,7 @@ class PublicKeyCredentialControllerUtility {
                         )
                     )
                 }
-                // TODO("Note userVerification is not settable in current impl")
+                // TODO(b/262924507) : Fido implementation lacks userVerification in current impl
                 builder.setAuthenticatorSelection(
                     authSelectionBuilder.build()
                 )
@@ -388,7 +402,8 @@ class PublicKeyCredentialControllerUtility {
                             descriptorType,
                             descriptorId, transports
                         )
-                    ) // TODO("Confirm allowed mismatch with the spec such as the int algorithm")
+                    ) // TODO(b/262924507) : Ensure spec changes (i.e. int algorithm) in current
+                    // fido impl stays that way - edit if fido modifies
                 }
             }
             builder.setExcludeList(excludeCredentialsList)
@@ -409,8 +424,7 @@ class PublicKeyCredentialControllerUtility {
             val rp = json.getJSONObject("rp")
             val rpId = rp.getString("id")
             val rpName = rp.optString("name", "")
-            // TODO("Decided things not in the spec but in fido impl are used")
-            // TODO("Come back to this if that is ever updated")
+            // TODO(b/262924507) : Fido and spec differ; always keep re-checking if aligns
             var rpIcon: String? = rp.optString("icon", "")
             if (rpIcon!!.isEmpty()) {
                 rpIcon = null

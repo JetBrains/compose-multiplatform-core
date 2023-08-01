@@ -54,8 +54,10 @@
     <string name="date_range_picker_day_in_range" msgid="9048690781645835833">"ਰੇਂਜ ਵਿੱਚ"</string>
     <string name="date_range_input_title" msgid="2366412111888449406">"ਤਾਰੀਖਾਂ ਦਾਖਲ ਕਰੋ"</string>
     <string name="date_range_input_invalid_range_input" msgid="1891592555781755601">"ਇਨਪੁੱਟ ਕੀਤੀ ਗਈ ਤਾਰੀਖ ਦੀ ਰੇਂਜ ਅਵੈਧ ਹੈ"</string>
-    <!-- no translation found for bottom_sheet_drag_handle_description (7772321844937772780) -->
-    <skip />
+    <string name="bottom_sheet_drag_handle_description" msgid="7772321844937772780">"ਘਸੀਟਣ ਵਾਲਾ ਹੈਂਡਲ"</string>
+    <string name="bottom_sheet_collapse_description" msgid="6128938260108474660">"ਹੇਠਲੀ ਸ਼ੀਟ ਨੂੰ ਸਮੇਟੋ"</string>
+    <string name="bottom_sheet_dismiss_description" msgid="1918297411568599192">"ਹੇਠਲੀ ਸ਼ੀਟ ਨੂੰ ਖਾਰਜ ਕਰੋ"</string>
+    <string name="bottom_sheet_expand_description" msgid="4324434199045499117">"ਹੇਠਲੀ ਸ਼ੀਟ ਦਾ ਵਿਸਤਾਰ ਕਰੋ"</string>
     <string name="tooltip_pane_description" msgid="8191239805703103845">"ਟੂਲ-ਟਿੱਪ"</string>
     <string name="tooltip_long_press_label" msgid="2732804537909054941">"ਟੂਲ-ਟਿੱਪ ਦਿਖਾਓ"</string>
     <string name="time_picker_pm" msgid="2232702812657998674">"PM"</string>
@@ -68,4 +70,6 @@
     <string name="time_picker_minute_suffix" msgid="3206486707779478173">"%1$d ਮਿੰਟ"</string>
     <string name="time_picker_minute" msgid="6116528647594005945">"ਮਿੰਟ"</string>
     <string name="time_picker_hour" msgid="7241191970823415723">"ਘੰਟੇ"</string>
+    <string name="time_picker_minute_text_field" msgid="994099543833979061">"ਮਿੰਟਾਂ ਲਈ"</string>
+    <string name="time_picker_hour_text_field" msgid="5298761125390275834">"ਘੰਟੇ ਲਈ"</string>
 </resources>

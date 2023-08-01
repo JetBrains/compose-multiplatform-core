@@ -17,21 +17,22 @@
 package androidx.compose.foundation.pager
 
 import android.view.View
+import androidx.compose.foundation.BaseLazyLayoutTestWithOrientation
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.LocalOverscrollConfiguration
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.snapping.MinFlingVelocityDp
 import androidx.compose.foundation.gestures.snapping.SnapFlingBehavior
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.Stable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -51,21 +52,17 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.TouchInjectionScope
 import androidx.compose.ui.test.assertPositionInRootIsEqualTo
-import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.swipeWithVelocity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.CoroutineScope
-import org.junit.Rule
 
 @OptIn(ExperimentalFoundationApi::class)
-internal open class BasePagerTest(private val config: ParamConfig) {
-    @get:Rule
-    val rule = createComposeRule()
+open class BasePagerTest(private val config: ParamConfig) :
+    BaseLazyLayoutTestWithOrientation(config.orientation) {
 
-    val isVertical = config.orientation == Orientation.Vertical
     lateinit var scope: CoroutineScope
     var pagerSize: Int = 0
     var placed = mutableSetOf<Int>()
@@ -73,20 +70,13 @@ internal open class BasePagerTest(private val config: ParamConfig) {
     lateinit var focusManager: FocusManager
     lateinit var firstItemFocusRequester: FocusRequester
     var composeView: View? = null
-
-    @Stable
-    fun Modifier.crossAxisSize(size: Dp) =
-        if (isVertical) {
-            this.width(size)
-        } else {
-            this.height(size)
-        }
+    lateinit var pagerState: PagerState
 
     fun TouchInjectionScope.swipeWithVelocityAcrossMainAxis(velocity: Float, delta: Float? = null) {
         val end = if (delta == null) {
             layoutEnd
         } else {
-            if (isVertical) {
+            if (vertical) {
                 layoutStart.copy(y = layoutStart.y + delta)
             } else {
                 layoutStart.copy(x = layoutStart.x + delta)
@@ -102,7 +92,7 @@ internal open class BasePagerTest(private val config: ParamConfig) {
         val end = if (delta == null) {
             layoutEnd
         } else {
-            if (isVertical) {
+            if (vertical) {
                 layoutStart.copy(x = layoutStart.x + delta)
             } else {
                 layoutStart.copy(y = layoutStart.y + delta)
@@ -111,25 +101,45 @@ internal open class BasePagerTest(private val config: ParamConfig) {
         swipeWithVelocity(layoutStart, end, velocity)
     }
 
+    fun Modifier.fillMaxCrossAxis() =
+        if (vertical) {
+            this.fillMaxWidth()
+        } else {
+            this.fillMaxHeight()
+        }
+
     internal fun createPager(
-        state: PagerState,
-        modifier: Modifier = Modifier,
+        initialPage: Int = 0,
+        initialPageOffsetFraction: Float = 0f,
         pageCount: () -> Int = { DefaultPageCount },
-        offscreenPageLimit: Int = 0,
-        pageSize: PageSize = PageSize.Fill,
+        modifier: Modifier = Modifier,
+        offscreenPageLimit: Int = config.beyondBoundsPageCount,
+        pageSize: () -> PageSize = { PageSize.Fill },
         userScrollEnabled: Boolean = true,
         snappingPage: PagerSnapDistance = PagerSnapDistance.atMost(1),
         nestedScrollConnection: NestedScrollConnection = object : NestedScrollConnection {},
-        effects: @Composable () -> Unit = {},
+        additionalContent: @Composable () -> Unit = {},
+        contentPadding: PaddingValues = config.mainAxisContentPadding,
+        pageSpacing: Dp = config.pageSpacing,
+        reverseLayout: Boolean = config.reverseLayout,
+        snapVelocityThreshold: Dp = MinFlingVelocityDp,
+        snapPositionalThreshold: Float = 0.5f,
+        key: ((index: Int) -> Any)? = null,
         pageContent: @Composable (page: Int) -> Unit = { Page(index = it) }
     ) {
+
         rule.setContent {
+            val state = rememberPagerState(initialPage, initialPageOffsetFraction, pageCount).also {
+                pagerState = it
+            }
             composeView = LocalView.current
             focusManager = LocalFocusManager.current
             val flingBehavior =
                 PagerDefaults.flingBehavior(
                     state = state,
-                    pagerSnapDistance = snappingPage
+                    pagerSnapDistance = snappingPage,
+                    snapVelocityThreshold = snapVelocityThreshold,
+                    snapPositionalThreshold = snapPositionalThreshold
                 )
             CompositionLocalProvider(
                 LocalLayoutDirection provides config.layoutDirection,
@@ -142,23 +152,23 @@ internal open class BasePagerTest(private val config: ParamConfig) {
                         .nestedScroll(nestedScrollConnection)
                 ) {
                     HorizontalOrVerticalPager(
-                        pageCount = pageCount(),
                         state = state,
                         beyondBoundsPageCount = offscreenPageLimit,
                         modifier = modifier
                             .testTag(PagerTestTag)
-                            .onSizeChanged { pagerSize = if (isVertical) it.height else it.width },
-                        pageSize = pageSize,
+                            .onSizeChanged { pagerSize = if (vertical) it.height else it.width },
+                        pageSize = pageSize(),
                         userScrollEnabled = userScrollEnabled,
-                        reverseLayout = config.reverseLayout,
+                        reverseLayout = reverseLayout,
                         flingBehavior = flingBehavior,
-                        pageSpacing = config.pageSpacing,
-                        contentPadding = config.mainAxisContentPadding,
-                        pageContent = pageContent
+                        pageSpacing = pageSpacing,
+                        contentPadding = contentPadding,
+                        pageContent = pageContent,
+                        key = key
                     )
                 }
             }
-            effects()
+            additionalContent()
         }
     }
 
@@ -171,7 +181,7 @@ internal open class BasePagerTest(private val config: ParamConfig) {
             .focusRequester(focusRequester)
             .onPlaced {
                 placed.add(index)
-                pageSize = if (isVertical) it.size.height else it.size.width
+                pageSize = if (vertical) it.size.height else it.size.width
             }
             .fillMaxSize()
             .background(Color.Blue)
@@ -187,7 +197,7 @@ internal open class BasePagerTest(private val config: ParamConfig) {
     }
 
     internal val scrollForwardSign: Int
-        get() = if (isVertical) {
+        get() = if (vertical) {
             if (config.reverseLayout && config.layoutDirection == LayoutDirection.Rtl) {
                 1
             } else if (!config.reverseLayout && config.layoutDirection == LayoutDirection.Rtl) {
@@ -210,7 +220,7 @@ internal open class BasePagerTest(private val config: ParamConfig) {
         }
 
     internal val TouchInjectionScope.layoutStart: Offset
-        get() = if (isVertical) {
+        get() = if (vertical) {
             if (config.reverseLayout && config.layoutDirection == LayoutDirection.Rtl) {
                 topCenter
             } else if (!config.reverseLayout && config.layoutDirection == LayoutDirection.Rtl) {
@@ -233,7 +243,7 @@ internal open class BasePagerTest(private val config: ParamConfig) {
         }
 
     internal val TouchInjectionScope.layoutEnd: Offset
-        get() = if (isVertical) {
+        get() = if (vertical) {
             if (config.reverseLayout && config.layoutDirection == LayoutDirection.Rtl) {
                 bottomCenter
             } else if (!config.reverseLayout && config.layoutDirection == LayoutDirection.Rtl) {
@@ -258,8 +268,7 @@ internal open class BasePagerTest(private val config: ParamConfig) {
     @OptIn(ExperimentalFoundationApi::class)
     @Composable
     internal fun HorizontalOrVerticalPager(
-        pageCount: Int,
-        state: PagerState = rememberPagerState(),
+        state: PagerState = rememberPagerState(pageCount = { DefaultPageCount }),
         modifier: Modifier = Modifier,
         userScrollEnabled: Boolean = true,
         reverseLayout: Boolean = false,
@@ -268,11 +277,11 @@ internal open class BasePagerTest(private val config: ParamConfig) {
         pageSize: PageSize = PageSize.Fill,
         flingBehavior: SnapFlingBehavior = PagerDefaults.flingBehavior(state = state),
         pageSpacing: Dp = 0.dp,
+        key: ((index: Int) -> Any)? = null,
         pageContent: @Composable (pager: Int) -> Unit
     ) {
-        if (isVertical) {
+        if (vertical) {
             VerticalPager(
-                pageCount = pageCount,
                 state = state,
                 modifier = modifier,
                 userScrollEnabled = userScrollEnabled,
@@ -282,11 +291,11 @@ internal open class BasePagerTest(private val config: ParamConfig) {
                 pageSize = pageSize,
                 flingBehavior = flingBehavior,
                 pageSpacing = pageSpacing,
+                key = key,
                 pageContent = pageContent
             )
         } else {
             HorizontalPager(
-                pageCount = pageCount,
                 state = state,
                 modifier = modifier,
                 userScrollEnabled = userScrollEnabled,
@@ -296,6 +305,7 @@ internal open class BasePagerTest(private val config: ParamConfig) {
                 pageSize = pageSize,
                 flingBehavior = flingBehavior,
                 pageSpacing = pageSpacing,
+                key = key,
                 pageContent = pageContent
             )
         }
@@ -317,7 +327,7 @@ internal open class BasePagerTest(private val config: ParamConfig) {
             val position = pageToVerifyPosition * (pageSize + spacings) - initialPageOffset
             val positionWithOffset =
                 position + (pageSize + spacings) * pageOffset * scrollForwardSign
-            if (isVertical) {
+            if (vertical) {
                 0.dp to positionWithOffset.toDp()
             } else {
                 positionWithOffset.toDp() to 0.dp
@@ -328,19 +338,21 @@ internal open class BasePagerTest(private val config: ParamConfig) {
     }
 }
 
-internal class ParamConfig(
+class ParamConfig(
     val orientation: Orientation,
     val reverseLayout: Boolean = false,
     val layoutDirection: LayoutDirection = LayoutDirection.Ltr,
     val pageSpacing: Dp = 0.dp,
-    val mainAxisContentPadding: PaddingValues = PaddingValues(0.dp)
+    val mainAxisContentPadding: PaddingValues = PaddingValues(0.dp),
+    val beyondBoundsPageCount: Int = 0
 ) {
     override fun toString(): String {
         return "orientation=$orientation " +
             "reverseLayout=$reverseLayout " +
             "layoutDirection=$layoutDirection " +
             "pageSpacing=$pageSpacing " +
-            "mainAxisContentPadding=$mainAxisContentPadding"
+            "mainAxisContentPadding=$mainAxisContentPadding " +
+            "beyondBoundsPageCount=$beyondBoundsPageCount"
     }
 }
 
@@ -348,6 +360,11 @@ internal const val PagerTestTag = "pager"
 internal const val DefaultPageCount = 20
 internal const val DefaultAnimationRepetition = 3
 internal val TestOrientation = listOf(Orientation.Vertical, Orientation.Horizontal)
+internal val AllOrientationsParams = mutableListOf<ParamConfig>().apply {
+    for (orientation in TestOrientation) {
+        add(ParamConfig(orientation = orientation))
+    }
+}
 internal val TestReverseLayout = listOf(false, true)
 internal val TestLayoutDirection = listOf(LayoutDirection.Rtl, LayoutDirection.Ltr)
 internal val TestPageSpacing = listOf(0.dp, 8.dp)

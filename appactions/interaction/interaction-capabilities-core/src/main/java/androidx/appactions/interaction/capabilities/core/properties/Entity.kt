@@ -1,7 +1,7 @@
 /*
  * Copyright 2023 The Android Open Source Project
  *
- * Licensed under the Apache License, Version 2.0 (the "License")
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -17,7 +17,7 @@
 package androidx.appactions.interaction.capabilities.core.properties
 
 /**
- * Entities are used when defining ActionCapability for defining possible values for ParamProperty.
+ * Entities are used defining possible values for [Property].
  */
 class Entity internal constructor(
     val id: String?,
@@ -55,9 +55,9 @@ class Entity internal constructor(
         /** Builds and returns an Entity. */
         fun build() = Entity(
             id,
-            requireNotNull(name, {
+            requireNotNull(name) {
                 "setName must be called before build"
-            }),
+            },
             alternateNames,
         )
     }

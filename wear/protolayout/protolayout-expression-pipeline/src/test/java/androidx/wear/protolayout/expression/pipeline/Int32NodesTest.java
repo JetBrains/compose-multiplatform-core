@@ -18,22 +18,28 @@ package androidx.wear.protolayout.expression.pipeline;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import static org.mockito.Mockito.verify;
 import static org.robolectric.Shadows.shadowOf;
 
 import static java.lang.Integer.MAX_VALUE;
 
 import android.os.Looper;
 
+import androidx.annotation.NonNull;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.wear.protolayout.expression.pipeline.Int32Nodes.AnimatableFixedInt32Node;
 import androidx.wear.protolayout.expression.pipeline.Int32Nodes.DynamicAnimatedInt32Node;
 import androidx.wear.protolayout.expression.pipeline.Int32Nodes.FixedInt32Node;
 import androidx.wear.protolayout.expression.pipeline.Int32Nodes.GetDurationPartOpNode;
+import androidx.wear.protolayout.expression.pipeline.Int32Nodes.PlatformInt32SourceNode;
 import androidx.wear.protolayout.expression.pipeline.Int32Nodes.StateInt32SourceNode;
+import androidx.wear.protolayout.expression.pipeline.sensor.SensorGateway;
 import androidx.wear.protolayout.expression.proto.AnimationParameterProto.AnimationSpec;
 import androidx.wear.protolayout.expression.proto.DynamicProto.AnimatableFixedInt32;
 import androidx.wear.protolayout.expression.proto.DynamicProto.DurationPartType;
 import androidx.wear.protolayout.expression.proto.DynamicProto.GetDurationPartOp;
+import androidx.wear.protolayout.expression.proto.DynamicProto.PlatformInt32Source;
+import androidx.wear.protolayout.expression.proto.DynamicProto.PlatformInt32SourceType;
 import androidx.wear.protolayout.expression.proto.DynamicProto.StateInt32Source;
 import androidx.wear.protolayout.expression.proto.FixedProto.FixedInt32;
 import androidx.wear.protolayout.expression.proto.StateEntryProto.StateEntryValue;
@@ -41,15 +47,24 @@ import androidx.wear.protolayout.expression.proto.StateEntryProto.StateEntryValu
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Executor;
 
 @RunWith(AndroidJUnit4.class)
 public class Int32NodesTest {
+    @Rule public final MockitoRule mockito = MockitoJUnit.rule();
+
+    @Mock private DynamicTypeValueReceiverWithPreUpdate<Integer> mMockValueReceiver;
+
     @Test
     public void testFixedInt32Node() {
         List<Integer> results = new ArrayList<>();
@@ -57,6 +72,7 @@ public class Int32NodesTest {
         FixedInt32 protoNode = FixedInt32.newBuilder().setValue(56).build();
         FixedInt32Node node = new FixedInt32Node(protoNode, new AddToListCallback<>(results));
 
+        node.preInit();
         node.init();
 
         assertThat(results).containsExactly(56);
@@ -155,8 +171,8 @@ public class Int32NodesTest {
     @Test
     public void stateInt32NodeTest() {
         List<Integer> results = new ArrayList<>();
-        ObservableStateStore oss =
-                new ObservableStateStore(
+        StateStore oss =
+                new StateStore(
                         ImmutableMap.of(
                                 "foo",
                                 StateEntryValue.newBuilder()
@@ -176,8 +192,8 @@ public class Int32NodesTest {
     @Test
     public void stateInt32UpdatesWithStateChanges() {
         List<Integer> results = new ArrayList<>();
-        ObservableStateStore oss =
-                new ObservableStateStore(
+        StateStore oss =
+                new StateStore(
                         ImmutableMap.of(
                                 "foo",
                                 StateEntryValue.newBuilder()
@@ -219,6 +235,7 @@ public class Int32NodesTest {
                         protoNode, new AddToListCallback<>(results), quotaManager);
         node.setVisibility(true);
 
+        node.preInit();
         node.init();
         shadowOf(Looper.getMainLooper()).idle();
 
@@ -243,6 +260,7 @@ public class Int32NodesTest {
                         protoNode, new AddToListCallback<>(results), quotaManager);
         node.setVisibility(false);
 
+        node.preInit();
         node.init();
         shadowOf(Looper.getMainLooper()).idle();
 
@@ -266,6 +284,7 @@ public class Int32NodesTest {
                         protoNode, new AddToListCallback<>(results), quotaManager);
         node.setVisibility(true);
 
+        node.preInit();
         node.init();
         shadowOf(Looper.getMainLooper()).idle();
 
@@ -280,8 +299,8 @@ public class Int32NodesTest {
         int value3 = 17;
         List<Integer> results = new ArrayList<>();
         QuotaManager quotaManager = new FixedQuotaManagerImpl(MAX_VALUE);
-        ObservableStateStore oss =
-                new ObservableStateStore(
+        StateStore oss =
+                new StateStore(
                         ImmutableMap.of(
                                 "foo",
                                 StateEntryValue.newBuilder()
@@ -331,5 +350,63 @@ public class Int32NodesTest {
         assertThat(results.get(0)).isEqualTo(value2);
         assertThat(Iterables.getLast(results)).isEqualTo(value3);
         assertThat(results).isInOrder();
+    }
+
+    @Test
+    public void platformInt32Source_propagatesInvalidatedSignal() {
+        FakeSensorGateway fakeSensorGateway = new FakeSensorGateway();
+        PlatformInt32Source platformSource =
+                PlatformInt32Source.newBuilder()
+                        .setSourceType(
+                                PlatformInt32SourceType
+                                        .PLATFORM_INT32_SOURCE_TYPE_CURRENT_HEART_RATE)
+                        .build();
+        PlatformInt32SourceNode platformSourceNode =
+                new PlatformInt32SourceNode(
+                        platformSource,
+                        new SensorGatewayPlatformDataSource(Runnable::run, fakeSensorGateway),
+                        mMockValueReceiver);
+
+        platformSourceNode.preInit();
+        verify(mMockValueReceiver).onPreUpdate();
+
+        platformSourceNode.init();
+        assertThat(fakeSensorGateway.registeredConsumers).hasSize(1);
+
+        fakeSensorGateway.registeredConsumers.get(0).onInvalidated();
+        verify(mMockValueReceiver).onInvalidated();
+    }
+
+    private static class FakeSensorGateway implements SensorGateway {
+        final List<Consumer> registeredConsumers = new ArrayList<>();
+
+        @Override
+        public void enableUpdates() {}
+
+        @Override
+        public void disableUpdates() {}
+
+        @Override
+        public void registerSensorGatewayConsumer(
+                @SensorDataType int requestedDataType, @NonNull Consumer consumer) {
+            registeredConsumers.add(consumer);
+        }
+
+        @Override
+        public void registerSensorGatewayConsumer(
+                @SensorDataType int requestedDataType,
+                @NonNull Executor executor,
+                @NonNull Consumer consumer) {
+            registerSensorGatewayConsumer(requestedDataType, consumer);
+        }
+
+        @Override
+        public void unregisterSensorGatewayConsumer(
+                @SensorDataType int requestedDataType, @NonNull Consumer consumer) {
+            registeredConsumers.remove(consumer);
+        }
+
+        @Override
+        public void close() {}
     }
 }

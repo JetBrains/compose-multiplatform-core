@@ -55,23 +55,9 @@ public interface CameraDeviceSurfaceManager {
     }
 
     /**
-     * Check whether the input surface configuration list is under the capability of any combination
-     * of this object.
-     *
-     * @param isConcurrentCameraModeOn true if concurrent camera mode is on, otherwise false.
-     * @param cameraId          the camera id of the camera device to be compared
-     * @param surfaceConfigList the surface configuration list to be compared
-     * @return the check result that whether it could be supported
-     */
-    boolean checkSupported(
-            boolean isConcurrentCameraModeOn,
-            @NonNull String cameraId,
-            @Nullable List<SurfaceConfig> surfaceConfigList);
-
-    /**
      * Transform to a SurfaceConfig object with cameraId, image format and size info
      *
-     * @param isConcurrentCameraModeOn true if concurrent camera mode is on, otherwise false.
+     * @param cameraMode  the working camera mode.
      * @param cameraId    the camera id of the camera device to transform the object
      * @param imageFormat the image format info for the surface configuration object
      * @param size        the size info for the surface configuration object
@@ -79,7 +65,7 @@ public interface CameraDeviceSurfaceManager {
      */
     @Nullable
     SurfaceConfig transformSurfaceConfig(
-            boolean isConcurrentCameraModeOn,
+            @CameraMode.Mode int cameraMode,
             @NonNull String cameraId,
             int imageFormat,
             @NonNull Size size);
@@ -87,12 +73,15 @@ public interface CameraDeviceSurfaceManager {
     /**
      * Retrieves a map of suggested stream specifications for the given list of use cases.
      *
-     * @param isConcurrentCameraModeOn true if concurrent camera mode is on, otherwise false.
-     * @param cameraId          the camera id of the camera device used by the use cases
-     * @param existingSurfaces  list of surfaces already configured and used by the camera. The
-     *                          stream specifications for these surface can not change.
-     * @param newUseCaseConfigs list of configurations of the use cases that will be given a
-     *                          suggested stream specification
+     * @param cameraMode                        the working camera mode.
+     * @param cameraId                          the camera id of the camera device used by the
+     *                                          use cases
+     * @param existingSurfaces                  list of surfaces already configured and used by
+     *                                          the camera. The stream specifications for these
+     *                                          surface can not change.
+     * @param newUseCaseConfigsSupportedSizeMap map of configurations of the use cases to the
+     *                                          supported output sizes list that will be given a
+     *                                          suggested stream specification
      * @return map of suggested stream specifications for given use cases
      * @throws IllegalStateException    if not initialized
      * @throws IllegalArgumentException if {@code newUseCaseConfigs} is an empty list, if
@@ -102,8 +91,8 @@ public interface CameraDeviceSurfaceManager {
      */
     @NonNull
     Map<UseCaseConfig<?>, StreamSpec> getSuggestedStreamSpecs(
-            boolean isConcurrentCameraModeOn,
+            @CameraMode.Mode int cameraMode,
             @NonNull String cameraId,
             @NonNull List<AttachedSurfaceInfo> existingSurfaces,
-            @NonNull List<UseCaseConfig<?>> newUseCaseConfigs);
+            @NonNull Map<UseCaseConfig<?>, List<Size>> newUseCaseConfigsSupportedSizeMap);
 }

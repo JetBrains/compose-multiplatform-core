@@ -39,7 +39,7 @@ package androidx.compose.ui.text {
     method public androidx.compose.ui.text.AnnotatedString.Builder append(char char);
     method public void append(androidx.compose.ui.text.AnnotatedString text);
     method public void append(androidx.compose.ui.text.AnnotatedString text, int start, int end);
-    method @Deprecated public void deprecated_append_returning_void(char char);
+    method @Deprecated public void append(char char);
     method public int getLength();
     method public void pop();
     method public void pop(int index);
@@ -283,14 +283,14 @@ package androidx.compose.ui.text {
   }
 
   public final class PlatformParagraphStyle {
-    ctor @Deprecated public PlatformParagraphStyle(optional boolean includeFontPadding);
-    ctor @Deprecated public PlatformParagraphStyle(optional int emojiSupportMatch, optional boolean includeFontPadding);
+    ctor public PlatformParagraphStyle(optional boolean includeFontPadding);
+    ctor public PlatformParagraphStyle(optional int emojiSupportMatch, optional boolean includeFontPadding);
     ctor public PlatformParagraphStyle(optional int emojiSupportMatch);
     method public int getEmojiSupportMatch();
-    method @Deprecated public boolean getIncludeFontPadding();
+    method public boolean getIncludeFontPadding();
     method public androidx.compose.ui.text.PlatformParagraphStyle merge(androidx.compose.ui.text.PlatformParagraphStyle? other);
     property public final int emojiSupportMatch;
-    property @Deprecated public final boolean includeFontPadding;
+    property public final boolean includeFontPadding;
     field public static final androidx.compose.ui.text.PlatformParagraphStyle.Companion Companion;
   }
 
@@ -312,7 +312,7 @@ package androidx.compose.ui.text {
 
   public final class PlatformTextStyle {
     ctor public PlatformTextStyle(androidx.compose.ui.text.PlatformSpanStyle? spanStyle, androidx.compose.ui.text.PlatformParagraphStyle? paragraphStyle);
-    ctor @Deprecated public PlatformTextStyle(optional boolean includeFontPadding);
+    ctor public PlatformTextStyle(optional boolean includeFontPadding);
     ctor public PlatformTextStyle(int emojiSupportMatch);
     method public androidx.compose.ui.text.PlatformParagraphStyle? getParagraphStyle();
     method public androidx.compose.ui.text.PlatformSpanStyle? getSpanStyle();
@@ -444,6 +444,12 @@ package androidx.compose.ui.text {
     property public final long size;
   }
 
+  @androidx.compose.runtime.Immutable public final class TextMeasurer {
+    ctor public TextMeasurer(androidx.compose.ui.text.font.FontFamily.Resolver fallbackFontFamilyResolver, androidx.compose.ui.unit.Density fallbackDensity, androidx.compose.ui.unit.LayoutDirection fallbackLayoutDirection, optional int cacheSize);
+    method @androidx.compose.runtime.Stable public androidx.compose.ui.text.TextLayoutResult measure(androidx.compose.ui.text.AnnotatedString text, optional androidx.compose.ui.text.TextStyle style, optional int overflow, optional boolean softWrap, optional int maxLines, optional java.util.List<androidx.compose.ui.text.AnnotatedString.Range<androidx.compose.ui.text.Placeholder>> placeholders, optional long constraints, optional androidx.compose.ui.unit.LayoutDirection layoutDirection, optional androidx.compose.ui.unit.Density density, optional androidx.compose.ui.text.font.FontFamily.Resolver fontFamilyResolver, optional boolean skipCache);
+    method @androidx.compose.runtime.Stable public androidx.compose.ui.text.TextLayoutResult measure(String text, optional androidx.compose.ui.text.TextStyle style, optional int overflow, optional boolean softWrap, optional int maxLines, optional long constraints, optional androidx.compose.ui.unit.LayoutDirection layoutDirection, optional androidx.compose.ui.unit.Density density, optional androidx.compose.ui.text.font.FontFamily.Resolver fontFamilyResolver, optional boolean skipCache);
+  }
+
   public final class TextPainter {
     method public void paint(androidx.compose.ui.graphics.Canvas canvas, androidx.compose.ui.text.TextLayoutResult textLayoutResult);
     field public static final androidx.compose.ui.text.TextPainter INSTANCE;
@@ -478,6 +484,7 @@ package androidx.compose.ui.text {
   public final class TextRangeKt {
     method public static long TextRange(int start, int end);
     method public static long TextRange(int index);
+    method public static long constrain(long, int minimumValue, int maximumValue);
     method public static String substring(CharSequence, long range);
   }
 
@@ -1006,6 +1013,24 @@ package androidx.compose.ui.text.input {
     property public final char mask;
   }
 
+  public sealed interface PlatformTextInput {
+    method public void releaseInputFocus();
+    method public void requestInputFocus();
+  }
+
+  public interface PlatformTextInputAdapter {
+    method public android.view.inputmethod.InputConnection? createInputConnection(android.view.inputmethod.EditorInfo outAttrs);
+    method public default void onDisposed();
+  }
+
+  @androidx.compose.runtime.Immutable public fun interface PlatformTextInputPlugin<T extends androidx.compose.ui.text.input.PlatformTextInputAdapter> {
+    method public T createAdapter(androidx.compose.ui.text.input.PlatformTextInput platformTextInput, android.view.View view);
+  }
+
+  @androidx.compose.runtime.Stable public sealed interface PlatformTextInputPluginRegistry {
+    method @androidx.compose.runtime.Composable public <T extends androidx.compose.ui.text.input.PlatformTextInputAdapter> T rememberAdapter(androidx.compose.ui.text.input.PlatformTextInputPlugin<T> plugin);
+  }
+
   public interface PlatformTextInputService {
     method public void hideSoftwareKeyboard();
     method public default void notifyFocusedRect(androidx.compose.ui.geometry.Rect rect);
@@ -1265,6 +1290,7 @@ package androidx.compose.ui.text.style {
   }
 
   @kotlin.jvm.JvmInline public static final value class LineHeightStyle.Alignment {
+    ctor public LineHeightStyle.Alignment(float topRatio);
     field public static final androidx.compose.ui.text.style.LineHeightStyle.Alignment.Companion Companion;
   }
 

@@ -112,9 +112,9 @@ private val SharedTextAndroidCanvas: TextAndroidCanvas = TextAndroidCanvas()
  */
 @OptIn(InternalPlatformTextApi::class)
 @InternalPlatformTextApi
-class TextLayout constructor(
+internal class TextLayout constructor(
     charSequence: CharSequence,
-    width: Float = 0.0f,
+    width: Float,
     textPaint: TextPaint,
     @TextLayoutAlignment alignment: Int = DEFAULT_ALIGNMENT,
     ellipsize: TextUtils.TruncateAt? = null,
@@ -137,31 +137,6 @@ class TextLayout constructor(
         textDirectionHeuristic
     )
 ) {
-    companion object {
-        // This is used for benchmarks in HyphensLineBreakBenchmark.kt
-        @VisibleForTesting
-        fun constructStaticLayout(
-            charSequence: CharSequence,
-            width: Int,
-            textPaint: TextPaint,
-            hyphenationFrequency: Int,
-            lineBreakStyle: Int,
-            breakStrategy: Int,
-            lineBreakWordStyle: Int
-        ): StaticLayout {
-            val layout = StaticLayoutFactory.create(
-                text = charSequence,
-                paint = textPaint,
-                width = width,
-                hyphenationFrequency = hyphenationFrequency,
-                lineBreakStyle = lineBreakStyle,
-                breakStrategy = breakStrategy,
-                lineBreakWordStyle = lineBreakWordStyle
-            )
-            return layout
-        }
-    }
-
     val maxIntrinsicWidth: Float
         get() = layoutIntrinsics.maxIntrinsicWidth
 
@@ -490,7 +465,7 @@ class TextLayout constructor(
 
     fun getLineEllipsisCount(lineIndex: Int): Int = layout.getEllipsisCount(lineIndex)
 
-    fun getLineForVertical(vertical: Int): Int = layout.getLineForVertical(topPadding + vertical)
+    fun getLineForVertical(vertical: Int): Int = layout.getLineForVertical(vertical - topPadding)
 
     fun getOffsetForHorizontal(line: Int, horizontal: Float): Int {
         return layout.getOffsetForHorizontal(line, horizontal + -1 * getHorizontalPadding(line))

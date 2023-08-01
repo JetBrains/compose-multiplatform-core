@@ -23,12 +23,15 @@ import androidx.camera.core.CameraEffect
 import androidx.camera.core.CameraEffect.IMAGE_CAPTURE
 import androidx.camera.core.CameraEffect.PREVIEW
 import androidx.camera.core.CameraEffect.VIDEO_CAPTURE
+import androidx.camera.core.ImageCapture
+import androidx.camera.core.ImageProxy
 import androidx.camera.core.impl.CameraCaptureCallback
 import androidx.camera.core.impl.CameraCaptureResult
 import androidx.camera.core.impl.SessionConfig
 import androidx.camera.core.impl.StreamSpec
 import androidx.camera.core.impl.UseCaseConfig
 import androidx.camera.core.impl.UseCaseConfigFactory
+import androidx.camera.core.impl.utils.executor.CameraXExecutors.directExecutor
 import androidx.camera.core.impl.utils.executor.CameraXExecutors.mainThreadExecutor
 import androidx.camera.core.internal.TargetConfig.OPTION_TARGET_CLASS
 import androidx.camera.core.internal.TargetConfig.OPTION_TARGET_NAME
@@ -38,6 +41,7 @@ import androidx.camera.testing.fakes.FakeCameraCaptureResult
 import androidx.camera.testing.fakes.FakeSurfaceEffect
 import androidx.camera.testing.fakes.FakeSurfaceProcessorInternal
 import androidx.camera.testing.fakes.FakeUseCase
+import androidx.camera.testing.fakes.FakeUseCaseConfig
 import androidx.camera.testing.fakes.FakeUseCaseConfigFactory
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.CompletableDeferred
@@ -60,8 +64,12 @@ import org.robolectric.annotation.internal.DoNotInstrument
 @Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 class StreamSharingTest {
 
-    private val child1 = FakeUseCase()
-    private val child2 = FakeUseCase()
+    private val child1 = FakeUseCase(
+        FakeUseCaseConfig.Builder().setSurfaceOccupancyPriority(1).useCaseConfig
+    )
+    private val child2 = FakeUseCase(
+        FakeUseCaseConfig.Builder().setSurfaceOccupancyPriority(2).useCaseConfig
+    )
     private val useCaseConfigFactory = FakeUseCaseConfigFactory()
     private val camera = FakeCamera()
     private lateinit var streamSharing: StreamSharing
@@ -88,6 +96,33 @@ class StreamSharingTest {
         }
         effectProcessor.release()
         shadowOf(getMainLooper()).idle()
+    }
+
+    @Test
+    fun childTakingPicture_triggersSnapshot() {
+        // Arrange: set up StreamSharing with ImageCapture as child
+        val imageCapture = ImageCapture.Builder().build()
+        streamSharing = StreamSharing(camera, setOf(child1, imageCapture), useCaseConfigFactory)
+        streamSharing.bindToCamera(camera, null, defaultConfig)
+        streamSharing.onSuggestedStreamSpecUpdated(StreamSpec.builder(size).build())
+
+        // Act: the child takes a picture.
+        imageCapture.takePicture(directExecutor(), object : ImageCapture.OnImageCapturedCallback() {
+            override fun onCaptureSuccess(image: ImageProxy) {}
+        })
+        shadowOf(getMainLooper()).idle()
+
+        // Assert: the snapshot is triggered.
+        assertThat(sharingProcessor.isSnapshotTriggered).isTrue()
+    }
+
+    @Test
+    fun getParentSurfacePriority_isHighestChildrenPriority() {
+        assertThat(
+            streamSharing.mergeConfigs(
+                camera.cameraInfoInternal, /*extendedConfig*/null, /*cameraDefaultConfig*/null
+            ).surfaceOccupancyPriority
+        ).isEqualTo(2)
     }
 
     @Test
