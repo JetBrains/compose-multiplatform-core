@@ -24,7 +24,6 @@ import androidx.compose.ui.platform.AndroidComposeView
 import androidx.compose.ui.platform.LocalPlatformTextInputPluginRegistry
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
 import com.google.common.truth.Truth.assertThat
@@ -32,7 +31,6 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-@OptIn(ExperimentalTextApi::class)
 @SmallTest
 @RunWith(AndroidJUnit4::class)
 class PlatformTextInputViewIntegrationTest {
@@ -134,8 +132,6 @@ class PlatformTextInputViewIntegrationTest {
         val actionLabel = "test connection!"
         val inputConnection = TestInputConnection(view)
 
-        override val inputForTests: TextInputForTests = NoopInputForTests
-
         override fun createInputConnection(outAttrs: EditorInfo): InputConnection {
             outAttrs.actionLabel = actionLabel
             return inputConnection
@@ -148,9 +144,4 @@ class PlatformTextInputViewIntegrationTest {
     }
 
     private class TestInputConnection(view: View) : BaseInputConnection(view, false)
-
-    private object NoopInputForTests : TextInputForTests {
-        override fun inputTextForTest(text: String) = TODO("Not implemented for test")
-        override fun submitTextForTest() = TODO("Not implemented for test")
-    }
 }

@@ -213,7 +213,7 @@ internal class NodeChain(val layoutNode: LayoutNode) {
             syncCoordinators()
         }
         if (attachNeeded && layoutNode.isAttached) {
-            attach(performInvalidations = true)
+            attach()
         }
     }
 
@@ -236,19 +236,20 @@ internal class NodeChain(val layoutNode: LayoutNode) {
         }
     }
 
-    private fun syncCoordinators() {
+    fun syncCoordinators() {
         var coordinator: NodeCoordinator = innerCoordinator
         var node: Modifier.Node? = tail.parent
         while (node != null) {
-            if (node.isKind(Nodes.Layout) && node is LayoutModifierNode) {
-                val next = if (node.isAttached) {
+            val layoutmod = node.asLayoutModifierNode()
+            if (layoutmod != null) {
+                val next = if (node.coordinator != null) {
                     val c = node.coordinator as LayoutModifierNodeCoordinator
                     val prevNode = c.layoutModifierNode
-                    c.layoutModifierNode = node
+                    c.layoutModifierNode = layoutmod
                     if (prevNode !== node) c.onLayoutModifierNodeChanged()
                     c
                 } else {
-                    val c = LayoutModifierNodeCoordinator(layoutNode, node)
+                    val c = LayoutModifierNodeCoordinator(layoutNode, layoutmod)
                     node.updateCoordinator(c)
                     c
                 }
@@ -264,17 +265,15 @@ internal class NodeChain(val layoutNode: LayoutNode) {
         outerCoordinator = coordinator
     }
 
-    fun attach(performInvalidations: Boolean) {
+    fun attach() {
         headToTail {
             if (!it.isAttached) {
                 it.attach()
-                if (performInvalidations) {
-                    if (it.insertedNodeAwaitingAttachForInvalidation) {
-                        autoInvalidateInsertedNode(it)
-                    }
-                    if (it.updatedNodeAwaitingAttachForInvalidation) {
-                        autoInvalidateUpdatedNode(it)
-                    }
+                if (it.insertedNodeAwaitingAttachForInvalidation) {
+                    autoInvalidateInsertedNode(it)
+                }
+                if (it.updatedNodeAwaitingAttachForInvalidation) {
+                    autoInvalidateUpdatedNode(it)
                 }
                 // when we attach with performInvalidations == false no separate
                 // invalidations needed as the whole LayoutNode is attached to the tree.
@@ -296,7 +295,31 @@ internal class NodeChain(val layoutNode: LayoutNode) {
         var i = 0
         headToTailExclusive { node ->
             val coordinator = requireNotNull(node.coordinator)
-            infoList += ModifierInfo(current[i++], coordinator, coordinator.layer)
+            // placeWithLayer puts the layer on the _next_ coordinator
+            //
+            // - If the last node does placeWithLayer, the layer is on the innerCoordinator
+            // - the first LayoutNode in the tree gets a layer from the root
+            //
+            // This logic prefers to use this.layer, but will use innerCoordinator on the last node
+            // -- this exists for ui-inspector and must remain stable due to a non-same-version
+            // release dependency on tree structure.
+            val currentNodeLayer = coordinator.layer
+            val innerNodeLayer = innerCoordinator.layer.takeIf {
+                // emit the innerCoordinator only if it's different than current coordinator and
+                // this is the last node
+
+                // note: this logic will correctly handle the case where a Modifier.Node as the last
+                // element in the chain calls placeWithLayer. However, it does also cause an emit
+                // when .graphicsLayer is the last element in the chain as well - was previously
+                // depended upon by ui-tooling to avoid seeing the Crossfade layer.
+
+                // Going forward, as a contract, all layers will be emitted. And UI-tooling should
+                // not gain a new dependency on omitted layers.
+                val localChild = node.child
+                localChild === tail && node.coordinator !== localChild.coordinator
+            }
+            val layer = currentNodeLayer ?: innerNodeLayer
+            infoList += ModifierInfo(current[i++], coordinator, layer)
         }
         return infoList.asMutableList()
     }
@@ -518,7 +541,7 @@ internal class NodeChain(val layoutNode: LayoutNode) {
     ): Modifier.Node {
         val node = when (element) {
             is ModifierNodeElement<*> -> element.create().also {
-                it.kindSet = calculateNodeKindSetFrom(it)
+                it.kindSet = calculateNodeKindSetFromIncludingDelegates(it)
             }
             else -> BackwardsCompatNode(element)
         }
@@ -569,15 +592,13 @@ internal class NodeChain(val layoutNode: LayoutNode) {
                     return replaceNode(node, updated)
                 } else {
                     // the node was updated. we are done.
-                    if (next.autoInvalidate) {
-                        if (updated.isAttached) {
-                            // the modifier element is labeled as "auto invalidate", which means
-                            // that since the node was updated, we need to invalidate everything
-                            // relevant to it.
-                            autoInvalidateUpdatedNode(updated)
-                        } else {
-                            updated.updatedNodeAwaitingAttachForInvalidation = true
-                        }
+                    if (updated.isAttached) {
+                        // the modifier element is labeled as "auto invalidate", which means
+                        // that since the node was updated, we need to invalidate everything
+                        // relevant to it.
+                        autoInvalidateUpdatedNode(updated)
+                    } else {
+                        updated.updatedNodeAwaitingAttachForInvalidation = true
                     }
                     return updated
                 }
@@ -610,7 +631,7 @@ internal class NodeChain(val layoutNode: LayoutNode) {
 
     internal inline fun <reified T> headToTail(type: NodeKind<T>, block: (T) -> Unit) {
         headToTail(type.mask) {
-            if (it is T) block(it)
+            it.dispatchForKind(type, block)
         }
     }
 
@@ -649,7 +670,7 @@ internal class NodeChain(val layoutNode: LayoutNode) {
 
     internal inline fun <reified T> tailToHead(type: NodeKind<T>, block: (T) -> Unit) {
         tailToHead(type.mask) {
-            if (it is T) block(it)
+            it.dispatchForKind(type, block)
         }
     }
 

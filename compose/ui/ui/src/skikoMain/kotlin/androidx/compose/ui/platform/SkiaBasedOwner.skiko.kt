@@ -85,6 +85,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
 import androidx.compose.ui.text.InternalTextApi
 import androidx.compose.ui.text.input.PlatformTextInputPluginRegistryImpl
+import kotlin.coroutines.CoroutineContext
 
 private typealias Command = () -> Unit
 
@@ -98,6 +99,7 @@ internal class SkiaBasedOwner(
     private val platformInputService: PlatformInput,
     private val component: PlatformComponent,
     density: Density = Density(1f, 1f),
+    coroutineContext: CoroutineContext,
     val isPopup: Boolean = false,
     val isFocusable: Boolean = true,
     val onDismissRequest: (() -> Unit)? = null,
@@ -184,6 +186,8 @@ internal class SkiaBasedOwner(
             .onPreviewKeyEvent(onPreviewKeyEvent)
             .onKeyEvent(onKeyEvent)
     }
+
+    override val coroutineContext: CoroutineContext = coroutineContext
 
     override val rootForTest = this
 
@@ -318,8 +322,8 @@ internal class SkiaBasedOwner(
         measureAndLayoutDelegate.dispatchOnPositionedCallbacks()
     }
 
-    override fun forceMeasureTheSubtree(layoutNode: LayoutNode) {
-        measureAndLayoutDelegate.forceMeasureTheSubtree(layoutNode)
+    override fun forceMeasureTheSubtree(layoutNode: LayoutNode, affectsLookahead: Boolean) {
+        measureAndLayoutDelegate.forceMeasureTheSubtree(layoutNode, affectsLookahead)
     }
 
     override fun onRequestMeasure(
@@ -498,13 +502,16 @@ internal class SkiaBasedOwner(
         requestLayout()
     }
 
+    // A Stub for the PointerIconService required in Owner.kt
     override val pointerIconService: PointerIconService =
         object : PointerIconService {
-            override var current: PointerIcon
-                get() = desiredPointerIcon ?: PointerIcon.Default
-                set(value) {
-                    desiredPointerIcon = value
-                }
+            override fun getIcon(): PointerIcon {
+                return desiredPointerIcon ?: PointerIcon.Default
+            }
+
+            override fun setIcon(value: PointerIcon?) {
+                desiredPointerIcon = value
+            }
         }
 }
 

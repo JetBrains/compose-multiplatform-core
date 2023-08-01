@@ -18,6 +18,7 @@ package androidx.javascriptengine;
 
 import android.content.Context;
 
+import androidx.annotation.GuardedBy;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.LargeTest;
@@ -33,6 +34,7 @@ import org.junit.runner.RunWith;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Vector;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
@@ -817,7 +819,7 @@ public class WebViewJavaScriptSandboxTest {
     @Test
     @LargeTest
     public void testLargeScriptByteArrayJsEvaluation() throws Throwable {
-        String longString = "a".repeat(2000000);
+        final String longString = "a".repeat(2000000);
         final String codeString = ""
                 + "let " + longString + " = 0;"
                 + "\"PASS\"";
@@ -839,4 +841,302 @@ public class WebViewJavaScriptSandboxTest {
         }
     }
 
+    @Test
+    @LargeTest
+    public void testLargeReturn() throws Throwable {
+        final String longString = "a".repeat(2000000);
+        final String code = "'a'.repeat(2000000);";
+        final String expected = longString;
+        Context context = ApplicationProvider.getApplicationContext();
+
+        ListenableFuture<JavaScriptSandbox> jsSandboxFuture =
+                JavaScriptSandbox.createConnectedInstanceAsync(context);
+        try (JavaScriptSandbox jsSandbox = jsSandboxFuture.get(5, TimeUnit.SECONDS)) {
+            Assume.assumeTrue(jsSandbox.isFeatureSupported(
+                    JavaScriptSandbox.JS_FEATURE_EVALUATE_WITHOUT_TRANSACTION_LIMIT));
+            try (JavaScriptIsolate jsIsolate = jsSandbox.createIsolate()) {
+                ListenableFuture<String> resultFuture = jsIsolate.evaluateJavaScriptAsync(code);
+                String result = resultFuture.get(60, TimeUnit.SECONDS);
+
+                Assert.assertEquals(expected, result);
+            }
+        }
+    }
+
+    @Test
+    @LargeTest
+    public void testLargeError() throws Throwable {
+        final String longString = "a".repeat(2000000);
+        final String code = "throw \"" + longString + "\");";
+        Context context = ApplicationProvider.getApplicationContext();
+
+        ListenableFuture<JavaScriptSandbox> jsSandboxFuture =
+                JavaScriptSandbox.createConnectedInstanceAsync(context);
+        try (JavaScriptSandbox jsSandbox = jsSandboxFuture.get(5, TimeUnit.SECONDS)) {
+            Assume.assumeTrue(jsSandbox.isFeatureSupported(
+                    JavaScriptSandbox.JS_FEATURE_EVALUATE_WITHOUT_TRANSACTION_LIMIT));
+            try (JavaScriptIsolate jsIsolate = jsSandbox.createIsolate()) {
+                ListenableFuture<String> resultFuture = jsIsolate.evaluateJavaScriptAsync(code);
+                try {
+                    resultFuture.get(5, TimeUnit.SECONDS);
+                    Assert.fail("Should have thrown.");
+                } catch (ExecutionException e) {
+                    Assert.assertTrue(e.getCause().getClass().equals(
+                            EvaluationFailedException.class));
+                    Assert.assertTrue(e.getCause().getMessage().contains(longString));
+                }
+            }
+        }
+    }
+
+    @Test
+    @MediumTest
+    public void testResultSizeEnforced() throws Throwable {
+        final int maxSize = 100;
+        Context context = ApplicationProvider.getApplicationContext();
+
+        ListenableFuture<JavaScriptSandbox> jsSandboxFuture =
+                JavaScriptSandbox.createConnectedInstanceAsync(context);
+        try (JavaScriptSandbox jsSandbox = jsSandboxFuture.get(5, TimeUnit.SECONDS)) {
+            Assume.assumeTrue(jsSandbox.isFeatureSupported(
+                    JavaScriptSandbox.JS_FEATURE_EVALUATE_WITHOUT_TRANSACTION_LIMIT));
+            IsolateStartupParameters settings = new IsolateStartupParameters();
+            settings.setMaxEvaluationReturnSizeBytes(maxSize);
+            try (JavaScriptIsolate jsIsolate = jsSandbox.createIsolate(settings)) {
+                // Running code that returns greater than `maxSize` number of bytes should throw.
+                final String greaterThanMaxSizeCode = ""
+                        + "'a'.repeat(" + (maxSize + 1) + ");";
+                ListenableFuture<String> greaterThanMaxSizeResultFuture =
+                        jsIsolate.evaluateJavaScriptAsync(greaterThanMaxSizeCode);
+                try {
+                    greaterThanMaxSizeResultFuture.get(5, TimeUnit.SECONDS);
+                    Assert.fail("Should have thrown.");
+                } catch (ExecutionException e) {
+                    if (!(e.getCause() instanceof EvaluationResultSizeLimitExceededException)) {
+                        throw e;
+                    }
+                }
+
+                // Running code that returns `maxSize` number of bytes should not throw.
+                final String maxSizeCode = ""
+                        + "'a'.repeat(" + maxSize + ");";
+                final String maxSizeExpected = "a".repeat(maxSize);
+                ListenableFuture<String> maxSizeResultFuture =
+                        jsIsolate.evaluateJavaScriptAsync(maxSizeCode);
+                String maxSizeResult = maxSizeResultFuture.get(5, TimeUnit.SECONDS);
+                Assert.assertEquals(maxSizeExpected, maxSizeResult);
+
+                // Running code that returns less than `maxSize` number of bytes should not throw.
+                final String lessThanMaxSizeCode = ""
+                        + "'a'.repeat(" + (maxSize - 1) + ");";
+                final String lessThanMaxSizeExpected = "a".repeat(maxSize - 1);
+                ListenableFuture<String> lessThanMaxSizeResultFuture =
+                        jsIsolate.evaluateJavaScriptAsync(lessThanMaxSizeCode);
+                String lessThanMaxSizeResult = lessThanMaxSizeResultFuture.get(5,
+                        TimeUnit.SECONDS);
+                Assert.assertEquals(lessThanMaxSizeExpected, lessThanMaxSizeResult);
+            }
+        }
+    }
+
+    @Test
+    @LargeTest
+    public void testConsoleLogging() throws Throwable {
+        final class LoggingJavaScriptConsoleCallback implements JavaScriptConsoleCallback {
+            private final Object mLock = new Object();
+            @GuardedBy("mLock")
+            private final StringBuilder mMessages = new StringBuilder();
+
+            public static final String CLEAR_MARKER = "(console.clear() called)\n";
+            // This is required for synchronization between the instrumentation thread and the UI
+            // thread.
+            public CountDownLatch latch;
+
+            LoggingJavaScriptConsoleCallback(int numberOfCalls) {
+                latch = new CountDownLatch(numberOfCalls);
+            }
+
+            @Override
+            public void onConsoleMessage(JavaScriptConsoleCallback.ConsoleMessage message) {
+                synchronized (mLock) {
+                    mMessages.append(message.toString()).append("\n");
+                }
+                latch.countDown();
+            }
+
+            @Override
+            public void onConsoleClear() {
+                synchronized (mLock) {
+                    mMessages.append(CLEAR_MARKER);
+                }
+                latch.countDown();
+            }
+
+            public String messages() {
+                synchronized (mLock) {
+                    return mMessages.toString();
+                }
+            }
+
+            public void resetLatch(int count) {
+                latch = new CountDownLatch(count);
+            }
+        }
+
+        final String code = ""
+                + "function a() {b();}\n"
+                + "function b() {c();}\n"
+                + "function c() {console.trace('I am a trace message!');}\n"
+                + "console.log('I am a log message!');\n"
+                + "console.debug('I am a debug message!');\n"
+                + "console.info('I am an info message!');\n"
+                + "console.error('I am an error message!');\n"
+                + "console.warn('I am a warn message!');\n"
+                + "console.assert(false, 'I am an assert message!');\n"
+                + "console.log({'I am': [1, 'complex', {}]});\n"
+                + "a();\n"
+                + "console.count('I am counting');\n"
+                + "console.count('I am counting');\n"
+                + "console.clear();\n"
+                + "\"PASS\"";
+        final String expected = "PASS";
+        final String expectedLog = ""
+                + "L <expression>:4:9: I am a log message!\n"
+                + "D <expression>:5:9: I am a debug message!\n"
+                + "I <expression>:6:9: I am an info message!\n"
+                + "E <expression>:7:9: I am an error message!\n"
+                + "W <expression>:8:9: I am a warn message!\n"
+                + "E <expression>:9:9: I am an assert message!\n"
+                + "L <expression>:10:9: [object Object]\n"
+                + "I <expression>:3:23: I am a trace message!\n"
+                + "D <expression>:12:9: I am counting: 1\n"
+                + "D <expression>:13:9: I am counting: 2\n"
+                + LoggingJavaScriptConsoleCallback.CLEAR_MARKER;
+        final int numOfLogs = 11;
+        final Context context = ApplicationProvider.getApplicationContext();
+
+        final ListenableFuture<JavaScriptSandbox> jsSandboxFuture =
+                JavaScriptSandbox.createConnectedInstanceAsync(context);
+        try (JavaScriptSandbox jsSandbox = jsSandboxFuture.get(5, TimeUnit.SECONDS);
+             JavaScriptIsolate jsIsolate = jsSandbox.createIsolate()) {
+            Assume.assumeTrue(jsSandbox.isFeatureSupported(
+                    JavaScriptSandbox.JS_FEATURE_CONSOLE_MESSAGING));
+            final LoggingJavaScriptConsoleCallback client1 =
+                    new LoggingJavaScriptConsoleCallback(numOfLogs);
+            final LoggingJavaScriptConsoleCallback client2 =
+                    new LoggingJavaScriptConsoleCallback(numOfLogs);
+            // Test logging does not crash when no client attached
+            // (There may be no inspector)
+            {
+                final ListenableFuture<String> resultFuture =
+                        jsIsolate.evaluateJavaScriptAsync(code);
+                final String result = resultFuture.get(5, TimeUnit.SECONDS);
+
+                Assert.assertEquals(expected, result);
+            }
+            // Test logging works when client attached
+            // (This may spin up an inspector)
+            {
+                jsIsolate.setConsoleCallback(client1);
+                final ListenableFuture<String> resultFuture =
+                        jsIsolate.evaluateJavaScriptAsync(code);
+                final String result = resultFuture.get(5, TimeUnit.SECONDS);
+
+                Assert.assertEquals(expected, result);
+                Assert.assertTrue(client1.latch.await(2, TimeUnit.SECONDS));
+                Assert.assertEquals(expectedLog, client1.messages());
+            }
+            // Test client can be replaced
+            // (This may retain the same inspector)
+            {
+                jsIsolate.setConsoleCallback(client2);
+                final ListenableFuture<String> resultFuture =
+                        jsIsolate.evaluateJavaScriptAsync(code);
+                final String result = resultFuture.get(5, TimeUnit.SECONDS);
+
+                Assert.assertEquals(expected, result);
+                Assert.assertTrue(client2.latch.await(2, TimeUnit.SECONDS));
+                Assert.assertEquals(expectedLog, client2.messages());
+            }
+            // Test client can be nullified/disabled
+            // (This may tear down the inspector)
+            {
+                jsIsolate.clearConsoleCallback();
+                final ListenableFuture<String> resultFuture =
+                        jsIsolate.evaluateJavaScriptAsync(code);
+                final String result = resultFuture.get(5, TimeUnit.SECONDS);
+
+                Assert.assertEquals(expected, result);
+            }
+            // Ensure console messaging can be re-enabled (on an existing client)
+            // (This may spin up a new inspector)
+            {
+                client1.resetLatch(numOfLogs);
+                jsIsolate.setConsoleCallback(client1);
+                final ListenableFuture<String> resultFuture =
+                        jsIsolate.evaluateJavaScriptAsync(code);
+                final String result = resultFuture.get(5, TimeUnit.SECONDS);
+
+                Assert.assertEquals(expected, result);
+                Assert.assertTrue(client1.latch.await(2, TimeUnit.SECONDS));
+                Assert.assertEquals(expectedLog + expectedLog, client1.messages());
+            }
+            // Ensure client1 and client2 hasn't received anything additional
+            {
+                Thread.sleep(1000);
+                Assert.assertEquals(expectedLog + expectedLog, client1.messages());
+                Assert.assertEquals(expectedLog, client2.messages());
+            }
+        }
+    }
+
+    @Test
+    @MediumTest
+    public void testConsoleCallbackCanCallService() throws Throwable {
+        // This checks that there is nothing intrinsically wrong with calling service APIs from a
+        // console client. Note that, in theory, Binder will reuse the same threads if code recurses
+        // back between processes, which may make subtle (dead)locking bugs harder to detect.
+        //
+        // The console client handler for console.clear will trigger the main evaluation to resolve
+        // via a secondary evaluation.
+        final String code = ""
+                + "var checkIn = null;\n"
+                + "console.clear();\n"
+                + "new Promise((resolve) => {\n"
+                + "  checkIn = resolve;\n"
+                + "})\n";
+        final String callbackCode = ""
+                + "checkIn('PASS');\n"
+                + "'(this callback result is ignored)'\n";
+        final String expected = "PASS";
+        final Context context = ApplicationProvider.getApplicationContext();
+
+        final ListenableFuture<JavaScriptSandbox> jsSandboxFuture =
+                JavaScriptSandbox.createConnectedInstanceAsync(context);
+        try (JavaScriptSandbox jsSandbox = jsSandboxFuture.get(5, TimeUnit.SECONDS);
+             JavaScriptIsolate jsIsolate = jsSandbox.createIsolate()) {
+            Assume.assumeTrue(jsSandbox.isFeatureSupported(
+                    JavaScriptSandbox.JS_FEATURE_CONSOLE_MESSAGING));
+            Assume.assumeTrue(
+                    jsSandbox.isFeatureSupported(JavaScriptSandbox.JS_FEATURE_PROMISE_RETURN));
+
+            CountDownLatch latch = new CountDownLatch(1);
+            jsIsolate.setConsoleCallback(new JavaScriptConsoleCallback() {
+                @Override
+                public void onConsoleMessage(ConsoleMessage message) {}
+
+                @Override
+                public void onConsoleClear() {
+                    jsIsolate.evaluateJavaScriptAsync(callbackCode);
+                    latch.countDown();
+                }
+            });
+            final ListenableFuture<String> resultFuture = jsIsolate.evaluateJavaScriptAsync(code);
+            // Note: the main executor is on a different thread to the instrumentation thread, so
+            // blocking here will not block the console callback.
+            final String result = resultFuture.get(5, TimeUnit.SECONDS);
+            Assert.assertTrue(latch.await(2, TimeUnit.SECONDS));
+            Assert.assertEquals(expected, result);
+        }
+    }
 }

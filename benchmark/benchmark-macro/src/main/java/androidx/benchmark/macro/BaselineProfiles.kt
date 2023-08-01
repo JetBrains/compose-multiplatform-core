@@ -27,6 +27,7 @@ import androidx.benchmark.InstrumentationResults
 import androidx.benchmark.Outputs
 import androidx.benchmark.Shell
 import androidx.benchmark.userspaceTrace
+import androidx.core.os.BuildCompat
 import java.io.File
 
 /**
@@ -41,6 +42,7 @@ fun collectBaselineProfile(
     uniqueName: String,
     packageName: String,
     iterations: Int = 3,
+    includeInStartupProfile: Boolean,
     filterPredicate: ((String) -> Boolean)?,
     profileBlock: MacrobenchmarkScope.() -> Unit,
 ) {
@@ -84,7 +86,13 @@ fun collectBaselineProfile(
         // Filter
         val profile = filterProfileRulesToTargetP(unfilteredProfile, sortRules = true)
         // Report
-        reportResults(profile, filterPredicate, uniqueName, startTime)
+        reportResults(
+            profile = profile,
+            filterPredicate = filterPredicate,
+            uniqueFilePrefix = uniqueName,
+            startTime = startTime,
+            includeInStartupProfile = includeInStartupProfile
+        )
     } finally {
         killProcessBlock.invoke()
     }
@@ -104,6 +112,7 @@ fun collectStableBaselineProfile(
     stableIterations: Int,
     maxIterations: Int,
     strictStability: Boolean = false,
+    includeInStartupProfile: Boolean,
     filterPredicate: ((String) -> Boolean)?,
     profileBlock: MacrobenchmarkScope.() -> Unit
 ) {
@@ -139,7 +148,8 @@ fun collectStableBaselineProfile(
                     // Don't reset for subsequent iterations
                     Log.d(TAG, "Killing package $packageName")
                     killProcessBlock()
-                    mode.compileImpl(packageName = packageName,
+                    mode.compileImpl(
+                        packageName = packageName,
                         killProcessBlock = killProcessBlock
                     ) {
                         scope.iteration = iteration
@@ -164,7 +174,8 @@ fun collectStableBaselineProfile(
                 lastProfile = unfilteredProfile
                 stableCount = 1
             } else {
-                Log.d(TAG,
+                Log.d(
+                    TAG,
                     "Profiles stable in iteration $iteration (for $stableCount iterations)"
                 )
                 stableCount += 1
@@ -188,7 +199,13 @@ fun collectStableBaselineProfile(
         }
 
         val profile = filterProfileRulesToTargetP(lastProfile, sortRules = true)
-        reportResults(profile, filterPredicate, uniqueName, startTime)
+        reportResults(
+            profile = profile,
+            filterPredicate = filterPredicate,
+            uniqueFilePrefix = uniqueName,
+            startTime = startTime,
+            includeInStartupProfile = includeInStartupProfile
+        )
     } finally {
         killProcessBlock.invoke()
     }
@@ -231,53 +248,41 @@ private fun reportResults(
     profile: String,
     filterPredicate: ((String) -> Boolean)?,
     uniqueFilePrefix: String,
-    startTime: Long
+    startTime: Long,
+    includeInStartupProfile: Boolean
 ) {
-    // Build a startup profile
-    var startupProfile: String? = null
-    if (Arguments.enableStartupProfiles) {
-        startupProfile =
-            startupProfile(profile, includeStartupOnly = Arguments.strictStartupProfiles)
-    }
-
     // Filter profile if necessary based on filters
     val filteredProfile = applyPackageFilters(profile, filterPredicate)
 
     // Write a file with a timestamp to be able to disambiguate between runs with the same
     // unique name.
 
-    val fileName = "$uniqueFilePrefix-baseline-prof.txt"
-    val absolutePath = Outputs.writeFile(fileName, "baseline-profile") {
-        it.writeText(filteredProfile)
-    }
-    var startupProfilePath: String? = null
-    if (startupProfile != null) {
-        val startupProfileFileName = "$uniqueFilePrefix-startup-prof.txt"
-        startupProfilePath = Outputs.writeFile(startupProfileFileName, "startup-profile") {
-            it.writeText(startupProfile)
+    val (fileName, reportKey, tsFileName) =
+        if (includeInStartupProfile && Arguments.enableStartupProfiles) {
+            arrayOf(
+                "$uniqueFilePrefix-startup-prof.txt",
+                "startup-profile",
+                "$uniqueFilePrefix-startup-prof-${Outputs.dateToFileName()}.txt"
+            )
+        } else {
+            arrayOf(
+                "$uniqueFilePrefix-baseline-prof.txt",
+                "baseline-profile",
+                "$uniqueFilePrefix-baseline-prof-${Outputs.dateToFileName()}.txt"
+            )
         }
-    }
-    val tsFileName = "$uniqueFilePrefix-baseline-prof-${Outputs.dateToFileName()}.txt"
+
+    val absolutePath = Outputs.writeFile(fileName, reportKey) { it.writeText(filteredProfile) }
     val tsAbsolutePath = Outputs.writeFile(tsFileName, "baseline-profile-ts") {
         Log.d(TAG, "Pull Baseline Profile with: `adb pull \"${it.absolutePath}\" .`")
         it.writeText(filteredProfile)
-    }
-    var tsStartupAbsolutePath: String? = null
-    if (startupProfile != null) {
-        val tsStartupFileName = "$uniqueFilePrefix-startup-prof-${Outputs.dateToFileName()}.txt"
-        tsStartupAbsolutePath = Outputs.writeFile(tsStartupFileName, "startup-profile-ts") {
-            Log.d(TAG, "Pull Startup Profile with: `adb pull \"${it.absolutePath}\" .`")
-            it.writeText(startupProfile)
-        }
     }
 
     val totalRunTime = System.nanoTime() - startTime
     val results = Summary(
         totalRunTime = totalRunTime,
         profilePath = absolutePath,
-        profileTsPath = tsAbsolutePath,
-        startupProfilePath = startupProfilePath,
-        startupTsProfilePath = tsStartupAbsolutePath
+        profileTsPath = tsAbsolutePath
     )
     InstrumentationResults.instrumentationReport {
         val summary = summaryRecord(results)
@@ -293,10 +298,22 @@ private fun reportResults(
  * Does not require root.
  */
 @RequiresApi(33)
+@androidx.annotation.OptIn(BuildCompat.PrereleaseSdkCheck::class)
 private fun extractProfile(packageName: String): String {
-    Shell.executeScriptSilent(
-        "pm dump-profiles --dump-classes-and-methods $packageName"
-    )
+
+    val dumpCommand = "pm dump-profiles --dump-classes-and-methods $packageName"
+    if (BuildCompat.isAtLeastU()) {
+        // On api 34 this will produce an output like:
+        // Profile saved to '/data/misc/profman/<PACKAGE_NAME>-primary.prof.txt'
+        val stdout = Shell.executeScriptCaptureStdout(dumpCommand).trim()
+        val expected = "Profile saved to '/data/misc/profman/$packageName-primary.prof.txt'"
+        check(stdout == expected) {
+            "Expected `pm dump-profiles` stdout to be $expected but was $stdout"
+        }
+    } else {
+        // On api 33 and below this command does not produce any output
+        Shell.executeScriptSilent(dumpCommand)
+    }
     val fileName = "$packageName-primary.prof.txt"
     Shell.executeScriptSilent(
         "mv /data/misc/profman/$fileName ${Outputs.dirUsableByAppAndShell}/"
@@ -411,21 +428,7 @@ private fun summaryRecord(record: Summary): String {
         """.trimIndent()
     )
 
-    // Link to a path with timestamp to prevent studio from caching the file
-    val startupTsProfilePath = record.startupTsProfilePath
-    if (!startupTsProfilePath.isNullOrBlank()) {
-        val startupRelativePath = Outputs.relativePathFor(startupTsProfilePath)
-            .replace("(", "\\(")
-            .replace(")", "\\)")
-        summary.append("\n").append(
-            """
-                Startup profile [results](file://$startupRelativePath)
-            """.trimIndent()
-        )
-    }
-
     // Add commands that can be used to pull these files.
-
     summary.append("\n")
         .append("\n")
         .append(
@@ -434,18 +437,6 @@ private fun summaryRecord(record: Summary): String {
                 adb ${deviceSpecifier}pull "${record.profilePath}" .
             """.trimIndent()
         )
-
-    val startupProfilePath = record.startupProfilePath
-    if (!startupProfilePath.isNullOrBlank()) {
-        summary.append("\n")
-            .append("\n")
-            .append(
-                """
-                    To copy the startup profile use:
-                    adb ${deviceSpecifier}pull "${record.startupProfilePath}" .
-                """.trimIndent()
-            )
-    }
     return summary.toString()
 }
 
@@ -471,14 +462,4 @@ private data class Summary(
     val totalRunTime: Long,
     val profilePath: String,
     val profileTsPath: String,
-    val startupProfilePath: String? = null,
-    val startupTsProfilePath: String? = null
-) {
-    init {
-        if (startupProfilePath.isNullOrBlank()) {
-            require(startupTsProfilePath.isNullOrBlank())
-        } else {
-            require(!startupTsProfilePath.isNullOrBlank())
-        }
-    }
-}
+)

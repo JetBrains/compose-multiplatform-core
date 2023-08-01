@@ -44,7 +44,6 @@ import java.util.concurrent.Executor;
  * Helps schedule {@link androidx.work.impl.model.WorkSpec}s while enforcing
  * {@link Scheduler#MAX_SCHEDULER_LIMIT}s.
  *
- * @hide
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class Schedulers {
@@ -148,14 +147,13 @@ public class Schedulers {
     }
 
     @NonNull
-    static Scheduler createBestAvailableBackgroundScheduler(
-            @NonNull Context context,
-            @NonNull WorkManagerImpl workManager) {
+    static Scheduler createBestAvailableBackgroundScheduler(@NonNull Context context,
+            @NonNull WorkDatabase workDatabase, Configuration configuration) {
 
         Scheduler scheduler;
 
         if (Build.VERSION.SDK_INT >= WorkManagerImpl.MIN_JOB_SCHEDULER_API_LEVEL) {
-            scheduler = new SystemJobScheduler(context, workManager);
+            scheduler = new SystemJobScheduler(context, workDatabase, configuration);
             setComponentEnabled(context, SystemJobService.class, true);
             Logger.get().debug(TAG, "Created SystemJobScheduler and enabled SystemJobService");
         } else {

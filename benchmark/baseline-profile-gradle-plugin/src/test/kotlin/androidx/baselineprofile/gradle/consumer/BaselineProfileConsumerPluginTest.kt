@@ -16,122 +16,82 @@
 
 package androidx.baselineprofile.gradle.consumer
 
-import androidx.baselineprofile.gradle.utils.CONFIGURATION_NAME_BASELINE_PROFILES
-import androidx.baselineprofile.gradle.utils.GRADLE_CODE_PRINT_TASK
-import androidx.baselineprofile.gradle.utils.camelCase
-import androidx.testutils.gradle.ProjectSetupRule
+import androidx.baselineprofile.gradle.utils.ANDROID_APPLICATION_PLUGIN
+import androidx.baselineprofile.gradle.utils.ANDROID_LIBRARY_PLUGIN
+import androidx.baselineprofile.gradle.utils.ANDROID_TEST_PLUGIN
+import androidx.baselineprofile.gradle.utils.BaselineProfileProjectSetupRule
+import androidx.baselineprofile.gradle.utils.Fixtures
+import androidx.baselineprofile.gradle.utils.TEST_AGP_VERSION_8_0_0
+import androidx.baselineprofile.gradle.utils.TEST_AGP_VERSION_8_1_0
+import androidx.baselineprofile.gradle.utils.TEST_AGP_VERSION_ALL
+import androidx.baselineprofile.gradle.utils.VariantProfile
+import androidx.baselineprofile.gradle.utils.build
+import androidx.baselineprofile.gradle.utils.buildAndAssertThatOutput
+import androidx.baselineprofile.gradle.utils.require
+import androidx.baselineprofile.gradle.utils.requireInOrder
 import com.google.common.truth.Truth.assertThat
 import java.io.File
-import org.gradle.testkit.runner.GradleRunner
-import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
+import org.junit.runners.Parameterized
 
-@RunWith(JUnit4::class)
-class BaselineProfileConsumerPluginTest {
-
-    // To test the consumer plugin we need a module that exposes a baselineprofile configuration
-    // to be consumed. This is why we'll be using 2 projects. The producer project build gradle
-    // is generated ad hoc in the tests that require it in order to supply mock profiles.
+@RunWith(Parameterized::class)
+class BaselineProfileConsumerPluginTest(agpVersion: String?) {
 
     companion object {
-        private const val expectedBaselineProfileOutputFolder = "generated/baselineProfiles"
-    }
+        private const val EXPECTED_PROFILE_FOLDER = "generated/baselineProfiles"
 
-    private val rootFolder = TemporaryFolder().also { it.create() }
+        @Parameterized.Parameters(name = "agpVersion={0}")
+        @JvmStatic
+        fun parameters() = TEST_AGP_VERSION_ALL
+    }
 
     @get:Rule
-    val consumerProjectSetup = ProjectSetupRule(rootFolder.root)
+    val projectSetup = BaselineProfileProjectSetupRule(forceAgpVersion = agpVersion)
 
-    @get:Rule
-    val producerProjectSetup = ProjectSetupRule(rootFolder.root)
+    private val gradleRunner by lazy { projectSetup.consumer.gradleRunner }
 
-    private lateinit var consumerModuleName: String
-    private lateinit var producerModuleName: String
-    private lateinit var gradleRunner: GradleRunner
+    private fun baselineProfileFile(variantName: String) = File(
+        projectSetup.consumer.rootDir,
+        "src/$variantName/$EXPECTED_PROFILE_FOLDER/baseline-prof.txt"
+    )
 
-    @Before
-    fun setUp() {
-        consumerModuleName = consumerProjectSetup.rootDir.relativeTo(rootFolder.root).name
-        producerModuleName = producerProjectSetup.rootDir.relativeTo(rootFolder.root).name
+    private fun startupProfileFile(variantName: String) = File(
+        projectSetup.consumer.rootDir,
+        "src/$variantName/$EXPECTED_PROFILE_FOLDER/startup-prof.txt"
+    )
 
-        rootFolder.newFile("settings.gradle").writeText(
-            """
-            include '$consumerModuleName'
-            include '$producerModuleName'
-        """.trimIndent()
-        )
-        gradleRunner = GradleRunner.create()
-            .withProjectDir(consumerProjectSetup.rootDir)
-            .withPluginClasspath()
-    }
+    private fun mergedArtProfile(variantName: String) = File(
+        projectSetup.consumer.rootDir,
+        "build/intermediates/merged_art_profile/$variantName/baseline-prof.txt"
+    )
 
-    private fun writeDefaultProducerProject() {
-        producerProjectSetup.writeDefaultBuildGradle(
-            prefix = MockProducerBuildGrade()
-                .withConfiguration(flavor = "", buildType = "release")
-                .withProducedBaselineProfile(
-                    lines = listOf(
-                        Fixtures.CLASS_1_METHOD_1,
-                        Fixtures.CLASS_2_METHOD_2,
-                        Fixtures.CLASS_2,
-                        Fixtures.CLASS_1,
-                    ),
-                    flavor = "",
-                    buildType = "release"
-                )
-                .build(),
-            suffix = ""
-        )
-    }
+    private fun readBaselineProfileFileContent(variantName: String): List<String> =
+        baselineProfileFile(variantName).readLines()
 
-    private fun readBaselineProfileFileContent(variantName: String) =
-        File(
-            consumerProjectSetup.rootDir,
-            "src/$variantName/$expectedBaselineProfileOutputFolder/baseline-prof.txt"
-        ).readLines()
+    private fun readStartupProfileFileContent(variantName: String): List<String> =
+        startupProfileFile(variantName).readLines()
 
     @Test
-    fun testGenerateTaskWithNoFlavors() {
-        consumerProjectSetup.writeDefaultBuildGradle(
-            prefix = """
-                plugins {
-                    id("com.android.library")
-                    id("androidx.baselineprofile.consumer")
-                }
-                android {
-                    namespace 'com.example.namespace'
-                }
-                dependencies {
-                    baselineProfile(project(":$producerModuleName"))
-                }
-            """.trimIndent(),
-            suffix = ""
+    fun testGenerateTaskWithNoFlavorsForLibrary() {
+        projectSetup.consumer.setup(
+            androidPlugin = ANDROID_LIBRARY_PLUGIN
         )
-        producerProjectSetup.writeDefaultBuildGradle(
-            prefix = MockProducerBuildGrade()
-                .withConfiguration(flavor = "", buildType = "release")
-                .withProducedBaselineProfile(
-                    lines = listOf(
-                        Fixtures.CLASS_1_METHOD_1,
-                        Fixtures.CLASS_1,
-                    ),
-                    flavor = "",
-                    buildType = "release"
-                )
-                .withProducedBaselineProfile(
-                    lines = listOf(
-                        Fixtures.CLASS_2_METHOD_1,
-                        Fixtures.CLASS_2,
-                    ),
-                    flavor = "",
-                    buildType = "release"
-                )
-                .build(),
-            suffix = ""
+        projectSetup.producer.setupWithoutFlavors(
+            releaseProfileLines = listOf(
+                Fixtures.CLASS_1_METHOD_1,
+                Fixtures.CLASS_1,
+                Fixtures.CLASS_2_METHOD_1,
+                Fixtures.CLASS_2
+            ),
+            releaseStartupProfileLines = listOf(
+                Fixtures.CLASS_3_METHOD_1,
+                Fixtures.CLASS_3,
+                Fixtures.CLASS_4_METHOD_1,
+                Fixtures.CLASS_4
+            )
         )
 
         gradleRunner
@@ -145,68 +105,69 @@ class BaselineProfileConsumerPluginTest {
                 Fixtures.CLASS_2,
                 Fixtures.CLASS_2_METHOD_1,
             )
+
+        assertThat(startupProfileFile("main").exists()).isFalse()
+    }
+
+    @Test
+    fun testGenerateTaskWithNoFlavorsForApplication() {
+        projectSetup.consumer.setup(
+            androidPlugin = ANDROID_APPLICATION_PLUGIN
+        )
+        projectSetup.producer.setupWithoutFlavors(
+            releaseProfileLines = listOf(
+                Fixtures.CLASS_1_METHOD_1,
+                Fixtures.CLASS_1,
+                Fixtures.CLASS_2_METHOD_1,
+                Fixtures.CLASS_2
+            ),
+            releaseStartupProfileLines = listOf(
+                Fixtures.CLASS_3_METHOD_1,
+                Fixtures.CLASS_3,
+                Fixtures.CLASS_4_METHOD_1,
+                Fixtures.CLASS_4
+            )
+        )
+
+        gradleRunner
+            .withArguments("generateBaselineProfile", "--stacktrace")
+            .build()
+
+        assertThat(readBaselineProfileFileContent("release"))
+            .containsExactly(
+                Fixtures.CLASS_1,
+                Fixtures.CLASS_1_METHOD_1,
+                Fixtures.CLASS_2,
+                Fixtures.CLASS_2_METHOD_1,
+            )
+
+        assertThat(readStartupProfileFileContent("release"))
+            .containsExactly(
+                Fixtures.CLASS_3,
+                Fixtures.CLASS_3_METHOD_1,
+                Fixtures.CLASS_4,
+                Fixtures.CLASS_4_METHOD_1,
+            )
     }
 
     @Test
     fun testGenerateTaskWithFlavorsAndDefaultMerge() {
-        consumerProjectSetup.writeDefaultBuildGradle(
-            prefix = """
-                plugins {
-                    id("com.android.application")
-                    id("androidx.baselineprofile.consumer")
-                }
-                android {
-                    namespace 'com.example.namespace'
-                    productFlavors {
-                        flavorDimensions = ["version"]
-                        free {
-                            dimension "version"
-                        }
-                        paid {
-                            dimension "version"
-                        }
-                    }
-                }
-                dependencies {
-                    baselineProfile(project(":$producerModuleName"))
-                }
-            """.trimIndent(),
-            suffix = ""
+        projectSetup.consumer.setup(
+            androidPlugin = ANDROID_APPLICATION_PLUGIN,
+            flavors = true,
+            dependencyOnProducerProject = true
         )
-        producerProjectSetup.writeDefaultBuildGradle(
-            prefix = MockProducerBuildGrade()
-                .withConfiguration(flavor = "free", buildType = "release")
-                .withConfiguration(flavor = "paid", buildType = "release")
-                .withProducedBaselineProfile(
-                    lines = listOf(
-                        Fixtures.CLASS_1_METHOD_1,
-                        Fixtures.CLASS_1,
-                    ),
-                    flavor = "free",
-                    buildType = "release"
-                )
-                .withProducedBaselineProfile(
-                    lines = listOf(
-                        Fixtures.CLASS_2_METHOD_1,
-                        Fixtures.CLASS_2,
-                    ),
-                    flavor = "paid",
-                    buildType = "release"
-                )
-                .build(),
-            suffix = ""
+        projectSetup.producer.setupWithFreeAndPaidFlavors(
+            freeReleaseProfileLines = listOf(Fixtures.CLASS_1_METHOD_1, Fixtures.CLASS_1),
+            paidReleaseProfileLines = listOf(Fixtures.CLASS_2_METHOD_1, Fixtures.CLASS_2),
         )
 
         // Asserts that all per-variant, per-flavor and per-build type tasks are being generated.
-        gradleRunner
-            .withArguments("tasks", "--stacktrace")
-            .build()
-            .output
-            .also {
-                assertThat(it).contains("generateReleaseBaselineProfile - ")
-                assertThat(it).contains("generateFreeReleaseBaselineProfile - ")
-                assertThat(it).contains("generatePaidReleaseBaselineProfile - ")
-            }
+        gradleRunner.buildAndAssertThatOutput("tasks") {
+            contains("generateReleaseBaselineProfile - ")
+            contains("generateFreeReleaseBaselineProfile - ")
+            contains("generatePaidReleaseBaselineProfile - ")
+        }
 
         gradleRunner
             .withArguments("generateReleaseBaselineProfile", "--stacktrace")
@@ -227,68 +188,26 @@ class BaselineProfileConsumerPluginTest {
 
     @Test
     fun testGenerateTaskWithFlavorsAndMergeAll() {
-        consumerProjectSetup.writeDefaultBuildGradle(
-            prefix = """
-                plugins {
-                    id("com.android.application")
-                    id("androidx.baselineprofile.consumer")
-                }
-                android {
-                    namespace 'com.example.namespace'
-                    productFlavors {
-                        flavorDimensions = ["version"]
-                        free {
-                            dimension "version"
-                        }
-                        paid {
-                            dimension "version"
-                        }
-                    }
-                }
-                dependencies {
-                    baselineProfile(project(":$producerModuleName"))
-                }
-                baselineProfile {
-                    mergeIntoMain = true
-                }
-            """.trimIndent(),
-            suffix = ""
+        projectSetup.consumer.setup(
+            androidPlugin = ANDROID_APPLICATION_PLUGIN,
+            flavors = true,
+            dependencyOnProducerProject = true,
+            baselineProfileBlock = """
+                mergeIntoMain = true
+            """.trimIndent()
         )
-        producerProjectSetup.writeDefaultBuildGradle(
-            prefix = MockProducerBuildGrade()
-                .withConfiguration(flavor = "free", buildType = "release")
-                .withConfiguration(flavor = "paid", buildType = "release")
-                .withProducedBaselineProfile(
-                    lines = listOf(
-                        Fixtures.CLASS_1_METHOD_1,
-                        Fixtures.CLASS_1,
-                    ),
-                    flavor = "free",
-                    buildType = "release"
-                )
-                .withProducedBaselineProfile(
-                    lines = listOf(
-                        Fixtures.CLASS_2_METHOD_1,
-                        Fixtures.CLASS_2,
-                    ),
-                    flavor = "paid",
-                    buildType = "release"
-                )
-                .build(),
-            suffix = ""
+        projectSetup.producer.setupWithFreeAndPaidFlavors(
+            freeReleaseProfileLines = listOf(Fixtures.CLASS_1_METHOD_1, Fixtures.CLASS_1),
+            paidReleaseProfileLines = listOf(Fixtures.CLASS_2_METHOD_1, Fixtures.CLASS_2)
         )
 
         // Asserts that all per-variant, per-flavor and per-build type tasks are being generated.
-        gradleRunner
-            .withArguments("tasks", "--stacktrace")
-            .build()
-            .output
-            .also {
-                assertThat(it).contains("generateBaselineProfile - ")
-                assertThat(it).contains("generateReleaseBaselineProfile - ")
-                assertThat(it).doesNotContain("generateFreeReleaseBaselineProfile - ")
-                assertThat(it).doesNotContain("generatePaidReleaseBaselineProfile - ")
-            }
+        gradleRunner.buildAndAssertThatOutput("tasks") {
+            contains("generateBaselineProfile - ")
+            contains("generateReleaseBaselineProfile - ")
+            doesNotContain("generateFreeReleaseBaselineProfile - ")
+            doesNotContain("generatePaidReleaseBaselineProfile - ")
+        }
 
         gradleRunner
             .withArguments("generateBaselineProfile", "--stacktrace")
@@ -304,81 +223,26 @@ class BaselineProfileConsumerPluginTest {
     }
 
     @Test
-    fun testPluginAppliedToApplicationModule() {
-
-        // For this test the producer is not important
-        writeDefaultProducerProject()
-
-        consumerProjectSetup.writeDefaultBuildGradle(
-            prefix = """
-                plugins {
-                    id("com.android.application")
-                    id("androidx.baselineprofile.consumer")
-                }
-                android {
-                    namespace 'com.example.namespace'
-                }
-                dependencies {
-                    baselineProfile(project(":$producerModuleName"))
-                }
-            """.trimIndent(),
-            suffix = ""
-        )
-
-        gradleRunner
-            .withArguments("generateReleaseBaselineProfile", "--stacktrace")
-            .build()
-
-        // This should not fail.
-    }
-
-    @Test
     fun testPluginAppliedToLibraryModule() {
-        // For this test the producer is not important
-        writeDefaultProducerProject()
-
-        consumerProjectSetup.writeDefaultBuildGradle(
-            prefix = """
-                plugins {
-                    id("com.android.library")
-                    id("androidx.baselineprofile.consumer")
-                }
-                android {
-                    namespace 'com.example.namespace'
-                }
-                dependencies {
-                    baselineProfile(project(":$producerModuleName"))
-                }
-            """.trimIndent(),
-            suffix = ""
+        projectSetup.producer.setup()
+        projectSetup.consumer.setup(
+            androidPlugin = ANDROID_LIBRARY_PLUGIN,
+            addAppTargetPlugin = false,
+            dependencyOnProducerProject = true
         )
-
         gradleRunner
             .withArguments("generateBaselineProfile", "--stacktrace")
             .build()
-
         // This should not fail.
     }
 
     @Test
     fun testPluginAppliedToNonApplicationAndNonLibraryModule() {
-        // For this test the producer is not important
-        writeDefaultProducerProject()
-
-        consumerProjectSetup.writeDefaultBuildGradle(
-            prefix = """
-                plugins {
-                    id("com.android.test")
-                    id("androidx.baselineprofile.consumer")
-                }
-                android {
-                    namespace 'com.example.namespace'
-                }
-                dependencies {
-                    baselineProfile(project(":$producerModuleName"))
-                }
-            """.trimIndent(),
-            suffix = ""
+        projectSetup.producer.setup()
+        projectSetup.consumer.setup(
+            androidPlugin = ANDROID_TEST_PLUGIN,
+            addAppTargetPlugin = false,
+            dependencyOnProducerProject = true
         )
 
         gradleRunner
@@ -388,24 +252,18 @@ class BaselineProfileConsumerPluginTest {
 
     @Test
     fun testSrcSetAreAddedToVariants() {
-        consumerProjectSetup.writeDefaultBuildGradle(
-            prefix = """
-                plugins {
-                    id("com.android.application")
-                    id("androidx.baselineprofile.apptarget")
-                    id("androidx.baselineprofile.consumer")
-                }
-                android {
-                    namespace 'com.example.namespace'
-                    productFlavors {
-                        flavorDimensions = ["version"]
-                        free { dimension "version" }
-                        paid { dimension "version" }
-                    }
-                }
-
-                $GRADLE_CODE_PRINT_TASK
-
+        projectSetup.producer.setupWithFreeAndPaidFlavors(
+            freeReleaseProfileLines = listOf(Fixtures.CLASS_1_METHOD_1, Fixtures.CLASS_1),
+            paidReleaseProfileLines = listOf(Fixtures.CLASS_2_METHOD_1, Fixtures.CLASS_2)
+        )
+        projectSetup.consumer.setup(
+            androidPlugin = ANDROID_APPLICATION_PLUGIN,
+            flavors = true,
+            dependencyOnProducerProject = true,
+            baselineProfileBlock = """
+                enableR8BaselineProfileRewrite = false
+            """.trimIndent(),
+            additionalGradleCodeBlock = """
                 androidComponents {
                     onVariants(selector()) { variant ->
                         tasks.register(variant.name + "Print", PrintTask) { t ->
@@ -413,8 +271,7 @@ class BaselineProfileConsumerPluginTest {
                         }
                     }
                 }
-            """.trimIndent(),
-            suffix = ""
+            """.trimIndent()
         )
 
         arrayOf("freeRelease", "paidRelease")
@@ -424,84 +281,103 @@ class BaselineProfileConsumerPluginTest {
                 // not exist so we need to create it.
                 val expected =
                     File(
-                        consumerProjectSetup.rootDir,
-                        "src/$it/$expectedBaselineProfileOutputFolder"
+                        projectSetup.consumer.rootDir,
+                        "src/$it/$EXPECTED_PROFILE_FOLDER"
                     )
                         .apply {
                             mkdirs()
                             deleteOnExit()
                         }
 
-                gradleRunner
-                    .withArguments("${it}Print", "--stacktrace")
-                    .build()
-                    .output
-                    .let { o -> assertThat(o).contains(expected.absolutePath) }
+                gradleRunner.buildAndAssertThatOutput("${it}Print") {
+                    contains(expected.absolutePath)
+                }
             }
     }
 
     @Test
-    fun testFilterAndSortAndMerge() {
-        consumerProjectSetup.writeDefaultBuildGradle(
-            prefix = """
-                plugins {
-                    id("com.android.library")
-                    id("androidx.baselineprofile.consumer")
-                }
-                android {
-                    namespace 'com.example.namespace'
-                    productFlavors {
-                        flavorDimensions = ["version"]
-                        free {
-                            dimension "version"
-                        }
-                        paid {
-                            dimension "version"
+    fun testWhenPluginIsAppliedAndNoDependencyIsSetShouldFailWithErrorMsg() {
+        projectSetup.consumer.setup(
+            androidPlugin = ANDROID_APPLICATION_PLUGIN,
+            flavors = false,
+            dependencyOnProducerProject = false
+        )
+
+        gradleRunner
+            .withArguments("generateReleaseBaselineProfile", "--stacktrace")
+            .buildAndFail()
+            .output
+            .replace("\n", " ")
+            .also {
+                assertThat(it).contains(
+                    "The baseline profile consumer plugin is applied to " +
+                        "this module but no dependency has been set"
+                )
+            }
+    }
+
+    @Test
+    fun testR8RewriteBaselineProfilePropertySet() {
+        projectSetup.producer.setupWithFreeAndPaidFlavors(
+            freeReleaseProfileLines = listOf(Fixtures.CLASS_1_METHOD_1, Fixtures.CLASS_1),
+            paidReleaseProfileLines = listOf(Fixtures.CLASS_2_METHOD_1, Fixtures.CLASS_2)
+        )
+        projectSetup.consumer.setup(
+            androidPlugin = ANDROID_LIBRARY_PLUGIN,
+            dependencyOnProducerProject = true,
+            flavors = true,
+            buildTypeAnotherRelease = true,
+            additionalGradleCodeBlock = """
+                androidComponents {
+                    onVariants(selector()) { variant ->
+                        println(variant.name)
+                        tasks.register("print" + variant.name, PrintTask) { t ->
+                            def prop = "android.experimental.art-profile-r8-rewriting"
+                            if (prop in variant.experimentalProperties) {
+                                def value = variant.experimentalProperties[prop].get().toString()
+                                t.text.set( "r8-rw=" + value)
+                            } else {
+                                t.text.set( "r8-rw=false")
+                            }
                         }
                     }
                 }
-                dependencies {
-                    baselineProfile(project(":$producerModuleName"))
-                }
-                baselineProfile {
-                    filter { include("com.sample.Utils") }
-                }
-            """.trimIndent(),
-            suffix = ""
+            """.trimIndent()
         )
-        producerProjectSetup.writeDefaultBuildGradle(
-            prefix = MockProducerBuildGrade()
-                .withConfiguration(
-                    flavor = "free",
-                    buildType = "release"
-                )
-                .withConfiguration(
-                    flavor = "paid",
-                    buildType = "release"
-                )
-                .withProducedBaselineProfile(
-                    lines = listOf(
-                        Fixtures.CLASS_1_METHOD_1,
-                        Fixtures.CLASS_1_METHOD_2,
-                        Fixtures.CLASS_1,
-                    ),
-                    flavor = "free",
-                    buildType = "release"
-                )
-                .withProducedBaselineProfile(
-                    lines = listOf(
-                        Fixtures.CLASS_2_METHOD_1,
-                        Fixtures.CLASS_2_METHOD_2,
-                        Fixtures.CLASS_2_METHOD_3,
-                        Fixtures.CLASS_2_METHOD_4,
-                        Fixtures.CLASS_2_METHOD_5,
-                        Fixtures.CLASS_2,
-                    ),
-                    flavor = "paid",
-                    buildType = "release"
-                )
-                .build(),
-            suffix = ""
+
+        arrayOf(
+            "printFreeRelease",
+            "printPaidRelease",
+            "printFreeAnotherRelease",
+            "printPaidAnotherRelease",
+        ).forEach { gradleRunner.buildAndAssertThatOutput(it) { contains("r8-rw=false") } }
+    }
+
+    @Test
+    fun testFilterAndSortAndMerge() {
+        projectSetup.consumer.setup(
+            androidPlugin = ANDROID_LIBRARY_PLUGIN,
+            flavors = true,
+            baselineProfileBlock = """
+                filter {
+                    include("com.sample.Utils")
+                }
+            """.trimIndent()
+        )
+        projectSetup.producer.setupWithFreeAndPaidFlavors(
+            freeReleaseProfileLines = listOf(
+                Fixtures.CLASS_1_METHOD_1,
+                Fixtures.CLASS_1_METHOD_2,
+                Fixtures.CLASS_1,
+            ),
+            paidReleaseProfileLines = listOf(
+                Fixtures.CLASS_2_METHOD_1,
+                Fixtures.CLASS_2_METHOD_2,
+                Fixtures.CLASS_2_METHOD_3,
+                Fixtures.CLASS_2_METHOD_4,
+                Fixtures.CLASS_2_METHOD_5,
+                Fixtures.CLASS_2,
+            )
         )
 
         gradleRunner
@@ -509,9 +385,10 @@ class BaselineProfileConsumerPluginTest {
             .build()
 
         // In the final output there should be :
-        //  - one single file in src/main/generatedBaselineProfiles because merge = `all`.
+        //  - one single file in src/main/generated/baselineProfiles (because this is a library).
         //  - There should be only the Utils class [CLASS_2] because of the include filter.
-        //  - The method `someOtherMethod` [CLASS_2_METHOD_3] should be included only once.
+        //  - The method `someOtherMethod` [CLASS_2_METHOD_3] should be included only once
+        //      (despite being included multiple times with different flags).
         assertThat(readBaselineProfileFileContent("main"))
             .containsExactly(
                 Fixtures.CLASS_2,
@@ -520,79 +397,834 @@ class BaselineProfileConsumerPluginTest {
                 Fixtures.CLASS_2_METHOD_3,
             )
     }
-}
 
-private class MockProducerBuildGrade {
+    @Test
+    fun testFilterPerVariant() {
+        projectSetup.consumer.setup(
+            androidPlugin = ANDROID_APPLICATION_PLUGIN,
+            flavors = true,
+            baselineProfileBlock = """
+                filter {
+                    include("com.sample.Activity")
+                }
+                variants {
+                    freeRelease {
+                        filter { include("com.sample.Utils") }
+                    }
+                    paidRelease {
+                        filter { include("com.sample.Fragment") }
+                    }
+                }
+            """.trimIndent()
+        )
 
-    private var profileIndex = 0
-    private var content = """
-        plugins { id("com.android.library") }
-        android { namespace 'com.example.namespace' }
+        val commonProfile = listOf(
+            Fixtures.CLASS_1,
+            Fixtures.CLASS_1_METHOD_1,
+            Fixtures.CLASS_1_METHOD_2,
+            Fixtures.CLASS_2,
+            Fixtures.CLASS_2_METHOD_1,
+            Fixtures.CLASS_2_METHOD_2,
+            Fixtures.CLASS_2_METHOD_3,
+            Fixtures.CLASS_3,
+            Fixtures.CLASS_3_METHOD_1,
+        )
+        projectSetup.producer.setupWithFreeAndPaidFlavors(
+            freeReleaseProfileLines = commonProfile,
+            paidReleaseProfileLines = commonProfile,
+        )
 
-        // This task produces a file with a fixed output
-        abstract class TestProfileTask extends DefaultTask {
-            @Input abstract Property<String> getFileContent()
-            @OutputFile abstract RegularFileProperty getOutputFile()
-            @TaskAction void exec() { getOutputFile().get().asFile.write(getFileContent().get()) }
+        gradleRunner
+            .withArguments("generateBaselineProfile", "--stacktrace")
+            .build()
+
+        assertThat(readBaselineProfileFileContent("freeRelease"))
+            .containsExactly(
+                Fixtures.CLASS_1,
+                Fixtures.CLASS_1_METHOD_1,
+                Fixtures.CLASS_1_METHOD_2,
+                Fixtures.CLASS_2,
+                Fixtures.CLASS_2_METHOD_1,
+                Fixtures.CLASS_2_METHOD_2,
+                Fixtures.CLASS_2_METHOD_3,
+            )
+        assertThat(readBaselineProfileFileContent("paidRelease"))
+            .containsExactly(
+                Fixtures.CLASS_1,
+                Fixtures.CLASS_1_METHOD_1,
+                Fixtures.CLASS_1_METHOD_2,
+                Fixtures.CLASS_3,
+                Fixtures.CLASS_3_METHOD_1,
+            )
+    }
+
+    @Test
+    fun testSaveInSrcTrueAndAutomaticGenerationDuringBuildTrue() {
+        projectSetup.consumer.setup(
+            androidPlugin = ANDROID_APPLICATION_PLUGIN,
+            flavors = true,
+            baselineProfileBlock = """
+                saveInSrc = true
+                automaticGenerationDuringBuild = true
+            """.trimIndent()
+        )
+        projectSetup.producer.setupWithFreeAndPaidFlavors(
+            freeReleaseProfileLines = listOf(Fixtures.CLASS_1_METHOD_1, Fixtures.CLASS_1),
+            paidReleaseProfileLines = listOf(Fixtures.CLASS_2_METHOD_1, Fixtures.CLASS_2),
+        )
+
+        // Asserts that assembling release triggers generation of profile
+        gradleRunner.build("assembleFreeRelease", "--dry-run") {
+            val notFound = it.lines().requireInOrder(
+                ":${projectSetup.consumer.name}:mergeFreeReleaseBaselineProfile",
+                ":${projectSetup.consumer.name}:copyFreeReleaseBaselineProfileIntoSrc",
+                ":${projectSetup.consumer.name}:mergeFreeReleaseArtProfile",
+                ":${projectSetup.consumer.name}:compileFreeReleaseArtProfile",
+                ":${projectSetup.consumer.name}:assembleFreeRelease"
+            )
+            assertThat(notFound).isEmpty()
         }
 
-    """.trimIndent()
+        // Asserts that the profile is generated in the src folder
+        gradleRunner.build("generateFreeReleaseBaselineProfile") {
+            assertThat(readBaselineProfileFileContent("freeRelease"))
+                .containsExactly(
+                    Fixtures.CLASS_1,
+                    Fixtures.CLASS_1_METHOD_1,
+                )
+        }
+    }
 
-    fun withConfiguration(flavor: String, buildType: String): MockProducerBuildGrade {
+    @Test
+    fun testSaveInSrcTrueAndAutomaticGenerationDuringBuildFalse() {
+        projectSetup.consumer.setup(
+            androidPlugin = ANDROID_APPLICATION_PLUGIN,
+            flavors = true,
+            baselineProfileBlock = """
+                saveInSrc = true
+                automaticGenerationDuringBuild = false
+            """.trimIndent()
+        )
+        projectSetup.producer.setupWithFreeAndPaidFlavors(
+            freeReleaseProfileLines = listOf(Fixtures.CLASS_1_METHOD_1, Fixtures.CLASS_1),
+            paidReleaseProfileLines = listOf(Fixtures.CLASS_2_METHOD_1, Fixtures.CLASS_2),
+        )
 
-        content += """
+        // Asserts that assembling release does not trigger generation of profile
+        gradleRunner.buildAndAssertThatOutput("assembleFreeRelease", "--dry-run") {
+            arrayOf(
+                "mergeFreeReleaseBaselineProfile",
+                "copyFreeReleaseBaselineProfileIntoSrc"
+            ).forEach { doesNotContain(":${projectSetup.consumer.name}:$it") }
+            arrayOf(
+                "mergeFreeReleaseArtProfile",
+                "compileFreeReleaseArtProfile",
+                "assembleFreeRelease"
+            ).forEach { contains(":${projectSetup.consumer.name}:$it") }
+        }
 
-        configurations {
-            ${configurationName(flavor, buildType)} {
-                canBeConsumed = true
-                canBeResolved = false
-                attributes {
-                    attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category, "baselineProfile"))
-                    attribute(Attribute.of("androidx.baselineprofile.gradle.attributes.BuildType", String), "$buildType")
-                    attribute(Attribute.of("androidx.baselineprofile.gradle.attributes.Flavor", String), "$flavor")
+        // Asserts that the profile is generated in the src folder
+        gradleRunner.build("generateFreeReleaseBaselineProfile") {
+            assertThat(readBaselineProfileFileContent("freeRelease"))
+                .containsExactly(
+                    Fixtures.CLASS_1,
+                    Fixtures.CLASS_1_METHOD_1,
+                )
+        }
+    }
+
+    @Test
+    fun testSaveInSrcFalseAndAutomaticGenerationDuringBuildTrue() {
+        projectSetup.consumer.setup(
+            androidPlugin = ANDROID_APPLICATION_PLUGIN,
+            flavors = true,
+            baselineProfileBlock = """
+                saveInSrc = false
+                automaticGenerationDuringBuild = true
+            """.trimIndent()
+        )
+        projectSetup.producer.setupWithFreeAndPaidFlavors(
+            freeReleaseProfileLines = listOf(Fixtures.CLASS_1_METHOD_1, Fixtures.CLASS_1),
+            paidReleaseProfileLines = listOf(Fixtures.CLASS_2_METHOD_1, Fixtures.CLASS_2),
+        )
+
+        // Asserts that assembling release triggers generation of profile
+        gradleRunner.buildAndAssertThatOutput("assembleFreeRelease", "--dry-run") {
+            arrayOf(
+                "mergeFreeReleaseBaselineProfile",
+                "mergeFreeReleaseArtProfile",
+                "compileFreeReleaseArtProfile",
+                "assembleFreeRelease"
+            ).forEach { contains(":${projectSetup.consumer.name}:$it") }
+            doesNotContain(
+                ":${projectSetup.consumer.name}:copyFreeReleaseBaselineProfileIntoSrc"
+            )
+        }
+
+        // Asserts that the profile is not generated in the src folder
+        gradleRunner.build("generateFreeReleaseBaselineProfile") {}
+
+        val profileFile = baselineProfileFile("freeRelease")
+        assertThat(profileFile.exists()).isFalse()
+    }
+
+    @Test
+    fun testSaveInSrcFalseAndAutomaticGenerationDuringBuildFalse() {
+        projectSetup.producer.setup()
+        projectSetup.consumer.setup(
+            androidPlugin = ANDROID_APPLICATION_PLUGIN,
+            baselineProfileBlock = """
+                saveInSrc = false
+                automaticGenerationDuringBuild = false
+            """.trimIndent()
+        )
+        gradleRunner
+            .withArguments("generateReleaseBaselineProfile", "--stacktrace")
+            .buildAndFail()
+            .output
+            .replace(System.lineSeparator(), " ")
+            .also {
+                assertThat(it)
+                    .contains(
+                        "The current configuration of flags `saveInSrc` and " +
+                            "`automaticGenerationDuringBuild` is not supported"
+                    )
+            }
+    }
+
+    @Test
+    fun testWhenFiltersFilterOutAllTheProfileRules() {
+        projectSetup.consumer.setup(
+            androidPlugin = ANDROID_LIBRARY_PLUGIN,
+            baselineProfileBlock = """
+                filter { include("nothing.**") }
+            """.trimIndent()
+        )
+        projectSetup.producer.setupWithoutFlavors(
+            releaseProfileLines = listOf(
+                Fixtures.CLASS_1_METHOD_1,
+                Fixtures.CLASS_1
+            )
+        )
+
+        gradleRunner
+            .withArguments("generateReleaseBaselineProfile", "--stacktrace")
+            .buildAndFail()
+            .output
+            .replace(System.lineSeparator(), " ")
+            .also {
+                assertThat(it)
+                    .contains(
+                        "The baseline profile consumer plugin is configured with filters that " +
+                            "exclude all the profile rules"
+                    )
+            }
+    }
+
+    @Test
+    fun testWhenProfileProducerProducesEmptyProfile() {
+        projectSetup.consumer.setup(
+            androidPlugin = ANDROID_LIBRARY_PLUGIN
+        )
+        projectSetup.producer.setupWithoutFlavors(
+            releaseProfileLines = listOf()
+        )
+        gradleRunner.buildAndAssertThatOutput("generateReleaseBaselineProfile") {
+            contains("No baseline profile rules were generated")
+        }
+    }
+
+    @Test
+    fun testVariantConfigurationOverrideForFlavors() {
+        projectSetup.producer.setupWithFreeAndPaidFlavors(
+            freeReleaseProfileLines = listOf(Fixtures.CLASS_1_METHOD_1, Fixtures.CLASS_1),
+            paidReleaseProfileLines = listOf(Fixtures.CLASS_2_METHOD_1, Fixtures.CLASS_2),
+        )
+        projectSetup.consumer.setup(
+            androidPlugin = ANDROID_LIBRARY_PLUGIN,
+            flavors = true,
+            baselineProfileBlock = """
+
+                // Global configuration
+                enableR8BaselineProfileRewrite = false
+                saveInSrc = true
+                automaticGenerationDuringBuild = false
+                baselineProfileOutputDir = "generated/baselineProfiles"
+                mergeIntoMain = true
+
+                // Per variant configuration overrides global configuration.
+                variants {
+                    free {
+                        enableR8BaselineProfileRewrite = true
+                        saveInSrc = false
+                        automaticGenerationDuringBuild = true
+                        baselineProfileOutputDir = "somefolder"
+                        mergeIntoMain = false
+                    }
+                    paidRelease {
+                        enableR8BaselineProfileRewrite = true
+                        saveInSrc = false
+                        automaticGenerationDuringBuild = true
+                        baselineProfileOutputDir = "someOtherfolder"
+                        mergeIntoMain = false
+                    }
                 }
+
+            """.trimIndent()
+        )
+
+        gradleRunner.buildAndAssertThatOutput(
+            "printBaselineProfileExtensionForVariantFreeRelease"
+        ) {
+            contains("enableR8BaselineProfileRewrite=`true`")
+            contains("saveInSrc=`false`")
+            contains("automaticGenerationDuringBuild=`true`")
+            contains("baselineProfileOutputDir=`somefolder`")
+            contains("mergeIntoMain=`false`")
+        }
+
+        gradleRunner.buildAndAssertThatOutput(
+            "printBaselineProfileExtensionForVariantPaidRelease"
+        ) {
+            contains("enableR8BaselineProfileRewrite=`true`")
+            contains("saveInSrc=`false`")
+            contains("automaticGenerationDuringBuild=`true`")
+            contains("baselineProfileOutputDir=`someOtherfolder`")
+            contains("mergeIntoMain=`false`")
+        }
+    }
+
+    @Test
+    fun testVariantConfigurationOverrideForBuildTypes() {
+        projectSetup.producer.setupWithFreeAndPaidFlavors(
+            freeReleaseProfileLines = listOf(Fixtures.CLASS_1_METHOD_1, Fixtures.CLASS_1),
+            paidReleaseProfileLines = listOf(Fixtures.CLASS_2_METHOD_1, Fixtures.CLASS_2),
+        )
+        projectSetup.consumer.setup(
+            androidPlugin = ANDROID_LIBRARY_PLUGIN,
+            flavors = true,
+            baselineProfileBlock = """
+
+                // Global configuration
+                enableR8BaselineProfileRewrite = false
+                saveInSrc = true
+                automaticGenerationDuringBuild = false
+                baselineProfileOutputDir = "generated/baselineProfiles"
+                mergeIntoMain = true
+
+                // Per variant configuration overrides global configuration.
+                variants {
+                    release {
+                        enableR8BaselineProfileRewrite = true
+                        saveInSrc = false
+                        automaticGenerationDuringBuild = true
+                        baselineProfileOutputDir = "myReleaseFolder"
+                        mergeIntoMain = false
+                    }
+                    paidRelease {
+                        enableR8BaselineProfileRewrite = true
+                        saveInSrc = false
+                        automaticGenerationDuringBuild = true
+                        baselineProfileOutputDir = "someOtherfolder"
+                        mergeIntoMain = false
+                    }
+                }
+
+            """.trimIndent()
+        )
+
+        gradleRunner.buildAndAssertThatOutput(
+            "printBaselineProfileExtensionForVariantFreeRelease"
+        ) {
+            contains("enableR8BaselineProfileRewrite=`true`")
+            contains("saveInSrc=`false`")
+            contains("automaticGenerationDuringBuild=`true`")
+            contains("baselineProfileOutputDir=`myReleaseFolder`")
+            contains("mergeIntoMain=`false`")
+        }
+
+        gradleRunner.buildAndAssertThatOutput(
+            "printBaselineProfileExtensionForVariantPaidRelease"
+        ) {
+            contains("enableR8BaselineProfileRewrite=`true`")
+            contains("saveInSrc=`false`")
+            contains("automaticGenerationDuringBuild=`true`")
+            contains("baselineProfileOutputDir=`someOtherfolder`")
+            contains("mergeIntoMain=`false`")
+        }
+    }
+
+    @Test
+    fun testVariantConfigurationOverrideForFlavorsAndBuildType() {
+        projectSetup.producer.setupWithFreeAndPaidFlavors(
+            freeReleaseProfileLines = listOf(Fixtures.CLASS_1_METHOD_1, Fixtures.CLASS_1),
+            paidReleaseProfileLines = listOf(Fixtures.CLASS_2_METHOD_1, Fixtures.CLASS_2),
+        )
+        projectSetup.consumer.setup(
+            androidPlugin = ANDROID_LIBRARY_PLUGIN,
+            flavors = true,
+            baselineProfileBlock = """
+                variants {
+                    free {
+                        saveInSrc = true
+                    }
+                    release {
+                        saveInSrc = false
+                    }
+                }
+
+            """.trimIndent()
+        )
+        gradleRunner
+            .withArguments("printBaselineProfileExtensionForVariantFreeRelease", "--stacktrace")
+            .buildAndFail()
+            .output
+            .let {
+                assertThat(it)
+                    .contains("The per-variant configuration for baseline profiles is ambiguous")
+            }
+    }
+
+    @Test
+    fun testVariantDependenciesWithFlavors() {
+        projectSetup.producer.setupWithFreeAndPaidFlavors(
+            freeReleaseProfileLines = listOf(Fixtures.CLASS_1_METHOD_1, Fixtures.CLASS_1),
+            paidReleaseProfileLines = listOf(Fixtures.CLASS_2_METHOD_1, Fixtures.CLASS_2),
+        )
+
+        // In this setup no dependency is being added through the dependency block.
+        // Instead dependencies are being added through per-variant configuration block.
+        projectSetup.consumer.setup(
+            androidPlugin = ANDROID_APPLICATION_PLUGIN,
+            flavors = true,
+            dependencyOnProducerProject = false,
+            baselineProfileBlock = """
+                variants {
+                    free {
+                        from(project(":${projectSetup.producer.name}"))
+                    }
+                    paid {
+                        from(project(":${projectSetup.producer.name}"))
+                    }
+                }
+
+            """.trimIndent()
+        )
+        gradleRunner
+            .withArguments("generateReleaseBaselineProfile", "--stacktrace")
+            .build()
+
+        assertThat(readBaselineProfileFileContent("freeRelease"))
+            .containsExactly(
+                Fixtures.CLASS_1,
+                Fixtures.CLASS_1_METHOD_1,
+            )
+        assertThat(readBaselineProfileFileContent("paidRelease"))
+            .containsExactly(
+                Fixtures.CLASS_2,
+                Fixtures.CLASS_2_METHOD_1,
+            )
+    }
+
+    @Test
+    fun testVariantDependenciesWithVariantsAndDirectConfiguration() {
+        projectSetup.producer.setupWithFreeAndPaidFlavors(
+            freeReleaseProfileLines = listOf(Fixtures.CLASS_1_METHOD_1, Fixtures.CLASS_1),
+            paidReleaseProfileLines = listOf(Fixtures.CLASS_2_METHOD_1, Fixtures.CLASS_2),
+        )
+
+        // In this setup no dependency is being added through the dependency block.
+        // Instead dependencies are being added through per-variant configuration block.
+        projectSetup.consumer.setup(
+            androidPlugin = ANDROID_APPLICATION_PLUGIN,
+            flavors = true,
+            dependencyOnProducerProject = false,
+            baselineProfileBlock = """
+                variants {
+                    freeRelease {
+                        from(project(":${projectSetup.producer.name}"))
+                    }
+                    paidRelease {
+                        from(project(":${projectSetup.producer.name}"), "freeRelease")
+                    }
+                }
+
+            """.trimIndent()
+        )
+        gradleRunner
+            .withArguments("generateReleaseBaselineProfile", "--stacktrace")
+            .build()
+
+        assertThat(readBaselineProfileFileContent("freeRelease"))
+            .containsExactly(
+                Fixtures.CLASS_1,
+                Fixtures.CLASS_1_METHOD_1,
+            )
+
+        // This output should be the same of free release
+        assertThat(readBaselineProfileFileContent("paidRelease"))
+            .containsExactly(
+                Fixtures.CLASS_1,
+                Fixtures.CLASS_1_METHOD_1,
+            )
+    }
+
+    @Test
+    fun testPartialResults() {
+        projectSetup.consumer.setup(
+            androidPlugin = ANDROID_APPLICATION_PLUGIN
+        )
+
+        // Function to setup the producer, run the generate profile command and assert output
+        val setupProducerGenerateAndAssert: (
+            Boolean,
+            Map<String, List<String>>,
+            List<String>
+        ) -> (Unit) = { partial, mapFileToProfile, finalProfileAssertList ->
+
+            projectSetup.producer.setup(
+                variantProfiles = listOf(
+                    VariantProfile(
+                        flavor = null,
+                        buildType = "release",
+                        profileFileLines = mapFileToProfile
+                    )
+                )
+            )
+
+            val args = mutableListOf("generateBaselineProfile")
+            if (partial) args.add("-Pandroid.testInstrumentationRunnerArguments.class=someClass")
+            projectSetup.consumer.gradleRunner.build(*args.toTypedArray()) { }
+
+            assertThat(readBaselineProfileFileContent("release"))
+                .containsExactly(*finalProfileAssertList.toTypedArray())
+        }
+
+        // Full generation, 2 new tests.
+        setupProducerGenerateAndAssert(
+            false,
+            mapOf(
+                "myTest1" to listOf(Fixtures.CLASS_1, Fixtures.CLASS_1_METHOD_1),
+                "myTest2" to listOf(Fixtures.CLASS_2, Fixtures.CLASS_2_METHOD_1)
+            ),
+            listOf(
+                Fixtures.CLASS_1,
+                Fixtures.CLASS_1_METHOD_1,
+                Fixtures.CLASS_2,
+                Fixtures.CLASS_2_METHOD_1
+            )
+        )
+
+        // Partial generation, modify 1 test.
+        setupProducerGenerateAndAssert(
+            true,
+            mapOf(
+                "myTest1" to listOf(Fixtures.CLASS_3, Fixtures.CLASS_3_METHOD_1)
+            ),
+            listOf(
+                Fixtures.CLASS_3,
+                Fixtures.CLASS_3_METHOD_1,
+                Fixtures.CLASS_2,
+                Fixtures.CLASS_2_METHOD_1
+            )
+        )
+
+        // Partial generation, add 1 test.
+        setupProducerGenerateAndAssert(
+            true,
+            mapOf(
+                "myTest3" to listOf(Fixtures.CLASS_4, Fixtures.CLASS_4_METHOD_1)
+            ),
+            listOf(
+                Fixtures.CLASS_3,
+                Fixtures.CLASS_3_METHOD_1,
+                Fixtures.CLASS_4,
+                Fixtures.CLASS_4_METHOD_1,
+                Fixtures.CLASS_2,
+                Fixtures.CLASS_2_METHOD_1
+            )
+        )
+
+        // Full generation, 2 new tests.
+        setupProducerGenerateAndAssert(
+            false,
+            mapOf(
+                "myTest1-new" to listOf(Fixtures.CLASS_1, Fixtures.CLASS_1_METHOD_1),
+                "myTest2-new" to listOf(Fixtures.CLASS_2, Fixtures.CLASS_2_METHOD_1)
+            ),
+            listOf(
+                Fixtures.CLASS_1,
+                Fixtures.CLASS_1_METHOD_1,
+                Fixtures.CLASS_2,
+                Fixtures.CLASS_2_METHOD_1
+            )
+        )
+    }
+
+    @Test
+    fun testBaselineProfileIsInMergeArtProfileIntermediate() {
+        projectSetup.consumer.setup(
+            androidPlugin = ANDROID_APPLICATION_PLUGIN,
+            flavors = true,
+            baselineProfileBlock = """
+                saveInSrc = true
+                automaticGenerationDuringBuild = true
+            """.trimIndent()
+        )
+
+        data class VariantAndProfile(val variantName: String, val profile: List<String>)
+
+        val freeRelease = VariantAndProfile(
+            variantName = "freeRelease",
+            profile = listOf(
+                Fixtures.CLASS_1,
+                Fixtures.CLASS_1_METHOD_1,
+                Fixtures.CLASS_1_METHOD_2,
+                Fixtures.CLASS_3,
+                Fixtures.CLASS_3_METHOD_1,
+            )
+        )
+        val paidRelease = VariantAndProfile(
+            variantName = "paidRelease",
+            profile = listOf(
+                Fixtures.CLASS_1,
+                Fixtures.CLASS_1_METHOD_1,
+                Fixtures.CLASS_1_METHOD_2,
+                Fixtures.CLASS_2,
+                Fixtures.CLASS_2_METHOD_1,
+                Fixtures.CLASS_2_METHOD_2,
+                Fixtures.CLASS_2_METHOD_3,
+            )
+        )
+        projectSetup.producer.setupWithFreeAndPaidFlavors(
+            freeReleaseProfileLines = freeRelease.profile,
+            paidReleaseProfileLines = paidRelease.profile,
+        )
+
+        gradleRunner
+            .build("mergeFreeReleaseArtProfile", "mergePaidReleaseArtProfile") {}
+
+        arrayOf(freeRelease, paidRelease).forEach {
+            val notFound = mergedArtProfile(it.variantName)
+                .readLines()
+                .require(*(it.profile).toTypedArray())
+            assertThat(notFound).isEmpty()
+        }
+    }
+}
+
+@RunWith(JUnit4::class)
+class BaselineProfileConsumerPluginTestWithAgp80 {
+
+    @get:Rule
+    val projectSetup = BaselineProfileProjectSetupRule(
+        forceAgpVersion = TEST_AGP_VERSION_8_0_0
+    )
+
+    @Test
+    fun verifyGenerateTasks() {
+        projectSetup.producer.setupWithFreeAndPaidFlavors(
+            freeReleaseProfileLines = listOf(Fixtures.CLASS_1_METHOD_1, Fixtures.CLASS_1),
+            paidReleaseProfileLines = listOf(Fixtures.CLASS_2_METHOD_1, Fixtures.CLASS_2),
+            freeAnotherReleaseProfileLines = listOf(Fixtures.CLASS_3_METHOD_1, Fixtures.CLASS_3),
+            paidAnotherReleaseProfileLines = listOf(Fixtures.CLASS_4_METHOD_1, Fixtures.CLASS_4),
+        )
+        projectSetup.consumer.setup(
+            androidPlugin = ANDROID_APPLICATION_PLUGIN,
+            dependencyOnProducerProject = true,
+            flavors = true,
+            buildTypeAnotherRelease = true
+        )
+        projectSetup.consumer.gradleRunner.build("tasks") {
+
+            val notFound = it.lines().require(
+                "generateBaselineProfile - ",
+                "generateReleaseBaselineProfile - ",
+                "generateAnotherReleaseBaselineProfile - ",
+                "generateFreeReleaseBaselineProfile - ",
+                "generatePaidReleaseBaselineProfile - ",
+                "generateFreeAnotherReleaseBaselineProfile - ",
+                "generatePaidAnotherReleaseBaselineProfile - ",
+            )
+            assertThat(notFound).isEmpty()
+
+            // Note that there are no flavor tasks with AGP 8.0 because it would build across
+            // multiple build types.
+            assertThat(it).apply {
+                doesNotContain("generateFreeBaselineProfile")
+                doesNotContain("generatePaidBaselineProfile")
             }
         }
 
-        """.trimIndent()
-        return this
-    }
+        val name = projectSetup.consumer.name
 
-    fun withProducedBaselineProfile(
-        lines: List<String>,
-        flavor: String = "",
-        buildType: String
-    ): MockProducerBuildGrade {
-        profileIndex++
-        content += """
-
-        def task$profileIndex = tasks.register('testProfile$profileIndex', TestProfileTask)
-        task$profileIndex.configure {
-            it.outputFile.set(project.layout.buildDirectory.file("test$profileIndex"))
-            it.fileContent.set(${"\"\"\"${lines.joinToString("\n")}\"\"\""})
-        }
-        artifacts {
-            add("${configurationName(flavor, buildType)}", task$profileIndex.map { it.outputFile })
+        // 'generateBaselineProfile` does the same of `generateReleaseBaselineProfile`.
+        arrayOf(
+            "generateBaselineProfile",
+            "generateReleaseBaselineProfile"
+        ).forEach { cmd ->
+            projectSetup.consumer.gradleRunner.build(cmd, "--dry-run") {
+                val notFound = it.lines().require(
+                    ":$name:copyFreeReleaseBaselineProfileIntoSrc",
+                    ":$name:copyPaidReleaseBaselineProfileIntoSrc",
+                )
+                assertThat(notFound).isEmpty()
+            }
         }
 
-        """.trimIndent()
-        return this
+        projectSetup.consumer.gradleRunner.build(
+            "generateAnotherReleaseBaselineProfile", "--dry-run"
+        ) {
+            val notFound = it.lines().require(
+                ":$name:copyFreeAnotherReleaseBaselineProfileIntoSrc",
+                ":$name:copyPaidAnotherReleaseBaselineProfileIntoSrc",
+            )
+            assertThat(notFound).isEmpty()
+        }
     }
-
-    fun build() = content
 }
 
-private fun configurationName(flavor: String, buildType: String): String =
-    camelCase(flavor, buildType, CONFIGURATION_NAME_BASELINE_PROFILES)
+@RunWith(JUnit4::class)
+class BaselineProfileConsumerPluginTestWithAgp81 {
 
-object Fixtures {
-    const val CLASS_1 = "Lcom/sample/Activity;"
-    const val CLASS_1_METHOD_1 = "HSPLcom/sample/Activity;-><init>()V"
-    const val CLASS_1_METHOD_2 = "HSPLcom/sample/Activity;->onCreate(Landroid/os/Bundle;)V"
-    const val CLASS_2 = "Lcom/sample/Utils;"
-    const val CLASS_2_METHOD_1 = "HSLcom/sample/Utils;-><init>()V"
-    const val CLASS_2_METHOD_2 = "HLcom/sample/Utils;->someMethod()V"
-    const val CLASS_2_METHOD_3 = "HLcom/sample/Utils;->someOtherMethod()V"
-    const val CLASS_2_METHOD_4 = "HSLcom/sample/Utils;->someOtherMethod()V"
-    const val CLASS_2_METHOD_5 = "HSPLcom/sample/Utils;->someOtherMethod()V"
+    @get:Rule
+    val projectSetup = BaselineProfileProjectSetupRule(
+        forceAgpVersion = TEST_AGP_VERSION_8_1_0
+    )
+
+    @Test
+    fun verifyGenerateTasks() {
+        projectSetup.producer.setupWithFreeAndPaidFlavors(
+            freeReleaseProfileLines = listOf(Fixtures.CLASS_1_METHOD_1, Fixtures.CLASS_1),
+            paidReleaseProfileLines = listOf(Fixtures.CLASS_2_METHOD_1, Fixtures.CLASS_2),
+            freeAnotherReleaseProfileLines = listOf(Fixtures.CLASS_3_METHOD_1, Fixtures.CLASS_3),
+            paidAnotherReleaseProfileLines = listOf(Fixtures.CLASS_4_METHOD_1, Fixtures.CLASS_4),
+        )
+        projectSetup.consumer.setup(
+            androidPlugin = ANDROID_APPLICATION_PLUGIN,
+            dependencyOnProducerProject = true,
+            flavors = true,
+            buildTypeAnotherRelease = true
+        )
+        projectSetup.consumer.gradleRunner.build("tasks") {
+            val notFound = it.lines().require(
+                "generateBaselineProfile - ",
+                "generateReleaseBaselineProfile - ",
+                "generateAnotherReleaseBaselineProfile - ",
+                "generateFreeBaselineProfile - ",
+                "generatePaidBaselineProfile - ",
+                "generateFreeReleaseBaselineProfile - ",
+                "generatePaidReleaseBaselineProfile - ",
+                "generateFreeAnotherReleaseBaselineProfile - ",
+                "generatePaidAnotherReleaseBaselineProfile - ",
+            )
+            assertThat(notFound).isEmpty()
+        }
+
+        val name = projectSetup.consumer.name
+
+        projectSetup.consumer.gradleRunner.build(
+            "generateBaselineProfile", "--dry-run"
+        ) {
+            val notFound = it.lines().require(
+                ":$name:copyFreeReleaseBaselineProfileIntoSrc",
+                ":$name:copyPaidReleaseBaselineProfileIntoSrc",
+                ":$name:copyFreeAnotherReleaseBaselineProfileIntoSrc",
+                ":$name:copyPaidAnotherReleaseBaselineProfileIntoSrc",
+            )
+            assertThat(notFound).isEmpty()
+        }
+
+        projectSetup.consumer.gradleRunner.build(
+            "generateReleaseBaselineProfile", "--dry-run"
+        ) {
+            val notFound = it.lines().require(
+                ":$name:copyFreeReleaseBaselineProfileIntoSrc",
+                ":$name:copyPaidReleaseBaselineProfileIntoSrc",
+            )
+            assertThat(notFound).isEmpty()
+        }
+
+        projectSetup.consumer.gradleRunner.build(
+            "generateAnotherReleaseBaselineProfile",
+            "--dry-run"
+        ) {
+            val notFound = it.lines().require(
+                ":$name:copyFreeAnotherReleaseBaselineProfileIntoSrc",
+                ":$name:copyPaidAnotherReleaseBaselineProfileIntoSrc",
+            )
+            assertThat(notFound).isEmpty()
+        }
+
+        projectSetup.consumer.gradleRunner.build(
+            "generateFreeBaselineProfile", "--dry-run"
+        ) {
+            val notFound = it.lines().require(
+                ":$name:copyFreeReleaseBaselineProfileIntoSrc",
+                ":$name:copyFreeAnotherReleaseBaselineProfileIntoSrc",
+            )
+            assertThat(notFound).isEmpty()
+        }
+
+        projectSetup.consumer.gradleRunner.build(
+            "generatePaidBaselineProfile", "--dry-run"
+        ) {
+            val notFound = it.lines().require(
+                ":$name:copyPaidReleaseBaselineProfileIntoSrc",
+                ":$name:copyPaidAnotherReleaseBaselineProfileIntoSrc",
+            )
+            assertThat(notFound).isEmpty()
+        }
+    }
+
+    @Test
+    fun verifyTasksWithAndroidTestPlugin() {
+        projectSetup.consumer.setup(
+            androidPlugin = ANDROID_APPLICATION_PLUGIN,
+            flavors = true,
+            baselineProfileBlock = """
+                saveInSrc = true
+                automaticGenerationDuringBuild = true
+            """.trimIndent(),
+            additionalGradleCodeBlock = """
+                androidComponents {
+                    onVariants(selector()) { variant ->
+                        tasks.register(variant.name + "BaselineProfileSrcSet", PrintTask) { t ->
+                            t.text.set(variant.sources.baselineProfiles.directories.toString())
+                        }
+                    }
+                }
+            """.trimIndent()
+        )
+        projectSetup.producer.setupWithFreeAndPaidFlavors(
+            freeReleaseProfileLines = listOf(Fixtures.CLASS_1_METHOD_1, Fixtures.CLASS_1),
+            paidReleaseProfileLines = listOf(Fixtures.CLASS_2_METHOD_1, Fixtures.CLASS_2),
+        )
+
+        // Asserts that running connected checks on a benchmark variants also triggers
+        // baseline profile generation (due to `automaticGenerationDuringBuild` true`).
+        projectSetup
+            .producer
+            .gradleRunner
+            .build("connectedFreeBenchmarkReleaseAndroidTest", "--dry-run") { text ->
+
+                val consumerName = projectSetup.consumer.name
+                val producerName = projectSetup.producer.name
+
+                val notFound = text.lines().requireInOrder(
+                    ":$consumerName:packageFreeNonMinifiedRelease",
+                    ":$producerName:connectedFreeNonMinifiedReleaseAndroidTest",
+                    ":$producerName:collectFreeNonMinifiedReleaseBaselineProfile",
+                    ":$consumerName:mergeFreeReleaseBaselineProfile",
+                    ":$consumerName:copyFreeReleaseBaselineProfileIntoSrc",
+                    ":$consumerName:mergeFreeBenchmarkReleaseArtProfile",
+                    ":$consumerName:compileFreeBenchmarkReleaseArtProfile",
+                    ":$consumerName:packageFreeBenchmarkRelease",
+                    ":$consumerName:createFreeBenchmarkReleaseApkListingFileRedirect",
+                    ":$producerName:connectedFreeBenchmarkReleaseAndroidTest"
+                )
+
+                assertThat(notFound).isEmpty()
+            }
+    }
 }

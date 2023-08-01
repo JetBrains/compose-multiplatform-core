@@ -136,9 +136,9 @@ package androidx.core.app {
     field public static final int MODE_IGNORED = 1; // 0x1
   }
 
-  public final class BundleCompat {
-    method public static android.os.IBinder? getBinder(android.os.Bundle, String?);
-    method public static void putBinder(android.os.Bundle, String?, android.os.IBinder?);
+  @Deprecated public final class BundleCompat {
+    method @Deprecated public static android.os.IBinder? getBinder(android.os.Bundle, String?);
+    method @Deprecated public static void putBinder(android.os.Bundle, String?, android.os.IBinder?);
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public class ComponentActivity extends android.app.Activity implements androidx.core.view.KeyEventDispatcher.Component androidx.lifecycle.LifecycleOwner {
@@ -324,6 +324,7 @@ package androidx.core.app {
     method @RequiresApi(19) public static boolean getUsesChronometer(android.app.Notification);
     method @androidx.core.app.NotificationCompat.NotificationVisibility public static int getVisibility(android.app.Notification);
     method public static boolean isGroupSummary(android.app.Notification);
+    method public static android.graphics.Bitmap? reduceLargeIconSize(android.content.Context, android.graphics.Bitmap?);
     field public static final int BADGE_ICON_LARGE = 2; // 0x2
     field public static final int BADGE_ICON_NONE = 0; // 0x0
     field public static final int BADGE_ICON_SMALL = 1; // 0x1
@@ -620,6 +621,7 @@ package androidx.core.app {
     method public androidx.core.app.NotificationCompat.Builder setGroupAlertBehavior(@androidx.core.app.NotificationCompat.GroupAlertBehavior int);
     method public androidx.core.app.NotificationCompat.Builder setGroupSummary(boolean);
     method public androidx.core.app.NotificationCompat.Builder setLargeIcon(android.graphics.Bitmap?);
+    method @RequiresApi(23) public androidx.core.app.NotificationCompat.Builder setLargeIcon(android.graphics.drawable.Icon?);
     method public androidx.core.app.NotificationCompat.Builder setLights(@ColorInt int, int, int);
     method public androidx.core.app.NotificationCompat.Builder setLocalOnly(boolean);
     method public androidx.core.app.NotificationCompat.Builder setLocusId(androidx.core.content.LocusIdCompat?);
@@ -790,6 +792,21 @@ package androidx.core.app {
     field @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) protected androidx.core.app.NotificationCompat.Builder! mBuilder;
   }
 
+  public static final class NotificationCompat.TvExtender implements androidx.core.app.NotificationCompat.Extender {
+    ctor public NotificationCompat.TvExtender();
+    ctor public NotificationCompat.TvExtender(android.app.Notification);
+    method public androidx.core.app.NotificationCompat.Builder extend(androidx.core.app.NotificationCompat.Builder);
+    method public String? getChannelId();
+    method public android.app.PendingIntent? getContentIntent();
+    method public android.app.PendingIntent? getDeleteIntent();
+    method public boolean isAvailableOnTv();
+    method public boolean isSuppressShowOverApps();
+    method public androidx.core.app.NotificationCompat.TvExtender setChannelId(String?);
+    method public androidx.core.app.NotificationCompat.TvExtender setContentIntent(android.app.PendingIntent?);
+    method public androidx.core.app.NotificationCompat.TvExtender setDeleteIntent(android.app.PendingIntent?);
+    method public androidx.core.app.NotificationCompat.TvExtender setSuppressShowOverApps(boolean);
+  }
+
   public static final class NotificationCompat.WearableExtender implements androidx.core.app.NotificationCompat.Extender {
     ctor public NotificationCompat.WearableExtender();
     ctor public NotificationCompat.WearableExtender(android.app.Notification);
@@ -885,6 +902,8 @@ package androidx.core.app {
     method public void deleteNotificationChannelGroup(String);
     method public void deleteUnlistedNotificationChannels(java.util.Collection<java.lang.String!>);
     method public static androidx.core.app.NotificationManagerCompat from(android.content.Context);
+    method public java.util.List<android.service.notification.StatusBarNotification!> getActiveNotifications();
+    method @androidx.core.app.NotificationManagerCompat.InterruptionFilter public int getCurrentInterruptionFilter();
     method public static java.util.Set<java.lang.String!> getEnabledListenerPackages(android.content.Context);
     method public int getImportance();
     method public android.app.NotificationChannel? getNotificationChannel(String);
@@ -909,6 +928,14 @@ package androidx.core.app {
     field public static final int IMPORTANCE_MIN = 1; // 0x1
     field public static final int IMPORTANCE_NONE = 0; // 0x0
     field public static final int IMPORTANCE_UNSPECIFIED = -1000; // 0xfffffc18
+    field public static final int INTERRUPTION_FILTER_ALARMS = 4; // 0x4
+    field public static final int INTERRUPTION_FILTER_ALL = 1; // 0x1
+    field public static final int INTERRUPTION_FILTER_NONE = 3; // 0x3
+    field public static final int INTERRUPTION_FILTER_PRIORITY = 2; // 0x2
+    field public static final int INTERRUPTION_FILTER_UNKNOWN = 0; // 0x0
+  }
+
+  @IntDef({androidx.core.app.NotificationManagerCompat.INTERRUPTION_FILTER_UNKNOWN, androidx.core.app.NotificationManagerCompat.INTERRUPTION_FILTER_ALL, androidx.core.app.NotificationManagerCompat.INTERRUPTION_FILTER_PRIORITY, androidx.core.app.NotificationManagerCompat.INTERRUPTION_FILTER_NONE, androidx.core.app.NotificationManagerCompat.INTERRUPTION_FILTER_ALARMS}) @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.SOURCE) public static @interface NotificationManagerCompat.InterruptionFilter {
   }
 
   public static class NotificationManagerCompat.NotificationWithIdAndTag {
@@ -936,7 +963,7 @@ package androidx.core.app {
     method public static android.app.PendingIntent getActivities(android.content.Context, int, android.content.Intent![], int, boolean);
     method public static android.app.PendingIntent getActivity(android.content.Context, int, android.content.Intent, int, boolean);
     method public static android.app.PendingIntent getActivity(android.content.Context, int, android.content.Intent, int, android.os.Bundle, boolean);
-    method public static android.app.PendingIntent getBroadcast(android.content.Context, int, android.content.Intent, int, boolean);
+    method public static android.app.PendingIntent? getBroadcast(android.content.Context, int, android.content.Intent, int, boolean);
     method @RequiresApi(26) public static android.app.PendingIntent getForegroundService(android.content.Context, int, android.content.Intent, int, boolean);
     method public static android.app.PendingIntent getService(android.content.Context, int, android.content.Intent, int, boolean);
   }
@@ -1194,6 +1221,7 @@ package androidx.core.content {
     ctor protected FileProvider(@XmlRes int);
     method public int delete(android.net.Uri, String?, String![]?);
     method public String? getType(android.net.Uri);
+    method public String? getTypeAnonymous(android.net.Uri);
     method public static android.net.Uri! getUriForFile(android.content.Context, String, java.io.File);
     method public static android.net.Uri getUriForFile(android.content.Context, String, java.io.File, String);
     method public android.net.Uri! insert(android.net.Uri, android.content.ContentValues);
@@ -1469,6 +1497,11 @@ package androidx.core.content.pm {
 
 package androidx.core.content.res {
 
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP) public class CamColor {
+    method public static void getM3HCTfromColor(@ColorInt int, float[]);
+    method public static int toColor(@FloatRange(from=0.0, to=360.0) float, @FloatRange(from=0.0, to=java.lang.Double.POSITIVE_INFINITY, toInclusive=false) float, @FloatRange(from=0.0, to=100.0) float);
+  }
+
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class ColorStateListInflaterCompat {
     method public static android.content.res.ColorStateList createFromXml(android.content.res.Resources, org.xmlpull.v1.XmlPullParser, android.content.res.Resources.Theme?) throws java.io.IOException, org.xmlpull.v1.XmlPullParserException;
     method public static android.content.res.ColorStateList createFromXmlInner(android.content.res.Resources, org.xmlpull.v1.XmlPullParser, android.util.AttributeSet, android.content.res.Resources.Theme?) throws java.io.IOException, org.xmlpull.v1.XmlPullParserException;
@@ -1646,6 +1679,7 @@ package androidx.core.graphics {
     method @ColorInt public static int HSLToColor(float[]);
     method @ColorInt public static int LABToColor(@FloatRange(from=0.0f, to=100) double, @FloatRange(from=0xffffff80, to=127) double, @FloatRange(from=0xffffff80, to=127) double);
     method public static void LABToXYZ(@FloatRange(from=0.0f, to=100) double, @FloatRange(from=0xffffff80, to=127) double, @FloatRange(from=0xffffff80, to=127) double, double[]);
+    method @ColorInt public static int M3HCTtoColor(float, float, float);
     method public static void RGBToHSL(@IntRange(from=0, to=255) int, @IntRange(from=0, to=255) int, @IntRange(from=0, to=255) int, float[]);
     method public static void RGBToLAB(@IntRange(from=0, to=255) int, @IntRange(from=0, to=255) int, @IntRange(from=0, to=255) int, double[]);
     method public static void RGBToXYZ(@IntRange(from=0, to=255) int, @IntRange(from=0, to=255) int, @IntRange(from=0, to=255) int, double[]);
@@ -1659,6 +1693,7 @@ package androidx.core.graphics {
     method public static int calculateMinimumAlpha(@ColorInt int, @ColorInt int, float);
     method public static void colorToHSL(@ColorInt int, float[]);
     method public static void colorToLAB(@ColorInt int, double[]);
+    method public static void colorToM3HCT(@ColorInt int, float[]);
     method public static void colorToXYZ(@ColorInt int, double[]);
     method public static int compositeColors(@ColorInt int, @ColorInt int);
     method @RequiresApi(26) public static android.graphics.Color compositeColors(android.graphics.Color, android.graphics.Color);
@@ -2159,10 +2194,12 @@ package androidx.core.os {
   }
 
   public final class BundleCompat {
+    method public static android.os.IBinder? getBinder(android.os.Bundle, String?);
     method public static <T> T? getParcelable(android.os.Bundle, String?, Class<T!>);
     method public static android.os.Parcelable![]? getParcelableArray(android.os.Bundle, String?, Class<? extends android.os.Parcelable>);
     method public static <T> java.util.ArrayList<T!>? getParcelableArrayList(android.os.Bundle, String?, Class<? extends T>);
     method public static <T> android.util.SparseArray<T!>? getSparseParcelableArray(android.os.Bundle, String?, Class<? extends T>);
+    method public static void putBinder(android.os.Bundle, String?, android.os.IBinder?);
   }
 
   public final class CancellationSignal {
@@ -3122,6 +3159,12 @@ package androidx.core.view {
     method public int computeVerticalScrollExtent();
     method public int computeVerticalScrollOffset();
     method public int computeVerticalScrollRange();
+  }
+
+  public final class SoftwareKeyboardControllerCompat {
+    ctor public SoftwareKeyboardControllerCompat(android.view.View);
+    method public void hide();
+    method public void show();
   }
 
   public interface TintableBackgroundView {

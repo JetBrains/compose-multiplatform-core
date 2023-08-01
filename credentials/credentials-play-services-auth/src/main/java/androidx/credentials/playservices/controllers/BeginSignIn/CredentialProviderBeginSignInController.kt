@@ -228,7 +228,7 @@ class CredentialProviderBeginSignInController(private val activity: Activity) :
         }
 
         if (response.profilePictureUri != null) {
-            cred.setProfilePictureUri(response.profilePictureUri.toString())
+            cred.setProfilePictureUri(response.profilePictureUri)
         }
 
         return cred.build()
@@ -237,6 +237,7 @@ class CredentialProviderBeginSignInController(private val activity: Activity) :
     companion object {
         private val TAG = CredentialProviderBeginSignInController::class.java.name
         private var controller: CredentialProviderBeginSignInController? = null
+        // TODO(b/262924507) : Test multiple calls (re-instantiation validates but just in case)
 
         /**
          * This finds a past version of the [CredentialProviderBeginSignInController] if it exists,

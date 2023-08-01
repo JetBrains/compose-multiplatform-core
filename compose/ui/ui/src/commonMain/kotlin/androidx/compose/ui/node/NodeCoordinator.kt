@@ -36,13 +36,12 @@ import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.layout.AlignmentLine
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.LookaheadLayoutCoordinatesImpl
-import androidx.compose.ui.layout.LookaheadScope
 import androidx.compose.ui.layout.Measurable
 import androidx.compose.ui.layout.MeasureResult
 import androidx.compose.ui.layout.Placeable
 import androidx.compose.ui.layout.findRootCoordinates
 import androidx.compose.ui.layout.positionInRoot
-import androidx.compose.ui.semantics.outerSemantics
+import androidx.compose.ui.semantics.collapsedSemantics
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntOffset
@@ -109,7 +108,7 @@ internal abstract class NodeCoordinator(
 
     inline fun <reified T> visitNodes(type: NodeKind<T>, block: (T) -> Unit) {
         visitNodes(type.mask, type.includeSelfInTraversal) {
-            if (it is T) block(it)
+            it.dispatchForKind(type, block)
         }
     }
 
@@ -117,16 +116,8 @@ internal abstract class NodeCoordinator(
         return headNode(type.includeSelfInTraversal)?.has(type) == true
     }
 
-    inline fun <reified T> head(type: NodeKind<T>): T? {
-        visitNodes(type.mask, type.includeSelfInTraversal) { return it as? T }
-        return null
-    }
-
-    fun <T> headUnchecked(type: NodeKind<T>): T? {
-        visitNodes(type.mask, type.includeSelfInTraversal) {
-            @Suppress("UNCHECKED_CAST")
-            return it as T
-        }
+    fun head(type: NodeKind<*>): Modifier.Node? {
+        visitNodes(type.mask, type.includeSelfInTraversal) { return it }
         return null
     }
 
@@ -187,31 +178,12 @@ internal abstract class NodeCoordinator(
             }
         }
 
-    internal var lookaheadDelegate: LookaheadDelegate? = null
-        private set
+    abstract var lookaheadDelegate: LookaheadDelegate?
+        protected set
 
     private var oldAlignmentLines: MutableMap<AlignmentLine, Int>? = null
 
-    /**
-     * Creates a new lookaheadDelegate instance when the scope changes. If the provided scope is
-     * null, it means the lookahead root does not exit (or no longer exists), set
-     * the [lookaheadDelegate] to null.
-     */
-    internal fun updateLookaheadScope(scope: LookaheadScope?) {
-        lookaheadDelegate = scope?.let {
-            if (it != lookaheadDelegate?.lookaheadScope) {
-                createLookaheadDelegate(it)
-            } else {
-                lookaheadDelegate
-            }
-        }
-    }
-
-    protected fun updateLookaheadDelegate(lookaheadDelegate: LookaheadDelegate) {
-        this.lookaheadDelegate = lookaheadDelegate
-    }
-
-    abstract fun createLookaheadDelegate(scope: LookaheadScope): LookaheadDelegate
+    abstract fun ensureLookaheadDelegateCreated()
 
     override val providedAlignmentLines: Set<AlignmentLine>
         get() {
@@ -241,12 +213,12 @@ internal abstract class NodeCoordinator(
         } else {
             wrappedBy?.invalidateLayer()
         }
-        layoutNode.owner?.onLayoutChange(layoutNode)
         measuredSize = IntSize(width, height)
-        graphicsLayerScope.size = measuredSize.toSize()
+        updateLayerParameters(invokeOnLayoutChange = false)
         visitNodes(Nodes.Draw) {
             it.onMeasureResultChanged()
         }
+        layoutNode.owner?.onLayoutChange(layoutNode)
     }
 
     override var position: IntOffset = IntOffset.Zero
@@ -262,10 +234,12 @@ internal abstract class NodeCoordinator(
             if (layoutNode.nodes.has(Nodes.ParentData)) {
                 with(layoutNode.density) {
                     layoutNode.nodes.tailToHead {
-                        if (it === thisNode) return@tailToHead
-                        if (it.isKind(Nodes.ParentData) && it is ParentDataModifierNode) {
-                            data = with(it) { modifyParentData(data) }
+                        if (it.isKind(Nodes.ParentData)) {
+                            it.dispatchForKind(Nodes.ParentData) {
+                                data = with(it) { modifyParentData(data) }
+                            }
                         }
+                        if (it === thisNode) return@tailToHead
                     }
                 }
             }
@@ -301,12 +275,10 @@ internal abstract class NodeCoordinator(
 
     protected inline fun performingMeasure(
         constraints: Constraints,
-        block: () -> Placeable
+        crossinline block: () -> Placeable
     ): Placeable {
         measurementConstraints = constraints
-        val result = block()
-        layer?.resize(measuredSize)
-        return result
+        return block()
     }
 
     fun onMeasured() {
@@ -328,7 +300,7 @@ internal abstract class NodeCoordinator(
         zIndex: Float,
         layerBlock: (GraphicsLayerScope.() -> Unit)?
     ) {
-        onLayerBlockUpdated(layerBlock)
+        updateLayerBlock(layerBlock)
         if (this.position != position) {
             this.position = position
             layoutNode.layoutDelegate.measurePassDelegate
@@ -377,12 +349,6 @@ internal abstract class NodeCoordinator(
 
     @OptIn(ExperimentalComposeUiApi::class)
     fun onPlaced() {
-        val lookahead = lookaheadDelegate
-        if (lookahead != null) {
-            visitNodes(Nodes.LayoutAware) {
-                it.onLookaheadPlaced(lookahead.lookaheadLayoutCoordinates)
-            }
-        }
         visitNodes(Nodes.LayoutAware) {
             it.onPlaced(this)
         }
@@ -406,20 +372,11 @@ internal abstract class NodeCoordinator(
 
     fun updateLayerBlock(
         layerBlock: (GraphicsLayerScope.() -> Unit)?,
-        forceLayerInvalidated: Boolean = false
+        forceUpdateLayerParameters: Boolean = false
     ) {
-        val layerInvalidated = this.layerBlock !== layerBlock || forceLayerInvalidated
-        this.layerBlock = layerBlock
-        onLayerBlockUpdated(layerBlock, forceLayerInvalidated = layerInvalidated)
-    }
-
-    private fun onLayerBlockUpdated(
-        layerBlock: (GraphicsLayerScope.() -> Unit)?,
-        forceLayerInvalidated: Boolean = false
-    ) {
-        val layerInvalidated = this.layerBlock !== layerBlock || layerDensity != layoutNode
+        val updateParameters = this.layerBlock !== layerBlock || layerDensity != layoutNode
             .density || layerLayoutDirection != layoutNode.layoutDirection ||
-            forceLayerInvalidated
+            forceUpdateLayerParameters
         this.layerBlock = layerBlock
         this.layerDensity = layoutNode.density
         this.layerLayoutDirection = layoutNode.layoutDirection
@@ -436,7 +393,7 @@ internal abstract class NodeCoordinator(
                 updateLayerParameters()
                 layoutNode.innerLayerCoordinatorIsDirty = true
                 invalidateParentLayer()
-            } else if (layerInvalidated) {
+            } else if (updateParameters) {
                 updateLayerParameters()
             }
         } else {
@@ -453,7 +410,7 @@ internal abstract class NodeCoordinator(
         }
     }
 
-    private fun updateLayerParameters() {
+    private fun updateLayerParameters(invokeOnLayoutChange: Boolean = true) {
         val layer = layer
         if (layer != null) {
             val layerBlock = requireNotNull(layerBlock)
@@ -488,11 +445,13 @@ internal abstract class NodeCoordinator(
                 density = layoutNode.density
             )
             isClipping = graphicsLayerScope.clip
+            lastLayerAlpha = graphicsLayerScope.alpha
+            if (invokeOnLayoutChange) {
+                layoutNode.owner?.onLayoutChange(layoutNode)
+            }
         } else {
             require(layerBlock == null)
         }
-        lastLayerAlpha = graphicsLayerScope.alpha
-        layoutNode.owner?.onLayoutChange(layoutNode)
     }
 
     private val invalidateParentLayer: () -> Unit = {
@@ -529,14 +488,14 @@ internal abstract class NodeCoordinator(
      * This can only be `false` when [isTouchEvent] is `true` or else a layer miss means the event
      * will be clipped out.
      */
-    fun <T : DelegatableNode> hitTest(
-        hitTestSource: HitTestSource<T>,
+    fun hitTest(
+        hitTestSource: HitTestSource,
         pointerPosition: Offset,
-        hitTestResult: HitTestResult<T>,
+        hitTestResult: HitTestResult,
         isTouchEvent: Boolean,
         isInLayer: Boolean
     ) {
-        val head = headUnchecked(hitTestSource.entityType())
+        val head = head(hitTestSource.entityType())
         if (!withinLayerBounds(pointerPosition)) {
             // This missed the clip, but if this layout is too small and this is within the
             // minimum touch target, we still consider it a hit.
@@ -601,10 +560,10 @@ internal abstract class NodeCoordinator(
      * The [NodeCoordinator] had a hit in bounds and can record any children in the
      * [hitTestResult].
      */
-    private fun <T : DelegatableNode> T?.hit(
-        hitTestSource: HitTestSource<T>,
+    private fun Modifier.Node?.hit(
+        hitTestSource: HitTestSource,
         pointerPosition: Offset,
-        hitTestResult: HitTestResult<T>,
+        hitTestResult: HitTestResult,
         isTouchEvent: Boolean,
         isInLayer: Boolean
     ) {
@@ -612,7 +571,7 @@ internal abstract class NodeCoordinator(
             hitTestChild(hitTestSource, pointerPosition, hitTestResult, isTouchEvent, isInLayer)
         } else {
             hitTestResult.hit(this, isInLayer) {
-                nextUncheckedUntil(hitTestSource.entityType(), Nodes.Layout)
+                nextUntil(hitTestSource.entityType(), Nodes.Layout)
                     .hit(hitTestSource, pointerPosition, hitTestResult, isTouchEvent, isInLayer)
             }
         }
@@ -622,10 +581,10 @@ internal abstract class NodeCoordinator(
      * The [NodeCoordinator] had a hit [distanceFromEdge] from the bounds and it is within
      * the minimum touch target distance, so it should be recorded as such in the [hitTestResult].
      */
-    private fun <T : DelegatableNode> T?.hitNear(
-        hitTestSource: HitTestSource<T>,
+    private fun Modifier.Node?.hitNear(
+        hitTestSource: HitTestSource,
         pointerPosition: Offset,
-        hitTestResult: HitTestResult<T>,
+        hitTestResult: HitTestResult,
         isTouchEvent: Boolean,
         isInLayer: Boolean,
         distanceFromEdge: Float
@@ -639,7 +598,7 @@ internal abstract class NodeCoordinator(
                 distanceFromEdge,
                 isInLayer
             ) {
-                nextUncheckedUntil(hitTestSource.entityType(), Nodes.Layout).hitNear(
+                nextUntil(hitTestSource.entityType(), Nodes.Layout).hitNear(
                     hitTestSource,
                     pointerPosition,
                     hitTestResult,
@@ -655,10 +614,10 @@ internal abstract class NodeCoordinator(
      * The [NodeCoordinator] had a miss, but it hasn't been clipped out. The child must be
      * checked to see if it hit.
      */
-    private fun <T : DelegatableNode> T?.speculativeHit(
-        hitTestSource: HitTestSource<T>,
+    private fun Modifier.Node?.speculativeHit(
+        hitTestSource: HitTestSource,
         pointerPosition: Offset,
-        hitTestResult: HitTestResult<T>,
+        hitTestResult: HitTestResult,
         isTouchEvent: Boolean,
         isInLayer: Boolean,
         distanceFromEdge: Float
@@ -673,7 +632,7 @@ internal abstract class NodeCoordinator(
                 distanceFromEdge,
                 isInLayer
             ) {
-                nextUncheckedUntil(hitTestSource.entityType(), Nodes.Layout).speculativeHit(
+                nextUntil(hitTestSource.entityType(), Nodes.Layout).speculativeHit(
                     hitTestSource,
                     pointerPosition,
                     hitTestResult,
@@ -683,7 +642,7 @@ internal abstract class NodeCoordinator(
                 )
             }
         } else {
-            nextUncheckedUntil(hitTestSource.entityType(), Nodes.Layout).speculativeHit(
+            nextUntil(hitTestSource.entityType(), Nodes.Layout).speculativeHit(
                 hitTestSource,
                 pointerPosition,
                 hitTestResult,
@@ -697,10 +656,10 @@ internal abstract class NodeCoordinator(
     /**
      * Do a [hitTest] on the children of this [NodeCoordinator].
      */
-    open fun <T : DelegatableNode> hitTestChild(
-        hitTestSource: HitTestSource<T>,
+    open fun hitTestChild(
+        hitTestSource: HitTestSource,
         pointerPosition: Offset,
-        hitTestResult: HitTestResult<T>,
+        hitTestResult: HitTestResult,
         isTouchEvent: Boolean,
         isInLayer: Boolean
     ) {
@@ -773,6 +732,10 @@ internal abstract class NodeCoordinator(
         sourceCoordinates: LayoutCoordinates,
         relativeToSource: Offset
     ): Offset {
+        if (sourceCoordinates is LookaheadLayoutCoordinatesImpl) {
+            return -sourceCoordinates.localPositionOf(this, -relativeToSource)
+        }
+
         val nodeCoordinator = sourceCoordinates.toCoordinator()
         val commonAncestor = findCommonAncestor(nodeCoordinator)
 
@@ -932,7 +895,10 @@ internal abstract class NodeCoordinator(
      * attached to the [Owner].
      */
     fun onLayoutNodeAttach() {
-        onLayerBlockUpdated(layerBlock)
+        // this call will update the parameters of the layer (alpha, scale, etc)
+        updateLayerBlock(layerBlock, forceUpdateLayerParameters = true)
+        // this call will invalidate the content of the layer
+        layer?.invalidate()
     }
 
     /**
@@ -942,7 +908,7 @@ internal abstract class NodeCoordinator(
     fun onRelease() {
         released = true
         if (layer != null) {
-            onLayerBlockUpdated(null)
+            updateLayerBlock(null)
         }
     }
 
@@ -1164,17 +1130,17 @@ internal abstract class NodeCoordinator(
      * used in their implementations are different. This extracts the differences between the
      * two methods into a single interface.
      */
-    internal interface HitTestSource<N : DelegatableNode> {
+    internal interface HitTestSource {
         /**
          * Returns the [NodeKind] for the hit test target.
          */
-        fun entityType(): NodeKind<N>
+        fun entityType(): NodeKind<*>
 
         /**
          * Pointer input hit tests can intercept child hits when enabled. This returns `true`
          * if the modifier has requested intercepting.
          */
-        fun interceptOutOfBoundsChildEvents(node: N): Boolean
+        fun interceptOutOfBoundsChildEvents(node: Modifier.Node): Boolean
 
         /**
          * Returns false if the parent layout node has a state that suppresses
@@ -1188,7 +1154,7 @@ internal abstract class NodeCoordinator(
         fun childHitTest(
             layoutNode: LayoutNode,
             pointerPosition: Offset,
-            hitTestResult: HitTestResult<N>,
+            hitTestResult: HitTestResult,
             isTouchEvent: Boolean,
             isInLayer: Boolean
         )
@@ -1238,18 +1204,22 @@ internal abstract class NodeCoordinator(
          */
         @OptIn(ExperimentalComposeUiApi::class)
         val PointerInputSource =
-            object : HitTestSource<PointerInputModifierNode> {
+            object : HitTestSource {
                 override fun entityType() = Nodes.PointerInput
 
-                override fun interceptOutOfBoundsChildEvents(node: PointerInputModifierNode) =
-                    node.interceptOutOfBoundsChildEvents()
+                override fun interceptOutOfBoundsChildEvents(node: Modifier.Node): Boolean {
+                    node.dispatchForKind(Nodes.PointerInput) {
+                        if (it.interceptOutOfBoundsChildEvents()) return true
+                    }
+                    return false
+                }
 
                 override fun shouldHitTestChildren(parentLayoutNode: LayoutNode) = true
 
                 override fun childHitTest(
                     layoutNode: LayoutNode,
                     pointerPosition: Offset,
-                    hitTestResult: HitTestResult<PointerInputModifierNode>,
+                    hitTestResult: HitTestResult,
                     isTouchEvent: Boolean,
                     isInLayer: Boolean
                 ) = layoutNode.hitTest(pointerPosition, hitTestResult, isTouchEvent, isInLayer)
@@ -1259,19 +1229,18 @@ internal abstract class NodeCoordinator(
          * Hit testing specifics for semantics.
          */
         val SemanticsSource =
-            object : HitTestSource<SemanticsModifierNode> {
+            object : HitTestSource {
                 override fun entityType() = Nodes.Semantics
 
-                override fun interceptOutOfBoundsChildEvents(node: SemanticsModifierNode) = false
+                override fun interceptOutOfBoundsChildEvents(node: Modifier.Node) = false
 
                 override fun shouldHitTestChildren(parentLayoutNode: LayoutNode) =
-                    parentLayoutNode.outerSemantics?.collapsedSemanticsConfiguration()
-                        ?.isClearingSemantics != true
+                    parentLayoutNode.collapsedSemantics?.isClearingSemantics != true
 
                 override fun childHitTest(
                     layoutNode: LayoutNode,
                     pointerPosition: Offset,
-                    hitTestResult: HitTestResult<SemanticsModifierNode>,
+                    hitTestResult: HitTestResult,
                     isTouchEvent: Boolean,
                     isInLayer: Boolean
                 ) = layoutNode.hitTestSemantics(
@@ -1336,7 +1305,10 @@ private class LayerPositionalProperties {
     }
 }
 
-private fun <T> DelegatableNode.nextUncheckedUntil(type: NodeKind<T>, stopType: NodeKind<*>): T? {
+private fun DelegatableNode.nextUntil(
+    type: NodeKind<*>,
+    stopType: NodeKind<*>
+): Modifier.Node? {
     val child = node.child ?: return null
     if (child.aggregateChildKindSet and type.mask == 0) return null
     var next: Modifier.Node? = child
@@ -1344,8 +1316,7 @@ private fun <T> DelegatableNode.nextUncheckedUntil(type: NodeKind<T>, stopType: 
         val kindSet = next.kindSet
         if (kindSet and stopType.mask != 0) return null
         if (kindSet and type.mask != 0) {
-            @Suppress("UNCHECKED_CAST")
-            return next as? T
+            return next
         }
         next = next.child
     }

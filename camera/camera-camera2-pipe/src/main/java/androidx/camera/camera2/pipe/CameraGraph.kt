@@ -135,7 +135,22 @@ interface CameraGraph : AutoCloseable {
     data class Flags(
         val configureBlankSessionOnStop: Boolean = false,
         val abortCapturesOnStop: Boolean = false,
-        val allowMultipleActiveCameras: Boolean = false
+        val allowMultipleActiveCameras: Boolean = false,
+
+        /**
+         * A quirk that waits for the last repeating capture request to start before stopping the
+         * current capture session. Please refer to the bugs linked here, or
+         * [androidx.camera.camera2.pipe.compat.Camera2Quirks.shouldWaitForRepeatingRequest] for
+         * more information.
+         *
+         * This flag provides the overrides for you to override the default behavior (CameraPipe
+         * would turn on/off the quirk automatically based on device information).
+         *
+         * - Bug(s): b/146773463, b/267557892
+         * - Device(s): Camera devices on hardware level LEGACY
+         * - API levels: All
+         */
+        val quirkWaitForRepeatingRequestOnDisconnect: Boolean? = null,
     )
 
     enum class OperatingMode {
@@ -297,13 +312,20 @@ interface CameraGraph : AutoCloseable {
          * that component, i.e. if it was locked earlier it will stay locked and if it was already
          * unlocked, it will stay unlocked.
          *
+         * @param frameLimit the maximum number of frames to wait before we give up waiting for this
+         *   operation to complete.
+         * @param timeLimitNs the maximum time limit in ms we wait before we give up waiting for
+         *   this operation to complete.
+         *
          * @return [Result3A], which will contain the latest frame number at which the auto-focus,
          *   auto-exposure, auto-white balance were unlocked as per the method arguments.
          */
         suspend fun unlock3A(
             ae: Boolean? = null,
             af: Boolean? = null,
-            awb: Boolean? = null
+            awb: Boolean? = null,
+            frameLimit: Int = DEFAULT_FRAME_LIMIT,
+            timeLimitNs: Long = DEFAULT_TIME_LIMIT_NS
         ): Deferred<Result3A>
 
         /**
@@ -373,5 +395,8 @@ abstract class GraphState internal constructor() {
      * will retry opening the camera (and creating a capture session).
      */
     class GraphStateError(val cameraError: CameraError, val willAttemptRetry: Boolean) :
-        GraphState()
+        GraphState() {
+        override fun toString(): String =
+            super.toString() + "(cameraError = $cameraError, willAttemptRetry = $willAttemptRetry)"
+    }
 }

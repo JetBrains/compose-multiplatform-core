@@ -95,7 +95,7 @@ class EmojiViewTest {
         dumpAndAssertAgainstGolden("multiple_draw")
     }
 
-    @Ignore // b/271085711
+    @Ignore
     @Test
     fun testClear() {
         setAndWait(GRINNING_FACE)

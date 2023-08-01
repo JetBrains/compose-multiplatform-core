@@ -48,9 +48,12 @@ import androidx.camera.core.impl.SessionConfig;
 import androidx.camera.core.impl.StreamSpec;
 import androidx.camera.core.impl.UseCaseConfig;
 import androidx.camera.core.impl.UseCaseConfigFactory;
+import androidx.camera.core.impl.utils.futures.Futures;
 import androidx.camera.core.processing.DefaultSurfaceProcessor;
 import androidx.camera.core.processing.SurfaceEdge;
 import androidx.camera.core.processing.SurfaceProcessorNode;
+
+import com.google.common.util.concurrent.ListenableFuture;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -97,12 +100,17 @@ public class StreamSharing extends UseCase {
     public StreamSharing(@NonNull CameraInternal parentCamera,
             @NonNull Set<UseCase> children,
             @NonNull UseCaseConfigFactory useCaseConfigFactory) {
-        this(new VirtualCamera(parentCamera, children, useCaseConfigFactory));
-    }
-
-    StreamSharing(@NonNull VirtualCamera virtualCamera) {
         super(DEFAULT_CONFIG);
-        mVirtualCamera = virtualCamera;
+        mVirtualCamera = new VirtualCamera(parentCamera, children, useCaseConfigFactory,
+                () -> {
+                    SurfaceProcessorNode sharingNode = mSharingNode;
+                    if (sharingNode != null) {
+                        return sharingNode.getSurfaceProcessor().snapshot();
+                    } else {
+                        return Futures.immediateFailedFuture(new Exception(
+                                "Failed to take picture: pipeline is not ready."));
+                    }
+                });
     }
 
     @Nullable
@@ -223,7 +231,8 @@ public class StreamSharing extends UseCase {
         mVirtualCamera.setChildrenEdges(outputEdges);
 
         // Send the camera edge Surface to the camera2.
-        SessionConfig.Builder builder = SessionConfig.Builder.createFrom(config);
+        SessionConfig.Builder builder = SessionConfig.Builder.createFrom(config,
+                streamSpec.getResolution());
         builder.addSurface(mCameraEdge.getDeferrableSurface());
         builder.addRepeatingCameraCaptureCallback(mVirtualCamera.getParentMetadataCallback());
         addCameraErrorListener(builder, cameraId, config, streamSpec);
@@ -292,6 +301,18 @@ public class StreamSharing extends UseCase {
             return getViewPortCropRect();
         }
         return new Rect(0, 0, surfaceResolution.getWidth(), surfaceResolution.getHeight());
+    }
+
+    /**
+     * Interface for controlling the {@link StreamSharing}.
+     */
+    interface Control {
+
+        /**
+         * Takes a snapshot of the current stream and write it to the children with JPEG Surface.
+         */
+        @NonNull
+        ListenableFuture<Void> jpegSnapshot();
     }
 
     @VisibleForTesting

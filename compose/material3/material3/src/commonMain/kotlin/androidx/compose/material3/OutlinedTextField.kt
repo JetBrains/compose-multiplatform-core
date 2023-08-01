@@ -23,7 +23,9 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -61,6 +63,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.coerceAtLeast
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.lerp
 import androidx.compose.ui.unit.offset
 import androidx.compose.ui.util.lerp
 import kotlin.math.max
@@ -130,7 +133,7 @@ import kotlin.math.roundToInt
  * [Interaction]s and customize the appearance / behavior of this text field in different states.
  * @param shape defines the shape of this text field's border
  * @param colors [TextFieldColors] that will be used to resolve the colors used for this text field
- * in different states. See [TextFieldDefaults.outlinedTextFieldColors].
+ * in different states. See [OutlinedTextFieldDefaults.colors].
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -156,8 +159,8 @@ fun OutlinedTextField(
     maxLines: Int = if (singleLine) 1 else Int.MAX_VALUE,
     minLines: Int = 1,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
-    shape: Shape = TextFieldDefaults.outlinedShape,
-    colors: TextFieldColors = TextFieldDefaults.outlinedTextFieldColors()
+    shape: Shape = OutlinedTextFieldDefaults.shape,
+    colors: TextFieldColors = OutlinedTextFieldDefaults.colors()
 ) {
     // If color is not provided via the text style, use content color as a default
     val textColor = textStyle.color.takeOrElse {
@@ -178,8 +181,8 @@ fun OutlinedTextField(
                 modifier
             }
                 .defaultMinSize(
-                    minWidth = TextFieldDefaults.MinWidth,
-                    minHeight = TextFieldDefaults.MinHeight
+                    minWidth = OutlinedTextFieldDefaults.MinWidth,
+                    minHeight = OutlinedTextFieldDefaults.MinHeight
                 ),
             onValueChange = onValueChange,
             enabled = enabled,
@@ -194,7 +197,7 @@ fun OutlinedTextField(
             maxLines = maxLines,
             minLines = minLines,
             decorationBox = @Composable { innerTextField ->
-                TextFieldDefaults.OutlinedTextFieldDecorationBox(
+                OutlinedTextFieldDefaults.DecorationBox(
                     value = value,
                     visualTransformation = visualTransformation,
                     innerTextField = innerTextField,
@@ -211,7 +214,7 @@ fun OutlinedTextField(
                     interactionSource = interactionSource,
                     colors = colors,
                     container = {
-                        TextFieldDefaults.OutlinedBorderContainerBox(
+                        OutlinedTextFieldDefaults.ContainerBox(
                             enabled,
                             isError,
                             interactionSource,
@@ -289,7 +292,7 @@ fun OutlinedTextField(
  * [Interaction]s and customize the appearance / behavior of this text field in different states.
  * @param shape defines the shape of this text field's border
  * @param colors [TextFieldColors] that will be used to resolve the colors used for this text field
- * in different states. See [TextFieldDefaults.outlinedTextFieldColors].
+ * in different states. See [OutlinedTextFieldDefaults.colors].
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -315,8 +318,8 @@ fun OutlinedTextField(
     maxLines: Int = if (singleLine) 1 else Int.MAX_VALUE,
     minLines: Int = 1,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
-    shape: Shape = TextFieldDefaults.outlinedShape,
-    colors: TextFieldColors = TextFieldDefaults.outlinedTextFieldColors()
+    shape: Shape = OutlinedTextFieldDefaults.shape,
+    colors: TextFieldColors = OutlinedTextFieldDefaults.colors()
 ) {
     // If color is not provided via the text style, use content color as a default
     val textColor = textStyle.color.takeOrElse {
@@ -337,8 +340,8 @@ fun OutlinedTextField(
                 modifier
             }
                 .defaultMinSize(
-                    minWidth = TextFieldDefaults.MinWidth,
-                    minHeight = TextFieldDefaults.MinHeight
+                    minWidth = OutlinedTextFieldDefaults.MinWidth,
+                    minHeight = OutlinedTextFieldDefaults.MinHeight
                 ),
             onValueChange = onValueChange,
             enabled = enabled,
@@ -353,7 +356,7 @@ fun OutlinedTextField(
             maxLines = maxLines,
             minLines = minLines,
             decorationBox = @Composable { innerTextField ->
-                TextFieldDefaults.OutlinedTextFieldDecorationBox(
+                OutlinedTextFieldDefaults.DecorationBox(
                     value = value.text,
                     visualTransformation = visualTransformation,
                     innerTextField = innerTextField,
@@ -370,7 +373,7 @@ fun OutlinedTextField(
                     interactionSource = interactionSource,
                     colors = colors,
                     container = {
-                        TextFieldDefaults.OutlinedBorderContainerBox(
+                        OutlinedTextFieldDefaults.ContainerBox(
                             enabled,
                             isError,
                             interactionSource,
@@ -407,8 +410,8 @@ fun OutlinedTextField(
     maxLines: Int = if (singleLine) 1 else Int.MAX_VALUE,
     minLines: Int = 1,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
-    shape: Shape = TextFieldDefaults.outlinedShape,
-    colors: TextFieldColors = TextFieldDefaults.outlinedTextFieldColors()
+    shape: Shape = OutlinedTextFieldDefaults.shape,
+    colors: TextFieldColors = OutlinedTextFieldDefaults.colors()
 ) {
     OutlinedTextField(
         value = value,
@@ -460,8 +463,8 @@ fun OutlinedTextField(
     maxLines: Int = if (singleLine) 1 else Int.MAX_VALUE,
     minLines: Int = 1,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
-    shape: Shape = TextFieldDefaults.outlinedShape,
-    colors: TextFieldColors = TextFieldDefaults.outlinedTextFieldColors()
+    shape: Shape = OutlinedTextFieldDefaults.shape,
+    colors: TextFieldColors = OutlinedTextFieldDefaults.colors()
 ) {
     OutlinedTextField(
         value = value,
@@ -562,6 +565,8 @@ internal fun OutlinedTextFieldLayout(
                 Box(
                     Modifier
                         .layoutId(PrefixId)
+                        .heightIn(min = MinTextLineHeight)
+                        .wrapContentHeight()
                         .padding(start = startPadding, end = PrefixSuffixTextPadding)
                 ) {
                     prefix()
@@ -571,36 +576,51 @@ internal fun OutlinedTextFieldLayout(
                 Box(
                     Modifier
                         .layoutId(SuffixId)
+                        .heightIn(min = MinTextLineHeight)
+                        .wrapContentHeight()
                         .padding(start = PrefixSuffixTextPadding, end = endPadding)
                 ) {
                     suffix()
                 }
             }
 
-            val textPadding = Modifier.padding(
-                start = if (prefix == null) startPadding else 0.dp,
-                end = if (suffix == null) endPadding else 0.dp,
-            )
+            val textPadding = Modifier
+                .heightIn(min = MinTextLineHeight)
+                .wrapContentHeight()
+                .padding(
+                    start = if (prefix == null) startPadding else 0.dp,
+                    end = if (suffix == null) endPadding else 0.dp,
+                )
 
             if (placeholder != null) {
-                placeholder(Modifier.layoutId(PlaceholderId).then(textPadding))
+                placeholder(Modifier
+                    .layoutId(PlaceholderId)
+                    .then(textPadding))
             }
 
             Box(
-                modifier = Modifier.layoutId(TextFieldId).then(textPadding),
+                modifier = Modifier
+                    .layoutId(TextFieldId)
+                    .then(textPadding),
                 propagateMinConstraints = true
             ) {
                 textField()
             }
 
             if (label != null) {
-                Box(modifier = Modifier.layoutId(LabelId)) { label() }
+                Box(Modifier
+                    .heightIn(min = lerp(
+                        MinTextLineHeight, MinFocusedLabelLineHeight, animationProgress))
+                    .wrapContentHeight()
+                    .layoutId(LabelId)) { label() }
             }
 
             if (supporting != null) {
                 @OptIn(ExperimentalMaterial3Api::class)
                 Box(Modifier
                     .layoutId(SupportingId)
+                    .heightIn(min = MinSupportingTextLineHeight)
+                    .wrapContentHeight()
                     .padding(TextFieldDefaults.supportingTextPadding())
                 ) { supporting() }
             }

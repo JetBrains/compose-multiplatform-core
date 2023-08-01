@@ -38,7 +38,7 @@ import androidx.compose.ui.node.LayoutModifierNode
 import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.node.invalidateDraw
 import androidx.compose.ui.node.invalidateLayer
-import androidx.compose.ui.node.invalidateLayout
+import androidx.compose.ui.node.invalidateMeasurements
 import androidx.compose.ui.platform.InspectorInfo
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.IntSize
@@ -78,11 +78,6 @@ fun Modifier.paint(
 /**
  * Customized [ModifierNodeElement] for painting content using [painter].
  *
- * IMPORTANT NOTE: This class sets [androidx.compose.ui.node.ModifierNodeElement.autoInvalidate]
- * to false which means it MUST invalidate both draw and the layout. It invalidates both in the
- * [PainterModifierNodeElement.update] method through [LayoutModifierNode.invalidateLayer]
- * (invalidates draw) and [LayoutModifierNode.invalidateLayout] (invalidates layout).
- *
  * @param painter used to paint content
  * @param sizeToIntrinsics `true` to size the element relative to [Painter.intrinsicSize]
  * @param alignment specifies alignment of the [painter] relative to content
@@ -92,7 +87,6 @@ fun Modifier.paint(
  *
  * @sample androidx.compose.ui.samples.PainterModifierSample
  */
-@ExperimentalComposeUiApi
 private data class PainterModifierNodeElement(
     val painter: Painter,
     val sizeToIntrinsics: Boolean,
@@ -101,9 +95,6 @@ private data class PainterModifierNodeElement(
     val alpha: Float,
     val colorFilter: ColorFilter?
 ) : ModifierNodeElement<PainterModifierNode>() {
-    override val autoInvalidate: Boolean
-        get() = false
-
     override fun create(): PainterModifierNode {
         return PainterModifierNode(
             painter = painter,
@@ -116,7 +107,7 @@ private data class PainterModifierNodeElement(
     }
 
     override fun update(node: PainterModifierNode): PainterModifierNode {
-        val invalidateLayout = node.sizeToIntrinsics != sizeToIntrinsics ||
+        val intrinsicsChanged = node.sizeToIntrinsics != sizeToIntrinsics ||
             (sizeToIntrinsics && node.painter.intrinsicSize != painter.intrinsicSize)
 
         node.painter = painter
@@ -126,13 +117,12 @@ private data class PainterModifierNodeElement(
         node.alpha = alpha
         node.colorFilter = colorFilter
 
-        // Only invalidate layout if Intrinsics have changed.
-        if (invalidateLayout) {
-            node.invalidateLayout()
-        } else {
-            // Otherwise, redraw because one of the node properties has changed.
-            node.invalidateDraw()
+        // Only remeasure if intrinsics have changed.
+        if (intrinsicsChanged) {
+            node.invalidateMeasurements()
         }
+        // redraw because one of the node properties has changed.
+        node.invalidateDraw()
 
         return node
     }
@@ -151,6 +141,12 @@ private data class PainterModifierNodeElement(
 /**
  * [DrawModifier] used to draw the provided [Painter] followed by the contents
  * of the component itself
+ *
+ *
+ * IMPORTANT NOTE: This class sets [androidx.compose.ui.Modifier.Node.shouldAutoInvalidate]
+ * to false which means it MUST invalidate both draw and the layout. It invalidates both in the
+ * [PainterModifierNodeElement.update] method through [LayoutModifierNode.invalidateLayer]
+ * (invalidates draw) and [LayoutModifierNode.invalidateLayout] (invalidates layout).
  */
 @OptIn(ExperimentalComposeUiApi::class)
 private class PainterModifierNode(
@@ -169,6 +165,9 @@ private class PainterModifierNode(
      */
     private val useIntrinsicSize: Boolean
         get() = sizeToIntrinsics && painter.intrinsicSize.isSpecified
+
+    override val shouldAutoInvalidate: Boolean
+        get() = false
 
     override fun MeasureScope.measure(
         measurable: Measurable,

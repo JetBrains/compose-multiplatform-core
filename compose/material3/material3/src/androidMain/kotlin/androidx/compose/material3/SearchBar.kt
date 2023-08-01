@@ -59,6 +59,7 @@ import androidx.compose.material3.tokens.SearchBarTokens
 import androidx.compose.material3.tokens.SearchViewTokens
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.State
 import androidx.compose.runtime.derivedStateOf
@@ -82,6 +83,7 @@ import androidx.compose.ui.graphics.takeOrElse
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.semantics
@@ -101,6 +103,7 @@ import androidx.compose.ui.util.lerp
 import androidx.compose.ui.zIndex
 import kotlin.math.max
 import kotlin.math.min
+import kotlinx.coroutines.delay
 
 /**
  * <a href="https://m3.material.io/components/search/overview" class="external" target="_blank">Material Design search</a>.
@@ -177,6 +180,7 @@ fun SearchBar(
         animationSpec = if (active) AnimationEnterFloatSpec else AnimationExitFloatSpec
     )
 
+    val focusManager = LocalFocusManager.current
     val density = LocalDensity.current
 
     val defaultInputFieldShape = SearchBarDefaults.inputFieldShape
@@ -276,6 +280,15 @@ fun SearchBar(
         }
     }
 
+    LaunchedEffect(active) {
+        if (!active) {
+            // Not strictly needed according to the motion spec, but since the animation already has
+            // a delay, this works around b/261632544.
+            delay(AnimationDelayMillis.toLong())
+            focusManager.clearFocus()
+        }
+    }
+
     BackHandler(enabled = active) {
         onActiveChange(false)
     }
@@ -344,6 +357,8 @@ fun DockedSearchBar(
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     content: @Composable ColumnScope.() -> Unit,
 ) {
+    val focusManager = LocalFocusManager.current
+
     Surface(
         shape = shape,
         color = colors.containerColor,
@@ -386,6 +401,15 @@ fun DockedSearchBar(
                     content()
                 }
             }
+        }
+    }
+
+    LaunchedEffect(active) {
+        if (!active) {
+            // Not strictly needed according to the motion spec, but since the animation already has
+            // a delay, this works around b/261632544.
+            delay(AnimationDelayMillis.toLong())
+            focusManager.clearFocus()
         }
     }
 
@@ -443,7 +467,7 @@ private fun SearchBarInputField(
         keyboardActions = KeyboardActions(onSearch = { onSearch(query) }),
         interactionSource = interactionSource,
         decorationBox = @Composable { innerTextField ->
-            TextFieldDefaults.TextFieldDecorationBox(
+            TextFieldDefaults.DecorationBox(
                 value = query,
                 innerTextField = innerTextField,
                 enabled = enabled,
@@ -459,7 +483,7 @@ private fun SearchBarInputField(
                 } },
                 shape = SearchBarDefaults.inputFieldShape,
                 colors = colors,
-                contentPadding = TextFieldDefaults.textFieldWithoutLabelPadding(),
+                contentPadding = TextFieldDefaults.contentPaddingWithoutLabel(),
                 container = {},
             )
         }
@@ -469,6 +493,7 @@ private fun SearchBarInputField(
 /**
  * Defaults used in [SearchBar] and [DockedSearchBar].
  */
+@ExperimentalMaterial3Api
 object SearchBarDefaults {
     /** Default elevation for a search bar. */
     val Elevation: Dp = SearchBarTokens.ContainerElevation
@@ -497,7 +522,6 @@ object SearchBarDefaults {
      * @param dividerColor the color of the divider between the input field and the search results
      * @param inputFieldColors the colors of the input field
      */
-    @ExperimentalMaterial3Api
     @Composable
     fun colors(
         containerColor: Color = SearchBarTokens.ContainerColor.toColor(),
@@ -533,7 +557,6 @@ object SearchBarDefaults {
      * @param unfocusedPlaceholderColor the placeholder color for this input field when not focused
      * @param disabledPlaceholderColor the placeholder color for this input field when disabled
      */
-    @ExperimentalMaterial3Api
     @Composable
     fun inputFieldColors(
         focusedTextColor: Color = SearchBarTokens.InputTextColor.toColor(),
@@ -555,7 +578,7 @@ object SearchBarDefaults {
         disabledPlaceholderColor: Color = FilledTextFieldTokens.DisabledInputColor.toColor()
             .copy(alpha = FilledTextFieldTokens.DisabledInputOpacity),
     ): TextFieldColors =
-        TextFieldDefaults.textFieldColors(
+        TextFieldDefaults.colors(
             focusedTextColor = focusedTextColor,
             unfocusedTextColor = unfocusedTextColor,
             disabledTextColor = disabledTextColor,
@@ -573,7 +596,6 @@ object SearchBarDefaults {
         )
 
     @Deprecated("Maintained for binary compatibility", level = DeprecationLevel.HIDDEN)
-    @ExperimentalMaterial3Api
     @Composable
     fun inputFieldColors(
         textColor: Color = SearchBarTokens.InputTextColor.toColor(),
@@ -681,6 +703,7 @@ private class MutableWindowInsets(
 }
 
 // Measurement specs
+@OptIn(ExperimentalMaterial3Api::class)
 private val SearchBarCornerRadius: Dp = InputFieldHeight / 2
 internal val DockedActiveTableMinHeight: Dp = 240.dp
 private const val DockedActiveTableMaxHeightScreenRatio: Float = 2f / 3f

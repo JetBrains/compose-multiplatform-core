@@ -57,6 +57,7 @@ public class ColorNodesTest {
         FixedColor protoNode = FixedColor.newBuilder().setArgb(FROM_COLOR).build();
         FixedColorNode node = new FixedColorNode(protoNode, new AddToListCallback<>(results));
 
+        node.preInit();
         node.init();
 
         assertThat(results).containsExactly(FROM_COLOR);
@@ -65,8 +66,8 @@ public class ColorNodesTest {
     @Test
     public void stateColorSourceNode_worksWithFixedColor() {
         List<Integer> results = new ArrayList<>();
-        ObservableStateStore oss =
-                new ObservableStateStore(
+        StateStore oss =
+                new StateStore(
                         ImmutableMap.of(
                                 "foo",
                                 StateEntryValue.newBuilder()
@@ -86,8 +87,8 @@ public class ColorNodesTest {
     @Test
     public void stateColorSourceNode_updatesWithStateChanges() {
         List<Integer> results = new ArrayList<>();
-        ObservableStateStore oss =
-                new ObservableStateStore(
+        StateStore oss =
+                new StateStore(
                         ImmutableMap.of(
                                 "foo",
                                 StateEntryValue.newBuilder()
@@ -112,8 +113,8 @@ public class ColorNodesTest {
     @Test
     public void stateColorSourceNode_noUpdatesAfterDestroy() {
         List<Integer> results = new ArrayList<>();
-        ObservableStateStore oss =
-                new ObservableStateStore(
+        StateStore oss =
+                new StateStore(
                         ImmutableMap.of(
                                 "foo",
                                 StateEntryValue.newBuilder()
@@ -152,6 +153,7 @@ public class ColorNodesTest {
                         protoNode, new AddToListCallback<>(results), quotaManager);
         node.setVisibility(true);
 
+        node.preInit();
         node.init();
         shadowOf(Looper.getMainLooper()).idle();
 
@@ -174,6 +176,7 @@ public class ColorNodesTest {
                         protoNode, new AddToListCallback<>(results), quotaManager);
         node.setVisibility(false);
 
+        node.preInit();
         node.init();
         shadowOf(Looper.getMainLooper()).idle();
 
@@ -195,6 +198,7 @@ public class ColorNodesTest {
                         protoNode, new AddToListCallback<>(results), quotaManager);
         node.setVisibility(true);
 
+        node.preInit();
         node.init();
         shadowOf(Looper.getMainLooper()).idle();
 
@@ -206,8 +210,8 @@ public class ColorNodesTest {
     public void dynamicAnimatedColor_animatesWithStateChange() {
         List<Integer> results = new ArrayList<>();
         QuotaManager quotaManager = new FixedQuotaManagerImpl(MAX_VALUE);
-        ObservableStateStore oss =
-                new ObservableStateStore(
+        StateStore oss =
+                new StateStore(
                         ImmutableMap.of(
                                 "foo",
                                 StateEntryValue.newBuilder()
@@ -249,8 +253,8 @@ public class ColorNodesTest {
         int color3 = 0xFFFFFFFF;
         List<Integer> results = new ArrayList<>();
         QuotaManager quotaManager = new FixedQuotaManagerImpl(MAX_VALUE);
-        ObservableStateStore oss =
-                new ObservableStateStore(
+        StateStore oss =
+                new StateStore(
                         ImmutableMap.of(
                                 "foo",
                                 StateEntryValue.newBuilder()
@@ -309,8 +313,8 @@ public class ColorNodesTest {
         int color3 = 0xFFFFFFFF;
         List<Integer> results = new ArrayList<>();
         QuotaManager quotaManager = new FixedQuotaManagerImpl(1);
-        ObservableStateStore oss =
-                new ObservableStateStore(
+        StateStore oss =
+                new StateStore(
                         ImmutableMap.of(
                                 "foo",
                                 StateEntryValue.newBuilder()

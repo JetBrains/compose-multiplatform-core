@@ -59,7 +59,6 @@ import java.util.Set;
 /**
  * Manages the enqueuing of a {@link WorkContinuationImpl}.
  *
- * @hide
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class EnqueueRunnable implements Runnable {
@@ -189,7 +188,7 @@ public class EnqueueRunnable implements Runnable {
 
         boolean needsScheduling = false;
 
-        long currentTimeMillis = System.currentTimeMillis();
+        long currentTimeMillis = workManagerImpl.getConfiguration().getClock().currentTimeMillis();
         WorkDatabase workDatabase = workManagerImpl.getWorkDatabase();
 
         boolean hasPrerequisite = (prerequisiteIds != null && prerequisiteIds.length > 0);

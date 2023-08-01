@@ -16,7 +16,13 @@
 
 package androidx.compose.foundation.demos.text
 
+import androidx.compose.foundation.demos.text2.BasicSecureTextFieldDemos
+import androidx.compose.foundation.demos.text2.BasicTextField2CustomPinFieldDemo
 import androidx.compose.foundation.demos.text2.BasicTextField2Demos
+import androidx.compose.foundation.demos.text2.BasicTextField2FilterDemos
+import androidx.compose.foundation.demos.text2.DecorationBoxDemos
+import androidx.compose.foundation.demos.text2.KeyboardOptionsDemos
+import androidx.compose.foundation.demos.text2.ScrollableDemos
 import androidx.compose.integration.demos.common.ComposableDemo
 import androidx.compose.integration.demos.common.DemoCategory
 
@@ -112,14 +118,19 @@ val TextDemos = DemoCategory(
                 ComposableDemo("Tail Following Text Field") { TailFollowingTextFieldDemo() },
                 ComposableDemo("Focus immediately") { FocusTextFieldImmediatelyDemo() },
                 ComposableDemo("Secondary input system") { PlatformTextInputAdapterDemo() },
+                ComposableDemo("TextField focus") { TextFieldFocusDemo() },
             )
         ),
         DemoCategory(
             "BasicTextField2",
             listOf(
-                ComposableDemo("Basic text input") {
-                    BasicTextField2Demos()
-                }
+                ComposableDemo("Basic text input") { BasicTextField2Demos() },
+                ComposableDemo("Keyboard Options") { KeyboardOptionsDemos() },
+                ComposableDemo("Decoration Box") { DecorationBoxDemos() },
+                ComposableDemo("Scroll") { ScrollableDemos() },
+                ComposableDemo("Filters") { BasicTextField2FilterDemos() },
+                ComposableDemo("Secure Field") { BasicSecureTextFieldDemos() },
+                ComposableDemo("Custom PIN field") { BasicTextField2CustomPinFieldDemo() },
             )
         ),
         DemoCategory(
@@ -134,7 +145,8 @@ val TextDemos = DemoCategory(
             "\uD83D\uDD75️️️ Memory allocs",
             listOf(
                 ComposableDemo("\uD83D\uDD75️ SetText") { MemoryAllocsSetText() },
-                ComposableDemo("\uD83D\uDD75️ IfNotEmptyText") { MemoryAllocsIfNotEmptyText() }
+                ComposableDemo("\uD83D\uDD75️ IfNotEmptyText") { MemoryAllocsIfNotEmptyText() },
+                ComposableDemo("\uD83E\uDDA5 LazyList reuse") { MemoryAllocsLazyList() }
             )
         )
     )

@@ -273,6 +273,16 @@ object SemanticsActions {
     val SetText = ActionPropertyKey<(AnnotatedString) -> Boolean>("SetText")
 
     /**
+     * @see SemanticsPropertyReceiver.insertTextAtCursor
+     */
+    val InsertTextAtCursor = ActionPropertyKey<(AnnotatedString) -> Boolean>("InsertTextAtCursor")
+
+    /**
+     * @see SemanticsPropertyReceiver.performImeAction
+     */
+    val PerformImeAction = ActionPropertyKey<() -> Boolean>("PerformImeAction")
+
+    /**
      * @see SemanticsPropertyReceiver.copyText
      */
     val CopyText = ActionPropertyKey<() -> Boolean>("CopyText")
@@ -867,6 +877,9 @@ var SemanticsPropertyReceiver.textSelectionRange by SemanticsProperties.TextSele
  * Contains the IME action provided by the node.
  *
  * For example, "go to next form field" or "submit".
+ *
+ * A node that specifies an action should also specify a callback to perform the action via
+ * [performImeAction].
  */
 var SemanticsPropertyReceiver.imeAction by SemanticsProperties.ImeAction
 
@@ -1021,13 +1034,47 @@ fun SemanticsPropertyReceiver.setProgress(label: String? = null, action: ((Float
  * Expected to be used on editable text fields.
  *
  * @param label Optional label for this action.
- * @param action Action to be performed when the [SemanticsActions.SetText] is called.
+ * @param action Action to be performed when [SemanticsActions.SetText] is called.
  */
 fun SemanticsPropertyReceiver.setText(
     label: String? = null,
     action: ((AnnotatedString) -> Boolean)?
 ) {
     this[SemanticsActions.SetText] = AccessibilityAction(label, action)
+}
+
+/**
+ * Action to insert text into this node at the current cursor position, or replacing the selection
+ * if text is selected.
+ *
+ * Expected to be used on editable text fields.
+ *
+ * @param label Optional label for this action.
+ * @param action Action to be performed when [SemanticsActions.InsertTextAtCursor] is called.
+ */
+fun SemanticsPropertyReceiver.insertTextAtCursor(
+    label: String? = null,
+    action: ((AnnotatedString) -> Boolean)?
+) {
+    this[SemanticsActions.InsertTextAtCursor] = AccessibilityAction(label, action)
+}
+
+/**
+ * Action to invoke the IME action handler configured on the node.
+ *
+ * Expected to be used on editable text fields.
+ *
+ * A node that specifies an action callback should also report what IME action it will perform via
+ * the [imeAction] property.
+ *
+ * @param label Optional label for this action.
+ * @param action Action to be performed when [SemanticsActions.PerformImeAction] is called.
+ */
+fun SemanticsPropertyReceiver.performImeAction(
+    label: String? = null,
+    action: (() -> Boolean)?
+) {
+    this[SemanticsActions.PerformImeAction] = AccessibilityAction(label, action)
 }
 
 /**

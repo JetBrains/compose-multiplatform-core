@@ -19,10 +19,15 @@ package androidx.compose.ui
 import androidx.compose.runtime.Stable
 import androidx.compose.ui.internal.JvmDefaultWithCompatibility
 import androidx.compose.ui.node.DelegatableNode
+import androidx.compose.ui.node.DrawModifierNode
 import androidx.compose.ui.node.ModifierNodeOwnerScope
 import androidx.compose.ui.node.NodeCoordinator
 import androidx.compose.ui.node.NodeKind
+import androidx.compose.ui.node.invalidateDraw
 import androidx.compose.ui.node.requireOwner
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
 
 /**
  * An ordered, immutable collection of [modifier elements][Modifier.Element] that decorate or add
@@ -147,6 +152,7 @@ interface Modifier {
      * [androidx.compose.ui.node.ModifierNodeElement] to a [Modifier] chain.
      *
      * @see androidx.compose.ui.node.ModifierNodeElement
+     * @see androidx.compose.ui.node.CompositionLocalConsumerModifierNode
      * @see androidx.compose.ui.node.DelegatableNode
      * @see androidx.compose.ui.node.DelegatingNode
      * @see androidx.compose.ui.node.LayoutModifierNode
@@ -159,12 +165,34 @@ interface Modifier {
      * @see androidx.compose.ui.node.GlobalPositionAwareModifierNode
      * @see androidx.compose.ui.node.IntermediateLayoutModifierNode
      */
-    @ExperimentalComposeUiApi
     abstract class Node : DelegatableNode {
         @Suppress("LeakingThis")
         final override var node: Node = this
             private set
+
+        private var scope: CoroutineScope? = null
+
+        /**
+         * A [CoroutineScope] that can be used to launch tasks that should run while the node is
+         * attached.
+         *
+         * The scope is accessible between [onAttach] and [onDetach] calls, and will be cancelled
+         * after the node is detached (after [onDetach] returns).
+         *
+         * @sample androidx.compose.ui.samples.ModifierNodeCoroutineScopeSample
+         *
+         * @throws IllegalStateException If called while the node is not attached.
+         */
+        val coroutineScope: CoroutineScope
+            get() = scope ?: CoroutineScope(
+                requireOwner().coroutineContext +
+                    Job(parent = requireOwner().coroutineContext[Job])
+            ).also {
+                scope = it
+            }
+
         internal var kindSet: Int = 0
+
         // NOTE: We use an aggregate mask that or's all of the type masks of the children of the
         // chain so that we can quickly prune a subtree. This INCLUDES the kindSet of this node
         // as well
@@ -188,6 +216,24 @@ interface Modifier {
         var isAttached: Boolean = false
             private set
 
+        /**
+         * If this property returns `true`, then nodes will be automatically invalidated after the
+         * modifier update completes (For example, if the returned Node is a [DrawModifierNode], its
+         * [DrawModifierNode.invalidateDraw] function will be invoked automatically as part of
+         * auto invalidation).
+         *
+         * This is enabled by default, and provides a convenient mechanism to schedule invalidation
+         * and apply changes made to the modifier. You may choose to set this to `false` if your
+         * modifier has auto-invalidatable properties that do not frequently require invalidation to
+         * improve performance by skipping unnecessary invalidation. If `autoInvalidate` is set to
+         * `false`, you must call the appropriate invalidate functions manually when the modifier
+         * is updated or else the updates may not be reflected in the UI appropriately.
+         */
+        @Suppress("GetterSetterNames")
+        @get:Suppress("GetterSetterNames")
+        open val shouldAutoInvalidate: Boolean
+            get() = true
+
         internal open fun updateCoordinator(coordinator: NodeCoordinator?) {
             this.coordinator = coordinator
         }
@@ -208,8 +254,11 @@ interface Modifier {
             check(coordinator != null)
             onDetach()
             isAttached = false
-//            coordinator = null
-            // TODO(lmr): cancel jobs / side effects?
+
+            scope?.let {
+                it.cancel()
+                scope = null
+            }
         }
 
         internal open fun reset() {

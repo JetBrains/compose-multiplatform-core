@@ -33,7 +33,6 @@ import androidx.compose.ui.platform.ClipboardManager
 import androidx.compose.ui.platform.TextToolbar
 import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.platform.WindowInfo
-import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.PlatformTextInputPluginRegistry
@@ -41,6 +40,7 @@ import androidx.compose.ui.text.input.TextInputService
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
+import kotlin.coroutines.CoroutineContext
 
 /**
  * Owner implements the connection to the underlying view system. On Android, this connects
@@ -111,7 +111,6 @@ internal interface Owner {
 
     val textInputService: TextInputService
 
-    @OptIn(ExperimentalTextApi::class)
     val platformTextInputPluginRegistry: PlatformTextInputPluginRegistry
 
     val pointerIconService: PointerIconService
@@ -229,7 +228,7 @@ internal interface Owner {
     /**
      * Makes sure the passed [layoutNode] and its subtree is remeasured and has the final sizes.
      */
-    fun forceMeasureTheSubtree(layoutNode: LayoutNode)
+    fun forceMeasureTheSubtree(layoutNode: LayoutNode, affectsLookahead: Boolean = false)
 
     /**
      * Creates an [OwnedLayer] which will be drawing the passed [drawBlock].
@@ -267,6 +266,11 @@ internal interface Owner {
     val snapshotObserver: OwnerSnapshotObserver
 
     val modifierLocalManager: ModifierLocalManager
+
+    /**
+     * CoroutineContext for launching coroutines in Modifier Nodes.
+     */
+    val coroutineContext: CoroutineContext
 
     /**
      * Registers a call to be made when the [Applier.onEndChanges] is called. [listener]

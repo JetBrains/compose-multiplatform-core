@@ -106,7 +106,7 @@ fun Text(
     softWrap: Boolean = true,
     maxLines: Int = Int.MAX_VALUE,
     minLines: Int = 1,
-    onTextLayout: (TextLayoutResult) -> Unit = {},
+    onTextLayout: ((TextLayoutResult) -> Unit)? = null,
     style: TextStyle = LocalTextStyle.current
 ) {
 
@@ -347,7 +347,7 @@ fun Text(
  *
  * @see ProvideTextStyle
  */
-val LocalTextStyle = compositionLocalOf(structuralEqualityPolicy()) { TextStyle.Default }
+val LocalTextStyle = compositionLocalOf(structuralEqualityPolicy()) { DefaultTextStyle }
 
 // TODO: b/156598010 remove this and replace with fold definition on the backing CompositionLocal
 /**

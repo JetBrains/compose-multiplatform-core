@@ -17,51 +17,48 @@
 package androidx.tv.material3
 
 import androidx.compose.animation.ContentTransform
-import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 
 /**
  * CarouselScope provides a [CarouselScope.CarouselItem] function which you can use to
- * provide the slide's animation, background and the inner content.
+ * provide the carousel item's animation, background and the inner content.
  */
 @ExperimentalTvMaterial3Api
 class CarouselScope @OptIn(ExperimentalTvMaterial3Api::class)
 internal constructor(private val carouselState: CarouselState) {
     /**
-     * [CarouselScope.CarouselItem] can be used to define a slide's animation, background, and
+     * [CarouselScope.CarouselItem] can be used to define a item's animation, background, and
      * content. Using this is optional and you can choose to define your own CarouselItem from
      * scratch
      *
      * @param modifier modifier applied to the CarouselItem
-     * @param background composable defining the background of the slide
-     * @param contentTransformForward content transform to be applied to the content of the slide
+     * @param background composable defining the background of the item
+     * @param contentTransformStartToEnd content transform to be applied to the content of the item
      * when scrolling forward in the carousel
-     * @param contentTransformBackward content transform to be applied to the content of the slide
+     * @param contentTransformEndToStart content transform to be applied to the content of the item
      * when scrolling backward in the carousel
      * @param content composable defining the content displayed on top of the background
      */
     @Composable
-    @Suppress("IllegalExperimentalApiUsage")
-    @OptIn(ExperimentalAnimationApi::class)
     @ExperimentalTvMaterial3Api
     fun CarouselItem(
         modifier: Modifier = Modifier,
         background: @Composable () -> Unit = {},
-        contentTransformForward: ContentTransform =
-            CarouselItemDefaults.contentTransformForward,
-        contentTransformBackward: ContentTransform =
-            CarouselItemDefaults.contentTransformBackward,
+        contentTransformStartToEnd: ContentTransform =
+            CarouselItemDefaults.contentTransformStartToEnd,
+        contentTransformEndToStart: ContentTransform =
+            CarouselItemDefaults.contentTransformEndToStart,
         content: @Composable () -> Unit
     ) {
         CarouselItem(
             background = background,
-            slideIndex = carouselState.activeSlideIndex,
+            itemIndex = carouselState.activeItemIndex,
             contentTransform =
             if (carouselState.isMovingBackward)
-                contentTransformBackward
+                contentTransformEndToStart
             else
-                contentTransformForward,
+                contentTransformStartToEnd,
             modifier = modifier,
             content = content,
         )

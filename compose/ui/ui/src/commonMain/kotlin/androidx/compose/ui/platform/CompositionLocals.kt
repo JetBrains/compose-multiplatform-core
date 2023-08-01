@@ -29,7 +29,6 @@ import androidx.compose.ui.input.InputModeManager
 import androidx.compose.ui.input.pointer.PointerIconService
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.node.Owner
-import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.PlatformTextInputPluginRegistry
@@ -143,12 +142,10 @@ val LocalTextInputService = staticCompositionLocalOf<TextInputService?> { null }
  * This is a low-level API for code that talks directly to the platform input method framework.
  * Higher-level text input APIs in the Foundation library are more appropriate for most cases.
  */
-@Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-@ExperimentalTextApi
-@get:ExperimentalTextApi
+// Experimental in desktop.
 val LocalPlatformTextInputPluginRegistry =
     staticCompositionLocalOf<PlatformTextInputPluginRegistry> {
-        error("No PlatformTextInputServiceProvider provided")
+        error("No PlatformTextInputPluginRegistry provided")
     }
 
 /**
@@ -183,7 +180,6 @@ internal val LocalPointerIconService = staticCompositionLocalOf<PointerIconServi
     null
 }
 
-@OptIn(ExperimentalTextApi::class)
 @ExperimentalComposeUiApi
 @Composable
 internal fun ProvideCommonCompositionLocals(

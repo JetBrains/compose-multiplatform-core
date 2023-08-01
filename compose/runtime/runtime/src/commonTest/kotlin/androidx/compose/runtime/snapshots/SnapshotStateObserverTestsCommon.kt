@@ -18,8 +18,10 @@ package androidx.compose.runtime.snapshots
 
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.referentialEqualityPolicy
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.structuralEqualityPolicy
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -714,6 +716,77 @@ class SnapshotStateObserverTestsCommon {
             }
         }
         assertEquals(1, changes)
+    }
+
+    @Test
+    fun readingDerivedState_invalidatesWhenValueNotChanged() {
+        var changes = 0
+        val changeBlock: (Any) -> Unit = { changes++ }
+
+        runSimpleTest { stateObserver, state ->
+            var condition by mutableStateOf(false)
+            val derivedState = derivedStateOf {
+                // the same initial value for both branches
+                if (condition) state.value else 0
+            }
+
+            // record observation
+            stateObserver.observeReads("scope", changeBlock) {
+                // read state
+                derivedState.value
+            }
+
+            condition = true
+            Snapshot.sendApplyNotifications()
+        }
+        assertEquals(1, changes)
+    }
+
+    @Test
+    fun readingDerivedState_invalidatesIfReadBeforeSnapshotAdvance() {
+        var changes = 0
+        val changeBlock: (Any) -> Unit = {
+            if (it == "draw_1") {
+                changes++
+            }
+        }
+
+        runSimpleTest { stateObserver, layoutState ->
+            val derivedState = derivedStateOf {
+                layoutState.value
+            }
+
+            // record observation for a draw scope
+            stateObserver.observeReads("draw", changeBlock) {
+                derivedState.value
+            }
+
+            // record observation for a different draw scope
+            stateObserver.observeReads("draw_1", changeBlock) {
+                derivedState.value
+            }
+
+            Snapshot.sendApplyNotifications()
+
+            // record
+            layoutState.value += 1
+
+            // record observation for the first draw scope
+            stateObserver.observeReads("draw", changeBlock) {
+                // read state
+                derivedState.value
+            }
+
+            // second block should be invalidated after we read the value
+            assertEquals(1, changes)
+
+            // record observation for the second draw scope
+            stateObserver.observeReads("draw_1", changeBlock) {
+                // read state
+                derivedState.value
+            }
+        }
+        assertEquals(2, changes)
     }
 
     private fun runSimpleTest(

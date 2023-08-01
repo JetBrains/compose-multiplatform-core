@@ -68,12 +68,12 @@ class BeginSignInControllerUtility {
                         convertToPlayAuthPasskeyRequest(option)
                     )
                     isPublicKeyCredReqFound = true
-                    // TODO("Confirm logic for single vs multiple options of the same type")
+                    // TODO(b/262924507) : watch for GIS update on single vs multiple options of a
+                    // single type. Also make allow list update as GIS has done it.
                 } else if (option is GetGoogleIdOption) {
                     requestBuilder.setGoogleIdTokenRequestOptions(
                         convertToGoogleIdTokenOption(option))
-                    // TODO(b/270239625) add this bit to GID
-                    // autoSelect = autoSelect || option.isAutoSelectEnabled
+                    autoSelect = autoSelect || option.autoSelectEnabled
                 }
             }
             return requestBuilder
