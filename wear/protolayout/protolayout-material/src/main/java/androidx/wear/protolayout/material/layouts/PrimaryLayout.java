@@ -20,7 +20,7 @@ import static androidx.annotation.Dimension.DP;
 import static androidx.wear.protolayout.DimensionBuilders.dp;
 import static androidx.wear.protolayout.DimensionBuilders.expand;
 import static androidx.wear.protolayout.DimensionBuilders.wrap;
-import static androidx.wear.protolayout.material.ChipDefaults.COMPACT_HEIGHT_TAPPABLE;
+import static androidx.wear.protolayout.material.ChipDefaults.MIN_TAPPABLE_HEIGHT;
 import static androidx.wear.protolayout.material.Helper.checkNotNull;
 import static androidx.wear.protolayout.material.Helper.checkTag;
 import static androidx.wear.protolayout.material.Helper.getMetadataTagBytes;
@@ -69,8 +69,8 @@ import java.util.List;
 /**
  * ProtoLayout layout that represents a suggested layout style for Material ProtoLayout with the
  * primary (compact) chip at the bottom with the given content in the center and the recommended
- * margin and padding applied. There is a fixed slot for an optional primary label above or
- * optional secondary label below the main content area.
+ * margin and padding applied. There is a fixed slot for an optional primary label above or optional
+ * secondary label below the main content area.
  *
  * <p>It is highly recommended that main content has max lines between 2 and 4 (dependant on labels
  * present), i.e.: * No labels are present: content with max 4 lines, * 1 label is present: content
@@ -218,12 +218,12 @@ public class PrimaryLayout implements LayoutElement {
         /**
          * Sets the additional content to this layout, above the primary chip.
          *
-         * The content slot will wrap the elements' height, so the height of the given content must
-         * be fixed or set to wrap ({@code expand} can't be used).
+         * <p>The content slot will wrap the elements' height, so the height of the given content
+         * must be fixed or set to wrap ({@code expand} can't be used).
          *
-         * This layout has built-in horizontal margins, so the given content should have width set
-         * to {@code expand} to use all the available space, rather than an explicit width which may
-         * lead to clipping.
+         * <p>This layout has built-in horizontal margins, so the given content should have width
+         * set to {@code expand} to use all the available space, rather than an explicit width which
+         * may lead to clipping.
          */
         @NonNull
         public Builder setContent(@NonNull LayoutElement content) {
@@ -258,7 +258,7 @@ public class PrimaryLayout implements LayoutElement {
             float horizontalPadding = getHorizontalPadding();
             float horizontalChipPadding = getChipHorizontalPadding();
 
-            float primaryChipHeight = mPrimaryChip != null ? COMPACT_HEIGHT_TAPPABLE.getValue() : 0;
+            float primaryChipHeight = mPrimaryChip != null ? MIN_TAPPABLE_HEIGHT.getValue() : 0;
 
             DpProp mainContentHeight =
                     dp(

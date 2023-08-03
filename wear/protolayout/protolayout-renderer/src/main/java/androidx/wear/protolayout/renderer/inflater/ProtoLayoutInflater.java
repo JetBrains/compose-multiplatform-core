@@ -86,7 +86,7 @@ import androidx.core.content.ContextCompat;
 import androidx.core.view.AccessibilityDelegateCompat;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat;
-import androidx.vectordrawable.graphics.drawable.SeekableAnimatedVectorDrawable;
+import androidx.wear.protolayout.renderer.common.SeekableAnimatedVectorDrawable;
 import androidx.wear.protolayout.expression.pipeline.AnimationsHelper;
 import androidx.wear.protolayout.expression.proto.AnimationParameterProto.AnimationSpec;
 import androidx.wear.protolayout.expression.proto.DynamicProto.DynamicFloat;
@@ -124,6 +124,7 @@ import androidx.wear.protolayout.proto.LayoutElementProto.ArcText;
 import androidx.wear.protolayout.proto.LayoutElementProto.Box;
 import androidx.wear.protolayout.proto.LayoutElementProto.Column;
 import androidx.wear.protolayout.proto.LayoutElementProto.ContentScaleMode;
+import androidx.wear.protolayout.proto.LayoutElementProto.ExtensionLayoutElement;
 import androidx.wear.protolayout.proto.LayoutElementProto.FontStyle;
 import androidx.wear.protolayout.proto.LayoutElementProto.Image;
 import androidx.wear.protolayout.proto.LayoutElementProto.Layout;
@@ -161,6 +162,7 @@ import androidx.wear.protolayout.proto.TriggerProto.OnConditionMetTrigger;
 import androidx.wear.protolayout.proto.TriggerProto.OnLoadTrigger;
 import androidx.wear.protolayout.proto.TriggerProto.Trigger;
 import androidx.wear.protolayout.proto.TypesProto.StringProp;
+import androidx.wear.protolayout.renderer.ProtoLayoutExtensionViewProvider;
 import androidx.wear.protolayout.renderer.ProtoLayoutTheme;
 import androidx.wear.protolayout.renderer.ProtoLayoutTheme.FontSet;
 import androidx.wear.protolayout.renderer.R;
@@ -271,6 +273,8 @@ public final class ProtoLayoutInflater {
     private final ResourceResolvers mLayoutResourceResolvers;
 
     private final Optional<ProtoLayoutDynamicDataPipeline> mDataPipeline;
+
+    @Nullable private final ProtoLayoutExtensionViewProvider mExtensionViewProvider;
 
     private final boolean mAllowLayoutChangingBindsWithoutDefault;
     final String mClickableIdExtra;
@@ -490,6 +494,7 @@ public final class ProtoLayoutInflater {
         @NonNull private final ProtoLayoutTheme mProtoLayoutTheme;
         @Nullable private final ProtoLayoutDynamicDataPipeline mDataPipeline;
         @NonNull private final String mClickableIdExtra;
+        @Nullable private final ProtoLayoutExtensionViewProvider mExtensionViewProvider;
         private final boolean mAnimationEnabled;
         private final boolean mAllowLayoutChangingBindsWithoutDefault;
 
@@ -502,6 +507,7 @@ public final class ProtoLayoutInflater {
                 @NonNull Resources rendererResources,
                 @NonNull ProtoLayoutTheme protoLayoutTheme,
                 @Nullable ProtoLayoutDynamicDataPipeline dataPipeline,
+                @Nullable ProtoLayoutExtensionViewProvider extensionViewProvider,
                 @NonNull String clickableIdExtra,
                 boolean animationEnabled,
                 boolean allowLayoutChangingBindsWithoutDefault) {
@@ -516,6 +522,7 @@ public final class ProtoLayoutInflater {
             this.mAnimationEnabled = animationEnabled;
             this.mAllowLayoutChangingBindsWithoutDefault = allowLayoutChangingBindsWithoutDefault;
             this.mClickableIdExtra = clickableIdExtra;
+            this.mExtensionViewProvider = extensionViewProvider;
         }
 
         /** A {@link Context} suitable for interacting with UI. */
@@ -581,6 +588,12 @@ public final class ProtoLayoutInflater {
             return mClickableIdExtra;
         }
 
+        /** View provider for the renderer extension. */
+        @Nullable
+        public ProtoLayoutExtensionViewProvider getExtensionViewProvider() {
+            return mExtensionViewProvider;
+        }
+
         /** Whether animation is enabled, which decides whether to load contentUpdateAnimations. */
         public boolean getAnimationEnabled() {
             return mAnimationEnabled;
@@ -609,6 +622,7 @@ public final class ProtoLayoutInflater {
             private boolean mAllowLayoutChangingBindsWithoutDefault = false;
             @Nullable private String mClickableIdExtra;
 
+            @Nullable private ProtoLayoutExtensionViewProvider mExtensionViewProvider = null;
             /**
              * @param uiContext A {@link Context} suitable for interacting with UI with.
              * @param layout The layout to be rendered.
@@ -679,6 +693,14 @@ public final class ProtoLayoutInflater {
                 return this;
             }
 
+            /** Sets the view provider for the renderer extension. */
+            @NonNull
+            public Builder setExtensionViewProvider(
+                    @NonNull ProtoLayoutExtensionViewProvider extensionViewProvider) {
+                this.mExtensionViewProvider = extensionViewProvider;
+                return this;
+            }
+
             /**
              * Sets whether animation is enabled, which decides whether to load
              * contentUpdateAnimations. Defaults to true.
@@ -738,6 +760,7 @@ public final class ProtoLayoutInflater {
                         mRendererResources,
                         checkNotNull(mProtoLayoutTheme),
                         mDataPipeline,
+                        mExtensionViewProvider,
                         checkNotNull(mClickableIdExtra),
                         mAnimationEnabled,
                         mAllowLayoutChangingBindsWithoutDefault);
@@ -763,6 +786,7 @@ public final class ProtoLayoutInflater {
         this.mAllowLayoutChangingBindsWithoutDefault =
                 config.getAllowLayoutChangingBindsWithoutDefault();
         this.mClickableIdExtra = config.getClickableIdExtra();
+        this.mExtensionViewProvider = config.getExtensionViewProvider();
     }
 
     private int safeDpToPx(float dp) {
@@ -1156,8 +1180,7 @@ public final class ProtoLayoutInflater {
                                                                         clickable
                                                                                 .getOnClick()
                                                                                 .getLoadAction(),
-                                                                        clickable
-                                                                                .getId()))));
+                                                                        clickable.getId()))));
                 break;
             case VALUE_NOT_SET:
                 break;
@@ -1560,8 +1583,8 @@ public final class ProtoLayoutInflater {
     }
 
     @Nullable
-    private static TruncateAt textTruncationToEllipsize(TextOverflowProp type) {
-        switch (type.getValue()) {
+    private static TruncateAt textTruncationToEllipsize(TextOverflow overflowValue) {
+        switch (overflowValue) {
             case TEXT_OVERFLOW_TRUNCATE:
                 // A null TruncateAt disables adding an ellipsis.
                 return null;
@@ -2084,11 +2107,15 @@ public final class ProtoLayoutInflater {
                         .applyPendingChildLayoutParams(layoutParams));
     }
 
-    private static void applyTextOverflow(
+    private void applyTextOverflow(
             TextView textView, TextOverflowProp overflow, MarqueeParameters marqueeParameters) {
-        textView.setEllipsize(textTruncationToEllipsize(overflow));
-        if (overflow.getValue() == TextOverflow.TEXT_OVERFLOW_MARQUEE
-                && textView.getMaxLines() == 1) {
+        TextOverflow overflowValue = overflow.getValue();
+        if (!mAnimationEnabled && overflowValue == TextOverflow.TEXT_OVERFLOW_MARQUEE) {
+            overflowValue = TextOverflow.TEXT_OVERFLOW_UNDEFINED;
+        }
+
+        textView.setEllipsize(textTruncationToEllipsize(overflowValue));
+        if (overflowValue == TextOverflow.TEXT_OVERFLOW_MARQUEE && textView.getMaxLines() == 1) {
             int marqueeIterations =
                     marqueeParameters.hasIterations()
                             ? marqueeParameters.getIterations()
@@ -2422,7 +2449,7 @@ public final class ProtoLayoutInflater {
                         pipelineMaker
                                 .get()
                                 .addResolvedAnimatedImageWithBoolTrigger(
-                                        avd, trigger, posId, conditionTrigger.getTrigger());
+                                        avd, trigger, posId, conditionTrigger.getCondition());
                     } else {
                         // Use default trigger if it's not set.
                         if (trigger == null
@@ -3151,8 +3178,12 @@ public final class ProtoLayoutInflater {
                                 nodePosId,
                                 pipelineMaker);
                 break;
-            case VENDOR_EXTENSION:
-                // TODO(b/276703002): Add support for vendor extension.
+            case EXTENSION:
+                try {
+                    inflatedView = inflateExtension(parentViewWrapper, element.getExtension());
+                } catch (IllegalStateException ex) {
+                    Log.w(TAG, "Error inflating Extension.", ex);
+                }
                 break;
             case INNER_NOT_SET:
                 Log.w(TAG, "Unknown child type: " + element.getInnerCase().name());
@@ -3178,6 +3209,56 @@ public final class ProtoLayoutInflater {
             pipelineMaker.ifPresent(pipe -> pipe.rememberNode(nodePosId));
         }
         return inflatedView;
+    }
+
+    @Nullable
+    private InflatedView inflateExtension(
+            ParentViewWrapper parentViewWrapper, ExtensionLayoutElement element) {
+        int widthPx = safeDpToPx(element.getWidth().getLinearDimension());
+        int heightPx = safeDpToPx(element.getHeight().getLinearDimension());
+
+        if (widthPx == 0 && heightPx == 0) {
+            return null;
+        }
+
+        if (mExtensionViewProvider == null) {
+            Log.e(TAG, "Layout has extension payload, but no extension provider is available.");
+            return inflateFailedExtension(parentViewWrapper, element);
+        }
+
+        View view =
+                mExtensionViewProvider.provideView(
+                        element.getPayload().toByteArray(), element.getExtensionId());
+
+        if (view == null) {
+            Log.w(TAG, "Extension view provider returned null.");
+            // A failed extension should still occupy space.
+            return inflateFailedExtension(parentViewWrapper, element);
+        }
+
+        if (view.getTag() != null) {
+            throw new IllegalStateException("Extension must not set View's default tag");
+        }
+
+        LayoutParams lp = new LayoutParams(widthPx, heightPx);
+        parentViewWrapper.maybeAddView(view, lp);
+
+        return new InflatedView(
+                view, parentViewWrapper.getParentProperties().applyPendingChildLayoutParams(lp));
+    }
+
+    private InflatedView inflateFailedExtension(
+            ParentViewWrapper parentViewWrapper, ExtensionLayoutElement element) {
+        int widthPx = safeDpToPx(element.getWidth().getLinearDimension());
+        int heightPx = safeDpToPx(element.getHeight().getLinearDimension());
+
+        Space space = new Space(mUiContext);
+
+        LayoutParams lp = new LayoutParams(widthPx, heightPx);
+        parentViewWrapper.maybeAddView(space, lp);
+
+        return new InflatedView(
+                space, parentViewWrapper.getParentProperties().applyPendingChildLayoutParams(lp));
     }
 
     /**
@@ -3883,11 +3964,10 @@ public final class ProtoLayoutInflater {
                         break;
                     }
                     mLoadActionExecutor.execute(
-                                    () ->
-                                        mLoadActionListener.onClick(
-                                                buildState(
-                                                        action.getLoadAction(),
-                                                        mClickable.getId())));
+                            () ->
+                                    mLoadActionListener.onClick(
+                                            buildState(
+                                                    action.getLoadAction(), mClickable.getId())));
                     break;
                 case VALUE_NOT_SET:
                     break;

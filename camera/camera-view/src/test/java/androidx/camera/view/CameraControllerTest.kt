@@ -38,12 +38,12 @@ import androidx.camera.core.impl.utils.executor.CameraXExecutors.directExecutor
 import androidx.camera.core.impl.utils.executor.CameraXExecutors.mainThreadExecutor
 import androidx.camera.testing.fakes.FakeCamera
 import androidx.camera.testing.fakes.FakeCameraControl
-import androidx.camera.testing.fakes.FakeLifecycleOwner
-import androidx.camera.testing.fakes.FakeSurfaceEffect
-import androidx.camera.testing.fakes.FakeSurfaceProcessor
+import androidx.camera.testing.impl.fakes.FakeLifecycleOwner
+import androidx.camera.testing.impl.fakes.FakeSurfaceEffect
+import androidx.camera.testing.impl.fakes.FakeSurfaceProcessor
 import androidx.camera.video.Quality
+import androidx.camera.video.QualitySelector
 import androidx.camera.view.CameraController.COORDINATE_SYSTEM_VIEW_REFERENCED
-import androidx.camera.view.transform.OutputTransform
 import androidx.concurrent.futures.CallbackToFutureAdapter
 import androidx.test.annotation.UiThreadTest
 import androidx.test.core.app.ApplicationProvider
@@ -69,6 +69,8 @@ class CameraControllerTest {
         const val ZOOM_RATIO = .5F
         const val TORCH_ENABLED = true
     }
+
+    private val previewViewTransform = Matrix().also { it.postRotate(90F) }
 
     private val context = ApplicationProvider.getApplicationContext<Context>()
     private lateinit var controller: LifecycleCameraController
@@ -231,14 +233,15 @@ class CameraControllerTest {
 
     @Test
     fun viewTransform_valueIsPassedToAnalyzer() {
-        val previewTransform = Matrix()
+        // Non-null value passed to analyzer.
         assertThat(
             getPreviewTransformPassedToAnalyzer(
                 COORDINATE_SYSTEM_VIEW_REFERENCED,
-                previewTransform
+                previewViewTransform
             )
-        ).isEqualTo(previewTransform)
+        ).isEqualTo(previewViewTransform)
 
+        // Null value passed to analyzer.
         assertThat(
             getPreviewTransformPassedToAnalyzer(
                 COORDINATE_SYSTEM_VIEW_REFERENCED,
@@ -249,19 +252,21 @@ class CameraControllerTest {
 
     @Test
     fun originalTransform_valueIsNotPassedToAnalyzer() {
+        // Value not passed to analyzer. Analyzer still has it's original value which is identity
+        // matrix.
         assertThat(
             getPreviewTransformPassedToAnalyzer(
                 COORDINATE_SYSTEM_ORIGINAL,
-                Matrix()
-            )
-        ).isNull()
+                previewViewTransform
+            )!!.isIdentity
+        ).isTrue()
     }
 
     private fun getPreviewTransformPassedToAnalyzer(
         coordinateSystem: Int,
         previewTransform: Matrix?
     ): Matrix? {
-        var matrix: Matrix? = null
+        var matrix: Matrix? = Matrix()
         val analyzer = object : ImageAnalysis.Analyzer {
             override fun analyze(image: ImageProxy) {
                 // no-op
@@ -276,10 +281,7 @@ class CameraControllerTest {
             }
         }
         controller.setImageAnalysisAnalyzer(mainThreadExecutor(), analyzer)
-        val outputTransform = previewTransform?.let {
-            OutputTransform(it, Size(1, 1))
-        }
-        controller.updatePreviewViewTransform(outputTransform)
+        controller.updatePreviewViewTransform(previewTransform)
         return matrix
     }
 
@@ -384,8 +386,9 @@ class CameraControllerTest {
     @UiThreadTest
     @Test
     fun setVideoCaptureQuality() {
-        controller.videoCaptureTargetQuality = targetVideoQuality
-        assertThat(controller.videoCaptureTargetQuality).isEqualTo(targetVideoQuality)
+        val qualitySelector = QualitySelector.from(targetVideoQuality)
+        controller.videoCaptureQualitySelector = qualitySelector
+        assertThat(controller.videoCaptureQualitySelector).isEqualTo(qualitySelector)
     }
 
     @UiThreadTest

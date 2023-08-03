@@ -28,7 +28,6 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
-import androidx.window.core.ExperimentalWindowApi
 import androidx.window.demo.R
 import androidx.window.demo.databinding.ActivitySplitDeviceStateLayoutBinding
 import androidx.window.embedding.EmbeddingRule
@@ -45,7 +44,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-@OptIn(ExperimentalWindowApi::class)
 open class SplitDeviceStateActivityBase : AppCompatActivity(), View.OnClickListener,
     RadioGroup.OnCheckedChangeListener, CompoundButton.OnCheckedChangeListener,
     AdapterView.OnItemSelectedListener {
@@ -84,6 +82,22 @@ open class SplitDeviceStateActivityBase : AppCompatActivity(), View.OnClickListe
         activityA = ComponentName(this, SplitDeviceStateActivityA::class.java.name)
         activityB = ComponentName(this, SplitDeviceStateActivityB::class.java.name)
 
+        val radioGroup = viewBinding.splitAttributesOptionsRadioGroup
+        if (componentName == activityA) {
+            // Set to the first option
+            radioGroup.check(R.id.use_default_split_attributes)
+            onCheckedChanged(radioGroup, radioGroup.checkedRadioButtonId)
+            radioGroup.setOnCheckedChangeListener(this)
+        } else {
+            // Only update split pair rule on the primary Activity. The secondary Activity can only
+            // finish itself to prevent confusing users. We only apply the rule when the Activity is
+            // launched from the primary.
+            viewBinding.chooseLayoutTextView.visibility = View.GONE
+            radioGroup.visibility = View.GONE
+            viewBinding.launchActivityToSide.text = resources
+                .getString(R.string.finish_this_activity)
+        }
+
         viewBinding.showHorizontalLayoutInTabletopCheckBox.setOnCheckedChangeListener(this)
         viewBinding.showFullscreenInBookModeCheckBox.setOnCheckedChangeListener(this)
         viewBinding.swapPrimarySecondaryPositionCheckBox.setOnCheckedChangeListener(this)
@@ -98,7 +112,8 @@ open class SplitDeviceStateActivityBase : AppCompatActivity(), View.OnClickListe
             viewBinding.splitByHingeWhenSeparatingRadioButton.isEnabled = false
             hideAllSubCheckBoxes()
             // Add the error message to notify the SplitAttributesCalculator is not available.
-            viewBinding.errorMessageTextView.text = "SplitAttributesCalculator is not supported!"
+            viewBinding.warningMessageTextView.text = resources
+                .getString(R.string.split_attributes_calculator_not_supported)
         }
 
         lifecycleScope.launch {
@@ -302,7 +317,7 @@ open class SplitDeviceStateActivityBase : AppCompatActivity(), View.OnClickListe
                 // Don't update the error message if the callback is not supported.
                 return@withContext
             }
-            viewBinding.errorMessageTextView.text =
+            viewBinding.warningMessageTextView.text =
                 if (suggestToFinishItself) {
                     "Please finish the activity to try other split configurations."
                 } else {

@@ -60,6 +60,13 @@ class CameraInternalAdapter @Inject constructor(
         // TODO: Consider preloading the list of camera ids and metadata.
     }
 
+    fun pauseRefresh() = threads.scope.launch(threads.backgroundDispatcher) {
+        useCaseManager.pauseRefresh()
+    }
+    fun resumeRefresh() = threads.scope.launch(threads.backgroundDispatcher) {
+        useCaseManager.resumeRefresh()
+    }
+
     // Load / unload methods
     override fun open() {
         debug { "$this#open" }
@@ -67,6 +74,10 @@ class CameraInternalAdapter @Inject constructor(
 
     override fun close() {
         debug { "$this#close" }
+    }
+
+    override fun setActiveResumingMode(enabled: Boolean) {
+        useCaseManager.setActiveResumeMode(enabled)
     }
 
     override fun release(): ListenableFuture<Void> {

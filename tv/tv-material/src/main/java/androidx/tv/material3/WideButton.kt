@@ -35,7 +35,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
@@ -48,8 +47,12 @@ import androidx.tv.material3.tokens.Elevation
 /**
  * Material Design wide button for TV.
  *
+ * Samples:
+ * @sample androidx.tv.samples.WideButtonSample
+ *
  * @param onClick called when this button is clicked
  * @param modifier the [Modifier] to be applied to this button
+ * @param onLongClick called when this button is long clicked (long-pressed).
  * @param enabled controls the enabled state of this button. When `false`, this component will not
  * respond to user input, and it will appear visually disabled and disabled to accessibility
  * services.
@@ -74,6 +77,7 @@ import androidx.tv.material3.tokens.Elevation
 fun WideButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    onLongClick: (() -> Unit)? = null,
     enabled: Boolean = true,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     background: @Composable () -> Unit = {
@@ -93,6 +97,7 @@ fun WideButton(
 ) {
     WideButtonImpl(
         onClick = onClick,
+        onLongClick = onLongClick,
         enabled = enabled,
         scale = scale,
         glow = glow,
@@ -111,9 +116,15 @@ fun WideButton(
 /**
  * Material Design wide button for TV.
  *
+ * Samples:
+ * @sample androidx.tv.samples.WideButtonWithIcon
+ * @sample androidx.tv.samples.WideButtonWithSubtitle
+ * @sample androidx.tv.samples.WideButtonWithIconAndSubtitle
+ *
  * @param onClick called when this button is clicked
  * @param title the title content of the button, typically a [Text]
  * @param modifier the [Modifier] to be applied to this button
+ * @param onLongClick called when this button is long clicked (long-pressed).
  * @param enabled controls the enabled state of this button. When `false`, this component will not
  * respond to user input, and it will appear visually disabled and disabled to accessibility
  * services.
@@ -140,6 +151,7 @@ fun WideButton(
     onClick: () -> Unit,
     title: @Composable () -> Unit,
     modifier: Modifier = Modifier,
+    onLongClick: (() -> Unit)? = null,
     enabled: Boolean = true,
     icon: (@Composable () -> Unit)? = null,
     subtitle: (@Composable () -> Unit)? = null,
@@ -161,6 +173,7 @@ fun WideButton(
 
     WideButtonImpl(
         onClick = onClick,
+        onLongClick = onLongClick,
         enabled = enabled,
         scale = scale,
         glow = glow,
@@ -224,6 +237,7 @@ private fun WideButtonImpl(
     interactionSource: MutableInteractionSource,
     background: @Composable () -> Unit,
     modifier: Modifier = Modifier,
+    onLongClick: (() -> Unit)? = null,
     minHeight: Dp = BaseWideButtonDefaults.MinHeight,
     content: @Composable RowScope.() -> Unit
 ) {
@@ -234,12 +248,12 @@ private fun WideButtonImpl(
     Surface(
         modifier = modifier.semantics { role = Role.Button },
         onClick = onClick,
+        onLongClick = onLongClick,
         enabled = enabled,
         scale = scale.toClickableSurfaceScale(),
         glow = glow.toClickableSurfaceGlow(),
         shape = shape.toClickableSurfaceShape(),
-        color = wideButtonContainerColor(),
-        contentColor = contentColor.toClickableSurfaceContentColor(),
+        colors = contentColor.toClickableSurfaceColors(),
         tonalElevation = tonalElevation,
         border = border.toClickableSurfaceBorder(),
         interactionSource = interactionSource
@@ -273,12 +287,3 @@ private fun WideButtonImpl(
         }
     }
 }
-
-@OptIn(ExperimentalTvMaterial3Api::class)
-@Composable
-private fun wideButtonContainerColor() = ClickableSurfaceDefaults.color(
-    color = Color.Transparent,
-    focusedColor = Color.Transparent,
-    pressedColor = Color.Transparent,
-    disabledColor = Color.Transparent,
-)

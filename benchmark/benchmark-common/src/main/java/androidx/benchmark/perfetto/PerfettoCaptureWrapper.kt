@@ -20,12 +20,14 @@ import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
+import androidx.benchmark.InMemoryTracing
 import androidx.benchmark.Outputs
 import androidx.benchmark.Outputs.dateToFileName
 import androidx.benchmark.PropOverride
 import androidx.benchmark.Shell
 import androidx.benchmark.perfetto.PerfettoHelper.Companion.LOG_TAG
 import androidx.benchmark.perfetto.PerfettoHelper.Companion.isAbiSupported
+import java.io.File
 
 /**
  * Wrapper for [PerfettoCapture] which does nothing below API 23.
@@ -54,23 +56,18 @@ class PerfettoCaptureWrapper {
 
     @RequiresApi(23)
     private fun start(
-        appTagPackages: List<String>,
-        userspaceTracingPackage: String?
+        config: PerfettoConfig,
+        perfettoSdkConfig: PerfettoCapture.PerfettoSdkConfig?
     ): Boolean {
         capture?.apply {
-            if (Build.VERSION.SDK_INT >= 23) {
-                Log.d(LOG_TAG, "Recording perfetto trace")
-                if (userspaceTracingPackage != null &&
-                    Build.VERSION.SDK_INT >= 30
-                ) {
-                    val result = enableAndroidxTracingPerfetto(
-                        targetPackage = userspaceTracingPackage,
-                        provideBinariesIfMissing = true
-                    ) ?: "Success"
-                    Log.d(LOG_TAG, "Enable full tracing result=$result")
-                }
-                start(appTagPackages)
+            Log.d(LOG_TAG, "Recording perfetto trace")
+            if (perfettoSdkConfig != null &&
+                Build.VERSION.SDK_INT >= 30
+            ) {
+                val result = enableAndroidxTracingPerfetto(perfettoSdkConfig) ?: "Success"
+                Log.d(LOG_TAG, "Enable full tracing result=$result")
             }
+            start(config)
         }
 
         return true
@@ -94,13 +91,15 @@ class PerfettoCaptureWrapper {
 
     fun record(
         fileLabel: String,
-        appTagPackages: List<String>,
-        userspaceTracingPackage: String?,
+        config: PerfettoConfig,
+        perfettoSdkConfig: PerfettoCapture.PerfettoSdkConfig?,
         traceCallback: ((String) -> Unit)? = null,
+        enableTracing: Boolean = true,
+        inMemoryTracingLabel: String? = null,
         block: () -> Unit
     ): String? {
-        // skip if Perfetto not supported, or on Cuttlefish (where tracing doesn't work)
-        if (Build.VERSION.SDK_INT < 23 || !isAbiSupported()) {
+        // skip if Perfetto not supported, or if caller opts out
+        if (Build.VERSION.SDK_INT < 23 || !isAbiSupported() || !enableTracing) {
             block()
             return null
         }
@@ -125,12 +124,21 @@ class PerfettoCaptureWrapper {
         val path: String
         try {
             propOverride?.forceValue()
-            start(appTagPackages, userspaceTracingPackage)
+            start(config, perfettoSdkConfig)
+
+            // To avoid b/174007010, userspace tracing is cleared and saved *during* trace, so
+            // that events won't lie outside the bounds of the trace content.
+            InMemoryTracing.clearEvents()
             try {
                 block()
             } finally {
                 // finally here to ensure trace is fully recorded if block throws
                 path = stop(fileLabel)
+
+                if (inMemoryTracingLabel != null) {
+                    val inMemoryTrace = InMemoryTracing.commitToTrace(inMemoryTracingLabel)
+                    File(path).appendBytes(inMemoryTrace.encode())
+                }
                 traceCallback?.invoke(path)
             }
             return path

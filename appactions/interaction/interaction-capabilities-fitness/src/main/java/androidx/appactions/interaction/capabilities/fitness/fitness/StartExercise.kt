@@ -16,104 +16,43 @@
 
 package androidx.appactions.interaction.capabilities.fitness.fitness
 
-import androidx.appactions.interaction.capabilities.core.Capability
 import androidx.appactions.interaction.capabilities.core.BaseExecutionSession
+import androidx.appactions.interaction.capabilities.core.Capability
 import androidx.appactions.interaction.capabilities.core.CapabilityFactory
-import androidx.appactions.interaction.capabilities.core.impl.BuilderOf
 import androidx.appactions.interaction.capabilities.core.impl.converters.TypeConverters
 import androidx.appactions.interaction.capabilities.core.impl.spec.ActionSpecBuilder
-import androidx.appactions.interaction.capabilities.core.properties.StringValue
+import androidx.appactions.interaction.capabilities.core.impl.spec.ActionSpecRegistry
 import androidx.appactions.interaction.capabilities.core.properties.Property
+import androidx.appactions.interaction.capabilities.core.properties.StringValue
 import java.time.Duration
-import java.util.Optional
 
-/** StartExercise.kt in interaction-capabilities-fitness */
-private const val CAPABILITY_NAME = "actions.intent.START_EXERCISE"
-
-// TODO(b/273602015): Update to use Name property from builtintype library.
-private val ACTION_SPEC =
-    ActionSpecBuilder.ofCapabilityNamed(CAPABILITY_NAME)
-        .setDescriptor(StartExercise.Properties::class.java)
-        .setArguments(StartExercise.Arguments::class.java, StartExercise.Arguments::Builder)
-        .setOutput(StartExercise.Output::class.java)
-        .bindOptionalParameter(
-            "exercise.duration",
-            { property -> Optional.ofNullable(property.duration) },
-            StartExercise.Arguments.Builder::setDuration,
-            TypeConverters.DURATION_PARAM_VALUE_CONVERTER,
-            TypeConverters.DURATION_ENTITY_CONVERTER
-        )
-        .bindOptionalParameter(
-            "exercise.name",
-            { property -> Optional.ofNullable(property.name) },
-            StartExercise.Arguments.Builder::setName,
-            TypeConverters.STRING_PARAM_VALUE_CONVERTER,
-            TypeConverters.STRING_VALUE_ENTITY_CONVERTER
-        )
-        .build()
-
-@CapabilityFactory(name = CAPABILITY_NAME)
+/** A capability corresponding to actions.intent.START_EXERCISE */
+@CapabilityFactory(name = StartExercise.CAPABILITY_NAME)
 class StartExercise private constructor() {
-    class CapabilityBuilder :
-        Capability.Builder<
-            CapabilityBuilder, Properties, Arguments, Output, Confirmation, ExecutionSession
-            >(ACTION_SPEC) {
-        fun setDurationProperty(duration: Property<Duration>): CapabilityBuilder =
-            apply {
-                Properties.Builder().setDuration(duration).build()
-            }
-
-        fun setNameProperty(name: Property<StringValue>): CapabilityBuilder =
-            apply {
-                Properties.Builder().setName(name).build()
-            }
-
-        override fun build(): Capability {
-            // TODO(b/268369632): No-op remove empty property builder after Property od removed
-            super.setProperty(Properties.Builder().build())
-            return super.build()
-        }
+    internal enum class SlotMetadata(val path: String) {
+        NAME("exercise.name"),
+        DURATION("exercise.duration")
     }
 
-    // TODO(b/268369632): Remove Property from public capability APIs.
-    class Properties internal constructor(
-        val duration: Property<Duration>?,
-        val name: Property<StringValue>?
-    ) {
-        override fun toString(): String {
-            return "Property(duration=$duration, name=$name)"
-        }
+    class CapabilityBuilder :
+        Capability.Builder<
+            CapabilityBuilder,
+            Arguments,
+            Output,
+            Confirmation,
+            ExecutionSession
+            >(ACTION_SPEC) {
+        fun setNameProperty(name: Property<StringValue>): CapabilityBuilder = setProperty(
+            SlotMetadata.NAME.path,
+            name,
+            TypeConverters.STRING_VALUE_ENTITY_CONVERTER
+        )
 
-        override fun equals(other: Any?): Boolean {
-            if (this === other) return true
-            if (javaClass !== other?.javaClass) return false
-
-            other as Properties
-
-            if (duration != other.duration) return false
-            if (name != other.name) return false
-
-            return true
-        }
-
-        override fun hashCode(): Int {
-            var result = duration.hashCode()
-            result += 31 * name.hashCode()
-            return result
-        }
-
-        class Builder {
-            private var duration: Property<Duration>? = null
-            private var name: Property<StringValue>? = null
-
-            fun setDuration(duration: Property<Duration>): Builder =
-                apply { this.duration = duration }
-
-            fun setName(name: Property<StringValue>): Builder =
-                apply { this.name = name }
-
-            fun build(): Properties = Properties(duration, name)
-        }
+        fun setDurationProperty(duration: Property<Duration>): CapabilityBuilder = setProperty(
+            SlotMetadata.DURATION.path,
+            duration,
+            TypeConverters.DURATION_ENTITY_CONVERTER
+        )
     }
 
     class Arguments internal constructor(
@@ -142,7 +81,7 @@ class StartExercise private constructor() {
             return result
         }
 
-        class Builder : BuilderOf<Arguments> {
+        class Builder {
             private var duration: Duration? = null
             private var name: String? = null
 
@@ -152,7 +91,7 @@ class StartExercise private constructor() {
             fun setName(name: String): Builder =
                 apply { this.name = name }
 
-            override fun build(): Arguments = Arguments(duration, name)
+            fun build(): Arguments = Arguments(duration, name)
         }
     }
 
@@ -161,4 +100,30 @@ class StartExercise private constructor() {
     class Confirmation internal constructor()
 
     sealed interface ExecutionSession : BaseExecutionSession<Arguments, Output>
+
+    companion object {
+        /** Canonical name for [StartExercise] capability */
+        const val CAPABILITY_NAME = "actions.intent.START_EXERCISE"
+        // TODO(b/273602015): Update to use Name property from builtintype library.
+        private val ACTION_SPEC =
+            ActionSpecBuilder.ofCapabilityNamed(CAPABILITY_NAME)
+                .setArguments(Arguments::class.java, Arguments::Builder, Arguments.Builder::build)
+                .setOutput(Output::class.java)
+                .bindParameter(
+                    SlotMetadata.DURATION.path,
+                    Arguments::duration,
+                    Arguments.Builder::setDuration,
+                    TypeConverters.DURATION_PARAM_VALUE_CONVERTER
+                )
+                .bindParameter(
+                    SlotMetadata.NAME.path,
+                    Arguments::name,
+                    Arguments.Builder::setName,
+                    TypeConverters.STRING_PARAM_VALUE_CONVERTER
+                )
+                .build()
+        init {
+            ActionSpecRegistry.registerActionSpec(Arguments::class, Output::class, ACTION_SPEC)
+        }
+    }
 }

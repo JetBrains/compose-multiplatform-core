@@ -24,6 +24,7 @@ import androidx.compose.ui.layout.Placeable.PlacementScope.Companion.placeWithLa
 import androidx.compose.ui.node.LayoutModifierNode
 import androidx.compose.ui.node.NodeMeasuringIntrinsics
 import androidx.compose.ui.node.Nodes
+import androidx.compose.ui.node.requireLayoutNode
 import androidx.compose.ui.node.visitAncestors
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.IntOffset
@@ -83,12 +84,10 @@ internal class IntermediateLayoutModifierNode(
     private var intermediateMeasurable: IntermediateMeasurablePlaceable? = null
 
     override fun onAttach() {
-        val layoutNode = coordinator!!.layoutNode
+        val coordinates = coordinator?.lookaheadDelegate?.lookaheadLayoutCoordinates
+        checkNotNull(coordinates) { "could not fetch lookahead coordinates" }
 
-        val coordinates = coordinator!!.lookaheadDelegate?.lookaheadLayoutCoordinates
-        require(coordinates != null)
-
-        val closestLookaheadRoot = layoutNode.lookaheadRoot
+        val closestLookaheadRoot = requireLayoutNode().lookaheadRoot
         closestLookaheadScope = if (closestLookaheadRoot?.isVirtualLookaheadRoot == true) {
             // The closest explicit scope in the tree will be the closest scope, as all
             // descendant intermediateLayoutModifiers will be using that as their LookaheadScope
@@ -283,21 +282,6 @@ internal class IntermediateLayoutModifierNode(
                 this@lookaheadScopeCoordinates.lookaheadScopeCoordinates
             }
 
-        @Suppress("DEPRECATION")
-        @Deprecated(
-            "onPlaced in LookaheadLayoutScope has been deprecated. It's replaced" +
-                " with reading LookaheadLayoutCoordinates directly during placement in" +
-                "IntermediateMeasureScope"
-        )
-        override fun Modifier.onPlaced(
-            onPlaced: (
-                lookaheadScopeCoordinates: LookaheadLayoutCoordinates,
-                layoutCoordinates: LookaheadLayoutCoordinates
-            ) -> Unit
-        ): Modifier = with(closestLookaheadScope) {
-            this@onPlaced.onPlaced(onPlaced)
-        }
-
         override fun layout(
             width: Int,
             height: Int,
@@ -316,6 +300,10 @@ internal class IntermediateLayoutModifierNode(
                 )
             }
         }
+
+        // Intermediate layout pass is post-lookahead. Therefore return false here.
+        override val isLookingAhead: Boolean
+            get() = false
 
         override val layoutDirection: LayoutDirection
             get() = coordinator!!.layoutDirection

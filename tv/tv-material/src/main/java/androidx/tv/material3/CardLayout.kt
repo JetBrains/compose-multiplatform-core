@@ -40,6 +40,8 @@ import androidx.compose.ui.graphics.Color
  * It provides a vertical layout with an image card slot at the top. And below that, there are
  * slots for the title, subtitle and description.
  *
+ * @sample androidx.tv.samples.StandardCardLayoutSample
+ *
  * @param imageCard defines the [Composable] to be used for the image card. See
  * [CardLayoutDefaults.ImageCard] to create an image card. The `interactionSource` param provided
  * in the lambda function should be forwarded and used with the image card composable.
@@ -101,6 +103,8 @@ fun StandardCardLayout(
  * It provides a horizontal layout with an image card slot at the start, followed by the title,
  * subtitle and description at the end.
  *
+ * @sample androidx.tv.samples.WideCardLayoutSample
+ *
  * @param imageCard defines the [Composable] to be used for the image card. See
  * [CardLayoutDefaults.ImageCard] to create an image card. The `interactionSource` param provided
  * in the lambda function should to be forwarded and used with the image card composable.
@@ -151,6 +155,7 @@ fun WideCardLayout(
     }
 }
 
+@OptIn(ExperimentalTvMaterial3Api::class)
 @Composable
 internal fun CardLayoutContent(
     title: @Composable () -> Unit,
@@ -191,11 +196,12 @@ object CardLayoutDefaults {
      *
      * This Card handles click events, calling its [onClick] lambda.
      *
-     * @param onClick called when this card is clicked
+     * @param onClick called when this card is clicked.
      * @param interactionSource the [MutableInteractionSource] representing the stream of
      * [Interaction]s for this card. When using with the CardLayout(s), it is recommended to
      * pass in the interaction state obtained from the parent lambda.
-     * @param modifier the [Modifier] to be applied to this card
+     * @param modifier the [Modifier] to be applied to this card.
+     * @param onLongClick called when this card is long clicked (long-pressed).
      * @param shape [CardShape] defines the shape of this card's container in different interaction
      * states. See [CardDefaults.shape].
      * @param colors [CardColors] defines the background & content colors used in this card for
@@ -213,6 +219,7 @@ object CardLayoutDefaults {
         onClick: () -> Unit,
         interactionSource: MutableInteractionSource,
         modifier: Modifier = Modifier,
+        onLongClick: (() -> Unit)? = null,
         shape: CardShape = CardDefaults.shape(),
         colors: CardColors = CardDefaults.colors(),
         scale: CardScale = CardDefaults.scale(),
@@ -222,6 +229,7 @@ object CardLayoutDefaults {
     ) {
         Card(
             onClick = onClick,
+            onLongClick = onLongClick,
             modifier = modifier,
             shape = shape,
             colors = colors,

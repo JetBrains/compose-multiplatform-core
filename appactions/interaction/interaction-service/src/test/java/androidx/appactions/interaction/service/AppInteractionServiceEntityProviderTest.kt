@@ -16,9 +16,9 @@
 
 package androidx.appactions.interaction.service
 
+import androidx.appactions.builtintypes.types.Alarm
 import androidx.appactions.interaction.capabilities.core.impl.converters.EntityConverter
-import androidx.appactions.interaction.capabilities.core.impl.converters.TypeConverters
-import androidx.appactions.interaction.capabilities.core.values.Alarm
+import androidx.appactions.interaction.capabilities.serializers.types.ALARM_TYPE_SPEC
 import androidx.appactions.interaction.capabilities.testing.internal.ArgumentUtils.buildSearchActionParamValue
 import androidx.appactions.interaction.capabilities.testing.internal.TestingUtils.awaitSync
 import androidx.appactions.interaction.proto.GroundingRequest
@@ -45,10 +45,8 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.kotlin.times
 import org.robolectric.Robolectric
 
-// TODO(b/271929200) Implement tests for the 2 UI related RPCs
 @RunWith(AndroidJUnit4::class)
 class AppInteractionServiceEntityProviderTest {
     val testServerName = "testServer"
@@ -66,7 +64,7 @@ class AppInteractionServiceEntityProviderTest {
 
     @Test
     fun alarmProvider_incorrectProviderId(): Unit = runBlocking {
-        val morningAlarm = Alarm.newBuilder().setId("alarm1").setName("Morning Alarm").build()
+        val morningAlarm = Alarm.Builder().setIdentifier("alarm1").setName("Morning Alarm").build()
         val alarmProvider = FakeAlarmEntityProvider(
             "alarmProvider",
             listOf(morningAlarm)
@@ -110,7 +108,7 @@ class AppInteractionServiceEntityProviderTest {
 
     @Test
     fun alarmProvider_success(): Unit = runBlocking {
-        val morningAlarm = Alarm.newBuilder().setId("alarm1").setName("Morning Alarm").build()
+        val morningAlarm = Alarm.Builder().setIdentifier("alarm1").setName("Morning Alarm").build()
         val alarmProvider = FakeAlarmEntityProvider(
             "alarmProvider",
             listOf(morningAlarm)
@@ -146,7 +144,7 @@ class AppInteractionServiceEntityProviderTest {
                     .setStatus(Status.SUCCESS)
                     .addCandidates(
                         Candidate.newBuilder().setGroundedEntity(
-                            EntityConverter.of(TypeConverters.ALARM_TYPE_SPEC).convert(morningAlarm)
+                            EntityConverter.of(ALARM_TYPE_SPEC).convert(morningAlarm)
                         )
                     )
             ).build()

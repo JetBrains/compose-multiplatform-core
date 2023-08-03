@@ -18,6 +18,7 @@ package androidx.camera.camera2.internal;
 
 import static android.hardware.camera2.CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES;
 
+import static androidx.camera.core.DynamicRange.HLG_10_BIT;
 import static androidx.camera.core.DynamicRange.SDR;
 
 import static com.google.common.truth.Truth.assertThat;
@@ -117,6 +118,8 @@ public class Camera2CameraInfoImplTest {
             new Range<>(30, 30),
             new Range<>(60, 60)
     };
+
+    @RequiresApi(33)
     private static final DynamicRangeProfiles CAMERA0_DYNAMIC_RANGE_PROFILES =
             new DynamicRangeProfiles(new long[]{DynamicRangeProfiles.HLG10, 0, 0});
 
@@ -143,9 +146,6 @@ public class Camera2CameraInfoImplTest {
             new Range<>(12, 30),
             new Range<>(30, 30),
     };
-    private static final DynamicRange HLG10 = new DynamicRange(DynamicRange.FORMAT_HLG,
-            DynamicRange.BIT_DEPTH_10_BIT);
-
     private CameraCharacteristicsCompat mCameraCharacteristics0;
     private CameraManagerCompat mCameraManagerCompat;
     private ZoomControl mMockZoomControl;
@@ -630,19 +630,11 @@ public class Camera2CameraInfoImplTest {
         List<Size> resolutions = cameraInfo.getSupportedResolutions(
                 ImageFormatConstants.INTERNAL_DEFINED_IMAGE_FORMAT_PRIVATE);
 
-        if (Build.VERSION.SDK_INT == 21) {
-            // TargetAspectRatio workaround should be applied to the StreamConfigurationMapCompat
-            assertThat(resolutions).containsExactly(
-                    new Size(1920, 1080),
-                    new Size(1280, 720)
-            );
-        } else {
-            assertThat(resolutions).containsExactly(
-                    new Size(1920, 1080),
-                    new Size(1280, 720),
-                    new Size(640, 480)
-            );
-        }
+        assertThat(resolutions).containsExactly(
+                new Size(1920, 1080),
+                new Size(1280, 720),
+                new Size(640, 480)
+        );
     }
 
     @Test
@@ -666,8 +658,8 @@ public class Camera2CameraInfoImplTest {
         CameraInfo cameraInfo2 = new Camera2CameraInfoImpl(CAMERA2_ID,
                 mCameraManagerCompat);
 
-        List<Range<Integer>> resultFpsRanges0 = cameraInfo0.getSupportedFrameRateRanges();
-        List<Range<Integer>> resultFpsRanges2 = cameraInfo2.getSupportedFrameRateRanges();
+        Set<Range<Integer>> resultFpsRanges0 = cameraInfo0.getSupportedFrameRateRanges();
+        Set<Range<Integer>> resultFpsRanges2 = cameraInfo2.getSupportedFrameRateRanges();
 
         assertThat(resultFpsRanges0).containsExactly((Object[]) CAMERA0_AE_FPS_RANGES);
         assertThat(resultFpsRanges2).containsExactly((Object[]) CAMERA2_AE_FPS_RANGES);
@@ -681,7 +673,7 @@ public class Camera2CameraInfoImplTest {
         CameraInfo cameraInfo1 = new Camera2CameraInfoImpl(CAMERA1_ID,
                 mCameraManagerCompat);
 
-        List<Range<Integer>> resultFpsRanges1 = cameraInfo1.getSupportedFrameRateRanges();
+        Set<Range<Integer>> resultFpsRanges1 = cameraInfo1.getSupportedFrameRateRanges();
 
         assertThat(resultFpsRanges1).isEmpty();
     }
@@ -709,7 +701,7 @@ public class Camera2CameraInfoImplTest {
                 CAMERA0_ID, mCameraManagerCompat);
 
         Set<DynamicRange> supportedDynamicRanges = cameraInfo.getSupportedDynamicRanges();
-        assertThat(supportedDynamicRanges).containsExactly(SDR, HLG10);
+        assertThat(supportedDynamicRanges).containsExactly(SDR, HLG_10_BIT);
     }
 
     @Config(maxSdk = 32)

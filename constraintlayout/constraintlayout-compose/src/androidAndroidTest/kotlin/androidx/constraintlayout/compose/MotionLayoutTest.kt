@@ -44,6 +44,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
@@ -152,7 +153,8 @@ internal class MotionLayoutTest {
                     ) {
                         keyAttributes(element) {
                             frame(50) {
-                                customColor("color", Color.Red)
+                                // Also tests interpolating to a transparent color
+                                customColor("color", Color(0x00ff0000))
                                 customDistance("distance", 20.dp)
                                 customFontSize("fontSize", 30.sp)
                                 customInt("int", 40)
@@ -198,7 +200,7 @@ internal class MotionLayoutTest {
 
         progress.value = 0.25f
         rule.waitForIdle()
-        rule.onNodeWithText("1) Color: #ffffbaba").assertExists()
+        rule.onNodeWithText("1) Color: #7fffbaba").assertExists()
         rule.onNodeWithText("2) Distance: 10.0.dp").assertExists()
         rule.onNodeWithText("3) FontSize: 15.0.sp").assertExists()
         rule.onNodeWithText("4) Int: 20").assertExists()
@@ -211,7 +213,7 @@ internal class MotionLayoutTest {
 
         progress.value = 0.75f
         rule.waitForIdle()
-        rule.onNodeWithText("1) Color: #ffba0000").assertExists()
+        rule.onNodeWithText("1) Color: #7fba0000").assertExists()
         rule.onNodeWithText("2) Distance: 15.0.dp").assertExists()
         rule.onNodeWithText("3) FontSize: 25.0.sp").assertExists()
         rule.onNodeWithText("4) Int: 35").assertExists()
@@ -537,7 +539,7 @@ internal class MotionLayoutTest {
                                     }
                                 }
                             ) {
-                                staggered = staggeredValue.value
+                                maxStaggerDelay = staggeredValue.value
                             }
                         }
                     }
@@ -659,6 +661,234 @@ internal class MotionLayoutTest {
         assertEquals(14, actualTextSize.height.value.roundToInt())
     }
 
+    @Test
+    fun testOnSwipe_withLimitBounds() = with(rule.density) {
+        val rootSizePx = 300
+        val boxSizePx = 30
+        val boxId = "box"
+        var boxPosition = IntOffset.Zero
+
+        rule.setContent {
+            MotionLayout(
+                motionScene = remember {
+                    createCornerToCornerMotionScene(
+                        boxId = boxId,
+                        boxSizePx = boxSizePx
+                    ) { boxRef ->
+                        onSwipe = OnSwipe(
+                            anchor = boxRef,
+                            side = SwipeSide.End,
+                            direction = SwipeDirection.End,
+                            limitBoundsTo = boxRef
+                        )
+                    }
+                },
+                progress = 0f,
+                modifier = Modifier
+                    .layoutTestId("MyMotion")
+                    .size(rootSizePx.toDp())
+            ) {
+                Box(
+                    Modifier
+                        .background(Color.Red)
+                        .layoutTestId(boxId)
+                        .onGloballyPositioned {
+                            boxPosition = it
+                                .positionInParent()
+                                .round()
+                        }
+                )
+            }
+        }
+        rule.waitForIdle()
+        val motionSemantic = rule.onNodeWithTag("MyMotion")
+        motionSemantic
+            .assertExists()
+            // The first swipe will completely miss the Box, so it shouldn't move
+            .performSwipe(
+                from = {
+                    Offset(left + boxSizePx / 2, centerY)
+                },
+                to = {
+                    Offset(right * 0.9f, centerY)
+                }
+            )
+        // Wait a frame for the Touch Up animation to start
+        rule.mainClock.advanceTimeByFrame()
+        // Then wait for it to end
+        rule.waitForIdle()
+        // Box didn't move since the swipe didn't start within the box
+        assertEquals(IntOffset.Zero, boxPosition)
+
+        motionSemantic
+            .assertExists()
+            // The second swipe will start within the Box
+            .performSwipe(
+                from = {
+                    Offset(left + boxSizePx / 2, top + boxSizePx / 2)
+                },
+                to = {
+                    Offset(right * 0.9f, centerY)
+                }
+            )
+        // Wait a frame for the Touch Up animation to start
+        rule.mainClock.advanceTimeByFrame()
+        // Then wait for it to end
+        rule.waitForIdle()
+        // Box moved to end
+        assertEquals(IntOffset(rootSizePx - boxSizePx, rootSizePx - boxSizePx), boxPosition)
+    }
+
+    @Test
+    fun testInvalidationStrategy_onObservedStateChange() = with(rule.density) {
+        val rootSizePx = 200
+        val progress = mutableStateOf(0f)
+        val textContent = mutableStateOf("Foo")
+        val optimizeCorrectly = mutableStateOf(false)
+        val textId = "text"
+
+        rule.setContent {
+            WithConsistentTextStyle {
+                MotionLayout(
+                    motionScene = remember {
+                        MotionScene {
+                            val textRef = createRefFor(textId)
+
+                            defaultTransition(
+                                from = constraintSet {
+                                    constrain(textRef) {
+                                        centerTo(parent)
+                                    }
+                                },
+                                to = constraintSet {
+                                    constrain(textRef) {
+                                        centerTo(parent)
+                                    }
+                                }
+                            )
+                        }
+                    },
+                    progress = progress.value,
+                    modifier = Modifier.size(rootSizePx.toDp()),
+                    invalidationStrategy = remember(optimizeCorrectly.value) {
+                        if (optimizeCorrectly.value) {
+                            InvalidationStrategy {
+                                textContent.value
+                            }
+                        } else {
+                            InvalidationStrategy {
+                                // Do not invalidate on recomposition
+                            }
+                        }
+                    }
+                ) {
+                    Text(
+                        text = textContent.value,
+                        fontSize = 10.sp,
+                        modifier = Modifier.layoutTestId(textId)
+                    )
+                }
+            }
+        }
+
+        rule.waitForIdle()
+        var actualTextSize = rule.onNodeWithTag(textId).getUnclippedBoundsInRoot()
+        assertEquals(18, actualTextSize.width.value.roundToInt())
+        assertEquals(14, actualTextSize.height.value.roundToInt())
+
+        textContent.value = "Foo\nBar"
+
+        // Because we are optimizing "incorrectly" the text layout remains unchanged
+        rule.waitForIdle()
+        actualTextSize = rule.onNodeWithTag(textId).getUnclippedBoundsInRoot()
+        assertEquals(18, actualTextSize.width.value.roundToInt())
+        assertEquals(14, actualTextSize.height.value.roundToInt())
+
+        textContent.value = "Foo"
+        optimizeCorrectly.value = true
+
+        // We change the text back and update the optimization strategy to be correct, text should
+        // be the same as in its initial state
+        rule.waitForIdle()
+        actualTextSize = rule.onNodeWithTag(textId).getUnclippedBoundsInRoot()
+        assertEquals(18, actualTextSize.width.value.roundToInt())
+        assertEquals(14, actualTextSize.height.value.roundToInt())
+
+        textContent.value = "Foo\nBar"
+
+        // With the appropriate optimization strategy, the layout is invalidated when the text
+        // changes
+        rule.waitForIdle()
+        actualTextSize = rule.onNodeWithTag(textId).getUnclippedBoundsInRoot()
+        assertEquals(18, actualTextSize.width.value.roundToInt())
+        assertEquals(25, actualTextSize.height.value.roundToInt())
+    }
+
+    @Test
+    fun testOnSwipe_withDragScale() = with(rule.density) {
+        val rootSizePx = 300
+        val boxSizePx = 30
+        val boxId = "box"
+        val dragScale = 3f
+        var boxPosition = IntOffset.Zero
+
+        rule.setContent {
+            MotionLayout(
+                motionScene = remember {
+                    createCornerToCornerMotionScene(
+                        boxId = boxId,
+                        boxSizePx = boxSizePx
+                    ) { boxRef ->
+                        onSwipe = OnSwipe(
+                            anchor = boxRef,
+                            side = SwipeSide.Middle,
+                            direction = SwipeDirection.Down,
+                            onTouchUp = SwipeTouchUp.ToStart,
+                            dragScale = dragScale
+                        )
+                    }
+                },
+                progress = 0f,
+                modifier = Modifier
+                    .layoutTestId("MyMotion")
+                    .size(rootSizePx.toDp())
+            ) {
+                Box(
+                    Modifier
+                        .background(Color.Red)
+                        .layoutTestId(boxId)
+                        .onGloballyPositioned {
+                            boxPosition = it
+                                .positionInParent()
+                                .round()
+                        }
+                )
+            }
+        }
+        rule.waitForIdle()
+        val motionSemantic = rule.onNodeWithTag("MyMotion")
+
+        motionSemantic
+            .assertExists()
+            .performSwipe(
+                from = {
+                    Offset(center.x, top + (boxSizePx / 2f))
+                },
+                to = {
+                    // Move only half-way, with a dragScale of 1f, it would be forced to
+                    // return to the start position
+                    val off = ((bottom - (boxSizePx / 2f)) - (top + (boxSizePx / 2f))) * 0.5f
+                    Offset(center.x, (top + (boxSizePx / 2f)) + off)
+                }
+            )
+        // Wait a frame for the Touch Up animation to start
+        rule.mainClock.advanceTimeByFrame()
+        // Then wait for it to end
+        rule.waitForIdle()
+        // Box is at the ending position because of the increased dragScale
+        assertEquals(IntOffset(rootSizePx - boxSizePx, rootSizePx - boxSizePx), boxPosition)
+    }
+
     private fun Color.toHexString(): String = toArgb().toUInt().toString(16)
 }
 
@@ -717,7 +947,6 @@ private fun CustomTextSize(modifier: Modifier, progress: Float) {
 private fun WithConsistentTextStyle(
     content: @Composable () -> Unit
 ) {
-    @Suppress("DEPRECATION")
     CompositionLocalProvider(
         LocalDensity provides Density(1f, 1f),
         LocalTextStyle provides TextStyle(
@@ -727,4 +956,35 @@ private fun WithConsistentTextStyle(
         ),
         content = content
     )
+}
+
+private fun Density.createCornerToCornerMotionScene(
+    boxId: String,
+    boxSizePx: Int,
+    transitionContent: TransitionScope.(boxRef: ConstrainedLayoutReference) -> Unit
+) = MotionScene {
+    val boxRef = createRefFor(boxId)
+
+    defaultTransition(
+        from = constraintSet {
+            constrain(boxRef) {
+                width = boxSizePx.toDp().asDimension()
+                height = boxSizePx.toDp().asDimension()
+
+                top.linkTo(parent.top)
+                start.linkTo(parent.start)
+            }
+        },
+        to = constraintSet {
+            constrain(boxRef) {
+                width = boxSizePx.toDp().asDimension()
+                height = boxSizePx.toDp().asDimension()
+
+                bottom.linkTo(parent.bottom)
+                end.linkTo(parent.end)
+            }
+        }
+    ) {
+        transitionContent(boxRef)
+    }
 }

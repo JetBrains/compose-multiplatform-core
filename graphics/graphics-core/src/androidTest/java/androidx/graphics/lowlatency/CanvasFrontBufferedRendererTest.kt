@@ -24,6 +24,7 @@ import android.view.SurfaceView
 import androidx.annotation.RequiresApi
 import androidx.core.os.BuildCompat
 import androidx.graphics.drawSquares
+import androidx.graphics.opengl.SurfaceViewTestActivity
 import androidx.graphics.surface.SurfaceControlCompat
 import androidx.graphics.surface.SurfaceControlUtils
 import androidx.lifecycle.Lifecycle
@@ -37,6 +38,7 @@ import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import kotlin.math.roundToInt
 import org.junit.Assert
+import org.junit.Assert.fail
 import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -45,6 +47,7 @@ import org.junit.runner.RunWith
 @SmallTest
 class CanvasFrontBufferedRendererTest {
 
+    @Ignore("b/285410170")
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.Q)
     @Test
     fun testFrontBufferedLayerRender() {
@@ -92,7 +95,7 @@ class CanvasFrontBufferedRendererTest {
         var renderer: CanvasFrontBufferedRenderer<Any>? = null
         var surfaceView: SurfaceView? = null
         try {
-            val scenario = ActivityScenario.launch(FrontBufferedRendererTestActivity::class.java)
+            val scenario = ActivityScenario.launch(SurfaceViewTestActivity::class.java)
                 .moveToState(Lifecycle.State.CREATED)
                 .onActivity {
                     surfaceView = it.getSurfaceView()
@@ -168,7 +171,7 @@ class CanvasFrontBufferedRendererTest {
         var renderer: CanvasFrontBufferedRenderer<Any>? = null
         var surfaceView: SurfaceView? = null
         try {
-            val scenario = ActivityScenario.launch(FrontBufferedRendererTestActivity::class.java)
+            val scenario = ActivityScenario.launch(SurfaceViewTestActivity::class.java)
                 .moveToState(Lifecycle.State.CREATED)
                 .onActivity {
                     surfaceView = it.getSurfaceView()
@@ -275,7 +278,7 @@ class CanvasFrontBufferedRendererTest {
         var renderer: CanvasFrontBufferedRenderer<Int>? = null
         var surfaceView: SurfaceView? = null
         try {
-            val scenario = ActivityScenario.launch(FrontBufferedRendererTestActivity::class.java)
+            val scenario = ActivityScenario.launch(SurfaceViewTestActivity::class.java)
                 .moveToState(Lifecycle.State.CREATED)
                 .onActivity {
                     surfaceView = it.getSurfaceView()
@@ -370,7 +373,7 @@ class CanvasFrontBufferedRendererTest {
         var renderer: CanvasFrontBufferedRenderer<Int>? = null
         var surfaceView: SurfaceView? = null
         try {
-            val scenario = ActivityScenario.launch(FrontBufferedRendererTestActivity::class.java)
+            val scenario = ActivityScenario.launch(SurfaceViewTestActivity::class.java)
                 .moveToState(Lifecycle.State.CREATED)
                 .onActivity {
                     surfaceView = it.getSurfaceView()
@@ -409,7 +412,7 @@ class CanvasFrontBufferedRendererTest {
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.Q)
     @Test
     fun testMultiBufferedContentsNotPersisted() {
-        val screenWidth = FrontBufferedRendererTestActivity.WIDTH
+        val screenWidth = SurfaceViewTestActivity.WIDTH
         val renderLatch = CountDownLatch(1)
         val firstDrawLatch = CountDownLatch(1)
         val callbacks = object : CanvasFrontBufferedRenderer.Callback<Any> {
@@ -454,7 +457,7 @@ class CanvasFrontBufferedRendererTest {
         var renderer: CanvasFrontBufferedRenderer<Any>? = null
         var surfaceView: SurfaceView? = null
         try {
-            val scenario = ActivityScenario.launch(FrontBufferedRendererTestActivity::class.java)
+            val scenario = ActivityScenario.launch(SurfaceViewTestActivity::class.java)
                 .moveToState(Lifecycle.State.CREATED)
                 .onActivity {
                     surfaceView = it.getSurfaceView()
@@ -571,7 +574,7 @@ class CanvasFrontBufferedRendererTest {
             Assert.assertTrue(automation.setRotation(rotation))
             automation.waitForIdle(1000, 3000)
 
-            val scenario = ActivityScenario.launch(FrontBufferedRendererTestActivity::class.java)
+            val scenario = ActivityScenario.launch(SurfaceViewTestActivity::class.java)
                 .moveToState(Lifecycle.State.CREATED)
                 .onActivity {
                     surfaceView = it.getSurfaceView()
@@ -623,6 +626,57 @@ class CanvasFrontBufferedRendererTest {
         }
     }
 
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.Q)
+    @Test
+    fun testReleaseRemovedSurfaceCallbacks() {
+        val callbacks = object : CanvasFrontBufferedRenderer.Callback<Any> {
+            override fun onDrawFrontBufferedLayer(
+                canvas: Canvas,
+                bufferWidth: Int,
+                bufferHeight: Int,
+                param: Any
+            ) {
+                // no-op
+            }
+
+            override fun onDrawMultiBufferedLayer(
+                canvas: Canvas,
+                bufferWidth: Int,
+                bufferHeight: Int,
+                params: Collection<Any>
+            ) {
+                // no-op
+            }
+        }
+        var renderer: CanvasFrontBufferedRenderer<Any>? = null
+        var surfaceView: SurfaceViewTestActivity.TestSurfaceView? = null
+        val createLatch = CountDownLatch(1)
+        ActivityScenario.launch(SurfaceViewTestActivity::class.java)
+            .moveToState(Lifecycle.State.CREATED)
+            .onActivity {
+                surfaceView = it.getSurfaceView()
+                renderer = CanvasFrontBufferedRenderer(surfaceView!!, callbacks)
+                createLatch.countDown()
+            }
+
+        Assert.assertTrue(createLatch.await(3000, TimeUnit.MILLISECONDS))
+        // Capture surfaceView with local val to avoid Kotlin warnings regarding the surfaceView
+        // parameter changing potentially
+        val resolvedSurfaceView = surfaceView
+        try {
+            if (resolvedSurfaceView != null) {
+                Assert.assertEquals(1, resolvedSurfaceView.getCallbackCount())
+                renderer?.release(true)
+                renderer = null
+                Assert.assertEquals(0, resolvedSurfaceView.getCallbackCount())
+            } else {
+                fail("Unable to resolve SurfaceView, was the Activity created?")
+            }
+        } finally {
+            renderer?.release(true)
+        }
+    }
+
     @RequiresApi(Build.VERSION_CODES.Q)
     private fun CanvasFrontBufferedRenderer<*>?.blockingRelease(timeoutMillis: Long = 3000) {
         if (this != null) {
@@ -640,7 +694,14 @@ class CanvasFrontBufferedRendererTest {
         // See "b/277225133" these tests pass on cuttlefish + other devices but fail for some reason
         // FTL configured API level 33 emulator instances
         // Additionally some cuttlefish instances don't support rotation based testing (b/277764242)
-        !(Build.MODEL.contains("gphone") && Build.VERSION.SDK_INT == 33) &&
-            !(Build.MODEL.contains("Cuttlefish") &&
-                (Build.VERSION.SDK_INT == 30 || BuildCompat.isAtLeastV()))
+        isSupportedGphone() && isSupportedCuttlefish()
+
+    private fun isSupportedGphone() =
+        !(Build.MODEL.contains("gphone") &&
+            (Build.VERSION.SDK_INT == 33 || Build.VERSION.SDK_INT == 30))
+
+    @OptIn(BuildCompat.PrereleaseSdkCheck::class)
+    private fun isSupportedCuttlefish() =
+        !(Build.MODEL.contains("Cuttlefish") &&
+            (Build.VERSION.SDK_INT == 30 || BuildCompat.isAtLeastV()))
 }

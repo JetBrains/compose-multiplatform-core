@@ -19,7 +19,7 @@ package androidx.compose.compiler.plugins.kotlin
 import org.junit.Test
 
 @Suppress("SpellCheckingInspection") // Expected strings can have partial words
-class TargetAnnotationsTransformTests : AbstractIrTransformTest() {
+class TargetAnnotationsTransformTests(useFir: Boolean) : AbstractIrTransformTest(useFir) {
     @Test
     fun testInferUIFromCall() = verify(
         """
@@ -890,16 +890,13 @@ class TargetAnnotationsTransformTests : AbstractIrTransformTest() {
           }
           static val %stable: Int = 0
         }
-        val localBoxMeasurePolicy: MeasurePolicy = class <no name provided> : MeasurePolicy {
-          override fun measure(%this%MeasurePolicy: MeasureScope, <anonymous parameter 0>: List<Measurable>, constraints: Constraints): MeasureResult {
-            return %this%MeasurePolicy.layout(
-              width = constraints.minWidth,
-              height = constraints.minHeight
-            ) {
-            }
+        val localBoxMeasurePolicy: MeasurePolicy = MeasurePolicy { <unused var>: List<Measurable>, constraints: Constraints ->
+          %this%MeasurePolicy.layout(
+            width = constraints.minWidth,
+            height = constraints.minHeight
+          ) {
           }
         }
-        <no name provided>()
         @Composable
         @ComposableInferredTarget(scheme = "[androidx.compose.ui.UiComposable[androidx.compose.ui.UiComposable]]")
         fun LocalBox(modifier: Modifier?, content: @[ExtensionFunctionType] Function3<LocalBoxScope, Composer, Int, Unit>, %composer: Composer?, %changed: Int, %default: Int) {
@@ -983,12 +980,9 @@ class TargetAnnotationsTransformTests : AbstractIrTransformTest() {
               sourceInformationMarkerStart(%composer, <>, "C:Test.kt")
               Unit
               sourceInformationMarkerEnd(%composer)
-            }, null, class <no name provided> : MeasurePolicy {
-              override fun measure(%this%Layout: MeasureScope, <anonymous parameter 0>: List<Measurable>, <anonymous parameter 1>: Constraints): MeasureResult {
-                return error("")
-              }
-            }
-            <no name provided>(), %composer, 0, 0b0010)
+            }, null, MeasurePolicy { <unused var>: List<Measurable>, <unused var>: Constraints ->
+              error("")
+            }, %composer, 0b000110000000, 0b0010)
             if (isTraceInProgress()) {
               traceEventEnd()
             }
@@ -1012,12 +1006,9 @@ class TargetAnnotationsTransformTests : AbstractIrTransformTest() {
             if (isTraceInProgress()) {
               traceEventStart(<>, %dirty, -1, <>)
             }
-            Layout(content, null, class <no name provided> : MeasurePolicy {
-              override fun measure(%this%Layout: MeasureScope, <anonymous parameter 0>: List<Measurable>, <anonymous parameter 1>: Constraints): MeasureResult {
-                return error("")
-              }
-            }
-            <no name provided>(), %composer, 0b1110 and %dirty, 0b0010)
+            Layout(content, null, MeasurePolicy { <unused var>: List<Measurable>, <unused var>: Constraints ->
+              error("")
+            }, %composer, 0b000110000000 or 0b1110 and %dirty, 0b0010)
             if (isTraceInProgress()) {
               traceEventEnd()
             }
@@ -1059,7 +1050,7 @@ class TargetAnnotationsTransformTests : AbstractIrTransformTest() {
             }
             BasicText(AnnotatedString(
               text = "Some text"
-            ), null, null, null, <unsafe-coerce>(0), false, 0, 0, null, %composer, 0b0110, 0b000111111110)
+            ), null, null, null, <unsafe-coerce>(0), false, 0, 0, null, null, %composer, 0b0110, 0b001111111110)
             if (isTraceInProgress()) {
               traceEventEnd()
             }
@@ -1100,7 +1091,7 @@ class TargetAnnotationsTransformTests : AbstractIrTransformTest() {
               } else {
                 %composer.skipToGroupEnd()
               }
-            }, %composer, 0b00111000)
+            }, %composer, 0b00110000 or ProvidedValue.%stable or 0)
             if (isTraceInProgress()) {
               traceEventEnd()
             }
@@ -1138,7 +1129,7 @@ class TargetAnnotationsTransformTests : AbstractIrTransformTest() {
               } else {
                 %composer.skipToGroupEnd()
               }
-            }, %composer, 0b00111000)
+            }, %composer, 0b00110000 or ProvidedValue.%stable or 0)
             if (isTraceInProgress()) {
               traceEventEnd()
             }

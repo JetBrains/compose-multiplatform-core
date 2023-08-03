@@ -30,7 +30,6 @@ import org.junit.runner.RunWith
 class UiResponseTest {
     private val context: Context = ApplicationProvider.getApplicationContext()
     private val remoteViewsFactoryId = 123
-    private val changeViewId = 111
 
     @Test
     fun uiResponse_remoteViewsBuilder_withFactory_success() {
@@ -39,7 +38,6 @@ class UiResponseTest {
             UiResponse.RemoteViewsUiBuilder()
                 .setRemoteViews(views, SizeF(10f, 15f))
                 .addRemoteViewsFactory(remoteViewsFactoryId, FakeRemoteViewsFactory())
-                .addViewIdForCollectionUpdate(changeViewId)
                 .build()
 
         assertThat(uiResponse.tileLayoutInternal).isNull()
@@ -47,9 +45,8 @@ class UiResponseTest {
         assertThat(uiResponse.remoteViewsInternal?.size?.height).isEqualTo(15)
         assertThat(uiResponse.remoteViewsInternal?.remoteViews?.`package`)
             .isEqualTo(context.packageName)
-        assertThat(uiResponse.remoteViewsInternal?.remoteViewsFactories)
+        assertThat(uiResponse.remoteViewsInternal?.collectionViewFactories)
             .containsKey(remoteViewsFactoryId)
-        assertThat(uiResponse.remoteViewsInternal?.changedViewIds).containsExactly(changeViewId)
     }
 
     @Test
@@ -63,7 +60,6 @@ class UiResponseTest {
         assertThat(uiResponse.remoteViewsInternal?.size?.height).isEqualTo(15)
         assertThat(uiResponse.remoteViewsInternal?.remoteViews?.`package`)
             .isEqualTo(context.packageName)
-        assertThat(uiResponse.remoteViewsInternal?.changedViewIds).isEmpty()
     }
 
     @Test
@@ -74,45 +70,7 @@ class UiResponseTest {
         assertThrows(NullPointerException::class.java) {
             UiResponse.RemoteViewsUiBuilder()
                 .addRemoteViewsFactory(remoteViewsFactoryId, FakeRemoteViewsFactory())
-                .addViewIdForCollectionUpdate(changeViewId)
                 .build()
         }
-    }
-
-    @Test
-    @Suppress("deprecation") // For backwards compatibility.
-    fun uiResponse_tileLayoutBuilder_success() {
-        val layout =
-            androidx.wear.tiles.LayoutElementBuilders.Layout.Builder()
-                .setRoot(
-                    androidx.wear.tiles.LayoutElementBuilders.Box.Builder()
-                        .addContent(
-                            androidx.wear.tiles.LayoutElementBuilders.Column.Builder()
-                                .addContent(
-                                    androidx.wear.tiles.LayoutElementBuilders.Text.Builder()
-                                        .setText("LA8JE92")
-                                        .build()
-                                )
-                                .build()
-                        )
-                        .build()
-                )
-                .build()
-        val resources = androidx.wear.tiles.ResourceBuilders.Resources.Builder()
-            .setVersion("1234")
-            .build()
-        val uiResponse: UiResponse =
-            UiResponse.TileLayoutBuilder().setTileLayout(layout, resources).build()
-
-        assertThat(uiResponse.remoteViewsInternal).isNull()
-        assertThat(uiResponse.tileLayoutInternal?.layout).isNotNull()
-        assertThat(uiResponse.tileLayoutInternal?.resources).isNotNull()
-        assertThat(uiResponse.tileLayoutInternal?.toProto()?.layout).isNotEmpty()
-        assertThat(uiResponse.tileLayoutInternal?.toProto()?.resources).isNotEmpty()
-    }
-
-    @Test
-    fun uiResponse_tileLayoutBuilder_failure() {
-        assertThrows(NullPointerException::class.java) { UiResponse.TileLayoutBuilder().build() }
     }
 }

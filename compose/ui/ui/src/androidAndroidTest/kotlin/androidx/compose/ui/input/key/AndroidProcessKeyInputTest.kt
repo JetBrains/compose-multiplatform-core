@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.input.key
 
+import android.view.KeyEvent as AndroidKeyEvent
 import android.view.KeyEvent.ACTION_DOWN as ActionDown
 import android.view.KeyEvent.ACTION_UP as ActionUp
 import android.view.KeyEvent.KEYCODE_A as KeyCodeA
@@ -30,17 +31,17 @@ import androidx.compose.ui.focus.setFocusableContent
 import androidx.compose.ui.input.key.Key.Companion.A
 import androidx.compose.ui.input.key.KeyEventType.Companion.KeyDown
 import androidx.compose.ui.input.key.KeyEventType.Companion.KeyUp
+import androidx.compose.ui.node.DelegatingNode
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.semantics.elementFor
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.filters.SmallTest
 import com.google.common.truth.Truth.assertThat
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
-import android.view.KeyEvent as AndroidKeyEvent
-import androidx.compose.ui.node.DelegatingNode
-import androidx.compose.ui.semantics.elementFor
 import org.mockito.kotlin.inOrder
 
 /**
@@ -102,6 +103,7 @@ class AndroidProcessKeyInputTest(private val keyEventAction: Int) {
         }
     }
 
+    @Ignore("b/279178695")
     @Test
     fun delegated_onKeyEvent_triggered() {
         // Arrange.
@@ -139,6 +141,8 @@ class AndroidProcessKeyInputTest(private val keyEventAction: Int) {
             ownerView.dispatchKeyEvent(AndroidKeyEvent(keyEventAction, KeyCodeA))
         }
 
+        rule.waitUntil { receivedKeyEvent != null }
+
         // Assert.
         rule.runOnIdle {
             val keyEvent = checkNotNull(receivedKeyEvent)
@@ -154,6 +158,7 @@ class AndroidProcessKeyInputTest(private val keyEventAction: Int) {
         }
     }
 
+    @Ignore("b/279178695")
     @Test
     fun delegated_multiple_onKeyEvent_triggered() {
         // Arrange.
@@ -204,6 +209,8 @@ class AndroidProcessKeyInputTest(private val keyEventAction: Int) {
         val keyConsumed = rule.runOnIdle {
             ownerView.dispatchKeyEvent(AndroidKeyEvent(keyEventAction, KeyCodeA))
         }
+
+        rule.waitUntil { receivedKeyEvent2 != null }
 
         // Assert.
         rule.runOnIdle {

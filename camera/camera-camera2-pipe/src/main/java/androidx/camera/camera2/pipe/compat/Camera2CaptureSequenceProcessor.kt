@@ -277,34 +277,26 @@ internal class Camera2CaptureSequenceProcessor(
                 if (shouldWaitForRepeatingRequest) {
                     lastSingleRepeatingRequestSequence = captureSequence
                 }
-                session.setRepeatingRequest(
-                    captureSequence.captureRequestList[0], captureCallback, threads.camera2Handler
-                )
+                session.setRepeatingRequest(captureSequence.captureRequestList[0], captureCallback)
             } else {
-                session.capture(
-                    captureSequence.captureRequestList[0], captureSequence, threads.camera2Handler
-                )
+                session.capture(captureSequence.captureRequestList[0], captureSequence)
             }
         } else {
             if (captureSequence.repeating) {
-                session.setRepeatingBurst(
-                    captureSequence.captureRequestList, captureSequence, threads.camera2Handler
-                )
+                session.setRepeatingBurst(captureSequence.captureRequestList, captureSequence)
             } else {
-                session.captureBurst(
-                    captureSequence.captureRequestList, captureSequence, threads.camera2Handler
-                )
+                session.captureBurst(captureSequence.captureRequestList, captureSequence)
             }
         }
     }
 
     override fun abortCaptures(): Unit = synchronized(lock) {
-        if (closed) return
+        Log.debug { "$this#abortCaptures" }
         session.abortCaptures()
     }
 
     override fun stopRepeating(): Unit = synchronized(lock) {
-        if (closed) return
+        Log.debug { "$this#stopRepeating" }
         session.stopRepeating()
     }
 

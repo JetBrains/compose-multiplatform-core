@@ -33,7 +33,6 @@ import androidx.compose.ui.text.android.LayoutCompat.HyphenationFrequency
 import androidx.compose.ui.text.android.LayoutCompat.JustificationMode
 import androidx.compose.ui.text.android.LayoutCompat.LineBreakStyle
 import androidx.compose.ui.text.android.LayoutCompat.LineBreakWordStyle
-import androidx.core.os.BuildCompat
 import java.lang.reflect.Constructor
 import java.lang.reflect.InvocationTargetException
 
@@ -153,12 +152,12 @@ private class StaticLayoutParams constructor(
     val rightIndents: IntArray?
 ) {
     init {
-        require(start in 0..end)
-        require(end in 0..text.length)
-        require(maxLines >= 0)
-        require(width >= 0)
-        require(ellipsizedWidth >= 0)
-        require(lineSpacingMultiplier >= 0f)
+        require(start in 0..end) { "invalid start value" }
+        require(end in 0..text.length) { "invalid end value" }
+        require(maxLines >= 0) { "invalid maxLines value" }
+        require(width >= 0) { "invalid width value" }
+        require(ellipsizedWidth >= 0) { "invalid ellipsizedWidth value" }
+        require(lineSpacingMultiplier >= 0f) { "invalid lineSpacingMultiplier value" }
     }
 }
 
@@ -206,7 +205,6 @@ private class StaticLayoutFactory23 : StaticLayoutFactoryImpl {
             }.build()
     }
 
-    @androidx.annotation.OptIn(markerClass = [BuildCompat.PrereleaseSdkCheck::class])
     override fun isFallbackLineSpacingEnabled(
         layout: StaticLayout,
         useFallbackLineSpacing: Boolean

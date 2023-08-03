@@ -34,13 +34,13 @@ import androidx.core.view.WindowInsetsControllerCompat
 
 // The light scrim color used in the platform API 29+
 // https://cs.android.com/android/platform/superproject/+/master:frameworks/base/core/java/com/android/internal/policy/DecorView.java;drc=6ef0f022c333385dba2c294e35b8de544455bf19;l=142
-@VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+@VisibleForTesting
 internal val DefaultLightScrim = Color.argb(0xe6, 0xFF, 0xFF, 0xFF)
 
 // The dark scrim color used in the platform.
 // https://cs.android.com/android/platform/superproject/+/master:frameworks/base/core/res/res/color/system_bar_background_semi_transparent.xml
 // https://cs.android.com/android/platform/superproject/+/master:frameworks/base/core/res/remote_color_resources_res/values/colors.xml;l=67
-@VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+@VisibleForTesting
 internal val DefaultDarkScrim = Color.argb(0x80, 0x1b, 0x1b, 0x1b)
 
 private var Impl: EdgeToEdgeImpl? = null
@@ -73,8 +73,8 @@ fun ComponentActivity.enableEdgeToEdge(
     navigationBarStyle: SystemBarStyle = SystemBarStyle.auto(DefaultLightScrim, DefaultDarkScrim)
 ) {
     val view = window.decorView
-    val statusBarIsDark = statusBarStyle.isDark(view.resources)
-    val navigationBarIsDark = navigationBarStyle.isDark(view.resources)
+    val statusBarIsDark = statusBarStyle.detectDarkMode(view.resources)
+    val navigationBarIsDark = navigationBarStyle.detectDarkMode(view.resources)
     val impl = Impl ?: if (Build.VERSION.SDK_INT >= 29) {
         EdgeToEdgeApi29()
     } else if (Build.VERSION.SDK_INT >= 26) {
@@ -97,7 +97,8 @@ fun ComponentActivity.enableEdgeToEdge(
 class SystemBarStyle private constructor(
     private val lightScrim: Int,
     internal val darkScrim: Int,
-    internal val nightMode: Int
+    internal val nightMode: Int,
+    internal val detectDarkMode: (Resources) -> Boolean
 ) {
 
     companion object {
@@ -116,10 +117,26 @@ class SystemBarStyle private constructor(
          * mode.
          * @param darkScrim The scrim color to be used for the background when the app is in dark
          * mode. This is also used on devices where the system icon color is always light.
+         * @param detectDarkMode Optional. Detects whether UI currently uses dark mode or not. The
+         * default implementation can detect any of the standard dark mode features from the
+         * platform, appcompat, and Jetpack Compose.
          */
         @JvmStatic
-        fun auto(@ColorInt lightScrim: Int, @ColorInt darkScrim: Int): SystemBarStyle {
-            return SystemBarStyle(lightScrim, darkScrim, UiModeManager.MODE_NIGHT_AUTO)
+        @JvmOverloads
+        fun auto(
+            @ColorInt lightScrim: Int,
+            @ColorInt darkScrim: Int,
+            detectDarkMode: (Resources) -> Boolean = { resources ->
+                (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
+                    Configuration.UI_MODE_NIGHT_YES
+            }
+        ): SystemBarStyle {
+            return SystemBarStyle(
+                lightScrim = lightScrim,
+                darkScrim = darkScrim,
+                nightMode = UiModeManager.MODE_NIGHT_AUTO,
+                detectDarkMode = detectDarkMode
+            )
         }
 
         /**
@@ -131,7 +148,12 @@ class SystemBarStyle private constructor(
          */
         @JvmStatic
         fun dark(@ColorInt scrim: Int): SystemBarStyle {
-            return SystemBarStyle(scrim, scrim, UiModeManager.MODE_NIGHT_YES)
+            return SystemBarStyle(
+                lightScrim = scrim,
+                darkScrim = scrim,
+                nightMode = UiModeManager.MODE_NIGHT_YES,
+                detectDarkMode = { _ -> true }
+            )
         }
 
         /**
@@ -145,16 +167,12 @@ class SystemBarStyle private constructor(
          */
         @JvmStatic
         fun light(@ColorInt scrim: Int, @ColorInt darkScrim: Int): SystemBarStyle {
-            return SystemBarStyle(scrim, darkScrim, UiModeManager.MODE_NIGHT_NO)
-        }
-    }
-
-    internal fun isDark(resources: Resources): Boolean {
-        return when (nightMode) {
-            UiModeManager.MODE_NIGHT_YES -> true
-            UiModeManager.MODE_NIGHT_NO -> false
-            else -> (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
-                Configuration.UI_MODE_NIGHT_YES
+            return SystemBarStyle(
+                lightScrim = scrim,
+                darkScrim = darkScrim,
+                nightMode = UiModeManager.MODE_NIGHT_NO,
+                detectDarkMode = { _ -> false }
+            )
         }
     }
 

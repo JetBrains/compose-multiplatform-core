@@ -16,9 +16,10 @@
 
 package androidx.work.impl.utils;
 
-import static androidx.work.WorkInfo.State.CANCELLED;
 import static androidx.work.WorkInfo.State.FAILED;
 import static androidx.work.WorkInfo.State.SUCCEEDED;
+
+import android.app.job.JobParameters;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
@@ -71,7 +72,7 @@ public abstract class CancelWorkRunnable implements Runnable {
         iterativelyCancelWorkAndDependents(workManagerImpl.getWorkDatabase(), workSpecId);
 
         Processor processor = workManagerImpl.getProcessor();
-        processor.stopAndCancelWork(workSpecId);
+        processor.stopAndCancelWork(workSpecId, JobParameters.STOP_REASON_CANCELLED_BY_APP);
 
         for (Scheduler scheduler : workManagerImpl.getSchedulers()) {
             scheduler.cancel(workSpecId);
@@ -97,7 +98,7 @@ public abstract class CancelWorkRunnable implements Runnable {
             // Don't fail already cancelled work.
             WorkInfo.State state = workSpecDao.getState(id);
             if (state != SUCCEEDED && state != FAILED) {
-                workSpecDao.setState(CANCELLED, id);
+                workSpecDao.setCancelledState(id);
             }
             idsToProcess.addAll(dependencyDao.getDependentWorkIds(id));
         }
@@ -222,7 +223,9 @@ public abstract class CancelWorkRunnable implements Runnable {
                     }
                     // Update the last cancelled time in Preference.
                     new PreferenceUtils(workManagerImpl.getWorkDatabase())
-                            .setLastCancelAllTimeMillis(System.currentTimeMillis());
+                            .setLastCancelAllTimeMillis(
+                                    workManagerImpl.getConfiguration().getClock()
+                                            .currentTimeMillis());
                     workDatabase.setTransactionSuccessful();
                 } finally {
                     workDatabase.endTransaction();

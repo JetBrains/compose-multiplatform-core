@@ -26,6 +26,7 @@ import androidx.privacysandbox.ads.adservices.internal.AdServicesInfo;
 import androidx.privacysandbox.ads.adservices.java.endtoend.TestUtil;
 import androidx.privacysandbox.ads.adservices.java.measurement.MeasurementManagerFutures;
 import androidx.privacysandbox.ads.adservices.measurement.DeletionRequest;
+import androidx.privacysandbox.ads.adservices.measurement.SourceRegistrationRequest;
 import androidx.privacysandbox.ads.adservices.measurement.WebSourceParams;
 import androidx.privacysandbox.ads.adservices.measurement.WebSourceRegistrationRequest;
 import androidx.privacysandbox.ads.adservices.measurement.WebTriggerParams;
@@ -47,6 +48,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 @RunWith(JUnit4.class)
+@SdkSuppress(minSdkVersion = 28) // API 28 required for device_config used by this test
 // TODO: Consider refactoring so that we're not duplicating code.
 public class MeasurementManagerTest {
     private static final String TAG = "MeasurementManagerTest";
@@ -72,6 +74,7 @@ public class MeasurementManagerTest {
         // We need to turn the Consent Manager into debug mode
         mTestUtil.overrideConsentManagerDebugMode(true);
         mTestUtil.overrideMeasurementKillSwitches(true);
+        mTestUtil.overrideAdIdKillSwitch(true);
         mTestUtil.overrideDisableMeasurementEnrollmentCheck("1");
         mMeasurementManager =
                 MeasurementManagerFutures.from(ApplicationProvider.getApplicationContext());
@@ -87,6 +90,7 @@ public class MeasurementManagerTest {
         mTestUtil.overrideConsentManagerDebugMode(false);
         mTestUtil.resetOverrideDisableMeasurementEnrollmentCheck();
         mTestUtil.overrideMeasurementKillSwitches(false);
+        mTestUtil.overrideAdIdKillSwitch(false);
         mTestUtil.overrideDisableMeasurementEnrollmentCheck("0");
         // Cool-off rate limiter
         TimeUnit.SECONDS.sleep(1);
@@ -100,6 +104,19 @@ public class MeasurementManagerTest {
         assertThat(mMeasurementManager.registerSourceAsync(
                 SOURCE_REGISTRATION_URI,
                 /* inputEvent= */ null).get())
+                .isNotNull();
+    }
+
+    @Test
+    public void testRegisterAppSources_NoServerSetup_NoErrors() throws Exception {
+        // Skip the test if SDK extension 5 is not present.
+        Assume.assumeTrue(AdServicesInfo.INSTANCE.version() >= 5);
+
+        SourceRegistrationRequest request =
+                new SourceRegistrationRequest.Builder(
+                        Collections.singletonList(SOURCE_REGISTRATION_URI))
+                        .build();
+        assertThat(mMeasurementManager.registerSourceAsync(request).get())
                 .isNotNull();
     }
 

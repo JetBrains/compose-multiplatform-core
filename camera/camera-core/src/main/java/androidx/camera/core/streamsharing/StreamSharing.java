@@ -18,9 +18,13 @@ package androidx.camera.core.streamsharing;
 
 import static androidx.camera.core.CameraEffect.PREVIEW;
 import static androidx.camera.core.CameraEffect.VIDEO_CAPTURE;
+import static androidx.camera.core.MirrorMode.MIRROR_MODE_ON_FRONT_ONLY;
 import static androidx.camera.core.impl.ImageFormatConstants.INTERNAL_DEFINED_IMAGE_FORMAT_PRIVATE;
 import static androidx.camera.core.impl.ImageInputConfig.OPTION_INPUT_FORMAT;
+import static androidx.camera.core.impl.ImageOutputConfig.OPTION_MIRROR_MODE;
+import static androidx.camera.core.impl.UseCaseConfig.OPTION_CAPTURE_TYPE;
 import static androidx.camera.core.impl.utils.Threads.checkMainThread;
+import static androidx.camera.core.impl.utils.TransformUtils.getRotatedSize;
 import static androidx.core.util.Preconditions.checkNotNull;
 
 import static java.util.Collections.singletonList;
@@ -28,12 +32,15 @@ import static java.util.Objects.requireNonNull;
 
 import android.graphics.Rect;
 import android.os.Build;
+import android.util.Log;
 import android.util.Size;
 
+import androidx.annotation.IntRange;
 import androidx.annotation.MainThread;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
+import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import androidx.camera.core.ImageCapture;
 import androidx.camera.core.UseCase;
@@ -41,6 +48,7 @@ import androidx.camera.core.impl.CameraInfoInternal;
 import androidx.camera.core.impl.CameraInternal;
 import androidx.camera.core.impl.Config;
 import androidx.camera.core.impl.ImageFormatConstants;
+import androidx.camera.core.impl.ImageOutputConfig;
 import androidx.camera.core.impl.MutableConfig;
 import androidx.camera.core.impl.MutableOptionsBundle;
 import androidx.camera.core.impl.OptionsBundle;
@@ -58,6 +66,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -66,9 +75,9 @@ import java.util.Set;
  */
 @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
 public class StreamSharing extends UseCase {
-
+    private static final String TAG = "StreamSharing";
     @NonNull
-    private static final StreamSharingConfig DEFAULT_CONFIG;
+    private final StreamSharingConfig mDefaultConfig;
 
     @NonNull
     private final VirtualCamera mVirtualCamera;
@@ -85,12 +94,28 @@ public class StreamSharing extends UseCase {
     @Nullable
     private SurfaceEdge mSharingInputEdge;
 
-    static {
+    @SuppressWarnings("WeakerAccess") // Synthetic access
+    SessionConfig.Builder mSessionConfigBuilder;
+
+    private static StreamSharingConfig getDefaultConfig(Set<UseCase> children) {
         MutableConfig mutableConfig = new StreamSharingBuilder().getMutableConfig();
         mutableConfig.insertOption(OPTION_INPUT_FORMAT,
                 ImageFormatConstants.INTERNAL_DEFINED_IMAGE_FORMAT_PRIVATE);
-        DEFAULT_CONFIG = new StreamSharingConfig(OptionsBundle.from(mutableConfig));
+        mutableConfig.insertOption(OPTION_CAPTURE_TYPE,
+                UseCaseConfigFactory.CaptureType.STREAM_SHARING);
+        List<UseCaseConfigFactory.CaptureType> captureTypes = new ArrayList<>();
+        for (UseCase child : children) {
+            if (child.getCurrentConfig().containsOption(OPTION_CAPTURE_TYPE)) {
+                captureTypes.add(child.getCurrentConfig().getCaptureType());
+            } else {
+                Log.e(TAG, "A child does not have capture type.");
+            }
+        }
+        mutableConfig.insertOption(StreamSharingConfig.OPTION_CAPTURE_TYPES, captureTypes);
+        mutableConfig.insertOption(OPTION_MIRROR_MODE, MIRROR_MODE_ON_FRONT_ONLY);
+        return new StreamSharingConfig(OptionsBundle.from(mutableConfig));
     }
+
 
     /**
      * Constructs a {@link StreamSharing} with a parent {@link CameraInternal}, children
@@ -100,12 +125,14 @@ public class StreamSharing extends UseCase {
     public StreamSharing(@NonNull CameraInternal parentCamera,
             @NonNull Set<UseCase> children,
             @NonNull UseCaseConfigFactory useCaseConfigFactory) {
-        super(DEFAULT_CONFIG);
+        super(getDefaultConfig(children));
+        mDefaultConfig = getDefaultConfig(children);
         mVirtualCamera = new VirtualCamera(parentCamera, children, useCaseConfigFactory,
-                () -> {
+                (jpegQuality, rotationDegrees) -> {
                     SurfaceProcessorNode sharingNode = mSharingNode;
                     if (sharingNode != null) {
-                        return sharingNode.getSurfaceProcessor().snapshot();
+                        return sharingNode.getSurfaceProcessor().snapshot(
+                                jpegQuality, rotationDegrees);
                     } else {
                         return Futures.immediateFailedFuture(new Exception(
                                 "Failed to take picture: pipeline is not ready."));
@@ -119,11 +146,11 @@ public class StreamSharing extends UseCase {
             @NonNull UseCaseConfigFactory factory) {
         // The shared stream optimizes for VideoCapture.
         Config captureConfig = factory.getConfig(
-                UseCaseConfigFactory.CaptureType.VIDEO_CAPTURE,
+                mDefaultConfig.getCaptureType(),
                 ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY);
 
         if (applyDefaultConfig) {
-            captureConfig = Config.mergeConfigs(captureConfig, DEFAULT_CONFIG.getConfig());
+            captureConfig = Config.mergeConfigs(captureConfig, mDefaultConfig.getConfig());
         }
         return captureConfig == null ? null :
                 getUseCaseConfigBuilder(captureConfig).getUseCaseConfig();
@@ -150,6 +177,18 @@ public class StreamSharing extends UseCase {
                 getCameraId(), getCurrentConfig(), streamSpec));
         notifyActive();
         return streamSpec;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @NonNull
+    @Override
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    protected StreamSpec onSuggestedStreamSpecImplementationOptionsUpdated(@NonNull Config config) {
+        mSessionConfigBuilder.addImplementationOptions(config);
+        updateSessionConfig(mSessionConfigBuilder.build());
+        return getAttachedStreamSpec().toBuilder().setImplementationOptions(config).build();
     }
 
     @Override
@@ -209,12 +248,14 @@ public class StreamSharing extends UseCase {
                 getSensorToBufferTransformMatrix(),
                 camera.getHasTransform(),
                 requireNonNull(getCropRect(streamSpec.getResolution())),
-                /*rotationDegrees=*/0, // Rotation are handled by each child.
-                /*mirroring=*/false); // Mirroring will be decided by each child.
+                getRelativeRotation(camera), // Rotation can be overridden by children.
+                // Once copied, the target rotation will no longer be useful.
+                ImageOutputConfig.ROTATION_NOT_SPECIFIED,
+                isMirroringRequired(camera)); // Mirroring can be overridden by children.
         mSharingInputEdge = getSharingInputEdge(mCameraEdge, camera);
 
         mSharingNode = new SurfaceProcessorNode(camera,
-                DefaultSurfaceProcessor.Factory.newInstance());
+                DefaultSurfaceProcessor.Factory.newInstance(streamSpec.getDynamicRange()));
 
         // Transform the input based on virtual camera configuration.
         Map<UseCase, SurfaceProcessorNode.OutConfig> outConfigMap =
@@ -235,7 +276,11 @@ public class StreamSharing extends UseCase {
                 streamSpec.getResolution());
         builder.addSurface(mCameraEdge.getDeferrableSurface());
         builder.addRepeatingCameraCaptureCallback(mVirtualCamera.getParentMetadataCallback());
+        if (streamSpec.getImplementationOptions() != null) {
+            builder.addImplementationOptions(streamSpec.getImplementationOptions());
+        }
         addCameraErrorListener(builder, cameraId, config, streamSpec);
+        mSessionConfigBuilder = builder;
         return builder.build();
     }
 
@@ -252,7 +297,15 @@ public class StreamSharing extends UseCase {
         // Transform the camera edge to get the input edge.
         mEffectNode = new SurfaceProcessorNode(camera,
                 getEffect().createSurfaceProcessorInternal());
-        SurfaceProcessorNode.OutConfig outConfig = SurfaceProcessorNode.OutConfig.of(cameraEdge);
+        // Effect does not apply rotation.
+        int rotationAppliedByEffect = 0;
+        SurfaceProcessorNode.OutConfig outConfig = SurfaceProcessorNode.OutConfig.of(
+                cameraEdge.getTargets(),
+                cameraEdge.getFormat(),
+                cameraEdge.getCropRect(),
+                getRotatedSize(cameraEdge.getCropRect(), rotationAppliedByEffect),
+                rotationAppliedByEffect,
+                /*mirroring=*/false); // Effects does not mirror.
         SurfaceProcessorNode.In in = SurfaceProcessorNode.In.of(cameraEdge,
                 singletonList(outConfig));
         SurfaceProcessorNode.Out out = mEffectNode.transform(in);
@@ -312,7 +365,9 @@ public class StreamSharing extends UseCase {
          * Takes a snapshot of the current stream and write it to the children with JPEG Surface.
          */
         @NonNull
-        ListenableFuture<Void> jpegSnapshot();
+        ListenableFuture<Void> jpegSnapshot(
+                @IntRange(from = 0, to = 100) int jpegQuality,
+                @IntRange(from = 0, to = 359) int rotationDegrees);
     }
 
     @VisibleForTesting

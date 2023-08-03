@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:RequiresApi(Build.VERSION_CODES.LOLLIPOP)
+
 package androidx.camera.camera2.pipe.compat
 
 import android.content.Context
@@ -22,7 +24,9 @@ import android.os.Build
 import android.os.Looper
 import android.util.Size
 import android.view.Surface
+import androidx.annotation.RequiresApi
 import androidx.camera.camera2.pipe.CameraGraph
+import androidx.camera.camera2.pipe.CameraGraph.Flags.FinalizeSessionOnCloseBehavior
 import androidx.camera.camera2.pipe.CameraId
 import androidx.camera.camera2.pipe.CameraMetadata
 import androidx.camera.camera2.pipe.CameraPipe
@@ -43,6 +47,7 @@ import androidx.camera.camera2.pipe.internal.CameraErrorListener
 import androidx.camera.camera2.pipe.testing.FakeCaptureSequence
 import androidx.camera.camera2.pipe.testing.FakeCaptureSequenceProcessor
 import androidx.camera.camera2.pipe.testing.FakeGraphProcessor
+import androidx.camera.camera2.pipe.testing.FakeThreads
 import androidx.camera.camera2.pipe.testing.RobolectricCameraPipeTestRunner
 import androidx.camera.camera2.pipe.testing.RobolectricCameras
 import androidx.test.core.app.ApplicationProvider
@@ -112,7 +117,8 @@ internal class CaptureSessionFactoryTest {
                     testCamera.metadata,
                     testCamera.cameraDevice,
                     testCamera.cameraId,
-                    cameraErrorListener
+                    cameraErrorListener,
+                    threads = FakeThreads.fromTestScope(this)
                 ),
                 mapOf(stream1.id to surface),
                 captureSessionState =
@@ -128,6 +134,10 @@ internal class CaptureSessionFactoryTest {
                     },
                     CameraSurfaceManager(),
                     SystemTimeSource(),
+                    CameraGraph.Flags(
+                        quirkFinalizeSessionOnCloseBehavior = FinalizeSessionOnCloseBehavior.OFF,
+                        quirkCloseCaptureSessionOnDisconnect = false,
+                    ),
                     this
                 )
             )

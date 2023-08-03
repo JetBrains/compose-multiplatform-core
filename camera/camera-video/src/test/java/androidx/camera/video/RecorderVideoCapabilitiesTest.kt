@@ -14,23 +14,33 @@
  * limitations under the License.
  */
 
+@file:RequiresApi(21)
+
 package androidx.camera.video
 
 import android.media.CamcorderProfile
 import android.os.Build
 import android.util.Size
+import androidx.annotation.RequiresApi
 import androidx.camera.core.DynamicRange
 import androidx.camera.core.DynamicRange.BIT_DEPTH_10_BIT
-import androidx.camera.core.DynamicRange.FORMAT_HLG
+import androidx.camera.core.DynamicRange.BIT_DEPTH_8_BIT
+import androidx.camera.core.DynamicRange.BIT_DEPTH_UNSPECIFIED
+import androidx.camera.core.DynamicRange.ENCODING_DOLBY_VISION
+import androidx.camera.core.DynamicRange.ENCODING_HDR_UNSPECIFIED
+import androidx.camera.core.DynamicRange.ENCODING_UNSPECIFIED
+import androidx.camera.core.DynamicRange.HDR10_10_BIT
 import androidx.camera.core.DynamicRange.HDR_UNSPECIFIED_10_BIT
+import androidx.camera.core.DynamicRange.HLG_10_BIT
 import androidx.camera.core.DynamicRange.SDR
+import androidx.camera.core.DynamicRange.UNSPECIFIED
 import androidx.camera.core.impl.EncoderProfilesProxy.VideoProfileProxy
-import androidx.camera.testing.EncoderProfilesUtil.PROFILES_2160P
-import androidx.camera.testing.EncoderProfilesUtil.PROFILES_720P
-import androidx.camera.testing.EncoderProfilesUtil.RESOLUTION_2160P
-import androidx.camera.testing.EncoderProfilesUtil.RESOLUTION_720P
 import androidx.camera.testing.fakes.FakeCameraInfoInternal
-import androidx.camera.testing.fakes.FakeEncoderProfilesProvider
+import androidx.camera.testing.impl.EncoderProfilesUtil.PROFILES_2160P
+import androidx.camera.testing.impl.EncoderProfilesUtil.PROFILES_720P
+import androidx.camera.testing.impl.EncoderProfilesUtil.RESOLUTION_2160P
+import androidx.camera.testing.impl.EncoderProfilesUtil.RESOLUTION_720P
+import androidx.camera.testing.impl.fakes.FakeEncoderProfilesProvider
 import androidx.camera.video.Quality.FHD
 import androidx.camera.video.Quality.HD
 import androidx.camera.video.Quality.HIGHEST
@@ -47,7 +57,10 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 
-private val HLG10 = DynamicRange(FORMAT_HLG, BIT_DEPTH_10_BIT)
+private val UNSPECIFIED_8_BIT = DynamicRange(ENCODING_UNSPECIFIED, BIT_DEPTH_8_BIT)
+private val UNSPECIFIED_10_BIT = DynamicRange(ENCODING_UNSPECIFIED, BIT_DEPTH_10_BIT)
+private val HDR_UNSPECIFIED = DynamicRange(ENCODING_HDR_UNSPECIFIED, BIT_DEPTH_UNSPECIFIED)
+private val DOLBY_VISION_UNSPECIFIED = DynamicRange(ENCODING_DOLBY_VISION, BIT_DEPTH_UNSPECIFIED)
 
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
@@ -60,7 +73,7 @@ class RecorderVideoCapabilitiesTest {
         .add(CamcorderProfile.QUALITY_720P, PROFILES_720P) // HD (720p)
         .add(CamcorderProfile.QUALITY_LOW, PROFILES_720P) // HD (720p) per above definition
         .build()
-    private val defaultDynamicRanges = setOf(SDR, HLG10)
+    private val defaultDynamicRanges = setOf(SDR, HLG_10_BIT)
     private val cameraInfo = FakeCameraInfoInternal().apply {
         encoderProfilesProvider = defaultProfilesProvider
         supportedDynamicRanges = defaultDynamicRanges
@@ -76,7 +89,56 @@ class RecorderVideoCapabilitiesTest {
 
     @Test
     fun canGetSupportedDynamicRanges() {
-        assertThat(videoCapabilities.supportedDynamicRanges).containsExactly(SDR, HLG10)
+        assertThat(videoCapabilities.supportedDynamicRanges).containsExactly(SDR, HLG_10_BIT)
+    }
+
+    @Test
+    fun hasSupportedQualities_sdr() {
+        assertThat(videoCapabilities.getSupportedQualities(SDR)).containsExactly(HD, UHD)
+    }
+
+    @Test
+    fun hasSupportedQualities_hlg10() {
+        assertThat(videoCapabilities.getSupportedQualities(HLG_10_BIT)).containsExactly(HD, UHD)
+    }
+
+    @Test
+    fun hasSupportedQualities_hdr10() {
+        assertThat(videoCapabilities.getSupportedQualities(HDR10_10_BIT)).isEmpty()
+    }
+
+    @Test
+    fun hasSupportedQualities_unspecified() {
+        assertThat(videoCapabilities.getSupportedQualities(UNSPECIFIED)).containsExactly(HD, UHD)
+    }
+
+    @Test
+    fun hasSupportedQualities_hdrUnspecified() {
+        assertThat(videoCapabilities.getSupportedQualities(HDR_UNSPECIFIED))
+            .containsExactly(HD, UHD)
+    }
+
+    @Test
+    fun hasSupportedQualities_hdrUnspecified10Bit() {
+        assertThat(videoCapabilities.getSupportedQualities(HDR_UNSPECIFIED_10_BIT))
+            .containsExactly(HD, UHD)
+    }
+
+    @Test
+    fun hasSupportedQualities_unspecified8Bit() {
+        assertThat(videoCapabilities.getSupportedQualities(UNSPECIFIED_8_BIT))
+            .containsExactly(HD, UHD)
+    }
+
+    @Test
+    fun hasSupportedQualities_unspecified10Bit() {
+        assertThat(videoCapabilities.getSupportedQualities(UNSPECIFIED_10_BIT))
+            .containsExactly(HD, UHD)
+    }
+
+    @Test
+    fun hasSupportedQualities_dolbyVisionUnspecified() {
+        assertThat(videoCapabilities.getSupportedQualities(DOLBY_VISION_UNSPECIFIED)).isEmpty()
     }
 
     @Test
@@ -90,17 +152,27 @@ class RecorderVideoCapabilitiesTest {
     }
 
     @Test
-    fun isQualitySupported_hlg10WithBackupProfile() {
-        assertThat(videoCapabilities.isQualitySupported(HIGHEST, HLG10)).isTrue()
-        assertThat(videoCapabilities.isQualitySupported(LOWEST, HLG10)).isTrue()
-        assertThat(videoCapabilities.isQualitySupported(UHD, HLG10)).isTrue()
-        assertThat(videoCapabilities.isQualitySupported(FHD, HLG10)).isFalse()
-        assertThat(videoCapabilities.isQualitySupported(HD, HLG10)).isTrue()
-        assertThat(videoCapabilities.isQualitySupported(SD, HLG10)).isFalse()
+    fun isQualitySupported_unspecified() {
+        assertThat(videoCapabilities.isQualitySupported(HIGHEST, UNSPECIFIED)).isTrue()
+        assertThat(videoCapabilities.isQualitySupported(LOWEST, UNSPECIFIED)).isTrue()
+        assertThat(videoCapabilities.isQualitySupported(UHD, UNSPECIFIED)).isTrue()
+        assertThat(videoCapabilities.isQualitySupported(FHD, UNSPECIFIED)).isFalse()
+        assertThat(videoCapabilities.isQualitySupported(HD, UNSPECIFIED)).isTrue()
+        assertThat(videoCapabilities.isQualitySupported(SD, UNSPECIFIED)).isFalse()
     }
 
     @Test
-    fun isQualitySupported_hdrUnspecifiedWithBackupProfile() {
+    fun isQualitySupported_hlg10WithBackupProfile() {
+        assertThat(videoCapabilities.isQualitySupported(HIGHEST, HLG_10_BIT)).isTrue()
+        assertThat(videoCapabilities.isQualitySupported(LOWEST, HLG_10_BIT)).isTrue()
+        assertThat(videoCapabilities.isQualitySupported(UHD, HLG_10_BIT)).isTrue()
+        assertThat(videoCapabilities.isQualitySupported(FHD, HLG_10_BIT)).isFalse()
+        assertThat(videoCapabilities.isQualitySupported(HD, HLG_10_BIT)).isTrue()
+        assertThat(videoCapabilities.isQualitySupported(SD, HLG_10_BIT)).isFalse()
+    }
+
+    @Test
+    fun isQualitySupported_hdrUnspecified10BitWithBackupProfile() {
         assertThat(videoCapabilities.isQualitySupported(HIGHEST, HDR_UNSPECIFIED_10_BIT)).isTrue()
         assertThat(videoCapabilities.isQualitySupported(LOWEST, HDR_UNSPECIFIED_10_BIT)).isTrue()
         assertThat(videoCapabilities.isQualitySupported(UHD, HDR_UNSPECIFIED_10_BIT)).isTrue()
@@ -131,12 +203,12 @@ class RecorderVideoCapabilitiesTest {
 
     @Test
     fun canGetNonNullHlg10BackupProfile_whenSdrProfileExisted() {
-        assertThat(videoCapabilities.getProfiles(HIGHEST, HLG10)).isNotNull()
-        assertThat(videoCapabilities.getProfiles(LOWEST, HLG10)).isNotNull()
-        assertThat(videoCapabilities.getProfiles(UHD, HLG10)).isNotNull()
-        assertThat(videoCapabilities.getProfiles(FHD, HLG10)).isNull()
-        assertThat(videoCapabilities.getProfiles(HD, HLG10)).isNotNull()
-        assertThat(videoCapabilities.getProfiles(SD, HLG10)).isNull()
+        assertThat(videoCapabilities.getProfiles(HIGHEST, HLG_10_BIT)).isNotNull()
+        assertThat(videoCapabilities.getProfiles(LOWEST, HLG_10_BIT)).isNotNull()
+        assertThat(videoCapabilities.getProfiles(UHD, HLG_10_BIT)).isNotNull()
+        assertThat(videoCapabilities.getProfiles(FHD, HLG_10_BIT)).isNull()
+        assertThat(videoCapabilities.getProfiles(HD, HLG_10_BIT)).isNotNull()
+        assertThat(videoCapabilities.getProfiles(SD, HLG_10_BIT)).isNull()
     }
 
     @Test

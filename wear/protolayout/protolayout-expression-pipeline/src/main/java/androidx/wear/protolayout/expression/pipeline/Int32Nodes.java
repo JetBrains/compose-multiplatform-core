@@ -23,7 +23,11 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
+import androidx.wear.protolayout.expression.DynamicBuilders.DynamicInt32;
+import androidx.wear.protolayout.expression.DynamicDataKey;
+import androidx.wear.protolayout.expression.PlatformHealthSources;
 import androidx.wear.protolayout.expression.proto.AnimationParameterProto.AnimationSpec;
+import androidx.wear.protolayout.expression.proto.DynamicDataProto.DynamicDataValue;
 import androidx.wear.protolayout.expression.proto.DynamicProto.AnimatableFixedInt32;
 import androidx.wear.protolayout.expression.proto.DynamicProto.ArithmeticInt32Op;
 import androidx.wear.protolayout.expression.proto.DynamicProto.DurationPartType;
@@ -35,6 +39,7 @@ import androidx.wear.protolayout.expression.proto.DynamicProto.StateInt32Source;
 import androidx.wear.protolayout.expression.proto.FixedProto.FixedInt32;
 
 import java.time.Duration;
+import java.util.function.Function;
 
 /** Dynamic data nodes which yield integers. */
 class Int32Nodes {
@@ -70,61 +75,46 @@ class Int32Nodes {
     }
 
     /** Dynamic integer node that gets value from the platform source. */
-    static class PlatformInt32SourceNode implements DynamicDataSourceNode<Integer> {
-        private static final String TAG = "PlatformInt32SourceNode";
+    static class LegacyPlatformInt32SourceNode extends StateSourceNode<Integer> {
 
-        @Nullable private final SensorGatewayPlatformDataSource mSensorGatewaySource;
-        private final PlatformInt32SourceType mPlatformSourceType;
-        private final DynamicTypeValueReceiverWithPreUpdate<Integer> mDownstream;
-
-        PlatformInt32SourceNode(
+        LegacyPlatformInt32SourceNode(
+                PlatformDataStore dataStore,
                 PlatformInt32Source protoNode,
-                @Nullable SensorGatewayPlatformDataSource sensorGatewaySource,
                 DynamicTypeValueReceiverWithPreUpdate<Integer> downstream) {
-            this.mPlatformSourceType = protoNode.getSourceType();
-            if (mPlatformSourceType
-                            == PlatformInt32SourceType.PLATFORM_INT32_SOURCE_TYPE_CURRENT_HEART_RATE
-                    || mPlatformSourceType
-                            == PlatformInt32SourceType
-                                    .PLATFORM_INT32_SOURCE_TYPE_DAILY_STEP_COUNT) {
-                this.mSensorGatewaySource = sensorGatewaySource;
-            } else {
-                this.mSensorGatewaySource = null;
-                Log.w(TAG, "Unknown PlatformInt32SourceType: " + mPlatformSourceType);
-            }
-            this.mDownstream = downstream;
+            super(
+                    dataStore,
+                    getDataKey(protoNode.getSourceType()),
+                    getStateExtractor(protoNode.getSourceType()),
+                    downstream);
         }
 
-        @Override
-        @UiThread
-        public void preInit() {
-            if (mSensorGatewaySource != null) {
-                mDownstream.onPreUpdate();
+        @NonNull
+        private static DynamicDataKey<?> getDataKey(PlatformInt32SourceType type) {
+            if (type == PlatformInt32SourceType.PLATFORM_INT32_SOURCE_TYPE_CURRENT_HEART_RATE) {
+                return PlatformHealthSources.Keys.HEART_RATE_BPM;
             }
+
+            if (type == PlatformInt32SourceType.PLATFORM_INT32_SOURCE_TYPE_DAILY_STEP_COUNT) {
+                return PlatformHealthSources.Keys.DAILY_STEPS;
+            }
+
+            throw new IllegalArgumentException(
+                    "Unknown DynamicInt32 platform source type: " + type);
         }
 
-        @Override
-        @UiThread
-        public void init() {
-            if (mSensorGatewaySource != null) {
-                try {
-                    mSensorGatewaySource.registerForData(mPlatformSourceType, mDownstream);
-                } catch (SecurityException e) {
-                    // Package does not have the permission to request the health data.
-                    Log.w(TAG, e.getMessage(), e);
-                    mDownstream.onInvalidated();
-                }
-            } else {
-                mDownstream.onInvalidated();
+        @NonNull
+        private static Function<DynamicDataValue, Integer> getStateExtractor(
+                PlatformInt32SourceType type) {
+            if (type == PlatformInt32SourceType.PLATFORM_INT32_SOURCE_TYPE_CURRENT_HEART_RATE) {
+                return se -> (int) se.getFloatVal().getValue();
             }
-        }
 
-        @Override
-        @UiThread
-        public void destroy() {
-            if (mSensorGatewaySource != null) {
-                mSensorGatewaySource.unregisterForData(mPlatformSourceType, mDownstream);
+            if (type == PlatformInt32SourceType.PLATFORM_INT32_SOURCE_TYPE_DAILY_STEP_COUNT) {
+                return se -> se.getInt32Val().getValue();
             }
+
+            throw new IllegalArgumentException(
+                    "Unknown DynamicInt32 platform source type: " + type);
         }
     }
 
@@ -170,12 +160,13 @@ class Int32Nodes {
     static class StateInt32SourceNode extends StateSourceNode<Integer> {
 
         StateInt32SourceNode(
-                StateStore stateStore,
+                DataStore dataStore,
                 StateInt32Source protoNode,
                 DynamicTypeValueReceiverWithPreUpdate<Integer> downstream) {
             super(
-                    stateStore,
-                    protoNode.getSourceKey(),
+                    dataStore,
+                    StateSourceNode.<DynamicInt32>createKey(
+                            protoNode.getSourceNamespace(), protoNode.getSourceKey()),
                     se -> se.getInt32Val().getValue(),
                     downstream);
         }

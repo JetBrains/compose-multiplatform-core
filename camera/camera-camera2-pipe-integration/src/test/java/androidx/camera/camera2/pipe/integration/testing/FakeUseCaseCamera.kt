@@ -14,18 +14,23 @@
  * limitations under the License.
  */
 
+@file:RequiresApi(21)
+
 package androidx.camera.camera2.pipe.integration.testing
 
 import android.hardware.camera2.CaptureRequest
 import android.hardware.camera2.params.MeteringRectangle
+import androidx.annotation.RequiresApi
 import androidx.camera.camera2.pipe.AeMode
 import androidx.camera.camera2.pipe.CameraGraph
+import androidx.camera.camera2.pipe.CameraStream
 import androidx.camera.camera2.pipe.Lock3ABehavior
 import androidx.camera.camera2.pipe.Request
 import androidx.camera.camera2.pipe.RequestTemplate
 import androidx.camera.camera2.pipe.Result3A
 import androidx.camera.camera2.pipe.StreamId
 import androidx.camera.camera2.pipe.integration.adapter.CameraStateAdapter
+import androidx.camera.camera2.pipe.integration.adapter.SessionConfigAdapter
 import androidx.camera.camera2.pipe.integration.config.UseCaseCameraComponent
 import androidx.camera.camera2.pipe.integration.config.UseCaseCameraConfig
 import androidx.camera.camera2.pipe.integration.impl.UseCaseCamera
@@ -33,6 +38,7 @@ import androidx.camera.camera2.pipe.integration.impl.UseCaseCameraRequestControl
 import androidx.camera.core.UseCase
 import androidx.camera.core.impl.CaptureConfig
 import androidx.camera.core.impl.Config
+import androidx.camera.core.impl.DeferrableSurface
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Deferred
@@ -40,8 +46,14 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.withTimeoutOrNull
 
 class FakeUseCaseCameraComponentBuilder : UseCaseCameraComponent.Builder {
+    var buildInvocationCount = 0
+    private var sessionConfigAdapter = SessionConfigAdapter(emptyList())
+    private var cameraGraph = FakeCameraGraph()
+    private var streamConfigMap = mutableMapOf<CameraStream.Config, DeferrableSurface>()
+
     private var config: UseCaseCameraConfig =
-        UseCaseCameraConfig(emptyList(), CameraStateAdapter(), CameraGraph.Flags())
+        UseCaseCameraConfig(emptyList(), sessionConfigAdapter, CameraStateAdapter(), cameraGraph,
+            streamConfigMap)
 
     override fun config(config: UseCaseCameraConfig): UseCaseCameraComponent.Builder {
         this.config = config
@@ -49,6 +61,7 @@ class FakeUseCaseCameraComponentBuilder : UseCaseCameraComponent.Builder {
     }
 
     override fun build(): UseCaseCameraComponent {
+        buildInvocationCount++
         return FakeUseCaseCameraComponent(config.provideUseCaseList())
     }
 }
@@ -141,7 +154,12 @@ open class FakeUseCaseCameraRequestControl : UseCaseCameraRequestControl {
         flashType: Int,
         flashMode: Int,
     ): List<Deferred<Void?>> {
-        return listOf(CompletableDeferred(null))
+        return captureSequence.map {
+            CompletableDeferred<Void?>(null).apply { complete(null) }
+        }
+    }
+
+    override fun close() {
     }
 
     data class FocusMeteringParams(

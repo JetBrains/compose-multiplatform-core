@@ -16,19 +16,23 @@
 
 package androidx.graphics.surface
 
+import android.annotation.SuppressLint
 import android.graphics.Color
 import android.graphics.ColorSpace
 import android.graphics.Rect
 import android.graphics.Region
+import android.hardware.DataSpace
 import android.opengl.EGL14
 import android.os.Build
 import android.os.SystemClock
+import android.view.Display
 import android.view.SurfaceHolder
 import androidx.graphics.opengl.egl.EGLConfigAttributes
 import androidx.graphics.opengl.egl.EGLManager
 import androidx.graphics.opengl.egl.EGLSpec
 import androidx.graphics.opengl.egl.EGLVersion
 import androidx.graphics.opengl.egl.supportsNativeAndroidFence
+import androidx.graphics.surface.SurfaceControlUtils.Companion.getSolidBuffer
 import androidx.hardware.SyncFenceCompat
 import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ActivityScenario
@@ -40,9 +44,11 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executor
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
+import java.util.function.Consumer
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Before
@@ -605,7 +611,8 @@ class SurfaceControlCompatTest {
                         assertNotNull(buffer2)
 
                         SurfaceControlCompat.Transaction()
-                            .setBuffer(scCompat, buffer) {
+                            .setBuffer(scCompat, buffer) { releaseFence ->
+                                releaseFence.awaitForever()
                                 releaseLatch.countDown()
                             }
                             .setVisibility(scCompat, true)
@@ -676,10 +683,12 @@ class SurfaceControlCompatTest {
                         assertNotNull(buffer3)
 
                         SurfaceControlCompat.Transaction()
-                            .setBuffer(scCompat, buffer) {
+                            .setBuffer(scCompat, buffer) { releaseFence ->
+                                releaseFence.awaitForever()
                                 releaseLatch.countDown()
                             }
-                            .setBuffer(scCompat, buffer2) {
+                            .setBuffer(scCompat, buffer2) { releaseFence ->
+                                releaseFence.awaitForever()
                                 assertTrue(releaseLatch.await(3000, TimeUnit.MILLISECONDS))
                                 releaseLatch2.countDown()
                             }
@@ -749,7 +758,8 @@ class SurfaceControlCompatTest {
 
                         SurfaceControlCompat.Transaction()
                             .setBuffer(scCompat, buffer)
-                            .setBuffer(scCompat, buffer3) {
+                            .setBuffer(scCompat, buffer3) { releaseFence ->
+                                releaseFence.awaitForever()
                                 releaseLatch.countDown()
                             }
                             .setBuffer(scCompat, buffer2)
@@ -831,10 +841,12 @@ class SurfaceControlCompatTest {
                         assertNotNull(buffer3)
 
                         SurfaceControlCompat.Transaction()
-                            .setBuffer(scCompat, buffer) {
+                            .setBuffer(scCompat, buffer) { releaseFence ->
+                                releaseFence.awaitForever()
                                 releaseLatch.countDown()
                             }
-                            .setBuffer(scCompat2, buffer2) {
+                            .setBuffer(scCompat2, buffer2) { releaseFence ->
+                                releaseFence.awaitForever()
                                 releaseLatch2.countDown()
                             }
                             .setVisibility(scCompat, true)
@@ -1258,6 +1270,52 @@ class SurfaceControlCompatTest {
                 val coord = intArrayOf(0, 0)
                 it.mSurfaceView.getLocationOnScreen(coord)
                 Color.RED == bitmap.getPixel(coord[0], coord[1])
+            }
+        }
+    }
+
+    @Test
+    fun testTransactionSetNullBuffer() {
+        val scenario = ActivityScenario.launch(SurfaceControlWrapperTestActivity::class.java)
+            .moveToState(
+                Lifecycle.State.CREATED
+            ).onActivity {
+                val callback = object : SurfaceHolderCallback() {
+                    override fun surfaceCreated(sh: SurfaceHolder) {
+                        val scCompat = SurfaceControlCompat
+                            .Builder()
+                            .setParent(it.getSurfaceView())
+                            .setName("SurfaceControlCompatTest")
+                            .build()
+
+                        // Buffer colorspace is RGBA, so Color.BLUE will be visually Red
+                        val buffer = SurfaceControlUtils.getSolidBuffer(
+                            SurfaceControlWrapperTestActivity.DEFAULT_WIDTH,
+                            SurfaceControlWrapperTestActivity.DEFAULT_HEIGHT,
+                            Color.BLUE
+                        )
+                        SurfaceControlCompat.Transaction()
+                            .setBuffer(scCompat, buffer)
+                            .setOpaque(
+                                scCompat,
+                                false
+                            )
+                            .commit()
+
+                        SurfaceControlCompat.Transaction()
+                            .setBuffer(scCompat, null)
+                            .commit()
+                    }
+                }
+
+                it.addSurface(it.mSurfaceView, callback)
+            }
+
+        scenario.moveToState(Lifecycle.State.RESUMED).onActivity {
+            SurfaceControlUtils.validateOutput { bitmap ->
+                val coord = intArrayOf(0, 0)
+                it.mSurfaceView.getLocationOnScreen(coord)
+                Color.BLACK == bitmap.getPixel(coord[0], coord[1])
             }
         }
     }
@@ -1841,6 +1899,165 @@ class SurfaceControlCompatTest {
                 val coord = intArrayOf(0, 0)
                 it.mSurfaceView.getLocationOnScreen(coord)
                 Color.RED == bitmap.getPixel(coord[0], coord[1])
+            }
+        }
+    }
+
+    @SuppressLint("NewApi")
+    @SdkSuppress(maxSdkVersion = Build.VERSION_CODES.TIRAMISU)
+    @Test
+    fun testSetExtendedRangeBrightnessThrowsOnUnsupportedPlatforms() {
+        ActivityScenario.launch(SurfaceControlWrapperTestActivity::class.java)
+            .moveToState(
+                Lifecycle.State.CREATED
+            ).onActivity {
+                val callback = object : SurfaceHolderCallback() {
+                    override fun surfaceCreated(sh: SurfaceHolder) {
+
+                        assertThrows(UnsupportedOperationException::class.java) {
+                            val surfaceControl = SurfaceControlCompat.Builder()
+                                .setName("testSurfaceControl")
+                                .setParent(it.mSurfaceView)
+                                .build()
+                            SurfaceControlCompat.Transaction()
+                                .setExtendedRangeBrightness(surfaceControl, 1.0f, 2.0f)
+                                .commit()
+                        }
+                    }
+                }
+
+                it.addSurface(it.mSurfaceView, callback)
+            }
+    }
+
+    @SuppressLint("NewApi")
+    @SdkSuppress(maxSdkVersion = Build.VERSION_CODES.S_V2)
+    @Test
+    fun testSetDataSpaceThrowsOnUnsupportedPlatforms() {
+        ActivityScenario.launch(SurfaceControlWrapperTestActivity::class.java)
+            .moveToState(
+                Lifecycle.State.CREATED
+            ).onActivity {
+                val callback = object : SurfaceHolderCallback() {
+                    override fun surfaceCreated(sh: SurfaceHolder) {
+
+                        assertThrows(UnsupportedOperationException::class.java) {
+                            val surfaceControl = SurfaceControlCompat.Builder()
+                                .setName("testSurfaceControl")
+                                .setParent(it.mSurfaceView)
+                                .build()
+
+                            val extendedDataspace = DataSpace.pack(
+                                DataSpace.STANDARD_BT709,
+                                DataSpace.TRANSFER_SRGB, DataSpace.RANGE_EXTENDED
+                            )
+                            SurfaceControlCompat.Transaction()
+                                .setDataSpace(surfaceControl, extendedDataspace)
+                                .commit()
+                        }
+                    }
+                }
+
+                it.addSurface(it.mSurfaceView, callback)
+            }
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+    @Test
+    fun testSetExtendedRangeBrightness() {
+        val scenario = ActivityScenario.launch(SurfaceControlWrapperTestActivity::class.java)
+            .moveToState(
+                Lifecycle.State.CREATED
+            ).onActivity {
+                val display = it.display
+                assertNotNull(display)
+                if (display!!.isHdrSdrRatioAvailable) {
+                    assertEquals(1.0f, display.hdrSdrRatio, .0001f)
+                }
+
+                it.window.attributes.screenBrightness = 0.01f
+                val hdrReady = CountDownLatch(1)
+                val listenerErrors = arrayOfNulls<Exception>(1)
+                if (display.isHdrSdrRatioAvailable) {
+                    display.registerHdrSdrRatioChangedListener(
+                        executor!!,
+                        object : Consumer<Display?> {
+                            var mIsRegistered = true
+                            override fun accept(updatedDisplay: Display?) {
+                                try {
+                                    assertEquals(display.displayId, updatedDisplay!!.displayId)
+                                    assertTrue(mIsRegistered)
+                                    if (display.hdrSdrRatio > 2f) {
+                                        hdrReady.countDown()
+                                        display.unregisterHdrSdrRatioChangedListener(this)
+                                        mIsRegistered = false
+                                    }
+                                } catch (e: Exception) {
+                                    synchronized(it) {
+                                        listenerErrors[0] = e
+                                        hdrReady.countDown()
+                                    }
+                                }
+                            }
+                        })
+                } else {
+                    assertThrows(IllegalStateException::class.java) {
+                        display.registerHdrSdrRatioChangedListener(
+                            executor!!,
+                            Consumer { _: Display? -> })
+                    }
+                }
+                val extendedDataspace = DataSpace.pack(DataSpace.STANDARD_BT709,
+                    DataSpace.TRANSFER_SRGB, DataSpace.RANGE_EXTENDED)
+                val buffer = getSolidBuffer(
+                    SurfaceControlWrapperTestActivity.DEFAULT_WIDTH,
+                    SurfaceControlWrapperTestActivity.DEFAULT_HEIGHT,
+                    Color.RED)
+                val callback = object : SurfaceHolderCallback() {
+                    override fun surfaceCreated(sh: SurfaceHolder) {
+                        val scCompat = SurfaceControlCompat
+                            .Builder()
+                            .setParent(it.getSurfaceView())
+                            .setName("SurfaceControlCompatTest")
+                            .build()
+
+                        SurfaceControlCompat.Transaction()
+                            .setBuffer(scCompat, buffer)
+                            .setDataSpace(scCompat, extendedDataspace)
+                            .setExtendedRangeBrightness(scCompat, 1.0f, 3.0f)
+                            .setVisibility(scCompat, true)
+                            .commit()
+                    }
+                }
+
+                it.addSurface(it.mSurfaceView, callback)
+            }
+
+        scenario.moveToState(Lifecycle.State.RESUMED).onActivity {
+            SurfaceControlUtils.validateOutput(it.window) { bitmap ->
+                val coord = intArrayOf(0, 0)
+                it.mSurfaceView.getLocationInWindow(coord)
+                val topLeft = bitmap.getPixel(
+                    coord[0] + 2,
+                    coord[1] + 2
+                )
+                val topRight = bitmap.getPixel(
+                    coord[0] + it.mSurfaceView.width - 2,
+                    coord[1] + 2
+                )
+                val bottomLeft = bitmap.getPixel(
+                    coord[0] + 2,
+                    coord[1] + it.mSurfaceView.height - 2
+                )
+                val bottomRight = bitmap.getPixel(
+                    coord[0] + it.mSurfaceView.width - 2,
+                    coord[1] + it.mSurfaceView.height - 2
+                )
+
+                Color.RED == topLeft &&
+                    topLeft == topRight &&
+                    bottomLeft == topRight &&
+                    bottomLeft == bottomRight
             }
         }
     }

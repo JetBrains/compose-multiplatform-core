@@ -278,6 +278,16 @@ private val SearchBars = Component(
     examples = SearchBarExamples
 )
 
+private val SegmentedButtons = Component(
+    id = nextId(),
+    name = "Segmented Button",
+    description = "Segmented buttons help people select options, switch views, or sort elements.",
+    guidelinesUrl = "", // No guidelines yet
+    docsUrl = "", // No docs yet
+    sourceUrl = "$Material3SourceUrl/SegmentedButton.kt",
+    examples = SegmentedButtonExamples
+)
+
 private val Sliders = Component(
     id = nextId(),
     name = "Sliders",
@@ -391,12 +401,13 @@ val Components = listOf(
     ProgressIndicators,
     RadioButtons,
     SearchBars,
+    SegmentedButtons,
     Sliders,
     Snackbars,
     Switches,
     Tabs,
     TextFields,
-    Tooltips,
     TimePickers,
+    Tooltips,
     TopAppBar
 )

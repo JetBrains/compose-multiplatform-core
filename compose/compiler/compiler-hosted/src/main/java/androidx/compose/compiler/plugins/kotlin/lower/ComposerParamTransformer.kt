@@ -34,7 +34,6 @@ import org.jetbrains.kotlin.ir.declarations.IrDeclarationOrigin
 import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.declarations.IrLocalDelegatedProperty
 import org.jetbrains.kotlin.ir.declarations.IrModuleFragment
-import org.jetbrains.kotlin.ir.declarations.IrProperty
 import org.jetbrains.kotlin.ir.declarations.IrSimpleFunction
 import org.jetbrains.kotlin.ir.declarations.IrValueParameter
 import org.jetbrains.kotlin.ir.declarations.copyAttributes
@@ -120,7 +119,7 @@ class ComposerParamTransformer(
         // for each declaration, we create a deepCopy transformer It is important here that we
         // use the "preserving metadata" variant since we are using this copy to *replace* the
         // originals, or else the module we would produce wouldn't have any metadata in it.
-        val transformer = DeepCopyIrTreeWithSymbolsPreservingMetadata(
+        val transformer = DeepCopyIrTreeWithRemappedComposableTypes(
             context,
             symbolRemapper,
             typeRemapper
@@ -174,18 +173,6 @@ class ComposerParamTransformer(
         return super.visitLocalDelegatedProperty(declaration)
     }
 
-    override fun visitProperty(declaration: IrProperty): IrStatement {
-        if (declaration.getter?.isComposableDelegatedAccessor() == true) {
-            declaration.getter!!.annotations += createComposableAnnotation()
-        }
-
-        if (declaration.setter?.isComposableDelegatedAccessor() == true) {
-            declaration.setter!!.annotations += createComposableAnnotation()
-        }
-
-        return super.visitProperty(declaration)
-    }
-
     private fun createComposableAnnotation() =
         IrConstructorCallImpl(
             startOffset = SYNTHETIC_OFFSET,
@@ -205,10 +192,10 @@ class ComposerParamTransformer(
                 }
                 symbol.owner.withComposerParamIfNeeded()
             }
-            symbol.owner.hasComposableAnnotation() ->
-                symbol.owner.withComposerParamIfNeeded()
             isComposableLambdaInvoke() ->
                 symbol.owner.lambdaInvokeWithComposerParam()
+            symbol.owner.hasComposableAnnotation() ->
+                symbol.owner.withComposerParamIfNeeded()
             // Not a composable call
             else -> return this
         }
@@ -607,8 +594,9 @@ class ComposerParamTransformer(
                     try {
                         // we don't want to pass the composer parameter in to composable calls
                         // inside of nested scopes.... *unless* the scope was inlined.
-                        isNestedScope =
-                            if (declaration.isNonComposableInlinedLambda()) wasNested else true
+                        isNestedScope = wasNested ||
+                            !inlineLambdaInfo.isInlineLambda(declaration) ||
+                            declaration.hasComposableAnnotation()
                         return super.visitFunction(declaration)
                     } finally {
                         isNestedScope = wasNested
@@ -629,15 +617,21 @@ class ComposerParamTransformer(
     private fun defaultParameterType(param: IrValueParameter): IrType {
         val type = param.type
         if (param.defaultValue == null) return type
+        val constructorAccessible = !type.isPrimitiveType() &&
+            type.classOrNull?.owner?.primaryConstructor != null
         return when {
             type.isPrimitiveType() -> type
-            type.isInlineClassType() -> type
+            type.isInlineClassType() -> if (context.platform.isJvm() || constructorAccessible) {
+                type
+            } else {
+                // k/js and k/native: private constructors of value classes can be not accessible.
+                // Therefore it won't be possible to create a "fake" default argument for calls.
+                // Making it nullable allows to pass null.
+                type.makeNullable()
+            }
             else -> type.makeNullable()
         }
     }
-
-    private fun IrFunction.isNonComposableInlinedLambda(): Boolean =
-        inlineLambdaInfo.isInlineLambda(this) && !hasComposableAnnotation()
 
     /**
      * With klibs, composable functions are always deserialized from IR instead of being restored

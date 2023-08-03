@@ -41,7 +41,6 @@ import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
@@ -107,25 +106,23 @@ fun Switch(
     // the animation state through this, animating back to the previous value if we don't receive
     // a new checked value.
     var forceAnimationCheck by remember { mutableStateOf(false) }
-    val swipeableState = remember {
-        SwipeableV2State(
+    val switchVelocityThresholdPx = with(LocalDensity.current) { SwitchVelocityThreshold.toPx() }
+    val anchoredDraggableState = remember(maxBound, switchVelocityThresholdPx) {
+        AnchoredDraggableState(
             initialValue = checked,
-            positionalThreshold = SwitchThreshold,
-            animationSpec = AnimationSpec
+            animationSpec = AnimationSpec,
+            anchors = DraggableAnchors {
+                false at minBound
+                true at maxBound
+            },
+            positionalThreshold = { distance -> distance * SwitchPositionalThreshold },
+            velocityThreshold = { switchVelocityThresholdPx }
         )
     }
     val currentOnCheckedChange by rememberUpdatedState(onCheckedChange)
     val currentChecked by rememberUpdatedState(checked)
-
-    // Todo: Offer static anchors Modifier.swipeable overload b/265435207
-    val density = LocalDensity.current
-    SideEffect {
-        swipeableState.density = density
-        val anchors = mapOf(false to minBound, true to maxBound)
-        swipeableState.updateAnchors(anchors)
-    }
-    LaunchedEffect(swipeableState) {
-        snapshotFlow { swipeableState.currentValue }
+    LaunchedEffect(anchoredDraggableState) {
+        snapshotFlow { anchoredDraggableState.currentValue }
             .collectLatest { newValue ->
                 if (currentChecked != newValue) {
                     currentOnCheckedChange?.invoke(newValue)
@@ -134,8 +131,8 @@ fun Switch(
             }
     }
     LaunchedEffect(checked, forceAnimationCheck) {
-        if (checked != swipeableState.currentValue) {
-            swipeableState.animateTo(checked)
+        if (checked != anchoredDraggableState.currentValue) {
+            anchoredDraggableState.animateTo(checked)
         }
     }
     val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
@@ -163,8 +160,8 @@ fun Switch(
                 }
             )
             .then(toggleableModifier)
-            .swipeableV2(
-                state = swipeableState,
+            .anchoredDraggable(
+                state = anchoredDraggableState,
                 orientation = Orientation.Horizontal,
                 enabled = enabled && onCheckedChange != null,
                 reverseDirection = isRtl,
@@ -175,10 +172,10 @@ fun Switch(
             .requiredSize(SwitchWidth, SwitchHeight)
     ) {
         SwitchImpl(
-            checked = swipeableState.targetValue,
+            checked = anchoredDraggableState.targetValue,
             enabled = enabled,
             colors = colors,
-            thumbValue = { swipeableState.requireOffset() },
+            thumbValue = { anchoredDraggableState.requireOffset() },
             interactionSource = interactionSource
         )
     }
@@ -419,5 +416,5 @@ private class DefaultSwitchColors(
     }
 }
 
-@OptIn(ExperimentalMaterialApi::class)
-private val SwitchThreshold = fractionalPositionalThreshold(0.7f)
+private const val SwitchPositionalThreshold = 0.7f
+private val SwitchVelocityThreshold = 125.dp

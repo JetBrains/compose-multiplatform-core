@@ -19,8 +19,10 @@
 package androidx.compose.runtime
 
 import androidx.compose.runtime.internal.JvmDefaultWithCompatibility
+import androidx.compose.runtime.snapshots.AutoboxingStateValueProperty
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.runtime.snapshots.SnapshotMutableState
+import androidx.compose.runtime.snapshots.StateFactoryMarker
 import androidx.compose.runtime.snapshots.StateObject
 import androidx.compose.runtime.snapshots.StateRecord
 import androidx.compose.runtime.snapshots.overwritable
@@ -40,8 +42,13 @@ import kotlin.reflect.KProperty
  *
  * @see LongState
  * @see MutableLongState
+ * @see mutableStateOf
+ * @see mutableIntStateOf
+ * @see mutableFloatStateOf
+ * @see mutableDoubleStateOf
  */
-fun mutableStateOf(
+@StateFactoryMarker
+fun mutableLongStateOf(
     value: Long
 ): MutableLongState = createSnapshotMutableLongState(value)
 
@@ -50,11 +57,12 @@ fun mutableStateOf(
  * function cause the current [RecomposeScope] to subscribe to changes of that value.
  *
  * @see MutableLongState
- * @see mutableStateOf
+ * @see mutableDoubleStateOf
  */
 @Stable
 @JvmDefaultWithCompatibility
 interface LongState : State<Long> {
+    @get:AutoboxingStateValueProperty("longValue")
     override val value: Long
         @Suppress("AutoBoxing") get() = longValue
 
@@ -75,11 +83,13 @@ inline operator fun LongState.getValue(thisObj: Any?, property: KProperty<*>): L
  * scheduled.
  *
  * @see [LongState]
- * @see [mutableStateOf]
+ * @see [mutableDoubleStateOf]
  */
 @Stable
 @JvmDefaultWithCompatibility
 interface MutableLongState : LongState, MutableState<Long> {
+    @get:AutoboxingStateValueProperty("longValue")
+    @set:AutoboxingStateValueProperty("longValue")
     override var value: Long
         @Suppress("AutoBoxing") get() = longValue
         set(value) { longValue = value }
@@ -110,7 +120,7 @@ internal expect fun createSnapshotMutableLongState(
  *
  * @param value the wrapped value
  *
- * @see [mutableStateOf]
+ * @see [mutableDoubleStateOf]
  */
 internal open class SnapshotMutableLongStateImpl(
     value: Long

@@ -19,30 +19,37 @@ package androidx.camera.core.streamsharing
 import android.os.Build
 import android.os.Looper.getMainLooper
 import android.util.Size
+import android.view.Surface
 import androidx.camera.core.CameraEffect
 import androidx.camera.core.CameraEffect.IMAGE_CAPTURE
 import androidx.camera.core.CameraEffect.PREVIEW
 import androidx.camera.core.CameraEffect.VIDEO_CAPTURE
+import androidx.camera.core.CameraSelector.LENS_FACING_FRONT
 import androidx.camera.core.ImageCapture
+import androidx.camera.core.ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY
 import androidx.camera.core.ImageProxy
+import androidx.camera.core.SurfaceRequest
 import androidx.camera.core.impl.CameraCaptureCallback
 import androidx.camera.core.impl.CameraCaptureResult
+import androidx.camera.core.impl.MutableOptionsBundle
 import androidx.camera.core.impl.SessionConfig
 import androidx.camera.core.impl.StreamSpec
 import androidx.camera.core.impl.UseCaseConfig
 import androidx.camera.core.impl.UseCaseConfigFactory
+import androidx.camera.core.impl.UseCaseConfigFactory.CaptureType
 import androidx.camera.core.impl.utils.executor.CameraXExecutors.directExecutor
 import androidx.camera.core.impl.utils.executor.CameraXExecutors.mainThreadExecutor
 import androidx.camera.core.internal.TargetConfig.OPTION_TARGET_CLASS
 import androidx.camera.core.internal.TargetConfig.OPTION_TARGET_NAME
 import androidx.camera.core.processing.DefaultSurfaceProcessor
 import androidx.camera.testing.fakes.FakeCamera
-import androidx.camera.testing.fakes.FakeCameraCaptureResult
-import androidx.camera.testing.fakes.FakeSurfaceEffect
-import androidx.camera.testing.fakes.FakeSurfaceProcessorInternal
-import androidx.camera.testing.fakes.FakeUseCase
-import androidx.camera.testing.fakes.FakeUseCaseConfig
-import androidx.camera.testing.fakes.FakeUseCaseConfigFactory
+import androidx.camera.testing.fakes.FakeCameraInfoInternal
+import androidx.camera.testing.impl.fakes.FakeCameraCaptureResult
+import androidx.camera.testing.impl.fakes.FakeSurfaceEffect
+import androidx.camera.testing.impl.fakes.FakeSurfaceProcessorInternal
+import androidx.camera.testing.impl.fakes.FakeUseCase
+import androidx.camera.testing.impl.fakes.FakeUseCaseConfig
+import androidx.camera.testing.impl.fakes.FakeUseCaseConfigFactory
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Deferred
@@ -64,6 +71,10 @@ import org.robolectric.annotation.internal.DoNotInstrument
 @Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 class StreamSharingTest {
 
+    companion object {
+        private const val SENSOR_ROTATION = 270
+    }
+
     private val child1 = FakeUseCase(
         FakeUseCaseConfig.Builder().setSurfaceOccupancyPriority(1).useCaseConfig
     )
@@ -72,12 +83,20 @@ class StreamSharingTest {
     )
     private val useCaseConfigFactory = FakeUseCaseConfigFactory()
     private val camera = FakeCamera()
+    private val frontCamera =
+        FakeCamera(null, FakeCameraInfoInternal(SENSOR_ROTATION, LENS_FACING_FRONT))
     private lateinit var streamSharing: StreamSharing
     private val size = Size(800, 600)
     private lateinit var defaultConfig: UseCaseConfig<*>
     private lateinit var effectProcessor: FakeSurfaceProcessorInternal
     private lateinit var sharingProcessor: FakeSurfaceProcessorInternal
     private lateinit var effect: CameraEffect
+    private val testImplementationOption: androidx.camera.core.impl.Config.Option<Int> =
+        androidx.camera.core.impl.Config.Option.create(
+            "test.testOption",
+            Int::class.javaPrimitiveType!!
+        )
+    private val testImplementationOptionValue = 5
 
     @Before
     fun setUp() {
@@ -99,9 +118,12 @@ class StreamSharingTest {
     }
 
     @Test
-    fun childTakingPicture_triggersSnapshot() {
-        // Arrange: set up StreamSharing with ImageCapture as child
-        val imageCapture = ImageCapture.Builder().build()
+    fun childTakingPicture_getJpegQuality() {
+        // Arrange: set up StreamSharing with min latency ImageCapture as child
+        val imageCapture = ImageCapture.Builder()
+            .setTargetRotation(Surface.ROTATION_90)
+            .setCaptureMode(CAPTURE_MODE_MINIMIZE_LATENCY)
+            .build()
         streamSharing = StreamSharing(camera, setOf(child1, imageCapture), useCaseConfigFactory)
         streamSharing.bindToCamera(camera, null, defaultConfig)
         streamSharing.onSuggestedStreamSpecUpdated(StreamSpec.builder(size).build())
@@ -112,8 +134,9 @@ class StreamSharingTest {
         })
         shadowOf(getMainLooper()).idle()
 
-        // Assert: the snapshot is triggered.
-        assertThat(sharingProcessor.isSnapshotTriggered).isTrue()
+        // Assert: the jpeg quality of min latency capture is 95.
+        assertThat(sharingProcessor.jpegQuality).isEqualTo(95)
+        assertThat(sharingProcessor.rotationDegrees).isEqualTo(270)
     }
 
     @Test
@@ -139,7 +162,7 @@ class StreamSharingTest {
     @Test
     fun hasEffect_createEffectNode() {
         // Arrange: set an effect on StreamSharing.
-        streamSharing.bindToCamera(camera, null, defaultConfig)
+        streamSharing.bindToCamera(frontCamera, null, defaultConfig)
         streamSharing.effect = effect
         // Act: create pipeline
         streamSharing.onSuggestedStreamSpecUpdated(StreamSpec.builder(size).build())
@@ -148,8 +171,17 @@ class StreamSharingTest {
         assertThat(effectProcessor.surfaceRequest).isNotNull()
         assertThat(effectProcessor.surfaceOutputs).isNotEmpty()
         assertThat(sharingProcessor.surfaceRequest).isNotNull()
+        // Assert: effect implementation receives correct transformation.
+        var transformationInfo: SurfaceRequest.TransformationInfo? = null
+        effectProcessor.surfaceRequest!!.setTransformationInfoListener(mainThreadExecutor()) {
+            transformationInfo = it
+        }
+        shadowOf(getMainLooper()).idle()
+        assertThat(transformationInfo).isNotNull()
+        assertThat(transformationInfo!!.rotationDegrees).isEqualTo(SENSOR_ROTATION)
+        assertThat(transformationInfo!!.mirroring).isTrue()
         // Act: unbind StreamSharing.
-        streamSharing.unbindFromCamera(camera)
+        streamSharing.unbindFromCamera(frontCamera)
         shadowOf(getMainLooper()).idle()
         // Assert: the processors received signals to release the Surfaces.
         assertThat(effectProcessor.isInputSurfaceReleased).isTrue()
@@ -175,6 +207,57 @@ class StreamSharingTest {
         // Assert: children receives the metadata with the tag bundle overridden.
         assertThat(result1.getCompleted().tagBundle.getTag(key)).isEqualTo(value)
         assertThat(result2.getCompleted().tagBundle.getTag(key)).isEqualTo(value)
+    }
+
+    @Test
+    fun sessionConfigHasStreamSpecImplementationOptions_whenCreatePipeline() {
+        // Arrange: set up StreamSharing with ImageCapture as child
+        val imageCapture = ImageCapture.Builder().build()
+        streamSharing = StreamSharing(camera, setOf(child1, imageCapture), useCaseConfigFactory)
+        streamSharing.bindToCamera(camera, null, defaultConfig)
+
+        // Act: update stream specification.
+        val streamSpecOptions = MutableOptionsBundle.create()
+        streamSpecOptions.insertOption(testImplementationOption, testImplementationOptionValue)
+        streamSharing.onSuggestedStreamSpecUpdated(
+            StreamSpec.builder(size).setImplementationOptions(streamSpecOptions).build()
+        )
+
+        // Assert: the session config gets the correct implementation options from stream
+        // specification.
+        assertThat(
+            streamSharing.sessionConfig.implementationOptions.retrieveOption(
+                testImplementationOption
+            )
+        ).isEqualTo(testImplementationOptionValue)
+    }
+
+    @Test
+    fun sessionConfigHasStreamSpecImplementationOptions_whenUpdateStreamSpecImplOptions() {
+        // Arrange: set up StreamSharing with ImageCapture as child with initial stream
+        // specification implementation options.
+        val imageCapture = ImageCapture.Builder().build()
+        streamSharing = StreamSharing(camera, setOf(child1, imageCapture), useCaseConfigFactory)
+        streamSharing.bindToCamera(camera, null, defaultConfig)
+        var streamSpecOptions = MutableOptionsBundle.create()
+        streamSpecOptions.insertOption(testImplementationOption, testImplementationOptionValue)
+        streamSharing.updateSuggestedStreamSpec(
+            StreamSpec.builder(size).setImplementationOptions(streamSpecOptions).build()
+        )
+
+        // Act: update stream specification implementation options.
+        val newImplementationOptionValue = 6
+        streamSpecOptions = MutableOptionsBundle.create()
+        streamSpecOptions.insertOption(testImplementationOption, newImplementationOptionValue)
+        streamSharing.updateSuggestedStreamSpecImplementationOptions(streamSpecOptions)
+
+        // Assert: the session config gets the correct implementation options from stream
+        // specification.
+        assertThat(
+            streamSharing.sessionConfig.implementationOptions.retrieveOption(
+                testImplementationOption
+            )
+        ).isEqualTo(newImplementationOptionValue)
     }
 
     private fun FakeUseCase.setTagBundleOnSessionConfigAsync(
@@ -295,7 +378,7 @@ class StreamSharingTest {
         val config = streamSharing.getDefaultConfig(true, useCaseConfigFactory)!!
 
         assertThat(useCaseConfigFactory.lastRequestedCaptureType)
-            .isEqualTo(UseCaseConfigFactory.CaptureType.VIDEO_CAPTURE)
+            .isEqualTo(UseCaseConfigFactory.CaptureType.STREAM_SHARING)
         assertThat(
             config.retrieveOption(
                 OPTION_TARGET_CLASS,
@@ -308,5 +391,14 @@ class StreamSharingTest {
                 null
             )
         ).startsWith("androidx.camera.core.streamsharing.StreamSharing-")
+    }
+
+    @Test
+    fun getDefaultConfig_getCaptureTypes() {
+        val config: StreamSharingConfig =
+            (streamSharing.getDefaultConfig(true, useCaseConfigFactory) as StreamSharingConfig?)!!
+        assertThat(config.captureTypes.size).isEqualTo(2)
+        assertThat(config.captureTypes[0]).isEqualTo(CaptureType.PREVIEW)
+        assertThat(config.captureTypes[1]).isEqualTo(CaptureType.PREVIEW)
     }
 }

@@ -23,6 +23,7 @@ import org.jetbrains.kotlin.descriptors.DescriptorVisibilities
 import org.jetbrains.kotlin.descriptors.Modality
 import org.jetbrains.kotlin.ir.IrBuiltIns
 import org.jetbrains.kotlin.ir.IrElement
+import org.jetbrains.kotlin.ir.IrStatement
 import org.jetbrains.kotlin.ir.ObsoleteDescriptorBasedAPI
 import org.jetbrains.kotlin.ir.declarations.IrAnnotationContainer
 import org.jetbrains.kotlin.ir.declarations.IrClass
@@ -89,6 +90,7 @@ import org.jetbrains.kotlin.ir.expressions.IrVararg
 import org.jetbrains.kotlin.ir.expressions.IrWhen
 import org.jetbrains.kotlin.ir.expressions.IrWhileLoop
 import org.jetbrains.kotlin.ir.expressions.impl.IrIfThenElseImpl
+import org.jetbrains.kotlin.ir.symbols.IrReturnTargetSymbol
 import org.jetbrains.kotlin.ir.symbols.IrTypeAliasSymbol
 import org.jetbrains.kotlin.ir.types.IrDynamicType
 import org.jetbrains.kotlin.ir.types.IrErrorType
@@ -115,12 +117,13 @@ import org.jetbrains.kotlin.ir.util.primaryConstructor
 import org.jetbrains.kotlin.ir.util.statements
 import org.jetbrains.kotlin.ir.visitors.IrElementVisitorVoid
 import org.jetbrains.kotlin.ir.visitors.acceptVoid
+import org.jetbrains.kotlin.name.SpecialNames
 import org.jetbrains.kotlin.types.Variance
 import org.jetbrains.kotlin.utils.Printer
 
-fun IrElement.dumpSrc(): String {
+fun IrElement.dumpSrc(useFir: Boolean = false): String {
     val sb = StringBuilder()
-    accept(IrSourcePrinterVisitor(sb, "%tab%"), null)
+    accept(IrSourcePrinterVisitor(sb, "%tab%", useFir), null)
     return sb
         .toString()
         // replace tabs at beginning of line with white space
@@ -144,6 +147,7 @@ class Scope(
 class IrSourcePrinterVisitor(
     out: Appendable,
     indentUnit: String = "  ",
+    private val useFir: Boolean = false,
 ) : IrElementVisitorVoid {
     private val printer = Printer(out, indentUnit)
     private var currentScope: Scope = Scope()
@@ -209,7 +213,7 @@ class IrSourcePrinterVisitor(
             print("noinline ")
         }
         declaration.printAnnotations()
-        print(declaration.name)
+        print(declaration.normalizedName)
         print(": ")
         print(declaration.type.renderSrc())
         declaration.defaultValue?.let { it ->
@@ -516,16 +520,21 @@ class IrSourcePrinterVisitor(
             val arg = getValueArgument(i)
             if (arg != null) {
                 val param = symbol.owner.valueParameters[i]
-                val isTrailingLambda = i == symbol.owner.valueParameters.size - 1 &&
-                    (
-                        arg is IrFunctionExpression ||
-                            (arg is IrBlock && arg.origin == IrStatementOrigin.LAMBDA)
-                        )
+                val isLambda = arg is IrFunctionExpression ||
+                    (arg is IrBlock &&
+                        (arg.origin == IrStatementOrigin.LAMBDA ||
+                            arg.origin == IrStatementOrigin.ADAPTED_FUNCTION_REFERENCE))
+                if (isLambda) {
+                    arg.unwrapLambda()?.let {
+                        returnTargetToCall[it] = this
+                    }
+                }
+                val isTrailingLambda = i == symbol.owner.valueParameters.size - 1 && isLambda
                 if (isTrailingLambda) {
                     trailingLambda = arg
                 } else {
                     arguments.add(arg)
-                    paramNames.add(param.name.asString())
+                    paramNames.add(param.normalizedName)
                 }
             } else {
                 useParameterNames = true
@@ -607,10 +616,12 @@ class IrSourcePrinterVisitor(
             IrTypeOperator.NOT_INSTANCEOF -> {
                 expression.argument.print()
             }
-            IrTypeOperator.CAST, IrTypeOperator.IMPLICIT_CAST, IrTypeOperator.SAFE_CAST -> {
+            IrTypeOperator.CAST, IrTypeOperator.SAFE_CAST, IrTypeOperator.IMPLICIT_CAST -> {
                 expression.argument.print()
             }
             IrTypeOperator.SAM_CONVERSION -> {
+                print(expression.type.renderSrc())
+                print(" ")
                 expression.argument.print()
             }
             IrTypeOperator.IMPLICIT_NOTNULL -> {
@@ -801,33 +812,47 @@ class IrSourcePrinterVisitor(
         println("}")
     }
 
+    // Map local return targets to the corresponding function call.
+    // This is used to print qualified returns.
+    private val returnTargetToCall =
+        mutableMapOf<IrReturnTargetSymbol, IrFunctionAccessExpression>()
+
+    private val IrFunction.isLambda: Boolean
+        get() = name.asString() == SpecialNames.ANONYMOUS_STRING ||
+            origin == IrDeclarationOrigin.ADAPTER_FOR_CALLABLE_REFERENCE
+
+    private val IrFunction.isDelegatedPropertySetter: Boolean
+        get() = isSetter && origin == IrDeclarationOrigin.DELEGATED_PROPERTY_ACCESSOR
+
+    private fun IrExpression.isLastStatementIn(statements: List<IrStatement>): Boolean {
+        val lastStatement = statements.lastOrNull()
+        return when {
+            lastStatement === this -> true
+            lastStatement is IrBlock -> isLastStatementIn(lastStatement.statements)
+            else -> false
+        }
+    }
+
+    private fun IrExpression.isLastStatementIn(function: IrFunction): Boolean =
+        function.body?.let { isLastStatementIn(it.statements) } ?: false
+
     override fun visitReturn(expression: IrReturn) {
         val value = expression.value
-        // only print the return statement directly if it is not a lambda
+        // Only print the return statement directly if it is not the last statement in a lambda,
+        // or a delegated property setter. The latter have a superfluous "return" in K1.
         val returnTarget = expression.returnTargetSymbol.owner
         if (returnTarget !is IrFunction ||
-            returnTarget.origin != IrDeclarationOrigin.ADAPTER_FOR_CALLABLE_REFERENCE) {
-
-            val isLastStatementInLambda =
-                returnTarget is IrFunction &&
-                    returnTarget.name.asString() == "<anonymous>" &&
-                    returnTarget.body?.statements?.last().let {
-                        it == expression || (it is IrBlock && it.statements.last() == expression)
-                    }
-
-            if (!isLastStatementInLambda) {
-                print("return ")
-            }
+            (!returnTarget.isLambda && (useFir || !returnTarget.isDelegatedPropertySetter)) ||
+            !expression.isLastStatementIn(returnTarget)) {
+            val suffix = returnTargetToCall[returnTarget.symbol]?.let {
+                "@${it.symbol.owner.name}"
+            } ?: ""
+            print("return$suffix ")
         }
-        if (expression.type.isUnit() || value.type.isUnit()) {
-            if (value is IrGetObjectValue) {
-                return
-            } else {
-                value.print()
-            }
-        } else {
-            value.print()
+        if (value.type.isUnit() && value is IrGetObjectValue) {
+            return
         }
+        value.print()
     }
 
     override fun visitBlock(expression: IrBlock) {
@@ -897,7 +922,7 @@ class IrSourcePrinterVisitor(
             declaration.isVar -> print("var ")
             else -> print("val ")
         }
-        print(declaration.name)
+        print(declaration.normalizedName)
         declaration.initializer?.let {
             print(" = ")
             it.print()
@@ -910,7 +935,7 @@ class IrSourcePrinterVisitor(
 
     override fun visitGetValue(expression: IrGetValue) {
         val owner = expression.symbol.owner
-        print(owner.name)
+        print(owner.normalizedName)
 
         if (
             owner.parent != currentScope.owner &&
@@ -975,7 +1000,7 @@ class IrSourcePrinterVisitor(
     }
 
     override fun visitSetValue(expression: IrSetValue) {
-        print(expression.symbol.owner.name)
+        print(expression.symbol.owner.normalizedName)
         print(" = ")
         expression.value.print()
     }
@@ -1509,7 +1534,7 @@ class IrSourcePrinterVisitor(
             if (owner is IrFunction) {
                 (0 until expectedCount).map {
                     if (it < owner.valueParameters.size)
-                        owner.valueParameters[it].name.asString()
+                        owner.valueParameters[it].normalizedName
                     else
                         "${it + 1}"
                 }
@@ -1540,6 +1565,19 @@ class IrSourcePrinterVisitor(
             else -> append(irElement.accept(this@IrSourcePrinterVisitor, null))
         }
     }
+
+    // Names for temporary variables and synthesized parameters are not consistent between
+    // K1 and K2. This function returns the same name for both frontends.
+    private val IrValueDeclaration.normalizedName: String
+        get() = when {
+            // FIR generates both <iterator> and tmp0_for_iterator...
+            origin == IrDeclarationOrigin.FOR_LOOP_ITERATOR -> "<iterator>"
+            // $anonymous$parameter$x vs $unused$var$x
+            origin == IrDeclarationOrigin.UNDERSCORE_PARAMETER -> "<unused var>"
+            !useFir && name.asString().endsWith("_elvis_lhs") -> "<elvis>"
+            !useFir && name.asString() == "\$this\$null" -> "<this>"
+            else -> name.asString()
+        }
 
     override fun visitElement(element: IrElement) {
         print("<<${element::class.java.simpleName}>>")

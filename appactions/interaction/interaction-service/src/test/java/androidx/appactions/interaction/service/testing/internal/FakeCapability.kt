@@ -16,45 +16,29 @@
 
 package androidx.appactions.interaction.service.testing.internal
 
-import androidx.appactions.interaction.capabilities.core.Capability
 import androidx.appactions.interaction.capabilities.core.BaseExecutionSession
-import androidx.appactions.interaction.capabilities.core.ExecutionSessionFactory
+import androidx.appactions.interaction.capabilities.core.Capability
+import androidx.appactions.interaction.capabilities.core.HostProperties
 import androidx.appactions.interaction.capabilities.core.ValueListener
-import androidx.appactions.interaction.capabilities.core.impl.BuilderOf
 import androidx.appactions.interaction.capabilities.core.impl.converters.TypeConverters
 import androidx.appactions.interaction.capabilities.core.impl.spec.ActionSpecBuilder
-import androidx.appactions.interaction.capabilities.core.properties.StringValue
-import androidx.appactions.interaction.capabilities.core.properties.Property
 import androidx.appactions.interaction.capabilities.core.impl.task.SessionBridge
 import androidx.appactions.interaction.capabilities.core.impl.task.TaskHandler
-import java.util.Optional
+import androidx.appactions.interaction.capabilities.core.properties.Property
+import androidx.appactions.interaction.capabilities.core.properties.StringValue
 
 private const val CAPABILITY_NAME = "actions.intent.FAKE_CAPABILITY"
-private val ACTION_SPEC = ActionSpecBuilder.ofCapabilityNamed(CAPABILITY_NAME)
-    .setDescriptor(FakeCapability.Properties::class.java)
-    .setArguments(FakeCapability.Arguments::class.java, FakeCapability.Arguments::Builder)
-    .setOutput(FakeCapability.Output::class.java).bindOptionalParameter(
-        "fieldOne",
-        { property -> Optional.ofNullable(property.fieldOne) },
-        FakeCapability.Arguments.Builder::setFieldOne,
-        TypeConverters.STRING_PARAM_VALUE_CONVERTER,
-        TypeConverters.STRING_VALUE_ENTITY_CONVERTER,
-    ).build()
 
 class FakeCapability private constructor() {
-    class Properties(
-        val fieldOne: Property<StringValue>? = null,
-    )
-
     class Arguments internal constructor(
         val fieldOne: String?,
     ) {
-        class Builder : BuilderOf<Arguments> {
+        class Builder {
             private var fieldOne: String? = null
             fun setFieldOne(value: String) = apply {
                 fieldOne = value
             }
-            override fun build() = Arguments(fieldOne)
+            fun build() = Arguments(fieldOne)
         }
     }
 
@@ -69,15 +53,14 @@ class FakeCapability private constructor() {
 
     class CapabilityBuilder : Capability.Builder<
         CapabilityBuilder,
-        Properties,
         Arguments,
         Output,
         Confirmation,
         ExecutionSession,
         >(ACTION_SPEC) {
-        override val sessionBridge = SessionBridge<ExecutionSession, Confirmation> {
+        override val sessionBridge = SessionBridge<ExecutionSession, Arguments, Confirmation> {
                 session ->
-            val builder = TaskHandler.Builder<Confirmation>()
+            val builder = TaskHandler.Builder<Arguments, Confirmation>()
             session.fieldOneListener?.let {
                 builder.registerValueTaskParam(
                     "fieldOne",
@@ -88,19 +71,27 @@ class FakeCapability private constructor() {
             builder.build()
         }
 
-        private var fieldOne: Property<StringValue>? = null
-
-        fun setFieldOne(fieldOne: Property<StringValue>) = apply {
-            this.fieldOne = fieldOne
-        }
-
         public override fun setExecutionSessionFactory(
-            sessionFactory: ExecutionSessionFactory<ExecutionSession>,
+            sessionFactory: (hostProperties: HostProperties?) -> ExecutionSession
         ) = super.setExecutionSessionFactory(sessionFactory)
 
-        override fun build(): Capability {
-            super.setProperty(Properties(fieldOne))
-            return super.build()
-        }
+        fun setFieldOne(fieldOne: Property<StringValue>) = setProperty(
+            "fieldOne",
+            fieldOne,
+            TypeConverters.STRING_VALUE_ENTITY_CONVERTER
+        )
+    }
+
+    companion object {
+        private val ACTION_SPEC = ActionSpecBuilder.ofCapabilityNamed(CAPABILITY_NAME)
+            .setArguments(Arguments::class.java, Arguments::Builder, Arguments.Builder::build)
+            .setOutput(Output::class.java)
+            .bindParameter(
+                "fieldOne",
+                Arguments::fieldOne,
+                Arguments.Builder::setFieldOne,
+                TypeConverters.STRING_PARAM_VALUE_CONVERTER
+            )
+            .build()
     }
 }

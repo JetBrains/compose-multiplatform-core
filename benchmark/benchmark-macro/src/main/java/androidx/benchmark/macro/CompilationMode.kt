@@ -24,12 +24,11 @@ import androidx.annotation.RestrictTo
 import androidx.benchmark.Arguments
 import androidx.benchmark.DeviceInfo
 import androidx.benchmark.Shell
+import androidx.benchmark.inMemoryTrace
 import androidx.benchmark.macro.CompilationMode.Full
 import androidx.benchmark.macro.CompilationMode.Ignore
 import androidx.benchmark.macro.CompilationMode.None
 import androidx.benchmark.macro.CompilationMode.Partial
-import androidx.benchmark.userspaceTrace
-import androidx.core.os.BuildCompat
 import androidx.profileinstaller.ProfileInstallReceiver
 import org.junit.AssumptionViolatedException
 
@@ -73,7 +72,6 @@ import org.junit.AssumptionViolatedException
  * to compile the target app).
  */
 sealed class CompilationMode {
-    @androidx.annotation.OptIn(markerClass = [BuildCompat.PrereleaseSdkCheck::class])
     internal fun resetAndCompile(
         packageName: String,
         allowCompilationSkipping: Boolean = true,
@@ -91,7 +89,7 @@ sealed class CompilationMode {
                     // The flag `enablePackageReset` can be set to `true` on `userdebug` builds in
                     // order to speed-up the profile reset. When set to false, reset is performed
                     // uninstalling and reinstalling the app.
-                    if (BuildCompat.isAtLeastU() || Shell.isSessionRooted()) {
+                    if (Build.VERSION.SDK_INT >= 34 || Shell.isSessionRooted()) {
                         // Package reset enabled
                         Log.d(TAG, "Re-compiling $packageName")
                         // cmd package compile --reset returns a "Success" or a "Failure" to stdout.
@@ -101,8 +99,9 @@ sealed class CompilationMode {
                         val output = Shell.executeScriptCaptureStdout(
                             "cmd package compile --reset $packageName"
                         )
-                        check(output.trim() == "Success") {
-                            "Unable to recompile $packageName ($output)"
+
+                        check(output.trim() == "Success" || output.contains("PERFORMED")) {
+                            compileResetErrorString(packageName, output, DeviceInfo.isEmulator)
                         }
                     } else {
                         // User builds pre-U. Kick off a full uninstall-reinstall
@@ -124,7 +123,7 @@ sealed class CompilationMode {
      * does work on older APIs without root
      */
     private fun reinstallPackage(packageName: String) {
-        userspaceTrace("reinstallPackage") {
+        inMemoryTrace("reinstallPackage") {
 
             // Copy APKs to /data/local/temp
             val apkPaths = Shell.pmPath(packageName)
@@ -154,8 +153,8 @@ sealed class CompilationMode {
                 // correctly installed. (b/231294733)
                 output = Shell.executeScriptCaptureStdout("pm install -t $tempApkPathsString")
 
-                check(output.trim() == "Success") {
-                    "Unable to install $packageName ($output)"
+                check(output.trim() == "Success" || output.contains("PERFORMED")) {
+                    "Unable to install $packageName (out=$output)"
                 }
             } finally {
                 // Cleanup the temporary APK
@@ -384,7 +383,6 @@ sealed class CompilationMode {
      *
      * TODO: migrate this to an internal-only flag on [None] instead
      *
-     * @suppress
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     object Interpreted : CompilationMode() {
@@ -433,7 +431,24 @@ sealed class CompilationMode {
             val stdout = Shell.executeScriptCaptureStdout(
                 "cmd package compile -f -m $compileArgument $packageName"
             )
-            check(stdout.trim() == "Success")
+            check(stdout.trim() == "Success" || stdout.contains("PERFORMED")) {
+                "Failed to compile (out=$stdout)"
+            }
+        }
+
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // enable testing
+        fun compileResetErrorString(
+            packageName: String,
+            output: String,
+            isEmulator: Boolean
+        ): String {
+            return "Unable to reset compilation of $packageName (out=$output)." +
+                if (output.contains("could not be compiled") && isEmulator) {
+                    " Try updating your emulator -" +
+                        " see https://issuetracker.google.com/issue?id=251540646"
+                } else {
+                    ""
+                }
         }
     }
 }
@@ -443,7 +458,6 @@ sealed class CompilationMode {
  *
  * Used by jetpack-internal benchmarks to skip CompilationModes that would self-suppress.
  *
- * @suppress
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 fun CompilationMode.isSupportedWithVmSettings(): Boolean {

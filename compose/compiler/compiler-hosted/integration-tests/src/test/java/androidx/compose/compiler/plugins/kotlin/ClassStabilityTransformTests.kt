@@ -30,7 +30,7 @@ import org.jetbrains.kotlin.ir.util.statements
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
-class ClassStabilityTransformTests : AbstractIrTransformTest() {
+class ClassStabilityTransformTests(useFir: Boolean) : AbstractIrTransformTest(useFir) {
     @Test
     fun testEmptyClassIsStable() = assertStability(
         "class Foo",
@@ -948,7 +948,7 @@ class ClassStabilityTransformTests : AbstractIrTransformTest() {
                   return <this>.p1%delegate.getValue(<this>, ::p1)
                 }
                 set(value) {
-                  return <this>.p1%delegate.setValue(<this>, ::p1, <set-?>)
+                  <this>.p1%delegate.setValue(<this>, ::p1, <set-?>)
                 }
               static val %stable: Int = 0
             }
@@ -959,7 +959,7 @@ class ClassStabilityTransformTests : AbstractIrTransformTest() {
                   return <this>.p1%delegate.getValue(<this>, ::p1)
                 }
                 set(value) {
-                  return <this>.p1%delegate.setValue(<this>, ::p1, <set-?>)
+                  <this>.p1%delegate.setValue(<this>, ::p1, <set-?>)
                 }
               static val %stable: Int = 8
             }
@@ -1169,7 +1169,7 @@ class ClassStabilityTransformTests : AbstractIrTransformTest() {
                   return <this>.p1%delegate.getValue(<this>, ::p1)
                 }
                 set(value) {
-                  return <this>.p1%delegate.setValue(<this>, ::p1, <set-?>)
+                  <this>.p1%delegate.setValue(<this>, ::p1, <set-?>)
                 }
               static val %stable: Int = 0
             }
@@ -1180,7 +1180,7 @@ class ClassStabilityTransformTests : AbstractIrTransformTest() {
                   return <this>.p1%delegate.getValue(<this>, ::p1)
                 }
                 set(value) {
-                  return <this>.p1%delegate.setValue(<this>, ::p1, <set-?>)
+                  <this>.p1%delegate.setValue(<this>, ::p1, <set-?>)
                 }
               static val %stable: Int = UnstableDelegate.%stable
             }
@@ -1302,9 +1302,9 @@ class ClassStabilityTransformTests : AbstractIrTransformTest() {
               if (isTraceInProgress()) {
                 traceEventStart(<>, %dirty, -1, <>)
               }
-              val tmp0_iterator = items.iterator()
-              while (tmp0_iterator.hasNext()) {
-                val item = tmp0_iterator.next()
+              val <iterator> = items.iterator()
+              while (<iterator>.hasNext()) {
+                val item = <iterator>.next()
                 itemContent(item, %composer, 0b01110000 and %dirty)
               }
               if (isTraceInProgress()) {

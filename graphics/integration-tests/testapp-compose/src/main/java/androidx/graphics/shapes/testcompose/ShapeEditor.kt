@@ -48,9 +48,12 @@ import androidx.compose.ui.unit.dp
 import androidx.core.graphics.plus
 import androidx.graphics.shapes.CornerRounding
 import androidx.graphics.shapes.RoundedPolygon
+import androidx.graphics.shapes.circle
+import androidx.graphics.shapes.rectangle
 import androidx.graphics.shapes.star
 import kotlin.math.cos
 import kotlin.math.max
+import kotlin.math.min
 import kotlin.math.roundToInt
 import kotlin.math.sin
 
@@ -105,7 +108,7 @@ class ShapeParameters(
     )
 
     enum class ShapeId {
-        Star, Polygon, Triangle, Blob, CornerSE
+        Star, Polygon, Triangle, Blob, CornerSE, Circle, Rectangle
     }
 
     private fun radialToCartesian(
@@ -164,16 +167,20 @@ class ShapeParameters(
         ),
         ShapeItem(
             "Triangle", shapegen = {
-                val points = listOf(
-                    radialToCartesian(1f, 270f.toRadians()),
-                    radialToCartesian(1f, 30f.toRadians()),
-                    radialToCartesian(this.innerRadius.value, 90f.toRadians()),
-                    radialToCartesian(1f, 150f.toRadians()),
+                val points = floatArrayOf(
+                    radialToCartesian(1f, 270f.toRadians()).x,
+                    radialToCartesian(1f, 270f.toRadians()).y,
+                    radialToCartesian(1f, 30f.toRadians()).x,
+                    radialToCartesian(1f, 30f.toRadians()).y,
+                    radialToCartesian(this.innerRadius.value, 90f.toRadians()).x,
+                    radialToCartesian(this.innerRadius.value, 90f.toRadians()).y,
+                    radialToCartesian(1f, 150f.toRadians()).x,
+                    radialToCartesian(1f, 150f.toRadians()).y
                 )
                 RoundedPolygon(
                     points,
                     CornerRounding(this.roundness.value, this.smooth.value),
-                    center = PointZero
+                    centerX = PointZero.x, centerY = PointZero.y
                 )
             },
             debugDump = {
@@ -191,14 +198,13 @@ class ShapeParameters(
                 val sx = this.innerRadius.value.coerceAtLeast(0.1f)
                 val sy = this.roundness.value.coerceAtLeast(0.1f)
                 RoundedPolygon(
-                    listOf(
-                        PointF(-sx, -sy),
-                        PointF(sx, -sy),
-                        PointF(sx, sy),
-                        PointF(-sx, sy),
+                    vertices = floatArrayOf(-sx, -sy,
+                        sx, -sy,
+                        sx, sy,
+                        -sx, sy,
                     ),
-                    rounding = CornerRounding(this.roundness.value, this.smooth.value),
-                    center = PointZero
+                    rounding = CornerRounding(min(sx, sy), this.smooth.value),
+                    centerX = 0f, centerY = 0f
                 )
             },
             debugDump = {
@@ -214,14 +220,14 @@ class ShapeParameters(
         ShapeItem(
             "CornerSE", shapegen = {
                 RoundedPolygon(
-                    SquarePoints(),
+                    squarePoints(),
                     perVertexRounding = listOf(
                         CornerRounding(this.roundness.value, this.smooth.value),
                         CornerRounding(1f),
                         CornerRounding(1f),
                         CornerRounding(1f)
                     ),
-                    center = PointZero
+                    centerX = PointZero.x, centerY = PointZero.y
                 )
             },
             debugDump = {
@@ -230,6 +236,40 @@ class ShapeParameters(
                         "smooth = ${this.smooth.value}f, " +
                         rotationAsString() +
                         "shapeId = ShapeParameters.ShapeId.CornerSE)"
+                )
+            },
+            usesSides = false,
+            usesInnerRatio = false,
+            usesInnerParameters = false
+        ),
+        ShapeItem(
+            "Circle", shapegen = {
+                RoundedPolygon.circle(this.sides.value.roundToInt())
+            },
+            debugDump = {
+                debugLog(
+                    "ShapeParameters(roundness = ${this.roundness.value}f, " +
+                        "smooth = ${this.smooth.value}f, " +
+                        rotationAsString() +
+                        "shapeId = ShapeParameters.ShapeId.Circle)"
+                )
+            },
+            usesSides = true,
+            usesInnerRatio = false,
+            usesInnerParameters = false
+        ),
+        ShapeItem(
+            "Rectangle", shapegen = {
+                RoundedPolygon.rectangle(width = 4f, height = 2f,
+                    rounding = CornerRounding(this.roundness.value, this.smooth.value),
+                )
+            },
+            debugDump = {
+                debugLog(
+                    "ShapeParameters(roundness = ${this.roundness.value}f, " +
+                        "smooth = ${this.smooth.value}f, " +
+                        rotationAsString() +
+                        "shapeId = ShapeParameters.ShapeId.Rectangle)"
                 )
             },
             usesSides = false,
@@ -250,7 +290,6 @@ class ShapeParameters(
         transform(Matrix().apply {
             if (autoSize) {
                 // Move the center to the origin.
-                center
                 postTranslate(-(bounds.left + bounds.right) / 2, -(bounds.top + bounds.bottom) / 2)
 
                 // Scale to the [-1, 1] range
@@ -383,13 +422,7 @@ operator fun PointF.times(factor: Float): PointF {
     return PointF(this.x * factor, this.y * factor)
 }
 
-// Create a new list every time, because mutability is complicated.
-private fun SquarePoints() = listOf(
-    PointF(1f, 1f),
-    PointF(-1f, 1f),
-    PointF(-1f, -1f),
-    PointF(1f, -1f)
-)
+private fun squarePoints() = floatArrayOf(1f, 1f, -1f, 1f, -1f, -1f, 1f, -1f)
 
 internal fun directionVectorPointF(angleRadians: Float) =
     PointF(cos(angleRadians), sin(angleRadians))

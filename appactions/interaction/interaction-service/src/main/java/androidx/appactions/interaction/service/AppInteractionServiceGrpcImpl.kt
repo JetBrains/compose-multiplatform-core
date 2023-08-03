@@ -31,6 +31,7 @@ import androidx.appactions.interaction.capabilities.core.impl.utils.CapabilityLo
 import androidx.appactions.interaction.capabilities.core.impl.utils.CapabilityLogger.LogLevel
 import androidx.appactions.interaction.capabilities.core.impl.utils.LoggerInternal
 import androidx.appactions.interaction.proto.AppActionsContext
+import androidx.appactions.interaction.proto.AppInteractionMetadata.ErrorStatus
 import androidx.appactions.interaction.proto.FulfillmentRequest
 import androidx.appactions.interaction.proto.FulfillmentResponse
 import androidx.appactions.interaction.proto.GroundingRequest
@@ -102,6 +103,7 @@ internal class AppInteractionServiceGrpcImpl(
                             LogLevel.ERROR -> Log.e(logTag, message)
                             LogLevel.WARN -> Log.w(logTag, message)
                             LogLevel.INFO -> Log.i(logTag, message)
+                            LogLevel.DEBUG -> Log.d(logTag, message)
                         }
                     }
 
@@ -115,6 +117,7 @@ internal class AppInteractionServiceGrpcImpl(
                             LogLevel.ERROR -> Log.e(logTag, message, throwable)
                             LogLevel.WARN -> Log.w(logTag, message, throwable)
                             LogLevel.INFO -> Log.i(logTag, message, throwable)
+                            LogLevel.DEBUG -> Log.d(logTag, message, throwable)
                         }
                     }
                 },
@@ -138,20 +141,20 @@ internal class AppInteractionServiceGrpcImpl(
             if (currentSessionId != null) {
                 return
             }
-            val sessionId = request.getSessionIdentifier()!!
+            val sessionId = request.sessionIdentifier!!
             currentSessionId = sessionId
-            if (registeredCapabilities.size == 0) {
+            if (registeredCapabilities.isEmpty()) {
                 registeredCapabilities = appInteractionService.registeredCapabilities
             }
-            val targetCapability = registeredCapabilities
-                .filter { request.getIdentifier() == it.id }
-                .firstOrNull()
+            val targetCapability =
+                registeredCapabilities.firstOrNull { request.identifier == it.id }
             if (targetCapability == null) {
                 return respondWithError(
                     StatusRuntimeException(
                         Status.FAILED_PRECONDITION.withDescription(
                             ERROR_NO_ACTION_CAPABILITY,
                         ),
+                        AppInteractionGrpcMetadata.metadataOf(ErrorStatus.CAPABILITY_NOT_FOUND)
                     ),
                     startSessionResponseObserver,
                 )
@@ -159,8 +162,8 @@ internal class AppInteractionServiceGrpcImpl(
             val hostProperties = HostProperties.Builder()
                 .setMaxHostSizeDp(
                     SizeF(
-                        request.getHostProperties().getHostViewHeightDp(),
-                        request.getHostProperties().getHostViewWidthDp(),
+                        request.hostProperties.hostViewHeightDp,
+                        request.hostProperties.hostViewWidthDp,
                     ),
                 ).build()
             val session = targetCapability.createSession(
@@ -173,16 +176,20 @@ internal class AppInteractionServiceGrpcImpl(
 
         override fun onError(t: Throwable) {
             respondWithError(t, startSessionResponseObserver)
-            currentSessionId?.let(::destroySession)
-            currentSessionId = null
+            currentSessionId?.let {
+                destroyAndRemoveSession(it)
+                UiSessions.removeUiCache(it)
+            }
         }
 
         override fun onCompleted() {
             synchronized(startSessionResponseObserver) {
                 startSessionResponseObserver.onCompleted()
             }
-            currentSessionId?.let(::destroySession)
-            currentSessionId = null
+            currentSessionId?.let {
+                destroyAndRemoveSession(it)
+                UiSessions.removeUiCache(it)
+            }
         }
     }
 
@@ -190,36 +197,38 @@ internal class AppInteractionServiceGrpcImpl(
         request: Request,
         responseObserver: StreamObserver<Response>,
     ) {
-        if (request.getFulfillmentRequest().getFulfillmentsList().isEmpty()) {
+        if (request.fulfillmentRequest.fulfillmentsList.isEmpty()) {
             return respondWithError(
                 StatusRuntimeException(
                     Status.FAILED_PRECONDITION.withDescription(
                         ERROR_NO_FULFILLMENT_REQUEST,
                     ),
+                    AppInteractionGrpcMetadata.metadataOf(ErrorStatus.INVALID_REQUEST)
                 ),
                 responseObserver,
             )
         }
-        val selectedFulfillment = request.getFulfillmentRequest().getFulfillments(0)
-        val capability = registeredCapabilities
-            .filter { selectedFulfillment.getIdentifier() == it.id }
-            .firstOrNull()
+        val selectedFulfillment = request.fulfillmentRequest.getFulfillments(0)
+        val capability =
+            registeredCapabilities.firstOrNull { selectedFulfillment.identifier == it.id }
         if (capability == null) {
             return respondWithError(
                 StatusRuntimeException(
                     Status.FAILED_PRECONDITION.withDescription(
                         ERROR_NO_ACTION_CAPABILITY,
                     ),
+                    AppInteractionGrpcMetadata.metadataOf(ErrorStatus.CAPABILITY_NOT_FOUND)
                 ),
                 responseObserver,
             )
         }
-        val sessionId = request.getSessionIdentifier()!!
+        val sessionId = request.sessionIdentifier!!
         val currentSession = SessionManager.getSession(sessionId)
         if (currentSession == null) {
             return respondWithError(
                 StatusRuntimeException(
                     Status.FAILED_PRECONDITION.withDescription(ERROR_NO_SESSION),
+                    AppInteractionGrpcMetadata.metadataOf(ErrorStatus.SESSION_NOT_FOUND)
                 ),
                 responseObserver,
             )
@@ -228,6 +237,7 @@ internal class AppInteractionServiceGrpcImpl(
             return respondWithError(
                 StatusRuntimeException(
                     Status.FAILED_PRECONDITION.withDescription(ERROR_SESSION_ENDED),
+                    AppInteractionGrpcMetadata.metadataOf(ErrorStatus.SESSION_NOT_FOUND)
                 ),
                 responseObserver,
             )
@@ -235,17 +245,22 @@ internal class AppInteractionServiceGrpcImpl(
         Futures.addCallback(
             executeFulfillmentRequest(currentSession, selectedFulfillment),
             object : FutureCallback<FulfillmentResponse> {
-                override fun onSuccess(fulfillmentResponse: FulfillmentResponse) {
+                override fun onSuccess(result: FulfillmentResponse) {
                     val responseBuilder =
-                        convertFulfillmentResponse(fulfillmentResponse, capability)
+                        convertFulfillmentResponse(result, capability, currentSession)
                             .toBuilder()
                     val uiCache = UiSessions.getUiCacheOrNull(sessionId)
-                    if (uiCache != null && uiCache.hasUnreadUiResponse()) {
-                        responseBuilder.setUiUpdate(UiUpdate.getDefaultInstance())
-                        if (!uiCache.getCachedChangedViewIds().isEmpty()) {
+                    if (uiCache != null && uiCache.hasUnreadUiResponse) {
+                        val cachedRemoteViewsInternal = uiCache.cachedRemoteViewsInternal
+                        responseBuilder.uiUpdate = UiUpdate.getDefaultInstance()
+                        if (cachedRemoteViewsInternal != null &&
+                            cachedRemoteViewsInternal.collectionViewFactories.keys.isNotEmpty()
+                        ) {
                             responseBuilder.setCollectionUpdate(
                                 AppInteractionServiceProto.CollectionUpdate.newBuilder()
-                                    .addAllViewIds(uiCache.getCachedChangedViewIds()),
+                                    .addAllViewIds(
+                                        cachedRemoteViewsInternal.collectionViewFactories.keys
+                                    ),
                             )
                         }
                         uiCache.resetUnreadUiResponse()
@@ -255,13 +270,13 @@ internal class AppInteractionServiceGrpcImpl(
 
                 override fun onFailure(t: Throwable) {
                     respondWithError(
-                        when {
-                            t is CapabilityExecutionException -> convertToGrpcException(t)
-                            t is StatusRuntimeException || t is StatusException -> t
+                        when (t) {
+                            is CapabilityExecutionException -> convertToGrpcException(t)
+                            is StatusRuntimeException, is StatusException -> t
                             else -> StatusRuntimeException(
-                                Status.INTERNAL.withDescription(
-                                    t.message,
-                                ).withCause(t),
+                                Status.INTERNAL.withDescription(t.message).withCause(t),
+                                AppInteractionGrpcMetadata.metadataOf(
+                                    ErrorStatus.UNKNOWN_ERROR_STATUS)
                             )
                         },
                         responseObserver,
@@ -278,53 +293,44 @@ internal class AppInteractionServiceGrpcImpl(
         req: AppInteractionServiceProto.UiRequest,
         responseObserver: StreamObserver<AppInteractionServiceProto.UiResponse>,
     ) {
-        val sessionId = req.getSessionIdentifier()!!
-        val currentSession = SessionManager.getSession(sessionId)
-        if (currentSession == null) {
+        val sessionId = req.sessionIdentifier!!
+        if (SessionManager.getSession(sessionId) == null) {
             return respondWithError(
                 StatusRuntimeException(
                     Status.FAILED_PRECONDITION.withDescription(ERROR_NO_SESSION),
-                ),
-                responseObserver,
-            )
-        }
-        if (!currentSession.isActive) {
-            destroySession(req.getSessionIdentifier())
-            return respondWithError(
-                StatusRuntimeException(
-                    Status.FAILED_PRECONDITION.withDescription(ERROR_SESSION_ENDED),
+                    AppInteractionGrpcMetadata.metadataOf(ErrorStatus.SESSION_NOT_FOUND)
                 ),
                 responseObserver,
             )
         }
         val uiCache = UiSessions.getUiCacheOrNull(sessionId)
         if (uiCache == null) {
-            destroySession(req.getSessionIdentifier())
             return respondWithError(
-                StatusRuntimeException(Status.INTERNAL.withDescription(ERROR_NO_UI)),
+                StatusRuntimeException(Status.INTERNAL.withDescription(ERROR_NO_UI),
+                    AppInteractionGrpcMetadata.metadataOf(ErrorStatus.NO_UI_ELEMENTS)),
                 responseObserver,
             )
         }
-        val tileLayout = uiCache.cachedTileLayout
-        val remoteViews = uiCache.cachedRemoteViews
-        val remoteViewsSize = uiCache.cachedRemoteViewsSize
+        val tileLayoutInternal = uiCache.cachedTileLayoutInternal
+        val remoteViewsInternal = uiCache.cachedRemoteViewsInternal
 
-        if (tileLayout == null && (remoteViews == null || remoteViewsSize == null)) {
-            destroySession(req.sessionIdentifier)
-            respondWithError(
-                StatusRuntimeException(Status.INTERNAL.withDescription(ERROR_NO_UI)),
+        if (tileLayoutInternal == null && remoteViewsInternal == null) {
+            UiSessions.removeUiCache(sessionId)
+            return respondWithError(
+                StatusRuntimeException(Status.INTERNAL.withDescription(ERROR_NO_UI),
+                    AppInteractionGrpcMetadata.metadataOf(ErrorStatus.NO_UI_ELEMENTS)),
                 responseObserver
             )
         }
         val uiResponseBuilder = AppInteractionServiceProto.UiResponse.newBuilder()
-        tileLayout?.let { uiResponseBuilder.tileLayout = it.toProto() }
-        if (remoteViews != null && remoteViewsSize != null) {
-            RemoteViewsOverMetadataInterceptor.setRemoteViews(remoteViews)
+        tileLayoutInternal?.let { uiResponseBuilder.tileLayout = it.toProto() }
+        if (remoteViewsInternal != null) {
+            RemoteViewsOverMetadataInterceptor.setRemoteViews(remoteViewsInternal.remoteViews)
             uiResponseBuilder
                 .setRemoteViewsInfo(
                     RemoteViewsInfo.newBuilder()
-                        .setWidthDp(remoteViewsSize.width)
-                        .setHeightDp(remoteViewsSize.height)
+                        .setWidthDp(remoteViewsInternal.size.width)
+                        .setHeightDp(remoteViewsInternal.size.height)
                 )
                 .build()
         }
@@ -335,44 +341,37 @@ internal class AppInteractionServiceGrpcImpl(
         req: CollectionRequest,
         responseObserver: StreamObserver<CollectionResponse>,
     ) {
-        val sessionId = req.getSessionIdentifier()!!
-        val currentSession = SessionManager.getSession(sessionId)
-        if (currentSession == null) {
+        val sessionId = req.sessionIdentifier!!
+        if (SessionManager.getSession(sessionId) == null) {
             return respondWithError(
                 StatusRuntimeException(
                     Status.FAILED_PRECONDITION.withDescription(ERROR_NO_SESSION),
-                ),
-                responseObserver,
-            )
-        }
-        if (!currentSession.isActive) {
-            destroySession(req.getSessionIdentifier())
-            return respondWithError(
-                StatusRuntimeException(
-                    Status.FAILED_PRECONDITION.withDescription(ERROR_SESSION_ENDED),
+                    AppInteractionGrpcMetadata.metadataOf(ErrorStatus.SESSION_NOT_FOUND)
                 ),
                 responseObserver,
             )
         }
         val uiCache = UiSessions.getUiCacheOrNull(sessionId)
         if (uiCache == null) {
-            destroySession(req.getSessionIdentifier())
-            return respondWithError(
-                StatusRuntimeException(Status.INTERNAL.withDescription(ERROR_NO_UI)),
-                responseObserver,
-            )
-        }
-        val factory = uiCache.onGetViewFactoryInternal(req.getViewId())
-        if (factory == null) {
-            destroySession(req.getSessionIdentifier())
             return respondWithError(
                 StatusRuntimeException(
-                    Status.UNIMPLEMENTED.withDescription(ERROR_NO_COLLECTION_SUPPORT),
+                    Status.INTERNAL.withDescription(ERROR_NO_UI),
+                    AppInteractionGrpcMetadata.metadataOf(ErrorStatus.NO_UI_ELEMENTS)
                 ),
                 responseObserver,
             )
         }
-        when (req.getRequestDataCase()) {
+        val factory = uiCache.cachedRemoteViewsInternal?.collectionViewFactories?.get(req.viewId)
+        if (factory == null) {
+            return respondWithError(
+                StatusRuntimeException(
+                    Status.INTERNAL.withDescription(ERROR_NO_COLLECTION_SUPPORT),
+                    AppInteractionGrpcMetadata.metadataOf(ErrorStatus.UNKNOWN_ERROR_STATUS),
+                ),
+                responseObserver,
+            )
+        }
+        when (req.requestDataCase) {
             RequestDataCase.ON_DESTROY -> {
                 requestCollectionOnDestroy(factory, responseObserver)
             }
@@ -383,7 +382,7 @@ internal class AppInteractionServiceGrpcImpl(
                 requestCollectionGetViewAt(
                     factory,
                     responseObserver,
-                    req.getGetViewAt().getPosition(),
+                    req.getViewAt.position,
                 )
             }
             RequestDataCase.GET_LOADING_VIEW -> {
@@ -396,7 +395,7 @@ internal class AppInteractionServiceGrpcImpl(
                 requestCollectionGetItemId(
                     factory,
                     responseObserver,
-                    req.getGetItemId().getPosition(),
+                    req.getItemId.position,
                 )
             }
             RequestDataCase.HAS_STABLE_IDS -> {
@@ -414,9 +413,9 @@ internal class AppInteractionServiceGrpcImpl(
         request: GroundingRequest,
         responseObserver: StreamObserver<GroundingResponse>,
     ) {
-        val entityProvider = appInteractionService.registeredEntityProviders.filter {
-            it.id == request.getRequest().getEntityProviderId()
-        }.firstOrNull()
+        val entityProvider = appInteractionService.registeredEntityProviders.firstOrNull {
+            it.id == request.request.entityProviderId
+        }
         if (entityProvider == null) {
             return respondAndComplete(
                 GroundingResponse.newBuilder()
@@ -436,12 +435,11 @@ internal class AppInteractionServiceGrpcImpl(
                 )
             } catch (t: Throwable) {
                 respondWithError(
-                    when {
-                        t is StatusRuntimeException || t is StatusException -> t
+                    when (t) {
+                        is StatusRuntimeException, is StatusException -> t
                         else -> StatusRuntimeException(
-                            Status.INTERNAL.withDescription(
-                                t.message,
-                            ).withCause(t),
+                            Status.INTERNAL.withDescription(t.message,).withCause(t),
+                            AppInteractionGrpcMetadata.metadataOf(ErrorStatus.UNKNOWN_ERROR_STATUS)
                         )
                     },
                     responseObserver,
@@ -466,7 +464,7 @@ internal class AppInteractionServiceGrpcImpl(
             CollectionResponse.newBuilder()
                 .setGetCount(
                     CollectionResponse.GetCount.newBuilder()
-                        .setCount(factory.getCount()),
+                        .setCount(factory.count),
                 )
                 .build(),
             observer,
@@ -486,7 +484,7 @@ internal class AppInteractionServiceGrpcImpl(
         factory: RemoteViewsFactory,
         observer: StreamObserver<CollectionResponse>,
     ) {
-        factory.getLoadingView()?.let(RemoteViewsOverMetadataInterceptor::setRemoteViews)
+        factory.loadingView?.let(RemoteViewsOverMetadataInterceptor::setRemoteViews)
         respondAndComplete(CollectionResponse.getDefaultInstance(), observer)
     }
 
@@ -498,7 +496,7 @@ internal class AppInteractionServiceGrpcImpl(
             CollectionResponse.newBuilder()
                 .setGetViewTypeCount(
                     CollectionResponse.GetViewTypeCount.newBuilder()
-                        .setViewTypeCount(factory.getViewTypeCount()),
+                        .setViewTypeCount(factory.viewTypeCount),
                 )
                 .build(),
             observer,
@@ -547,47 +545,54 @@ internal class AppInteractionServiceGrpcImpl(
         return builder.build()
     }
 
-    private fun destroySession(sessionId: String) {
+    /**
+     * Calls destroy on the session if it's found in SessionManager.
+     * Also removes the session from map.
+     */
+    internal fun destroyAndRemoveSession(sessionId: String) {
         SessionManager.getSession(sessionId)?.destroy()
         SessionManager.removeSession(sessionId)
     }
 
     internal fun convertToGrpcException(e: CapabilityExecutionException): StatusRuntimeException {
-        return when (e.getErrorStatus()) {
-            ErrorStatusInternal.TIMEOUT -> StatusRuntimeException(
-                Status.DEADLINE_EXCEEDED.withDescription(e.message).withCause(e),
-            )
-            else -> StatusRuntimeException(
-                Status.INTERNAL.withDescription(e.message).withCause(e),
-            )
+        val rpcStatus = when (e.errorStatus) {
+            ErrorStatusInternal.UNKNOWN_ERROR_STATUS -> Status.UNKNOWN
+            ErrorStatusInternal.CANCELED -> Status.CANCELLED
+            ErrorStatusInternal.TIMEOUT -> Status.DEADLINE_EXCEEDED
+            ErrorStatusInternal.INVALID_REQUEST -> Status.INVALID_ARGUMENT
+            ErrorStatusInternal.SESSION_NOT_FOUND -> Status.FAILED_PRECONDITION
+            ErrorStatusInternal.INTERNAL,
+            ErrorStatusInternal.EXTERNAL_EXCEPTION,
+            -> Status.INTERNAL
         }
+        return StatusRuntimeException(
+            rpcStatus.withDescription(e.message).withCause(e),
+            AppInteractionGrpcMetadata.metadataOf(e.errorStatus)
+        )
     }
 
     internal fun convertFulfillmentResponse(
         fulfillmentResponse: FulfillmentResponse,
         capability: Capability,
+        currentSession: CapabilitySession
     ): Response {
         val appAction = capability.appAction
-        val isDialogSession = appAction.getTaskInfo().getSupportsPartialFulfillment()
+        val isDialogSession = appAction.taskInfo.supportsPartialFulfillment
         val version = convertToAppActionsContextVersion(
-            LibInfo(appInteractionService.getApplicationContext()).getVersion(),
+            LibInfo(appInteractionService.applicationContext).getVersion(),
         )
+        val appActionsContextBuilder = AppActionsContext.newBuilder()
+            .addActions(appAction)
+            .setVersion(version)
+        currentSession.state?.let(appActionsContextBuilder::addDialogStates)
         val responseBuilder: Response.Builder =
-            // TODO(b/269638788): Add DialogState to the Response proto.
             Response.newBuilder()
                 .setFulfillmentResponse(fulfillmentResponse)
-                .setAppActionsContext(
-                    AppActionsContext.newBuilder()
-                        .addActions(appAction)
-                        .setVersion(version)
-                        .build(),
-                )
+                .setAppActionsContext(appActionsContextBuilder.build())
         if (!isDialogSession) {
-            responseBuilder.setEndingStatus(
-                AppInteractionServiceProto.Status.newBuilder()
-                    .setStatusCode(Code.COMPLETE)
-                    .build(),
-            )
+            responseBuilder.endingStatus = AppInteractionServiceProto.Status.newBuilder()
+                .setStatusCode(Code.COMPLETE)
+                .build()
         }
         return responseBuilder.build()
     }

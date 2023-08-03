@@ -22,6 +22,9 @@ dependencies {
     implementation("androidx.concurrent:concurrent-futures:1.0.0")
     implementation("androidx.interpolator:interpolator:1.0.0")
 
+    // Workaround for Kotlin dependency constraints
+    implementation(libs.kotlinStdlib)
+
     // We don't ship this as a public artifact, so it must remain a project-type dependency.
     annotationProcessor(projectOrArtifact(":versionedparcelable:versionedparcelable-compiler"))
 
@@ -54,6 +57,7 @@ dependencies {
     androidTestImplementation(project(":internal-testutils-mockito"))
 
     testImplementation(libs.junit)
+    testImplementation(libs.testExtJunit)
     testImplementation(libs.testCore)
     testImplementation(libs.testRunner)
     testImplementation(libs.truth)
@@ -90,10 +94,11 @@ android {
 }
 
 androidx {
-    name = "Android Support Library compat"
+    name = "Core"
     publish = Publish.SNAPSHOT_AND_RELEASE
     mavenVersion = LibraryVersions.CORE
     inceptionYear = "2015"
-    description = "The Support Library is a static library that you can add to your Android application in order to use APIs that are either not available for older platform versions or utility APIs that aren\'t a part of the framework APIs. Compatible on devices running API 14 or later."
+    description = "Provides backward-compatible implementations of Android platform APIs and " +
+            "features."
     failOnDeprecationWarnings = false
 }

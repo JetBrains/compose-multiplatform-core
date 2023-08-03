@@ -67,7 +67,7 @@ abstract class ModifierNodeElement<N : Modifier.Node> : Modifier.Element, Inspec
      * application. This function will have the current node instance passed in as a parameter, and
      * it is expected that the node will be brought up to date.
      */
-    abstract fun update(node: N): N
+    abstract fun update(node: N)
 
     /**
      * Populates an [InspectorInfo] object with attributes to display in the layout inspector. This
@@ -89,12 +89,16 @@ abstract class ModifierNodeElement<N : Modifier.Node> : Modifier.Element, Inspec
         tryPopulateReflectively(this@ModifierNodeElement)
     }
 
-    // Require hashCode() to be implemented. Using a data class is sufficient. Singletons and
-    // modifiers with no parameters may implement this function by returning an arbitrary constant.
+    /**
+     * Require hashCode() to be implemented. Using a data class is sufficient. Singletons and
+     * modifiers with no parameters may implement this function by returning an arbitrary constant.
+     */
     abstract override fun hashCode(): Int
 
-    // Require equals() to be implemented. Using a data class is sufficient. Singletons may
-    // implement this function with referential equality (`this === other`). Modifiers with no
-    // inputs may implement this function by checking the type of the other object.
+    /**
+     * Require equals() to be implemented. Using a data class is sufficient. Singletons may
+     * implement this function with referential equality (`this === other`). Modifiers with no
+     * inputs may implement this function by checking the type of the other object.
+     */
     abstract override fun equals(other: Any?): Boolean
 }

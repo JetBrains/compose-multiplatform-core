@@ -16,12 +16,12 @@
 
 package androidx.appactions.builtintypes.experimental.types
 
-// TODO(b/271634410): Update Attendee references
+import androidx.appactions.builtintypes.experimental.properties.Attendee
 import androidx.appactions.builtintypes.experimental.properties.EndDate
 import androidx.appactions.builtintypes.experimental.properties.Name
 import androidx.appactions.builtintypes.experimental.properties.StartDate
-import androidx.appactions.builtintypes.experimental.properties.Attendee
 import java.time.LocalDate
+import java.time.ZonedDateTime
 
 interface CalendarEvent : Thing {
     val startDate: StartDate?
@@ -37,8 +37,10 @@ interface CalendarEvent : Thing {
     interface Builder<Self : Builder<Self>> : Thing.Builder<Self> {
         fun setStartDate(startDate: StartDate?): Self
         fun setStartDate(value: LocalDate): Self
+        fun setStartDate(value: ZonedDateTime): Self
         fun setEndDate(endDate: EndDate?): Self
         fun setEndDate(value: LocalDate): Self
+        fun setEndDate(value: ZonedDateTime): Self
         fun addAttendee(attendee: Attendee): Self
         fun addAttendees(value: List<Attendee>): Self
 
@@ -65,11 +67,19 @@ private class CalendarEventBuilderImpl : CalendarEvent.Builder<CalendarEventBuil
         startDate = StartDate(value)
     }
 
+    override fun setStartDate(value: ZonedDateTime): CalendarEventBuilderImpl = apply {
+        startDate = StartDate(value)
+    }
+
     override fun setEndDate(endDate: EndDate?): CalendarEventBuilderImpl = apply {
         this.endDate = endDate
     }
 
     override fun setEndDate(value: LocalDate): CalendarEventBuilderImpl = apply {
+        endDate = EndDate(value)
+    }
+
+    override fun setEndDate(value: ZonedDateTime): CalendarEventBuilderImpl = apply {
         endDate = EndDate(value)
     }
 
@@ -106,4 +116,16 @@ private class CalendarEventImpl(
             .setStartDate(startDate)
             .setEndDate(endDate)
             .addAttendees(attendeeList)
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is CalendarEventImpl) return false
+        if (attendeeList != other.attendeeList) return false
+        if (endDate != other.endDate) return false
+        if (startDate != other.startDate) return false
+        if (identifier != other.identifier) return false
+        if (name != other.name) return false
+
+        return true
+    }
 }

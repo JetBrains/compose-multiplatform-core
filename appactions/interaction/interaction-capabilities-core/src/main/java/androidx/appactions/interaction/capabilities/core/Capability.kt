@@ -16,18 +16,22 @@
 
 package androidx.appactions.interaction.capabilities.core
 
+import android.annotation.SuppressLint
 import androidx.annotation.RestrictTo
 import androidx.appactions.interaction.capabilities.core.impl.CapabilitySession
 import androidx.appactions.interaction.capabilities.core.impl.SingleTurnCapabilityImpl
+import androidx.appactions.interaction.capabilities.core.impl.converters.EntityConverter
 import androidx.appactions.interaction.capabilities.core.impl.spec.ActionSpec
+import androidx.appactions.interaction.capabilities.core.impl.spec.BoundProperty
+import androidx.appactions.interaction.capabilities.core.impl.task.EmptyTaskUpdater
 import androidx.appactions.interaction.capabilities.core.impl.task.SessionBridge
 import androidx.appactions.interaction.capabilities.core.impl.task.TaskCapabilityImpl
-import androidx.appactions.interaction.capabilities.core.impl.task.EmptyTaskUpdater
+import androidx.appactions.interaction.capabilities.core.properties.Property
 import androidx.appactions.interaction.proto.AppActionsContext.AppAction
 
 /**
- * A Capability represents some supported Built-In-Intent. Register capabilities within an app to
- * declare support for the capability.
+ * A Capability represents a supported [built-in intent](https://developer.android.com/reference/app-actions/built-in-intents).
+ * [Register](https://developer.android.com/guide/app-actions/intents) capabilities within an app to declare support for the capability.
  */
 abstract class Capability internal constructor(
     /** Returns the unique Id of this capability declaration. */
@@ -36,8 +40,6 @@ abstract class Capability internal constructor(
 
     /**
      * Returns an app action proto describing how to fulfill this capability.
-     *
-     * @suppress
      */
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     abstract val appAction: AppAction
@@ -45,8 +47,6 @@ abstract class Capability internal constructor(
     /**
      * Create a new capability session. The capability library doesn't maintain registry of
      * capabilities, so it's not going to assign any session id.
-     *
-     * @suppress
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     abstract fun createSession(
@@ -57,40 +57,46 @@ abstract class Capability internal constructor(
     /**
      * An abstract Builder class for Capability.
      */
+    @SuppressLint("StaticFinalBuilder")
     abstract class Builder<
         BuilderT :
         Builder<
             BuilderT,
-            PropertyT,
             ArgumentsT,
             OutputT,
             ConfirmationT,
             ExecutionSessionT
             >,
-        PropertyT,
         ArgumentsT,
         OutputT,
         ConfirmationT,
         ExecutionSessionT : BaseExecutionSession<ArgumentsT, OutputT>
-        > protected constructor(
-        private val actionSpec: ActionSpec<PropertyT, ArgumentsT, OutputT>
-    ) {
+        > private constructor() {
         private var id: String? = null
-        private var property: PropertyT? = null
-        private var capabilityExecutor: CapabilityExecutor<ArgumentsT, OutputT>? = null
-        private var sessionFactory: ExecutionSessionFactory<ExecutionSessionT>? = null
+        private val boundPropertyMap = mutableMapOf<String, BoundProperty<*>>()
+        private var executionCallback: ExecutionCallback<ArgumentsT, OutputT>? = null
+        private var sessionFactory:
+            ((hostProperties: HostProperties?) -> ExecutionSessionT)? = null
+        private var actionSpec: ActionSpec<ArgumentsT, OutputT>? = null
+
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+        constructor(actionSpec: ActionSpec<ArgumentsT, OutputT>) : this() {
+            this.actionSpec = actionSpec
+        }
 
         /**
          * The SessionBridge object, which is used to normalize Session instances to TaskHandler.
          * see SessionBridge documentation for more information.
-         *
-         * @suppress
          */
         @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-        protected open val sessionBridge: SessionBridge<ExecutionSessionT, ConfirmationT>? = null
+        protected open val sessionBridge: SessionBridge<
+            ExecutionSessionT,
+            ArgumentsT,
+            ConfirmationT
+        >? = null
 
         @Suppress("UNCHECKED_CAST")
-        fun asBuilder(): BuilderT {
+        private fun asBuilder(): BuilderT {
             return this as BuilderT
         }
 
@@ -103,76 +109,91 @@ abstract class Capability internal constructor(
         }
 
         /**
-         * Sets the Property instance for this capability. Must be called before {@link
-         * Builder#build}.
-         */
-        protected fun setProperty(property: PropertyT) = asBuilder().apply {
-            this.property = property
+         * Sets a single slot property for this capability, and associated entity converter. */
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+        protected fun <T> setProperty(
+            slotName: String,
+            property: Property<T>,
+            entityConverter: EntityConverter<T>,
+        ) = asBuilder().apply {
+            this.boundPropertyMap[slotName] = BoundProperty(slotName, property, entityConverter)
         }
 
         /**
-         * Sets the CapabilityExecutor for this capability.
+         * Sets the ExecutionCallback for this capability.
          *
-         * setExecutionSessionFactory and setExecutor are mutually exclusive, so calling one will
-         * nullify the other.
+         * [setExecutionSessionFactory] and [setExecutionCallback] are mutually exclusive, so
+         * calling one will nullify the other.
          *
-         * This method accepts a coroutine-based CapabilityExecutor instance. There is also an overload
-         * which accepts the CapabilityExecutorAsync instead.
+         * This method accepts a coroutine-based ExecutionCallback instance. There is also an
+         * overload which accepts the [ExecutionCallbackAsync] instead.
          */
-        fun setExecutor(capabilityExecutor: CapabilityExecutor<ArgumentsT, OutputT>) =
+        @SuppressLint("MissingGetterMatchingBuilder")
+        fun setExecutionCallback(executionCallback: ExecutionCallback<ArgumentsT, OutputT>) =
             asBuilder().apply {
-                this.capabilityExecutor = capabilityExecutor
+                this.executionCallback = executionCallback
             }
 
         /**
-         * Sets the CapabilityExecutorAsync for this capability.
+         * Sets the [ExecutionCallbackAsync] for this capability.
          *
-         * setExecutionSessionFactory and setExecutor are mutually exclusive, so calling one will
-         * nullify the other.
+         * [setExecutionSessionFactory] and [setExecutionCallback] are mutually exclusive, so
+         * calling one will nullify the other.
          *
-         * This method accepts the CapabilityExecutorAsync interface which returns a ListenableFuture.
+         * This method accepts the [ExecutionCallbackAsync] interface, which is the Future version
+         * of [ExecutionCallback]
          */
-        fun setExecutor(
-            capabilityExecutorAsync: CapabilityExecutorAsync<ArgumentsT, OutputT>
+        @SuppressLint("MissingGetterMatchingBuilder")
+        fun setExecutionCallback(
+            executionCallbackAsync: ExecutionCallbackAsync<ArgumentsT, OutputT>
         ) = asBuilder().apply {
-            this.capabilityExecutor = capabilityExecutorAsync.toCapabilityExecutor()
+            this.executionCallback = executionCallbackAsync.toExecutionCallback()
         }
 
         /**
-         * Sets the SessionBuilder instance which is used to create Session instaces for this
+         * Sets the lambda used to create [ExecutionSessionT] instances for this
          * capability.
          *
-         * [setExecutionSessionFactory] and [setExecutor] are mutually exclusive, so calling one
-         * will nullify the other.
+         * [setExecutionSessionFactory] and [setExecutionCallback] are mutually exclusive, so
+         * calling one will nullify the other.
          */
+        @SuppressLint("MissingGetterMatchingBuilder")
         protected open fun setExecutionSessionFactory(
-            sessionFactory: ExecutionSessionFactory<ExecutionSessionT>
+            sessionFactory: (hostProperties: HostProperties?) -> ExecutionSessionT
         ): BuilderT = asBuilder().apply {
             this.sessionFactory = sessionFactory
         }
 
-        /** Builds and returns this Capability. */
+        /**
+         * Builds and returns this Capability.
+         * [setId] must be called before [build].
+         * either [setExecutionCabllack] or [setSessionFactory] must be called before [build].
+         * child classes may enforce additional required properties to be set before [build].
+         * An [IllegalStateException] will be thrown if above requirements are not met.
+         */
         open fun build(): Capability {
-            val checkedId = requireNotNull(id) { "setId must be called before build" }
-            val checkedProperty = requireNotNull(property) { "property must not be null." }
-            if (capabilityExecutor != null) {
+            val checkedId = id ?: throw IllegalStateException("setId must be called before build")
+            val boundProperties = boundPropertyMap.values.toList()
+            if (executionCallback != null) {
                 return SingleTurnCapabilityImpl(
                     checkedId,
-                    actionSpec,
-                    checkedProperty,
-                    capabilityExecutor!!
+                    actionSpec!!,
+                    boundProperties,
+                    executionCallback!!
                 )
-            } else {
-                val checkedSessionFactory = requireNotNull(sessionFactory) {
-                    "either setExecutor or setExecutionSessionFactory must be called before build"
-                }
+            } else if (sessionFactory != null) {
                 return TaskCapabilityImpl(
                     checkedId,
-                    actionSpec,
-                    checkedProperty,
-                    checkedSessionFactory,
+                    actionSpec!!,
+                    boundProperties,
+                    sessionFactory!!,
                     sessionBridge!!,
                     ::EmptyTaskUpdater
+                )
+            } else {
+                throw IllegalStateException(
+                    """either setExecutionCallback or setExecutionSessionFactory must be called
+                    before capability '$id' can be built"""
                 )
             }
         }

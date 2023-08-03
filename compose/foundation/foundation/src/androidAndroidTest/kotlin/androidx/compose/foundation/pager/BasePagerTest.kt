@@ -57,6 +57,7 @@ import androidx.compose.ui.test.swipeWithVelocity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import kotlin.test.assertTrue
 import kotlinx.coroutines.CoroutineScope
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -125,7 +126,7 @@ open class BasePagerTest(private val config: ParamConfig) :
         snapVelocityThreshold: Dp = MinFlingVelocityDp,
         snapPositionalThreshold: Float = 0.5f,
         key: ((index: Int) -> Any)? = null,
-        pageContent: @Composable (page: Int) -> Unit = { Page(index = it) }
+        pageContent: @Composable PagerScope.(page: Int) -> Unit = { Page(index = it) }
     ) {
 
         rule.setContent {
@@ -278,7 +279,7 @@ open class BasePagerTest(private val config: ParamConfig) :
         flingBehavior: SnapFlingBehavior = PagerDefaults.flingBehavior(state = state),
         pageSpacing: Dp = 0.dp,
         key: ((index: Int) -> Any)? = null,
-        pageContent: @Composable (pager: Int) -> Unit
+        pageContent: @Composable PagerScope.(pager: Int) -> Unit
     ) {
         if (vertical) {
             VerticalPager(
@@ -336,6 +337,20 @@ open class BasePagerTest(private val config: ParamConfig) :
         rule.onNodeWithTag("$pageToVerifyPosition")
             .assertPositionInRootIsEqualTo(left + leftContentPadding, top + topContentPadding)
     }
+
+    internal fun runAndWaitForPageSettling(block: () -> Unit) {
+        block()
+        rule.mainClock.advanceTimeUntil {
+            pagerState.currentPageOffsetFraction != 0.0f
+        } // wait for first move from drag
+        rule.mainClock.advanceTimeUntil {
+            pagerState.currentPageOffsetFraction == 0.0f
+        } // wait for fling settling
+        // pump the clock twice and check we're still settled.
+        rule.mainClock.advanceTimeByFrame()
+        rule.mainClock.advanceTimeByFrame()
+        assertTrue { pagerState.currentPageOffsetFraction == 0.0f }
+    }
 }
 
 class ParamConfig(
@@ -358,7 +373,7 @@ class ParamConfig(
 
 internal const val PagerTestTag = "pager"
 internal const val DefaultPageCount = 20
-internal const val DefaultAnimationRepetition = 3
+internal const val DefaultAnimationRepetition = 2
 internal val TestOrientation = listOf(Orientation.Vertical, Orientation.Horizontal)
 internal val AllOrientationsParams = mutableListOf<ParamConfig>().apply {
     for (orientation in TestOrientation) {

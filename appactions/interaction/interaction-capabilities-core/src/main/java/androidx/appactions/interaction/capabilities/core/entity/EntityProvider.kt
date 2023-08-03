@@ -17,14 +17,14 @@
 package androidx.appactions.interaction.capabilities.core.entity
 
 import androidx.annotation.RestrictTo
-import androidx.appactions.interaction.capabilities.core.impl.converters.EntityConverter
+import androidx.appactions.builtintypes.types.Thing
+import androidx.appactions.interaction.capabilities.core.SearchAction
 import androidx.appactions.interaction.capabilities.core.impl.concurrent.Futures
+import androidx.appactions.interaction.capabilities.core.impl.converters.EntityConverter
 import androidx.appactions.interaction.capabilities.core.impl.converters.SearchActionConverter
 import androidx.appactions.interaction.capabilities.core.impl.converters.TypeConverters
 import androidx.appactions.interaction.capabilities.core.impl.converters.TypeSpec
 import androidx.appactions.interaction.capabilities.core.impl.exceptions.StructConversionException
-import androidx.appactions.interaction.capabilities.core.values.SearchAction
-import androidx.appactions.interaction.capabilities.core.values.Thing
 import androidx.appactions.interaction.proto.GroundingRequest
 import androidx.appactions.interaction.proto.GroundingResponse
 import androidx.concurrent.futures.await
@@ -53,6 +53,7 @@ constructor(
      *
      * @param request The request includes e.g. entity, search metadata, etc.
      * @return an [EntityLookupResponse] instance
+     * * TODO(dennistwo) lookup request should contain a different generic type (filter type)
      */
     open suspend fun lookup(request: EntityLookupRequest<T>): EntityLookupResponse<T> {
         return lookupAsync(request).await()
@@ -72,8 +73,6 @@ constructor(
     /**
      * Internal method to lookup untyped entity, which will be used by service library to handle
      * {@link GroundingRequest}.
-     *
-     * @suppress
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     suspend fun lookupInternal(request: GroundingRequest): GroundingResponse {

@@ -22,6 +22,7 @@ import static androidx.camera.camera2.internal.Camera2CameraImplTest.TestUseCase
 import static androidx.camera.core.CameraSelector.DEFAULT_BACK_CAMERA;
 import static androidx.camera.core.concurrent.CameraCoordinator.CAMERA_OPERATING_MODE_CONCURRENT;
 import static androidx.camera.core.concurrent.CameraCoordinator.CAMERA_OPERATING_MODE_SINGLE;
+import static androidx.camera.core.resolutionselector.ResolutionSelector.PREFER_HIGHER_RESOLUTION_OVER_CAPTURE_RATE;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
@@ -77,14 +78,14 @@ import androidx.camera.core.impl.SessionConfig;
 import androidx.camera.core.impl.StreamSpec;
 import androidx.camera.core.impl.utils.executor.CameraXExecutors;
 import androidx.camera.core.resolutionselector.ResolutionSelector;
-import androidx.camera.testing.CameraUtil;
-import androidx.camera.testing.HandlerUtil;
-import androidx.camera.testing.fakes.FakeCameraCoordinator;
-import androidx.camera.testing.fakes.FakeUseCase;
-import androidx.camera.testing.fakes.FakeUseCaseConfig;
-import androidx.camera.testing.mocks.MockObserver;
-import androidx.camera.testing.mocks.helpers.CallTimes;
-import androidx.camera.testing.mocks.helpers.CallTimesAtLeast;
+import androidx.camera.testing.impl.CameraUtil;
+import androidx.camera.testing.impl.HandlerUtil;
+import androidx.camera.testing.impl.fakes.FakeCameraCoordinator;
+import androidx.camera.testing.impl.fakes.FakeUseCase;
+import androidx.camera.testing.impl.fakes.FakeUseCaseConfig;
+import androidx.camera.testing.impl.mocks.MockObserver;
+import androidx.camera.testing.impl.mocks.helpers.CallTimes;
+import androidx.camera.testing.impl.mocks.helpers.CallTimesAtLeast;
 import androidx.core.os.HandlerCompat;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
@@ -1075,8 +1076,8 @@ public final class Camera2CameraImplTest {
 
         // Creates a test use case with high resolution enabled.
         ResolutionSelector highResolutionSelector =
-                new ResolutionSelector.Builder().setHighResolutionEnabledFlag(
-                        ResolutionSelector.HIGH_RESOLUTION_FLAG_ON).build();
+                new ResolutionSelector.Builder().setAllowedResolutionMode(
+                        PREFER_HIGHER_RESOLUTION_OVER_CAPTURE_RATE).build();
         FakeUseCaseConfig.Builder configBuilder =
                 new FakeUseCaseConfig.Builder().setSessionOptionUnpacker(
                         new Camera2SessionOptionUnpacker()).setTargetName(

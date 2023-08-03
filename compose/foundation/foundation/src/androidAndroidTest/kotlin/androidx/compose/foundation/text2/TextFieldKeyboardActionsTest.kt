@@ -27,10 +27,10 @@ import androidx.compose.foundation.text.KeyboardActionScope
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardHelper
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.text2.input.TextFieldState
 import androidx.compose.foundation.text2.input.TextFieldLineLimits.MultiLine
 import androidx.compose.foundation.text2.input.TextFieldLineLimits.SingleLine
-import androidx.compose.foundation.text2.input.internal.AndroidTextInputAdapter
+import androidx.compose.foundation.text2.input.TextFieldState
+import androidx.compose.foundation.text2.input.internal.setInputConnectionCreatedListenerForTests
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -49,6 +49,7 @@ import androidx.compose.ui.test.performImeAction
 import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.pressKey
+import androidx.compose.ui.test.requestFocus
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -91,7 +92,8 @@ class TextFieldKeyboardActionsTest {
     fun textField_performsImeAction_viaInputConnection() {
         var called = false
         var inputConnection: InputConnection? = null
-        AndroidTextInputAdapter.setInputConnectionCreatedListenerForTests { _, ic ->
+
+        setInputConnectionCreatedListenerForTests { _, ic ->
             inputConnection = ic
         }
         rule.setContent {
@@ -104,7 +106,7 @@ class TextFieldKeyboardActionsTest {
             )
         }
 
-        rule.onNode(hasSetTextAction()).performSemanticsAction(SemanticsActions.RequestFocus)
+        rule.onNode(hasSetTextAction()).requestFocus()
 
         rule.runOnIdle {
             inputConnection?.performEditorAction(EditorInfo.IME_ACTION_SEND)
@@ -116,7 +118,7 @@ class TextFieldKeyboardActionsTest {
     fun textField_performsUnexpectedImeAction_fromInputConnection() {
         var calledFor: ImeAction? = null
         var inputConnection: InputConnection? = null
-        AndroidTextInputAdapter.setInputConnectionCreatedListenerForTests { _, ic ->
+        setInputConnectionCreatedListenerForTests { _, ic ->
             inputConnection = ic
         }
         rule.setContent {
@@ -129,7 +131,7 @@ class TextFieldKeyboardActionsTest {
             )
         }
 
-        rule.onNode(hasSetTextAction()).performSemanticsAction(SemanticsActions.RequestFocus)
+        rule.onNode(hasSetTextAction()).requestFocus()
 
         rule.runOnIdle {
             inputConnection?.performEditorAction(EditorInfo.IME_ACTION_SEARCH)
@@ -272,7 +274,7 @@ class TextFieldKeyboardActionsTest {
     fun textField_performsGo_whenReceivedImeActionIsGo() {
         var called = false
         var inputConnection: InputConnection? = null
-        AndroidTextInputAdapter.setInputConnectionCreatedListenerForTests { _, ic ->
+        setInputConnectionCreatedListenerForTests { _, ic ->
             inputConnection = ic
         }
         rule.setContent {
@@ -284,7 +286,7 @@ class TextFieldKeyboardActionsTest {
             )
         }
 
-        rule.onNode(hasSetTextAction()).performSemanticsAction(SemanticsActions.RequestFocus)
+        rule.onNode(hasSetTextAction()).requestFocus()
 
         rule.runOnIdle {
             inputConnection?.performEditorAction(EditorInfo.IME_ACTION_GO)
@@ -296,7 +298,7 @@ class TextFieldKeyboardActionsTest {
     fun textField_doesNotPerformGo_whenReceivedImeActionIsNotGo() {
         var called = false
         var inputConnection: InputConnection? = null
-        AndroidTextInputAdapter.setInputConnectionCreatedListenerForTests { _, ic ->
+        setInputConnectionCreatedListenerForTests { _, ic ->
             inputConnection = ic
         }
         rule.setContent {
@@ -308,7 +310,7 @@ class TextFieldKeyboardActionsTest {
             )
         }
 
-        rule.onNode(hasSetTextAction()).performSemanticsAction(SemanticsActions.RequestFocus)
+        rule.onNode(hasSetTextAction()).requestFocus()
 
         rule.runOnIdle {
             inputConnection?.performEditorAction(EditorInfo.IME_ACTION_SEARCH)
@@ -336,7 +338,7 @@ class TextFieldKeyboardActionsTest {
         keyboardActions = actions2
 
         // do not go through focus requests again
-        rule.onNode(hasSetTextAction()).performSemanticsAction(SemanticsActions.PerformImeAction)
+        rule.onNode(hasSetTextAction()).performSemanticsAction(SemanticsActions.OnImeAction)
         rule.runOnIdle { assertThat(lastCaller).isEqualTo(2) }
     }
 

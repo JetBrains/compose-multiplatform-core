@@ -16,10 +16,10 @@
 
 package com.android.build.gradle.internal.fixtures
 
+import java.util.function.BiFunction
 import org.gradle.api.Transformer
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
-import java.util.function.BiFunction
 
 class FakeGradleProperty<T>(private var value: T? = null) : Property<T> {
 
@@ -34,6 +34,7 @@ class FakeGradleProperty<T>(private var value: T? = null) : Property<T> {
 
     override fun isPresent() = value != null || valueProvider != null
 
+    @Suppress("WRONG_NULLABILITY_FOR_JAVA_OVERRIDE") // KT-36770
     override fun getOrElse(defaultValue: T) =
         value ?: valueProvider?.get() ?: convention ?: defaultValue
 

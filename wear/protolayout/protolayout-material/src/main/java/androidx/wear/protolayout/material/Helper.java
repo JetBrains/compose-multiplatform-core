@@ -27,23 +27,19 @@ import androidx.wear.protolayout.DeviceParametersBuilders.DeviceParameters;
 import androidx.wear.protolayout.DimensionBuilders.DpProp;
 import androidx.wear.protolayout.ModifiersBuilders.ElementMetadata;
 import androidx.wear.protolayout.ModifiersBuilders.Modifiers;
+import androidx.wear.protolayout.TypeBuilders.FloatProp;
+import androidx.wear.protolayout.TypeBuilders.StringProp;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collection;
 
-/**
- * Helper class used for ProtoLayout Material.
- *
- */
+/** Helper class used for ProtoLayout Material. */
 @RestrictTo(Scope.LIBRARY_GROUP)
 public class Helper {
     private Helper() {}
 
-    /**
-     * Returns given value if not null or throws {@code NullPointerException} otherwise.
-     *
-     */
+    /** Returns given value if not null or throws {@code NullPointerException} otherwise. */
     @RestrictTo(Scope.LIBRARY_GROUP)
     @NonNull
     public static <T> T checkNotNull(@Nullable T value) {
@@ -59,29 +55,20 @@ public class Helper {
         return dp(diameter.getValue() / 2);
     }
 
-    /**
-     * Returns true if the given DeviceParameters belong to the round screen device.
-     *
-     */
+    /** Returns true if the given DeviceParameters belong to the round screen device. */
     @RestrictTo(Scope.LIBRARY_GROUP)
     public static boolean isRoundDevice(@NonNull DeviceParameters deviceParameters) {
         return deviceParameters.getScreenShape() == DeviceParametersBuilders.SCREEN_SHAPE_ROUND;
     }
 
-    /**
-     * Returns String representation of tag from byte array.
-     *
-     */
+    /** Returns String representation of tag from byte array. */
     @RestrictTo(Scope.LIBRARY_GROUP)
     @NonNull
     public static String getTagName(@NonNull byte[] tagData) {
         return new String(tagData, StandardCharsets.UTF_8);
     }
 
-    /**
-     * Returns byte array representation of tag from String.
-     *
-     */
+    /** Returns byte array representation of tag from String. */
     @RestrictTo(Scope.LIBRARY_GROUP)
     @NonNull
     public static byte[] getTagBytes(@NonNull String tagName) {
@@ -130,5 +117,17 @@ public class Helper {
         byte[] metadataTag = getMetadataTagBytes(modifiers.getMetadata());
         byte[] tag = Arrays.copyOf(metadataTag, validPrefix.length());
         return metadataTag.length == validBase.length && validPrefix.equals(getTagName(tag));
+    }
+
+    /** Returns a {@link StringProp} for the given string value. */
+    @NonNull
+    public static StringProp staticString(@NonNull String value) {
+        return new StringProp.Builder(value).build();
+    }
+
+    /** Returns a {@link FloatProp} for the given float value. */
+    @NonNull
+    public static FloatProp staticFloat(float staticValue) {
+        return new FloatProp.Builder(staticValue).build();
     }
 }

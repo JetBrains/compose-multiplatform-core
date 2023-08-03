@@ -32,13 +32,13 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.TimeUnit
 
 @Composable private fun Recompose(body: @Composable (recompose: () -> Unit) -> Unit) {
     val scope = currentRecomposeScope
@@ -140,9 +140,9 @@ class WrapperTest {
         assertTrue(composedLatch.await(1, TimeUnit.SECONDS))
 
         activityScenario.onActivity {
-            assertEquals(2, owner.observerCount)
+            assertEquals(3, owner.observerCount)
             view.disposeComposition()
-            assertEquals(1, owner.observerCount)
+            assertEquals(2, owner.observerCount)
         }
     }
 

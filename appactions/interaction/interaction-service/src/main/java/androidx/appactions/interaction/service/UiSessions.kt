@@ -18,8 +18,8 @@
 package androidx.appactions.interaction.service
 
 import androidx.annotation.GuardedBy
-import androidx.appactions.interaction.capabilities.core.CapabilityExecutor
 import androidx.appactions.interaction.capabilities.core.BaseExecutionSession
+import androidx.appactions.interaction.capabilities.core.ExecutionCallback
 import androidx.appactions.interaction.capabilities.core.impl.UiHandleRegistry
 import androidx.appactions.interaction.service.UiSessions.removeUiCache
 import javax.annotation.concurrent.ThreadSafe
@@ -64,14 +64,16 @@ internal object UiSessions {
     }
 }
 
+// TODO(b/284056880): Open up UI related APIs (remove internal)
 /** Return a UI associated with this [BaseExecutionSession]. */
-fun BaseExecutionSession<*, *>.updateUi(uiResponse: UiResponse) =
+internal fun BaseExecutionSession<*, *>.updateUi(uiResponse: UiResponse) =
     UiSessions.getOrCreateUiCache(
         UiHandleRegistry.getSessionIdFromUiHandle(this)!!
     ).updateUiInternal(uiResponse)
 
-/** Return a UI associated with this [CapabilityExecutor]. */
-fun CapabilityExecutor<*, *>.updateUi(uiResponse: UiResponse) =
+// TODO(b/284056880): Open up UI related APIs (remove internal)
+/** Return a UI associated with this [ExecutionCallback]. */
+internal fun ExecutionCallback<*, *>.updateUi(uiResponse: UiResponse) =
     UiSessions.getOrCreateUiCache(
         UiHandleRegistry.getSessionIdFromUiHandle(this)!!
     ).updateUiInternal(uiResponse)

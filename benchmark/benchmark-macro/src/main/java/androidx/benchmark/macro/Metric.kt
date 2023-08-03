@@ -28,7 +28,9 @@ import androidx.benchmark.macro.perfetto.AudioUnderrunQuery
 import androidx.benchmark.macro.perfetto.BatteryDischargeQuery
 import androidx.benchmark.macro.perfetto.FrameTimingQuery
 import androidx.benchmark.macro.perfetto.FrameTimingQuery.SubMetric
+import androidx.benchmark.macro.perfetto.FrameTimingQuery.getFrameSubMetrics
 import androidx.benchmark.macro.perfetto.MemoryCountersQuery
+import androidx.benchmark.macro.perfetto.MemoryUsageQuery
 import androidx.benchmark.macro.perfetto.PowerQuery
 import androidx.benchmark.macro.perfetto.StartupTimingQuery
 import androidx.benchmark.macro.perfetto.camelCase
@@ -179,7 +181,7 @@ class AudioUnderrunMetric : Metric() {
  * Positive numbers indicate a dropped frame and visible jank / stutter, negative numbers indicate
  * how much faster than the deadline a frame was.
  *
- * * `frameCpuTimeMs` - How much time the frame took to be produced on the CPU - on both the UI
+ * * `frameDurationCpuMs` - How much time the frame took to be produced on the CPU - on both the UI
  * Thread, and RenderThread.
  */
 @Suppress("CanSealedSubClassBeObject")
@@ -193,11 +195,12 @@ class FrameTimingMetric : Metric() {
         captureInfo: CaptureInfo,
         traceSession: PerfettoTraceProcessor.Session
     ): List<Measurement> {
-        return FrameTimingQuery.getFrameSubMetrics(
+        return FrameTimingQuery.getFrameData(
             session = traceSession,
             captureApiLevel = Build.VERSION.SDK_INT,
             packageName = captureInfo.targetPackageName
         )
+            .getFrameSubMetrics(Build.VERSION.SDK_INT)
             .filterKeys { it == SubMetric.FrameDurationCpuNs || it == SubMetric.FrameOverrunNs }
             .map {
                 Measurement(
@@ -379,7 +382,8 @@ abstract class TraceMetric : Metric() {
  * Captures the time taken by named trace section - a named begin / end pair matching the provided
  * [sectionName].
  *
- * Select how matching sections are resolved into a duration metric with [mode].
+ * Select how matching sections are resolved into a duration metric with [mode], and configure if
+ * sections outside the target process are included with [targetPackageOnly].
  *
  * @see androidx.tracing.Trace.beginSection
  * @see androidx.tracing.Trace.endSection
@@ -387,8 +391,22 @@ abstract class TraceMetric : Metric() {
  */
 @ExperimentalMetricApi
 class TraceSectionMetric(
+    /**
+     * Section name or pattern to match.
+     *
+     * "%" can be used as a wildcard, as this is supported by the underlying
+     * [PerfettoTraceProcessor] query. For example `"JIT %"` will match a section named
+     * `"JIT compiling int com.package.MyClass.method(int)"` present in the trace.
+     */
     private val sectionName: String,
-    private val mode: Mode = Mode.First
+    /**
+     * How should the
+     */
+    private val mode: Mode = Mode.First,
+    /**
+     * Filter results to trace sections only from the target process, defaults to true.
+     */
+    private val targetPackageOnly: Boolean = true
 ) : Metric() {
     enum class Mode {
         /**
@@ -422,7 +440,10 @@ class TraceSectionMetric(
         captureInfo: CaptureInfo,
         traceSession: PerfettoTraceProcessor.Session
     ): List<Measurement> {
-        val slices = traceSession.querySlices(sectionName)
+        val slices = traceSession.querySlices(
+            sectionName,
+            packageName = if (targetPackageOnly) captureInfo.targetPackageName else null
+        )
 
         return when (mode) {
             Mode.First -> {
@@ -443,6 +464,10 @@ class TraceSectionMetric(
                         name = sectionName + "Ms",
                         // note, this duration assumes non-reentrant slices
                         data = slices.sumOf { it.dur } / 1_000_000.0
+                    ),
+                    Measurement(
+                        name = sectionName + "Count",
+                        data = slices.size.toDouble()
                     )
                 )
             }
@@ -510,13 +535,11 @@ class PowerMetric(
     companion object {
         internal const val MEASURE_BLOCK_SECTION_NAME = "measureBlock"
 
-        @Suppress("FunctionName")
         @JvmStatic
         fun Battery(): Type.Battery {
             return Type.Battery()
         }
 
-        @Suppress("FunctionName")
         @JvmStatic
         fun Energy(
             categories: Map<PowerCategory, PowerCategoryDisplayLevel> = emptyMap()
@@ -524,7 +547,6 @@ class PowerMetric(
             return Type.Energy(categories)
         }
 
-        @Suppress("FunctionName")
         @JvmStatic
         fun Power(
             categories: Map<PowerCategory, PowerCategoryDisplayLevel> = emptyMap()
@@ -579,7 +601,7 @@ class PowerMetric(
         traceSession: PerfettoTraceProcessor.Session
     ): List<Measurement> {
         // collect metrics between trace point flags
-        val slice = traceSession.querySlices(MEASURE_BLOCK_SECTION_NAME)
+        val slice = traceSession.querySlices(MEASURE_BLOCK_SECTION_NAME, packageName = null)
             .firstOrNull()
             ?: return emptyList()
 
@@ -672,6 +694,85 @@ class PowerMetric(
                 }
             }
         }.flatten().associate { pair -> Pair(pair.first, pair.second) }
+    }
+}
+
+/**
+ * Metric for tracking the memory usage of the target application.
+ *
+ * There are two modes for measurement - `Last`, which represents the last observed value
+ * during an iteration, and `Max`, which represents the largest sample observed per measurement.
+ *
+ * By default, reports:
+ * * `memoryRssAnonKb` - Anonymous resident/allocated memory owned by the process, not including
+ *   memory mapped files or shared memory.
+ * * `memoryRssAnonFileKb` - Memory allocated by the process to map files.
+ * * `memoryHeapSizeKb` - Heap memory allocations from the Android Runtime, sampled after each GC.
+ * * `memoryGpuKb` - GPU Memory allocated for the process.
+ *
+ * By passing a custom `subMetrics` list, you can enable other [SubMetric]s.
+ */
+@ExperimentalMetricApi
+class MemoryUsageMetric(
+    private val mode: Mode,
+    private val subMetrics: List<SubMetric> = listOf(
+        SubMetric.HeapSize,
+        SubMetric.RssAnon,
+        SubMetric.RssFile,
+        SubMetric.Gpu,
+    )
+) : TraceMetric() {
+    enum class Mode {
+        /**
+         * Select the last available sample for each value. Useful for inspecting the final state of
+         * e.g. Heap Size.
+         */
+        Last,
+
+        /**
+         * Select the maximum value observed.
+         *
+         * Useful for inspecting the worst case state, e.g. finding worst heap size during a given
+         * scenario.
+         */
+        Max
+    }
+
+    enum class SubMetric(
+        /**
+         * Name of counter in trace.
+         */
+        internal val counterName: String,
+        /**
+         * False if the metric is represented in the trace in bytes,
+         * and must be divided by 1024 to be converted to KB.
+         */
+        internal val alreadyInKb: Boolean
+    ) {
+        HeapSize("Heap size (KB)", alreadyInKb = true),
+        RssAnon("mem.rss.anon", alreadyInKb = false),
+        RssFile("mem.rss.file", alreadyInKb = false),
+        RssShmem("mem.rss.shmem", alreadyInKb = false),
+        Gpu("GPU Memory", alreadyInKb = false)
+    }
+
+    override fun getResult(
+        captureInfo: CaptureInfo,
+        traceSession: PerfettoTraceProcessor.Session
+    ): List<Measurement> {
+
+        val suffix = mode.toString()
+        return MemoryUsageQuery.getMemoryUsageKb(
+            session = traceSession,
+            targetPackageName = captureInfo.targetPackageName,
+            mode = mode
+        )?.mapNotNull {
+            if (it.key in subMetrics) {
+                Measurement("memory${it.key}${suffix}Kb", it.value.toDouble())
+            } else {
+                null
+            }
+        } ?: listOf()
     }
 }
 

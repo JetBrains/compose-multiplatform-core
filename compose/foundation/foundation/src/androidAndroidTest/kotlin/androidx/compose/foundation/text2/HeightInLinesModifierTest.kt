@@ -25,8 +25,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.text.TEST_FONT
 import androidx.compose.foundation.text.heightInLines
-import androidx.compose.foundation.text2.input.TextFieldState
 import androidx.compose.foundation.text2.input.TextFieldLineLimits.MultiLine
+import androidx.compose.foundation.text2.input.TextFieldState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
