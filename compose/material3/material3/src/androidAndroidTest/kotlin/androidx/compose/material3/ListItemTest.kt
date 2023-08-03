@@ -18,13 +18,14 @@ package androidx.compose.material3
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.tokens.ListTokens
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.layout.FirstBaseline
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.node.Ref
 import androidx.compose.ui.test.assertHeightIsEqualTo
 import androidx.compose.ui.test.assertWidthIsEqualTo
@@ -37,11 +38,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.width
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
+import com.google.common.truth.Truth.assertThat
+import kotlin.math.roundToInt
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import kotlin.math.roundToInt
-import com.google.common.truth.Truth.assertThat
 
 @MediumTest
 @RunWith(AndroidJUnit4::class)
@@ -52,6 +53,16 @@ class ListItemTest {
 
     val icon24x24 by lazy { ImageBitmap(width = 24.dp.toIntPx(), height = 24.dp.toIntPx()) }
     val icon40x40 by lazy { ImageBitmap(width = 40.dp.toIntPx(), height = 40.dp.toIntPx()) }
+
+    @Test
+    fun listItem_withEmptyHeadline_doesNotCrash() {
+        rule
+            .setMaterialContentForSizeAssertions {
+                ListItem(headlineContent = {})
+            }
+            .assertHeightIsEqualTo(ListTokens.ListItemOneLineContainerHeight)
+            .assertWidthIsEqualTo(rule.rootWidth())
+    }
 
     @Test
     fun listItem_oneLine_size() {
@@ -126,8 +137,8 @@ class ListItemTest {
     @Test
     fun listItem_oneLine_positioning_noIcon() {
         val listItemHeight = ListTokens.ListItemOneLineContainerHeight
-        val expectedStartPadding = 16.dp
-        val expectedEndPadding = 24.dp
+        val expectedStartPadding = LeadingContentEndPadding
+        val expectedEndPadding = ListItemEndPadding
 
         val textPosition = Ref<Offset>()
         val textSize = Ref<IntSize>()
@@ -152,20 +163,18 @@ class ListItemTest {
 
         val ds = rule.onRoot().getUnclippedBoundsInRoot()
         rule.runOnIdleWithDensity {
-            assertThat(textPosition.value!!.x).isEqualTo(
-                expectedStartPadding.roundToPx()
-                    .toFloat()
+            assertThat(textPosition.value!!.x).isWithin(1f).of(
+                expectedStartPadding.toPx()
             )
-            assertThat(textPosition.value!!.y).isEqualTo(
-                ((listItemHeight.roundToPx() - textSize.value!!.height) / 2f).roundToInt().toFloat()
+            assertThat(textPosition.value!!.y).isWithin(1f).of(
+                (listItemHeight.toPx() - textSize.value!!.height) / 2f
             )
-            assertThat(trailingPosition.value!!.x).isEqualTo(
-                ds.width.roundToPx() - trailingSize.value!!.width -
-                    expectedEndPadding.roundToPx().toFloat()
+
+            assertThat(trailingPosition.value!!.x).isWithin(1f).of(
+                ds.width.toPx() - trailingSize.value!!.width - expectedEndPadding.toPx()
             )
-            assertThat(trailingPosition.value!!.y).isEqualTo(
-                ((listItemHeight.roundToPx() - trailingSize.value!!.height) / 2f).roundToInt()
-                    .toFloat()
+            assertThat(trailingPosition.value!!.y).isWithin(1f).of(
+                (listItemHeight.toPx() - trailingSize.value!!.height) / 2f
             )
         }
     }
@@ -173,8 +182,8 @@ class ListItemTest {
     @Test
     fun listItem_oneLine_positioning_withIcon() {
         val listItemHeight = ListTokens.ListItemOneLineContainerHeight
-        val expectedStartPadding = 16.dp
-        val expectedTextStartPadding = 16.dp
+        val expectedStartPadding = ListItemStartPadding
+        val expectedTextStartPadding = LeadingContentEndPadding
 
         val textPosition = Ref<Offset>()
         val textSize = Ref<IntSize>()
@@ -196,36 +205,96 @@ class ListItemTest {
             }
         }
         rule.runOnIdleWithDensity {
-            assertThat(iconPosition.value!!.x).isEqualTo(
-                expectedStartPadding.roundToPx().toFloat()
+            assertThat(iconPosition.value!!.x).isWithin(1f).of(
+                expectedStartPadding.toPx()
             )
-            assertThat(iconPosition.value!!.y).isEqualTo(
-                ((listItemHeight.roundToPx() - iconSize.value!!.height) / 2f).roundToInt().toFloat()
+            assertThat(iconPosition.value!!.y).isWithin(1f).of(
+                (listItemHeight.toPx() - iconSize.value!!.height) / 2f
             )
-            assertThat(textPosition.value!!.x).isEqualTo(
-                expectedStartPadding.roundToPx().toFloat() +
+
+            assertThat(textPosition.value!!.x).isWithin(1f).of(
+                expectedStartPadding.toPx() +
                     iconSize.value!!.width +
-                    expectedTextStartPadding.roundToPx().toFloat()
+                    expectedTextStartPadding.toPx()
             )
-            assertThat(textPosition.value!!.y).isEqualTo(
-                ((listItemHeight.roundToPx() - textSize.value!!.height) / 2f).roundToInt().toFloat()
+            assertThat(textPosition.value!!.y).isWithin(1f).of(
+                (listItemHeight.toPx() - textSize.value!!.height) / 2f
+            )
+        }
+    }
+
+    @Test
+    fun listItem_oneLine_positioning_customSize() {
+        val listItemHeight = 100.dp
+        val listItemWidth = 300.dp
+        val expectedStartPadding = ListItemStartPadding
+        val expectedEndPadding = ListItemEndPadding
+        val expectedTextStartPadding = LeadingContentEndPadding
+
+        val textPosition = Ref<Offset>()
+        val textSize = Ref<IntSize>()
+        val leadingIconPosition = Ref<Offset>()
+        val leadingIconSize = Ref<IntSize>()
+        val trailingPosition = Ref<Offset>()
+        val trailingSize = Ref<IntSize>()
+        rule.setMaterialContent(lightColorScheme()) {
+            ListItem(
+                modifier = Modifier.size(width = listItemWidth, height = listItemHeight),
+                headlineContent = {
+                    Text("Primary text", Modifier.saveLayout(textPosition, textSize))
+                },
+                leadingContent = {
+                    Image(
+                        icon24x24,
+                        null,
+                        Modifier.saveLayout(leadingIconPosition, leadingIconSize))
+                },
+                trailingContent = {
+                    Text(
+                        "meta",
+                        Modifier.saveLayout(trailingPosition, trailingSize)
+                    )
+                }
+            )
+        }
+        rule.runOnIdleWithDensity {
+            assertThat(leadingIconPosition.value!!.x).isWithin(1f).of(
+                expectedStartPadding.toPx()
+            )
+            assertThat(leadingIconPosition.value!!.y).isWithin(1f).of(
+                (listItemHeight.toPx() - leadingIconSize.value!!.height) / 2f
+            )
+
+            assertThat(textPosition.value!!.x).isWithin(1f).of(
+                expectedStartPadding.toPx() +
+                    leadingIconSize.value!!.width +
+                    expectedTextStartPadding.toPx()
+            )
+            assertThat(textPosition.value!!.y).isWithin(1f).of(
+                (listItemHeight.toPx() - textSize.value!!.height) / 2f
+            )
+
+            assertThat(trailingPosition.value!!.x).isWithin(1f).of(
+                listItemWidth.toPx() - trailingSize.value!!.width -
+                    expectedEndPadding.toPx()
+            )
+            assertThat(trailingPosition.value!!.y).isWithin(1f).of(
+                (listItemHeight.toPx() - trailingSize.value!!.height) / 2f
             )
         }
     }
 
     @Test
     fun listItem_twoLine_positioning_noIcon() {
-        val expectedStartPadding = 16.dp
-        val expectedEndPadding = 24.dp
+        val listItemHeight = ListTokens.ListItemTwoLineContainerHeight
+        val expectedStartPadding = ListItemStartPadding
+        val expectedEndPadding = ListItemEndPadding
 
         val textPosition = Ref<Offset>()
-        val textBaseline = Ref<Float>()
         val textSize = Ref<IntSize>()
         val secondaryTextPosition = Ref<Offset>()
-        val secondaryTextBaseline = Ref<Float>()
         val secondaryTextSize = Ref<IntSize>()
         val trailingPosition = Ref<Offset>()
-        val trailingBaseline = Ref<Float>()
         val trailingSize = Ref<IntSize>()
         rule.setMaterialContent(lightColorScheme()) {
             Box {
@@ -233,23 +302,19 @@ class ListItemTest {
                     headlineContent = {
                         Text(
                             "Primary text",
-                            Modifier.saveLayout(textPosition, textSize, textBaseline)
+                            Modifier.saveLayout(textPosition, textSize)
                         )
                     },
                     supportingContent = {
                         Text(
                             "Secondary text",
-                            Modifier.saveLayout(
-                                secondaryTextPosition,
-                                secondaryTextSize,
-                                secondaryTextBaseline
-                            )
+                            Modifier.saveLayout(secondaryTextPosition, secondaryTextSize)
                         )
                     },
                     trailingContent = {
                         Text(
                             "meta",
-                            Modifier.saveLayout(trailingPosition, trailingSize, trailingBaseline)
+                            Modifier.saveLayout(trailingPosition, trailingSize)
                         )
                     }
                 )
@@ -257,29 +322,41 @@ class ListItemTest {
         }
         val ds = rule.onRoot().getUnclippedBoundsInRoot()
         rule.runOnIdleWithDensity {
-            assertThat(textPosition.value!!.x).isEqualTo(
-                expectedStartPadding.roundToPx().toFloat()
+            val totalTextHeight = textSize.value!!.height + secondaryTextSize.value!!.height
+
+            assertThat(textPosition.value!!.x).isWithin(1f).of(
+                expectedStartPadding.toPx()
             )
-            assertThat(secondaryTextPosition.value!!.x).isEqualTo(
-                expectedStartPadding.roundToPx().toFloat()
+            assertThat(textPosition.value!!.y).isWithin(1f).of(
+                (listItemHeight.toPx() - totalTextHeight) / 2f
             )
-            assertThat(trailingPosition.value!!.x).isEqualTo(
-                ds.width.roundToPx() - trailingSize.value!!.width -
-                    expectedEndPadding.roundToPx().toFloat()
+
+            assertThat(secondaryTextPosition.value!!.x).isWithin(1f).of(
+                expectedStartPadding.toPx()
+            )
+            assertThat(secondaryTextPosition.value!!.y).isWithin(1f).of(
+                (listItemHeight.toPx() - totalTextHeight) / 2f + textSize.value!!.height
+            )
+
+            assertThat(trailingPosition.value!!.x).isWithin(1f).of(
+                ds.width.toPx() - trailingSize.value!!.width -
+                    expectedEndPadding.toPx()
+            )
+            assertThat(trailingPosition.value!!.y).isWithin(1f).of(
+                (listItemHeight.toPx() - trailingSize.value!!.height) / 2f
             )
         }
     }
 
     @Test
     fun listItem_twoLine_positioning_withIcon() {
-        val expectedStartPadding = 16.dp
-        val expectedContentStartPadding = 16.dp
+        val listItemHeight = ListTokens.ListItemTwoLineContainerHeight
+        val expectedStartPadding = ListItemStartPadding
+        val expectedContentStartPadding = LeadingContentEndPadding
 
         val textPosition = Ref<Offset>()
-        val textBaseline = Ref<Float>()
         val textSize = Ref<IntSize>()
         val secondaryTextPosition = Ref<Offset>()
-        val secondaryTextBaseline = Ref<Float>()
         val secondaryTextSize = Ref<IntSize>()
         val iconPosition = Ref<Offset>()
         val iconSize = Ref<IntSize>()
@@ -289,17 +366,13 @@ class ListItemTest {
                     headlineContent = {
                         Text(
                             "Primary text",
-                            Modifier.saveLayout(textPosition, textSize, textBaseline)
+                            Modifier.saveLayout(textPosition, textSize)
                         )
                     },
                     supportingContent = {
                         Text(
                             "Secondary text",
-                            Modifier.saveLayout(
-                                secondaryTextPosition,
-                                secondaryTextSize,
-                                secondaryTextBaseline
-                            )
+                            Modifier.saveLayout(secondaryTextPosition, secondaryTextSize)
                         )
                     },
                     leadingContent = {
@@ -309,32 +382,123 @@ class ListItemTest {
             }
         }
         rule.runOnIdleWithDensity {
-            assertThat(textPosition.value!!.x).isEqualTo(
-                expectedStartPadding.roundToPx().toFloat() + iconSize.value!!.width +
-                    expectedContentStartPadding.roundToPx().toFloat()
+            val totalTextHeight = textSize.value!!.height + secondaryTextSize.value!!.height
+
+            assertThat(textPosition.value!!.x).isWithin(1f).of(
+                expectedStartPadding.toPx() + iconSize.value!!.width +
+                    expectedContentStartPadding.toPx()
             )
-            assertThat(secondaryTextPosition.value!!.x).isEqualTo(
-                expectedStartPadding.roundToPx().toFloat() +
-                    iconSize.value!!.width +
-                    expectedContentStartPadding.roundToPx().toFloat()
+            assertThat(textPosition.value!!.y).isWithin(1f).of(
+                (listItemHeight.toPx() - totalTextHeight) / 2f
             )
-            assertThat(iconPosition.value!!.x).isEqualTo(
-                expectedStartPadding.roundToPx().toFloat()
+
+            assertThat(secondaryTextPosition.value!!.x).isWithin(1f).of(
+                expectedStartPadding.toPx() + iconSize.value!!.width +
+                    expectedContentStartPadding.toPx()
+            )
+            assertThat(secondaryTextPosition.value!!.y).isWithin(1f).of(
+                (listItemHeight.toPx() - totalTextHeight) / 2f + textSize.value!!.height
+            )
+
+            assertThat(iconPosition.value!!.x).isWithin(1f).of(
+                expectedStartPadding.toPx()
+            )
+            assertThat(iconPosition.value!!.y).isWithin(1f).of(
+                (listItemHeight.toPx() - iconSize.value!!.height) / 2f
+            )
+        }
+    }
+
+    @Test
+    fun listItem_twoLine_positioning_customSize() {
+        val listItemHeight = 100.dp
+        val listItemWidth = 300.dp
+        val expectedStartPadding = ListItemStartPadding
+        val expectedEndPadding = ListItemEndPadding
+        val expectedTextStartPadding = LeadingContentEndPadding
+
+        val textPosition = Ref<Offset>()
+        val textSize = Ref<IntSize>()
+        val secondaryTextPosition = Ref<Offset>()
+        val secondaryTextSize = Ref<IntSize>()
+        val leadingIconPosition = Ref<Offset>()
+        val leadingIconSize = Ref<IntSize>()
+        val trailingPosition = Ref<Offset>()
+        val trailingSize = Ref<IntSize>()
+        rule.setMaterialContent(lightColorScheme()) {
+            ListItem(
+                modifier = Modifier.size(width = listItemWidth, height = listItemHeight),
+                headlineContent = {
+                    Text("Primary text", Modifier.saveLayout(textPosition, textSize))
+                },
+                supportingContent = {
+                    Text(
+                        "Secondary text",
+                        Modifier.saveLayout(secondaryTextPosition, secondaryTextSize)
+                    )
+                },
+                leadingContent = {
+                    Image(
+                        icon24x24,
+                        null,
+                        Modifier.saveLayout(leadingIconPosition, leadingIconSize))
+                },
+                trailingContent = {
+                    Text(
+                        "meta",
+                        Modifier.saveLayout(trailingPosition, trailingSize)
+                    )
+                }
+            )
+        }
+        rule.runOnIdleWithDensity {
+            val totalTextHeight = textSize.value!!.height + secondaryTextSize.value!!.height
+
+            assertThat(leadingIconPosition.value!!.x).isWithin(1f).of(
+                expectedStartPadding.toPx()
+            )
+            assertThat(leadingIconPosition.value!!.y).isWithin(1f).of(
+                (listItemHeight.toPx() - leadingIconSize.value!!.height) / 2f
+            )
+
+            assertThat(textPosition.value!!.x).isWithin(1f).of(
+                expectedStartPadding.toPx() +
+                    leadingIconSize.value!!.width +
+                    expectedTextStartPadding.toPx()
+            )
+            assertThat(textPosition.value!!.y).isWithin(1f).of(
+                (listItemHeight.toPx() - totalTextHeight) / 2f
+            )
+
+            assertThat(secondaryTextPosition.value!!.x).isWithin(1f).of(
+                expectedStartPadding.toPx() +
+                    leadingIconSize.value!!.width +
+                    expectedTextStartPadding.toPx()
+            )
+            assertThat(secondaryTextPosition.value!!.y).isWithin(1f).of(
+                (listItemHeight.toPx() - totalTextHeight) / 2f + textSize.value!!.height
+            )
+
+            assertThat(trailingPosition.value!!.x).isWithin(1f).of(
+                listItemWidth.toPx() - trailingSize.value!!.width -
+                    expectedEndPadding.toPx()
+            )
+            assertThat(trailingPosition.value!!.y).isWithin(1f).of(
+                (listItemHeight.toPx() - trailingSize.value!!.height) / 2f
             )
         }
     }
 
     @Test
     fun listItem_threeLine_positioning_noOverline_metaText() {
-        val expectedStartPadding = 16.dp
-        val expectedContentStartPadding = 16.dp
-        val expectedEndPadding = 24.dp
+        val expectedTopPadding = ListItemThreeLineVerticalPadding
+        val expectedStartPadding = ListItemStartPadding
+        val expectedContentStartPadding = LeadingContentEndPadding
+        val expectedEndPadding = ListItemEndPadding
 
         val textPosition = Ref<Offset>()
-        val textBaseline = Ref<Float>()
         val textSize = Ref<IntSize>()
         val secondaryTextPosition = Ref<Offset>()
-        val secondaryTextBaseline = Ref<Float>()
         val secondaryTextSize = Ref<IntSize>()
         val iconPosition = Ref<Offset>()
         val iconSize = Ref<IntSize>()
@@ -346,17 +510,13 @@ class ListItemTest {
                     headlineContent = {
                         Text(
                             "Primary text",
-                            Modifier.saveLayout(textPosition, textSize, textBaseline)
+                            Modifier.saveLayout(textPosition, textSize)
                         )
                     },
                     supportingContent = {
                         Text(
                             "Very long supporting text which will span two lines",
-                            Modifier.saveLayout(
-                                secondaryTextPosition,
-                                secondaryTextSize,
-                                secondaryTextBaseline
-                            )
+                            Modifier.saveLayout(secondaryTextPosition, secondaryTextSize)
                         )
                     },
                     leadingContent = {
@@ -370,70 +530,75 @@ class ListItemTest {
         }
         val ds = rule.onRoot().getUnclippedBoundsInRoot()
         rule.runOnIdleWithDensity {
-            assertThat(textPosition.value!!.x).isEqualTo(
-                expectedStartPadding.roundToPx().toFloat() + iconSize.value!!.width +
-                    expectedContentStartPadding.roundToPx().toFloat()
+            assertThat(textPosition.value!!.x).isWithin(1f).of(
+                expectedStartPadding.toPx() + iconSize.value!!.width +
+                    expectedContentStartPadding.toPx()
             )
-            assertThat(secondaryTextPosition.value!!.x).isEqualTo(
-                expectedStartPadding.roundToPx().toFloat() + iconSize.value!!.width +
-                    expectedContentStartPadding.roundToPx().toFloat()
+            assertThat(textPosition.value!!.y).isWithin(1f).of(
+                expectedTopPadding.toPx()
             )
-            assertThat(iconPosition.value!!.x).isEqualTo(expectedStartPadding.roundToPx().toFloat())
-            assertThat(trailingPosition.value!!.x).isEqualTo(
-                ds.width.roundToPx() - trailingSize.value!!.width.toFloat() -
-                    expectedEndPadding.roundToPx().toFloat()
+
+            assertThat(secondaryTextPosition.value!!.x).isWithin(1f).of(
+                expectedStartPadding.toPx() + iconSize.value!!.width +
+                    expectedContentStartPadding.toPx()
+            )
+            assertThat(secondaryTextPosition.value!!.y).isWithin(1f).of(
+                expectedTopPadding.toPx() + textSize.value!!.height
+            )
+
+            assertThat(iconPosition.value!!.x).isWithin(1f).of(
+                expectedStartPadding.toPx()
+            )
+            assertThat(iconPosition.value!!.y).isWithin(1f).of(
+                expectedTopPadding.toPx()
+            )
+
+            assertThat(trailingPosition.value!!.x).isWithin(1f).of(
+                ds.width.toPx() - trailingSize.value!!.width -
+                    expectedEndPadding.toPx()
+            )
+            assertThat(trailingPosition.value!!.y).isWithin(1f).of(
+                expectedTopPadding.toPx()
             )
         }
     }
 
     @Test
     fun listItem_threeLine_positioning_overline_trailingIcon() {
-        val expectedTopPadding = 16.dp
-        val expectedStartPadding = 16.dp
-        val expectedContentStartPadding = 16.dp
-        val expectedEndPadding = 24.dp
+        val expectedTopPadding = ListItemThreeLineVerticalPadding
+        val expectedStartPadding = ListItemStartPadding
+        val expectedContentStartPadding = LeadingContentEndPadding
+        val expectedEndPadding = ListItemEndPadding
 
         val textPosition = Ref<Offset>()
-        val textBaseline = Ref<Float>()
         val textSize = Ref<IntSize>()
         val overlineTextPosition = Ref<Offset>()
-        val overlineTextBaseline = Ref<Float>()
         val overlineTextSize = Ref<IntSize>()
         val secondaryTextPosition = Ref<Offset>()
-        val secondaryTextBaseline = Ref<Float>()
         val secondaryTextSize = Ref<IntSize>()
         val iconPosition = Ref<Offset>()
         val iconSize = Ref<IntSize>()
         val trailingPosition = Ref<Offset>()
         val trailingSize = Ref<IntSize>()
-        val trailingBaseline = Ref<Float>()
         rule.setMaterialContent(lightColorScheme()) {
             Box {
                 ListItem(
                     overlineContent = {
                         Text(
                             "OVERLINE",
-                            Modifier.saveLayout(
-                                overlineTextPosition,
-                                overlineTextSize,
-                                overlineTextBaseline
-                            )
+                            Modifier.saveLayout(overlineTextPosition, overlineTextSize)
                         )
                     },
                     headlineContent = {
                         Text(
                             "Primary text",
-                            Modifier.saveLayout(textPosition, textSize, textBaseline)
+                            Modifier.saveLayout(textPosition, textSize)
                         )
                     },
                     supportingContent = {
                         Text(
                             "Secondary text",
-                            Modifier.saveLayout(
-                                secondaryTextPosition,
-                                secondaryTextSize,
-                                secondaryTextBaseline
-                            )
+                            Modifier.saveLayout(secondaryTextPosition, secondaryTextSize)
                         )
                     },
                     leadingContent = {
@@ -446,11 +611,7 @@ class ListItemTest {
                     trailingContent = {
                         Text(
                             "meta",
-                            Modifier.saveLayout(
-                                trailingPosition,
-                                trailingSize,
-                                trailingBaseline
-                            )
+                            Modifier.saveLayout(trailingPosition, trailingSize)
                         )
                     }
                 )
@@ -459,30 +620,141 @@ class ListItemTest {
 
         val ds = rule.onRoot().getUnclippedBoundsInRoot()
         rule.runOnIdleWithDensity {
-            assertThat(textPosition.value!!.x).isEqualTo(
-                expectedStartPadding.roundToPx().toFloat() +
-                    iconSize.value!!.width +
-                    expectedContentStartPadding.roundToPx().toFloat()
+            assertThat(textPosition.value!!.x).isWithin(1f).of(
+                expectedStartPadding.toPx() + iconSize.value!!.width +
+                    expectedContentStartPadding.toPx()
             )
-            assertThat(secondaryTextPosition.value!!.x).isEqualTo(
-                expectedStartPadding.roundToPx().toFloat() +
-                    iconSize.value!!.width +
-                    expectedContentStartPadding.roundToPx().toFloat()
+            assertThat(textPosition.value!!.y).isWithin(1f).of(
+                expectedTopPadding.toPx() + overlineTextSize.value!!.height
             )
-            assertThat(iconPosition.value!!.x).isEqualTo(
-                expectedStartPadding.roundToPx().toFloat()
+
+            assertThat(secondaryTextPosition.value!!.x).isWithin(1f).of(
+                expectedStartPadding.toPx() + iconSize.value!!.width +
+                    expectedContentStartPadding.toPx()
             )
-            assertThat(trailingPosition.value!!.x).isEqualTo(
-                ds.width.roundToPx() - trailingSize.value!!.width -
-                    expectedEndPadding.roundToPx().toFloat()
+            assertThat(secondaryTextPosition.value!!.y).isWithin(1f).of(
+                expectedTopPadding.toPx() + overlineTextSize.value!!.height +
+                textSize.value!!.height
             )
-            assertThat(overlineTextPosition.value!!.x).isEqualTo(
-                expectedStartPadding.roundToPx().toFloat() +
-                    iconSize.value!!.width +
-                    expectedContentStartPadding.roundToPx().toFloat()
+
+            assertThat(iconPosition.value!!.x).isWithin(1f).of(
+                expectedStartPadding.toPx()
             )
-            assertThat(overlineTextPosition.value!!.y).isEqualTo(
-                expectedTopPadding.roundToPx().toFloat()
+            assertThat(iconPosition.value!!.y).isWithin(1f).of(
+                expectedTopPadding.toPx()
+            )
+
+            assertThat(trailingPosition.value!!.x).isWithin(1f).of(
+                ds.width.toPx() - trailingSize.value!!.width -
+                    expectedEndPadding.toPx()
+            )
+            assertThat(trailingPosition.value!!.y).isWithin(1f).of(
+                expectedTopPadding.toPx()
+            )
+
+            assertThat(overlineTextPosition.value!!.x).isWithin(1f).of(
+                expectedStartPadding.toPx() + iconSize.value!!.width +
+                    expectedContentStartPadding.toPx()
+            )
+            assertThat(overlineTextPosition.value!!.y).isWithin(1f).of(
+                expectedTopPadding.toPx()
+            )
+        }
+    }
+
+    @Test
+    fun listItem_threeLine_overline_positioning_customSize() {
+        val listItemHeight = 100.dp
+        val listItemWidth = 300.dp
+        val expectedTopPadding = ListItemThreeLineVerticalPadding
+        val expectedStartPadding = ListItemStartPadding
+        val expectedEndPadding = ListItemEndPadding
+        val expectedTextStartPadding = LeadingContentEndPadding
+
+        val textPosition = Ref<Offset>()
+        val textSize = Ref<IntSize>()
+        val overlineTextPosition = Ref<Offset>()
+        val overlineTextSize = Ref<IntSize>()
+        val secondaryTextPosition = Ref<Offset>()
+        val secondaryTextSize = Ref<IntSize>()
+        val leadingIconPosition = Ref<Offset>()
+        val leadingIconSize = Ref<IntSize>()
+        val trailingPosition = Ref<Offset>()
+        val trailingSize = Ref<IntSize>()
+        rule.setMaterialContent(lightColorScheme()) {
+            ListItem(
+                modifier = Modifier.size(width = listItemWidth, height = listItemHeight),
+                overlineContent = {
+                    Text(
+                        "OVERLINE",
+                        Modifier.saveLayout(overlineTextPosition, overlineTextSize)
+                    )
+                },
+                headlineContent = {
+                    Text("Primary text", Modifier.saveLayout(textPosition, textSize))
+                },
+                supportingContent = {
+                    Text(
+                        "Secondary text",
+                        Modifier.saveLayout(secondaryTextPosition, secondaryTextSize)
+                    )
+                },
+                leadingContent = {
+                    Image(
+                        icon24x24,
+                        null,
+                        Modifier.saveLayout(leadingIconPosition, leadingIconSize))
+                },
+                trailingContent = {
+                    Text(
+                        "meta",
+                        Modifier.saveLayout(trailingPosition, trailingSize)
+                    )
+                }
+            )
+        }
+        rule.runOnIdleWithDensity {
+            assertThat(leadingIconPosition.value!!.x).isWithin(1f).of(
+                expectedStartPadding.toPx()
+            )
+            assertThat(leadingIconPosition.value!!.y).isWithin(1f).of(
+                expectedTopPadding.toPx()
+            )
+
+            assertThat(overlineTextPosition.value!!.x).isWithin(1f).of(
+                expectedStartPadding.toPx() +
+                    leadingIconSize.value!!.width +
+                    expectedTextStartPadding.toPx()
+            )
+            assertThat(overlineTextPosition.value!!.y).isWithin(1f).of(
+                expectedTopPadding.toPx()
+            )
+
+            assertThat(textPosition.value!!.x).isWithin(1f).of(
+                expectedStartPadding.toPx() +
+                    leadingIconSize.value!!.width +
+                    expectedTextStartPadding.toPx()
+            )
+            assertThat(textPosition.value!!.y).isWithin(1f).of(
+                expectedTopPadding.toPx() + overlineTextSize.value!!.height
+            )
+
+            assertThat(secondaryTextPosition.value!!.x).isWithin(1f).of(
+                expectedStartPadding.toPx() +
+                    leadingIconSize.value!!.width +
+                    expectedTextStartPadding.toPx()
+            )
+            assertThat(secondaryTextPosition.value!!.y).isWithin(1f).of(
+                expectedTopPadding.toPx() + overlineTextSize.value!!.height +
+                textSize.value!!.height
+            )
+
+            assertThat(trailingPosition.value!!.x).isWithin(1f).of(
+                listItemWidth.toPx() - trailingSize.value!!.width -
+                    expectedEndPadding.toPx()
+            )
+            assertThat(trailingPosition.value!!.y).isWithin(1f).of(
+                expectedTopPadding.toPx()
             )
         }
     }
@@ -492,10 +764,8 @@ class ListItemTest {
     private fun Modifier.saveLayout(
         coords: Ref<Offset>,
         size: Ref<IntSize>,
-        baseline: Ref<Float> = Ref()
     ): Modifier = onGloballyPositioned { coordinates: LayoutCoordinates ->
-        coords.value = coordinates.localToRoot(Offset.Zero)
-        baseline.value = coordinates[FirstBaseline].toFloat() + coords.value!!.y
+        coords.value = coordinates.positionInRoot()
         size.value = coordinates.size
     }
 }

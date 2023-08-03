@@ -22,7 +22,6 @@ import androidx.compose.animation.splineBasedDecay
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.gestures.FlingBehavior
 import androidx.compose.foundation.gestures.Orientation
-import androidx.compose.foundation.lazy.LazyListItemInfo
 import androidx.compose.foundation.lazy.LazyListLayoutInfo
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.Composable
@@ -46,8 +45,7 @@ import kotlin.math.sign
 @ExperimentalFoundationApi
 fun SnapLayoutInfoProvider(
     lazyListState: LazyListState,
-    positionInLayout: Density.(layoutSize: Float, itemSize: Float) -> Float =
-        { layoutSize, itemSize -> (layoutSize / 2f - itemSize / 2f) }
+    positionInLayout: SnapPositionInLayout = SnapPositionInLayout.CenterToCenter
 ): SnapLayoutInfoProvider = object : SnapLayoutInfoProvider {
 
     private val layoutInfo: LazyListLayoutInfo
@@ -72,7 +70,15 @@ fun SnapLayoutInfoProvider(
 
         layoutInfo.visibleItemsInfo.fastForEach { item ->
             val offset =
-                calculateDistanceToDesiredSnapPosition(layoutInfo, item, positionInLayout)
+                calculateDistanceToDesiredSnapPosition(
+                    mainAxisViewPortSize = layoutInfo.singleAxisViewportSize,
+                    beforeContentPadding = layoutInfo.beforeContentPadding,
+                    afterContentPadding = layoutInfo.afterContentPadding,
+                    itemSize = item.size,
+                    itemOffset = item.offset,
+                    itemIndex = item.index,
+                    snapPositionInLayout = positionInLayout
+                )
 
             // Find item that is closest to the center
             if (offset <= 0 && offset > lowerBoundOffset) {
@@ -111,20 +117,5 @@ fun rememberSnapFlingBehavior(lazyListState: LazyListState): FlingBehavior {
     return rememberSnapFlingBehavior(snappingLayout)
 }
 
-internal fun Density.calculateDistanceToDesiredSnapPosition(
-    layoutInfo: LazyListLayoutInfo,
-    item: LazyListItemInfo,
-    positionInLayout: Density.(layoutSize: Float, itemSize: Float) -> Float
-): Float {
-    val containerSize =
-        with(layoutInfo) { singleAxisViewportSize - beforeContentPadding - afterContentPadding }
-
-    val desiredDistance =
-        positionInLayout(containerSize.toFloat(), item.size.toFloat())
-
-    val itemCurrentPosition = item.offset
-    return itemCurrentPosition - desiredDistance
-}
-
-private val LazyListLayoutInfo.singleAxisViewportSize: Int
+internal val LazyListLayoutInfo.singleAxisViewportSize: Int
     get() = if (orientation == Orientation.Vertical) viewportSize.height else viewportSize.width

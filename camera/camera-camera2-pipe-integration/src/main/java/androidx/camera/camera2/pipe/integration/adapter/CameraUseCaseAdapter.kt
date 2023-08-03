@@ -35,7 +35,6 @@ import androidx.camera.core.impl.CaptureConfig
 import androidx.camera.core.impl.Config
 import androidx.camera.core.impl.ImageCaptureConfig
 import androidx.camera.core.impl.ImageOutputConfig
-import androidx.camera.core.impl.ImageOutputConfig.OPTION_RESOLUTION_SELECTOR
 import androidx.camera.core.impl.MutableOptionsBundle
 import androidx.camera.core.impl.OptionsBundle
 import androidx.camera.core.impl.PreviewConfig
@@ -43,8 +42,6 @@ import androidx.camera.core.impl.SessionConfig
 import androidx.camera.core.impl.UseCaseConfig
 import androidx.camera.core.impl.UseCaseConfigFactory
 import androidx.camera.core.impl.UseCaseConfigFactory.CaptureType
-import androidx.camera.core.resolutionselector.ResolutionSelector
-import androidx.camera.core.resolutionselector.ResolutionStrategy
 
 /**
  * This class builds [Config] objects for a given [UseCaseConfigFactory.CaptureType].
@@ -84,11 +81,13 @@ class CameraUseCaseAdapter(context: Context) : UseCaseConfigFactory {
         when (captureType) {
             CaptureType.IMAGE_CAPTURE,
             CaptureType.PREVIEW,
+            CaptureType.METERING_REPEATING,
             CaptureType.IMAGE_ANALYSIS -> sessionBuilder.setTemplateType(
                 CameraDevice.TEMPLATE_PREVIEW
             )
 
-            CaptureType.VIDEO_CAPTURE -> sessionBuilder.setTemplateType(
+            CaptureType.VIDEO_CAPTURE,
+            CaptureType.STREAM_SHARING -> sessionBuilder.setTemplateType(
                 CameraDevice.TEMPLATE_RECORD
             )
         }
@@ -103,7 +102,9 @@ class CameraUseCaseAdapter(context: Context) : UseCaseConfigFactory {
 
             CaptureType.PREVIEW,
             CaptureType.IMAGE_ANALYSIS,
-            CaptureType.VIDEO_CAPTURE ->
+            CaptureType.VIDEO_CAPTURE,
+            CaptureType.STREAM_SHARING,
+            CaptureType.METERING_REPEATING ->
                 captureBuilder.templateType = CameraDevice.TEMPLATE_RECORD
         }
         mutableConfig.insertOption(
@@ -131,15 +132,6 @@ class CameraUseCaseAdapter(context: Context) : UseCaseConfigFactory {
             mutableConfig.insertOption(
                 ImageOutputConfig.OPTION_MAX_RESOLUTION,
                 previewSize
-            )
-            mutableConfig.insertOption(
-                OPTION_RESOLUTION_SELECTOR,
-                ResolutionSelector.Builder().setResolutionStrategy(
-                    ResolutionStrategy(
-                        previewSize,
-                        ResolutionStrategy.FALLBACK_RULE_CLOSEST_LOWER
-                    )
-                ).build()
             )
         }
 

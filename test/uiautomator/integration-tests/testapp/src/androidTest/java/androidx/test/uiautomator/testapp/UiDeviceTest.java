@@ -25,6 +25,7 @@ import static org.junit.Assert.assertTrue;
 import android.app.UiAutomation;
 import android.graphics.Point;
 import android.view.KeyEvent;
+import android.view.Surface;
 import android.widget.TextView;
 
 import androidx.test.filters.LargeTest;
@@ -32,11 +33,11 @@ import androidx.test.filters.SdkSuppress;
 import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.uiautomator.By;
 import androidx.test.uiautomator.BySelector;
+import androidx.test.uiautomator.Orientation;
 import androidx.test.uiautomator.UiDevice;
 import androidx.test.uiautomator.UiObject2;
 import androidx.test.uiautomator.Until;
 
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -59,7 +60,7 @@ import javax.xml.xpath.XPathFactory;
 public class UiDeviceTest extends BaseTest {
 
     private static final long TIMEOUT_MS = 5_000;
-    private static final int GESTURE_MARGIN = 50;
+    private static final long LONG_TIMEOUT_MS = 30_000;
     private static final String PACKAGE_NAME = "androidx.test.uiautomator.testapp";
     // Defined in 'AndroidManifest.xml'.
     private static final String APP_NAME = "UiAutomator Test App";
@@ -244,15 +245,15 @@ public class UiDeviceTest extends BaseTest {
         assertEquals("keycode Z pressed with meta shift left on", textView.getText());
     }
 
-    @Ignore // b/266617096
     @Test
     public void testPressRecentApps() throws Exception {
         launchTestActivity(MainActivity.class);
 
-        // Test app appears in the "Recent Apps" screen after pressing button.
-        assertFalse(mDevice.wait(Until.hasObject(By.desc(APP_NAME)), TIMEOUT_MS));
+        // Test app appears in the "Recent Apps" screen after pressing button (may need to wait
+        // for a tooltip that shows up the first time the screen is opened).
+        assertFalse(mDevice.hasObject(By.desc(APP_NAME)));
         mDevice.pressRecentApps();
-        assertTrue(mDevice.wait(Until.hasObject(By.desc(APP_NAME)), TIMEOUT_MS));
+        assertTrue(mDevice.wait(Until.hasObject(By.desc(APP_NAME)), LONG_TIMEOUT_MS));
     }
 
     @Test
@@ -300,7 +301,6 @@ public class UiDeviceTest extends BaseTest {
         assertEquals("I've been clicked!", button.getText());
     }
 
-    @Ignore // b/266617096
     @Test
     public void testSwipe() {
         launchTestActivity(SwipeTestActivity.class);
@@ -309,7 +309,7 @@ public class UiDeviceTest extends BaseTest {
 
         int width = mDevice.getDisplayWidth();
         int height = mDevice.getDisplayHeight();
-        mDevice.swipe(GESTURE_MARGIN, height / 2, width - GESTURE_MARGIN, height / 2, 10);
+        mDevice.swipe(width / 10, height / 2, 9 * width / 10, height / 2, 10);
 
         assertTrue(swipeRegion.wait(Until.textEquals("swipe_right"), TIMEOUT_MS));
     }
@@ -330,7 +330,6 @@ public class UiDeviceTest extends BaseTest {
         assertTrue(dragDestination.wait(Until.textEquals("drag_received"), TIMEOUT_MS));
     }
 
-    @Ignore // b/266617096
     @Test
     public void testSwipe_withPointArray() {
         launchTestActivity(SwipeTestActivity.class);
@@ -340,9 +339,9 @@ public class UiDeviceTest extends BaseTest {
         int width = mDevice.getDisplayWidth();
         int height = mDevice.getDisplayHeight();
 
-        Point point1 = new Point(GESTURE_MARGIN, height / 2);
+        Point point1 = new Point(width / 10, height / 2);
         Point point2 = new Point(width / 2, height / 2);
-        Point point3 = new Point(width - GESTURE_MARGIN, height / 2);
+        Point point3 = new Point(9 * width / 10, height / 2);
 
         mDevice.swipe(new Point[]{point1, point2, point3}, 10);
 
@@ -393,24 +392,23 @@ public class UiDeviceTest extends BaseTest {
     }
 
     @Test
-    public void testSetOrientationPortrait() throws Exception {
+    public void testSetOrientation() {
         launchTestActivity(KeycodeTestActivity.class);
-        try {
-            mDevice.setOrientationPortrait();
-            assertTrue(mDevice.getDisplayHeight() > mDevice.getDisplayWidth());
-        } finally {
-            mDevice.unfreezeRotation();
-        }
-    }
 
-    @Test
-    public void testSetOrientationLandscape() throws Exception {
-        launchTestActivity(KeycodeTestActivity.class);
         try {
-            mDevice.setOrientationLandscape();
-            assertTrue(mDevice.getDisplayWidth() > mDevice.getDisplayHeight());
+            mDevice.setOrientation(Orientation.ROTATION_0);
+            assertEquals(Surface.ROTATION_0, mDevice.getDisplayRotation());
+
+            mDevice.setOrientation(Orientation.ROTATION_90);
+            assertEquals(Surface.ROTATION_90, mDevice.getDisplayRotation());
+
+            mDevice.setOrientation(Orientation.PORTRAIT);
+            assertTrue(mDevice.getDisplayHeight() >= mDevice.getDisplayWidth());
+
+            mDevice.setOrientation(Orientation.LANDSCAPE);
+            assertTrue(mDevice.getDisplayHeight() <= mDevice.getDisplayWidth());
         } finally {
-            mDevice.unfreezeRotation();
+            mDevice.setOrientation(Orientation.ROTATION_0);
         }
     }
 

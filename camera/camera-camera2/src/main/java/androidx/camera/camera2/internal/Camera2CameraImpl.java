@@ -37,13 +37,13 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.OptIn;
 import androidx.annotation.RequiresApi;
-import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import androidx.camera.camera2.internal.annotation.CameraExecutor;
 import androidx.camera.camera2.internal.compat.ApiCompat;
 import androidx.camera.camera2.internal.compat.CameraAccessExceptionCompat;
 import androidx.camera.camera2.internal.compat.CameraCharacteristicsCompat;
 import androidx.camera.camera2.internal.compat.CameraManagerCompat;
+import androidx.camera.camera2.internal.compat.params.DynamicRangesCompat;
 import androidx.camera.camera2.internal.compat.quirk.DeviceQuirks;
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop;
 import androidx.camera.core.CameraState;
@@ -201,6 +201,9 @@ final class Camera2CameraImpl implements CameraInternal {
     @NonNull
     private final CameraCharacteristicsCompat mCameraCharacteristicsCompat;
 
+    @NonNull
+    private final DynamicRangesCompat mDynamicRangesCompat;
+
     /**
      * Constructor for a camera.
      *
@@ -234,7 +237,6 @@ final class Camera2CameraImpl implements CameraInternal {
         mCameraStateMachine = new CameraStateMachine(cameraStateRegistry);
         mCaptureSessionRepository = new CaptureSessionRepository(mExecutor);
         mDisplayInfoManager = displayInfoManager;
-        mCaptureSession = newCaptureSession();
 
         try {
             mCameraCharacteristicsCompat =
@@ -248,6 +250,10 @@ final class Camera2CameraImpl implements CameraInternal {
         } catch (CameraAccessExceptionCompat e) {
             throw CameraUnavailableExceptionHelper.createFrom(e);
         }
+        mDynamicRangesCompat =
+                DynamicRangesCompat.fromCameraCharacteristics(mCameraCharacteristicsCompat);
+        mCaptureSession = newCaptureSession();
+
         mCaptureSessionOpenerBuilder = new SynchronizedCaptureSessionOpener.Builder(mExecutor,
                 mScheduledExecutorService, schedulerHandler, mCaptureSessionRepository,
                 cameraInfoImpl.getCameraQuirks(), DeviceQuirks.getAll());
@@ -268,10 +274,11 @@ final class Camera2CameraImpl implements CameraInternal {
     private CaptureSessionInterface newCaptureSession() {
         synchronized (mLock) {
             if (mSessionProcessor == null) {
-                return new CaptureSession();
+                return new CaptureSession(mDynamicRangesCompat);
             } else {
                 return new ProcessingCaptureSession(mSessionProcessor,
-                        mCameraInfoInternal, mExecutor, mScheduledExecutorService);
+                        mCameraInfoInternal, mDynamicRangesCompat, mExecutor,
+                        mScheduledExecutorService);
             }
         }
     }
@@ -359,7 +366,7 @@ final class Camera2CameraImpl implements CameraInternal {
     @ExecutedBy("mExecutor")
     private void configAndClose(boolean abortInFlightCaptures) {
 
-        final CaptureSession noOpSession = new CaptureSession();
+        final CaptureSession noOpSession = new CaptureSession(mDynamicRangesCompat);
 
         mConfiguringForClose.add(noOpSession);  // Make mCameraDevice is not closed and existed.
         resetCaptureSession(abortInFlightCaptures);
@@ -645,9 +652,16 @@ final class Camera2CameraImpl implements CameraInternal {
     @Override
     public void onUseCaseReset(@NonNull UseCase useCase) {
         Preconditions.checkNotNull(useCase);
-        String useCaseId = getUseCaseId(useCase);
         SessionConfig sessionConfig = useCase.getSessionConfig();
         UseCaseConfig<?> useCaseConfig = useCase.getCurrentConfig();
+        resetUseCase(getUseCaseId(useCase), sessionConfig, useCaseConfig);
+    }
+
+    private void resetUseCase(
+            @NonNull String useCaseId,
+            @NonNull SessionConfig sessionConfig,
+            @NonNull UseCaseConfig<?> useCaseConfig
+    ) {
         mExecutor.execute(() -> {
             debugLog("Use case " + useCaseId + " RESET");
             mUseCaseAttachState.updateUseCase(useCaseId, sessionConfig, useCaseConfig);
@@ -671,7 +685,7 @@ final class Camera2CameraImpl implements CameraInternal {
      * block until completion.
      *
      */
-    @RestrictTo(RestrictTo.Scope.TESTS)
+    @VisibleForTesting
     boolean isUseCaseAttached(@NonNull UseCase useCase) {
         try {
             String useCaseId = getUseCaseId(useCase);
@@ -969,7 +983,20 @@ final class Camera2CameraImpl implements CameraInternal {
                 if (mMeteringRepeatingSession == null) {
                     mMeteringRepeatingSession = new MeteringRepeatingSession(
                             mCameraInfoInternal.getCameraCharacteristicsCompat(),
-                            mDisplayInfoManager);
+                            mDisplayInfoManager,
+                            () -> {
+                                if (!isMeteringRepeatingAttached()) {
+                                    return;
+                                }
+
+                                SessionConfig sessionConfigMeteringRepeating =
+                                        mMeteringRepeatingSession.getSessionConfig();
+                                UseCaseConfig<?> useCaseConfig =
+                                        mMeteringRepeatingSession.getUseCaseConfig();
+
+                                resetUseCase(getMeteringRepeatingId(mMeteringRepeatingSession),
+                                        sessionConfigMeteringRepeating, useCaseConfig);
+                            });
                 }
                 addMeteringRepeating();
             } else {
@@ -1023,7 +1050,7 @@ final class Camera2CameraImpl implements CameraInternal {
     }
 
     @NonNull
-    @RestrictTo(RestrictTo.Scope.TESTS)
+    @VisibleForTesting
     public CameraAvailability getCameraAvailability() {
         return mCameraAvailability;
     }
@@ -1185,7 +1212,8 @@ final class Camera2CameraImpl implements CameraInternal {
         Map<DeferrableSurface, Long> streamUseCaseMap = new HashMap<>();
         StreamUseCaseUtil.populateSurfaceToStreamUseCaseMapping(
                 mUseCaseAttachState.getAttachedSessionConfigs(),
-                streamUseCaseMap, mCameraCharacteristicsCompat, true);
+                mUseCaseAttachState.getAttachedUseCaseConfigs(),
+                streamUseCaseMap);
 
         mCaptureSession.setStreamUseCaseMap(streamUseCaseMap);
 

@@ -16,8 +16,8 @@
 
 package androidx.appactions.builtintypes.experimental.types
 
-import androidx.appactions.builtintypes.experimental.properties.Name
 import androidx.appactions.builtintypes.experimental.properties.ItemListElement
+import androidx.appactions.builtintypes.experimental.properties.Name
 
 interface ItemList : Thing {
     val itemListElements: List<ItemListElement>
@@ -81,4 +81,13 @@ private class ItemListImpl(
             .setIdentifier(identifier)
             .setName(name)
             .addItemListElements(itemListElements)
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is ItemListImpl) return false
+        if (this.name != other.name) return false
+        if (this.identifier != other.identifier) return false
+        if (this.itemListElements != other.itemListElements) return false
+        return true
+    }
 }

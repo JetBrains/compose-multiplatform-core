@@ -19,9 +19,12 @@ package androidx.privacysandbox.ui.client.view
 import android.content.Context
 import android.content.res.Configuration
 import android.os.Build
+import android.os.IBinder
 import android.util.AttributeSet
+import android.view.SurfaceView
 import android.view.View
 import android.view.ViewGroup
+import android.view.ViewTreeObserver
 import androidx.annotation.RequiresApi
 import androidx.privacysandbox.ui.core.SandboxedUiAdapter
 import java.util.concurrent.CopyOnWriteArrayList
@@ -59,7 +62,7 @@ sealed class SandboxedSdkUiSessionState private constructor() {
 
     /**
      * There is an open session with the supplied [SandboxedUiAdapter] and its UI is currently
-     * being displayed.
+     * being displayed. This state is set after the first draw event of the [SandboxedSdkView].
      */
     object Active : SandboxedSdkUiSessionState()
 
@@ -85,10 +88,13 @@ sealed class SandboxedSdkUiSessionState private constructor() {
 
 // TODO(b/268014171): Remove API requirements once S- support is added
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-class SandboxedSdkView @JvmOverloads constructor(
-    context: Context,
-    attrs: AttributeSet? = null
-) : ViewGroup(context, attrs) {
+class SandboxedSdkView @JvmOverloads constructor(context: Context, attrs: AttributeSet? = null) :
+    ViewGroup(context, attrs) {
+
+    // TODO(b/284147223): Remove this logic in V+
+    private val surfaceView = SurfaceView(context).apply {
+        visibility = GONE
+    }
 
     private var adapter: SandboxedUiAdapter? = null
     private var client: Client? = null
@@ -97,6 +103,7 @@ class SandboxedSdkView @JvmOverloads constructor(
     private var requestedWidth = -1
     private var requestedHeight = -1
     private var isTransitionGroupSet = false
+    private var windowInputToken: IBinder? = null
     internal val stateListenerManager: StateListenerManager = StateListenerManager()
 
     /**
@@ -124,20 +131,29 @@ class SandboxedSdkView @JvmOverloads constructor(
         checkClientOpenSession()
     }
 
+    /**
+     * Sets the Z-ordering of the [SandboxedSdkView]'s surface, relative to its window.
+     *
+     * When [setOnTop] is true, every [android.view.MotionEvent] on the [SandboxedSdkView] will be
+     * sent to the UI provider. When [setOnTop] is false, every [android.view.MotionEvent] will be
+     * sent to the client. By default, motion events are sent to the UI provider.
+     */
     fun setZOrderOnTopAndEnableUserInteraction(setOnTop: Boolean) {
         if (setOnTop == isZOrderOnTop) return
-        this.isZOrderOnTop = setOnTop
-        checkClientOpenSession()
         client?.notifyZOrderChanged(setOnTop)
+        isZOrderOnTop = setOnTop
+        checkClientOpenSession()
     }
 
     private fun checkClientOpenSession() {
         val adapter = adapter
-        if (client == null && adapter != null && isAttachedToWindow && width > 0 && height > 0) {
+        if (client == null && adapter != null && windowInputToken != null &&
+            width > 0 && height > 0) {
             stateListenerManager.currentUiSessionState = SandboxedSdkUiSessionState.Loading
             client = Client(this)
             adapter.openSession(
                 context,
+                windowInputToken!!,
                 width,
                 height,
                 isZOrderOnTop,
@@ -147,6 +163,33 @@ class SandboxedSdkView @JvmOverloads constructor(
         }
     }
 
+    /**
+     * Attaches a temporary [SurfaceView] to the view hierarchy. This [SurfaceView] will be removed
+     * once it has been attached to the window and its host token is non-null.
+     *
+     * TODO(b/284147223): Remove this logic in V+
+     */
+    private fun attachTemporarySurfaceView() {
+        val onSurfaceViewAttachedListener =
+            object : OnAttachStateChangeListener {
+                override fun onViewAttachedToWindow(view: View) {
+                    view.removeOnAttachStateChangeListener(this)
+                    removeSurfaceViewAndOpenSession()
+                }
+
+                override fun onViewDetachedFromWindow(view: View) {
+                }
+            }
+        surfaceView.addOnAttachStateChangeListener(onSurfaceViewAttachedListener)
+        super.addView(surfaceView, 0, generateDefaultLayoutParams())
+    }
+
+    internal fun removeSurfaceViewAndOpenSession() {
+        windowInputToken = surfaceView.hostToken
+        super.removeView(surfaceView)
+        checkClientOpenSession()
+    }
+
     internal fun requestSize(width: Int, height: Int) {
         if (width == this.width && height == this.height) return
         requestedWidth = width
@@ -154,7 +197,7 @@ class SandboxedSdkView @JvmOverloads constructor(
         requestLayout()
     }
 
-    internal fun removeContentView() {
+    private fun removeContentView() {
         if (childCount == 1) {
             super.removeViewAt(0)
         }
@@ -173,7 +216,25 @@ class SandboxedSdkView @JvmOverloads constructor(
         } else {
             super.addView(contentView, 0, contentView.layoutParams)
         }
-        stateListenerManager.currentUiSessionState = SandboxedSdkUiSessionState.Active
+        // Listen for first draw event before sending an ACTIVE state change to listeners. Removes
+        // the listener afterwards so that we don't handle multiple draw events.
+        viewTreeObserver.addOnDrawListener(
+            object : ViewTreeObserver.OnDrawListener {
+                var handledDraw = false
+
+                override fun onDraw() {
+                    if (!handledDraw) {
+                        stateListenerManager.currentUiSessionState =
+                            SandboxedSdkUiSessionState.Active
+                        post {
+                            // Posted to handler as this can't be directly called from onDraw
+                            viewTreeObserver.removeOnDrawListener(this)
+                        }
+                        handledDraw = true
+                    }
+                }
+            }
+        )
     }
 
     internal fun onClientClosedSession(error: Throwable? = null) {
@@ -229,18 +290,24 @@ class SandboxedSdkView @JvmOverloads constructor(
     }
 
     override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
-        getChildAt(0)?.layout(left, top, right, bottom)
+        // Child needs to receive coordinates that are relative to the parent.
+        getChildAt(0)?.layout(
+            /* l = */ 0,
+            /* t = */ 0,
+            /* r = */ right - left,
+            /* b = */ bottom - top)
         checkClientOpenSession()
     }
 
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
-        checkClientOpenSession()
+        attachTemporarySurfaceView()
     }
 
     override fun onDetachedFromWindow() {
         client?.close()
         client = null
+        windowInputToken = null
         super.onDetachedFromWindow()
     }
 
@@ -251,16 +318,16 @@ class SandboxedSdkView @JvmOverloads constructor(
         oldHeight: Int
     ) {
         super.onSizeChanged(width, height, oldWidth, oldHeight)
-        checkClientOpenSession()
         client?.notifyResized(width, height)
+        checkClientOpenSession()
     }
 
     // TODO(b/270971893) Compare to old configuration before notifying of configuration change.
     override fun onConfigurationChanged(config: Configuration?) {
         requireNotNull(config) { "Config cannot be null" }
         super.onConfigurationChanged(config)
-        checkClientOpenSession()
         client?.notifyConfigurationChanged(config)
+        checkClientOpenSession()
     }
 
     /**
@@ -330,9 +397,7 @@ class SandboxedSdkView @JvmOverloads constructor(
         private var pendingWidth: Int? = null
         private var pendingHeight: Int? = null
 
-        // pendingZOrderOnTop ensures visible and interactive provider UI as long as the UI is
-        // unobstructed to the user.
-        private var pendingZOrderOnTop: Boolean? = true
+        private var pendingZOrderOnTop: Boolean? = null
         private var pendingConfiguration: Configuration? = null
 
         fun notifyConfigurationChanged(configuration: Configuration) {
@@ -390,6 +455,7 @@ class SandboxedSdkView @JvmOverloads constructor(
             pendingZOrderOnTop?.let {
                 session.notifyZOrderChanged(it)
             }
+            pendingZOrderOnTop = null
         }
 
         override fun onSessionError(throwable: Throwable) {

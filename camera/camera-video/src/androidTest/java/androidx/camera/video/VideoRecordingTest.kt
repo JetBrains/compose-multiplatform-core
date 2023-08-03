@@ -16,7 +16,6 @@
 
 package androidx.camera.video
 
-import androidx.camera.testing.mocks.helpers.ArgumentCaptor as ArgumentCaptorCameraX
 import android.Manifest
 import android.content.Context
 import android.graphics.Rect
@@ -28,8 +27,13 @@ import android.util.Log
 import android.util.Rational
 import android.util.Size
 import android.view.Surface
+import androidx.annotation.RequiresApi
 import androidx.camera.camera2.Camera2Config
+import androidx.camera.camera2.internal.compat.quirk.DeviceQuirks as Camera2DeviceQuirks
+import androidx.camera.camera2.internal.compat.quirk.ExtraCroppingQuirk as Camera2ExtraCroppingQuirk
 import androidx.camera.camera2.pipe.integration.CameraPipeConfig
+import androidx.camera.camera2.pipe.integration.compat.quirk.DeviceQuirks as PipeDeviceQuirks
+import androidx.camera.camera2.pipe.integration.compat.quirk.ExtraCroppingQuirk as PipeExtraCroppingQuirk
 import androidx.camera.core.AspectRatio
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraInfo
@@ -46,13 +50,14 @@ import androidx.camera.core.impl.utils.TransformUtils.rectToSize
 import androidx.camera.core.impl.utils.TransformUtils.rotateSize
 import androidx.camera.core.impl.utils.executor.CameraXExecutors
 import androidx.camera.lifecycle.ProcessCameraProvider
-import androidx.camera.testing.AndroidUtil.skipVideoRecordingTestIfNotSupportedByEmulator
-import androidx.camera.testing.CameraPipeConfigTestRule
-import androidx.camera.testing.CameraUtil
-import androidx.camera.testing.SurfaceTextureProvider
-import androidx.camera.testing.fakes.FakeLifecycleOwner
-import androidx.camera.testing.mocks.MockConsumer
-import androidx.camera.testing.mocks.helpers.CallTimesAtLeast
+import androidx.camera.testing.impl.AndroidUtil.skipVideoRecordingTestIfNotSupportedByEmulator
+import androidx.camera.testing.impl.CameraPipeConfigTestRule
+import androidx.camera.testing.impl.CameraUtil
+import androidx.camera.testing.impl.SurfaceTextureProvider
+import androidx.camera.testing.impl.fakes.FakeLifecycleOwner
+import androidx.camera.testing.impl.mocks.MockConsumer
+import androidx.camera.testing.impl.mocks.helpers.ArgumentCaptor as ArgumentCaptorCameraX
+import androidx.camera.testing.impl.mocks.helpers.CallTimesAtLeast
 import androidx.camera.video.VideoRecordEvent.Finalize.ERROR_NONE
 import androidx.camera.video.VideoRecordEvent.Finalize.ERROR_SOURCE_INACTIVE
 import androidx.core.util.Consumer
@@ -70,6 +75,7 @@ import org.junit.After
 import org.junit.Assume.assumeFalse
 import org.junit.Assume.assumeTrue
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -242,7 +248,7 @@ class VideoRecordingTest(
         completeVideoRecording(videoCapture, file)
 
         // Verify.
-        val (videoContentRotation, metadataRotation) = getExpectedRotation(videoCapture)
+        val (videoContentRotation, metadataRotation) = getExpectedRotation(videoCapture, cameraInfo)
         verifyMetadataRotation(metadataRotation, file)
 
         // Cleanup.
@@ -273,6 +279,7 @@ class VideoRecordingTest(
     @Test
     fun getCorrectResolution_when_setSupportedQuality() {
         // Pre-arrange.
+        assumeExtraCroppingQuirk()
         val qualityList = videoCapabilities.getSupportedQualities(dynamicRange)
         assumeTrue(qualityList.isNotEmpty())
         Log.d(TAG, "CameraSelector: ${cameraSelector.lensFacing}, QualityList: $qualityList ")
@@ -292,7 +299,6 @@ class VideoRecordingTest(
             }
 
             instrumentation.runOnMainSync {
-                cameraProvider.unbindAll()
                 cameraProvider.bindToLifecycle(
                     lifecycleOwner,
                     cameraSelector,
@@ -311,9 +317,12 @@ class VideoRecordingTest(
             completeVideoRecording(videoCapture, file)
 
             // Verify.
-            verifyVideoResolution(getExpectedResolution(videoCapture), file)
+            verifyVideoResolution(getExpectedResolution(videoCapture, targetResolution), file)
 
             // Cleanup.
+            instrumentation.runOnMainSync {
+                cameraProvider.unbindAll()
+            }
             file.delete()
         }
     }
@@ -321,6 +330,7 @@ class VideoRecordingTest(
     @Test
     fun getCorrectResolution_when_setAspectRatio() {
         // Pre-arrange.
+        assumeExtraCroppingQuirk()
         assumeTrue(videoCapabilities.getSupportedQualities(dynamicRange).isNotEmpty())
 
         for (aspectRatio in listOf(AspectRatio.RATIO_4_3, AspectRatio.RATIO_16_9)) {
@@ -335,7 +345,6 @@ class VideoRecordingTest(
             }
 
             instrumentation.runOnMainSync {
-                cameraProvider.unbindAll()
                 cameraProvider.bindToLifecycle(
                     lifecycleOwner,
                     cameraSelector,
@@ -356,6 +365,9 @@ class VideoRecordingTest(
             verifyVideoAspectRatio(getExpectedAspectRatio(videoCapture)!!, file)
 
             // Cleanup.
+            instrumentation.runOnMainSync {
+                cameraProvider.unbindAll()
+            }
             file.delete()
         }
     }
@@ -363,6 +375,7 @@ class VideoRecordingTest(
     @Test
     fun getCorrectResolution_when_setCropRect() {
         assumeSuccessfulSurfaceProcessing()
+        assumeExtraCroppingQuirk()
 
         // Arrange.
         assumeTrue(videoCapabilities.getSupportedQualities(dynamicRange).isNotEmpty())
@@ -381,7 +394,6 @@ class VideoRecordingTest(
         )
 
         instrumentation.runOnMainSync {
-            cameraProvider.unbindAll()
             cameraProvider.bindToLifecycle(
                 lifecycleOwner,
                 cameraSelector,
@@ -399,7 +411,10 @@ class VideoRecordingTest(
         completeVideoRecording(videoCapture, file)
 
         // Verify.
-        verifyVideoResolution(getExpectedResolution(videoCapture), file)
+        verifyVideoResolution(
+            getExpectedResolution(videoCapture, rectToSize(videoCapture.cropRect!!)),
+            file
+        )
 
         // Cleanup.
         file.delete()
@@ -835,6 +850,229 @@ class VideoRecordingTest(
         file2.delete()
     }
 
+    @Test
+    fun mute_defaultToNotMuted() {
+        assumeTrue("Audio stream is not available", audioStreamAvailable)
+
+        // Arrange.
+        val recorder = Recorder.Builder().build()
+        val videoCaptureLocal = VideoCapture.withOutput(recorder)
+        instrumentation.runOnMainSync {
+            cameraProvider.bindToLifecycle(
+                lifecycleOwner,
+                cameraSelector,
+                preview,
+                videoCaptureLocal
+            )
+        }
+        val file1 = File.createTempFile("CameraX", ".tmp").apply { deleteOnExit() }
+
+        recorder.prepareRecording(context, FileOutputOptions.Builder(file1).build())
+            .withAudioEnabled()
+            .start(CameraXExecutors.directExecutor(), mockVideoRecordEventConsumer).use {
+                mockVideoRecordEventConsumer.verifyRecordingStartSuccessfully()
+                // Keep the first recording muted.
+                it.mute(true)
+            }
+
+        mockVideoRecordEventConsumer.verifyAcceptCall(
+            VideoRecordEvent.Finalize::class.java,
+            false,
+            GENERAL_TIMEOUT
+        )
+        file1.delete()
+
+        mockVideoRecordEventConsumer.clearAcceptCalls()
+
+        val file2 = File.createTempFile("CameraX", ".tmp").apply { deleteOnExit() }
+
+        // Act.
+        recorder.prepareRecording(context, FileOutputOptions.Builder(file2).build())
+            .withAudioEnabled()
+            .start(CameraXExecutors.directExecutor(), mockVideoRecordEventConsumer).use {
+                mockVideoRecordEventConsumer.verifyRecordingStartSuccessfully()
+                val captor = ArgumentCaptorCameraX<VideoRecordEvent> { argument ->
+                    VideoRecordEvent::class.java.isInstance(
+                        argument
+                    )
+                }
+                mockVideoRecordEventConsumer.verifyAcceptCall(
+                    VideoRecordEvent::class.java,
+                    false,
+                    CallTimesAtLeast(1),
+                    captor
+                )
+                assertThat(captor.value).isInstanceOf(VideoRecordEvent.Status::class.java)
+                val status = captor.value as VideoRecordEvent.Status
+                // Assert: The second recording should not be muted.
+                assertThat(status.recordingStats.audioStats.audioState)
+                    .isEqualTo(AudioStats.AUDIO_STATE_ACTIVE)
+            }
+
+        mockVideoRecordEventConsumer.verifyAcceptCall(
+            VideoRecordEvent.Finalize::class.java,
+            false,
+            GENERAL_TIMEOUT
+        )
+        file2.delete()
+    }
+
+    @Ignore("b/285940946")
+    @Test
+    fun canContinueRecordingAfterRebind() {
+        val videoCapture = VideoCapture.withOutput(Recorder.Builder().build())
+
+        instrumentation.runOnMainSync {
+            cameraProvider.bindToLifecycle(lifecycleOwner, cameraSelector, preview, videoCapture)
+        }
+
+        val file = File.createTempFile("CameraX", ".tmp").apply { deleteOnExit() }
+        val recording =
+            videoCapture.output.prepareRecording(context, FileOutputOptions.Builder(file).build())
+                .withAudioEnabled()
+                .asPersistentRecording()
+                .start(CameraXExecutors.directExecutor(), mockVideoRecordEventConsumer)
+
+        mockVideoRecordEventConsumer.verifyRecordingStartSuccessfully()
+
+        mockVideoRecordEventConsumer.clearAcceptCalls()
+
+        instrumentation.runOnMainSync {
+            cameraProvider.unbindAll()
+            cameraProvider.bindToLifecycle(lifecycleOwner, cameraSelector, preview, videoCapture)
+        }
+
+        mockVideoRecordEventConsumer.verifyAcceptCall(
+            VideoRecordEvent.Status::class.java,
+            true,
+            STATUS_TIMEOUT,
+            CallTimesAtLeast(5)
+        )
+
+        recording.stop()
+
+        mockVideoRecordEventConsumer.verifyAcceptCall(
+            VideoRecordEvent.Finalize::class.java,
+            true,
+            GENERAL_TIMEOUT
+        )
+
+        verifyRecordingResult(file, true)
+
+        file.delete()
+    }
+
+    @Ignore("b/285940946")
+    @Test
+    fun canContinueRecordingPausedAfterRebind() {
+        val videoCapture = VideoCapture.withOutput(Recorder.Builder().build())
+
+        instrumentation.runOnMainSync {
+            cameraProvider.bindToLifecycle(lifecycleOwner, cameraSelector, preview, videoCapture)
+        }
+
+        val file = File.createTempFile("CameraX", ".tmp").apply { deleteOnExit() }
+        val recording =
+            videoCapture.output.prepareRecording(context, FileOutputOptions.Builder(file).build())
+                .withAudioEnabled()
+                .asPersistentRecording()
+                .start(CameraXExecutors.directExecutor(), mockVideoRecordEventConsumer)
+
+        mockVideoRecordEventConsumer.verifyRecordingStartSuccessfully()
+
+        recording.pause()
+
+        mockVideoRecordEventConsumer.verifyAcceptCall(
+            VideoRecordEvent.Pause::class.java,
+            true,
+            GENERAL_TIMEOUT
+        )
+
+        mockVideoRecordEventConsumer.clearAcceptCalls()
+
+        instrumentation.runOnMainSync {
+            cameraProvider.unbindAll()
+            cameraProvider.bindToLifecycle(lifecycleOwner, cameraSelector, preview, videoCapture)
+        }
+
+        recording.resume()
+
+        mockVideoRecordEventConsumer.verifyAcceptCall(
+            VideoRecordEvent.Resume::class.java,
+            true,
+            GENERAL_TIMEOUT
+        )
+
+        mockVideoRecordEventConsumer.verifyAcceptCall(
+            VideoRecordEvent.Status::class.java,
+            true,
+            STATUS_TIMEOUT,
+            CallTimesAtLeast(5)
+        )
+
+        recording.stop()
+
+        mockVideoRecordEventConsumer.verifyAcceptCall(
+            VideoRecordEvent.Finalize::class.java,
+            true,
+            GENERAL_TIMEOUT
+        )
+
+        verifyRecordingResult(file, true)
+
+        file.delete()
+    }
+
+    @Test
+    fun canRecordWithCorrectTransformation() {
+        // Arrange.
+        lateinit var backCamera: Camera
+        lateinit var frontCamera: Camera
+
+        // Act.
+        instrumentation.runOnMainSync {
+            backCamera = cameraProvider.bindToLifecycle(
+                lifecycleOwner,
+                CameraSelector.DEFAULT_BACK_CAMERA,
+                preview,
+                videoCapture
+            )
+        }
+
+        val file1 = File.createTempFile("CameraX", ".tmp").apply { deleteOnExit() }
+        performRecording(videoCapture, file1, includeAudio = true)
+
+        instrumentation.runOnMainSync {
+            cameraProvider.unbindAll()
+            frontCamera = cameraProvider.bindToLifecycle(
+                lifecycleOwner,
+                CameraSelector.DEFAULT_FRONT_CAMERA,
+                preview,
+                videoCapture
+            )
+        }
+
+        val file2 = File.createTempFile("CameraX", ".tmp").apply { deleteOnExit() }
+        performRecording(videoCapture, file2, includeAudio = true)
+
+        // Assert.
+        verifyMetadataRotation(
+            getExpectedRotation(
+                videoCapture,
+                backCamera.cameraInfo
+            ).metadataRotation, file1
+        )
+        verifyMetadataRotation(
+            getExpectedRotation(
+                videoCapture,
+                frontCamera.cameraInfo
+            ).metadataRotation, file2
+        )
+
+        file1.delete()
+        file2.delete()
+    }
+
     private fun performRecording(
         videoCapture: VideoCapture<Recorder>,
         file: File,
@@ -937,7 +1175,10 @@ class VideoRecordingTest(
 
     data class ExpectedRotation(val contentRotation: Int, val metadataRotation: Int)
 
-    private fun getExpectedRotation(videoCapture: VideoCapture<Recorder>): ExpectedRotation {
+    private fun getExpectedRotation(
+        videoCapture: VideoCapture<Recorder>,
+        cameraInfo: CameraInfo
+    ): ExpectedRotation {
         val rotationNeeded = cameraInfo.getSensorRotationDegrees(videoCapture.targetRotation)
         return if (videoCapture.node != null) {
             ExpectedRotation(rotationNeeded, 0)
@@ -946,14 +1187,20 @@ class VideoRecordingTest(
         }
     }
 
-    private fun getExpectedResolution(videoCapture: VideoCapture<Recorder>): Size =
-        rotateSize(
-            rectToSize(videoCapture.cropRect!!),
-            getExpectedRotation(videoCapture).contentRotation
-        )
+    private fun getExpectedResolution(
+        videoCapture: VideoCapture<Recorder>,
+        resolution: Size
+    ): Size = rotateSize(resolution, getExpectedRotation(videoCapture, cameraInfo).contentRotation)
 
     private fun getExpectedAspectRatio(videoCapture: VideoCapture<Recorder>): Rational? {
-        val needRotate by lazy { is90or270(getExpectedRotation(videoCapture).contentRotation) }
+        val needRotate by lazy {
+            is90or270(
+                getExpectedRotation(
+                    videoCapture,
+                    cameraInfo
+                ).contentRotation
+            )
+        }
         return when (videoCapture.output.aspectRatio) {
             AspectRatio.RATIO_4_3 ->
                 if (needRotate) AspectRatioUtil.ASPECT_RATIO_3_4
@@ -1052,6 +1299,10 @@ class VideoRecordingTest(
         )
     }
 
+    private fun assumeExtraCroppingQuirk() {
+        assumeExtraCroppingQuirk(implName)
+    }
+
     private class ImageSavedCallback :
         ImageCapture.OnImageSavedCallback {
 
@@ -1143,3 +1394,14 @@ internal fun MediaMetadataRetriever.hasVideo(): Boolean =
 
 internal fun MediaMetadataRetriever.getDuration(): Long? =
     extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLong()
+
+@RequiresApi(21)
+fun assumeExtraCroppingQuirk(implName: String) {
+    val msg =
+        "Devices in ExtraCroppingQuirk will get a fixed resolution regardless of any settings"
+    if (implName.contains(CameraPipeConfig::class.simpleName!!)) {
+        assumeTrue(msg, PipeDeviceQuirks[PipeExtraCroppingQuirk::class.java] == null)
+    } else {
+        assumeTrue(msg, Camera2DeviceQuirks.get(Camera2ExtraCroppingQuirk::class.java) == null)
+    }
+}

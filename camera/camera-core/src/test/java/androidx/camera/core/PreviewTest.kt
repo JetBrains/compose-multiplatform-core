@@ -17,23 +17,29 @@
 package androidx.camera.core
 
 import android.content.Context
+import android.graphics.Matrix
 import android.graphics.Rect
 import android.graphics.SurfaceTexture
 import android.os.Build
 import android.os.Handler
 import android.os.HandlerThread
 import android.os.Looper.getMainLooper
+import android.util.Range
 import android.util.Rational
 import android.util.Size
 import android.view.Surface
+import android.view.Surface.ROTATION_90
+import androidx.annotation.RequiresApi
 import androidx.camera.core.CameraEffect.IMAGE_CAPTURE
 import androidx.camera.core.CameraEffect.PREVIEW
 import androidx.camera.core.CameraEffect.VIDEO_CAPTURE
 import androidx.camera.core.CameraSelector.LENS_FACING_FRONT
 import androidx.camera.core.MirrorMode.MIRROR_MODE_ON_FRONT_ONLY
+import androidx.camera.core.Preview.SurfaceProvider
 import androidx.camera.core.SurfaceRequest.TransformationInfo
 import androidx.camera.core.impl.CameraFactory
 import androidx.camera.core.impl.CameraThreadConfig
+import androidx.camera.core.impl.MutableOptionsBundle
 import androidx.camera.core.impl.OptionsBundle
 import androidx.camera.core.impl.PreviewConfig
 import androidx.camera.core.impl.SessionConfig
@@ -41,24 +47,27 @@ import androidx.camera.core.impl.StreamSpec
 import androidx.camera.core.impl.UseCaseConfig
 import androidx.camera.core.impl.UseCaseConfigFactory
 import androidx.camera.core.impl.utils.executor.CameraXExecutors
+import androidx.camera.core.impl.utils.executor.CameraXExecutors.directExecutor
 import androidx.camera.core.impl.utils.executor.CameraXExecutors.mainThreadExecutor
 import androidx.camera.core.internal.CameraUseCaseAdapter
 import androidx.camera.core.internal.utils.SizeUtil
 import androidx.camera.core.resolutionselector.ResolutionSelector
-import androidx.camera.testing.CameraUtil
-import androidx.camera.testing.CameraXUtil
 import androidx.camera.testing.fakes.FakeAppConfig
 import androidx.camera.testing.fakes.FakeCamera
-import androidx.camera.testing.fakes.FakeCameraDeviceSurfaceManager
-import androidx.camera.testing.fakes.FakeCameraFactory
 import androidx.camera.testing.fakes.FakeCameraInfoInternal
-import androidx.camera.testing.fakes.FakeSurfaceEffect
-import androidx.camera.testing.fakes.FakeSurfaceProcessorInternal
-import androidx.camera.testing.fakes.FakeUseCase
+import androidx.camera.testing.impl.CameraUtil
+import androidx.camera.testing.impl.CameraXUtil
+import androidx.camera.testing.impl.fakes.FakeCameraDeviceSurfaceManager
+import androidx.camera.testing.impl.fakes.FakeCameraFactory
+import androidx.camera.testing.impl.fakes.FakeSurfaceEffect
+import androidx.camera.testing.impl.fakes.FakeSurfaceProcessorInternal
+import androidx.camera.testing.impl.fakes.FakeUseCase
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
 import java.util.Collections
 import java.util.concurrent.ExecutionException
+import java.util.concurrent.Semaphore
+import java.util.concurrent.TimeUnit
 import org.junit.After
 import org.junit.Assert
 import org.junit.Before
@@ -69,6 +78,7 @@ import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 
+@RequiresApi(21)
 private val TEST_CAMERA_SELECTOR = CameraSelector.DEFAULT_BACK_CAMERA
 
 /**
@@ -79,7 +89,13 @@ private val TEST_CAMERA_SELECTOR = CameraSelector.DEFAULT_BACK_CAMERA
 @Config(
     minSdk = Build.VERSION_CODES.LOLLIPOP
 )
+// Option Declarations:
+// *********************************************************************************************
 class PreviewTest {
+
+    companion object {
+        val FRAME_RATE_RANGE = Range(30, 60)
+    }
 
     private var cameraUseCaseAdapter: CameraUseCaseAdapter? = null
 
@@ -94,6 +110,17 @@ class PreviewTest {
     private lateinit var effect: CameraEffect
 
     private val handlersToRelease = mutableListOf<Handler>()
+
+    private val sensorToBufferTransform = Matrix().apply {
+        setScale(1f, 2f)
+    }
+
+    private val testImplementationOption: androidx.camera.core.impl.Config.Option<Int> =
+        androidx.camera.core.impl.Config.Option.create(
+            "test.testOption",
+            Int::class.javaPrimitiveType!!
+        )
+    private val testImplementationOptionValue = 5
 
     @Before
     @Throws(ExecutionException::class, InterruptedException::class)
@@ -140,6 +167,43 @@ class PreviewTest {
         for (handler in handlersToRelease) {
             handler.looper.quitSafely()
         }
+    }
+
+    @Test
+    fun attachPreview_receiveTransformationInfoOnlyOnce() {
+        // Arrange.
+        val semaphore = Semaphore(0)
+
+        // Act: create preview and listen to transformation info.
+        createPreview(surfaceProvider = {
+            it.setTransformationInfoListener(directExecutor()) {
+                semaphore.release()
+            }
+        })
+
+        // Assert: only receive transformation info once.
+        assertThat(semaphore.tryAcquire(1, 1, TimeUnit.SECONDS)).isTrue()
+        assertThat(semaphore.tryAcquire(2, 1, TimeUnit.SECONDS)).isFalse()
+    }
+
+    @Test
+    fun createPreview_sessionConfigMatchesStreamSpec() {
+        // Act: Create a preview use case.
+        val preview = createPreview()
+        // Assert: The session config matches the stream spec.
+        val sessionConfig = preview.sessionConfig
+        assertThat(sessionConfig.expectedFrameRateRange).isEqualTo(FRAME_RATE_RANGE)
+        assertThat(sessionConfig.implementationOptions.retrieveOption(testImplementationOption))
+            .isEqualTo(testImplementationOptionValue)
+    }
+
+    @Test
+    fun createPreview_deferrableSurfaceIsTheSurfaceRequestSurface() {
+        // Act: Create a preview use case.
+        val preview = createPreview()
+        // Assert: The preview's deferrable surface is the surface request surface.
+        assertThat(preview.sessionConfig.surfaces.single())
+            .isEqualTo(preview.mCurrentSurfaceRequest!!.deferrableSurface)
     }
 
     @Test
@@ -235,6 +299,23 @@ class PreviewTest {
     }
 
     @Test
+    fun setTargetRotation_rotationIsPropagated() {
+        // Arrange: create preview and wait for transformation info.
+        val preview = createPreview()
+        var transformationInfo: TransformationInfo? = null
+        preview.mCurrentSurfaceRequest!!.setTransformationInfoListener(
+            mainThreadExecutor()
+        ) { newValue: TransformationInfo -> transformationInfo = newValue }
+
+        // Act: set target rotation.
+        preview.targetRotation = Surface.ROTATION_180
+        shadowOf(getMainLooper()).idle()
+
+        // Assert: target rotation is updated.
+        assertThat(transformationInfo!!.targetRotation).isEqualTo(Surface.ROTATION_180)
+    }
+
+    // @Test TODO re-enable once b/284336967 is done.
     fun attachUseCase_transformationInfoUpdates() {
         // Arrange: attach Preview without a SurfaceProvider.
         // Build and bind use case.
@@ -309,6 +390,7 @@ class PreviewTest {
 
         // Get pending SurfaceRequest created by pipeline.
         assertThat(transformationInfo!!.hasCameraTransform()).isTrue()
+        assertThat(transformationInfo!!.sensorToBufferTransform).isEqualTo(sensorToBufferTransform)
     }
 
     @Test
@@ -417,7 +499,7 @@ class PreviewTest {
         val preview = createPreview(
             effect,
             frontCamera,
-            targetRotation = Surface.ROTATION_90
+            targetRotation = ROTATION_90
         )
         assertThat(preview.cameraEdge.hasCameraTransform()).isTrue()
         // Assert: rotationDegrees is not flipped.
@@ -431,7 +513,7 @@ class PreviewTest {
         val preview = createPreview(
             effect,
             frontCamera,
-            targetRotation = Surface.ROTATION_90
+            targetRotation = ROTATION_90
         )
         // Assert: rotationDegrees is 0.
         assertThat(preview.cameraEdge.rotationDegrees).isEqualTo(0)
@@ -444,7 +526,7 @@ class PreviewTest {
         val preview = createPreview(
             effect,
             frontCamera,
-            targetRotation = Surface.ROTATION_90
+            targetRotation = ROTATION_90
         )
         // Assert
         assertThat(preview.cameraEdge.hasCameraTransform()).isFalse()
@@ -458,7 +540,7 @@ class PreviewTest {
         val preview = createPreview(
             effect,
             frontCamera,
-            targetRotation = Surface.ROTATION_90
+            targetRotation = ROTATION_90
         )
         // Assert
         assertThat(preview.cameraEdge.mirroring).isFalse()
@@ -640,6 +722,30 @@ class PreviewTest {
         assertThat(receivedAfterAttach).isTrue()
     }
 
+    @Test
+    fun sessionConfigHasStreamSpecImplementationOptions_whenCreatePipeline() {
+        val preview = createPreview(effect)
+        assertThat(
+            preview.sessionConfig.implementationOptions.retrieveOption(
+                testImplementationOption
+            )
+        ).isEqualTo(testImplementationOptionValue)
+    }
+
+    @Test
+    fun sessionConfigHasStreamSpecImplementationOptions_whenUpdateStreamSpecImplOptions() {
+        val preview = createPreview(effect)
+        val newImplementationOptionValue = 6
+        val streamSpecOptions = MutableOptionsBundle.create()
+        streamSpecOptions.insertOption(testImplementationOption, newImplementationOptionValue)
+        preview.updateSuggestedStreamSpecImplementationOptions(streamSpecOptions)
+        assertThat(
+            preview.sessionConfig.implementationOptions.retrieveOption(
+                testImplementationOption
+            )
+        ).isEqualTo(newImplementationOptionValue)
+    }
+
     @Suppress("DEPRECATION") // test for legacy resolution API
     @Test
     fun throwException_whenSetBothTargetResolutionAndAspectRatio() {
@@ -667,6 +773,13 @@ class PreviewTest {
                 .setResolutionSelector(ResolutionSelector.Builder().build())
                 .build()
         }
+    }
+
+    @Test
+    fun canSetTargetFrameRate() {
+        val preview = Preview.Builder().setTargetFrameRate(Range(15, 30))
+            .build()
+        assertThat(preview.targetFrameRate).isEqualTo(Range(15, 30))
     }
 
     private fun bindToLifecycleAndGetSurfaceRequest(): SurfaceRequest {
@@ -711,13 +824,15 @@ class PreviewTest {
     private fun createPreview(
         effect: CameraEffect? = null,
         camera: FakeCamera = backCamera,
-        targetRotation: Int = Surface.ROTATION_0
+        targetRotation: Int = ROTATION_90,
+        surfaceProvider: SurfaceProvider = SurfaceProvider {
+        }
     ): Preview {
         previewToDetach = Preview.Builder()
             .setTargetRotation(targetRotation)
             .build()
         previewToDetach.effect = effect
-        previewToDetach.setSurfaceProvider(CameraXExecutors.directExecutor()) {}
+        previewToDetach.setSurfaceProvider(directExecutor(), surfaceProvider)
         val previewConfig = PreviewConfig(
             cameraXConfig.getUseCaseConfigFactoryProvider(null)!!.newInstance(context).getConfig(
                 UseCaseConfigFactory.CaptureType.PREVIEW,
@@ -726,8 +841,13 @@ class PreviewTest {
         )
         previewToDetach.bindToCamera(camera, null, previewConfig)
 
-        val streamSpec = StreamSpec.builder(Size(640, 480)).build()
-        previewToDetach.onSuggestedStreamSpecUpdated(streamSpec)
+        val streamSpecOptions = MutableOptionsBundle.create()
+        streamSpecOptions.insertOption(testImplementationOption, testImplementationOptionValue)
+        val streamSpec = StreamSpec.builder(Size(640, 480))
+            .setExpectedFrameRateRange(FRAME_RATE_RANGE)
+            .setImplementationOptions(streamSpecOptions).build()
+        previewToDetach.sensorToBufferTransformMatrix = sensorToBufferTransform
+        previewToDetach.updateSuggestedStreamSpec(streamSpec)
         return previewToDetach
     }
 

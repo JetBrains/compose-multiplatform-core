@@ -21,6 +21,7 @@ import androidx.core.graphics.minus
 import androidx.test.filters.SmallTest
 import kotlin.AssertionError
 import kotlin.math.sqrt
+import org.junit.Assert
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
 import org.junit.Test
@@ -63,8 +64,8 @@ class ShapesTest {
         radius2: Float = radius1,
         center: PointF = Zero
     ) {
-        assertPointOnRadii(cubic.p0, radius1, radius2, center)
-        assertPointOnRadii(cubic.p3, radius1, radius2, center)
+        assertPointOnRadii(PointF(cubic.anchorX0, cubic.anchorY0), radius1, radius2, center)
+        assertPointOnRadii(PointF(cubic.anchorX1, cubic.anchorY1), radius1, radius2, center)
     }
 
     /**
@@ -90,14 +91,24 @@ class ShapesTest {
 
     @Test
     fun circleTest() {
+        Assert.assertThrows(IllegalArgumentException::class.java) {
+            RoundedPolygon.circle(2)
+        }
+
         val circle = RoundedPolygon.circle()
         assertCircleShape(circle.toCubicShape())
+
+        val simpleCircle = RoundedPolygon.circle(3)
+        assertCircleShape(simpleCircle.toCubicShape())
+
+        val complexCircle = RoundedPolygon.circle(20)
+        assertCircleShape(complexCircle.toCubicShape())
 
         val bigCircle = RoundedPolygon.circle(radius = 3f)
         assertCircleShape(bigCircle.toCubicShape(), radius = 3f)
 
         val center = PointF(1f, 2f)
-        val offsetCircle = RoundedPolygon.circle(center = center)
+        val offsetCircle = RoundedPolygon.circle(centerX = center.x, centerY = center.y)
         assertCircleShape(offsetCircle.toCubicShape(), center = center)
     }
 
@@ -117,7 +128,8 @@ class ShapesTest {
         }
 
         val center = PointF(1f, 2f)
-        star = RoundedPolygon.star(4, innerRadius = innerRadius, center = center)
+        star = RoundedPolygon.star(4, innerRadius = innerRadius,
+            centerX = center.x, centerY = center.y)
         shape = star.toCubicShape()
         for (cubic in shape.cubics) {
             assertCubicOnRadii(cubic, radius, innerRadius, center)

@@ -24,11 +24,9 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.graphics.drawSquares
 import androidx.graphics.isAllColor
-import androidx.graphics.opengl.egl.supportsNativeAndroidFence
 import androidx.graphics.surface.SurfaceControlCompat
 import androidx.graphics.surface.SurfaceControlCompat.Companion.BUFFER_TRANSFORM_IDENTITY
 import androidx.graphics.verifyQuadrants
-import androidx.graphics.withEgl
 import androidx.hardware.SyncFenceCompat
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SdkSuppress
@@ -41,7 +39,6 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
-import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -170,11 +167,7 @@ class SingleBufferedCanvasRendererV29Test {
                     firstRenderLatch.countDown()
                     clearLatch.countDown()
                 }
-            }).apply {
-                // See: b/236394768 Workaround for ANGLE issue where FBOs with HardwareBuffer
-                // attachments are not executed until a glReadPixels call is made
-                forceFlush.set(true)
-            }
+            })
         try {
             renderer.render(Unit)
             firstRenderLatch.await(3000, TimeUnit.MILLISECONDS)
@@ -263,6 +256,7 @@ class SingleBufferedCanvasRendererV29Test {
     @Test
     fun testMultiReleasesDoesNotCrash() {
         val transformer = BufferTransformer()
+        transformer.computeTransform(TEST_WIDTH, TEST_HEIGHT, BUFFER_TRANSFORM_IDENTITY)
         val executor = Executors.newSingleThreadExecutor()
         val renderer = SingleBufferedCanvasRendererV29(
             TEST_WIDTH,
@@ -298,67 +292,10 @@ class SingleBufferedCanvasRendererV29Test {
 
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.Q)
     @Test
-    fun testRendererVisibleFlag() {
-        var supportsNativeAndroidFence = false
-        withEgl { eglManager ->
-            supportsNativeAndroidFence = eglManager.supportsNativeAndroidFence()
-        }
-        if (!supportsNativeAndroidFence) {
-            return
-        }
+    fun testBatchedRenders() {
         val transformer = BufferTransformer().apply {
             computeTransform(TEST_WIDTH, TEST_HEIGHT, BUFFER_TRANSFORM_IDENTITY)
         }
-        val executor = Executors.newSingleThreadExecutor()
-        var syncFenceNull = false
-        var drawLatch: CountDownLatch? = null
-        val renderer = SingleBufferedCanvasRendererV29(
-            TEST_WIDTH,
-            TEST_HEIGHT,
-            transformer,
-            executor,
-            object : SingleBufferedCanvasRenderer.RenderCallbacks<Int> {
-                override fun render(canvas: Canvas, width: Int, height: Int, param: Int) {
-                    canvas.drawColor(param)
-                }
-
-                override fun onBufferReady(
-                    hardwareBuffer: HardwareBuffer,
-                    syncFenceCompat: SyncFenceCompat?
-                ) {
-                    syncFenceNull = syncFenceCompat == null
-                    syncFenceCompat?.awaitForever()
-                    drawLatch?.countDown()
-                }
-            })
-        try {
-            renderer.isVisible = false
-            drawLatch = CountDownLatch(1)
-            renderer.render(Color.RED)
-            assertTrue(drawLatch.await(3000, TimeUnit.MILLISECONDS))
-            assertFalse(syncFenceNull)
-
-            renderer.isVisible = true
-            drawLatch = CountDownLatch(1)
-            renderer.render(Color.BLUE)
-            assertTrue(drawLatch.await(3000, TimeUnit.MILLISECONDS))
-            assertTrue(syncFenceNull)
-        } finally {
-            val latch = CountDownLatch(1)
-            renderer.release(true) {
-                executor.shutdownNow()
-                latch.countDown()
-            }
-            assertTrue(latch.await(3000, TimeUnit.MILLISECONDS))
-        }
-    }
-
-    @Ignore("b/274099885")
-    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.Q)
-    @Test
-    fun testBatchedRenders() {
-        val transformer = BufferTransformer()
-        transformer.computeTransform(TEST_WIDTH, TEST_HEIGHT, BUFFER_TRANSFORM_IDENTITY)
         val executor = Executors.newSingleThreadExecutor()
         val renderCount = AtomicInteger(0)
         val renderer = SingleBufferedCanvasRendererV29(

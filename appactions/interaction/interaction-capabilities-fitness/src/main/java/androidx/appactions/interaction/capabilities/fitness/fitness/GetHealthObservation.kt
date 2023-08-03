@@ -16,105 +16,43 @@
 
 package androidx.appactions.interaction.capabilities.fitness.fitness
 
-import androidx.appactions.interaction.capabilities.core.Capability
 import androidx.appactions.interaction.capabilities.core.BaseExecutionSession
+import androidx.appactions.interaction.capabilities.core.Capability
 import androidx.appactions.interaction.capabilities.core.CapabilityFactory
-import androidx.appactions.interaction.capabilities.core.impl.BuilderOf
 import androidx.appactions.interaction.capabilities.core.impl.converters.TypeConverters
 import androidx.appactions.interaction.capabilities.core.impl.spec.ActionSpecBuilder
+import androidx.appactions.interaction.capabilities.core.impl.spec.ActionSpecRegistry
 import androidx.appactions.interaction.capabilities.core.properties.Property
 import java.time.LocalTime
-import java.util.Optional
 
-/** GetHealthObservation.kt in interaction-capabilities-fitness */
-private const val CAPABILITY_NAME = "actions.intent.START_EXERCISE"
-
-// TODO(b/273602015): Update to use Name property from builtintype library.
-private val ACTION_SPEC =
-    ActionSpecBuilder.ofCapabilityNamed(CAPABILITY_NAME)
-        .setDescriptor(GetHealthObservation.Properties::class.java)
-        .setArguments(
-            GetHealthObservation.Arguments::class.java,
-            GetHealthObservation.Arguments::Builder
-        )
-        .setOutput(GetHealthObservation.Output::class.java)
-        .bindOptionalParameter(
-            "exerciseObservation.startTime",
-            { property -> Optional.ofNullable(property.startTime) },
-            GetHealthObservation.Arguments.Builder::setStartTime,
-            TypeConverters.LOCAL_TIME_PARAM_VALUE_CONVERTER,
-            TypeConverters.LOCAL_TIME_ENTITY_CONVERTER
-        )
-        .bindOptionalParameter(
-            "exerciseObservation.endTime",
-            { property -> Optional.ofNullable(property.endTime) },
-            GetHealthObservation.Arguments.Builder::setEndTime,
-            TypeConverters.LOCAL_TIME_PARAM_VALUE_CONVERTER,
-            TypeConverters.LOCAL_TIME_ENTITY_CONVERTER
-        )
-        .build()
-
-@CapabilityFactory(name = CAPABILITY_NAME)
+/** A capability corresponding to actions.intent.GET_HEALTH_OBSERVATION */
+@CapabilityFactory(name = GetHealthObservation.CAPABILITY_NAME)
 class GetHealthObservation private constructor() {
-    class CapabilityBuilder :
-        Capability.Builder<
-            CapabilityBuilder, Properties, Arguments, Output, Confirmation, ExecutionSession
-            >(ACTION_SPEC) {
-        private var propertyBuilder: Properties.Builder = Properties.Builder()
-        fun setStartTimeProperty(startTime: Property<LocalTime>): CapabilityBuilder = apply {
-            propertyBuilder.setEndTime(startTime)
-        }
 
-        fun setEndTimeProperty(endTime: Property<LocalTime>): CapabilityBuilder = apply {
-            propertyBuilder.setEndTime(endTime)
-        }
-
-        override fun build(): Capability {
-            // TODO(b/268369632): Clean this up after Property is removed
-            super.setProperty(propertyBuilder.build())
-            return super.build()
-        }
+    internal enum class SlotMetadata(val path: String) {
+        START_TIME("healthObservation.startTime"),
+        END_TIME("healthObservation.endTime")
     }
 
-    // TODO(b/268369632): Remove Property from public capability APIs.
-    class Properties internal constructor(
-        val startTime: Property<LocalTime>?,
-        val endTime: Property<LocalTime>?
-    ) {
-        override fun toString(): String {
-            return "Property(startTime=$startTime, endTime=$endTime)"
-        }
+    class CapabilityBuilder :
+        Capability.Builder<
+            CapabilityBuilder,
+            Arguments,
+            Output,
+            Confirmation,
+            ExecutionSession
+            >(ACTION_SPEC) {
+        fun setStartTimeProperty(startTime: Property<LocalTime>): CapabilityBuilder = setProperty(
+            SlotMetadata.START_TIME.path,
+            startTime,
+            TypeConverters.LOCAL_TIME_ENTITY_CONVERTER
+        )
 
-        override fun equals(other: Any?): Boolean {
-            if (this === other) return true
-            if (javaClass !== other?.javaClass) return false
-
-            other as Properties
-
-            if (startTime != other.startTime) return false
-            if (endTime != other.endTime) return false
-
-            return true
-        }
-
-        override fun hashCode(): Int {
-            var result = startTime.hashCode()
-            result += 31 * endTime.hashCode()
-            return result
-        }
-
-        class Builder {
-            private var startTime: Property<LocalTime>? = null
-            private var endTime: Property<LocalTime>? = null
-
-            fun setStartTime(startTime: Property<LocalTime>): Builder =
-                apply { this.startTime = startTime }
-
-            fun setEndTime(endTime: Property<LocalTime>): Builder =
-                apply { this.endTime = endTime }
-
-            fun build(): Properties = Properties(startTime, endTime)
-        }
+        fun setEndTimeProperty(endTime: Property<LocalTime>): CapabilityBuilder = setProperty(
+            SlotMetadata.END_TIME.path,
+            endTime,
+            TypeConverters.LOCAL_TIME_ENTITY_CONVERTER
+        )
     }
 
     class Arguments internal constructor(
@@ -143,7 +81,7 @@ class GetHealthObservation private constructor() {
             return result
         }
 
-        class Builder : BuilderOf<Arguments> {
+        class Builder {
             private var startTime: LocalTime? = null
             private var endTime: LocalTime? = null
 
@@ -153,7 +91,7 @@ class GetHealthObservation private constructor() {
             fun setEndTime(endTime: LocalTime): Builder =
                 apply { this.endTime = endTime }
 
-            override fun build(): Arguments = Arguments(startTime, endTime)
+            fun build(): Arguments = Arguments(startTime, endTime)
         }
     }
 
@@ -162,4 +100,34 @@ class GetHealthObservation private constructor() {
     class Confirmation internal constructor()
 
     sealed interface ExecutionSession : BaseExecutionSession<Arguments, Output>
+
+    companion object {
+        /** Canonical name for [GetHealthObservation] capability */
+        const val CAPABILITY_NAME = "actions.intent.GET_HEALTH_OBSERVATION"
+        // TODO(b/273602015): Update to use Name property from builtintype library.
+        private val ACTION_SPEC =
+            ActionSpecBuilder.ofCapabilityNamed(CAPABILITY_NAME)
+                .setArguments(
+                    Arguments::class.java,
+                    Arguments::Builder,
+                    Arguments.Builder::build
+                )
+                .setOutput(Output::class.java)
+                .bindParameter(
+                    SlotMetadata.START_TIME.path,
+                    Arguments::startTime,
+                    Arguments.Builder::setStartTime,
+                    TypeConverters.LOCAL_TIME_PARAM_VALUE_CONVERTER
+                )
+                .bindParameter(
+                    SlotMetadata.END_TIME.path,
+                    Arguments::endTime,
+                    Arguments.Builder::setEndTime,
+                    TypeConverters.LOCAL_TIME_PARAM_VALUE_CONVERTER
+                )
+                .build()
+        init {
+            ActionSpecRegistry.registerActionSpec(Arguments::class, Output::class, ACTION_SPEC)
+        }
+    }
 }

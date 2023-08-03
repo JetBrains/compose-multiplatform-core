@@ -21,13 +21,12 @@ import androidx.compose.ui.graphics.drawscope.ContentDrawScope
 import androidx.compose.ui.layout.Measurable
 import androidx.compose.ui.layout.MeasureResult
 import androidx.compose.ui.layout.MeasureScope
-import androidx.compose.ui.semantics.SemanticsConfiguration
+import androidx.compose.ui.semantics.SemanticsPropertyReceiver
 import androidx.compose.ui.unit.Constraints
+import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
-
-import com.google.common.truth.Truth.assertThat
 
 @RunWith(JUnit4::class)
 class DelegatingNodeTest {
@@ -610,7 +609,8 @@ class DelegatingNodeTest {
         assert(c.node === a)
 
         // detached now, nodes should still point to a
-        chain.detach()
+        chain.runDetachLifecycle()
+        chain.markAsDetached()
 
         assert(!a.isAttached)
         assert(!b.isAttached)
@@ -620,7 +620,8 @@ class DelegatingNodeTest {
         assert(b.node === a)
         assert(c.node === a)
 
-        chain.attach()
+        chain.markAsAttached()
+        chain.runAttachLifecycle()
 
         // attached now, nodes should still point to a
         assert(a.isAttached)
@@ -673,7 +674,8 @@ class DelegatingNodeTest {
         assert(a.node === a)
         assert(b.node === a)
 
-        chain.detach()
+        chain.runDetachLifecycle()
+        chain.markAsDetached()
 
         // detached AND undelegated now
         assert(!a.isAttached)
@@ -682,7 +684,8 @@ class DelegatingNodeTest {
         assert(a.node === a)
         assert(b.node === b)
 
-        chain.attach()
+        chain.markAsAttached()
+        chain.runAttachLifecycle()
 
         // attached and delegated now
         assert(a.isAttached)
@@ -717,7 +720,8 @@ class DelegatingNodeTest {
         assert(a.node === a)
         assert(b.node === a)
 
-        chain.detach()
+        chain.runDetachLifecycle()
+        chain.markAsDetached()
 
         // detached now, still delegated
         assert(!a.isAttached)
@@ -726,7 +730,8 @@ class DelegatingNodeTest {
         assert(a.node === a)
         assert(b.node === a)
 
-        chain.attach()
+        chain.markAsAttached()
+        chain.runAttachLifecycle()
 
         // attached, still delegated
         assert(a.isAttached)
@@ -789,7 +794,7 @@ private fun unattachedLayout(vararg modifiers: Modifier.Node): LayoutNode {
 
 internal data class NodeElement(val node: Modifier.Node) : ModifierNodeElement<Modifier.Node>() {
     override fun create(): Modifier.Node = node
-    override fun update(node: Modifier.Node): Modifier.Node = node
+    override fun update(node: Modifier.Node) {}
 }
 
 class Recorder : (Any) -> Unit {
@@ -830,8 +835,7 @@ class DrawMod(val id: String = "") : DrawModifierNode, Modifier.Node() {
 }
 
 class SemanticsMod(val id: String = "") : SemanticsModifierNode, Modifier.Node() {
-    override val semanticsConfiguration: SemanticsConfiguration
-        get() = SemanticsConfiguration()
+    override fun SemanticsPropertyReceiver.applySemantics() { }
     override fun toString(): String {
         return "SemanticsMod($id)"
     }

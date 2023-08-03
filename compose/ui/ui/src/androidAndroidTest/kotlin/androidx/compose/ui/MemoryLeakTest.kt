@@ -32,6 +32,8 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
+import java.text.NumberFormat
+import java.util.Locale
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
@@ -39,8 +41,6 @@ import kotlinx.coroutines.yield
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.text.NumberFormat
-import java.util.Locale
 
 @LargeTest
 @RunWith(AndroidJUnit4::class)
@@ -80,17 +80,21 @@ class MemoryLeakTest {
                 activityTestRule.activity
             )
 
-            // Unfortunately we have to ignore the first run as it seems that even though the view
-            // gets properly garbage collected there are some data that remain allocated. Not sure
-            // what is causing this but could be some static variables.
-            loopAndVerifyMemory(iterations = 400, gcFrequency = 40, ignoreFirstRun = true) {
-                try {
-                    runner.createTestCase()
-                    runner.emitContent()
-                } finally {
-                    // This will remove the owner view from the hierarchy
-                    runner.disposeContent()
+            try {
+                // Unfortunately we have to ignore the first run as it seems that even though the view
+                // gets properly garbage collected there are some data that remain allocated. Not sure
+                // what is causing this but could be some static variables.
+                loopAndVerifyMemory(iterations = 400, gcFrequency = 40, ignoreFirstRun = true) {
+                    try {
+                        runner.createTestCase()
+                        runner.emitContent()
+                    } finally {
+                        // This will remove the owner view from the hierarchy
+                        runner.disposeContent()
+                    }
                 }
+            } finally {
+                runner.close()
             }
         }
     }

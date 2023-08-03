@@ -38,8 +38,8 @@ import androidx.compose.material3.tokens.PlainTooltipTokens
 import androidx.compose.material3.tokens.RichTooltipTokens
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.Immutable
-import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -56,6 +56,8 @@ import androidx.compose.ui.input.pointer.PointerEventTimeoutCancellationExceptio
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.debugInspectorInfo
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.onLongClick
 import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.semantics
@@ -66,9 +68,10 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.PopupPositionProvider
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.CancellableContinuation
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withTimeout
 
 // TODO: add link to m3 doc once created by designer at the top
 /**
@@ -84,6 +87,11 @@ import kotlinx.coroutines.suspendCancellableCoroutine
  *
  * @param tooltip the composable that will be used to populate the tooltip's content.
  * @param modifier the [Modifier] to be applied to the tooltip.
+ * @param focusable [Boolean] that determines if the tooltip is focusable. When true,
+ * the tooltip will consume touch events while it's shown and will have accessibility
+ * focus move to the first element of the component. When false, the tooltip
+ * won't consume touch events while it's shown but assistive-tech users will need
+ * to swipe or drag to get to the first element of the component.
  * @param tooltipState handles the state of the tooltip's visibility.
  * @param shape the [Shape] that should be applied to the tooltip container.
  * @param containerColor [Color] that will be applied to the tooltip's container.
@@ -95,7 +103,8 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 fun PlainTooltipBox(
     tooltip: @Composable () -> Unit,
     modifier: Modifier = Modifier,
-    tooltipState: PlainTooltipState = remember { PlainTooltipState() },
+    focusable: Boolean = true,
+    tooltipState: PlainTooltipState = rememberPlainTooltipState(),
     shape: Shape = TooltipDefaults.plainTooltipContainerShape,
     containerColor: Color = TooltipDefaults.plainTooltipContainerColor,
     contentColor: Color = TooltipDefaults.plainTooltipContentColor,
@@ -112,6 +121,7 @@ fun PlainTooltipBox(
             )
         },
         modifier = modifier,
+        focusable = focusable,
         tooltipState = tooltipState,
         shape = shape,
         containerColor = containerColor,
@@ -137,6 +147,11 @@ fun PlainTooltipBox(
  *
  * @param text the message to be displayed in the center of the tooltip.
  * @param modifier the [Modifier] to be applied to the tooltip.
+ * @param focusable [Boolean] that determines if the tooltip is focusable. When true,
+ * the tooltip will consume touch events while it's shown and will have accessibility
+ * focus move to the first element of the component. When false, the tooltip
+ * won't consume touch events while it's shown but assistive-tech users will need
+ * to swipe or drag to get to the first element of the component.
  * @param tooltipState handles the state of the tooltip's visibility.
  * @param title An optional title for the tooltip.
  * @param action An optional action for the tooltip.
@@ -149,20 +164,16 @@ fun PlainTooltipBox(
 fun RichTooltipBox(
     text: @Composable () -> Unit,
     modifier: Modifier = Modifier,
-    tooltipState: RichTooltipState = remember { RichTooltipState() },
+    focusable: Boolean = true,
     title: (@Composable () -> Unit)? = null,
     action: (@Composable () -> Unit)? = null,
+    tooltipState: RichTooltipState = rememberRichTooltipState(action != null),
     shape: Shape = TooltipDefaults.richTooltipContainerShape,
     colors: RichTooltipColors = TooltipDefaults.richTooltipColors(),
     content: @Composable TooltipBoxScope.() -> Unit
 ) {
     val tooltipAnchorPadding = with(LocalDensity.current) { TooltipAnchorPadding.roundToPx() }
     val positionProvider = remember { RichTooltipPositionProvider(tooltipAnchorPadding) }
-
-    SideEffect {
-        // Make the rich tooltip persistent if an action is provided.
-        tooltipState.isPersistent = (action != null)
-    }
 
     TooltipBox(
         tooltipContent = {
@@ -180,16 +191,21 @@ fun RichTooltipBox(
         elevation = RichTooltipTokens.ContainerElevation,
         maxWidth = RichTooltipMaxWidth,
         modifier = modifier,
+        focusable = focusable,
         content = content
     )
 }
 
+/**
+ * TODO: Figure out what should live here vs. within foundation (b/262626721)
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun TooltipBox(
     tooltipContent: @Composable () -> Unit,
     tooltipPositionProvider: PopupPositionProvider,
     modifier: Modifier,
+    focusable: Boolean,
     shape: Shape,
     tooltipState: TooltipState,
     containerColor: Color,
@@ -200,9 +216,9 @@ private fun TooltipBox(
     val coroutineScope = rememberCoroutineScope()
     val longPressLabel = getString(string = Strings.TooltipLongPressLabel)
 
-    val scope = remember {
+    val scope = remember(tooltipState) {
         object : TooltipBoxScope {
-            override fun Modifier.tooltipAnchor(): Modifier {
+            override fun Modifier.tooltipTrigger(): Modifier {
                 val onLongPress = {
                     coroutineScope.launch {
                         tooltipState.show()
@@ -253,7 +269,8 @@ private fun TooltipBox(
                     if (tooltipState.isVisible) {
                         coroutineScope.launch { tooltipState.dismiss() }
                     }
-                }
+                },
+                focusable = focusable
             ) {
                 Surface(
                     modifier = modifier
@@ -263,7 +280,10 @@ private fun TooltipBox(
                             minHeight = TooltipMinHeight
                         )
                         .animateTooltip(transition)
-                        .semantics { paneTitle = tooltipPaneDescription },
+                        .semantics {
+                            liveRegion = LiveRegionMode.Assertive
+                            paneTitle = tooltipPaneDescription
+                        },
                     shape = shape,
                     color = containerColor,
                     shadowElevation = elevation,
@@ -274,6 +294,10 @@ private fun TooltipBox(
         }
 
         scope.content()
+    }
+
+    DisposableEffect(tooltipState) {
+        onDispose { tooltipState.onDispose() }
     }
 }
 
@@ -351,28 +375,33 @@ private fun RichTooltipImpl(
 @ExperimentalMaterial3Api
 object TooltipDefaults {
     /**
+     * The global/default [MutatorMutex] used to sync Tooltips.
+     */
+    val GlobalMutatorMutex = MutatorMutex()
+
+    /**
      * The default [Shape] for a [PlainTooltipBox]'s container.
      */
     val plainTooltipContainerShape: Shape
-        @Composable get() = PlainTooltipTokens.ContainerShape.toShape()
+        @Composable get() = PlainTooltipTokens.ContainerShape.value
 
     /**
      * The default [Color] for a [PlainTooltipBox]'s container.
      */
     val plainTooltipContainerColor: Color
-        @Composable get() = PlainTooltipTokens.ContainerColor.toColor()
+        @Composable get() = PlainTooltipTokens.ContainerColor.value
 
     /**
-     * The default [color] for the content within the [PlainTooltipBox].
+     * The default [Color] for the content within the [PlainTooltipBox].
      */
     val plainTooltipContentColor: Color
-        @Composable get() = PlainTooltipTokens.SupportingTextColor.toColor()
+        @Composable get() = PlainTooltipTokens.SupportingTextColor.value
 
     /**
      * The default [Shape] for a [RichTooltipBox]'s container.
      */
     val richTooltipContainerShape: Shape @Composable get() =
-        RichTooltipTokens.ContainerShape.toShape()
+        RichTooltipTokens.ContainerShape.value
 
     /**
      * Method to create a [RichTooltipColors] for [RichTooltipBox]
@@ -380,10 +409,10 @@ object TooltipDefaults {
      */
     @Composable
     fun richTooltipColors(
-        containerColor: Color = RichTooltipTokens.ContainerColor.toColor(),
-        contentColor: Color = RichTooltipTokens.SupportingTextColor.toColor(),
-        titleContentColor: Color = RichTooltipTokens.SubheadColor.toColor(),
-        actionContentColor: Color = RichTooltipTokens.ActionLabelTextColor.toColor(),
+        containerColor: Color = RichTooltipTokens.ContainerColor.value,
+        contentColor: Color = RichTooltipTokens.SupportingTextColor.value,
+        titleContentColor: Color = RichTooltipTokens.SubheadColor.value,
+        actionContentColor: Color = RichTooltipTokens.ActionLabelTextColor.value,
     ): RichTooltipColors =
         RichTooltipColors(
             containerColor = containerColor,
@@ -433,30 +462,88 @@ interface TooltipBoxScope {
      * after long pressing the anchor composable is desired. It appends a long click to
      * the composable that this modifier is chained with.
      */
-    fun Modifier.tooltipAnchor(): Modifier
+    fun Modifier.tooltipTrigger(): Modifier
 }
+
+/**
+ * Create and remember the default [PlainTooltipState].
+ *
+ * @param mutatorMutex [MutatorMutex] used to ensure that for all of the tooltips associated
+ * with the mutator mutex, only one will be shown on the screen at any time.
+ */
+@Composable
+@ExperimentalMaterial3Api
+fun rememberPlainTooltipState(
+    mutatorMutex: MutatorMutex = TooltipDefaults.GlobalMutatorMutex
+): PlainTooltipState =
+    remember { PlainTooltipStateImpl(mutatorMutex) }
+
+/**
+ * Create and remember the default [RichTooltipState].
+ *
+ * @param isPersistent [Boolean] that determines if the tooltip associated with this
+ * [RichTooltipState] will be persistent or not. If isPersistent is true, then the tooltip will
+ * only be dismissed when the user clicks outside the bounds of the tooltip or if
+ * [TooltipState.dismiss] is called. When isPersistent is false, the tooltip will dismiss after
+ * a short duration. Ideally, this should be set to true when an action is provided to the
+ * [RichTooltipBox] that this [RichTooltipState] is associated with.
+ * @param mutatorMutex [MutatorMutex] used to ensure that for all of the tooltips associated
+ * with the mutator mutex, only one will be shown on the screen at any time.
+ */
+@Composable
+@ExperimentalMaterial3Api
+fun rememberRichTooltipState(
+    isPersistent: Boolean,
+    mutatorMutex: MutatorMutex = TooltipDefaults.GlobalMutatorMutex
+): RichTooltipState =
+    remember { RichTooltipStateImpl(isPersistent, mutatorMutex) }
 
 /**
  * The [TooltipState] that should be used with [RichTooltipBox]
  */
 @Stable
 @ExperimentalMaterial3Api
-class RichTooltipState : TooltipState {
+interface PlainTooltipState : TooltipState
+
+/**
+ * The [TooltipState] that should be used with [RichTooltipBox]
+ */
+@Stable
+@ExperimentalMaterial3Api
+interface RichTooltipState : TooltipState {
+    val isPersistent: Boolean
+}
+
+/**
+ * The default implementation for [RichTooltipState]
+ *
+ * @param isPersistent [Boolean] that determines if the tooltip associated with this
+ * [RichTooltipState] will be persistent or not. If isPersistent is true, then the tooltip will
+ * only be dismissed when the user clicks outside the bounds of the tooltip or if
+ * [TooltipState.dismiss] is called. When isPersistent is false, the tooltip will dismiss after
+ * a short duration. Ideally, this should be set to true when an action is provided to the
+ * [RichTooltipBox] that this [RichTooltipState] is associated with.
+ * @param mutatorMutex [MutatorMutex] used to ensure that for all of the tooltips associated
+ * with the mutator mutex, only one will be shown on the screen at any time.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Stable
+internal class RichTooltipStateImpl(
+    override val isPersistent: Boolean,
+    private val mutatorMutex: MutatorMutex
+) : RichTooltipState {
+
     /**
      * [Boolean] that will be used to update the visibility
      * state of the associated tooltip.
      */
     override var isVisible: Boolean by mutableStateOf(false)
-        internal set
+        private set
 
     /**
-     * If isPersistent is true, then the tooltip will only be dismissed when the user clicks
-     * outside the bounds of the tooltip or if [TooltipState.dismiss] is called. When isPersistent
-     * is false, the tooltip will dismiss after a short duration. If an action composable is
-     * provided to the [RichTooltipBox] that the [RichTooltipState] is associated with, then the
-     * isPersistent will be set to true.
+     * continuation used to clean up
      */
-    internal var isPersistent: Boolean by mutableStateOf(false)
+    private var job: (CancellableContinuation<Unit>)? = null
 
     /**
      * Show the tooltip associated with the current [RichTooltipState].
@@ -465,33 +552,67 @@ class RichTooltipState : TooltipState {
      * being shown will dismiss.
      */
     override suspend fun show() {
-        TooltipSync.show(
-            state = this,
-            persistent = isPersistent
-        )
+        val cancellableShow: suspend () -> Unit = {
+            suspendCancellableCoroutine { continuation ->
+                isVisible = true
+                job = continuation
+            }
+        }
+
+        // Show associated tooltip for [TooltipDuration] amount of time
+        // or until tooltip is explicitly dismissed depending on [isPersistent].
+        mutatorMutex.mutate(MutatePriority.Default) {
+            try {
+                if (isPersistent) {
+                    cancellableShow()
+                } else {
+                    withTimeout(TooltipDuration) {
+                        cancellableShow()
+                    }
+                }
+            } finally {
+                // timeout or cancellation has occurred
+                // and we close out the current tooltip.
+                isVisible = false
+            }
+        }
     }
 
     /**
      * Dismiss the tooltip associated with
      * this [RichTooltipState] if it's currently being shown.
      */
-    override suspend fun dismiss() {
-        TooltipSync.dismissCurrentTooltip(this)
+    override fun dismiss() {
+        isVisible = false
+    }
+
+    /**
+     * Cleans up [MutatorMutex] when the tooltip associated
+     * with this state leaves Composition.
+     */
+    override fun onDispose() {
+        job?.cancel()
     }
 }
 
 /**
- * The [TooltipState] that should be used with [RichTooltipBox]
+ * The default implementation for [PlainTooltipState]
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Stable
-@ExperimentalMaterial3Api
-class PlainTooltipState : TooltipState {
+internal class PlainTooltipStateImpl(private val mutatorMutex: MutatorMutex) : PlainTooltipState {
+
     /**
      * [Boolean] that will be used to update the visibility
      * state of the associated tooltip.
      */
     override var isVisible by mutableStateOf(false)
-        internal set
+        private set
+
+    /**
+     * continuation used to clean up
+     */
+    private var job: (CancellableContinuation<Unit>)? = null
 
     /**
      * Show the tooltip associated with the current [PlainTooltipState].
@@ -499,29 +620,47 @@ class PlainTooltipState : TooltipState {
      * all of the other tooltips currently being shown will dismiss.
      */
     override suspend fun show() {
-        TooltipSync.show(
-            state = this,
-            persistent = false
-        )
+        // Show associated tooltip for [TooltipDuration] amount of time.
+        mutatorMutex.mutate {
+            try {
+                withTimeout(TooltipDuration) {
+                    suspendCancellableCoroutine { continuation ->
+                        isVisible = true
+                        job = continuation
+                    }
+                }
+            } finally {
+                // timeout or cancellation has occurred
+                // and we close out the current tooltip.
+                isVisible = false
+            }
+        }
     }
 
     /**
      * Dismiss the tooltip associated with
      * this [PlainTooltipState] if it's currently being shown.
      */
-    override suspend fun dismiss() {
-        TooltipSync.dismissCurrentTooltip(this)
+    override fun dismiss() {
+        isVisible = false
+    }
+
+    /**
+     * Cleans up [MutatorMutex] when the tooltip associated
+     * with this state leaves Composition.
+     */
+    override fun onDispose() {
+        job?.cancel()
     }
 }
 
 /**
  * The state that is associated with an instance of a tooltip.
- * Each instance of tooltips should have its own [TooltipState] it
- * will be used to synchronize the tooltips shown via [TooltipSync].
+ * Each instance of tooltips should have its own [TooltipState].
  */
 @Stable
 @ExperimentalMaterial3Api
-internal sealed interface TooltipState {
+interface TooltipState {
     /**
      * [Boolean] that will be used to update the visibility
      * state of the associated tooltip.
@@ -539,7 +678,12 @@ internal sealed interface TooltipState {
      * Dismiss the tooltip associated with
      * this [TooltipState] if it's currently being shown.
      */
-    suspend fun dismiss()
+    fun dismiss()
+
+    /**
+     * Clean up when the this state leaves Composition.
+     */
+    fun onDispose()
 }
 
 private class PlainTooltipPositionProvider(
@@ -588,92 +732,6 @@ private data class RichTooltipPositionProvider(
         if (y < 0)
             y = anchorBounds.bottom + tooltipAnchorPadding
         return IntOffset(x, y)
-    }
-}
-
-/**
- * Object used to synchronize
- * multiple [TooltipState]s, ensuring that there will
- * only be one tooltip shown on the screen at any given time.
- */
-@Stable
-@ExperimentalMaterial3Api
-private object TooltipSync {
-    val mutatorMutex: MutatorMutex = MutatorMutex()
-    var mutexOwner: TooltipState? = null
-
-    /**
-     * Shows the tooltip associated with [TooltipState],
-     * it dismisses any tooltip currently being shown.
-     */
-    suspend fun show(
-        state: TooltipState,
-        persistent: Boolean
-    ) {
-        val runBlock: suspend () -> Unit
-        val cleanUp: () -> Unit
-
-        when (state) {
-            is PlainTooltipState -> {
-                /**
-                 * Show associated tooltip for [TooltipDuration] amount of time.
-                 */
-                runBlock = {
-                    state.isVisible = true
-                    delay(TooltipDuration)
-                }
-                /**
-                 * When the mutex is taken, we just dismiss the associated tooltip.
-                 */
-                cleanUp = { state.isVisible = false }
-            }
-            is RichTooltipState -> {
-                /**
-                 * Show associated tooltip for [TooltipDuration] amount of time
-                 * or until tooltip is explicitly dismissed depending on [persistent].
-                 */
-                runBlock = {
-                    if (persistent) {
-                        suspendCancellableCoroutine<Unit> {
-                            state.isVisible = true
-                        }
-                    } else {
-                        state.isVisible = true
-                        delay(TooltipDuration)
-                    }
-                }
-                /**
-                 * When the mutex is taken, we just dismiss the associated tooltip.
-                 */
-                cleanUp = { state.isVisible = false }
-            }
-        }
-
-        mutatorMutex.mutate(MutatePriority.Default) {
-            try {
-                mutexOwner = state
-                runBlock()
-            } finally {
-                mutexOwner = null
-                // timeout or cancellation has occurred
-                // and we close out the current tooltip.
-                cleanUp()
-            }
-        }
-    }
-
-    /**
-     * Dismisses the tooltip currently
-     * being shown by freeing up the lock.
-     */
-    suspend fun dismissCurrentTooltip(
-        state: TooltipState
-    ) {
-        if (state == mutexOwner) {
-            mutatorMutex.mutate(MutatePriority.UserInput) {
-                /* Do nothing, we're just freeing up the mutex */
-            }
-        }
     }
 }
 
@@ -743,9 +801,12 @@ private fun Modifier.animateTooltip(
     )
 }
 
+@Composable
+@ExperimentalMaterial3Api
 internal expect fun TooltipPopup(
     popupPositionProvider: PopupPositionProvider,
     onDismissRequest: () -> Unit,
+    focusable: Boolean,
     content: @Composable () -> Unit
 )
 

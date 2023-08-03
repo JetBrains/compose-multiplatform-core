@@ -48,8 +48,13 @@ import androidx.tv.material3.tokens.Elevation
  *
  * The default text style for internal [Text] components will be set to [Typography.labelLarge].
  *
+ * Samples:
+ * @sample androidx.tv.samples.ButtonSample
+ * @sample androidx.tv.samples.LikeButtonSample
+ *
  * @param onClick called when this button is clicked
  * @param modifier the [Modifier] to be applied to this button
+ * @param onLongClick called when this button is long clicked (long-pressed).
  * @param enabled controls the enabled state of this button. When `false`, this component will not
  * respond to user input, and it will appear visually disabled and disabled to accessibility
  * services.
@@ -73,6 +78,7 @@ import androidx.tv.material3.tokens.Elevation
 fun Button(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    onLongClick: (() -> Unit)? = null,
     enabled: Boolean = true,
     scale: ButtonScale = ButtonDefaults.scale(),
     glow: ButtonGlow = ButtonDefaults.glow(),
@@ -87,6 +93,7 @@ fun Button(
     ButtonImpl(
         onClick = onClick,
         modifier = modifier,
+        onLongClick = onLongClick,
         enabled = enabled,
         scale = scale,
         glow = glow,
@@ -115,8 +122,12 @@ fun Button(
  *
  * The default text style for internal [Text] components will be set to [Typography.labelLarge].
  *
+ * Samples:
+ * @sample androidx.tv.samples.OutlinedButtonSample
+ *
  * @param onClick called when this button is clicked
  * @param modifier the [Modifier] to be applied to this button
+ * @param onLongClick called when this button is long clicked (long-pressed).
  * @param enabled controls the enabled state of this button. When `false`, this component will not
  * respond to user input, and it will appear visually disabled and disabled to accessibility
  * services.
@@ -140,6 +151,7 @@ fun Button(
 fun OutlinedButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    onLongClick: (() -> Unit)? = null,
     enabled: Boolean = true,
     scale: ButtonScale = OutlinedButtonDefaults.scale(),
     glow: ButtonGlow = OutlinedButtonDefaults.glow(),
@@ -154,6 +166,7 @@ fun OutlinedButton(
     ButtonImpl(
         onClick = onClick,
         modifier = modifier,
+        onLongClick = onLongClick,
         enabled = enabled,
         scale = scale,
         glow = glow,
@@ -172,6 +185,7 @@ fun OutlinedButton(
 private fun ButtonImpl(
     onClick: () -> Unit,
     modifier: Modifier,
+    onLongClick: (() -> Unit)? = null,
     enabled: Boolean,
     scale: ButtonScale,
     glow: ButtonGlow,
@@ -186,12 +200,12 @@ private fun ButtonImpl(
     Surface(
         modifier = modifier.semantics { role = Role.Button },
         onClick = onClick,
+        onLongClick = onLongClick,
         enabled = enabled,
         scale = scale.toClickableSurfaceScale(),
         glow = glow.toClickableSurfaceGlow(),
         shape = shape.toClickableSurfaceShape(),
-        color = colors.toClickableSurfaceContainerColor(),
-        contentColor = colors.toClickableSurfaceContentColor(),
+        colors = colors.toClickableSurfaceColors(),
         tonalElevation = tonalElevation,
         border = border.toClickableSurfaceBorder(),
         interactionSource = interactionSource

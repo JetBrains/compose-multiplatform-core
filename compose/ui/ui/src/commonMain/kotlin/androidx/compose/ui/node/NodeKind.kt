@@ -14,19 +14,15 @@
  * limitations under the License.
  */
 
-@file:Suppress("DEPRECATION", "NOTHING_TO_INLINE")
-
 package androidx.compose.ui.node
 
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.DrawModifier
-import androidx.compose.ui.focus.FocusEventModifier
 import androidx.compose.ui.focus.FocusEventModifierNode
-import androidx.compose.ui.focus.FocusOrderModifier
 import androidx.compose.ui.focus.FocusProperties
 import androidx.compose.ui.focus.FocusPropertiesModifierNode
-import androidx.compose.ui.focus.FocusTargetModifierNode
+import androidx.compose.ui.focus.FocusTargetNode
 import androidx.compose.ui.focus.invalidateFocusEvent
 import androidx.compose.ui.focus.invalidateFocusProperties
 import androidx.compose.ui.focus.invalidateFocusTarget
@@ -41,18 +37,21 @@ import androidx.compose.ui.layout.OnPlacedModifier
 import androidx.compose.ui.layout.OnRemeasuredModifier
 import androidx.compose.ui.layout.ParentDataModifier
 import androidx.compose.ui.modifier.ModifierLocalConsumer
-import androidx.compose.ui.modifier.ModifierLocalNode
+import androidx.compose.ui.modifier.ModifierLocalModifierNode
 import androidx.compose.ui.modifier.ModifierLocalProvider
 import androidx.compose.ui.semantics.SemanticsModifier
 
+@Suppress("NOTHING_TO_INLINE")
 @JvmInline
 internal value class NodeKind<T>(val mask: Int) {
     inline infix fun or(other: NodeKind<*>): Int = mask or other.mask
     inline infix fun or(other: Int): Int = mask or other
 }
 
+@Suppress("NOTHING_TO_INLINE")
 internal inline infix fun Int.or(other: NodeKind<*>): Int = this or other.mask
 
+@Suppress("NOTHING_TO_INLINE")
 internal inline operator fun Int.contains(value: NodeKind<*>): Boolean = this and value.mask != 0
 
 // For a given NodeCoordinator, the "LayoutAware" nodes that it is concerned with should include
@@ -78,7 +77,7 @@ internal object Nodes {
     @JvmStatic
     inline val PointerInput get() = NodeKind<PointerInputModifierNode>(0b1 shl 4)
     @JvmStatic
-    inline val Locals get() = NodeKind<ModifierLocalNode>(0b1 shl 5)
+    inline val Locals get() = NodeKind<ModifierLocalModifierNode>(0b1 shl 5)
     @JvmStatic
     inline val ParentData get() = NodeKind<ParentDataModifierNode>(0b1 shl 6)
     @JvmStatic
@@ -88,7 +87,7 @@ internal object Nodes {
     @JvmStatic
     inline val IntermediateMeasure get() = NodeKind<IntermediateLayoutModifierNode>(0b1 shl 9)
     @JvmStatic
-    inline val FocusTarget get() = NodeKind<FocusTargetModifierNode>(0b1 shl 10)
+    inline val FocusTarget get() = NodeKind<FocusTargetNode>(0b1 shl 10)
     @JvmStatic
     inline val FocusProperties get() = NodeKind<FocusPropertiesModifierNode>(0b1 shl 11)
     @JvmStatic
@@ -126,10 +125,12 @@ internal fun calculateNodeKindSetFrom(element: Modifier.Element): Int {
     ) {
         mask = mask or Nodes.Locals
     }
-    if (element is FocusEventModifier) {
+    @Suppress("DEPRECATION")
+    if (element is androidx.compose.ui.focus.FocusEventModifier) {
         mask = mask or Nodes.FocusEvent
     }
-    if (element is FocusOrderModifier) {
+    @Suppress("DEPRECATION")
+    if (element is androidx.compose.ui.focus.FocusOrderModifier) {
         mask = mask or Nodes.FocusProperties
     }
     if (element is OnGloballyPositionedModifier) {
@@ -166,7 +167,7 @@ internal fun calculateNodeKindSetFrom(node: Modifier.Node): Int {
     if (node is PointerInputModifierNode) {
         mask = mask or Nodes.PointerInput
     }
-    if (node is ModifierLocalNode) {
+    if (node is ModifierLocalModifierNode) {
         mask = mask or Nodes.Locals
     }
     if (node is ParentDataModifierNode) {
@@ -181,7 +182,7 @@ internal fun calculateNodeKindSetFrom(node: Modifier.Node): Int {
     if (node is IntermediateLayoutModifierNode) {
         mask = mask or Nodes.IntermediateMeasure
     }
-    if (node is FocusTargetModifierNode) {
+    if (node is FocusTargetNode) {
         mask = mask or Nodes.FocusTarget
     }
     if (node is FocusPropertiesModifierNode) {
@@ -205,22 +206,25 @@ internal fun calculateNodeKindSetFrom(node: Modifier.Node): Int {
     return mask
 }
 
+@Suppress("ConstPropertyName")
 private const val Updated = 0
+@Suppress("ConstPropertyName")
 private const val Inserted = 1
+@Suppress("ConstPropertyName")
 private const val Removed = 2
 
 internal fun autoInvalidateRemovedNode(node: Modifier.Node) {
-    check(node.isAttached)
+    check(node.isAttached) { "autoInvalidateRemovedNode called on unattached node" }
     autoInvalidateNodeIncludingDelegates(node, 0.inv(), Removed)
 }
 
 internal fun autoInvalidateInsertedNode(node: Modifier.Node) {
-    check(node.isAttached)
+    check(node.isAttached) { "autoInvalidateInsertedNode called on unattached node" }
     autoInvalidateNodeIncludingDelegates(node, 0.inv(), Inserted)
 }
 
 internal fun autoInvalidateUpdatedNode(node: Modifier.Node) {
-    check(node.isAttached)
+    check(node.isAttached) { "autoInvalidateUpdatedNode called on unattached node" }
     autoInvalidateNodeIncludingDelegates(node, 0.inv(), Updated)
 }
 
@@ -246,7 +250,7 @@ private fun autoInvalidateNodeSelf(node: Modifier.Node, selfKindSet: Int, phase:
     // Don't invalidate the node if it marks itself as autoInvalidate = false.
     if (phase == Updated && !node.shouldAutoInvalidate) return
     if (Nodes.Layout in selfKindSet && node is LayoutModifierNode) {
-        node.invalidateMeasurements()
+        node.invalidateMeasurement()
         if (phase == Removed) {
             val coordinator = node.requireCoordinator(Nodes.Layout)
             coordinator.onRelease()
@@ -264,7 +268,7 @@ private fun autoInvalidateNodeSelf(node: Modifier.Node, selfKindSet: Int, phase:
     if (Nodes.ParentData in selfKindSet && node is ParentDataModifierNode) {
         node.invalidateParentData()
     }
-    if (Nodes.FocusTarget in selfKindSet && node is FocusTargetModifierNode) {
+    if (Nodes.FocusTarget in selfKindSet && node is FocusTargetNode) {
         when (phase) {
             // when we previously had focus target modifier on a node and then this modifier
             // is removed we need to notify the focus tree about so the focus state is reset.
@@ -282,7 +286,7 @@ private fun autoInvalidateNodeSelf(node: Modifier.Node, selfKindSet: Int, phase:
             else -> node.invalidateFocusProperties()
         }
     }
-    if (Nodes.FocusEvent in selfKindSet && node is FocusEventModifierNode && phase != Removed) {
+    if (Nodes.FocusEvent in selfKindSet && node is FocusEventModifierNode) {
         node.invalidateFocusEvent()
     }
 }
@@ -306,14 +310,14 @@ private fun FocusPropertiesModifierNode.scheduleInvalidationOfAssociatedFocusTar
  */
 private fun FocusPropertiesModifierNode.specifiesCanFocusProperty(): Boolean {
     CanFocusChecker.reset()
-    modifyFocusProperties(CanFocusChecker)
+    applyFocusProperties(CanFocusChecker)
     return CanFocusChecker.isCanFocusSet()
 }
 
 private object CanFocusChecker : FocusProperties {
     private var canFocusValue: Boolean? = null
     override var canFocus: Boolean
-        get() = checkNotNull(canFocusValue)
+        get() = checkNotNull(canFocusValue) { "canFocus is read before it is written" }
         set(value) { canFocusValue = value }
     fun isCanFocusSet(): Boolean = canFocusValue != null
     fun reset() { canFocusValue = null }

@@ -25,7 +25,6 @@ import androidx.room.compiler.processing.XExecutableType
 import androidx.room.compiler.processing.XFieldElement
 import androidx.room.compiler.processing.XFiler
 import androidx.room.compiler.processing.XMessager
-import androidx.room.compiler.processing.XMethodElement
 import androidx.room.compiler.processing.XProcessingEnv
 import androidx.room.compiler.processing.XRoundEnv
 import androidx.room.compiler.processing.XType
@@ -37,12 +36,15 @@ import androidx.room.compiler.processing.javac.JavacElement
 import androidx.room.compiler.processing.javac.JavacExecutableElement
 import androidx.room.compiler.processing.javac.JavacExecutableType
 import androidx.room.compiler.processing.javac.JavacFiler
+import androidx.room.compiler.processing.javac.JavacMethodElement
 import androidx.room.compiler.processing.javac.JavacProcessingEnv
 import androidx.room.compiler.processing.javac.JavacProcessingEnvMessager
 import androidx.room.compiler.processing.javac.JavacRoundEnv
 import androidx.room.compiler.processing.javac.JavacType
 import androidx.room.compiler.processing.javac.JavacTypeElement
 import androidx.room.compiler.processing.javac.JavacVariableElement
+import androidx.room.compiler.processing.ksp.KSClassDeclarationAsOriginatingElement
+import androidx.room.compiler.processing.ksp.KSFileAsOriginatingElement
 import androidx.room.compiler.processing.ksp.KspAnnotation
 import androidx.room.compiler.processing.ksp.KspAnnotationValue
 import androidx.room.compiler.processing.ksp.KspElement
@@ -56,6 +58,7 @@ import androidx.room.compiler.processing.ksp.KspTypeElement
 import androidx.room.compiler.processing.ksp.synthetic.KspSyntheticContinuationParameterElement
 import androidx.room.compiler.processing.ksp.synthetic.KspSyntheticPropertyMethodElement
 import androidx.room.compiler.processing.ksp.synthetic.KspSyntheticReceiverParameterElement
+import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.processing.SymbolProcessorEnvironment
 import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSAnnotation
@@ -105,10 +108,18 @@ object XConverters {
     fun XVariableElement.toJavac(): VariableElement = (this as JavacVariableElement).element
 
     @JvmStatic
-    fun XAnnotation.toJavac(): AnnotationMirror = (this as JavacAnnotation).mirror
+    fun XAnnotation.toJavac(): AnnotationMirror = when (this) {
+        is JavacAnnotation -> this.mirror
+        // TODO(kuanyingchou: Try to support JavacKmAnnotation
+        else -> error("Don't know how to convert element of type '${this::class}' to Java")
+    }
 
     @JvmStatic
-    fun XAnnotationValue.toJavac(): AnnotationValue = (this as JavacAnnotationValue).annotationValue
+    fun XAnnotationValue.toJavac(): AnnotationValue = when (this) {
+        is JavacAnnotationValue -> this.annotationValue
+        // TODO(kuanyingchou: Try to support JavacKmAnnotationValue
+        else -> error("Don't know how to convert element of type '${this::class}' to Java")
+    }
 
     @JvmStatic
     fun XType.toJavac(): TypeMirror = (this as JavacType).typeMirror
@@ -122,6 +133,10 @@ object XConverters {
             is TypeElement -> this.toXProcessing(env)
             is ExecutableElement -> this.toXProcessing(env)
             is VariableElement -> this.toXProcessing(env)
+            is KSFileAsOriginatingElement ->
+                (env as KspProcessingEnv).wrapKSFile(this.ksFile)
+            is KSClassDeclarationAsOriginatingElement ->
+                (env as KspProcessingEnv).wrapClassDeclaration(this.ksClassDeclaration)
             else -> error(
                 "Don't know how to convert element of type '${this::class}' to a XElement"
             )
@@ -147,7 +162,7 @@ object XConverters {
     @JvmStatic
     fun AnnotationValue.toXProcessing(method: ExecutableElement, env: XProcessingEnv):
         XAnnotationValue = JavacAnnotationValue(
-            env as JavacProcessingEnv, method.toXProcessing(env) as XMethodElement, this
+            env as JavacProcessingEnv, method.toXProcessing(env) as JavacMethodElement, this
         )
 
     @JvmStatic
@@ -171,6 +186,9 @@ object XConverters {
 
     @JvmStatic
     fun XProcessingEnv.toKS(): SymbolProcessorEnvironment = (this as KspProcessingEnv).delegate
+
+    @JvmStatic
+    fun XProcessingEnv.toKSResolver(): Resolver = (this as KspProcessingEnv).resolver
 
     @JvmStatic
     fun XTypeElement.toKS(): KSClassDeclaration = (this as KspTypeElement).declaration

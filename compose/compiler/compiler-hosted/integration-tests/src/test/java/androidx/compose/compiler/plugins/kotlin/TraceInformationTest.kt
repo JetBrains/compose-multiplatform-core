@@ -26,7 +26,7 @@ import org.junit.Test
  * More complex cases tested in other IrTransform tests that use
  * the [TruncateTracingInfoMode.KEEP_INFO_STRING].
  */
-class TraceInformationTest : AbstractIrTransformTest() {
+class TraceInformationTest(useFir: Boolean) : AbstractIrTransformTest(useFir) {
     @Test
     fun testBasicComposableFunctions() = verifyComposeIrTransform(
         """
@@ -84,6 +84,52 @@ class TraceInformationTest : AbstractIrTransformTest() {
             }
         """,
         truncateTracingInfoMode = TruncateTracingInfoMode.TRUNCATE_KEY
+    )
+
+    @Test
+    fun testReadOnlyComposable() = verifyComposeIrTransform(
+        """
+            import androidx.compose.runtime.*
+
+            @Composable
+            @ReadOnlyComposable
+            internal fun someFun(a: Boolean): Boolean {
+                if (a) {
+                    return a
+                } else {
+                    return a
+                }
+            }
+        """,
+        """
+            @Composable
+            @ReadOnlyComposable
+            internal fun someFun(a: Boolean, %composer: Composer?, %changed: Int): Boolean {
+              sourceInformationMarkerStart(%composer, <>, "C(someFun):Test.kt")
+              if (isTraceInProgress()) {
+                traceEventStart(<>, %changed, -1, <>)
+              }
+              if (a) {
+                val tmp0_return = a
+                if (isTraceInProgress()) {
+                  traceEventEnd()
+                }
+                sourceInformationMarkerEnd(%composer)
+                return tmp0_return
+              } else {
+                val tmp1_return = a
+                if (isTraceInProgress()) {
+                  traceEventEnd()
+                }
+                sourceInformationMarkerEnd(%composer)
+                return tmp1_return
+              }
+              if (isTraceInProgress()) {
+                traceEventEnd()
+              }
+              sourceInformationMarkerEnd(%composer)
+            }
+        """
     )
 
     @Test

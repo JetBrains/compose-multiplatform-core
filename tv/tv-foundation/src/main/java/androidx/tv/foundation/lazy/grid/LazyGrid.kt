@@ -127,7 +127,7 @@ internal fun LazyGrid(
             ),
         prefetchState = state.prefetchState,
         measurePolicy = measurePolicy,
-        itemProvider = itemProvider
+        itemProvider = { itemProvider }
     )
 }
 
@@ -222,9 +222,13 @@ private fun rememberLazyGridMeasurePolicy(
         state.slotsPerLine = resolvedSlotSizesSums.size
 
         val spaceBetweenLinesDp = if (isVertical) {
-            requireNotNull(verticalArrangement).spacing
+            requireNotNull(verticalArrangement) {
+                "encountered null verticalArrangement when isVertical == true"
+            }.spacing
         } else {
-            requireNotNull(horizontalArrangement).spacing
+            requireNotNull(horizontalArrangement) {
+                "encountered null horizontalArrangement when isVertical == false"
+            }.spacing
         }
         val spaceBetweenLines = spaceBetweenLinesDp.roundToPx()
         val spaceBetweenSlotsDp = if (isVertical) {

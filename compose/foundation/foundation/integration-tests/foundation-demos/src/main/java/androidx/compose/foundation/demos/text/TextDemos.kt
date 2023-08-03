@@ -23,6 +23,8 @@ import androidx.compose.foundation.demos.text2.BasicTextField2FilterDemos
 import androidx.compose.foundation.demos.text2.DecorationBoxDemos
 import androidx.compose.foundation.demos.text2.KeyboardOptionsDemos
 import androidx.compose.foundation.demos.text2.ScrollableDemos
+import androidx.compose.foundation.demos.text2.SwapFieldSameStateDemo
+import androidx.compose.foundation.demos.text2.TextFieldLineLimitsDemos
 import androidx.compose.integration.demos.common.ComposableDemo
 import androidx.compose.integration.demos.common.DemoCategory
 
@@ -36,6 +38,13 @@ val TextDemos = DemoCategory(
                 ComposableDemo("Brush") { TextBrushDemo() },
                 ComposableDemo("drawText") { DrawTextDemo() },
                 ComposableDemo("Stroke") { TextStrokeDemo() }
+            )
+        ),
+        DemoCategory(
+            "Animation",
+            listOf(
+                ComposableDemo("color = { animatedColor.value }") { TextColorAnimation() },
+                ComposableDemo("GraphicsLayer (skew, scale, etc)") { TextAnimationDemo() },
             )
         ),
         DemoCategory(
@@ -74,7 +83,6 @@ val TextDemos = DemoCategory(
                 ComposableDemo("Layout Reuse") { TextReuseLayoutDemo() },
                 ComposableDemo("Multi paragraph") { MultiParagraphDemo() },
                 ComposableDemo("Interactive text") { InteractiveTextDemo() },
-                ComposableDemo("Text Animation") { TextAnimationDemo() },
             )
         ),
         DemoCategory(
@@ -119,6 +127,7 @@ val TextDemos = DemoCategory(
                 ComposableDemo("Focus immediately") { FocusTextFieldImmediatelyDemo() },
                 ComposableDemo("Secondary input system") { PlatformTextInputAdapterDemo() },
                 ComposableDemo("TextField focus") { TextFieldFocusDemo() },
+                ComposableDemo("Read-only field") { ReadOnlyTextFieldDemo() },
             )
         ),
         DemoCategory(
@@ -127,9 +136,11 @@ val TextDemos = DemoCategory(
                 ComposableDemo("Basic text input") { BasicTextField2Demos() },
                 ComposableDemo("Keyboard Options") { KeyboardOptionsDemos() },
                 ComposableDemo("Decoration Box") { DecorationBoxDemos() },
+                ComposableDemo("Line limits") { TextFieldLineLimitsDemos() },
                 ComposableDemo("Scroll") { ScrollableDemos() },
                 ComposableDemo("Filters") { BasicTextField2FilterDemos() },
                 ComposableDemo("Secure Field") { BasicSecureTextFieldDemos() },
+                ComposableDemo("Swap the field but reuse the state") { SwapFieldSameStateDemo() },
                 ComposableDemo("Custom PIN field") { BasicTextField2CustomPinFieldDemo() },
             )
         ),

@@ -84,14 +84,7 @@ public class NavBackStackEntry private constructor(
         maxLifecycle = entry.maxLifecycle
     }
 
-    /**
-     * @hide
-     */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public companion object {
-        /**
-         * @hide
-         */
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         public fun create(
             context: Context?,

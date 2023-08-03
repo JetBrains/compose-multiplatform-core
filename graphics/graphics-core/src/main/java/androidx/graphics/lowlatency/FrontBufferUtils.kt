@@ -41,17 +41,21 @@ internal class FrontBufferUtils private constructor() {
         /**
          * Flags that are expected to be supported on all [HardwareBuffer] instances
          */
+        @SuppressLint("WrongConstant")
         internal const val BaseFlags =
             HardwareBuffer.USAGE_GPU_SAMPLED_IMAGE or
                 HardwareBuffer.USAGE_GPU_COLOR_OUTPUT or
                 USAGE_COMPOSER_OVERLAY
 
         internal fun obtainHardwareBufferUsageFlags(): Long =
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (!UseCompatSurfaceControl &&
+                Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 UsageFlagsVerificationHelper.obtainUsageFlagsV33()
             } else {
                 BaseFlags
             }
+
+        internal const val UseCompatSurfaceControl = false
     }
 }
 

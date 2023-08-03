@@ -25,6 +25,7 @@ import static androidx.camera.core.internal.utils.SizeUtil.RESOLUTION_VGA;
 
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.graphics.ImageFormat;
 import android.graphics.SurfaceTexture;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraDevice;
@@ -32,12 +33,16 @@ import android.hardware.camera2.params.StreamConfigurationMap;
 import android.media.CamcorderProfile;
 import android.media.MediaRecorder;
 import android.os.Build;
+import android.util.Pair;
 import android.util.Range;
+import android.util.Rational;
 import android.util.Size;
 
 import androidx.annotation.DoNotInline;
 import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.OptIn;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.VisibleForTesting;
 import androidx.camera.camera2.internal.compat.CameraAccessExceptionCompat;
@@ -46,6 +51,8 @@ import androidx.camera.camera2.internal.compat.CameraManagerCompat;
 import androidx.camera.camera2.internal.compat.StreamConfigurationMapCompat;
 import androidx.camera.camera2.internal.compat.workaround.ExtraSupportedSurfaceCombinationsContainer;
 import androidx.camera.camera2.internal.compat.workaround.ResolutionCorrector;
+import androidx.camera.camera2.internal.compat.workaround.TargetAspectRatio;
+import androidx.camera.camera2.interop.ExperimentalCamera2Interop;
 import androidx.camera.core.CameraUnavailableException;
 import androidx.camera.core.DynamicRange;
 import androidx.camera.core.impl.AttachedSurfaceInfo;
@@ -56,6 +63,7 @@ import androidx.camera.core.impl.SurfaceCombination;
 import androidx.camera.core.impl.SurfaceConfig;
 import androidx.camera.core.impl.SurfaceSizeDefinition;
 import androidx.camera.core.impl.UseCaseConfig;
+import androidx.camera.core.impl.utils.AspectRatioUtil;
 import androidx.camera.core.impl.utils.CompareSizesByArea;
 import androidx.camera.core.internal.utils.SizeUtil;
 import androidx.core.util.Preconditions;
@@ -80,6 +88,7 @@ import java.util.Map;
  * devices. This structure is used to store a list of surface combinations that are guaranteed to
  * support for this camera device.
  */
+@OptIn(markerClass = ExperimentalCamera2Interop.class)
 @RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 final class SupportedSurfaceCombination {
     private static final String TAG = "SupportedSurfaceCombination";
@@ -89,6 +98,7 @@ final class SupportedSurfaceCombination {
     private final Map<FeatureSettings, List<SurfaceCombination>>
             mFeatureSettingsToSupportedCombinationsMap = new HashMap<>();
     private final List<SurfaceCombination> mSurfaceCombinations10Bit = new ArrayList<>();
+    private final List<SurfaceCombination> mSurfaceCombinationsStreamUseCase = new ArrayList<>();
     private final String mCameraId;
     private final CamcorderProfileHelper mCamcorderProfileHelper;
     private final CameraCharacteristicsCompat mCharacteristics;
@@ -98,12 +108,15 @@ final class SupportedSurfaceCombination {
     private boolean mIsRawSupported = false;
     private boolean mIsBurstCaptureSupported = false;
     private boolean mIsConcurrentCameraModeSupported = false;
+    private boolean mIsStreamUseCaseSupported = false;
     private boolean mIsUltraHighResolutionSensorSupported = false;
     @VisibleForTesting
     SurfaceSizeDefinition mSurfaceSizeDefinition;
     List<Integer> mSurfaceSizeDefinitionFormats = new ArrayList<>();
     @NonNull
     private final DisplayInfoManager mDisplayInfoManager;
+
+    private final TargetAspectRatio mTargetAspectRatio = new TargetAspectRatio();
     private final ResolutionCorrector mResolutionCorrector = new ResolutionCorrector();
     private final DynamicRangeResolver mDynamicRangeResolver;
 
@@ -166,6 +179,11 @@ final class SupportedSurfaceCombination {
             generate10BitSupportedCombinationList();
         }
 
+        mIsStreamUseCaseSupported = StreamUseCaseUtil.isStreamUseCaseSupported(mCharacteristics);
+        if (mIsStreamUseCaseSupported) {
+            generateStreamUseCaseSupportedCombinationList();
+        }
+
         generateSurfaceSizeDefinition();
         checkCustomization();
     }
@@ -198,7 +216,8 @@ final class SupportedSurfaceCombination {
 
         for (SurfaceCombination surfaceCombination : getSurfaceCombinationsByFeatureSettings(
                 featureSettings)) {
-            isSupported = surfaceCombination.isSupported(surfaceConfigList);
+            isSupported = surfaceCombination.getOrderedSupportedSurfaceConfigList(surfaceConfigList)
+                    != null;
 
             if (isSupported) {
                 break;
@@ -206,6 +225,28 @@ final class SupportedSurfaceCombination {
         }
 
         return isSupported;
+    }
+
+    @Nullable
+    List<SurfaceConfig> getOrderedSupportedStreamUseCaseSurfaceConfigList(
+            @NonNull FeatureSettings featureSettings,
+            List<SurfaceConfig> surfaceConfigList) {
+        if (!StreamUseCaseUtil.shouldUseStreamUseCase(featureSettings)) {
+            return null;
+        }
+
+        for (SurfaceCombination surfaceCombination : mSurfaceCombinationsStreamUseCase) {
+            // Stream use case table doesn't support sublist. SurfaceCombination and
+            // SurfaceConfig list need to be EXACT match.
+            if (surfaceCombination.getSurfaceConfigList().size() == surfaceConfigList.size()) {
+                List<SurfaceConfig> orderedSurfaceConfigList =
+                        surfaceCombination.getOrderedSupportedSurfaceConfigList(surfaceConfigList);
+                if (orderedSurfaceConfigList != null) {
+                    return orderedSurfaceConfigList;
+                }
+            }
+        }
+        return null;
     }
 
     /**
@@ -484,8 +525,10 @@ final class SupportedSurfaceCombination {
      * @param attachedSurfaces                  the existing surfaces.
      * @param newUseCaseConfigsSupportedSizeMap newly added UseCaseConfig to supported output
      *                                          sizes map.
-     * @return the suggested stream specifications, which is a mapping from UseCaseConfig to the
-     * suggested stream specification.
+     * @return the suggested stream specifications, which is a pair of mappings. The first
+     * mapping is from UseCaseConfig to the suggested stream specification representing new
+     * UseCases. The second mapping is from attachedSurfaceInfo to the suggested stream
+     * specifications representing existing UseCases.
      * @throws IllegalArgumentException if the suggested solution for newUseCaseConfigs cannot be
      *                                  found. This may be due to no available output size, no
      *                                  available surface combination, unsupported combinations
@@ -493,7 +536,8 @@ final class SupportedSurfaceCombination {
      *                                  unsupported combination of camera features.
      */
     @NonNull
-    Map<UseCaseConfig<?>, StreamSpec> getSuggestedStreamSpecifications(
+    Pair<Map<UseCaseConfig<?>, StreamSpec>, Map<AttachedSurfaceInfo, StreamSpec>>
+            getSuggestedStreamSpecifications(
             @CameraMode.Mode int cameraMode,
             @NonNull List<AttachedSurfaceInfo> attachedSurfaces,
             @NonNull Map<UseCaseConfig<?>, List<Size>> newUseCaseConfigsSupportedSizeMap) {
@@ -534,7 +578,16 @@ final class SupportedSurfaceCombination {
                             getUpdatedSurfaceSizeDefinitionByFormat(imageFormat)));
         }
 
-        if (!checkSupported(featureSettings, surfaceConfigs)) {
+        boolean containsZsl = StreamUseCaseUtil.containsZslUseCase(attachedSurfaces,
+                newUseCaseConfigs);
+        List<SurfaceConfig> orderedSurfaceConfigListForStreamUseCase =
+                mIsStreamUseCaseSupported && !containsZsl
+                        ? getOrderedSupportedStreamUseCaseSurfaceConfigList(featureSettings,
+                        surfaceConfigs) : null;
+
+        boolean isSurfaceCombinationSupported = checkSupported(featureSettings, surfaceConfigs);
+
+        if (orderedSurfaceConfigListForStreamUseCase == null && !isSurfaceCombinationSupported) {
             throw new IllegalArgumentException(
                     "No supported surface combination is found for camera device - Id : "
                             + mCameraId + ".  May be attempting to bind too many use cases. "
@@ -562,9 +615,8 @@ final class SupportedSurfaceCombination {
         for (Integer index : useCasesPriorityOrder) {
             UseCaseConfig<?> useCaseConfig = newUseCaseConfigs.get(index);
             List<Size> supportedOutputSizes = newUseCaseConfigsSupportedSizeMap.get(useCaseConfig);
-            supportedOutputSizes = mResolutionCorrector.insertOrPrioritize(
-                    SurfaceConfig.getConfigType(useCaseConfig.getInputFormat()),
-                    supportedOutputSizes);
+            supportedOutputSizes = applyResolutionSelectionOrderRelatedWorkarounds(
+                    supportedOutputSizes, useCaseConfig.getInputFormat());
             supportedOutputSizesList.add(supportedOutputSizes);
         }
 
@@ -581,42 +633,80 @@ final class SupportedSurfaceCombination {
                             targetFramerateForConfig);
         }
 
-        Map<UseCaseConfig<?>, StreamSpec> suggestedStreamSpecMap;
+        Map<AttachedSurfaceInfo, StreamSpec> attachedSurfaceStreamSpecMap = new HashMap<>();
+        Map<UseCaseConfig<?>, StreamSpec> suggestedStreamSpecMap = new HashMap<>();
+        // The two maps are used to keep track of the attachedSurfaceInfo or useCaseConfigs the
+        // surfaceConfigs are made from. They are populated in getSurfaceConfigListAndFpsCeiling ().
+        // The keys are the position of their corresponding surfaceConfigs in the list. We can
+        // them map streamUseCases in orderedSurfaceConfigListForStreamUseCase, which is in the
+        // same order as surfaceConfigs list, to the original useCases to determine the
+        // captureTypes are correct.
+        Map<Integer, AttachedSurfaceInfo> surfaceConfigIndexAttachedSurfaceInfoMap =
+                new HashMap<>();
+        Map<Integer, UseCaseConfig<?>> surfaceConfigIndexUseCaseConfigMap =
+                new HashMap<>();
+
         List<Size> savedSizes = null;
         int savedConfigMaxFps = Integer.MAX_VALUE;
+        List<Size> savedSizesForStreamUseCase = null;
+        int savedConfigMaxFpsForStreamUseCase = Integer.MAX_VALUE;
+
+        if (orderedSurfaceConfigListForStreamUseCase != null) {
+            // Check if any possible size arrangement is supported for stream use case.
+            for (List<Size> possibleSizeList : allPossibleSizeArrangements) {
+                surfaceConfigs = getSurfaceConfigListAndFpsCeiling(
+                        cameraMode,
+                        attachedSurfaces, possibleSizeList, newUseCaseConfigs,
+                        useCasesPriorityOrder, existingSurfaceFrameRateCeiling,
+                        surfaceConfigIndexAttachedSurfaceInfoMap,
+                        surfaceConfigIndexUseCaseConfigMap).first;
+                orderedSurfaceConfigListForStreamUseCase =
+                        getOrderedSupportedStreamUseCaseSurfaceConfigList(featureSettings,
+                                surfaceConfigs);
+                if (orderedSurfaceConfigListForStreamUseCase != null
+                        && !StreamUseCaseUtil.areCaptureTypesEligible(
+                        surfaceConfigIndexAttachedSurfaceInfoMap,
+                        surfaceConfigIndexUseCaseConfigMap,
+                        orderedSurfaceConfigListForStreamUseCase)) {
+                    orderedSurfaceConfigListForStreamUseCase = null;
+                }
+                if (orderedSurfaceConfigListForStreamUseCase != null) {
+                    if (StreamUseCaseUtil.areStreamUseCasesAvailableForSurfaceConfigs(
+                            mCharacteristics, orderedSurfaceConfigListForStreamUseCase)) {
+                        break;
+                    } else {
+                        orderedSurfaceConfigListForStreamUseCase = null;
+                    }
+                }
+                surfaceConfigIndexAttachedSurfaceInfoMap.clear();
+                surfaceConfigIndexUseCaseConfigMap.clear();
+            }
+
+            // We can terminate early if surface combination is not supported and none of the
+            // possible size arrangement supports stream use case either.
+            if (orderedSurfaceConfigListForStreamUseCase == null
+                    && !isSurfaceCombinationSupported) {
+                throw new IllegalArgumentException(
+                        "No supported surface combination is found for camera device - Id : "
+                                + mCameraId + ".  May be attempting to bind too many use cases. "
+                                + "Existing surfaces: " + attachedSurfaces + " New configs: "
+                                + newUseCaseConfigs);
+            }
+        }
+
+        boolean supportedSizesFound = false;
+        boolean supportedSizesForStreamUseCaseFound = false;
 
         // Transform use cases to SurfaceConfig list and find the first (best) workable combination
         for (List<Size> possibleSizeList : allPossibleSizeArrangements) {
             // Attach SurfaceConfig of original use cases since it will impact the new use cases
-            List<SurfaceConfig> surfaceConfigList = new ArrayList<>();
-            int currentConfigFramerateCeiling = existingSurfaceFrameRateCeiling;
+            Pair<List<SurfaceConfig>, Integer> resultPair =
+                    getSurfaceConfigListAndFpsCeiling(cameraMode,
+                            attachedSurfaces, possibleSizeList, newUseCaseConfigs,
+                            useCasesPriorityOrder, existingSurfaceFrameRateCeiling, null, null);
+            List<SurfaceConfig> surfaceConfigList = resultPair.first;
+            int currentConfigFramerateCeiling = resultPair.second;
             boolean isConfigFrameRateAcceptable = true;
-
-            for (AttachedSurfaceInfo attachedSurfaceInfo : attachedSurfaces) {
-                surfaceConfigList.add(attachedSurfaceInfo.getSurfaceConfig());
-            }
-
-            // Attach SurfaceConfig of new use cases
-            for (int i = 0; i < possibleSizeList.size(); i++) {
-                Size size = possibleSizeList.get(i);
-                UseCaseConfig<?> newUseCase =
-                        newUseCaseConfigs.get(useCasesPriorityOrder.get(i));
-                int imageFormat = newUseCase.getInputFormat();
-                // add new use case/size config to list of surfaces
-                surfaceConfigList.add(
-                        SurfaceConfig.transformSurfaceConfig(
-                                cameraMode,
-                                imageFormat,
-                                size,
-                                getUpdatedSurfaceSizeDefinitionByFormat(imageFormat)));
-
-                // get the maximum fps of the new surface and update the maximum fps of the
-                // proposed configuration
-                currentConfigFramerateCeiling = getUpdatedMaximumFps(
-                        currentConfigFramerateCeiling,
-                        newUseCase.getInputFormat(),
-                        size);
-            }
             if (targetFramerateForConfig != null) {
                 if (existingSurfaceFrameRateCeiling > currentConfigFramerateCeiling
                         && currentConfigFramerateCeiling < targetFramerateForConfig.getLower()) {
@@ -628,8 +718,11 @@ final class SupportedSurfaceCombination {
                 }
             }
 
+            // Find the same possible size arrangement that is supported by stream use case again
+            // if we found one earlier.
+
             // only change the saved config if you get another that has a better max fps
-            if (checkSupported(featureSettings, surfaceConfigList)) {
+            if (!supportedSizesFound && checkSupported(featureSettings, surfaceConfigList)) {
                 // if the config is supported by the device but doesn't meet the target framerate,
                 // save the config
                 if (savedConfigMaxFps == Integer.MAX_VALUE) {
@@ -645,7 +738,35 @@ final class SupportedSurfaceCombination {
                 if (isConfigFrameRateAcceptable) {
                     savedConfigMaxFps = currentConfigFramerateCeiling;
                     savedSizes = possibleSizeList;
-                    break;
+                    supportedSizesFound = true;
+                    if (supportedSizesForStreamUseCaseFound) {
+                        break;
+                    }
+                }
+            }
+            // If we already know that there is a supported surface combination from the stream
+            // use case table, keep an independent tracking on the saved sizes and max FPS. Only
+            // use stream use case if the save sizes for the normal case and for stream use case
+            // are the same.
+            if (orderedSurfaceConfigListForStreamUseCase != null
+                    && !supportedSizesForStreamUseCaseFound
+                    && getOrderedSupportedStreamUseCaseSurfaceConfigList(
+                    featureSettings, surfaceConfigList) != null) {
+                if (savedConfigMaxFpsForStreamUseCase == Integer.MAX_VALUE) {
+                    savedConfigMaxFpsForStreamUseCase = currentConfigFramerateCeiling;
+                    savedSizesForStreamUseCase = possibleSizeList;
+                } else if (savedConfigMaxFpsForStreamUseCase < currentConfigFramerateCeiling) {
+                    savedConfigMaxFpsForStreamUseCase = currentConfigFramerateCeiling;
+                    savedSizesForStreamUseCase = possibleSizeList;
+                }
+
+                if (isConfigFrameRateAcceptable) {
+                    savedConfigMaxFpsForStreamUseCase = currentConfigFramerateCeiling;
+                    savedSizesForStreamUseCase = possibleSizeList;
+                    supportedSizesForStreamUseCaseFound = true;
+                    if (supportedSizesFound) {
+                        break;
+                    }
                 }
             }
         }
@@ -658,13 +779,15 @@ final class SupportedSurfaceCombination {
                         getClosestSupportedDeviceFrameRate(targetFramerateForConfig,
                                 savedConfigMaxFps);
             }
-            suggestedStreamSpecMap = new HashMap<>();
             for (UseCaseConfig<?> useCaseConfig : newUseCaseConfigs) {
                 Size resolutionForUseCase = savedSizes.get(
                         useCasesPriorityOrder.indexOf(newUseCaseConfigs.indexOf(useCaseConfig)));
                 StreamSpec.Builder streamSpecBuilder = StreamSpec.builder(resolutionForUseCase)
                         .setDynamicRange(Preconditions.checkNotNull(
-                                resolvedDynamicRanges.get(useCaseConfig)));
+                                resolvedDynamicRanges.get(useCaseConfig)))
+                        .setImplementationOptions(
+                                StreamUseCaseUtil.getStreamSpecImplementationOptions(useCaseConfig)
+                        );
                 if (targetFramerateForDevice != null) {
                     streamSpecBuilder.setExpectedFrameRateRange(targetFramerateForDevice);
                 }
@@ -678,7 +801,137 @@ final class SupportedSurfaceCombination {
                             + " Existing surfaces: " + attachedSurfaces
                             + " New configs: " + newUseCaseConfigs);
         }
-        return suggestedStreamSpecMap;
+
+        // Only perform stream use case operations if the saved max FPS and sizes are the same
+        if (orderedSurfaceConfigListForStreamUseCase != null
+                && savedConfigMaxFps == savedConfigMaxFpsForStreamUseCase
+                && savedSizes.size() == savedSizesForStreamUseCase.size()) {
+            boolean hasDifferenceSavedSizes = false;
+            for (int i = 0; i < savedSizes.size(); i++) {
+                if (!savedSizes.get(i).equals(savedSizesForStreamUseCase.get(i))) {
+                    hasDifferenceSavedSizes = true;
+                    break;
+                }
+            }
+            if (!hasDifferenceSavedSizes) {
+                boolean hasStreamUseCaseOverride =
+                        StreamUseCaseUtil.populateStreamUseCaseStreamSpecOptionWithInteropOverride(
+                                mCharacteristics, attachedSurfaces, suggestedStreamSpecMap,
+                                attachedSurfaceStreamSpecMap);
+                if (!hasStreamUseCaseOverride) {
+                    StreamUseCaseUtil
+                            .populateStreamUseCaseStreamSpecOptionWithSupportedSurfaceConfigs(
+                                    suggestedStreamSpecMap, attachedSurfaceStreamSpecMap,
+                                    surfaceConfigIndexAttachedSurfaceInfoMap,
+                                    surfaceConfigIndexUseCaseConfigMap,
+                                    orderedSurfaceConfigListForStreamUseCase);
+                }
+            }
+        }
+        return new Pair<>(suggestedStreamSpecMap, attachedSurfaceStreamSpecMap);
+    }
+
+    private Pair<List<SurfaceConfig>, Integer> getSurfaceConfigListAndFpsCeiling(
+            @CameraMode.Mode int cameraMode,
+            List<AttachedSurfaceInfo> attachedSurfaces,
+            List<Size> possibleSizeList, List<UseCaseConfig<?>> newUseCaseConfigs,
+            List<Integer> useCasesPriorityOrder,
+            int currentConfigFramerateCeiling,
+            @Nullable Map<Integer, AttachedSurfaceInfo> surfaceConfigIndexAttachedSurfaceInfoMap,
+            @Nullable Map<Integer, UseCaseConfig<?>> surfaceConfigIndexUseCaseConfigMap) {
+        List<SurfaceConfig> surfaceConfigList = new ArrayList<>();
+        for (AttachedSurfaceInfo attachedSurfaceInfo : attachedSurfaces) {
+            surfaceConfigList.add(attachedSurfaceInfo.getSurfaceConfig());
+            if (surfaceConfigIndexAttachedSurfaceInfoMap != null) {
+                surfaceConfigIndexAttachedSurfaceInfoMap.put(surfaceConfigList.size() - 1,
+                        attachedSurfaceInfo);
+            }
+        }
+
+        // Attach SurfaceConfig of new use cases
+        for (int i = 0; i < possibleSizeList.size(); i++) {
+            Size size = possibleSizeList.get(i);
+            UseCaseConfig<?> newUseCase =
+                    newUseCaseConfigs.get(useCasesPriorityOrder.get(i));
+            int imageFormat = newUseCase.getInputFormat();
+            // add new use case/size config to list of surfaces
+            SurfaceConfig surfaceConfig = SurfaceConfig.transformSurfaceConfig(
+                    cameraMode,
+                    imageFormat,
+                    size,
+                    getUpdatedSurfaceSizeDefinitionByFormat(imageFormat));
+            surfaceConfigList.add(surfaceConfig);
+            if (surfaceConfigIndexUseCaseConfigMap != null) {
+                surfaceConfigIndexUseCaseConfigMap.put(surfaceConfigList.size() - 1, newUseCase);
+            }
+            // get the maximum fps of the new surface and update the maximum fps of the
+            // proposed configuration
+            currentConfigFramerateCeiling = getUpdatedMaximumFps(
+                    currentConfigFramerateCeiling,
+                    newUseCase.getInputFormat(),
+                    size);
+        }
+        return new Pair<>(surfaceConfigList, currentConfigFramerateCeiling);
+    }
+
+    /**
+     * Applies resolution selection order related workarounds.
+     *
+     * <p>{@link TargetAspectRatio} workaround makes CameraX select sizes of specific aspect
+     * ratio in priority to avoid the preview image stretch issue.
+     *
+     * <p>{@link ResolutionCorrector} workaround makes CameraX select specific sizes for
+     * different capture types to avoid the preview image stretch issue.
+     *
+     * @see TargetAspectRatio
+     * @see ResolutionCorrector
+     */
+    @VisibleForTesting
+    @NonNull
+    List<Size> applyResolutionSelectionOrderRelatedWorkarounds(@NonNull List<Size> sizeList,
+            int imageFormat) {
+        // Applies TargetAspectRatio workaround
+        int targetAspectRatio = mTargetAspectRatio.get(mCameraId, mCharacteristics);
+        Rational ratio = null;
+
+        switch (targetAspectRatio) {
+            case TargetAspectRatio.RATIO_4_3:
+                ratio = AspectRatioUtil.ASPECT_RATIO_4_3;
+                break;
+            case TargetAspectRatio.RATIO_16_9:
+                ratio = AspectRatioUtil.ASPECT_RATIO_16_9;
+                break;
+            case TargetAspectRatio.RATIO_MAX_JPEG:
+                Size maxJpegSize = getUpdatedSurfaceSizeDefinitionByFormat(
+                        ImageFormat.JPEG).getMaximumSize(ImageFormat.JPEG);
+                ratio = new Rational(maxJpegSize.getWidth(), maxJpegSize.getHeight());
+                break;
+            case TargetAspectRatio.RATIO_ORIGINAL:
+                ratio = null;
+        }
+
+        List<Size> resultList;
+
+        if (ratio == null) {
+            resultList = sizeList;
+        } else {
+            List<Size> aspectRatioMatchedSizeList = new ArrayList<>();
+            resultList = new ArrayList<>();
+
+            for (Size size : sizeList) {
+                if (AspectRatioUtil.hasMatchingAspectRatio(size, ratio)) {
+                    aspectRatioMatchedSizeList.add(size);
+                } else {
+                    resultList.add(size);
+                }
+            }
+            resultList.addAll(0, aspectRatioMatchedSizeList);
+        }
+
+        // Applies ResolutionCorrector workaround and return the result list.
+        return mResolutionCorrector.insertOrPrioritize(
+                SurfaceConfig.getConfigType(imageFormat),
+                resultList);
     }
 
     @RequiredMaxBitDepth
@@ -846,6 +1099,13 @@ final class SupportedSurfaceCombination {
     private void generate10BitSupportedCombinationList() {
         mSurfaceCombinations10Bit.addAll(
                 GuaranteedConfigurationsUtil.get10BitSupportedCombinationList());
+    }
+
+    private void generateStreamUseCaseSupportedCombinationList() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            mSurfaceCombinationsStreamUseCase.addAll(
+                    GuaranteedConfigurationsUtil.getStreamUseCaseSupportedCombinationList());
+        }
     }
 
     private void checkCustomization() {

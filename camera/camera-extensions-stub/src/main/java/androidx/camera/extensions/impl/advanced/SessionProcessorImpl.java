@@ -144,8 +144,12 @@ public interface SessionProcessorImpl {
      * implementations are provided in the stub for OEM to construct the
      * {@link Camera2OutputConfigImpl} and {@link Camera2SessionConfigImpl} instances.
      *
-     * @param previewSurfaceConfig       output surface for preview
-     * @param imageCaptureSurfaceConfig  output surface for image capture.
+     * @param previewSurfaceConfig       output surface for preview, which may contain a
+     *                                   <code>null</code> surface if the app doesn't specify the
+     *                                   preview surface.
+     * @param imageCaptureSurfaceConfig  output surface for still capture, which may contain a
+     *                                   <code>null</code> surface if the app doesn't specify the
+     *                                   still capture surface.
      * @param imageAnalysisSurfaceConfig an optional output config for image analysis
      *                                   (YUV_420_888).
      * @return a {@link Camera2SessionConfigImpl} consisting of a list of
@@ -375,9 +379,10 @@ public interface SessionProcessorImpl {
          *                             as part of this callback. Both Camera2 and CameraX guarantee
          *                             that those two settings and results are always supported and
          *                             applied by the corresponding framework.
+         * @since 1.3
          */
-        void onCaptureCompleted(long timestamp, int captureSequenceId,
-                @NonNull Map<CaptureResult.Key, Object> result);
+        default void onCaptureCompleted(long timestamp, int captureSequenceId,
+                @NonNull Map<CaptureResult.Key, Object> result) {}
 
         /**
          * Capture progress callback that needs to be called when the process capture is
@@ -392,6 +397,6 @@ public interface SessionProcessorImpl {
          * @param progress             Value between 0 and 100.
          * @since 1.4
          */
-        void onCaptureProcessProgressed(int progress);
+        default void onCaptureProcessProgressed(int progress) {}
     }
 }

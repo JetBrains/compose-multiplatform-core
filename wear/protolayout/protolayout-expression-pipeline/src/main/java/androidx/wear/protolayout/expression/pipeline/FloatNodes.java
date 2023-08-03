@@ -21,6 +21,7 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
+import androidx.wear.protolayout.expression.DynamicBuilders.DynamicFloat;
 import androidx.wear.protolayout.expression.proto.AnimationParameterProto.AnimationSpec;
 import androidx.wear.protolayout.expression.proto.DynamicProto.AnimatableFixedFloat;
 import androidx.wear.protolayout.expression.proto.DynamicProto.ArithmeticFloatOp;
@@ -67,12 +68,13 @@ class FloatNodes {
     /** Dynamic float node that gets value from the state. */
     static class StateFloatSourceNode extends StateSourceNode<Float> {
         StateFloatSourceNode(
-                StateStore stateStore,
+                DataStore dataStore,
                 StateFloatSource protoNode,
                 DynamicTypeValueReceiverWithPreUpdate<Float> downstream) {
             super(
-                    stateStore,
-                    protoNode.getSourceKey(),
+                    dataStore,
+                    StateSourceNode.<DynamicFloat>createKey(
+                            protoNode.getSourceNamespace(), protoNode.getSourceKey()),
                     se -> se.getFloatVal().getValue(),
                     downstream);
         }

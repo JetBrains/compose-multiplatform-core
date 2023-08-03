@@ -19,27 +19,62 @@ package androidx.compose.ui
 
 import android.os.Build
 import android.text.SpannableString
+import android.util.LongSparseArray
 import android.view.ViewGroup
 import android.view.ViewStructure
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
+import android.view.translation.TranslationRequestValue
+import android.view.translation.TranslationResponseValue
+import android.view.translation.ViewTranslationRequest
+import android.view.translation.ViewTranslationResponse
 import android.widget.FrameLayout
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.runtime.structuralEqualityPolicy
+import androidx.compose.ui.autofill.Autofill
+import androidx.compose.ui.autofill.AutofillTree
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.focus.FocusOwner
+import androidx.compose.ui.geometry.MutableRect
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Canvas
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.Matrix
+import androidx.compose.ui.graphics.RenderEffect
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.toAndroidRect
+import androidx.compose.ui.hapticfeedback.HapticFeedback
+import androidx.compose.ui.input.InputModeManager
+import androidx.compose.ui.input.key.KeyEvent
+import androidx.compose.ui.input.pointer.PointerIconService
+import androidx.compose.ui.modifier.ModifierLocalManager
+import androidx.compose.ui.node.InternalCoreApi
 import androidx.compose.ui.node.LayoutNode
+import androidx.compose.ui.node.LayoutNodeDrawScope
+import androidx.compose.ui.node.OwnedLayer
+import androidx.compose.ui.node.Owner
+import androidx.compose.ui.node.OwnerSnapshotObserver
+import androidx.compose.ui.node.RootForTest
+import androidx.compose.ui.platform.AccessibilityManager
 import androidx.compose.ui.platform.AndroidComposeView
 import androidx.compose.ui.platform.AndroidComposeViewAccessibilityDelegateCompat
 import androidx.compose.ui.platform.AndroidComposeViewAccessibilityDelegateCompat.SemanticsNodeCopy
+import androidx.compose.ui.platform.ClipboardManager
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.PlatformTextInputSessionScope
 import androidx.compose.ui.platform.SemanticsNodeWithAdjustedBounds
+import androidx.compose.ui.platform.TextToolbar
+import androidx.compose.ui.platform.ViewConfiguration
+import androidx.compose.ui.platform.WindowInfo
 import androidx.compose.ui.platform.getAllUncoveredSemanticsNodesToMap
+import androidx.compose.ui.platform.invertTo
 import androidx.compose.ui.semantics.CustomAccessibilityAction
-import androidx.compose.ui.semantics.EmptySemanticsModifierNodeElement
+import androidx.compose.ui.semantics.EmptySemanticsElement
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.Role
@@ -47,6 +82,7 @@ import androidx.compose.ui.semantics.ScrollAxisRange
 import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.semantics.SemanticsOwner
 import androidx.compose.ui.semantics.SemanticsPropertyReceiver
+import androidx.compose.ui.semantics.clearTextSubstitution
 import androidx.compose.ui.semantics.collapse
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.copyText
@@ -61,9 +97,11 @@ import androidx.compose.ui.semantics.focused
 import androidx.compose.ui.semantics.getTextLayoutResult
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.horizontalScrollAxisRange
+import androidx.compose.ui.semantics.isShowingTextSubstitution
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.onLongClick
+import androidx.compose.ui.semantics.originalText
 import androidx.compose.ui.semantics.password
 import androidx.compose.ui.semantics.pasteText
 import androidx.compose.ui.semantics.progressBarRangeInfo
@@ -72,17 +110,29 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.setProgress
 import androidx.compose.ui.semantics.setSelection
 import androidx.compose.ui.semantics.setText
+import androidx.compose.ui.semantics.setTextSubstitution
+import androidx.compose.ui.semantics.showTextSubstitution
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.semantics.text
 import androidx.compose.ui.semantics.textSelectionRange
 import androidx.compose.ui.semantics.verticalScrollAxisRange
+import androidx.compose.ui.test.InternalTestApi
 import androidx.compose.ui.test.TestActivity
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.input.TextInputService
+import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntRect
+import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.toOffset
 import androidx.core.view.ViewCompat
 import androidx.core.view.ViewStructureCompat
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat
@@ -94,18 +144,9 @@ import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
-import org.mockito.kotlin.any
-import org.mockito.kotlin.argThat
-import org.mockito.kotlin.argumentCaptor
-import org.mockito.kotlin.doReturn
-import org.mockito.kotlin.eq
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.never
-import org.mockito.kotlin.spy
-import org.mockito.kotlin.times
-import org.mockito.kotlin.verify
-import org.mockito.kotlin.whenever
 import java.util.concurrent.Executors
+import java.util.function.Consumer
+import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.asCoroutineDispatcher
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -116,6 +157,18 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.ArgumentMatcher
 import org.mockito.ArgumentMatchers
+import org.mockito.kotlin.any
+import org.mockito.kotlin.argThat
+import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
+import org.mockito.kotlin.spy
+import org.mockito.kotlin.times
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoMoreInteractions
+import org.mockito.kotlin.whenever
 
 @MediumTest
 @RunWith(AndroidJUnit4::class)
@@ -709,7 +762,7 @@ class AndroidComposeViewAccessibilityDelegateCompatTest {
     @FlakyTest(bugId = 195287742)
     fun sendScrollEvent_byStateObservation() {
         var scrollValue by mutableStateOf(0f, structuralEqualityPolicy())
-        var scrollMaxValue by mutableStateOf(100f, structuralEqualityPolicy())
+        val scrollMaxValue = 100f
 
         val semanticsNode = createSemanticsNodeWithProperties(1, false) {
             verticalScrollAxisRange = ScrollAxisRange({ scrollValue }, { scrollMaxValue })
@@ -754,12 +807,7 @@ class AndroidComposeViewAccessibilityDelegateCompatTest {
                 ArgumentMatcher {
                     it.eventType == AccessibilityEvent.TYPE_VIEW_SCROLLED &&
                         it.scrollY == 1 &&
-                        it.maxScrollY == 100 &&
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                            it.scrollDeltaY == 1
-                        } else {
-                            true
-                        }
+                        it.maxScrollY > it.scrollY
                 }
             )
         )
@@ -956,12 +1004,11 @@ class AndroidComposeViewAccessibilityDelegateCompatTest {
         )
     }
 
-    @OptIn(ExperimentalComposeUiApi::class)
     @Test
     fun testUncoveredNodes_notPlacedNodes_notIncluded() {
         val nodes = SemanticsOwner(
             LayoutNode().also {
-                it.modifier = EmptySemanticsModifierNodeElement
+                it.modifier = EmptySemanticsElement
             }
         ).getAllUncoveredSemanticsNodesToMap()
         assertEquals(0, nodes.size)
@@ -1412,6 +1459,35 @@ class AndroidComposeViewAccessibilityDelegateCompatTest {
 
     @Test
     @SdkSuppress(minSdkVersion = 29)
+    fun testInitContentCaptureSemanticsStructureChangeEvents_onStart() {
+        setUpContentCapture()
+
+        accessibilityDelegate.initContentCapture(true)
+
+        // verify the root node appeared
+        verify(contentCaptureSessionCompat).newVirtualViewStructure(any(), any())
+        verify(contentCaptureSessionCompat).notifyViewsAppeared(any())
+        verify(viewStructureCompat).setDimens(any(), any(), any(), any(), any(), any())
+        verify(viewStructureCompat).toViewStructure()
+        verifyNoMoreInteractions(contentCaptureSessionCompat)
+        verifyNoMoreInteractions(viewStructureCompat)
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = 29)
+    fun testInitContentCaptureSemanticsStructureChangeEvents_onStop() {
+        setUpContentCapture()
+
+        accessibilityDelegate.initContentCapture(false)
+
+        // verify the root node disappeared
+        verify(contentCaptureSessionCompat).notifyViewsDisappeared(any())
+        verifyNoMoreInteractions(contentCaptureSessionCompat)
+        verifyNoMoreInteractions(viewStructureCompat)
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = 29)
     fun testSendContentCaptureSemanticsStructureChangeEvents_appeared() {
         setUpContentCapture()
 
@@ -1560,6 +1636,216 @@ class AndroidComposeViewAccessibilityDelegateCompatTest {
         assertThat(accessibilityDelegate.bufferedContentCaptureDisappearedNodes).isEmpty()
     }
 
+    @Test
+    @SdkSuppress(minSdkVersion = 29)
+    fun testUpdateTranslationOnAppeared_showOriginal() {
+        setUpContentCapture()
+        accessibilityDelegate.onHideTranslation()
+
+        val nodeId = 10
+        val oldNode = createSemanticsNodeWithChildren(nodeId, emptyList())
+        val oldNodeCopy = SemanticsNodeCopy(oldNode, mapOf())
+        accessibilityDelegate.previousSemanticsNodes[nodeId] = oldNodeCopy
+
+        var result = true
+        val newNodeId1 = 11
+        val newNodeId2 = 10
+        val newNode1 = createSemanticsNodeWithChildren(newNodeId1, emptyList()) {
+            text = AnnotatedString("foo")
+            originalText = AnnotatedString("bar")
+            isShowingTextSubstitution = true
+            showTextSubstitution {
+                result = it
+                true
+            }
+        }
+        val newNode2 = createSemanticsNodeWithChildren(newNodeId2, listOf(newNode1))
+        accessibilityDelegate.currentSemanticsNodes = mapOf(
+            newNodeId1 to SemanticsNodeWithAdjustedBounds(newNode1, android.graphics.Rect()),
+            newNodeId2 to SemanticsNodeWithAdjustedBounds(newNode2, android.graphics.Rect()),
+        )
+
+        accessibilityDelegate.sendContentCaptureSemanticsStructureChangeEvents(
+            newNode2, oldNodeCopy)
+
+        assertFalse(result)
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = 29)
+    fun testUpdateTranslationOnAppeared_showTranslated() {
+        setUpContentCapture()
+        accessibilityDelegate.onShowTranslation()
+
+        val nodeId = 10
+        val oldNode = createSemanticsNodeWithChildren(nodeId, emptyList())
+        val oldNodeCopy = SemanticsNodeCopy(oldNode, mapOf())
+        accessibilityDelegate.previousSemanticsNodes[nodeId] = oldNodeCopy
+
+        var result = false
+        val newNodeId1 = 11
+        val newNodeId2 = 10
+        val newNode1 = createSemanticsNodeWithChildren(newNodeId1, emptyList()) {
+            text = AnnotatedString("foo")
+            isShowingTextSubstitution = false
+            showTextSubstitution {
+                result = it
+                true
+            }
+        }
+        val newNode2 = createSemanticsNodeWithChildren(newNodeId2, listOf(newNode1))
+        accessibilityDelegate.currentSemanticsNodes = mapOf(
+            newNodeId1 to SemanticsNodeWithAdjustedBounds(newNode1, android.graphics.Rect()),
+            newNodeId2 to SemanticsNodeWithAdjustedBounds(newNode2, android.graphics.Rect()),
+        )
+
+        accessibilityDelegate.sendContentCaptureSemanticsStructureChangeEvents(
+            newNode2, oldNodeCopy)
+
+        assertTrue(result)
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = 31)
+    fun testOnCreateVirtualViewTranslationRequests() {
+        setUpContentCapture()
+
+        val newNodeId1 = 11
+        val newNodeId2 = 10
+        val newNode1 = createSemanticsNodeWithChildren(newNodeId1, emptyList()) {
+            text = AnnotatedString("foo")
+        }
+        val newNode2 = createSemanticsNodeWithChildren(newNodeId2, listOf(newNode1)) {
+            text = AnnotatedString("bar")
+        }
+        accessibilityDelegate.currentSemanticsNodes = mapOf(
+            newNodeId1 to SemanticsNodeWithAdjustedBounds(newNode1, android.graphics.Rect()),
+            newNodeId2 to SemanticsNodeWithAdjustedBounds(newNode2, android.graphics.Rect()),
+        )
+
+        val ids = LongArray(1)
+        ids[0] = newNodeId1.toLong()
+        val requestsCollector: Consumer<ViewTranslationRequest?> = mock()
+
+        accessibilityDelegate.onCreateVirtualViewTranslationRequests(
+            ids,
+            IntArray(0),
+            requestsCollector,
+        )
+
+        val captor = argumentCaptor<ViewTranslationRequest>()
+        verify(requestsCollector).accept(captor.capture())
+        val request = ViewTranslationRequest.Builder(
+            androidComposeView.autofillId,
+            newNodeId1.toLong()
+        )
+            .setValue(ViewTranslationRequest.ID_TEXT, TranslationRequestValue.forText(
+                AnnotatedString("foo")))
+            .build()
+        assertEquals(captor.firstValue, request)
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = 31)
+    fun testOnVirtualViewTranslationResponses() {
+        setUpContentCapture()
+        val newNodeId1 = 11
+        var result: AnnotatedString? = null
+        val newNode1 = createSemanticsNodeWithChildren(newNodeId1, emptyList()) {
+            text = AnnotatedString("foo")
+            setTextSubstitution {
+                result = it
+                true
+            }
+        }
+        accessibilityDelegate.currentSemanticsNodes = mapOf(
+            newNodeId1 to SemanticsNodeWithAdjustedBounds(newNode1, android.graphics.Rect()),
+        )
+
+        val autofillId = androidComposeView.autofillId
+        val response = ViewTranslationResponse.Builder(autofillId)
+            .setValue(ViewTranslationRequest.ID_TEXT,
+                TranslationResponseValue.Builder(0).setText("bar").build())
+            .build()
+        val responses = LongSparseArray<ViewTranslationResponse?>()
+        responses.append(newNodeId1.toLong(), response)
+
+        accessibilityDelegate.onVirtualViewTranslationResponses(responses)
+
+        assertEquals("bar", result?.text)
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = 31)
+    fun testOnShowTranslation() {
+        setUpContentCapture()
+        val newNodeId1 = 11
+        var result = false
+        val newNode1 = createSemanticsNodeWithChildren(newNodeId1, emptyList()) {
+            text = AnnotatedString("foo")
+            isShowingTextSubstitution = false
+            showTextSubstitution {
+                result = it
+                true
+            }
+        }
+        accessibilityDelegate.currentSemanticsNodes = mapOf(
+            newNodeId1 to SemanticsNodeWithAdjustedBounds(newNode1, android.graphics.Rect()),
+        )
+
+        accessibilityDelegate.onShowTranslation()
+
+        assertTrue(result)
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = 31)
+    fun testOnHideTranslation() {
+        setUpContentCapture()
+        val newNodeId1 = 11
+        var result = true
+        val newNode1 = createSemanticsNodeWithChildren(newNodeId1, emptyList()) {
+            text = AnnotatedString("bar")
+            isShowingTextSubstitution = true
+            originalText = AnnotatedString("foo")
+            showTextSubstitution {
+                result = it
+                true
+            }
+        }
+        accessibilityDelegate.currentSemanticsNodes = mapOf(
+            newNodeId1 to SemanticsNodeWithAdjustedBounds(newNode1, android.graphics.Rect()),
+        )
+
+        accessibilityDelegate.onHideTranslation()
+
+        assertFalse(result)
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = 31)
+    fun testOnClearTranslation() {
+        setUpContentCapture()
+        val newNodeId1 = 11
+        var result = false
+        val newNode1 = createSemanticsNodeWithChildren(newNodeId1, emptyList()) {
+            text = AnnotatedString("bar")
+            originalText = AnnotatedString("foo")
+            isShowingTextSubstitution = true
+            clearTextSubstitution {
+                result = true
+                true
+            }
+        }
+        accessibilityDelegate.currentSemanticsNodes = mapOf(
+            newNodeId1 to SemanticsNodeWithAdjustedBounds(newNode1, android.graphics.Rect()),
+        )
+
+        accessibilityDelegate.onClearTranslation()
+
+        assertTrue(result)
+    }
+
     private fun sendTextSemanticsChangeEvent(oldNodePassword: Boolean, newNodePassword: Boolean) {
         val nodeId = 1
         val oldTextNode = createSemanticsNodeWithProperties(nodeId, true) {
@@ -1594,7 +1880,7 @@ class AndroidComposeViewAccessibilityDelegateCompatTest {
         accessibilityDelegate.sendSemanticsPropertyChangeEvents(mapOf(nodeId to newTextNode))
     }
 
-    @OptIn(ExperimentalComposeUiApi::class)
+    @OptIn(InternalTestApi::class)
     private fun createSemanticsNodeWithProperties(
         id: Int,
         mergeDescendants: Boolean,
@@ -1604,6 +1890,7 @@ class AndroidComposeViewAccessibilityDelegateCompatTest {
         layoutNode.modifier = Modifier.semantics(mergeDescendants) {
             properties()
         }
+        layoutNode.attach(MockOwner())
         return SemanticsNode(layoutNode, true)
     }
 
@@ -1617,6 +1904,7 @@ class AndroidComposeViewAccessibilityDelegateCompatTest {
         layoutNode.modifier = Modifier.semantics {
             properties()
         }
+        layoutNode.attach(MockOwner())
         return SemanticsNode(layoutNode, true)
     }
 
@@ -1642,4 +1930,233 @@ class AndroidComposeViewAccessibilityDelegateCompatTest {
         }
         return false
     }
+}
+
+internal class MockOwner(
+    private val position: IntOffset = IntOffset.Zero,
+    override val root: LayoutNode = LayoutNode(),
+    override val coroutineContext: CoroutineContext =
+        Executors.newFixedThreadPool(3).asCoroutineDispatcher()
+) : Owner {
+    val onRequestMeasureParams = mutableListOf<LayoutNode>()
+    val onAttachParams = mutableListOf<LayoutNode>()
+    val onDetachParams = mutableListOf<LayoutNode>()
+    var layoutChangeCount = 0
+
+    override val rootForTest: RootForTest
+        get() = TODO("Not yet implemented")
+    override val hapticFeedBack: HapticFeedback
+        get() = TODO("Not yet implemented")
+    override val inputModeManager: InputModeManager
+        get() = TODO("Not yet implemented")
+    override val clipboardManager: ClipboardManager
+        get() = TODO("Not yet implemented")
+    override val accessibilityManager: AccessibilityManager
+        get() = TODO("Not yet implemented")
+    override val textToolbar: TextToolbar
+        get() = TODO("Not yet implemented")
+
+    @OptIn(ExperimentalComposeUiApi::class)
+    override val autofillTree: AutofillTree
+        get() = TODO("Not yet implemented")
+
+    @OptIn(ExperimentalComposeUiApi::class)
+    override val autofill: Autofill?
+        get() = TODO("Not yet implemented")
+    override val density: Density
+        get() = Density(1f)
+    override val textInputService: TextInputService
+        get() = TODO("Not yet implemented")
+
+    override suspend fun textInputSession(
+        session: suspend PlatformTextInputSessionScope.() -> Nothing
+    ): Nothing {
+        TODO("Not yet implemented")
+    }
+
+    override val pointerIconService: PointerIconService
+        get() = TODO("Not yet implemented")
+    override val focusOwner: FocusOwner
+        get() = TODO("Not yet implemented")
+    override val windowInfo: WindowInfo
+        get() = TODO("Not yet implemented")
+
+    @Deprecated(
+        "fontLoader is deprecated, use fontFamilyResolver",
+        replaceWith = ReplaceWith("fontFamilyResolver")
+    )
+    @Suppress("DEPRECATION")
+    override val fontLoader: Font.ResourceLoader
+        get() = TODO("Not yet implemented")
+    override val fontFamilyResolver: FontFamily.Resolver
+        get() = TODO("Not yet implemented")
+    override val layoutDirection: LayoutDirection
+        get() = LayoutDirection.Ltr
+    @InternalCoreApi
+    override var showLayoutBounds: Boolean = false
+    override val snapshotObserver = OwnerSnapshotObserver { it.invoke() }
+    override val modifierLocalManager: ModifierLocalManager = ModifierLocalManager(this)
+
+    override fun onRequestMeasure(
+        layoutNode: LayoutNode,
+        affectsLookahead: Boolean,
+        forceRequest: Boolean,
+        scheduleMeasureAndLayout: Boolean
+    ) {
+        onRequestMeasureParams += layoutNode
+        if (affectsLookahead) {
+            layoutNode.markLookaheadMeasurePending()
+        }
+        layoutNode.markMeasurePending()
+    }
+
+    override fun onRequestRelayout(
+        layoutNode: LayoutNode,
+        affectsLookahead: Boolean,
+        forceRequest: Boolean
+    ) {
+        if (affectsLookahead) {
+            layoutNode.markLookaheadLayoutPending()
+        }
+        layoutNode.markLayoutPending()
+    }
+
+    override fun requestOnPositionedCallback(layoutNode: LayoutNode) {
+    }
+
+    override fun onAttach(node: LayoutNode) {
+        onAttachParams += node
+    }
+
+    override fun onDetach(node: LayoutNode) {
+        onDetachParams += node
+    }
+
+    override fun calculatePositionInWindow(localPosition: Offset): Offset =
+        localPosition + position.toOffset()
+
+    override fun calculateLocalPosition(positionInWindow: Offset): Offset =
+        positionInWindow - position.toOffset()
+
+    override fun requestFocus(): Boolean = false
+
+    override fun measureAndLayout(sendPointerUpdate: Boolean) {
+    }
+
+    override fun measureAndLayout(layoutNode: LayoutNode, constraints: Constraints) {
+    }
+
+    override fun forceMeasureTheSubtree(layoutNode: LayoutNode, affectsLookahead: Boolean) {
+    }
+
+    override fun registerOnEndApplyChangesListener(listener: () -> Unit) {
+        listener()
+    }
+
+    override fun onEndApplyChanges() {
+    }
+
+    override fun registerOnLayoutCompletedListener(listener: Owner.OnLayoutCompletedListener) {
+        TODO("Not yet implemented")
+    }
+
+    val invalidatedLayers = mutableListOf<OwnedLayer>()
+
+    override fun createLayer(
+        drawBlock: (Canvas) -> Unit,
+        invalidateParentLayer: () -> Unit
+    ): OwnedLayer {
+        val transform = Matrix()
+        val inverseTransform = Matrix()
+        return object : OwnedLayer {
+            override fun updateLayerProperties(
+                scaleX: Float,
+                scaleY: Float,
+                alpha: Float,
+                translationX: Float,
+                translationY: Float,
+                shadowElevation: Float,
+                rotationX: Float,
+                rotationY: Float,
+                rotationZ: Float,
+                cameraDistance: Float,
+                transformOrigin: TransformOrigin,
+                shape: Shape,
+                clip: Boolean,
+                renderEffect: RenderEffect?,
+                ambientShadowColor: Color,
+                spotShadowColor: Color,
+                compositingStrategy: CompositingStrategy,
+                layoutDirection: LayoutDirection,
+                density: Density
+            ) {
+                transform.reset()
+                // This is not expected to be 100% accurate
+                transform.scale(scaleX, scaleY)
+                transform.rotateZ(rotationZ)
+                transform.translate(translationX, translationY)
+                transform.invertTo(inverseTransform)
+            }
+
+            override fun isInLayer(position: Offset) = true
+
+            override fun move(position: IntOffset) {
+            }
+
+            override fun resize(size: IntSize) {
+            }
+
+            override fun drawLayer(canvas: Canvas) {
+                drawBlock(canvas)
+            }
+
+            override fun updateDisplayList() {
+            }
+
+            override fun invalidate() {
+                invalidatedLayers.add(this)
+            }
+
+            override fun destroy() {
+            }
+
+            override fun mapBounds(rect: MutableRect, inverse: Boolean) {
+            }
+
+            override fun reuseLayer(
+                drawBlock: (Canvas) -> Unit,
+                invalidateParentLayer: () -> Unit
+            ) {
+            }
+
+            override fun transform(matrix: Matrix) {
+                matrix.timesAssign(transform)
+            }
+
+            override fun inverseTransform(matrix: Matrix) {
+                matrix.timesAssign(inverseTransform)
+            }
+
+            override fun mapOffset(point: Offset, inverse: Boolean) = point
+        }
+    }
+
+    var semanticsChanged: Boolean = false
+    override fun onSemanticsChange() {
+        semanticsChanged = true
+    }
+
+    override fun onLayoutChange(layoutNode: LayoutNode) {
+        layoutChangeCount++
+    }
+
+    override fun getFocusDirection(keyEvent: KeyEvent): FocusDirection? {
+        TODO("Not yet implemented")
+    }
+
+    override var measureIteration: Long = 0
+    override val viewConfiguration: ViewConfiguration
+        get() = TODO("Not yet implemented")
+
+    override val sharedDrawScope = LayoutNodeDrawScope()
 }

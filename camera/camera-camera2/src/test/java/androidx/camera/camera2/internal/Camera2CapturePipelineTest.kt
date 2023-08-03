@@ -30,6 +30,7 @@ import android.media.Image
 import android.media.ImageWriter
 import android.os.Build
 import android.view.Surface
+import androidx.annotation.RequiresApi
 import androidx.camera.camera2.impl.Camera2ImplConfig
 import androidx.camera.camera2.internal.compat.CameraCharacteristicsCompat
 import androidx.camera.camera2.internal.compat.quirk.AutoFlashUnderExposedQuirk
@@ -54,8 +55,8 @@ import androidx.camera.core.impl.Quirks
 import androidx.camera.core.impl.SessionConfig
 import androidx.camera.core.impl.utils.futures.Futures
 import androidx.camera.core.internal.CameraCaptureResultImageInfo
-import androidx.camera.testing.fakes.FakeCameraCaptureResult
-import androidx.camera.testing.fakes.FakeImageProxy
+import androidx.camera.testing.impl.fakes.FakeCameraCaptureResult
+import androidx.camera.testing.impl.fakes.FakeImageProxy
 import androidx.concurrent.futures.await
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth
@@ -561,6 +562,7 @@ class Camera2CapturePipelineTest {
         }
     }
 
+    @Config(minSdk = 23)
     @Test
     fun submitZslCaptureRequests_withZslTemplate_templateZeroShutterLagSent(): Unit = runBlocking {
         // Arrange.
@@ -595,6 +597,7 @@ class Camera2CapturePipelineTest {
         }
     }
 
+    @Config(minSdk = 23)
     @Test
     fun submitZslCaptureRequests_withZslDisabledByFlashMode_templateStillPictureSent():
         Unit = runBlocking {
@@ -626,6 +629,7 @@ class Camera2CapturePipelineTest {
         }
     }
 
+    @Config(minSdk = 23)
     @Test
     fun submitZslCaptureRequests_withZslDisabledByUseCaseConfig_templateStillPictureSent():
         Unit = runBlocking {
@@ -657,6 +661,7 @@ class Camera2CapturePipelineTest {
         }
     }
 
+    @Config(minSdk = 23)
     @Test
     fun submitZslCaptureRequests_withNoTemplate_templateStillPictureSent(): Unit = runBlocking {
         // Arrange.
@@ -1230,6 +1235,7 @@ class Camera2CapturePipelineTest {
         )
     }
 
+    @RequiresApi(23)
     private fun initCameraControlWithZsl(
         isZslDisabledByFlashMode: Boolean,
         isZslDisabledByUserCaseConfig: Boolean
@@ -1246,11 +1252,15 @@ class Camera2CapturePipelineTest {
 
         // Only need to initialize when not disabled
         if (!isZslDisabledByFlashMode && !isZslDisabledByUserCaseConfig) {
-            val captureResult = FakeCameraCaptureResult()
+            val captureResult =
+                FakeCameraCaptureResult()
             captureResult.afState = AfState.LOCKED_FOCUSED
             captureResult.aeState = AeState.CONVERGED
             captureResult.awbState = AwbState.CONVERGED
-            val imageProxy = FakeImageProxy(CameraCaptureResultImageInfo(captureResult))
+            val imageProxy =
+                FakeImageProxy(
+                    CameraCaptureResultImageInfo(captureResult)
+                )
             imageProxy.image = mock(Image::class.java)
             zslControl.mImageRingBuffer.enqueue(imageProxy)
             zslControl.mReprocessingImageWriter = mock(ImageWriter::class.java)

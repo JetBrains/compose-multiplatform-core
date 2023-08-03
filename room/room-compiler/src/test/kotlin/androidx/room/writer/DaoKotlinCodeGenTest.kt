@@ -1483,6 +1483,7 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                 @Query("SELECT * FROM Artist JOIN Song ON Artist.artistId = Song.artistKey")
                 fun getArtistWithSongs(): Map<Artist, List<Song>>
 
+                @Suppress("DEPRECATION") // For @MapInfo
                 @MapInfo(valueColumn = "songCount")
                 @Query(
                     "SELECT Artist.*, COUNT(songId) as songCount " +
@@ -1492,6 +1493,7 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                 fun getArtistSongCount(): Map<Artist, Int>
 
                 @SuppressWarnings(RoomWarnings.CURSOR_MISMATCH)
+                @Suppress("DEPRECATION") // For @MapInfo
                 @MapInfo(valueColumn = "songId")
                 @Query("SELECT * FROM Artist JOIN Song ON Artist.artistId = Song.artistKey")
                 fun getArtistWithSongIds(): Map<Artist, List<String>>
@@ -1508,6 +1510,79 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                 @PrimaryKey
                 val songId: String,
                 val artistKey: String
+            )
+            """.trimIndent()
+        )
+        runTest(
+            sources = listOf(src),
+            expectedFilePath = getTestGoldenPath(testName)
+        )
+    }
+
+    @Test
+    fun queryResultAdapter_nestedMap() {
+        val testName = object {}.javaClass.enclosingMethod!!.name
+        val src = Source.kotlin(
+            "MyDao.kt",
+            """
+            import androidx.room.*
+
+            @Database(
+                entities = [Artist::class, Song::class, Album::class, Playlist::class],
+                version = 1,
+                exportSchema = false
+            )
+            abstract class MyDatabase : RoomDatabase() {
+              abstract fun getDao(): MyDao
+            }
+
+            @Dao
+            interface MyDao {
+                @SuppressWarnings(RoomWarnings.CURSOR_MISMATCH)
+                @Query(
+                    "SELECT * FROM Artist JOIN (Album JOIN Song ON Album.albumName = Song.album) " +
+                    "ON Artist.artistName = Album.albumArtist"
+                )
+                fun singleNested(): Map<Artist, Map<Album, List<Song>>>
+
+                @SuppressWarnings(RoomWarnings.CURSOR_MISMATCH)
+                @Query(
+                    "SELECT * FROM Playlist JOIN (Artist JOIN (Album JOIN Song " +
+                    "ON Album.albumName = Song.album) " +
+                    "ON Artist.artistName = Album.albumArtist)" +
+                    "ON Playlist.playlistArtist = Artist.artistName"
+                )
+                fun doubleNested(): Map<Playlist, Map<Artist, Map<Album, List<Song>>>>
+            }
+
+            @Entity
+            data class Artist(
+                @PrimaryKey
+                val artistId: String,
+                val artistName: String,
+            )
+
+            @Entity
+            data class Album(
+                @PrimaryKey
+                val albumId: String,
+                val albumName: String,
+                val albumArtist: String
+            )
+
+            @Entity
+            data class Playlist(
+                @PrimaryKey
+                val playlistId: String,
+                val playlistArtist: String,
+            )
+
+            @Entity
+            data class Song(
+                @PrimaryKey
+                val songId: String,
+                val album: String,
+                val songArtist: String
             )
             """.trimIndent()
         )
@@ -1638,6 +1713,60 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                 @PrimaryKey val id: Int,
                 val userId: Int,
                 val text: String,
+            )
+            """.trimIndent()
+        )
+        runTest(
+            sources = listOf(src),
+            expectedFilePath = getTestGoldenPath(testName)
+        )
+    }
+
+    @Test
+    fun queryResultAdapter_nestedMap_ambiguousIndexAdapter() {
+        val testName = object {}.javaClass.enclosingMethod!!.name
+        val src = Source.kotlin(
+            "MyDao.kt",
+            """
+            import androidx.room.*
+            import java.nio.ByteBuffer
+
+            @Database(
+                entities = [User::class, Comment::class, Avatar::class],
+                version = 1,
+                exportSchema = false
+            )
+            abstract class MyDatabase : RoomDatabase() {
+              abstract fun getDao(): MyDao
+            }
+
+            @Dao
+            interface MyDao {
+                @Query(
+                    "SELECT * FROM User JOIN Avatar ON User.id = Avatar.userId JOIN " +
+                    "Comment ON Avatar.userId = Comment.userId"
+                )
+                fun getLeftJoinUserNestedMap(): Map<User, Map<Avatar, List<Comment>>>
+            }
+
+            @Entity
+            data class User(
+                @PrimaryKey val id: Int,
+                val name: String,
+            )
+
+            @Entity
+            data class Comment(
+                @PrimaryKey val id: Int,
+                val userId: Int,
+                val text: String,
+            )
+
+            @Entity
+            data class Avatar(
+                @PrimaryKey val userId: Int,
+                val url: String,
+                val data: ByteBuffer,
             )
             """.trimIndent()
         )
@@ -2214,7 +2343,7 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
     }
 
     @Test
-    fun valueClassConverter() {
+    fun pojoRowAdapter_valueClassConverter() {
         val testName = object {}.javaClass.enclosingMethod!!.name
         val src = Source.kotlin(
             "MyDao.kt",
@@ -2235,6 +2364,9 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
             value class LongValueClass(val data: Long)
 
             @JvmInline
+            value class NullableLongValueClass(val data: Long?)
+
+            @JvmInline
             value class UUIDValueClass(val data: UUID)
 
             @JvmInline
@@ -2245,6 +2377,9 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                 @PrimaryKey
                 val pk: LongValueClass,
                 val uuidData: UUIDValueClass,
+                val nullableUuidData: UUIDValueClass?,
+                val nullableLongData: NullableLongValueClass,
+                val doubleNullableLongData: NullableLongValueClass?,
                 val genericData: GenericValueClass<String>
             )
             """.trimIndent()

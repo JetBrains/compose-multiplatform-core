@@ -23,8 +23,10 @@ import androidx.compose.foundation.gestures.ScrollScope
 import androidx.compose.foundation.gestures.snapping.MinFlingVelocityDp
 import androidx.compose.foundation.gestures.snapping.SnapFlingBehavior
 import androidx.compose.foundation.gestures.snapping.SnapLayoutInfoProvider
+import androidx.compose.foundation.gestures.snapping.SnapPositionInLayout.Companion.CenterToCenter
 import androidx.compose.foundation.gestures.snapping.calculateDistanceToDesiredSnapPosition
 import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
+import androidx.compose.foundation.gestures.snapping.singleAxisViewportSize
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
@@ -456,11 +458,16 @@ class LazyListSnapFlingBehaviorTest(private val orientation: Orientation) :
         var itemIndex = -1
         if (state == null) return -1
         var minDistance = Float.POSITIVE_INFINITY
+        val layoutInfo = state.layoutInfo
         (state.layoutInfo.visibleItemsInfo).forEach {
             val distance = calculateDistanceToDesiredSnapPosition(
-                state.layoutInfo,
-                it,
-                CenterToCenter
+                mainAxisViewPortSize = layoutInfo.singleAxisViewportSize,
+                beforeContentPadding = layoutInfo.beforeContentPadding,
+                afterContentPadding = layoutInfo.afterContentPadding,
+                itemSize = it.size,
+                itemOffset = it.offset,
+                itemIndex = it.index,
+                snapPositionInLayout = CenterToCenter
             )
             if (abs(distance) < minDistance) {
                 minDistance = abs(distance)
@@ -498,13 +505,11 @@ class LazyListSnapFlingBehaviorTest(private val orientation: Orientation) :
 
         val ItemSize = 200.dp
         const val TestTag = "MainList"
-        val CenterToCenter: Density.(Float, Float) -> Float =
-            { layoutSize, itemSize -> layoutSize / 2f - itemSize / 2f }
     }
 }
 
 @OptIn(ExperimentalFoundationApi::class)
-private class QuerySnapFlingBehavior(
+internal class QuerySnapFlingBehavior(
     val snapFlingBehavior: SnapFlingBehavior,
     val onAnimationStep: (Float) -> Unit
 ) : FlingBehavior {

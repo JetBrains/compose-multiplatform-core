@@ -14,12 +14,15 @@
  * limitations under the License.
  */
 
-@file:JvmName("PrimitiveSnapshotStateKt")
+@file:JvmName("SnapshotFloatStateKt")
 @file:JvmMultifileClass
 package androidx.compose.runtime
 
+import androidx.compose.runtime.internal.equalsWithNanFix
+import androidx.compose.runtime.snapshots.AutoboxingStateValueProperty
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.runtime.snapshots.SnapshotMutableState
+import androidx.compose.runtime.snapshots.StateFactoryMarker
 import androidx.compose.runtime.snapshots.StateObject
 import androidx.compose.runtime.snapshots.StateRecord
 import androidx.compose.runtime.snapshots.overwritable
@@ -39,8 +42,13 @@ import kotlin.reflect.KProperty
  *
  * @see FloatState
  * @see MutableFloatState
+ * @see mutableStateOf
+ * @see mutableIntStateOf
+ * @see mutableLongStateOf
+ * @see mutableDoubleStateOf
  */
-fun mutableStateOf(
+@StateFactoryMarker
+fun mutableFloatStateOf(
     value: Float
 ): MutableFloatState = createSnapshotMutableFloatState(value)
 
@@ -49,11 +57,12 @@ fun mutableStateOf(
  * function cause the current [RecomposeScope] to subscribe to changes of that value.
  *
  * @see MutableFloatState
- * @see mutableStateOf
+ * @see mutableDoubleStateOf
  */
 @Stable
 @JvmDefaultWithCompatibility
 interface FloatState : State<Float> {
+    @get:AutoboxingStateValueProperty("floatValue")
     override val value: Float
         @Suppress("AutoBoxing") get() = floatValue
 
@@ -74,11 +83,13 @@ inline operator fun FloatState.getValue(thisObj: Any?, property: KProperty<*>): 
  * scheduled.
  *
  * @see [FloatState]
- * @see [mutableStateOf]
+ * @see [mutableDoubleStateOf]
  */
 @Stable
 @JvmDefaultWithCompatibility
 interface MutableFloatState : FloatState, MutableState<Float> {
+    @get:AutoboxingStateValueProperty("floatValue")
+    @set:AutoboxingStateValueProperty("floatValue")
     override var value: Float
         @Suppress("AutoBoxing") get() = floatValue
         set(value) { floatValue = value }
@@ -109,7 +120,7 @@ internal expect fun createSnapshotMutableFloatState(
  *
  * @param value the wrapped value
  *
- * @see [mutableStateOf]
+ * @see [mutableDoubleStateOf]
  */
 internal open class SnapshotMutableFloatStateImpl(
     value: Float
@@ -123,7 +134,7 @@ internal open class SnapshotMutableFloatStateImpl(
     override var floatValue: Float
         get() = next.readable(this).value
         set(value) = next.withCurrent {
-            if (it.value != value) {
+            if (!it.value.equalsWithNanFix(value)) {
                 next.overwritable(this, it) { this.value = value }
             }
         }
@@ -148,7 +159,7 @@ internal open class SnapshotMutableFloatStateImpl(
     ): StateRecord? {
         val currentRecord = current as FloatStateStateRecord
         val appliedRecord = applied as FloatStateStateRecord
-        return if (currentRecord.value == appliedRecord.value) {
+        return if (currentRecord.value.equalsWithNanFix(appliedRecord.value)) {
             current
         } else {
             null

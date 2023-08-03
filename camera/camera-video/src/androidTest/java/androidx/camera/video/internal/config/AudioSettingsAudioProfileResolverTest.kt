@@ -26,10 +26,11 @@ import androidx.camera.core.CameraSelector
 import androidx.camera.core.CameraXConfig
 import androidx.camera.core.DynamicRange.SDR
 import androidx.camera.core.internal.CameraUseCaseAdapter
-import androidx.camera.testing.AudioUtil
-import androidx.camera.testing.CameraPipeConfigTestRule
-import androidx.camera.testing.CameraUtil
-import androidx.camera.testing.CameraXUtil
+import androidx.camera.testing.impl.AudioUtil
+import androidx.camera.testing.impl.CameraPipeConfigTestRule
+import androidx.camera.testing.impl.CameraUtil
+import androidx.camera.testing.impl.CameraXUtil
+import androidx.camera.testing.impl.IgnoreAudioProblematicDeviceRule
 import androidx.camera.video.AudioSpec
 import androidx.camera.video.Quality
 import androidx.camera.video.Recorder
@@ -39,6 +40,7 @@ import androidx.camera.video.internal.audio.AudioSource
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
+import androidx.test.rule.GrantPermissionRule
 import com.google.common.truth.Truth.assertThat
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.Dispatchers
@@ -64,6 +66,10 @@ class AudioSettingsAudioProfileResolverTest(
     private val cameraConfig: CameraXConfig
 ) {
 
+    // Ignore problematic device for b/277176784
+    @get:Rule
+    val ignoreProblematicDeviceRule = IgnoreAudioProblematicDeviceRule()
+
     companion object {
         @JvmStatic
         @Parameterized.Parameters(name = "{0}")
@@ -72,6 +78,11 @@ class AudioSettingsAudioProfileResolverTest(
             arrayOf(CameraPipeConfig::class.simpleName, CameraPipeConfig.defaultConfig())
         )
     }
+
+    @get:Rule
+    val grantPermissionRule: GrantPermissionRule = GrantPermissionRule.grant(
+        android.Manifest.permission.RECORD_AUDIO
+    )
 
     @get:Rule
     val cameraPipeConfigTestRule = CameraPipeConfigTestRule(

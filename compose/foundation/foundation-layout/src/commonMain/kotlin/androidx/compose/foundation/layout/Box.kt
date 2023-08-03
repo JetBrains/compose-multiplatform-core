@@ -197,7 +197,7 @@ private fun Placeable.PlacementScope.placeInBox(
  */
 @Composable
 fun Box(modifier: Modifier) {
-    Layout({}, measurePolicy = EmptyBoxMeasurePolicy, modifier = modifier)
+    Layout(measurePolicy = EmptyBoxMeasurePolicy, modifier = modifier)
 }
 
 internal val EmptyBoxMeasurePolicy = MeasurePolicy { _, constraints ->
@@ -269,10 +269,9 @@ private class BoxChildDataElement(
         return BoxChildDataNode(alignment, matchParentSize)
     }
 
-    override fun update(node: BoxChildDataNode): BoxChildDataNode {
+    override fun update(node: BoxChildDataNode) {
         node.alignment = alignment
         node.matchParentSize = matchParentSize
-        return node
     }
 
     override fun InspectorInfo.inspectableProperties() {

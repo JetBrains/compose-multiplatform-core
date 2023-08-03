@@ -40,6 +40,10 @@ internal class JavacMethodParameter(
         enclosingElement.isExtensionFunction() &&
         enclosingElement.parameters.first() == this
 
+    override fun isVarArgs() =
+        kotlinMetadata?.isVarArgs() ?: (enclosingElement.isVarArgs() &&
+            enclosingElement.parameters.last() == this)
+
     override fun isKotlinPropertyParam() =
         enclosingElement is JavacMethodElement &&
         enclosingElement.isKotlinPropertyMethod()
@@ -47,9 +51,14 @@ internal class JavacMethodParameter(
     override val kotlinMetadata by lazy { kotlinMetadataFactory() }
 
     override val name: String
-        get() = (kotlinMetadata?.name ?: super.name).sanitizeAsJavaParameterName(
-            argIndex = argIndex
-        )
+        get() = if (isReceiverParam() && enclosingElement.isAbstract()) {
+            // Receiver parameter names for abstract methods are not reliable across different
+            // versions of KAPT so we just build the name ourselves to match KSP.
+            // https://youtrack.jetbrains.com/issue/KT-18048/kapt-drops-method-parameter-names
+            "\$this\$${enclosingElement.name}"
+        } else {
+            (kotlinMetadata?.name ?: super.name)
+        }.sanitizeAsJavaParameterName(argIndex)
 
     override val kotlinType: KmTypeContainer?
         get() = kotlinMetadata?.type

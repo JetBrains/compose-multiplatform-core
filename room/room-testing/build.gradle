@@ -37,8 +37,9 @@ dependencies {
     api(project(":sqlite:sqlite-framework"))
     api(project(":room:room-migration"))
     api(libs.junit)
-    implementation("androidx.arch.core:core-runtime:2.0.1")
-    androidTestImplementation(libs.truth)
+    implementation("androidx.arch.core:core-runtime:2.2.0")
+    androidTestImplementation(libs.truth) // Kruth currently lacks StringSubject#containsMatch
+    androidTestImplementation(project(":kruth:kruth"))
     androidTestImplementation(libs.kotlinStdlib)
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.testCore)
@@ -54,7 +55,7 @@ ksp {
 }
 
 androidx {
-    name = "Android Room Testing"
+    name = "Room Testing"
     publish = Publish.SNAPSHOT_AND_RELEASE
     inceptionYear = "2017"
     description = "Android Room Testing"

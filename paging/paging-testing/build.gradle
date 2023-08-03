@@ -36,8 +36,8 @@ dependencies {
 }
 
 androidx {
-    name = "androidx.paging:paging-testing"
-    type = LibraryType.PUBLISHED_LIBRARY
+    name = "Paging Testing Extensions"
+    type = LibraryType.PUBLISHED_TEST_LIBRARY
     inceptionYear = "2022"
     description = "Test artifact for Paging implementation"
     publish = Publish.SNAPSHOT_AND_RELEASE

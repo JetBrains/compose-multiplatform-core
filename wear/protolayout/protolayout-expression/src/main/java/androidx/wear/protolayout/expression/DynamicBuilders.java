@@ -29,6 +29,7 @@ import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 import androidx.wear.protolayout.expression.AnimationParameterBuilders.AnimationSpec;
 import androidx.wear.protolayout.expression.ConditionScopes.ConditionScope;
+import androidx.wear.protolayout.expression.DynamicDataBuilders.DynamicDataValue;
 import androidx.wear.protolayout.expression.FixedValueBuilders.FixedBool;
 import androidx.wear.protolayout.expression.FixedValueBuilders.FixedColor;
 import androidx.wear.protolayout.expression.FixedValueBuilders.FixedDuration;
@@ -36,11 +37,12 @@ import androidx.wear.protolayout.expression.FixedValueBuilders.FixedFloat;
 import androidx.wear.protolayout.expression.FixedValueBuilders.FixedInstant;
 import androidx.wear.protolayout.expression.FixedValueBuilders.FixedInt32;
 import androidx.wear.protolayout.expression.FixedValueBuilders.FixedString;
-import androidx.wear.protolayout.expression.StateEntryBuilders.StateEntryValue;
 import androidx.wear.protolayout.expression.proto.DynamicProto;
+import androidx.wear.protolayout.protobuf.CodedInputStream;
+import androidx.wear.protolayout.protobuf.CodedOutputStream;
 import androidx.wear.protolayout.protobuf.ExtensionRegistryLite;
-import androidx.wear.protolayout.protobuf.InvalidProtocolBufferException;
 
+import java.io.IOException;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.time.Duration;
@@ -265,7 +267,13 @@ public final class DynamicBuilders {
      * @since 1.2
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY)
-    @IntDef({LOGICAL_OP_TYPE_UNDEFINED, LOGICAL_OP_TYPE_AND, LOGICAL_OP_TYPE_OR})
+    @IntDef({
+        LOGICAL_OP_TYPE_UNDEFINED,
+        LOGICAL_OP_TYPE_AND,
+        LOGICAL_OP_TYPE_OR,
+        LOGICAL_OP_TYPE_EQUAL,
+        LOGICAL_OP_TYPE_NOT_EQUAL
+    })
     @Retention(RetentionPolicy.SOURCE)
     @interface LogicalOpType {}
 
@@ -289,6 +297,20 @@ public final class DynamicBuilders {
      * @since 1.2
      */
     static final int LOGICAL_OP_TYPE_OR = 2;
+
+    /**
+     * Equal check.
+     *
+     * @since 1.2
+     */
+    static final int LOGICAL_OP_TYPE_EQUAL = 3;
+
+    /**
+     * Not Equal check.
+     *
+     * @since 1.2
+     */
+    static final int LOGICAL_OP_TYPE_NOT_EQUAL = 4;
 
     /**
      * The duration part to retrieve using {@link GetDurationPartOp}.
@@ -411,18 +433,13 @@ public final class DynamicBuilders {
             return mImpl.getSourceType().getNumber();
         }
 
-        /** @hide */
         @Override
         @RestrictTo(Scope.LIBRARY_GROUP)
         @Nullable
         public Fingerprint getFingerprint() {
             return mFingerprint;
         }
-        /**
-         * Creates a new wrapper instance from the proto.
-         *
-         * @hide
-         */
+        /** Creates a new wrapper instance from the proto. */
         @RestrictTo(Scope.LIBRARY_GROUP)
         @NonNull
         public static PlatformInt32Source fromProto(
@@ -436,18 +453,12 @@ public final class DynamicBuilders {
             return fromProto(proto, null);
         }
 
-        /**
-         * Returns the internal proto instance.
-         *
-         * @hide
-         */
-        @RestrictTo(Scope.LIBRARY_GROUP)
+        /** Returns the internal proto instance. */
         @NonNull
         DynamicProto.PlatformInt32Source toProto() {
             return mImpl;
         }
 
-        /** @hide */
         @Override
         @RestrictTo(Scope.LIBRARY_GROUP)
         @NonNull
@@ -565,6 +576,7 @@ public final class DynamicBuilders {
             return fromProto(proto, null);
         }
 
+        /** Returns the internal proto instance. */
         @NonNull
         DynamicProto.ArithmeticInt32Op toProto() {
             return mImpl;
@@ -576,6 +588,19 @@ public final class DynamicBuilders {
         @NonNull
         public DynamicProto.DynamicInt32 toDynamicInt32Proto() {
             return DynamicProto.DynamicInt32.newBuilder().setArithmeticOperation(mImpl).build();
+        }
+
+        @Override
+        @NonNull
+        public String toString() {
+            return "ArithmeticInt32Op{"
+                    + "inputLhs="
+                    + getInputLhs()
+                    + ", inputRhs="
+                    + getInputRhs()
+                    + ", operationType="
+                    + getOperationType()
+                    + "}";
         }
 
         /** Builder for {@link ArithmeticInt32Op}. */
@@ -657,6 +682,16 @@ public final class DynamicBuilders {
             return mImpl.getSourceKey();
         }
 
+        /**
+         * Gets the namespace for the state key.
+         *
+         * @since 1.2
+         */
+        @NonNull
+        public String getSourceNamespace() {
+            return mImpl.getSourceNamespace();
+        }
+
         @Override
         @RestrictTo(Scope.LIBRARY_GROUP)
         @Nullable
@@ -677,6 +712,7 @@ public final class DynamicBuilders {
             return fromProto(proto, null);
         }
 
+        /** Returns the internal proto instance. */
         @NonNull
         DynamicProto.StateInt32Source toProto() {
             return mImpl;
@@ -692,7 +728,12 @@ public final class DynamicBuilders {
         @Override
         @NonNull
         public String toString() {
-            return "StateInt32Source{" + "sourceKey=" + getSourceKey() + "}";
+            return "StateInt32Source{"
+                    + "sourceKey="
+                    + getSourceKey()
+                    + ", sourceNamespace="
+                    + getSourceNamespace()
+                    + "}";
         }
 
         /** Builder for {@link StateInt32Source}. */
@@ -712,6 +753,18 @@ public final class DynamicBuilders {
             public Builder setSourceKey(@NonNull String sourceKey) {
                 mImpl.setSourceKey(sourceKey);
                 mFingerprint.recordPropertyUpdate(1, sourceKey.hashCode());
+                return this;
+            }
+
+            /**
+             * Sets the name space for the state key.
+             *
+             * @since 1.2
+             */
+            @NonNull
+            public Builder setSourceNamespace(@NonNull String sourceNamespace) {
+                mImpl.setSourceNamespace(sourceNamespace);
+                mFingerprint.recordPropertyUpdate(2, sourceNamespace.hashCode());
                 return this;
             }
 
@@ -803,6 +856,7 @@ public final class DynamicBuilders {
             return fromProto(proto, null);
         }
 
+        /** Returns the internal proto instance. */
         @NonNull
         DynamicProto.ConditionalInt32Op toProto() {
             return mImpl;
@@ -814,6 +868,19 @@ public final class DynamicBuilders {
         @NonNull
         public DynamicProto.DynamicInt32 toDynamicInt32Proto() {
             return DynamicProto.DynamicInt32.newBuilder().setConditionalOp(mImpl).build();
+        }
+
+        @Override
+        @NonNull
+        public String toString() {
+            return "ConditionalInt32Op{"
+                    + "condition="
+                    + getCondition()
+                    + ", valueIfTrue="
+                    + getValueIfTrue()
+                    + ", valueIfFalse="
+                    + getValueIfFalse()
+                    + "}";
         }
 
         /** Builder for {@link ConditionalInt32Op}. */
@@ -952,6 +1019,7 @@ public final class DynamicBuilders {
             return fromProto(proto, null);
         }
 
+        /** Returns the internal proto instance. */
         @NonNull
         DynamicProto.ConditionalFloatOp toProto() {
             return mImpl;
@@ -963,6 +1031,19 @@ public final class DynamicBuilders {
         @NonNull
         public DynamicProto.DynamicFloat toDynamicFloatProto() {
             return DynamicProto.DynamicFloat.newBuilder().setConditionalOp(mImpl).build();
+        }
+
+        @Override
+        @NonNull
+        public String toString() {
+            return "ConditionalFloatOp{"
+                    + "condition="
+                    + getCondition()
+                    + ", valueIfTrue="
+                    + getValueIfTrue()
+                    + ", valueIfFalse="
+                    + getValueIfFalse()
+                    + "}";
         }
 
         /** Builder for {@link ConditionalFloatOp}. */
@@ -1079,6 +1160,7 @@ public final class DynamicBuilders {
             return fromProto(proto, null);
         }
 
+        /** Returns the internal proto instance. */
         @NonNull
         DynamicProto.FloatToInt32Op toProto() {
             return mImpl;
@@ -1196,6 +1278,7 @@ public final class DynamicBuilders {
         public Fingerprint getFingerprint() {
             return mFingerprint;
         }
+
         /** Creates a new wrapper instance from the proto. */
         @RestrictTo(Scope.LIBRARY_GROUP)
         @NonNull
@@ -1211,7 +1294,6 @@ public final class DynamicBuilders {
         }
 
         /** Returns the internal proto instance. */
-        @RestrictTo(Scope.LIBRARY_GROUP)
         @NonNull
         DynamicProto.AnimatableFixedInt32 toProto() {
             return mImpl;
@@ -1345,6 +1427,7 @@ public final class DynamicBuilders {
         public Fingerprint getFingerprint() {
             return mFingerprint;
         }
+
         /** Creates a new wrapper instance from the proto. */
         @RestrictTo(Scope.LIBRARY_GROUP)
         @NonNull
@@ -1361,7 +1444,6 @@ public final class DynamicBuilders {
         }
 
         /** Returns the internal proto instance. */
-        @RestrictTo(Scope.LIBRARY_GROUP)
         @NonNull
         DynamicProto.AnimatableDynamicInt32 toProto() {
             return mImpl;
@@ -1459,23 +1541,70 @@ public final class DynamicBuilders {
         /**
          * Creates a {@link DynamicInt32} from a byte array generated by {@link
          * #toDynamicInt32ByteArray()}.
+         *
+         * @throws IllegalArgumentException if the byte array does not contain a valid serialization
          */
         @NonNull
         static DynamicInt32 fromByteArray(@NonNull byte[] byteArray) {
+            return fromByteArray(byteArray, 0, byteArray.length);
+        }
+
+        /**
+         * Creates a {@link DynamicInt32} from the provided byte array at the provided offset and
+         * length, that was generated by one of the {@link #toDynamicInt32ByteArray} overloads.
+         *
+         * @throws IllegalArgumentException if the byte array does not contain a valid serialization
+         *     in the provided offset and length
+         */
+        @NonNull
+        static DynamicInt32 fromByteArray(@NonNull byte[] byteArray, int offset, int length) {
             try {
                 return dynamicInt32FromProto(
                         DynamicProto.DynamicInt32.parseFrom(
-                                byteArray, ExtensionRegistryLite.getEmptyRegistry()));
-            } catch (InvalidProtocolBufferException e) {
+                                CodedInputStream.newInstance(byteArray, offset, length),
+                                ExtensionRegistryLite.getEmptyRegistry()));
+            } catch (IOException e) {
                 throw new IllegalArgumentException(
                         "Byte array could not be parsed into DynamicInt32", e);
             }
         }
 
-        /** Creates a byte array that can later be used with {@link #fromByteArray(byte[])}. */
+        /**
+         * Serializes the {@link DynamicInt32} into a new byte array that can later be used with
+         * {@link #fromByteArray(byte[])}.
+         */
         @NonNull
         default byte[] toDynamicInt32ByteArray() {
             return toDynamicInt32Proto().toByteArray();
+        }
+
+        /**
+         * Serializes the {@link DynamicInt32} into the provided byte array, returning the amount of
+         * bytes written, that can later be used with {@code DynamicInt32.fromByteArray(byteArray,
+         * 0, bytesWritten)}.
+         *
+         * @throws IllegalArgumentException if the byte array is too small
+         */
+        default int toDynamicInt32ByteArray(@NonNull byte[] byteArray) {
+            return toDynamicInt32ByteArray(byteArray, 0, byteArray.length);
+        }
+
+        /**
+         * Serializes the {@link DynamicInt32} into the provided byte array, returning the amount of
+         * bytes written, limited by the provided offset and length, that can later be used with
+         * {@code DynamicInt32.fromByteArray(byteArray, offset, bytesWritten)}.
+         *
+         * @throws IllegalArgumentException if the byte array is too small
+         */
+        default int toDynamicInt32ByteArray(@NonNull byte[] byteArray, int offset, int length) {
+            CodedOutputStream stream = CodedOutputStream.newInstance(byteArray, offset, length);
+            try {
+                toDynamicInt32Proto().writeTo(stream);
+            } catch (IOException e) {
+                throw new IllegalArgumentException(
+                        "Provided byte array not large enough to contain this DynamicInt32", e);
+            }
+            return stream.getTotalBytesWritten();
         }
 
         /** Creates a constant-valued {@link DynamicInt32}. */
@@ -1487,12 +1616,14 @@ public final class DynamicBuilders {
         /**
          * Creates a {@link DynamicInt32} that is bound to the value of an item of the State.
          *
-         * @param stateKey The key to a {@link StateEntryValue} with an int value from the
-         *     provider's state.
+         * @param dynamicDataKey The source key to a {@link DynamicDataValue} with an int value.
          */
         @NonNull
-        static DynamicInt32 fromState(@NonNull String stateKey) {
-            return new StateInt32Source.Builder().setSourceKey(stateKey).build();
+        static DynamicInt32 from(@NonNull DynamicDataKey<DynamicInt32> dynamicDataKey) {
+            return new StateInt32Source.Builder()
+                    .setSourceKey(dynamicDataKey.getKey())
+                    .setSourceNamespace(dynamicDataKey.getNamespace())
+                    .build();
         }
 
         /**
@@ -1528,12 +1659,11 @@ public final class DynamicBuilders {
          * time the state value changes, this {@link DynamicInt32} will animate from its current
          * value to the new value (from the state).
          *
-         * @param stateKey The key to a {@link StateEntryValue} with an int value from the
-         *     provider's state.
+         * @param dynamicDataKey The source key to a {@link DynamicDataValue} with an int value.
          */
         @NonNull
-        static DynamicInt32 animate(@NonNull String stateKey) {
-            return new AnimatableDynamicInt32.Builder().setInput(fromState(stateKey)).build();
+        static DynamicInt32 animate(@NonNull DynamicDataKey<DynamicInt32> dynamicDataKey) {
+            return new AnimatableDynamicInt32.Builder().setInput(from(dynamicDataKey)).build();
         }
 
         /**
@@ -1541,15 +1671,15 @@ public final class DynamicBuilders {
          * time the state value changes, this {@link DynamicInt32} will animate from its current
          * value to the new value (from the state).
          *
-         * @param stateKey The key to a {@link StateEntryValue} with an int value from the
-         *     provider's state.
+         * @param dynamicDataKey The source key to a {@link DynamicDataValue} with an int value
          * @param animationSpec The animation parameters.
          */
         @NonNull
         static DynamicInt32 animate(
-                @NonNull String stateKey, @NonNull AnimationSpec animationSpec) {
+                @NonNull DynamicDataKey<DynamicInt32> dynamicDataKey,
+                @NonNull AnimationSpec animationSpec) {
             return new AnimatableDynamicInt32.Builder()
-                    .setInput(fromState(stateKey))
+                    .setInput(from(dynamicDataKey))
                     .setAnimationSpec(animationSpec)
                     .build();
         }
@@ -2334,8 +2464,8 @@ public final class DynamicBuilders {
 
                 /**
                  * Sets minimum number of integer digits for the formatter. Defaults to one if not
-                 * specified. If minIntegerDigits is zero and the -1 < input < 1, the Integer
-                 * part will not appear.
+                 * specified. If minIntegerDigits is zero and the -1 < input < 1, the Integer part
+                 * will not appear.
                  */
                 @NonNull
                 public Builder setMinIntegerDigits(@IntRange(from = 0) int minIntegerDigits) {
@@ -2516,6 +2646,7 @@ public final class DynamicBuilders {
             return fromProto(proto, null);
         }
 
+        /** Returns the internal proto instance. */
         @NonNull
         DynamicProto.Int32FormatOp toProto() {
             return mImpl;
@@ -2623,6 +2754,16 @@ public final class DynamicBuilders {
             return mImpl.getSourceKey();
         }
 
+        /**
+         * Gets the namespace for the state key.
+         *
+         * @since 1.2
+         */
+        @NonNull
+        public String getSourceNamespace() {
+            return mImpl.getSourceNamespace();
+        }
+
         @Override
         @RestrictTo(Scope.LIBRARY_GROUP)
         @Nullable
@@ -2643,7 +2784,7 @@ public final class DynamicBuilders {
             return fromProto(proto, null);
         }
 
-
+        /** Returns the internal proto instance. */
         @NonNull
         DynamicProto.StateStringSource toProto() {
             return mImpl;
@@ -2659,7 +2800,12 @@ public final class DynamicBuilders {
         @Override
         @NonNull
         public String toString() {
-            return "StateStringSource{" + "sourceKey=" + getSourceKey() + "}";
+            return "StateStringSource{"
+                    + "sourceKey="
+                    + getSourceKey()
+                    + ", sourceNamespace="
+                    + getSourceNamespace()
+                    + "}";
         }
 
         /** Builder for {@link StateStringSource}. */
@@ -2679,6 +2825,18 @@ public final class DynamicBuilders {
             public Builder setSourceKey(@NonNull String sourceKey) {
                 mImpl.setSourceKey(sourceKey);
                 mFingerprint.recordPropertyUpdate(1, sourceKey.hashCode());
+                return this;
+            }
+
+            /**
+             * Sets the name space for the state key.
+             *
+             * @since 1.2
+             */
+            @NonNull
+            public Builder setSourceNamespace(@NonNull String sourceNamespace) {
+                mImpl.setSourceNamespace(sourceNamespace);
+                mFingerprint.recordPropertyUpdate(2, sourceNamespace.hashCode());
                 return this;
             }
 
@@ -2769,6 +2927,7 @@ public final class DynamicBuilders {
             return fromProto(proto, null);
         }
 
+        /** Returns the internal proto instance. */
         @NonNull
         DynamicProto.ConditionalStringOp toProto() {
             return mImpl;
@@ -2912,6 +3071,7 @@ public final class DynamicBuilders {
             return fromProto(proto, null);
         }
 
+        /** Returns the internal proto instance. */
         @NonNull
         DynamicProto.ConcatStringOp toProto() {
             return mImpl;
@@ -3074,6 +3234,7 @@ public final class DynamicBuilders {
             return fromProto(proto, null);
         }
 
+        /** Returns the internal proto instance. */
         @NonNull
         DynamicProto.FloatFormatOp toProto() {
             return mImpl;
@@ -3207,23 +3368,70 @@ public final class DynamicBuilders {
         /**
          * Creates a {@link DynamicString} from a byte array generated by {@link
          * #toDynamicStringByteArray()}.
+         *
+         * @throws IllegalArgumentException if the byte array does not contain a valid serialization
          */
         @NonNull
         static DynamicString fromByteArray(@NonNull byte[] byteArray) {
+            return fromByteArray(byteArray, 0, byteArray.length);
+        }
+
+        /**
+         * Creates a {@link DynamicString} from the provided byte array at the provided offset and
+         * length, that was generated by one of the {@link #toDynamicStringByteArray} overloads.
+         *
+         * @throws IllegalArgumentException if the byte array does not contain a valid serialization
+         *     in the provided offset and length
+         */
+        @NonNull
+        static DynamicString fromByteArray(@NonNull byte[] byteArray, int offset, int length) {
             try {
                 return dynamicStringFromProto(
                         DynamicProto.DynamicString.parseFrom(
-                                byteArray, ExtensionRegistryLite.getEmptyRegistry()));
-            } catch (InvalidProtocolBufferException e) {
+                                CodedInputStream.newInstance(byteArray, offset, length),
+                                ExtensionRegistryLite.getEmptyRegistry()));
+            } catch (IOException e) {
                 throw new IllegalArgumentException(
                         "Byte array could not be parsed into DynamicString", e);
             }
         }
 
-        /** Creates a byte array that can later be used with {@link #fromByteArray(byte[])}. */
+        /**
+         * Serializes the {@link DynamicString} into a new byte array that can later be used with
+         * {@link #fromByteArray(byte[])}.
+         */
         @NonNull
         default byte[] toDynamicStringByteArray() {
             return toDynamicStringProto().toByteArray();
+        }
+
+        /**
+         * Serializes the {@link DynamicString} into the provided byte array, returning the amount
+         * of bytes written, that can later be used with {@code DynamicString.fromByteArray(
+         * byteArray, 0, bytesWritten)}.
+         *
+         * @throws IllegalArgumentException if the byte array is too small
+         */
+        default int toDynamicStringByteArray(@NonNull byte[] byteArray) {
+            return toDynamicStringByteArray(byteArray, 0, byteArray.length);
+        }
+
+        /**
+         * Serializes the {@link DynamicString} into the provided byte array, returning the amount
+         * of bytes written, limited by the provided offset and length, that can later be used with
+         * {@code DynamicString.fromByteArray(byteArray, offset, bytesWritten)}.
+         *
+         * @throws IllegalArgumentException if the byte array is too small
+         */
+        default int toDynamicStringByteArray(@NonNull byte[] byteArray, int offset, int length) {
+            CodedOutputStream stream = CodedOutputStream.newInstance(byteArray, offset, length);
+            try {
+                toDynamicStringProto().writeTo(stream);
+            } catch (IOException e) {
+                throw new IllegalArgumentException(
+                        "Provided byte array not large enough to contain this DynamicString", e);
+            }
+            return stream.getTotalBytesWritten();
         }
 
         /**
@@ -3239,12 +3447,14 @@ public final class DynamicBuilders {
          * Creates a {@link DynamicString} that is bound to the value of an item of the State. The
          * resulted {@link DynamicString} is subject to being truncated if it's too long.
          *
-         * @param stateKey The key to a {@link StateEntryValue} with a string value from the
-         *     provider's state.
+         * @param dynamicDataKey The source key to a {@link DynamicDataValue} with a string value.
          */
         @NonNull
-        static DynamicString fromState(@NonNull String stateKey) {
-            return new StateStringSource.Builder().setSourceKey(stateKey).build();
+        static DynamicString from(@NonNull DynamicDataKey<DynamicString> dynamicDataKey) {
+            return new StateStringSource.Builder()
+                    .setSourceKey(dynamicDataKey.getKey())
+                    .setSourceNamespace(dynamicDataKey.getNamespace())
+                    .build();
         }
 
         /**
@@ -3409,6 +3619,7 @@ public final class DynamicBuilders {
             return fromProto(proto, null);
         }
 
+        /** Returns the internal proto instance. */
         @NonNull
         DynamicProto.ArithmeticFloatOp toProto() {
             return mImpl;
@@ -3420,6 +3631,19 @@ public final class DynamicBuilders {
         @NonNull
         public DynamicProto.DynamicFloat toDynamicFloatProto() {
             return DynamicProto.DynamicFloat.newBuilder().setArithmeticOperation(mImpl).build();
+        }
+
+        @Override
+        @NonNull
+        public String toString() {
+            return "ArithmeticFloatOp{"
+                    + "inputLhs="
+                    + getInputLhs()
+                    + ", inputRhs="
+                    + getInputRhs()
+                    + ", operationType="
+                    + getOperationType()
+                    + "}";
         }
 
         /** Builder for {@link ArithmeticFloatOp}. */
@@ -3501,6 +3725,16 @@ public final class DynamicBuilders {
             return mImpl.getSourceKey();
         }
 
+        /**
+         * Gets the namespace for the state key.
+         *
+         * @since 1.2
+         */
+        @NonNull
+        public String getSourceNamespace() {
+            return mImpl.getSourceNamespace();
+        }
+
         @Override
         @RestrictTo(Scope.LIBRARY_GROUP)
         @Nullable
@@ -3521,6 +3755,7 @@ public final class DynamicBuilders {
             return fromProto(proto, null);
         }
 
+        /** Returns the internal proto instance. */
         @NonNull
         DynamicProto.StateFloatSource toProto() {
             return mImpl;
@@ -3536,7 +3771,12 @@ public final class DynamicBuilders {
         @Override
         @NonNull
         public String toString() {
-            return "StateFloatSource{" + "sourceKey=" + getSourceKey() + "}";
+            return "StateFloatSource{"
+                    + "sourceKey="
+                    + getSourceKey()
+                    + ", sourceNamespace="
+                    + getSourceNamespace()
+                    + "}";
         }
 
         /** Builder for {@link StateFloatSource}. */
@@ -3556,6 +3796,18 @@ public final class DynamicBuilders {
             public Builder setSourceKey(@NonNull String sourceKey) {
                 mImpl.setSourceKey(sourceKey);
                 mFingerprint.recordPropertyUpdate(1, sourceKey.hashCode());
+                return this;
+            }
+
+            /**
+             * Sets the name space for the state key.
+             *
+             * @since 1.2
+             */
+            @NonNull
+            public Builder setSourceNamespace(@NonNull String sourceNamespace) {
+                mImpl.setSourceNamespace(sourceNamespace);
+                mFingerprint.recordPropertyUpdate(2, sourceNamespace.hashCode());
                 return this;
             }
 
@@ -3615,6 +3867,7 @@ public final class DynamicBuilders {
             return fromProto(proto, null);
         }
 
+        /** Returns the internal proto instance. */
         @NonNull
         DynamicProto.Int32ToFloatOp toProto() {
             return mImpl;
@@ -3730,6 +3983,7 @@ public final class DynamicBuilders {
             return fromProto(proto, null);
         }
 
+        /** Returns the internal proto instance. */
         @NonNull
         DynamicProto.AnimatableFixedFloat toProto() {
             return mImpl;
@@ -3879,6 +4133,7 @@ public final class DynamicBuilders {
             return fromProto(proto, null);
         }
 
+        /** Returns the internal proto instance. */
         @NonNull
         DynamicProto.AnimatableDynamicFloat toProto() {
             return mImpl;
@@ -3976,23 +4231,70 @@ public final class DynamicBuilders {
         /**
          * Creates a {@link DynamicFloat} from a byte array generated by {@link
          * #toDynamicFloatByteArray()}.
+         *
+         * @throws IllegalArgumentException if the byte array does not contain a valid serialization
          */
         @NonNull
         static DynamicFloat fromByteArray(@NonNull byte[] byteArray) {
+            return fromByteArray(byteArray, 0, byteArray.length);
+        }
+
+        /**
+         * Creates a {@link DynamicFloat} from the provided byte array at the provided offset and
+         * length, that was generated by one of the {@link #toDynamicFloatByteArray} overloads.
+         *
+         * @throws IllegalArgumentException if the byte array does not contain a valid serialization
+         *     in the provided offset and length
+         */
+        @NonNull
+        static DynamicFloat fromByteArray(@NonNull byte[] byteArray, int offset, int length) {
             try {
                 return dynamicFloatFromProto(
                         DynamicProto.DynamicFloat.parseFrom(
-                                byteArray, ExtensionRegistryLite.getEmptyRegistry()));
-            } catch (InvalidProtocolBufferException e) {
+                                CodedInputStream.newInstance(byteArray, offset, length),
+                                ExtensionRegistryLite.getEmptyRegistry()));
+            } catch (IOException e) {
                 throw new IllegalArgumentException(
                         "Byte array could not be parsed into DynamicFloat", e);
             }
         }
 
-        /** Creates a byte array that can later be used with {@link #fromByteArray(byte[])}. */
+        /**
+         * Serializes the {@link DynamicFloat} into a new byte array that can later be used with
+         * {@link #fromByteArray(byte[])}.
+         */
         @NonNull
         default byte[] toDynamicFloatByteArray() {
             return toDynamicFloatProto().toByteArray();
+        }
+
+        /**
+         * Serializes the {@link DynamicFloat} into the provided byte array, returning the amount of
+         * bytes written, that can later be used with {@code DynamicFloat.fromByteArray(byteArray,
+         * 0, bytesWritten)}.
+         *
+         * @throws IllegalArgumentException if the byte array is too small
+         */
+        default int toDynamicFloatByteArray(@NonNull byte[] byteArray) {
+            return toDynamicFloatByteArray(byteArray, 0, byteArray.length);
+        }
+
+        /**
+         * Serializes the {@link DynamicFloat} into the provided byte array, returning the amount of
+         * bytes written, limited by the provided offset and length, that can later be used with
+         * {@code DynamicFloat.fromByteArray(byteArray, offset, bytesWritten)}.
+         *
+         * @throws IllegalArgumentException if the byte array is too small
+         */
+        default int toDynamicFloatByteArray(@NonNull byte[] byteArray, int offset, int length) {
+            CodedOutputStream stream = CodedOutputStream.newInstance(byteArray, offset, length);
+            try {
+                toDynamicFloatProto().writeTo(stream);
+            } catch (IOException e) {
+                throw new IllegalArgumentException(
+                        "Provided byte array not large enough to contain this DynamicFloat", e);
+            }
+            return stream.getTotalBytesWritten();
         }
 
         /**
@@ -4010,12 +4312,14 @@ public final class DynamicBuilders {
         /**
          * Creates a {@link DynamicFloat} that is bound to the value of an item of the State.
          *
-         * @param stateKey The key to a {@link StateEntryValue} with a float value from the
-         *     provider's state.
+         * @param dynamicDataKey The data source to a {@link DynamicDataValue} with a float value.
          */
         @NonNull
-        static DynamicFloat fromState(@NonNull String stateKey) {
-            return new StateFloatSource.Builder().setSourceKey(stateKey).build();
+        static DynamicFloat from(@NonNull DynamicDataKey<DynamicFloat> dynamicDataKey) {
+            return new StateFloatSource.Builder()
+                    .setSourceKey(dynamicDataKey.getKey())
+                    .setSourceNamespace(dynamicDataKey.getNamespace())
+                    .build();
         }
 
         /**
@@ -4052,12 +4356,11 @@ public final class DynamicBuilders {
          * time the state value changes, this {@link DynamicFloat} will animate from its current
          * value to the new value (from the state).
          *
-         * @param stateKey The key to a {@link StateEntryValue} with a float value from the
-         *     providers state.
+         * @param dynamicDataKey The data source to a {@link DynamicDataValue} with a float value.
          */
         @NonNull
-        static DynamicFloat animate(@NonNull String stateKey) {
-            return new AnimatableDynamicFloat.Builder().setInput(fromState(stateKey)).build();
+        static DynamicFloat animate(@NonNull DynamicDataKey<DynamicFloat> dynamicDataKey) {
+            return new AnimatableDynamicFloat.Builder().setInput(from(dynamicDataKey)).build();
         }
 
         /**
@@ -4065,15 +4368,15 @@ public final class DynamicBuilders {
          * time the state value changes, this {@link DynamicFloat} will animate from its current
          * value to the new value (from the state).
          *
-         * @param stateKey The key to a {@link StateEntryValue} with a float value from the
-         *     providers state.
+         * @param dynamicDataKey The source key to a {@link DynamicDataValue} with a float value.
          * @param animationSpec The animation parameters.
          */
         @NonNull
         static DynamicFloat animate(
-                @NonNull String stateKey, @NonNull AnimationSpec animationSpec) {
+                @NonNull DynamicDataKey<DynamicFloat> dynamicDataKey,
+                @NonNull AnimationSpec animationSpec) {
             return new AnimatableDynamicFloat.Builder()
-                    .setInput(fromState(stateKey))
+                    .setInput(from(dynamicDataKey))
                     .setAnimationSpec(animationSpec)
                     .build();
         }
@@ -4780,8 +5083,8 @@ public final class DynamicBuilders {
 
                 /**
                  * Sets minimum number of integer digits for the formatter. Defaults to one if not
-                 * specified. If minIntegerDigits is zero and the -1 < input < 1, the Integer
-                 * part will not appear.
+                 * specified. If minIntegerDigits is zero and the -1 < input < 1, the Integer part
+                 * will not appear.
                  */
                 @NonNull
                 public Builder setMinIntegerDigits(@IntRange(from = 0) int minIntegerDigits) {
@@ -4916,6 +5219,16 @@ public final class DynamicBuilders {
             return mImpl.getSourceKey();
         }
 
+        /**
+         * Gets the namespace for the state key.
+         *
+         * @since 1.2
+         */
+        @NonNull
+        public String getSourceNamespace() {
+            return mImpl.getSourceNamespace();
+        }
+
         @Override
         @RestrictTo(Scope.LIBRARY_GROUP)
         @Nullable
@@ -4936,6 +5249,7 @@ public final class DynamicBuilders {
             return fromProto(proto, null);
         }
 
+        /** Returns the internal proto instance. */
         @NonNull
         DynamicProto.StateBoolSource toProto() {
             return mImpl;
@@ -4951,7 +5265,12 @@ public final class DynamicBuilders {
         @Override
         @NonNull
         public String toString() {
-            return "StateBoolSource{" + "sourceKey=" + getSourceKey() + "}";
+            return "StateBoolSource{"
+                    + "sourceKey="
+                    + getSourceKey()
+                    + ", sourceNamespace="
+                    + getSourceNamespace()
+                    + "}";
         }
 
         /** Builder for {@link StateBoolSource}. */
@@ -4972,6 +5291,18 @@ public final class DynamicBuilders {
             public Builder setSourceKey(@NonNull String sourceKey) {
                 mImpl.setSourceKey(sourceKey);
                 mFingerprint.recordPropertyUpdate(1, sourceKey.hashCode());
+                return this;
+            }
+
+            /**
+             * Sets the name space for the state key.
+             *
+             * @since 1.2
+             */
+            @NonNull
+            public Builder setSourceNamespace(@NonNull String sourceNamespace) {
+                mImpl.setSourceNamespace(sourceNamespace);
+                mFingerprint.recordPropertyUpdate(2, sourceNamespace.hashCode());
                 return this;
             }
 
@@ -5059,6 +5390,7 @@ public final class DynamicBuilders {
             return fromProto(proto, null);
         }
 
+        /** Returns the internal proto instance. */
         @NonNull
         DynamicProto.ComparisonInt32Op toProto() {
             return mImpl;
@@ -5070,6 +5402,19 @@ public final class DynamicBuilders {
         @NonNull
         public DynamicProto.DynamicBool toDynamicBoolProto() {
             return DynamicProto.DynamicBool.newBuilder().setInt32Comparison(mImpl).build();
+        }
+
+        @Override
+        @NonNull
+        public String toString() {
+            return "ComparisonInt32Op{"
+                    + "inputLhs="
+                    + getInputLhs()
+                    + ", inputRhs="
+                    + getInputRhs()
+                    + ", operationType="
+                    + getOperationType()
+                    + "}";
         }
 
         /** Builder for {@link ComparisonInt32Op}. */
@@ -5203,6 +5548,7 @@ public final class DynamicBuilders {
             return fromProto(proto, null);
         }
 
+        /** Returns the internal proto instance. */
         @NonNull
         DynamicProto.ComparisonFloatOp toProto() {
             return mImpl;
@@ -5214,6 +5560,19 @@ public final class DynamicBuilders {
         @NonNull
         public DynamicProto.DynamicBool toDynamicBoolProto() {
             return DynamicProto.DynamicBool.newBuilder().setFloatComparison(mImpl).build();
+        }
+
+        @Override
+        @NonNull
+        public String toString() {
+            return "ComparisonFloatOp{"
+                    + "inputLhs="
+                    + getInputLhs()
+                    + ", inputRhs="
+                    + getInputRhs()
+                    + ", operationType="
+                    + getOperationType()
+                    + "}";
         }
 
         /** Builder for {@link ComparisonFloatOp}. */
@@ -5319,6 +5678,7 @@ public final class DynamicBuilders {
             return fromProto(proto, null);
         }
 
+        /** Returns the internal proto instance. */
         @NonNull
         DynamicProto.NotBoolOp toProto() {
             return mImpl;
@@ -5439,6 +5799,7 @@ public final class DynamicBuilders {
             return fromProto(proto, null);
         }
 
+        /** Returns the internal proto instance. */
         @NonNull
         DynamicProto.LogicalBoolOp toProto() {
             return mImpl;
@@ -5532,23 +5893,70 @@ public final class DynamicBuilders {
         /**
          * Creates a {@link DynamicBool} from a byte array generated by {@link
          * #toDynamicBoolByteArray()}.
+         *
+         * @throws IllegalArgumentException if the byte array does not contain a valid serialization
          */
         @NonNull
         static DynamicBool fromByteArray(@NonNull byte[] byteArray) {
+            return fromByteArray(byteArray, 0, byteArray.length);
+        }
+
+        /**
+         * Creates a {@link DynamicBool} from the provided byte array at the provided offset and
+         * length, that was generated by one of the {@link #toDynamicBoolByteArray} overloads.
+         *
+         * @throws IllegalArgumentException if the byte array does not contain a valid serialization
+         *     in the provided offset and length
+         */
+        @NonNull
+        static DynamicBool fromByteArray(@NonNull byte[] byteArray, int offset, int length) {
             try {
                 return dynamicBoolFromProto(
                         DynamicProto.DynamicBool.parseFrom(
-                                byteArray, ExtensionRegistryLite.getEmptyRegistry()));
-            } catch (InvalidProtocolBufferException e) {
+                                CodedInputStream.newInstance(byteArray, offset, length),
+                                ExtensionRegistryLite.getEmptyRegistry()));
+            } catch (IOException e) {
                 throw new IllegalArgumentException(
                         "Byte array could not be parsed into DynamicBool", e);
             }
         }
 
-        /** Creates a byte array that can later be used with {@link #fromByteArray(byte[])}. */
+        /**
+         * Serializes the {@link DynamicBool} into a new byte array that can later be used with
+         * {@link #fromByteArray(byte[])}.
+         */
         @NonNull
         default byte[] toDynamicBoolByteArray() {
             return toDynamicBoolProto().toByteArray();
+        }
+
+        /**
+         * Serializes the {@link DynamicBool} into the provided byte array, returning the amount of
+         * bytes written, that can later be used with {@code DynamicBool.fromByteArray(byteArray, 0,
+         * bytesWritten)}.
+         *
+         * @throws IllegalArgumentException if the byte array is too small
+         */
+        default int toDynamicBoolByteArray(@NonNull byte[] byteArray) {
+            return toDynamicBoolByteArray(byteArray, 0, byteArray.length);
+        }
+
+        /**
+         * Serializes the {@link DynamicBool} into the provided byte array, returning the amount of
+         * bytes written, limited by the provided offset and length, that can later be used with
+         * {@code DynamicBool.fromByteArray(byteArray, offset, bytesWritten)}.
+         *
+         * @throws IllegalArgumentException if the byte array is too small
+         */
+        default int toDynamicBoolByteArray(@NonNull byte[] byteArray, int offset, int length) {
+            CodedOutputStream stream = CodedOutputStream.newInstance(byteArray, offset, length);
+            try {
+                toDynamicBoolProto().writeTo(stream);
+            } catch (IOException e) {
+                throw new IllegalArgumentException(
+                        "Provided byte array not large enough to contain this DynamicBool", e);
+            }
+            return stream.getTotalBytesWritten();
         }
 
         /** Creates a constant-valued {@link DynamicBool}. */
@@ -5560,12 +5968,14 @@ public final class DynamicBuilders {
         /**
          * Creates a {@link DynamicBool} that is bound to the value of an item of the State.
          *
-         * @param stateKey The key to a {@link StateEntryValue} with a boolean value from the
-         *     provider's state.
+         * @param dynamicDataKey The key to a {@link DynamicDataValue} with a boolean value.
          */
         @NonNull
-        static DynamicBool fromState(@NonNull String stateKey) {
-            return new StateBoolSource.Builder().setSourceKey(stateKey).build();
+        static DynamicBool from(@NonNull DynamicDataKey<DynamicBool> dynamicDataKey) {
+            return new StateBoolSource.Builder()
+                    .setSourceKey(dynamicDataKey.getKey())
+                    .setSourceNamespace(dynamicDataKey.getNamespace())
+                    .build();
         }
 
         /**
@@ -5607,6 +6017,32 @@ public final class DynamicBuilders {
                     .build();
         }
 
+        /**
+         * Returns a {@link DynamicBool} that is true if the value of this {@link DynamicBool} and
+         * {@code other} are equal, otherwise it's false.
+         */
+        @NonNull
+        default DynamicBool eq(@NonNull DynamicBool other) {
+            return new LogicalBoolOp.Builder()
+                    .setInputLhs(this)
+                    .setInputRhs(other)
+                    .setOperationType(DynamicBuilders.LOGICAL_OP_TYPE_EQUAL)
+                    .build();
+        }
+
+        /**
+         * Returns a {@link DynamicBool} that is true if the value of this {@link DynamicBool} and
+         * {@code other} are not equal, otherwise it's false.
+         */
+        @NonNull
+        default DynamicBool ne(@NonNull DynamicBool other) {
+            return new LogicalBoolOp.Builder()
+                    .setInputLhs(this)
+                    .setInputRhs(other)
+                    .setOperationType(DynamicBuilders.LOGICAL_OP_TYPE_NOT_EQUAL)
+                    .build();
+        }
+
         /** Get the fingerprint for this object or null if unknown. */
         @RestrictTo(Scope.LIBRARY_GROUP)
         @Nullable
@@ -5621,7 +6057,6 @@ public final class DynamicBuilders {
             DynamicBool build();
         }
     }
-
 
     /** Creates a new wrapper instance from the proto. */
     @RestrictTo(Scope.LIBRARY_GROUP)
@@ -5683,6 +6118,16 @@ public final class DynamicBuilders {
             return mImpl.getSourceKey();
         }
 
+        /**
+         * Gets the namespace for the state key.
+         *
+         * @since 1.2
+         */
+        @NonNull
+        public String getSourceNamespace() {
+            return mImpl.getSourceNamespace();
+        }
+
         @Override
         @RestrictTo(Scope.LIBRARY_GROUP)
         @Nullable
@@ -5703,6 +6148,7 @@ public final class DynamicBuilders {
             return fromProto(proto, null);
         }
 
+        /** Returns the internal proto instance. */
         @NonNull
         DynamicProto.StateColorSource toProto() {
             return mImpl;
@@ -5718,7 +6164,12 @@ public final class DynamicBuilders {
         @Override
         @NonNull
         public String toString() {
-            return "StateColorSource{" + "sourceKey=" + getSourceKey() + "}";
+            return "StateColorSource{"
+                    + "sourceKey="
+                    + getSourceKey()
+                    + ", sourceNamespace="
+                    + getSourceNamespace()
+                    + "}";
         }
 
         /** Builder for {@link StateColorSource}. */
@@ -5738,6 +6189,18 @@ public final class DynamicBuilders {
             public Builder setSourceKey(@NonNull String sourceKey) {
                 mImpl.setSourceKey(sourceKey);
                 mFingerprint.recordPropertyUpdate(1, sourceKey.hashCode());
+                return this;
+            }
+
+            /**
+             * Sets the name space for the state key.
+             *
+             * @since 1.2
+             */
+            @NonNull
+            public Builder setSourceNamespace(@NonNull String sourceNamespace) {
+                mImpl.setSourceNamespace(sourceNamespace);
+                mFingerprint.recordPropertyUpdate(2, sourceNamespace.hashCode());
                 return this;
             }
 
@@ -5819,6 +6282,7 @@ public final class DynamicBuilders {
             return fromProto(proto, null);
         }
 
+        /** Returns the internal proto instance. */
         @NonNull
         DynamicProto.AnimatableFixedColor toProto() {
             return mImpl;
@@ -5968,6 +6432,7 @@ public final class DynamicBuilders {
             return fromProto(proto, null);
         }
 
+        /** Returns the internal proto instance. */
         @NonNull
         DynamicProto.AnimatableDynamicColor toProto() {
             return mImpl;
@@ -6116,7 +6581,6 @@ public final class DynamicBuilders {
         }
 
         /** Returns the internal proto instance. */
-        @RestrictTo(Scope.LIBRARY_GROUP)
         @NonNull
         DynamicProto.ConditionalColorOp toProto() {
             return mImpl;
@@ -6211,23 +6675,70 @@ public final class DynamicBuilders {
         /**
          * Creates a {@link DynamicColor} from a byte array generated by {@link
          * #toDynamicColorByteArray()}.
+         *
+         * @throws IllegalArgumentException if the byte array does not contain a valid serialization
          */
         @NonNull
         static DynamicColor fromByteArray(@NonNull byte[] byteArray) {
+            return fromByteArray(byteArray, 0, byteArray.length);
+        }
+
+        /**
+         * Creates a {@link DynamicColor} from the provided byte array at the provided offset and
+         * length, that was generated by one of the {@link #toDynamicColorByteArray} overloads.
+         *
+         * @throws IllegalArgumentException if the byte array does not contain a valid serialization
+         *     in the provided offset and length
+         */
+        @NonNull
+        static DynamicColor fromByteArray(@NonNull byte[] byteArray, int offset, int length) {
             try {
                 return dynamicColorFromProto(
                         DynamicProto.DynamicColor.parseFrom(
-                                byteArray, ExtensionRegistryLite.getEmptyRegistry()));
-            } catch (InvalidProtocolBufferException e) {
+                                CodedInputStream.newInstance(byteArray, offset, length),
+                                ExtensionRegistryLite.getEmptyRegistry()));
+            } catch (IOException e) {
                 throw new IllegalArgumentException(
                         "Byte array could not be parsed into DynamicColor", e);
             }
         }
 
-        /** Creates a byte array that can later be used with {@link #fromByteArray(byte[])}. */
+        /**
+         * Serializes the {@link DynamicColor} into a new byte array that can later be used with
+         * {@link #fromByteArray(byte[])}.
+         */
         @NonNull
         default byte[] toDynamicColorByteArray() {
             return toDynamicColorProto().toByteArray();
+        }
+
+        /**
+         * Serializes the {@link DynamicColor} into the provided byte array, returning the amount of
+         * bytes written, that can later be used with {@code DynamicColor.fromByteArray(byteArray,
+         * 0, bytesWritten)}.
+         *
+         * @throws IllegalArgumentException if the byte array is too small
+         */
+        default int toDynamicColorByteArray(@NonNull byte[] byteArray) {
+            return toDynamicColorByteArray(byteArray, 0, byteArray.length);
+        }
+
+        /**
+         * Serializes the {@link DynamicColor} into the provided byte array, returning the amount of
+         * bytes written, limited by the provided offset and length, that can later be used with
+         * {@code DynamicColor.fromByteArray(byteArray, offset, bytesWritten)}.
+         *
+         * @throws IllegalArgumentException if the byte array is too small
+         */
+        default int toDynamicColorByteArray(@NonNull byte[] byteArray, int offset, int length) {
+            CodedOutputStream stream = CodedOutputStream.newInstance(byteArray, offset, length);
+            try {
+                toDynamicColorProto().writeTo(stream);
+            } catch (IOException e) {
+                throw new IllegalArgumentException(
+                        "Provided byte array not large enough to contain this DynamicColor", e);
+            }
+            return stream.getTotalBytesWritten();
         }
 
         /** Creates a constant-valued {@link DynamicColor}. */
@@ -6239,12 +6750,14 @@ public final class DynamicBuilders {
         /**
          * Creates a {@link DynamicColor} that is bound to the value of an item of the State.
          *
-         * @param stateKey The key to a {@link StateEntryValue} with a color value from the
-         *     provider's state.
+         * @param dynamicDataKey The source key to a {@link DynamicDataValue} with a color value.
          */
         @NonNull
-        static DynamicColor fromState(@NonNull String stateKey) {
-            return new StateColorSource.Builder().setSourceKey(stateKey).build();
+        static DynamicColor from(@NonNull DynamicDataKey<DynamicColor> dynamicDataKey) {
+            return new StateColorSource.Builder()
+                    .setSourceKey(dynamicDataKey.getKey())
+                    .setSourceNamespace(dynamicDataKey.getNamespace())
+                    .build();
         }
 
         /**
@@ -6282,12 +6795,11 @@ public final class DynamicBuilders {
          * time the state value changes, this {@link DynamicColor} will animate from its current
          * value to the new value (from the state).
          *
-         * @param stateKey The key to a {@link StateEntryValue} with a color value from the
-         *     provider's state.
+         * @param dynamicDataKey The source key to a {@link DynamicDataValue} with a color value.
          */
         @NonNull
-        static DynamicColor animate(@NonNull String stateKey) {
-            return new AnimatableDynamicColor.Builder().setInput(fromState(stateKey)).build();
+        static DynamicColor animate(@NonNull DynamicDataKey<DynamicColor> dynamicDataKey) {
+            return new AnimatableDynamicColor.Builder().setInput(from(dynamicDataKey)).build();
         }
 
         /**
@@ -6295,15 +6807,15 @@ public final class DynamicBuilders {
          * time the state value changes, this {@link DynamicColor} will animate from its current
          * value to the new value (from the state).
          *
-         * @param stateKey The key to a {@link StateEntryValue} with a color value from the
-         *     provider's state.
+         * @param dynamicDataKey The source key to a {@link DynamicDataValue} with a color value.
          * @param animationSpec The animation parameters.
          */
         @NonNull
         static DynamicColor animate(
-                @NonNull String stateKey, @NonNull AnimationSpec animationSpec) {
+                @NonNull DynamicDataKey<DynamicColor> dynamicDataKey,
+                @NonNull AnimationSpec animationSpec) {
             return new AnimatableDynamicColor.Builder()
-                    .setInput(fromState(stateKey))
+                    .setInput(from(dynamicDataKey))
                     .setAnimationSpec(animationSpec)
                     .build();
         }
@@ -6366,7 +6878,6 @@ public final class DynamicBuilders {
         }
     }
 
-
     /** Creates a new wrapper instance from the proto. */
     @RestrictTo(Scope.LIBRARY_GROUP)
     @NonNull
@@ -6383,6 +6894,9 @@ public final class DynamicBuilders {
         }
         if (proto.hasAnimatableDynamic()) {
             return AnimatableDynamicColor.fromProto(proto.getAnimatableDynamic(), fingerprint);
+        }
+        if (proto.hasConditionalOp()) {
+            return ConditionalColorOp.fromProto(proto.getConditionalOp(), fingerprint);
         }
         throw new IllegalStateException("Proto was not a recognised instance of DynamicColor");
     }
@@ -6432,6 +6946,7 @@ public final class DynamicBuilders {
             return fromProto(proto, null);
         }
 
+        /** Returns the internal proto instance. */
         @NonNull
         DynamicProto.PlatformTimeSource toProto() {
             return mImpl;
@@ -6550,7 +7065,6 @@ public final class DynamicBuilders {
         }
 
         /** Returns the internal proto instance. */
-        @RestrictTo(Scope.LIBRARY_GROUP)
         @NonNull
         DynamicProto.ConditionalInstantOp toProto() {
             return mImpl;
@@ -6648,23 +7162,70 @@ public final class DynamicBuilders {
         /**
          * Creates a {@link DynamicInstant} from a byte array generated by {@link
          * #toDynamicInstantByteArray()}.
+         *
+         * @throws IllegalArgumentException if the byte array does not contain a valid serialization
          */
         @NonNull
         static DynamicInstant fromByteArray(@NonNull byte[] byteArray) {
+            return fromByteArray(byteArray, 0, byteArray.length);
+        }
+
+        /**
+         * Creates a {@link DynamicInstant} from the provided byte array at the provided offset and
+         * length, that was generated by one of the {@link #toDynamicInstantByteArray} overloads.
+         *
+         * @throws IllegalArgumentException if the byte array does not contain a valid serialization
+         *     in the provided offset and length
+         */
+        @NonNull
+        static DynamicInstant fromByteArray(@NonNull byte[] byteArray, int offset, int length) {
             try {
                 return dynamicInstantFromProto(
                         DynamicProto.DynamicInstant.parseFrom(
-                                byteArray, ExtensionRegistryLite.getEmptyRegistry()));
-            } catch (InvalidProtocolBufferException e) {
+                                CodedInputStream.newInstance(byteArray, offset, length),
+                                ExtensionRegistryLite.getEmptyRegistry()));
+            } catch (IOException e) {
                 throw new IllegalArgumentException(
                         "Byte array could not be parsed into DynamicInstant", e);
             }
         }
 
-        /** Creates a byte array that can later be used with {@link #fromByteArray(byte[])}. */
+        /**
+         * Serializes the {@link DynamicInstant} into a new byte array that can later be used with
+         * {@link #fromByteArray(byte[])}.
+         */
         @NonNull
         default byte[] toDynamicInstantByteArray() {
             return toDynamicInstantProto().toByteArray();
+        }
+
+        /**
+         * Serializes the {@link DynamicInstant} into the provided byte array, returning the amount
+         * of bytes written, that can later be used with {@code DynamicInstant.fromByteArray(
+         * byteArray, 0, bytesWritten)}.
+         *
+         * @throws IllegalArgumentException if the byte array is too small
+         */
+        default int toDynamicInstantByteArray(@NonNull byte[] byteArray) {
+            return toDynamicInstantByteArray(byteArray, 0, byteArray.length);
+        }
+
+        /**
+         * Serializes the {@link DynamicInstant} into the provided byte array, returning the amount
+         * of bytes written, limited by the provided offset and length, that can later be used with
+         * {@code DynamicInstant.fromByteArray(byteArray, offset, bytesWritten)}.
+         *
+         * @throws IllegalArgumentException if the byte array is too small
+         */
+        default int toDynamicInstantByteArray(@NonNull byte[] byteArray, int offset, int length) {
+            CodedOutputStream stream = CodedOutputStream.newInstance(byteArray, offset, length);
+            try {
+                toDynamicInstantProto().writeTo(stream);
+            } catch (IOException e) {
+                throw new IllegalArgumentException(
+                        "Provided byte array not large enough to contain this DynamicInstant", e);
+            }
+            return stream.getTotalBytesWritten();
         }
 
         /**
@@ -6830,6 +7391,7 @@ public final class DynamicBuilders {
             return fromProto(proto, null);
         }
 
+        /** Returns the internal proto instance. */
         @NonNull
         DynamicProto.BetweenDuration toProto() {
             return mImpl;
@@ -6979,7 +7541,6 @@ public final class DynamicBuilders {
         }
 
         /** Returns the internal proto instance. */
-        @RestrictTo(Scope.LIBRARY_GROUP)
         @NonNull
         DynamicProto.ConditionalDurationOp toProto() {
             return mImpl;
@@ -7074,23 +7635,70 @@ public final class DynamicBuilders {
         /**
          * Creates a {@link DynamicDuration} from a byte array generated by {@link
          * #toDynamicDurationByteArray()}.
+         *
+         * @throws IllegalArgumentException if the byte array does not contain a valid serialization
          */
         @NonNull
         static DynamicDuration fromByteArray(@NonNull byte[] byteArray) {
+            return fromByteArray(byteArray, 0, byteArray.length);
+        }
+
+        /**
+         * Creates a {@link DynamicDuration} from the provided byte array at the provided offset and
+         * length, that was generated by one of the {@link #toDynamicDurationByteArray} overloads.
+         *
+         * @throws IllegalArgumentException if the byte array does not contain a valid serialization
+         *     in the provided offset and length
+         */
+        @NonNull
+        static DynamicDuration fromByteArray(@NonNull byte[] byteArray, int offset, int length) {
             try {
                 return dynamicDurationFromProto(
                         DynamicProto.DynamicDuration.parseFrom(
-                                byteArray, ExtensionRegistryLite.getEmptyRegistry()));
-            } catch (InvalidProtocolBufferException e) {
+                                CodedInputStream.newInstance(byteArray, offset, length),
+                                ExtensionRegistryLite.getEmptyRegistry()));
+            } catch (IOException e) {
                 throw new IllegalArgumentException(
                         "Byte array could not be parsed into DynamicDuration", e);
             }
         }
 
-        /** Creates a byte array that can later be used with {@link #fromByteArray(byte[])}. */
+        /**
+         * Serializes the {@link DynamicDuration} into a new byte array that can later be used with
+         * {@link #fromByteArray(byte[])}.
+         */
         @NonNull
         default byte[] toDynamicDurationByteArray() {
             return toDynamicDurationProto().toByteArray();
+        }
+
+        /**
+         * Serializes the {@link DynamicDuration} into the provided byte array, returning the amount
+         * of bytes written, that can later be used with {@code DynamicDuration.fromByteArray(
+         * byteArray, 0, bytesWritten)}.
+         *
+         * @throws IllegalArgumentException if the byte array is too small
+         */
+        default int toDynamicDurationByteArray(@NonNull byte[] byteArray) {
+            return toDynamicDurationByteArray(byteArray, 0, byteArray.length);
+        }
+
+        /**
+         * Serializes the {@link DynamicDuration} into the provided byte array, returning the amount
+         * of bytes written, limited by the provided offset and length, that can later be used with
+         * {@code DynamicDuration.fromByteArray(byteArray, offset, bytesWritten)}.
+         *
+         * @throws IllegalArgumentException if the byte array is too small
+         */
+        default int toDynamicDurationByteArray(@NonNull byte[] byteArray, int offset, int length) {
+            CodedOutputStream stream = CodedOutputStream.newInstance(byteArray, offset, length);
+            try {
+                toDynamicDurationProto().writeTo(stream);
+            } catch (IOException e) {
+                throw new IllegalArgumentException(
+                        "Provided byte array not large enough to contain this DynamicDuration", e);
+            }
+            return stream.getTotalBytesWritten();
         }
 
         /**
@@ -7332,7 +7940,7 @@ public final class DynamicBuilders {
             return FixedDuration.fromProto(proto.getFixed(), fingerprint);
         }
         if (proto.hasConditionalOp()) {
-            return ConditionalDurationOp.fromProto(proto.getConditionalOp());
+            return ConditionalDurationOp.fromProto(proto.getConditionalOp(), fingerprint);
         }
         throw new IllegalStateException("Proto was not a recognised instance of DynamicDuration");
     }
@@ -7407,6 +8015,7 @@ public final class DynamicBuilders {
             return fromProto(proto, null);
         }
 
+        /** Returns the internal proto instance. */
         @NonNull
         DynamicProto.GetDurationPartOp toProto() {
             return mImpl;

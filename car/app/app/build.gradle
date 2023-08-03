@@ -21,7 +21,6 @@ import androidx.build.uptodatedness.EnableCachingKt
 import androidx.build.Version
 
 import com.android.build.gradle.LibraryExtension
-import com.android.build.gradle.api.AndroidSourceDirectorySet
 import com.android.build.gradle.api.SourceKind
 import com.google.common.io.Files
 import org.apache.commons.io.FileUtils
@@ -41,6 +40,7 @@ buildscript {
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
+    id("androidx.stableaidl")
 }
 
 dependencies {
@@ -52,10 +52,7 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel:2.2.0")
     // Session and Screen both implement LifeCycleOwner so this needs to be exposed.
     api("androidx.lifecycle:lifecycle-common-java8:2.2.0")
-    api("androidx.annotation:annotation-experimental:1.1.0")
-    // There is an implicit compile-only dep due to :annotation-experimental
-    // Build will complain without this manual declaration.
-    api(libs.kotlinStdlib) // Added for annotation-experimental
+    api("androidx.annotation:annotation-experimental:1.3.1")
 
     annotationProcessor(libs.nullaway)
 
@@ -88,13 +85,18 @@ android {
         resValue "string", "car_app_library_version", androidx.LibraryVersions.CAR_APP.toString()
         consumerProguardFiles "proguard-rules.pro"
     }
+    buildTypes.all {
+        stableAidl {
+            version 1
+        }
+    }
 
     testOptions.unitTests.includeAndroidResources = true
     namespace "androidx.car.app"
 }
 
 androidx {
-    name = "Android for Cars App Library"
+    name = "Android for Cars App"
     type = LibraryType.PUBLISHED_LIBRARY
     inceptionYear = "2020"
     description = "Build navigation, parking, and charging apps for Android Auto"
@@ -137,7 +139,7 @@ class ProtocolApiTask extends DefaultTask {
         MetalavaRunnerKt.runMetalavaWithArgs(
                 metalavaClasspath,
                 standardArgs,
-                false,
+                /* k2UastEnabled= */ false,
                 workerExecutor,
         )
     }
@@ -160,7 +162,7 @@ class GenerateProtocolApiTask extends ProtocolApiTask {
                 '--api',
                 generatedApi.toString(),
                 "--show-annotation",
-                "@androidx.car.app.annotations.CarProtocol",
+                "androidx.car.app.annotations.CarProtocol",
                 "--hide",
                 "UnhiddenSystemApi"
         ]
@@ -379,8 +381,6 @@ class ProtocolLocation {
     }
 }
 
-LibraryExtension library = project.extensions.getByType(LibraryExtension.class)
-
 def getLibraryExtension() {
     return project.extensions.findByType(LibraryExtension.class)
 }
@@ -409,12 +409,13 @@ public FileCollection getSourceCollection() {
     return sourceCollection
 }
 
-def writeCarApiLevelFileTask = tasks.register("writeCarApiLevelFile", ApiLevelFileWriterTask) { task ->
-    task.outputDir.set(new File(project.buildDir, "generatedResources"))
-}
+def writeCarApiLevel = tasks.register("writeCarApiLevelFile", ApiLevelFileWriterTask)
 
-AndroidSourceDirectorySet resources = library.sourceSets.getByName("main").resources
-resources.srcDir(writeCarApiLevelFileTask.map {it.outputDir })
+androidComponents {
+    onVariants(selector().all(), { variant ->
+        variant.sources.resources.addGeneratedSourceDirectory(writeCarApiLevel, { it.outputDir })
+    })
+}
 
 // afterEvaluate required to read extension properties
 afterEvaluate {
@@ -462,10 +463,3 @@ afterEvaluate {
     EnableCachingKt.cacheEvenIfNoOutputs(checkProtocolApiCompat)
     checkApi.dependsOn(checkProtocolApi)
 }
-
-library.libraryVariants.all { variant ->
-    variant.processJavaResourcesProvider.configure {
-        it.dependsOn(writeCarApiLevelFile)
-    }
-}
-

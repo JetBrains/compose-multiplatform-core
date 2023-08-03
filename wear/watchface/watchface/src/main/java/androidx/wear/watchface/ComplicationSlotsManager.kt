@@ -27,7 +27,6 @@ import androidx.annotation.Px
 import androidx.annotation.RestrictTo
 import androidx.annotation.UiThread
 import androidx.annotation.VisibleForTesting
-import androidx.annotation.VisibleForTesting.Companion.PACKAGE_PRIVATE
 import androidx.annotation.WorkerThread
 import androidx.wear.watchface.complications.ComplicationSlotBounds
 import androidx.wear.watchface.complications.data.ComplicationData
@@ -81,11 +80,11 @@ public class ComplicationSlotsManager(
     /**
      * The [WatchState] of the associated watch face. This is only initialized after
      * [WatchFaceService.createComplicationSlotsManager] has completed.
-     *
-     * @hide
      */
-    @VisibleForTesting(otherwise = PACKAGE_PRIVATE)
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    @VisibleForTesting
+    @set:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    @field:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public lateinit var watchState: WatchState
 
     internal lateinit var watchFaceHostApi: WatchFaceHostApi
@@ -128,8 +127,8 @@ public class ComplicationSlotsManager(
 
     private val complicationListeners = HashSet<TapCallback>()
 
-    /** @hide */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    @set:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public var configExtrasChangeCallback: WatchFace.ComplicationSlotConfigExtrasChangeCallback? =
         null
 

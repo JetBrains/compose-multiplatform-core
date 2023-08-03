@@ -21,6 +21,7 @@ import androidx.compose.foundation.text2.input.TextEditFilter
 import androidx.compose.foundation.text2.input.TextFieldCharSequence
 import androidx.compose.ui.text.TextRange
 import com.google.common.truth.Truth.assertThat
+import kotlin.test.fail
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
@@ -164,8 +165,8 @@ class EditProcessorTest {
 
         val initialBuffer = processor.mBuffer
 
-        assertThat(initialSelection.min).isEqualTo(initialBuffer.selectionStart)
-        assertThat(initialSelection.max).isEqualTo(initialBuffer.selectionEnd)
+        assertThat(initialSelection.start).isEqualTo(initialBuffer.selectionStart)
+        assertThat(initialSelection.end).isEqualTo(initialBuffer.selectionEnd)
 
         val updatedSelection = TextRange(3, 0)
         val newTextFieldValue = TextFieldCharSequence(textFieldValue, selection = updatedSelection)
@@ -173,8 +174,8 @@ class EditProcessorTest {
         processor.reset(newTextFieldValue)
 
         assertThat(processor.mBuffer).isSameInstanceAs(initialBuffer)
-        assertThat(updatedSelection.min).isEqualTo(initialBuffer.selectionStart)
-        assertThat(updatedSelection.max).isEqualTo(initialBuffer.selectionEnd)
+        assertThat(updatedSelection.start).isEqualTo(initialBuffer.selectionStart)
+        assertThat(updatedSelection.end).isEqualTo(initialBuffer.selectionEnd)
         assertThat(resetCalled).isEqualTo(1)
     }
 
@@ -367,6 +368,125 @@ class EditProcessorTest {
         assertThat(processor.mBuffer).isNotSameInstanceAs(initialBuffer)
         assertThat(resetCalledOld?.toString()).isEqualTo("abcd") // what IME applied
         assertThat(resetCalledNew?.toString()).isEqualTo("abc") // what is decided by filter
+    }
+
+    @Test
+    fun filterNotRan_whenNoCommands() {
+        val initialValue =
+            TextFieldCharSequence("hello", selection = TextRange(2), composition = null)
+        val processor = EditProcessor(initialValue)
+        val filter = TextEditFilter { old, new ->
+            fail("filter ran, old=\"$old\", new=\"$new\"")
+        }
+
+        processor.update(emptyList(), filter = filter)
+    }
+
+    @Test
+    fun filterNotRan_whenOnlyFinishComposingTextCommand_noComposition() {
+        val initialValue =
+            TextFieldCharSequence("hello", selection = TextRange(2), composition = null)
+        val processor = EditProcessor(initialValue)
+        val filter = TextEditFilter { old, new ->
+            fail("filter ran, old=\"$old\", new=\"$new\"")
+        }
+
+        processor.update(FinishComposingTextCommand, filter = filter)
+    }
+
+    @Test
+    fun filterNotRan_whenOnlyFinishComposingTextCommand_withComposition() {
+        val initialValue =
+            TextFieldCharSequence("hello", selection = TextRange(2), composition = TextRange(0, 5))
+        val processor = EditProcessor(initialValue)
+        val filter = TextEditFilter { old, new ->
+            fail("filter ran, old=\"$old\", new=\"$new\"")
+        }
+
+        processor.update(FinishComposingTextCommand, filter = filter)
+    }
+
+    @Test
+    fun filterNotRan_whenCommandsResultInInitialValue() {
+        val initialValue =
+            TextFieldCharSequence("hello", selection = TextRange(2), composition = TextRange(0, 5))
+        val processor = EditProcessor(initialValue)
+        val filter = TextEditFilter { old, new ->
+            fail(
+                "filter ran, old=\"$old\" (${old.selectionInChars}), " +
+                    "new=\"$new\" (${new.selectionInChars})"
+            )
+        }
+
+        processor.update(
+            SetComposingRegionCommand(0, 5),
+            CommitTextCommand("hello", 1),
+            SetSelectionCommand(2, 2),
+            filter = filter
+        )
+    }
+
+    @Test
+    fun filterRan_whenOnlySelectionChanges() {
+        val initialValue =
+            TextFieldCharSequence("hello", selection = TextRange(2), composition = null)
+        var filterRan = false
+        val processor = EditProcessor(initialValue)
+        val filter = TextEditFilter { old, new ->
+            // Filter should only run once.
+            assertThat(filterRan).isFalse()
+            filterRan = true
+            assertThat(new.toString()).isEqualTo(old.toString())
+            assertThat(old.selectionInChars).isEqualTo(TextRange(2))
+            assertThat(new.selectionInChars).isEqualTo(TextRange(0, 5))
+        }
+
+        processor.update(SetSelectionCommand(0, 5), filter = filter)
+    }
+
+    @Test
+    fun filterRan_whenOnlyTextChanges() {
+        val initialValue =
+            TextFieldCharSequence("hello", selection = TextRange(2), composition = null)
+        var filterRan = false
+        val processor = EditProcessor(initialValue)
+        val filter = TextEditFilter { old, new ->
+            // Filter should only run once.
+            assertThat(filterRan).isFalse()
+            filterRan = true
+            assertThat(new.selectionInChars).isEqualTo(old.selectionInChars)
+            assertThat(old.toString()).isEqualTo("hello")
+            assertThat(new.toString()).isEqualTo("world")
+        }
+
+        processor.update(
+            DeleteAllCommand,
+            CommitTextCommand("world", 1),
+            SetSelectionCommand(2, 2),
+            filter = filter
+        )
+    }
+
+    @Test
+    fun stateUpdated_whenOnlyCompositionChanges_noFilter() {
+        val initialValue =
+            TextFieldCharSequence("hello", selection = TextRange(5), composition = TextRange(0, 5))
+        val processor = EditProcessor(initialValue)
+
+        processor.update(SetComposingRegionCommand(2, 3), filter = null)
+
+        assertThat(processor.value.compositionInChars).isEqualTo(TextRange(2, 3))
+    }
+
+    @Test
+    fun stateUpdated_whenOnlyCompositionChanges_withFilter() {
+        val initialValue =
+            TextFieldCharSequence("hello", selection = TextRange(5), composition = TextRange(0, 5))
+        val processor = EditProcessor(initialValue)
+
+        processor.update(SetComposingRegionCommand(2, 3), filter = { _, _ -> })
+
+        assertThat(processor.value.compositionInChars).isEqualTo(TextRange(2, 3))
     }
 
     private fun EditProcessor.update(

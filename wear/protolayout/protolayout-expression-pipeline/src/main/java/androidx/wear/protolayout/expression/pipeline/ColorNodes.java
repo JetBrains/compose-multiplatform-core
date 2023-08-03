@@ -19,6 +19,7 @@ package androidx.wear.protolayout.expression.pipeline;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
+import androidx.wear.protolayout.expression.DynamicBuilders.DynamicColor;
 import androidx.wear.protolayout.expression.proto.AnimationParameterProto.AnimationSpec;
 import androidx.wear.protolayout.expression.proto.DynamicProto.AnimatableFixedColor;
 import androidx.wear.protolayout.expression.proto.DynamicProto.StateColorSource;
@@ -59,12 +60,13 @@ class ColorNodes {
     /** Dynamic color node that gets value from the platform source. */
     static class StateColorSourceNode extends StateSourceNode<Integer> {
         StateColorSourceNode(
-                StateStore stateStore,
+                DataStore dataStore,
                 StateColorSource protoNode,
                 DynamicTypeValueReceiverWithPreUpdate<Integer> downstream) {
             super(
-                    stateStore,
-                    protoNode.getSourceKey(),
+                    dataStore,
+                    StateSourceNode.<DynamicColor>createKey(
+                            protoNode.getSourceNamespace(), protoNode.getSourceKey()),
                     se -> se.getColorVal().getArgb(),
                     downstream);
         }

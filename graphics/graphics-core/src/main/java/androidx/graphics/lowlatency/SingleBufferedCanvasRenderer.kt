@@ -28,6 +28,7 @@ import java.util.concurrent.Executor
  * Interface to provide an abstraction around implementations for a low latency hardware
  * accelerated [Canvas] that provides a [HardwareBuffer] with the [Canvas] rendered scene
  */
+@RequiresApi(Build.VERSION_CODES.Q)
 internal interface SingleBufferedCanvasRenderer<T> {
 
     interface RenderCallbacks<T> {
@@ -67,7 +68,6 @@ internal interface SingleBufferedCanvasRenderer<T> {
 
     companion object {
 
-        @RequiresApi(Build.VERSION_CODES.Q)
         fun <T> create(
             width: Int,
             height: Int,
@@ -75,14 +75,23 @@ internal interface SingleBufferedCanvasRenderer<T> {
             executor: Executor,
             bufferReadyListener: RenderCallbacks<T>
         ): SingleBufferedCanvasRenderer<T> {
-            // TODO return different instance for corresponding platform version
-            return SingleBufferedCanvasRendererV29(
-                width,
-                height,
-                bufferTransformer,
-                executor,
-                bufferReadyListener
-            )
+            return if (Build.VERSION.SDK_INT >= 34) {
+                SingleBufferedCanvasRendererV34(
+                    width,
+                    height,
+                    bufferTransformer,
+                    executor,
+                    bufferReadyListener
+                )
+            } else {
+                SingleBufferedCanvasRendererV29(
+                    width,
+                    height,
+                    bufferTransformer,
+                    executor,
+                    bufferReadyListener
+                )
+            }
         }
     }
 }

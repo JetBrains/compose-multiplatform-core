@@ -39,7 +39,7 @@ import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.layout.positionInWindow
-import androidx.compose.ui.modifier.ModifierLocalNode
+import androidx.compose.ui.modifier.ModifierLocalModifierNode
 import androidx.compose.ui.modifier.modifierLocalMapOf
 import androidx.compose.ui.modifier.modifierLocalOf
 import androidx.compose.ui.node.DelegatingNode
@@ -51,7 +51,7 @@ import androidx.compose.ui.node.PointerInputModifierNode
 import androidx.compose.ui.node.SemanticsModifierNode
 import androidx.compose.ui.node.requireLayoutDirection
 import androidx.compose.ui.platform.InspectorInfo
-import androidx.compose.ui.semantics.SemanticsConfiguration
+import androidx.compose.ui.semantics.SemanticsPropertyReceiver
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.unit.IntSize
@@ -155,13 +155,12 @@ fun DelegatedNodeSampleExplicit() {
             gesture.onCancelPointerInput()
         }
 
-        override val semanticsConfiguration: SemanticsConfiguration = SemanticsConfiguration()
-            .apply {
-                onClick {
-                    gesture.onTap()
-                    true
-                }
+        override fun SemanticsPropertyReceiver.applySemantics() {
+            onClick {
+                gesture.onTap()
+                true
             }
+        }
     }
 }
 
@@ -184,13 +183,12 @@ fun DelegatedNodeSampleImplicit() {
     }
 
     class TapSemanticsNode(var onTap: () -> Unit) : SemanticsModifierNode, Modifier.Node() {
-        override val semanticsConfiguration: SemanticsConfiguration = SemanticsConfiguration()
-            .apply {
-                onClick {
-                    onTap()
-                    true
-                }
+        override fun SemanticsPropertyReceiver.applySemantics() {
+            onClick {
+                onTap()
+                true
             }
+        }
     }
     class TapGestureWithClickSemantics(onTap: () -> Unit) : DelegatingNode() {
         var onTap: () -> Unit
@@ -209,7 +207,7 @@ fun DelegatedNodeSampleImplicit() {
 @Sampled
 @Composable
 fun LazyDelegationExample() {
-    class ExpensivePositionHandlingOnPointerEvents() : PointerInputModifierNode, DelegatingNode() {
+    class ExpensivePositionHandlingOnPointerEvents : PointerInputModifierNode, DelegatingNode() {
 
         val globalAwareNode = object : GlobalPositionAwareModifierNode, Modifier.Node() {
             override fun onGloballyPositioned(coordinates: LayoutCoordinates) {
@@ -250,13 +248,12 @@ fun LazyDelegationExample() {
     }
 
     class TapSemanticsNode(var onTap: () -> Unit) : SemanticsModifierNode, Modifier.Node() {
-        override val semanticsConfiguration: SemanticsConfiguration = SemanticsConfiguration()
-            .apply {
-                onClick {
-                    onTap()
-                    true
-                }
+        override fun SemanticsPropertyReceiver.applySemantics() {
+            onClick {
+                onTap()
+                true
             }
+        }
     }
     class TapGestureWithClickSemantics(onTap: () -> Unit) : DelegatingNode() {
         var onTap: () -> Unit
@@ -323,9 +320,8 @@ fun ModifierNodeElementSample() {
         val color: Color
     ) : ModifierNodeElement<Circle>() {
         override fun create() = Circle(color)
-        override fun update(node: Circle): Circle {
+        override fun update(node: Circle) {
             node.color = color
-            return node
         }
         override fun InspectorInfo.inspectableProperties() {
             name = "circle"
@@ -341,18 +337,16 @@ fun ModifierNodeElementSample() {
 @Composable
 fun SemanticsModifierNodeSample() {
     class HeadingNode : SemanticsModifierNode, Modifier.Node() {
-        override val semanticsConfiguration: SemanticsConfiguration = SemanticsConfiguration()
-            .apply {
-                heading()
-            }
+        override fun SemanticsPropertyReceiver.applySemantics() {
+            heading()
+        }
     }
 
     val HeadingElement = object : ModifierNodeElement<HeadingNode>() {
         override fun create() = HeadingNode()
 
-        override fun update(node: HeadingNode): HeadingNode {
+        override fun update(node: HeadingNode) {
             // Nothing to update.
-            return node
         }
 
         override fun InspectorInfo.inspectableProperties() {
@@ -391,9 +385,8 @@ fun PointerInputModifierNodeSample() {
         val callback: (PointerEvent) -> Unit
     ) : ModifierNodeElement<OnPointerEventNode>() {
         override fun create() = OnPointerEventNode(callback)
-        override fun update(node: OnPointerEventNode): OnPointerEventNode {
+        override fun update(node: OnPointerEventNode) {
             node.callback = callback
-            return node
         }
 
         override fun InspectorInfo.inspectableProperties() {
@@ -418,9 +411,8 @@ fun LayoutAwareModifierNodeSample() {
 
     data class LogSizeElement(val id: String) : ModifierNodeElement<SizeLoggerNode>() {
         override fun create(): SizeLoggerNode = SizeLoggerNode(id)
-        override fun update(node: SizeLoggerNode): SizeLoggerNode {
+        override fun update(node: SizeLoggerNode) {
             node.id = id
-            return node
         }
         override fun InspectorInfo.inspectableProperties() {
             name = "logSize"
@@ -452,9 +444,8 @@ fun GlobalPositionAwareModifierNodeSample() {
 
     data class PositionLoggerElement(val id: String) : ModifierNodeElement<PositionLoggerNode>() {
         override fun create() = PositionLoggerNode(id)
-        override fun update(node: PositionLoggerNode): PositionLoggerNode {
+        override fun update(node: PositionLoggerNode) {
             node.id = id
-            return node
         }
         override fun InspectorInfo.inspectableProperties() {
             name = "logPosition"
@@ -471,9 +462,9 @@ fun GlobalPositionAwareModifierNodeSample() {
 fun JustReadingOrProvidingModifierLocalNodeSample() {
     class Logger { fun log(string: String) { println(string) } }
 
-    val loggerLocal = modifierLocalOf<Logger> { Logger() }
+    val loggerLocal = modifierLocalOf { Logger() }
 
-    class ProvideLoggerNode(logger: Logger) : ModifierLocalNode, Modifier.Node() {
+    class ProvideLoggerNode(logger: Logger) : ModifierLocalModifierNode, Modifier.Node() {
         override val providedValues = modifierLocalMapOf(loggerLocal to logger)
     }
 
@@ -481,9 +472,8 @@ fun JustReadingOrProvidingModifierLocalNodeSample() {
         val logger: Logger
     ) : ModifierNodeElement<ProvideLoggerNode>() {
         override fun create() = ProvideLoggerNode(logger)
-        override fun update(node: ProvideLoggerNode): ProvideLoggerNode {
+        override fun update(node: ProvideLoggerNode) {
             node.provide(loggerLocal, logger)
-            return node
         }
         override fun InspectorInfo.inspectableProperties() {
             name = "provideLogger"
@@ -493,7 +483,7 @@ fun JustReadingOrProvidingModifierLocalNodeSample() {
 
     class SizeLoggerNode(
         var id: String
-    ) : ModifierLocalNode, LayoutAwareModifierNode, Modifier.Node() {
+    ) : ModifierLocalModifierNode, LayoutAwareModifierNode, Modifier.Node() {
         override fun onRemeasured(size: IntSize) {
             loggerLocal.current.log("The size of $id was $size")
         }
@@ -503,9 +493,8 @@ fun JustReadingOrProvidingModifierLocalNodeSample() {
         val id: String
     ) : ModifierNodeElement<SizeLoggerNode>() {
         override fun create() = SizeLoggerNode(id)
-        override fun update(node: SizeLoggerNode): SizeLoggerNode {
+        override fun update(node: SizeLoggerNode) {
             node.id = id
-            return node
         }
         override fun InspectorInfo.inspectableProperties() {
             name = "logSize"
@@ -517,7 +506,6 @@ fun JustReadingOrProvidingModifierLocalNodeSample() {
     fun Modifier.provideLogger(logger: Logger) = this then ProvideLoggerElement(logger)
 }
 
-@OptIn(ExperimentalComposeUiApi::class)
 @Sampled
 @Composable
 fun ModifierNodeResetSample() {

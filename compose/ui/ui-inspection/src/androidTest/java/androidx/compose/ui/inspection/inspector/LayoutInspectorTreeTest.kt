@@ -97,7 +97,6 @@ import java.util.WeakHashMap
 import kotlin.math.roundToInt
 import org.junit.After
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -165,7 +164,6 @@ class LayoutInspectorTreeTest {
         assertThat(DEBUG).isFalse()
     }
 
-    @Ignore // b/273151077
     @Test
     fun buildTree() {
         val slotTableRecord = CompositionDataRecord.create()
@@ -179,6 +177,7 @@ class LayoutInspectorTreeTest {
                             text = "helloworld",
                             color = Color.Green,
                             fontSize = 10.sp,
+                            lineHeight = 10.sp,
                             fontFamily = fontFamily
                         )
                         // width: 24.dp, height: 24.dp
@@ -187,7 +186,12 @@ class LayoutInspectorTreeTest {
                             // minwidth: 64.dp, height: 42.dp
                             Button(onClick = {}) {
                                 // width: 20.dp, height: 10.dp
-                                Text(text = "ok", fontSize = 10.sp, fontFamily = fontFamily)
+                                Text(
+                                    text = "ok",
+                                    fontSize = 10.sp,
+                                    lineHeight = 10.sp,
+                                    fontFamily = fontFamily
+                                )
                             }
                         }
                     }
@@ -246,7 +250,6 @@ class LayoutInspectorTreeTest {
         }
     }
 
-    @Ignore // b/273151077
     @Test
     fun buildTreeWithTransformedText() {
         val slotTableRecord = CompositionDataRecord.create()
@@ -316,16 +319,13 @@ class LayoutInspectorTreeTest {
         val nodes = builder.convert(view)
         dumpNodes(nodes, view, builder)
 
-        if (DEBUG) {
-            validate(nodes, builder) {
-                node("Box", children = listOf("ModalDrawer"))
-                node("ModalDrawer", children = listOf("Column", "Text"))
-                node("Column", children = listOf("Text", "Button"))
-                node("Text")
-                node("Button", children = listOf("Text"))
-                node("Text")
-                node("Text")
-            }
+        validate(nodes, builder) {
+            node("ModalDrawer", isRenderNode = true, children = listOf("Column", "Text"))
+            node("Column", inlined = true, children = listOf("Text", "Button"))
+            node("Text", isRenderNode = true)
+            node("Button", isRenderNode = true, children = listOf("Text"))
+            node("Text", isRenderNode = true)
+            node("Text", isRenderNode = true)
         }
         assertThat(nodes.size).isEqualTo(1)
     }
@@ -357,7 +357,6 @@ class LayoutInspectorTreeTest {
 
         if (DEBUG) {
             validate(nodes, builder) {
-                node("Box", children = listOf("ModalDrawer"))
                 node("ModalDrawer", children = listOf("WithConstraints"))
                 node("WithConstraints", children = listOf("SubcomposeLayout"))
                 node("SubcomposeLayout", children = listOf("Box"))
@@ -468,7 +467,6 @@ class LayoutInspectorTreeTest {
         assertThat(node?.id).isGreaterThan(0)
     }
 
-    @Ignore // b/273151077
     @Test
     fun testSemantics() {
         val slotTableRecord = CompositionDataRecord.create()
@@ -521,7 +519,6 @@ class LayoutInspectorTreeTest {
         }
     }
 
-    @Ignore // b/273151077
     @Test
     fun testDialog() {
         val slotTableRecord = CompositionDataRecord.create()
@@ -594,7 +591,6 @@ class LayoutInspectorTreeTest {
         }
     }
 
-    @Ignore // b/273151077
     @Test
     fun testPopup() {
         val slotTableRecord = CompositionDataRecord.create()
@@ -826,7 +822,6 @@ class LayoutInspectorTreeTest {
     }
     // WARNING: End formatted section
 
-    @Ignore // b/273151077
     @Test
     fun testLineNumbers() {
         // WARNING: The formatting of the lines below here affect test results.
@@ -1038,6 +1033,7 @@ class LayoutInspectorTreeTest {
             assertWithMessage("No such node found: $name").that(nodeIterator.hasNext()).isTrue()
             val node = nodeIterator.next()
             assertThat(node.name).isEqualTo(name)
+            assertThat(node.anchorId).isNotEqualTo(UNDEFINED_ID)
             val message = "Node: $name"
             assertWithMessage(message).that(node.children.map { it.name })
                 .containsExactlyElementsIn(children).inOrder()

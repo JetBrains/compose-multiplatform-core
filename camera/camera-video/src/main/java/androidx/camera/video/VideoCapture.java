@@ -17,7 +17,6 @@
 package androidx.camera.video;
 
 import static androidx.camera.core.CameraEffect.VIDEO_CAPTURE;
-import static androidx.camera.core.DynamicRange.SDR;
 import static androidx.camera.core.impl.ImageFormatConstants.INTERNAL_DEFINED_IMAGE_FORMAT_PRIVATE;
 import static androidx.camera.core.impl.ImageInputConfig.OPTION_INPUT_DYNAMIC_RANGE;
 import static androidx.camera.core.impl.ImageOutputConfig.OPTION_CUSTOM_ORDERED_RESOLUTIONS;
@@ -29,6 +28,7 @@ import static androidx.camera.core.impl.ImageOutputConfig.OPTION_SUPPORTED_RESOL
 import static androidx.camera.core.impl.ImageOutputConfig.OPTION_TARGET_ROTATION;
 import static androidx.camera.core.impl.UseCaseConfig.OPTION_CAMERA_SELECTOR;
 import static androidx.camera.core.impl.UseCaseConfig.OPTION_CAPTURE_CONFIG_UNPACKER;
+import static androidx.camera.core.impl.UseCaseConfig.OPTION_CAPTURE_TYPE;
 import static androidx.camera.core.impl.UseCaseConfig.OPTION_DEFAULT_CAPTURE_CONFIG;
 import static androidx.camera.core.impl.UseCaseConfig.OPTION_DEFAULT_SESSION_CONFIG;
 import static androidx.camera.core.impl.UseCaseConfig.OPTION_HIGH_RESOLUTION_DISABLED;
@@ -90,6 +90,7 @@ import androidx.camera.core.impl.CaptureConfig;
 import androidx.camera.core.impl.Config;
 import androidx.camera.core.impl.ConfigProvider;
 import androidx.camera.core.impl.DeferrableSurface;
+import androidx.camera.core.impl.ImageInputConfig;
 import androidx.camera.core.impl.ImageOutputConfig;
 import androidx.camera.core.impl.ImageOutputConfig.RotationValue;
 import androidx.camera.core.impl.MutableConfig;
@@ -103,6 +104,7 @@ import androidx.camera.core.impl.Timebase;
 import androidx.camera.core.impl.UseCaseConfig;
 import androidx.camera.core.impl.UseCaseConfigFactory;
 import androidx.camera.core.impl.utils.Threads;
+import androidx.camera.core.impl.utils.TransformUtils;
 import androidx.camera.core.impl.utils.executor.CameraXExecutors;
 import androidx.camera.core.impl.utils.futures.FutureCallback;
 import androidx.camera.core.impl.utils.futures.Futures;
@@ -120,7 +122,7 @@ import androidx.camera.video.internal.compat.quirk.ImageCaptureFailedWhenVideoCa
 import androidx.camera.video.internal.compat.quirk.PreviewDelayWhenVideoCaptureIsBoundQuirk;
 import androidx.camera.video.internal.compat.quirk.PreviewStretchWhenVideoCaptureIsBoundQuirk;
 import androidx.camera.video.internal.compat.quirk.VideoQualityQuirk;
-import androidx.camera.video.internal.config.MimeInfo;
+import androidx.camera.video.internal.config.VideoMimeInfo;
 import androidx.camera.video.internal.encoder.InvalidConfigException;
 import androidx.camera.video.internal.encoder.VideoEncoderConfig;
 import androidx.camera.video.internal.encoder.VideoEncoderInfo;
@@ -210,6 +212,8 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
     private VideoEncoderInfo mVideoEncoderInfo;
     @Nullable
     private Rect mCropRect;
+    private int mRotationDegrees;
+    private boolean mHasCompensatingTransformation = false;
 
     /**
      * Create a VideoCapture associated with the given {@link VideoOutput}.
@@ -218,7 +222,8 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
      */
     @NonNull
     public static <T extends VideoOutput> VideoCapture<T> withOutput(@NonNull T videoOutput) {
-        return new VideoCapture.Builder<>(Preconditions.checkNotNull(videoOutput)).build();
+        return new VideoCapture.Builder<>(Preconditions.checkNotNull(videoOutput)).setCaptureType(
+                UseCaseConfigFactory.CaptureType.VIDEO_CAPTURE).build();
     }
 
     /**
@@ -247,13 +252,12 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
      *
      * <p>The rotation can be set prior to constructing a VideoCapture using
      * {@link VideoCapture.Builder#setTargetRotation(int)} or dynamically by calling
-     * {@link VideoCapture#setTargetRotation(int)} or {@link #setTargetRotationDegrees(int)}.
+     * {@link VideoCapture#setTargetRotation(int)}.
      * If not set, the target rotation defaults to the value of {@link Display#getRotation()} of
      * the default display at the time the use case is bound.
      *
      * @return The rotation of the intended target.
      * @see VideoCapture#setTargetRotation(int)
-     * @see VideoCapture#setTargetRotationDegrees(int)
      */
     @RotationValue
     public int getTargetRotation() {
@@ -290,10 +294,11 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
      * the target rotation. This way, the rotation output will indicate which way is down for a
      * given video. This is important since display orientation may be locked by device default,
      * user setting, or app configuration, and some devices may not transition to a
-     * reverse-portrait display orientation. In these cases, use
-     * {@link #setTargetRotationDegrees} to set target rotation dynamically according to the
-     * {@link android.view.OrientationEventListener}, without re-creating the use case.
-     * See {@link #setTargetRotationDegrees} for more information.
+     * reverse-portrait display orientation. In these cases, set target rotation dynamically
+     * according to the {@link android.view.OrientationEventListener}, without re-creating the
+     * use case. {@link UseCase#snapToSurfaceRotation(int)} is a helper function to convert the
+     * orientation of the {@link android.view.OrientationEventListener} to a rotation value.
+     * See {@link UseCase#snapToSurfaceRotation(int)} for more information and sample code.
      *
      * <p>If not set, the target rotation will default to the value of
      * {@link Display#getRotation()} of the default display at the time the use case is bound. To
@@ -321,76 +326,6 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
     }
 
     /**
-     * Sets the desired rotation of the output video in degrees.
-     *
-     * <p>In general, it is best to use an {@link  android.view.OrientationEventListener} to set
-     * the target rotation. This way, the rotation output will indicate which way is down for a
-     * given video. This is important since display orientation may be locked by device default,
-     * user setting, or app configuration, and some devices may not transition to a
-     * reverse-portrait display orientation. In these cases, use
-     * {@code setTargetRotationDegrees()} to set target rotation dynamically according
-     * to the {@link  android.view.OrientationEventListener}, without re-creating the use case.
-     * The sample code is as below:
-     * <pre>{@code
-     * public class CameraXActivity extends AppCompatActivity {
-     *
-     *     private OrientationEventListener mOrientationEventListener;
-     *
-     *     @Override
-     *     protected void onStart() {
-     *         super.onStart();
-     *         if (mOrientationEventListener == null) {
-     *             mOrientationEventListener = new OrientationEventListener(this) {
-     *                 @Override
-     *                 public void onOrientationChanged(int orientation) {
-     *                     if (orientation == OrientationEventListener.ORIENTATION_UNKNOWN) {
-     *                         return;
-     *                     }
-     *                     mVideoCapture.setTargetRotationDegrees(orientation);
-     *                 }
-     *             };
-     *         }
-     *         mOrientationEventListener.enable();
-     *     }
-     *
-     *     @Override
-     *     protected void onStop() {
-     *         super.onStop();
-     *         mOrientationEventListener.disable();
-     *     }
-     * }
-     * }</pre>
-     *
-     * <p>{@code setTargetRotationDegrees()} cannot rotate the camera image to an arbitrary angle,
-     * instead it maps the angle to one of {@link Surface#ROTATION_0},
-     * {@link Surface#ROTATION_90}, {@link Surface#ROTATION_180} and {@link Surface#ROTATION_270}
-     * as the input of {@link #setTargetRotation(int)}. The rule is as follows:
-     * <p>If the input degrees is not in the range [0..359], it will be converted to the equivalent
-     * degrees in the range [0..359]. And then take the following mapping based on the input
-     * degrees.
-     * <p>degrees >= 315 || degrees < 45 -> {@link Surface#ROTATION_0}
-     * <p>degrees >= 225 && degrees < 315 -> {@link Surface#ROTATION_90}
-     * <p>degrees >= 135 && degrees < 225 -> {@link Surface#ROTATION_180}
-     * <p>degrees >= 45 && degrees < 135 -> {@link Surface#ROTATION_270}
-     * <p>The rotation value can be obtained by {@link #getTargetRotation()}. This means the
-     * rotation previously set by {@link #setTargetRotation(int)} will be overridden by
-     * {@code setTargetRotationDegrees(int)}, and vice versa.
-     *
-     * <p>For a {@link Recorder} output, calling this method has no effect on the ongoing
-     * recording, but will affect recordings started after calling this method. The final
-     * rotation degrees of the video, including the degrees set by this method and the orientation
-     * of the camera sensor, will be reflected by several possibilities, 1) the rotation degrees is
-     * written into the video metadata, 2) the video content is directly rotated, 3) both, i.e.
-     * rotation metadata and rotated video content which combines to the target rotation. CameraX
-     * will choose a strategy according to the use case.
-     *
-     * @param degrees Desired rotation degree of the output video.
-     */
-    public void setTargetRotationDegrees(int degrees) {
-        setTargetRotation(orientationDegreesToSurfaceRotation(degrees));
-    }
-
-    /**
      * Returns the mirror mode.
      *
      * <p>The mirror mode is set by {@link VideoCapture.Builder#setMirrorMode(int)}. If not set,
@@ -403,9 +338,48 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
         return getMirrorModeInternal();
     }
 
+    @SuppressWarnings("unchecked")
+    @RestrictTo(Scope.LIBRARY_GROUP)
+    @NonNull
+    @Override
+    protected StreamSpec onSuggestedStreamSpecUpdated(@NonNull StreamSpec suggestedStreamSpec) {
+        Logger.d(TAG, "onSuggestedStreamSpecUpdated: " + suggestedStreamSpec);
+        VideoCaptureConfig<T> config = (VideoCaptureConfig<T>) getCurrentConfig();
+        List<Size> customOrderedResolutions = config.getCustomOrderedResolutions(null);
+        if (customOrderedResolutions != null
+                && !customOrderedResolutions.contains(suggestedStreamSpec.getResolution())) {
+            Logger.w(TAG, "suggested resolution " + suggestedStreamSpec.getResolution()
+                    + " is not in custom ordered resolutions " + customOrderedResolutions);
+        }
+        return suggestedStreamSpec;
+    }
+
+    /**
+     * Returns the dynamic range.
+     *
+     * <p>The dynamic range is set by {@link VideoCapture.Builder#setDynamicRange(DynamicRange)}.
+     * If the dynamic range set is not a fully defined dynamic range, such as
+     * {@link DynamicRange#HDR_UNSPECIFIED_10_BIT}, then it will be returned just as provided,
+     * and will not be returned as a fully defined dynamic range.
+     *
+     * <p>If the dynamic range was not provided to
+     * {@link VideoCapture.Builder#setDynamicRange(DynamicRange)}, this will return the default of
+     * {@link DynamicRange#SDR}
+     *
+     * @return the dynamic range set for this {@code VideoCapture} use case.
+     */
+    // Internal implementation note: this method should not be used to retrieve the dynamic range
+    // that will be sent to the VideoOutput. That should always be retrieved from the StreamSpec
+    // since that will be the final DynamicRange chosen by the camera based on other use case
+    // combinations.
+    @NonNull
+    public DynamicRange getDynamicRange() {
+        return getCurrentConfig().hasDynamicRange() ? getCurrentConfig().getDynamicRange() :
+                Defaults.DEFAULT_DYNAMIC_RANGE;
+    }
+
     /**
      * {@inheritDoc}
-     *
      */
     @SuppressWarnings("unchecked")
     @RestrictTo(Scope.LIBRARY_GROUP)
@@ -416,11 +390,13 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
                 + "specification should be already updated and shouldn't be null.");
         Preconditions.checkState(mSurfaceRequest == null, "The surface request should be null "
                 + "when VideoCapture is attached.");
+        StreamSpec attachedStreamSpec = Preconditions.checkNotNull(getAttachedStreamSpec());
         mStreamInfo = fetchObservableValue(getOutput().getStreamInfo(),
                 StreamInfo.STREAM_INFO_ANY_INACTIVE);
         mSessionConfigBuilder = createPipeline(getCameraId(),
-                (VideoCaptureConfig<T>) getCurrentConfig(), getAttachedStreamSpec());
-        applyStreamInfoToSessionConfigBuilder(mSessionConfigBuilder, mStreamInfo);
+                (VideoCaptureConfig<T>) getCurrentConfig(), attachedStreamSpec);
+        applyStreamInfoAndStreamSpecToSessionConfigBuilder(mSessionConfigBuilder, mStreamInfo,
+                attachedStreamSpec);
         updateSessionConfig(mSessionConfigBuilder.build());
         // VideoCapture has to be active to apply SessionConfig's template type.
         notifyActive();
@@ -431,7 +407,6 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
 
     /**
      * {@inheritDoc}
-     *
      */
     @Override
     @RestrictTo(Scope.LIBRARY_GROUP)
@@ -442,7 +417,6 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
 
     /**
      * {@inheritDoc}
-     *
      */
     @RestrictTo(Scope.LIBRARY_GROUP)
     @Override
@@ -461,6 +435,18 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
         clearPipeline();
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @NonNull
+    @Override
+    @RestrictTo(Scope.LIBRARY_GROUP)
+    protected StreamSpec onSuggestedStreamSpecImplementationOptionsUpdated(@NonNull Config config) {
+        mSessionConfigBuilder.addImplementationOptions(config);
+        updateSessionConfig(mSessionConfigBuilder.build());
+        return getAttachedStreamSpec().toBuilder().setImplementationOptions(config).build();
+    }
+
     @NonNull
     @Override
     public String toString() {
@@ -469,7 +455,6 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
 
     /**
      * {@inheritDoc}
-     *
      */
     @RestrictTo(Scope.LIBRARY_GROUP)
     @Override
@@ -477,7 +462,7 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
     public UseCaseConfig<?> getDefaultConfig(boolean applyDefaultConfig,
             @NonNull UseCaseConfigFactory factory) {
         Config captureConfig = factory.getConfig(
-                UseCaseConfigFactory.CaptureType.VIDEO_CAPTURE,
+                DEFAULT_CONFIG.getConfig().getCaptureType(),
                 ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY);
 
         if (applyDefaultConfig) {
@@ -490,7 +475,6 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
 
     /**
      * {@inheritDoc}
-     *
      */
     @RestrictTo(Scope.LIBRARY_GROUP)
     @NonNull
@@ -498,14 +482,13 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
     protected UseCaseConfig<?> onMergeConfig(@NonNull CameraInfoInternal cameraInfo,
             @NonNull UseCaseConfig.Builder<?, ?, ?> builder) {
 
-        updateSupportedResolutionsByQuality(cameraInfo, builder);
+        updateCustomOrderedResolutionsByQuality(cameraInfo, builder);
 
         return builder.getUseCaseConfig();
     }
 
     /**
      * {@inheritDoc}
-     *
      */
     @NonNull
     @RestrictTo(Scope.LIBRARY_GROUP)
@@ -516,26 +499,57 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
 
     private void sendTransformationInfoIfReady() {
         CameraInternal cameraInternal = getCamera();
-        SurfaceRequest surfaceRequest = mSurfaceRequest;
-        Rect cropRect = mCropRect;
-        if (cameraInternal != null && surfaceRequest != null && cropRect != null) {
-            int relativeRotation = getRelativeRotation(cameraInternal,
-                    isMirroringRequired(cameraInternal));
-            int targetRotation = getAppTargetRotation();
-            if (mCameraEdge != null) {
-                mCameraEdge.setRotationDegrees(relativeRotation);
-            } else {
-                surfaceRequest.updateTransformationInfo(
-                        SurfaceRequest.TransformationInfo.of(cropRect, relativeRotation,
-                                targetRotation, cameraInternal.getHasTransform()));
-            }
+        SurfaceEdge cameraEdge = mCameraEdge;
+        if (cameraInternal != null && cameraEdge != null) {
+            mRotationDegrees = adjustRotationWithInProgressTransformation(
+                    getRelativeRotation(cameraInternal, isMirroringRequired(cameraInternal)));
+            cameraEdge.updateTransformation(mRotationDegrees, getAppTargetRotation());
         }
+    }
+
+    @NonNull
+    private Rect adjustCropRectWithInProgressTransformation(@NonNull Rect cropRect,
+            int rotationDegrees) {
+        Rect adjustedCropRect = cropRect;
+        if (shouldCompensateTransformation()) {
+            adjustedCropRect = TransformUtils.sizeToRect(TransformUtils.getRotatedSize(
+                    Preconditions.checkNotNull(
+                            mStreamInfo.getInProgressTransformationInfo()).getCropRect(),
+                    rotationDegrees));
+        }
+        return adjustedCropRect;
+    }
+
+    private int adjustRotationWithInProgressTransformation(int rotationDegrees) {
+        int adjustedRotationDegrees = rotationDegrees;
+        if (shouldCompensateTransformation()) {
+            adjustedRotationDegrees = TransformUtils.within360((rotationDegrees
+                    - mStreamInfo.getInProgressTransformationInfo().getRotationDegrees()));
+        }
+        return adjustedRotationDegrees;
+    }
+
+    @NonNull
+    private Size adjustResolutionWithInProgressTransformation(@NonNull Size resolution,
+            @NonNull Rect originalCropRect, @NonNull Rect targetCropRect) {
+        Size nodeResolution = resolution;
+        if (shouldCompensateTransformation() && !targetCropRect.equals(originalCropRect)) {
+            float targetRatio = ((float) targetCropRect.height()) / originalCropRect.height();
+            nodeResolution = new Size((int) Math.ceil(resolution.getWidth() * targetRatio),
+                    (int) Math.ceil(resolution.getHeight() * targetRatio));
+        }
+        return nodeResolution;
     }
 
     @VisibleForTesting
     @Nullable
     Rect getCropRect() {
         return mCropRect;
+    }
+
+    @VisibleForTesting
+    int getRotationDegrees() {
+        return mRotationDegrees;
     }
 
     /**
@@ -588,8 +602,18 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
         DynamicRange dynamicRange = streamSpec.getDynamicRange();
         VideoEncoderInfo videoEncoderInfo = getVideoEncoderInfo(config.getVideoEncoderInfoFinder(),
                 videoCapabilities, dynamicRange, mediaSpec, resolution, expectedFrameRate);
-        mCropRect = calculateCropRect(resolution, videoEncoderInfo);
-        mNode = createNodeIfNeeded(camera, mCropRect, resolution);
+        mRotationDegrees = adjustRotationWithInProgressTransformation(getRelativeRotation(camera,
+                isMirroringRequired(camera)));
+        Rect originalCropRect = calculateCropRect(resolution, videoEncoderInfo);
+        mCropRect = adjustCropRectWithInProgressTransformation(originalCropRect, mRotationDegrees);
+        Size nodeResolution = adjustResolutionWithInProgressTransformation(resolution,
+                originalCropRect, mCropRect);
+        if (shouldCompensateTransformation()) {
+            // If this pipeline is created with in-progress transformation, we need to reset the
+            // pipeline when the transformation becomes invalid.
+            mHasCompensatingTransformation = true;
+        }
+        mNode = createNodeIfNeeded(camera, mCropRect, resolution, dynamicRange);
         // Choose Timebase based on the whether the buffer is copied.
         Timebase timebase;
         if (mNode != null || !camera.getHasTransform()) {
@@ -602,34 +626,37 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
             // UPTIME when encoder surface is directly sent to camera.
             timebase = Timebase.UPTIME;
         }
+        // Update the StreamSpec with new frame rate range and resolution.
+        StreamSpec updatedStreamSpec =
+                streamSpec.toBuilder()
+                        .setResolution(nodeResolution)
+                        .setExpectedFrameRateRange(expectedFrameRate)
+                        .build();
+        // Make sure the previously created camera edge is cleared before creating a new one.
+        checkState(mCameraEdge == null);
+        mCameraEdge = new SurfaceEdge(
+                VIDEO_CAPTURE,
+                INTERNAL_DEFINED_IMAGE_FORMAT_PRIVATE,
+                updatedStreamSpec,
+                getSensorToBufferTransformMatrix(),
+                camera.getHasTransform(),
+                mCropRect,
+                mRotationDegrees,
+                getAppTargetRotation(),
+                shouldMirror(camera));
+        mCameraEdge.addOnInvalidatedListener(onSurfaceInvalidated);
         if (mNode != null) {
-            // Make sure the previously created camera edge is cleared before creating a new one.
-            checkState(mCameraEdge == null);
-            // Update the StreamSpec to use the frame rate range that is not unspecified.
-            StreamSpec updatedStreamSpec =
-                    streamSpec.toBuilder().setExpectedFrameRateRange(expectedFrameRate).build();
-            SurfaceEdge cameraEdge = new SurfaceEdge(
-                    VIDEO_CAPTURE,
-                    INTERNAL_DEFINED_IMAGE_FORMAT_PRIVATE,
-                    updatedStreamSpec,
-                    getSensorToBufferTransformMatrix(),
-                    camera.getHasTransform(),
-                    mCropRect,
-                    getRelativeRotation(camera, isMirroringRequired(camera)),
-                    shouldMirror(camera));
-            cameraEdge.addOnInvalidatedListener(onSurfaceInvalidated);
-            mCameraEdge = cameraEdge;
             SurfaceProcessorNode.OutConfig outConfig =
-                    SurfaceProcessorNode.OutConfig.of(cameraEdge);
+                    SurfaceProcessorNode.OutConfig.of(mCameraEdge);
             SurfaceProcessorNode.In nodeInput = SurfaceProcessorNode.In.of(
-                    cameraEdge,
+                    mCameraEdge,
                     singletonList(outConfig));
             SurfaceProcessorNode.Out nodeOutput = mNode.transform(nodeInput);
             SurfaceEdge appEdge = requireNonNull(nodeOutput.get(outConfig));
             appEdge.addOnInvalidatedListener(
                     () -> onAppEdgeInvalidated(appEdge, camera, config, timebase));
             mSurfaceRequest = appEdge.createSurfaceRequest(camera);
-            mDeferrableSurface = cameraEdge.getDeferrableSurface();
+            mDeferrableSurface = mCameraEdge.getDeferrableSurface();
             DeferrableSurface latestDeferrableSurface = mDeferrableSurface;
             mDeferrableSurface.getTerminationFuture().addListener(() -> {
                 // If camera surface is the latest one, it means this pipeline can be abandoned.
@@ -639,12 +666,7 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
                 }
             }, CameraXExecutors.mainThreadExecutor());
         } else {
-            mSurfaceRequest = new SurfaceRequest(
-                    resolution,
-                    camera,
-                    dynamicRange,
-                    expectedFrameRate,
-                    onSurfaceInvalidated);
+            mSurfaceRequest = mCameraEdge.createSurfaceRequest(camera);
             mDeferrableSurface = mSurfaceRequest.getDeferrableSurface();
         }
 
@@ -663,6 +685,9 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
                 (sessionConfig, error) -> resetPipeline(cameraId, config, streamSpec));
         if (USE_TEMPLATE_PREVIEW_BY_QUIRK) {
             sessionConfigBuilder.setTemplateType(CameraDevice.TEMPLATE_PREVIEW);
+        }
+        if (streamSpec.getImplementationOptions() != null) {
+            sessionConfigBuilder.addImplementationOptions(streamSpec.getImplementationOptions());
         }
 
         return sessionConfigBuilder;
@@ -700,6 +725,8 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
         mCropRect = null;
         mSurfaceRequest = null;
         mStreamInfo = StreamInfo.STREAM_INFO_ANY_INACTIVE;
+        mRotationDegrees = 0;
+        mHasCompensatingTransformation = false;
     }
 
     @MainThread
@@ -715,7 +742,8 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
         if (isCurrentCamera(cameraId)) {
             // Only reset the pipeline when the bound camera is the same.
             mSessionConfigBuilder = createPipeline(cameraId, config, streamSpec);
-            applyStreamInfoToSessionConfigBuilder(mSessionConfigBuilder, mStreamInfo);
+            applyStreamInfoAndStreamSpecToSessionConfigBuilder(mSessionConfigBuilder, mStreamInfo,
+                    streamSpec);
             updateSessionConfig(mSessionConfigBuilder.build());
             notifyReset();
         }
@@ -725,7 +753,7 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
      *
      */
     @Nullable
-    @RestrictTo(Scope.TESTS)
+    @VisibleForTesting
     SurfaceEdge getCameraEdge() {
         return mCameraEdge;
     }
@@ -735,7 +763,6 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
      *
      * <p>These values may be overridden by the implementation. They only provide a minimum set of
      * defaults that are implementation independent.
-     *
      */
     @RestrictTo(Scope.LIBRARY_GROUP)
     public static final class Defaults implements ConfigProvider<VideoCaptureConfig<?>> {
@@ -750,10 +777,18 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
 
         static final Range<Integer> DEFAULT_FPS_RANGE = new Range<>(30, 30);
 
+        /**
+         * Explicitly setting the default dynamic range to SDR (rather than UNSPECIFIED) means
+         * VideoCapture won't inherit dynamic ranges from other use cases.
+         */
+        static final DynamicRange DEFAULT_DYNAMIC_RANGE = DynamicRange.SDR;
+
         static {
             Builder<?> builder = new Builder<>(DEFAULT_VIDEO_OUTPUT)
                     .setSurfaceOccupancyPriority(DEFAULT_SURFACE_OCCUPANCY_PRIORITY)
-                    .setVideoEncoderInfoFinder(DEFAULT_VIDEO_ENCODER_INFO_FINDER);
+                    .setVideoEncoderInfoFinder(DEFAULT_VIDEO_ENCODER_INFO_FINDER)
+                    .setDynamicRange(DEFAULT_DYNAMIC_RANGE)
+                    .setCaptureType(UseCaseConfigFactory.CaptureType.VIDEO_CAPTURE);
 
             DEFAULT_CONFIG = builder.getUseCaseConfig();
         }
@@ -806,11 +841,14 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
             // Doing resetPipeline() includes notifyReset/notifyUpdated(). Doing NotifyReset()
             // includes notifyUpdated(). So we just take actions on higher order item for
             // optimization.
-            if (!StreamInfo.NON_SURFACE_STREAM_ID.contains(currentStreamInfo.getId())
-                    && !StreamInfo.NON_SURFACE_STREAM_ID.contains(streamInfo.getId())
-                    && currentStreamInfo.getId() != streamInfo.getId()) {
-                // Reset pipeline if the stream ids are different, which means there's a new
-                // surface ready to be requested.
+            StreamSpec attachedStreamSpec = Preconditions.checkNotNull(getAttachedStreamSpec());
+            if (isStreamIdChanged(currentStreamInfo.getId(), streamInfo.getId())
+                    || shouldResetCompensatingTransformation(currentStreamInfo, streamInfo)) {
+                // Reset pipeline if it's one of the following cases:
+                // 1. The stream ids are different, which means there's a new surface ready to be
+                // requested.
+                // 2. The in-progress transformation info becomes null, which means a recording
+                // has been finalized, and there's an existing compensating transformation.
                 resetPipeline(getCameraId(), (VideoCaptureConfig<T>) getCurrentConfig(),
                         Preconditions.checkNotNull(getAttachedStreamSpec()));
             } else if ((currentStreamInfo.getId() != STREAM_ID_ERROR
@@ -819,11 +857,15 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
                     && streamInfo.getId() != STREAM_ID_ERROR)) {
                 // If id switch to STREAM_ID_ERROR, it means VideoOutput is failed to setup video
                 // stream. The surface should be removed from camera. Vice versa.
-                applyStreamInfoToSessionConfigBuilder(mSessionConfigBuilder, streamInfo);
+                applyStreamInfoAndStreamSpecToSessionConfigBuilder(mSessionConfigBuilder,
+                        streamInfo,
+                        attachedStreamSpec);
                 updateSessionConfig(mSessionConfigBuilder.build());
                 notifyReset();
             } else if (currentStreamInfo.getStreamState() != streamInfo.getStreamState()) {
-                applyStreamInfoToSessionConfigBuilder(mSessionConfigBuilder, streamInfo);
+                applyStreamInfoAndStreamSpecToSessionConfigBuilder(mSessionConfigBuilder,
+                        streamInfo,
+                        attachedStreamSpec);
                 updateSessionConfig(mSessionConfigBuilder.build());
                 notifyUpdated();
             }
@@ -837,8 +879,9 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
 
     @MainThread
     @SuppressWarnings("WeakerAccess") /* synthetic accessor */
-    void applyStreamInfoToSessionConfigBuilder(@NonNull SessionConfig.Builder sessionConfigBuilder,
-            @NonNull StreamInfo streamInfo) {
+    void applyStreamInfoAndStreamSpecToSessionConfigBuilder(
+            @NonNull SessionConfig.Builder sessionConfigBuilder,
+            @NonNull StreamInfo streamInfo, @NonNull StreamSpec streamSpec) {
         final boolean isStreamError = streamInfo.getId() == StreamInfo.STREAM_ID_ERROR;
         final boolean isStreamActive = streamInfo.getStreamState() == StreamState.ACTIVE;
         if (isStreamError && isStreamActive) {
@@ -847,11 +890,12 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
         }
 
         sessionConfigBuilder.clearSurfaces();
+        DynamicRange dynamicRange = streamSpec.getDynamicRange();
         if (!isStreamError) {
             if (isStreamActive) {
-                sessionConfigBuilder.addSurface(mDeferrableSurface);
+                sessionConfigBuilder.addSurface(mDeferrableSurface, dynamicRange);
             } else {
-                sessionConfigBuilder.addNonRepeatingSurface(mDeferrableSurface);
+                sessionConfigBuilder.addNonRepeatingSurface(mDeferrableSurface, dynamicRange);
             }
         } // Don't attach surface when stream is invalid.
 
@@ -861,15 +905,17 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
     @Nullable
     private SurfaceProcessorNode createNodeIfNeeded(@NonNull CameraInternal camera,
             @NonNull Rect cropRect,
-            @NonNull Size resolution) {
+            @NonNull Size resolution,
+            @NonNull DynamicRange dynamicRange) {
         if (getEffect() != null
                 || shouldEnableSurfaceProcessingByQuirk(camera)
                 || shouldCrop(cropRect, resolution)
-                || shouldMirror(camera)) {
+                || shouldMirror(camera)
+                || shouldCompensateTransformation()) {
             Logger.d(TAG, "Surface processing is enabled.");
             return new SurfaceProcessorNode(requireNonNull(getCamera()),
                     getEffect() != null ? getEffect().createSurfaceProcessorInternal() :
-                            DefaultSurfaceProcessor.Factory.newInstance());
+                            DefaultSurfaceProcessor.Factory.newInstance(dynamicRange));
         }
         return null;
     }
@@ -1001,10 +1047,29 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
         }
     }
 
+    @SuppressWarnings("WeakerAccess") /* synthetic accessor */
+    boolean isStreamIdChanged(int currentId, int newId) {
+        return !StreamInfo.NON_SURFACE_STREAM_ID.contains(currentId)
+                && !StreamInfo.NON_SURFACE_STREAM_ID.contains(newId)
+                && currentId != newId;
+    }
+
+    @SuppressWarnings("WeakerAccess") /* synthetic accessor */
+    boolean shouldResetCompensatingTransformation(@NonNull StreamInfo currentStreamInfo,
+            @NonNull StreamInfo streamInfo) {
+        return mHasCompensatingTransformation
+                && currentStreamInfo.getInProgressTransformationInfo() != null
+                && streamInfo.getInProgressTransformationInfo() == null;
+    }
+
     private boolean shouldMirror(@NonNull CameraInternal camera) {
         // Stream is always mirrored during buffer copy. If there has been a buffer copy, it
         // means the input stream is already mirrored. Otherwise, mirror it as needed.
         return camera.getHasTransform() && isMirroringRequired(camera);
+    }
+
+    private boolean shouldCompensateTransformation() {
+        return mStreamInfo.getInProgressTransformationInfo() != null;
     }
 
     private static boolean shouldCrop(@NonNull Rect cropRect, @NonNull Size resolution) {
@@ -1060,7 +1125,7 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
         VideoValidatedEncoderProfilesProxy encoderProfiles =
                 videoCapabilities.findHighestSupportedEncoderProfilesFor(resolution, dynamicRange);
         VideoEncoderInfo videoEncoderInfo = resolveVideoEncoderInfo(videoEncoderInfoFinder,
-                encoderProfiles, mediaSpec, resolution, expectedFrameRate);
+                encoderProfiles, mediaSpec, resolution, dynamicRange, expectedFrameRate);
         if (videoEncoderInfo == null) {
             // If VideoCapture cannot find videoEncoderInfo, it means that VideoOutput should
             // also not be able to find the encoder. VideoCapture will not handle this situation
@@ -1088,15 +1153,18 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
             @Nullable VideoValidatedEncoderProfilesProxy encoderProfiles,
             @NonNull MediaSpec mediaSpec,
             @NonNull Size resolution,
+            @NonNull DynamicRange dynamicRange,
             @NonNull Range<Integer> expectedFrameRate) {
         // Resolve the VideoEncoderConfig
-        MimeInfo videoMimeInfo = resolveVideoMimeInfo(mediaSpec, encoderProfiles);
+        VideoMimeInfo videoMimeInfo = resolveVideoMimeInfo(mediaSpec, dynamicRange,
+                encoderProfiles);
         VideoEncoderConfig videoEncoderConfig = resolveVideoEncoderConfig(
                 videoMimeInfo,
                 // Timebase won't affect the found EncoderInfo so give a arbitrary one.
                 Timebase.UPTIME,
                 mediaSpec.getVideoSpec(),
                 resolution,
+                dynamicRange,
                 expectedFrameRate);
 
         return videoEncoderInfoFinder.apply(videoEncoderConfig);
@@ -1176,25 +1244,25 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
     }
 
     /**
-     * Set {@link ImageOutputConfig#OPTION_SUPPORTED_RESOLUTIONS} according to the resolution found
-     * by the {@link QualitySelector} in VideoOutput.
+     * Set {@link ImageOutputConfig#OPTION_CUSTOM_ORDERED_RESOLUTIONS} according to the resolution
+     * found by the {@link QualitySelector} in VideoOutput.
      *
      * @throws IllegalArgumentException if not able to find a resolution by the QualitySelector
      *                                  in VideoOutput.
      */
-    private void updateSupportedResolutionsByQuality(@NonNull CameraInfoInternal cameraInfo,
+    private void updateCustomOrderedResolutionsByQuality(@NonNull CameraInfoInternal cameraInfo,
             @NonNull UseCaseConfig.Builder<?, ?, ?> builder) throws IllegalArgumentException {
         MediaSpec mediaSpec = getMediaSpec();
 
         Preconditions.checkArgument(mediaSpec != null,
                 "Unable to update target resolution by null MediaSpec.");
 
-        DynamicRange dynamicRange = Preconditions.checkNotNull(
-                builder.getMutableConfig().retrieveOption(OPTION_INPUT_DYNAMIC_RANGE, SDR));
+        DynamicRange requestedDynamicRange = getDynamicRange();
         VideoCapabilities videoCapabilities = getVideoCapabilities(cameraInfo);
 
         // Get supported qualities.
-        List<Quality> supportedQualities = videoCapabilities.getSupportedQualities(dynamicRange);
+        List<Quality> supportedQualities = videoCapabilities.getSupportedQualities(
+                requestedDynamicRange);
         if (supportedQualities.isEmpty()) {
             // When the device does not have any supported quality, even the most flexible
             // QualitySelector such as QualitySelector.from(Quality.HIGHEST), still cannot
@@ -1218,18 +1286,18 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
 
         // Get corresponded resolutions for the target aspect ratio.
         int aspectRatio = videoSpec.getAspectRatio();
-        Map<Quality, Size> sizeMap = getQualityToResolutionMap(videoCapabilities, dynamicRange);
+        Map<Quality, Size> sizeMap = getQualityToResolutionMap(videoCapabilities,
+                requestedDynamicRange);
         QualityRatioToResolutionsTable qualityRatioTable = new QualityRatioToResolutionsTable(
                 cameraInfo.getSupportedResolutions(getImageFormat()), sizeMap);
-        List<Size> supportedResolutions = new ArrayList<>();
+        List<Size> customOrderedResolutions = new ArrayList<>();
         for (Quality selectedQuality : selectedQualities) {
-            supportedResolutions.addAll(
+            customOrderedResolutions.addAll(
                     qualityRatioTable.getResolutions(selectedQuality, aspectRatio));
         }
-        Logger.d(TAG, "Set supported resolutions = " + supportedResolutions);
-
+        Logger.d(TAG, "Set custom ordered resolutions = " + customOrderedResolutions);
         builder.getMutableConfig().insertOption(OPTION_CUSTOM_ORDERED_RESOLUTIONS,
-                supportedResolutions);
+                customOrderedResolutions);
     }
 
     private static boolean hasVideoQualityQuirkAndWorkaroundBySurfaceProcessing() {
@@ -1306,7 +1374,8 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
     @SuppressWarnings("ObjectToString")
     public static final class Builder<T extends VideoOutput> implements
             UseCaseConfig.Builder<VideoCapture<T>, VideoCaptureConfig<T>, Builder<T>>,
-            ImageOutputConfig.Builder<Builder<T>>, ThreadConfig.Builder<Builder<T>> {
+            ImageOutputConfig.Builder<Builder<T>>, ImageInputConfig.Builder<Builder<T>>,
+            ThreadConfig.Builder<Builder<T>> {
         private final MutableOptionsBundle mMutableConfig;
 
         /** Creates a new Builder object. */
@@ -1364,7 +1433,6 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
 
         /**
          * {@inheritDoc}
-         *
          */
         @RestrictTo(Scope.LIBRARY_GROUP)
         @Override
@@ -1375,7 +1443,6 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
 
         /**
          * {@inheritDoc}
-         *
          */
         @RestrictTo(Scope.LIBRARY_GROUP)
         @NonNull
@@ -1447,7 +1514,6 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
          * setTargetAspectRatio is not supported on VideoCapture
          *
          * <p>To set aspect ratio, see {@link Recorder.Builder#setAspectRatio(int)}.
-         *
          */
         @RestrictTo(Scope.LIBRARY_GROUP)
         @NonNull
@@ -1464,7 +1530,7 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
          * Rotation values are relative to the "natural" rotation, {@link Surface#ROTATION_0}.
          *
          * <p>In general, it is best to additionally set the target rotation dynamically on the
-         * use case. See {@link VideoCapture#setTargetRotationDegrees(int)} for additional
+         * use case. See {@link VideoCapture#setTargetRotation(int)} for additional
          * documentation.
          *
          * <p>If not set, the target rotation will default to the value of
@@ -1480,7 +1546,6 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
          * @param rotation The rotation of the intended target.
          * @return The current Builder.
          * @see VideoCapture#setTargetRotation(int)
-         * @see VideoCapture#setTargetRotationDegrees(int)
          * @see android.view.OrientationEventListener
          */
         @NonNull
@@ -1516,7 +1581,6 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
          * setTargetResolution is not supported on VideoCapture
          *
          * <p>To set resolution, see {@link Recorder.Builder#setQualitySelector(QualitySelector)}.
-         *
          */
         @RestrictTo(Scope.LIBRARY_GROUP)
         @NonNull
@@ -1569,6 +1633,40 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
         @NonNull
         public Builder<T> setResolutionSelector(@NonNull ResolutionSelector resolutionSelector) {
             getMutableConfig().insertOption(OPTION_RESOLUTION_SELECTOR, resolutionSelector);
+            return this;
+        }
+
+        // Implementations of ImageInputConfig.Builder default methods
+
+        /**
+         * Sets the {@link DynamicRange}.
+         *
+         * <p>The dynamic range specifies how the range of colors, highlights and shadows that
+         * are captured by the video producer are displayed on a display. Some dynamic ranges will
+         * allow the video to make full use of the extended range of brightness of a display when
+         * the video is played back.
+         *
+         * <p>The supported dynamic ranges for video capture depend on the capabilities of the
+         * camera and the {@link VideoOutput}. The supported dynamic ranges can normally be
+         * queried through the specific video output. For example, the available dynamic
+         * ranges for the {@link Recorder} video output can be queried through
+         * the {@link androidx.camera.video.VideoCapabilities} returned by
+         * {@link Recorder#getVideoCapabilities(CameraInfo)} via
+         * {@link androidx.camera.video.VideoCapabilities#getSupportedDynamicRanges()}.
+         *
+         * <p>It is possible to choose a high dynamic range (HDR) with unspecified encoding by
+         * providing {@link DynamicRange#HDR_UNSPECIFIED_10_BIT}.
+         *
+         * <p>If the dynamic range is not provided, the returned video capture use case will use
+         * a default of {@link DynamicRange#SDR}.
+         *
+         * @return The current Builder.
+         * @see DynamicRange
+         */
+        @NonNull
+        @Override
+        public Builder<T> setDynamicRange(@NonNull DynamicRange dynamicRange) {
+            getMutableConfig().insertOption(OPTION_INPUT_DYNAMIC_RANGE, dynamicRange);
             return this;
         }
 
@@ -1683,6 +1781,14 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
         @NonNull
         public Builder<T> setTargetFrameRate(@NonNull Range<Integer> targetFrameRate) {
             getMutableConfig().insertOption(OPTION_TARGET_FRAME_RATE, targetFrameRate);
+            return this;
+        }
+
+        @RestrictTo(Scope.LIBRARY_GROUP)
+        @NonNull
+        @Override
+        public Builder<T> setCaptureType(@NonNull UseCaseConfigFactory.CaptureType captureType) {
+            getMutableConfig().insertOption(OPTION_CAPTURE_TYPE, captureType);
             return this;
         }
     }

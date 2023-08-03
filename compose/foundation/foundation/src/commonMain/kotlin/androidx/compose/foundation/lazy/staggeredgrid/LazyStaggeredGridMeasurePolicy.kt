@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.lazy.layout.LazyLayoutMeasureScope
+import androidx.compose.foundation.lazy.layout.calculateLazyLayoutPinnedIndices
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.unit.Constraints
@@ -32,21 +33,23 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.constrainHeight
 import androidx.compose.ui.unit.constrainWidth
+import kotlinx.coroutines.CoroutineScope
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 internal fun rememberStaggeredGridMeasurePolicy(
     state: LazyStaggeredGridState,
-    itemProvider: LazyStaggeredGridItemProvider,
+    itemProviderLambda: () -> LazyStaggeredGridItemProvider,
     contentPadding: PaddingValues,
     reverseLayout: Boolean,
     orientation: Orientation,
     mainAxisSpacing: Dp,
     crossAxisSpacing: Dp,
+    coroutineScope: CoroutineScope,
     slots: Density.(Constraints) -> LazyStaggeredGridSlots
 ): LazyLayoutMeasureScope.(Constraints) -> LazyStaggeredGridMeasureResult = remember(
     state,
-    itemProvider,
+    itemProviderLambda,
     contentPadding,
     reverseLayout,
     orientation,
@@ -61,14 +64,12 @@ internal fun rememberStaggeredGridMeasurePolicy(
         )
         val resolvedSlots = slots(this, constraints)
         val isVertical = orientation == Orientation.Vertical
+        val itemProvider = itemProviderLambda()
 
         // setup information for prefetch
         state.slots = resolvedSlots
         state.isVertical = isVertical
         state.spanProvider = itemProvider.spanProvider
-
-        // ensure scroll position is up to date
-        state.updateScrollPositionIfTheFirstItemWasMoved(itemProvider)
 
         // setup measure
         val beforeContentPadding = contentPadding.beforePadding(
@@ -96,8 +97,14 @@ internal fun rememberStaggeredGridMeasurePolicy(
             calculateTopPadding() + calculateBottomPadding()
         }.roundToPx()
 
+        val pinnedItems = itemProvider.calculateLazyLayoutPinnedIndices(
+            state.pinnedItems,
+            state.beyondBoundsInfo
+        )
+
         measureStaggeredGrid(
             state = state,
+            pinnedItems = pinnedItems,
             itemProvider = itemProvider,
             resolvedSlots = resolvedSlots,
             constraints = constraints.copy(
@@ -111,6 +118,7 @@ internal fun rememberStaggeredGridMeasurePolicy(
             reverseLayout = reverseLayout,
             beforeContentPadding = beforeContentPadding,
             afterContentPadding = afterContentPadding,
+            coroutineScope = coroutineScope
         ).also {
             state.applyMeasureResult(it)
         }

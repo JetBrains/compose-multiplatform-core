@@ -32,6 +32,7 @@ import android.os.Build
 import android.util.Range
 import android.util.Size
 import android.view.WindowManager
+import androidx.camera.camera2.pipe.CameraBackendId
 import androidx.camera.camera2.pipe.CameraId
 import androidx.camera.camera2.pipe.integration.CameraPipeConfig
 import androidx.camera.camera2.pipe.integration.adapter.GuaranteedConfigurationsUtil.getConcurrentSupportedCombinationList
@@ -64,15 +65,15 @@ import androidx.camera.core.internal.utils.SizeUtil
 import androidx.camera.core.internal.utils.SizeUtil.RESOLUTION_1440P
 import androidx.camera.core.internal.utils.SizeUtil.RESOLUTION_720P
 import androidx.camera.core.internal.utils.SizeUtil.RESOLUTION_VGA
-import androidx.camera.testing.CameraUtil
-import androidx.camera.testing.CameraXUtil
-import androidx.camera.testing.EncoderProfilesUtil
 import androidx.camera.testing.fakes.FakeCamera
-import androidx.camera.testing.fakes.FakeCameraCoordinator
-import androidx.camera.testing.fakes.FakeCameraFactory
 import androidx.camera.testing.fakes.FakeCameraInfoInternal
-import androidx.camera.testing.fakes.FakeEncoderProfilesProvider
-import androidx.camera.testing.fakes.FakeUseCaseConfig
+import androidx.camera.testing.impl.CameraUtil
+import androidx.camera.testing.impl.CameraXUtil
+import androidx.camera.testing.impl.EncoderProfilesUtil
+import androidx.camera.testing.impl.fakes.FakeCameraCoordinator
+import androidx.camera.testing.impl.fakes.FakeCameraFactory
+import androidx.camera.testing.impl.fakes.FakeEncoderProfilesProvider
+import androidx.camera.testing.impl.fakes.FakeUseCaseConfig
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.testutils.assertThrows
@@ -94,6 +95,7 @@ import org.robolectric.annotation.internal.DoNotInstrument
 import org.robolectric.shadow.api.Shadow
 import org.robolectric.shadows.ShadowCameraCharacteristics
 import org.robolectric.shadows.ShadowCameraManager
+import org.robolectric.util.ReflectionHelpers
 
 @Suppress("DEPRECATION")
 @RunWith(RobolectricTestRunner::class)
@@ -918,7 +920,7 @@ class SupportedSurfaceCombinationTest {
         val privUseCase = createUseCase(UseCaseConfigFactory.CaptureType.PREVIEW)
         val jpegUseCase = createUseCase(UseCaseConfigFactory.CaptureType.IMAGE_CAPTURE)
         val useCaseExpectedResultMap = mutableMapOf<UseCase, Size>().apply {
-            put(privUseCase, previewSize)
+            put(privUseCase, if (Build.VERSION.SDK_INT == 21) RESOLUTION_VGA else previewSize)
             put(jpegUseCase, maximumSize)
         }
         getSuggestedSpecsAndVerify(useCaseExpectedResultMap)
@@ -932,7 +934,7 @@ class SupportedSurfaceCombinationTest {
         val yuvUseCase = createUseCase(UseCaseConfigFactory.CaptureType.IMAGE_ANALYSIS) // YUV
         val jpegUseCase = createUseCase(UseCaseConfigFactory.CaptureType.IMAGE_CAPTURE) // JPEG
         val useCaseExpectedResultMap = mutableMapOf<UseCase, Size>().apply {
-            put(yuvUseCase, previewSize)
+            put(yuvUseCase, if (Build.VERSION.SDK_INT == 21) RESOLUTION_VGA else previewSize)
             put(jpegUseCase, maximumSize)
         }
         getSuggestedSpecsAndVerify(useCaseExpectedResultMap)
@@ -946,8 +948,8 @@ class SupportedSurfaceCombinationTest {
         val privUseCase1 = createUseCase(UseCaseConfigFactory.CaptureType.PREVIEW) // PRIV
         val privUseCase2 = createUseCase(UseCaseConfigFactory.CaptureType.VIDEO_CAPTURE) // PRIV
         val useCaseExpectedResultMap = mutableMapOf<UseCase, Size>().apply {
-            put(privUseCase1, previewSize)
-            put(privUseCase2, previewSize)
+            put(privUseCase1, if (Build.VERSION.SDK_INT == 21) RESOLUTION_VGA else previewSize)
+            put(privUseCase2, if (Build.VERSION.SDK_INT == 21) RESOLUTION_VGA else previewSize)
         }
         getSuggestedSpecsAndVerify(useCaseExpectedResultMap)
     }
@@ -960,8 +962,8 @@ class SupportedSurfaceCombinationTest {
         val privUseCase = createUseCase(UseCaseConfigFactory.CaptureType.PREVIEW) // PRIV
         val yuvUseCase = createUseCase(UseCaseConfigFactory.CaptureType.IMAGE_ANALYSIS) // YUV
         val useCaseExpectedResultMap = mutableMapOf<UseCase, Size>().apply {
-            put(privUseCase, previewSize)
-            put(yuvUseCase, previewSize)
+            put(privUseCase, if (Build.VERSION.SDK_INT == 21) RESOLUTION_VGA else previewSize)
+            put(yuvUseCase, if (Build.VERSION.SDK_INT == 21) RESOLUTION_VGA else previewSize)
         }
         getSuggestedSpecsAndVerify(useCaseExpectedResultMap)
     }
@@ -975,8 +977,8 @@ class SupportedSurfaceCombinationTest {
         val yuvUseCase = createUseCase(UseCaseConfigFactory.CaptureType.IMAGE_ANALYSIS) // YUV
         val jpegUseCase = createUseCase(UseCaseConfigFactory.CaptureType.IMAGE_CAPTURE) // JPEG
         val useCaseExpectedResultMap = mutableMapOf<UseCase, Size>().apply {
-            put(privUseCase, previewSize)
-            put(yuvUseCase, previewSize)
+            put(privUseCase, if (Build.VERSION.SDK_INT == 21) RESOLUTION_VGA else previewSize)
+            put(yuvUseCase, if (Build.VERSION.SDK_INT == 21) RESOLUTION_VGA else previewSize)
             put(jpegUseCase, maximumSize)
         }
         getSuggestedSpecsAndVerify(useCaseExpectedResultMap)
@@ -1571,7 +1573,7 @@ class SupportedSurfaceCombinationTest {
             CameraMode.DEFAULT,
             attachedSurfaceInfoList,
             useCaseConfigToOutputSizesMap
-        )
+        ).first
 
         useCasesExpectedResultMap.keys.forEach {
             val resultSize = suggestedStreamSpecs[useCaseConfigMap[it]]!!.resolution
@@ -1732,6 +1734,88 @@ class SupportedSurfaceCombinationTest {
         )
     }
 
+    @Test
+    fun applyLegacyApi21QuirkCorrectly() {
+        setupCamera()
+        val supportedSurfaceCombination = SupportedSurfaceCombination(
+            context, fakeCameraMetadata,
+            mockEncoderProfilesAdapter
+        )
+        val sortedSizeList = listOf(
+            // 16:9 sizes are put in the front of the list
+            Size(3840, 2160), // 16:9
+            Size(1920, 1080), // 16:9
+            Size(1280, 720), // 16:9
+            Size(960, 544), // a mod16 version of resolution with 16:9 aspect ratio.
+            Size(800, 450), // 16:9
+
+            // 4:3 sizes are put in the end of the list
+            Size(4032, 3024), // 4:3
+            Size(1920, 1440), // 4:3
+            Size(1280, 960), // 4:3
+            Size(640, 480), // 4:3
+        )
+        val resultList =
+            supportedSurfaceCombination.applyResolutionSelectionOrderRelatedWorkarounds(
+                sortedSizeList,
+                ImageFormat.YUV_420_888
+            )
+        val expectedResultList = if (Build.VERSION.SDK_INT == 21) {
+            listOf(
+                // 4:3 sizes are pulled to the front of the list
+                Size(4032, 3024), // 4:3
+                Size(1920, 1440), // 4:3
+                Size(1280, 960), // 4:3
+                Size(640, 480), // 4:3
+
+                // 16:9 sizes are put in the end of the list
+                Size(3840, 2160), // 16:9
+                Size(1920, 1080), // 16:9
+                Size(1280, 720), // 16:9
+                Size(960, 544), // a mod16 version of resolution with 16:9 aspect ratio.
+                Size(800, 450), // 16:9
+            )
+        } else {
+            sortedSizeList
+        }
+        assertThat(resultList).containsExactlyElementsIn(expectedResultList).inOrder()
+    }
+
+    @Test
+    fun applyResolutionCorrectorWorkaroundCorrectly() {
+        ReflectionHelpers.setStaticField(Build::class.java, "BRAND", "Samsung")
+        ReflectionHelpers.setStaticField(Build::class.java, "MODEL", "SM-J710MN")
+        setupCamera(hardwareLevel = CameraMetadata.INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED)
+        val supportedSurfaceCombination = SupportedSurfaceCombination(
+            context, fakeCameraMetadata,
+            mockEncoderProfilesAdapter
+        )
+        val resultList =
+            supportedSurfaceCombination.applyResolutionSelectionOrderRelatedWorkarounds(
+                supportedSizes.toList(),
+                ImageFormat.YUV_420_888
+            )
+        val expectedResultList = if (Build.VERSION.SDK_INT in 21..26) {
+            listOf(
+                // 1280x720 is pulled to the first position for YUV format.
+                Size(1280, 720),
+
+                // The remaining sizes keep the original order
+                Size(4032, 3024),
+                Size(3840, 2160),
+                Size(1920, 1440),
+                Size(1920, 1080),
+                Size(1280, 960),
+                Size(960, 544),
+                Size(800, 450),
+                Size(640, 480),
+            )
+        } else {
+            supportedSizes.toList()
+        }
+        assertThat(resultList).containsExactlyElementsIn(expectedResultList).inOrder()
+    }
+
     private fun setupCamera(
         hardwareLevel: Int = CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY,
         sensorOrientation: Int = sensorOrientation90,
@@ -1782,9 +1866,12 @@ class SupportedSurfaceCombinationTest {
             CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP to mockMap,
         ).also { characteristicsMap ->
             mockMaximumResolutionMap?.let {
-                characteristicsMap[
-                    CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP_MAXIMUM_RESOLUTION] =
+                if (Build.VERSION.SDK_INT >= 31) {
+                    characteristicsMap[
+                        CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP_MAXIMUM_RESOLUTION
+                    ] =
                     mockMaximumResolutionMap
+                }
             }
         }
 
@@ -1815,7 +1902,10 @@ class SupportedSurfaceCombinationTest {
         ).thenReturn(supportedSizes)
         // This is setup for high resolution output sizes
         highResolutionSupportedSizes?.let {
-            whenever(mockMap.getHighResolutionOutputSizes(ArgumentMatchers.anyInt())).thenReturn(it)
+            if (Build.VERSION.SDK_INT >= 23) {
+                whenever(mockMap.getHighResolutionOutputSizes(ArgumentMatchers.anyInt()))
+                    .thenReturn(it)
+            }
         }
         shadowCharacteristics.set(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP, mockMap)
         mockMaximumResolutionMap?.let {
@@ -1823,17 +1913,21 @@ class SupportedSurfaceCombinationTest {
                 .thenReturn(maximumResolutionSupportedSizes)
             whenever(mockMaximumResolutionMap.getOutputSizes(SurfaceTexture::class.java))
                 .thenReturn(maximumResolutionSupportedSizes)
-            whenever(
-                mockMaximumResolutionMap.getHighResolutionOutputSizes(
-                    ArgumentMatchers.anyInt()
+            if (Build.VERSION.SDK_INT >= 23) {
+                whenever(
+                    mockMaximumResolutionMap.getHighResolutionOutputSizes(
+                        ArgumentMatchers.anyInt()
+                    )
+                ).thenReturn(
+                    maximumResolutionHighResolutionSupportedSizes
                 )
-            ).thenReturn(
-                maximumResolutionHighResolutionSupportedSizes
-            )
-            shadowCharacteristics.set(
-                CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP_MAXIMUM_RESOLUTION,
-                mockMaximumResolutionMap
-            )
+            }
+            if (Build.VERSION.SDK_INT >= 31) {
+                shadowCharacteristics.set(
+                    CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP_MAXIMUM_RESOLUTION,
+                    mockMaximumResolutionMap
+                )
+            }
         }
         @LensFacing val lensFacingEnum = CameraUtil.getLensFacingEnumFromInt(
             CameraCharacteristics.LENS_FACING_BACK
@@ -1856,6 +1950,10 @@ class SupportedSurfaceCombinationTest {
         val fakeCameraDevices =
             FakeCameraDevices(
                 defaultCameraBackendId = FakeCameraBackend.FAKE_CAMERA_BACKEND_ID,
+                concurrentCameraBackendIds = setOf(
+                    setOf(CameraBackendId("0"), CameraBackendId("1")),
+                    setOf(CameraBackendId("0"), CameraBackendId("2"))
+                ),
                 cameraMetadataMap =
                 mapOf(FakeCameraBackend.FAKE_CAMERA_BACKEND_ID to listOf(fakeCameraMetadata))
             )

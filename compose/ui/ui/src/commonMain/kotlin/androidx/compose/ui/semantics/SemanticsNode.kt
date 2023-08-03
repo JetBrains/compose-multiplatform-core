@@ -175,6 +175,18 @@ class SemanticsNode internal constructor(
             ?: Offset.Zero
 
     /**
+     * The bounding box for this node relative to the parent semantics node, with clipping applied.
+     */
+    internal val boundsInParent: Rect
+        get() {
+            val parent = this.parent ?: return Rect.Zero
+            val currentCoordinates = findCoordinatorToGetBounds()?.takeIf { it.isAttached }
+                ?.coordinates ?: return Rect.Zero
+            return parent.outerSemanticsNode.requireCoordinator(Nodes.Semantics)
+                .localBoundingBoxOf(currentCoordinates)
+        }
+
+    /**
      * Whether this node is transparent.
      */
     internal val isTransparent: Boolean
@@ -248,10 +260,15 @@ class SemanticsNode internal constructor(
         // TODO(lmr): visitChildren would be great for this but we would lose the zSorted bit...
         //  i wonder if we can optimize this for the common case of no z-sortedness going on.
         zSortedChildren.forEach { child ->
-            if (child.nodes.has(Nodes.Semantics)) {
-                list.add(SemanticsNode(child, mergingEnabled))
-            } else {
-                child.fillOneLayerOfSemanticsWrappers(list)
+            // TODO(b/290936195): In some conditions it appears that children here can be
+            //  unattached. We just guard against that here as a "quick fix" but we need to
+            //  understand why this is happening and followup with a proper fix.
+            if (child.isAttached) {
+                if (child.nodes.has(Nodes.Semantics)) {
+                    list.add(SemanticsNode(child, mergingEnabled))
+                } else {
+                    child.fillOneLayerOfSemanticsWrappers(list)
+                }
             }
         }
     }
@@ -402,7 +419,9 @@ class SemanticsNode internal constructor(
         }
         val fakeNode = SemanticsNode(
             outerSemanticsNode = object : SemanticsModifierNode, Modifier.Node() {
-                override val semanticsConfiguration = configuration
+                override fun SemanticsPropertyReceiver.applySemantics() {
+                    properties()
+                }
             },
             mergingEnabled = false,
             layoutNode = LayoutNode(
@@ -427,25 +446,9 @@ class SemanticsNode internal constructor(
     }
 }
 
-internal val LayoutNode.collapsedSemantics: SemanticsConfiguration?
-    get() {
-        var result: SemanticsConfiguration? = null
-        nodes.tailToHead(Nodes.Semantics) {
-            val current = result
-            if (current == null || it.semanticsConfiguration.isClearingSemantics) {
-                result = it.semanticsConfiguration
-            } else {
-                result = it.semanticsConfiguration.copy().also {
-                    it.collapsePeer(current)
-                }
-            }
-        }
-        return result
-    }
-
 internal val LayoutNode.outerMergingSemantics: SemanticsModifierNode?
     get() = nodes.firstFromHead(Nodes.Semantics) {
-        it.semanticsConfiguration.isMergingSemanticsOfDescendants
+        it.shouldMergeDescendantSemantics
     }
 
 /**

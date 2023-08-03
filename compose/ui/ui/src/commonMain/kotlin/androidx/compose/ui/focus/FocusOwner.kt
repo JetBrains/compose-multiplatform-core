@@ -39,6 +39,14 @@ internal interface FocusOwner : FocusManager {
     var layoutDirection: LayoutDirection
 
     /**
+     * This manager provides a way to ensure that only one focus transaction is running at a time.
+     * We use this to prevent re-entrant focus operations. Starting a new transaction automatically
+     * cancels the previous transaction and reverts any focus state changes made during that
+     * transaction.
+     */
+    val focusTransactionManager: FocusTransactionManager
+
+    /**
      * The [Owner][androidx.compose.ui.node.Owner] calls this function when it gains focus. This
      * informs the [focus manager][FocusOwnerImpl] that the
      * [Owner][androidx.compose.ui.node.Owner] gained focus, and that it should propagate this
@@ -91,7 +99,7 @@ internal interface FocusOwner : FocusManager {
     /**
      * Schedule a FocusTarget node to be invalidated after onApplyChanges.
      */
-    fun scheduleInvalidation(node: FocusTargetModifierNode)
+    fun scheduleInvalidation(node: FocusTargetNode)
 
     /**
      * Schedule a FocusEvent node to be invalidated after onApplyChanges.

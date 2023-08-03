@@ -26,9 +26,12 @@ import androidx.compose.foundation.text.BasicText
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ReusableContent
 import androidx.compose.runtime.Stable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
@@ -38,14 +41,15 @@ import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.node.DelegatingNode
 import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.platform.InspectableValue
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.ValueElement
 import androidx.compose.ui.platform.isDebugInspectorInfoEnabled
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.assert
-import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertContentDescriptionEquals
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.assertValueEquals
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -62,14 +66,15 @@ import androidx.compose.ui.zIndex
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
+import kotlin.math.max
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import kotlin.math.max
 
 @MediumTest
 @RunWith(AndroidJUnit4::class)
@@ -106,23 +111,7 @@ class SemanticsTests {
     }
 
     @Test
-    fun valueSemanticsAreEqual() {
-        assertEquals(
-            Modifier.semantics {
-                text = AnnotatedString("text")
-                contentDescription = "foo"
-                popup()
-            },
-            Modifier.semantics {
-                text = AnnotatedString("text")
-                contentDescription = "foo"
-                popup()
-            }
-        )
-    }
-
-    @Test
-    fun containerProperty() {
+    fun isTraversalGroupProperty() {
         rule.setContent {
             Surface(
                 Modifier.testTag(TestTag)
@@ -133,7 +122,70 @@ class SemanticsTests {
 
         rule.onNodeWithTag(TestTag)
             .assert(SemanticsMatcher.expectValue(
-                SemanticsProperties.IsContainer, true))
+                SemanticsProperties.IsTraversalGroup, true))
+    }
+
+    @Test
+    fun traversalIndexProperty() {
+        rule.setContent {
+            Surface {
+                Box(Modifier
+                    .semantics { traversalIndex = 0f }
+                    .testTag(TestTag)
+                ) {
+                    Text("Hello World", modifier = Modifier.padding(8.dp))
+                }
+            }
+        }
+
+        rule.onNodeWithTag(TestTag)
+            .assert(SemanticsMatcher.expectValue(
+                SemanticsProperties.TraversalIndex, 0f))
+    }
+
+    @Test
+    fun traversalIndexPropertyNull() {
+        rule.setContent {
+            Surface {
+                Box(Modifier
+                    .testTag(TestTag)
+                ) {
+                    Text("Hello World", modifier = Modifier.padding(8.dp))
+                }
+            }
+        }
+
+        // If traversalIndex is not explicitly set, the default value is zero, but
+        // only considered so when sorting in the DelegateCompat file
+        rule.onNodeWithTag(TestTag)
+            .assertDoesNotHaveProperty(SemanticsProperties.TraversalIndex)
+    }
+
+    @Test
+    @Suppress("DEPRECATION")
+    fun isContainerPropertyDeprecated() {
+        rule.setContent {
+            Surface {
+                Box(Modifier
+                    .testTag(TestTag)
+                    .semantics { isContainer = true }
+                ) {
+                    Text("Hello World", modifier = Modifier.padding(8.dp))
+                }
+            }
+        }
+
+        // Since `isContainer` has been deprecated, setting that property will actually set
+        // `isTraversalGroup` instead, but `IsContainer` can still be used to retrieve the value
+        rule.onNodeWithTag(TestTag)
+            .assert(
+                SemanticsMatcher("container property") {
+                    it.config.getOrNull(SemanticsProperties.IsContainer) == true
+                }
+            )
+        rule.onNodeWithTag(TestTag)
+            .assert(SemanticsMatcher.expectValue(
+                SemanticsProperties.IsTraversalGroup, true))
     }
 
     @Test
@@ -933,6 +985,166 @@ class SemanticsTests {
             .assertContentDescriptionEquals("hello world")
             .assertTestPropertyEquals("bar")
     }
+
+    @Test
+    fun testBoundInParent() {
+        rule.setContent {
+            with(LocalDensity.current) {
+                Box(
+                    Modifier
+                        .size(100.toDp())
+                        .padding(10.toDp(), 20.toDp())
+                        .semantics {}
+                ) {
+                    Box(
+                        Modifier
+                            .size(10.toDp())
+                            .offset(20.toDp(), 30.toDp())
+                    ) {
+                        Box(Modifier
+                            .size(1.toDp())
+                            .testTag(TestTag)) {}
+                    }
+                }
+            }
+        }
+
+        rule.waitForIdle()
+
+        val bounds = rule.onNodeWithTag(TestTag, true).fetchSemanticsNode().boundsInParent
+        assertEquals(
+            Rect(20.0f, 30.0f, 21.0f, 31.0f),
+            bounds
+        )
+    }
+
+    @Test
+    fun testBoundInParent_boundInRootWhenNoParent() {
+        rule.setContent {
+            with(LocalDensity.current) {
+                Box(
+                    Modifier
+                        .size(100.toDp())
+                        .padding(10.toDp(), 20.toDp())
+                ) {
+                    Box(
+                        Modifier
+                            .size(10.toDp())
+                            .offset(20.toDp(), 30.toDp())
+                    ) {
+                        Box(Modifier
+                            .size(1.toDp())
+                            .testTag(TestTag)) {}
+                    }
+                }
+            }
+        }
+
+        rule.waitForIdle()
+
+        val bounds = rule.onNodeWithTag(TestTag, true).fetchSemanticsNode().boundsInParent
+        assertEquals(
+            Rect(30.0f, 50.0f, 31.0f, 51.0f),
+            bounds
+        )
+    }
+
+    @Test
+    fun testRegenerateSemanticsId() {
+        var reuseKey by mutableStateOf(0)
+        rule.setContent {
+            ReusableContent(reuseKey) {
+                Box(
+                    Modifier.testTag(TestTag)
+                )
+            }
+        }
+        val oldId = rule.onNodeWithTag(TestTag).fetchSemanticsNode().id
+        rule.runOnIdle {
+            reuseKey = 1
+        }
+        val newId = rule.onNodeWithTag(TestTag).fetchSemanticsNode().id
+
+        assertNotEquals(oldId, newId)
+    }
+
+    @Test
+    fun testSetTextSubstitution_annotatedString() {
+        rule.setContent {
+            Surface {
+                Text(
+                    AnnotatedString("hello"),
+                    Modifier
+                        .testTag(TestTag)
+                )
+            }
+        }
+
+        val config = rule.onNodeWithTag(TestTag, true).fetchSemanticsNode().config
+        rule.runOnUiThread {
+            config.getOrNull(SemanticsActions.SetTextSubstitution)?.action?.invoke(
+                AnnotatedString("bonjour"))
+        }
+
+        rule.waitForIdle()
+
+        var newConfig = rule.onNodeWithTag(TestTag, true).fetchSemanticsNode().config
+        // SetTextSubstitution doesn't trigger text update
+        assertThat(newConfig.getOrNull(SemanticsProperties.Text))
+            .containsExactly(AnnotatedString("hello"))
+
+        rule.runOnUiThread {
+            config.getOrNull(SemanticsActions.ShowTextSubstitution)?.action?.invoke(true)
+        }
+
+        rule.waitForIdle()
+
+        newConfig = rule.onNodeWithTag(TestTag, true).fetchSemanticsNode().config
+        // ShowTextSubstitution triggers text update
+        assertThat(newConfig.getOrNull(SemanticsProperties.Text))
+            .containsExactly(AnnotatedString("bonjour"))
+        assertEquals(
+            AnnotatedString("hello"), newConfig.getOrNull(SemanticsProperties.OriginalText))
+    }
+
+    @Test
+    fun testSetTextSubstitution_simpleString() {
+        rule.setContent {
+            Surface {
+                Text(
+                    "hello",
+                    Modifier
+                        .testTag(TestTag)
+                )
+            }
+        }
+
+        val config = rule.onNodeWithTag(TestTag, true).fetchSemanticsNode().config
+        rule.runOnUiThread {
+            config.getOrNull(SemanticsActions.SetTextSubstitution)?.action?.invoke(
+                AnnotatedString("bonjour"))
+        }
+
+        rule.waitForIdle()
+
+        var newConfig = rule.onNodeWithTag(TestTag, true).fetchSemanticsNode().config
+        // SetTextSubstitution doesn't trigger text update
+        assertThat(newConfig.getOrNull(SemanticsProperties.Text))
+            .containsExactly(AnnotatedString("hello"))
+
+        rule.runOnUiThread {
+            config.getOrNull(SemanticsActions.ShowTextSubstitution)?.action?.invoke(true)
+        }
+
+        rule.waitForIdle()
+
+        newConfig = rule.onNodeWithTag(TestTag, true).fetchSemanticsNode().config
+        // ShowTextSubstitution triggers text update
+        assertThat(newConfig.getOrNull(SemanticsProperties.Text))
+            .containsExactly(AnnotatedString("bonjour"))
+        assertEquals(
+            AnnotatedString("hello"), newConfig.getOrNull(SemanticsProperties.OriginalText))
+    }
 }
 
 private fun SemanticsNodeInteraction.assertDoesNotHaveProperty(property: SemanticsPropertyKey<*>) {
@@ -1047,10 +1259,9 @@ internal fun SemanticsMod(
     properties: SemanticsPropertyReceiver.() -> Unit
 ): CoreSemanticsModifierNode {
     return CoreSemanticsModifierNode(
-        SemanticsConfiguration().apply {
-            isMergingSemanticsOfDescendants = mergeDescendants
-            properties()
-        }
+        mergeDescendants = mergeDescendants,
+        isClearingSemantics = false,
+        properties = properties,
     )
 }
 
@@ -1060,5 +1271,5 @@ internal fun Modifier.elementFor(node: Modifier.Node): Modifier {
 
 internal data class NodeElement(val node: Modifier.Node) : ModifierNodeElement<Modifier.Node>() {
     override fun create(): Modifier.Node = node
-    override fun update(node: Modifier.Node): Modifier.Node = node
+    override fun update(node: Modifier.Node) {}
 }

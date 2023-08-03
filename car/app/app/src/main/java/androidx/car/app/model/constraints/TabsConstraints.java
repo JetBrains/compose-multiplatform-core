@@ -18,7 +18,6 @@ package androidx.car.app.model.constraints;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
-import androidx.car.app.annotations.ExperimentalCarApi;
 import androidx.car.app.annotations.RequiresCarApi;
 import androidx.car.app.model.Tab;
 
@@ -29,9 +28,7 @@ import java.util.Set;
 /**
  * Encapsulates the constraints to apply when creating {@link TabTemplate}.
  *
- * @hide
  */
-@ExperimentalCarApi
 @RequiresCarApi(6)
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 public class TabsConstraints {

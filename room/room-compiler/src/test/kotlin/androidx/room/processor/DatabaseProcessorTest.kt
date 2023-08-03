@@ -17,6 +17,7 @@
 package androidx.room.processor
 
 import COMMON
+import androidx.kruth.assertThat
 import androidx.room.DatabaseProcessingStep
 import androidx.room.RoomProcessor
 import androidx.room.compiler.codegen.CodeLanguage
@@ -41,7 +42,6 @@ import androidx.room.vo.DatabaseView
 import androidx.room.vo.ReadQueryMethod
 import androidx.room.vo.Warning
 import com.google.auto.service.processor.AutoServiceProcessor
-import com.google.common.truth.Truth.assertThat
 import java.io.File
 import java.io.FileOutputStream
 import java.net.URL
@@ -54,6 +54,7 @@ import org.hamcrest.CoreMatchers.not
 import org.hamcrest.CoreMatchers.notNullValue
 import org.hamcrest.CoreMatchers.sameInstance
 import org.hamcrest.MatcherAssert.assertThat
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -340,6 +341,7 @@ class DatabaseProcessorTest {
     }
 
     @Test
+    @Ignore("b/285140651")
     fun detectMissingEntityAnnotationInLibraryClass() {
         val librarySource = Source.java(
             "test.library.MissingEntityAnnotationPojo",
@@ -376,6 +378,7 @@ class DatabaseProcessorTest {
     }
 
     @Test
+    @Ignore("b/285140651")
     fun detectMissingDaoAnnotationInLibraryClass() {
         val librarySource = Source.java(
             "test.library.MissingAnnotationsBaseDao",

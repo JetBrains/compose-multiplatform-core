@@ -36,7 +36,7 @@ import androidx.compose.ui.input.pointer.PointerEvent
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.PointerInputScope
 import androidx.compose.ui.input.pointer.SuspendingPointerInputModifierNode
-import androidx.compose.ui.modifier.ModifierLocalNode
+import androidx.compose.ui.modifier.ModifierLocalModifierNode
 import androidx.compose.ui.node.CompositionLocalConsumerModifierNode
 import androidx.compose.ui.node.DelegatingNode
 import androidx.compose.ui.node.ModifierNodeElement
@@ -46,7 +46,7 @@ import androidx.compose.ui.platform.InspectorInfo
 import androidx.compose.ui.platform.debugInspectorInfo
 import androidx.compose.ui.platform.inspectable
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.SemanticsConfiguration
+import androidx.compose.ui.semantics.SemanticsPropertyReceiver
 import androidx.compose.ui.semantics.disabled
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.onLongClick
@@ -269,16 +269,18 @@ fun Modifier.combinedClickable(
         .indication(interactionSource, indication)
         .hoverable(enabled = enabled, interactionSource = interactionSource)
         .focusableInNonTouchMode(enabled = enabled, interactionSource = interactionSource)
-        .then(CombinedClickableElement(
-            interactionSource,
-            enabled,
-            onClickLabel,
-            role,
-            onClick,
-            onLongClickLabel,
-            onLongClick,
-            onDoubleClick
-        ))
+        .then(
+            CombinedClickableElement(
+                interactionSource,
+                enabled,
+                onClickLabel,
+                role,
+                onClick,
+                onLongClickLabel,
+                onLongClick,
+                onDoubleClick
+            )
+        )
 }
 
 private suspend fun PressGestureScope.handlePressInteraction(
@@ -421,8 +423,8 @@ private class ClickableElement(
         onClick
     )
 
-    override fun update(node: ClickableNode) = node.also {
-        it.update(interactionSource, enabled, onClickLabel, role, onClick)
+    override fun update(node: ClickableNode) {
+        node.update(interactionSource, enabled, onClickLabel, role, onClick)
     }
 
     // Defined in the factory functions with inspectable
@@ -430,7 +432,8 @@ private class ClickableElement(
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
-        if (javaClass != other?.javaClass) return false
+        if (other === null) return false
+        if (this::class != other::class) return false
 
         other as ClickableElement
 
@@ -462,28 +465,28 @@ private class CombinedClickableElement(
     private val onLongClickLabel: String?,
     private val onLongClick: (() -> Unit)?,
     private val onDoubleClick: (() -> Unit)?
-) : ModifierNodeElement<CombinedClickableNode>() {
-    override fun create() = CombinedClickableNode(
+) : ModifierNodeElement<CombinedClickableNodeImpl>() {
+    override fun create() = CombinedClickableNodeImpl(
+        onClick,
+        onLongClickLabel,
+        onLongClick,
+        onDoubleClick,
         interactionSource,
         enabled,
         onClickLabel,
         role,
-        onClick,
-        onLongClickLabel,
-        onLongClick,
-        onDoubleClick
     )
 
-    override fun update(node: CombinedClickableNode) = node.also {
-        it.update(
+    override fun update(node: CombinedClickableNodeImpl) {
+        node.update(
+            onClick,
+            onLongClickLabel,
+            onLongClick,
+            onDoubleClick,
             interactionSource,
             enabled,
             onClickLabel,
             role,
-            onClick,
-            onLongClickLabel,
-            onLongClick,
-            onDoubleClick
         )
     }
 
@@ -492,7 +495,8 @@ private class CombinedClickableElement(
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
-        if (javaClass != other?.javaClass) return false
+        if (other === null) return false
+        if (this::class != other::class) return false
 
         other as CombinedClickableElement
 
@@ -572,16 +576,95 @@ private class ClickableNode(
     }
 }
 
-private class CombinedClickableNode(
+/**
+ * Create a [CombinedClickableNode] that can be delegated to inside custom modifier nodes.
+ *
+ * This API is experimental and is temporarily being exposed to enable performance analysis, you
+ * should use [combinedClickable] instead for the majority of use cases.
+ *
+ * @param onClick will be called when user clicks on the element
+ * @param onLongClickLabel semantic / accessibility label for the [onLongClick] action
+ * @param onLongClick will be called when user long presses on the element
+ * @param onDoubleClick will be called when user double clicks on the element
+ * @param interactionSource [MutableInteractionSource] that will be used to emit
+ * [PressInteraction.Press] when this clickable is pressed. Only the initial (first) press will be
+ * recorded and emitted with [MutableInteractionSource].
+ * @param enabled Controls the enabled state. When false, [onClick], [onLongClick] or
+ * [onDoubleClick] won't be invoked
+ * @param onClickLabel semantic / accessibility label for the [onClick] action
+ * @param role the type of user interface element. Accessibility services might use this
+ * to describe the element or do customizations
+ */
+@ExperimentalFoundationApi
+fun CombinedClickableNode(
+    onClick: () -> Unit,
+    onLongClickLabel: String?,
+    onLongClick: (() -> Unit)?,
+    onDoubleClick: (() -> Unit)?,
     interactionSource: MutableInteractionSource,
     enabled: Boolean,
     onClickLabel: String?,
     role: Role?,
+): CombinedClickableNode = CombinedClickableNodeImpl(
+    onClick,
+    onLongClickLabel,
+    onLongClick,
+    onDoubleClick,
+    interactionSource,
+    enabled,
+    onClickLabel,
+    role,
+)
+
+/**
+ * Public interface for the internal node used inside [combinedClickable], to allow for custom
+ * modifier nodes to delegate to it.
+ *
+ * This API is experimental and is temporarily being exposed to enable performance analysis, you
+ * should use [combinedClickable] instead for the majority of use cases.
+ */
+@ExperimentalFoundationApi
+sealed interface CombinedClickableNode : PointerInputModifierNode {
+    /**
+     * Updates this node with new values, and resets any invalidated state accordingly.
+     *
+     * @param onClick will be called when user clicks on the element
+     * @param onLongClickLabel semantic / accessibility label for the [onLongClick] action
+     * @param onLongClick will be called when user long presses on the element
+     * @param onDoubleClick will be called when user double clicks on the element
+     * @param interactionSource [MutableInteractionSource] that will be used to emit
+     * [PressInteraction.Press] when this clickable is pressed. Only the initial (first) press will
+     * be recorded and emitted with [MutableInteractionSource].
+     * @param enabled Controls the enabled state. When false, [onClick], [onLongClick] or
+     * [onDoubleClick] won't be invoked
+     * @param onClickLabel semantic / accessibility label for the [onClick] action
+     * @param role the type of user interface element. Accessibility services might use this
+     * to describe the element or do customizations
+     */
+    fun update(
+        onClick: () -> Unit,
+        onLongClickLabel: String?,
+        onLongClick: (() -> Unit)?,
+        onDoubleClick: (() -> Unit)?,
+        interactionSource: MutableInteractionSource,
+        enabled: Boolean,
+        onClickLabel: String?,
+        role: Role?,
+    )
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+private class CombinedClickableNodeImpl(
     onClick: () -> Unit,
     onLongClickLabel: String?,
     private var onLongClick: (() -> Unit)?,
-    onDoubleClick: (() -> Unit)?
-) : AbstractClickableNode(interactionSource, enabled, onClickLabel, role, onClick) {
+    onDoubleClick: (() -> Unit)?,
+    interactionSource: MutableInteractionSource,
+    enabled: Boolean,
+    onClickLabel: String?,
+    role: Role?,
+) : CombinedClickableNode,
+    AbstractClickableNode(interactionSource, enabled, onClickLabel, role, onClick) {
     override val clickableSemanticsNode = delegate(
         ClickableSemanticsNode(
             enabled = enabled,
@@ -604,15 +687,15 @@ private class CombinedClickableNode(
         )
     )
 
-    fun update(
+    override fun update(
+        onClick: () -> Unit,
+        onLongClickLabel: String?,
+        onLongClick: (() -> Unit)?,
+        onDoubleClick: (() -> Unit)?,
         interactionSource: MutableInteractionSource,
         enabled: Boolean,
         onClickLabel: String?,
         role: Role?,
-        onClick: () -> Unit,
-        onLongClickLabel: String?,
-        onLongClick: (() -> Unit)?,
-        onDoubleClick: (() -> Unit)?
     ) {
         // If we have gone from no long click to having a long click or vice versa,
         // cancel any existing press interactions.
@@ -645,7 +728,7 @@ private sealed class AbstractClickableNode(
     private var onClickLabel: String?,
     private var role: Role?,
     private var onClick: () -> Unit
-) : DelegatingNode(), SemanticsModifierNode, PointerInputModifierNode, KeyInputModifierNode {
+) : DelegatingNode(), PointerInputModifierNode, KeyInputModifierNode {
     abstract val clickablePointerInputNode: AbstractClickablePointerInputNode
     abstract val clickableSemanticsNode: ClickableSemanticsNode
 
@@ -694,9 +777,6 @@ private sealed class AbstractClickableNode(
         interactionData.pressInteraction = null
         interactionData.currentKeyPressInteractions.clear()
     }
-
-    override val semanticsConfiguration: SemanticsConfiguration
-        get() = clickableSemanticsNode.semanticsConfiguration
 
     override fun onPointerEvent(
         pointerEvent: PointerEvent,
@@ -757,8 +837,8 @@ private class ClickableSemanticsElement(
         onClick = onClick
     )
 
-    override fun update(node: ClickableSemanticsNode) = node.also {
-        it.update(enabled, onClickLabel, role, onClick, onLongClickLabel, onLongClick)
+    override fun update(node: ClickableSemanticsNode) {
+        node.update(enabled, onClickLabel, role, onClick, onLongClickLabel, onLongClick)
     }
 
     override fun InspectorInfo.inspectableProperties() = Unit
@@ -812,26 +892,26 @@ private class ClickableSemanticsNode(
         this.onLongClick = onLongClick
     }
 
-    override val semanticsConfiguration
-        get() = SemanticsConfiguration().apply {
-            isMergingSemanticsOfDescendants = true
-            if (this@ClickableSemanticsNode.role != null) {
-                role = this@ClickableSemanticsNode.role!!
-            }
-            onClick(
-                action = { onClick(); true },
-                label = onClickLabel
-            )
-            if (onLongClick != null) {
-                onLongClick(
-                    action = { onLongClick?.invoke(); true },
-                    label = onLongClickLabel
-                )
-            }
-            if (!enabled) {
-                disabled()
-            }
+    override val shouldMergeDescendantSemantics: Boolean
+        get() = true
+    override fun SemanticsPropertyReceiver.applySemantics() {
+        if (this@ClickableSemanticsNode.role != null) {
+            role = this@ClickableSemanticsNode.role!!
         }
+        onClick(
+            action = { onClick(); true },
+            label = onClickLabel
+        )
+        if (onLongClick != null) {
+            onLongClick(
+                action = { onLongClick?.invoke(); true },
+                label = onLongClickLabel
+            )
+        }
+        if (!enabled) {
+            disabled()
+        }
+    }
 }
 
 private sealed class AbstractClickablePointerInputNode(
@@ -839,7 +919,7 @@ private sealed class AbstractClickablePointerInputNode(
     protected var interactionSource: MutableInteractionSource?,
     protected var onClick: () -> Unit,
     protected val interactionData: AbstractClickableNode.InteractionData
-) : DelegatingNode(), ModifierLocalNode, CompositionLocalConsumerModifierNode,
+) : DelegatingNode(), ModifierLocalModifierNode, CompositionLocalConsumerModifierNode,
     PointerInputModifierNode {
 
     private val delayPressInteraction = {

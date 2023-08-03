@@ -16,51 +16,39 @@
 
 package androidx.wear.compose.integration.demos
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.outlined.Delete
-import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.wear.compose.foundation.ExpandableState
 import androidx.wear.compose.foundation.ExperimentalWearFoundationApi
+import androidx.wear.compose.foundation.RevealValue
+import androidx.wear.compose.foundation.createAnchors
 import androidx.wear.compose.foundation.expandableItem
-import androidx.wear.compose.foundation.fractionalPositionalThreshold
 import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
 import androidx.wear.compose.foundation.rememberExpandableState
+import androidx.wear.compose.foundation.rememberRevealState
 import androidx.wear.compose.material.AppCard
 import androidx.wear.compose.material.Chip
 import androidx.wear.compose.material.ChipDefaults
+import androidx.wear.compose.material.ExperimentalWearMaterialApi
 import androidx.wear.compose.material.Icon
-import androidx.wear.compose.material.MaterialTheme
-import androidx.wear.compose.foundation.SwipeToReveal
-import androidx.wear.compose.foundation.RevealState
-import androidx.wear.compose.foundation.RevealValue
+import androidx.wear.compose.material.SwipeToRevealCard
+import androidx.wear.compose.material.SwipeToRevealChip
+import androidx.wear.compose.material.SwipeToRevealDefaults
 import androidx.wear.compose.material.Text
-import androidx.wear.compose.foundation.createAnchors
-import androidx.wear.compose.foundation.rememberRevealState
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
 @Composable
 fun SwipeToRevealChips() {
@@ -81,6 +69,8 @@ fun SwipeToRevealChips() {
                     SwipeToRevealChipExpandable(
                         expandableState = currentState
                     )
+                } else {
+                    Spacer(modifier = Modifier.width(200.dp))
                 }
             }
         }
@@ -118,12 +108,8 @@ fun SwipeToRevealCards() {
                         from = currentFrom,
                         email = currentEmail
                     )
-                }
-
-                LaunchedEffect(currentState.expanded) {
-                    if (!currentState.expanded) {
-                        emailMap.remove(currentFrom)
-                    }
+                } else {
+                    Spacer(modifier = Modifier.width(200.dp))
                 }
             }
         }
@@ -135,12 +121,15 @@ fun SwipeToRevealWithSingleAction() {
     SwipeToRevealSingleAction()
 }
 
+/**
+ * Swipe to reveal in RTL. This is should be identical to LTR.
+ */
 @Composable
 fun SwipeToRevealInRtl() {
     SwipeToRevealSingleAction(LayoutDirection.Rtl)
 }
 
-@OptIn(ExperimentalWearFoundationApi::class)
+@OptIn(ExperimentalWearFoundationApi::class, ExperimentalWearMaterialApi::class)
 @Composable
 private fun SwipeToRevealChipExpandable(
     expandableState: ExpandableState
@@ -150,52 +139,62 @@ private fun SwipeToRevealChipExpandable(
         if (state.currentValue == RevealValue.Revealed) {
             delay(2000)
             expandableState.expanded = false
-            state.snapTo(RevealValue.Covered)
         }
     }
-    Box(
-        contentAlignment = Alignment.Center,
-        modifier = Modifier.size(width = 200.dp, height = 50.dp)
+    SwipeToRevealChip(
+        revealState = state,
+        action = SwipeToRevealDefaults.action(
+            icon = { Icon(SwipeToRevealDefaults.Delete, contentDescription = "Delete") },
+            label = { Text(text = "Delete") },
+        ),
+        additionalAction = SwipeToRevealDefaults.additionalAction(
+            icon = { Icon(SwipeToRevealDefaults.MoreOptions, contentDescription = "More Options") },
+        ),
+        undoAction = SwipeToRevealDefaults.undoAction(
+            label = { Text(text = "Undo") },
+        ),
     ) {
-        SwipeToRevealWithDefaultButtons(
-            shape = CircleShape,
-            state = state,
-        ) {
-            Chip(
-                onClick = { /*TODO*/ },
-                colors = ChipDefaults.secondaryChipColors(),
-                modifier = Modifier.fillMaxWidth(),
-                label = {
-                    Text("S2R Chip with defaults")
-                }
-            )
-        }
+        Chip(
+            onClick = { /*TODO*/ },
+            colors = ChipDefaults.secondaryChipColors(),
+            modifier = Modifier.fillMaxWidth(),
+            label = {
+                Text("S2R Chip with defaults")
+            }
+        )
     }
 }
 
-@OptIn(ExperimentalWearFoundationApi::class)
+@OptIn(ExperimentalWearFoundationApi::class, ExperimentalWearMaterialApi::class)
 @Composable
 private fun SwipeToRevealCardExpandable(
     expandableState: ExpandableState,
     from: String,
     email: String
 ) {
-
     val state = rememberRevealState()
     LaunchedEffect(state.currentValue) {
         if (state.currentValue == RevealValue.Revealed) {
             delay(2000)
             expandableState.expanded = false
-            state.snapTo(RevealValue.Covered)
         }
     }
-    SwipeToRevealWithDefaultButtons(
-        shape = RoundedCornerShape(10.dp),
-        state = state
+    SwipeToRevealCard(
+        revealState = state,
+        action = SwipeToRevealDefaults.action(
+            icon = { Icon(SwipeToRevealDefaults.Delete, contentDescription = "Delete") },
+            label = { Text(text = "Delete") },
+        ),
+        additionalAction = SwipeToRevealDefaults.additionalAction(
+            icon = { Icon(SwipeToRevealDefaults.MoreOptions, contentDescription = "More Options") },
+        ),
+        undoAction = SwipeToRevealDefaults.undoAction(
+            label = { Text(text = "Undo") },
+        ),
     ) {
         AppCard(
             onClick = {},
-            modifier = Modifier.size(width = 200.dp, height = 100.dp),
+            modifier = Modifier.width(width = 200.dp),
             appName = { Text("Gmail") },
             appImage = {
                 Icon(
@@ -204,7 +203,7 @@ private fun SwipeToRevealCardExpandable(
                 )
             },
             time = { Text("now") },
-            title = { Text("From: $from") }
+            title = { Text("From: $from", maxLines = 1, overflow = TextOverflow.Ellipsis) }
         ) {
             Text(
                 text = email,
@@ -215,131 +214,62 @@ private fun SwipeToRevealCardExpandable(
     }
 }
 
-@OptIn(ExperimentalWearFoundationApi::class)
-@Composable
-private fun SwipeToRevealWithDefaultButtons(
-    state: RevealState = rememberRevealState(),
-    shape: Shape = CircleShape,
-    content: @Composable () -> Unit
-) {
-    val coroutineScope = rememberCoroutineScope()
-    SwipeToReveal(
-        action = {
-            DeleteButton(
-                state = state,
-                coroutineScope = coroutineScope,
-                shape = shape
-            )
-        },
-        additionalAction = {
-            MoreOptionsButton(
-                state = state,
-                coroutineScope = coroutineScope,
-                shape = shape
-            )
-        },
-        undoAction = {
-            Box(
-                modifier = Modifier.clickable {
-                    coroutineScope.launch {
-                        state.snapTo(RevealValue.Covered)
-                    }
-                }
-            ) {
-                Text("Undo")
-            }
-        },
-        state = state,
-        content = content,
-    )
-}
-
-@OptIn(ExperimentalWearFoundationApi::class)
+@OptIn(ExperimentalWearFoundationApi::class, ExperimentalWearMaterialApi::class)
 @Composable
 private fun SwipeToRevealSingleAction(
     layoutDirection: LayoutDirection = LayoutDirection.Ltr
 ) {
+    val itemCount = 2
+    val expandableState = List(itemCount) {
+        rememberExpandableState(initiallyExpanded = true)
+    }
     ScalingLazyColumn {
         item {
             Text("Swipe to reveal One-Action")
             Spacer(Modifier.size(10.dp))
         }
-        repeat(2) {
-            item {
+        repeat(itemCount) { curr ->
+            expandableItem(
+                state = expandableState[curr]
+            ) { expanded ->
                 val state = rememberRevealState(
-                    anchors = createAnchors(revealingAnchor = 0.5f),
-                    positionalThreshold = fractionalPositionalThreshold(0.5f)
+                    // Setting anchor to 0.4 since there is only one action.
+                    anchors = createAnchors(revealingAnchor = 0.4f),
                 )
-                CompositionLocalProvider(
-                    LocalLayoutDirection provides layoutDirection
-                ) {
-                    SwipeToReveal(
-                        action = {
-                            DeleteButton(
-                                state = state,
-                                coroutineScope = rememberCoroutineScope(),
-                                shape = CircleShape
-                            )
-                        },
-                        state = state
+                if (expanded) {
+                    CompositionLocalProvider(
+                        LocalLayoutDirection provides layoutDirection
                     ) {
-                        Chip(
-                            onClick = { /*TODO*/ },
-                            colors = ChipDefaults.secondaryChipColors(),
-                            modifier = Modifier.fillMaxWidth(),
-                            label = { Text("Try this") }
-                        )
+                        SwipeToRevealChip(
+                            revealState = state,
+                            action = SwipeToRevealDefaults.action(
+                                icon = {
+                                    Icon(
+                                        SwipeToRevealDefaults.Delete,
+                                        contentDescription = "Delete"
+                                    )
+                                },
+                                label = { Text(text = "Delete") },
+                            ),
+                        ) {
+                            Chip(
+                                onClick = { /*TODO*/ },
+                                colors = ChipDefaults.secondaryChipColors(),
+                                modifier = Modifier.fillMaxWidth(),
+                                label = { Text("Try this") }
+                            )
+                        }
+                    }
+                } else {
+                    Spacer(modifier = Modifier.width(200.dp))
+                }
+                LaunchedEffect(state.currentValue) {
+                    if (state.currentValue == RevealValue.Revealed) {
+                        delay(2000)
+                        expandableState[curr].expanded = false
                     }
                 }
             }
         }
-    }
-}
-
-@OptIn(ExperimentalWearFoundationApi::class)
-@Composable
-private fun DeleteButton(
-    state: RevealState,
-    coroutineScope: CoroutineScope,
-    shape: Shape = CircleShape,
-) {
-    Box(
-        modifier = Modifier
-            .clickable {
-                coroutineScope.launch { state.animateTo(RevealValue.Revealed) }
-            }
-            .background(MaterialTheme.colors.error, shape)
-            .fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Icon(
-            imageVector = Icons.Outlined.Delete,
-            contentDescription = "Delete",
-            tint = Color.Black,
-        )
-    }
-}
-
-@OptIn(ExperimentalWearFoundationApi::class)
-@Composable
-private fun MoreOptionsButton(
-    state: RevealState,
-    coroutineScope: CoroutineScope,
-    shape: Shape = CircleShape,
-) {
-    Box(
-        modifier = Modifier
-            .clickable {
-                coroutineScope.launch { state.animateTo(RevealValue.Covered) }
-            }
-            .background(MaterialTheme.colors.onSurfaceVariant, shape)
-            .fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Icon(
-            imageVector = Icons.Outlined.MoreVert,
-            contentDescription = "More Options",
-            tint = Color.DarkGray,
-        )
     }
 }

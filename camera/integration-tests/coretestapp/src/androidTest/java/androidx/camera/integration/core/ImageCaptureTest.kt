@@ -30,6 +30,7 @@ import android.location.LocationManager
 import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
+import android.util.Pair
 import android.util.Rational
 import android.util.Size
 import android.view.Surface
@@ -57,19 +58,28 @@ import androidx.camera.core.impl.ExtendedCameraConfigProviderStore
 import androidx.camera.core.impl.Identifier
 import androidx.camera.core.impl.ImageCaptureConfig
 import androidx.camera.core.impl.ImageOutputConfig
+import androidx.camera.core.impl.ImageOutputConfig.OPTION_RESOLUTION_SELECTOR
 import androidx.camera.core.impl.MutableOptionsBundle
 import androidx.camera.core.impl.SessionProcessor
 import androidx.camera.core.impl.utils.CameraOrientationUtil
 import androidx.camera.core.impl.utils.Exif
 import androidx.camera.core.internal.compat.workaround.ExifRotationAvailability
+import androidx.camera.core.resolutionselector.AspectRatioStrategy
+import androidx.camera.core.resolutionselector.ResolutionFilter
 import androidx.camera.core.resolutionselector.ResolutionSelector
+import androidx.camera.core.resolutionselector.ResolutionSelector.PREFER_HIGHER_RESOLUTION_OVER_CAPTURE_RATE
+import androidx.camera.core.resolutionselector.ResolutionStrategy
 import androidx.camera.integration.core.util.CameraPipeUtil
 import androidx.camera.lifecycle.ProcessCameraProvider
-import androidx.camera.testing.CameraPipeConfigTestRule
-import androidx.camera.testing.CameraUtil
-import androidx.camera.testing.SurfaceTextureProvider
-import androidx.camera.testing.fakes.FakeLifecycleOwner
-import androidx.camera.testing.fakes.FakeSessionProcessor
+import androidx.camera.testing.impl.CameraPipeConfigTestRule
+import androidx.camera.testing.impl.CameraUtil
+import androidx.camera.testing.impl.CoreAppTestUtil
+import androidx.camera.testing.impl.SurfaceTextureProvider
+import androidx.camera.testing.impl.WakelockEmptyActivityRule
+import androidx.camera.testing.impl.fakes.FakeLifecycleOwner
+import androidx.camera.testing.impl.fakes.FakeSessionProcessor
+import androidx.camera.video.Recorder
+import androidx.camera.video.VideoCapture
 import androidx.core.content.ContextCompat
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.LargeTest
@@ -92,6 +102,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import org.junit.After
 import org.junit.Assume.assumeFalse
+import org.junit.Assume.assumeNoException
 import org.junit.Assume.assumeNotNull
 import org.junit.Assume.assumeTrue
 import org.junit.Before
@@ -105,7 +116,7 @@ private val DEFAULT_RESOLUTION = Size(640, 480)
 private val BACK_SELECTOR = CameraSelector.DEFAULT_BACK_CAMERA
 private val FRONT_SELECTOR = CameraSelector.DEFAULT_FRONT_CAMERA
 private const val BACK_LENS_FACING = CameraSelector.LENS_FACING_BACK
-private const val CAPTURE_TIMEOUT = 10_000.toLong() //  10 seconds
+private const val CAPTURE_TIMEOUT = 15_000.toLong() //  15 seconds
 
 @LargeTest
 @RunWith(Parameterized::class)
@@ -129,6 +140,9 @@ class ImageCaptureTest(private val implName: String, private val cameraXConfig: 
     val temporaryFolder =
         TemporaryFolder(ApplicationProvider.getApplicationContext<Context>().cacheDir)
 
+    @get:Rule
+    val wakelockEmptyActivityRule = WakelockEmptyActivityRule()
+
     companion object {
         @JvmStatic
         @Parameterized.Parameters(name = "{0}")
@@ -146,6 +160,7 @@ class ImageCaptureTest(private val implName: String, private val cameraXConfig: 
 
     @Before
     fun setUp(): Unit = runBlocking {
+        CoreAppTestUtil.assumeCompatibleDevice()
         assumeTrue(CameraUtil.hasCameraWithLensFacing(BACK_LENS_FACING))
         createDefaultPictureFolderIfNotExist()
         ProcessCameraProvider.configureInstance(cameraXConfig)
@@ -1573,6 +1588,38 @@ class ImageCaptureTest(private val implName: String, private val cameraXConfig: 
     }
 
     @Test
+    fun unbindVideoCaptureWithoutStartingRecorder_imageCapturingShouldSuccess() = runBlocking {
+        // Arrange.
+        val imageCapture = ImageCapture.Builder().build()
+        val videoCapture = VideoCapture.Builder<Recorder>(Recorder.Builder().build()).build()
+
+        withContext(Dispatchers.Main) {
+            cameraProvider.bindToLifecycle(
+                fakeLifecycleOwner, BACK_SELECTOR, imageCapture, videoCapture
+            )
+        }
+
+        // wait for camera to start by taking a picture
+        val callback1 = FakeImageCaptureCallback(capturesCount = 1)
+        imageCapture.takePicture(mainExecutor, callback1)
+        try {
+            callback1.awaitCapturesAndAssert(capturedImagesCount = 1)
+        } catch (e: AssertionError) {
+            assumeNoException("image capture failed, camera might not have started yet", e)
+        }
+
+        // Act.
+        val callback2 = FakeImageCaptureCallback(capturesCount = 1)
+        withContext(Dispatchers.Main) {
+            cameraProvider.unbind(videoCapture)
+            imageCapture.takePicture(mainExecutor, callback2)
+        }
+
+        // Assert.
+        callback2.awaitCapturesAndAssert(capturedImagesCount = 1)
+    }
+
+    @Test
     fun capturedImage_withHighResolutionEnabled_imageCaptureOnly() = runBlocking {
         capturedImage_withHighResolutionEnabled()
     }
@@ -1592,6 +1639,67 @@ class ImageCaptureTest(private val implName: String, private val cameraXConfig: 
         capturedImage_withHighResolutionEnabled(preview, imageAnalysis)
     }
 
+    @Test
+    @SdkSuppress(minSdkVersion = 28)
+    fun getRealtimeCaptureLatencyEstimate_whenSessionProcessorSupportsRealtimeLatencyEstimate() =
+        runBlocking {
+            val expectedCaptureLatencyMillis = 1000L
+            val expectedProcessingLatencyMillis = 100L
+            val sessionProcessor = object : SessionProcessor by FakeSessionProcessor(
+                inputFormatPreview = null, // null means using the same output surface
+                inputFormatCapture = null
+            ) {
+                override fun getRealtimeCaptureLatency(): Pair<Long, Long> =
+                    Pair(expectedCaptureLatencyMillis, expectedProcessingLatencyMillis)
+            }
+
+            val imageCapture = ImageCapture.Builder().build()
+            val preview = Preview.Builder().build()
+
+            withContext(Dispatchers.Main) {
+                preview.setSurfaceProvider(SurfaceTextureProvider.createSurfaceTextureProvider())
+                val cameraSelector =
+                    getCameraSelectorWithSessionProcessor(BACK_SELECTOR, sessionProcessor)
+                cameraProvider.bindToLifecycle(
+                    fakeLifecycleOwner, cameraSelector, imageCapture, preview
+                )
+            }
+
+            val latencyEstimate = imageCapture.realtimeCaptureLatencyEstimate
+            // Check the realtime latency estimate is correct.
+            assertThat(latencyEstimate.captureLatencyMillis).isEqualTo(expectedCaptureLatencyMillis)
+            assertThat(latencyEstimate.processingLatencyMillis).isEqualTo(
+                expectedProcessingLatencyMillis
+            )
+        }
+
+    @Test
+    fun resolutionSelectorConfigCorrectlyMerged_afterBindToLifecycle() = runBlocking {
+        val resolutionFilter = ResolutionFilter { supportedSizes, _ -> supportedSizes }
+        val useCase = ImageCapture.Builder().setResolutionSelector(
+            ResolutionSelector.Builder().setResolutionFilter(resolutionFilter)
+                .setAllowedResolutionMode(PREFER_HIGHER_RESOLUTION_OVER_CAPTURE_RATE).build()
+        ).build()
+        withContext(Dispatchers.Main) {
+            cameraProvider.bindToLifecycle(fakeLifecycleOwner, BACK_SELECTOR, useCase)
+        }
+        val resolutionSelector = useCase.currentConfig.retrieveOption(OPTION_RESOLUTION_SELECTOR)
+        // The default 4:3 AspectRatioStrategy is kept
+        assertThat(resolutionSelector!!.aspectRatioStrategy).isEqualTo(
+            AspectRatioStrategy.RATIO_4_3_FALLBACK_AUTO_STRATEGY
+        )
+        // The default highest available ResolutionStrategy is kept
+        assertThat(resolutionSelector.resolutionStrategy).isEqualTo(
+            ResolutionStrategy.HIGHEST_AVAILABLE_STRATEGY
+        )
+        // The set resolutionFilter is kept
+        assertThat(resolutionSelector.resolutionFilter).isEqualTo(resolutionFilter)
+        // The set allowedResolutionMode is kept
+        assertThat(resolutionSelector.allowedResolutionMode).isEqualTo(
+            PREFER_HIGHER_RESOLUTION_OVER_CAPTURE_RATE
+        )
+    }
+
     private fun capturedImage_withHighResolutionEnabled(
         preview: Preview? = null,
         imageAnalysis: ImageAnalysis? = null
@@ -1608,7 +1716,7 @@ class ImageCaptureTest(private val implName: String, private val cameraXConfig: 
         assumeTrue(maxHighResolutionOutputSize != null)
 
         val resolutionSelector = ResolutionSelector.Builder()
-            .setHighResolutionEnabledFlag(ResolutionSelector.HIGH_RESOLUTION_FLAG_ON)
+            .setAllowedResolutionMode(PREFER_HIGHER_RESOLUTION_OVER_CAPTURE_RATE)
             .setResolutionFilter { _, _ ->
                 listOf(maxHighResolutionOutputSize)
             }

@@ -53,13 +53,12 @@ import androidx.compose.ui.node.PointerInputModifierNode
 import androidx.compose.ui.node.RootForTest
 import androidx.compose.ui.platform.AccessibilityManager
 import androidx.compose.ui.platform.ClipboardManager
+import androidx.compose.ui.platform.PlatformTextInputSessionScope
 import androidx.compose.ui.platform.TextToolbar
 import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.platform.WindowInfo
-import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.input.PlatformTextInputPluginRegistry
 import androidx.compose.ui.text.input.TextInputService
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
@@ -73,6 +72,7 @@ import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
 import java.util.concurrent.Executors
 import kotlin.coroutines.CoroutineContext
+import kotlin.test.assertEquals
 import kotlinx.coroutines.asCoroutineDispatcher
 import org.junit.Before
 import org.junit.Test
@@ -501,7 +501,7 @@ class HitPathTrackerTest {
         hitPathTracker.dispatchChanges(internalPointerEvent)
 
         PointerInputChangeSubject
-            .assertThat(internalPointerEvent.changes.values.first())
+            .assertThat(internalPointerEvent.changes.valueAt(0))
             .isStructurallyEqualTo(down(5))
     }
 
@@ -523,7 +523,7 @@ class HitPathTrackerTest {
         hitPathTracker.dispatchChanges(internalPointerEvent)
 
         PointerInputChangeSubject
-            .assertThat(internalPointerEvent.changes.values.first())
+            .assertThat(internalPointerEvent.changes.valueAt(0))
             .isStructurallyEqualTo(down(13).apply { if (pressed != previousPressed) consume() })
     }
 
@@ -629,7 +629,7 @@ class HitPathTrackerTest {
         assertThat(log1[5].pass).isEqualTo(PointerEventPass.Main)
 
         PointerInputChangeSubject
-            .assertThat(internalPointerEvent.changes.values.first())
+            .assertThat(internalPointerEvent.changes.valueAt(0))
             .isStructurallyEqualTo(
                 consumedExpectedChange
             )
@@ -771,14 +771,14 @@ class HitPathTrackerTest {
             )
         assertThat(log2[3].pass).isEqualTo(PointerEventPass.Main)
 
-        assertThat(internalPointerEvent.changes).hasSize(2)
+        assertEquals(2, internalPointerEvent.changes.size())
         PointerInputChangeSubject
-            .assertThat(internalPointerEvent.changes[actualEvent1.id])
+            .assertThat(internalPointerEvent.changes[actualEvent1.id.value])
             .isStructurallyEqualTo(
                 consumedExpectedEvent1
             )
         PointerInputChangeSubject
-            .assertThat(internalPointerEvent.changes[actualEvent2.id])
+            .assertThat(internalPointerEvent.changes[actualEvent2.id.value])
             .isStructurallyEqualTo(
                 consumedExpectedEvent2
             )
@@ -882,13 +882,13 @@ class HitPathTrackerTest {
             )
         assertThat(log1[5].pass).isEqualTo(PointerEventPass.Main)
 
-        assertThat(internalPointerEvent.changes).hasSize(2)
+        assertEquals(2, internalPointerEvent.changes.size())
         PointerInputChangeSubject
-            .assertThat(internalPointerEvent.changes[actualEvent1.id])
+            .assertThat(internalPointerEvent.changes[actualEvent1.id.value])
             .isStructurallyEqualTo(consumedEvent1)
 
         PointerInputChangeSubject
-            .assertThat(internalPointerEvent.changes[actualEvent2.id])
+            .assertThat(internalPointerEvent.changes[actualEvent2.id.value])
             .isStructurallyEqualTo(consumedEvent2)
     }
 
@@ -971,14 +971,14 @@ class HitPathTrackerTest {
             )
         assertThat(log1[3].pass).isEqualTo(PointerEventPass.Main)
 
-        assertThat(internalPointerEvent.changes).hasSize(2)
+        assertEquals(2, internalPointerEvent.changes.size())
         PointerInputChangeSubject
-            .assertThat(internalPointerEvent.changes[actualEvent1.id])
+            .assertThat(internalPointerEvent.changes[actualEvent1.id.value])
             .isStructurallyEqualTo(
                 consumedEvent1
             )
         PointerInputChangeSubject
-            .assertThat(internalPointerEvent.changes[actualEvent2.id])
+            .assertThat(internalPointerEvent.changes[actualEvent2.id.value])
             .isStructurallyEqualTo(
                 consumedEvent2
             )
@@ -3537,8 +3537,8 @@ class HitPathTrackerTest {
             return false
         }
         var check = true
-        actualNode.pointerIds.forEach {
-            check = check && expectedNode.pointerIds.contains(it)
+        for (i in 0 until actualNode.pointerIds.size) {
+            check = check && expectedNode.pointerIds.contains(actualNode.pointerIds[i])
         }
         if (!check) {
             return false
@@ -3640,9 +3640,11 @@ private class MockOwner(
         get() = TODO("Not yet implemented")
     override val textToolbar: TextToolbar
         get() = TODO("Not yet implemented")
+
     @OptIn(ExperimentalComposeUiApi::class)
     override val autofillTree: AutofillTree
         get() = TODO("Not yet implemented")
+
     @OptIn(ExperimentalComposeUiApi::class)
     override val autofill: Autofill?
         get() = TODO("Not yet implemented")
@@ -3650,15 +3652,20 @@ private class MockOwner(
         get() = Density(1f)
     override val textInputService: TextInputService
         get() = TODO("Not yet implemented")
-    @OptIn(ExperimentalTextApi::class)
-    override val platformTextInputPluginRegistry: PlatformTextInputPluginRegistry
-        get() = TODO("Not yet implemented")
+
+    override suspend fun textInputSession(
+        session: suspend PlatformTextInputSessionScope.() -> Nothing
+    ): Nothing {
+        TODO("Not yet implemented")
+    }
+
     override val pointerIconService: PointerIconService
         get() = TODO("Not yet implemented")
     override val focusOwner: FocusOwner
         get() = TODO("Not yet implemented")
     override val windowInfo: WindowInfo
         get() = TODO("Not yet implemented")
+
     @Deprecated(
         "fontLoader is deprecated, use fontFamilyResolver",
         replaceWith = ReplaceWith("fontFamilyResolver")
@@ -3688,7 +3695,8 @@ private class MockOwner(
     override fun onRequestMeasure(
         layoutNode: LayoutNode,
         affectsLookahead: Boolean,
-        forceRequest: Boolean
+        forceRequest: Boolean,
+        scheduleMeasureAndLayout: Boolean
     ) {
         onRequestMeasureParams += layoutNode
         if (affectsLookahead) {

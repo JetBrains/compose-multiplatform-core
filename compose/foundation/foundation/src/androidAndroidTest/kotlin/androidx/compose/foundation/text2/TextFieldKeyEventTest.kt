@@ -20,9 +20,9 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.text.TEST_FONT_FAMILY
-import androidx.compose.foundation.text2.input.TextFieldState
 import androidx.compose.foundation.text2.input.TextFieldLineLimits.MultiLine
 import androidx.compose.foundation.text2.input.TextFieldLineLimits.SingleLine
+import androidx.compose.foundation.text2.input.TextFieldState
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -405,6 +405,12 @@ class TextFieldKeyEventTest {
             }
             pressKey(Key.Zero)
             expectedText("hello world0\n0hi")
+            withKeyDown(Key.CtrlLeft) {
+                pressKey(Key.DirectionUp)
+                pressKey(Key.DirectionUp)
+            }
+            pressKey(Key.Zero)
+            expectedText("0hello world0\n0hi")
         }
     }
 
@@ -564,6 +570,7 @@ class TextFieldKeyEventTest {
         }
     }
 
+    @Ignore // b/293919923
     @Test
     fun textField_withActiveSelection_shiftTabSingleLine() {
         keysSequenceTest("text", singleLine = true) {

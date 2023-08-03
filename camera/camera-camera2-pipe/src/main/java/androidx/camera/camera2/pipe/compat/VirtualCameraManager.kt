@@ -41,8 +41,9 @@ internal sealed class CameraRequest
 
 internal data class RequestOpen(
     val virtualCamera: VirtualCameraState,
-    val share: Boolean = false,
-    val graphListener: GraphListener
+    val sharedCameraIds: List<CameraId>,
+    val graphListener: GraphListener,
+    val isForegroundObserver: (Unit) -> Boolean,
 ) : CameraRequest()
 
 internal data class RequestClose(val activeCamera: VirtualCameraManager.ActiveCamera) :
@@ -69,6 +70,7 @@ constructor(
     // TODO: Consider rewriting this as a MutableSharedFlow
     private val requestQueue: Channel<CameraRequest> = Channel(requestQueueDepth)
     private val activeCameras: MutableSet<ActiveCamera> = mutableSetOf()
+    private val pendingRequestOpens = mutableListOf<RequestOpen>()
 
     init {
         threads.globalScope.launch(CoroutineName("CXCP-VirtualCameraManager")) { requestLoop() }
@@ -76,11 +78,19 @@ constructor(
 
     internal fun open(
         cameraId: CameraId,
-        share: Boolean = false,
-        graphListener: GraphListener
+        sharedCameraIds: List<CameraId>,
+        graphListener: GraphListener,
+        isForegroundObserver: (Unit) -> Boolean,
     ): VirtualCamera {
-        val result = VirtualCameraState(cameraId, graphListener)
-        offerChecked(RequestOpen(result, share, graphListener))
+        val result = VirtualCameraState(cameraId, graphListener, threads.globalScope)
+        offerChecked(
+            RequestOpen(
+                result,
+                sharedCameraIds,
+                graphListener,
+                isForegroundObserver
+            )
+        )
         return result
     }
 
@@ -109,6 +119,9 @@ constructor(
                 if (activeCameras.contains(closeRequest.activeCamera)) {
                     activeCameras.remove(closeRequest.activeCamera)
                 }
+                pendingRequestOpens.removeAll {
+                    it.virtualCamera.cameraId == closeRequest.activeCamera.cameraId
+                }
 
                 launch { closeRequest.activeCamera.close() }
                 closeRequest.activeCamera.awaitClosed()
@@ -134,6 +147,7 @@ constructor(
                     camera.awaitClosed()
                 }
                 activeCameras.clear()
+                pendingRequestOpens.clear()
                 continue
             }
 
@@ -155,16 +169,20 @@ constructor(
             //   needed. Since close may block, we will re-evaluate the next request after the
             //   desired cameras are closed since new requests may have arrived.
             val cameraIdToOpen = request.virtualCamera.cameraId
-            val camerasToClose =
-                if (request.share) {
-                    emptyList()
-                } else {
-                    activeCameras.filter { it.cameraId != cameraIdToOpen }
-                }
+            val camerasToClose = if (request.sharedCameraIds.isEmpty()) {
+                activeCameras.filter { it.cameraId != cameraIdToOpen }
+            } else {
+                val allCameraIds =
+                    (request.sharedCameraIds + request.virtualCamera.cameraId).toSet()
+                activeCameras.filter { it.allCameraIds != allCameraIds }
+            }
 
             if (camerasToClose.isNotEmpty()) {
                 // Shutdown of cameras should always happen first (and suspend until complete)
                 activeCameras.removeAll(camerasToClose)
+                pendingRequestOpens.removeAll { requestOpen ->
+                    camerasToClose.any { it.cameraId == requestOpen.virtualCamera.cameraId }
+                }
                 for (camera in camerasToClose) {
                     // TODO: This should be a dispatcher instead of scope.launch
 
@@ -186,7 +204,12 @@ constructor(
             var realCamera = activeCameras.firstOrNull { it.cameraId == cameraIdToOpen }
             if (realCamera == null) {
                 val openResult =
-                    openCameraWithRetry(cameraIdToOpen, scope = this)
+                    openCameraWithRetry(
+                        cameraIdToOpen,
+                        request.sharedCameraIds,
+                        request.isForegroundObserver,
+                        scope = this
+                    )
                 if (openResult.activeCamera != null) {
                     realCamera = openResult.activeCamera
                     activeCameras.add(realCamera)
@@ -198,13 +221,33 @@ constructor(
             }
 
             // Stage 4: Attach camera(s)
-            realCamera.connectTo(request.virtualCamera)
+            if (request.sharedCameraIds.isNotEmpty()) {
+                // Both sharedCameraIds and activeCameras are small collections. Looping over them
+                // in what equates to nested for-loops are actually going to be more efficient than
+                // say, replacing activeCameras with a hashmap.
+                if (request.sharedCameraIds.all { cameraId ->
+                        activeCameras.any { it.cameraId == cameraId }
+                    }) {
+                    // If the camera of the request and the cameras it is shared with have been
+                    // opened, we can connect the ActiveCameras.
+                    realCamera.connectTo(request.virtualCamera)
+                    connectPendingRequestOpens(request.sharedCameraIds)
+                } else {
+                    // Else, save the request in the pending request queue, and connect the request
+                    // once other cameras are opened.
+                    pendingRequestOpens.add(request)
+                }
+            } else {
+                realCamera.connectTo(request.virtualCamera)
+            }
             requests.remove(request)
         }
     }
 
     private suspend fun openCameraWithRetry(
         cameraId: CameraId,
+        sharedCameraIds: List<CameraId>,
+        isForegroundObserver: (Unit) -> Boolean,
         scope: CoroutineScope
     ): OpenVirtualCameraResult {
         // TODO: Figure out how 1-time permissions work, and see if they can be reset without
@@ -212,7 +255,7 @@ constructor(
         check(permissions.hasCameraPermission) { "Missing camera permissions!" }
 
         Log.debug { "Opening $cameraId with retries..." }
-        val result = retryingCameraStateOpener.openCameraWithRetry(cameraId)
+        val result = retryingCameraStateOpener.openCameraWithRetry(cameraId, isForegroundObserver)
         if (result.cameraState == null) {
             return OpenVirtualCameraResult(lastCameraError = result.errorCode)
         }
@@ -220,9 +263,33 @@ constructor(
             activeCamera =
             ActiveCamera(
                 androidCameraState = result.cameraState,
-                scope = scope, channel = requestQueue
+                allCameraIds = (sharedCameraIds + cameraId).toSet(),
+                scope = scope,
+                channel = requestQueue
             )
         )
+    }
+
+    private suspend fun connectPendingRequestOpens(cameraIds: List<CameraId>) {
+        val requestOpensToRemove = mutableListOf<RequestOpen>()
+        val requestOpens = pendingRequestOpens.filter {
+            cameraIds.contains(it.virtualCamera.cameraId)
+        }
+        for (request in requestOpens) {
+            // If the request is shared with this pending request, then we should be
+            // able to connect this pending request too, since we don't allow
+            // overlapping.
+            val allCameraIds =
+                listOf(request.virtualCamera.cameraId) + request.sharedCameraIds
+            check(allCameraIds.all { cameraId -> activeCameras.any { it.cameraId == cameraId } })
+
+            val realCamera =
+                activeCameras.find { it.cameraId == request.virtualCamera.cameraId }
+            checkNotNull(realCamera)
+            realCamera.connectTo(request.virtualCamera)
+            requestOpensToRemove.add(request)
+        }
+        pendingRequestOpens.removeAll(requestOpensToRemove)
     }
 
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
@@ -240,6 +307,7 @@ constructor(
 
     internal class ActiveCamera(
         private val androidCameraState: AndroidCameraState,
+        internal val allCameraIds: Set<CameraId>,
         scope: CoroutineScope,
         channel: SendChannel<CameraRequest>
     ) {

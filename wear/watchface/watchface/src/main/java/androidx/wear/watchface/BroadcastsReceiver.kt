@@ -28,7 +28,6 @@ import androidx.wear.watchface.BroadcastsReceiver.BroadcastEventObserver
 /**
  * This class decouples [BroadcastEventObserver]s from the actual broadcast event receivers to make
  * testing easier.
- *
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class BroadcastsReceiver
@@ -124,7 +123,10 @@ constructor(private val context: Context, private val observer: BroadcastEventOb
                 addAction(WatchFaceImpl.MOCK_TIME_INTENT)
                 addAction(ACTION_AMBIENT_STARTED)
                 addAction(ACTION_AMBIENT_STOPPED)
-            }
+            },
+            // Listen to broadcasts from the system or the app itself,
+            // so it does not have to be exported
+            Context.RECEIVER_NOT_EXPORTED
         )
     }
 
