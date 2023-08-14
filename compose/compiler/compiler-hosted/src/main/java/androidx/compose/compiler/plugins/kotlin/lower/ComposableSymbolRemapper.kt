@@ -17,13 +17,21 @@
 package androidx.compose.compiler.plugins.kotlin.lower
 
 import androidx.compose.compiler.plugins.kotlin.k1.hasComposableAnnotation
+import androidx.compose.compiler.plugins.kotlin.k2.ComposableFunction
+import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
+import org.jetbrains.kotlin.backend.jvm.functionByName
 import org.jetbrains.kotlin.descriptors.ClassConstructorDescriptor
 import org.jetbrains.kotlin.descriptors.FunctionDescriptor
 import org.jetbrains.kotlin.descriptors.ParameterDescriptor
 import org.jetbrains.kotlin.descriptors.TypeParameterDescriptor
+import org.jetbrains.kotlin.fir.lazy.Fir2IrLazyClass
+import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.descriptors.IrBasedDeclarationDescriptor
+import org.jetbrains.kotlin.ir.symbols.IrClassSymbol
+import org.jetbrains.kotlin.ir.symbols.IrSimpleFunctionSymbol
 import org.jetbrains.kotlin.ir.util.DeepCopySymbolRemapper
 import org.jetbrains.kotlin.ir.util.DescriptorsRemapper
+import org.jetbrains.kotlin.ir.util.classId
 import org.jetbrains.kotlin.types.KotlinType
 
 /**
@@ -91,4 +99,4 @@ class ComposableSymbolRemapper : DeepCopySymbolRemapper(
             hasComposableAnnotation() ||
                 arguments.any { it.type.hasComposableAnnotation() }
     }
-)
+) {}

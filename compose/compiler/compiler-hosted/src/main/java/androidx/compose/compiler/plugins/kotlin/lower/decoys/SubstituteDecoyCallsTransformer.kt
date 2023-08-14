@@ -113,7 +113,11 @@ class SubstituteDecoyCallsTransformer(
         if (declaration.isDecoy()) {
             return super.visitSimpleFunction(declaration)
         }
+        remapOverriddenSymbols(declaration)
+        return super.visitSimpleFunction(declaration)
+    }
 
+    private fun remapOverriddenSymbols(declaration: IrSimpleFunction) {
         val newOverriddenSymbols = declaration.overriddenSymbols.map {
             // It can be an overridden symbol from another module, so access it via `decoyOwner`
             val maybeDecoy = it.decoyOwner
@@ -121,11 +125,12 @@ class SubstituteDecoyCallsTransformer(
                 maybeDecoy.getComposableForDecoy() as IrSimpleFunctionSymbol
             } else {
                 it
+            }.also {
+                remapOverriddenSymbols(it.owner)
             }
         }
 
         declaration.overriddenSymbols = newOverriddenSymbols
-        return super.visitSimpleFunction(declaration)
     }
 
     override fun visitConstructorCall(expression: IrConstructorCall): IrExpression {
@@ -250,10 +255,13 @@ class SubstituteDecoyCallsTransformer(
                 else
                     typeArgument
 
+            private fun IrType.isComposableFunction(): Boolean {
+                return isSyntheticComposableFunction() || (isFunction() && hasComposableAnnotation())
+            }
+
             override fun remapType(type: IrType): IrType {
                 if (type !is IrSimpleType) return type
-                if (!type.isFunction()) return type
-                if (!type.isComposable()) return type
+                if (!type.isComposableFunction()) return type
 
                 val oldIrArguments = type.arguments
                 val realParams = oldIrArguments.size - 1

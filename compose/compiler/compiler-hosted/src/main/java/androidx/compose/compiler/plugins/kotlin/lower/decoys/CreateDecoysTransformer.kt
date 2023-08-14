@@ -18,6 +18,8 @@ package androidx.compose.compiler.plugins.kotlin.lower.decoys
 
 import androidx.compose.compiler.plugins.kotlin.ModuleMetrics
 import androidx.compose.compiler.plugins.kotlin.lower.ModuleLoweringPass
+import androidx.compose.compiler.plugins.kotlin.lower.function
+import androidx.compose.compiler.plugins.kotlin.lower.isSyntheticComposableFunction
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.backend.common.ir.moveBodyTo
 import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
@@ -29,26 +31,18 @@ import org.jetbrains.kotlin.ir.builders.declarations.buildFun
 import org.jetbrains.kotlin.ir.builders.irBlockBody
 import org.jetbrains.kotlin.ir.builders.irCall
 import org.jetbrains.kotlin.ir.builders.irReturn
-import org.jetbrains.kotlin.ir.declarations.IrConstructor
-import org.jetbrains.kotlin.ir.declarations.IrDeclarationContainer
-import org.jetbrains.kotlin.ir.declarations.IrDeclarationParent
-import org.jetbrains.kotlin.ir.declarations.IrFunction
-import org.jetbrains.kotlin.ir.declarations.IrModuleFragment
-import org.jetbrains.kotlin.ir.declarations.IrSimpleFunction
-import org.jetbrains.kotlin.ir.declarations.IrValueParameter
+import org.jetbrains.kotlin.ir.declarations.*
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.expressions.IrExpressionBody
 import org.jetbrains.kotlin.ir.expressions.IrGetValue
 import org.jetbrains.kotlin.ir.expressions.impl.IrConstructorCallImpl
-import org.jetbrains.kotlin.ir.util.DeepCopySymbolRemapper
-import org.jetbrains.kotlin.ir.util.addChild
-import org.jetbrains.kotlin.ir.util.constructors
-import org.jetbrains.kotlin.ir.util.copyTo
-import org.jetbrains.kotlin.ir.util.copyTypeParametersFrom
-import org.jetbrains.kotlin.ir.util.defaultType
-import org.jetbrains.kotlin.ir.util.hasDefaultValue
-import org.jetbrains.kotlin.ir.util.patchDeclarationParents
-import org.jetbrains.kotlin.ir.util.remapTypeParameters
+import org.jetbrains.kotlin.ir.types.IrSimpleType
+import org.jetbrains.kotlin.ir.types.IrType
+import org.jetbrains.kotlin.ir.types.IrTypeArgument
+import org.jetbrains.kotlin.ir.types.IrTypeProjection
+import org.jetbrains.kotlin.ir.types.impl.IrSimpleTypeImpl
+import org.jetbrains.kotlin.ir.types.impl.makeTypeProjection
+import org.jetbrains.kotlin.ir.util.*
 import org.jetbrains.kotlin.ir.visitors.IrElementTransformerVoid
 import org.jetbrains.kotlin.ir.visitors.transformChildrenVoid
 import org.jetbrains.kotlin.name.Name
@@ -226,6 +220,14 @@ class CreateDecoysTransformer(
         newFunction.body = original.moveBodyTo(newFunction)
             ?.copyWithNewTypeParams(original, newFunction)
 
+        // we need to clean the original body before types remapping (to not remap body, it's moved to a new function).
+        // also see fun IrFunction.stubBody
+        original.body = null
+
+        // we have to remap original types (in parameters) to get rid of ComposableFunctionX references.
+        // this way the `original` will produce a correct signature stored in DecoyImplementation annotation
+        original.remapComposableFunctionReferences()
+
         newFunction.addDecoyImplementationAnnotation(newName.asString(), original.getSignatureId())
 
         newFunction.valueParameters.forEach {
@@ -236,6 +238,36 @@ class CreateDecoysTransformer(
         }
 
         return newFunction
+    }
+
+    private fun IrFunction.remapComposableFunctionReferences() {
+        this.remapTypes(object : TypeRemapper {
+            override fun enterScope(irTypeParametersContainer: IrTypeParametersContainer) {}
+            override fun leaveScope() {}
+
+            private fun remapTypeArgument(typeArgument: IrTypeArgument): IrTypeArgument =
+                if (typeArgument is IrTypeProjection)
+                    makeTypeProjection(this.remapType(typeArgument.type), typeArgument.variance)
+                else
+                    typeArgument
+
+            override fun remapType(type: IrType): IrType {
+                if (type !is IrSimpleType) return type
+                if (type.isSyntheticComposableFunction()) {
+                    val oldIrArguments = type.arguments
+                    val functionCls = context.function(oldIrArguments.size - 1)
+                    return IrSimpleTypeImpl(
+                        null,
+                        functionCls,
+                        type.nullability,
+                        oldIrArguments.map { remapTypeArgument(it) },
+                        type.annotations,
+                        null
+                    )
+                }
+                return type
+            }
+        })
     }
 
     /**

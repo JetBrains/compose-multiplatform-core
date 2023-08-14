@@ -16,8 +16,8 @@
 
 package androidx.compose.compiler.plugins.kotlin.lower.decoys
 
+import androidx.compose.compiler.plugins.kotlin.lower.*
 import androidx.compose.compiler.plugins.kotlin.lower.DeepCopyPreservingMetadata
-import androidx.compose.compiler.plugins.kotlin.lower.hasAnnotationSafe
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContextImpl
 import org.jetbrains.kotlin.backend.common.serialization.signature.IdSignatureSerializer
@@ -28,7 +28,10 @@ import org.jetbrains.kotlin.ir.UNDEFINED_OFFSET
 import org.jetbrains.kotlin.ir.declarations.IrDeclaration
 import org.jetbrains.kotlin.ir.declarations.IrDeclarationContainer
 import org.jetbrains.kotlin.ir.declarations.IrFunction
+import org.jetbrains.kotlin.ir.declarations.IrTypeParametersContainer
+import org.jetbrains.kotlin.ir.declarations.lazy.IrLazyFunctionBase
 import org.jetbrains.kotlin.ir.expressions.IrConst
+import org.jetbrains.kotlin.ir.expressions.IrConstructorCall
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.expressions.IrVararg
 import org.jetbrains.kotlin.ir.expressions.impl.IrVarargImpl
@@ -38,18 +41,11 @@ import org.jetbrains.kotlin.ir.linkage.IrDeserializer.TopLevelSymbolKind.FUNCTIO
 import org.jetbrains.kotlin.ir.symbols.IrFunctionSymbol
 import org.jetbrains.kotlin.ir.symbols.IrSimpleFunctionSymbol
 import org.jetbrains.kotlin.ir.symbols.IrSymbol
+import org.jetbrains.kotlin.ir.types.IrSimpleType
 import org.jetbrains.kotlin.ir.types.IrType
 import org.jetbrains.kotlin.ir.types.IrTypeArgument
 import org.jetbrains.kotlin.ir.types.impl.IrSimpleTypeImpl
-import org.jetbrains.kotlin.ir.util.DeepCopyTypeRemapper
-import org.jetbrains.kotlin.ir.util.IdSignature
-import org.jetbrains.kotlin.ir.util.SymbolRenamer
-import org.jetbrains.kotlin.ir.util.TypeRemapper
-import org.jetbrains.kotlin.ir.util.deepCopyWithSymbols
-import org.jetbrains.kotlin.ir.util.getAnnotation
-import org.jetbrains.kotlin.ir.util.isTopLevel
-import org.jetbrains.kotlin.ir.util.module
-import org.jetbrains.kotlin.ir.util.remapTypeParameters
+import org.jetbrains.kotlin.ir.util.*
 
 @JvmDefaultWithCompatibility
 internal interface DecoyTransformBase {
@@ -57,10 +53,12 @@ internal interface DecoyTransformBase {
     val signatureBuilder: IdSignatureSerializer
 
     fun IrFunction.getSignatureId(): Long {
-        val signature = symbol.signature
-            ?: signatureBuilder.composeSignatureForDeclaration(this, false)
-
-        return signature.getSignatureId()
+        return if (this is IrLazyFunctionBase) {
+            symbol.signature ?: signatureBuilder.composeSignatureForDeclaration(this, false)
+        } else {
+            // types may have been remapped, so `symbol.signature` is outdated.
+            signatureBuilder.composeSignatureForDeclaration(this, false)
+        }.getSignatureId()
     }
 
     private fun IdSignature.getSignatureId(): Long {
