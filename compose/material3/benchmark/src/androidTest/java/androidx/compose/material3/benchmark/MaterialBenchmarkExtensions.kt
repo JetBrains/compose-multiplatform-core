@@ -154,6 +154,45 @@ internal fun ComposeBenchmarkRule.benchmarkLayoutUntilStable(
     }
 }
 
+internal fun ComposeBenchmarkRule.benchmarkFirstRenderUntilStable(
+    caseFactory: () -> LayeredComposeTestCase,
+    maxSteps: Int = MaxSteps,
+) {
+    runBenchmarkFor(LayeredCaseAdapter.of(caseFactory)) {
+        measureRepeated {
+            runWithTimingDisabled {
+                doFramesUntilNoChangesPending(maxSteps)
+                // Add the content to benchmark
+                getTestCase().addMeasuredContent()
+            }
+
+            var loopCount = 0
+            while (hasPendingChanges()) {
+                loopCount++
+                recomposeUntilNoChangesPending()
+                requestLayout()
+                measure()
+                layout()
+                drawPrepare()
+                draw()
+
+                runWithTimingDisabled {
+                    drawFinish()
+                }
+            }
+
+            if (loopCount == 1) {
+                throw AssertionError("Use benchmarkToFirstPixel instead")
+            }
+
+            runWithTimingDisabled {
+                assertNoPendingChanges()
+                disposeContent()
+            }
+        }
+    }
+}
+
 private class LayeredCaseAdapter(private val innerCase: LayeredComposeTestCase) : ComposeTestCase {
 
     companion object {

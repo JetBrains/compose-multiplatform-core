@@ -2899,6 +2899,17 @@ package androidx.core.view {
   @IntDef({androidx.core.view.ContentInfoCompat.SOURCE_APP, androidx.core.view.ContentInfoCompat.SOURCE_CLIPBOARD, androidx.core.view.ContentInfoCompat.SOURCE_INPUT_METHOD, androidx.core.view.ContentInfoCompat.SOURCE_DRAG_AND_DROP, androidx.core.view.ContentInfoCompat.SOURCE_AUTOFILL, androidx.core.view.ContentInfoCompat.SOURCE_PROCESS_TEXT}) @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.SOURCE) public static @interface ContentInfoCompat.Source {
   }
 
+  public class DifferentialMotionFlingHelper {
+    ctor public DifferentialMotionFlingHelper(android.content.Context, androidx.core.view.DifferentialMotionFlingHelper.DifferentialMotionFlingTarget);
+    method public void onMotionEvent(android.view.MotionEvent, int);
+  }
+
+  public static interface DifferentialMotionFlingHelper.DifferentialMotionFlingTarget {
+    method public float getScaledScrollFactor();
+    method public boolean startDifferentialMotionFling(float);
+    method public void stopDifferentialMotionFling();
+  }
+
   public final class DisplayCompat {
     method public static androidx.core.view.DisplayCompat.ModeCompat getMode(android.content.Context, android.view.Display);
     method public static androidx.core.view.DisplayCompat.ModeCompat![] getSupportedModes(android.content.Context, android.view.Display);
@@ -3334,11 +3345,16 @@ package androidx.core.view {
   }
 
   public final class VelocityTrackerCompat {
+    method public static void addMovement(android.view.VelocityTracker, android.view.MotionEvent);
+    method public static void clear(android.view.VelocityTracker);
+    method public static void computeCurrentVelocity(android.view.VelocityTracker, int);
+    method public static void computeCurrentVelocity(android.view.VelocityTracker, int, float);
     method public static float getAxisVelocity(android.view.VelocityTracker, @androidx.core.view.VelocityTrackerCompat.VelocityTrackableMotionEventAxis int);
     method public static float getAxisVelocity(android.view.VelocityTracker, @androidx.core.view.VelocityTrackerCompat.VelocityTrackableMotionEventAxis int, int);
     method @Deprecated public static float getXVelocity(android.view.VelocityTracker!, int);
     method @Deprecated public static float getYVelocity(android.view.VelocityTracker!, int);
     method public static boolean isAxisSupported(android.view.VelocityTracker, @androidx.core.view.VelocityTrackerCompat.VelocityTrackableMotionEventAxis int);
+    method public static void recycle(android.view.VelocityTracker);
   }
 
   @IntDef({android.view.MotionEvent.AXIS_X, android.view.MotionEvent.AXIS_Y, android.view.MotionEvent.AXIS_SCROLL}) @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.SOURCE) public static @interface VelocityTrackerCompat.VelocityTrackableMotionEventAxis {
