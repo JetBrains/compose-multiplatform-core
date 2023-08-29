@@ -165,6 +165,7 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
             dependencyClasspath,
             buildOnServer,
             docsSourcesConfiguration,
+            multiplatformDocsSourcesConfiguration,
             mergedProjectMetadata
         )
     }
@@ -288,8 +289,9 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
                 it.isCanBeResolved = false
                 it.isCanBeConsumed = false
             }
-        val apiSinceDocsConfiguration =
-            project.configurations.create("apiSinceDocs") {
+        // This exists for libraries that are deprecated or not hosted in the AndroidX repo
+        val docsWithoutApiSinceConfiguration =
+            project.configurations.create("docsWithoutApiSince") {
                 it.isCanBeResolved = false
                 it.isCanBeConsumed = false
             }
@@ -334,7 +336,7 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
         docsSourcesConfiguration =
             project.configurations.create("docs-sources") {
                 it.setResolveSources()
-                it.extendsFrom(docsConfiguration, apiSinceDocsConfiguration)
+                it.extendsFrom(docsConfiguration, docsWithoutApiSinceConfiguration)
             }
         multiplatformDocsSourcesConfiguration =
             project.configurations.create("multiplatform-docs-sources") { configuration ->
@@ -378,7 +380,7 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
                     project.objects.named<Bundling>(Bundling.EXTERNAL)
                 )
 
-                it.extendsFrom(apiSinceDocsConfiguration)
+                it.extendsFrom(docsConfiguration, multiplatformDocsConfiguration)
             }
 
         fun Configuration.setResolveClasspathForUsage(usage: String) {
@@ -398,7 +400,7 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
                 docsConfiguration,
                 samplesConfiguration,
                 stubsConfiguration,
-                apiSinceDocsConfiguration
+                docsWithoutApiSinceConfiguration
             )
         }
 
@@ -453,6 +455,7 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
         dependencyClasspath: FileCollection,
         buildOnServer: TaskProvider<*>,
         docsConfiguration: Configuration,
+        multiplatformDocsConfiguration: Configuration,
         mergedProjectMetadata: Provider<RegularFile>
     ) {
         val generatedDocsDir = project.layout.buildDirectory.dir("docs")
@@ -467,6 +470,14 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
                 val artifacts = docsConfiguration.incoming.artifacts.resolvedArtifacts
                 task.getArtifactIds().set(artifacts.map { result -> result.map { it.id } })
                 task.getArtifactFiles().set(artifacts.map { result -> result.map { it.file } })
+                val multiplatformArtifacts =
+                    multiplatformDocsConfiguration.incoming.artifacts.resolvedArtifacts
+                task.getMultiplatformArtifactIds().set(multiplatformArtifacts.map { result ->
+                    result.map { it.id }
+                })
+                task.getMultiplatformArtifactFiles().set(multiplatformArtifacts.map { result ->
+                    result.map { it.file }
+                })
                 task.destinationFile.set(getMetadataRegularFile(project))
             }
 

@@ -21,7 +21,6 @@ import com.android.build.gradle.AppPlugin
 import com.android.build.gradle.BaseExtension
 import com.android.build.gradle.LibraryPlugin
 import com.android.build.gradle.internal.lint.AndroidLintAnalysisTask
-import com.android.build.gradle.internal.lint.AndroidLintTask
 import com.android.build.gradle.internal.lint.LintModelWriterTask
 import com.android.build.gradle.internal.lint.VariantInputs
 import java.io.File
@@ -93,6 +92,11 @@ private fun Project.configureAndroidProjectForLint(
  * Android Lint configuration entry point for non-Android projects.
  */
 private fun Project.configureNonAndroidProjectForLint() = afterEvaluate {
+    // TODO(aurimas): remove this workaround for b/293900782 after upgrading to AGP 8.2.0-beta01
+    if (path == ":collection:collection-benchmark-kmp" ||
+        path == ":benchmark:benchmark-darwin-samples") {
+        return@afterEvaluate
+    }
     // The lint plugin expects certain configurations and source sets which are only added by
     // the Java and Android plugins. If this is a multiplatform project targeting JVM, we'll
     // need to manually create these configurations and source sets based on their multiplatform
@@ -175,13 +179,8 @@ private fun Project.configureLintForAidlAfterEvaluate() {
         sourceProvider.javaDirectories.withChangesAllowed { from(mainAidl, variantAidl) }
     }
 
-    // Lint for libraries is split into two tasks - analysis, and reporting. We need to
-    // add the new sources to both, so all parts of the pipeline are aware.
+    // Add the new sources to the lint analysis tasks.
     project.tasks.withType<AndroidLintAnalysisTask>().configureEach {
-        it.variantInputs.addSourceSets()
-    }
-
-    project.tasks.withType<AndroidLintTask>().configureEach {
         it.variantInputs.addSourceSets()
     }
 
@@ -271,13 +270,10 @@ private fun Project.addSourceSetsForAndroidMultiplatformAfterEvaluate() {
         }
     }
 
-    // Lint for libraries is split into two tasks - analysis, and reporting. We need to
-    // add the new sources to both, so all parts of the pipeline are aware.
+    // Add the new sources to the lint analysis tasks.
     project.tasks.withType<AndroidLintAnalysisTask>().configureEach {
         it.variantInputs.addSourceSets()
     }
-
-    project.tasks.withType<AndroidLintTask>().configureEach { it.variantInputs.addSourceSets() }
 
     // Also configure the model writing task, so that we don't run into mismatches between
     // analyzed sources in one module and a downstream module
@@ -310,19 +306,6 @@ private fun Project.configureLint(lint: Lint, isLibrary: Boolean) {
     lint.apply {
         // Skip lintVital tasks on assemble. We explicitly run lintRelease for libraries.
         checkReleaseBuilds = false
-    }
-
-    tasks.withType(AndroidLintTask::class.java).configureEach { task ->
-        // Remove the lint and column attributes from generated lint baseline XML.
-        if (task.name.startsWith("updateLintBaseline")) {
-            task.doLast {
-                task.projectInputs.lintOptions.baseline.orNull?.asFile?.let { file ->
-                    if (file.exists()) {
-                        file.writeText(removeLineAndColumnAttributes(file.readText()))
-                    }
-                }
-            }
-        }
     }
 
     // Lint is configured entirely in finalizeDsl so that individual projects cannot easily
