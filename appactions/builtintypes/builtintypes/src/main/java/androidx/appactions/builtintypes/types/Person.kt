@@ -1,16 +1,18 @@
-// Copyright 2023 The Android Open Source Project
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * Copyright 2023 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package androidx.appactions.builtintypes.types
 
 import androidx.appactions.builtintypes.properties.DisambiguatingDescription
@@ -20,6 +22,7 @@ import java.util.Objects
 import kotlin.Any
 import kotlin.Boolean
 import kotlin.Int
+import kotlin.NotImplementedError
 import kotlin.String
 import kotlin.Suppress
 import kotlin.collections.Map
@@ -48,14 +51,18 @@ public interface Person : Thing {
    *
    * See https://schema.org/email for more context.
    */
-  @get:Document.StringProperty public val email: String?
+  @get:Document.StringProperty
+  public val email: String?
+    get() = null
 
   /**
    * The telephone number.
    *
    * See https://schema.org/telephone for more context.
    */
-  @get:Document.StringProperty(name = "telephone") public val telephoneNumber: String?
+  @get:Document.StringProperty(name = "telephone")
+  public val telephoneNumber: String?
+    get() = null
 
   /** Converts this [Person] to its builder with all the properties copied over. */
   public override fun toBuilder(): Builder<*>
@@ -76,10 +83,12 @@ public interface Person : Thing {
     public override fun build(): Person
 
     /** Sets the `email`. */
-    public fun setEmail(text: String?): Self
+    @Suppress("DocumentExceptions")
+    public fun setEmail(text: String?): Self = throw NotImplementedError()
 
     /** Sets the `telephoneNumber`. */
-    public fun setTelephoneNumber(text: String?): Self
+    @Suppress("DocumentExceptions")
+    public fun setTelephoneNumber(text: String?): Self = throw NotImplementedError()
   }
 }
 

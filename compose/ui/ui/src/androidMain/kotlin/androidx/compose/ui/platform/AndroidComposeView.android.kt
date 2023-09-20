@@ -60,6 +60,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.referentialEqualityPolicy
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.SessionMutex
@@ -69,6 +70,8 @@ import androidx.compose.ui.autofill.AutofillCallback
 import androidx.compose.ui.autofill.AutofillTree
 import androidx.compose.ui.autofill.performAutofill
 import androidx.compose.ui.autofill.populateViewStructure
+import androidx.compose.ui.draganddrop.ComposeDragShadowBuilder
+import androidx.compose.ui.draganddrop.DragAndDropInfo
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusDirection.Companion.Down
 import androidx.compose.ui.focus.FocusDirection.Companion.Exit
@@ -99,6 +102,8 @@ import androidx.compose.ui.input.key.Key.Companion.DirectionUp
 import androidx.compose.ui.input.key.Key.Companion.Enter
 import androidx.compose.ui.input.key.Key.Companion.Escape
 import androidx.compose.ui.input.key.Key.Companion.NumPadEnter
+import androidx.compose.ui.input.key.Key.Companion.PageDown
+import androidx.compose.ui.input.key.Key.Companion.PageUp
 import androidx.compose.ui.input.key.Key.Companion.Tab
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.KeyEventType.Companion.KeyDown
@@ -659,7 +664,7 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
      * This function is used by the testing framework to send key events.
      */
     override fun sendKeyEvent(keyEvent: KeyEvent): Boolean =
-        // First dispatch the key event to mimic the event being intercepted before it is sent to
+    // First dispatch the key event to mimic the event being intercepted before it is sent to
         // the soft keyboard.
         focusOwner.dispatchInterceptedSoftKeyboardEvent(keyEvent) ||
             // Next, send the key event to the Soft Keyboard.
@@ -735,6 +740,32 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
         }
     }
 
+    override fun drag(dragAndDropInfo: DragAndDropInfo): Boolean {
+        val density = with(context.resources) {
+            Density(
+                density = displayMetrics.density,
+                fontScale = configuration.fontScale
+            )
+        }
+        val shadowBuilder = ComposeDragShadowBuilder(
+            density = density,
+            dragAndDropInfo = dragAndDropInfo,
+        )
+        @Suppress("DEPRECATION")
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
+            AndroidComposeViewStartDragAndDropN.startDragAndDrop(
+                view = this,
+                dragAndDropInfo = dragAndDropInfo,
+                dragShadowBuilder = shadowBuilder,
+            )
+        else startDrag(
+            dragAndDropInfo.transfer.clipData,
+            shadowBuilder,
+            dragAndDropInfo.transfer.localState,
+            dragAndDropInfo.transfer.flags,
+        )
+    }
+
     private fun clearChildInvalidObservations(viewGroup: ViewGroup) {
         for (i in 0 until viewGroup.childCount) {
             val child = viewGroup.getChildAt(i)
@@ -787,6 +818,10 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
                     info: AccessibilityNodeInfoCompat
                 ) {
                     super.onInitializeAccessibilityNodeInfo(host, info)
+
+                    // Prevent TalkBack from trying to focus the AndroidViewHolder
+                    info.setVisibleToUser(false)
+
                     var parentId = layoutNode
                         .findClosestParentNode { it.nodes.has(Nodes.Semantics) }
                         ?.semanticsId
@@ -1007,6 +1042,7 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
 
     @Suppress("NOTHING_TO_INLINE")
     private inline operator fun ULong.component1() = (this shr 32).toInt()
+
     @Suppress("NOTHING_TO_INLINE")
     private inline operator fun ULong.component2() = (this and 0xFFFFFFFFUL).toInt()
 
@@ -1142,8 +1178,12 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
             Tab -> if (keyEvent.isShiftPressed) Previous else Next
             DirectionRight -> Right
             DirectionLeft -> Left
-            DirectionUp -> Up
-            DirectionDown -> Down
+            // For the initial key input of a new composable, both up/down and page up/down will
+            // trigger the composable to get focus (so the composable can handle key events to
+            // move focus or scroll content). Remember, composables can't receive key events without
+            // focus.
+            DirectionUp, PageUp -> Up
+            DirectionDown, PageDown -> Down
             DirectionCenter, Enter, NumPadEnter -> FocusDirection.Enter
             Back, Escape -> Exit
             else -> null
@@ -1155,6 +1195,7 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
             invalidateLayers(root)
         }
         measureAndLayout()
+        Snapshot.sendApplyNotifications()
 
         isDrawingContent = true
         // we don't have to observe here because the root has a layer modifier
@@ -1399,7 +1440,8 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
         val rotaryEvent = RotaryScrollEvent(
             verticalScrollPixels = axisValue * getScaledVerticalScrollFactor(config, context),
             horizontalScrollPixels = axisValue * getScaledHorizontalScrollFactor(config, context),
-            uptimeMillis = event.eventTime
+            uptimeMillis = event.eventTime,
+            inputDeviceId = event.deviceId
         )
         return focusOwner.dispatchRotaryEvent(rotaryEvent)
     }
@@ -2152,4 +2194,20 @@ private object MotionEventVerifierApi29 {
     fun isValidMotionEvent(event: MotionEvent, index: Int): Boolean {
         return event.getRawX(index).isFinite() && event.getRawY(index).isFinite()
     }
+}
+
+@RequiresApi(Build.VERSION_CODES.N)
+private object AndroidComposeViewStartDragAndDropN {
+    @DoNotInline
+    @RequiresApi(Build.VERSION_CODES.N)
+    fun startDragAndDrop(
+        view: View,
+        dragAndDropInfo: DragAndDropInfo,
+        dragShadowBuilder: ComposeDragShadowBuilder
+    ): Boolean = view.startDragAndDrop(
+        dragAndDropInfo.transfer.clipData,
+        dragShadowBuilder,
+        dragAndDropInfo.transfer.localState,
+        dragAndDropInfo.transfer.flags,
+    )
 }

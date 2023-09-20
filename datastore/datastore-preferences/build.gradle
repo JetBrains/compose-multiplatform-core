@@ -24,9 +24,6 @@ plugins {
 }
 
 android{
-    buildTypes.all{
-        consumerProguardFiles "proguard-rules.pro"
-    }
     namespace "androidx.datastore.preferences"
 }
 androidXMultiplatform {
@@ -67,11 +64,11 @@ androidXMultiplatform {
         androidMain {
             dependsOn(jvmMain)
         }
-        androidTest {
+        androidUnitTest {
             dependsOn(jvmTest)
         }
-        androidAndroidTest {
-            dependsOn(androidTest)
+        androidInstrumentedTest {
+            dependsOn(androidUnitTest)
             dependencies {
                 implementation(libs.testRunner)
                 implementation(libs.testCore)

@@ -32,9 +32,8 @@ import androidx.wear.tiles.renderer.TileRenderer
 import androidx.wear.tiles.timeline.TilesTimelineCache
 import androidx.wear.tiles.tooling.preview.TilePreviewData
 import java.lang.reflect.Method
+import java.lang.reflect.Modifier
 import kotlin.math.roundToInt
-import kotlinx.coroutines.guava.await
-import kotlinx.coroutines.runBlocking
 
 private const val TOOLS_NS_URI = "http://schemas.android.com/tools"
 
@@ -64,6 +63,9 @@ internal fun Class<out Any>.findMethod(
  */
 internal class TileServiceViewAdapter(context: Context, attrs: AttributeSet) :
     FrameLayout(context, attrs) {
+
+    private val executor = ContextCompat.getMainExecutor(context)
+
     init {
         init(attrs)
     }
@@ -76,9 +78,9 @@ internal class TileServiceViewAdapter(context: Context, attrs: AttributeSet) :
     }
 
     internal fun init(tilePreviewMethodFqn: String) {
-        val tilePreview = getTilePreview(tilePreviewMethodFqn)
+        val tilePreview = getTilePreview(tilePreviewMethodFqn) ?: return
         lateinit var tileRenderer: TileRenderer
-        tileRenderer = TileRenderer(context, ContextCompat.getMainExecutor(context)) { newState ->
+        tileRenderer = TileRenderer(context, executor) { newState ->
             tileRenderer.previewTile(tilePreview, newState)
         }
         tileRenderer.previewTile(tilePreview)
@@ -97,7 +99,7 @@ internal class TileServiceViewAdapter(context: Context, attrs: AttributeSet) :
             .setDeviceConfiguration(deviceParams)
             .build()
 
-        val tile = tilePreview.onTileRequest(tileRequest, context).also { tile ->
+        val tile = tilePreview.onTileRequest(tileRequest).also { tile ->
             tile.state?.let { setState(it.keyToValueMapping) }
         }
         val layout = tile.tileTimeline?.getCurrentLayout() ?: return
@@ -106,28 +108,45 @@ internal class TileServiceViewAdapter(context: Context, attrs: AttributeSet) :
             .setDeviceConfiguration(deviceParams)
             .setVersion(tile.resourcesVersion)
             .build()
-        val resources = tilePreview.onTileResourceRequest(resourcesRequest, context)
+        val resources = tilePreview.onTileResourceRequest(resourcesRequest)
 
-        runBlocking {
-            inflateAsync(layout, resources, this@TileServiceViewAdapter)
-                .await()
-                ?.apply { (layoutParams as LayoutParams).gravity = Gravity.CENTER }
+        val inflateFuture = inflateAsync(layout, resources, this@TileServiceViewAdapter)
+        inflateFuture.addListener({
+            inflateFuture.get()?.let {
+                (it.layoutParams as LayoutParams).gravity = Gravity.CENTER
+            }
+        }, executor)
+    }
+
+    @SuppressLint("BanUncheckedReflection")
+    internal fun getTilePreview(tilePreviewMethodFqn: String): TilePreviewData? {
+        val className = tilePreviewMethodFqn.substringBeforeLast('.')
+        val methodName = tilePreviewMethodFqn.substringAfterLast('.')
+
+        val methods = Class.forName(className).declaredMethods.filter { it.name == methodName }
+        methods.firstOrNull {
+            it.parameterCount == 1 && it.parameters.first().type == Context::class.java
+        }?.let { methodWithContextParameter ->
+            return invokeTilePreviewMethod(methodWithContextParameter, context)
+        }
+
+        return methods.firstOrNull {
+            it.name == methodName && it.parameterCount == 0
+        }?.let { methodWithoutContextParameter ->
+            return invokeTilePreviewMethod(methodWithoutContextParameter)
         }
     }
-}
 
-@SuppressLint("BanUncheckedReflection")
-internal fun getTilePreview(tilePreviewMethodFqn: String): TilePreviewData {
-    val className = tilePreviewMethodFqn.substringBeforeLast('.')
-    val methodName = tilePreviewMethodFqn.substringAfterLast('.')
-
-    val method = Class.forName(className).declaredMethods.first {
-        it.name == methodName && it.parameterCount == 0
-    }.apply {
-        isAccessible = true
+    @SuppressLint("BanUncheckedReflection")
+    private fun invokeTilePreviewMethod(method: Method, vararg args: Any?): TilePreviewData? {
+        method.isAccessible = true
+        return if (Modifier.isStatic(method.modifiers)) {
+            method.invoke(null, *args) as? TilePreviewData
+        } else {
+            val instance = method.declaringClass.getConstructor().newInstance()
+            method.invoke(instance, *args) as? TilePreviewData
+        }
     }
-
-    return method.invoke(null) as TilePreviewData
 }
 
 internal fun TimelineBuilders.Timeline?.getCurrentLayout(): LayoutElementBuilders.Layout? {

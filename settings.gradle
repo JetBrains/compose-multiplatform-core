@@ -593,6 +593,7 @@ includeProject(":compose:material", [BuildType.COMPOSE])
 includeProject(":compose:material3:material3", [BuildType.COMPOSE])
 includeProject(":compose:material3:benchmark", [BuildType.COMPOSE])
 includeProject(":compose:material3:material3-adaptive", [BuildType.COMPOSE])
+includeProject(":compose:material3:material3-adaptive:material3-adaptive-samples", "compose/material3/material3-adaptive/samples", [BuildType.COMPOSE])
 includeProject(":compose:material3:material3-lint", [BuildType.COMPOSE])
 includeProject(":compose:material3:material3-window-size-class", [BuildType.COMPOSE])
 includeProject(":compose:material3:material3-window-size-class:material3-window-size-class-samples", "compose/material3/material3-window-size-class/samples", [BuildType.COMPOSE])
@@ -602,11 +603,6 @@ includeProject(":compose:material:material-lint", [BuildType.COMPOSE])
 includeProject(":compose:material:material-icons-core", [BuildType.COMPOSE])
 includeProject(":compose:material:material-icons-core:material-icons-core-samples", "compose/material/material-icons-core/samples", [BuildType.COMPOSE])
 includeProject(":compose:material:material-icons-extended", [BuildType.COMPOSE])
-includeProject(":compose:material:material-icons-extended-filled", [BuildType.COMPOSE])
-includeProject(":compose:material:material-icons-extended-outlined", [BuildType.COMPOSE])
-includeProject(":compose:material:material-icons-extended-rounded", [BuildType.COMPOSE])
-includeProject(":compose:material:material-icons-extended-sharp", [BuildType.COMPOSE])
-includeProject(":compose:material:material-icons-extended-twotone", [BuildType.COMPOSE])
 includeProject(":compose:material:material-ripple", [BuildType.COMPOSE])
 includeProject(":compose:material:material-ripple:material-ripple-benchmark", "compose/material/material-ripple/benchmark", [BuildType.COMPOSE])
 includeProject(":compose:material:material:icons:generator", [BuildType.COMPOSE])
@@ -711,6 +707,7 @@ includeProject(":core:uwb:uwb", [BuildType.MAIN])
 includeProject(":core:uwb:uwb-rxjava3", [BuildType.MAIN])
 includeProject(":credentials:credentials", [BuildType.MAIN])
 includeProject(":credentials:credentials-samples", "credentials/credentials/samples", [BuildType.MAIN])
+includeProject(":credentials:credentials-fido", [BuildType.MAIN])
 includeProject(":credentials:credentials-play-services-auth", [BuildType.MAIN])
 includeProject(":credentials:credentials-provider", [BuildType.MAIN])
 includeProject(":cursoradapter:cursoradapter", [BuildType.MAIN])
@@ -767,7 +764,9 @@ includeProject(":glance:glance", [BuildType.GLANCE])
 includeProject(":glance:glance-appwidget", [BuildType.GLANCE])
 includeProject(":glance:glance-appwidget-preview", [BuildType.GLANCE])
 includeProject(":glance:glance-appwidget-proto", [BuildType.GLANCE])
+includeProject(":glance:glance-appwidget-testing", [BuildType.GLANCE])
 includeProject(":glance:glance-appwidget:glance-appwidget-samples", "glance/glance-appwidget/samples", [BuildType.GLANCE])
+includeProject(":glance:glance-appwidget-testing:glance-appwidget-testing-samples", "glance/glance-appwidget-testing/samples", [BuildType.GLANCE])
 includeProject(":glance:glance-appwidget:integration-tests:demos", [BuildType.GLANCE])
 includeProject(":glance:glance-appwidget:integration-tests:macrobenchmark", [BuildType.GLANCE])
 includeProject(":glance:glance-appwidget:integration-tests:macrobenchmark-target", [BuildType.GLANCE])
@@ -886,7 +885,7 @@ includeProject(":navigation:navigation-testing", [BuildType.MAIN, BuildType.FLAN
 includeProject(":navigation:navigation-ui", [BuildType.MAIN, BuildType.FLAN])
 includeProject(":navigation:navigation-ui-ktx", [BuildType.MAIN, BuildType.FLAN])
 includeProject(":paging:integration-tests:testapp", [BuildType.MAIN])
-includeProject(":paging:paging-common", [BuildType.MAIN, BuildType.COMPOSE])
+includeProject(":paging:paging-common", [BuildType.MAIN, BuildType.COMPOSE, BuildType.INFRAROGUE, BuildType.KMP])
 includeProject(":paging:paging-common-ktx", [BuildType.MAIN, BuildType.COMPOSE])
 includeProject(":paging:paging-compose", [BuildType.COMPOSE])
 includeProject(":paging:paging-compose:paging-compose-samples", "paging/paging-compose/samples", [BuildType.COMPOSE])
@@ -898,7 +897,7 @@ includeProject(":paging:paging-rxjava2", [BuildType.MAIN, BuildType.COMPOSE])
 includeProject(":paging:paging-rxjava2-ktx", [BuildType.MAIN])
 includeProject(":paging:paging-rxjava3", [BuildType.MAIN])
 includeProject(":paging:paging-samples", "paging/samples", [BuildType.MAIN, BuildType.COMPOSE])
-includeProject(":paging:paging-testing", [BuildType.MAIN, BuildType.COMPOSE])
+includeProject(":paging:paging-testing", [BuildType.MAIN, BuildType.COMPOSE, BuildType.INFRAROGUE, BuildType.KMP])
 includeProject(":palette:palette", [BuildType.MAIN])
 includeProject(":palette:palette-ktx", [BuildType.MAIN])
 includeProject(":percentlayout:percentlayout", [BuildType.MAIN])
@@ -949,7 +948,7 @@ includeProject(":room:integration-tests:room-testapp-autovalue", "room/integrati
 includeProject(":room:integration-tests:room-testapp-kotlin", "room/integration-tests/kotlintestapp", [BuildType.MAIN])
 includeProject(":room:integration-tests:room-testapp-noappcompat", "room/integration-tests/noappcompattestapp", [BuildType.MAIN])
 includeProject(":room:room-benchmark", "room/benchmark", [BuildType.MAIN])
-includeProject(":room:room-common", [BuildType.MAIN, BuildType.COMPOSE])
+includeProject(":room:room-common", [BuildType.MAIN, BuildType.COMPOSE, BuildType.KMP])
 includeProject(":room:room-compiler", [BuildType.MAIN, BuildType.COMPOSE])
 includeProject(":room:room-compiler-processing", [BuildType.MAIN, BuildType.COMPOSE, BuildType.FLAN])
 includeProject(":room:room-compiler-processing-testing", [BuildType.MAIN, BuildType.COMPOSE, BuildType.FLAN])
@@ -1017,8 +1016,6 @@ includeProject(":tv:tv-foundation", [BuildType.COMPOSE])
 includeProject(":tv:tv-material", [BuildType.COMPOSE])
 includeProject(":tv:integration-tests:playground", [BuildType.COMPOSE])
 includeProject(":tv:integration-tests:presentation", [BuildType.COMPOSE])
-includeProject(":tv:integration-tests:macrobenchmark", [BuildType.COMPOSE])
-includeProject(":tv:integration-tests:macrobenchmark-target", [BuildType.COMPOSE])
 includeProject(":tv:tv-samples", "tv/samples", [BuildType.COMPOSE])
 includeProject(":tvprovider:tvprovider", [BuildType.MAIN])
 includeProject(":vectordrawable:integration-tests:testapp", [BuildType.MAIN])
@@ -1234,8 +1231,11 @@ if (isAllProjects()) {
 // for each size and test runner is happy when there is nothing to test.
 includeProject(":placeholder-tests")
 
-// Workaround for b/203825166
-includeBuild("placeholder")
+// Add includedBuild in most cases for b/203825166
+// Skip adding includeBuild when regenerating signatures for https://github.com/gradle/gradle/issues/26179
+if (!startParameter.projectProperties.containsKey('androidx.update.signatures')) {
+    includeBuild("placeholder")
+}
 
 // ---------------------------------------------------------------------
 // --- there should be no includeProject additions after this line -----
@@ -1246,6 +1246,11 @@ void addReferences(String projectPath, Set<String> included) {
     if (projectPath in included) return
     included.add(projectPath)
     for (reference in projectReferences[projectPath]) {
+        if (!allProjects.containsKey(reference) || allProjects[reference] == "") {
+            throw new GradleException("Project $reference does not exist.\n" +
+                    "Please check the build.gradle file for your $projectPath project " +
+                    "and update the project dependencies.")
+        }
         addReferences(reference, included)
     }
 }

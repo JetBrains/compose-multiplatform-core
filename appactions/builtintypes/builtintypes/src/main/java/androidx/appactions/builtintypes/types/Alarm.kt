@@ -1,16 +1,18 @@
-// Copyright 2023 The Android Open Source Project
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * Copyright 2023 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package androidx.appactions.builtintypes.types
 
 import androidx.appactions.builtintypes.properties.DisambiguatingDescription
@@ -20,6 +22,7 @@ import java.util.Objects
 import kotlin.Any
 import kotlin.Boolean
 import kotlin.Int
+import kotlin.NotImplementedError
 import kotlin.String
 import kotlin.Suppress
 import kotlin.collections.Map
@@ -49,7 +52,9 @@ public interface Alarm : Thing {
    *
    * See https://schema.googleapis.com/alarmSchedule for more context.
    */
-  @get:Document.DocumentProperty public val alarmSchedule: Schedule?
+  @get:Document.DocumentProperty
+  public val alarmSchedule: Schedule?
+    get() = null
 
   /**
    * Specifies if the alarm enabled or disabled.
@@ -58,7 +63,10 @@ public interface Alarm : Thing {
    *
    * See https://schema.googleapis.com/isAlarmEnabled for more context.
    */
-  @get:Document.BooleanProperty @get:Suppress("AutoBoxing") public val isAlarmEnabled: Boolean?
+  @get:Document.BooleanProperty
+  @get:Suppress("AutoBoxing")
+  public val isAlarmEnabled: Boolean?
+    get() = null
 
   /** Converts this [Alarm] to its builder with all the properties copied over. */
   public override fun toBuilder(): Builder<*>
@@ -79,10 +87,13 @@ public interface Alarm : Thing {
     public override fun build(): Alarm
 
     /** Sets the `alarmSchedule`. */
-    public fun setAlarmSchedule(schedule: Schedule?): Self
+    @Suppress("DocumentExceptions")
+    public fun setAlarmSchedule(schedule: Schedule?): Self = throw NotImplementedError()
 
     /** Sets the `isAlarmEnabled`. */
-    public fun setAlarmEnabled(@Suppress("AutoBoxing") boolean: Boolean?): Self
+    @Suppress("DocumentExceptions")
+    public fun setAlarmEnabled(@Suppress("AutoBoxing") boolean: Boolean?): Self =
+      throw NotImplementedError()
 
     /** Sets the `disambiguatingDescription` to a canonical [DisambiguatingDescriptionValue]. */
     public fun setDisambiguatingDescription(canonicalValue: DisambiguatingDescriptionValue): Self =
@@ -156,7 +167,7 @@ public interface Alarm : Thing {
  */
 @Suppress("UNCHECKED_CAST")
 public abstract class AbstractAlarm<
-  Self : AbstractAlarm<Self, Builder>, Builder : AbstractAlarm.Builder<Builder, Self>>
+    Self : AbstractAlarm<Self, Builder>, Builder : AbstractAlarm.Builder<Builder, Self>>
 internal constructor(
   public final override val namespace: String,
   public final override val alarmSchedule: Schedule?,

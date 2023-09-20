@@ -30,10 +30,8 @@ import android.widget.CheckBox
 import android.widget.EditText
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.PopupMenu
-import androidx.bluetooth.AdvertiseResult
 import androidx.bluetooth.BluetoothLe
 import androidx.bluetooth.GattCharacteristic
-import androidx.bluetooth.GattCharacteristic.Companion.PROPERTY_READ
 import androidx.bluetooth.GattServerRequest
 import androidx.bluetooth.GattService
 import androidx.bluetooth.integration.testapp.R
@@ -326,32 +324,33 @@ class AdvertiserFragment : Fragment() {
         advertiseJob = advertiseScope.launch {
             isAdvertising = true
 
-            bluetoothLe.advertise(viewModel.advertiseParams)
-                .collect {
-                    Log.d(TAG, "AdvertiseResult collected: $it")
+            bluetoothLe.advertise(viewModel.advertiseParams) {
+                when (it) {
+                    BluetoothLe.ADVERTISE_STARTED -> {
+                        toast("ADVERTISE_STARTED").show()
+                    }
 
-                    when (it) {
-                        AdvertiseResult.ADVERTISE_STARTED -> {
-                            toast("ADVERTISE_STARTED").show()
-                        }
-                        AdvertiseResult.ADVERTISE_FAILED_DATA_TOO_LARGE -> {
-                            isAdvertising = false
-                            toast("ADVERTISE_FAILED_DATA_TOO_LARGE").show()
-                        }
-                        AdvertiseResult.ADVERTISE_FAILED_FEATURE_UNSUPPORTED -> {
-                            isAdvertising = false
-                            toast("ADVERTISE_FAILED_FEATURE_UNSUPPORTED").show()
-                        }
-                        AdvertiseResult.ADVERTISE_FAILED_INTERNAL_ERROR -> {
-                            isAdvertising = false
-                            toast("ADVERTISE_FAILED_INTERNAL_ERROR").show()
-                        }
-                        AdvertiseResult.ADVERTISE_FAILED_TOO_MANY_ADVERTISERS -> {
-                            isAdvertising = false
-                            toast("ADVERTISE_FAILED_TOO_MANY_ADVERTISERS").show()
-                        }
+                    BluetoothLe.ADVERTISE_FAILED_DATA_TOO_LARGE -> {
+                        isAdvertising = false
+                        toast("ADVERTISE_FAILED_DATA_TOO_LARGE").show()
+                    }
+
+                    BluetoothLe.ADVERTISE_FAILED_FEATURE_UNSUPPORTED -> {
+                        isAdvertising = false
+                        toast("ADVERTISE_FAILED_FEATURE_UNSUPPORTED").show()
+                    }
+
+                    BluetoothLe.ADVERTISE_FAILED_INTERNAL_ERROR -> {
+                        isAdvertising = false
+                        toast("ADVERTISE_FAILED_INTERNAL_ERROR").show()
+                    }
+
+                    BluetoothLe.ADVERTISE_FAILED_TOO_MANY_ADVERTISERS -> {
+                        isAdvertising = false
+                        toast("ADVERTISE_FAILED_TOO_MANY_ADVERTISERS").show()
                     }
                 }
+            }
         }
     }
 
@@ -372,7 +371,7 @@ class AdvertiserFragment : Fragment() {
                             else -> editTextInput
                         }
                     )
-                    val service = GattService.of(uuid, listOf())
+                    val service = GattService(uuid, listOf())
                     viewModel.addGattService(service)
                     gattServerServicesAdapter
                         ?.notifyItemInserted(viewModel.gattServerServices.size - 1)
@@ -439,7 +438,7 @@ class AdvertiserFragment : Fragment() {
                             else -> uuidText
                         }
                     )
-                    val sampleCharacteristic = GattCharacteristic.of(uuid, properties)
+                    val sampleCharacteristic = GattCharacteristic(uuid, properties)
 
                     val index = viewModel.gattServerServices.indexOf(bluetoothGattService)
                     viewModel.addGattCharacteristic(bluetoothGattService, sampleCharacteristic)
@@ -460,18 +459,20 @@ class AdvertiserFragment : Fragment() {
         gattServerJob = gattServerScope.launch {
             isGattServerOpen = true
 
-            bluetoothLe.openGattServer(viewModel.gattServerServices).collect {
-                launch {
-                    it.accept {
-                        launch {
+            bluetoothLe.openGattServer(viewModel.gattServerServices) {
+                connectRequests.collect {
+                    launch {
+                        it.accept {
                             requests.collect {
+                                // TODO(b/269390098): handle request correctly
                                 when (it) {
-                                    is GattServerRequest.ReadCharacteristicRequest ->
-                                        it.sendResponse(/*success=*/true,
-                                            ByteBuffer.allocate(Int.SIZE_BYTES).putInt(1).array())
+                                    is GattServerRequest.ReadCharacteristic ->
+                                        it.sendResponse(
+                                            ByteBuffer.allocate(Int.SIZE_BYTES).putInt(1).array()
+                                        )
 
-                                    is GattServerRequest.WriteCharacteristicRequest ->
-                                        it.sendResponse(/*success=*/true)
+                                    is GattServerRequest.WriteCharacteristics ->
+                                        it.sendResponse()
 
                                     else -> throw NotImplementedError("unknown request")
                                 }

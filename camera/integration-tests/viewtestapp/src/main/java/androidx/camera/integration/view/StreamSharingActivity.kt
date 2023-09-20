@@ -33,10 +33,10 @@ import androidx.camera.core.Preview
 import androidx.camera.core.UseCase
 import androidx.camera.core.impl.utils.executor.CameraXExecutors
 import androidx.camera.lifecycle.ProcessCameraProvider
-import androidx.camera.testing.impl.E2ETestUtil.canDeviceWriteToMediaStore
-import androidx.camera.testing.impl.E2ETestUtil.generateVideoFileOutputOptions
-import androidx.camera.testing.impl.E2ETestUtil.generateVideoMediaStoreOptions
-import androidx.camera.testing.impl.E2ETestUtil.writeTextToExternalFile
+import androidx.camera.testing.impl.FileUtil.canDeviceWriteToMediaStore
+import androidx.camera.testing.impl.FileUtil.generateVideoFileOutputOptions
+import androidx.camera.testing.impl.FileUtil.generateVideoMediaStoreOptions
+import androidx.camera.testing.impl.FileUtil.writeTextToExternalFile
 import androidx.camera.video.PendingRecording
 import androidx.camera.video.Recorder
 import androidx.camera.video.Recording
@@ -77,6 +77,7 @@ class StreamSharingActivity : AppCompatActivity() {
     private var cameraSelector: CameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
     private var camera: Camera? = null
     private var previewViewMode: ImplementationMode = ImplementationMode.PERFORMANCE
+    private var previewViewScaleType = PreviewView.ScaleType.FILL_CENTER;
     private var activeRecording: Recording? = null
     private var isUseCasesBound: Boolean = false
     private var deviceOrientation: Int = -1
@@ -102,6 +103,7 @@ class StreamSharingActivity : AppCompatActivity() {
 
         // Initial view objects.
         previewView = findViewById(R.id.preview_view)
+        previewView.scaleType = previewViewScaleType
         previewView.implementationMode = previewViewMode
         exportButton = findViewById(R.id.export_button)
         exportButton.setOnClickListener {
@@ -212,9 +214,10 @@ class StreamSharingActivity : AppCompatActivity() {
         return null
     }
 
+    @SuppressLint("RestrictedApi")
     private fun isStreamSharingEnabled(): Boolean {
         val isCombinationSupported =
-            camera != null && camera!!.isUseCasesCombinationSupported(*useCases)
+            camera != null && camera!!.isUseCasesCombinationSupportedByFramework(*useCases)
         return !isCombinationSupported && isUseCasesBound
     }
 

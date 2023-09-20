@@ -16,6 +16,7 @@
 
 package androidx.privacysandbox.ui.integration.testsdkprovider
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
@@ -24,7 +25,9 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.net.Uri
 import android.os.Bundle
+import android.os.Handler
 import android.os.IBinder
+import android.os.Looper
 import android.provider.Settings
 import android.util.Log
 import android.view.View
@@ -37,13 +40,14 @@ import java.util.concurrent.Executor
 
 class SdkApi(sdkContext: Context) : ISdkApi.Stub() {
     private var mContext: Context? = null
+    private val handler = Handler(Looper.getMainLooper())
 
     init {
         mContext = sdkContext
     }
 
-    override fun loadAd(isWebView: Boolean, text: String): Bundle {
-        return BannerAd(isWebView, text).toCoreLibInfo(mContext!!)
+    override fun loadAd(isWebView: Boolean, text: String, withSlowDraw: Boolean): Bundle {
+        return BannerAd(isWebView, withSlowDraw, text).toCoreLibInfo(mContext!!)
     }
 
     private fun isAirplaneModeOn(): Boolean {
@@ -51,7 +55,11 @@ class SdkApi(sdkContext: Context) : ISdkApi.Stub() {
             mContext?.contentResolver, Settings.Global.AIRPLANE_MODE_ON, 0) != 0
     }
 
-    private inner class BannerAd(private val isWebView: Boolean, private val text: String) :
+    private inner class BannerAd(
+        private val isWebView: Boolean,
+        private val withSlowDraw: Boolean,
+        private val text: String
+    ) :
         SandboxedUiAdapter {
         override fun openSession(
             context: Context,
@@ -62,28 +70,32 @@ class SdkApi(sdkContext: Context) : ISdkApi.Stub() {
             clientExecutor: Executor,
             client: SandboxedUiAdapter.SessionClient,
         ) {
-            Log.d(TAG, "Session requested")
-            lateinit var adView: View
-            if (isWebView) {
-                // To test error cases.
-                if (isAirplaneModeOn()) {
-                    clientExecutor.execute {
-                        client.onSessionError(Throwable("Cannot load WebView in airplane mode."))
+            handler.post(Runnable lambda@{
+                Log.d(TAG, "Session requested")
+                lateinit var adView: View
+                if (isWebView) {
+                    // To test error cases.
+                    if (isAirplaneModeOn()) {
+                        clientExecutor.execute {
+                            client.onSessionError(
+                                Throwable("Cannot load WebView in airplane mode.")
+                            )
+                        }
+                        return@lambda
                     }
-                    return
+                    val webView = WebView(context)
+                    webView.loadUrl(AD_URL)
+                    webView.layoutParams = ViewGroup.LayoutParams(
+                        initialWidth, initialHeight
+                    )
+                    adView = webView
+                } else {
+                    adView = TestView(context, withSlowDraw, text)
                 }
-                val webView = WebView(context)
-                webView.loadUrl(AD_URL)
-                webView.layoutParams = ViewGroup.LayoutParams(
-                    initialWidth, initialHeight
-                )
-                adView = webView
-            } else {
-                adView = TestView(context, text)
-            }
-            clientExecutor.execute {
-                client.onSessionOpened(BannerAdSession(adView))
-            }
+                clientExecutor.execute {
+                    client.onSessionOpened(BannerAdSession(adView))
+                }
+            })
         }
 
         private inner class BannerAdSession(private val adView: View) : SandboxedUiAdapter.Session {
@@ -110,9 +122,18 @@ class SdkApi(sdkContext: Context) : ISdkApi.Stub() {
         }
     }
 
-    private inner class TestView(context: Context, private val text: String) : View(context) {
+    private inner class TestView(
+        context: Context,
+        private val withSlowDraw: Boolean,
+        private val text: String
+    ) : View(context) {
 
+        @SuppressLint("BanThreadSleep")
         override fun onDraw(canvas: Canvas) {
+            // We are adding sleep to test the synchronization of the app and the sandbox view's
+            // size changes.
+            if (withSlowDraw)
+                Thread.sleep(500)
             super.onDraw(canvas)
 
             val paint = Paint()

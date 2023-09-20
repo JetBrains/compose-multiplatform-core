@@ -27,6 +27,8 @@ import androidx.compose.runtime.collection.IdentityScopeMap
 import androidx.compose.runtime.collection.fastForEach
 import androidx.compose.runtime.collection.mutableVectorOf
 import androidx.compose.runtime.composeRuntimeError
+import androidx.compose.runtime.currentThreadId
+import androidx.compose.runtime.currentThreadName
 import androidx.compose.runtime.observeDerivedStateRecalculations
 import androidx.compose.runtime.structuralEqualityPolicy
 
@@ -184,6 +186,12 @@ class SnapshotStateObserver(private val onChangedExecutor: (callback: () -> Unit
         }
     }
 
+    private inline fun removeScopeMapIf(block: (ObservedScopeMap) -> Boolean) {
+        synchronized(observedScopeMaps) {
+            observedScopeMaps.removeIf(block)
+        }
+    }
+
     /**
      * Method to call when unsubscribing from the apply observer.
      */
@@ -199,6 +207,11 @@ class SnapshotStateObserver(private val onChangedExecutor: (callback: () -> Unit
      * The [ObservedScopeMap] that should be added to when a model is read during [observeReads].
      */
     private var currentMap: ObservedScopeMap? = null
+
+    /**
+     * Thread id that has set the [currentMap]
+     */
+    private var currentMapThreadId = -1L
 
     /**
      * Executes [block], observing state object reads during its execution.
@@ -222,21 +235,29 @@ class SnapshotStateObserver(private val onChangedExecutor: (callback: () -> Unit
 
         val oldPaused = isPaused
         val oldMap = currentMap
+        val oldThreadId = currentMapThreadId
 
-        try {
-            isPaused = false
-            currentMap = scopeMap
-
-            scopeMap.observe(scope, readObserver, block)
-        } finally {
-            require(currentMap === scopeMap) {
-                "Inconsistent modification of observation scopes in SnapshotStateObserver. " +
+        if (oldThreadId != -1L) {
+            require(oldThreadId == currentThreadId()) {
+                "Detected multithreaded access to SnapshotStateObserver: " +
+                    "previousThreadId=$oldThreadId), " +
+                    "currentThread={id=${currentThreadId()}, name=${currentThreadName()}}. " +
                     "Note that observation on multiple threads in layout/draw is not supported. " +
                     "Make sure your measure/layout/draw for each Owner (AndroidComposeView) " +
                     "is executed on the same thread."
             }
+        }
+
+        try {
+            isPaused = false
+            currentMap = scopeMap
+            currentMapThreadId = Thread.currentThread().id
+
+            scopeMap.observe(scope, readObserver, block)
+        } finally {
             currentMap = oldMap
             isPaused = oldPaused
+            currentMapThreadId = oldThreadId
         }
     }
 
@@ -266,8 +287,9 @@ class SnapshotStateObserver(private val onChangedExecutor: (callback: () -> Unit
      * `onValueChangedForScope` callbacks passed in [observeReads].
      */
     fun clear(scope: Any) {
-        forEachScopeMap {
+        removeScopeMapIf {
             it.clearScopeObservations(scope)
+            !it.hasScopeObservations()
         }
     }
 
@@ -276,8 +298,9 @@ class SnapshotStateObserver(private val onChangedExecutor: (callback: () -> Unit
      * used when a scope is no longer in the hierarchy and should not receive any callbacks.
      */
     fun clearIf(predicate: (scope: Any) -> Boolean) {
-        forEachScopeMap { scopeMap ->
+        removeScopeMapIf { scopeMap ->
             scopeMap.removeScopeIf(predicate)
+            !scopeMap.hasScopeObservations()
         }
     }
 
@@ -515,6 +538,9 @@ class SnapshotStateObserver(private val onChangedExecutor: (callback: () -> Unit
                 }
             }
         }
+
+        fun hasScopeObservations(): Boolean =
+            scopeToValues.isNotEmpty()
 
         private fun removeObservation(scope: Any, value: Any) {
             valueToScopes.remove(value, scope)

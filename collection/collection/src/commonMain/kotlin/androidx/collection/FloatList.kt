@@ -21,6 +21,15 @@ package androidx.collection
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.contract
 import kotlin.jvm.JvmField
+import kotlin.jvm.JvmOverloads
+
+// -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+// DO NOT MAKE CHANGES to the kotlin source file.
+//
+// This file was generated from a template in the template directory.
+// Make a change to the original template and run the generateCollections.sh script
+// to ensure the change is available on all versions of the map.
+// -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 /**
  * [FloatList] is a [List]-like collection for [Float] values. It allows retrieving
@@ -417,6 +426,67 @@ public sealed class FloatList(initialCapacity: Int) {
     }
 
     /**
+     * Creates a String from the elements separated by [separator] and using [prefix] before
+     * and [postfix] after, if supplied.
+     *
+     * When a non-negative value of [limit] is provided, a maximum of [limit] items are used
+     * to generate the string. If the collection holds more than [limit] items, the string
+     * is terminated with [truncated].
+     */
+    @JvmOverloads
+    public fun joinToString(
+        separator: CharSequence = ", ",
+        prefix: CharSequence = "",
+        postfix: CharSequence = "", // I know this should be suffix, but this is kotlin's name
+        limit: Int = -1,
+        truncated: CharSequence = "...",
+    ): String = buildString {
+        append(prefix)
+        this@FloatList.forEachIndexed { index, element ->
+            if (index == limit) {
+                append(truncated)
+                return@buildString
+            }
+            if (index != 0) {
+                append(separator)
+            }
+            append(element)
+        }
+        append(postfix)
+    }
+
+    /**
+     * Creates a String from the elements separated by [separator] and using [prefix] before
+     * and [postfix] after, if supplied. [transform] dictates how each element will be represented.
+     *
+     * When a non-negative value of [limit] is provided, a maximum of [limit] items are used
+     * to generate the string. If the collection holds more than [limit] items, the string
+     * is terminated with [truncated].
+     */
+    @JvmOverloads
+    public inline fun joinToString(
+        separator: CharSequence = ", ",
+        prefix: CharSequence = "",
+        postfix: CharSequence = "", // I know this should be suffix, but this is kotlin's name
+        limit: Int = -1,
+        truncated: CharSequence = "...",
+        crossinline transform: (Float) -> CharSequence
+    ): String = buildString {
+        append(prefix)
+        this@FloatList.forEachIndexed { index, element ->
+            if (index == limit) {
+                append(truncated)
+                return@buildString
+            }
+            if (index != 0) {
+                append(separator)
+            }
+            append(transform(element))
+        }
+        append(postfix)
+    }
+
+    /**
      * Returns a hash code based on the contents of the [FloatList].
      */
     override fun hashCode(): Int {
@@ -449,23 +519,7 @@ public sealed class FloatList(initialCapacity: Int) {
      * Returns a String representation of the list, surrounded by "[]" and each element
      * separated by ", ".
      */
-    override fun toString(): String {
-        if (isEmpty()) {
-            return "[]"
-        }
-        val last = lastIndex
-        return buildString {
-            append('[')
-            val content = content
-            for (i in 0 until last) {
-                append(content[i])
-                append(',')
-                append(' ')
-            }
-            append(content[last])
-            append(']')
-        }
-    }
+    override fun toString(): String = joinToString(prefix = "[", postfix = "]")
 }
 
 /**
@@ -835,17 +889,80 @@ public class MutableFloatList(
     }
 }
 
-// Empty array used when nothing is allocated
-@Suppress("PrivatePropertyName")
-private val EmptyFloatArray = FloatArray(0)
+private val EmptyFloatList: FloatList = MutableFloatList(0)
 
 /**
- * Creates and returns an empty [MutableFloatList] with the default capacity.
+ * @return a read-only [FloatList] with nothing in it.
+ */
+public fun emptyFloatList(): FloatList = EmptyFloatList
+
+/**
+ * @return a read-only [FloatList] with nothing in it.
+ */
+public fun floatListOf(): FloatList = EmptyFloatList
+
+/**
+ * @return a new read-only [FloatList] with [element1] as the only item in the list.
+ */
+public fun floatListOf(element1: Float): FloatList = mutableFloatListOf(element1)
+
+/**
+ * @return a new read-only [FloatList] with 2 elements, [element1] and [element2], in order.
+ */
+public fun floatListOf(element1: Float, element2: Float): FloatList =
+    mutableFloatListOf(element1, element2)
+
+/**
+ * @return a new read-only [FloatList] with 3 elements, [element1], [element2], and [element3],
+ * in order.
+ */
+public fun floatListOf(element1: Float, element2: Float, element3: Float): FloatList =
+    mutableFloatListOf(element1, element2, element3)
+
+/**
+ * @return a new read-only [FloatList] with [elements] in order.
+ */
+public fun floatListOf(vararg elements: Float): FloatList =
+    MutableFloatList(elements.size).apply { plusAssign(elements) }
+
+/**
+ * @return a new empty [MutableFloatList] with the default capacity.
  */
 public inline fun mutableFloatListOf(): MutableFloatList = MutableFloatList()
 
 /**
- * Creates and returns a [MutableFloatList] with the given values.
+ * @return a new [MutableFloatList] with [element1] as the only item in the list.
+ */
+public fun mutableFloatListOf(element1: Float): MutableFloatList {
+    val list = MutableFloatList(1)
+    list += element1
+    return list
+}
+
+/**
+ * @return a new [MutableFloatList] with 2 elements, [element1] and [element2], in order.
+ */
+public fun mutableFloatListOf(element1: Float, element2: Float): MutableFloatList {
+    val list = MutableFloatList(2)
+    list += element1
+    list += element2
+    return list
+}
+
+/**
+ * @return a new [MutableFloatList] with 3 elements, [element1], [element2], and [element3],
+ * in order.
+ */
+public fun mutableFloatListOf(element1: Float, element2: Float, element3: Float): MutableFloatList {
+    val list = MutableFloatList(3)
+    list += element1
+    list += element2
+    list += element3
+    return list
+}
+
+/**
+ * @return a new [MutableFloatList] with the given elements, in order.
  */
 public inline fun mutableFloatListOf(vararg elements: Float): MutableFloatList =
-    MutableFloatList(elements.size).also { it.addAll(elements) }
+    MutableFloatList(elements.size).apply { plusAssign(elements) }

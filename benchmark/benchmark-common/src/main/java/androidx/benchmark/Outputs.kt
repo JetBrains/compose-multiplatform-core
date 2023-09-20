@@ -32,6 +32,8 @@ object Outputs {
 
     private val formatter: SimpleDateFormat = SimpleDateFormat("yyyy-MM-dd-HH-mm-ss")
 
+    private val sanitizerRegex = Regex("(\\W+)")
+
     /**
      * The intended output directory that respects the `additionalTestOutputDir`.
      */
@@ -115,7 +117,6 @@ object Outputs {
      */
     fun writeFile(
         fileName: String,
-        reportKey: String,
         reportOnRunEndOnly: Boolean = false,
         block: (file: File) -> Unit,
     ): String {
@@ -141,7 +142,7 @@ object Outputs {
         }
 
         InstrumentationResults.reportAdditionalFileToCopy(
-            key = reportKey,
+            key = sanitizedName,
             absoluteFilePath = destination.absolutePath,
             reportOnRunEndOnly = reportOnRunEndOnly
         )
@@ -149,12 +150,15 @@ object Outputs {
     }
 
     fun sanitizeFilename(filename: String): String {
-        return filename
-            .replace(" ", "")
-            .replace("(", "[")
-            .replace(")", "]")
-            .replace("=", "-") // fix trace copying in AndroidX CI
-            .replace(":", "-") // avoid perm error when writing on API 33
+        val index = filename.lastIndexOf('.')
+        return if (index <= 0) {
+            filename.replace(sanitizerRegex, "_")
+        } else {
+            val name = filename.substring(0 until index)
+            val extension = filename.substring(index)
+            val sanitized = name.replace(sanitizerRegex, "_")
+            "$sanitized$extension"
+        }
     }
 
     fun testOutputFile(filename: String): File {

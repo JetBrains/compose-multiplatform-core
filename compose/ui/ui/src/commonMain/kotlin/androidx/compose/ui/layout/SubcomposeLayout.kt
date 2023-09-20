@@ -567,15 +567,16 @@ internal class LayoutNodeSubcompositionsState(
                         node.resetLayoutState()
                         if (deactivate) {
                             nodeState.composition?.deactivate()
+                            nodeState.activeState = mutableStateOf(false)
+                        } else {
+                            nodeState.active = false
                         }
                         // create a new instance to avoid change notifications
-                        nodeState.activeState = mutableStateOf(false)
                         nodeState.slotId = ReusedSlotId
                     }
                 }
             }
             slotIdToNode.clear()
-            Snapshot.sendApplyNotifications()
         }
 
         makeSureStateIsConsistent()
@@ -673,7 +674,6 @@ internal class LayoutNodeSubcompositionsState(
             nodeState.activeState = mutableStateOf(true)
             nodeState.forceReuse = true
             nodeState.forceRecompose = true
-            Snapshot.sendApplyNotifications()
             node
         }
     }
@@ -739,7 +739,7 @@ internal class LayoutNodeSubcompositionsState(
         "layouts is not supported. This includes components that are built on top of " +
         "SubcomposeLayout, such as lazy lists, BoxWithConstraints, TabRow, etc. To mitigate " +
         "this:\n" +
-        "- if intrinsic measurements are used to achieve 'match parent' sizing,, consider " +
+        "- if intrinsic measurements are used to achieve 'match parent' sizing, consider " +
         "replacing the parent of the component with a custom layout which controls the order in " +
         "which children are measured, making intrinsic measurement not needed\n" +
         "- adding a size modifier to the component, in order to fast return the queried " +

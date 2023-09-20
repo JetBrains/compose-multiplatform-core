@@ -23,13 +23,14 @@ import androidx.compose.foundation.gestures.ScrollableState
 import androidx.compose.foundation.interaction.InteractionSource
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.lazy.layout.AwaitFirstLayoutModifier
-import androidx.compose.foundation.lazy.layout.LazyAnimateScrollScope
+import androidx.compose.foundation.lazy.layout.LazyLayoutAnimateScrollScope
 import androidx.compose.foundation.lazy.layout.LazyLayoutBeyondBoundsInfo
 import androidx.compose.foundation.lazy.layout.LazyLayoutItemProvider
 import androidx.compose.foundation.lazy.layout.LazyLayoutPinnedItemList
 import androidx.compose.foundation.lazy.layout.LazyLayoutPrefetchState
 import androidx.compose.foundation.lazy.layout.LazyLayoutPrefetchState.PrefetchHandle
 import androidx.compose.foundation.lazy.layout.animateScrollToItem
+import androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridLaneInfo.Companion.FullSpan
 import androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridLaneInfo.Companion.Unset
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
@@ -156,7 +157,7 @@ class LazyStaggeredGridState private constructor(
     override var canScrollBackward: Boolean by mutableStateOf(false)
         private set
 
-    /** implementation of [LazyAnimateScrollScope] scope required for [animateScrollToItem] */
+    /** implementation of [LazyLayoutAnimateScrollScope] scope required for [animateScrollToItem] */
     private val animateScrollScope = LazyStaggeredGridAnimateScrollScope(this)
 
     internal var remeasurement: Remeasurement? = null
@@ -303,6 +304,7 @@ class LazyStaggeredGridState private constructor(
         }
     }
 
+    private val numOfItemsToTeleport: Int get() = 100 * laneCount
     /**
      * Animate (smooth scroll) to the given item.
      *
@@ -316,7 +318,7 @@ class LazyStaggeredGridState private constructor(
         index: Int,
         scrollOffset: Int = 0
     ) {
-        animateScrollScope.animateScrollToItem(index, scrollOffset)
+        animateScrollScope.animateScrollToItem(index, scrollOffset, numOfItemsToTeleport, density)
     }
 
     internal fun ScrollScope.snapToItemInternal(index: Int, scrollOffset: Int) {
@@ -459,8 +461,18 @@ class LazyStaggeredGridState private constructor(
 
         // reposition spans if needed to ensure valid indices
         laneInfo.ensureValidIndex(itemIndex + laneCount)
-        val previousLane = laneInfo.getLane(itemIndex)
-        val targetLaneIndex = if (previousLane == Unset) 0 else minOf(previousLane, laneCount)
+        val targetLaneIndex =
+            when (val previousLane = laneInfo.getLane(itemIndex)) {
+                // lane was never set or contains obsolete full span (the check for full span above)
+                Unset, FullSpan -> 0
+                // lane was previously set, keep item to the same lane
+                else -> {
+                    require(previousLane >= 0) {
+                        "Expected positive lane number, got $previousLane instead."
+                    }
+                    minOf(previousLane, laneCount)
+                }
+            }
 
         // fill lanes before starting index
         var currentItemIndex = itemIndex

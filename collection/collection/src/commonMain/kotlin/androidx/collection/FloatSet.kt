@@ -28,14 +28,23 @@ package androidx.collection
 
 import kotlin.contracts.contract
 import kotlin.jvm.JvmField
+import kotlin.jvm.JvmOverloads
 
-// This is a copy of ScatterSet, but with Float elements
+// -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+// DO NOT MAKE CHANGES to the kotlin source file.
+//
+// This file was generated from a template in the template directory.
+// Make a change to the original template and run the generateCollections.sh script
+// to ensure the change is available on all versions of the map.
+// -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+// This is a copy of ScatterSet, but with primitive elements
 
 // Default empty set to avoid allocations
 private val EmptyFloatSet = MutableFloatSet(0)
 
 // An empty array of floats
-private val EmptyFloatArray = FloatArray(0)
+internal val EmptyFloatArray = FloatArray(0)
 
 /**
  * Returns an empty, read-only [FloatSet].
@@ -43,17 +52,75 @@ private val EmptyFloatArray = FloatArray(0)
 public fun emptyFloatSet(): FloatSet = EmptyFloatSet
 
 /**
+ * Returns an empty, read-only [ScatterSet].
+ */
+@Suppress("UNCHECKED_CAST")
+public fun floatSetOf(): FloatSet = EmptyFloatSet
+
+/**
+ * Returns a new read-only [FloatSet] with only [element1] in it.
+ */
+@Suppress("UNCHECKED_CAST")
+public fun floatSetOf(element1: Float): FloatSet = mutableFloatSetOf(element1)
+
+/**
+ * Returns a new read-only [FloatSet] with only [element1] and [element2] in it.
+ */
+@Suppress("UNCHECKED_CAST")
+public fun floatSetOf(element1: Float, element2: Float): FloatSet =
+    mutableFloatSetOf(element1, element2)
+
+/**
+ * Returns a new read-only [FloatSet] with only [element1], [element2], and [element3] in it.
+ */
+@Suppress("UNCHECKED_CAST")
+public fun floatSetOf(element1: Float, element2: Float, element3: Float): FloatSet =
+    mutableFloatSetOf(element1, element2, element3)
+
+/**
+ * Returns a new read-only [FloatSet] with only [elements] in it.
+ */
+@Suppress("UNCHECKED_CAST")
+public fun floatSetOf(vararg elements: Float): FloatSet =
+    MutableFloatSet(elements.size).apply { plusAssign(elements) }
+
+/**
  * Returns a new [MutableFloatSet].
  */
 public fun mutableFloatSetOf(): MutableFloatSet = MutableFloatSet()
 
 /**
+ * Returns a new [MutableFloatSet] with only [element1] in it.
+ */
+public fun mutableFloatSetOf(element1: Float): MutableFloatSet =
+    MutableFloatSet(1).apply {
+        plusAssign(element1)
+    }
+
+/**
+ * Returns a new [MutableFloatSet] with only [element1] and [element2] in it.
+ */
+public fun mutableFloatSetOf(element1: Float, element2: Float): MutableFloatSet =
+    MutableFloatSet(2).apply {
+        plusAssign(element1)
+        plusAssign(element2)
+    }
+
+/**
+ * Returns a new [MutableFloatSet] with only [element1], [element2], and [element3] in it.
+ */
+public fun mutableFloatSetOf(element1: Float, element2: Float, element3: Float): MutableFloatSet =
+    MutableFloatSet(3).apply {
+        plusAssign(element1)
+        plusAssign(element2)
+        plusAssign(element3)
+    }
+
+/**
  * Returns a new [MutableFloatSet] with the specified elements.
  */
 public fun mutableFloatSetOf(vararg elements: Float): MutableFloatSet =
-    MutableFloatSet(elements.size).apply {
-        addAll(elements)
-    }
+    MutableFloatSet(elements.size).apply { plusAssign(elements) }
 
 /**
  * [FloatSet] is a container with a [Set]-like interface designed to avoid
@@ -255,6 +322,71 @@ public sealed class FloatSet {
     public operator fun contains(element: Float): Boolean = findElementIndex(element) >= 0
 
     /**
+     * Creates a String from the elements separated by [separator] and using [prefix] before
+     * and [postfix] after, if supplied.
+     *
+     * When a non-negative value of [limit] is provided, a maximum of [limit] items are used
+     * to generate the string. If the collection holds more than [limit] items, the string
+     * is terminated with [truncated].
+     */
+    @JvmOverloads
+    public fun joinToString(
+        separator: CharSequence = ", ",
+        prefix: CharSequence = "",
+        postfix: CharSequence = "", // I know this should be suffix, but this is kotlin's name
+        limit: Int = -1,
+        truncated: CharSequence = "...",
+    ): String = buildString {
+        append(prefix)
+        var index = 0
+        this@FloatSet.forEach { element ->
+            if (index == limit) {
+                append(truncated)
+                return@buildString
+            }
+            if (index != 0) {
+                append(separator)
+            }
+            append(element)
+            index++
+        }
+        append(postfix)
+    }
+
+    /**
+     * Creates a String from the elements separated by [separator] and using [prefix] before
+     * and [postfix] after, if supplied. [transform] dictates how each element will be represented.
+     *
+     * When a non-negative value of [limit] is provided, a maximum of [limit] items are used
+     * to generate the string. If the collection holds more than [limit] items, the string
+     * is terminated with [truncated].
+     */
+    @JvmOverloads
+    public inline fun joinToString(
+        separator: CharSequence = ", ",
+        prefix: CharSequence = "",
+        postfix: CharSequence = "", // I know this should be suffix, but this is kotlin's name
+        limit: Int = -1,
+        truncated: CharSequence = "...",
+        crossinline transform: (Float) -> CharSequence
+    ): String = buildString {
+        append(prefix)
+        var index = 0
+        this@FloatSet.forEach { element ->
+            if (index == limit) {
+                append(truncated)
+                return@buildString
+            }
+            if (index != 0) {
+                append(separator)
+            }
+            append(transform(element))
+            index++
+        }
+        append(postfix)
+    }
+
+    /**
      * Returns the hash code value for this set. The hash code of a set is defined to be the
      * sum of the hash codes of the elements in the set.
      */
@@ -300,23 +432,7 @@ public sealed class FloatSet {
      * Returns a string representation of this set. The set is denoted in the
      * string by the `{}`. Each element is separated by `, `.
      */
-    public override fun toString(): String {
-        if (isEmpty()) {
-            return "[]"
-        }
-
-        val s = StringBuilder().append('[')
-        val last = _size - 1
-        var index = 0
-        forEach { element ->
-            s.append(element)
-            if (index++ < last) {
-                s.append(',').append(' ')
-            }
-        }
-
-        return s.append(']').toString()
-    }
+    override fun toString(): String = joinToString(prefix = "[", postfix = "]")
 
     /**
      * Scans the set to find the index in the backing arrays of the
@@ -712,7 +828,7 @@ public class MutableFloatSet(
  * Returns the hash code of [k]. This follows the [HashSet] default behavior on Android
  * of returning [Object.hashcode()] with the higher bits of hash spread to the lower bits.
  */
-private inline fun hash(k: Float): Int {
+internal inline fun hash(k: Float): Int {
     val hash = k.hashCode()
     return hash xor (hash ushr 16)
 }

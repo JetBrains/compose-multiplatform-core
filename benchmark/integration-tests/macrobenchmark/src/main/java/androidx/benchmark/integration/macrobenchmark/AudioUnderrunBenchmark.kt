@@ -24,7 +24,6 @@ import androidx.benchmark.macro.StartupMode
 import androidx.benchmark.macro.junit4.MacrobenchmarkRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
-import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.UiDevice
 import org.junit.Before
@@ -34,9 +33,8 @@ import org.junit.runner.RunWith
 
 @LargeTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = 23)
 @OptIn(ExperimentalMetricApi::class)
-class AudioUnderrunBenchmark() {
+class AudioUnderrunBenchmark {
     @get:Rule
     val benchmarkRule = MacrobenchmarkRule()
 

@@ -487,6 +487,10 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
         val dackkaTask =
             project.tasks.register("docs", DackkaTask::class.java) { task ->
                 var taskStartTime: LocalDateTime? = null
+                task.argsJsonFile = File(
+                    project.rootProject.getDistributionDirectory(),
+                    "dackkaArgs-${project.name}.json"
+                )
                 task.apply {
                     dependsOn(unzipJvmSourcesTask)
                     dependsOn(unzipSamplesTask)
@@ -519,6 +523,7 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
                     annotationsNotToDisplay = hiddenAnnotations
                     annotationsNotToDisplayJava = hiddenAnnotationsJava
                     annotationsNotToDisplayKotlin = hiddenAnnotationsKotlin
+                    hidingAnnotations = annotationsToHideApis
                     versionMetadataFiles =
                         versionMetadataConfiguration.incoming.artifacts.resolvedArtifacts.map {
                             it.map { it.file }
@@ -699,6 +704,9 @@ private val hiddenAnnotationsKotlin: List<String> = listOf("kotlin.ExtensionFunc
 
 // Annotations which should not be displayed in the Java docs, in addition to hiddenAnnotations
 private val hiddenAnnotationsJava: List<String> = emptyList()
+
+// Annotations which mean the elements they are applied to should be hidden from the docs
+private val annotationsToHideApis: List<String> = listOf("androidx.annotation.RestrictTo")
 
 /** Data class that matches JSON structure of kotlin source set metadata */
 data class ProjectStructureMetadata(var sourceSets: List<SourceSetMetadata>)

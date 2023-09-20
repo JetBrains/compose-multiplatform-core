@@ -90,6 +90,7 @@ package androidx.core.app {
     method public static androidx.core.app.ActivityOptionsCompat makeThumbnailScaleUpAnimation(android.view.View, android.graphics.Bitmap, int, int);
     method public void requestUsageTimeReport(android.app.PendingIntent);
     method public androidx.core.app.ActivityOptionsCompat setLaunchBounds(android.graphics.Rect?);
+    method public androidx.core.app.ActivityOptionsCompat setShareIdentityEnabled(boolean);
     method public android.os.Bundle? toBundle();
     method public void update(androidx.core.app.ActivityOptionsCompat);
     field public static final String EXTRA_USAGE_TIME_REPORT = "android.activity.usage_time";
@@ -896,7 +897,7 @@ package androidx.core.app {
     method public abstract void cancel(String!, int, String!);
     method public abstract void cancelAll(String!);
     method public abstract void notify(String!, int, String!, android.app.Notification!);
-    method public android.os.IBinder! onBind(android.content.Intent!);
+    method @DeprecatedSinceApi(api=19, message="SDKs past 19 have no need for side channeling.") public android.os.IBinder! onBind(android.content.Intent!);
   }
 
   public final class NotificationManagerCompat {
@@ -2899,12 +2900,12 @@ package androidx.core.view {
   @IntDef({androidx.core.view.ContentInfoCompat.SOURCE_APP, androidx.core.view.ContentInfoCompat.SOURCE_CLIPBOARD, androidx.core.view.ContentInfoCompat.SOURCE_INPUT_METHOD, androidx.core.view.ContentInfoCompat.SOURCE_DRAG_AND_DROP, androidx.core.view.ContentInfoCompat.SOURCE_AUTOFILL, androidx.core.view.ContentInfoCompat.SOURCE_PROCESS_TEXT}) @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.SOURCE) public static @interface ContentInfoCompat.Source {
   }
 
-  public class DifferentialMotionFlingHelper {
-    ctor public DifferentialMotionFlingHelper(android.content.Context, androidx.core.view.DifferentialMotionFlingHelper.DifferentialMotionFlingTarget);
+  public class DifferentialMotionFlingController {
+    ctor public DifferentialMotionFlingController(android.content.Context, androidx.core.view.DifferentialMotionFlingTarget);
     method public void onMotionEvent(android.view.MotionEvent, int);
   }
 
-  public static interface DifferentialMotionFlingHelper.DifferentialMotionFlingTarget {
+  public interface DifferentialMotionFlingTarget {
     method public float getScaledScrollFactor();
     method public boolean startDifferentialMotionFling(float);
     method public void stopDifferentialMotionFling();

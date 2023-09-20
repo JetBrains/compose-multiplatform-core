@@ -19,8 +19,11 @@ package androidx.credentials.playservices.controllers.CreatePublicKeyCredential
 import androidx.credentials.GetPublicKeyCredentialOption
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
+import androidx.testutils.assertThrows
 import com.google.android.gms.fido.fido2.api.common.ErrorCode
 import com.google.common.truth.Truth.assertThat
+import org.json.JSONArray
+import org.json.JSONException
 import org.json.JSONObject
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -75,10 +78,8 @@ class PublicKeyCredentialControllerUtilityTest {
         "pubKeyCredParams",
       PublicKeyCredentialControllerUtility.Companion.JSON_KEY_CLIENT_EXTENSION_RESULTS to
         "clientExtensionResults",
-      PublicKeyCredentialControllerUtility.Companion.JSON_KEY_CRED_PROPS to
-          "credProps",
-      PublicKeyCredentialControllerUtility.Companion.JSON_KEY_RK to
-          "rk"
+      PublicKeyCredentialControllerUtility.Companion.JSON_KEY_CRED_PROPS to "credProps",
+      PublicKeyCredentialControllerUtility.Companion.JSON_KEY_RK to "rk"
     )
 
   private val TEST_REQUEST_JSON = "{\"hi\":{\"there\":{\"lol\":\"Value\"}}}"
@@ -148,160 +149,319 @@ class PublicKeyCredentialControllerUtilityTest {
   }
 
   @Test
-  fun toAssertPasskeyResponse_authenticatorAssertionResponse_success() {
-    val byteArrayClientDataJson = byteArrayOf(0x48, 101, 108, 108, 111)
-    val byteArrayAuthenticatorData = byteArrayOf(0x48, 101, 108, 108, 112)
-    val byteArraySignature = byteArrayOf(0x48, 101, 108, 108, 113)
-    val byteArrayUserHandle = byteArrayOf(0x48, 101, 108, 108, 114)
+  fun toCreatePasskeyResponseJson_addAuthenticatorAttestationResponse_success() {
     val json = JSONObject()
-    val publicKeyCredId = "id"
-    val publicKeyCredRawId = byteArrayOf(0x48, 101, 108, 108, 115)
-    val publicKeyCredType = "type"
-    val authenticatorAttachment = "platform"
-    val hasClientExtensionOutputs = true
-    val isDiscoverableCredential = true
-    val expectedClientExtensions = "{\"credProps\":{\"rk\":true}}"
+    val byteArrayClientDataJson = byteArrayOf(0x48, 101, 108, 108, 111)
+    val byteArrayAttestationObject = byteArrayOf(0x48, 101, 108, 108, 112)
+    var transportArray = arrayOf("transport")
 
-    PublicKeyCredentialControllerUtility.beginSignInAssertionResponse(
+    PublicKeyCredentialControllerUtility.addAuthenticatorAttestationResponse(
       byteArrayClientDataJson,
-      byteArrayAuthenticatorData,
-      byteArraySignature,
-      byteArrayUserHandle,
-      json,
-      publicKeyCredId,
-      publicKeyCredRawId,
-      publicKeyCredType,
-      authenticatorAttachment,
-      hasClientExtensionOutputs,
-      isDiscoverableCredential
+      byteArrayAttestationObject,
+      transportArray,
+      json
     )
 
-    assertThat(json.get(PublicKeyCredentialControllerUtility.JSON_KEY_ID))
-      .isEqualTo(publicKeyCredId)
-    assertThat(json.get(PublicKeyCredentialControllerUtility.JSON_KEY_RAW_ID))
-      .isEqualTo(PublicKeyCredentialControllerUtility.b64Encode(publicKeyCredRawId))
-    assertThat(json.get(PublicKeyCredentialControllerUtility.JSON_KEY_TYPE))
-      .isEqualTo(publicKeyCredType)
-    assertThat(json.get(PublicKeyCredentialControllerUtility.JSON_KEY_AUTH_ATTACHMENT))
-      .isEqualTo(authenticatorAttachment)
-    assertThat(json.getJSONObject(PublicKeyCredentialControllerUtility
-      .JSON_KEY_CLIENT_EXTENSION_RESULTS).toString()).isEqualTo(expectedClientExtensions)
+    var response = json.getJSONObject(PublicKeyCredentialControllerUtility.JSON_KEY_RESPONSE)
 
-    // There is some embedded JSON so we should make sure we test that.
-    var embeddedResponse =
-      json.getJSONObject(PublicKeyCredentialControllerUtility.JSON_KEY_RESPONSE)
-    assertThat(embeddedResponse.get(PublicKeyCredentialControllerUtility.JSON_KEY_CLIENT_DATA))
+    assertThat(response.get(PublicKeyCredentialControllerUtility.JSON_KEY_CLIENT_DATA))
       .isEqualTo(PublicKeyCredentialControllerUtility.b64Encode(byteArrayClientDataJson))
-    assertThat(embeddedResponse.get(PublicKeyCredentialControllerUtility.JSON_KEY_AUTH_DATA))
-      .isEqualTo(PublicKeyCredentialControllerUtility.b64Encode(byteArrayAuthenticatorData))
-    assertThat(embeddedResponse.get(PublicKeyCredentialControllerUtility.JSON_KEY_SIGNATURE))
-      .isEqualTo(PublicKeyCredentialControllerUtility.b64Encode(byteArraySignature))
-    assertThat(embeddedResponse.get(PublicKeyCredentialControllerUtility.JSON_KEY_USER_HANDLE))
-      .isEqualTo(PublicKeyCredentialControllerUtility.b64Encode(byteArrayUserHandle))
-
-    // ClientExtensions are another group of embedded JSON
-    var clientExtensions = json.getJSONObject(PublicKeyCredentialControllerUtility
-      .JSON_KEY_CLIENT_EXTENSION_RESULTS)
-    assertThat(clientExtensions.get(PublicKeyCredentialControllerUtility.JSON_KEY_CRED_PROPS))
-      .isNotNull()
-    assertThat(clientExtensions.getJSONObject(PublicKeyCredentialControllerUtility
-      .JSON_KEY_CRED_PROPS).getBoolean(PublicKeyCredentialControllerUtility.JSON_KEY_RK)).isTrue()
+    assertThat(response.get(PublicKeyCredentialControllerUtility.JSON_KEY_ATTESTATION_OBJ))
+      .isEqualTo(PublicKeyCredentialControllerUtility.b64Encode(byteArrayAttestationObject))
+    assertThat(response.get(PublicKeyCredentialControllerUtility.JSON_KEY_TRANSPORTS))
+      .isEqualTo(JSONArray(transportArray))
   }
 
-  fun toAssertPasskeyResponse_authenticatorAssertionResponse_noUserHandle_success() {
-    val byteArrayClientDataJson = byteArrayOf(0x48, 101, 108, 108, 111)
-    val byteArrayAuthenticatorData = byteArrayOf(0x48, 101, 108, 108, 112)
-    val byteArraySignature = byteArrayOf(0x48, 101, 108, 108, 113)
-    val json = JSONObject()
-    val publicKeyCredId = "id"
-    val publicKeyCredRawId = byteArrayOf(0x48, 101, 108, 108, 115)
-    val publicKeyCredType = "type"
-    val authenticatorAttachment = "platform"
-    val hasClientExtensionOutputs = false
+  @Test
+  fun convertJSON_requiredFields_success() {
+    var json =
+      JSONObject(
+        "{" +
+          "\"rp\": {" +
+          "\"id\": \"rpidvalue\"," +
+          "\"name\": \"Name of RP\"," +
+          "\"icon\": \"rpicon.png\"" +
+          "}," +
+          "\"pubKeyCredParams\": [{" +
+          "\"alg\": -7," +
+          "\"type\": \"public-key\"" +
+          "}]," +
+          "\"challenge\": \"dGVzdA==\"," +
+          "\"user\": {" +
+          "\"id\": \"idvalue\"," +
+          "\"name\": \"Name of User\"," +
+          "\"displayName\": \"Display Name of User\"," +
+          "\"icon\": \"icon.png\"" +
+          "}" +
+          "}"
+      )
+    var output = PublicKeyCredentialControllerUtility.convertJSON(json)
 
-    PublicKeyCredentialControllerUtility.beginSignInAssertionResponse(
-      byteArrayClientDataJson,
-      byteArrayAuthenticatorData,
-      byteArraySignature,
-      null,
-      json,
-      publicKeyCredId,
-      publicKeyCredRawId,
-      publicKeyCredType,
-      authenticatorAttachment,
-      hasClientExtensionOutputs,
-      null
-    )
-
-    assertThat(json.get(PublicKeyCredentialControllerUtility.JSON_KEY_ID))
-      .isEqualTo(publicKeyCredId)
-    assertThat(json.get(PublicKeyCredentialControllerUtility.JSON_KEY_RAW_ID))
-      .isEqualTo(PublicKeyCredentialControllerUtility.b64Encode(publicKeyCredRawId))
-    assertThat(json.get(PublicKeyCredentialControllerUtility.JSON_KEY_TYPE))
-      .isEqualTo(publicKeyCredType)
-    assertThat(json.get(PublicKeyCredentialControllerUtility.JSON_KEY_AUTH_ATTACHMENT))
-      .isEqualTo(authenticatorAttachment)
-    assertThat(json.getJSONObject(PublicKeyCredentialControllerUtility
-      .JSON_KEY_CLIENT_EXTENSION_RESULTS).toString()).isEqualTo(JSONObject().toString())
-
-    // There is some embedded JSON so we should make sure we test that.
-    var embeddedResponse =
-      json.getJSONObject(PublicKeyCredentialControllerUtility.JSON_KEY_RESPONSE)
-    assertThat(embeddedResponse.get(PublicKeyCredentialControllerUtility.JSON_KEY_CLIENT_DATA))
-      .isEqualTo(PublicKeyCredentialControllerUtility.b64Encode(byteArrayClientDataJson))
-    assertThat(embeddedResponse.get(PublicKeyCredentialControllerUtility.JSON_KEY_AUTH_DATA))
-      .isEqualTo(PublicKeyCredentialControllerUtility.b64Encode(byteArrayAuthenticatorData))
-    assertThat(embeddedResponse.get(PublicKeyCredentialControllerUtility.JSON_KEY_SIGNATURE))
-      .isEqualTo(PublicKeyCredentialControllerUtility.b64Encode(byteArraySignature))
-    assertThat(embeddedResponse.has(PublicKeyCredentialControllerUtility.JSON_KEY_USER_HANDLE))
-      .isFalse()
+    assertThat(output.user.id).isNotEmpty()
+    assertThat(output.user.name).isEqualTo("Name of User")
+    assertThat(output.user.displayName).isEqualTo("Display Name of User")
+    assertThat(output.user.icon).isEqualTo("icon.png")
+    assertThat(output.challenge).isNotEmpty()
+    assertThat(output.rp.id).isNotEmpty()
+    assertThat(output.rp.name).isEqualTo("Name of RP")
+    assertThat(output.rp.icon).isEqualTo("rpicon.png")
+    assertThat(output.parameters[0].algorithmIdAsInteger).isEqualTo(-7)
+    assertThat(output.parameters[0].typeAsString).isEqualTo("public-key")
   }
 
-  fun toAssertPasskeyResponse_authenticatorAssertionResponse_noAuthenticatorAttachment_success() {
-    val byteArrayClientDataJson = byteArrayOf(0x48, 101, 108, 108, 111)
-    val byteArrayAuthenticatorData = byteArrayOf(0x48, 101, 108, 108, 112)
-    val byteArraySignature = byteArrayOf(0x48, 101, 108, 108, 113)
-    val json = JSONObject()
-    val publicKeyCredId = "id"
-    val publicKeyCredRawId = byteArrayOf(0x48, 101, 108, 108, 115)
-    val publicKeyCredType = "type"
-    val hasClientExtensionOutputs = false
+  @Test
+  fun convertJSON_requiredFields_failOnMissingRpId() {
+    var json =
+      JSONObject(
+        "{" +
+          "\"rp\": {" +
+          "\"name\": \"Name of RP\"," +
+          "\"icon\": \"rpicon.png\"" +
+          "}," +
+          "\"pubKeyCredParams\": [{" +
+          "\"alg\": -7," +
+          "\"type\": \"public-key\"" +
+          "}]," +
+          "\"challenge\": \"dGVzdA==\"," +
+          "\"user\": {" +
+          "\"id\": \"idvalue\"," +
+          "\"name\": \"Name of User\"," +
+          "\"displayName\": \"Display Name of User\"," +
+          "\"icon\": \"icon.png\"" +
+          "}" +
+          "}"
+      )
 
-    PublicKeyCredentialControllerUtility.beginSignInAssertionResponse(
-      byteArrayClientDataJson,
-      byteArrayAuthenticatorData,
-      byteArraySignature,
-      null,
-      json,
-      publicKeyCredId,
-      publicKeyCredRawId,
-      publicKeyCredType,
-      null,
-      hasClientExtensionOutputs,
-      null
-    )
+    assertThrows<JSONException> { PublicKeyCredentialControllerUtility.convertJSON(json) }
+  }
 
-    assertThat(json.get(PublicKeyCredentialControllerUtility.JSON_KEY_ID))
-      .isEqualTo(publicKeyCredId)
-    assertThat(json.get(PublicKeyCredentialControllerUtility.JSON_KEY_RAW_ID))
-      .isEqualTo(PublicKeyCredentialControllerUtility.b64Encode(publicKeyCredRawId))
-    assertThat(json.get(PublicKeyCredentialControllerUtility.JSON_KEY_TYPE))
-      .isEqualTo(publicKeyCredType)
-    assertThat(json.optJSONObject(PublicKeyCredentialControllerUtility.JSON_KEY_AUTH_ATTACHMENT))
-      .isNull()
-    assertThat(json.getJSONObject(PublicKeyCredentialControllerUtility
-      .JSON_KEY_CLIENT_EXTENSION_RESULTS).toString()).isEqualTo(JSONObject().toString())
+  @Test
+  fun convertJSON_requiredFields_failOnMissingRpName() {
+    var json =
+      JSONObject(
+        "{" +
+          "\"rp\": {" +
+          "\"id\": \"rpidvalue\"," +
+          "\"icon\": \"rpicon.png\"" +
+          "}," +
+          "\"pubKeyCredParams\": [{" +
+          "\"alg\": -7," +
+          "\"type\": \"public-key\"" +
+          "}]," +
+          "\"challenge\": \"dGVzdA==\"," +
+          "\"user\": {" +
+          "\"id\": \"idvalue\"," +
+          "\"name\": \"Name of User\"," +
+          "\"displayName\": \"Display Name of User\"," +
+          "\"icon\": \"icon.png\"" +
+          "}" +
+          "}"
+      )
 
-    // There is some embedded JSON so we should make sure we test that.
-    var embeddedResponse =
-      json.getJSONObject(PublicKeyCredentialControllerUtility.JSON_KEY_RESPONSE)
-    assertThat(embeddedResponse.get(PublicKeyCredentialControllerUtility.JSON_KEY_CLIENT_DATA))
-      .isEqualTo(PublicKeyCredentialControllerUtility.b64Encode(byteArrayClientDataJson))
-    assertThat(embeddedResponse.get(PublicKeyCredentialControllerUtility.JSON_KEY_AUTH_DATA))
-      .isEqualTo(PublicKeyCredentialControllerUtility.b64Encode(byteArrayAuthenticatorData))
-    assertThat(embeddedResponse.get(PublicKeyCredentialControllerUtility.JSON_KEY_SIGNATURE))
-      .isEqualTo(PublicKeyCredentialControllerUtility.b64Encode(byteArraySignature))
-    assertThat(embeddedResponse.has(PublicKeyCredentialControllerUtility.JSON_KEY_USER_HANDLE))
-      .isFalse()
+    assertThrows<JSONException> { PublicKeyCredentialControllerUtility.convertJSON(json) }
+  }
+
+  @Test
+  fun convertJSON_requiredFields_failOnMissingRp() {
+    var json =
+      JSONObject(
+        "{" +
+          "\"pubKeyCredParams\": [{" +
+          "\"alg\": -7," +
+          "\"type\": \"public-key\"" +
+          "}]," +
+          "\"challenge\": \"dGVzdA==\"," +
+          "\"user\": {" +
+          "\"id\": \"idvalue\"," +
+          "\"name\": \"Name of User\"," +
+          "\"displayName\": \"Display Name of User\"," +
+          "\"icon\": \"icon.png\"" +
+          "}" +
+          "}"
+      )
+
+    assertThrows<JSONException> { PublicKeyCredentialControllerUtility.convertJSON(json) }
+  }
+
+  @Test
+  fun convertJSON_requiredFields_failOnMissingPubKeyCredParams() {
+    var json =
+      JSONObject(
+        "{" +
+          "\"rp\": {" +
+          "\"id\": \"rpidvalue\"," +
+          "\"name\": \"Name of RP\"," +
+          "\"icon\": \"rpicon.png\"" +
+          "}," +
+          "\"challenge\": \"dGVzdA==\"," +
+          "\"user\": {" +
+          "\"id\": \"idvalue\"," +
+          "\"name\": \"Name of User\"," +
+          "\"displayName\": \"Display Name of User\"," +
+          "\"icon\": \"icon.png\"" +
+          "}" +
+          "}"
+      )
+
+    assertThrows<JSONException> { PublicKeyCredentialControllerUtility.convertJSON(json) }
+  }
+
+  @Test
+  fun convertJSON_requiredFields_failOnMissingChallenge() {
+    var json =
+      JSONObject(
+        "{" +
+          "\"rp\": {" +
+          "\"id\": \"rpidvalue\"," +
+          "\"name\": \"Name of RP\"," +
+          "\"icon\": \"rpicon.png\"" +
+          "}," +
+          "\"pubKeyCredParams\": [{" +
+          "\"alg\": -7," +
+          "\"type\": \"public-key\"" +
+          "}]," +
+          "\"user\": {" +
+          "\"id\": \"idvalue\"," +
+          "\"name\": \"Name of User\"," +
+          "\"displayName\": \"Display Name of User\"," +
+          "\"icon\": \"icon.png\"" +
+          "}" +
+          "}"
+      )
+
+    assertThrows<JSONException> { PublicKeyCredentialControllerUtility.convertJSON(json) }
+  }
+
+  @Test
+  fun convertJSON_requiredFields_failOnMissingUser() {
+    var json =
+      JSONObject(
+        "{" +
+          "\"rp\": {" +
+          "\"id\": \"rpidvalue\"," +
+          "\"name\": \"Name of RP\"," +
+          "\"icon\": \"rpicon.png\"" +
+          "}," +
+          "\"pubKeyCredParams\": [{" +
+          "\"alg\": -7," +
+          "\"type\": \"public-key\"" +
+          "}]," +
+          "\"challenge\": \"dGVzdA==\"" +
+          "}"
+      )
+
+    assertThrows<JSONException> { PublicKeyCredentialControllerUtility.convertJSON(json) }
+  }
+
+  @Test
+  fun convertJSON_requiredFields_failOnMissingUserId() {
+    var json =
+      JSONObject(
+        "{" +
+          "\"rp\": {" +
+          "\"id\": \"rpidvalue\"," +
+          "\"name\": \"Name of RP\"," +
+          "\"icon\": \"rpicon.png\"" +
+          "}," +
+          "\"pubKeyCredParams\": [{" +
+          "\"alg\": -7," +
+          "\"type\": \"public-key\"" +
+          "}]," +
+          "\"challenge\": \"dGVzdA==\"," +
+          "\"user\": {" +
+          "\"name\": \"Name of User\"," +
+          "\"displayName\": \"Display Name of User\"," +
+          "\"icon\": \"icon.png\"" +
+          "}" +
+          "}"
+      )
+
+    assertThrows<JSONException> { PublicKeyCredentialControllerUtility.convertJSON(json) }
+  }
+
+  @Test
+  fun convertJSON_requiredFields_failOnMissingUserName() {
+    var json =
+      JSONObject(
+        "{" +
+          "\"rp\": {" +
+          "\"id\": \"rpidvalue\"," +
+          "\"name\": \"Name of RP\"," +
+          "\"icon\": \"rpicon.png\"" +
+          "}," +
+          "\"pubKeyCredParams\": [{" +
+          "\"alg\": -7," +
+          "\"type\": \"public-key\"" +
+          "}]," +
+          "\"challenge\": \"dGVzdA==\"," +
+          "\"user\": {" +
+          "\"id\": \"idvalue\"," +
+          "\"displayName\": \"Display Name of User\"," +
+          "\"icon\": \"icon.png\"" +
+          "}" +
+          "}"
+      )
+
+    assertThrows<JSONException> { PublicKeyCredentialControllerUtility.convertJSON(json) }
+  }
+
+  @Test
+  fun convertJSON_requiredFields_failOnMissingUserDisplayName() {
+    var json =
+      JSONObject(
+        "{" +
+          "\"rp\": {" +
+          "\"id\": \"rpidvalue\"," +
+          "\"name\": \"Name of RP\"," +
+          "\"icon\": \"rpicon.png\"" +
+          "}," +
+          "\"pubKeyCredParams\": [{" +
+          "\"alg\": -7," +
+          "\"type\": \"public-key\"" +
+          "}]," +
+          "\"challenge\": \"dGVzdA==\"," +
+          "\"user\": {" +
+          "\"id\": \"idvalue\"," +
+          "\"name\": \"Name of User\"," +
+          "\"icon\": \"icon.png\"" +
+          "}" +
+          "}"
+      )
+
+    assertThrows<JSONException> { PublicKeyCredentialControllerUtility.convertJSON(json) }
+  }
+
+  @Test
+  fun convertJSON_optionalFields_extensions_success() {
+    var json =
+      JSONObject(
+        "{" +
+          "\"rp\": {" +
+          "\"id\": \"rpidvalue\"," +
+          "\"name\": \"Name of RP\"," +
+          "\"icon\": \"rpicon.png\"" +
+          "}," +
+          "\"extensions\": {" +
+          "\"appid\": \"https://www.android.com/appid1\"," +
+          "\"uvm\": true" +
+          "}," +
+          "\"pubKeyCredParams\": [{" +
+          "\"alg\": -7," +
+          "\"type\": \"public-key\"" +
+          "}]," +
+          "\"challenge\": \"dGVzdA==\"," +
+          "\"user\": {" +
+          "\"id\": \"idvalue\"," +
+          "\"name\": \"Name of User\"," +
+          "\"displayName\": \"Display Name of User\"," +
+          "\"icon\": \"icon.png\"" +
+          "}" +
+          "}"
+      )
+    var output = PublicKeyCredentialControllerUtility.convertJSON(json)
+
+    assertThat(output.authenticationExtensions!!.fidoAppIdExtension!!.appId)
+      .isEqualTo("https://www.android.com/appid1")
+    assertThat(output.authenticationExtensions!!.userVerificationMethodExtension!!.uvm).isTrue()
   }
 }
