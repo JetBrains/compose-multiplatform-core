@@ -27,10 +27,10 @@ internal object PerfettoNative {
     object Metadata {
         const val version = "1.0.0-beta03"
         val checksums = mapOf(
-            "arm64-v8a" to "5923df8e91baefd05153fc29d1d1affb7c8bfb85a587908ef56ce9fec13dbbbb",
-            "armeabi-v7a" to "1231a6cd88ae1972faf1469a02d3b3b00a9981171f145c9d6bbbf4facb066920",
-            "x86" to "a2d7623ff54d45bbaf496aa87409a9484bfe7caa4ff2b2116efa0a16325675cf",
-            "x86_64" to "dee5ac0d8f1a47357c49efa5e384579a8609f6fddff5171426b897c26019b410",
+            "arm64-v8a" to "e11502d6fa0c949774a792c2406744a1fff112ba26e6af19a6722dd55a6061ca",
+            "armeabi-v7a" to "cd286085893cc7760b658f48b436fd317493159dcbab680667c0bf01d25ffb04",
+            "x86" to "2679c351d40e405e46dec58c8f63570eb29196cd9e67404cf66abe74bc933a88",
+            "x86_64" to "2971a9135cd69feb2a4e3c7b42f6b52469421713331cdb7a841c1c8cc707b637",
         )
     }
 

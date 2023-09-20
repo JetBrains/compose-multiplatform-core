@@ -97,6 +97,11 @@ fun Project.configureSourceJarForAndroid(extension: LibraryExtension) {
             }
         }
     }
+
+    val disableNames = setOf(
+        "releaseSourcesJar",
+    )
+    disableUnusedSourceJarTasks(disableNames)
 }
 
 /** Sets up a source jar task for a Java library project. */
@@ -128,6 +133,11 @@ fun Project.configureSourceJarForJava() {
             }
         }
     registerSourcesVariant(sourceJar)
+
+    val disableNames = setOf(
+        "kotlinSourcesJar",
+    )
+    disableUnusedSourceJarTasks(disableNames)
 }
 
 fun Project.configureSourceJarForMultiplatform() {
@@ -161,6 +171,18 @@ fun Project.configureSourceJarForMultiplatform() {
             task.metaInf.from(metadataFile)
         }
     registerMultiplatformSourcesVariant(sourceJar)
+    val disableNames = setOf(
+        "kotlinSourcesJar",
+    )
+    disableUnusedSourceJarTasks(disableNames)
+}
+
+fun Project.disableUnusedSourceJarTasks(disableNames: Set<String>) {
+    project.tasks.configureEach({ task ->
+        if (disableNames.contains(task.name)) {
+            task.enabled = false
+        }
+    })
 }
 
 internal val Project.multiplatformUsage
@@ -236,7 +258,7 @@ fun createSourceSetMetadata(extension: KotlinMultiplatformExtension): String {
             "commonMain" to
                 mapOf(
                     "name" to commonMain.name,
-                    "dependencies" to commonMain.dependsOn.map { it.name },
+                    "dependencies" to commonMain.dependsOn.map { it.name }.sorted(),
                     "analysisPlatform" to DokkaAnalysisPlatform.COMMON.jsonName
                 )
         )
@@ -245,13 +267,15 @@ fun createSourceSetMetadata(extension: KotlinMultiplatformExtension): String {
             sourceSetsByName.getOrPut(it.name) {
                 mapOf(
                     "name" to it.name,
-                    "dependencies" to it.dependsOn.map { it.name },
+                    "dependencies" to it.dependsOn.map { it.name }.sorted(),
                     "analysisPlatform" to target.docsPlatform().jsonName
                 )
             }
         }
     }
-    val sourceSetMetadata = mutableMapOf("sourceSets" to sourceSetsByName.values)
+    val sourceSetMetadata = mapOf(
+        "sourceSets" to sourceSetsByName.keys.sorted().map { sourceSetsByName[it] }
+    )
     val gson = GsonBuilder().setPrettyPrinting().create()
     return gson.toJson(sourceSetMetadata)
 }

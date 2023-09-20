@@ -20,7 +20,16 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
+import kotlin.test.assertSame
 import kotlin.test.assertTrue
+
+// -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+// DO NOT MAKE CHANGES to the kotlin source file.
+//
+// This file was generated from a template in the template directory.
+// Make a change to the original template and run the generateCollections.sh script
+// to ensure the change is available on all versions of the map.
+// -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 class LongSetTest {
     @Test
@@ -146,9 +155,9 @@ class LongSetTest {
         val set = MutableLongSet()
         set += 1L
         set += 2L
-        var element: Long = Long.MIN_VALUE
-        var otherElement: Long = Long.MIN_VALUE
-        set.forEach { if (element == Long.MIN_VALUE) element = it else otherElement = it }
+        var element: Long = -1L
+        var otherElement: Long = -1L
+        set.forEach { if (element == -1L) element = it else otherElement = it }
         assertEquals(element, set.first())
         set -= element
         assertEquals(otherElement, set.first())
@@ -332,8 +341,37 @@ class LongSetTest {
         set += 1L
         set += 5L
         assertTrue(
-            "[1, 5]" == set.toString() ||
-                "[5, 1]" == set.toString()
+            "[${1L}, ${5L}]" == set.toString() ||
+                "[${5L}, ${1L}]" == set.toString()
+        )
+    }
+
+    @Test
+    fun joinToString() {
+        val set = longSetOf(1L, 2L, 3L, 4L, 5L)
+        val order = IntArray(5)
+        var index = 0
+        set.forEach { element ->
+            order[index++] = element.toInt()
+        }
+        assertEquals(
+            "${order[0].toLong()}, ${order[1].toLong()}, ${order[2].toLong()}, " +
+            "${order[3].toLong()}, ${order[4].toLong()}",
+            set.joinToString()
+        )
+        assertEquals(
+            "x${order[0].toLong()}, ${order[1].toLong()}, ${order[2].toLong()}...",
+            set.joinToString(prefix = "x", postfix = "y", limit = 3)
+        )
+        assertEquals(
+            ">${order[0].toLong()}-${order[1].toLong()}-${order[2].toLong()}-" +
+            "${order[3].toLong()}-${order[4].toLong()}<",
+            set.joinToString(separator = "-", prefix = ">", postfix = "<")
+        )
+        val names = arrayOf("one", "two", "three", "four", "five")
+        assertEquals(
+            "${names[order[0]]}, ${names[order[1]]}, ${names[order[2]]}...",
+            set.joinToString(limit = 3) { names[it.toInt()] }
         )
     }
 
@@ -441,5 +479,85 @@ class LongSetTest {
         set.removeAll(longArrayOf(6L, 8L, 9L, 10L, 11L, 12L, 13L, 14L))
         assertTrue(set.trim() > 0)
         assertEquals(capacity, set.capacity)
+    }
+
+    @Test
+    fun longSetOfEmpty() {
+        assertSame(emptyLongSet(), longSetOf())
+        assertEquals(0, longSetOf().size)
+    }
+
+    @Test
+    fun longSetOfOne() {
+        val set = longSetOf(1L)
+        assertEquals(1, set.size)
+        assertEquals(1L, set.first())
+    }
+
+    @Test
+    fun longSetOfTwo() {
+        val set = longSetOf(1L, 2L)
+        assertEquals(2, set.size)
+        assertTrue(1L in set)
+        assertTrue(2L in set)
+        assertFalse(5L in set)
+    }
+
+    @Test
+    fun longSetOfThree() {
+        val set = longSetOf(1L, 2L, 3L)
+        assertEquals(3, set.size)
+        assertTrue(1L in set)
+        assertTrue(2L in set)
+        assertTrue(3L in set)
+        assertFalse(5L in set)
+    }
+
+    @Test
+    fun longSetOfFour() {
+        val set = longSetOf(1L, 2L, 3L, 4L)
+        assertEquals(4, set.size)
+        assertTrue(1L in set)
+        assertTrue(2L in set)
+        assertTrue(3L in set)
+        assertTrue(4L in set)
+        assertFalse(5L in set)
+    }
+
+    @Test
+    fun mutableLongSetOfOne() {
+        val set = mutableLongSetOf(1L)
+        assertEquals(1, set.size)
+        assertEquals(1L, set.first())
+    }
+
+    @Test
+    fun mutableLongSetOfTwo() {
+        val set = mutableLongSetOf(1L, 2L)
+        assertEquals(2, set.size)
+        assertTrue(1L in set)
+        assertTrue(2L in set)
+        assertFalse(5L in set)
+    }
+
+    @Test
+    fun mutableLongSetOfThree() {
+        val set = mutableLongSetOf(1L, 2L, 3L)
+        assertEquals(3, set.size)
+        assertTrue(1L in set)
+        assertTrue(2L in set)
+        assertTrue(3L in set)
+        assertFalse(5L in set)
+    }
+
+    @Test
+    fun mutableLongSetOfFour() {
+        val set = mutableLongSetOf(1L, 2L, 3L, 4L)
+        assertEquals(4, set.size)
+        assertTrue(1L in set)
+        assertTrue(2L in set)
+        assertTrue(3L in set)
+        assertTrue(4L in set)
+        assertFalse(5L in set)
     }
 }

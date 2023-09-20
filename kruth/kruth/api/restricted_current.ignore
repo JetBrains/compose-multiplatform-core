@@ -1,6 +1,8 @@
 // Baseline format: 1.0
-AddedFinal: androidx.kruth.ComparableSubject#isEquivalentAccordingToCompareTo(T):
-    Method androidx.kruth.ComparableSubject.isEquivalentAccordingToCompareTo has added 'final' qualifier
+AddedAbstractMethod: androidx.kruth.FailureStrategy#fail(Error):
+    Added method androidx.kruth.FailureStrategy.fail(Error)
+
+
 AddedFinal: androidx.kruth.IterableSubject#isInOrder():
     Method androidx.kruth.IterableSubject.isInOrder has added 'final' qualifier
 AddedFinal: androidx.kruth.IterableSubject#isInStrictOrder():
@@ -43,12 +45,22 @@ ChangedType: androidx.kruth.StandardSubjectBuilder#that(T):
     Method androidx.kruth.StandardSubjectBuilder.that has changed return type from androidx.kruth.ClassSubject to androidx.kruth.Subject<T>
 ChangedType: androidx.kruth.StandardSubjectBuilder#that(java.util.Map<K,? extends V>):
     Method androidx.kruth.StandardSubjectBuilder.that has changed return type from androidx.kruth.MapSubject to androidx.kruth.MapSubject<K,V>
+ChangedType: androidx.kruth.Subject#failWithActual(String, Object):
+    Method androidx.kruth.Subject.failWithActual has changed return type from void to Void
 ChangedType: androidx.kruth.Subject.Factory#createSubject(androidx.kruth.FailureMetadata, ActualT):
     Method androidx.kruth.Subject.Factory.createSubject has changed return type from SubjectT (extends androidx.kruth.Subject) to SubjectT (extends androidx.kruth.Subject<? extends ActualT>)
 ChangedType: androidx.kruth.ThrowableSubject#hasCauseThat():
     Method androidx.kruth.ThrowableSubject.hasCauseThat has changed return type from androidx.kruth.ThrowableSubject to androidx.kruth.ThrowableSubject<java.lang.Throwable>
 
 
+InvalidNullConversion: androidx.kruth.MapSubject#containsEntry(K, V) parameter #0:
+    Attempted to change parameter from @Nullable to @NonNull: incompatible change for parameter key in androidx.kruth.MapSubject.containsEntry(K key, V value)
+InvalidNullConversion: androidx.kruth.MapSubject#containsEntry(K, V) parameter #1:
+    Attempted to change parameter from @Nullable to @NonNull: incompatible change for parameter value in androidx.kruth.MapSubject.containsEntry(K key, V value)
+InvalidNullConversion: androidx.kruth.MapSubject#doesNotContainEntry(K, V) parameter #0:
+    Attempted to change parameter from @Nullable to @NonNull: incompatible change for parameter key in androidx.kruth.MapSubject.doesNotContainEntry(K key, V value)
+InvalidNullConversion: androidx.kruth.MapSubject#doesNotContainEntry(K, V) parameter #1:
+    Attempted to change parameter from @Nullable to @NonNull: incompatible change for parameter value in androidx.kruth.MapSubject.doesNotContainEntry(K key, V value)
 InvalidNullConversion: androidx.kruth.SimpleSubjectBuilder#that(T) parameter #0:
     Attempted to change parameter from @Nullable to @NonNull: incompatible change for parameter actual in androidx.kruth.SimpleSubjectBuilder.that(T actual)
 InvalidNullConversion: androidx.kruth.StandardSubjectBuilder#that(T) parameter #0:
@@ -83,8 +95,6 @@ RemovedClass: androidx.kruth.FloatSubject:
     Removed class androidx.kruth.FloatSubject
 RemovedClass: androidx.kruth.GuavaOptionalSubject:
     Removed class androidx.kruth.GuavaOptionalSubject
-RemovedClass: androidx.kruth.IntegerSubject:
-    Removed class androidx.kruth.IntegerSubject
 RemovedClass: androidx.kruth.IterableSubject.UsingCorrespondence:
     Removed class androidx.kruth.IterableSubject.UsingCorrespondence
 RemovedClass: androidx.kruth.LongSubject:
@@ -125,8 +135,6 @@ RemovedClass: androidx.kruth.TruthJUnit:
 
 RemovedInterface: androidx.kruth.Fact:
     Class androidx.kruth.Fact no longer implements java.io.Serializable
-RemovedInterface: androidx.kruth.FailureStrategy:
-    Removed class androidx.kruth.FailureStrategy
 
 
 RemovedMethod: androidx.kruth.ComparableSubject#ComparableSubject(androidx.kruth.FailureMetadata, T):
@@ -135,6 +143,10 @@ RemovedMethod: androidx.kruth.ComparableSubject#isIn(com.google.common.collect.R
     Removed method androidx.kruth.ComparableSubject.isIn(com.google.common.collect.Range<T>)
 RemovedMethod: androidx.kruth.ComparableSubject#isNotIn(com.google.common.collect.Range<T>):
     Removed method androidx.kruth.ComparableSubject.isNotIn(com.google.common.collect.Range<T>)
+RemovedMethod: androidx.kruth.FailureStrategy#fail(AssertionError):
+    Removed method androidx.kruth.FailureStrategy.fail(AssertionError)
+RemovedMethod: androidx.kruth.IntegerSubject#IntegerSubject(androidx.kruth.FailureMetadata, Integer):
+    Removed constructor androidx.kruth.IntegerSubject(androidx.kruth.FailureMetadata,Integer)
 RemovedMethod: androidx.kruth.IterableSubject#IterableSubject(androidx.kruth.FailureMetadata, Iterable<?>):
     Removed constructor androidx.kruth.IterableSubject(androidx.kruth.FailureMetadata,Iterable<?>)
 RemovedMethod: androidx.kruth.IterableSubject#comparingElementsUsing(androidx.kruth.Correspondence<? super A,? super E>):
@@ -147,22 +159,14 @@ RemovedMethod: androidx.kruth.MapSubject#comparingValuesUsing(androidx.kruth.Cor
     Removed method androidx.kruth.MapSubject.comparingValuesUsing(androidx.kruth.Correspondence<? super A,? super E>)
 RemovedMethod: androidx.kruth.MapSubject#containsAtLeast(Object, Object, java.lang.Object...):
     Removed method androidx.kruth.MapSubject.containsAtLeast(Object,Object,java.lang.Object...)
-RemovedMethod: androidx.kruth.MapSubject#containsEntry(Object, Object):
-    Removed method androidx.kruth.MapSubject.containsEntry(Object,Object)
 RemovedMethod: androidx.kruth.MapSubject#containsExactly():
     Removed method androidx.kruth.MapSubject.containsExactly()
 RemovedMethod: androidx.kruth.MapSubject#containsExactly(Object, Object, java.lang.Object...):
     Removed method androidx.kruth.MapSubject.containsExactly(Object,Object,java.lang.Object...)
-RemovedMethod: androidx.kruth.MapSubject#doesNotContainEntry(Object, Object):
-    Removed method androidx.kruth.MapSubject.doesNotContainEntry(Object,Object)
-RemovedMethod: androidx.kruth.MapSubject#doesNotContainKey(Object):
-    Removed method androidx.kruth.MapSubject.doesNotContainKey(Object)
 RemovedMethod: androidx.kruth.MapSubject#formattingDiffsUsing(androidx.kruth.Correspondence.DiffFormatter<? super V,? super V>):
     Removed method androidx.kruth.MapSubject.formattingDiffsUsing(androidx.kruth.Correspondence.DiffFormatter<? super V,? super V>)
 RemovedMethod: androidx.kruth.StandardSubjectBuilder#about(androidx.kruth.CustomSubjectBuilder.Factory<CustomSubjectBuilderT>):
     Removed method androidx.kruth.StandardSubjectBuilder.about(androidx.kruth.CustomSubjectBuilder.Factory<CustomSubjectBuilderT>)
-RemovedMethod: androidx.kruth.StandardSubjectBuilder#forCustomFailureStrategy(androidx.kruth.FailureStrategy):
-    Removed method androidx.kruth.StandardSubjectBuilder.forCustomFailureStrategy(androidx.kruth.FailureStrategy)
 RemovedMethod: androidx.kruth.StandardSubjectBuilder#withMessage(String, java.lang.Object...):
     Removed method androidx.kruth.StandardSubjectBuilder.withMessage(String,java.lang.Object...)
 RemovedMethod: androidx.kruth.StringSubject#StringSubject(androidx.kruth.FailureMetadata, String):
@@ -189,8 +193,6 @@ RemovedMethod: androidx.kruth.Subject#actualCustomStringRepresentation():
     Removed method androidx.kruth.Subject.actualCustomStringRepresentation()
 RemovedMethod: androidx.kruth.Subject#check(String, java.lang.Object...):
     Removed method androidx.kruth.Subject.check(String,java.lang.Object...)
-RemovedMethod: androidx.kruth.Subject#failWithActual(String, Object):
-    Removed method androidx.kruth.Subject.failWithActual(String,Object)
 RemovedMethod: androidx.kruth.Subject#failWithActual(androidx.kruth.Fact, androidx.kruth.Fact...):
     Removed method androidx.kruth.Subject.failWithActual(androidx.kruth.Fact,androidx.kruth.Fact...)
 RemovedMethod: androidx.kruth.Subject#failWithoutActual(androidx.kruth.Fact, androidx.kruth.Fact...):

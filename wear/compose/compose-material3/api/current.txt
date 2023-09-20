@@ -91,6 +91,7 @@ package androidx.wear.compose.material3 {
   }
 
   @androidx.compose.runtime.Immutable public final class CheckboxColors {
+    ctor public CheckboxColors(long checkedBoxColor, long checkedCheckmarkColor, long uncheckedBoxColor, long uncheckedCheckmarkColor, long disabledCheckedBoxColor, long disabledCheckedCheckmarkColor, long disabledUncheckedBoxColor, long disabledUncheckedCheckmarkColor);
     method public long getCheckedBoxColor();
     method public long getCheckedCheckmarkColor();
     method public long getDisabledCheckedBoxColor();
@@ -222,20 +223,20 @@ package androidx.wear.compose.material3 {
   }
 
   public final class IconButtonDefaults {
-    method @androidx.compose.runtime.Composable public androidx.wear.compose.material3.IconButtonColors filledIconButtonColors(optional long containerColor, optional long contentColor);
-    method @androidx.compose.runtime.Composable public androidx.wear.compose.material3.IconButtonColors filledTonalIconButtonColors(optional long containerColor, optional long contentColor);
+    method @androidx.compose.runtime.Composable public androidx.wear.compose.material3.IconButtonColors filledIconButtonColors(optional long containerColor, optional long contentColor, optional long disabledContainerColor, optional long disabledContentColor);
+    method @androidx.compose.runtime.Composable public androidx.wear.compose.material3.IconButtonColors filledTonalIconButtonColors(optional long containerColor, optional long contentColor, optional long disabledContainerColor, optional long disabledContentColor);
     method public float getDefaultButtonSize();
     method public float getDefaultIconSize();
     method public float getExtraSmallButtonSize();
     method public float getLargeButtonSize();
     method public float getLargeIconSize();
-    method public androidx.compose.foundation.shape.RoundedCornerShape getShape();
+    method @androidx.compose.runtime.Composable public androidx.compose.ui.graphics.Shape getShape();
     method public float getSmallButtonSize();
     method public float getSmallIconSize();
     method @androidx.compose.runtime.Composable public androidx.wear.compose.material3.IconButtonColors iconButtonColors(optional long containerColor, optional long contentColor, optional long disabledContainerColor, optional long disabledContentColor);
     method public float iconSizeFor(float size);
     method @androidx.compose.runtime.Composable public androidx.wear.compose.material3.ToggleButtonColors iconToggleButtonColors(optional long checkedContainerColor, optional long checkedContentColor, optional long uncheckedContainerColor, optional long uncheckedContentColor, optional long disabledCheckedContainerColor, optional long disabledCheckedContentColor, optional long disabledUncheckedContainerColor, optional long disabledUncheckedContentColor);
-    method @androidx.compose.runtime.Composable public androidx.wear.compose.material3.IconButtonColors outlinedIconButtonColors(optional long contentColor);
+    method @androidx.compose.runtime.Composable public androidx.wear.compose.material3.IconButtonColors outlinedIconButtonColors(optional long contentColor, optional long disabledContentColor);
     property public final float DefaultButtonSize;
     property public final float DefaultIconSize;
     property public final float ExtraSmallButtonSize;
@@ -243,7 +244,7 @@ package androidx.wear.compose.material3 {
     property public final float LargeIconSize;
     property public final float SmallButtonSize;
     property public final float SmallIconSize;
-    property public final androidx.compose.foundation.shape.RoundedCornerShape shape;
+    property @androidx.compose.runtime.Composable public final androidx.compose.ui.graphics.Shape shape;
     field public static final androidx.wear.compose.material3.IconButtonDefaults INSTANCE;
   }
 
@@ -353,6 +354,7 @@ package androidx.wear.compose.material3 {
   }
 
   @androidx.compose.runtime.Immutable public final class RadioButtonColors {
+    ctor public RadioButtonColors(long selectedColor, long unselectedColor, long disabledSelectedColor, long disabledUnselectedColor);
     method public long getDisabledSelectedColor();
     method public long getDisabledUnselectedColor();
     method public long getSelectedColor();
@@ -431,6 +433,7 @@ package androidx.wear.compose.material3 {
   }
 
   @androidx.compose.runtime.Immutable public final class SwitchColors {
+    ctor public SwitchColors(long checkedThumbColor, long checkedThumbIconColor, long checkedTrackColor, long checkedTrackBorderColor, long uncheckedThumbColor, long uncheckedThumbIconColor, long uncheckedTrackColor, long uncheckedTrackBorderColor, long disabledCheckedThumbColor, long disabledCheckedThumbIconColor, long disabledCheckedTrackColor, long disabledCheckedTrackBorderColor, long disabledUncheckedThumbColor, long disabledUncheckedThumbIconColor, long disabledUncheckedTrackColor, long disabledUncheckedTrackBorderColor);
     method public long getCheckedThumbColor();
     method public long getCheckedThumbIconColor();
     method public long getCheckedTrackBorderColor();
@@ -466,7 +469,7 @@ package androidx.wear.compose.material3 {
   }
 
   public final class SwitchDefaults {
-    method @androidx.compose.runtime.Composable public androidx.wear.compose.material3.SwitchColors colors(optional long checkedThumbColor, optional long checkedThumbIconColor, optional long checkedTrackColor, optional long checkedTrackStrokeColor, optional long uncheckedThumbColor, optional long uncheckedThumbIconColor, optional long uncheckedTrackColor, optional long uncheckedTrackStrokeColor);
+    method @androidx.compose.runtime.Composable public androidx.wear.compose.material3.SwitchColors colors(optional long checkedThumbColor, optional long checkedThumbIconColor, optional long checkedTrackColor, optional long checkedTrackBorderColor, optional long uncheckedThumbColor, optional long uncheckedThumbIconColor, optional long uncheckedTrackColor, optional long uncheckedTrackBorderColor);
     field public static final androidx.wear.compose.material3.SwitchDefaults INSTANCE;
   }
 

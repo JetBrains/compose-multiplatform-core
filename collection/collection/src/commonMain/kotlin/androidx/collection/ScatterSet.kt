@@ -29,6 +29,7 @@ package androidx.collection
 import androidx.collection.internal.EMPTY_OBJECTS
 import kotlin.contracts.contract
 import kotlin.jvm.JvmField
+import kotlin.jvm.JvmOverloads
 
 // This is a copy of ScatterMap, but without values
 
@@ -42,17 +43,75 @@ private val EmptyScatterSet = MutableScatterSet<Any?>(0)
 public fun <E> emptyScatterSet(): ScatterSet<E> = EmptyScatterSet as ScatterSet<E>
 
 /**
+ * Returns an empty, read-only [ScatterSet].
+ */
+@Suppress("UNCHECKED_CAST")
+public fun <E> scatterSetOf(): ScatterSet<E> = EmptyScatterSet as ScatterSet<E>
+
+/**
+ * Returns a new read-only [ScatterSet] with only [element1] in it.
+ */
+@Suppress("UNCHECKED_CAST")
+public fun <E> scatterSetOf(element1: E): ScatterSet<E> = mutableScatterSetOf(element1)
+
+/**
+ * Returns a new read-only [ScatterSet] with only [element1] and [element2] in it.
+ */
+@Suppress("UNCHECKED_CAST")
+public fun <E> scatterSetOf(element1: E, element2: E): ScatterSet<E> =
+    mutableScatterSetOf(element1, element2)
+
+/**
+ * Returns a new read-only [ScatterSet] with only [element1], [element2], and [element3] in it.
+ */
+@Suppress("UNCHECKED_CAST")
+public fun <E> scatterSetOf(element1: E, element2: E, element3: E): ScatterSet<E> =
+    mutableScatterSetOf(element1, element2, element3)
+
+/**
+ * Returns a new read-only [ScatterSet] with only [elements] in it.
+ */
+@Suppress("UNCHECKED_CAST")
+public fun <E> scatterSetOf(vararg elements: E): ScatterSet<E> =
+    MutableScatterSet<E>(elements.size).apply { plusAssign(elements) }
+
+/**
  * Returns a new [MutableScatterSet].
  */
 public fun <E> mutableScatterSetOf(): MutableScatterSet<E> = MutableScatterSet()
 
 /**
+ * Returns a new [MutableScatterSet] with only [element1] in it.
+ */
+public fun <E> mutableScatterSetOf(element1: E): MutableScatterSet<E> =
+    MutableScatterSet<E>(1).apply {
+        plusAssign(element1)
+    }
+
+/**
+ * Returns a new [MutableScatterSet] with only [element1] and [element2] in it.
+ */
+public fun <E> mutableScatterSetOf(element1: E, element2: E): MutableScatterSet<E> =
+    MutableScatterSet<E>(2).apply {
+        plusAssign(element1)
+        plusAssign(element2)
+    }
+
+/**
+ * Returns a new [MutableScatterSet] with only [element1], [element2], and [element3] in it.
+ */
+public fun <E> mutableScatterSetOf(element1: E, element2: E, element3: E): MutableScatterSet<E> =
+    MutableScatterSet<E>(3).apply {
+        plusAssign(element1)
+        plusAssign(element2)
+        plusAssign(element3)
+    }
+
+/**
  * Returns a new [MutableScatterSet] with the specified contents.
  */
 public fun <E> mutableScatterSetOf(vararg elements: E): MutableScatterSet<E> =
-    MutableScatterSet<E>(elements.size).apply {
-        addAll(elements)
-    }
+    MutableScatterSet<E>(elements.size).apply { plusAssign(elements) }
 
 /**
  * [ScatterSet] is a container with a [Set]-like interface based on a flat
@@ -270,6 +329,45 @@ public sealed class ScatterSet<E> {
     public operator fun contains(element: E): Boolean = findElementIndex(element) >= 0
 
     /**
+     * Creates a String from the elements separated by [separator] and using [prefix] before
+     * and [postfix] after, if supplied.
+     *
+     * When a non-negative value of [limit] is provided, a maximum of [limit] items are used
+     * to generate the string. If the collection holds more than [limit] items, the string
+     * is terminated with [truncated].
+     *
+     * [transform] may be supplied to convert each element to a custom String.
+     */
+    @JvmOverloads
+    public fun joinToString(
+        separator: CharSequence = ", ",
+        prefix: CharSequence = "",
+        postfix: CharSequence = "", // I know this should be suffix, but this is kotlin's name
+        limit: Int = -1,
+        truncated: CharSequence = "...",
+        transform: ((E) -> CharSequence)? = null
+    ): String = buildString {
+        append(prefix)
+        var index = 0
+        this@ScatterSet.forEach { element ->
+            if (index == limit) {
+                append(truncated)
+                return@buildString
+            }
+            if (index != 0) {
+                append(separator)
+            }
+            if (transform == null) {
+                append(element)
+            } else {
+                append(transform(element))
+            }
+            index++
+        }
+        append(postfix)
+    }
+
+    /**
      * Returns the hash code value for this set. The hash code of a set is defined to
      * be the sum of the hash codes of the elements in the set, where the hash code
      * of a null element is defined to be zero
@@ -319,22 +417,12 @@ public sealed class ScatterSet<E> {
      * Returns a string representation of this set. The set is denoted in the
      * string by the `[]`. Each element is separated by `, `.
      */
-    public override fun toString(): String {
-        if (isEmpty()) {
-            return "[]"
+    override fun toString(): String = joinToString(prefix = "[", postfix = "]") { element ->
+        if (element === this) {
+            "(this)"
+        } else {
+            element.toString()
         }
-
-        val s = StringBuilder().append('[')
-        val last = _size - 1
-        var index = 0
-        forEach { element ->
-            s.append(if (element === this) "(this)" else element)
-            if (index++ < last) {
-                s.append(',').append(' ')
-            }
-        }
-
-        return s.append(']').toString()
     }
 
     /**
@@ -555,6 +643,18 @@ public class MutableScatterSet<E>(
     }
 
     /**
+     * Adds all the elements in the [elements] set into this set.
+     * @param elements An [ObjectList] whose elements are to be added to the set
+     * @return `true` if any of the specified elements were added to the collection,
+     * `false` if the collection was not modified.
+     */
+    public fun addAll(elements: ObjectList<E>): Boolean {
+        val oldSize = size
+        plusAssign(elements)
+        return oldSize != size
+    }
+
+    /**
      * Adds all the [elements] into this set.
      * @param elements An array of elements to add to the set.
      */
@@ -589,6 +689,16 @@ public class MutableScatterSet<E>(
      * @param elements A [ScatterSet] whose elements are to be added to the set
      */
     public operator fun plusAssign(elements: ScatterSet<E>) {
+        elements.forEach { element ->
+            plusAssign(element)
+        }
+    }
+
+    /**
+     * Adds all the elements in the [elements] set into this set.
+     * @param elements An [ObjectList] whose elements are to be added to the set
+     */
+    public operator fun plusAssign(elements: ObjectList<E>) {
         elements.forEach { element ->
             plusAssign(element)
         }
@@ -666,6 +776,17 @@ public class MutableScatterSet<E>(
 
     /**
      * Removes the specified [elements] from the set, if present.
+     * @param elements An [ObjectList] whose elements should be removed from the set.
+     * @return `true` if the set was changed or `false` if none of the elements were present.
+     */
+    public fun removeAll(elements: ObjectList<E>): Boolean {
+        val oldSize = size
+        minusAssign(elements)
+        return oldSize != size
+    }
+
+    /**
+     * Removes the specified [elements] from the set, if present.
      * @param elements An array of elements to be removed from the set.
      */
     public operator fun minusAssign(@Suppress("ArrayReturn") elements: Array<out E>) {
@@ -704,7 +825,31 @@ public class MutableScatterSet<E>(
         }
     }
 
-    private fun removeElementAt(index: Int) {
+    /**
+     * Removes the specified [elements] from the set, if present.
+     * @param elements An [ObjectList] whose elements should be removed from the set.
+     */
+    public operator fun minusAssign(elements: ObjectList<E>) {
+        elements.forEach { element ->
+            minusAssign(element)
+        }
+    }
+
+    /**
+     * Removes any values for which the specified [predicate] returns true.
+     */
+    public inline fun removeIf(predicate: (E) -> Boolean) {
+        val elements = elements
+        forEachIndex { index ->
+            @Suppress("UNCHECKED_CAST")
+            if (predicate(elements[index] as E)) {
+                removeElementAt(index)
+            }
+        }
+    }
+
+    @PublishedApi
+    internal fun removeElementAt(index: Int) {
         _size -= 1
 
         // TODO: We could just mark the element as empty if there's a group

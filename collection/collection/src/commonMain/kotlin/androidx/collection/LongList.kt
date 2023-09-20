@@ -21,6 +21,15 @@ package androidx.collection
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.contract
 import kotlin.jvm.JvmField
+import kotlin.jvm.JvmOverloads
+
+// -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+// DO NOT MAKE CHANGES to the kotlin source file.
+//
+// This file was generated from a template in the template directory.
+// Make a change to the original template and run the generateCollections.sh script
+// to ensure the change is available on all versions of the map.
+// -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 /**
  * [LongList] is a [List]-like collection for [Long] values. It allows retrieving
@@ -417,6 +426,67 @@ public sealed class LongList(initialCapacity: Int) {
     }
 
     /**
+     * Creates a String from the elements separated by [separator] and using [prefix] before
+     * and [postfix] after, if supplied.
+     *
+     * When a non-negative value of [limit] is provided, a maximum of [limit] items are used
+     * to generate the string. If the collection holds more than [limit] items, the string
+     * is terminated with [truncated].
+     */
+    @JvmOverloads
+    public fun joinToString(
+        separator: CharSequence = ", ",
+        prefix: CharSequence = "",
+        postfix: CharSequence = "", // I know this should be suffix, but this is kotlin's name
+        limit: Int = -1,
+        truncated: CharSequence = "...",
+    ): String = buildString {
+        append(prefix)
+        this@LongList.forEachIndexed { index, element ->
+            if (index == limit) {
+                append(truncated)
+                return@buildString
+            }
+            if (index != 0) {
+                append(separator)
+            }
+            append(element)
+        }
+        append(postfix)
+    }
+
+    /**
+     * Creates a String from the elements separated by [separator] and using [prefix] before
+     * and [postfix] after, if supplied. [transform] dictates how each element will be represented.
+     *
+     * When a non-negative value of [limit] is provided, a maximum of [limit] items are used
+     * to generate the string. If the collection holds more than [limit] items, the string
+     * is terminated with [truncated].
+     */
+    @JvmOverloads
+    public inline fun joinToString(
+        separator: CharSequence = ", ",
+        prefix: CharSequence = "",
+        postfix: CharSequence = "", // I know this should be suffix, but this is kotlin's name
+        limit: Int = -1,
+        truncated: CharSequence = "...",
+        crossinline transform: (Long) -> CharSequence
+    ): String = buildString {
+        append(prefix)
+        this@LongList.forEachIndexed { index, element ->
+            if (index == limit) {
+                append(truncated)
+                return@buildString
+            }
+            if (index != 0) {
+                append(separator)
+            }
+            append(transform(element))
+        }
+        append(postfix)
+    }
+
+    /**
      * Returns a hash code based on the contents of the [LongList].
      */
     override fun hashCode(): Int {
@@ -449,23 +519,7 @@ public sealed class LongList(initialCapacity: Int) {
      * Returns a String representation of the list, surrounded by "[]" and each element
      * separated by ", ".
      */
-    override fun toString(): String {
-        if (isEmpty()) {
-            return "[]"
-        }
-        val last = lastIndex
-        return buildString {
-            append('[')
-            val content = content
-            for (i in 0 until last) {
-                append(content[i])
-                append(',')
-                append(' ')
-            }
-            append(content[last])
-            append(']')
-        }
-    }
+    override fun toString(): String = joinToString(prefix = "[", postfix = "]")
 }
 
 /**
@@ -483,7 +537,7 @@ public sealed class LongList(initialCapacity: Int) {
  * @constructor Creates a [MutableLongList] with a [capacity] of `initialCapacity`.
  */
 public class MutableLongList(
-    initialCapacity: Int = DefaultCapacity
+    initialCapacity: Int = 16
 ) : LongList(initialCapacity) {
     /**
      * Returns the total number of elements that can be held before the [MutableLongList] must
@@ -835,20 +889,80 @@ public class MutableLongList(
     }
 }
 
-@Suppress("ConstPropertyName")
-private const val DefaultCapacity = 16
-
-// Empty array used when nothing is allocated
-@Suppress("PrivatePropertyName")
-private val EmptyLongArray = LongArray(0)
+private val EmptyLongList: LongList = MutableLongList(0)
 
 /**
- * Creates and returns an empty [MutableLongList] with the default capacity.
+ * @return a read-only [LongList] with nothing in it.
+ */
+public fun emptyLongList(): LongList = EmptyLongList
+
+/**
+ * @return a read-only [LongList] with nothing in it.
+ */
+public fun longListOf(): LongList = EmptyLongList
+
+/**
+ * @return a new read-only [LongList] with [element1] as the only item in the list.
+ */
+public fun longListOf(element1: Long): LongList = mutableLongListOf(element1)
+
+/**
+ * @return a new read-only [LongList] with 2 elements, [element1] and [element2], in order.
+ */
+public fun longListOf(element1: Long, element2: Long): LongList =
+    mutableLongListOf(element1, element2)
+
+/**
+ * @return a new read-only [LongList] with 3 elements, [element1], [element2], and [element3],
+ * in order.
+ */
+public fun longListOf(element1: Long, element2: Long, element3: Long): LongList =
+    mutableLongListOf(element1, element2, element3)
+
+/**
+ * @return a new read-only [LongList] with [elements] in order.
+ */
+public fun longListOf(vararg elements: Long): LongList =
+    MutableLongList(elements.size).apply { plusAssign(elements) }
+
+/**
+ * @return a new empty [MutableLongList] with the default capacity.
  */
 public inline fun mutableLongListOf(): MutableLongList = MutableLongList()
 
 /**
- * Creates and returns a [MutableLongList] with the given values.
+ * @return a new [MutableLongList] with [element1] as the only item in the list.
+ */
+public fun mutableLongListOf(element1: Long): MutableLongList {
+    val list = MutableLongList(1)
+    list += element1
+    return list
+}
+
+/**
+ * @return a new [MutableLongList] with 2 elements, [element1] and [element2], in order.
+ */
+public fun mutableLongListOf(element1: Long, element2: Long): MutableLongList {
+    val list = MutableLongList(2)
+    list += element1
+    list += element2
+    return list
+}
+
+/**
+ * @return a new [MutableLongList] with 3 elements, [element1], [element2], and [element3],
+ * in order.
+ */
+public fun mutableLongListOf(element1: Long, element2: Long, element3: Long): MutableLongList {
+    val list = MutableLongList(3)
+    list += element1
+    list += element2
+    list += element3
+    return list
+}
+
+/**
+ * @return a new [MutableLongList] with the given elements, in order.
  */
 public inline fun mutableLongListOf(vararg elements: Long): MutableLongList =
-    MutableLongList(elements.size).also { it.addAll(elements) }
+    MutableLongList(elements.size).apply { plusAssign(elements) }

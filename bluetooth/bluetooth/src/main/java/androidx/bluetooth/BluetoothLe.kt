@@ -25,16 +25,27 @@ import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanResult as FwkScanResult
 import android.bluetooth.le.ScanSettings
 import android.content.Context
+import android.os.Build
 import android.os.ParcelUuid
 import android.util.Log
+import androidx.annotation.DoNotInline
+import androidx.annotation.IntDef
+import androidx.annotation.RequiresApi
 import androidx.annotation.RequiresPermission
 import androidx.annotation.RestrictTo
 import androidx.annotation.VisibleForTesting
 import java.util.UUID
+import kotlin.coroutines.coroutineContext
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.job
 
 /**
  * Entry point for BLE related operations. This class provides a way to perform Bluetooth LE
@@ -42,8 +53,48 @@ import kotlinx.coroutines.flow.callbackFlow
  */
 class BluetoothLe constructor(private val context: Context) {
 
-    private companion object {
+    companion object {
         private const val TAG = "BluetoothLe"
+
+        /** Advertise started successfully. */
+        const val ADVERTISE_STARTED: Int = 101
+
+        /** Advertise failed to start because the data is too large. */
+        const val ADVERTISE_FAILED_DATA_TOO_LARGE: Int = 102
+
+        /** Advertise failed to start because the advertise feature is not supported. */
+        const val ADVERTISE_FAILED_FEATURE_UNSUPPORTED: Int = 103
+
+        /** Advertise failed to start because of an internal error. */
+        const val ADVERTISE_FAILED_INTERNAL_ERROR: Int = 104
+
+        /** Advertise failed to start because of too many advertisers. */
+        const val ADVERTISE_FAILED_TOO_MANY_ADVERTISERS: Int = 105
+    }
+
+    @Target(AnnotationTarget.TYPE)
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    @Retention(AnnotationRetention.SOURCE)
+    @IntDef(
+        ADVERTISE_STARTED,
+        ADVERTISE_FAILED_DATA_TOO_LARGE,
+        ADVERTISE_FAILED_FEATURE_UNSUPPORTED,
+        ADVERTISE_FAILED_INTERNAL_ERROR,
+        ADVERTISE_FAILED_TOO_MANY_ADVERTISERS
+    )
+    annotation class AdvertiseResult
+
+    @RequiresApi(34)
+    private object BluetoothLeApi34Impl {
+        @JvmStatic
+        @DoNotInline
+        fun setDiscoverable(
+            builder: AdvertiseSettings.Builder,
+            isDiscoverable: Boolean
+        ): AdvertiseSettings.Builder {
+            builder.setDiscoverable(isDiscoverable)
+            return builder
+        }
     }
 
     private val bluetoothManager =
@@ -67,39 +118,44 @@ class BluetoothLe constructor(private val context: Context) {
     var onStartScanListener: OnStartScanListener? = null
 
     /**
-     * Returns a _cold_ [Flow] to start Bluetooth LE Advertising.
-     * When the flow is successfully collected, the operation status [AdvertiseResult] will be
-     * delivered via the flow [kotlinx.coroutines.channels.Channel].
+     * Starts Bluetooth LE advertising
      *
-     * @param advertiseParams [AdvertiseParams] for Bluetooth LE advertising
-     * @return a _cold_ [Flow] with [AdvertiseResult] status in the data stream
+     * Note that this method may not complete if the duration is set to 0.
+     * To stop advertising, in that case, you should cancel the coroutine.
+     *
+     * @param advertiseParams [AdvertiseParams] for Bluetooth LE advertising.
+     * @param block an optional block of code that is invoked when advertising is started or failed.
+     *
+     * @throws IllegalArgumentException if the advertise parameters are not valid.
      */
     @RequiresPermission("android.permission.BLUETOOTH_ADVERTISE")
-    fun advertise(advertiseParams: AdvertiseParams): Flow<@AdvertiseResult.ResultType Int> =
-        callbackFlow {
+    suspend fun advertise(
+        advertiseParams: AdvertiseParams,
+        block: (suspend (@AdvertiseResult Int) -> Unit)? = null
+    ) {
+        val result = CompletableDeferred<Int>()
+
         val callback = object : AdvertiseCallback() {
             override fun onStartFailure(errorCode: Int) {
                 Log.d(TAG, "onStartFailure() called with: errorCode = $errorCode")
 
                 when (errorCode) {
                     ADVERTISE_FAILED_DATA_TOO_LARGE ->
-                        trySend(AdvertiseResult.ADVERTISE_FAILED_DATA_TOO_LARGE)
+                        result.complete(BluetoothLe.ADVERTISE_FAILED_DATA_TOO_LARGE)
 
                     ADVERTISE_FAILED_FEATURE_UNSUPPORTED ->
-                        trySend(AdvertiseResult.ADVERTISE_FAILED_FEATURE_UNSUPPORTED)
+                        result.complete(BluetoothLe.ADVERTISE_FAILED_FEATURE_UNSUPPORTED)
 
                     ADVERTISE_FAILED_INTERNAL_ERROR ->
-                        trySend(AdvertiseResult.ADVERTISE_FAILED_INTERNAL_ERROR)
+                        result.complete(BluetoothLe.ADVERTISE_FAILED_INTERNAL_ERROR)
 
                     ADVERTISE_FAILED_TOO_MANY_ADVERTISERS ->
-                        trySend(AdvertiseResult.ADVERTISE_FAILED_TOO_MANY_ADVERTISERS)
+                        result.complete(BluetoothLe.ADVERTISE_FAILED_TOO_MANY_ADVERTISERS)
                 }
             }
 
             override fun onStartSuccess(settingsInEffect: AdvertiseSettings) {
-                Log.d(TAG, "onStartSuccess() called with: settingsInEffect = $settingsInEffect")
-
-                trySend(AdvertiseResult.ADVERTISE_STARTED)
+                result.complete(ADVERTISE_STARTED)
             }
         }
 
@@ -107,9 +163,14 @@ class BluetoothLe constructor(private val context: Context) {
 
         val advertiseSettings = with(AdvertiseSettings.Builder()) {
             setConnectable(advertiseParams.isConnectable)
-            setTimeout(advertiseParams.timeoutMillis)
-            // TODO(b/290697177) Add when AndroidX is targeting Android U
-//            setDiscoverable(advertiseParams.isDiscoverable)
+            advertiseParams.durationMillis.let {
+                if (it !in 0..655350)
+                    throw IllegalArgumentException("advertise duration must be in [0, 655350]")
+                setTimeout(it)
+            }
+            if (Build.VERSION.SDK_INT >= 34) {
+                BluetoothLeApi34Impl.setDiscoverable(this, advertiseParams.isDiscoverable)
+            }
             build()
         }
 
@@ -127,12 +188,20 @@ class BluetoothLe constructor(private val context: Context) {
             build()
         }
 
-        Log.d(TAG, "bleAdvertiser.startAdvertising($advertiseSettings, $advertiseData) called")
         bleAdvertiser?.startAdvertising(advertiseSettings, advertiseData, callback)
 
-        awaitClose {
-            Log.d(TAG, "bleAdvertiser.stopAdvertising() called")
+        coroutineContext.job.invokeOnCompletion {
             bleAdvertiser?.stopAdvertising(callback)
+        }
+        result.await().let {
+            block?.invoke(it)
+            if (it == ADVERTISE_STARTED) {
+                if (advertiseParams.durationMillis > 0) {
+                    delay(advertiseParams.durationMillis.toLong())
+                } else {
+                    awaitCancellation()
+                }
+            }
         }
     }
 
@@ -176,9 +245,20 @@ class BluetoothLe constructor(private val context: Context) {
     interface GattClientScope {
 
         /**
-         * Gets the services discovered from the remote device.
+         * A flow of GATT services discovered from the remote device.
+         *
+         * If the services of the remote device has changed, the new services will be
+         * discovered and emitted automatically.
          */
-        fun getServices(): List<GattService>
+        val servicesFlow: StateFlow<List<GattService>>
+
+        /**
+         * GATT services recently discovered from the remote device.
+         *
+         * Note that this can be changed, subscribe to [servicesFlow] to get notified
+         * of services changes.
+         */
+        val services: List<GattService> get() = servicesFlow.value
 
         /**
          * Gets the service of the remote device by UUID.
@@ -213,12 +293,6 @@ class BluetoothLe constructor(private val context: Context) {
          * Returns a _cold_ [Flow] that contains the indicated value of the given characteristic.
          */
         fun subscribeToCharacteristic(characteristic: GattCharacteristic): Flow<ByteArray>
-
-        /**
-         * Suspends the current coroutine until the pending operations are handled and the
-         * connection is closed, then it invokes the given [block] before resuming the coroutine.
-         */
-        suspend fun awaitClose(block: () -> Unit)
     }
 
     /**
@@ -230,6 +304,7 @@ class BluetoothLe constructor(private val context: Context) {
      * @param device a [BluetoothDevice] to connect to
      * @param block a block of code that is invoked after the connection is made
      *
+     * @throws CancellationException if connect failed or it's canceled
      * @return a result returned by the given block if the connection was successfully finished
      *         or a failure with the corresponding reason
      *
@@ -238,51 +313,41 @@ class BluetoothLe constructor(private val context: Context) {
     suspend fun <R> connectGatt(
         device: BluetoothDevice,
         block: suspend GattClientScope.() -> R
-    ): Result<R> {
+    ): R {
         return client.connect(device, block)
     }
 
     /**
-     * Represents a client connection request from a remote device.
+     * A scope for handling connect requests from remote devices.
      *
-     * @property device the remote device connecting to the server
+     * @property connectRequests connect requests from remote devices.
+     *
+     * @see BluetoothLe#openGattServer
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY)
-    class GattServerConnectionRequest internal constructor(
-        val device: BluetoothDevice,
-        private val server: GattServer,
-        internal val session: GattServer.Session,
-    ) {
+    interface GattServerConnectScope {
         /**
-         * Accepts the connection request and handles incoming requests after that.
-         *
-         * Requests from the client before calling this should be saved.
-         *
-         * @see GattServerScope
+         * A _hot_ flow of [GattServerConnectRequest].
          */
-        suspend fun accept(block: suspend GattServerScope.() -> Unit) {
-            return server.acceptConnection(this, block)
-        }
+        val connectRequests: Flow<GattServerConnectRequest>
 
         /**
-         * Rejects the connection request.
+         * Updates the services of the opened GATT server.
          *
-         * All the requests from the client will be rejected.
+         * @param services the new services that will be notified to the clients.
          */
-        fun reject() {
-            return server.rejectConnection(this)
-        }
+        fun updateServices(services: List<GattService>)
     }
 
     /**
      * A scope for operations as a GATT server role.
      *
+     * A scope is created for each remote device.
+     *
      * Collect [requests] to respond with requests from the client.
      *
-     * @see GattServerConnectionRequest#accept()
+     * @see GattServerConnectRequest#accept()
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY)
-    interface GattServerScope {
+    interface GattServerSessionScope {
         /**
          * A client device connected to the server.
          */
@@ -291,8 +356,8 @@ class BluetoothLe constructor(private val context: Context) {
         /**
          * A _hot_ [Flow] of incoming requests from the client.
          *
-         * A request is either [GattServerRequest.ReadCharacteristicRequest] or
-         * [GattServerRequest.WriteCharacteristicRequest]
+         * A request is either [GattServerRequest.ReadCharacteristic] or
+         * [GattServerRequest.WriteCharacteristics]
          */
         val requests: Flow<GattServerRequest>
 
@@ -301,36 +366,61 @@ class BluetoothLe constructor(private val context: Context) {
          *
          * @param characteristic the updated characteristic
          * @param value the new value of the characteristic
+         *
+         * @return `true` if the notification sent successfully
          */
-        fun notify(characteristic: GattCharacteristic, value: ByteArray)
+        suspend fun notify(characteristic: GattCharacteristic, value: ByteArray): Boolean
+    }
+
+    /**
+     * Represents a connect request from a remote device.
+     *
+     * @property device the remote device connecting to the server
+     */
+    class GattServerConnectRequest internal constructor(
+        private val session: GattServer.Session,
+    ) {
+        val device: BluetoothDevice
+            get() = session.device
+        /**
+         * Accepts the connect request and handles incoming requests after that.
+         *
+         * Requests from the client before calling this should be saved.
+         *
+         * @param block a block of code that is invoked after the connection is made.
+         *
+         * @see GattServerSessionScope
+         */
+        suspend fun accept(block: suspend GattServerSessionScope.() -> Unit) {
+            return session.acceptConnection(block)
+        }
+
+        /**
+         * Rejects the connect request.
+         *
+         * All the requests from the client will be rejected.
+         */
+        fun reject() {
+            return session.rejectConnection()
+        }
     }
 
     /**
      * Opens a GATT server.
      *
-     * It returns a _cold_ [Flow] of connection requests.
-     * If the flow is cancelled, the server will be closed.
      *
      * Only one server at a time can be opened.
      *
-     * @param services the services that will be exposed to the clients.
+     * @param services the services that will be exposed to the clients
+     * @param block a block of code that is invoked after the server is opened
      *
-     * @see GattServerConnectionRequest
+     * @see GattServerConnectRequest
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY)
-    fun openGattServer(services: List<GattService>): Flow<GattServerConnectionRequest> {
-        return server.open(services)
-    }
-
-    /**
-     * Updates the services of the opened GATT server.
-     * It will be ignored if there is no opened server.
-     *
-     * @param services the new services that will be notified to the clients
-     */
-    @RestrictTo(RestrictTo.Scope.LIBRARY)
-    fun updateServices(services: List<GattService>) {
-        server.updateServices(services)
+    suspend fun <R> openGattServer(
+        services: List<GattService>,
+        block: suspend GattServerConnectScope.() -> R
+    ): R {
+        return server.open(services, block)
     }
 
     @VisibleForTesting

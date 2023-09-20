@@ -233,7 +233,7 @@ private fun macrobenchmark(
     // output, and give it different (test-wide) lifecycle
     val perfettoCollector = PerfettoCaptureWrapper()
     val tracePaths = mutableListOf<String>()
-    val resultFiles = mutableListOf<Profiler.ResultFile>()
+    val methodTracingResultFiles = mutableListOf<Profiler.ResultFile>()
     try {
         metrics.forEach {
             it.configure(packageName)
@@ -290,13 +290,14 @@ private fun macrobenchmark(
                             metrics.forEach {
                                 it.stop()
                             }
-                            if (launchWithMethodTracing) {
-                                val (label, tracePath) = scope.stopMethodTracing()
+                            if (launchWithMethodTracing && scope.isMethodTracing) {
+                                val (label, tracePath) = scope.stopMethodTracing(fileLabel)
                                 val resultFile = Profiler.ResultFile(
                                     label = label,
                                     absolutePath = tracePath
                                 )
-                                resultFiles += resultFile
+                                methodTracingResultFiles += resultFile
+                                scope.isMethodTracing = false
                             }
                         }
                     }
@@ -347,12 +348,18 @@ private fun macrobenchmark(
             """.trimIndent()
         }
         InstrumentationResults.instrumentationReport {
+            if (launchWithMethodTracing && methodTracingResultFiles.size < iterations) {
+                warningMessage += "\nNOTE: Method traces cannot be captured during iterations" +
+                    " that start while the target process is already running (including HOT/WARM" +
+                    " launches)."
+            }
+
             reportSummaryToIde(
                 warningMessage = warningMessage,
                 testName = uniqueName,
                 measurements = measurements,
                 iterationTracePaths = tracePaths,
-                profilerResults = resultFiles
+                profilerResults = methodTracingResultFiles
             )
 
             warningMessage = "" // warning only printed once

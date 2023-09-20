@@ -1,16 +1,18 @@
-// Copyright 2023 The Android Open Source Project
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * Copyright 2023 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package androidx.appactions.builtintypes.types
 
 import androidx.appactions.builtintypes.properties.DisambiguatingDescription
@@ -20,6 +22,7 @@ import java.util.Objects
 import kotlin.Any
 import kotlin.Boolean
 import kotlin.Int
+import kotlin.NotImplementedError
 import kotlin.String
 import kotlin.Suppress
 import kotlin.collections.Map
@@ -41,7 +44,9 @@ import kotlin.jvm.JvmStatic
 @Document(name = "bit:Thing")
 public interface Thing {
   /** Represents the AppSearch document's namespace. */
-  @get:Document.Namespace public val namespace: String
+  @get:Document.Namespace
+  public val namespace: String
+    get() = ""
 
   /**
    * A sub property of description. A short description of the item used to disambiguate from other,
@@ -50,7 +55,9 @@ public interface Thing {
    *
    * See https://schema.org/disambiguatingDescription for more context.
    */
-  @get:Document.DocumentProperty public val disambiguatingDescription: DisambiguatingDescription?
+  @get:Document.DocumentProperty
+  public val disambiguatingDescription: DisambiguatingDescription?
+    get() = null
 
   /**
    * The identifier property represents any kind of identifier for any kind of Thing, such as ISBNs,
@@ -58,14 +65,18 @@ public interface Thing {
    *
    * See https://schema.org/identifier for more context.
    */
-  @get:Document.Id public val identifier: String
+  @get:Document.Id
+  public val identifier: String
+    get() = ""
 
   /**
    * The name of the item.
    *
    * See https://schema.org/name for more context.
    */
-  @get:Document.DocumentProperty public val name: Name?
+  @get:Document.DocumentProperty
+  public val name: Name?
+    get() = null
 
   /** Converts this [Thing] to its builder with all the properties copied over. */
   public fun toBuilder(): Builder<*>
@@ -87,25 +98,29 @@ public interface Thing {
     public fun build(): Thing
 
     /** Sets the `namespace`. */
-    public fun setNamespace(namespace: String): Self
+    @Suppress("DocumentExceptions")
+    public fun setNamespace(namespace: String): Self = throw NotImplementedError()
 
     /** Sets the `disambiguatingDescription` to [String]. */
     public fun setDisambiguatingDescription(text: String): Self =
       setDisambiguatingDescription(DisambiguatingDescription(text))
 
     /** Sets the `disambiguatingDescription`. */
+    @Suppress("DocumentExceptions")
     public fun setDisambiguatingDescription(
       disambiguatingDescription: DisambiguatingDescription?
-    ): Self
+    ): Self = throw NotImplementedError()
 
     /** Sets the `identifier`. */
-    public fun setIdentifier(text: String): Self
+    @Suppress("DocumentExceptions")
+    public fun setIdentifier(text: String): Self = throw NotImplementedError()
 
     /** Sets the `name` to [String]. */
     public fun setName(text: String): Self = setName(Name(text))
 
     /** Sets the `name`. */
-    public fun setName(name: Name?): Self
+    @Suppress("DocumentExceptions")
+    public fun setName(name: Name?): Self = throw NotImplementedError()
   }
 }
 

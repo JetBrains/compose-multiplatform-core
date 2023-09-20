@@ -20,7 +20,16 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
+import kotlin.test.assertSame
 import kotlin.test.assertTrue
+
+// -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+// DO NOT MAKE CHANGES to the kotlin source file.
+//
+// This file was generated from a template in the template directory.
+// Make a change to the original template and run the generateCollections.sh script
+// to ensure the change is available on all versions of the map.
+// -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 class IntSetTest {
     @Test
@@ -146,9 +155,9 @@ class IntSetTest {
         val set = MutableIntSet()
         set += 1
         set += 2
-        var element: Int = Int.MIN_VALUE
-        var otherElement: Int = Int.MIN_VALUE
-        set.forEach { if (element == Int.MIN_VALUE) element = it else otherElement = it }
+        var element: Int = -1
+        var otherElement: Int = -1
+        set.forEach { if (element == -1) element = it else otherElement = it }
         assertEquals(element, set.first())
         set -= element
         assertEquals(otherElement, set.first())
@@ -332,8 +341,37 @@ class IntSetTest {
         set += 1
         set += 5
         assertTrue(
-            "[1, 5]" == set.toString() ||
-                "[5, 1]" == set.toString()
+            "[${1}, ${5}]" == set.toString() ||
+                "[${5}, ${1}]" == set.toString()
+        )
+    }
+
+    @Test
+    fun joinToString() {
+        val set = intSetOf(1, 2, 3, 4, 5)
+        val order = IntArray(5)
+        var index = 0
+        set.forEach { element ->
+            order[index++] = element.toInt()
+        }
+        assertEquals(
+            "${order[0].toInt()}, ${order[1].toInt()}, ${order[2].toInt()}, " +
+            "${order[3].toInt()}, ${order[4].toInt()}",
+            set.joinToString()
+        )
+        assertEquals(
+            "x${order[0].toInt()}, ${order[1].toInt()}, ${order[2].toInt()}...",
+            set.joinToString(prefix = "x", postfix = "y", limit = 3)
+        )
+        assertEquals(
+            ">${order[0].toInt()}-${order[1].toInt()}-${order[2].toInt()}-" +
+            "${order[3].toInt()}-${order[4].toInt()}<",
+            set.joinToString(separator = "-", prefix = ">", postfix = "<")
+        )
+        val names = arrayOf("one", "two", "three", "four", "five")
+        assertEquals(
+            "${names[order[0]]}, ${names[order[1]]}, ${names[order[2]]}...",
+            set.joinToString(limit = 3) { names[it.toInt()] }
         )
     }
 
@@ -441,5 +479,85 @@ class IntSetTest {
         set.removeAll(intArrayOf(6, 8, 9, 10, 11, 12, 13, 14))
         assertTrue(set.trim() > 0)
         assertEquals(capacity, set.capacity)
+    }
+
+    @Test
+    fun intSetOfEmpty() {
+        assertSame(emptyIntSet(), intSetOf())
+        assertEquals(0, intSetOf().size)
+    }
+
+    @Test
+    fun intSetOfOne() {
+        val set = intSetOf(1)
+        assertEquals(1, set.size)
+        assertEquals(1, set.first())
+    }
+
+    @Test
+    fun intSetOfTwo() {
+        val set = intSetOf(1, 2)
+        assertEquals(2, set.size)
+        assertTrue(1 in set)
+        assertTrue(2 in set)
+        assertFalse(5 in set)
+    }
+
+    @Test
+    fun intSetOfThree() {
+        val set = intSetOf(1, 2, 3)
+        assertEquals(3, set.size)
+        assertTrue(1 in set)
+        assertTrue(2 in set)
+        assertTrue(3 in set)
+        assertFalse(5 in set)
+    }
+
+    @Test
+    fun intSetOfFour() {
+        val set = intSetOf(1, 2, 3, 4)
+        assertEquals(4, set.size)
+        assertTrue(1 in set)
+        assertTrue(2 in set)
+        assertTrue(3 in set)
+        assertTrue(4 in set)
+        assertFalse(5 in set)
+    }
+
+    @Test
+    fun mutableIntSetOfOne() {
+        val set = mutableIntSetOf(1)
+        assertEquals(1, set.size)
+        assertEquals(1, set.first())
+    }
+
+    @Test
+    fun mutableIntSetOfTwo() {
+        val set = mutableIntSetOf(1, 2)
+        assertEquals(2, set.size)
+        assertTrue(1 in set)
+        assertTrue(2 in set)
+        assertFalse(5 in set)
+    }
+
+    @Test
+    fun mutableIntSetOfThree() {
+        val set = mutableIntSetOf(1, 2, 3)
+        assertEquals(3, set.size)
+        assertTrue(1 in set)
+        assertTrue(2 in set)
+        assertTrue(3 in set)
+        assertFalse(5 in set)
+    }
+
+    @Test
+    fun mutableIntSetOfFour() {
+        val set = mutableIntSetOf(1, 2, 3, 4)
+        assertEquals(4, set.size)
+        assertTrue(1 in set)
+        assertTrue(2 in set)
+        assertTrue(3 in set)
+        assertTrue(4 in set)
+        assertFalse(5 in set)
     }
 }

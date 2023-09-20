@@ -79,6 +79,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastForEachIndexed
+import androidx.compose.ui.util.fastMaxOfOrNull
 import kotlin.math.roundToInt
 import kotlinx.coroutines.CoroutineScope
 
@@ -819,13 +820,14 @@ fun <S> Transition<S>.AnimatedContent(
         }
         if (!contentMap.containsKey(targetState) || !contentMap.containsKey(currentState)) {
             contentMap.clear()
-            val enter = transitionSpec(rootScope).targetContentEnter
-            val exit = rootScope.transitionSpec().initialContentExit
-            val zIndex = transitionSpec(rootScope).targetContentZIndex
             currentlyVisible.fastForEach { stateForContent ->
                 contentMap[stateForContent] = {
+                    // Only update content transform when enter/exit _direction_ changes.
+                    val contentTransform = remember(stateForContent == targetState) {
+                        rootScope.transitionSpec()
+                    }
                     PopulateContentFor(
-                        stateForContent, rootScope, enter, exit, zIndex, currentlyVisible, content
+                        stateForContent, rootScope, contentTransform, currentlyVisible, content
                     )
                 }
             }
@@ -849,7 +851,7 @@ fun <S> Transition<S>.AnimatedContent(
                 }
                 .then(sizeModifier),
             content = {
-                currentlyVisible.forEach {
+                currentlyVisible.fastForEach {
                     key(contentKey(it)) { contentMap[it]?.invoke() }
                 }
             },
@@ -870,33 +872,32 @@ fun <S> Transition<S>.AnimatedContent(
 private inline fun <S> Transition<S>.PopulateContentFor(
     stateForContent: S,
     rootScope: AnimatedContentRootScope<S>,
-    enter: EnterTransition,
-    exit: ExitTransition,
-    zIndex: Float,
+    contentTransform: ContentTransform,
     currentlyVisible: SnapshotStateList<S>,
     crossinline content: @Composable() AnimatedContentScope.(targetState: S) -> Unit
 ) {
-    var activeEnter by remember { mutableStateOf(enter) }
+    var activeEnter by remember { mutableStateOf(contentTransform.targetContentEnter) }
     var activeExit by remember { mutableStateOf(ExitTransition.None) }
-    val targetZIndex = remember { zIndex }
+    val targetZIndex = remember { contentTransform.targetContentZIndex }
 
     val isEntering = targetState == stateForContent
     if (targetState == currentState) {
         // Transition finished, reset active enter & exit.
-        activeEnter = androidx.compose.animation.EnterTransition.None
-        activeExit = androidx.compose.animation.ExitTransition.None
+        activeEnter = EnterTransition.None
+        activeExit = ExitTransition.None
     } else if (isEntering) {
         // If the previous enter transition never finishes when multiple
         // interruptions happen, avoid adding new enter transitions for simplicity.
-        if (activeEnter == androidx.compose.animation.EnterTransition.None)
-            activeEnter += enter
+        if (activeEnter == EnterTransition.None)
+            activeEnter += contentTransform.targetContentEnter
     } else {
         // If the previous exit transition never finishes when multiple
         // interruptions happen, avoid adding new enter transitions for simplicity.
-        if (activeExit == androidx.compose.animation.ExitTransition.None) {
-            activeExit += exit
+        if (activeExit == ExitTransition.None) {
+            activeExit += contentTransform.initialContentExit
         }
     }
+
     val childData = remember { AnimatedContentRootScope.ChildData(stateForContent) }
     AnimatedEnterExitImpl(
         this,
@@ -914,16 +915,15 @@ private inline fun <S> Transition<S>.PopulateContentFor(
             .then(
                 if (isEntering) {
                     activeEnter[ScaleToFitTransitionKey]
-                        ?: activeExit[ScaleToFitTransitionKey] ?: androidx.compose.ui.Modifier
+                        ?: activeExit[ScaleToFitTransitionKey] ?: Modifier
                 } else {
                     activeExit[ScaleToFitTransitionKey]
-                        ?: activeEnter[ScaleToFitTransitionKey] ?: androidx.compose.ui.Modifier
+                        ?: activeEnter[ScaleToFitTransitionKey] ?: Modifier
                 }
             ),
         shouldDisposeBlock = { currentState, targetState ->
-            currentState == androidx.compose.animation.EnterExitState.PostExit &&
-                targetState == androidx.compose.animation.EnterExitState.PostExit &&
-                !activeExit.data.hold
+            currentState == EnterExitState.PostExit &&
+                targetState == EnterExitState.PostExit && !activeExit.data.hold
         },
         onLookaheadMeasured = {
             if (isEntering) rootScope.targetSizeMap.getOrPut(targetState) {
@@ -1044,22 +1044,22 @@ private class AnimatedContentMeasurePolicy<S>(
     override fun IntrinsicMeasureScope.minIntrinsicWidth(
         measurables: List<IntrinsicMeasurable>,
         height: Int
-    ) = measurables.asSequence().map { it.minIntrinsicWidth(height) }.maxOrNull() ?: 0
+    ) = measurables.fastMaxOfOrNull { it.minIntrinsicWidth(height) } ?: 0
 
     override fun IntrinsicMeasureScope.minIntrinsicHeight(
         measurables: List<IntrinsicMeasurable>,
         width: Int
-    ) = measurables.asSequence().map { it.minIntrinsicHeight(width) }.maxOrNull() ?: 0
+    ) = measurables.fastMaxOfOrNull { it.minIntrinsicHeight(width) } ?: 0
 
     override fun IntrinsicMeasureScope.maxIntrinsicWidth(
         measurables: List<IntrinsicMeasurable>,
         height: Int
-    ) = measurables.asSequence().map { it.maxIntrinsicWidth(height) }.maxOrNull() ?: 0
+    ) = measurables.fastMaxOfOrNull { it.maxIntrinsicWidth(height) } ?: 0
 
     override fun IntrinsicMeasureScope.maxIntrinsicHeight(
         measurables: List<IntrinsicMeasurable>,
         width: Int
-    ) = measurables.asSequence().map { it.maxIntrinsicHeight(width) }.maxOrNull() ?: 0
+    ) = measurables.fastMaxOfOrNull { it.maxIntrinsicHeight(width) } ?: 0
 }
 
 private class SizeModifierInLookaheadNode<S>(

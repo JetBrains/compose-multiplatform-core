@@ -345,6 +345,9 @@ private fun Project.configureLint(lint: Lint, isLibrary: Boolean) {
             disable.add("LintError")
         }
 
+        // Disable a check that's only relevant for apps that ship to Play Store. (b/299278101)
+        disable.add("ExpiredTargetSdkVersion")
+
         // Reenable after b/238892319 is resolved
         disable.add("NotificationPermission")
 
@@ -363,11 +366,9 @@ private fun Project.configureLint(lint: Lint, isLibrary: Boolean) {
         // Explicitly disable StopShip check (see b/244617216)
         disable.add("StopShip")
 
-        // Broken in 7.0.0-alpha15 due to b/180408990
+        // Swap the built-in RestrictedApi check for our "fixed" version (see b/297047524)
         disable.add("RestrictedApi")
-
-        // Disable until ag/19949626 goes in (b/261918265)
-        disable.add("MissingQuantity")
+        fatal.add("RestrictedApiAndroidX")
 
         // Provide stricter enforcement for project types intended to run on a device.
         if (extension.type.compilationTarget == CompilationTarget.DEVICE) {

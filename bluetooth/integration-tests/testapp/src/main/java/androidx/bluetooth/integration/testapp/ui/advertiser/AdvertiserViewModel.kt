@@ -32,7 +32,7 @@ class AdvertiserViewModel : ViewModel() {
     var includeDeviceName = false
     var connectable = false
     var discoverable = false
-    var timeoutMillis = 0
+    var durationMillis = 0
     var manufacturerDatas = mutableListOf<Pair<Int, ByteArray>>()
     var serviceDatas = mutableListOf<Pair<UUID, ByteArray>>()
     var serviceUuids = mutableListOf<UUID>()
@@ -56,7 +56,7 @@ class AdvertiserViewModel : ViewModel() {
             includeDeviceName,
             connectable,
             discoverable,
-            timeoutMillis,
+            durationMillis,
             manufacturerDatas.toMap(),
             serviceDatas.toMap(),
             serviceUuids
@@ -85,7 +85,7 @@ class AdvertiserViewModel : ViewModel() {
     fun addGattCharacteristic(service: GattService, characteristic: GattCharacteristic) {
         val index = _gattServerServices.indexOf(service)
         if (index < 0) return;
-        _gattServerServices[index] = GattService.of(service.uuid,
+        _gattServerServices[index] = GattService(service.uuid,
             service.characteristics.toMutableList().apply {
                 add(characteristic)
             }

@@ -20,6 +20,7 @@ import android.Manifest.permission.BLUETOOTH_CONNECT
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothDevice as FwkDevice
 import android.bluetooth.BluetoothGatt
+import android.bluetooth.BluetoothGatt.GATT_SUCCESS
 import android.bluetooth.BluetoothGattCharacteristic as FwkCharacteristic
 import android.bluetooth.BluetoothGattServer
 import android.bluetooth.BluetoothGattServerCallback
@@ -32,13 +33,14 @@ import androidx.annotation.RequiresPermission
 import androidx.annotation.RestrictTo
 import androidx.annotation.VisibleForTesting
 import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.atomic.AtomicReference
+import java.util.concurrent.atomic.AtomicInteger
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.awaitClose
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 /**
  * Class for handling operations as a GATT server role
@@ -66,19 +68,23 @@ class GattServer(private val context: Context) {
         )
     }
 
-    private companion object {
-        private const val TAG = "GattServer"
-    }
-
-    internal class Session {
-        enum class State {
-            DISCONNECTED,
-            CONNECTING,
-            CONNECTED,
+    internal interface Session {
+        companion object {
+            const val STATE_DISCONNECTED = 0
+            const val STATE_CONNECTING = 1
+            const val STATE_CONNECTED = 2
         }
 
-        var state: AtomicReference<State> = AtomicReference(State.CONNECTING)
-        val requestChannel = Channel<GattServerRequest>(Channel.UNLIMITED)
+        val device: BluetoothDevice
+        var pendingWriteParts: MutableList<GattServerRequest.WriteCharacteristics.Part>
+        suspend fun acceptConnection(block: suspend BluetoothLe.GattServerSessionScope.() -> Unit)
+        fun rejectConnection()
+
+        fun sendResponse(requestId: Int, status: Int, offset: Int, value: ByteArray?)
+    }
+
+    private companion object {
+        private const val TAG = "GattServer"
     }
 
     // Should be accessed only from the callback thread
@@ -92,144 +98,232 @@ class GattServer(private val context: Context) {
         if (Build.VERSION.SDK_INT >= 33) FrameworkAdapterApi33()
         else FrameworkAdapterBase()
 
-    fun open(services: List<GattService>):
-        Flow<BluetoothLe.GattServerConnectionRequest> = callbackFlow {
-        attributeMap.updateWithServices(services)
-        val callback = object : BluetoothGattServerCallback() {
-            override fun onConnectionStateChange(
-                device: FwkDevice,
-                status: Int,
-                newState: Int
-            ) {
-                when (newState) {
-                    BluetoothProfile.STATE_CONNECTED -> {
-                        trySend(
-                            BluetoothLe.GattServerConnectionRequest(
-                                BluetoothDevice(device),
-                                this@GattServer,
-                                addSession(device)
-                            )
-                        )
+    suspend fun <R> open(
+        services: List<GattService>,
+        block: suspend BluetoothLe.GattServerConnectScope.() -> R
+    ): R {
+        return createServerScope(services).block()
+    }
+
+    private fun createServerScope(services: List<GattService>): BluetoothLe.GattServerConnectScope {
+        return object : BluetoothLe.GattServerConnectScope {
+            private val attributeMap = AttributeMap()
+            // Should be accessed only from the callback thread
+            private val sessions: MutableMap<FwkDevice, Session> = mutableMapOf()
+            private val notifyMutex = Mutex()
+            private var notifyJob: CompletableDeferred<Boolean>? = null
+
+            override val connectRequests = callbackFlow {
+                    attributeMap.updateWithServices(services)
+                    val callback = object : BluetoothGattServerCallback() {
+                        override fun onConnectionStateChange(
+                            device: FwkDevice,
+                            status: Int,
+                            newState: Int
+                        ) {
+                            when (newState) {
+                                BluetoothProfile.STATE_CONNECTED -> {
+                                    trySend(
+                                        BluetoothLe.GattServerConnectRequest(
+                                            addSession(device)
+                                        )
+                                    )
+                                }
+
+                                BluetoothProfile.STATE_DISCONNECTED -> removeSession(device)
+                            }
+                        }
+
+                        override fun onCharacteristicReadRequest(
+                            device: FwkDevice,
+                            requestId: Int,
+                            offset: Int,
+                            characteristic: FwkCharacteristic
+                        ) {
+                            attributeMap.fromFwkCharacteristic(characteristic)?.let { char ->
+                                findActiveSessionWithDevice(device)?.run {
+                                    requestChannel.trySend(
+                                        GattServerRequest.ReadCharacteristic(
+                                            this, requestId, offset, char
+                                        )
+                                    )
+                                }
+                            } ?: run {
+                                fwkAdapter.sendResponse(
+                                    device, requestId, BluetoothGatt.GATT_READ_NOT_PERMITTED,
+                                    offset, /*value=*/null
+                                )
+                            }
+                        }
+
+                        override fun onCharacteristicWriteRequest(
+                            device: FwkDevice,
+                            requestId: Int,
+                            fwkCharacteristic: FwkCharacteristic,
+                            preparedWrite: Boolean,
+                            responseNeeded: Boolean,
+                            offset: Int,
+                            value: ByteArray
+                        ) {
+                            attributeMap.fromFwkCharacteristic(fwkCharacteristic)?.let { char ->
+                                findActiveSessionWithDevice(device)?.let { session ->
+                                    if (preparedWrite) {
+                                        session.pendingWriteParts.add(
+                                            GattServerRequest.WriteCharacteristics.Part(
+                                                char,
+                                                offset,
+                                                value
+                                            ))
+                                        fwkAdapter.sendResponse(device, requestId,
+                                            BluetoothGatt.GATT_SUCCESS, offset, value)
+                                    } else {
+                                        session.requestChannel.trySend(
+                                            GattServerRequest.WriteCharacteristics(
+                                                session,
+                                                requestId,
+                                                listOf(GattServerRequest.WriteCharacteristics.Part(
+                                                    char,
+                                                    0,
+                                                    value
+                                                ))
+                                            ))
+                                    }
+                                }
+                            } ?: run {
+                                fwkAdapter.sendResponse(device, requestId,
+                                    BluetoothGatt.GATT_WRITE_NOT_PERMITTED, offset, /*value=*/null)
+                            }
+                        }
+
+                        override fun onExecuteWrite(
+                            device: FwkDevice,
+                            requestId: Int,
+                            execute: Boolean
+                        ) {
+                            findActiveSessionWithDevice(device)?.let { session ->
+                                if (execute) {
+                                    session.requestChannel.trySend(
+                                        GattServerRequest.WriteCharacteristics(
+                                            session,
+                                            requestId,
+                                            session.pendingWriteParts
+                                        )
+                                    )
+                                } else {
+                                    fwkAdapter.sendResponse(
+                                        device, requestId,
+                                        BluetoothGatt.GATT_SUCCESS, /*offset=*/0, /*value=*/null
+                                    )
+                                }
+                                session.pendingWriteParts = mutableListOf()
+                            } ?: run {
+                                fwkAdapter.sendResponse(device, requestId,
+                                    BluetoothGatt.GATT_WRITE_NOT_PERMITTED,
+                                    /*offset=*/0, /*value=*/null)
+                            }
+                        }
+
+                        override fun onNotificationSent(
+                            device: android.bluetooth.BluetoothDevice?,
+                            status: Int
+                        ) {
+                            notifyJob?.complete(status == GATT_SUCCESS)
+                            notifyJob = null
+                        }
                     }
-                    BluetoothProfile.STATE_DISCONNECTED -> removeSession(device)
+                    fwkAdapter.openGattServer(context, callback)
+                    services.forEach { fwkAdapter.addService(it.fwkService) }
+
+                    awaitClose {
+                        fwkAdapter.closeGattServer()
+                    }
+                }
+
+            override fun updateServices(services: List<GattService>) {
+                fwkAdapter.clearServices()
+                services.forEach { fwkAdapter.addService(it.fwkService) }
+            }
+
+            fun addSession(device: FwkDevice): Session {
+                return Session(BluetoothDevice(device)).apply {
+                    sessions[device] = this
                 }
             }
 
-            override fun onCharacteristicReadRequest(
-                device: FwkDevice,
-                requestId: Int,
-                offset: Int,
-                characteristic: FwkCharacteristic
-            ) {
-                attributeMap.fromFwkCharacteristic(characteristic)?.let {
-                    findActiveSessionWithDevice(device)?.requestChannel?.trySend(
-                        GattServerRequest.ReadCharacteristicRequest(
-                            this@GattServer, device, requestId, offset, it
+            fun removeSession(device: FwkDevice) {
+                sessions.remove(device)
+            }
+
+            fun findActiveSessionWithDevice(device: FwkDevice): Session? {
+                return sessions[device]?.takeIf {
+                    it.state.get() != GattServer.Session.STATE_DISCONNECTED
+                }
+            }
+
+            inner class Session(override val device: BluetoothDevice) : GattServer.Session {
+
+                val state: AtomicInteger = AtomicInteger(GattServer.Session.STATE_CONNECTING)
+                val requestChannel = Channel<GattServerRequest>(Channel.UNLIMITED)
+                override var pendingWriteParts =
+                    mutableListOf<GattServerRequest.WriteCharacteristics.Part>()
+
+                override suspend fun acceptConnection(
+                    block: suspend BluetoothLe.GattServerSessionScope.() -> Unit
+                ) {
+                    if (!state.compareAndSet(
+                            GattServer.Session.STATE_CONNECTING,
+                            GattServer.Session.STATE_CONNECTED
                         )
-                    )
-                } ?: run {
-                    sendResponse(device, requestId, BluetoothGatt.GATT_READ_NOT_PERMITTED, offset,
-                        /*value=*/null)
-                }
-            }
+                    ) {
+                        throw IllegalStateException("the request is already handled")
+                    }
 
-            override fun onCharacteristicWriteRequest(
-                device: FwkDevice,
-                requestId: Int,
-                characteristic: FwkCharacteristic,
-                preparedWrite: Boolean,
-                responseNeeded: Boolean,
-                offset: Int,
-                value: ByteArray?
-            ) {
-                attributeMap.fromFwkCharacteristic(characteristic)?.let {
-                    findActiveSessionWithDevice(device)?.requestChannel?.trySend(
-                        GattServerRequest.WriteCharacteristicRequest(
-                            this@GattServer,
-                            device,
-                            requestId,
-                            it,
-                            preparedWrite,
-                            responseNeeded,
-                            offset,
-                            value
+                    val scope = object : BluetoothLe.GattServerSessionScope {
+                        override val device: BluetoothDevice
+                            get() = this@Session.device
+                        override val requests = requestChannel.receiveAsFlow()
+
+                        override suspend fun notify(
+                            characteristic: GattCharacteristic,
+                            value: ByteArray
+                        ): Boolean {
+                            notifyMutex.withLock {
+                                CompletableDeferred<Boolean>().also {
+                                    notifyJob = it
+                                    fwkAdapter.notifyCharacteristicChanged(
+                                        device.fwkDevice,
+                                        characteristic.fwkCharacteristic,
+                                        false,
+                                        value
+                                    )
+                                    return it.await()
+                                }
+                            }
+                        }
+                    }
+                    scope.block()
+                }
+
+                override fun rejectConnection() {
+                    if (!state.compareAndSet(
+                            GattServer.Session.STATE_CONNECTING,
+                            GattServer.Session.STATE_DISCONNECTED
                         )
-                    )
-                } ?: run {
-                    sendResponse(device, requestId, BluetoothGatt.GATT_WRITE_NOT_PERMITTED,
-                        offset, /*value=*/null)
+                    ) {
+                        throw IllegalStateException("the request is already handled")
+                    }
+                }
+
+                override fun sendResponse(
+                    requestId: Int,
+                    status: Int,
+                    offset: Int,
+                    value: ByteArray?
+                ) {
+                    fwkAdapter.sendResponse(device.fwkDevice, requestId, status, offset, value)
                 }
             }
         }
-        fwkAdapter.openGattServer(context, callback)
-        services.forEach { fwkAdapter.addService(it.fwkService) }
-
-        awaitClose {
-            fwkAdapter.closeGattServer()
-        }
-    }
-
-    fun updateServices(services: List<GattService>) {
-        fwkAdapter.clearServices()
-        services.forEach { fwkAdapter.addService(it.fwkService) }
-    }
-
-    suspend fun<R> acceptConnection(
-        request: BluetoothLe.GattServerConnectionRequest,
-        block: suspend BluetoothLe.GattServerScope.() -> R
-    ) = coroutineScope {
-        val session = request.session
-        if (!session.state.compareAndSet(Session.State.CONNECTING, Session.State.CONNECTED)) {
-            throw IllegalStateException("the request is already handled")
-        }
-        val scope = object : BluetoothLe.GattServerScope {
-            override val device: BluetoothDevice
-                get() = request.device
-            override val requests = session.requestChannel.receiveAsFlow()
-
-            override fun notify(
-                characteristic: GattCharacteristic,
-                value: ByteArray
-            ) {
-                fwkAdapter.notifyCharacteristicChanged(
-                    request.device.fwkDevice, characteristic.fwkCharacteristic, false, value)
-            }
-        }
-        scope.block()
-    }
-
-    @SuppressLint("MissingPermission")
-    fun rejectConnection(request: BluetoothLe.GattServerConnectionRequest) {
-        if (!request.session.state.compareAndSet(
-                Session.State.CONNECTING, Session.State.DISCONNECTED)) {
-            throw IllegalStateException("the request is already handled")
-        }
-    }
-
-    internal fun findActiveSessionWithDevice(device: FwkDevice): Session? {
-        return sessions[device]?.takeIf {
-            it.state.get() != Session.State.DISCONNECTED
-        }
-    }
-
-    internal fun addSession(device: FwkDevice): Session {
-        return Session().apply {
-            sessions[device] = this
-        }
-    }
-
-    internal fun removeSession(device: FwkDevice) {
-        sessions.remove(device)
-    }
-
-    internal fun sendResponse(
-        device: FwkDevice,
-        requestId: Int,
-        status: Int,
-        offset: Int,
-        value: ByteArray?
-    ) {
-        fwkAdapter.sendResponse(device, requestId, status, offset, value)
     }
 
     private open class FrameworkAdapterBase : FrameworkAdapter {

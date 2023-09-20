@@ -22,6 +22,14 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
 import kotlin.test.assertTrue
 
+// -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+// DO NOT MAKE CHANGES to the kotlin source file.
+//
+// This file was generated from a template in the template directory.
+// Make a change to the original template and run the generateCollections.sh script
+// to ensure the change is available on all versions of the map.
+// -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
 class IntListTest {
     private val list: MutableIntList = mutableIntListOf(1, 2, 3, 4, 5)
 
@@ -80,8 +88,29 @@ class IntListTest {
 
     @Test
     fun string() {
-        assertEquals("[1, 2, 3, 4, 5]", list.toString())
+        assertEquals("[${1}, ${2}, ${3}, ${4}, ${5}]", list.toString())
         assertEquals("[]", mutableIntListOf().toString())
+    }
+
+    @Test
+    fun joinToString() {
+        assertEquals("${1}, ${2}, ${3}, ${4}, ${5}", list.joinToString())
+        assertEquals(
+            "x${1}, ${2}, ${3}...",
+            list.joinToString(prefix = "x", postfix = "y", limit = 3)
+        )
+        assertEquals(
+            ">${1}-${2}-${3}-${4}-${5}<",
+            list.joinToString(separator = "-", prefix = ">", postfix = "<")
+        )
+        assertEquals("one, two, three...", list.joinToString(limit = 3) {
+            when (it.toInt()) {
+                1 -> "one"
+                2 -> "two"
+                3 -> "three"
+                else -> "whoops"
+            }
+        })
     }
 
     @Test
@@ -334,7 +363,7 @@ class IntListTest {
 
     @Test
     fun fold() {
-        assertEquals("12345", list.fold("") { acc, i -> acc + i.toString() })
+        assertEquals("12345", list.fold("") { acc, i -> acc + i.toInt().toString() })
     }
 
     @Test
@@ -342,14 +371,14 @@ class IntListTest {
         assertEquals(
             "01-12-23-34-45-",
             list.foldIndexed("") { index, acc, i ->
-                "$acc$index$i-"
+                "$acc$index${i.toInt()}-"
             }
         )
     }
 
     @Test
     fun foldRight() {
-        assertEquals("54321", list.foldRight("") { i, acc -> acc + i.toString() })
+        assertEquals("54321", list.foldRight("") { i, acc -> acc + i.toInt().toString() })
     }
 
     @Test
@@ -357,7 +386,7 @@ class IntListTest {
         assertEquals(
             "45-34-23-12-01-",
             list.foldRightIndexed("") { index, i, acc ->
-                "$acc$index$i-"
+                "$acc$index${i.toInt()}-"
             }
         )
     }
@@ -627,5 +656,89 @@ class IntListTest {
         val l = mutableIntListOf(1, 4, 2, 5, 3)
         l.sortDescending()
         assertEquals(mutableIntListOf(5, 4, 3, 2, 1), l)
+    }
+
+    @Test
+    fun testEmptyIntList() {
+        val l = emptyIntList()
+        assertEquals(0, l.size)
+    }
+
+    @Test
+    fun intListOfEmpty() {
+        val l = intListOf()
+        assertEquals(0, l.size)
+    }
+
+    @Test
+    fun intListOfOneValue() {
+        val l = intListOf(2)
+        assertEquals(1, l.size)
+        assertEquals(2, l[0])
+    }
+
+    @Test
+    fun intListOfTwoValues() {
+        val l = intListOf(2, 1)
+        assertEquals(2, l.size)
+        assertEquals(2, l[0])
+        assertEquals(1, l[1])
+    }
+
+    @Test
+    fun intListOfThreeValues() {
+        val l = intListOf(2, 10, -1)
+        assertEquals(3, l.size)
+        assertEquals(2, l[0])
+        assertEquals(10, l[1])
+        assertEquals(-1, l[2])
+    }
+
+    @Test
+    fun intListOfFourValues() {
+        val l = intListOf(2, 10, -1, 10)
+        assertEquals(4, l.size)
+        assertEquals(2, l[0])
+        assertEquals(10, l[1])
+        assertEquals(-1, l[2])
+        assertEquals(10, l[3])
+    }
+
+    @Test
+    fun mutableIntListOfOneValue() {
+        val l = mutableIntListOf(2)
+        assertEquals(1, l.size)
+        assertEquals(1, l.capacity)
+        assertEquals(2, l[0])
+    }
+
+    @Test
+    fun mutableIntListOfTwoValues() {
+        val l = mutableIntListOf(2, 1)
+        assertEquals(2, l.size)
+        assertEquals(2, l.capacity)
+        assertEquals(2, l[0])
+        assertEquals(1, l[1])
+    }
+
+    @Test
+    fun mutableIntListOfThreeValues() {
+        val l = mutableIntListOf(2, 10, -1)
+        assertEquals(3, l.size)
+        assertEquals(3, l.capacity)
+        assertEquals(2, l[0])
+        assertEquals(10, l[1])
+        assertEquals(-1, l[2])
+    }
+
+    @Test
+    fun mutableIntListOfFourValues() {
+        val l = mutableIntListOf(2, 10, -1, 10)
+        assertEquals(4, l.size)
+        assertEquals(4, l.capacity)
+        assertEquals(2, l[0])
+        assertEquals(10, l[1])
+        assertEquals(-1, l[2])
+        assertEquals(10, l[3])
     }
 }

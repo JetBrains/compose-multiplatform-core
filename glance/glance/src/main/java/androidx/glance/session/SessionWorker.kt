@@ -27,10 +27,14 @@ import androidx.work.Data
 import androidx.work.WorkerParameters
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
@@ -112,18 +116,36 @@ internal class SessionWorker(
         val frameClock = InteractiveFrameClock(this)
         val snapshotMonitor = launch { globalSnapshotMonitor() }
         val root = session.createRootEmittable()
-        val recomposer = Recomposer(coroutineContext)
-        val composition = Composition(Applier(root), recomposer).apply {
-            setContent(session.provideGlance(applicationContext))
-        }
         val uiReady = MutableStateFlow(false)
+        // Use an independent Job with a CoroutineExceptionHandler so that we can catch errors from
+        // LaunchedEffects in the composition and they won't propagate up to the Worker context.
+        val effectExceptionHandler = CoroutineExceptionHandler { _, throwable ->
+            launch {
+                session.onCompositionError(applicationContext, throwable)
+                session.close()
+                uiReady.emit(true)
+            }
+        }
+        val effectCoroutineContext = coroutineContext + Job() + effectExceptionHandler
+        val recomposer = Recomposer(effectCoroutineContext)
+        val composition = Composition(Applier(root), recomposer)
 
         launch(frameClock) {
-            recomposer.runRecomposeAndApplyChanges()
+            try {
+                composition.setContent(session.provideGlance(applicationContext))
+                recomposer.runRecomposeAndApplyChanges()
+            } catch (e: CancellationException) {
+                // do nothing if we are cancelled.
+            } catch (throwable: Throwable) {
+                session.onCompositionError(applicationContext, throwable)
+                session.close()
+                // Set uiReady to true to resume coroutine waiting on it.
+                uiReady.emit(true)
+            }
         }
         launch {
             var lastRecomposeCount = recomposer.changeCount
-            recomposer.currentState.collect { state ->
+            recomposer.currentState.collectLatest { state ->
                 if (DEBUG) Log.d(TAG, "Recomposer(${session.key}): currentState=$state")
                 when (state) {
                     Recomposer.State.Idle -> {

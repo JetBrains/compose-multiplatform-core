@@ -21,6 +21,15 @@ package androidx.collection
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.contract
 import kotlin.jvm.JvmField
+import kotlin.jvm.JvmOverloads
+
+// -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+// DO NOT MAKE CHANGES to the kotlin source file.
+//
+// This file was generated from a template in the template directory.
+// Make a change to the original template and run the generateCollections.sh script
+// to ensure the change is available on all versions of the map.
+// -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 /**
  * [IntList] is a [List]-like collection for [Int] values. It allows retrieving
@@ -417,6 +426,67 @@ public sealed class IntList(initialCapacity: Int) {
     }
 
     /**
+     * Creates a String from the elements separated by [separator] and using [prefix] before
+     * and [postfix] after, if supplied.
+     *
+     * When a non-negative value of [limit] is provided, a maximum of [limit] items are used
+     * to generate the string. If the collection holds more than [limit] items, the string
+     * is terminated with [truncated].
+     */
+    @JvmOverloads
+    public fun joinToString(
+        separator: CharSequence = ", ",
+        prefix: CharSequence = "",
+        postfix: CharSequence = "", // I know this should be suffix, but this is kotlin's name
+        limit: Int = -1,
+        truncated: CharSequence = "...",
+    ): String = buildString {
+        append(prefix)
+        this@IntList.forEachIndexed { index, element ->
+            if (index == limit) {
+                append(truncated)
+                return@buildString
+            }
+            if (index != 0) {
+                append(separator)
+            }
+            append(element)
+        }
+        append(postfix)
+    }
+
+    /**
+     * Creates a String from the elements separated by [separator] and using [prefix] before
+     * and [postfix] after, if supplied. [transform] dictates how each element will be represented.
+     *
+     * When a non-negative value of [limit] is provided, a maximum of [limit] items are used
+     * to generate the string. If the collection holds more than [limit] items, the string
+     * is terminated with [truncated].
+     */
+    @JvmOverloads
+    public inline fun joinToString(
+        separator: CharSequence = ", ",
+        prefix: CharSequence = "",
+        postfix: CharSequence = "", // I know this should be suffix, but this is kotlin's name
+        limit: Int = -1,
+        truncated: CharSequence = "...",
+        crossinline transform: (Int) -> CharSequence
+    ): String = buildString {
+        append(prefix)
+        this@IntList.forEachIndexed { index, element ->
+            if (index == limit) {
+                append(truncated)
+                return@buildString
+            }
+            if (index != 0) {
+                append(separator)
+            }
+            append(transform(element))
+        }
+        append(postfix)
+    }
+
+    /**
      * Returns a hash code based on the contents of the [IntList].
      */
     override fun hashCode(): Int {
@@ -449,23 +519,7 @@ public sealed class IntList(initialCapacity: Int) {
      * Returns a String representation of the list, surrounded by "[]" and each element
      * separated by ", ".
      */
-    override fun toString(): String {
-        if (isEmpty()) {
-            return "[]"
-        }
-        val last = lastIndex
-        return buildString {
-            append('[')
-            val content = content
-            for (i in 0 until last) {
-                append(content[i])
-                append(',')
-                append(' ')
-            }
-            append(content[last])
-            append(']')
-        }
-    }
+    override fun toString(): String = joinToString(prefix = "[", postfix = "]")
 }
 
 /**
@@ -483,7 +537,7 @@ public sealed class IntList(initialCapacity: Int) {
  * @constructor Creates a [MutableIntList] with a [capacity] of `initialCapacity`.
  */
 public class MutableIntList(
-    initialCapacity: Int = DefaultCapacity
+    initialCapacity: Int = 16
 ) : IntList(initialCapacity) {
     /**
      * Returns the total number of elements that can be held before the [MutableIntList] must
@@ -835,20 +889,80 @@ public class MutableIntList(
     }
 }
 
-@Suppress("ConstPropertyName")
-private const val DefaultCapacity = 16
-
-// Empty array used when nothing is allocated
-@Suppress("PrivatePropertyName")
-private val EmptyIntArray = IntArray(0)
+private val EmptyIntList: IntList = MutableIntList(0)
 
 /**
- * Creates and returns an empty [MutableIntList] with the default capacity.
+ * @return a read-only [IntList] with nothing in it.
+ */
+public fun emptyIntList(): IntList = EmptyIntList
+
+/**
+ * @return a read-only [IntList] with nothing in it.
+ */
+public fun intListOf(): IntList = EmptyIntList
+
+/**
+ * @return a new read-only [IntList] with [element1] as the only item in the list.
+ */
+public fun intListOf(element1: Int): IntList = mutableIntListOf(element1)
+
+/**
+ * @return a new read-only [IntList] with 2 elements, [element1] and [element2], in order.
+ */
+public fun intListOf(element1: Int, element2: Int): IntList =
+    mutableIntListOf(element1, element2)
+
+/**
+ * @return a new read-only [IntList] with 3 elements, [element1], [element2], and [element3],
+ * in order.
+ */
+public fun intListOf(element1: Int, element2: Int, element3: Int): IntList =
+    mutableIntListOf(element1, element2, element3)
+
+/**
+ * @return a new read-only [IntList] with [elements] in order.
+ */
+public fun intListOf(vararg elements: Int): IntList =
+    MutableIntList(elements.size).apply { plusAssign(elements) }
+
+/**
+ * @return a new empty [MutableIntList] with the default capacity.
  */
 public inline fun mutableIntListOf(): MutableIntList = MutableIntList()
 
 /**
- * Creates and returns a [MutableIntList] with the given values.
+ * @return a new [MutableIntList] with [element1] as the only item in the list.
+ */
+public fun mutableIntListOf(element1: Int): MutableIntList {
+    val list = MutableIntList(1)
+    list += element1
+    return list
+}
+
+/**
+ * @return a new [MutableIntList] with 2 elements, [element1] and [element2], in order.
+ */
+public fun mutableIntListOf(element1: Int, element2: Int): MutableIntList {
+    val list = MutableIntList(2)
+    list += element1
+    list += element2
+    return list
+}
+
+/**
+ * @return a new [MutableIntList] with 3 elements, [element1], [element2], and [element3],
+ * in order.
+ */
+public fun mutableIntListOf(element1: Int, element2: Int, element3: Int): MutableIntList {
+    val list = MutableIntList(3)
+    list += element1
+    list += element2
+    list += element3
+    return list
+}
+
+/**
+ * @return a new [MutableIntList] with the given elements, in order.
  */
 public inline fun mutableIntListOf(vararg elements: Int): MutableIntList =
-    MutableIntList(elements.size).also { it.addAll(elements) }
+    MutableIntList(elements.size).apply { plusAssign(elements) }

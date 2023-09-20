@@ -4,10 +4,10 @@ package androidx.appactions.builtintypes.properties {
   @androidx.appsearch.annotation.Document(name="bitprop:ByDay") public final class ByDay {
     ctor public ByDay(androidx.appactions.builtintypes.types.DayOfWeek dayOfWeek);
     ctor public ByDay(String text);
-    method public androidx.appactions.builtintypes.types.DayOfWeek? getAsDayOfWeek();
+    method @androidx.appsearch.annotation.Document.StringProperty(serializer=DayOfWeekAsCanonicalUrlSerializer::class) public androidx.appactions.builtintypes.types.DayOfWeek? getAsDayOfWeek();
     method @androidx.appsearch.annotation.Document.StringProperty public String? getAsText();
     method public <R> R mapWhen(androidx.appactions.builtintypes.properties.ByDay.Mapper<R> mapper);
-    property public final androidx.appactions.builtintypes.types.DayOfWeek? asDayOfWeek;
+    property @androidx.appsearch.annotation.Document.StringProperty(serializer=DayOfWeekAsCanonicalUrlSerializer::class) public final androidx.appactions.builtintypes.types.DayOfWeek? asDayOfWeek;
     property @androidx.appsearch.annotation.Document.StringProperty public final String? asText;
   }
 
@@ -42,13 +42,13 @@ package androidx.appactions.builtintypes.properties {
     ctor public EndDate(java.time.Instant instant);
     ctor public EndDate(java.time.LocalDate date);
     ctor public EndDate(java.time.LocalDateTime localDateTime);
-    method public java.time.LocalDate? getAsDate();
-    method public java.time.Instant? getAsInstant();
-    method public java.time.LocalDateTime? getAsLocalDateTime();
+    method @androidx.appsearch.annotation.Document.LongProperty(serializer=LocalDateAsEpochDaySerializer::class) public java.time.LocalDate? getAsDate();
+    method @androidx.appsearch.annotation.Document.LongProperty(serializer=InstantAsEpochMilliSerializer::class) public java.time.Instant? getAsInstant();
+    method @androidx.appsearch.annotation.Document.LongProperty(serializer=LocalDateTimeAsUtcEpochSecondSerializer::class) public java.time.LocalDateTime? getAsLocalDateTime();
     method public <R> R mapWhen(androidx.appactions.builtintypes.properties.EndDate.Mapper<R> mapper);
-    property public final java.time.LocalDate? asDate;
-    property public final java.time.Instant? asInstant;
-    property public final java.time.LocalDateTime? asLocalDateTime;
+    property @androidx.appsearch.annotation.Document.LongProperty(serializer=LocalDateAsEpochDaySerializer::class) public final java.time.LocalDate? asDate;
+    property @androidx.appsearch.annotation.Document.LongProperty(serializer=InstantAsEpochMilliSerializer::class) public final java.time.Instant? asInstant;
+    property @androidx.appsearch.annotation.Document.LongProperty(serializer=LocalDateTimeAsUtcEpochSecondSerializer::class) public final java.time.LocalDateTime? asLocalDateTime;
   }
 
   public static interface EndDate.Mapper<R> {
@@ -62,13 +62,13 @@ package androidx.appactions.builtintypes.properties {
     ctor public EndTime(java.time.Instant instant);
     ctor public EndTime(java.time.LocalDateTime localDateTime);
     ctor public EndTime(java.time.LocalTime time);
-    method public java.time.Instant? getAsInstant();
-    method public java.time.LocalDateTime? getAsLocalDateTime();
-    method public java.time.LocalTime? getAsTime();
+    method @androidx.appsearch.annotation.Document.LongProperty(serializer=InstantAsEpochMilliSerializer::class) public java.time.Instant? getAsInstant();
+    method @androidx.appsearch.annotation.Document.LongProperty(serializer=LocalDateTimeAsUtcEpochSecondSerializer::class) public java.time.LocalDateTime? getAsLocalDateTime();
+    method @androidx.appsearch.annotation.Document.LongProperty(serializer=LocalTimeAsNanoOfDaySerializer::class) public java.time.LocalTime? getAsTime();
     method public <R> R mapWhen(androidx.appactions.builtintypes.properties.EndTime.Mapper<R> mapper);
-    property public final java.time.Instant? asInstant;
-    property public final java.time.LocalDateTime? asLocalDateTime;
-    property public final java.time.LocalTime? asTime;
+    property @androidx.appsearch.annotation.Document.LongProperty(serializer=InstantAsEpochMilliSerializer::class) public final java.time.Instant? asInstant;
+    property @androidx.appsearch.annotation.Document.LongProperty(serializer=LocalDateTimeAsUtcEpochSecondSerializer::class) public final java.time.LocalDateTime? asLocalDateTime;
+    property @androidx.appsearch.annotation.Document.LongProperty(serializer=LocalTimeAsNanoOfDaySerializer::class) public final java.time.LocalTime? asTime;
   }
 
   public static interface EndTime.Mapper<R> {
@@ -82,13 +82,13 @@ package androidx.appactions.builtintypes.properties {
     ctor public ExceptDate(java.time.Instant instant);
     ctor public ExceptDate(java.time.LocalDate date);
     ctor public ExceptDate(java.time.LocalDateTime localDateTime);
-    method public java.time.LocalDate? getAsDate();
-    method public java.time.Instant? getAsInstant();
-    method public java.time.LocalDateTime? getAsLocalDateTime();
+    method @androidx.appsearch.annotation.Document.LongProperty(serializer=LocalDateAsEpochDaySerializer::class) public java.time.LocalDate? getAsDate();
+    method @androidx.appsearch.annotation.Document.LongProperty(serializer=InstantAsEpochMilliSerializer::class) public java.time.Instant? getAsInstant();
+    method @androidx.appsearch.annotation.Document.LongProperty(serializer=LocalDateTimeAsUtcEpochSecondSerializer::class) public java.time.LocalDateTime? getAsLocalDateTime();
     method public <R> R mapWhen(androidx.appactions.builtintypes.properties.ExceptDate.Mapper<R> mapper);
-    property public final java.time.LocalDate? asDate;
-    property public final java.time.Instant? asInstant;
-    property public final java.time.LocalDateTime? asLocalDateTime;
+    property @androidx.appsearch.annotation.Document.LongProperty(serializer=LocalDateAsEpochDaySerializer::class) public final java.time.LocalDate? asDate;
+    property @androidx.appsearch.annotation.Document.LongProperty(serializer=InstantAsEpochMilliSerializer::class) public final java.time.Instant? asInstant;
+    property @androidx.appsearch.annotation.Document.LongProperty(serializer=LocalDateTimeAsUtcEpochSecondSerializer::class) public final java.time.LocalDateTime? asLocalDateTime;
   }
 
   public static interface ExceptDate.Mapper<R> {
@@ -107,10 +107,10 @@ package androidx.appactions.builtintypes.properties {
   @androidx.appsearch.annotation.Document(name="bitprop:RepeatFrequency") public final class RepeatFrequency {
     ctor public RepeatFrequency(String text);
     ctor public RepeatFrequency(java.time.Duration duration);
-    method public java.time.Duration? getAsDuration();
+    method @androidx.appsearch.annotation.Document.LongProperty(serializer=DurationAsNanosSerializer::class) public java.time.Duration? getAsDuration();
     method @androidx.appsearch.annotation.Document.StringProperty public String? getAsText();
     method public <R> R mapWhen(androidx.appactions.builtintypes.properties.RepeatFrequency.Mapper<R> mapper);
-    property public final java.time.Duration? asDuration;
+    property @androidx.appsearch.annotation.Document.LongProperty(serializer=DurationAsNanosSerializer::class) public final java.time.Duration? asDuration;
     property @androidx.appsearch.annotation.Document.StringProperty public final String? asText;
   }
 
@@ -124,13 +124,13 @@ package androidx.appactions.builtintypes.properties {
     ctor public StartDate(java.time.Instant instant);
     ctor public StartDate(java.time.LocalDate date);
     ctor public StartDate(java.time.LocalDateTime localDateTime);
-    method public java.time.LocalDate? getAsDate();
-    method public java.time.Instant? getAsInstant();
-    method public java.time.LocalDateTime? getAsLocalDateTime();
+    method @androidx.appsearch.annotation.Document.LongProperty(serializer=LocalDateAsEpochDaySerializer::class) public java.time.LocalDate? getAsDate();
+    method @androidx.appsearch.annotation.Document.LongProperty(serializer=InstantAsEpochMilliSerializer::class) public java.time.Instant? getAsInstant();
+    method @androidx.appsearch.annotation.Document.LongProperty(serializer=LocalDateTimeAsUtcEpochSecondSerializer::class) public java.time.LocalDateTime? getAsLocalDateTime();
     method public <R> R mapWhen(androidx.appactions.builtintypes.properties.StartDate.Mapper<R> mapper);
-    property public final java.time.LocalDate? asDate;
-    property public final java.time.Instant? asInstant;
-    property public final java.time.LocalDateTime? asLocalDateTime;
+    property @androidx.appsearch.annotation.Document.LongProperty(serializer=LocalDateAsEpochDaySerializer::class) public final java.time.LocalDate? asDate;
+    property @androidx.appsearch.annotation.Document.LongProperty(serializer=InstantAsEpochMilliSerializer::class) public final java.time.Instant? asInstant;
+    property @androidx.appsearch.annotation.Document.LongProperty(serializer=LocalDateTimeAsUtcEpochSecondSerializer::class) public final java.time.LocalDateTime? asLocalDateTime;
   }
 
   public static interface StartDate.Mapper<R> {
@@ -144,13 +144,13 @@ package androidx.appactions.builtintypes.properties {
     ctor public StartTime(java.time.Instant instant);
     ctor public StartTime(java.time.LocalDateTime localDateTime);
     ctor public StartTime(java.time.LocalTime time);
-    method public java.time.Instant? getAsInstant();
-    method public java.time.LocalDateTime? getAsLocalDateTime();
-    method public java.time.LocalTime? getAsTime();
+    method @androidx.appsearch.annotation.Document.LongProperty(serializer=InstantAsEpochMilliSerializer::class) public java.time.Instant? getAsInstant();
+    method @androidx.appsearch.annotation.Document.LongProperty(serializer=LocalDateTimeAsUtcEpochSecondSerializer::class) public java.time.LocalDateTime? getAsLocalDateTime();
+    method @androidx.appsearch.annotation.Document.LongProperty(serializer=LocalTimeAsNanoOfDaySerializer::class) public java.time.LocalTime? getAsTime();
     method public <R> R mapWhen(androidx.appactions.builtintypes.properties.StartTime.Mapper<R> mapper);
-    property public final java.time.Instant? asInstant;
-    property public final java.time.LocalDateTime? asLocalDateTime;
-    property public final java.time.LocalTime? asTime;
+    property @androidx.appsearch.annotation.Document.LongProperty(serializer=InstantAsEpochMilliSerializer::class) public final java.time.Instant? asInstant;
+    property @androidx.appsearch.annotation.Document.LongProperty(serializer=LocalDateTimeAsUtcEpochSecondSerializer::class) public final java.time.LocalDateTime? asLocalDateTime;
+    property @androidx.appsearch.annotation.Document.LongProperty(serializer=LocalTimeAsNanoOfDaySerializer::class) public final java.time.LocalTime? asTime;
   }
 
   public static interface StartTime.Mapper<R> {
@@ -158,6 +158,46 @@ package androidx.appactions.builtintypes.properties {
     method public default R localDateTime(java.time.LocalDateTime instance);
     method public R orElse();
     method public default R time(java.time.LocalTime instance);
+  }
+
+}
+
+package androidx.appactions.builtintypes.serializers {
+
+  public final class DayOfWeekAsCanonicalUrlSerializer implements androidx.appsearch.app.StringSerializer<androidx.appactions.builtintypes.types.DayOfWeek> {
+    ctor public DayOfWeekAsCanonicalUrlSerializer();
+    method public androidx.appactions.builtintypes.types.DayOfWeek? deserialize(String value);
+    method public String serialize(androidx.appactions.builtintypes.types.DayOfWeek instance);
+  }
+
+  public final class DurationAsNanosSerializer implements androidx.appsearch.app.LongSerializer<java.time.Duration> {
+    ctor public DurationAsNanosSerializer();
+    method public java.time.Duration deserialize(long value);
+    method public long serialize(java.time.Duration instance);
+  }
+
+  public final class InstantAsEpochMilliSerializer implements androidx.appsearch.app.LongSerializer<java.time.Instant> {
+    ctor public InstantAsEpochMilliSerializer();
+    method public java.time.Instant deserialize(long value);
+    method public long serialize(java.time.Instant instance);
+  }
+
+  public final class LocalDateAsEpochDaySerializer implements androidx.appsearch.app.LongSerializer<java.time.LocalDate> {
+    ctor public LocalDateAsEpochDaySerializer();
+    method public java.time.LocalDate deserialize(long value);
+    method public long serialize(java.time.LocalDate instance);
+  }
+
+  public final class LocalDateTimeAsUtcEpochSecondSerializer implements androidx.appsearch.app.LongSerializer<java.time.LocalDateTime> {
+    ctor public LocalDateTimeAsUtcEpochSecondSerializer();
+    method public java.time.LocalDateTime deserialize(long value);
+    method public long serialize(java.time.LocalDateTime instance);
+  }
+
+  public final class LocalTimeAsNanoOfDaySerializer implements androidx.appsearch.app.LongSerializer<java.time.LocalTime> {
+    ctor public LocalTimeAsNanoOfDaySerializer();
+    method public java.time.LocalTime deserialize(long value);
+    method public long serialize(java.time.LocalTime instance);
   }
 
 }
@@ -681,18 +721,18 @@ package androidx.appactions.builtintypes.types {
 
   @androidx.appsearch.annotation.Document(name="bit:Alarm", parent={Thing::class}) public interface Alarm extends androidx.appactions.builtintypes.types.Thing {
     method @androidx.appsearch.annotation.Document.BuilderProducer public static androidx.appactions.builtintypes.types.Alarm.Builder<?> Builder();
-    method @androidx.appsearch.annotation.Document.DocumentProperty public androidx.appactions.builtintypes.types.Schedule? getAlarmSchedule();
-    method @androidx.appsearch.annotation.Document.BooleanProperty public Boolean? isAlarmEnabled();
+    method @androidx.appsearch.annotation.Document.DocumentProperty public default androidx.appactions.builtintypes.types.Schedule? getAlarmSchedule();
+    method @androidx.appsearch.annotation.Document.BooleanProperty public default Boolean? isAlarmEnabled();
     method public androidx.appactions.builtintypes.types.Alarm.Builder<?> toBuilder();
-    property @androidx.appsearch.annotation.Document.DocumentProperty public abstract androidx.appactions.builtintypes.types.Schedule? alarmSchedule;
-    property @androidx.appsearch.annotation.Document.BooleanProperty public abstract Boolean? isAlarmEnabled;
+    property @androidx.appsearch.annotation.Document.DocumentProperty public default androidx.appactions.builtintypes.types.Schedule? alarmSchedule;
+    property @androidx.appsearch.annotation.Document.BooleanProperty public default Boolean? isAlarmEnabled;
     field public static final androidx.appactions.builtintypes.types.Alarm.Companion Companion;
   }
 
   public static interface Alarm.Builder<Self extends androidx.appactions.builtintypes.types.Alarm.Builder<Self>> extends androidx.appactions.builtintypes.types.Thing.Builder<Self> {
     method public androidx.appactions.builtintypes.types.Alarm build();
-    method public Self setAlarmEnabled(Boolean? boolean);
-    method public Self setAlarmSchedule(androidx.appactions.builtintypes.types.Schedule? schedule);
+    method public default Self setAlarmEnabled(Boolean? boolean);
+    method public default Self setAlarmSchedule(androidx.appactions.builtintypes.types.Schedule? schedule);
     method public default Self setDisambiguatingDescription(androidx.appactions.builtintypes.types.Alarm.DisambiguatingDescriptionValue canonicalValue);
   }
 
@@ -725,6 +765,7 @@ package androidx.appactions.builtintypes.types {
   public final class DayOfWeek {
     method public String getCanonicalUrl();
     method public <R> R mapWhen(androidx.appactions.builtintypes.types.DayOfWeek.Mapper<R> mapper);
+    method public static java.util.List<androidx.appactions.builtintypes.types.DayOfWeek> values();
     property public final String canonicalUrl;
     field public static final androidx.appactions.builtintypes.types.DayOfWeek.Companion Companion;
     field public static final androidx.appactions.builtintypes.types.DayOfWeek FRIDAY;
@@ -738,6 +779,7 @@ package androidx.appactions.builtintypes.types {
   }
 
   public static final class DayOfWeek.Companion {
+    method public java.util.List<androidx.appactions.builtintypes.types.DayOfWeek> values();
   }
 
   public static interface DayOfWeek.Mapper<R> {
@@ -810,18 +852,18 @@ package androidx.appactions.builtintypes.types {
 
   @androidx.appsearch.annotation.Document(name="bit:Person", parent={Thing::class}) public interface Person extends androidx.appactions.builtintypes.types.Thing {
     method @androidx.appsearch.annotation.Document.BuilderProducer public static androidx.appactions.builtintypes.types.Person.Builder<?> Builder();
-    method @androidx.appsearch.annotation.Document.StringProperty public String? getEmail();
-    method @androidx.appsearch.annotation.Document.StringProperty(name="telephone") public String? getTelephoneNumber();
+    method @androidx.appsearch.annotation.Document.StringProperty public default String? getEmail();
+    method @androidx.appsearch.annotation.Document.StringProperty(name="telephone") public default String? getTelephoneNumber();
     method public androidx.appactions.builtintypes.types.Person.Builder<?> toBuilder();
-    property @androidx.appsearch.annotation.Document.StringProperty public abstract String? email;
-    property @androidx.appsearch.annotation.Document.StringProperty(name="telephone") public abstract String? telephoneNumber;
+    property @androidx.appsearch.annotation.Document.StringProperty public default String? email;
+    property @androidx.appsearch.annotation.Document.StringProperty(name="telephone") public default String? telephoneNumber;
     field public static final androidx.appactions.builtintypes.types.Person.Companion Companion;
   }
 
   public static interface Person.Builder<Self extends androidx.appactions.builtintypes.types.Person.Builder<Self>> extends androidx.appactions.builtintypes.types.Thing.Builder<Self> {
     method public androidx.appactions.builtintypes.types.Person build();
-    method public Self setEmail(String? text);
-    method public Self setTelephoneNumber(String? text);
+    method public default Self setEmail(String? text);
+    method public default Self setTelephoneNumber(String? text);
   }
 
   public static final class Person.Companion {
@@ -830,72 +872,72 @@ package androidx.appactions.builtintypes.types {
 
   @androidx.appsearch.annotation.Document(name="bit:Schedule", parent={Intangible::class}) public interface Schedule extends androidx.appactions.builtintypes.types.Intangible {
     method @androidx.appsearch.annotation.Document.BuilderProducer public static androidx.appactions.builtintypes.types.Schedule.Builder<?> Builder();
-    method @androidx.appsearch.annotation.Document.DocumentProperty(name="byDay") public java.util.List<androidx.appactions.builtintypes.properties.ByDay> getByDays();
-    method @androidx.appsearch.annotation.Document.LongProperty(name="byMonthDay") public java.util.List<java.lang.Long> getByMonthDays();
-    method @androidx.appsearch.annotation.Document.LongProperty(name="byMonthWeek") public java.util.List<java.lang.Long> getByMonthWeeks();
-    method @androidx.appsearch.annotation.Document.LongProperty(name="byMonth") public java.util.List<java.lang.Long> getByMonths();
-    method @androidx.appsearch.annotation.Document.DocumentProperty public androidx.appactions.builtintypes.properties.EndDate? getEndDate();
-    method @androidx.appsearch.annotation.Document.DocumentProperty public androidx.appactions.builtintypes.properties.EndTime? getEndTime();
-    method @androidx.appsearch.annotation.Document.DocumentProperty public androidx.appactions.builtintypes.properties.ExceptDate? getExceptDate();
-    method @androidx.appsearch.annotation.Document.LongProperty public Long? getRepeatCount();
-    method @androidx.appsearch.annotation.Document.DocumentProperty public androidx.appactions.builtintypes.properties.RepeatFrequency? getRepeatFrequency();
-    method @androidx.appsearch.annotation.Document.StringProperty public String? getScheduleTimezone();
-    method @androidx.appsearch.annotation.Document.DocumentProperty public androidx.appactions.builtintypes.properties.StartDate? getStartDate();
-    method @androidx.appsearch.annotation.Document.DocumentProperty public androidx.appactions.builtintypes.properties.StartTime? getStartTime();
+    method @androidx.appsearch.annotation.Document.DocumentProperty(name="byDay") public default java.util.List<androidx.appactions.builtintypes.properties.ByDay> getByDays();
+    method @androidx.appsearch.annotation.Document.LongProperty(name="byMonthDay") public default java.util.List<java.lang.Long> getByMonthDays();
+    method @androidx.appsearch.annotation.Document.LongProperty(name="byMonthWeek") public default java.util.List<java.lang.Long> getByMonthWeeks();
+    method @androidx.appsearch.annotation.Document.LongProperty(name="byMonth") public default java.util.List<java.lang.Long> getByMonths();
+    method @androidx.appsearch.annotation.Document.DocumentProperty public default androidx.appactions.builtintypes.properties.EndDate? getEndDate();
+    method @androidx.appsearch.annotation.Document.DocumentProperty public default androidx.appactions.builtintypes.properties.EndTime? getEndTime();
+    method @androidx.appsearch.annotation.Document.DocumentProperty public default androidx.appactions.builtintypes.properties.ExceptDate? getExceptDate();
+    method @androidx.appsearch.annotation.Document.LongProperty public default Long? getRepeatCount();
+    method @androidx.appsearch.annotation.Document.DocumentProperty public default androidx.appactions.builtintypes.properties.RepeatFrequency? getRepeatFrequency();
+    method @androidx.appsearch.annotation.Document.StringProperty public default String? getScheduleTimezone();
+    method @androidx.appsearch.annotation.Document.DocumentProperty public default androidx.appactions.builtintypes.properties.StartDate? getStartDate();
+    method @androidx.appsearch.annotation.Document.DocumentProperty public default androidx.appactions.builtintypes.properties.StartTime? getStartTime();
     method public androidx.appactions.builtintypes.types.Schedule.Builder<?> toBuilder();
-    property @androidx.appsearch.annotation.Document.DocumentProperty(name="byDay") public abstract java.util.List<androidx.appactions.builtintypes.properties.ByDay> byDays;
-    property @androidx.appsearch.annotation.Document.LongProperty(name="byMonthDay") public abstract java.util.List<java.lang.Long> byMonthDays;
-    property @androidx.appsearch.annotation.Document.LongProperty(name="byMonthWeek") public abstract java.util.List<java.lang.Long> byMonthWeeks;
-    property @androidx.appsearch.annotation.Document.LongProperty(name="byMonth") public abstract java.util.List<java.lang.Long> byMonths;
-    property @androidx.appsearch.annotation.Document.DocumentProperty public abstract androidx.appactions.builtintypes.properties.EndDate? endDate;
-    property @androidx.appsearch.annotation.Document.DocumentProperty public abstract androidx.appactions.builtintypes.properties.EndTime? endTime;
-    property @androidx.appsearch.annotation.Document.DocumentProperty public abstract androidx.appactions.builtintypes.properties.ExceptDate? exceptDate;
-    property @androidx.appsearch.annotation.Document.LongProperty public abstract Long? repeatCount;
-    property @androidx.appsearch.annotation.Document.DocumentProperty public abstract androidx.appactions.builtintypes.properties.RepeatFrequency? repeatFrequency;
-    property @androidx.appsearch.annotation.Document.StringProperty public abstract String? scheduleTimezone;
-    property @androidx.appsearch.annotation.Document.DocumentProperty public abstract androidx.appactions.builtintypes.properties.StartDate? startDate;
-    property @androidx.appsearch.annotation.Document.DocumentProperty public abstract androidx.appactions.builtintypes.properties.StartTime? startTime;
+    property @androidx.appsearch.annotation.Document.DocumentProperty(name="byDay") public default java.util.List<androidx.appactions.builtintypes.properties.ByDay> byDays;
+    property @androidx.appsearch.annotation.Document.LongProperty(name="byMonthDay") public default java.util.List<java.lang.Long> byMonthDays;
+    property @androidx.appsearch.annotation.Document.LongProperty(name="byMonthWeek") public default java.util.List<java.lang.Long> byMonthWeeks;
+    property @androidx.appsearch.annotation.Document.LongProperty(name="byMonth") public default java.util.List<java.lang.Long> byMonths;
+    property @androidx.appsearch.annotation.Document.DocumentProperty public default androidx.appactions.builtintypes.properties.EndDate? endDate;
+    property @androidx.appsearch.annotation.Document.DocumentProperty public default androidx.appactions.builtintypes.properties.EndTime? endTime;
+    property @androidx.appsearch.annotation.Document.DocumentProperty public default androidx.appactions.builtintypes.properties.ExceptDate? exceptDate;
+    property @androidx.appsearch.annotation.Document.LongProperty public default Long? repeatCount;
+    property @androidx.appsearch.annotation.Document.DocumentProperty public default androidx.appactions.builtintypes.properties.RepeatFrequency? repeatFrequency;
+    property @androidx.appsearch.annotation.Document.StringProperty public default String? scheduleTimezone;
+    property @androidx.appsearch.annotation.Document.DocumentProperty public default androidx.appactions.builtintypes.properties.StartDate? startDate;
+    property @androidx.appsearch.annotation.Document.DocumentProperty public default androidx.appactions.builtintypes.properties.StartTime? startTime;
     field public static final androidx.appactions.builtintypes.types.Schedule.Companion Companion;
   }
 
   public static interface Schedule.Builder<Self extends androidx.appactions.builtintypes.types.Schedule.Builder<Self>> extends androidx.appactions.builtintypes.types.Intangible.Builder<Self> {
-    method public Self addByDay(androidx.appactions.builtintypes.properties.ByDay byDay);
+    method public default Self addByDay(androidx.appactions.builtintypes.properties.ByDay byDay);
     method public default Self addByDay(androidx.appactions.builtintypes.types.DayOfWeek dayOfWeek);
     method public default Self addByDay(String text);
-    method public Self addByDays(Iterable<androidx.appactions.builtintypes.properties.ByDay> values);
-    method public Self addByMonth(long integer);
-    method public Self addByMonthDay(long integer);
-    method public Self addByMonthDays(Iterable<java.lang.Long> values);
-    method public Self addByMonthWeek(long integer);
-    method public Self addByMonthWeeks(Iterable<java.lang.Long> values);
-    method public Self addByMonths(Iterable<java.lang.Long> values);
+    method public default Self addByDays(Iterable<androidx.appactions.builtintypes.properties.ByDay> values);
+    method public default Self addByMonth(long integer);
+    method public default Self addByMonthDay(long integer);
+    method public default Self addByMonthDays(Iterable<java.lang.Long> values);
+    method public default Self addByMonthWeek(long integer);
+    method public default Self addByMonthWeeks(Iterable<java.lang.Long> values);
+    method public default Self addByMonths(Iterable<java.lang.Long> values);
     method public androidx.appactions.builtintypes.types.Schedule build();
-    method public Self clearByDays();
-    method public Self clearByMonthDays();
-    method public Self clearByMonthWeeks();
-    method public Self clearByMonths();
-    method public Self setEndDate(androidx.appactions.builtintypes.properties.EndDate? endDate);
+    method public default Self clearByDays();
+    method public default Self clearByMonthDays();
+    method public default Self clearByMonthWeeks();
+    method public default Self clearByMonths();
+    method public default Self setEndDate(androidx.appactions.builtintypes.properties.EndDate? endDate);
     method public default Self setEndDate(java.time.Instant instant);
     method public default Self setEndDate(java.time.LocalDate date);
     method public default Self setEndDate(java.time.LocalDateTime localDateTime);
-    method public Self setEndTime(androidx.appactions.builtintypes.properties.EndTime? endTime);
+    method public default Self setEndTime(androidx.appactions.builtintypes.properties.EndTime? endTime);
     method public default Self setEndTime(java.time.Instant instant);
     method public default Self setEndTime(java.time.LocalDateTime localDateTime);
     method public default Self setEndTime(java.time.LocalTime time);
-    method public Self setExceptDate(androidx.appactions.builtintypes.properties.ExceptDate? exceptDate);
+    method public default Self setExceptDate(androidx.appactions.builtintypes.properties.ExceptDate? exceptDate);
     method public default Self setExceptDate(java.time.Instant instant);
     method public default Self setExceptDate(java.time.LocalDate date);
     method public default Self setExceptDate(java.time.LocalDateTime localDateTime);
-    method public Self setRepeatCount(Long? integer);
-    method public Self setRepeatFrequency(androidx.appactions.builtintypes.properties.RepeatFrequency? repeatFrequency);
+    method public default Self setRepeatCount(Long? integer);
+    method public default Self setRepeatFrequency(androidx.appactions.builtintypes.properties.RepeatFrequency? repeatFrequency);
     method public default Self setRepeatFrequency(String text);
     method public default Self setRepeatFrequency(java.time.Duration duration);
-    method public Self setScheduleTimezone(String? text);
-    method public Self setStartDate(androidx.appactions.builtintypes.properties.StartDate? startDate);
+    method public default Self setScheduleTimezone(String? text);
+    method public default Self setStartDate(androidx.appactions.builtintypes.properties.StartDate? startDate);
     method public default Self setStartDate(java.time.Instant instant);
     method public default Self setStartDate(java.time.LocalDate date);
     method public default Self setStartDate(java.time.LocalDateTime localDateTime);
-    method public Self setStartTime(androidx.appactions.builtintypes.properties.StartTime? startTime);
+    method public default Self setStartTime(androidx.appactions.builtintypes.properties.StartTime? startTime);
     method public default Self setStartTime(java.time.Instant instant);
     method public default Self setStartTime(java.time.LocalDateTime localDateTime);
     method public default Self setStartTime(java.time.LocalTime time);
@@ -921,26 +963,26 @@ package androidx.appactions.builtintypes.types {
 
   @androidx.appsearch.annotation.Document(name="bit:Thing") public interface Thing {
     method @androidx.appsearch.annotation.Document.BuilderProducer public static androidx.appactions.builtintypes.types.Thing.Builder<?> Builder();
-    method @androidx.appsearch.annotation.Document.DocumentProperty public androidx.appactions.builtintypes.properties.DisambiguatingDescription? getDisambiguatingDescription();
-    method @androidx.appsearch.annotation.Document.Id public String getIdentifier();
-    method @androidx.appsearch.annotation.Document.DocumentProperty public androidx.appactions.builtintypes.properties.Name? getName();
-    method @androidx.appsearch.annotation.Document.Namespace public String getNamespace();
+    method @androidx.appsearch.annotation.Document.DocumentProperty public default androidx.appactions.builtintypes.properties.DisambiguatingDescription? getDisambiguatingDescription();
+    method @androidx.appsearch.annotation.Document.Id public default String getIdentifier();
+    method @androidx.appsearch.annotation.Document.DocumentProperty public default androidx.appactions.builtintypes.properties.Name? getName();
+    method @androidx.appsearch.annotation.Document.Namespace public default String getNamespace();
     method public androidx.appactions.builtintypes.types.Thing.Builder<?> toBuilder();
-    property @androidx.appsearch.annotation.Document.DocumentProperty public abstract androidx.appactions.builtintypes.properties.DisambiguatingDescription? disambiguatingDescription;
-    property @androidx.appsearch.annotation.Document.Id public abstract String identifier;
-    property @androidx.appsearch.annotation.Document.DocumentProperty public abstract androidx.appactions.builtintypes.properties.Name? name;
-    property @androidx.appsearch.annotation.Document.Namespace public abstract String namespace;
+    property @androidx.appsearch.annotation.Document.DocumentProperty public default androidx.appactions.builtintypes.properties.DisambiguatingDescription? disambiguatingDescription;
+    property @androidx.appsearch.annotation.Document.Id public default String identifier;
+    property @androidx.appsearch.annotation.Document.DocumentProperty public default androidx.appactions.builtintypes.properties.Name? name;
+    property @androidx.appsearch.annotation.Document.Namespace public default String namespace;
     field public static final androidx.appactions.builtintypes.types.Thing.Companion Companion;
   }
 
   public static interface Thing.Builder<Self extends androidx.appactions.builtintypes.types.Thing.Builder<Self>> {
     method public androidx.appactions.builtintypes.types.Thing build();
-    method public Self setDisambiguatingDescription(androidx.appactions.builtintypes.properties.DisambiguatingDescription? disambiguatingDescription);
+    method public default Self setDisambiguatingDescription(androidx.appactions.builtintypes.properties.DisambiguatingDescription? disambiguatingDescription);
     method public default Self setDisambiguatingDescription(String text);
-    method public Self setIdentifier(String text);
-    method public Self setName(androidx.appactions.builtintypes.properties.Name? name);
+    method public default Self setIdentifier(String text);
+    method public default Self setName(androidx.appactions.builtintypes.properties.Name? name);
     method public default Self setName(String text);
-    method public Self setNamespace(String namespace);
+    method public default Self setNamespace(String namespace);
   }
 
   public static final class Thing.Companion {
@@ -949,15 +991,15 @@ package androidx.appactions.builtintypes.types {
 
   @androidx.appsearch.annotation.Document(name="bit:Timer", parent={Thing::class}) public interface Timer extends androidx.appactions.builtintypes.types.Thing {
     method @androidx.appsearch.annotation.Document.BuilderProducer public static androidx.appactions.builtintypes.types.Timer.Builder<?> Builder();
-    method public java.time.Duration? getDuration();
+    method @androidx.appsearch.annotation.Document.LongProperty(serializer=DurationAsNanosSerializer::class) public default java.time.Duration? getDuration();
     method public androidx.appactions.builtintypes.types.Timer.Builder<?> toBuilder();
-    property public abstract java.time.Duration? duration;
+    property @androidx.appsearch.annotation.Document.LongProperty(serializer=DurationAsNanosSerializer::class) public default java.time.Duration? duration;
     field public static final androidx.appactions.builtintypes.types.Timer.Companion Companion;
   }
 
   public static interface Timer.Builder<Self extends androidx.appactions.builtintypes.types.Timer.Builder<Self>> extends androidx.appactions.builtintypes.types.Thing.Builder<Self> {
     method public androidx.appactions.builtintypes.types.Timer build();
-    method public Self setDuration(java.time.Duration? duration);
+    method public default Self setDuration(java.time.Duration? duration);
   }
 
   public static final class Timer.Companion {
