@@ -8,7 +8,11 @@ plugins {
 dependencies {
     api("androidx.annotation:annotation:1.2.0")
     api(project(":vectordrawable:vectordrawable"))
+<<<<<<< HEAD   (80725a Merge "Merge cherrypicks of ['android-review.googlesource.co)
     implementation("androidx.core:core:1.12.0")
+=======
+    implementation(project(":core:core"))
+>>>>>>> CHANGE (910e6e Fix RestrictedApiAndroidX in transition)
     implementation("androidx.interpolator:interpolator:1.0.0")
     implementation("androidx.collection:collection:1.1.0")
 
