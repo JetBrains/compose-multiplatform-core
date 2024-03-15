@@ -56,7 +56,7 @@ internal abstract class DesktopComposeSceneLayer(
     protected val eventListener get() = AwtEventListeners(
         DetectEventOutsideLayer(),
         boundsEventFilter,
-        FocusableLayerEventFilter()
+        BlockingInputLayerEventFilter()
     )
     private val boundsEventFilter = BoundsEventFilter(
         bounds = Rectangle(windowContainer.size)
@@ -107,6 +107,11 @@ internal abstract class DesktopComposeSceneLayer(
     final override var compositionLocalContext: CompositionLocalContext?
         get() = mediator?.compositionLocalContext
         set(value) { mediator?.compositionLocalContext = value }
+
+    // Blocking pointer input outside is not supported
+    override var consumePointerInputOutside: Boolean
+        get() = false
+        set(_) {}
 
     @CallSuper
     override fun close() {
@@ -228,7 +233,7 @@ internal abstract class DesktopComposeSceneLayer(
 
     /**
      * Detect and trigger [DesktopComposeSceneLayer.onMouseEventOutside] if event happened below
-     * focused layer.
+     * a layer that blocks pointer input outside of its bounds.
      */
     private inner class DetectEventOutsideLayer : AwtEventListener {
         override fun onMouseEvent(event: MouseEvent): Boolean {
@@ -236,7 +241,7 @@ internal abstract class DesktopComposeSceneLayer(
                 if (!inBounds(event)) {
                     it.onMouseEventOutside(event)
                 }
-                if (it.focusable) {
+                if (it.consumePointerInputOutside) {
                     return false
                 }
             }
@@ -244,12 +249,12 @@ internal abstract class DesktopComposeSceneLayer(
         }
     }
 
-    private inner class FocusableLayerEventFilter : AwtEventFilter() {
-        private val noFocusableLayersAbove: Boolean
-            get() = layersAbove.all { !it.focusable }
+    private inner class BlockingInputLayerEventFilter : AwtEventFilter() {
+        private val noBlockingInputLayers: Boolean
+            get() = layersAbove.all { !it.consumePointerInputOutside }
 
-        override fun shouldSendMouseEvent(event: MouseEvent): Boolean = noFocusableLayersAbove
-        override fun shouldSendKeyEvent(event: KeyEvent): Boolean = focusable && noFocusableLayersAbove
+        override fun shouldSendMouseEvent(event: MouseEvent): Boolean = noBlockingInputLayers
+        override fun shouldSendKeyEvent(event: KeyEvent): Boolean = focusable && noBlockingInputLayers
     }
 
     private inner class BoundsEventFilter(

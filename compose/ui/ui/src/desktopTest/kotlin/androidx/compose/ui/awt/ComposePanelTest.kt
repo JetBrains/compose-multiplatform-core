@@ -16,6 +16,7 @@
 package androidx.compose.ui.awt
 
 import androidx.compose.foundation.ScrollState
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -612,6 +613,66 @@ class ComposePanelTest {
                         awaitIdle()
                         assertTrue(keyEventsOnParent.isEmpty())
                         assertTrue(dismissPopupRequested)
+                    }
+                } finally {
+                    window.dispose()
+                }
+            }
+        }
+    }
+
+    @Test
+    fun focusableNonBlockingPopup_withComponentLayerType_passesClicksThrough() {
+        ComposeFeatureFlags.layerType.withOverride(LayerType.OnComponent) {
+            ComposeFeatureFlags.useSwingGraphicsInComposePanel.withOverride(true) {
+                val window = JFrame()
+                try {
+                    runApplicationTest {
+                        var showPopup by mutableStateOf(false)
+                        var backgroundClickCount = 0
+
+                        val composePanel = ComposePanel()
+                        composePanel.setContent {
+                            Box(
+                                Modifier
+                                    .size(200.dp)
+                                    .background(Color.Yellow)
+                                    .clickable { backgroundClickCount++ }
+                            )
+
+                            if (showPopup) {
+                                Popup(
+                                    properties = PopupProperties(
+                                        focusable = true,
+                                        dismissOnClickOutside = false,
+                                        consumePointerInputOutside = false,
+                                    ),
+                                ) {
+                                    Box(
+                                        Modifier
+                                            .size(50.dp)
+                                            .background(Color.Blue)
+                                    )
+                                }
+                            }
+                        }
+
+                        composePanel.windowContainer = window.layeredPane
+
+                        window.contentPane.add(composePanel, BorderLayout.CENTER)
+                        window.pack()
+                        window.isVisible = true
+
+                        awaitIdle()
+
+                        showPopup = true
+                        awaitIdle()
+
+                        window.layeredPane.sendMousePress(x = 100, y = 100)
+                        window.layeredPane.sendMouseRelease(x = 100, y = 100)
+                        awaitIdle()
+
+                        assertEquals(1, backgroundClickCount)
                     }
                 } finally {
                     window.dispose()

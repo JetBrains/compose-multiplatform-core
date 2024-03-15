@@ -531,7 +531,7 @@ internal class ComposeSceneMediator(
      * AWT/Swing, however, interprets listening to mouse events as "interest" in them and sends them
      * only to the "interested" component "under" the mouse pointer.
      */
-    private fun redispatchUnconsumedMouseEvent(event: MouseEvent) {
+    private fun redispatchUnconsumedMouseEvent(event: MouseEvent, target: Component? = null) {
         // Redispatch the event to the heavyweight ancestor, which in turn will try to find the
         // correct target component and send the event to it. Unregistering from mouse events
         // during this call allows the event to be sent to the component it would've been sent to
@@ -543,11 +543,11 @@ internal class ComposeSceneMediator(
         // With that approach, there would probably also be a need to add a flag (or multiple flags)
         // to ComposePanel that would control which types of events should be listened to.
         val source = event.component ?: return  // Should be contentComponent
-        val target = source.heavyWeightAncestorOrNull() ?: return
+        val resolvedTarget = target ?: source.heavyWeightAncestorOrNull() ?: return
         try {
             unsubscribeFromInputEvents()
-            val retargetedEvent = SwingUtilities.convertMouseEvent(source, event, target)
-            target.dispatchEvent(retargetedEvent)
+            val retargetedEvent = SwingUtilities.convertMouseEvent(source, event, resolvedTarget)
+            resolvedTarget.dispatchEvent(retargetedEvent)
         } finally {
             subscribeToInputEvents()
         }
