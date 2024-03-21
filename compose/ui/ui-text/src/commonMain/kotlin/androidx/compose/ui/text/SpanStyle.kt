@@ -84,8 +84,7 @@ private val DefaultColorForegroundStyle = TextForegroundStyle.from(DefaultColor)
  * @see ParagraphStyle
  */
 @Immutable
-class SpanStyle
-internal constructor(
+class SpanStyle(
     // The fill to draw text, a unified representation of Color and Brush.
     internal val textForegroundStyle: TextForegroundStyle,
     val fontSize: TextUnit = TextUnit.Unspecified,

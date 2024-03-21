@@ -44,6 +44,11 @@ import androidx.compose.ui.platform.LocalPlatformScreenReader
 import androidx.compose.ui.util.trace
 import kotlin.concurrent.Volatile
 import kotlin.coroutines.CoroutineContext
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /**
@@ -74,6 +79,21 @@ internal abstract class BaseComposeScene(
     private val recomposer: ComposeSceneRecomposer =
         ComposeSceneRecomposer(coroutineContext, frameClock)
     private var composition: Composition? = null
+
+    private val launchCommandJob = Job()
+    private val launchCommandChannel = Channel<LaunchCommand>(Channel.UNLIMITED)
+
+    private fun flushScheduledLaunches() {
+        launchCommandChannel.trySend(LaunchCommand.FlushLaunches)
+    }
+
+    init {
+        val launchCommandCoroutineScope =
+            CoroutineScope(coroutineContext + frameClock + launchCommandJob + Dispatchers.Default)
+        launchCommandCoroutineScope.launch {
+            launchEffects(launchCommandChannel)
+        }
+    }
 
     protected val compositionContext: CompositionContext
         get() = recomposer.compositionContext
@@ -130,6 +150,7 @@ internal abstract class BaseComposeScene(
 
         composition?.dispose()
         recomposer.cancel()
+        launchCommandJob.cancel()
     }
 
     override fun hasInvalidations(): Boolean = hasPendingDraws || recomposer.hasPendingWork
@@ -144,6 +165,7 @@ internal abstract class BaseComposeScene(
          * before first recomposition. Otherwise, it can lead to double recomposition.
          */
             recomposer.performScheduledRecomposerTasks()
+        flushScheduledLaunches()
 
             composition?.dispose()
             composition = createComposition {
@@ -152,12 +174,14 @@ internal abstract class BaseComposeScene(
                     LocalComposeScene provides this,
                     LocalComposeSceneContext provides composeSceneContext,
                     LocalPlatformScreenReader provides composeSceneContext.platformContext.screenReader,
+                    LocalLaunchCommandSendChannel provides launchCommandChannel,
                     content = content
                 )
             }
 
-            recomposer.performScheduledRecomposerTasks()
-        }
+        recomposer.performScheduledRecomposerTasks()
+        flushScheduledLaunches()
+    }
 
     override fun render(canvas: Canvas, nanoTime: Long) {
         // This is a no-op if the scene is closed, this situation can happen if the scene is
@@ -197,6 +221,7 @@ internal abstract class BaseComposeScene(
             // Actually draw
             snapshotInvalidationTracker.onDraw()
             draw(canvas)
+            flushScheduledLaunches()
         }
     }
 

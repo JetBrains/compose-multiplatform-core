@@ -17,7 +17,10 @@
 package androidx.compose.ui.util
 
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.awt.toAwtColor
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.isSpecified
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.toAwtImage
 import androidx.compose.ui.unit.DpSize
@@ -147,6 +150,14 @@ internal fun Window.align(alignment: Alignment) {
         screenBounds.x + screenInsets.left + location.x,
         screenBounds.y + screenInsets.top + location.y
     )
+}
+
+internal fun Frame.setBackgroundColor(value: Color) {
+    value.takeIf { it.isSpecified }?.toAwtColor().let { awtColor ->
+        if (this.background != awtColor) {
+            background = awtColor
+        }
+    }
 }
 
 /**

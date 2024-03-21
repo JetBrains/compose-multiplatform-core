@@ -1,3 +1,29 @@
+# Compose Mulltiplatform for Fleet
+
+This repository contains changes needed to for Fleet.
+
+## Publishing Compose for Fleet
+
+Since the official Compose modularization leads to JPMS-incompatible split packages,
+it is not possible to use the officially published modules of Compose Multiplatform in Fleet.
+
+As a workaround, `publishLocalFleet.sh` can publish a single, merged module to the local Maven
+repository with the following packages:
+
+- org.jetbrains.compose.runtime:runtime-saveable-desktop,
+- org.jetbrains.compose.animation:animation-desktop,
+- org.jetbrains.compose.animation:animation-core-desktop,
+- org.jetbrains.compose.foundation:foundation-desktop,
+- org.jetbrains.compose.foundation:foundation-layout-desktop,
+- org.jetbrains.compose.ui:ui-desktop,
+- org.jetbrains.compose.ui:ui-geometry-desktop,
+- org.jetbrains.compose.ui:ui-graphics-desktop,
+- org.jetbrains.compose.ui:ui-text-desktop,
+- org.jetbrains.compose.ui:ui-unit-desktop,
+- org.jetbrains.compose.ui:ui-util-desktop,
+
+its fully qualified name is `org.jetbrains.compose:compose-ui-foundation-animation-desktop`.
+
 # Android Jetpack
 
 [![Revved up by Gradle Enterprise](https://img.shields.io/badge/Revved%20up%20by-Gradle%20Enterprise-06A0CE?logo=Gradle&labelColor=02303A)](https://ge.androidx.dev)

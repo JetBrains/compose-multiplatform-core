@@ -37,7 +37,7 @@ import kotlin.jvm.JvmName
  * - Both [color] can be [Color.Unspecified] and [brush] null, indicating that nothing is specified.
  * - [SolidColor] brushes are stored as regular [Color].
  */
-internal interface TextForegroundStyle {
+interface TextForegroundStyle {
     val color: Color
 
     val brush: Brush?

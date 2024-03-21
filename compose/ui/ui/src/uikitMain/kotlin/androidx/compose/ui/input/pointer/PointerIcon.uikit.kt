@@ -23,3 +23,13 @@ internal actual val pointerIconDefault: PointerIcon = UIKitCursor("default")
 internal actual val pointerIconCrosshair: PointerIcon = UIKitCursor("crosshair")
 internal actual val pointerIconText: PointerIcon = UIKitCursor("text")
 internal actual val pointerIconHand: PointerIcon = UIKitCursor("hand")
+
+internal actual val pointerIconMove: PointerIcon = UIKitCursor("move")
+internal actual val pointerIconWait: PointerIcon = UIKitCursor("wait")
+internal actual val pointerIconColResize: PointerIcon = UIKitCursor("col-resize")
+internal actual val pointerIconRowResize: PointerIcon = UIKitCursor("row-resize")
+
+internal actual val pointerIconNeResize: PointerIcon = UIKitCursor("ne-resize")
+internal actual val pointerIconNwResize: PointerIcon = UIKitCursor("nw-resize")
+internal actual val pointerIconSeResize: PointerIcon = UIKitCursor("se-resize")
+internal actual val pointerIconSwResize: PointerIcon = UIKitCursor("sw-resize")

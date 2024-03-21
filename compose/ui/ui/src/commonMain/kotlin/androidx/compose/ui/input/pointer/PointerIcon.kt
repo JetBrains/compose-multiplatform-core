@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.input.pointer
 
+import androidx.compose.runtime.NoriaOnly
 import androidx.compose.runtime.Stable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.PointerEventPass.Main
@@ -58,6 +59,22 @@ interface PointerIcon {
 
         /** Commonly used to indicate to a user that an element is clickable. */
         val Hand = pointerIconHand
+
+        @NoriaOnly val Move = pointerIconMove
+
+        @NoriaOnly val Wait = pointerIconWait
+
+        @NoriaOnly val ColResize = pointerIconColResize
+
+        @NoriaOnly val RowResize = pointerIconRowResize
+
+        @NoriaOnly val NeResize = pointerIconNeResize
+
+        @NoriaOnly val NwResize = pointerIconNwResize
+
+        @NoriaOnly val SeResize = pointerIconSeResize
+
+        @NoriaOnly val SwResize = pointerIconSwResize
     }
 }
 
@@ -65,6 +82,16 @@ internal expect val pointerIconDefault: PointerIcon
 internal expect val pointerIconCrosshair: PointerIcon
 internal expect val pointerIconText: PointerIcon
 internal expect val pointerIconHand: PointerIcon
+
+internal expect val pointerIconMove: PointerIcon
+internal expect val pointerIconWait: PointerIcon
+internal expect val pointerIconColResize: PointerIcon
+internal expect val pointerIconRowResize: PointerIcon
+
+internal expect val pointerIconNeResize: PointerIcon
+internal expect val pointerIconNwResize: PointerIcon
+internal expect val pointerIconSeResize: PointerIcon
+internal expect val pointerIconSwResize: PointerIcon
 
 internal interface PointerIconService {
     fun getIcon(): PointerIcon

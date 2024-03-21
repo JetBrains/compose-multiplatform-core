@@ -214,6 +214,21 @@ sealed interface FocusEnterExitScope {
      */
     val requestedFocusDirection: FocusDirection
 
+    /**
+     * `true` if the entry or exit is triggered by the focus system looking for a
+     * suitable focus target in one of two situations:
+     * - Focus was sent to a focus target that has [FocusProperties.canFocus] set to `false` (e.g.
+     *   via [FocusRequester.requestFocus]), and its subtree is now searched for a node that can
+     *   receive focus. In this case, [requestedFocusDirection] will be [FocusDirection.Enter].
+     * - Focus was cleared from a node (e.g. via [FocusManager.clearFocus]), and its ancestors are
+     *   now checked for custom exit behavior. In this case, [requestedFocusDirection] will be
+     *   [FocusDirection.Exit].
+     *
+     * `false` in all other cases, specifically also when the property is applied to an ancestor
+     * of the receiver of a focus request, or when the user is manually moving focus.
+     */
+    val isAutomatic: Boolean
+
     /** Stop focus from changing. */
     fun cancelFocusChange()
 

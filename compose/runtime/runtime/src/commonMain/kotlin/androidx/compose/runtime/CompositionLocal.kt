@@ -272,6 +272,13 @@ public fun <T> compositionLocalOf(
 public fun <T> staticCompositionLocalOf(defaultFactory: () -> T): ProvidableCompositionLocal<T> =
     StaticProvidableCompositionLocal(defaultFactory)
 
+@NoriaOnly
+fun <T> staticOptimizedCompositionLocalOf(
+    lookupIndex: Int,
+    capture: ((T) -> T)? = null,
+    defaultFactory: () -> T
+): ProvidableCompositionLocal<T> = staticCompositionLocalOf(defaultFactory)
+
 /**
  * Create a [CompositionLocal] that behaves like it was provided using
  * [ProvidableCompositionLocal.providesComputed] by default. If a value is provided using

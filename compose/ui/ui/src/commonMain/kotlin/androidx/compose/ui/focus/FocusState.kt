@@ -54,7 +54,7 @@ interface FocusState {
 }
 
 /** Different states of the focus system. These are the states used by the Focus Nodes. */
-internal enum class FocusStateImpl : FocusState {
+enum class FocusStateImpl : FocusState {
     /** The focusable component is currently active (i.e. it receives key events). */
     Active,
 

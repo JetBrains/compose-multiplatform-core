@@ -53,10 +53,35 @@ import java.awt.Window
 )
 @Composable
 fun <T : Window> AwtWindow(
-    visible: Boolean = true,
+    visible: Boolean,
     create: () -> T,
     dispose: (T) -> Unit,
     update: (T) -> Unit = {}
 ) {
     androidx.compose.ui.awt.AwtWindow(visible, create, dispose, update)
+}
+
+
+@OptIn(DelicateCoroutinesApi::class)
+@Suppress("unused")
+@Composable
+fun <T> AwtWindow(
+    create: () -> T,
+    dispose: (T) -> Unit,
+    update: (T) -> Unit = {}
+) {
+    val windowRef = remember { Ref<T>() }
+    fun window() = windowRef.value!!
+
+    DisposableEffect(Unit) {
+        windowRef.value = create()
+        onDispose {
+            dispose(window())
+        }
+    }
+
+    UpdateEffect {
+        val window = window()
+        update(window)
+    }
 }

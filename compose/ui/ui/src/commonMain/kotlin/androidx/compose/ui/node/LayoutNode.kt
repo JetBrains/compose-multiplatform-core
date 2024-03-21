@@ -76,7 +76,7 @@ private val DefaultDensity = Density(1f)
 
 /** An element in the layout hierarchy, built with compose UI. */
 @OptIn(InternalComposeUiApi::class)
-internal class LayoutNode(
+class LayoutNode(
     // Virtual LayoutNode is the temporary concept allows us to a node which is not a real node,
     // but just a holder for its children - allows us to combine some children into something we
     // can subcompose in(LayoutNode) without being required to define it as a real layout - we
@@ -187,7 +187,7 @@ internal class LayoutNode(
      * This should **not** be mutated or even accessed directly from outside of [LayoutNode]. Use
      * [forEachChild]/[forEachChildIndexed] when there's a need to iterate through the vector.
      */
-    internal val _children: MutableVector<LayoutNode>
+    val _children: MutableVector<LayoutNode>
         get() {
             updateChildrenIfDirty()
             return if (virtualChildrenCount == 0) {
@@ -1486,7 +1486,7 @@ internal class LayoutNode(
         forEachCoordinatorIncludingInner { it.onRelease() }
     }
 
-    internal companion object {
+    companion object {
         private val ErrorMeasurePolicy: NoIntrinsicsMeasurePolicy =
             object :
                 NoIntrinsicsMeasurePolicy(error = "Undefined intrinsics block and it is required") {
@@ -1500,7 +1500,7 @@ internal class LayoutNode(
         @Suppress("ConstPropertyName") internal const val NotPlacedPlaceOrder = Int.MAX_VALUE
 
         /** Pre-allocated constructor to be used with ComposeNode */
-        internal val Constructor: () -> LayoutNode = { LayoutNode() }
+        val Constructor: () -> LayoutNode = { LayoutNode() }
 
         /**
          * All of these values are only used in tests. The real ViewConfiguration should be set in

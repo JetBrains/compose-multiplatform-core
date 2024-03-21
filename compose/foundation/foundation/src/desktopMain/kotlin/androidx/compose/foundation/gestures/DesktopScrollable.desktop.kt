@@ -34,7 +34,7 @@ import kotlin.math.sqrt
 // TODO(demin): Chrome on Windows/Linux uses different scroll strategy
 //  (always the same scroll offset, bounds-independent).
 //  Figure out why and decide if we can use this strategy instead of the current one.
-internal val LocalScrollConfig = compositionLocalOf<ScrollConfig> {
+val LocalScrollConfig = compositionLocalOf<ScrollConfig> {
     when (DesktopPlatform.Current) {
         DesktopPlatform.Linux -> LinuxGnomeConfig
         DesktopPlatform.Windows -> WindowsWinUIConfig

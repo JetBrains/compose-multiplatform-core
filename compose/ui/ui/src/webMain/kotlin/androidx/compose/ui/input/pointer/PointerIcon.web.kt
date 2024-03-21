@@ -36,3 +36,13 @@ internal actual val pointerIconDefault: PointerIcon = BrowserCursor("default")
 internal actual val pointerIconCrosshair: PointerIcon = BrowserCursor("crosshair")
 internal actual val pointerIconText: PointerIcon = BrowserCursor("text")
 internal actual val pointerIconHand: PointerIcon = BrowserCursor("pointer")
+
+internal actual val pointerIconMove: PointerIcon = BrowserCursor("move")
+internal actual val pointerIconWait: PointerIcon = BrowserCursor("progress")
+internal actual val pointerIconColResize: PointerIcon = BrowserCursor("col-resize")
+internal actual val pointerIconRowResize: PointerIcon = BrowserCursor("row-resize")
+
+internal actual val pointerIconNeResize: PointerIcon = BrowserCursor("ne-resize")
+internal actual val pointerIconNwResize: PointerIcon = BrowserCursor("nw-resize")
+internal actual val pointerIconSeResize: PointerIcon = BrowserCursor("se-resize")
+internal actual val pointerIconSwResize: PointerIcon = BrowserCursor("sw-resize")

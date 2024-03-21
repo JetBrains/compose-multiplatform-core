@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.util.fastForEachIndexed
 import kotlin.math.max
+import noria.NoriaContext
 
 /**
  * A layout composable with [content]. The [Box] will size itself to fit the content, subject to the
@@ -241,7 +242,7 @@ internal val EmptyBoxMeasurePolicy = MeasurePolicy { _, constraints ->
 /** A BoxScope provides a scope for the children of [Box] and [BoxWithConstraints]. */
 @LayoutScopeMarker
 @Immutable
-interface BoxScope {
+interface BoxScope : NoriaContext {
     /**
      * Pull the content element to a specific [Alignment] within the [Box]. This alignment will have
      * priority over the [Box]'s `alignment` parameter.

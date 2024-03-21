@@ -37,6 +37,7 @@ import androidx.compose.ui.layout.Placeable
 import androidx.compose.ui.layout.VerticalAlignmentLine
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.LayoutDirection
+import noria.NoriaContext
 
 /**
  * A layout composable that places its children in a vertical sequence. For a layout composable that
@@ -83,6 +84,7 @@ inline fun Column(
     modifier: Modifier = Modifier,
     verticalArrangement: Arrangement.Vertical = Arrangement.Top,
     horizontalAlignment: Alignment.Horizontal = Alignment.Start,
+    propagateMinWidth: Boolean = true,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val measurePolicy = columnMeasurePolicy(verticalArrangement, horizontalAlignment)
@@ -100,9 +102,8 @@ internal val DefaultColumnMeasurePolicy: MeasurePolicy =
         horizontalAlignment = Alignment.Start,
     )
 
-@PublishedApi
 @Composable
-internal fun columnMeasurePolicy(
+fun columnMeasurePolicy(
     verticalArrangement: Arrangement.Vertical,
     horizontalAlignment: Alignment.Horizontal,
 ): MeasurePolicy =
@@ -285,7 +286,7 @@ internal fun createColumnConstraints(
 @LayoutScopeMarker
 @Immutable
 @JvmDefaultWithCompatibility
-interface ColumnScope {
+interface ColumnScope : NoriaContext {
     /**
      * Size the element's height proportional to its [weight] relative to other weighted sibling
      * elements in the [Column]. The parent will divide the vertical space remaining after measuring

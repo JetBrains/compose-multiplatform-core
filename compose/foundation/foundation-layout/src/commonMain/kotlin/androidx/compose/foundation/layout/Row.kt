@@ -39,6 +39,7 @@ import androidx.compose.ui.layout.Measured
 import androidx.compose.ui.layout.Placeable
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.LayoutDirection
+import noria.NoriaContext
 
 /**
  * A layout composable that places its children in a horizontal sequence. For a layout composable
@@ -95,7 +96,8 @@ inline fun Row(
     modifier: Modifier = Modifier,
     horizontalArrangement: Arrangement.Horizontal = Arrangement.Start,
     verticalAlignment: Alignment.Vertical = Alignment.Top,
-    content: @Composable RowScope.() -> Unit,
+    propagateMinHeight: Boolean = true,
+    content: @Composable RowScope.() -> Unit
 ) {
     val measurePolicy = rowMeasurePolicy(horizontalArrangement, verticalAlignment)
     Layout(
@@ -297,7 +299,7 @@ internal fun createRowConstraints(
 @LayoutScopeMarker
 @Immutable
 @JvmDefaultWithCompatibility
-interface RowScope {
+interface RowScope : NoriaContext {
     /**
      * Size the element's width proportional to its [weight] relative to other weighted sibling
      * elements in the [Row]. The parent will divide the horizontal space remaining after measuring

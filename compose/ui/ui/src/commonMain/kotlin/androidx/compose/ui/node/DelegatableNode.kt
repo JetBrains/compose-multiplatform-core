@@ -485,6 +485,48 @@ internal inline fun <reified T> Modifier.Node.dispatchForKind(
     }
 }
 
+internal inline fun Modifier.Node.dispatchForMask(
+    mask: Int,
+    block: (Modifier.Node) -> Unit
+) {
+    var stack: MutableVector<Modifier.Node>? = null
+    var node: Modifier.Node? = this
+    while (node != null) {
+        if (node.kindSet and mask != 0 && node !is DelegatingNode) {
+            block(node)
+        } else if (node.kindSet and mask != 0 && node is DelegatingNode) {
+            // We jump through a few extra hoops here to avoid the vector allocation in the
+            // case where there is only one delegate node that implements this particular kind.
+            // It is very likely that a delegating node will have one or zero delegates of a
+            // particular kind, so this seems like a worthwhile optimization to make.
+            var count = 0
+            node.forEachImmediateDelegate { next ->
+                if (next.kindSet and mask != 0) {
+                    count++
+                    if (count == 1) {
+                        node = next
+                    } else {
+                        // turns out there are multiple delegates that implement this kind, so we
+                        // have to allocate in this case.
+                        stack = stack ?: mutableVectorOf()
+                        val theNode = node
+                        if (theNode != null) {
+                            stack?.add(theNode)
+                            node = null
+                        }
+                        stack?.add(next)
+                    }
+                }
+            }
+            if (count == 1) {
+                // if count == 1 then `node` is pointing to the "next" node we need to look at
+                continue
+            }
+        }
+        node = stack.pop()
+    }
+}
+
 private fun MutableVector<Modifier.Node>?.pop(): Modifier.Node? {
     return if (this == null || isEmpty()) null else removeAt(size - 1)
 }

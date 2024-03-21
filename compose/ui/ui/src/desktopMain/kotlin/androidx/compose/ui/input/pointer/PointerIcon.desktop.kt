@@ -50,3 +50,14 @@ internal actual val pointerIconDefault: PointerIcon = AwtCursor(Cursor(Cursor.DE
 internal actual val pointerIconCrosshair: PointerIcon = AwtCursor(Cursor(Cursor.CROSSHAIR_CURSOR))
 internal actual val pointerIconText: PointerIcon = AwtCursor(Cursor(Cursor.TEXT_CURSOR))
 internal actual val pointerIconHand: PointerIcon = AwtCursor(Cursor(Cursor.HAND_CURSOR))
+
+internal actual val pointerIconMove: PointerIcon = AwtCursor(Cursor(Cursor.MOVE_CURSOR))
+internal actual val pointerIconWait: PointerIcon = AwtCursor(Cursor(Cursor.WAIT_CURSOR))
+// todo[unterhofer] These aren't actually correct, I think
+internal actual val pointerIconColResize: PointerIcon = AwtCursor(Cursor(Cursor.E_RESIZE_CURSOR))
+internal actual val pointerIconRowResize: PointerIcon = AwtCursor(Cursor(Cursor.S_RESIZE_CURSOR))
+
+internal actual val pointerIconNeResize: PointerIcon = AwtCursor(Cursor(Cursor.NE_RESIZE_CURSOR))
+internal actual val pointerIconNwResize: PointerIcon = AwtCursor(Cursor(Cursor.NW_RESIZE_CURSOR))
+internal actual val pointerIconSeResize: PointerIcon = AwtCursor(Cursor(Cursor.SE_RESIZE_CURSOR))
+internal actual val pointerIconSwResize: PointerIcon = AwtCursor(Cursor(Cursor.SW_RESIZE_CURSOR))
