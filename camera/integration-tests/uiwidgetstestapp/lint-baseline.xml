@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<issues format="6" by="lint 8.2.0-alpha15" type="baseline" client="gradle" dependencies="false" name="AGP (8.2.0-alpha15)" variant="all" version="8.2.0-alpha15">
+<issues format="6" by="lint 8.3.0-beta01" type="baseline" client="gradle" dependencies="false" name="AGP (8.3.0-beta01)" variant="all" version="8.3.0-beta01">
 
     <issue
         id="RestrictedApiAndroidX"
@@ -129,6 +129,15 @@
 
     <issue
         id="RestrictedApiAndroidX"
+        message="Exif can only be accessed from within the same library group (referenced groupId=`androidx.camera` from groupId=`androidx.camera.integration-tests`)"
+        errorLine1="        private val exif: Exif"
+        errorLine2="                          ~~~~">
+        <location
+            file="src/main/java/androidx/camera/integration/uiwidgets/rotations/ImageCaptureResult.kt"/>
+    </issue>
+
+    <issue
+        id="RestrictedApiAndroidX"
         message="Exif.createFromInputStream can only be called from within the same library group (referenced groupId=`androidx.camera` from groupId=`androidx.camera.integration-tests`)"
         errorLine1="            exif = Exif.createFromInputStream(inputStream!!)"
         errorLine2="                        ~~~~~~~~~~~~~~~~~~~~~">
@@ -218,21 +227,12 @@
     </issue>
 
     <issue
-        id="PrimitiveInLambda"
-        message="Use a functional interface instead of lambda syntax for lambdas with primitive values in method ImageCaptureScreen has parameter &apos;onLinearZoomChange&apos; with type Function1&lt;? super Float, Unit>."
-        errorLine1="    onLinearZoomChange: (Float) -> Unit,"
-        errorLine2="                        ~~~~~~~~~~~~~~~">
+        id="PrimitiveInCollection"
+        message="field VALID_FLASH_MODES with type List&lt;Integer>: replace with IntList"
+        errorLine1="        private val VALID_FLASH_MODES = listOf("
+        errorLine2="        ^">
         <location
-            file="src/main/java/androidx/camera/integration/uiwidgets/compose/ui/screen/imagecapture/ImageCaptureScreen.kt"/>
-    </issue>
-
-    <issue
-        id="PrimitiveInLambda"
-        message="Use a functional interface instead of lambda syntax for lambdas with primitive values in method VideoCaptureScreen has parameter &apos;onLinearZoomChange&apos; with type Function1&lt;? super Float, Unit>."
-        errorLine1="    onLinearZoomChange: (Float) -> Unit,"
-        errorLine2="                        ~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/camera/integration/uiwidgets/compose/ui/screen/videocapture/VideoCaptureScreen.kt"/>
+            file="src/main/java/androidx/camera/integration/uiwidgets/compose/ui/screen/imagecapture/ImageCaptureScreenState.kt"/>
     </issue>
 
 </issues>

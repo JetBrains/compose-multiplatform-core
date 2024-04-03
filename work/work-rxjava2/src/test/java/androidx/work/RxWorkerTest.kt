@@ -26,6 +26,7 @@ import java.util.UUID
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executor
 import java.util.concurrent.TimeUnit
+import kotlin.coroutines.EmptyCoroutineContext
 import org.hamcrest.CoreMatchers.`is`
 import org.hamcrest.MatcherAssert.assertThat
 import org.junit.Assert
@@ -127,8 +128,9 @@ class RxWorkerTest {
         1,
         0,
         executor,
+        EmptyCoroutineContext,
         InstantWorkTaskExecutor(),
-        WorkerFactory.getDefaultWorkerFactory(),
+        DefaultWorkerFactory,
         progressUpdater,
         foregroundUpdater
     )

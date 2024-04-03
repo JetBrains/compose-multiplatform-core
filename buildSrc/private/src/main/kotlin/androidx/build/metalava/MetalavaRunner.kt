@@ -34,6 +34,7 @@ import org.gradle.process.ExecOperations
 import org.gradle.workers.WorkAction
 import org.gradle.workers.WorkParameters
 import org.gradle.workers.WorkerExecutor
+import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 
 // MetalavaRunner stores common configuration for executing Metalava
 
@@ -41,19 +42,20 @@ fun runMetalavaWithArgs(
     metalavaClasspath: FileCollection,
     args: List<String>,
     k2UastEnabled: Boolean,
+    kotlinSourceLevel: KotlinVersion,
     workerExecutor: WorkerExecutor,
 ) {
     val allArgs =
         args +
             listOf(
                 "--hide",
-                "HiddenSuperclass", // We allow having a hidden parent class
-                "--hide",
                 // Removing final from a method does not cause compatibility issues for AndroidX.
                 "RemovedFinalStrict",
                 "--error",
                 "UnresolvedImport",
-                "--delete-empty-removed-signatures",
+
+                "--kotlin-source",
+                kotlinSourceLevel.version,
 
                 // Metalava arguments to suppress compatibility checks for experimental API
                 // surfaces.
@@ -91,6 +93,7 @@ abstract class MetalavaWorkAction @Inject constructor(private val execOperations
             execOperations.javaexec {
                 // Intellij core reflects into java.util.ResourceBundle
                 it.jvmArgs = listOf("--add-opens", "java.base/java.util=ALL-UNNAMED")
+                it.systemProperty("java.awt.headless", "true")
                 it.classpath(parameters.metalavaClasspath.get())
                 it.mainClass.set("com.android.tools.metalava.Driver")
                 it.args = parameters.args.get() + k2UastArg
@@ -108,10 +111,9 @@ abstract class MetalavaWorkAction @Inject constructor(private val execOperations
 
 fun Project.getMetalavaClasspath(): FileCollection {
     val configuration =
-        configurations.findByName("metalava")
-            ?: configurations.create("metalava") {
-                it.dependencies.add(dependencies.create(getLibraryByName("metalava")))
-            }
+        configurations.detachedConfiguration(
+                dependencies.create(getLibraryByName("metalava"))
+        )
     return project.files(configuration)
 }
 
@@ -165,7 +167,6 @@ fun getApiLintArgs(targetsJavaConsumers: Boolean): List<String> {
                     "MethodNameTense",
                     "UseIcu",
                     "NoByteOrShort",
-                    "CommonArgsFirst",
                     "GetterOnBuilder",
                     "CallbackMethodName",
                     "StaticFinalBuilder",
@@ -232,6 +233,7 @@ fun generateApi(
     includeRestrictToLibraryGroupApis: Boolean,
     apiLevelsArgs: List<String>,
     k2UastEnabled: Boolean,
+    kotlinSourceLevel: KotlinVersion,
     workerExecutor: WorkerExecutor,
     pathToManifest: String? = null,
 ) {
@@ -248,14 +250,13 @@ fun generateApi(
     generateApiConfigs.forEach { (generateApiMode, apiLintMode) ->
         generateApi(
             metalavaClasspath,
-            files.bootClasspath,
-            files.dependencyClasspath,
-            files.sourcePaths.files,
+            files,
             apiLocation,
             generateApiMode,
             apiLintMode,
             apiLevelsArgs,
             k2UastEnabled,
+            kotlinSourceLevel,
             workerExecutor,
             pathToManifest
         )
@@ -268,29 +269,29 @@ fun generateApi(
  */
 private fun generateApi(
     metalavaClasspath: FileCollection,
-    bootClasspath: FileCollection,
-    dependencyClasspath: FileCollection,
-    sourcePaths: Collection<File>,
+    files: JavaCompileInputs,
     outputLocation: ApiLocation,
     generateApiMode: GenerateApiMode,
     apiLintMode: ApiLintMode,
     apiLevelsArgs: List<String>,
     k2UastEnabled: Boolean,
+    kotlinSourceLevel: KotlinVersion,
     workerExecutor: WorkerExecutor,
     pathToManifest: String? = null
 ) {
     val args =
         getGenerateApiArgs(
-            bootClasspath,
-            dependencyClasspath,
-            sourcePaths,
+            files.bootClasspath,
+            files.dependencyClasspath,
+            files.sourcePaths.files,
+            files.commonModuleSourcePaths.files,
             outputLocation,
             generateApiMode,
             apiLintMode,
             apiLevelsArgs,
             pathToManifest
         )
-    runMetalavaWithArgs(metalavaClasspath, args, k2UastEnabled, workerExecutor)
+    runMetalavaWithArgs(metalavaClasspath, args, k2UastEnabled, kotlinSourceLevel, workerExecutor)
 }
 
 /**
@@ -301,6 +302,7 @@ fun getGenerateApiArgs(
     bootClasspath: FileCollection,
     dependencyClasspath: FileCollection,
     sourcePaths: Collection<File>,
+    commonModuleSourcePaths: Collection<File>,
     outputLocation: ApiLocation?,
     generateApiMode: GenerateApiMode,
     apiLintMode: ApiLintMode,
@@ -314,9 +316,16 @@ fun getGenerateApiArgs(
             (bootClasspath.files + dependencyClasspath.files).joinToString(File.pathSeparator),
             "--source-path",
             sourcePaths.filter { it.exists() }.joinToString(File.pathSeparator),
-            "--format=v4",
-            "--warnings-as-errors"
         )
+
+    val existentCommonModuleSourcePaths = commonModuleSourcePaths.filter { it.exists() }
+    if (existentCommonModuleSourcePaths.isNotEmpty()) {
+        args += listOf("--common-source-path", existentCommonModuleSourcePaths.joinToString(":"))
+    }
+    args += listOf(
+        "--format=v4",
+        "--warnings-as-errors"
+    )
 
     pathToManifest?.let { args += listOf("--manifest", pathToManifest) }
 
@@ -324,7 +333,6 @@ fun getGenerateApiArgs(
         when (generateApiMode) {
             is GenerateApiMode.PublicApi -> {
                 args += listOf("--api", outputLocation.publicApiFile.toString())
-                args += listOf("--removed-api", outputLocation.removedApiFile.toString())
                 // Generate API levels just for the public API
                 args += apiLevelsArgs
             }

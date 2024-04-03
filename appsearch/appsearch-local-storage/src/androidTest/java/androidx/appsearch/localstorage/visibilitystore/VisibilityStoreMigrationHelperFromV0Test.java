@@ -33,7 +33,7 @@ import androidx.appsearch.app.PackageIdentifier;
 import androidx.appsearch.app.VisibilityDocument;
 import androidx.appsearch.localstorage.AppSearchConfigImpl;
 import androidx.appsearch.localstorage.AppSearchImpl;
-import androidx.appsearch.localstorage.DefaultIcingOptionsConfig;
+import androidx.appsearch.localstorage.LocalStorageIcingOptionsConfig;
 import androidx.appsearch.localstorage.OptimizeStrategy;
 import androidx.appsearch.localstorage.UnlimitedLimitConfig;
 import androidx.appsearch.localstorage.util.PrefixUtil;
@@ -130,35 +130,33 @@ public class VisibilityStoreMigrationHelperFromV0Test {
         appSearchImplInV0.close();
         AppSearchImpl appSearchImpl = AppSearchImpl.create(mFile,
                 new AppSearchConfigImpl(new UnlimitedLimitConfig(),
-                        new DefaultIcingOptionsConfig()), /*initStatsBuilder=*/ null,
+                        new LocalStorageIcingOptionsConfig()), /*initStatsBuilder=*/ null,
                 ALWAYS_OPTIMIZE,
                 /*visibilityChecker=*/null);
 
-        VisibilityDocument actualDocument1 = new VisibilityDocument(
+        VisibilityDocument actualDocument1 = new VisibilityDocument.Builder(
                 appSearchImpl.getDocument(
                         VisibilityStore.VISIBILITY_PACKAGE_NAME,
                         VisibilityStore.VISIBILITY_DATABASE_NAME,
                         VisibilityDocument.NAMESPACE,
                         /*id=*/ prefix + "Schema1",
-                        /*typePropertyPaths=*/ Collections.emptyMap()));
-        VisibilityDocument actualDocument2 = new VisibilityDocument(
+                        /*typePropertyPaths=*/ Collections.emptyMap())).build();
+        VisibilityDocument actualDocument2 = new VisibilityDocument.Builder(
                 appSearchImpl.getDocument(
                         VisibilityStore.VISIBILITY_PACKAGE_NAME,
                         VisibilityStore.VISIBILITY_DATABASE_NAME,
                         VisibilityDocument.NAMESPACE,
                         /*id=*/ prefix + "Schema2",
-                        /*typePropertyPaths=*/ Collections.emptyMap()));
+                        /*typePropertyPaths=*/ Collections.emptyMap())).build();
 
         VisibilityDocument expectedDocument1 =
                 new VisibilityDocument.Builder(/*id=*/ prefix + "Schema1")
                         .setNotDisplayedBySystem(true)
-                        .setCreationTimestampMillis(actualDocument1.getCreationTimestampMillis())
                         .addVisibleToPackage(new PackageIdentifier(packageNameFoo, sha256CertFoo))
                         .build();
         VisibilityDocument expectedDocument2 =
                 new VisibilityDocument.Builder(/*id=*/ prefix + "Schema2")
                         .setNotDisplayedBySystem(true)
-                        .setCreationTimestampMillis(actualDocument2.getCreationTimestampMillis())
                         .addVisibleToPackage(new PackageIdentifier(packageNameBar, sha256CertBar))
                         .build();
         assertThat(actualDocument1).isEqualTo(expectedDocument1);
@@ -198,7 +196,7 @@ public class VisibilityStoreMigrationHelperFromV0Test {
         // Set deprecated visibility schema version 0 into AppSearchImpl.
         AppSearchImpl appSearchImpl = AppSearchImpl.create(mFile,
                 new AppSearchConfigImpl(new UnlimitedLimitConfig(),
-                        new DefaultIcingOptionsConfig()), /*initStatsBuilder=*/ null,
+                        new LocalStorageIcingOptionsConfig()), /*initStatsBuilder=*/ null,
                 ALWAYS_OPTIMIZE,
                 /*visibilityChecker=*/null);
         InternalSetSchemaResponse internalSetSchemaResponse = appSearchImpl.setSchema(

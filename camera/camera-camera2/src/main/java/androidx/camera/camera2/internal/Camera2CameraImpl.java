@@ -75,6 +75,7 @@ import androidx.camera.core.impl.UseCaseAttachState;
 import androidx.camera.core.impl.UseCaseConfig;
 import androidx.camera.core.impl.UseCaseConfigFactory;
 import androidx.camera.core.impl.annotation.ExecutedBy;
+import androidx.camera.core.impl.stabilization.StabilizationMode;
 import androidx.camera.core.impl.utils.executor.CameraXExecutors;
 import androidx.camera.core.impl.utils.futures.FutureCallback;
 import androidx.camera.core.impl.utils.futures.Futures;
@@ -195,7 +196,7 @@ final class Camera2CameraImpl implements CameraInternal {
     private final Set<String> mNotifyStateAttachedSet = new HashSet<>();
 
     @NonNull
-    private CameraConfig mCameraConfig = CameraConfigs.emptyConfig();
+    private CameraConfig mCameraConfig = CameraConfigs.defaultConfig();
     final Object mLock = new Object();
     // mSessionProcessor will be used to transform capture session if non-null.
     @GuardedBy("mLock")
@@ -306,7 +307,8 @@ final class Camera2CameraImpl implements CameraInternal {
     private CaptureSessionInterface newCaptureSession() {
         synchronized (mLock) {
             if (mSessionProcessor == null) {
-                return new CaptureSession(mDynamicRangesCompat);
+                return new CaptureSession(mDynamicRangesCompat,
+                        mCameraInfoInternal.getCameraQuirks());
             } else {
                 return new ProcessingCaptureSession(mSessionProcessor,
                         mCameraInfoInternal, mDynamicRangesCompat, mExecutor,
@@ -888,10 +890,7 @@ final class Camera2CameraImpl implements CameraInternal {
 
     @Override
     public void setExtendedConfig(@Nullable CameraConfig cameraConfig) {
-        if (cameraConfig == null) {
-            cameraConfig = CameraConfigs.emptyConfig();
-        }
-
+        cameraConfig = cameraConfig != null ? cameraConfig : CameraConfigs.defaultConfig();
         SessionProcessor sessionProcessor = cameraConfig.getSessionProcessor(null);
         mCameraConfig = cameraConfig;
 
@@ -1068,7 +1067,7 @@ final class Camera2CameraImpl implements CameraInternal {
                     removeMeteringRepeating();
                 } else {
                     // Other normal cases, do nothing.
-                    Logger.d(TAG, "mMeteringRepeating is ATTACHED, "
+                    Logger.d(TAG, "No need to remove a previous mMeteringRepeating, "
                             + "SessionConfig Surfaces: " + sizeSessionSurfaces + ", "
                             + "CaptureConfig Surfaces: " + sizeRepeatingSurfaces);
                 }
@@ -1578,9 +1577,20 @@ final class Camera2CameraImpl implements CameraInternal {
         for (SessionConfig sessionConfig :
                 mUseCaseAttachState.getActiveAndAttachedSessionConfigs()) {
             // Query the repeating surfaces attached to this use case, then add them to the builder.
-            List<DeferrableSurface> surfaces =
-                    sessionConfig.getRepeatingCaptureConfig().getSurfaces();
+            CaptureConfig repeatingCaptureConfig = sessionConfig.getRepeatingCaptureConfig();
+            List<DeferrableSurface> surfaces = repeatingCaptureConfig.getSurfaces();
             if (!surfaces.isEmpty()) {
+                // TODO: Use priority to handle conflict for a specific stabilization mode setting
+                if (repeatingCaptureConfig.getPreviewStabilizationMode()
+                        != StabilizationMode.UNSPECIFIED) {
+                    captureConfigBuilder.setPreviewStabilization(
+                            repeatingCaptureConfig.getPreviewStabilizationMode());
+                }
+                if (repeatingCaptureConfig.getVideoStabilizationMode()
+                        != StabilizationMode.UNSPECIFIED) {
+                    captureConfigBuilder.setVideoStabilization(
+                            repeatingCaptureConfig.getVideoStabilizationMode());
+                }
                 for (DeferrableSurface surface : surfaces) {
                     captureConfigBuilder.addSurface(surface);
                 }

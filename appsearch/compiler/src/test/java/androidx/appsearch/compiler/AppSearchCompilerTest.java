@@ -16,6 +16,9 @@
 
 package androidx.appsearch.compiler;
 
+import static androidx.appsearch.compiler.AppSearchCompiler.OUTPUT_DIR_OPTION;
+import static androidx.appsearch.compiler.AppSearchCompiler.RESTRICT_GENERATED_CODE_TO_LIB_OPTION;
+
 import static com.google.testing.compile.CompilationSubject.assertThat;
 
 import com.google.auto.value.processor.AutoValueProcessor;
@@ -59,11 +62,12 @@ public class AppSearchCompilerTest {
     @Test
     public void testPrivate() {
         Compilation compilation = compile(
-                "Wrapper",
+                /* classSimpleName= */"Wrapper",
                 "public class Wrapper {\n"
                         + "@Document\n"
                         + "private class Gift {}\n"
-                        + "}  // Wrapper\n"
+                        + "}  // Wrapper\n",
+                /* restrictGeneratedCodeToLibrary= */false
         );
 
         assertThat(compilation).hadErrorContaining("annotated class is private");
@@ -96,7 +100,7 @@ public class AppSearchCompilerTest {
     }
 
     @Test
-    public void testAutoValueInheritance() throws Exception {
+    public void testAutoValueInheritance() {
         Compilation docExtendsAutoValueDoc = compile(
                 "import com.google.auto.value.AutoValue;\n"
                         + "import com.google.auto.value.AutoValue.*;\n"
@@ -144,7 +148,7 @@ public class AppSearchCompilerTest {
     }
 
     @Test
-    public void testSuperClassErrors() throws Exception {
+    public void testSuperClassErrors() {
         Compilation specialFieldReassigned = compile(
                 "@Document\n"
                         + "public class Gift {\n"
@@ -168,27 +172,6 @@ public class AppSearchCompilerTest {
         assertThat(specialFieldReassigned).hadErrorContaining(
                 "Property type must stay consistent when overriding annotated "
                         + "members but changed from @Id -> @StringProperty");
-
-        Compilation nonAnnotatedFieldHasSameName = compile(
-                "@Document\n"
-                        + "public class Gift {\n"
-                        + "  @Document.Namespace String namespace;\n"
-                        + "  @Document.Id String id;\n"
-                        + "  Gift(String id, String namespace) {\n"
-                        + "    this.id = id;\n"
-                        + "    this.namespace = namespace;\n"
-                        + "  }\n"
-                        + "}\n"
-                        + "@Document\n"
-                        + "class CoolGift extends Gift {\n"
-                        + "  String id;\n"
-                        + "  CoolGift(String id, String namespace) {\n"
-                        + "    super(id, namespace);\n"
-                        + "  }\n"
-                        + "  public String getId() { return id; }\n"
-                        + "}\n");
-        assertThat(nonAnnotatedFieldHasSameName).hadErrorContaining(
-                "Non-annotated field overriding special annotated fields named: id");
 
         //error on collision
         Compilation idCollision = compile(
@@ -1209,7 +1192,7 @@ public class AppSearchCompilerTest {
     }
 
     @Test
-    public void testInvalidLongPropertyIndexingType() throws Exception {
+    public void testInvalidLongPropertyIndexingType() {
         // AppSearchSchema requires Android and is not available in this desktop test, so we cheat
         // by using the integer constants directly.
         Compilation compilation = compile(
@@ -1241,7 +1224,7 @@ public class AppSearchCompilerTest {
     }
 
     @Test
-    public void testRepeatedPropertyJoinableType_throwsError() throws Exception {
+    public void testRepeatedPropertyJoinableType_throwsError() {
         Compilation compilation = compile(
                 "import java.util.*;\n"
                         + "@Document\n"
@@ -1460,8 +1443,8 @@ public class AppSearchCompilerTest {
                         + "  @Document\n"
                         + "  @AutoValue\n"
                         + "  abstract static class A {\n"
-                        + "    @CopyAnnotations @Document.Id abstract String id();\n"
                         + "    @CopyAnnotations @Document.Namespace abstract String namespace();\n"
+                        + "    @CopyAnnotations @Document.Id abstract String id();\n"
                         + "    public static A create(String id, String namespace) {\n"
                         + "      return new AutoValue_Gift_A(id, namespace);\n"
                         + "    }\n"
@@ -1479,6 +1462,38 @@ public class AppSearchCompilerTest {
                         + "@Document\n"
                         + "@AutoValue\n"
                         + "public abstract class Gift {\n"
+                        + "  @CopyAnnotations @Document.Namespace abstract String namespace();\n"
+                        + "  @CopyAnnotations @Document.Id abstract String id();\n"
+                        + "  @CopyAnnotations\n"
+                        + "  @Document.StringProperty abstract String property();\n"
+                        + "  public static Gift create(String id, String namespace, String"
+                        + " property) {\n"
+                        + "    return new AutoValue_Gift(id, namespace, property);\n"
+                        + "  }\n"
+                        + "}\n");
+
+        assertThat(compilation).succeededWithoutWarnings();
+        checkEqualsGolden("AutoValue_Gift.java");
+        checkDocumentMapEqualsGolden(/* roundIndex= */0);
+        // The number of rounds that the annotation processor takes can vary from setup to setup.
+        // In this test case, AutoValue documents are processed in the second round because their
+        // generated classes are not available in the first turn.
+        checkDocumentMapEqualsGolden(/* roundIndex= */1);
+    }
+
+    @Test
+    public void testAutoValueDocumentWithNormalDocument() throws IOException {
+        Compilation compilation = compile(
+                "import com.google.auto.value.AutoValue;\n"
+                        + "import com.google.auto.value.AutoValue.*;\n"
+                        + "@Document\n"
+                        + "class Person {\n"
+                        + "  @Document.Namespace String namespace;\n"
+                        + "  @Document.Id String id;\n"
+                        + "}\n"
+                        + "@Document\n"
+                        + "@AutoValue\n"
+                        + "public abstract class Gift {\n"
                         + "  @CopyAnnotations @Document.Id abstract String id();\n"
                         + "  @CopyAnnotations @Document.Namespace abstract String namespace();\n"
                         + "  @CopyAnnotations\n"
@@ -1491,6 +1506,11 @@ public class AppSearchCompilerTest {
 
         assertThat(compilation).succeededWithoutWarnings();
         checkEqualsGolden("AutoValue_Gift.java");
+        checkDocumentMapEqualsGolden(/* roundIndex= */0);
+        // The number of rounds that the annotation processor takes can vary from setup to setup.
+        // In this test case, AutoValue documents are processed in the second round because their
+        // generated classes are not available in the first turn.
+        checkDocumentMapEqualsGolden(/* roundIndex= */1);
     }
 
     @Test
@@ -1516,8 +1536,8 @@ public class AppSearchCompilerTest {
         Compilation compilation = compile(
                 "@Document\n"
                         + "public class Gift {\n"
-                        + "  @Document.Id private String mId;\n"
                         + "  @Document.Namespace private String mNamespace;\n"
+                        + "  @Document.Id private String mId;\n"
                         + "  public Gift(String id, String namespace, boolean nonAppSearchParam){\n"
                         + "    mId = id;\n"
                         + "    mNamespace = namespace;\n"
@@ -1639,6 +1659,7 @@ public class AppSearchCompilerTest {
         checkResultContains("Gift.java", "addParentType($$__AppSearch__Parent2.SCHEMA_NAME)");
 
         checkEqualsGolden("Gift.java");
+        checkDocumentMapEqualsGolden(/* roundIndex= */0);
     }
 
     @Test
@@ -1673,7 +1694,7 @@ public class AppSearchCompilerTest {
     }
 
     @Test
-    public void testPolymorphismOverrideExtendedPropertyInvalid() throws Exception {
+    public void testPolymorphismOverrideExtendedPropertyInvalid() {
         // Overridden properties cannot change the names.
         Compilation compilation = compile(
                 "@Document\n"
@@ -1790,7 +1811,7 @@ public class AppSearchCompilerTest {
     }
 
     @Test
-    public void testPolymorphismChildTypeWithoutName() throws Exception {
+    public void testPolymorphismChildTypeWithoutName() {
         Compilation compilation = compile(
                 "@Document\n"
                         + "class Parent {\n"
@@ -1804,6 +1825,341 @@ public class AppSearchCompilerTest {
                         + "}\n");
         assertThat(compilation).hadErrorContaining(
                 "All @Document classes with a parent must explicitly provide a name");
+    }
+
+    @Test
+    public void testIndexableNestedPropertiesListSimple() throws Exception {
+        Compilation compilation = compile(
+                "@Document\n"
+                        + "class Address {\n"
+                        + "  @Document.Namespace String namespace;\n"
+                        + "  @Document.Id String id;\n"
+                        + "  @Document.LongProperty long streetNumber;\n"
+                        + "  @Document.StringProperty String streetName;\n"
+                        + "  @Document.StringProperty String state;\n"
+                        + "  @Document.LongProperty long zipCode;\n"
+                        + "}\n"
+                        + "@Document\n"
+                        + "class Person {\n"
+                        + "  @Document.Namespace String namespace;\n"
+                        + "  @Document.Id String id;\n"
+                        + "  @Document.StringProperty String name;\n"
+                        + "  @Document.DocumentProperty(indexableNestedPropertiesList ="
+                        + "    {\"streetNumber\", \"streetName\"}) Address livesAt;\n"
+                        + "}\n");
+        assertThat(compilation).succeededWithoutWarnings();
+
+        checkResultContains("Person.java", "addIndexableNestedProperties(\"streetNumber\")");
+        checkResultContains("Person.java", "addIndexableNestedProperties(\"streetName\")");
+
+        checkEqualsGolden("Person.java");
+    }
+
+    @Test
+    public void testIndexableNestedPropertiesListEmpty() throws Exception {
+        Compilation compilation = compile(
+                "@Document\n"
+                        + "class Address {\n"
+                        + "  @Document.Namespace String namespace;\n"
+                        + "  @Document.Id String id;\n"
+                        + "  @Document.LongProperty long streetNumber;\n"
+                        + "  @Document.StringProperty String streetName;\n"
+                        + "  @Document.StringProperty String state;\n"
+                        + "  @Document.LongProperty long zipCode;\n"
+                        + "}\n"
+                        + "@Document\n"
+                        + "class Person {\n"
+                        + "  @Document.Namespace String namespace;\n"
+                        + "  @Document.Id String id;\n"
+                        + "  @Document.StringProperty String name;\n"
+                        + "  @Document.DocumentProperty(indexableNestedPropertiesList = {})"
+                        + "  Address livesAt;\n"
+                        + "}\n");
+        assertThat(compilation).succeededWithoutWarnings();
+        checkResultDoesNotContain("Person.java", "addIndexableNestedProperties");
+        checkEqualsGolden("Person.java");
+    }
+
+    @Test
+    public void testIndexableNestedPropertiesListInheritSuperclassTrue() throws Exception {
+        Compilation compilation = compile(
+                "@Document\n"
+                        + "class Address {\n"
+                        + "  @Document.Namespace String namespace;\n"
+                        + "  @Document.Id String id;\n"
+                        + "  @Document.LongProperty long streetNumber;\n"
+                        + "  @Document.StringProperty String streetName;\n"
+                        + "  @Document.StringProperty String state;\n"
+                        + "  @Document.LongProperty long zipCode;\n"
+                        + "}\n"
+                        + "@Document\n"
+                        + "class Person {\n"
+                        + "  @Document.Namespace String namespace;\n"
+                        + "  @Document.Id String id;\n"
+                        + "  @Document.StringProperty String name;\n"
+                        + "  @Document.DocumentProperty(indexableNestedPropertiesList ="
+                        + "    {\"streetNumber\", \"streetName\"}) Address livesAt;\n"
+                        + "}\n"
+                        + "@Document(name = \"Artist\", parent = {Person.class})\n"
+                        + "class Artist extends Person {\n"
+                        + "  @Document.StringProperty String mostFamousWork;\n"
+                        + "  @Document.DocumentProperty("
+                        + "    indexableNestedPropertiesList = {\"state\"},"
+                        + "    inheritIndexableNestedPropertiesFromSuperclass = true)"
+                        + "  Address livesAt;\n"
+                        + "}\n");
+        assertThat(compilation).succeededWithoutWarnings();
+
+        checkResultContains("Artist.java", "addIndexableNestedProperties(\"streetNumber\")");
+        checkResultContains("Artist.java", "addIndexableNestedProperties(\"streetName\")");
+        checkResultContains("Artist.java", "addIndexableNestedProperties(\"state\")");
+
+        checkEqualsGolden("Artist.java");
+    }
+
+    @Test
+    public void testIndexableNestedPropertiesListInheritSuperclassFalse() throws Exception {
+        Compilation compilation = compile(
+                "@Document\n"
+                        + "class Address {\n"
+                        + "  @Document.Namespace String namespace;\n"
+                        + "  @Document.Id String id;\n"
+                        + "  @Document.LongProperty long streetNumber;\n"
+                        + "  @Document.StringProperty String streetName;\n"
+                        + "  @Document.StringProperty String state;\n"
+                        + "  @Document.LongProperty long zipCode;\n"
+                        + "}\n"
+                        + "@Document\n"
+                        + "class Person {\n"
+                        + "  @Document.Namespace String namespace;\n"
+                        + "  @Document.Id String id;\n"
+                        + "  @Document.StringProperty String name;\n"
+                        + "  @Document.DocumentProperty(indexableNestedPropertiesList ="
+                        + "    {\"streetNumber\", \"streetName\"}) Address livesAt;\n"
+                        + "}\n"
+                        + "@Document(name = \"Artist\", parent = {Person.class})\n"
+                        + "class Artist extends Person {\n"
+                        + "  @Document.StringProperty String mostFamousWork;\n"
+                        + "  @Document.DocumentProperty("
+                        + "    indexableNestedPropertiesList = {\"state\"},"
+                        + "    inheritIndexableNestedPropertiesFromSuperclass = false)"
+                        + "  Address livesAt;\n"
+                        + "}\n");
+        assertThat(compilation).succeededWithoutWarnings();
+
+        checkResultContains("Artist.java", "addIndexableNestedProperties(\"state\")");
+        checkResultDoesNotContain("Artist.java", "addIndexableNestedProperties(\"streetNumber\")");
+        checkResultDoesNotContain("Artist.java", "addIndexableNestedProperties(\"streetName\")");
+
+        checkEqualsGolden("Artist.java");
+    }
+
+    @Test
+    public void testIndexableNestedPropertiesListInheritWithMultipleParentsClasses()
+            throws Exception {
+        // Tests that the child class inherits nested properties from the parent correctly. When
+        // set to true, the field overridden by the child class should only inherit indexable
+        // nested properties form its java parent class (i.e. the superclass/interface which the
+        // child class extends from/implements).
+        // In this test case, Artist's parent class is Person, and ArtistEmployee's parent class
+        // is Artist. This means that ArtistEmployee.livesAt's indexable list should contain the
+        // properties s specified in Artist.livesAt. and Person.livesAt (since both Artist and
+        // ArtistEmployee sets inheritFromParent=true for this field). ArtistEmployee.livesAt
+        // should not inherit the indexable list from Employee.livesAt since Employee is not
+        // ArtistEmployee's java class parent.
+        Compilation compilation = compile(
+                "@Document\n"
+                        + "class Address {\n"
+                        + "  @Document.Namespace String namespace;\n"
+                        + "  @Document.Id String id;\n"
+                        + "  @Document.LongProperty long streetNumber;\n"
+                        + "  @Document.StringProperty String streetName;\n"
+                        + "  @Document.StringProperty String state;\n"
+                        + "  @Document.LongProperty long zipCode;\n"
+                        + "}\n"
+                        + "@Document\n"
+                        + "class Person {\n"
+                        + "  @Document.Namespace String namespace;\n"
+                        + "  @Document.Id String id;\n"
+                        + "  @Document.StringProperty String name;\n"
+                        + "  @Document.DocumentProperty(indexableNestedPropertiesList ="
+                        + "    {\"streetNumber\", \"streetName\"}) Address livesAt;\n"
+                        + "}\n"
+                        + "@Document(name = \"Artist\", parent = {Person.class})\n"
+                        + "class Artist extends Person {\n"
+                        + "  @Document.StringProperty String mostFamousWork;\n"
+                        + "  @Document.DocumentProperty("
+                        + "    indexableNestedPropertiesList = {\"state\"},"
+                        + "    inheritIndexableNestedPropertiesFromSuperclass = true)"
+                        + "  Address livesAt;\n"
+                        + "}\n"
+                        + "@Document(name = \"Employee\", parent = {Person.class})\n"
+                        + "class Employee extends Person {\n"
+                        + "  @Document.DocumentProperty("
+                        + "    indexableNestedPropertiesList = {\"zipCode\"},"
+                        + "    inheritIndexableNestedPropertiesFromSuperclass = true)"
+                        + "  Address livesAt;\n"
+                        + "  @Document.DocumentProperty(indexableNestedPropertiesList ="
+                        + "    {\"zipCode\", \"streetName\"}) Address worksAt;\n"
+                        + "}\n"
+                        + "@Document(name = \"ArtistEmployee\", parent = {Artist.class,"
+                        + "Employee.class})\n"
+                        + "class ArtistEmployee extends Artist {\n"
+                        + "  @Document.StringProperty String mostFamousWork;\n"
+                        + "  @Document.DocumentProperty("
+                        + "    inheritIndexableNestedPropertiesFromSuperclass = true)"
+                        + "  Address livesAt;\n"
+                        + "}\n");
+        assertThat(compilation).succeededWithoutWarnings();
+
+        checkResultContains("ArtistEmployee.java",
+                "addIndexableNestedProperties(\"streetNumber\")");
+        checkResultContains("ArtistEmployee.java", "addIndexableNestedProperties(\"streetName\")");
+        checkResultContains("ArtistEmployee.java", "addIndexableNestedProperties(\"state\")");
+        // ArtistEmployee's indexable list should not contain 'zipCode' as  ArtistEmployee only
+        // extends Artist, which does not index zipCode
+        checkResultDoesNotContain("ArtistEmployee.java",
+                "addIndexableNestedProperties(\"zipCode\")");
+
+        checkEqualsGolden("ArtistEmployee.java");
+    }
+
+    @Test
+    public void testIndexableNestedPropertiesListImplicitInheritance() throws Exception {
+        // Tests that properties that are not declared in the child class itself but exists in
+        // the class due to java class inheritance indexes the correct indexable list.
+        // Artist.livesAt should be defined for Artist and index the same indexable properties as
+        // Person.livesAt.
+        Compilation compilation = compile(
+                "@Document\n"
+                        + "class Address {\n"
+                        + "  @Document.Namespace String namespace;\n"
+                        + "  @Document.Id String id;\n"
+                        + "  @Document.LongProperty long streetNumber;\n"
+                        + "  @Document.StringProperty String streetName;\n"
+                        + "  @Document.StringProperty String state;\n"
+                        + "  @Document.LongProperty long zipCode;\n"
+                        + "}\n"
+                        + "@Document\n"
+                        + "class Person {\n"
+                        + "  @Document.Namespace String namespace;\n"
+                        + "  @Document.Id String id;\n"
+                        + "  @Document.StringProperty String name;\n"
+                        + "  @Document.DocumentProperty(indexableNestedPropertiesList ="
+                        + "    {\"streetNumber\", \"streetName\"}) Address livesAt;\n"
+                        + "}\n"
+                        + "@Document(name = \"Artist\", parent = {Person.class})\n"
+                        + "class Artist extends Person {\n"
+                        + "  @Document.StringProperty String mostFamousWork;\n"
+                        + "}\n");
+        assertThat(compilation).succeededWithoutWarnings();
+
+        checkResultContains("Artist.java",
+                "addIndexableNestedProperties(\"streetNumber\")");
+        checkResultContains("Artist.java", "addIndexableNestedProperties(\"streetName\")");
+
+        checkResultDoesNotContain("Artist.java",
+                "addIndexableNestedProperties(\"zipCode\")");
+        checkResultDoesNotContain("Artist.java", "addIndexableNestedProperties(\"state\")");
+
+        checkEqualsGolden("Artist.java");
+    }
+
+    @Test
+    public void testIndexableNestedPropertiesListImplicitlyInheritFromMultipleLevels()
+            throws Exception {
+        // Tests that the indexable list is inherited correctly across multiple java inheritance
+        // levels.
+        // ArtistEmployee.livesAt should index the nested properties defined in Person.livesAt.
+        Compilation compilation = compile(
+                "@Document\n"
+                        + "class Address {\n"
+                        + "  @Document.Namespace String namespace;\n"
+                        + "  @Document.Id String id;\n"
+                        + "  @Document.LongProperty long streetNumber;\n"
+                        + "  @Document.StringProperty String streetName;\n"
+                        + "  @Document.StringProperty String state;\n"
+                        + "  @Document.LongProperty long zipCode;\n"
+                        + "}\n"
+                        + "@Document\n"
+                        + "class Person {\n"
+                        + "  @Document.Namespace String namespace;\n"
+                        + "  @Document.Id String id;\n"
+                        + "  @Document.StringProperty String name;\n"
+                        + "  @Document.DocumentProperty(indexableNestedPropertiesList ="
+                        + "    {\"streetNumber\", \"streetName\"}) Address livesAt;\n"
+                        + "}\n"
+                        + "@Document(name = \"Artist\", parent = {Person.class})\n"
+                        + "class Artist extends Person {\n"
+                        + "  @Document.StringProperty String mostFamousWork;\n"
+                        + "}\n"
+                        + "@Document(name = \"ArtistEmployee\", parent = {Artist.class})\n"
+                        + "class ArtistEmployee extends Artist {\n"
+                        + "  @Document.StringProperty String worksAt;\n"
+                        + "  @Document.DocumentProperty("
+                        + "    inheritIndexableNestedPropertiesFromSuperclass = true)"
+                        + "  Address livesAt;\n"
+                        + "}\n");
+        assertThat(compilation).succeededWithoutWarnings();
+
+        checkResultContains("ArtistEmployee.java",
+                "addIndexableNestedProperties(\"streetNumber\")");
+        checkResultContains("ArtistEmployee.java", "addIndexableNestedProperties(\"streetName\")");
+
+        checkResultDoesNotContain("ArtistEmployee.java",
+                "addIndexableNestedProperties(\"zipCode\")");
+        checkResultDoesNotContain("ArtistEmployee.java", "addIndexableNestedProperties(\"state\")");
+
+        checkEqualsGolden("ArtistEmployee.java");
+    }
+
+    @Test
+    public void testIndexableNestedPropertiesListTopLevelInheritTrue() throws Exception {
+        Compilation compilation = compile(
+                "@Document\n"
+                        + "class Address {\n"
+                        + "  @Document.Namespace String namespace;\n"
+                        + "  @Document.Id String id;\n"
+                        + "  @Document.LongProperty long streetNumber;\n"
+                        + "  @Document.StringProperty String streetName;\n"
+                        + "  @Document.StringProperty String state;\n"
+                        + "  @Document.LongProperty long zipCode;\n"
+                        + "}\n"
+                        + "@Document\n"
+                        + "class Person {\n"
+                        + "  @Document.Namespace String namespace;\n"
+                        + "  @Document.Id String id;\n"
+                        + "  @Document.StringProperty String name;\n"
+                        + "  @Document.DocumentProperty(indexableNestedPropertiesList ="
+                        + "    {\"streetNumber\", \"streetName\"},"
+                        + "    inheritIndexableNestedPropertiesFromSuperclass = true)"
+                        + "  Address livesAt;\n"
+                        + "}\n"
+                        + "@Document(name = \"Artist\", parent = {Person.class})\n"
+                        + "class Artist extends Person {\n"
+                        + "  @Document.StringProperty String mostFamousWork;\n"
+                        + "  @Document.DocumentProperty(indexableNestedPropertiesList ="
+                        + "    {\"state\"}, inheritIndexableNestedPropertiesFromSuperclass = true)"
+                        + "  Address livesAt;\n"
+                        + "}\n"
+                        + "@Document(name = \"ArtistEmployee\", parent = {Artist.class})\n"
+                        + "class ArtistEmployee extends Artist {\n"
+                        + "  @Document.StringProperty String worksAt;\n"
+                        + "  @Document.DocumentProperty("
+                        + "    inheritIndexableNestedPropertiesFromSuperclass = true)"
+                        + "  Address livesAt;\n"
+                        + "}\n");
+        assertThat(compilation).succeededWithoutWarnings();
+
+        checkResultContains("ArtistEmployee.java",
+                "addIndexableNestedProperties(\"streetNumber\")");
+        checkResultContains("ArtistEmployee.java", "addIndexableNestedProperties(\"streetName\")");
+        checkResultContains("ArtistEmployee.java", "addIndexableNestedProperties(\"state\")");
+
+        checkResultDoesNotContain("ArtistEmployee.java",
+                "addIndexableNestedProperties(\"zipCode\")");
+
+        checkEqualsGolden("ArtistEmployee.java");
     }
 
     @Test
@@ -1884,7 +2240,7 @@ public class AppSearchCompilerTest {
     }
 
     @Test
-    public void testAnnotationOnGetterWithoutFactory() throws Exception {
+    public void testAnnotationOnGetterWithoutFactory() {
         // An interface without any factory method is not able to initialize, as interfaces do
         // not have constructors.
         Compilation compilation = compile(
@@ -1943,6 +2299,41 @@ public class AppSearchCompilerTest {
     }
 
     @Test
+    public void testInterfaceAsNestedDocument() throws Exception {
+        Compilation compilation = compile(
+                "@Document\n"
+                        + "interface Thing {\n"
+                        + "  public static Thing create(String id, String namespace) {\n"
+                        + "    return new ThingImpl(id, namespace);\n"
+                        + "  }\n"
+                        + "  @Document.Namespace public String getNamespace();\n"
+                        + "  @Document.Id public String getId();\n"
+                        + "}\n"
+                        + "class ThingImpl implements Thing {\n"
+                        + "  public ThingImpl(String id, String namespace) {\n"
+                        + "    this.id = id;\n"
+                        + "    this.namespace = namespace;\n"
+                        + "  }\n"
+                        + "  private String namespace;\n"
+                        + "  private String id;\n"
+                        + "  public String getNamespace() { return namespace; }\n"
+                        + "  public String getId() { return id; }\n"
+                        + "}\n"
+                        + "@Document\n"
+                        + "public class Gift {\n"
+                        + "  @Document.Namespace String namespace;\n"
+                        + "  @Document.Id String id;\n"
+                        + "  @Document.DocumentProperty Thing thing;\n"
+                        + "}\n");
+        assertThat(compilation).succeededWithoutWarnings();
+        checkResultContains("Thing.java",
+                "Thing document = Thing.create(getIdConv, getNamespaceConv)");
+        checkResultContains("Gift.java",
+                "thingConv = thingCopy.toDocumentClass(Thing.class, documentClassMap)");
+        checkEqualsGolden("Gift.java");
+    }
+
+    @Test
     public void testInterfaceImplementingParents() throws Exception {
         Compilation compilation = compile(
                 "@Document\n"
@@ -1998,6 +2389,7 @@ public class AppSearchCompilerTest {
         checkResultContains("Gift.java", "document.getStr2()");
         checkResultContains("Gift.java", "document.getPrice()");
         checkEqualsGolden("Gift.java");
+        checkDocumentMapEqualsGolden(/* roundIndex= */0);
     }
 
     @Test
@@ -2059,7 +2451,7 @@ public class AppSearchCompilerTest {
     }
 
     @Test
-    public void testSameNameGetterAndFieldAnnotatingBothButGetterIsPrivate() throws Exception {
+    public void testSameNameGetterAndFieldAnnotatingBothButGetterIsPrivate() {
         Compilation compilation = compile(
                 "@Document\n"
                         + "public class Gift {\n"
@@ -2129,7 +2521,7 @@ public class AppSearchCompilerTest {
     }
 
     @Test
-    public void testGetterWithParameterCannotBeUsed() throws Exception {
+    public void testGetterWithParameterCannotBeUsed() {
         Compilation compilation = compile(
                 "@Document\n"
                         + "public class Gift {\n"
@@ -2146,7 +2538,7 @@ public class AppSearchCompilerTest {
     }
 
     @Test
-    public void testPrivateGetterCannotBeUsed() throws Exception {
+    public void testPrivateGetterCannotBeUsed() {
         Compilation compilation = compile(
                 "@Document\n"
                         + "public class Gift {\n"
@@ -2185,7 +2577,7 @@ public class AppSearchCompilerTest {
     }
 
     @Test
-    public void testGetterWithWrongReturnType() throws Exception {
+    public void testGetterWithWrongReturnType() {
         Compilation compilation = compile(
                 "@Document\n"
                         + "public class Gift {\n"
@@ -2283,6 +2675,48 @@ public class AppSearchCompilerTest {
         checkResultContains("Gift.java", "builder.setPrice(getPriceConv)");
         checkResultContains("Gift.java", "builder.build()");
         checkEqualsGolden("Gift.java");
+    }
+
+    @Test
+    public void testBuilderThatUsesGenerics() throws Exception {
+        Compilation compilation = compile(
+                "@Document\n"
+                        + "public class Gift {\n"
+                        + "  @Document.Namespace private final String mNamespace;\n"
+                        + "  @Document.Id private final String mId;\n"
+                        + "  private Gift(String namespace, String id) {\n"
+                        + "    mNamespace = namespace;\n"
+                        + "    mId = id;\n"
+                        + "  }\n"
+                        + "  public String getNamespace() { return mNamespace; }\n"
+                        + "  public String getId() { return mId; }\n"
+                        + "  public static abstract class BaseBuilder<T> {\n"
+                        + "    public final T build() { return buildInternal(false); }\n"
+                        + "    // Give this a param to have zero methods with the signature\n"
+                        + "    // () -> DocumentClass\n"
+                        + "    protected abstract T buildInternal(boolean ignore);\n"
+                        + "  }\n"
+                        + "  @Document.BuilderProducer\n"
+                        + "  public static class Builder extends BaseBuilder<Gift> {\n"
+                        + "    private String mNamespace = \"\";\n"
+                        + "    private String mId = \"\";\n"
+                        + "    @Override\n"
+                        + "    protected Gift buildInternal(boolean ignore) {\n"
+                        + "      return new Gift(mNamespace, mId);\n"
+                        + "    }\n"
+                        + "    public Builder setNamespace(String namespace) {\n"
+                        + "      mNamespace = namespace;\n"
+                        + "      return this;\n"
+                        + "    }\n"
+                        + "    public Builder setId(String id) {\n"
+                        + "      mId = id;\n"
+                        + "      return this;\n"
+                        + "    }\n"
+                        + "  }\n"
+                        + "}");
+        assertThat(compilation).succeededWithoutWarnings();
+        checkResultContains("Gift.java", "Gift.Builder builder = new Gift.Builder()");
+        checkResultContains("Gift.java", "return builder.build()");
     }
 
     @Test
@@ -2532,7 +2966,7 @@ public class AppSearchCompilerTest {
     }
 
     @Test
-    public void testCreationByBuilderErrors() throws Exception {
+    public void testCreationByBuilderErrors() {
         // Cannot have multiple builder producer
         Compilation compilation = compile(
                 "@Document\n"
@@ -2714,7 +3148,7 @@ public class AppSearchCompilerTest {
                         + "  @Document.BuilderProducer int getBuilder;\n"
                         + "}\n");
         assertThat(compilation).hadErrorContaining(
-                "annotation type not applicable to this kind of declaration");
+                "annotation interface not applicable to this kind of declaration");
 
         // Missing a setter in the builder
         compilation = compile(
@@ -2771,11 +3205,287 @@ public class AppSearchCompilerTest {
                 "Method cannot be used to create a document class: abstract constructor");
     }
 
-    private Compilation compile(String classBody) {
-        return compile("Gift", classBody);
+    @Test
+    public void testDocumentClassesWithDuplicatedNames() throws Exception {
+        Compilation compilation = compile(
+                "@Document(name=\"A\")\n"
+                        + "class MyClass1 {\n"
+                        + "  @Document.Namespace String namespace;\n"
+                        + "  @Document.Id String id;\n"
+                        + "}\n"
+                        + "@Document(name=\"A\")\n"
+                        + "class MyClass2 {\n"
+                        + "  @Document.Namespace String namespace;\n"
+                        + "  @Document.Id String id;\n"
+                        + "}\n"
+                        + "@Document(name=\"B\")\n"
+                        + "class MyClass3 {\n"
+                        + "  @Document.Namespace String namespace;\n"
+                        + "  @Document.Id String id;\n"
+                        + "}\n");
+        assertThat(compilation).succeededWithoutWarnings();
+        checkDocumentMapEqualsGolden(/* roundIndex= */0);
     }
 
-    private Compilation compile(String classSimpleName, String classBody) {
+    @Test
+    public void testStringSerializer() throws Exception {
+        Compilation compilation = compile(
+                "import androidx.appsearch.app.StringSerializer;\n"
+                        + "import java.net.URL;\n"
+                        + "import java.net.MalformedURLException;\n"
+                        + "import java.util.List;\n"
+                        + "@Document\n"
+                        + "class Gift {\n"
+                        + "    @Document.Id String mId;\n"
+                        + "    @Document.Namespace String mNamespace;\n"
+                        + "    @Document.StringProperty(\n"
+                        + "        serializer = UrlAsStringSerializer.class\n"
+                        + "    )\n"
+                        + "    URL mUrl;\n"
+                        + "    @Document.StringProperty(\n"
+                        + "        serializer = UrlAsStringSerializer.class\n"
+                        + "    )\n"
+                        + "    List<URL> mUrlList;\n"
+                        + "    @Document.StringProperty(\n"
+                        + "        serializer = UrlAsStringSerializer.class\n"
+                        + "    )\n"
+                        + "    URL[] mUrlArr;\n"
+                        + "    static class UrlAsStringSerializer \n"
+                        + "            implements StringSerializer<URL> {\n"
+                        + "        @Override\n"
+                        + "        public String serialize(URL url) {\n"
+                        + "            return url.toString();\n"
+                        + "        }\n"
+                        + "        @Override\n"
+                        + "        public URL deserialize(String string) {\n"
+                        + "            try {\n"
+                        + "                return new URL(string);\n"
+                        + "            } catch (MalformedURLException e) {\n"
+                        + "                return null;\n"
+                        + "            }\n"
+                        + "        }\n"
+                        + "    }\n"
+                        + "}"
+        );
+        assertThat(compilation).succeededWithoutWarnings();
+        checkEqualsGolden("Gift.java");
+        checkResultContains(
+                "Gift.java",
+                "Gift.UrlAsStringSerializer serializer = new Gift.UrlAsStringSerializer()");
+        checkResultContains("Gift.java", "String mUrlConv = serializer.serialize(mUrlCopy)");
+        checkResultContains(
+                "Gift.java", "mUrlConv = new Gift.UrlAsStringSerializer().deserialize(mUrlCopy)");
+        checkResultContains("Gift.java", "mUrlListConv[i++] = serializer.serialize(item)");
+        checkResultContains("Gift.java", "URL elem = serializer.deserialize(mUrlListCopy[i])");
+        checkResultContains("Gift.java", "mUrlArrConv[i] = serializer.serialize(mUrlArrCopy[i])");
+        checkResultContains("Gift.java", "URL elem = serializer.deserialize(mUrlArrCopy[i])");
+    }
+
+    @Test
+    public void testLongSerializer() throws Exception {
+        Compilation compilation = compile(
+                "import androidx.appsearch.app.LongSerializer;\n"
+                        + "import java.util.Arrays;\n"
+                        + "import java.util.List;\n"
+                        + "@Document\n"
+                        + "class Gift {\n"
+                        + "    @Document.Id String mId;\n"
+                        + "    @Document.Namespace String mNamespace;\n"
+                        + "    @Document.LongProperty(\n"
+                        + "        serializer = PricePointAsOrdinalSerializer.class\n"
+                        + "    )\n"
+                        + "    PricePoint mPricePoint;\n"
+                        + "    @Document.LongProperty(\n"
+                        + "        serializer = PricePointAsOrdinalSerializer.class\n"
+                        + "    )\n"
+                        + "    List<PricePoint> mPricePointList;\n"
+                        + "    @Document.LongProperty(\n"
+                        + "        serializer = PricePointAsOrdinalSerializer.class\n"
+                        + "    )\n"
+                        + "    PricePoint[] mPricePointArr;\n"
+                        + "    enum PricePoint { LOW, MID, HIGH }\n"
+                        + "    static class PricePointAsOrdinalSerializer \n"
+                        + "            implements LongSerializer<PricePoint> {\n"
+                        + "        @Override\n"
+                        + "        public long serialize(PricePoint pricePoint) {\n"
+                        + "            return pricePoint.ordinal();\n"
+                        + "        }\n"
+                        + "        @Override\n"
+                        + "        public PricePoint deserialize(long l) {\n"
+                        + "            return Arrays.stream(PricePoint.values())\n"
+                        + "                    .filter(pp -> pp.ordinal() == l)\n"
+                        + "                    .findFirst()\n"
+                        + "                    .orElse(null);\n"
+                        + "        }\n"
+                        + "    }\n"
+                        + "}"
+        );
+        assertThat(compilation).succeededWithoutWarnings();
+        checkEqualsGolden("Gift.java");
+        checkResultContains(
+                "Gift.java",
+                "Gift.PricePointAsOrdinalSerializer serializer = "
+                        + "new Gift.PricePointAsOrdinalSerializer()");
+        checkResultContains(
+                "Gift.java",
+                "mPricePointConv = "
+                        + "new Gift.PricePointAsOrdinalSerializer().deserialize(mPricePointCopy)");
+        checkResultContains(
+                "Gift.java", "long mPricePointConv = serializer.serialize(mPricePointCopy)");
+        checkResultContains(
+                "Gift.java",
+                "Gift.PricePoint elem = serializer.deserialize(mPricePointListCopy[i])");
+        checkResultContains("Gift.java", "mPricePointListConv[i++] = serializer.serialize(item)");
+        checkResultContains(
+                "Gift.java", "mPricePointArrConv[i] = serializer.serialize(mPricePointArrCopy[i])");
+        checkResultContains(
+                "Gift.java",
+                "Gift.PricePoint elem = serializer.deserialize(mPricePointArrCopy[i])");
+    }
+
+    @Test
+    public void testSerializerWithoutDefaultConstructor() {
+        Compilation compilation = compile(
+                "import androidx.appsearch.app.LongSerializer;\n"
+                        + "import java.time.Instant;\n"
+                        + "@Document\n"
+                        + "class Gift {\n"
+                        + "    @Document.Id\n"
+                        + "    String mId = null;\n"
+                        + "    @Document.Namespace\n"
+                        + "    String mNamespace = null;\n"
+                        + "    @Document.LongProperty(\n"
+                        + "        serializer = InstantAsEpochMillisSerializer.class\n"
+                        + "    )\n"
+                        + "    Instant mPurchaseTimeStamp = null;\n"
+                        + "    final static class InstantAsEpochMillisSerializer \n"
+                        + "            implements LongSerializer<Instant> {\n"
+                        + "        InstantAsEpochMillisSerializer(boolean someParam) {}\n"
+                        + "        @Override\n"
+                        + "        public long serialize(Instant instant) {\n"
+                        + "            return instant.toEpochMilli();\n"
+                        + "        }\n"
+                        + "        @Override\n"
+                        + "        public Instant deserialize(long l) {\n"
+                        + "            return Instant.ofEpochMilli(l);\n"
+                        + "        }\n"
+                        + "    }\n"
+                        + "}"
+        );
+        assertThat(compilation).hadErrorContaining(
+                "Serializer com.example.appsearch.Gift.InstantAsEpochMillisSerializer must have a "
+                        + "zero-param constructor");
+    }
+
+    @Test
+    public void testSerializerWithPrivateDefaultConstructor() {
+        Compilation compilation = compile(
+                "import androidx.appsearch.app.LongSerializer;\n"
+                        + "import java.time.Instant;\n"
+                        + "@Document\n"
+                        + "class Gift {\n"
+                        + "    @Document.Id\n"
+                        + "    String mId = null;\n"
+                        + "    @Document.Namespace\n"
+                        + "    String mNamespace = null;\n"
+                        + "    @Document.LongProperty(\n"
+                        + "        serializer = InstantAsEpochMillisSerializer.class\n"
+                        + "    )\n"
+                        + "    Instant mPurchaseTimeStamp = null;\n"
+                        + "    final static class InstantAsEpochMillisSerializer \n"
+                        + "            implements LongSerializer<Instant> {\n"
+                        + "        private InstantAsEpochMillisSerializer() {}\n"
+                        + "        @Override\n"
+                        + "        public long serialize(Instant instant) {\n"
+                        + "            return instant.toEpochMilli();\n"
+                        + "        }\n"
+                        + "        @Override\n"
+                        + "        public Instant deserialize(long l) {\n"
+                        + "            return Instant.ofEpochMilli(l);\n"
+                        + "        }\n"
+                        + "    }\n"
+                        + "}"
+        );
+        assertThat(compilation).hadErrorContaining(
+                "The zero-param constructor of serializer "
+                        + "com.example.appsearch.Gift.InstantAsEpochMillisSerializer must not "
+                        + "be private");
+    }
+
+    @Test
+    public void testPropertyTypeDoesNotMatchSerializer() {
+        Compilation compilation = compile(
+                "import androidx.appsearch.app.StringSerializer;\n"
+                        + "import java.net.MalformedURLException;\n"
+                        + "import java.net.URL;\n"
+                        + "@Document\n"
+                        + "class Gift {\n"
+                        + "    @Document.Id\n"
+                        + "    String mId = null;\n"
+                        + "    @Document.Namespace\n"
+                        + "    String mNamespace = null;\n"
+                        + "    @Document.StringProperty(serializer = UrlAsStringSerializer.class)\n"
+                        + "    int mProductUrl = null;\n"
+                        + "    final static class UrlAsStringSerializer\n"
+                        + "            implements StringSerializer<URL> {\n"
+                        + "        @Override\n"
+                        + "        public String serialize(URL url) {\n"
+                        + "            return url.toString();\n"
+                        + "        }\n"
+                        + "        @Override\n"
+                        + "        public URL deserialize(String string) {\n"
+                        + "            try {\n"
+                        + "                return new URL(string);\n"
+                        + "            } catch (MalformedURLException e) {\n"
+                        + "                return null;\n"
+                        + "            }\n"
+                        + "        }\n"
+                        + "    }\n"
+                        + "}"
+        );
+        assertThat(compilation).hadErrorContaining(
+                "@StringProperty with serializer = UrlAsStringSerializer must only be placed on a "
+                        + "getter/field of type or array or collection of java.net.URL");
+    }
+
+    @Test
+    public void testPropertyNamedAsDocumentClassMap() throws Exception {
+        Compilation compilation = compile(
+                "@Document\n"
+                        + "public class Gift {\n"
+                        + "  @Document.Namespace String namespace;\n"
+                        + "  @Document.Id String id;\n"
+                        + "  @Document.LongProperty int documentClassMap;\n"
+                        + "}\n");
+        assertThat(compilation).succeededWithoutWarnings();
+        checkResultContains("Gift.java",
+                "int documentClassMapConv = (int) genericDoc.getPropertyLong"
+                        + "(\"documentClassMap\")");
+        checkResultContains("Gift.java", "document.documentClassMap = documentClassMapConv");
+        checkEqualsGolden("Gift.java");
+    }
+
+    @Test
+    public void testGeneratedCodeRestrictedToLibrary() throws Exception {
+        Compilation compilation = compile(
+                /* classSimpleName=*/"Gift",
+                "@Document\n"
+                        + "public class Gift {\n"
+                        + "  @Document.Namespace String namespace;\n"
+                        + "  @Document.Id String id;\n"
+                        + "}\n",
+                /* restrictGeneratedCodeToLibrary= */true);
+        assertThat(compilation).succeededWithoutWarnings();
+        checkResultContains("Gift.java", "@RestrictTo(RestrictTo.Scope.LIBRARY)");
+        checkEqualsGolden("Gift.java");
+    }
+
+    private Compilation compile(String classBody) {
+        return compile("Gift", classBody, /* restrictGeneratedCodeToLibrary= */false);
+    }
+
+    private Compilation compile(
+            String classSimpleName, String classBody, boolean restrictGeneratedCodeToLibrary) {
         String src = "package com.example.appsearch;\n"
                 + "import androidx.appsearch.annotation.Document;\n"
                 + "import androidx.appsearch.annotation.Document.*;\n"
@@ -2786,19 +3496,38 @@ public class AppSearchCompilerTest {
         // Fully compiling this source code requires AppSearch to be on the classpath, but it only
         // builds on Android. Instead, this test configures the annotation processor to write to a
         // test-controlled path which is then diffed.
-        String outputDirFlag = String.format(
-                "-A%s=%s",
-                AppSearchCompiler.OUTPUT_DIR_OPTION,
-                mGenFilesDir.getAbsolutePath());
+        String outputDirFlag = "-A%s=%s".formatted(
+                OUTPUT_DIR_OPTION, mGenFilesDir.getAbsolutePath());
+        String restrictGeneratedCodeToLibraryFlag = "-A%s=%s".formatted(
+                RESTRICT_GENERATED_CODE_TO_LIB_OPTION, restrictGeneratedCodeToLibrary);
         return Compiler.javac()
                 .withProcessors(new AppSearchCompiler(), new AutoValueProcessor())
-                .withOptions(outputDirFlag)
+                .withOptions(outputDirFlag, restrictGeneratedCodeToLibraryFlag)
                 .compile(jfo);
     }
 
     private void checkEqualsGolden(String className) throws IOException {
-        // Get the expected file contents
         String goldenResPath = "goldens/" + mTestName.getMethodName() + ".JAVA";
+        File actualPackageDir = new File(mGenFilesDir, "com/example/appsearch");
+        File actualPath =
+                new File(actualPackageDir, IntrospectionHelper.GEN_CLASS_PREFIX + className);
+        checkEqualsGoldenHelper(goldenResPath, actualPath);
+    }
+
+    private void checkDocumentMapEqualsGolden(int roundIndex) throws IOException {
+        String goldenResPath =
+                "goldens/" + mTestName.getMethodName() + "DocumentMap_" + roundIndex + ".JAVA";
+        File actualPackageDir = new File(mGenFilesDir, "com/example/appsearch");
+        File[] files = actualPackageDir.listFiles((dir, name) ->
+                name.startsWith(IntrospectionHelper.GEN_CLASS_PREFIX + "DocumentClassMap")
+                        && name.endsWith("_" + roundIndex + ".java"));
+        Truth.assertThat(files).isNotNull();
+        Truth.assertThat(files).hasLength(1);
+        checkEqualsGoldenHelper(goldenResPath, files[0]);
+    }
+
+    private void checkEqualsGoldenHelper(String goldenResPath, File actualPath) throws IOException {
+        // Get the expected file contents
         String expected = "";
         try (InputStream is = getClass().getResourceAsStream(goldenResPath)) {
             if (is == null) {
@@ -2810,9 +3539,6 @@ public class AppSearchCompilerTest {
         }
 
         // Get the actual file contents
-        File actualPackageDir = new File(mGenFilesDir, "com/example/appsearch");
-        File actualPath =
-                new File(actualPackageDir, IntrospectionHelper.GEN_CLASS_PREFIX + className);
         Truth.assertWithMessage("Path " + actualPath + " is not a file")
                 .that(actualPath.isFile()).isTrue();
         String actual = Files.asCharSource(actualPath, StandardCharsets.UTF_8).read();
@@ -2843,14 +3569,21 @@ public class AppSearchCompilerTest {
     }
 
     private void checkResultContains(String className, String content) throws IOException {
-        // Get the actual file contents
+        String fileContents = getClassFileContents(className);
+        Truth.assertThat(fileContents).contains(content);
+    }
+
+    private void checkResultDoesNotContain(String className, String content) throws IOException {
+        String fileContents = getClassFileContents(className);
+        Truth.assertThat(fileContents).doesNotContain(content);
+    }
+
+    private String getClassFileContents(String className) throws IOException {
         File actualPackageDir = new File(mGenFilesDir, "com/example/appsearch");
         File actualPath =
                 new File(actualPackageDir, IntrospectionHelper.GEN_CLASS_PREFIX + className);
         Truth.assertWithMessage("Path " + actualPath + " is not a file")
                 .that(actualPath.isFile()).isTrue();
-        String actual = Files.asCharSource(actualPath, StandardCharsets.UTF_8).read();
-
-        Truth.assertThat(actual).contains(content);
+        return Files.asCharSource(actualPath, StandardCharsets.UTF_8).read();
     }
 }

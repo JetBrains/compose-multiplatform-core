@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<issues format="6" by="lint 8.3.0-alpha02" type="baseline" client="cli" dependencies="false" name="AGP (8.3.0-alpha02)" variant="all" version="8.3.0-alpha02">
+<issues format="6" by="lint 8.4.0-alpha12" type="baseline" client="gradle" dependencies="false" name="AGP (8.4.0-alpha12)" variant="all" version="8.4.0-alpha12">
 
     <issue
         id="BanThreadSleep"
@@ -8,6 +8,15 @@
         errorLine2="                   ~~~~~">
         <location
             file="src/androidTest/java/androidx/camera/integration/core/camera2/PreviewTest.kt"/>
+    </issue>
+
+    <issue
+        id="RestrictedApiAndroidX"
+        message="ImageCapture.OUTPUT_FORMAT_JPEG can only be accessed from within the same library group (referenced groupId=`androidx.camera` from groupId=`androidx.camera.integration-tests`)"
+        errorLine1="    private @ImageCapture.OutputFormat int mImageOutputFormat = OUTPUT_FORMAT_JPEG;"
+        errorLine2="                                                                ~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/camera/integration/core/CameraXActivity.java"/>
     </issue>
 
     <issue
@@ -69,6 +78,15 @@
         message="FileUtil.generateVideoFileOutputOptions can only be called from within the same library group (referenced groupId=`androidx.camera` from groupId=`androidx.camera.integration-tests`)"
         errorLine1="                                this, generateVideoFileOutputOptions(fileName, extension));"
         errorLine2="                                                                               ~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/camera/integration/core/CameraXActivity.java"/>
+    </issue>
+
+    <issue
+        id="RestrictedApiAndroidX"
+        message="ImageCaptureCapabilities.getSupportedOutputFormats can only be called from within the same library group (referenced groupId=`androidx.camera` from groupId=`androidx.camera.integration-tests`)"
+        errorLine1="            Set&lt;Integer> supportedOutputFormats = capabilities.getSupportedOutputFormats();"
+        errorLine2="                                                               ~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/androidx/camera/integration/core/CameraXActivity.java"/>
     </issue>
@@ -156,6 +174,15 @@
 
     <issue
         id="RestrictedApiAndroidX"
+        message="ImageCapture.OUTPUT_FORMAT_JPEG_ULTRA_HDR can only be accessed from within the same library group (referenced groupId=`androidx.camera` from groupId=`androidx.camera.integration-tests`)"
+        errorLine1="        } else if (mImageOutputFormat == OUTPUT_FORMAT_JPEG_ULTRA_HDR"
+        errorLine2="                                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/camera/integration/core/CameraXActivity.java"/>
+    </issue>
+
+    <issue
+        id="RestrictedApiAndroidX"
         message="Camera.isUseCasesCombinationSupported can only be called from within the same library group (referenced groupId=`androidx.camera` from groupId=`androidx.camera.integration-tests`)"
         errorLine1="        return mCamera.isUseCasesCombinationSupported(buildUseCases().toArray(new UseCase[0]));"
         errorLine2="                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
@@ -165,18 +192,18 @@
 
     <issue
         id="RestrictedApiAndroidX"
-        message="FileUtil.createParentFolder can only be called from within the same library group (referenced groupId=`androidx.camera` from groupId=`androidx.camera.integration-tests`)"
-        errorLine1="        if (createParentFolder(pictureFolder)) {"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~">
+        message="FileUtil.createFolder can only be called from within the same library group (referenced groupId=`androidx.camera` from groupId=`androidx.camera.integration-tests`)"
+        errorLine1="        if (createFolder(pictureFolder)) {"
+        errorLine2="            ~~~~~~~~~~~~">
         <location
             file="src/main/java/androidx/camera/integration/core/CameraXActivity.java"/>
     </issue>
 
     <issue
         id="RestrictedApiAndroidX"
-        message="FileUtil.createParentFolder can only be called from within the same library group (referenced groupId=`androidx.camera` from groupId=`androidx.camera.integration-tests`)"
-        errorLine1="        if (createParentFolder(pictureFolder)) {"
-        errorLine2="                               ~~~~~~~~~~~~~">
+        message="FileUtil.createFolder can only be called from within the same library group (referenced groupId=`androidx.camera` from groupId=`androidx.camera.integration-tests`)"
+        errorLine1="        if (createFolder(pictureFolder)) {"
+        errorLine2="                         ~~~~~~~~~~~~~">
         <location
             file="src/main/java/androidx/camera/integration/core/CameraXActivity.java"/>
     </issue>
@@ -237,18 +264,90 @@
 
     <issue
         id="RestrictedApiAndroidX"
-        message="FileUtil.createParentFolder can only be called from within the same library group (referenced groupId=`androidx.camera` from groupId=`androidx.camera.integration-tests`)"
-        errorLine1="        if (!createParentFolder(pictureFolder)) {"
-        errorLine2="             ~~~~~~~~~~~~~~~~~~">
+        message="ImageCapture.OUTPUT_FORMAT_JPEG can only be accessed from within the same library group (referenced groupId=`androidx.camera` from groupId=`androidx.camera.integration-tests`)"
+        errorLine1="        if (format == OUTPUT_FORMAT_JPEG) {"
+        errorLine2="                      ~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/camera/integration/core/CameraXActivity.java"/>
+    </issue>
+
+    <issue
+        id="RestrictedApiAndroidX"
+        message="ImageCapture.OUTPUT_FORMAT_JPEG_ULTRA_HDR can only be accessed from within the same library group (referenced groupId=`androidx.camera` from groupId=`androidx.camera.integration-tests`)"
+        errorLine1="        } else if (format == OUTPUT_FORMAT_JPEG_ULTRA_HDR) {"
+        errorLine2="                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/camera/integration/core/CameraXActivity.java"/>
+    </issue>
+
+    <issue
+        id="RestrictedApiAndroidX"
+        message="ImageCapture.OUTPUT_FORMAT_JPEG can only be accessed from within the same library group (referenced groupId=`androidx.camera` from groupId=`androidx.camera.integration-tests`)"
+        errorLine1="        if (format == OUTPUT_FORMAT_JPEG) {"
+        errorLine2="                      ~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/camera/integration/core/CameraXActivity.java"/>
+    </issue>
+
+    <issue
+        id="RestrictedApiAndroidX"
+        message="ImageCapture.OUTPUT_FORMAT_JPEG_ULTRA_HDR can only be accessed from within the same library group (referenced groupId=`androidx.camera` from groupId=`androidx.camera.integration-tests`)"
+        errorLine1="        } else if (format == OUTPUT_FORMAT_JPEG_ULTRA_HDR) {"
+        errorLine2="                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/camera/integration/core/CameraXActivity.java"/>
+    </issue>
+
+    <issue
+        id="RestrictedApiAndroidX"
+        message="ImageCapture.OUTPUT_FORMAT_JPEG can only be accessed from within the same library group (referenced groupId=`androidx.camera` from groupId=`androidx.camera.integration-tests`)"
+        errorLine1="        if (format == OUTPUT_FORMAT_JPEG) {"
+        errorLine2="                      ~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/camera/integration/core/CameraXActivity.java"/>
+    </issue>
+
+    <issue
+        id="RestrictedApiAndroidX"
+        message="ImageCapture.OUTPUT_FORMAT_JPEG_ULTRA_HDR can only be accessed from within the same library group (referenced groupId=`androidx.camera` from groupId=`androidx.camera.integration-tests`)"
+        errorLine1="        } else if (format == OUTPUT_FORMAT_JPEG_ULTRA_HDR) {"
+        errorLine2="                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/camera/integration/core/CameraXActivity.java"/>
+    </issue>
+
+    <issue
+        id="RestrictedApiAndroidX"
+        message="ImageCapture.OUTPUT_FORMAT_JPEG can only be accessed from within the same library group (referenced groupId=`androidx.camera` from groupId=`androidx.camera.integration-tests`)"
+        errorLine1="                return OUTPUT_FORMAT_JPEG;"
+        errorLine2="                       ~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/camera/integration/core/CameraXActivity.java"/>
+    </issue>
+
+    <issue
+        id="RestrictedApiAndroidX"
+        message="ImageCapture.OUTPUT_FORMAT_JPEG_ULTRA_HDR can only be accessed from within the same library group (referenced groupId=`androidx.camera` from groupId=`androidx.camera.integration-tests`)"
+        errorLine1="                return OUTPUT_FORMAT_JPEG_ULTRA_HDR;"
+        errorLine2="                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/camera/integration/core/CameraXActivity.java"/>
+    </issue>
+
+    <issue
+        id="RestrictedApiAndroidX"
+        message="FileUtil.createFolder can only be called from within the same library group (referenced groupId=`androidx.camera` from groupId=`androidx.camera.integration-tests`)"
+        errorLine1="        if (!createFolder(pictureFolder)) {"
+        errorLine2="             ~~~~~~~~~~~~">
         <location
             file="src/main/java/androidx/camera/integration/core/CameraXService.java"/>
     </issue>
 
     <issue
         id="RestrictedApiAndroidX"
-        message="FileUtil.createParentFolder can only be called from within the same library group (referenced groupId=`androidx.camera` from groupId=`androidx.camera.integration-tests`)"
-        errorLine1="        if (!createParentFolder(pictureFolder)) {"
-        errorLine2="                                ~~~~~~~~~~~~~">
+        message="FileUtil.createFolder can only be called from within the same library group (referenced groupId=`androidx.camera` from groupId=`androidx.camera.integration-tests`)"
+        errorLine1="        if (!createFolder(pictureFolder)) {"
+        errorLine2="                          ~~~~~~~~~~~~~">
         <location
             file="src/main/java/androidx/camera/integration/core/CameraXService.java"/>
     </issue>
@@ -386,15 +485,6 @@
         errorLine2="                                ~~~">
         <location
             file="src/main/java/androidx/camera/integration/core/CameraXService.java"/>
-    </issue>
-
-    <issue
-        id="RestrictedApiAndroidX"
-        message="TransformationInfo.hasCameraTransform can only be called from within the same library group (referenced groupId=`androidx.camera` from groupId=`androidx.camera.integration-tests`)"
-        errorLine1="                                    mHasCameraTransform = transformationInfo.hasCameraTransform();"
-        errorLine2="                                                                             ~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/camera/integration/core/OpenGLRenderer.java"/>
     </issue>
 
     <issue
@@ -544,7 +634,7 @@
     <issue
         id="RestrictedApiAndroidX"
         message="FileUtil.writeTextToExternalFile can only be called from within the same library group (referenced groupId=`androidx.camera` from groupId=`androidx.camera.integration-tests`)"
-        errorLine1="                generateFileName(INFO_FILE_PREFIX, false), &quot;txt&quot;);"
+        errorLine1="                generateFileName(INFO_FILE_PREFIX, true), &quot;txt&quot;);"
         errorLine2="                ~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/androidx/camera/integration/core/VideoCameraSwitchingActivity.java"/>
@@ -553,8 +643,8 @@
     <issue
         id="RestrictedApiAndroidX"
         message="FileUtil.writeTextToExternalFile can only be called from within the same library group (referenced groupId=`androidx.camera` from groupId=`androidx.camera.integration-tests`)"
-        errorLine1="                generateFileName(INFO_FILE_PREFIX, false), &quot;txt&quot;);"
-        errorLine2="                                                           ~~~~~">
+        errorLine1="                generateFileName(INFO_FILE_PREFIX, true), &quot;txt&quot;);"
+        errorLine2="                                                          ~~~~~">
         <location
             file="src/main/java/androidx/camera/integration/core/VideoCameraSwitchingActivity.java"/>
     </issue>
@@ -600,15 +690,6 @@
         message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
         errorLine1="    public void onCreate(Bundle savedInstanceState) {"
         errorLine2="                         ~~~~~~">
-        <location
-            file="src/main/java/androidx/camera/integration/core/OpenGLActivity.java"/>
-    </issue>
-
-    <issue
-        id="UnknownNullness"
-        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
-        errorLine1="    public static View chooseViewFinder(@Nullable Bundle intentExtras,"
-        errorLine2="                  ~~~~">
         <location
             file="src/main/java/androidx/camera/integration/core/OpenGLActivity.java"/>
     </issue>

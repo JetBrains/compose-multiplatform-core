@@ -39,7 +39,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.tooling.animation.AnimateXAsStateComposeAnimation.Companion.parse
 import androidx.compose.ui.tooling.animation.AnimationSearch
 import androidx.compose.ui.tooling.animation.Utils
-import androidx.compose.ui.tooling.animation.Utils.searchForAnimation
+import androidx.compose.ui.tooling.animation.Utils.addAnimations
 import androidx.compose.ui.tooling.animation.states.ComposeAnimationState
 import androidx.compose.ui.tooling.animation.states.TargetState
 import androidx.compose.ui.unit.Dp
@@ -64,7 +64,7 @@ class AnimateXAsStateClockTest {
     fun dpAnimationClock() {
         val search = AnimationSearch.AnimateXAsStateSearch { }
         var state: State<Dp>? = null
-        rule.searchForAnimation(search) {
+        rule.addAnimations(search) {
             state = animateDpAsState(
                 targetValue = 10.dp, animationSpec = TweenSpec(durationMillis = 100)
             )
@@ -105,7 +105,7 @@ class AnimateXAsStateClockTest {
     fun floatAnimation() {
         val search = AnimationSearch.AnimateXAsStateSearch { }
         var state: State<Float>? = null
-        rule.searchForAnimation(search) {
+        rule.addAnimations(search) {
             state = animateFloatAsState(
                 targetValue = 10f, animationSpec = TweenSpec(durationMillis = 100)
             )
@@ -138,9 +138,9 @@ class AnimateXAsStateClockTest {
 
     @Test
     fun intSizeAnimation() {
-        val search = AnimationSearch.AnimateXAsStateSearch { }
+        val search = AnimationSearch.AnimateXAsStateSearch() { }
         var state: State<IntSize>? = null
-        rule.searchForAnimation(search) {
+        rule.addAnimations(search) {
             state = animateIntSizeAsState(
                 targetValue = IntSize(10, 20),
                 animationSpec = TweenSpec(durationMillis = 100)
@@ -177,9 +177,9 @@ class AnimateXAsStateClockTest {
 
     @Test
     fun intAnimation() {
-        val search = AnimationSearch.AnimateXAsStateSearch { }
+        val search = AnimationSearch.AnimateXAsStateSearch() { }
         var state: State<Int>? = null
-        rule.searchForAnimation(search) {
+        rule.addAnimations(search) {
             state = animateIntAsState(
                 targetValue = 10, animationSpec = TweenSpec(durationMillis = 100)
             )
@@ -213,9 +213,9 @@ class AnimateXAsStateClockTest {
 
     @Test
     fun intOffsetAnimation() {
-        val search = AnimationSearch.AnimateXAsStateSearch { }
+        val search = AnimationSearch.AnimateXAsStateSearch() { }
         var state: State<IntOffset>? = null
-        rule.searchForAnimation(search) {
+        rule.addAnimations(search) {
             state = animateIntOffsetAsState(
                 targetValue = IntOffset(10, 20),
                 animationSpec = TweenSpec(durationMillis = 100)
@@ -252,9 +252,9 @@ class AnimateXAsStateClockTest {
 
     @Test
     fun offsetAnimation() {
-        val search = AnimationSearch.AnimateXAsStateSearch { }
+        val search = AnimationSearch.AnimateXAsStateSearch() { }
         var state: State<Offset>? = null
-        rule.searchForAnimation(search) {
+        rule.addAnimations(search) {
             state = animateOffsetAsState(
                 targetValue = Offset(10f, 20f),
                 animationSpec = TweenSpec(durationMillis = 100)
@@ -291,9 +291,9 @@ class AnimateXAsStateClockTest {
 
     @Test
     fun sizeAnimation() {
-        val search = AnimationSearch.AnimateXAsStateSearch { }
+        val search = AnimationSearch.AnimateXAsStateSearch() { }
         var state: State<Size>? = null
-        rule.searchForAnimation(search) {
+        rule.addAnimations(search) {
             state = animateSizeAsState(
                 targetValue = Size(10f, 20f),
                 animationSpec = TweenSpec(durationMillis = 100)
@@ -330,9 +330,9 @@ class AnimateXAsStateClockTest {
 
     @Test
     fun rectAnimation() {
-        val search = AnimationSearch.AnimateXAsStateSearch { }
+        val search = AnimationSearch.AnimateXAsStateSearch() { }
         var state: State<Rect>? = null
-        rule.searchForAnimation(search) {
+        rule.addAnimations(search) {
             state = animateRectAsState(
                 targetValue = Rect(10f, 20f, 30f, 40f),
                 animationSpec = TweenSpec(durationMillis = 100)
@@ -380,9 +380,9 @@ class AnimateXAsStateClockTest {
 
     @Test
     fun colorAnimation() {
-        val search = AnimationSearch.AnimateXAsStateSearch { }
+        val search = AnimationSearch.AnimateXAsStateSearch() { }
         var state: State<Color>? = null
-        rule.searchForAnimation(search) {
+        rule.addAnimations(search) {
             state = animateColorAsState(
                 targetValue = Color.Black,
                 animationSpec = TweenSpec(durationMillis = 100)
@@ -424,9 +424,9 @@ class AnimateXAsStateClockTest {
 
     @Test
     fun customFloatAnimation() {
-        val search = AnimationSearch.AnimateXAsStateSearch { }
+        val search = AnimationSearch.AnimateXAsStateSearch() { }
         var state: State<Float>? = null
-        rule.searchForAnimation(search) {
+        rule.addAnimations(search) {
             state = animateValueAsState(
                 targetValue = 10f,
                 Float.VectorConverter,
@@ -462,9 +462,9 @@ class AnimateXAsStateClockTest {
 
     @Test
     fun nullableFloatAnimation() {
-        val search = AnimationSearch.AnimateXAsStateSearch { }
+        val search = AnimationSearch.AnimateXAsStateSearch() { }
         var state: State<Float?>? = null
-        rule.searchForAnimation(search) {
+        rule.addAnimations(search) {
             state = animateValueAsState(
                 targetValue = 10f,
                 Utils.nullableFloatConverter,
@@ -500,9 +500,9 @@ class AnimateXAsStateClockTest {
 
     @Test
     fun stringAnimation() {
-        val search = AnimationSearch.AnimateXAsStateSearch { }
+        val search = AnimationSearch.AnimateXAsStateSearch() { }
         var state: State<String>? = null
-        rule.searchForAnimation(search) {
+        rule.addAnimations(search) {
             state = animateValueAsState(
                 targetValue = "10.0",
                 Utils.stringConverter,
@@ -538,9 +538,9 @@ class AnimateXAsStateClockTest {
 
     @Test
     fun enumAnimation() {
-        val search = AnimationSearch.AnimateXAsStateSearch { }
+        val search = AnimationSearch.AnimateXAsStateSearch() { }
         var state: State<Utils.EnumState>? = null
-        rule.searchForAnimation(search) {
+        rule.addAnimations(search) {
             state = animateValueAsState(
                 targetValue = Utils.EnumState.One,
                 Utils.enumConverter,
@@ -555,9 +555,9 @@ class AnimateXAsStateClockTest {
 
     @Test
     fun booleanAnimation() {
-        val search = AnimationSearch.AnimateXAsStateSearch { }
+        val search = AnimationSearch.AnimateXAsStateSearch() { }
         var state: State<Boolean>? = null
-        rule.searchForAnimation(search) {
+        rule.addAnimations(search) {
             state = animateValueAsState(
                 targetValue = false,
                 Utils.booleanConverter,
@@ -593,9 +593,9 @@ class AnimateXAsStateClockTest {
 
     @Test
     fun nullableEnumAnimation() {
-        val search = AnimationSearch.AnimateXAsStateSearch { }
+        val search = AnimationSearch.AnimateXAsStateSearch() { }
         var state: State<Utils.EnumState?>? = null
-        rule.searchForAnimation(search) {
+        rule.addAnimations(search) {
             state = animateValueAsState(
                 targetValue = Utils.EnumState.One,
                 Utils.nullableEnumConverter,

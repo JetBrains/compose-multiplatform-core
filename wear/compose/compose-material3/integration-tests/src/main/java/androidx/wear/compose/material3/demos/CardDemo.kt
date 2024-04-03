@@ -30,11 +30,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
+import androidx.wear.compose.integration.demos.common.ScalingLazyColumnWithRSB
 import androidx.wear.compose.material3.AppCard
 import androidx.wear.compose.material3.CardDefaults
 import androidx.wear.compose.material3.ListHeader
 import androidx.wear.compose.material3.Text
+import androidx.wear.compose.material3.TitleCard
 import androidx.wear.compose.material3.samples.AppCardSample
 import androidx.wear.compose.material3.samples.AppCardWithIconSample
 import androidx.wear.compose.material3.samples.CardSample
@@ -43,10 +44,11 @@ import androidx.wear.compose.material3.samples.OutlinedCardSample
 import androidx.wear.compose.material3.samples.OutlinedTitleCardSample
 import androidx.wear.compose.material3.samples.TitleCardSample
 import androidx.wear.compose.material3.samples.TitleCardWithImageSample
+import androidx.wear.compose.material3.samples.TitleCardWithSubtitleAndTimeSample
 
 @Composable
 fun CardDemo() {
-    ScalingLazyColumn(
+    ScalingLazyColumnWithRSB(
         modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -62,7 +64,12 @@ fun CardDemo() {
 
         item { ListHeader { Text("Title card") } }
         item { TitleCardSample() }
+        item { TitleCardWithSubtitleDemo() }
+        item { TitleCardWithSubtitleAndTimeSample() }
+        item { TitleCardWithContentSubtitleAndTimeDemo() }
         item { OutlinedTitleCardSample() }
+        item { OutlinedTitleCardWithSubtitleDemo() }
+        item { OutlinedTitleCardWithSubtitleAndTimeDemo() }
 
         item { ListHeader { Text("Image card") } }
         item { TitleCardWithImageSample() }
@@ -89,4 +96,48 @@ private fun AppCardWithImageDemo() {
             contentDescription = null
         )
     }
+}
+
+@Composable
+private fun OutlinedTitleCardWithSubtitleAndTimeDemo() {
+    TitleCard(
+        onClick = { /* Do something */ },
+        time = { Text("now") },
+        title = { Text("Title card") },
+        subtitle = { Text("Subtitle") },
+        colors = CardDefaults.outlinedCardColors(),
+        border = CardDefaults.outlinedCardBorder(),
+    )
+}
+
+@Composable
+fun TitleCardWithSubtitleDemo() {
+    TitleCard(
+        onClick = { /* Do something */ },
+        title = { Text("Title card") },
+        subtitle = { Text("Subtitle") }
+    )
+}
+
+@Composable
+fun TitleCardWithContentSubtitleAndTimeDemo() {
+    TitleCard(
+        onClick = { /* Do something */ },
+        time = { Text("now") },
+        title = { Text("Title card") },
+        subtitle = { Text("Subtitle") }
+    ) {
+        Text("Card content")
+    }
+}
+
+@Composable
+fun OutlinedTitleCardWithSubtitleDemo() {
+    TitleCard(
+        onClick = { /* Do something */ },
+        title = { Text("Title card") },
+        subtitle = { Text("Subtitle") },
+        colors = CardDefaults.outlinedCardColors(),
+        border = CardDefaults.outlinedCardBorder(),
+    )
 }

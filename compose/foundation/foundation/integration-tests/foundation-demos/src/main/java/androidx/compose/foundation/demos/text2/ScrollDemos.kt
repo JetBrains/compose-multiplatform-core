@@ -17,8 +17,8 @@
 package androidx.compose.foundation.demos.text2
 
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.demos.text.Language
 import androidx.compose.foundation.demos.text.TagLine
-import androidx.compose.foundation.demos.text.fontSize8
 import androidx.compose.foundation.demos.text.loremIpsum
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -27,22 +27,19 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text2.BasicTextField2
-import androidx.compose.foundation.text2.input.TextFieldLineLimits.MultiLine
-import androidx.compose.foundation.text2.input.TextFieldLineLimits.SingleLine
-import androidx.compose.foundation.text2.input.TextFieldState
-import androidx.compose.material.Button
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.input.TextFieldLineLimits.MultiLine
+import androidx.compose.foundation.text.input.TextFieldLineLimits.SingleLine
+import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.material.Slider
-import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.coerceIn
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlin.math.roundToInt
@@ -62,11 +59,6 @@ fun ScrollableDemos() {
         }
 
         item {
-            TagLine(tag = "SingleLine Vertical Scroll")
-            SingleLineVerticalScrollableTextField()
-        }
-
-        item {
             TagLine(tag = "MultiLine Vertical Scroll")
             MultiLineVerticalScrollableTextField()
         }
@@ -80,21 +72,30 @@ fun ScrollableDemos() {
             TagLine(tag = "Shared Hoisted ScrollState")
             SharedHoistedScroll()
         }
+    }
+}
 
-        item {
-            TagLine(tag = "Selectable with no interaction")
-            SelectionWithNoInteraction()
-        }
+@Composable
+fun ScrollableDemosRtl() {
+    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+        ScrollableDemos()
     }
 }
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun SingleLineHorizontalScrollableTextField() {
-    val state = remember {
-        TextFieldState(loremIpsum(wordCount = 100))
+    val layoutDirection = LocalLayoutDirection.current
+    val language = if (layoutDirection == LayoutDirection.Ltr) Language.Latin else Language.Hebrew
+    val state = remember(language) {
+        TextFieldState(
+            loremIpsum(
+                wordCount = 100,
+                language = language
+            )
+        )
     }
-    BasicTextField2(
+    BasicTextField(
         state = state,
         lineLimits = SingleLine,
         textStyle = TextStyle(fontSize = 24.sp),
@@ -102,14 +103,21 @@ fun SingleLineHorizontalScrollableTextField() {
     )
 }
 
-// TODO this is not supported currently. Add tests for this when supported.
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun SingleLineHorizontalScrollableTextFieldWithNewlines() {
-    val state = remember {
-        TextFieldState("This \ntext \ncontains \nnewlines \nbut \nis \nsingle-line.")
+    val layoutDirection = LocalLayoutDirection.current
+    val language = if (layoutDirection == LayoutDirection.Ltr) Language.Latin else Language.Hebrew
+    val state = remember(language) {
+        TextFieldState(
+            loremIpsum(
+                wordCount = 20,
+                language = language,
+                separator = "\n"
+            )
+        )
     }
-    BasicTextField2(
+    BasicTextField(
         state = state,
         lineLimits = SingleLine,
         textStyle = TextStyle(fontSize = 24.sp)
@@ -118,24 +126,18 @@ fun SingleLineHorizontalScrollableTextFieldWithNewlines() {
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun SingleLineVerticalScrollableTextField() {
-    val state = remember {
-        TextFieldState("When content gets long, this field should scroll vertically\n".repeat(10))
-    }
-    BasicTextField2(
-        state = state,
-        textStyle = TextStyle(fontSize = 24.sp),
-        lineLimits = MultiLine(maxHeightInLines = 1)
-    )
-}
-
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
 fun MultiLineVerticalScrollableTextField() {
-    val state = remember {
-        TextFieldState(loremIpsum(wordCount = 200))
+    val layoutDirection = LocalLayoutDirection.current
+    val language = if (layoutDirection == LayoutDirection.Ltr) Language.Latin else Language.Hebrew
+    val state = remember(language) {
+        TextFieldState(
+            loremIpsum(
+                wordCount = 200,
+                language = language
+            )
+        )
     }
-    BasicTextField2(
+    BasicTextField(
         state = state,
         textStyle = TextStyle(fontSize = 24.sp),
         modifier = Modifier.heightIn(max = 200.dp),
@@ -146,8 +148,15 @@ fun MultiLineVerticalScrollableTextField() {
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun HoistedHorizontalScroll() {
-    val state = remember {
-        TextFieldState("When content gets long, this field should scroll horizontally")
+    val layoutDirection = LocalLayoutDirection.current
+    val language = if (layoutDirection == LayoutDirection.Ltr) Language.Latin else Language.Hebrew
+    val state = remember(language) {
+        TextFieldState(
+            loremIpsum(
+                wordCount = 20,
+                language = language
+            )
+        )
     }
     val scrollState = rememberScrollState()
     val coroutineScope = rememberCoroutineScope()
@@ -159,7 +168,7 @@ fun HoistedHorizontalScroll() {
             },
             valueRange = 0f..scrollState.maxValue.toFloat()
         )
-        BasicTextField2(
+        BasicTextField(
             state = state,
             scrollState = scrollState,
             textStyle = TextStyle(fontSize = 24.sp),
@@ -172,11 +181,23 @@ fun HoistedHorizontalScroll() {
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun SharedHoistedScroll() {
-    val state1 = remember {
-        TextFieldState("When content gets long, this field should scroll horizontally")
+    val layoutDirection = LocalLayoutDirection.current
+    val language = if (layoutDirection == LayoutDirection.Ltr) Language.Latin else Language.Hebrew
+    val state1 = remember(language) {
+        TextFieldState(
+            loremIpsum(
+                wordCount = 20,
+                language = language
+            )
+        )
     }
-    val state2 = remember {
-        TextFieldState("When content gets long, this field should scroll horizontally")
+    val state2 = remember(language) {
+        TextFieldState(
+            loremIpsum(
+                wordCount = 20,
+                language = language
+            )
+        )
     }
     val scrollState = rememberScrollState()
     val coroutineScope = rememberCoroutineScope()
@@ -188,61 +209,18 @@ fun SharedHoistedScroll() {
             },
             valueRange = 0f..scrollState.maxValue.toFloat()
         )
-        BasicTextField2(
+        BasicTextField(
             state = state1,
             scrollState = scrollState,
             textStyle = TextStyle(fontSize = 24.sp),
             modifier = Modifier.fillMaxWidth(),
             lineLimits = SingleLine
         )
-        BasicTextField2(
+        BasicTextField(
             state = state2,
             scrollState = scrollState,
             textStyle = TextStyle(fontSize = 24.sp),
             modifier = Modifier.fillMaxWidth(),
-            lineLimits = SingleLine
-        )
-    }
-}
-
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-fun SelectionWithNoInteraction() {
-    val state =
-        remember { TextFieldState("Hello, World!", initialSelectionInChars = TextRange(1, 5)) }
-    val focusRequester = remember { FocusRequester() }
-    Column {
-        Button(onClick = { focusRequester.requestFocus() }) {
-            Text("Focus")
-        }
-        Button(onClick = {
-            state.edit {
-                selectCharsIn(
-                    TextRange(
-                        state.text.selectionInChars.start - 1,
-                        state.text.selectionInChars.end
-                    ).coerceIn(0, state.text.length)
-                )
-            }
-        }) {
-            Text("Increase Selection to Left")
-        }
-        Button(onClick = {
-            state.edit {
-                selectCharsIn(
-                    TextRange(
-                        state.text.selectionInChars.start,
-                        state.text.selectionInChars.end + 1
-                    ).coerceIn(0, state.text.length)
-                )
-            }
-        }) {
-            Text("Increase Selection to Right")
-        }
-        BasicTextField2(
-            state = state,
-            modifier = demoTextFieldModifiers.focusRequester(focusRequester),
-            textStyle = TextStyle(fontSize = fontSize8),
             lineLimits = SingleLine
         )
     }

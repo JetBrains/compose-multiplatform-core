@@ -16,18 +16,28 @@
 
 package androidx.camera.core.streamsharing
 
+import android.content.Context
 import android.graphics.ImageFormat
+import android.graphics.Rect
 import android.graphics.SurfaceTexture
+import android.hardware.camera2.CameraCaptureSession
+import android.hardware.camera2.CameraDevice
 import android.os.Build
 import android.os.Looper.getMainLooper
 import android.util.Size
 import android.view.Surface
+import androidx.annotation.RequiresApi
+import androidx.camera.camera2.impl.Camera2ImplConfig
+import androidx.camera.camera2.internal.Camera2UseCaseConfigFactory
+import androidx.camera.camera2.interop.Camera2Interop
 import androidx.camera.core.CameraEffect
 import androidx.camera.core.CameraEffect.IMAGE_CAPTURE
 import androidx.camera.core.CameraEffect.PREVIEW
 import androidx.camera.core.CameraEffect.VIDEO_CAPTURE
 import androidx.camera.core.CameraSelector.LENS_FACING_FRONT
 import androidx.camera.core.DynamicRange
+import androidx.camera.core.DynamicRange.HLG_10_BIT
+import androidx.camera.core.DynamicRange.SDR
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY
 import androidx.camera.core.ImageProxy
@@ -35,6 +45,7 @@ import androidx.camera.core.Preview
 import androidx.camera.core.SurfaceRequest
 import androidx.camera.core.impl.CameraCaptureCallback
 import androidx.camera.core.impl.CameraCaptureResult
+import androidx.camera.core.impl.CaptureConfig
 import androidx.camera.core.impl.DeferrableSurface
 import androidx.camera.core.impl.MutableOptionsBundle
 import androidx.camera.core.impl.SessionConfig
@@ -59,6 +70,7 @@ import androidx.camera.testing.impl.fakes.FakeUseCaseConfig
 import androidx.camera.testing.impl.fakes.FakeUseCaseConfigFactory
 import androidx.camera.video.Recorder
 import androidx.camera.video.VideoCapture
+import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
 import com.google.common.util.concurrent.ListenableFuture
 import kotlinx.coroutines.CompletableDeferred
@@ -68,6 +80,8 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mockito.Mockito
+import org.mockito.Mockito.mock
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
@@ -85,6 +99,8 @@ class StreamSharingTest {
         private const val SENSOR_ROTATION = 270
     }
 
+    private val context = ApplicationProvider.getApplicationContext<Context>()
+
     private val child1 = FakeUseCase(
         FakeUseCaseConfig.Builder().setSurfaceOccupancyPriority(1).useCaseConfig
     )
@@ -97,6 +113,7 @@ class StreamSharingTest {
         FakeCamera(null, FakeCameraInfoInternal(SENSOR_ROTATION, LENS_FACING_FRONT))
     private lateinit var streamSharing: StreamSharing
     private val size = Size(800, 600)
+    private val cropRect = Rect(150, 100, 750, 500)
     private lateinit var defaultConfig: UseCaseConfig<*>
     private lateinit var effectProcessor: FakeSurfaceProcessorInternal
     private lateinit var sharingProcessor: FakeSurfaceProcessorInternal
@@ -124,19 +141,153 @@ class StreamSharingTest {
             streamSharing.unbindFromCamera(streamSharing.camera!!)
         }
         effectProcessor.release()
+        sharingProcessor.cleanUp()
+        effectProcessor.cleanUp()
         shadowOf(getMainLooper()).idle()
+    }
+
+    @Test
+    fun effectHandleRotationAndMirroring_remainingTransformationIsEmpty() {
+        // Arrange: create an effect that handles rotation.
+        effect = FakeSurfaceEffect(
+            PREVIEW or VIDEO_CAPTURE,
+            CameraEffect.TRANSFORMATION_CAMERA_AND_SURFACE_ROTATION,
+            effectProcessor
+        )
+        streamSharing = StreamSharing(frontCamera, setOf(child1), useCaseConfigFactory)
+        streamSharing.setViewPortCropRect(cropRect)
+        streamSharing.effect = effect
+        // Act: Bind effect and get sharing input edge.
+        streamSharing.bindToCamera(frontCamera, null, defaultConfig)
+        streamSharing.onSuggestedStreamSpecUpdated(StreamSpec.builder(size).build())
+        // Assert: no remaining rotation because it's handled by the effect.
+        assertThat(streamSharing.sharingInputEdge!!.rotationDegrees).isEqualTo(0)
+        assertThat(streamSharing.sharingInputEdge!!.cropRect).isEqualTo(
+            Rect(100, 50, 500, 650)
+        )
+        assertThat(streamSharing.sharingInputEdge!!.isMirroring).isEqualTo(false)
+    }
+
+    @Test
+    fun effectDoNotHandleRotationAndMirroring_remainingTransformationIsNotEmpty() {
+        // Arrange: create an effect that does not handle rotation.
+        streamSharing = StreamSharing(camera, setOf(child1), useCaseConfigFactory)
+        streamSharing.setViewPortCropRect(cropRect)
+        streamSharing.effect = effect
+        // Act: bind effect.
+        streamSharing.bindToCamera(frontCamera, null, defaultConfig)
+        streamSharing.onSuggestedStreamSpecUpdated(StreamSpec.builder(size).build())
+        // Assert: the remaining rotation still exists because the effect doesn't handle it. It will
+        // be handled by downstream pipeline.
+        assertThat(streamSharing.sharingInputEdge!!.rotationDegrees).isEqualTo(SENSOR_ROTATION)
+        assertThat(streamSharing.sharingInputEdge!!.cropRect).isEqualTo(Rect(0, 0, 600, 400))
+        assertThat(streamSharing.sharingInputEdge!!.isMirroring).isEqualTo(true)
+    }
+
+    @Test
+    fun effectWithTransformationPassthrough_surfaceProcessorIsNotApplied() {
+        // Arrange: create an effect with passthrough transformation.
+        effect = FakeSurfaceEffect(
+            PREVIEW or VIDEO_CAPTURE,
+            CameraEffect.TRANSFORMATION_PASSTHROUGH,
+            effectProcessor
+        )
+        streamSharing = StreamSharing(camera, setOf(child1), useCaseConfigFactory)
+        streamSharing.effect = effect
+        // Act: bind effect.
+        streamSharing.bindToCamera(frontCamera, null, defaultConfig)
+        streamSharing.onSuggestedStreamSpecUpdated(StreamSpec.builder(size).build())
+        // Assert: surface processor is not applied, the sharing input edge is the camera edge.
+        assertThat(streamSharing.sharingInputEdge).isEqualTo(streamSharing.cameraEdge)
+    }
+
+    @Test
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    fun invokeParentSessionCaptureCallbacks_receivedByChildren() {
+        // Arrange.
+        val streamUseCaseIntDef = 3L
+        val sessionConfig = extendChildAndReturnParentSessionConfig {
+            it.setStreamUseCase(streamUseCaseIntDef)
+        }
+
+        // Assert: the repeating callback has size 2 (VirtualCamera callback and the child callback)
+        assertThat(
+            sessionConfig.implementationOptions.retrieveOption(
+                Camera2ImplConfig.STREAM_USE_CASE_OPTION
+            )
+        ).isEqualTo(
+            streamUseCaseIntDef
+        )
+    }
+
+    @Test
+    fun configureChildWithSessionCaptureCallback_verifyParentSessionCaptureCallbacksCounts() {
+        // Arrange.
+        val childSessionCaptureCallback = FakeSessionCaptureCallback()
+        val sessionConfig = extendChildAndReturnParentSessionConfig {
+            it.setSessionCaptureCallback(childSessionCaptureCallback)
+        }
+
+        // Assert: the repeating callback has size 2 (VirtualCamera callback and the child callback)
+        assertThat(sessionConfig.repeatingCameraCaptureCallbacks).hasSize(2)
+        // Assert: the single callback has size of 1 (the child callback)
+        assertThat(sessionConfig.singleCameraCaptureCallbacks).hasSize(1)
+    }
+
+    @Test
+    fun invokeParentSessionStateCallbacks_receivedByChildren() {
+        // Arrange.
+        val childSessionStateCallback = FakeSessionStateCallback()
+        val sessionConfig = extendChildAndReturnParentSessionConfig {
+            it.setSessionStateCallback(childSessionStateCallback)
+        }
+
+        // Act: invoke the parent camera's callbacks.
+        val parentCallback = sessionConfig.sessionStateCallbacks.single()
+        parentCallback.onActive(mock(CameraCaptureSession::class.java))
+        parentCallback.onClosed(mock(CameraCaptureSession::class.java))
+        parentCallback.onConfigureFailed(mock(CameraCaptureSession::class.java))
+        parentCallback.onConfigured(mock(CameraCaptureSession::class.java))
+        parentCallback.onReady(mock(CameraCaptureSession::class.java))
+
+        // Assert: the child receives the callbacks.
+        assertThat(childSessionStateCallback.onActiveCalled).isTrue()
+        assertThat(childSessionStateCallback.onClosedCalled).isTrue()
+        assertThat(childSessionStateCallback.onConfigureFailedCalled).isTrue()
+        assertThat(childSessionStateCallback.onConfiguredCalled).isTrue()
+        assertThat(childSessionStateCallback.onReadyCalled).isTrue()
+    }
+
+    @Test
+    fun invokeParentCameraStateCallbacks_receivedByChildren() {
+        // Arrange: create child with DeviceStateCallback
+        val childCameraStateCallback = FakeCameraStateCallback()
+        val sessionConfig = extendChildAndReturnParentSessionConfig {
+            it.setDeviceStateCallback(childCameraStateCallback)
+        }
+
+        // Act: invoke the parent camera's callbacks.
+        val parentCallback = sessionConfig.deviceStateCallbacks.single()
+        parentCallback.onOpened(Mockito.mock(CameraDevice::class.java))
+        parentCallback.onError(Mockito.mock(CameraDevice::class.java), 0)
+        parentCallback.onDisconnected(Mockito.mock(CameraDevice::class.java))
+
+        // Assert: the child receives the callbacks.
+        assertThat(childCameraStateCallback.onOpenedCalled).isTrue()
+        assertThat(childCameraStateCallback.onDisconnectedCalled).isTrue()
+        assertThat(childCameraStateCallback.onErrorCalled).isTrue()
     }
 
     @Test
     fun childTakingPicture_getJpegQuality() {
         // Arrange: set up StreamSharing with min latency ImageCapture as child
         val imageCapture = ImageCapture.Builder()
-            .setTargetRotation(Surface.ROTATION_90)
             .setCaptureMode(CAPTURE_MODE_MINIMIZE_LATENCY)
             .build()
         streamSharing = StreamSharing(camera, setOf(child1, imageCapture), useCaseConfigFactory)
         streamSharing.bindToCamera(camera, null, defaultConfig)
         streamSharing.onSuggestedStreamSpecUpdated(StreamSpec.builder(size).build())
+        imageCapture.targetRotation = Surface.ROTATION_90
 
         // Act: the child takes a picture.
         imageCapture.takePicture(directExecutor(), object : ImageCapture.OnImageCapturedCallback() {
@@ -166,7 +317,7 @@ class StreamSharingTest {
         )
         val hdrChild = FakeUseCase(
             FakeUseCaseConfig.Builder().setSurfaceOccupancyPriority(2)
-                .setDynamicRange(DynamicRange.HLG_10_BIT).useCaseConfig
+                .setDynamicRange(HLG_10_BIT).useCaseConfig
         )
         streamSharing =
             StreamSharing(camera, setOf(unspecifiedChild, hdrChild), useCaseConfigFactory)
@@ -174,18 +325,18 @@ class StreamSharingTest {
             streamSharing.mergeConfigs(
                 camera.cameraInfoInternal, /*extendedConfig*/null, /*cameraDefaultConfig*/null
             ).dynamicRange
-        ).isEqualTo(DynamicRange.HLG_10_BIT)
+        ).isEqualTo(HLG_10_BIT)
     }
 
     @Test(expected = IllegalArgumentException::class)
     fun getParentDynamicRange_exception_whenChildrenDynamicRangesConflict() {
         val sdrChild = FakeUseCase(
             FakeUseCaseConfig.Builder().setSurfaceOccupancyPriority(1)
-                .setDynamicRange(DynamicRange.SDR).useCaseConfig
+                .setDynamicRange(SDR).useCaseConfig
         )
         val hdrChild = FakeUseCase(
             FakeUseCaseConfig.Builder().setSurfaceOccupancyPriority(2)
-                .setDynamicRange(DynamicRange.HLG_10_BIT).useCaseConfig
+                .setDynamicRange(HLG_10_BIT).useCaseConfig
         )
         streamSharing = StreamSharing(camera, setOf(sdrChild, hdrChild), useCaseConfigFactory)
         streamSharing.mergeConfigs(
@@ -224,7 +375,7 @@ class StreamSharingTest {
         shadowOf(getMainLooper()).idle()
         assertThat(transformationInfo).isNotNull()
         assertThat(transformationInfo!!.rotationDegrees).isEqualTo(SENSOR_ROTATION)
-        assertThat(transformationInfo!!.mirroring).isTrue()
+        assertThat(transformationInfo!!.isMirroring).isTrue()
         // Act: unbind StreamSharing.
         streamSharing.unbindFromCamera(frontCamera)
         shadowOf(getMainLooper()).idle()
@@ -247,7 +398,7 @@ class StreamSharingTest {
 
         // Act: feed metadata to the parent.
         streamSharing.sessionConfig.repeatingCameraCaptureCallbacks.single()
-            .onCaptureCompleted(FakeCameraCaptureResult())
+            .onCaptureCompleted(CaptureConfig.DEFAULT_ID, FakeCameraCaptureResult())
 
         // Assert: children receives the metadata with the tag bundle overridden.
         assertThat(result1.getCompleted().tagBundle.getTag(key)).isEqualTo(value)
@@ -305,6 +456,57 @@ class StreamSharingTest {
         ).isEqualTo(newImplementationOptionValue)
     }
 
+    @Test
+    fun sessionConfigIsSdr_whenUpdateStreamSpecWithDefaultDynamicRangeSettings() {
+        // Arrange.
+        streamSharing = StreamSharing(camera, setOf(child1), useCaseConfigFactory)
+        streamSharing.bindToCamera(camera, null, defaultConfig)
+
+        // Act: update stream specification.
+        streamSharing.onSuggestedStreamSpecUpdated(
+            StreamSpec.builder(size).build()
+        )
+
+        // Assert: the session config gets the correct dynamic range.
+        val outputConfigs = streamSharing.sessionConfig.outputConfigs
+        assertThat(outputConfigs).hasSize(1)
+        assertThat(outputConfigs[0].dynamicRange).isEqualTo(SDR)
+    }
+
+    @Test
+    fun sessionConfigIsHdr_whenUpdateStreamSpecWithHdr() {
+        // Arrange.
+        streamSharing = StreamSharing(camera, setOf(child1), useCaseConfigFactory)
+        streamSharing.bindToCamera(camera, null, defaultConfig)
+
+        // Act: update stream specification.
+        streamSharing.onSuggestedStreamSpecUpdated(
+            StreamSpec.builder(size).setDynamicRange(HLG_10_BIT).build()
+        )
+
+        // Assert: the session config gets the correct dynamic range.
+        val outputConfigs = streamSharing.sessionConfig.outputConfigs
+        assertThat(outputConfigs).hasSize(1)
+        assertThat(outputConfigs[0].dynamicRange).isEqualTo(HLG_10_BIT)
+    }
+
+    private fun extendChildAndReturnParentSessionConfig(
+        extender: (Camera2Interop.Extender<Preview>) -> Unit
+    ): SessionConfig {
+        val previewBuilder = Preview.Builder().apply {
+            extender(Camera2Interop.Extender(this))
+        }
+        streamSharing =
+            StreamSharing(
+                camera,
+                setOf(previewBuilder.build()),
+                Camera2UseCaseConfigFactory(context)
+            )
+        streamSharing.bindToCamera(camera, null, defaultConfig)
+        streamSharing.onSuggestedStreamSpecUpdated(StreamSpec.builder(size).build())
+        return streamSharing.sessionConfig
+    }
+
     private fun FakeUseCase.setTagBundleOnSessionConfigAsync(
         key: String,
         value: String
@@ -314,7 +516,10 @@ class StreamSharingTest {
             val builder = SessionConfig.Builder()
             builder.addTag(key, value)
             builder.addRepeatingCameraCaptureCallback(object : CameraCaptureCallback() {
-                override fun onCaptureCompleted(cameraCaptureResult: CameraCaptureResult) {
+                override fun onCaptureCompleted(
+                    captureConfig: Int,
+                    cameraCaptureResult: CameraCaptureResult
+                ) {
                     deferredResult.complete(cameraCaptureResult)
                 }
             })
@@ -394,12 +599,12 @@ class StreamSharingTest {
         assertThat(child2.pipelineCreationCount).isEqualTo(2)
         shadowOf(getMainLooper()).idle()
         // Assert: child Surface are propagated to StreamSharing.
-        val child1Surface =
-            streamSharing.virtualCamera.mChildrenEdges[child1]!!.deferrableSurfaceForTesting.surface
+        val child1Surface = streamSharing.virtualCameraAdapter.mChildrenEdges[child1]!!
+            .deferrableSurfaceForTesting.surface
         assertThat(child1Surface.isDone).isTrue()
         assertThat(child1Surface.get()).isEqualTo(surface1)
-        val child2Surface =
-            streamSharing.virtualCamera.mChildrenEdges[child2]!!.deferrableSurfaceForTesting.surface
+        val child2Surface = streamSharing.virtualCameraAdapter.mChildrenEdges[child2]!!
+            .deferrableSurfaceForTesting.surface
         assertThat(child2Surface.isDone).isTrue()
         assertThat(child2Surface.get()).isEqualTo(surface2)
 
@@ -417,6 +622,17 @@ class StreamSharingTest {
         // Assert.
         assertThat(child1.camera!!.hasTransform).isFalse()
         assertThat(child2.camera!!.hasTransform).isFalse()
+    }
+
+    @Test
+    fun bindChildToCamera_virtualCameraHasNoRotationDegrees() {
+        // Act.
+        streamSharing.bindToCamera(frontCamera, null, null)
+        // Assert.
+        assertThat(child1.camera!!.cameraInfoInternal.getSensorRotationDegrees(Surface.ROTATION_0))
+            .isEqualTo(0)
+        assertThat(child2.camera!!.cameraInfoInternal.getSensorRotationDegrees(Surface.ROTATION_0))
+            .isEqualTo(0)
     }
 
     @Test

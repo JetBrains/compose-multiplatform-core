@@ -16,6 +16,10 @@
 
 package androidx.graphics.shapes
 
+import androidx.collection.FloatFloatPair
+import kotlin.math.abs
+import kotlin.math.max
+import kotlin.math.min
 import kotlin.math.sqrt
 
 /**
@@ -25,7 +29,9 @@ import kotlin.math.sqrt
  * the slope of the curve between the anchor points.
  */
 open class Cubic internal constructor(internal val points: FloatArray = FloatArray(8)) {
-    init { require(points.size == 8) }
+    init {
+        require(points.size == 8) { "Points array size should be 8" }
+    }
 
     /**
      * The first anchor point x coordinate
@@ -85,6 +91,123 @@ open class Cubic internal constructor(internal val points: FloatArray = FloatArr
             anchor0Y * (u * u * u) + control0Y * (3 * t * u * u) +
                 control1Y * (3 * t * t * u) + anchor1Y * (t * t * t)
         )
+    }
+
+    internal fun zeroLength() = abs(anchor0X - anchor1X) < DistanceEpsilon &&
+            abs(anchor0Y - anchor1Y) < DistanceEpsilon
+
+    private fun zeroIsh(value: Float) = abs(value) < DistanceEpsilon
+
+    /**
+     * This function returns the true bounds of this curve, filling [bounds] with the
+     * axis-aligned bounding box values for left, top, right, and bottom, in that order.
+     */
+    internal fun calculateBounds(
+        bounds: FloatArray = FloatArray(4),
+        approximate: Boolean = false
+    ) {
+
+        // A curve might be of zero-length, with both anchors co-lated.
+        // Just return the point itself.
+        if (zeroLength()) {
+            bounds[0] = anchor0X
+            bounds[1] = anchor0Y
+            bounds[2] = anchor0X
+            bounds[3] = anchor0Y
+            return
+        }
+
+        var minX = min(anchor0X, anchor1X)
+        var minY = min(anchor0Y, anchor1Y)
+        var maxX = max(anchor0X, anchor1X)
+        var maxY = max(anchor0Y, anchor1Y)
+
+        if (approximate) {
+            // Approximate bounds use the bounding box of all anchors and controls
+            bounds[0] = min(minX, min(control0X, control1X))
+            bounds[1] = min(minY, min(control0Y, control1Y))
+            bounds[2] = max(maxX, max(control0X, control1X))
+            bounds[3] = max(maxY, max(control0Y, control1Y))
+            return
+        }
+
+        // Find the derivative, which is a quadratic Bezier. Then we can solve for t using
+        // the quadratic formula
+        val xa = -anchor0X + 3 * control0X - 3 * control1X + anchor1X
+        val xb = 2 * anchor0X - 4 * control0X + 2 * control1X
+        val xc = -anchor0X + control0X
+
+        if (zeroIsh(xa)) {
+            // Try Muller's method instead; it can find a single root when a is 0
+            if (xb != 0f) {
+                val t = 2 * xc / (-2 * xb)
+                if (t in 0f..1f) {
+                    pointOnCurve(t).x.let {
+                        if (it < minX) minX = it
+                        if (it > maxX) maxX = it
+                    }
+                }
+            }
+        } else {
+            val xs = xb * xb - 4 * xa * xc
+            if (xs >= 0) {
+                val t1 = (-xb + sqrt(xs)) / (2 * xa)
+                if (t1 in 0f..1f) {
+                    pointOnCurve(t1).x.let {
+                        if (it < minX) minX = it
+                        if (it > maxX) maxX = it
+                    }
+                }
+
+                val t2 = (-xb - sqrt(xs)) / (2 * xa)
+                if (t2 in 0f..1f) {
+                    pointOnCurve(t2).x.let {
+                        if (it < minX) minX = it
+                        if (it > maxX) maxX = it
+                    }
+                }
+            }
+        }
+
+        // Repeat the above for y coordinate
+        val ya = -anchor0Y + 3 * control0Y - 3 * control1Y + anchor1Y
+        val yb = 2 * anchor0Y - 4 * control0Y + 2 * control1Y
+        val yc = -anchor0Y + control0Y
+
+        if (zeroIsh(ya)) {
+            if (yb != 0f) {
+                val t = 2 * yc / (-2 * yb)
+                if (t in 0f..1f) {
+                    pointOnCurve(t).y.let {
+                        if (it < minY) minY = it
+                        if (it > maxY) maxY = it
+                    }
+                }
+            }
+        } else {
+            val ys = yb * yb - 4 * ya * yc
+            if (ys >= 0) {
+                val t1 = (-yb + sqrt(ys)) / (2 * ya)
+                if (t1 in 0f..1f) {
+                    pointOnCurve(t1).y.let {
+                        if (it < minY) minY = it
+                        if (it > maxY) maxY = it
+                    }
+                }
+
+                val t2 = (-yb - sqrt(ys)) / (2 * ya)
+                if (t2 in 0f..1f) {
+                    pointOnCurve(t2).y.let {
+                        if (it < minY) minY = it
+                        if (it > maxY) maxY = it
+                    }
+                }
+            }
+        }
+        bounds[0] = minX
+        bounds[1] = minY
+        bounds[2] = maxX
+        bounds[3] = maxY
     }
 
     /**
@@ -149,9 +272,10 @@ open class Cubic internal constructor(internal val points: FloatArray = FloatArr
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
-        if (javaClass != other?.javaClass) return false
 
-        other as Cubic
+        if (other !is Cubic) {
+            return false
+        }
 
         return points.contentEquals(other.points)
     }
@@ -269,56 +393,47 @@ interface MutablePoint {
     var y: Float
 }
 
+typealias TransformResult = FloatFloatPair
+
 /**
- * Interface for a function that can transform (rotate/scale/translate/etc.) points
+ * Interface for a function that can transform (rotate/scale/translate/etc.) points.
  */
 fun interface PointTransformer {
     /**
-     * Transform the given [MutablePoint] in place.
+     * Transform the point given the x and y parameters, returning the transformed point as a
+     * [TransformResult]
      */
-    fun MutablePoint.transform()
+    fun transform(x: Float, y: Float): TransformResult
 }
 
 /**
  * This is a Mutable version of [Cubic], used mostly for performance critical paths so we can
  * avoid creating new [Cubic]s
  *
- * This is used in Morph.asMutableCubics, reusing a [MutableCubic] instance to avoid creating
+ * This is used in Morph.forEachCubic, reusing a [MutableCubic] instance to avoid creating
  * new [Cubic]s.
  */
-class MutableCubic internal constructor() : Cubic() {
-    internal val anchor0 = ArrayMutablePoint(points, 0)
-    internal val control0 = ArrayMutablePoint(points, 2)
-    internal val control1 = ArrayMutablePoint(points, 4)
-    internal val anchor1 = ArrayMutablePoint(points, 6)
+class MutableCubic : Cubic() {
+    private fun transformOnePoint(f: PointTransformer, ix: Int) {
+        val result = f.transform(points[ix], points[ix + 1])
+        points[ix] = result.first
+        points[ix + 1] = result.second
+    }
 
     fun transform(f: PointTransformer) {
-        with(f) {
-            anchor0.transform()
-            control0.transform()
-            control1.transform()
-            anchor1.transform()
+        transformOnePoint(f, 0)
+        transformOnePoint(f, 2)
+        transformOnePoint(f, 4)
+        transformOnePoint(f, 6)
+    }
+
+    fun interpolate(c1: Cubic, c2: Cubic, progress: Float) {
+        repeat(8) {
+            points[it] = interpolate(
+                c1.points[it],
+                c2.points[it],
+                progress
+            )
         }
     }
-}
-
-/**
- * Implementation of [MutablePoint] backed by a [FloatArray], at a given position.
- * Note that the same [FloatArray] can be used to back many [ArrayMutablePoint],
- * see [MutableCubic]
- */
-internal class ArrayMutablePoint(internal val arr: FloatArray, internal val ix: Int) :
-    MutablePoint {
-    init { require(arr.size >= ix + 2) }
-
-    override var x: Float
-        get() = arr[ix]
-        set(v) {
-            arr[ix] = v
-        }
-    override var y: Float
-        get() = arr[ix + 1]
-        set(v) {
-            arr[ix + 1] = v
-        }
 }

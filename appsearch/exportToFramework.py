@@ -64,7 +64,7 @@ FRAMEWORK_API_ROOT = 'framework/java/external/android/app/appsearch'
 FRAMEWORK_API_TEST_ROOT = 'testing/coretests/src/android/app/appsearch/external'
 FRAMEWORK_IMPL_ROOT = 'service/java/com/android/server/appsearch/external'
 FRAMEWORK_IMPL_TEST_ROOT = 'testing/servicestests/src/com/android/server/appsearch/external'
-FRAMEWORK_TEST_UTIL_ROOT = 'testing/testutils/src/android/app/appsearch/testutil/external'
+FRAMEWORK_TEST_UTIL_ROOT = '../../../cts/tests/appsearch/testutils/src/android/app/appsearch/testutil/external'
 FRAMEWORK_TEST_UTIL_TEST_ROOT = 'testing/servicestests/src/android/app/appsearch/testutil/external'
 FRAMEWORK_CTS_TEST_ROOT = '../../../cts/tests/appsearch/src/com/android/cts/appsearch/external'
 GOOGLE_JAVA_FORMAT = (
@@ -189,12 +189,6 @@ class ExportToFramework:
         return contents
 
     def _TransformTestCode(self, contents):
-        # Add imports used in tests
-        imports_to_add = []
-        if '@exportToFramework:SdkSuppress' in contents:
-            imports_to_add.append('androidx.test.filters.SdkSuppress')
-            imports_to_add.append('android.os.Build')
-
         contents = (contents
             .replace('androidx.appsearch.testutil.', 'android.app.appsearch.testutil.')
             .replace(
@@ -205,18 +199,8 @@ class ExportToFramework:
                     'android.app.appsearch.AppSearchManager')
             .replace('LocalStorage.', 'AppSearchManager.')
         )
-        contents = re.sub(
-            r'/\*@exportToFramework:SdkSuppress\(minSdkVersion = (.*?)\)\*/',
-            r'@SdkSuppress(minSdkVersion = \1)',
-            contents)
         for shim in ['AppSearchSession', 'GlobalSearchSession', 'SearchResults']:
             contents = re.sub(r"([^a-zA-Z])(%s)([^a-zA-Z0-9])" % shim, r'\1\2Shim\3', contents)
-
-        for import_to_add in imports_to_add:
-            contents = re.sub(
-                    r'^(\s*package [^;]+;\s*)$', r'\1\nimport %s;\n' % import_to_add, contents,
-                    flags=re.MULTILINE)
-
         return self._TransformCommonCode(contents)
 
     def _TransformAndCopyFolder(self, source_dir, dest_dir, transform_func=None):

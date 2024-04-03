@@ -16,7 +16,6 @@
 
 package androidx.compose.foundation.demos.pager
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -43,7 +42,6 @@ val PagerStateInteractions = listOf(
     }
 )
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun StateDrivenPage() {
     val pagerState = rememberPagerState { PagesCount }
@@ -59,7 +57,6 @@ private fun StateDrivenPage() {
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun StateDrivenPageWithMonitor() {
     val pagerState = rememberPagerState { PagesCount }
@@ -76,32 +73,32 @@ private fun StateDrivenPageWithMonitor() {
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun StateMonitoringPager() {
     val pagerState = rememberPagerState { PagesCount }
     Column(modifier = Modifier.fillMaxSize()) {
         HorizontalPager(
-            modifier = Modifier.weight(0.9f),
+            modifier = Modifier.weight(0.8f),
             state = pagerState
         ) {
             PagerItem(it)
         }
-        PageMonitor(Modifier.weight(0.1f), pagerState)
+        PageMonitor(Modifier.weight(0.2f), pagerState)
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun PageMonitor(modifier: Modifier, pagerState: PagerState) {
     Column(modifier.fillMaxWidth()) {
         Text(text = "Current Page: ${pagerState.currentPage}")
         Text(text = "Target Page: ${pagerState.targetPage}")
         Text(text = "Settled Page Offset: ${pagerState.settledPage}")
+        // This is to visualize the changing of this value during scroll.
+        // Reading scroll-related backed properties in composition will have performance impacts.
+        Text(text = "Current Page Offset Fraction: ${pagerState.currentPageOffsetFraction}")
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun StateMonitoringCustomPageSize() {
     val pagerState = rememberPagerState { PagesCount }

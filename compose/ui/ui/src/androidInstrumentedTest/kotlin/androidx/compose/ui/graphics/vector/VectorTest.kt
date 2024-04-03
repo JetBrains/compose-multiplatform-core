@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.graphics.vector
 
+import android.app.Activity
 import android.app.Application
 import android.content.ComponentCallbacks2
 import android.content.pm.ActivityInfo
@@ -23,6 +24,7 @@ import android.content.res.Configuration
 import android.content.res.Resources
 import android.graphics.Bitmap
 import android.os.Build
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
@@ -1108,7 +1110,6 @@ class VectorTest {
         var vectorInCache = false
         rule.setContent {
             val theme = LocalContext.current.theme
-            val density = LocalDensity.current
             val imageVectorCache = LocalImageVectorCache.current
             imageVectorCache.clear()
             Image(
@@ -1116,22 +1117,8 @@ class VectorTest {
                 contentDescription = null
             )
 
-            val key = ImageVectorCache.Key(theme, R.drawable.ic_triangle, density)
-            vectorInCache = imageVectorCache[key] != null
-        }
-
-        assertTrue(vectorInCache)
-    }
-
-    @Test
-    fun testVectorPainterCacheHit() {
-        var vectorInCache = false
-        rule.setContent {
-            // obtaining the same painter resource should return the same instance root
-            // GroupComponent
-            val painter1 = painterResource(R.drawable.ic_triangle) as VectorPainter
-            val painter2 = painterResource(R.drawable.ic_triangle) as VectorPainter
-            vectorInCache = painter1.vector.root === painter2.vector.root
+            vectorInCache =
+                imageVectorCache[ImageVectorCache.Key(theme, R.drawable.ic_triangle)] != null
         }
 
         assertTrue(vectorInCache)
@@ -1143,10 +1130,8 @@ class VectorTest {
         var application: Application? = null
         var theme: Resources.Theme? = null
         var vectorCache: ImageVectorCache? = null
-        var density: Density? = null
         rule.setContent {
             application = LocalContext.current.applicationContext as Application
-            density = LocalDensity.current
             theme = LocalContext.current.theme
             val imageVectorCache = LocalImageVectorCache.current
             imageVectorCache.clear()
@@ -1155,8 +1140,8 @@ class VectorTest {
                 contentDescription = null
             )
 
-            val key = ImageVectorCache.Key(theme!!, R.drawable.ic_triangle, density!!)
-            vectorInCache = imageVectorCache[key] != null
+            vectorInCache =
+                imageVectorCache[ImageVectorCache.Key(theme!!, R.drawable.ic_triangle)] != null
 
             vectorCache = imageVectorCache
         }
@@ -1164,24 +1149,20 @@ class VectorTest {
         application?.onTrimMemory(0)
 
         val cacheCleared = vectorCache?.let {
-            it[ImageVectorCache.Key(theme!!, R.drawable.ic_triangle, density!!)] == null
+            it[ImageVectorCache.Key(theme!!, R.drawable.ic_triangle)] == null
         } ?: false
 
         assertTrue("Vector was not inserted in cache after initial creation", vectorInCache)
         assertTrue("Cache was not cleared after trim memory call", cacheCleared)
     }
 
-    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
-    @Test
-    fun testImageVectorConfigChange() {
-        val tag = "testTag"
-        rule.activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-
-        val latch = CountDownLatch(1)
-
-        rule.activity.application.registerComponentCallbacks(object : ComponentCallbacks2 {
+    private fun Activity.rotate(rotation: Int): Boolean {
+        var rotationCount = 0
+        var rotateSuccess = false
+        var latch: CountDownLatch? = null
+        val callbacks = object : ComponentCallbacks2 {
             override fun onConfigurationChanged(p0: Configuration) {
-                latch.countDown()
+                latch?.countDown()
             }
 
             override fun onLowMemory() {
@@ -1191,10 +1172,31 @@ class VectorTest {
             override fun onTrimMemory(p0: Int) {
                 // NO-OP
             }
-        })
-
+        }
+        application.registerComponentCallbacks(callbacks)
         try {
-            latch.await(1500, TimeUnit.MILLISECONDS)
+            while (rotationCount < 3 && !rotateSuccess) {
+                latch = CountDownLatch(1)
+                this.requestedOrientation = rotation
+                rotateSuccess = latch.await(3000, TimeUnit.MILLISECONDS) &&
+                    this.requestedOrientation == rotation
+                rotationCount++
+            }
+        } finally {
+            application.unregisterComponentCallbacks(callbacks)
+        }
+        return rotateSuccess
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+    @Test
+    fun testImageVectorConfigChange() {
+        if (!rule.activity.rotate(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE)) {
+            Log.w(TAG, "device rotation unsuccessful")
+            return
+        }
+        val tag = "testTag"
+        try {
             rule.setContent {
                 Image(
                     painterResource(R.drawable.ic_triangle_config),
@@ -1208,7 +1210,7 @@ class VectorTest {
         } catch (e: InterruptedException) {
             fail("Unable to verify vector asset in landscape orientation")
         } finally {
-            rule.activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+            rule.activity.rotate(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)
         }
     }
 
@@ -1475,4 +1477,6 @@ class VectorTest {
         Assert.assertEquals(height, bitmap.height)
         return bitmap
     }
+
+    private val TAG = "VectorTest"
 }

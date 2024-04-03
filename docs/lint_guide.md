@@ -456,19 +456,18 @@ place the actions you want to take if a violation of the lint check is found.
 
 ```kotlin
 override fun visitElement(context: XmlContext, element: Element) {
-    val lintFix = fix().replace()
+    val fix = LintFix.create()
+        .replace()
         .text(ELEMENT)
-        .with(REPLACEMENT TEXT)
+        .with(REPLACEMENT_TEXT)
         .build()
 
-    val incident = Incident(context)
-        .fix(lintFix)
-        .issue(ISSUE)
-        .location(context.getLocation(node))
-        .message("My issue message")
-        .scope(context.getNameLocation(element))
-
-    context.report(incident)
+    context.report(
+        issue = ISSUE,
+        location = context.getNameLocation(element),
+        message = "My issue message",
+        quickFixData = fix
+    )
 }
 ```
 
@@ -592,6 +591,15 @@ multiple registries.
 
 ```
 androidx.mylibrary.lint.MyLibraryIssueRegistry
+```
+
+Note that `lintPublish` only publishes the lint module, it doesn't include it
+when running lint on the module that `lintPublish` is attached to. In order to
+also run these lint checks as part of the module that is publishing them, you
+can add `lintChecks` in the same way.
+
+```
+lintChecks(project(':mylibrary:mylibrary-lint'))
 ```
 
 ## Advanced topics
@@ -721,6 +729,14 @@ Here are the steps to fix this:
 Note: the generated replacement code will inline the specified sample file (in
 our case, `ktSample("androidx.sample.deprecated.DeprecatedKotlinClass")`).
 Replace the inlined code with the sample declaration.
+
+### Lint checks with WARNING severity (my lint check won't run!) {#tips-warnings}
+
+In AndroidX lint checks with a severity of `WARNING` are ignored by default to
+prevent noise from bundled lint checks. If your lint check has this severity,
+and you want it to run inside AndroidX, you'll need to override the severity: in
+Compose for example this happens in
+[AndroidXComposeLintIssues](https://cs.android.com/androidx/platform/frameworks/support/+/androidx-main:buildSrc/private/src/main/kotlin/androidx/build/AndroidXComposeLintIssues.kt).
 
 ## Helpful links
 

@@ -23,13 +23,11 @@ else
       -Pandroidx.enableComposeCompilerMetrics=true \
       -Pandroidx.enableComposeCompilerReports=true \
       -Pandroidx.constraints=true \
-      -Pandroidx.enabled.kmp.target.platforms=-desktop \
-      --no-daemon \
-      --profile "$@"; then
+      --no-daemon "$@"; then
     EXIT_VALUE=1
   fi
 
-  # Parse performance profile reports (generated with the --profile option above) and re-export
+  # Parse performance profile reports (generated with the --profile option) and re-export
   # the metrics in an easily machine-readable format for tracking
   impl/parse_profile_data.sh
 fi

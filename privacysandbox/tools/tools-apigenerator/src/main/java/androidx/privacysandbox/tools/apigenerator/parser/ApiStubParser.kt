@@ -16,6 +16,8 @@
 
 package androidx.privacysandbox.tools.apigenerator.parser
 
+import androidx.privacysandbox.tools.core.model.AnnotatedDataClass
+import androidx.privacysandbox.tools.core.model.AnnotatedEnumClass
 import androidx.privacysandbox.tools.core.model.AnnotatedInterface
 import androidx.privacysandbox.tools.core.model.AnnotatedValue
 import androidx.privacysandbox.tools.core.model.Method
@@ -26,13 +28,18 @@ import androidx.privacysandbox.tools.core.model.Types
 import androidx.privacysandbox.tools.core.model.ValueProperty
 import androidx.privacysandbox.tools.core.validator.ModelValidator
 import java.nio.file.Path
+import kotlinx.metadata.ClassKind
 import kotlinx.metadata.ClassName
-import kotlinx.metadata.Flag
 import kotlinx.metadata.KmClass
 import kotlinx.metadata.KmClassifier
 import kotlinx.metadata.KmFunction
 import kotlinx.metadata.KmProperty
 import kotlinx.metadata.KmType
+import kotlinx.metadata.isData
+import kotlinx.metadata.isNullable
+import kotlinx.metadata.isSuspend
+import kotlinx.metadata.isVar
+import kotlinx.metadata.kind
 
 internal object ApiStubParser {
     /**
@@ -58,7 +65,7 @@ internal object ApiStubParser {
         val type = parseClassName(service.name)
         val superTypes = service.supertypes.map(this::parseType).filterNot { it == Types.any }
 
-        if (!Flag.Class.IS_INTERFACE(service.flags)) {
+        if (service.kind != ClassKind.INTERFACE) {
             throw PrivacySandboxParsingException(
                 "${type.qualifiedName} is not a Kotlin interface but it's annotated with " +
                     "@$annotationName."
@@ -74,14 +81,53 @@ internal object ApiStubParser {
 
     private fun parseValue(value: KmClass): AnnotatedValue {
         val type = parseClassName(value.name)
+        val isEnum = value.kind == ClassKind.ENUM_CLASS
 
-        if (!Flag.Class.IS_DATA(value.flags)) {
+        if (!value.isData && !isEnum) {
             throw PrivacySandboxParsingException(
-                "${type.qualifiedName} is not a Kotlin data class but it's annotated with " +
-                    "@PrivacySandboxValue."
+                "${type.qualifiedName} is not a Kotlin data class or enum class but it's " +
+                    "annotated with @PrivacySandboxValue."
             )
         }
-        return AnnotatedValue(type, parseProperties(type, value))
+        val superTypes = value.supertypes.asSequence().map { it.classifier }
+            .filterIsInstance<KmClassifier.Class>()
+            .map { it.name }
+            .filter { it !in listOf("kotlin/Enum", "kotlin/Any") }
+            .map { parseClassName(it) }.toList()
+        if (superTypes.isNotEmpty()) {
+            throw PrivacySandboxParsingException(
+                "Error in ${type.qualifiedName}: values annotated with @PrivacySandboxValue may " +
+                    "not inherit other types (${
+                        superTypes.joinToString(limit = 3) { it.simpleName }
+                    })"
+            )
+        }
+
+        return if (value.isData) {
+            AnnotatedDataClass(type, parseProperties(type, value))
+        } else {
+            validateEnum(value, type)
+            AnnotatedEnumClass(type, value.enumEntries.toList())
+        }
+    }
+
+    private fun validateEnum(value: KmClass, type: Type) {
+        if (value.properties.isNotEmpty()) {
+            throw PrivacySandboxParsingException(
+                "Error in ${type.qualifiedName}: enum classes annotated with " +
+                    "@PrivacySandboxValue may not declare properties (${
+                        value.properties.joinToString(limit = 3) { it.name }
+                    })"
+            )
+        }
+        if (value.functions.isNotEmpty()) {
+            throw PrivacySandboxParsingException(
+                "Error in ${type.qualifiedName}: enum classes annotated with " +
+                    "@PrivacySandboxValue may not declare methods (${
+                        value.functions.joinToString(limit = 3) { it.name }
+                    })"
+            )
+        }
     }
 
     /** Parses properties and sorts them based on the order of constructor parameters. */
@@ -100,7 +146,7 @@ internal object ApiStubParser {
 
     private fun parseProperty(containerType: Type, property: KmProperty): ValueProperty {
         val qualifiedName = "${containerType.qualifiedName}.${property.name}"
-        if (Flag.Property.IS_VAR(property.flags)) {
+        if (property.isVar) {
             throw PrivacySandboxParsingException(
                 "Error in $qualifiedName: mutable properties are not allowed in data classes " +
                     "annotated with @PrivacySandboxValue."
@@ -114,13 +160,13 @@ internal object ApiStubParser {
             function.name,
             function.valueParameters.map { Parameter(it.name, parseType(it.type)) },
             parseType(function.returnType),
-            Flag.Function.IS_SUSPEND(function.flags)
+            function.isSuspend
         )
     }
 
     private fun parseType(type: KmType): Type {
         val classifier = type.classifier
-        val isNullable = Flag.Type.IS_NULLABLE(type.flags)
+        val isNullable = type.isNullable
         if (classifier !is KmClassifier.Class) {
             throw PrivacySandboxParsingException("Unsupported type in API description: $type")
         }

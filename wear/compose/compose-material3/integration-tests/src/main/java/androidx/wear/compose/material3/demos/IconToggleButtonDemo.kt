@@ -30,9 +30,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
+import androidx.wear.compose.integration.demos.common.ScalingLazyColumnWithRSB
 import androidx.wear.compose.material3.Icon
 import androidx.wear.compose.material3.IconButtonDefaults
 import androidx.wear.compose.material3.IconToggleButton
@@ -43,13 +44,13 @@ import androidx.wear.compose.material3.touchTargetAwareSize
 
 @Composable
 fun IconToggleButtonDemo() {
-    ScalingLazyColumn(
+    ScalingLazyColumnWithRSB(
         modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         item {
             ListHeader {
-                Text("Icon Toggle Button")
+                Text("Icon Toggle Button", textAlign = TextAlign.Center)
             }
         }
         item {
@@ -133,7 +134,7 @@ private fun IconToggleButtonsDemo(
     ) {
         Icon(
             imageVector = Icons.Filled.Favorite,
-            contentDescription = "Flight Mode",
+            contentDescription = "Favorite icon",
             modifier = Modifier.size(IconButtonDefaults.iconSizeFor(size))
         )
     }

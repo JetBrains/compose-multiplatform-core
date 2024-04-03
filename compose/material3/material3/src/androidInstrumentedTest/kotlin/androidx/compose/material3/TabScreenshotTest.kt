@@ -32,7 +32,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -49,7 +48,6 @@ import org.junit.runner.RunWith
 @LargeTest
 @RunWith(AndroidJUnit4::class)
 @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
-@OptIn(ExperimentalTestApi::class)
 class TabScreenshotTest {
 
     @get:Rule
@@ -540,6 +538,7 @@ class TabScreenshotTest {
  * visual state.
  */
 @Composable
+@OptIn(ExperimentalMaterial3Api::class)
 private fun DefaultPrimaryTabs(
     interactionSource: MutableInteractionSource
 ) {
@@ -547,12 +546,7 @@ private fun DefaultPrimaryTabs(
         Modifier
             .semantics(mergeDescendants = true) {}
             .testTag(TAG)) {
-        TabRow(selectedTabIndex = 0, indicator = @Composable { tabPositions ->
-            TabRowDefaults.PrimaryIndicator(
-                modifier = Modifier.tabIndicatorOffset(tabPositions[0]),
-                width = tabPositions[0].contentWidth
-            )
-        }) {
+        PrimaryTabRow(selectedTabIndex = 0) {
             Tab(
                 selected = true,
                 onClick = {},
@@ -580,6 +574,7 @@ private fun DefaultPrimaryTabs(
  * visual state.
  */
 @Composable
+@OptIn(ExperimentalMaterial3Api::class)
 private fun DefaultSecondaryTabs(
     interactionSource: MutableInteractionSource
 ) {
@@ -587,7 +582,7 @@ private fun DefaultSecondaryTabs(
         Modifier
             .semantics(mergeDescendants = true) {}
             .testTag(TAG)) {
-        TabRow(selectedTabIndex = 0) {
+        SecondaryTabRow(selectedTabIndex = 0) {
             Tab(
                 selected = true,
                 onClick = {},
@@ -618,6 +613,7 @@ private fun DefaultSecondaryTabs(
  * @param unselectedContentColor the content color for an unselected [Tab] (second and third tabs)
  */
 @Composable
+@OptIn(ExperimentalMaterial3Api::class)
 private fun CustomPrimaryTabs(
     interactionSource: MutableInteractionSource,
     containerColor: Color,
@@ -628,15 +624,10 @@ private fun CustomPrimaryTabs(
         Modifier
             .semantics(mergeDescendants = true) {}
             .testTag(TAG)) {
-        TabRow(selectedTabIndex = 0,
-            containerColor = containerColor,
-            indicator = @Composable { tabPositions ->
-                TabRowDefaults.PrimaryIndicator(
-                    modifier = Modifier.tabIndicatorOffset(tabPositions[0]),
-                    width = tabPositions[0].contentWidth,
-                    color = selectedContentColor
-                )
-            }) {
+        PrimaryTabRow(
+            selectedTabIndex = 0,
+            containerColor = containerColor
+        ) {
             Tab(
                 selected = true,
                 onClick = {},
@@ -673,6 +664,7 @@ private fun CustomPrimaryTabs(
  * @param unselectedContentColor the content color for an unselected [Tab] (second and third tabs)
  */
 @Composable
+@OptIn(ExperimentalMaterial3Api::class)
 private fun CustomSecondaryTabs(
     interactionSource: MutableInteractionSource,
     containerColor: Color,
@@ -683,14 +675,16 @@ private fun CustomSecondaryTabs(
         Modifier
             .semantics(mergeDescendants = true) {}
             .testTag(TAG)) {
-        TabRow(selectedTabIndex = 0,
+        SecondaryTabRow(
+            selectedTabIndex = 0,
             containerColor = containerColor,
-            indicator = @Composable { tabPositions ->
+            indicator = {
                 TabRowDefaults.SecondaryIndicator(
-                    modifier = Modifier.tabIndicatorOffset(tabPositions[0]),
+                    modifier = Modifier.tabIndicatorOffset(0),
                     color = selectedContentColor
                 )
-            }) {
+            }
+        ) {
             Tab(
                 selected = true,
                 onClick = {},
@@ -725,6 +719,7 @@ private fun CustomSecondaryTabs(
  * visual state.
  */
 @Composable
+@OptIn(ExperimentalMaterial3Api::class)
 private fun DefaultPrimaryLeadingIconTabs(
     interactionSource: MutableInteractionSource
 ) {
@@ -732,12 +727,7 @@ private fun DefaultPrimaryLeadingIconTabs(
         Modifier
             .semantics(mergeDescendants = true) {}
             .testTag(TAG)) {
-        TabRow(selectedTabIndex = 0, indicator = @Composable { tabPositions ->
-            TabRowDefaults.PrimaryIndicator(
-                modifier = Modifier.tabIndicatorOffset(tabPositions[0]),
-                width = tabPositions[0].contentWidth
-            )
-        }) {
+        PrimaryTabRow(selectedTabIndex = 0) {
             LeadingIconTab(
                 selected = true,
                 onClick = {},
@@ -769,6 +759,7 @@ private fun DefaultPrimaryLeadingIconTabs(
  * visual state.
  */
 @Composable
+@OptIn(ExperimentalMaterial3Api::class)
 private fun DefaultSecondaryLeadingIconTabs(
     interactionSource: MutableInteractionSource
 ) {
@@ -776,7 +767,7 @@ private fun DefaultSecondaryLeadingIconTabs(
         Modifier
             .semantics(mergeDescendants = true) {}
             .testTag(TAG)) {
-        TabRow(selectedTabIndex = 0) {
+        SecondaryTabRow(selectedTabIndex = 0) {
             LeadingIconTab(
                 selected = true,
                 onClick = {},
@@ -807,6 +798,7 @@ private fun DefaultSecondaryLeadingIconTabs(
  * visual state.
  */
 @Composable
+@OptIn(ExperimentalMaterial3Api::class)
 private fun DefaultPrimaryScrollableTabs(
     interactionSource: MutableInteractionSource
 ) {
@@ -814,7 +806,7 @@ private fun DefaultPrimaryScrollableTabs(
         Modifier
             .semantics(mergeDescendants = true) {}
             .testTag(TAG)) {
-        ScrollableTabRow(selectedTabIndex = 0, indicator = @Composable { tabPositions ->
+        PrimaryScrollableTabRow(selectedTabIndex = 0, indicator = @Composable { tabPositions ->
             TabRowDefaults.PrimaryIndicator(
                 modifier = Modifier.tabIndicatorOffset(tabPositions[0]),
                 width = tabPositions[0].contentWidth
@@ -847,6 +839,7 @@ private fun DefaultPrimaryScrollableTabs(
  * visual state.
  */
 @Composable
+@OptIn(ExperimentalMaterial3Api::class)
 private fun DefaultSecondaryScrollableTabs(
     interactionSource: MutableInteractionSource
 ) {
@@ -854,7 +847,7 @@ private fun DefaultSecondaryScrollableTabs(
         Modifier
             .semantics(mergeDescendants = true) {}
             .testTag(TAG)) {
-        ScrollableTabRow(selectedTabIndex = 0) {
+        SecondaryScrollableTabRow(selectedTabIndex = 0) {
             Tab(
                 selected = true,
                 onClick = {},

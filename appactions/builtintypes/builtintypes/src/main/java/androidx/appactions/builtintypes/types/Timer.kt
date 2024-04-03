@@ -15,7 +15,6 @@
  */
 package androidx.appactions.builtintypes.types
 
-import androidx.appactions.builtintypes.properties.DisambiguatingDescription
 import androidx.appactions.builtintypes.properties.Name
 import androidx.appactions.builtintypes.serializers.DurationAsNanosSerializer
 import androidx.appsearch.`annotation`.Document
@@ -58,7 +57,7 @@ public interface Timer : Thing {
     get() = null
 
   /** Converts this [Timer] to its builder with all the properties copied over. */
-  public override fun toBuilder(): Builder<*>
+  override fun toBuilder(): Builder<*>
 
   public companion object {
     /** Returns a default implementation of [Builder]. */
@@ -73,7 +72,7 @@ public interface Timer : Thing {
    */
   public interface Builder<Self : Builder<Self>> : Thing.Builder<Self> {
     /** Returns a built [Timer]. */
-    public override fun build(): Timer
+    override fun build(): Timer
 
     /** Sets the `duration`. */
     @Suppress("DocumentExceptions")
@@ -92,8 +91,8 @@ public interface Timer : Thing {
  * )
  * class MyTimer internal constructor(
  *   timer: Timer,
- *   val foo: String,
- *   val bars: List<Int>,
+ *   @Document.StringProperty val foo: String,
+ *   @Document.LongProperty val bars: List<Int>,
  * ) : AbstractTimer<
  *   MyTimer,
  *   MyTimer.Builder
@@ -113,6 +112,7 @@ public interface Timer : Thing {
  *       .addBars(bars)
  *   }
  *
+ *   @Document.BuilderProducer
  *   class Builder :
  *     AbstractTimer.Builder<
  *       Builder,
@@ -124,13 +124,14 @@ public interface Timer : Thing {
  */
 @Suppress("UNCHECKED_CAST")
 public abstract class AbstractTimer<
-    Self : AbstractTimer<Self, Builder>, Builder : AbstractTimer.Builder<Builder, Self>>
+  Self : AbstractTimer<Self, Builder>,
+  Builder : AbstractTimer.Builder<Builder, Self>
+>
 internal constructor(
-  public final override val namespace: String,
-  public final override val duration: Duration?,
-  public final override val disambiguatingDescription: DisambiguatingDescription?,
-  public final override val identifier: String,
-  public final override val name: Name?,
+  final override val namespace: String,
+  final override val duration: Duration?,
+  final override val identifier: String,
+  final override val name: Name?,
 ) : Timer {
   /**
    * Human readable name for the concrete [Self] class.
@@ -149,59 +150,40 @@ internal constructor(
   /** A copy-constructor that copies over properties from another [Timer] instance. */
   public constructor(
     timer: Timer
-  ) : this(
-    timer.namespace,
-    timer.duration,
-    timer.disambiguatingDescription,
-    timer.identifier,
-    timer.name
-  )
+  ) : this(timer.namespace, timer.duration, timer.identifier, timer.name)
 
   /** Returns a concrete [Builder] with the additional, non-[Timer] properties copied over. */
   protected abstract fun toBuilderWithAdditionalPropertiesOnly(): Builder
 
-  public final override fun toBuilder(): Builder =
+  final override fun toBuilder(): Builder =
     toBuilderWithAdditionalPropertiesOnly()
       .setNamespace(namespace)
       .setDuration(duration)
-      .setDisambiguatingDescription(disambiguatingDescription)
       .setIdentifier(identifier)
       .setName(name)
 
-  public final override fun equals(other: Any?): Boolean {
+  final override fun equals(other: Any?): Boolean {
     if (this === other) return true
     if (other == null || this::class.java != other::class.java) return false
     other as Self
     if (namespace != other.namespace) return false
     if (duration != other.duration) return false
-    if (disambiguatingDescription != other.disambiguatingDescription) return false
     if (identifier != other.identifier) return false
     if (name != other.name) return false
     if (additionalProperties != other.additionalProperties) return false
     return true
   }
 
-  public final override fun hashCode(): Int =
-    Objects.hash(
-      namespace,
-      duration,
-      disambiguatingDescription,
-      identifier,
-      name,
-      additionalProperties
-    )
+  final override fun hashCode(): Int =
+    Objects.hash(namespace, duration, identifier, name, additionalProperties)
 
-  public final override fun toString(): String {
+  final override fun toString(): String {
     val attributes = mutableMapOf<String, String>()
     if (namespace.isNotEmpty()) {
       attributes["namespace"] = namespace
     }
     if (duration != null) {
       attributes["duration"] = duration.toString()
-    }
-    if (disambiguatingDescription != null) {
-      attributes["disambiguatingDescription"] =
-        disambiguatingDescription.toString(includeWrapperName = false)
     }
     if (identifier.isNotEmpty()) {
       attributes["identifier"] = identifier
@@ -219,11 +201,13 @@ internal constructor(
    *
    * Allows for extension like:
    * ```kt
+   * @Document(...)
    * class MyTimer :
    *   : AbstractTimer<
    *     MyTimer,
    *     MyTimer.Builder>(...) {
    *
+   *   @Document.BuilderProducer
    *   class Builder
    *   : AbstractTimer.Builder<
    *       Builder,
@@ -289,8 +273,6 @@ internal constructor(
 
     private var duration: Duration? = null
 
-    private var disambiguatingDescription: DisambiguatingDescription? = null
-
     private var identifier: String = ""
 
     private var name: Name? = null
@@ -305,44 +287,36 @@ internal constructor(
      */
     @Suppress("BuilderSetStyle") protected abstract fun buildFromTimer(timer: Timer): Built
 
-    public final override fun build(): Built =
-      buildFromTimer(TimerImpl(namespace, duration, disambiguatingDescription, identifier, name))
+    final override fun build(): Built =
+      buildFromTimer(TimerImpl(namespace, duration, identifier, name))
 
-    public final override fun setNamespace(namespace: String): Self {
+    final override fun setNamespace(namespace: String): Self {
       this.namespace = namespace
       return this as Self
     }
 
-    public final override fun setDuration(duration: Duration?): Self {
+    final override fun setDuration(duration: Duration?): Self {
       this.duration = duration
       return this as Self
     }
 
-    public final override fun setDisambiguatingDescription(
-      disambiguatingDescription: DisambiguatingDescription?
-    ): Self {
-      this.disambiguatingDescription = disambiguatingDescription
-      return this as Self
-    }
-
-    public final override fun setIdentifier(text: String): Self {
+    final override fun setIdentifier(text: String): Self {
       this.identifier = text
       return this as Self
     }
 
-    public final override fun setName(name: Name?): Self {
+    final override fun setName(name: Name?): Self {
       this.name = name
       return this as Self
     }
 
     @Suppress("BuilderSetStyle")
-    public final override fun equals(other: Any?): Boolean {
+    final override fun equals(other: Any?): Boolean {
       if (this === other) return true
       if (other == null || this::class.java != other::class.java) return false
       other as Self
       if (namespace != other.namespace) return false
       if (duration != other.duration) return false
-      if (disambiguatingDescription != other.disambiguatingDescription) return false
       if (identifier != other.identifier) return false
       if (name != other.name) return false
       if (additionalProperties != other.additionalProperties) return false
@@ -350,28 +324,17 @@ internal constructor(
     }
 
     @Suppress("BuilderSetStyle")
-    public final override fun hashCode(): Int =
-      Objects.hash(
-        namespace,
-        duration,
-        disambiguatingDescription,
-        identifier,
-        name,
-        additionalProperties
-      )
+    final override fun hashCode(): Int =
+      Objects.hash(namespace, duration, identifier, name, additionalProperties)
 
     @Suppress("BuilderSetStyle")
-    public final override fun toString(): String {
+    final override fun toString(): String {
       val attributes = mutableMapOf<String, String>()
       if (namespace.isNotEmpty()) {
         attributes["namespace"] = namespace
       }
       if (duration != null) {
         attributes["duration"] = duration!!.toString()
-      }
-      if (disambiguatingDescription != null) {
-        attributes["disambiguatingDescription"] =
-          disambiguatingDescription!!.toString(includeWrapperName = false)
       }
       if (identifier.isNotEmpty()) {
         attributes["identifier"] = identifier
@@ -397,10 +360,9 @@ private class TimerImpl : AbstractTimer<TimerImpl, TimerImpl.Builder> {
   public constructor(
     namespace: String,
     duration: Duration?,
-    disambiguatingDescription: DisambiguatingDescription?,
     identifier: String,
     name: Name?,
-  ) : super(namespace, duration, disambiguatingDescription, identifier, name)
+  ) : super(namespace, duration, identifier, name)
 
   public constructor(timer: Timer) : super(timer)
 

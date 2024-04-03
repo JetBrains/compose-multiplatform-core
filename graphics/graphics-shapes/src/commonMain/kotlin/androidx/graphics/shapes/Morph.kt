@@ -16,6 +16,7 @@
 
 package androidx.graphics.shapes
 
+import kotlin.math.max
 import kotlin.math.min
 
 /**
@@ -35,13 +36,73 @@ import kotlin.math.min
  * curve placement within the shapes is very different.
  */
 class Morph(
-    start: RoundedPolygon,
-    end: RoundedPolygon
+    private val start: RoundedPolygon,
+    private val end: RoundedPolygon
 ) {
-    // morphMatch is the structure which holds the actual shape being morphed. It contains
-    // all cubics necessary to represent the start and end shapes (the original cubics in the
-    // shapes may be cut to align the start/end shapes)
-    private var morphMatch = match(start, end)
+    /**
+     * The structure which holds the actual shape being morphed. It contains
+     * all cubics necessary to represent the start and end shapes (the original cubics in the
+     * shapes may be cut to align the start/end shapes), matched one to one in each Pair.
+     */
+    @PublishedApi
+    internal val morphMatch: List<Pair<Cubic, Cubic>>
+        get() = _morphMatch
+
+    private val _morphMatch: List<Pair<Cubic, Cubic>> = match(start, end)
+
+    /**
+     * Calculates the axis-aligned bounds of the object.
+     * @param approximate when true, uses a faster calculation to create the bounding
+     * box based on the min/max values of all anchor and control points that make up the shape.
+     * Default value is true.
+     * @param bounds a buffer to hold the results. If not supplied, a temporary buffer will be
+     * created.
+     * @return The axis-aligned bounding box for this object, where the rectangles left,
+     * top, right, and bottom values will be stored in entries 0, 1, 2, and 3, in that order.
+     */
+    @JvmOverloads
+    fun calculateBounds(
+        bounds: FloatArray = FloatArray(4),
+        approximate: Boolean = true
+    ): FloatArray {
+        start.calculateBounds(bounds, approximate)
+        val minX = bounds[0]
+        val minY = bounds[1]
+        val maxX = bounds[2]
+        val maxY = bounds[3]
+        end.calculateBounds(bounds, approximate)
+        bounds[0] = min(minX, bounds[0])
+        bounds[1] = min(minY, bounds[1])
+        bounds[2] = max(maxX, bounds[2])
+        bounds[3] = max(maxY, bounds[3])
+        return bounds
+    }
+
+    /**
+     * Like [calculateBounds], this function calculates the axis-aligned bounds of the
+     * object and returns that rectangle. But this function determines the max dimension of
+     * the shape (by calculating the distance from its center to the start and midpoint of
+     * each curve) and returns a square which can be used to hold the object in any rotation.
+     * This function can be used, for example, to calculate the max size of a UI element meant
+     * to hold this shape in any rotation.
+     * @param bounds a buffer to hold the results. If not supplied, a temporary buffer will be
+     * created.
+     * @return The axis-aligned max bounding box for this object, where the rectangles left,
+     * top, right, and bottom values will be stored in entries 0, 1, 2, and 3, in that order.
+     */
+    fun calculateMaxBounds(bounds: FloatArray = FloatArray(4)): FloatArray {
+        start.calculateMaxBounds(bounds)
+        val minX = bounds[0]
+        val minY = bounds[1]
+        val maxX = bounds[2]
+        val maxY = bounds[3]
+        end.calculateMaxBounds(bounds)
+        bounds[0] = min(minX, bounds[0])
+        bounds[1] = min(minY, bounds[1])
+        bounds[2] = max(maxX, bounds[2])
+        bounds[3] = max(maxY, bounds[3])
+        return bounds
+    }
 
     /**
      * Returns a representation of the morph object at a given [progress] value as a list of Cubics.
@@ -56,19 +117,35 @@ class Morph(
      * values close to (but outside) the range can be used to get an exaggerated effect
      * (e.g., for a bounce or overshoot animation).
      */
-    fun asCubics(progress: Float) = morphMatch.map { match ->
-        Cubic(FloatArray(8) {
-            interpolate(
-                match.first.points[it],
-                match.second.points[it],
-                progress
-            )
-        })
+    fun asCubics(progress: Float): List<Cubic> {
+        return buildList {
+            // The first/last mechanism here ensures that the final anchor point in the shape
+            // exactly matches the first anchor point. There can be rendering artifacts introduced
+            // by those points being slightly off, even by much less than a pixel
+            var firstCubic: Cubic? = null
+            var lastCubic: Cubic? = null
+            for (i in _morphMatch.indices) {
+                val cubic = Cubic(FloatArray(8) {
+                    interpolate(
+                        _morphMatch[i].first.points[it],
+                        _morphMatch[i].second.points[it],
+                        progress
+                    )
+                })
+                if (firstCubic == null) firstCubic = cubic
+                if (lastCubic != null) add(lastCubic)
+                lastCubic = cubic
+            }
+            if (lastCubic != null && firstCubic != null) add(Cubic(
+                lastCubic.anchor0X, lastCubic.anchor0Y, lastCubic.control0X, lastCubic.control0Y,
+                lastCubic.control1X, lastCubic.control1Y, firstCubic.anchor0X, firstCubic.anchor0Y))
+        }
     }
 
     /**
-     * Returns a representation of the morph object at a given [progress] value as an Iterator of
-     * [MutableCubic]. This function is faster than [asCubics], since it doesn't allocate new
+     * Returns a representation of the morph object at a given [progress] value, iterating over
+     * the cubics and calling the callback.
+     * This function is faster than [asCubics], since it doesn't allocate new
      * [Cubic] instances, but to do this it reuses the same [MutableCubic] instance during
      * iteration.
      *
@@ -81,19 +158,19 @@ class Morph(
      * (e.g., for a bounce or overshoot animation).
      * @param mutableCubic An instance of [MutableCubic] that will be used to set each cubic in
      * time.
+     * @param callback The function to be called for each Cubic
      */
     @JvmOverloads
-    fun asMutableCubics(progress: Float, mutableCubic: MutableCubic = MutableCubic()):
-        Sequence<MutableCubic> = morphMatch.asSequence().map { match ->
-            repeat(8) {
-                mutableCubic.points[it] = interpolate(
-                    match.first.points[it],
-                    match.second.points[it],
-                    progress
-                )
-            }
-            mutableCubic
+    inline fun forEachCubic(
+        progress: Float,
+        mutableCubic: MutableCubic = MutableCubic(),
+        callback: (MutableCubic) -> Unit
+    ) {
+        for (i in morphMatch.indices) {
+            mutableCubic.interpolate(morphMatch[i].first, morphMatch[i].second, progress)
+            callback(mutableCubic)
         }
+    }
 
     internal companion object {
         /**
@@ -115,26 +192,32 @@ class Morph(
             p1: RoundedPolygon,
             p2: RoundedPolygon
         ): List<Pair<Cubic, Cubic>> {
+            // TODO Commented out due to the use of javaClass ("Error: Platform reference in a
+            //  common module")
+            /*
             if (DEBUG) {
-                repeat(2) { polyIndex ->
-                    debugLog(LOG_TAG) {
-                        listOf("Initial start:\n", "Initial end:\n")[polyIndex] +
-                            listOf(p1, p2)[polyIndex].features.joinToString("\n") { feature ->
-                                "${feature.javaClass.name.split("$").last()} - " +
-                                    ((feature as? Feature.Corner)?.convex?.let {
-                                        if (it) "Convex - " else "Concave - " } ?: "") +
-                                    feature.cubics.joinToString("|")
-                            }
-                    }
-                }
+               repeat(2) { polyIndex ->
+                   debugLog(LOG_TAG) {
+                       listOf("Initial start:\n", "Initial end:\n")[polyIndex] +
+                           listOf(p1, p2)[polyIndex].features.joinToString("\n") { feature ->
+                               "${feature.javaClass.name.split("$").last()} - " +
+                                   ((feature as? Feature.Corner)?.convex?.let {
+                                       if (it) "Convex - " else "Concave - " } ?: "") +
+                                   feature.cubics.joinToString("|")
+                           }
+                   }
+               }
             }
+            */
 
             // Measure polygons, returns lists of measured cubics for each polygon, which
             // we then use to match start/end curves
             val measuredPolygon1 = MeasuredPolygon.measurePolygon(
-                AngleMeasurer(p1.centerX, p1.centerY), p1)
+                AngleMeasurer(p1.centerX, p1.centerY), p1
+            )
             val measuredPolygon2 = MeasuredPolygon.measurePolygon(
-                AngleMeasurer(p2.centerX, p2.centerY), p2)
+                AngleMeasurer(p2.centerX, p2.centerY), p2
+            )
 
             // features1 and 2 will contain the list of corners (just the inner circular curve)
             // along with the progress at the middle of those corners. These measurement values
@@ -193,7 +276,7 @@ class Morph(
                 )
                 val minb = min(b1a, b2a)
                 debugLog(LOG_TAG) { "$b1a $b2a | $minb" }
-                // minb is the progress at which the curve that ends first ends.
+                // min b is the progress at which the curve that ends first ends.
                 // If both curves ends roughly there, no cutting is needed, we have a match.
                 // If one curve extends beyond, we need to cut it.
                 val (seg1, newb1) = if (b1a > minb + AngleEpsilon) {
@@ -213,7 +296,9 @@ class Morph(
                 b1 = newb1
                 b2 = newb2
             }
-            require(b1 == null && b2 == null)
+            require(b1 == null && b2 == null) {
+                "Expected both Polygon's Cubic to be fully matched"
+            }
 
             if (DEBUG) {
                 // Export as SVG path.
@@ -223,8 +308,12 @@ class Morph(
                 repeat(2) { listIx ->
                     val points = ret.map { if (listIx == 0) it.first else it.second }
                     debugLog(LOG_TAG) {
-                        "M " + showPoint(Point(points.first().anchor0X,
-                            points.first().anchor0Y)) + " " +
+                        "M " + showPoint(
+                            Point(
+                                points.first().anchor0X,
+                                points.first().anchor0Y
+                            )
+                        ) + " " +
                             points.joinToString(" ") {
                                 "C " + showPoint(Point(it.control0X, it.control0Y)) + ", " +
                                     showPoint(Point(it.control1X, it.control1Y)) + ", " +

@@ -25,6 +25,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.Measurable
 import androidx.compose.ui.layout.MeasurePolicy
+import androidx.compose.ui.layout.MeasureResult
+import androidx.compose.ui.layout.MeasureScope
 import androidx.compose.ui.layout.Placeable
 import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.node.ParentDataModifierNode
@@ -67,7 +69,7 @@ inline fun Box(
     propagateMinConstraints: Boolean = false,
     content: @Composable BoxScope.() -> Unit
 ) {
-    val measurePolicy = rememberBoxMeasurePolicy(contentAlignment, propagateMinConstraints)
+    val measurePolicy = maybeCachedBoxMeasurePolicy(contentAlignment, propagateMinConstraints)
     Layout(
         content = { BoxScopeInstance.content() },
         measurePolicy = measurePolicy,
@@ -75,25 +77,60 @@ inline fun Box(
     )
 }
 
+private fun cacheFor(
+    propagateMinConstraints: Boolean
+) = HashMap<Alignment, MeasurePolicy>(9).apply {
+    fun putAlignment(it: Alignment) {
+        put(it, BoxMeasurePolicy(it, propagateMinConstraints))
+    }
+    putAlignment(Alignment.TopStart)
+    putAlignment(Alignment.TopCenter)
+    putAlignment(Alignment.TopEnd)
+    putAlignment(Alignment.CenterStart)
+    putAlignment(Alignment.Center)
+    putAlignment(Alignment.CenterEnd)
+    putAlignment(Alignment.BottomStart)
+    putAlignment(Alignment.BottomCenter)
+    putAlignment(Alignment.BottomEnd)
+}
+
+private val cache1 = cacheFor(true)
+private val cache2 = cacheFor(false)
+
+@PublishedApi
+internal fun maybeCachedBoxMeasurePolicy(
+    alignment: Alignment,
+    propagateMinConstraints: Boolean
+): MeasurePolicy {
+    val cache = if (propagateMinConstraints) cache1 else cache2
+    return cache[alignment] ?: BoxMeasurePolicy(alignment, propagateMinConstraints)
+}
+
 @PublishedApi
 @Composable
 internal fun rememberBoxMeasurePolicy(
     alignment: Alignment,
     propagateMinConstraints: Boolean
-) = if (alignment == Alignment.TopStart && !propagateMinConstraints) {
+): MeasurePolicy = if (alignment == Alignment.TopStart && !propagateMinConstraints) {
     DefaultBoxMeasurePolicy
 } else {
     remember(alignment, propagateMinConstraints) {
-        boxMeasurePolicy(alignment, propagateMinConstraints)
+        BoxMeasurePolicy(alignment, propagateMinConstraints)
     }
 }
 
-internal val DefaultBoxMeasurePolicy: MeasurePolicy = boxMeasurePolicy(Alignment.TopStart, false)
+private val DefaultBoxMeasurePolicy: MeasurePolicy = BoxMeasurePolicy(Alignment.TopStart, false)
 
-internal fun boxMeasurePolicy(alignment: Alignment, propagateMinConstraints: Boolean) =
-    MeasurePolicy { measurables, constraints ->
+private data class BoxMeasurePolicy(
+    private val alignment: Alignment,
+    private val propagateMinConstraints: Boolean
+) : MeasurePolicy {
+    override fun MeasureScope.measure(
+        measurables: List<Measurable>,
+        constraints: Constraints
+    ): MeasureResult {
         if (measurables.isEmpty()) {
-            return@MeasurePolicy layout(
+            return layout(
                 constraints.minWidth,
                 constraints.minHeight
             ) {}
@@ -121,7 +158,7 @@ internal fun boxMeasurePolicy(alignment: Alignment, propagateMinConstraints: Boo
                     Constraints.fixed(constraints.minWidth, constraints.minHeight)
                 )
             }
-            return@MeasurePolicy layout(boxWidth, boxHeight) {
+            return layout(boxWidth, boxHeight) {
                 placeInBox(placeable, measurable, layoutDirection, boxWidth, boxHeight, alignment)
             }
         }
@@ -159,7 +196,7 @@ internal fun boxMeasurePolicy(alignment: Alignment, propagateMinConstraints: Boo
         }
 
         // Specify the size of the Box and position its children.
-        layout(boxWidth, boxHeight) {
+        return layout(boxWidth, boxHeight) {
             placeables.forEachIndexed { index, placeable ->
                 placeable as Placeable
                 val measurable = measurables[index]
@@ -167,6 +204,7 @@ internal fun boxMeasurePolicy(alignment: Alignment, propagateMinConstraints: Boo
             }
         }
     }
+}
 
 private fun Placeable.PlacementScope.placeInBox(
     placeable: Placeable,

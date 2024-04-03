@@ -158,6 +158,10 @@ internal sealed class JavacTypeElement(
         return kotlinMetadata?.isInterface() ?: (element.kind == ElementKind.INTERFACE)
     }
 
+    override fun isRecordClass(): Boolean {
+        return element.kind == ElementKind.RECORD
+    }
+
     override fun findPrimaryConstructor(): JavacConstructorElement? {
         val primarySignature = kotlinMetadata?.primaryConstructorSignature ?: return null
         return getConstructors().firstOrNull {
@@ -274,6 +278,14 @@ internal sealed class JavacTypeElement(
                 elementNullability = element.nullability
             )
         }
+    }
+
+    override fun isFromJava(): Boolean {
+        return element.asType().kind != TypeKind.ERROR && !hasAnnotation(Metadata::class)
+    }
+
+    override fun isFromKotlin(): Boolean {
+        return element.asType().kind != TypeKind.ERROR && hasAnnotation(Metadata::class)
     }
 
     class DefaultJavacTypeElement(

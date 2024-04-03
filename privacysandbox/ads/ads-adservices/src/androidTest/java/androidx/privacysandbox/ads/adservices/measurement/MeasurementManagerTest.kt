@@ -86,7 +86,15 @@ class MeasurementManagerTest {
     fun testMeasurementOlderVersions() {
         Assume.assumeTrue("maxSdkVersion = API 33 ext 4", !mValidAdServicesSdkExtVersion)
         Assume.assumeTrue("maxSdkVersion = API 31/32 ext 8", !mValidAdExtServicesSdkExtVersion)
-        assertThat(obtain(mContext)).isEqualTo(null)
+        assertThat(obtain(mContext)).isNull()
+    }
+
+    @Test
+    fun testMeasurementManagerNoClassDefFoundError() {
+        Assume.assumeTrue("minSdkVersion = API 31/32 ext 9", mValidAdExtServicesSdkExtVersion);
+
+        `when`(MeasurementManager.get(any())).thenThrow(NoClassDefFoundError())
+        assertThat(obtain(mContext)).isNull()
     }
 
     @Test
@@ -209,7 +217,7 @@ class MeasurementManagerTest {
 
         val request = WebSourceRegistrationRequest.Builder(
             listOf(WebSourceParams(uri1, false)), uri1)
-            .setAppDestination(uri1)
+            .setAppDestination(appDestination)
             .build()
 
         // Actually invoke the compat code.
@@ -229,6 +237,7 @@ class MeasurementManagerTest {
         val actualRequest = captor1.value
         assertThat(actualRequest.topOriginUri == uri1)
         assertThat(actualRequest.sourceParams.size == 1)
+        assertThat(actualRequest.appDestination == appDestination)
         assertThat(actualRequest.sourceParams[0].registrationUri == uri1)
         assertThat(!actualRequest.sourceParams[0].isDebugKeyAllowed)
     }
@@ -400,8 +409,9 @@ class MeasurementManagerTest {
     @SdkSuppress(minSdkVersion = 30)
     companion object {
 
-        private val uri1: Uri = Uri.parse("www.abc.com")
-        private val uri2: Uri = Uri.parse("http://www.xyz.com")
+        private val uri1: Uri = Uri.parse("https://www.abc.com")
+        private val uri2: Uri = Uri.parse("https://www.xyz.com")
+        private val appDestination: Uri = Uri.parse("android-app://com.app.package")
 
         private lateinit var mContext: Context
 

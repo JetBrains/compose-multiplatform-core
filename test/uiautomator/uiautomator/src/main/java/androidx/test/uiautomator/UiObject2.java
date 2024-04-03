@@ -136,7 +136,11 @@ public class UiObject2 implements Searchable {
 
     @Override
     public int hashCode() {
-        return getAccessibilityNodeInfo().hashCode();
+        try {
+            return getAccessibilityNodeInfo().hashCode();
+        } catch (StaleObjectException e) {
+            return mCachedNode.hashCode();
+        }
     }
 
     /** Recycle this object. */
@@ -151,26 +155,26 @@ public class UiObject2 implements Searchable {
      * Sets the percentage of gestures' margins to avoid touching too close to the edges, e.g.
      * when scrolling up, phone open quick settings instead if gesture is close to the top.
      * The percentage is based on the object's visible size, e.g. to set 20% margins:
-     * <pre>mUiObject2.setGestureMarginPercent(0.2f);</pre>
+     * <pre>mUiObject2.setGestureMarginPercentage(0.2f);</pre>
      *
      * @Param percent Float between [0, 0.5] for four margins: left, top, right, and bottom.
      */
-    public void setGestureMarginPercent(@FloatRange(from = 0f, to = 0.5f) float percent) {
-        setGestureMarginPercent(percent, percent, percent, percent);
+    public void setGestureMarginPercentage(@FloatRange(from = 0f, to = 0.5f) float percent) {
+        setGestureMarginsPercentage(percent, percent, percent, percent);
     }
 
     /**
      * Sets the percentage of gestures' margins to avoid touching too close to the edges, e.g.
      * when scrolling up, phone open quick settings instead if gesture is close to the top.
      * The percentage is based on the object's visible size, e.g. to set 20% bottom margin only:
-     * <pre>mUiObject2.setGestureMarginPercent(0f, 0f, 0f, 0.2f);</pre>
+     * <pre>mUiObject2.setGestureMarginsPercentage(0f, 0f, 0f, 0.2f);</pre>
      *
      * @Param left Float between [0, 1] for left margin
      * @Param top Float between [0, 1] for top margin
      * @Param right Float between [0, 1] for right margin
      * @Param bottom Float between [0, 1] for bottom margin
      */
-    public void setGestureMarginPercent(@FloatRange(from = 0f, to = 1f) float left,
+    public void setGestureMarginsPercentage(@FloatRange(from = 0f, to = 1f) float left,
             @FloatRange(from = 0f, to = 1f) float top,
             @FloatRange(from = 0f, to = 1f) float right,
             @FloatRange(from = 0f, to = 1f) float bottom) {
@@ -312,8 +316,13 @@ public class UiObject2 implements Searchable {
 
     /** Returns the visible bounds of a {@code node}. */
     private Rect getVisibleBounds(AccessibilityNodeInfo node) {
-        Point displaySize = getDevice().getDisplaySize(getDisplayId());
-        Rect screen = new Rect(0, 0, displaySize.x, displaySize.y);
+        //  The display may not be accessible because it can be a private display, for example.
+        final boolean isDisplayAccessible = getDevice().getDisplayById(getDisplayId()) != null;
+        Rect screen = null;
+        if (isDisplayAccessible) {
+            Point displaySize = getDevice().getDisplaySize(getDisplayId());
+            screen = new Rect(0, 0, displaySize.x, displaySize.y);
+        }
         return AccessibilityNodeInfoHelper.getVisibleBoundsInScreen(node, screen, true);
     }
 
@@ -484,6 +493,19 @@ public class UiObject2 implements Searchable {
      */
     public boolean isSelected() {
         return getAccessibilityNodeInfo().isSelected();
+    }
+
+    /**
+     * Returns the drawing order (z-index) of this object relative to its siblings. Higher values
+     * are drawn last (i.e. above their siblings).
+     * <p>In some cases, the drawing order is essentially simultaneous, so it is possible for two
+     * siblings to return the same value. It is also possible that values will be skipped.
+     *
+     * @return The drawing order of this object relative to its siblings.
+     */
+    @RequiresApi(24)
+    public int getDrawingOrder() {
+        return Api24Impl.getDrawingOrder(getAccessibilityNodeInfo());
     }
 
     // Actions
@@ -808,10 +830,12 @@ public class UiObject2 implements Searchable {
                     mGestureController.performGestureAndWait(scrollFinished, SCROLL_TIMEOUT, swipe);
             if (Boolean.TRUE.equals(scrollFinishedResult)) {
                 // Scroll has finished.
+                Log.i(TAG, "scrollUntil reached the end.");
                 break;
             } else if (scrollFinishedResult == null) {
                 // Couldn't determine whether scroll finished after retries.
                 if (nullScrollRetryCount++ >= MAX_NULL_SCROLL_RETRY) {
+                    Log.i(TAG, "scrollUntil reached max retries for null events.");
                     break;
                 }
                 Log.i(TAG, String.format("Couldn't determine whether scroll was finished, "
@@ -876,11 +900,15 @@ public class UiObject2 implements Searchable {
                     DEFAULT_SCROLL_UNTIL_PERCENT, speed, getDisplayId()).pause(250);
             if (mGestureController.performGestureAndWait(combinedEventCondition, SCROLL_TIMEOUT,
                     swipe)) {
+                if (Boolean.TRUE.equals(scrollFinished.getResult())) {
+                    Log.i(TAG, "scrollUntil reached the end.");
+                }
                 // Either scroll has finished or the accessibility event has appeared.
                 break;
             } else if (scrollFinished.getResult() == null) {
                 // Couldn't determine whether scroll finished after retries.
                 if (nullScrollRetryCount++ >= MAX_NULL_SCROLL_RETRY) {
+                    Log.i(TAG, "scrollUntil reached max retries for null events.");
                     break;
                 }
                 Log.i(TAG, String.format("Couldn't determine whether scroll was finished, "
@@ -1041,6 +1069,17 @@ public class UiObject2 implements Searchable {
         static void getBoundsInScreen(AccessibilityWindowInfo accessibilityWindowInfo,
                 Rect outBounds) {
             accessibilityWindowInfo.getBoundsInScreen(outBounds);
+        }
+    }
+
+    @RequiresApi(24)
+    static class Api24Impl {
+        private Api24Impl() {
+        }
+
+        @DoNotInline
+        static int getDrawingOrder(AccessibilityNodeInfo accessibilityNodeInfo) {
+            return accessibilityNodeInfo.getDrawingOrder();
         }
     }
 

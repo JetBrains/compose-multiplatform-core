@@ -19,6 +19,7 @@ package androidx.compose.compiler.plugins.kotlin.lower
 import androidx.compose.compiler.plugins.kotlin.ComposeCallableIds
 import androidx.compose.compiler.plugins.kotlin.ComposeClassIds
 import androidx.compose.compiler.plugins.kotlin.ModuleMetrics
+import androidx.compose.compiler.plugins.kotlin.analysis.StabilityInferencer
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
 import org.jetbrains.kotlin.descriptors.ClassKind
@@ -46,6 +47,7 @@ import org.jetbrains.kotlin.ir.builders.irSetField
 import org.jetbrains.kotlin.ir.builders.irString
 import org.jetbrains.kotlin.ir.builders.irTemporary
 import org.jetbrains.kotlin.ir.declarations.IrAnnotationContainer
+import org.jetbrains.kotlin.ir.declarations.IrAnonymousInitializer
 import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.declarations.IrDeclarationOrigin
 import org.jetbrains.kotlin.ir.declarations.IrEnumEntry
@@ -162,8 +164,9 @@ open class LiveLiteralTransformer(
     context: IrPluginContext,
     symbolRemapper: DeepCopySymbolRemapper,
     metrics: ModuleMetrics,
+    stabilityInferencer: StabilityInferencer
 ) :
-    AbstractComposeLowering(context, symbolRemapper, metrics),
+    AbstractComposeLowering(context, symbolRemapper, metrics, stabilityInferencer),
     ModuleLoweringPass {
 
     override fun lower(module: IrModuleFragment) {
@@ -462,6 +465,14 @@ open class LiveLiteralTransformer(
         if (declaration.isAnnotationClass) return declaration
         return siblings("class-${declaration.name.asJvmFriendlyString()}") {
             super.visitClass(declaration)
+        }
+    }
+
+    override fun visitAnonymousInitializer(declaration: IrAnonymousInitializer): IrStatement {
+        if (declaration.hasNoLiveLiteralsAnnotation()) return declaration
+
+        return enter("init") {
+            super.visitAnonymousInitializer(declaration)
         }
     }
 
@@ -890,12 +901,24 @@ open class LiveLiteralTransformer(
         }
 
     fun IrFactory.buildFunction(builder: IrFunctionBuilder): IrSimpleFunction = with(builder) {
-        createFunction(
-            startOffset, endOffset, origin,
-            IrSimpleFunctionSymbolImpl(),
-            name, visibility, modality, returnType,
-            isInline, isExternal, isTailrec, isSuspend, isOperator, isInfix, isExpect,
-            isFakeOverride, containerSource,
+        createSimpleFunction(
+            startOffset = startOffset,
+            endOffset = endOffset,
+            origin = origin,
+            name = name,
+            visibility = visibility,
+            isInline = isInline,
+            isExpect = isExpect,
+            returnType = returnType,
+            modality = modality,
+            symbol = IrSimpleFunctionSymbolImpl(),
+            isTailrec = isTailrec,
+            isSuspend = isSuspend,
+            isOperator = isOperator,
+            isInfix = isInfix,
+            isExternal = isExternal,
+            containerSource = containerSource,
+            isFakeOverride = isFakeOverride
         )
     }
 }

@@ -3,13 +3,14 @@
 package androidx.compose.ui.inspection.inspector
 
 import androidx.annotation.VisibleForTesting
+import androidx.collection.intSetOf
 import kotlin.math.absoluteValue
 
 @VisibleForTesting
 fun packageNameHash(packageName: String) =
     packageName.fold(0) { hash, char -> hash * 31 + char.code }.absoluteValue
 
-val systemPackages = setOf(
+val systemPackages = intSetOf(
     -1,
     packageNameHash("androidx.compose.animation"),
     packageNameHash("androidx.compose.animation.core"),
@@ -24,20 +25,22 @@ val systemPackages = setOf(
     packageNameHash("androidx.compose.foundation.lazy.grid"),
     packageNameHash("androidx.compose.foundation.lazy.layout"),
     packageNameHash("androidx.compose.foundation.lazy.staggeredgrid"),
-    packageNameHash("androidx.compose.foundation.newtext.text"),
-    packageNameHash("androidx.compose.foundation.newtext.text.copypasta"),
-    packageNameHash("androidx.compose.foundation.newtext.text.copypasta.selection"),
     packageNameHash("androidx.compose.foundation.pager"),
-    packageNameHash("androidx.compose.foundation.relocation"),
     packageNameHash("androidx.compose.foundation.text"),
     packageNameHash("androidx.compose.foundation.text.selection"),
+    packageNameHash("androidx.compose.foundation.text2"),
+    packageNameHash("androidx.compose.foundation.text2.input"),
     packageNameHash("androidx.compose.foundation.window"),
     packageNameHash("androidx.compose.material"),
     packageNameHash("androidx.compose.material.internal"),
     packageNameHash("androidx.compose.material.pullrefresh"),
     packageNameHash("androidx.compose.material.ripple"),
     packageNameHash("androidx.compose.material3"),
+    packageNameHash("androidx.compose.material3.adaptive"),
+    packageNameHash("androidx.compose.material3.adaptive.navigation.suite"),
+    packageNameHash("androidx.compose.material3.common"),
     packageNameHash("androidx.compose.material3.internal"),
+    packageNameHash("androidx.compose.material3.pulltorefresh"),
     packageNameHash("androidx.compose.material3.windowsizeclass"),
     packageNameHash("androidx.compose.runtime"),
     packageNameHash("androidx.compose.runtime.livedata"),
@@ -56,4 +59,5 @@ val systemPackages = setOf(
     packageNameHash("androidx.compose.ui.util"),
     packageNameHash("androidx.compose.ui.viewinterop"),
     packageNameHash("androidx.compose.ui.window"),
+    packageNameHash("androidx.navigation.compose"),
 )

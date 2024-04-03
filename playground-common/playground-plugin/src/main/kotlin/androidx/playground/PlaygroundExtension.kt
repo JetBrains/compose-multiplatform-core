@@ -16,7 +16,10 @@
 
 package androidx.playground
 
+import ProjectDependencyGraph
+import SkikoSetup
 import androidx.build.SettingsParser
+import androidx.build.gradle.isRoot
 import java.io.File
 import java.util.Properties
 import javax.inject.Inject
@@ -70,21 +73,12 @@ open class PlaygroundExtension @Inject constructor(
     }
 
     /**
-     * Includes a project by name, with a path relative to the root of AndroidX.
-     */
-    fun includeProject(name: String, filePath: String) {
-        if (supportRootDir == null) {
-            throw GradleException("Must call setupPlayground() first.")
-        }
-        includeProjectAt(name, File(supportRootDir, filePath))
-    }
-
-    /**
      * Initializes the playground project to use public repositories as well as other internal
      * projects that cannot be found in public repositories.
      *
      * @param relativePathToRoot The relative path of the project to the root AndroidX project
      */
+    @Suppress("unused") // used from settings.gradle files
     fun setupPlayground(relativePathToRoot: String) {
         // gradlePluginPortal has a variety of unsigned binaries that have proper signatures
         // in mavenCentral, so don't use gradlePluginPortal() if you can avoid it
@@ -105,6 +99,7 @@ open class PlaygroundExtension @Inject constructor(
                 )
             }
         }
+        SkikoSetup.defineSkikoInVersionCatalog(settings)
         val projectDir = settings.rootProject.projectDir
         val supportRoot = File(projectDir, relativePathToRoot).canonicalFile
         this.supportRootDir = supportRoot
@@ -124,11 +119,6 @@ open class PlaygroundExtension @Inject constructor(
 
         settings.rootProject.buildFileName = relativePathToBuild
 
-        includeProject(":lint-checks", "lint-checks")
-        includeProject(":lint-checks:integration-tests", "lint-checks/integration-tests")
-        includeProject(":internal-testutils-common", "testutils/testutils-common")
-        includeProject(":internal-testutils-gradle-plugin", "testutils/testutils-gradle-plugin")
-
         // allow public repositories
         System.setProperty("ALLOW_PUBLIC_REPOS", "true")
 
@@ -142,28 +132,111 @@ open class PlaygroundExtension @Inject constructor(
      * @param filter This filter will be called with the project name (project path in gradle).
      *               If filter returns true, it will be included in the build.
      */
+    @Suppress("unused") // used from settings.gradle files
     fun selectProjectsFromAndroidX(filter: (String) -> Boolean) {
         if (supportRootDir == null) {
             throw RuntimeException("Must call setupPlayground() first.")
         }
         val supportSettingsFile = File(supportRootDir, "settings.gradle")
-        SettingsParser.findProjects(supportSettingsFile).filter {
-            filter(it.gradlePath)
-        }.forEach { (projectGradlePath, projectFilePath) ->
-            includeProject(projectGradlePath, projectFilePath)
+        val playgroundProjectDependencyGraph = ProjectDependencyGraph(settings, true /*isPlayground*/)
+        // also get full graph that treats projectOrArtifact equal to project
+        val aospProjectDependencyGraph = ProjectDependencyGraph(settings, false /*isPlayground*/)
+
+        SettingsParser.findProjects(supportSettingsFile).forEach {
+            playgroundProjectDependencyGraph.addToAllProjects(
+                it.gradlePath,
+                File(supportRootDir, it.filePath)
+            )
+            aospProjectDependencyGraph.addToAllProjects(
+                it.gradlePath,
+                File(supportRootDir, it.filePath)
+            )
         }
+
+        val selectedGradlePaths = playgroundProjectDependencyGraph.allProjectPaths().filter {
+            filter(it)
+        }.toSet()
+
+        val allNeededProjects = playgroundProjectDependencyGraph
+            .getAllProjectsWithDependencies(selectedGradlePaths + REQUIRED_PROJECTS)
+            .toMutableSet()
+        // there are unnecessary usages of projectOrArtifact in build.gradle files and minimizing them is a goal
+        // since we are able to build more of AndroidX in GitHub thanks to the build cache.
+        // To find these "unnecessary" projectOrArtifact usages, traverse the full graph and add each project unless
+        // it has a direct (project) dependency to a disallowed project.
+
+        // find the list of projects that we cannot build on GitHub. These are projects which are known to be
+        // incompatible or incompatible because they have a project dependency to an incompatible project.
+        val projectOrArtifactDisallowList = buildProjectOrArtifactDisallowList(playgroundProjectDependencyGraph)
+        // track implicitly added projects for reporting purposes
+        val implicitlyAddedProjects = mutableSetOf<String>()
+        aospProjectDependencyGraph
+            .getAllProjectsWithDependencies(selectedGradlePaths + REQUIRED_PROJECTS)
+            .filterNot {
+                // if it is already included or cannot be included, skip
+                it.v1 in projectOrArtifactDisallowList && it !in allNeededProjects
+            }.onEach {
+                // track it for error reporting down below
+                implicitlyAddedProjects.add(it.v1)
+            }.forEach {
+                allNeededProjects.add(it)
+            }
+        val unsupportedProjects = allNeededProjects.map { it.v1 }.toSet().filter {
+            it in UNSUPPORTED_PROJECTS
+        }
+        if (unsupportedProjects.isNotEmpty()) {
+            val errorMsg = buildString {
+                appendLine(
+                    """There are unsupported builds in the project. You can break one of the
+                        |following dependencies by using projectOrArtifact instead of project
+                        |when declaring the dependency.
+                """.trimMargin()
+                )
+                appendLine("----")
+                unsupportedProjects.forEach {
+                    appendLine("Unsupported Playground Project: $it")
+                    appendLine("dependency path to $it from explicitly requested projects:")
+                    playgroundProjectDependencyGraph.findPathsBetween(selectedGradlePaths, it).forEach {
+                        appendLine(it)
+                    }
+                    appendLine("""
+                        dependency path to $it from implicitly added projects. If the following list is
+                        not empty, please file a bug on AndroidX/Github component.
+                    """.trimIndent())
+                    playgroundProjectDependencyGraph.findPathsBetween(implicitlyAddedProjects, it).forEach {
+                        appendLine(it)
+                    }
+                    appendLine("----")
+                }
+            }
+            throw GradleException(errorMsg)
+        }
+        // pass the list of user specified projects into the AndroidXPlaygroundRootImplPlugin
+        // so that it can setup the correct CI tasks.
+        settings.gradle.beforeProject { project ->
+            if (project.isRoot) {
+                project.extensions.extraProperties["primaryProjects"] =
+                    selectedGradlePaths.joinToString(",")
+            }
+        }
+        allNeededProjects
+            .sortedBy { it.v1 } // sort by project path so the parent shows up before children :)
+            .forEach {
+                includeProjectAt(name = it.v1, projectDir = it.v2)
+            }
     }
 
-    /**
-     * Checks if a project is necessary for playground projects that involve compose.
-     */
-    fun isNeededForComposePlayground(name: String): Boolean {
-        if (name == ":compose:lint:common") return true
-        if (name == ":compose:lint:internal-lint-checks") return true
-        if (name == ":compose:test-utils") return true
-        if (name == ":compose:lint:common-test") return true
-        if (name == ":test:screenshot:screenshot") return true
-        if (name == ":test:screenshot:screenshot-proto") return true
-        return false
+    private fun buildProjectOrArtifactDisallowList(projectDependencyGraph: ProjectDependencyGraph) : Set<String> {
+        return UNSUPPORTED_PROJECTS.flatMap {
+            projectDependencyGraph.findAllProjectsDependingOn(it)
+        }.toSet()
+    }
+
+    companion object {
+        private val REQUIRED_PROJECTS = listOf(":lint-checks")
+        private val UNSUPPORTED_PROJECTS = listOf(
+            ":benchmark:benchmark-common", // requires prebuilts
+            ":inspection:inspection", // native compilation
+        )
     }
 }

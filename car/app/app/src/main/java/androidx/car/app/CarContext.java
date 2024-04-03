@@ -25,6 +25,7 @@ import static androidx.car.app.utils.LogTags.TAG;
 import static java.util.Objects.requireNonNull;
 
 import android.app.Activity;
+import android.app.ActivityOptions;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.ContextWrapper;
@@ -32,22 +33,29 @@ import android.content.Intent;
 import android.content.res.Configuration;
 import android.hardware.display.DisplayManager;
 import android.hardware.display.VirtualDisplay;
+import android.os.Build;
+import android.os.Build.VERSION_CODES;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.util.Log;
+import android.view.Display;
 
 import androidx.activity.OnBackPressedCallback;
 import androidx.activity.OnBackPressedDispatcher;
+import androidx.annotation.DoNotInline;
 import androidx.annotation.MainThread;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.StringDef;
+import androidx.car.app.annotations.ExperimentalCarApi;
 import androidx.car.app.annotations.RequiresCarApi;
 import androidx.car.app.constraints.ConstraintManager;
 import androidx.car.app.hardware.CarHardwareManager;
 import androidx.car.app.managers.ManagerCache;
 import androidx.car.app.managers.ResultManager;
+import androidx.car.app.media.MediaPlaybackManager;
 import androidx.car.app.navigation.NavigationManager;
 import androidx.car.app.notification.CarPendingIntent;
 import androidx.car.app.suggestion.SuggestionManager;
@@ -98,8 +106,10 @@ public class CarContext extends ContextWrapper {
      * Represents the types of services for client-host communication.
      *
      */
+    @SuppressWarnings({
+            "UnsafeOptInUsageError"})
     @StringDef({APP_SERVICE, CAR_SERVICE, NAVIGATION_SERVICE, SCREEN_SERVICE, CONSTRAINT_SERVICE,
-            HARDWARE_SERVICE, SUGGESTION_SERVICE})
+            HARDWARE_SERVICE, SUGGESTION_SERVICE, MEDIA_PLAYBACK_SERVICE})
     @Retention(RetentionPolicy.SOURCE)
     @RestrictTo(LIBRARY)
     public @interface CarServiceType {
@@ -134,6 +144,12 @@ public class CarContext extends ContextWrapper {
      * Manages posting suggestion events
      */
     public static final String SUGGESTION_SERVICE = "suggestion";
+
+    /**
+     * Manages the media requests from 3p apps such as providing a media session token,
+     */
+    @ExperimentalCarApi
+    public static final String MEDIA_PLAYBACK_SERVICE = "media_playback";
 
     /**
      * Key for including a IStartCarApp in the notification {@link Intent}, for starting the app
@@ -607,7 +623,11 @@ public class CarContext extends ContextWrapper {
                 new Intent(REQUEST_PERMISSIONS_ACTION).setComponent(appActivityComponent)
                         .putExtras(extras)
                         .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        startActivity(intent);
+        Bundle activityOptionsBundle = null;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            activityOptionsBundle = Api26Impl.makeBasicActivityOptionsBundle();
+        }
+        startActivity(intent, activityOptionsBundle);
     }
 
     @RestrictTo(LIBRARY_GROUP) // Restrict to testing library
@@ -642,7 +662,6 @@ public class CarContext extends ContextWrapper {
 
     /**
      * Updates context information based on the information provided during connection handshake
-     *
      */
     @RestrictTo(LIBRARY_GROUP)
     @MainThread
@@ -709,7 +728,8 @@ public class CarContext extends ContextWrapper {
     @RestrictTo(LIBRARY_GROUP) // Restrict to testing library
     @SuppressWarnings({
             "argument.type.incompatible",
-            "method.invocation.invalid"
+            "method.invocation.invalid",
+            "UnsafeOptInUsageError"
     }) // @UnderInitialization not available with androidx
     protected CarContext(@NonNull Lifecycle lifecycle, @NonNull HostDispatcher hostDispatcher) {
         super(null);
@@ -729,6 +749,8 @@ public class CarContext extends ContextWrapper {
                 () -> ResultManager.create(this));
         mManagers.addFactory(SuggestionManager.class, SUGGESTION_SERVICE,
                 () -> SuggestionManager.create(this, hostDispatcher, lifecycle));
+        mManagers.addFactory(MediaPlaybackManager.class, MEDIA_PLAYBACK_SERVICE,
+                () -> MediaPlaybackManager.create(this, hostDispatcher, lifecycle));
 
         mOnBackPressedDispatcher =
                 new OnBackPressedDispatcher(() -> getCarService(ScreenManager.class).pop());
@@ -743,5 +765,15 @@ public class CarContext extends ContextWrapper {
         };
 
         lifecycle.addObserver(observer);
+    }
+
+    @RequiresApi(api = VERSION_CODES.O)
+    private static class Api26Impl {
+
+        @DoNotInline
+        static Bundle makeBasicActivityOptionsBundle() {
+            return ActivityOptions.makeBasic()
+                    .setLaunchDisplayId(Display.DEFAULT_DISPLAY).toBundle();
+        }
     }
 }

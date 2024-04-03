@@ -30,7 +30,6 @@ import androidx.activity.BackEventCompat
 import androidx.annotation.DoNotInline
 import androidx.annotation.RequiresApi
 import androidx.collection.ArrayMap
-import androidx.core.os.CancellationSignal
 import androidx.core.view.OneShotPreDrawListener
 import androidx.core.view.ViewCompat
 import androidx.core.view.ViewGroupCompat
@@ -344,6 +343,11 @@ internal class DefaultSpecialEffectsController(
                     sharedElementLastInViews.clear()
                 }
             }
+        }
+
+        if (sharedElementTransition == null && filteredInfos.all { it.transition == null }) {
+            // Return without creating a TransitionEffect since there are no Transitions to run
+            return
         }
 
         val transitionEffect = TransitionEffect(
@@ -701,7 +705,8 @@ internal class DefaultSpecialEffectsController(
         val lastInViews: ArrayMap<String, View>,
         val isPop: Boolean
     ) : Effect() {
-        val transitionSignal = CancellationSignal()
+        @Suppress("DEPRECATION")
+        val transitionSignal = androidx.core.os.CancellationSignal()
 
         var controller: Any? = null
 
@@ -721,7 +726,7 @@ internal class DefaultSpecialEffectsController(
         override fun onStart(container: ViewGroup) {
             // If the container has never been laid out, transitions will not start so
             // so lets instantly complete them.
-            if (!ViewCompat.isLaidOut(container)) {
+            if (!container.isLaidOut()) {
                 transitionInfos.forEach { transitionInfo: TransitionInfo ->
                     val operation: Operation = transitionInfo.operation
                     if (FragmentManager.isLoggingEnabled(Log.VERBOSE)) {
@@ -750,8 +755,10 @@ internal class DefaultSpecialEffectsController(
                         cancelRunnable,
                         Runnable {
                             if (FragmentManager.isLoggingEnabled(Log.VERBOSE)) {
-                                Log.v(FragmentManager.TAG,
-                                    "Transition for operation $operation has completed")
+                                Log.v(
+                                    FragmentManager.TAG,
+                                    "Transition for operation $operation has completed"
+                                )
                             }
                             operation.completeEffect(this)
                         })
@@ -765,7 +772,20 @@ internal class DefaultSpecialEffectsController(
                     check(controller != null) {
                         "Unable to start transition $mergedTransition for container $container."
                     }
-                    seekCancelLambda = { transitionImpl.animateToStart(controller!!) }
+                    seekCancelLambda = {
+                        if (FragmentManager.isLoggingEnabled(Log.VERBOSE)) {
+                            Log.v(FragmentManager.TAG, "Animating to start")
+                        }
+                        transitionImpl.animateToStart(controller!!) {
+                            transitionInfos.forEach { transitionInfo ->
+                                val operation = transitionInfo.operation
+                                val view = operation.fragment.view
+                                if (view != null) {
+                                    operation.finalState.applyState(view, container)
+                                }
+                            }
+                        }
+                    }
                     if (FragmentManager.isLoggingEnabled(Log.VERBOSE)) {
                         Log.v(FragmentManager.TAG,
                             "Started executing operations from $firstOut to $lastIn")
@@ -781,7 +801,7 @@ internal class DefaultSpecialEffectsController(
         override fun onCommit(container: ViewGroup) {
             // If the container has never been laid out, transitions will not start so
             // so lets instantly complete them.
-            if (!ViewCompat.isLaidOut(container)) {
+            if (!container.isLaidOut()) {
                 transitionInfos.forEach { transitionInfo: TransitionInfo ->
                     val operation: Operation = transitionInfo.operation
                     if (FragmentManager.isLoggingEnabled(Log.VERBOSE)) {
@@ -954,8 +974,22 @@ internal class DefaultSpecialEffectsController(
                         if (hasLastInEpicenter) {
                             transitionImpl.setEpicenter(transition, lastInEpicenterRect)
                         }
+                        if (FragmentManager.isLoggingEnabled(Log.VERBOSE)) {
+                            Log.v(FragmentManager.TAG, "Entering Transition: $transition")
+                            Log.v(FragmentManager.TAG, ">>>>> EnteringViews <<<<<")
+                            for (view: View in transitioningViews) {
+                                Log.v(FragmentManager.TAG, "View: $view")
+                            }
+                        }
                     } else {
                         transitionImpl.setEpicenter(transition, firstOutEpicenterView)
+                        if (FragmentManager.isLoggingEnabled(Log.VERBOSE)) {
+                            Log.v(FragmentManager.TAG, "Exiting Transition: $transition")
+                            Log.v(FragmentManager.TAG, ">>>>> ExitingViews <<<<<")
+                            for (view: View in transitioningViews) {
+                                Log.v(FragmentManager.TAG, "View: $view")
+                            }
+                        }
                     }
                     // Now determine how this transition should be merged together
                     if (transitionInfo.isOverlapAllowed) {
@@ -976,6 +1010,10 @@ internal class DefaultSpecialEffectsController(
             // runs after the mergedTransition set is complete
             mergedTransition = transitionImpl.mergeTransitionsInSequence(mergedTransition,
                 mergedNonOverlappingTransition, sharedElementTransition)
+
+            if (FragmentManager.isLoggingEnabled(Log.VERBOSE)) {
+                Log.v(FragmentManager.TAG, "Final merged transition: $mergedTransition")
+            }
 
             return Pair(enteringViews, mergedTransition)
         }

@@ -16,6 +16,10 @@
 
 package androidx.compose.material3
 
+import androidx.compose.material3.internal.Strings
+import androidx.compose.material3.internal.createCalendarModel
+import androidx.compose.material3.internal.formatWithSkeleton
+import androidx.compose.material3.internal.getString
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher.Companion.expectValue
@@ -301,6 +305,24 @@ class DatePickerTest {
             .assertDoesNotExist()
         rule.onNodeWithContentDescription(label = "previous", substring = true, ignoreCase = true)
             .assertDoesNotExist()
+    }
+
+    @Test
+    fun state_initWithoutRemember() {
+        val datePickerState = DatePickerState(
+            locale = Locale.getDefault(),
+            initialSelectedDateMillis = 1649721600000L // 04/12/2022
+        )
+        with(datePickerState) {
+            assertThat(selectedDateMillis).isEqualTo(1649721600000L)
+            // Using the JVM Locale.getDefault() for testing purposes only.
+            assertThat(displayedMonthMillis).isEqualTo(
+                createCalendarModel(Locale.getDefault()).getMonth(
+                    year = 2022,
+                    month = 4
+                ).startUtcTimeMillis
+            )
+        }
     }
 
     @Test

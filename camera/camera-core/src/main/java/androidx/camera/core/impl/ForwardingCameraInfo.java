@@ -20,14 +20,15 @@ import android.util.Range;
 import android.util.Size;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
+import androidx.camera.core.CameraInfo;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.CameraState;
 import androidx.camera.core.DynamicRange;
 import androidx.camera.core.ExperimentalZeroShutterLag;
 import androidx.camera.core.ExposureState;
 import androidx.camera.core.FocusMeteringAction;
-import androidx.camera.core.PreviewCapabilities;
 import androidx.camera.core.ZoomState;
 import androidx.lifecycle.LiveData;
 
@@ -129,6 +130,11 @@ public class ForwardingCameraInfo implements CameraInfoInternal {
         return mCameraInfoInternal.isPrivateReprocessingSupported();
     }
 
+    @Override
+    public boolean isLogicalMultiCameraSupported() {
+        return mCameraInfoInternal.isLogicalMultiCameraSupported();
+    }
+
     @NonNull
     @Override
     public String getCameraId() {
@@ -166,6 +172,12 @@ public class ForwardingCameraInfo implements CameraInfoInternal {
 
     @NonNull
     @Override
+    public Set<Integer> getSupportedOutputFormats() {
+        return mCameraInfoInternal.getSupportedOutputFormats();
+    }
+
+    @NonNull
+    @Override
     public List<Size> getSupportedResolutions(int format) {
         return mCameraInfoInternal.getSupportedResolutions(format);
     }
@@ -180,6 +192,13 @@ public class ForwardingCameraInfo implements CameraInfoInternal {
     @Override
     public Set<DynamicRange> getSupportedDynamicRanges() {
         return mCameraInfoInternal.getSupportedDynamicRanges();
+    }
+
+    @NonNull
+    @Override
+    public Set<DynamicRange> querySupportedDynamicRanges(
+            @NonNull Set<DynamicRange> candidateDynamicRanges) {
+        return mCameraInfoInternal.querySupportedDynamicRanges(candidateDynamicRanges);
     }
 
     @NonNull
@@ -206,7 +225,19 @@ public class ForwardingCameraInfo implements CameraInfoInternal {
 
     @NonNull
     @Override
-    public PreviewCapabilities getPreviewCapabilities() {
-        return mCameraInfoInternal.getPreviewCapabilities();
+    public Object getCameraCharacteristics() {
+        return mCameraInfoInternal.getCameraCharacteristics();
+    }
+
+    @Nullable
+    @Override
+    public Object getPhysicalCameraCharacteristics(@NonNull String physicalCameraId) {
+        return mCameraInfoInternal.getPhysicalCameraCharacteristics(physicalCameraId);
+    }
+
+    @NonNull
+    @Override
+    public Set<CameraInfo> getPhysicalCameraInfos() {
+        return mCameraInfoInternal.getPhysicalCameraInfos();
     }
 }

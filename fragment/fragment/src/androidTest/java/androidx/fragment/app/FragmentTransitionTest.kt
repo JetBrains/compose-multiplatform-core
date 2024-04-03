@@ -273,6 +273,83 @@ class FragmentTransitionTest(
     }
 
     @Test
+    fun sharedElementNoOtherTransition() {
+        val fragmentManager = activityRule.activity.supportFragmentManager
+        val fragment1 = setupInitialFragment()
+
+        fragment1.setEnterTransition(null)
+        fragment1.setExitTransition(null)
+        fragment1.setReenterTransition(null)
+        fragment1.setReturnTransition(null)
+
+        // Now do a transition to scene2
+        val fragment2 = TransitionFragment(R.layout.scene2)
+
+        fragment2.setEnterTransition(null)
+        fragment2.setExitTransition(null)
+        fragment2.setReenterTransition(null)
+        fragment2.setReturnTransition(null)
+
+        val startBlue = activityRule.findBlue()
+
+        fragment2.postponeEnterTransition()
+
+        fragmentManager.beginTransaction()
+            .setReorderingAllowed(reorderingAllowed)
+            .addSharedElement(startBlue, "blueSquare")
+            .replace(R.id.fragmentContainer, fragment2)
+            .addToBackStack(null)
+            .commit()
+
+        activityRule.runOnUiThread {
+            fragment1.view?.visibility = View.INVISIBLE
+            fragment2.startPostponedEnterTransition()
+        }
+
+        activityRule.waitForExecution()
+
+        fragment2.waitForNoTransition()
+
+        verifyNoOtherTransitions(fragment1)
+        verifyNoOtherTransitions(fragment2)
+    }
+
+    @Test
+    fun sharedElementAddNoOtherTransition() {
+        val fragmentManager = activityRule.activity.supportFragmentManager
+        val fragment1 = setupInitialFragment()
+
+        fragment1.setEnterTransition(null)
+        fragment1.setExitTransition(null)
+        fragment1.setReenterTransition(null)
+        fragment1.setReturnTransition(null)
+
+        // Now do a transition to scene2
+        val fragment2 = TransitionFragment(R.layout.scene2)
+
+        fragment2.setEnterTransition(null)
+        fragment2.setExitTransition(null)
+        fragment2.setReenterTransition(null)
+        fragment2.setReturnTransition(null)
+
+        val startBlue = activityRule.findBlue()
+
+        fragmentManager.beginTransaction()
+            .setReorderingAllowed(reorderingAllowed)
+            .addSharedElement(startBlue, "blueSquare")
+            .add(R.id.fragmentContainer, fragment2)
+            .addToBackStack(null)
+            .commit()
+
+        activityRule.waitForExecution()
+
+        fragment2.waitForNoTransition()
+
+        verifyNoOtherTransitions(fragment1)
+        verifyNoOtherTransitions(fragment2)
+    }
+
+    @Test
     fun noSharedElementToSharedElement() {
         val fragment1 = setupInitialFragment()
 
@@ -1201,49 +1278,57 @@ class FragmentTransitionTest(
     // When there is no matching shared element, the transition name should not be changed
     @Test
     fun noMatchingSharedElementRetainName() {
-        val fragmentManager = activityRule.activity.supportFragmentManager
-        val fragment1 = setupInitialFragment()
+        withUse(ActivityScenario.launch(FragmentTestActivity::class.java)) {
+            val fragmentManager = withActivity {
+                setContentView(R.layout.simple_container)
+                supportFragmentManager
+            }
+            fragmentManager.addOnBackStackChangedListener(
+                onBackStackChangedListener
+            )
+            val fragment1 = setupInitialFragmentWithScenario()
 
-        val startBlue = activityRule.findBlue()
-        val startGreen = activityRule.findGreen()
-        val startGreenBounds = startGreen.boundsOnScreen
+            val startBlue = findBlue()
+            val startGreen = findGreen()
+            val startGreenBounds = startGreen.boundsOnScreen
 
-        val fragment2 = TransitionFragment(R.layout.scene3)
+            val fragment2 = TransitionFragment(R.layout.scene3)
 
-        fragmentManager.beginTransaction()
-            .setReorderingAllowed(reorderingAllowed)
-            .addSharedElement(startGreen, "greenSquare")
-            .addSharedElement(startBlue, "blueSquare")
-            .replace(R.id.fragmentContainer, fragment2)
-            .addToBackStack(null)
-            .commit()
+            fragmentManager.beginTransaction()
+                .setReorderingAllowed(reorderingAllowed)
+                .addSharedElement(startGreen, "greenSquare")
+                .addSharedElement(startBlue, "blueSquare")
+                .replace(R.id.fragmentContainer, fragment2)
+                .addToBackStack(null)
+                .commit()
 
-        fragment2.waitForTransition()
-        val midGreen = activityRule.findGreen()
-        val midBlue = activityRule.findBlue()
-        val midRed = activityRule.findRed()
-        val midGreenBounds = midGreen.boundsOnScreen
+            fragment2.waitForTransition()
+            val midGreen = findGreen()
+            val midBlue = findBlue()
+            val midRed = findRed()
+            val midGreenBounds = midGreen.boundsOnScreen
 
-        fragment2.sharedElementEnter.verifyAndClearTransition {
-            epicenter = startGreenBounds
-            exitingViews += startGreen
-            enteringViews += midGreen
+            fragment2.sharedElementEnter.verifyAndClearTransition {
+                epicenter = startGreenBounds
+                exitingViews += startGreen
+                enteringViews += midGreen
+            }
+            fragment2.enterTransition.verifyAndClearTransition {
+                epicenter = midGreenBounds
+                enteringViews += listOfNotNull(midBlue, midRed)
+            }
+            verifyNoOtherTransitions(fragment2)
+
+            popBackStackImmediate()
+            fragment2.waitForTransition()
+            fragment1.waitForTransition()
+
+            val endBlue = findBlue()
+            val endGreen = findGreen()
+
+            assertThat(endBlue.transitionName).isEqualTo("blueSquare")
+            assertThat(endGreen.transitionName).isEqualTo("greenSquare")
         }
-        fragment2.enterTransition.verifyAndClearTransition {
-            epicenter = midGreenBounds
-            enteringViews += listOfNotNull(midBlue, midRed)
-        }
-        verifyNoOtherTransitions(fragment2)
-
-        activityRule.popBackStackImmediate()
-        fragment2.waitForTransition()
-        fragment1.waitForTransition()
-
-        val endBlue = activityRule.findBlue()
-        val endGreen = activityRule.findGreen()
-
-        assertThat(endBlue.transitionName).isEqualTo("blueSquare")
-        assertThat(endGreen.transitionName).isEqualTo("greenSquare")
     }
 
     // Test to ensure fragments don't leak in the container's tags
@@ -1412,6 +1497,29 @@ class FragmentTransitionTest(
         fragment1.waitForTransition()
         val blueSquare1 = activityRule.findBlue()
         val greenSquare1 = activityRule.findGreen()
+        fragment1.enterTransition.verifyAndClearTransition {
+            enteringViews += listOf(blueSquare1, greenSquare1)
+        }
+        verifyNoOtherTransitions(fragment1)
+        return fragment1
+    }
+
+    private inline fun <reified A : FragmentActivity>
+        ActivityScenario<A>.setupInitialFragmentWithScenario(): TransitionFragment {
+        val fragmentManager = withActivity {
+            supportFragmentManager
+        }
+        val fragment1 = TransitionFragment(R.layout.scene1)
+        fragmentManager.beginTransaction()
+            .setReorderingAllowed(reorderingAllowed)
+            .add(R.id.fragmentContainer, fragment1)
+            .addToBackStack(null)
+            .commit()
+        waitForExecution()
+        assertThat(onBackStackChangedTimes).isEqualTo(1)
+        fragment1.waitForTransition()
+        val blueSquare1 = findBlue()
+        val greenSquare1 = findGreen()
         fragment1.enterTransition.verifyAndClearTransition {
             enteringViews += listOf(blueSquare1, greenSquare1)
         }

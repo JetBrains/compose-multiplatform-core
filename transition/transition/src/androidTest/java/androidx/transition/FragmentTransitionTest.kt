@@ -155,6 +155,7 @@ class FragmentTransitionTest(
         assertThat(fragment.requireView()).isEqualTo(view1)
         verifyNoOtherTransitions(fragment)
     }
+
     @Test
     fun testTimedPostponeImmediateStartNotCanceled() {
         val fm = activityRule.activity.supportFragmentManager
@@ -242,6 +243,81 @@ class FragmentTransitionTest(
 
         // Now pop the back stack
         verifyPopTransition(1, fragment2, fragment1)
+    }
+
+    @Test
+    fun sharedElementNoOtherTransition() {
+        val fragment1 = setupInitialFragment()
+
+        fragment1.setEnterTransition(null)
+        fragment1.setExitTransition(null)
+        fragment1.setReenterTransition(null)
+        fragment1.setReturnTransition(null)
+
+        // Now do a transition to scene2
+        val fragment2 = TransitionFragment(R.layout.fragment_scene2)
+
+        fragment2.setEnterTransition(null)
+        fragment2.setExitTransition(null)
+        fragment2.setReenterTransition(null)
+        fragment2.setReturnTransition(null)
+
+        val startBlue = activityRule.findBlue()
+
+        fragment2.postponeEnterTransition()
+
+        fragmentManager.beginTransaction()
+            .setReorderingAllowed(reorderingAllowed)
+            .addSharedElement(startBlue, "blueSquare")
+            .replace(R.id.fragmentContainer, fragment2)
+            .addToBackStack(null)
+            .commit()
+
+        activityRule.runOnUiThread {
+            fragment1.view?.visibility = View.INVISIBLE
+            fragment2.startPostponedEnterTransition()
+        }
+
+        activityRule.waitForExecution()
+
+        fragment2.waitForNoTransition()
+
+        verifyNoOtherTransitions(fragment1)
+        verifyNoOtherTransitions(fragment2)
+    }
+
+    @Test
+    fun sharedElementAddNoOtherTransition() {
+        val fragment1 = setupInitialFragment()
+
+        fragment1.setEnterTransition(null)
+        fragment1.setExitTransition(null)
+        fragment1.setReenterTransition(null)
+        fragment1.setReturnTransition(null)
+
+        // Now do a transition to scene2
+        val fragment2 = TransitionFragment(R.layout.fragment_scene2)
+
+        fragment2.setEnterTransition(null)
+        fragment2.setExitTransition(null)
+        fragment2.setReenterTransition(null)
+        fragment2.setReturnTransition(null)
+
+        val startBlue = activityRule.findBlue()
+
+        fragmentManager.beginTransaction()
+            .setReorderingAllowed(reorderingAllowed)
+            .addSharedElement(startBlue, "blueSquare")
+            .add(R.id.fragmentContainer, fragment2)
+            .addToBackStack(null)
+            .commit()
+
+        activityRule.waitForExecution()
+
+        fragment2.waitForNoTransition()
+
+        verifyNoOtherTransitions(fragment1)
+        verifyNoOtherTransitions(fragment2)
     }
 
     // Test that shared elements transition from one fragment to the next
@@ -1042,7 +1118,11 @@ class FragmentTransitionTest(
                 .commit()
         }
 
-        fragment1.waitForTransition()
+        // In the none reordered case, the new transaction immediately completes the pop so
+        // there is no transition to wait on.
+        if (reorderingAllowed == Reordered) {
+            fragment1.waitForTransition()
+        }
 
         // This shouldn't give an error.
         activityRule.executePendingTransactions()

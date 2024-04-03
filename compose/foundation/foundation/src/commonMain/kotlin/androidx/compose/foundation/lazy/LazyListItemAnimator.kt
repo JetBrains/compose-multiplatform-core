@@ -19,18 +19,29 @@ package androidx.compose.foundation.lazy
 import androidx.compose.foundation.lazy.layout.LazyLayoutAnimation
 import androidx.compose.foundation.lazy.layout.LazyLayoutAnimationSpecsNode
 import androidx.compose.foundation.lazy.layout.LazyLayoutKeyIndexMap
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.GraphicsContext
+import androidx.compose.ui.graphics.drawscope.ContentDrawScope
+import androidx.compose.ui.graphics.drawscope.translate
+import androidx.compose.ui.graphics.layer.drawLayer
+import androidx.compose.ui.node.DrawModifierNode
+import androidx.compose.ui.node.ModifierNodeElement
+import androidx.compose.ui.node.invalidateDraw
+import androidx.compose.ui.platform.InspectorInfo
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.util.fastAny
 import androidx.compose.ui.util.fastForEach
 import kotlinx.coroutines.CoroutineScope
 
 /**
- * Handles the item animations when it is set via [LazyItemScope.animateItemPlacement].
+ * Handles the item animations when it is set via [LazyItemScope.animateItem].
  *
  * This class is responsible for:
  * - animating item appearance for the new items.
  * - detecting when item position changed, figuring our start/end offsets and starting the
  * animations for placement animations.
+ * - animating item disappearance for the removed items.
  */
 internal class LazyListItemAnimator {
     // state containing relevant info for active items.
@@ -48,6 +59,8 @@ internal class LazyListItemAnimator {
     private val movingInFromEndBound = mutableListOf<LazyListMeasuredItem>()
     private val movingAwayToStartBound = mutableListOf<LazyListMeasuredItem>()
     private val movingAwayToEndBound = mutableListOf<LazyListMeasuredItem>()
+    private val disappearingItems = mutableListOf<LazyLayoutAnimation>()
+    private var displayingNode: DrawModifierNode? = null
 
     /**
      * Should be called after the measuring so we can detect position changes and start animations.
@@ -63,9 +76,10 @@ internal class LazyListItemAnimator {
         isVertical: Boolean,
         isLookingAhead: Boolean,
         hasLookaheadOccurred: Boolean,
-        coroutineScope: CoroutineScope
+        coroutineScope: CoroutineScope,
+        graphicsContext: GraphicsContext
     ) {
-        val previousKeyToIndexMap = this.keyIndexMap
+        val previousKeyToIndexMap = keyIndexMap
         val keyIndexMap = itemProvider.keyIndexMap
         this.keyIndexMap = keyIndexMap
 
@@ -99,12 +113,13 @@ internal class LazyListItemAnimator {
             movingAwayKeys.remove(item.key)
             if (item.hasAnimations) {
                 val itemInfo = keyToItemInfoMap[item.key]
+                val previousIndex = previousKeyToIndexMap?.getIndex(item.key) ?: -1
+                val shouldAnimateAppearance = previousIndex == -1 && previousKeyToIndexMap != null
                 // there is no state associated with this item yet
                 if (itemInfo == null) {
                     val newItemInfo = ItemInfo()
-                    newItemInfo.updateAnimation(item, coroutineScope)
+                    newItemInfo.updateAnimation(item, coroutineScope, graphicsContext)
                     keyToItemInfoMap[item.key] = newItemInfo
-                    val previousIndex = previousKeyToIndexMap?.getIndex(item.key) ?: -1
                     if (item.index != previousIndex && previousIndex != -1) {
                         if (previousIndex < previousFirstVisibleIndex) {
                             // the larger index will be in the start of the list
@@ -118,7 +133,7 @@ internal class LazyListItemAnimator {
                             item.getOffset(0).let { if (item.isVertical) it.y else it.x },
                             newItemInfo
                         )
-                        if (previousIndex == -1 && previousKeyToIndexMap != null) {
+                        if (shouldAnimateAppearance) {
                             newItemInfo.animations.forEach {
                                 it?.animateAppearance()
                             }
@@ -126,7 +141,7 @@ internal class LazyListItemAnimator {
                     }
                 } else {
                     if (shouldSetupAnimation) {
-                        itemInfo.updateAnimation(item, coroutineScope)
+                        itemInfo.updateAnimation(item, coroutineScope, graphicsContext)
                         itemInfo.animations.forEach { animation ->
                             if (animation != null &&
                                 animation.rawOffset != LazyLayoutAnimation.NotInitialized
@@ -134,12 +149,23 @@ internal class LazyListItemAnimator {
                                 animation.rawOffset += scrollOffset
                             }
                         }
+                        if (shouldAnimateAppearance) {
+                            itemInfo.animations.forEach {
+                                if (it != null) {
+                                    if (it.isDisappearanceAnimationInProgress) {
+                                        disappearingItems.remove(it)
+                                        displayingNode?.invalidateDraw()
+                                    }
+                                    it.animateAppearance()
+                                }
+                            }
+                        }
                         startPlacementAnimationsIfNeeded(item)
                     }
                 }
             } else {
                 // no animation, clean up if needed
-                keyToItemInfoMap.remove(item.key)
+                removeInfoForKey(item.key)
             }
         }
 
@@ -147,7 +173,7 @@ internal class LazyListItemAnimator {
         if (shouldSetupAnimation && previousKeyToIndexMap != null) {
             movingInFromStartBound.sortByDescending { previousKeyToIndexMap.getIndex(it.key) }
             movingInFromStartBound.fastForEach { item ->
-                accumulatedOffset += item.size
+                accumulatedOffset += item.sizeWithSpacings
                 val mainAxisOffset = 0 - accumulatedOffset
                 initializeAnimation(item, mainAxisOffset)
                 startPlacementAnimationsIfNeeded(item)
@@ -156,7 +182,7 @@ internal class LazyListItemAnimator {
             movingInFromEndBound.sortBy { previousKeyToIndexMap.getIndex(it.key) }
             movingInFromEndBound.fastForEach { item ->
                 val mainAxisOffset = mainAxisLayoutSize + accumulatedOffset
-                accumulatedOffset += item.size
+                accumulatedOffset += item.sizeWithSpacings
                 initializeAnimation(item, mainAxisOffset)
                 startPlacementAnimationsIfNeeded(item)
             }
@@ -168,15 +194,44 @@ internal class LazyListItemAnimator {
             val newIndex = keyIndexMap.getIndex(key)
 
             if (newIndex == -1) {
-                keyToItemInfoMap.remove(key)
+                val info = keyToItemInfoMap.getValue(key)
+                var isProgress = false
+                info.animations.forEachIndexed { index, animation ->
+                    if (animation != null) {
+                        if (animation.isDisappearanceAnimationInProgress) {
+                            isProgress = true
+                        } else if (animation.isDisappearanceAnimationFinished) {
+                            animation.release()
+                            info.animations[index] = null
+                            disappearingItems.remove(animation)
+                            displayingNode?.invalidateDraw()
+                        } else {
+                            if (animation.layer != null) {
+                                animation.animateDisappearance()
+                            }
+                            if (animation.isDisappearanceAnimationInProgress) {
+                                disappearingItems.add(animation)
+                                displayingNode?.invalidateDraw()
+                                isProgress = true
+                            } else {
+                                animation.release()
+                                info.animations[index] = null
+                            }
+                        }
+                    }
+                }
+                if (!isProgress) {
+                    removeInfoForKey(key)
+                }
             } else {
                 val item = itemProvider.getAndMeasure(newIndex)
+                item.nonScrollableItem = true
                 val itemInfo = keyToItemInfoMap.getValue(key)
                 // check if we have any active placement animation on the item
                 val inProgress =
                     itemInfo.animations.any { it?.isPlacementAnimationInProgress == true }
                 if ((!inProgress && newIndex == previousKeyToIndexMap?.getIndex(key))) {
-                    keyToItemInfoMap.remove(key)
+                    removeInfoForKey(key)
                 } else {
                     if (newIndex < firstVisibleIndex) {
                         movingAwayToStartBound.add(item)
@@ -190,9 +245,12 @@ internal class LazyListItemAnimator {
         accumulatedOffset = 0
         movingAwayToStartBound.sortByDescending { keyIndexMap.getIndex(it.key) }
         movingAwayToStartBound.fastForEach { item ->
-            accumulatedOffset += item.size
-            val mainAxisOffset = 0 - accumulatedOffset
-
+            accumulatedOffset += item.sizeWithSpacings
+            val mainAxisOffset = if (isLookingAhead) {
+                positionedItems.first().offset - accumulatedOffset
+            } else {
+                0 - accumulatedOffset
+            }
             item.position(mainAxisOffset, layoutWidth, layoutHeight)
             if (shouldSetupAnimation) {
                 startPlacementAnimationsIfNeeded(item)
@@ -202,8 +260,11 @@ internal class LazyListItemAnimator {
         accumulatedOffset = 0
         movingAwayToEndBound.sortBy { keyIndexMap.getIndex(it.key) }
         movingAwayToEndBound.fastForEach { item ->
-            val mainAxisOffset = mainAxisLayoutSize + accumulatedOffset
-            accumulatedOffset += item.size
+            val mainAxisOffset = if (isLookingAhead)
+                positionedItems.last().let { it.offset + it.sizeWithSpacings } + accumulatedOffset
+            else
+                mainAxisLayoutSize + accumulatedOffset
+            accumulatedOffset += item.sizeWithSpacings
 
             item.position(mainAxisOffset, layoutWidth, layoutHeight)
             if (shouldSetupAnimation) {
@@ -223,12 +284,25 @@ internal class LazyListItemAnimator {
         movingAwayKeys.clear()
     }
 
+    private fun removeInfoForKey(key: Any) {
+        keyToItemInfoMap.remove(key)?.animations?.forEach {
+            it?.release()
+        }
+    }
+
     /**
      * Should be called when the animations are not needed for the next positions change,
      * for example when we snap to a new position.
      */
     fun reset() {
-        keyToItemInfoMap.clear()
+        if (keyToItemInfoMap.isNotEmpty()) {
+            keyToItemInfoMap.forEach {
+                it.value.animations.forEach {
+                    it?.release()
+                }
+            }
+            keyToItemInfoMap.clear()
+        }
         keyIndexMap = LazyLayoutKeyIndexMap.Empty
         firstVisibleIndex = -1
     }
@@ -275,6 +349,22 @@ internal class LazyListItemAnimator {
     fun getAnimation(key: Any, placeableIndex: Int): LazyLayoutAnimation? =
         keyToItemInfoMap[key]?.animations?.get(placeableIndex)
 
+    val minSizeToFitDisappearingItems: IntSize get() {
+        var size = IntSize.Zero
+        disappearingItems.fastForEach {
+            val layer = it.layer
+            if (layer != null) {
+                size = IntSize(
+                    width = maxOf(size.width, it.rawOffset.x + layer.size.width),
+                    height = maxOf(size.height, it.rawOffset.y + layer.size.height)
+                )
+            }
+        }
+        return size
+    }
+
+    val modifier: Modifier = DisplayingDisappearingItemsElement(this)
+
     private val LazyListMeasuredItem.hasAnimations: Boolean
         get() {
             repeat(placeablesCount) { index ->
@@ -286,7 +376,7 @@ internal class LazyListItemAnimator {
             return false
         }
 
-    private class ItemInfo {
+    private inner class ItemInfo {
         /**
          * This array will have the same amount of elements as there are placeables on the item.
          * If the element is not null this means there are specs associated with the given placeable.
@@ -294,9 +384,13 @@ internal class LazyListItemAnimator {
         var animations = EmptyArray
             private set
 
-        fun updateAnimation(positionedItem: LazyListMeasuredItem, coroutineScope: CoroutineScope) {
+        fun updateAnimation(
+            positionedItem: LazyListMeasuredItem,
+            coroutineScope: CoroutineScope,
+            graphicsContext: GraphicsContext
+        ) {
             for (i in positionedItem.placeablesCount until animations.size) {
-                animations[i]?.stopAnimations()
+                animations[i]?.release()
             }
             if (animations.size != positionedItem.placeablesCount) {
                 animations = animations.copyOf(positionedItem.placeablesCount)
@@ -304,14 +398,69 @@ internal class LazyListItemAnimator {
             repeat(positionedItem.placeablesCount) { index ->
                 val specs = positionedItem.getParentData(index).specs
                 if (specs == null) {
-                    animations[index]?.stopAnimations()
+                    animations[index]?.release()
                     animations[index] = null
                 } else {
-                    val animation = animations[index] ?: LazyLayoutAnimation(coroutineScope).also {
+                    val animation = animations[index] ?: LazyLayoutAnimation(
+                        coroutineScope = coroutineScope,
+                        graphicsContext = graphicsContext,
+                        // until b/329417380 is fixed we have to trigger any invalidation in
+                        // order for the layer properties change to be applied:
+                        onLayerPropertyChanged = { displayingNode?.invalidateDraw() }
+                    ).also {
                         animations[index] = it
                     }
-                    animation.appearanceSpec = specs.appearanceSpec
+                    animation.fadeInSpec = specs.fadeInSpec
                     animation.placementSpec = specs.placementSpec
+                    animation.fadeOutSpec = specs.fadeOutSpec
+                }
+            }
+        }
+    }
+
+    private data class DisplayingDisappearingItemsElement(
+        private val animator: LazyListItemAnimator
+    ) : ModifierNodeElement<DisplayingDisappearingItemsNode>() {
+        override fun create() = DisplayingDisappearingItemsNode(animator)
+
+        override fun update(node: DisplayingDisappearingItemsNode) {
+            node.setAnimator(animator)
+        }
+
+        override fun InspectorInfo.inspectableProperties() {
+            name = "DisplayingDisappearingItemsElement"
+        }
+    }
+
+    private data class DisplayingDisappearingItemsNode(
+        private var animator: LazyListItemAnimator
+    ) : Modifier.Node(), DrawModifierNode {
+        override fun ContentDrawScope.draw() {
+            animator.disappearingItems.fastForEach {
+                val layer = it.layer ?: return@fastForEach
+                val x = it.finalOffset.x.toFloat()
+                val y = it.finalOffset.y.toFloat()
+                translate(x - layer.topLeft.x.toFloat(), y - layer.topLeft.y.toFloat()) {
+                    drawLayer(layer)
+                }
+            }
+            drawContent()
+        }
+
+        override fun onAttach() {
+            animator.displayingNode = this
+        }
+
+        override fun onDetach() {
+            animator.reset()
+        }
+
+        fun setAnimator(animator: LazyListItemAnimator) {
+            if (this.animator != animator) {
+                if (node.isAttached) {
+                    this.animator.reset()
+                    animator.displayingNode = this
+                    this.animator = animator
                 }
             }
         }

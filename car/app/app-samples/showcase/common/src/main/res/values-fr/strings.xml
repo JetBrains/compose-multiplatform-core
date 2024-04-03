@@ -338,7 +338,7 @@
     <string name="user_interactions_demo_title" msgid="1356952319161314986">"Interactions des utilisateurs"</string>
     <string name="request_permission_menu_demo_title" msgid="4796486779527427017">"Démos de demandes d\'autorisation"</string>
     <string name="application_overflow_title" msgid="396427940886169325">"Programme de validation du menu de développement de l\'appli"</string>
-    <string name="application_overflow_subtitle1" msgid="7429415605726615529">"Veuillez tester les modèles suivant lorsque vous faites passer"</string>
+    <string name="application_overflow_subtitle1" msgid="7429415605726615529">"Veuillez tester les modèles suivants lorsque vous changez"</string>
     <string name="application_overflow_subtitle2" msgid="4385123036846369714">"l\'état du véhicule de garé à en mouvement"</string>
     <string name="perm_group" msgid="3834918337351876270">"Groupe d\'autorisations"</string>
     <string name="perm_group_description" msgid="7348847631139139024">"Groupe d\'autorisations pour l\'appli Showcase"</string>
@@ -365,4 +365,8 @@
     <string name="route_options_demo_title" msgid="4599699012716426514">"Options d\'itinéraire"</string>
     <string name="avoid_highways_row_title" msgid="4711913426200490304">"Éviter les autoroutes"</string>
     <string name="avoid_ferries_row_title" msgid="8232883866013711974">"Éviter le bateau"</string>
+    <string name="map_demos_title" msgid="2169766615521476592">"Versions de démonstration de carte"</string>
+    <string name="map_with_content_demo_title" msgid="1032610482145018739">"Carte avec une version de démonstration du contenu"</string>
+    <string name="map_with_message_demo_title" msgid="7007078234918054436">"Carte avec une version de démonstration du modèle de message"</string>
+    <string name="map_with_grid_demo_title" msgid="688667167861193192">"Carte avec une version de démonstration du modèle de grille"</string>
 </resources>

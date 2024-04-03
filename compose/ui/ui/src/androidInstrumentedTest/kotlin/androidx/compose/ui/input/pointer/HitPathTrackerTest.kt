@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION")
+
 package androidx.compose.ui.input.pointer
 
 import android.view.MotionEvent.ACTION_HOVER_ENTER
@@ -22,19 +24,17 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.autofill.Autofill
 import androidx.compose.ui.autofill.AutofillTree
-import androidx.compose.ui.draganddrop.DragAndDropInfo
+import androidx.compose.ui.draganddrop.DragAndDropManager
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusOwner
 import androidx.compose.ui.geometry.MutableRect
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Canvas
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.GraphicsContext
 import androidx.compose.ui.graphics.Matrix
-import androidx.compose.ui.graphics.RenderEffect
-import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.ReusableGraphicsLayerScope
+import androidx.compose.ui.graphics.layer.GraphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.input.InputModeManager
 import androidx.compose.ui.input.key.KeyEvent
@@ -55,6 +55,7 @@ import androidx.compose.ui.node.RootForTest
 import androidx.compose.ui.platform.AccessibilityManager
 import androidx.compose.ui.platform.ClipboardManager
 import androidx.compose.ui.platform.PlatformTextInputSessionScope
+import androidx.compose.ui.platform.SoftwareKeyboardController
 import androidx.compose.ui.platform.TextToolbar
 import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.platform.WindowInfo
@@ -3639,6 +3640,8 @@ private class MockOwner(
         get() = TODO("Not yet implemented")
     override val accessibilityManager: AccessibilityManager
         get() = TODO("Not yet implemented")
+    override val graphicsContext: GraphicsContext
+        get() = TODO("Not yet implemented")
     override val textToolbar: TextToolbar
         get() = TODO("Not yet implemented")
 
@@ -3653,10 +3656,24 @@ private class MockOwner(
         get() = Density(1f)
     override val textInputService: TextInputService
         get() = TODO("Not yet implemented")
+    override val softwareKeyboardController: SoftwareKeyboardController
+        get() = TODO("Not yet implemented")
 
     override suspend fun textInputSession(
         session: suspend PlatformTextInputSessionScope.() -> Nothing
     ): Nothing {
+        TODO("Not yet implemented")
+    }
+
+    override fun screenToLocal(positionOnScreen: Offset): Offset {
+        TODO("Not yet implemented")
+    }
+
+    override fun localToScreen(localPosition: Offset): Offset {
+        TODO("Not yet implemented")
+    }
+
+    override fun localToScreen(localTransform: Matrix) {
         TODO("Not yet implemented")
     }
 
@@ -3681,6 +3698,7 @@ private class MockOwner(
     override var showLayoutBounds: Boolean = false
     override val snapshotObserver = OwnerSnapshotObserver { it.invoke() }
     override val modifierLocalManager: ModifierLocalManager = ModifierLocalManager(this)
+    override val dragAndDropManager: DragAndDropManager get() = TODO("Not yet implemented")
     override fun registerOnEndApplyChangesListener(listener: () -> Unit) {
         TODO("Not yet implemented")
     }
@@ -3748,27 +3766,12 @@ private class MockOwner(
 
     override fun createLayer(
         drawBlock: (Canvas) -> Unit,
-        invalidateParentLayer: () -> Unit
+        invalidateParentLayer: () -> Unit,
+        explicitLayer: GraphicsLayer?
     ): OwnedLayer {
         return object : OwnedLayer {
             override fun updateLayerProperties(
-                scaleX: Float,
-                scaleY: Float,
-                alpha: Float,
-                translationX: Float,
-                translationY: Float,
-                shadowElevation: Float,
-                rotationX: Float,
-                rotationY: Float,
-                rotationZ: Float,
-                cameraDistance: Float,
-                transformOrigin: TransformOrigin,
-                shape: Shape,
-                clip: Boolean,
-                renderEffect: RenderEffect?,
-                ambientShadowColor: Color,
-                spotShadowColor: Color,
-                compositingStrategy: CompositingStrategy,
+                scope: ReusableGraphicsLayerScope,
                 layoutDirection: LayoutDirection,
                 density: Density
             ) {
@@ -3782,7 +3785,7 @@ private class MockOwner(
             override fun resize(size: IntSize) {
             }
 
-            override fun drawLayer(canvas: Canvas) {
+            override fun drawLayer(canvas: Canvas, parentLayer: GraphicsLayer?) {
                 drawBlock(canvas)
             }
 
@@ -3830,8 +3833,4 @@ private class MockOwner(
         get() = TODO("Not yet implemented")
 
     override val sharedDrawScope = LayoutNodeDrawScope()
-
-    override fun drag(dragAndDropInfo: DragAndDropInfo): Boolean {
-        TODO("Not yet implemented")
-    }
 }

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-// @exportToFramework:copyToPath(testing/testutils/src/android/app/appsearch/testutil/external/AppSearchConfigImpl.java)
+// @exportToFramework:copyToPath(../../../cts/tests/appsearch/testutils/src/android/app/appsearch/testutil/external/AppSearchConfigImpl.java)
 package androidx.appsearch.localstorage;
 
 import androidx.annotation.NonNull;
@@ -28,18 +28,24 @@ public class AppSearchConfigImpl implements AppSearchConfig {
     private final LimitConfig mLimitConfig;
     private final IcingOptionsConfig mIcingOptionsConfig;
     private final boolean mStoreParentInfoAsSyntheticProperty;
+    private final boolean mShouldRetrieveParentInfo;
 
     public AppSearchConfigImpl(@NonNull LimitConfig limitConfig,
             @NonNull IcingOptionsConfig icingOptionsConfig) {
-        this(limitConfig, icingOptionsConfig, false);
+        this(limitConfig,
+                icingOptionsConfig,
+                /* storeParentInfoAsSyntheticProperty= */ false,
+                /* shouldRetrieveParentInfo= */ false);
     }
 
     public AppSearchConfigImpl(@NonNull LimitConfig limitConfig,
             @NonNull IcingOptionsConfig icingOptionsConfig,
-            boolean storeParentInfoAsSyntheticProperty) {
+            boolean storeParentInfoAsSyntheticProperty,
+            boolean shouldRetrieveParentInfo) {
         mLimitConfig = limitConfig;
         mIcingOptionsConfig = icingOptionsConfig;
         mStoreParentInfoAsSyntheticProperty = storeParentInfoAsSyntheticProperty;
+        mShouldRetrieveParentInfo = shouldRetrieveParentInfo;
     }
 
     @Override
@@ -108,6 +114,16 @@ public class AppSearchConfigImpl implements AppSearchConfig {
     }
 
     @Override
+    public boolean getUseNewQualifiedIdJoinIndex() {
+        return mIcingOptionsConfig.getUseNewQualifiedIdJoinIndex();
+    }
+
+    @Override
+    public boolean getBuildPropertyExistenceMetadataHits() {
+        return mIcingOptionsConfig.getBuildPropertyExistenceMetadataHits();
+    }
+
+    @Override
     public int getMaxDocumentSizeBytes() {
         return mLimitConfig.getMaxDocumentSizeBytes();
     }
@@ -125,5 +141,10 @@ public class AppSearchConfigImpl implements AppSearchConfig {
     @Override
     public boolean shouldStoreParentInfoAsSyntheticProperty() {
         return mStoreParentInfoAsSyntheticProperty;
+    }
+
+    @Override
+    public boolean shouldRetrieveParentInfo() {
+        return mShouldRetrieveParentInfo;
     }
 }

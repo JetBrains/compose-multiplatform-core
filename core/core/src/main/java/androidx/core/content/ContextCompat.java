@@ -132,7 +132,6 @@ import android.telephony.SubscriptionManager;
 import android.telephony.TelephonyManager;
 import android.text.TextUtils;
 import android.util.Log;
-import android.util.TypedValue;
 import android.view.Display;
 import android.view.LayoutInflater;
 import android.view.WindowManager;
@@ -174,12 +173,8 @@ import java.util.concurrent.Executor;
 public class ContextCompat {
     private static final String TAG = "ContextCompat";
 
-    private static final Object sLock = new Object();
-
     // Lock that provides similar functionality to ContextImpl.mSync.
     private static final Object sSync = new Object();
-
-    private static TypedValue sTempValue;
 
     /**
      * This class should not be instantiated, but the constructor must be
@@ -188,23 +183,6 @@ public class ContextCompat {
     protected ContextCompat() {
         // Not publicly instantiable, but may be extended.
     }
-
-    /**
-     * <p>Attribution can be used in complex apps to logically separate parts of the app. E.g. a
-     * blogging app might also have a instant messaging app built in. In this case two separate tags
-     * can for used each sub-feature.
-     *
-     * @return the attribution tag this context is for or {@code null} if this is the default.
-     */
-    @Nullable
-    public static String getAttributionTag(@NonNull Context context) {
-        if (Build.VERSION.SDK_INT >= 30) {
-            return Api30Impl.getAttributionTag(context);
-        }
-
-        return null;
-    }
-
 
     private static final String DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION_SUFFIX =
             ".DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION";
@@ -291,11 +269,7 @@ public class ContextCompat {
      */
     public static boolean startActivities(@NonNull Context context, @NonNull Intent[] intents,
             @Nullable Bundle options) {
-        if (Build.VERSION.SDK_INT >= 16) {
-            Api16Impl.startActivities(context, intents, options);
-        } else {
-            context.startActivities(intents);
-        }
+        context.startActivities(intents, options);
         return true;
     }
 
@@ -318,11 +292,7 @@ public class ContextCompat {
      */
     public static void startActivity(@NonNull Context context, @NonNull Intent intent,
             @Nullable Bundle options) {
-        if (Build.VERSION.SDK_INT >= 16) {
-            Api16Impl.startActivity(context, intent, options);
-        } else {
-            context.startActivity(intent);
-        }
+        context.startActivity(intent, options);
     }
 
     /**
@@ -395,11 +365,7 @@ public class ContextCompat {
      */
     @NonNull
     public static File[] getObbDirs(@NonNull Context context) {
-        if (Build.VERSION.SDK_INT >= 19) {
-            return Api19Impl.getObbDirs(context);
-        } else {
-            return new File[]{context.getObbDir()};
-        }
+        return context.getObbDirs();
     }
 
     /**
@@ -448,11 +414,7 @@ public class ContextCompat {
      */
     @NonNull
     public static File[] getExternalFilesDirs(@NonNull Context context, @Nullable String type) {
-        if (Build.VERSION.SDK_INT >= 19) {
-            return Api19Impl.getExternalFilesDirs(context, type);
-        } else {
-            return new File[]{context.getExternalFilesDir(type)};
-        }
+        return context.getExternalFilesDirs(type);
     }
 
     /**
@@ -501,11 +463,7 @@ public class ContextCompat {
      */
     @NonNull
     public static File[] getExternalCacheDirs(@NonNull Context context) {
-        if (Build.VERSION.SDK_INT >= 19) {
-            return Api19Impl.getExternalCacheDirs(context);
-        } else {
-            return new File[]{context.getExternalCacheDir()};
-        }
+        return context.getExternalCacheDirs();
     }
 
     /**
@@ -525,22 +483,8 @@ public class ContextCompat {
     public static Drawable getDrawable(@NonNull Context context, @DrawableRes int id) {
         if (Build.VERSION.SDK_INT >= 21) {
             return Api21Impl.getDrawable(context, id);
-        } else if (Build.VERSION.SDK_INT >= 16) {
-            return context.getResources().getDrawable(id);
         } else {
-            // Prior to JELLY_BEAN, Resources.getDrawable() would not correctly
-            // retrieve the final configuration density when the resource ID
-            // is a reference another Drawable resource. As a workaround, try
-            // to resolve the drawable reference manually.
-            final int resolvedId;
-            synchronized (sLock) {
-                if (sTempValue == null) {
-                    sTempValue = new TypedValue();
-                }
-                context.getResources().getValue(id, sTempValue, true);
-                resolvedId = sTempValue.resourceId;
-            }
-            return context.getResources().getDrawable(resolvedId);
+            return context.getResources().getDrawable(id);
         }
     }
 
@@ -810,13 +754,14 @@ public class ContextCompat {
      * @param context  Context to retrieve service from.
      * @param receiver The BroadcastReceiver to handle the broadcast.
      * @param filter   Selects the Intent broadcasts to be received.
-     * @param flags    If this receiver is listening for broadcasts sent from the system or from
-     *                 other apps—even other apps that you own—use the {@link #RECEIVER_EXPORTED}
-     *                 flag. If instead this receiver is listening only for broadcasts sent by your
-     *                 app, use the {@link #RECEIVER_NOT_EXPORTED} flag.
+     * @param flags    If this receiver is listening for broadcasts sent from other apps—even other
+     *                 apps that you own—use the {@link #RECEIVER_EXPORTED} flag. If instead this 
+     *                 receiver is listening only for broadcasts sent by your
+     *                 app, or from the system UID, use the {@link #RECEIVER_NOT_EXPORTED} flag.
      * @return The first sticky intent found that matches <var>filter</var>,
      * or null if there are none.
      * @see Context#registerReceiver(BroadcastReceiver, IntentFilter, int)
+     * @see https://developer.android.com/develop/background-work/background-tasks/broadcasts#context-registered-receivers
      */
     @Nullable
     public static Intent registerReceiver(@NonNull Context context,
@@ -836,14 +781,15 @@ public class ContextCompat {
      *                            required.
      * @param scheduler           Handler identifying the thread will receive the Intent. If
      *                            null, the main thread of the process will be used.
-     * @param flags               If this receiver is listening for broadcasts sent from the
-     *                            system or from other apps—even other apps that you own—use the
+     * @param flags               If this receiver is listening for broadcasts sent from other
+     *                            apps—even other apps that you own—use the
      *                            {@link #RECEIVER_EXPORTED} flag. If instead this receiver is
-     *                            listening only for broadcasts sent by your app, use the
-     *                            {@link #RECEIVER_NOT_EXPORTED} flag.
+     *                            listening only for broadcasts sent by your app, or from the
+     *                            system UID, use the {@link #RECEIVER_NOT_EXPORTED} flag.
      * @return The first sticky intent found that matches <var>filter</var>,
      * or null if there are none.
      * @see Context#registerReceiver(BroadcastReceiver, IntentFilter, String, Handler, int)
+     * @see https://developer.android.com/develop/background-work/background-tasks/broadcasts#context-registered-receivers
      */
     @Nullable
     public static Intent registerReceiver(@NonNull Context context,
@@ -951,14 +897,62 @@ public class ContextCompat {
 
         // The Android framework supports per-app locales on API 33, so we assume the
         // configuration has been updated after API 32.
-        if (Build.VERSION.SDK_INT <= 32 && Build.VERSION.SDK_INT >= 17) {
+        if (Build.VERSION.SDK_INT <= 32) {
             if (!locales.isEmpty()) {
                 Configuration newConfig = new Configuration(
                         context.getResources().getConfiguration());
                 ConfigurationCompat.setLocales(newConfig, locales);
-                return Api17Impl.createConfigurationContext(context, newConfig);
+                return context.createConfigurationContext(newConfig);
             }
         }
+        return context;
+    }
+
+    /**
+     * Attribution can be used in complex apps to logically separate parts of the app. E.g. a
+     * blogging app might also have a instant messaging app built in. In this case two separate tags
+     * can for used each sub-feature.
+     * <p>
+     * Compatibility behavior:
+     * <ul>
+     *     <li>API 30 and above, returns the attribution tag or {@code null}
+     *     <li>API 29 and earlier, returns {@code null}
+     * </ul>
+     *
+     * @return the attribution tag this context is for or {@code null} if this is the default.
+     */
+    @Nullable
+    public static String getAttributionTag(@NonNull Context context) {
+        if (Build.VERSION.SDK_INT >= 30) {
+            return Api30Impl.getAttributionTag(context);
+        }
+
+        return null;
+    }
+
+    /**
+     * Return a new Context object for the current Context but attribute to a different tag.
+     * In complex apps attribution tagging can be used to distinguish between separate logical
+     * parts.
+     * <p>
+     * Compatibility behavior:
+     * <ul>
+     *     <li>API 30 and above, returns a new Context object with the specified attribution tag
+     *     <li>API 29 and earlier, returns the original {@code context} with no attribution tag
+     * </ul>
+     *
+     * @param context The current context.
+     * @param attributionTag The tag or {@code null} to create a context for the default.
+     * @return A {@link Context} that is tagged for the new attribution
+     * @see #getAttributionTag(Context)
+     */
+    @NonNull
+    public static Context createAttributionContext(@NonNull Context context,
+            @Nullable String attributionTag) {
+        if (Build.VERSION.SDK_INT >= 30) {
+            return Api30Impl.createAttributionContext(context, attributionTag);
+        }
+
         return context;
     }
 
@@ -1002,24 +996,18 @@ public class ContextCompat {
                 SERVICES.put(TelecomManager.class, TELECOM_SERVICE);
                 SERVICES.put(TvInputManager.class, TV_INPUT_SERVICE);
             }
-            if (Build.VERSION.SDK_INT >= 19) {
-                SERVICES.put(AppOpsManager.class, APP_OPS_SERVICE);
-                SERVICES.put(CaptioningManager.class, CAPTIONING_SERVICE);
-                SERVICES.put(ConsumerIrManager.class, CONSUMER_IR_SERVICE);
-                SERVICES.put(PrintManager.class, PRINT_SERVICE);
-            }
-            if (Build.VERSION.SDK_INT >= 18) {
-                SERVICES.put(BluetoothManager.class, BLUETOOTH_SERVICE);
-            }
-            if (Build.VERSION.SDK_INT >= 17) {
-                SERVICES.put(DisplayManager.class, DISPLAY_SERVICE);
-                SERVICES.put(UserManager.class, USER_SERVICE);
-            }
-            if (Build.VERSION.SDK_INT >= 16) {
-                SERVICES.put(InputManager.class, INPUT_SERVICE);
-                SERVICES.put(MediaRouter.class, MEDIA_ROUTER_SERVICE);
-                SERVICES.put(NsdManager.class, NSD_SERVICE);
-            }
+
+            SERVICES.put(AppOpsManager.class, APP_OPS_SERVICE);
+            SERVICES.put(CaptioningManager.class, CAPTIONING_SERVICE);
+            SERVICES.put(ConsumerIrManager.class, CONSUMER_IR_SERVICE);
+            SERVICES.put(PrintManager.class, PRINT_SERVICE);
+            SERVICES.put(BluetoothManager.class, BLUETOOTH_SERVICE);
+            SERVICES.put(DisplayManager.class, DISPLAY_SERVICE);
+            SERVICES.put(UserManager.class, USER_SERVICE);
+
+            SERVICES.put(InputManager.class, INPUT_SERVICE);
+            SERVICES.put(MediaRouter.class, MEDIA_ROUTER_SERVICE);
+            SERVICES.put(NsdManager.class, NSD_SERVICE);
             SERVICES.put(AccessibilityManager.class, ACCESSIBILITY_SERVICE);
             SERVICES.put(AccountManager.class, ACCOUNT_SERVICE);
             SERVICES.put(ActivityManager.class, ACTIVITY_SERVICE);
@@ -1049,57 +1037,6 @@ public class ContextCompat {
             SERVICES.put(WifiP2pManager.class, WIFI_P2P_SERVICE);
             SERVICES.put(WifiManager.class, WIFI_SERVICE);
             SERVICES.put(WindowManager.class, WINDOW_SERVICE);
-        }
-    }
-
-    @RequiresApi(16)
-    static class Api16Impl {
-        private Api16Impl() {
-            // This class is not instantiable.
-        }
-
-        @DoNotInline
-        static void startActivities(Context obj, Intent[] intents, Bundle options) {
-            obj.startActivities(intents, options);
-        }
-
-        @DoNotInline
-        static void startActivity(Context obj, Intent intent, Bundle options) {
-            obj.startActivity(intent, options);
-        }
-    }
-
-    @RequiresApi(17)
-    static class Api17Impl {
-        private Api17Impl() {
-            // This class is not instantiable.
-        }
-
-        @DoNotInline
-        static Context createConfigurationContext(Context obj, Configuration config) {
-            return obj.createConfigurationContext(config);
-        }
-    }
-
-    @RequiresApi(19)
-    static class Api19Impl {
-        private Api19Impl() {
-            // This class is not instantiable.
-        }
-
-        @DoNotInline
-        static File[] getExternalCacheDirs(Context obj) {
-            return obj.getExternalCacheDirs();
-        }
-
-        @DoNotInline
-        static File[] getExternalFilesDirs(Context obj, String type) {
-            return obj.getExternalFilesDirs(type);
-        }
-
-        @DoNotInline
-        static File[] getObbDirs(Context obj) {
-            return obj.getObbDirs();
         }
     }
 
@@ -1228,6 +1165,13 @@ public class ContextCompat {
                 return obj.getSystemService(DisplayManager.class)
                         .getDisplay(Display.DEFAULT_DISPLAY);
             }
+        }
+
+        @DoNotInline
+        @NonNull
+        static Context createAttributionContext(@NonNull Context context,
+                @Nullable String attributionTag) {
+            return context.createAttributionContext(attributionTag);
         }
     }
 

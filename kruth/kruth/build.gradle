@@ -14,6 +14,14 @@
  * limitations under the License.
  */
 
+/**
+ * This file was created using the `create_project.py` script located in the
+ * `<AndroidX root>/development/project-creator` directory.
+ *
+ * Please use that script when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
+
 import androidx.build.LibraryType
 import androidx.build.PlatformIdentifier
 import androidx.build.Publish
@@ -24,10 +32,13 @@ plugins {
 }
 
 androidXMultiplatform {
-    jvm {}
+    jvm {
+        withJava()
+    }
     mac()
     linux()
     ios()
+    androidNative()
 
     defaultPlatform(PlatformIdentifier.JVM)
 
@@ -41,23 +52,49 @@ androidXMultiplatform {
 
         commonTest {
             dependencies {
-                implementation(libs.kotlinTestCommon)
                 implementation(libs.kotlinTestAnnotationsCommon)
             }
         }
 
         jvmMain {
+            dependsOn(commonMain)
             dependencies {
                 api(libs.kotlinStdlib)
                 api(libs.kotlinTest)
+                implementation(libs.guavaAndroid)
+                implementation(libs.junit)
             }
         }
 
         jvmTest {
             dependencies {
-                implementation(libs.kotlinStdlib)
-                implementation(libs.kotlinTest)
+                api(libs.kotlinCoroutinesTest)
             }
+        }
+
+        nativeMain {
+            dependsOn(commonMain)
+        }
+
+        nativeTest {
+            dependsOn(commonTest)
+        }
+
+        targets.all { target ->
+            if (target.platformType == org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType.native) {
+                target.compilations["main"].defaultSourceSet {
+                    dependsOn(nativeMain)
+                }
+                target.compilations["test"].defaultSourceSet {
+                    dependsOn(nativeTest)
+                }
+            }
+        }
+
+        // Workaround for https://youtrack.jetbrains.com/issue/KT-51763
+        // Make sure commonization runs before any compilation task.
+        tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinNativeCompile).configureEach {
+            it.dependsOn(tasks.named("commonize"))
         }
     }
 }
@@ -67,4 +104,5 @@ androidx {
     publish = Publish.SNAPSHOT_ONLY
     runApiTasks = new RunApiTasks.Yes() // Used to diff against Google Truth
     type = LibraryType.INTERNAL_TEST_LIBRARY
+    doNotDocumentReason = "Not shipped externally"
 }

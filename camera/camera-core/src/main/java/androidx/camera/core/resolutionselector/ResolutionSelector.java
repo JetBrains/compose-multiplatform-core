@@ -24,6 +24,8 @@ import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.camera.core.UseCase;
+import androidx.camera.core.UseCaseGroup;
+import androidx.camera.core.ViewPort;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -223,6 +225,17 @@ public final class ResolutionSelector {
          *
          * <p>If the aspect ratio strategy is not specified,
          * {@link AspectRatioStrategy#RATIO_4_3_FALLBACK_AUTO_STRATEGY} will be used as the default.
+         *
+         * <p>{@link UseCase}s can be bound by a {@link UseCaseGroup} with a {@link ViewPort}
+         * setting. If a {@link ViewPort} is set, it is recommended that the {@link ViewPort} and
+         * the bound {@link UseCase}s should have matching aspect ratio settings. Otherwise, the
+         * output crop rectangles may be double-cropped from the full camera sensor field of view.
+         * See {@link ViewPort.Builder} for details.
+         *
+         * <p>CameraX only supports the common 4:3 and 16:9 aspect ratio settings. Some devices may
+         * offer additional output sizes. To access these, you'll need to create a
+         * {@link ResolutionSelector} with a {@link ResolutionFilter} to find and select those
+         * specific sizes.
          */
         @NonNull
         public Builder setAspectRatioStrategy(@NonNull AspectRatioStrategy aspectRatioStrategy) {
@@ -234,6 +247,19 @@ public final class ResolutionSelector {
          * Sets the resolution selection strategy for the {@link UseCase}. The resolution selection
          * strategy determines how the {@link UseCase} will choose the resolution of the captured
          * image.
+         *
+         * <p>Note: {@link ResolutionStrategy} works in conjunction with
+         * {@link AspectRatioStrategy} and the default {@link AspectRatioStrategy} is
+         * {@link AspectRatioStrategy#RATIO_4_3_FALLBACK_AUTO_STRATEGY}. Ensure you set a
+         * corresponding {@link AspectRatioStrategy} alongside your {@link ResolutionStrategy}.
+         * For example, if your {@link ResolutionStrategy} uses a bound size of {@code 1920x1080}
+         * and a 16:9 aspect ratio is preferred, set
+         * {@link AspectRatioStrategy#RATIO_16_9_FALLBACK_AUTO_STRATEGY} when building the
+         * {@link ResolutionSelector}.
+         *
+         * <p>CameraX only supports the common 4:3 and 16:9 aspect ratio settings. To select
+         * resolution of other aspect ratios, you'll need to create a {@link ResolutionSelector}
+         * with a {@link ResolutionFilter} to find and select those specific sizes.
          */
         @NonNull
         public Builder setResolutionStrategy(@NonNull ResolutionStrategy resolutionStrategy) {

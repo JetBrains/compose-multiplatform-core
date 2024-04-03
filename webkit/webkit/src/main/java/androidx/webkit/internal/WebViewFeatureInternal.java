@@ -30,6 +30,8 @@ import android.webkit.WebView;
 import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
+import androidx.webkit.Profile;
+import androidx.webkit.ProfileStore;
 import androidx.webkit.ProxyConfig;
 import androidx.webkit.ProxyController;
 import androidx.webkit.SafeBrowsingResponseCompat;
@@ -40,6 +42,7 @@ import androidx.webkit.WebMessageCompat;
 import androidx.webkit.WebMessagePortCompat;
 import androidx.webkit.WebResourceErrorCompat;
 import androidx.webkit.WebResourceRequestCompat;
+import androidx.webkit.WebSettingsCompat;
 import androidx.webkit.WebViewClientCompat;
 import androidx.webkit.WebViewCompat;
 import androidx.webkit.WebViewFeature;
@@ -530,6 +533,87 @@ public class WebViewFeatureInternal {
     public static final ApiFeature.NoFramework REQUESTED_WITH_HEADER_ALLOW_LIST =
             new ApiFeature.NoFramework(WebViewFeature.REQUESTED_WITH_HEADER_ALLOW_LIST,
                     Features.REQUESTED_WITH_HEADER_ALLOW_LIST);
+
+    /**
+     * This feature covers
+     * {@link androidx.webkit.WebSettingsCompat#setUserAgentMetadata(WebSettings, UserAgentMetadata)} and
+     * {@link androidx.webkit.WebSettingsCompat#getUserAgentMetadata(WebSettings)}.
+     *
+     */
+    public static final ApiFeature.NoFramework USER_AGENT_METADATA =
+            new ApiFeature.NoFramework(WebViewFeature.USER_AGENT_METADATA,
+                    Features.USER_AGENT_METADATA);
+
+    /**
+     * Feature for {@link #isFeatureSupported(String)}.
+     * This feature covers
+     * {@link Profile#getName()}.
+     * {@link Profile#getWebStorage()}.
+     * {@link Profile#getCookieManager()}.
+     * {@link Profile#getGeolocationPermissions()}.
+     * {@link Profile#getServiceWorkerController()}.
+     * {@link ProfileStore#getProfile(String)}.
+     * {@link ProfileStore#getOrCreateProfile(String)}.
+     * {@link ProfileStore#getAllProfileNames()}.
+     * {@link ProfileStore#deleteProfile(String)}.
+     * {@link ProfileStore#getInstance()}.
+     */
+    public static final ApiFeature.NoFramework MULTI_PROFILE =
+            new ApiFeature.NoFramework(WebViewFeature.MULTI_PROFILE, Features.MULTI_PROFILE) {
+                @Override
+                public boolean isSupportedByWebView() {
+                    // Multi-process mode is a requirement for Multi-Profile feature.
+                    if (!super.isSupportedByWebView()) {
+                        return false;
+                    }
+                    if (WebViewFeature.isFeatureSupported(WebViewFeature.MULTI_PROCESS)) {
+                        return WebViewCompat.isMultiProcessEnabled();
+                    }
+                    return false;
+                }
+            };
+
+    /**
+     * Feature for {@link WebViewFeature#isFeatureSupported(String)}.
+     * This feature covers
+     * {@link androidx.webkit.WebSettingsCompat#setAttributionRegistrationBehavior(WebSettings, int)}
+     * {@link androidx.webkit.WebSettingsCompat#getAttributionRegistrationBehavior(WebSettings)}
+     */
+    public static final ApiFeature.NoFramework ATTRIBUTION_REGISTRATION_BEHAVIOR =
+            new ApiFeature.NoFramework(WebViewFeature.ATTRIBUTION_REGISTRATION_BEHAVIOR,
+                    Features.ATTRIBUTION_BEHAVIOR);
+
+    /**
+     * Feature for {@link WebViewFeature#isFeatureSupported(String)}.
+     * This feature covers
+     * {@link androidx.webkit.WebSettingsCompat#setWebViewMediaIntegrityApiStatus(WebSettings, WebSettingsCompat.WebViewMediaIntegrityApiStatusConfig)}
+     * {@link androidx.webkit.WebSettingsCompat#getWebViewMediaIntegrityApiStatus(WebSettings)}
+     */
+    public static final ApiFeature.NoFramework WEBVIEW_MEDIA_INTEGRITY_API_STATUS =
+            new ApiFeature.NoFramework(WebViewFeature.WEBVIEW_MEDIA_INTEGRITY_API_STATUS,
+                    Features.WEBVIEW_MEDIA_INTEGRITY_API_STATUS);
+
+    /**
+     * Feature for {@link WebViewFeature#isFeatureSupported(String)}.
+     * This feature covers
+     * {@link androidx.webkit.WebViewCompat#isAudioMuted(WebView)}
+     * {@link androidx.webkit.WebViewCompat#setAudioMuted(WebView, boolean)}
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public static final ApiFeature.NoFramework MUTE_AUDIO =
+            new ApiFeature.NoFramework(WebViewFeature.MUTE_AUDIO,
+                    Features.MUTE_AUDIO);
+
+    /**
+     * Feature for {@link WebViewFeature#isFeatureSupported(String)}.
+     * This feature covers
+     * {@link androidx.webkit.WebSettingsCompat#setWebAuthenticationSupport(WebSettings, int)}
+     * {@link androidx.webkit.WebSettingsCompat#getWebAuthenticationSupport(WebSettings)}
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public static final ApiFeature.NoFramework WEB_AUTHENTICATION = new ApiFeature.NoFramework(
+            WebViewFeature.WEB_AUTHENTICATION, Features.WEB_AUTHENTICATION);
+
     // --- Add new feature constants above this line ---
 
     private WebViewFeatureInternal() {

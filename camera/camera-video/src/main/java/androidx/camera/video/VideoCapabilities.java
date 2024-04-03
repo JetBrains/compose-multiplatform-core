@@ -115,15 +115,26 @@ public interface VideoCapabilities {
     boolean isQualitySupported(@NonNull Quality quality, @NonNull DynamicRange dynamicRange);
 
     /**
-     * Returns if video stabilization is supported on the device.
+     * Returns if video stabilization is supported on the device. Video stabilization can be
+     * turned on via {@link VideoCapture.Builder#setVideoStabilizationEnabled(boolean)}.
+     *
+     * <p>Not all recording sizes or frame rates may be supported for
+     * stabilization by a device that reports stabilization support. It is guaranteed
+     * that an output targeting a MediaRecorder or MediaCodec will be stabilized if
+     * the recording resolution is less than or equal to 1920 x 1080 (width less than
+     * or equal to 1920, height less than or equal to 1080), and the recording
+     * frame rate is less than or equal to 30fps. At other sizes, the video stabilization will
+     * not take effect.
      *
      * @return true if {@link CaptureRequest#CONTROL_VIDEO_STABILIZATION_MODE_ON} is supported,
      * otherwise false.
      *
+     * @see VideoCapture.Builder#setVideoStabilizationEnabled(boolean)
      * @see CaptureRequest#CONTROL_VIDEO_STABILIZATION_MODE
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY)
-    boolean isStabilizationSupported();
+    default boolean isStabilizationSupported() {
+        return false;
+    }
 
     /**
      * Gets the corresponding {@link VideoValidatedEncoderProfilesProxy} of the input quality and
@@ -154,11 +165,11 @@ public interface VideoCapabilities {
      * nearest EncoderProfilesProxy will be selected, whether that EncoderProfilesProxy's
      * resolution is above or below the given size.
      *
-     * @see #findHighestSupportedQualityFor(Size, DynamicRange)
+     * @see #findNearestHigherSupportedQualityFor(Size, DynamicRange)
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY)
     @Nullable
-    default VideoValidatedEncoderProfilesProxy findHighestSupportedEncoderProfilesFor(
+    default VideoValidatedEncoderProfilesProxy findNearestHigherSupportedEncoderProfilesFor(
             @NonNull Size size, @NonNull DynamicRange dynamicRange) {
         return null;
     }
@@ -179,7 +190,7 @@ public interface VideoCapabilities {
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY)
     @NonNull
-    default Quality findHighestSupportedQualityFor(@NonNull Size size,
+    default Quality findNearestHigherSupportedQualityFor(@NonNull Size size,
             @NonNull DynamicRange dynamicRange) {
         return Quality.NONE;
     }

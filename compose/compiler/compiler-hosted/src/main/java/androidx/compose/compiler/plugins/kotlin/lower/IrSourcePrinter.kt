@@ -26,6 +26,7 @@ import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.IrStatement
 import org.jetbrains.kotlin.ir.ObsoleteDescriptorBasedAPI
 import org.jetbrains.kotlin.ir.declarations.IrAnnotationContainer
+import org.jetbrains.kotlin.ir.declarations.IrAnonymousInitializer
 import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.declarations.IrConstructor
 import org.jetbrains.kotlin.ir.declarations.IrDeclaration
@@ -301,7 +302,7 @@ class IrSourcePrinterVisitor(
         val isInfix = function.isInfix
         if (isOperator) {
             if (name == "not") {
-                // IR tree for `a !== b` looks like `not(equals(a, b))` which makes
+                // IR tree for `a != b` looks like `not(equals(a, b))` which makes
                 // it challenging to print it like the former. To do so, we capture when we are in
                 // a "not" call, and then check to see if the argument is an equals call. if it is,
                 // we will just print the child call and put the transformer into a mode where it
@@ -522,8 +523,7 @@ class IrSourcePrinterVisitor(
                 val param = symbol.owner.valueParameters[i]
                 val isLambda = arg is IrFunctionExpression ||
                     (arg is IrBlock &&
-                        (arg.origin == IrStatementOrigin.LAMBDA ||
-                            arg.origin == IrStatementOrigin.ADAPTED_FUNCTION_REFERENCE))
+                        (arg.origin == IrStatementOrigin.LAMBDA))
                 if (isLambda) {
                     arg.unwrapLambda()?.let {
                         returnTargetToCall[it] = this
@@ -571,7 +571,7 @@ class IrSourcePrinterVisitor(
                             }
                         }
                         else -> {
-                            arg.print()
+                            arg.printWithExplicitBlock()
                         }
                     }
                     if (i < arguments.size - 1) print(", ")
@@ -582,6 +582,18 @@ class IrSourcePrinterVisitor(
         trailingLambda?.let {
             print(" ")
             it.print()
+        }
+    }
+
+    fun IrElement.printWithExplicitBlock() {
+        when (this) {
+            is IrBlock -> {
+                println("<block>{")
+                indented { print() }
+                println()
+                print("}")
+            }
+            else -> print()
         }
     }
 
@@ -869,7 +881,7 @@ class IrSourcePrinterVisitor(
                 lhs.print()
                 print("--")
             }
-            IrStatementOrigin.LAMBDA, IrStatementOrigin.ADAPTED_FUNCTION_REFERENCE -> {
+            IrStatementOrigin.LAMBDA -> {
                 val function = expression.statements[0] as IrFunction
                 function.printAsLambda()
             }
@@ -882,17 +894,19 @@ class IrSourcePrinterVisitor(
                 val rhsStatement = expression.statements[1]
                 val rhs = when (rhsStatement) {
                     is IrBlock -> {
-                        val target = rhsStatement.statements[1]
-                        when (target) {
-                            is IrVariable -> target.initializer
-                            else -> target
-                        }
+                        if (rhsStatement.statements.size == 2) {
+                            val target = rhsStatement.statements[1]
+                            when (target) {
+                                is IrVariable -> target.initializer
+                                else -> target
+                            }
+                        } else rhsStatement
                     }
                     else -> {
                         rhsStatement
                     }
-                } as IrWhen
-                val call = rhs.branches.last().result as? IrCall
+                } as? IrWhen
+                val call = rhs?.let { it.branches.last().result as? IrCall }
                 if (call == null) {
                     expression.statements.printJoin("\n")
                     return
@@ -925,7 +939,7 @@ class IrSourcePrinterVisitor(
         print(declaration.normalizedName)
         declaration.initializer?.let {
             print(" = ")
-            it.print()
+            it.printWithExplicitBlock()
         }
     }
 
@@ -968,7 +982,7 @@ class IrSourcePrinterVisitor(
         print(type.renderSrc())
         declaration.initializer?.let {
             print(" = ")
-            it.print()
+            it.printWithExplicitBlock()
         }
     }
 
@@ -989,7 +1003,7 @@ class IrSourcePrinterVisitor(
         print(".")
         print(expression.symbol.owner.name)
         print(" = ")
-        expression.value.print()
+        expression.value.printWithExplicitBlock()
     }
 
     override fun visitGetEnumValue(expression: IrGetEnumValue) {
@@ -1002,7 +1016,7 @@ class IrSourcePrinterVisitor(
     override fun visitSetValue(expression: IrSetValue) {
         print(expression.symbol.owner.normalizedName)
         print(" = ")
-        expression.value.print()
+        expression.value.printWithExplicitBlock()
     }
 
     override fun visitExpressionBody(body: IrExpressionBody) {
@@ -1291,7 +1305,11 @@ class IrSourcePrinterVisitor(
 
     override fun visitFunctionReference(expression: IrFunctionReference) {
         val function = expression.symbol.owner
+
         expression.printExplicitReceiver("::")
+        if (expression.dispatchReceiver == null && expression.extensionReceiver == null) {
+            print("::")
+        }
 
         val prop = (function as? IrSimpleFunction)?.correspondingPropertySymbol?.owner
 
@@ -1395,6 +1413,15 @@ class IrSourcePrinterVisitor(
 
     override fun visitTypeAlias(declaration: IrTypeAlias) {
         print("<<TYPEALIAS>>")
+    }
+
+    override fun visitAnonymousInitializer(declaration: IrAnonymousInitializer) {
+        println("init {")
+        indented {
+            declaration.body.print()
+        }
+        println()
+        println("}")
     }
 
     private fun IrType.renderSrc() =
@@ -1520,7 +1547,7 @@ class IrSourcePrinterVisitor(
             if (parent is IrDeclaration) {
                 parent.renderDeclarationFqn(sb)
             } else if (parent is IrPackageFragment) {
-                sb.append(parent.fqName.toString())
+                sb.append(parent.packageFqName.toString())
             }
         } catch (e: UninitializedPropertyAccessException) {
             sb.append("<uninitialized parent>")

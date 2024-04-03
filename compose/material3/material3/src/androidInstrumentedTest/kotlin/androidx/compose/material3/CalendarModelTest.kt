@@ -17,6 +17,12 @@
 package androidx.compose.material3
 
 import android.os.Build
+import androidx.compose.material3.internal.CalendarDate
+import androidx.compose.material3.internal.CalendarModel
+import androidx.compose.material3.internal.CalendarModelImpl
+import androidx.compose.material3.internal.DaysInWeek
+import androidx.compose.material3.internal.LegacyCalendarModelImpl
+import androidx.compose.material3.internal.formatWithSkeleton
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
@@ -134,6 +140,49 @@ internal class CalendarModelTest(private val model: CalendarModel) {
         // Check that the direct formatting is equal to the one the model does.
         assertThat(model.formatWithSkeleton(month, "yMMMM"))
             .isEqualTo(month.format(model, "yMMMM"))
+    }
+
+    @Test
+    fun formatWithSkeleton() {
+        // Format twice to check that the formatter is outputting the right values, and that it's
+        // not failing due to cache issues.
+        var formatted = formatWithSkeleton(
+            January2022Millis,
+            DatePickerDefaults.YearMonthWeekdayDaySkeleton,
+            Locale.US,
+            cache = mutableMapOf()
+        )
+        assertThat(formatted).isEqualTo("Saturday, January 1, 2022")
+
+        formatted = formatWithSkeleton(
+            January2022Millis - 1000000000,
+            DatePickerDefaults.YearMonthWeekdayDaySkeleton,
+            Locale.US,
+            cache = mutableMapOf()
+        )
+        assertThat(formatted).isEqualTo("Monday, December 20, 2021")
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.M)
+    @Test
+    fun formatWithSkeletonProducingEqualPattern() {
+        // Format twice to check that the formatter is outputting the right values, and that it's
+        // not failing due to cache issues.
+        var formatted = formatWithSkeleton(
+            January2022Millis,
+            skeleton = "YY",
+            Locale.US,
+            cache = mutableMapOf()
+        )
+        assertThat(formatted).isEqualTo("22")
+
+        formatted = formatWithSkeleton(
+            January2022Millis - 1000000000,
+            "YY",
+            Locale.US,
+            cache = mutableMapOf()
+        )
+        assertThat(formatted).isEqualTo("21")
     }
 
     @Test

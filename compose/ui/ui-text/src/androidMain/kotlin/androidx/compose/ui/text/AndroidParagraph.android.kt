@@ -16,11 +16,13 @@
 
 package androidx.compose.ui.text
 
+import android.graphics.RectF
 import android.os.Build
 import android.text.Spannable
 import android.text.SpannableString
 import android.text.Spanned
 import android.text.TextUtils
+import androidx.annotation.IntRange
 import androidx.annotation.VisibleForTesting
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
@@ -34,6 +36,8 @@ import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.asComposePath
 import androidx.compose.ui.graphics.drawscope.DrawStyle
 import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.toAndroidRectF
+import androidx.compose.ui.graphics.toComposeRect
 import androidx.compose.ui.text.android.InternalPlatformTextApi
 import androidx.compose.ui.text.android.LayoutCompat.ALIGN_CENTER
 import androidx.compose.ui.text.android.LayoutCompat.ALIGN_LEFT
@@ -60,8 +64,11 @@ import androidx.compose.ui.text.android.LayoutCompat.LINE_BREAK_STYLE_NORMAL
 import androidx.compose.ui.text.android.LayoutCompat.LINE_BREAK_STYLE_STRICT
 import androidx.compose.ui.text.android.LayoutCompat.LINE_BREAK_WORD_STYLE_NONE
 import androidx.compose.ui.text.android.LayoutCompat.LINE_BREAK_WORD_STYLE_PHRASE
+import androidx.compose.ui.text.android.LayoutCompat.TEXT_GRANULARITY_CHARACTER
+import androidx.compose.ui.text.android.LayoutCompat.TEXT_GRANULARITY_WORD
 import androidx.compose.ui.text.android.TextLayout
-import androidx.compose.ui.text.android.selection.WordBoundary
+import androidx.compose.ui.text.android.selection.getWordEnd
+import androidx.compose.ui.text.android.selection.getWordStart
 import androidx.compose.ui.text.android.style.IndentationFixSpan
 import androidx.compose.ui.text.android.style.PlaceholderSpan
 import androidx.compose.ui.text.font.FontFamily
@@ -151,9 +158,9 @@ internal class AndroidParagraph(
 
         val hyphens = toLayoutHyphenationFrequency(style.paragraphStyle.hyphens)
 
-        val breakStrategy = toLayoutBreakStrategy(style.lineBreak?.strategy)
-        val lineBreakStyle = toLayoutLineBreakStyle(style.lineBreak?.strictness)
-        val lineBreakWordStyle = toLayoutLineBreakWordStyle(style.lineBreak?.wordBreak)
+        val breakStrategy = toLayoutBreakStrategy(style.lineBreak.strategy)
+        val lineBreakStyle = toLayoutLineBreakStyle(style.lineBreak.strictness)
+        val lineBreakWordStyle = toLayoutLineBreakWordStyle(style.lineBreak.wordBreak)
 
         val ellipsize = if (ellipsis) {
             TextUtils.TruncateAt.END
@@ -201,8 +208,11 @@ internal class AndroidParagraph(
         // Brush is not fully realized on text until layout is complete and size information
         // is known. Brush can now be applied to the overall textpaint and all the spans.
         textPaint.setBrush(style.brush, Size(width, height), style.alpha)
-        layout.getShaderBrushSpans().forEach { shaderBrushSpan ->
-            shaderBrushSpan.size = Size(width, height)
+        val shaderBrushSpans = layout.getShaderBrushSpans()
+        if (shaderBrushSpans != null) {
+            for (shaderBrushSpan in shaderBrushSpans) {
+                shaderBrushSpan.size = Size(width, height)
+            }
         }
     }
 
@@ -305,6 +315,21 @@ internal class AndroidParagraph(
         return layout.getOffsetForHorizontal(line, position.x)
     }
 
+    override fun getRangeForRect(
+        rect: Rect,
+        granularity: TextGranularity,
+        inclusionStrategy: TextInclusionStrategy
+    ): TextRange? {
+        val range = layout.getRangeForRect(
+            rect = rect.toAndroidRectF(),
+            granularity = granularity.toLayoutTextGranularity(),
+            inclusionStrategy = { segmentBounds: RectF, area: RectF ->
+                inclusionStrategy.isInside(segmentBounds.toComposeRect(), area.toComposeRect())
+            }
+        ) ?: return null
+        return TextRange(range[0], range[1])
+    }
+
     /**
      * Returns the bounding box as Rect of the character for given character offset. Rect includes
      * the top, bottom, left and right of a character.
@@ -345,7 +370,7 @@ internal class AndroidParagraph(
     override fun fillBoundingBoxes(
         range: TextRange,
         array: FloatArray,
-        arrayStart: Int
+        @IntRange(from = 0) arrayStart: Int
     ) {
         layout.fillBoundingBoxes(range.min, range.max, array, arrayStart)
     }
@@ -377,12 +402,9 @@ internal class AndroidParagraph(
         )
     }
 
-    private val wordBoundary: WordBoundary by lazy(LazyThreadSafetyMode.NONE) {
-        WordBoundary(textLocale, layout.text)
-    }
-
     override fun getWordBoundary(offset: Int): TextRange {
-        return TextRange(wordBoundary.getWordStart(offset), wordBoundary.getWordEnd(offset))
+        val wordIterator = layout.wordIterator
+        return TextRange(wordIterator.getWordStart(offset), wordIterator.getWordEnd(offset))
     }
 
     override fun getLineLeft(lineIndex: Int): Float = layout.getLineLeft(lineIndex)
@@ -393,7 +415,7 @@ internal class AndroidParagraph(
 
     internal fun getLineAscent(lineIndex: Int): Float = layout.getLineAscent(lineIndex)
 
-    internal fun getLineBaseline(lineIndex: Int): Float = layout.getLineBaseline(lineIndex)
+    override fun getLineBaseline(lineIndex: Int): Float = layout.getLineBaseline(lineIndex)
 
     internal fun getLineDescent(lineIndex: Int): Float = layout.getLineDescent(lineIndex)
 
@@ -436,13 +458,17 @@ internal class AndroidParagraph(
             ResolvedTextDirection.Ltr
     }
 
-    private fun TextLayout.getShaderBrushSpans(): Array<ShaderBrushSpan> {
-        if (text !is Spanned) return emptyArray()
+    private fun TextLayout.getShaderBrushSpans(): Array<ShaderBrushSpan>? {
+        if (text !is Spanned) return null
+        if (!(text as Spanned).hasSpan(ShaderBrushSpan::class.java)) return null
         val brushSpans = (text as Spanned).getSpans(
             0, text.length, ShaderBrushSpan::class.java
         )
-        if (brushSpans.isEmpty()) return emptyArray()
         return brushSpans
+    }
+
+    private fun Spanned.hasSpan(clazz: Class<*>): Boolean {
+        return nextSpanTransition(-1, length, clazz) != length
     }
 
     override fun paint(
@@ -551,7 +577,7 @@ internal class AndroidParagraph(
  * Converts [TextAlign] into [TextLayout] alignment constants.
  */
 @OptIn(InternalPlatformTextApi::class)
-private fun toLayoutAlign(align: TextAlign?): Int = when (align) {
+private fun toLayoutAlign(align: TextAlign): Int = when (align) {
     TextAlign.Left -> ALIGN_LEFT
     TextAlign.Right -> ALIGN_RIGHT
     TextAlign.Center -> ALIGN_CENTER
@@ -561,7 +587,7 @@ private fun toLayoutAlign(align: TextAlign?): Int = when (align) {
 }
 
 @OptIn(InternalPlatformTextApi::class)
-private fun toLayoutHyphenationFrequency(hyphens: Hyphens?): Int = when (hyphens) {
+private fun toLayoutHyphenationFrequency(hyphens: Hyphens): Int = when (hyphens) {
     Hyphens.Auto -> if (Build.VERSION.SDK_INT <= 32) {
         HYPHENATION_FREQUENCY_FULL
     } else {
@@ -572,7 +598,7 @@ private fun toLayoutHyphenationFrequency(hyphens: Hyphens?): Int = when (hyphens
 }
 
 @OptIn(InternalPlatformTextApi::class)
-private fun toLayoutBreakStrategy(breakStrategy: LineBreak.Strategy?): Int = when (breakStrategy) {
+private fun toLayoutBreakStrategy(breakStrategy: LineBreak.Strategy): Int = when (breakStrategy) {
     LineBreak.Strategy.Simple -> BREAK_STRATEGY_SIMPLE
     LineBreak.Strategy.HighQuality -> BREAK_STRATEGY_HIGH_QUALITY
     LineBreak.Strategy.Balanced -> BREAK_STRATEGY_BALANCED
@@ -580,7 +606,7 @@ private fun toLayoutBreakStrategy(breakStrategy: LineBreak.Strategy?): Int = whe
 }
 
 @OptIn(InternalPlatformTextApi::class)
-private fun toLayoutLineBreakStyle(lineBreakStrictness: LineBreak.Strictness?): Int =
+private fun toLayoutLineBreakStyle(lineBreakStrictness: LineBreak.Strictness): Int =
     when (lineBreakStrictness) {
         LineBreak.Strictness.Default -> LINE_BREAK_STYLE_NONE
         LineBreak.Strictness.Loose -> LINE_BREAK_STYLE_LOOSE
@@ -590,7 +616,7 @@ private fun toLayoutLineBreakStyle(lineBreakStrictness: LineBreak.Strictness?): 
     }
 
 @OptIn(InternalPlatformTextApi::class)
-private fun toLayoutLineBreakWordStyle(lineBreakWordStyle: LineBreak.WordBreak?): Int =
+private fun toLayoutLineBreakWordStyle(lineBreakWordStyle: LineBreak.WordBreak): Int =
     when (lineBreakWordStyle) {
         LineBreak.WordBreak.Default -> LINE_BREAK_WORD_STYLE_NONE
         LineBreak.WordBreak.Phrase -> LINE_BREAK_WORD_STYLE_PHRASE
@@ -608,7 +634,8 @@ private fun TextLayout.numberOfLinesThatFitMaxHeight(maxHeight: Int): Int {
 private fun shouldAttachIndentationFixSpan(textStyle: TextStyle, ellipsis: Boolean) =
     with(textStyle) {
         ellipsis && (letterSpacing != 0.sp && letterSpacing != TextUnit.Unspecified) &&
-            (textAlign != null && textAlign != TextAlign.Start && textAlign != TextAlign.Justify)
+            (textAlign != TextAlign.Unspecified && textAlign != TextAlign.Start &&
+                textAlign != TextAlign.Justify)
     }
 
 @OptIn(InternalPlatformTextApi::class)
@@ -617,4 +644,12 @@ private fun CharSequence.attachIndentationFixSpan(): CharSequence {
     val spannable = if (this is Spannable) this else SpannableString(this)
     spannable.setSpan(IndentationFixSpan(), spannable.length - 1, spannable.length - 1)
     return spannable
+}
+
+private fun TextGranularity.toLayoutTextGranularity(): Int {
+    return when (this) {
+        TextGranularity.Character -> TEXT_GRANULARITY_CHARACTER
+        TextGranularity.Word -> TEXT_GRANULARITY_WORD
+        else -> TEXT_GRANULARITY_CHARACTER
+    }
 }

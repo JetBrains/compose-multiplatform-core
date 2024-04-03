@@ -25,10 +25,10 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.material3.internal.ProvideContentColorTextStyle
 import androidx.compose.material3.tokens.DatePickerModalTokens
 import androidx.compose.material3.tokens.DialogTokens
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Shape
@@ -73,7 +73,7 @@ fun DatePickerDialog(
     properties: DialogProperties = DialogProperties(usePlatformDefaultWidth = false),
     content: @Composable ColumnScope.() -> Unit
 ) {
-    AlertDialog(
+    BasicAlertDialog(
         onDismissRequest = onDismissRequest,
         modifier = modifier.wrapContentHeight(),
         properties = properties
@@ -87,26 +87,31 @@ fun DatePickerDialog(
             tonalElevation = tonalElevation,
         ) {
             Column(verticalArrangement = Arrangement.SpaceBetween) {
-                content()
+                // Wrap the content with a Box and Modifier.weight(1f) to ensure that any "confirm"
+                // and "dismiss" buttons are not pushed out of view when running on small screens,
+                // or when nesting a DateRangePicker.
+                // Fill is false to support collapsing the dialog's height when switching to input
+                // mode.
+                Box(Modifier.weight(1f, fill = false)) {
+                    this@Column.content()
+                }
                 // Buttons
                 Box(
                     modifier = Modifier
                         .align(Alignment.End)
                         .padding(DialogButtonsPadding)
                 ) {
-                    CompositionLocalProvider(
-                        LocalContentColor provides DialogTokens.ActionLabelTextColor.value
+                    ProvideContentColorTextStyle(
+                        contentColor = DialogTokens.ActionLabelTextColor.value,
+                        textStyle =
+                        MaterialTheme.typography.fromToken(DialogTokens.ActionLabelTextFont)
                     ) {
-                        val textStyle =
-                            MaterialTheme.typography.fromToken(DialogTokens.ActionLabelTextFont)
-                        ProvideTextStyle(value = textStyle) {
-                            AlertDialogFlowRow(
-                                mainAxisSpacing = DialogButtonsMainAxisSpacing,
-                                crossAxisSpacing = DialogButtonsCrossAxisSpacing
-                            ) {
-                                dismissButton?.invoke()
-                                confirmButton()
-                            }
+                        AlertDialogFlowRow(
+                            mainAxisSpacing = DialogButtonsMainAxisSpacing,
+                            crossAxisSpacing = DialogButtonsCrossAxisSpacing
+                        ) {
+                            dismissButton?.invoke()
+                            confirmButton()
                         }
                     }
                 }

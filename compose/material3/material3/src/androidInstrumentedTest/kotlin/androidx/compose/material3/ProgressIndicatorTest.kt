@@ -22,11 +22,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.testutils.assertPixelColor
-import androidx.compose.testutils.assertPixels
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
@@ -62,7 +59,7 @@ class ProgressIndicatorTest {
         rule.setContent {
             LinearProgressIndicator(
                 modifier = Modifier.testTag(tag),
-                progress = progress.value
+                progress = { progress.value },
             )
         }
 
@@ -75,7 +72,7 @@ class ProgressIndicatorTest {
         val progress = mutableStateOf(0f)
 
         rule.setMaterialContent(lightColorScheme()) {
-            LinearProgressIndicator(modifier = Modifier.testTag(tag), progress = progress.value)
+            LinearProgressIndicator(modifier = Modifier.testTag(tag), progress = { progress.value })
         }
 
         rule.onNodeWithTag(tag)
@@ -97,7 +94,7 @@ class ProgressIndicatorTest {
         val progress = mutableStateOf(-1f)
 
         rule.setMaterialContent(lightColorScheme()) {
-            LinearProgressIndicator(modifier = Modifier.testTag(tag), progress = progress.value)
+            LinearProgressIndicator(modifier = Modifier.testTag(tag), progress = { progress.value })
         }
 
         rule.onNodeWithTag(tag)
@@ -117,7 +114,7 @@ class ProgressIndicatorTest {
     fun determinateLinearProgressIndicator_Size() {
         rule
             .setMaterialContentForSizeAssertions {
-                LinearProgressIndicator(progress = 0f)
+                LinearProgressIndicator(progress = { 0f })
             }
             .assertWidthIsEqualTo(LinearIndicatorWidth)
             .assertHeightIsEqualTo(LinearIndicatorHeight)
@@ -161,7 +158,7 @@ class ProgressIndicatorTest {
         rule.setMaterialContent(lightColorScheme()) {
             CircularProgressIndicator(
                 modifier = Modifier.testTag(tag),
-                progress = progress.value
+                progress = { progress.value },
             )
         }
 
@@ -186,7 +183,7 @@ class ProgressIndicatorTest {
         rule.setMaterialContent(lightColorScheme()) {
             CircularProgressIndicator(
                 modifier = Modifier.testTag(tag),
-                progress = progress.value
+                progress = { progress.value },
             )
         }
 
@@ -207,7 +204,7 @@ class ProgressIndicatorTest {
     fun determinateCircularProgressIndicator_Size() {
         rule
             .setMaterialContentForSizeAssertions {
-                CircularProgressIndicator(progress = 0f)
+                CircularProgressIndicator(progress = { 0f })
             }
             .assertIsSquareWithSize(CircularIndicatorDiameter)
     }
@@ -254,15 +251,17 @@ class ProgressIndicatorTest {
             Box(Modifier.testTag(tag)) {
                 LinearProgressIndicator(
                     modifier = Modifier.size(expectedWidth, expectedHeight),
-                    progress = 1f,
-                    color = Color.Blue)
+                    progress = { 1f },
+                )
             }
         }
 
         rule.onNodeWithTag(tag)
             .captureToImage()
-            .assertPixels(expectedSize = expectedSize) {
-                Color.Blue
+            .toPixelMap()
+            .let {
+                assertEquals(expectedSize.width, it.width)
+                assertEquals(expectedSize.height, it.height)
             }
     }
 
@@ -280,7 +279,7 @@ class ProgressIndicatorTest {
             Box(Modifier.testTag(tag)) {
                 LinearProgressIndicator(
                     modifier = Modifier.size(expectedWidth, expectedHeight),
-                    color = Color.Blue)
+                )
             }
         }
 
@@ -292,12 +291,6 @@ class ProgressIndicatorTest {
             .let {
                 assertEquals(expectedSize.width, it.width)
                 assertEquals(expectedSize.height, it.height)
-                // Assert on the first pixel column, to make sure that the progress indicator draws
-                // to the expect height.
-                // We can't assert width as the width dynamically changes during the animation
-                for (i in 0 until it.height) {
-                    it.assertPixelColor(Color.Blue, 0, i)
-                }
             }
     }
 
@@ -373,7 +366,7 @@ class ProgressIndicatorTest {
         // padding.
         val tag = "progress_indicator"
         rule.setContent {
-            LinearProgressIndicator(modifier = Modifier.testTag(tag), progress = 1f)
+            LinearProgressIndicator(modifier = Modifier.testTag(tag), progress = { 1f })
         }
 
         val node = rule.onNodeWithTag(tag)
@@ -398,7 +391,7 @@ class ProgressIndicatorTest {
         val tag = "progress_indicator"
         rule.setContent {
             Box(Modifier.testTag(tag)) {
-                LinearProgressIndicator(progress = 1f)
+                LinearProgressIndicator(progress = { 1f })
             }
         }
 
@@ -438,7 +431,8 @@ class ProgressIndicatorTest {
                 // the withPadding tag will measure with padding.
                 Box(Modifier.testTag(visualTag)) {
                     LinearProgressIndicator(
-                        modifier = Modifier.testTag(withPaddingTag), progress = 1f
+                        modifier = Modifier.testTag(withPaddingTag),
+                        progress = { 1f },
                     )
                 }
                 repeat(20) {

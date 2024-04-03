@@ -1,5 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?><!--
-  Copyright 2023 The Android Open Source Project
+ <!-- Copyright 2023 The Android Open Source Project
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -17,5 +16,5 @@
 <resources>
     <dimen name="glance_component_button_corners">24dp</dimen>
     <dimen name="glance_component_square_icon_button_corners">16dp</dimen>
-    <dimen name="glance_component_circle_icon_button_corners">9999.dp</dimen>
+    <dimen name="glance_component_circle_icon_button_corners">9999dp</dimen>
 </resources>

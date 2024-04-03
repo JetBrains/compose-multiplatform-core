@@ -18,6 +18,7 @@ package androidx.compose.ui.semantics
 
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextLayoutResult
@@ -203,9 +204,9 @@ object SemanticsProperties {
     )
 
     /**
-     * @see SemanticsPropertyReceiver.originalText
+     * @see SemanticsPropertyReceiver.textSubstitution
      */
-    val OriginalText = SemanticsPropertyKey<AnnotatedString>(name = "OriginalText")
+    val TextSubstitution = SemanticsPropertyKey<AnnotatedString>(name = "TextSubstitution")
 
     /**
      * @see SemanticsPropertyReceiver.isShowingTextSubstitution
@@ -251,6 +252,16 @@ object SemanticsProperties {
      * @see SemanticsPropertyReceiver.indexForKey
      */
     val IndexForKey = SemanticsPropertyKey<(Any) -> Int>("IndexForKey")
+
+    /**
+     * @see SemanticsPropertyReceiver.editable
+     */
+    val Editable = SemanticsPropertyKey<Unit>("Editable")
+
+    /**
+     * @see SemanticsPropertyReceiver.maxTextLength
+     */
+    val MaxTextLength = SemanticsPropertyKey<Int>("MaxTextLength")
 }
 
 /**
@@ -282,6 +293,11 @@ object SemanticsActions {
      * @see SemanticsPropertyReceiver.scrollBy
      */
     val ScrollBy = ActionPropertyKey<(x: Float, y: Float) -> Boolean>("ScrollBy")
+
+    /**
+     * @see SemanticsPropertyReceiver.scrollByOffset
+     */
+    val ScrollByOffset = SemanticsPropertyKey<suspend (offset: Offset) -> Offset>("ScrollByOffset")
 
     /**
      * @see SemanticsPropertyReceiver.scrollToIndex
@@ -327,6 +343,18 @@ object SemanticsActions {
      * @see SemanticsPropertyReceiver.onImeAction
      */
     val OnImeAction = ActionPropertyKey<() -> Boolean>("PerformImeAction")
+
+    // b/322269946
+    @Suppress("unused")
+    @Deprecated(
+        message = "Use `SemanticsActions.OnImeAction` instead.",
+        replaceWith = ReplaceWith(
+            "OnImeAction",
+            "androidx.compose.ui.semantics.SemanticsActions.OnImeAction",
+        ),
+        level = DeprecationLevel.ERROR,
+    )
+    val PerformImeAction = ActionPropertyKey<() -> Boolean>("PerformImeAction")
 
     /**
      * @see SemanticsPropertyReceiver.copyText
@@ -388,6 +416,12 @@ object SemanticsActions {
      * @see SemanticsPropertyReceiver.pageRight
      */
     val PageRight = ActionPropertyKey<() -> Boolean>("PageRight")
+
+    /**
+     * @see SemanticsPropertyReceiver.getScrollViewportLength
+     */
+    val GetScrollViewportLength =
+        ActionPropertyKey<(MutableList<Float>) -> Boolean>("GetScrollViewportLength")
 }
 
 /**
@@ -816,7 +850,7 @@ var SemanticsPropertyReceiver.contentDescription: String
 var SemanticsPropertyReceiver.stateDescription by SemanticsProperties.StateDescription
 
 /**
- * The semantics is represents a range of possible values with a current value.
+ * The semantics represents a range of possible values with a current value.
  * For example, when used on a slider control, this will allow screen readers to communicate
  * the slider's state.
  */
@@ -979,8 +1013,6 @@ var SemanticsPropertyReceiver.testTag by SemanticsProperties.TestTag
 /**
  * Text of the semantics node. It must be real text instead of developer-set content description.
  *
- * Represents the text substitution if [SemanticsActions.ShowTextSubstitution] is called.
- *
  * @see SemanticsPropertyReceiver.editableText
  */
 var SemanticsPropertyReceiver.text: AnnotatedString
@@ -990,11 +1022,10 @@ var SemanticsPropertyReceiver.text: AnnotatedString
     }
 
 /**
- * Original text of the semantics node. This property is only available after calling
- * [SemanticsActions.ShowTextSubstitution]. The value should be equal to the [text] before calling
+ * Text substitution of the semantics node. This property is only available after calling
  * [SemanticsActions.SetTextSubstitution].
  */
-var SemanticsPropertyReceiver.originalText by SemanticsProperties.OriginalText
+var SemanticsPropertyReceiver.textSubstitution by SemanticsProperties.TextSubstitution
 
 /**
  * Whether this element is showing the text substitution. This property is only available after
@@ -1082,6 +1113,19 @@ fun SemanticsPropertyReceiver.indexForKey(mapping: (Any) -> Int) {
 }
 
 /**
+ * Whether this semantics node is editable, e.g. an editable text field.
+ */
+fun SemanticsPropertyReceiver.editable() {
+    this[SemanticsProperties.Editable] = Unit
+}
+
+/**
+ * Limits the number of characters that can be entered, e.g. in an editable text field. By default
+ * this value is -1, signifying there is no maximum text length limit.
+ */
+var SemanticsPropertyReceiver.maxTextLength by SemanticsProperties.MaxTextLength
+
+/**
  * The node is marked as a collection of horizontally or vertically stacked selectable elements.
  *
  * Unlike [collectionInfo] which marks a collection of any elements and asks developer to
@@ -1135,18 +1179,38 @@ fun SemanticsPropertyReceiver.onLongClick(label: String? = null, action: (() -> 
 }
 
 /**
- * Action to scroll by a specified amount.
+ * Action to asynchronously scroll by a specified amount.
  *
- * Expected to be used in conjunction with verticalScrollAxisRange/horizontalScrollAxisRange.
+ * [scrollByOffset] should be preferred in most cases, since it is synchronous and returns the
+ * amount of scroll that was actually consumed.
+ *
+ * Expected to be used in conjunction with [verticalScrollAxisRange]/[horizontalScrollAxisRange].
  *
  * @param label Optional label for this action.
- * @param action Action to be performed when the [SemanticsActions.ScrollBy] is called.
+ * @param action Action to be performed when [SemanticsActions.ScrollBy] is called.
  */
 fun SemanticsPropertyReceiver.scrollBy(
     label: String? = null,
     action: ((x: Float, y: Float) -> Boolean)?
 ) {
     this[SemanticsActions.ScrollBy] = AccessibilityAction(label, action)
+}
+
+/**
+ * Action to scroll by a specified amount and return how much of the offset was actually consumed.
+ * E.g. if the node can't scroll at all in the given direction, [Offset.Zero] should be returned.
+ * The action should not return until the scroll operation has finished.
+ *
+ * Expected to be used in conjunction with [verticalScrollAxisRange]/[horizontalScrollAxisRange].
+ *
+ * Unlike [scrollBy], this action is synchronous, and returns the amount of scroll consumed.
+ *
+ * @param action Action to be performed when [SemanticsActions.ScrollByOffset] is called.
+ */
+fun SemanticsPropertyReceiver.scrollByOffset(
+    action: suspend (offset: Offset) -> Offset
+) {
+    this[SemanticsActions.ScrollByOffset] = action
 }
 
 /**
@@ -1273,6 +1337,24 @@ fun SemanticsPropertyReceiver.onImeAction(
     action: (() -> Boolean)?
 ) {
     this[SemanticsProperties.ImeAction] = imeActionType
+    this[SemanticsActions.OnImeAction] = AccessibilityAction(label, action)
+}
+
+// b/322269946
+@Suppress("unused")
+@Deprecated(
+    message = "Use `SemanticsPropertyReceiver.onImeAction` instead.",
+    replaceWith = ReplaceWith(
+        "onImeAction(imeActionType = ImeAction.Default, label = label, action = action)",
+        "androidx.compose.ui.semantics.onImeAction",
+        "androidx.compose.ui.text.input.ImeAction",
+    ),
+    level = DeprecationLevel.ERROR,
+)
+fun SemanticsPropertyReceiver.performImeAction(
+    label: String? = null,
+    action: (() -> Boolean)?
+) {
     this[SemanticsActions.OnImeAction] = AccessibilityAction(label, action)
 }
 
@@ -1438,4 +1520,19 @@ fun SemanticsPropertyReceiver.pageRight(
     action: (() -> Boolean)?
 ) {
     this[SemanticsActions.PageRight] = AccessibilityAction(label, action)
+}
+
+/**
+ * Action to get a scrollable's active view port amount for scrolling actions. The result is the
+ * first element of the array in the argument of the AccessibilityAction.
+ *
+ * @param label Optional label for this action.
+ * @param action Action to be performed when the [SemanticsActions.GetScrollViewportLength] is
+ * called.
+ */
+fun SemanticsPropertyReceiver.getScrollViewportLength(
+    label: String? = null,
+    action: ((MutableList<Float>) -> Boolean)
+) {
+    this[SemanticsActions.GetScrollViewportLength] = AccessibilityAction(label, action)
 }

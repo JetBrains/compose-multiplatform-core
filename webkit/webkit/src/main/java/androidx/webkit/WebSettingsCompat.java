@@ -697,6 +697,296 @@ public class WebSettingsCompat {
         }
     }
 
+    /**
+     * Sets the WebView's user-agent metadata to generate user-agent client hints.
+     * <p>
+     * UserAgentMetadata in WebView is used to populate user-agent client hints, they can provide
+     * the client’s branding and version information, the underlying operating system’s branding
+     * and major version, as well as details about the underlying device.
+     * <p>
+     * The user-agent string can be set with {@link WebSettings#setUserAgentString(String)}, here
+     * are the details on how this API interacts it to generate user-agent client hints.
+     * <p>
+     * If the UserAgentMetadata is null and the overridden user-agent contains the system default
+     * user-agent, the system default value will be used.
+     * <p>
+     * If the UserAgentMetadata is null but the overridden user-agent doesn't contain the system
+     * default user-agent, only the
+     * <a href="https://wicg.github.io/client-hints-infrastructure/#low-entropy-hint-table">low-entry user-agent client hints</a> will be generated.
+     *
+     * <p> See <a href="https://wicg.github.io/ua-client-hints/">
+     * this</a> for more information about User-Agent Client Hints.
+     *
+     * <p>
+     * This method should only be called if
+     * {@link WebViewFeature#isFeatureSupported(String)}
+     * returns true for {@link WebViewFeature#USER_AGENT_METADATA}.
+     *
+     * @param settings Settings retrieved from {@link WebView#getSettings()}.
+     * @param metadata the WebView's user-agent metadata.
+     */
+    @RequiresFeature(name = WebViewFeature.USER_AGENT_METADATA,
+            enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
+    public static void setUserAgentMetadata(@NonNull WebSettings settings,
+            @NonNull UserAgentMetadata metadata) {
+        final ApiFeature.NoFramework feature =
+                WebViewFeatureInternal.USER_AGENT_METADATA;
+        if (feature.isSupportedByWebView()) {
+            getAdapter(settings).setUserAgentMetadata(metadata);
+        } else {
+            throw WebViewFeatureInternal.getUnsupportedOperationException();
+        }
+    }
+
+    /**
+     * Get the WebView's user-agent metadata which used to generate user-agent client hints.
+     *
+     * <p> See <a href="https://wicg.github.io/ua-client-hints/"> this</a> for more information
+     * about User-Agent Client Hints.
+     *
+     * <p>
+     * This method should only be called if
+     * {@link WebViewFeature#isFeatureSupported(String)}
+     * returns true for {@link WebViewFeature#USER_AGENT_METADATA}.
+     *
+     * @param settings Settings retrieved from {@link WebView#getSettings()}.
+     */
+    @RequiresFeature(name = WebViewFeature.USER_AGENT_METADATA,
+            enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
+    @NonNull
+    public static UserAgentMetadata getUserAgentMetadata(@NonNull WebSettings settings) {
+        final ApiFeature.NoFramework feature =
+                WebViewFeatureInternal.USER_AGENT_METADATA;
+        if (feature.isSupportedByWebView()) {
+            return getAdapter(settings).getUserAgentMetadata();
+        } else {
+            throw WebViewFeatureInternal.getUnsupportedOperationException();
+        }
+    }
+
+    @IntDef({ATTRIBUTION_BEHAVIOR_DISABLED,
+            ATTRIBUTION_BEHAVIOR_APP_SOURCE_AND_WEB_TRIGGER,
+            ATTRIBUTION_BEHAVIOR_WEB_SOURCE_AND_WEB_TRIGGER,
+            ATTRIBUTION_BEHAVIOR_APP_SOURCE_AND_APP_TRIGGER})
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    @Retention(RetentionPolicy.SOURCE)
+    @interface AttributionRegistrationBehavior {
+    }
+
+    /**
+     * AttributionRegistrationBehavior that disables source and trigger registration from WebView.
+     * <p>
+     * Note that the initial network call to the Attribution Source or Trigger URIs may still
+     * happen depending on the installed version of WebView, but any response is discarded and
+     * nothing will be stored on the device.
+     */
+    public static final int ATTRIBUTION_BEHAVIOR_DISABLED =
+            WebSettingsBoundaryInterface.AttributionBehavior.DISABLED;
+    /**
+     * AttributionRegistrationBehavior that allows apps to register app sources (sources
+     * associated with the app package name) and web triggers (triggers associated with the
+     * eTLD+1) from WebView.
+     * <p>
+     * This is the default behavior.
+     */
+    public static final int ATTRIBUTION_BEHAVIOR_APP_SOURCE_AND_WEB_TRIGGER =
+            WebSettingsBoundaryInterface.AttributionBehavior.APP_SOURCE_AND_WEB_TRIGGER;
+    /**
+     * AttributionRegistrationBehavior that allows apps to register web sources and web triggers
+     * from WebView.
+     * <p>
+     * This option should only be used after applying to
+     * <a href="https://developer.android.com/design-for-safety/privacy-sandbox/attribution-app-to-web#register-attribution">
+     *     use web sources</a>.
+     */
+    public static final int ATTRIBUTION_BEHAVIOR_WEB_SOURCE_AND_WEB_TRIGGER =
+            WebSettingsBoundaryInterface.AttributionBehavior.WEB_SOURCE_AND_WEB_TRIGGER;
+    /**
+     * AttributionRegistrationBehavior that allows apps to register app sources and app triggers
+     * from WebView.
+     */
+    public static final int ATTRIBUTION_BEHAVIOR_APP_SOURCE_AND_APP_TRIGGER =
+            WebSettingsBoundaryInterface.AttributionBehavior.APP_SOURCE_AND_APP_TRIGGER;
+
+    /**
+     * Control how WebView interacts with
+     * <a href="https://developer.android.com/design-for-safety/privacy-sandbox/attribution">Attribution Reporting</a>.
+     * <p>
+     * WebView supports
+     * <a href="https://github.com/WICG/attribution-reporting-api">Attribution Reporting</a> across
+     * <a href="https://developer.android.com/design-for-safety/privacy-sandbox/attribution-app-to-web">apps and web pages</a>
+     * by enabling the web content to register sources and triggers.
+     * <p>
+     * By default, attribution sources will be registered as attributed to the app, while
+     * triggers are attributed to the loaded web content
+     * ({@link #ATTRIBUTION_BEHAVIOR_APP_SOURCE_AND_WEB_TRIGGER}). Apps should only need to
+     * change this default if they have a specific semantic for how they use WebView. In
+     * particular, in-app browsers should follow the steps to apply to the
+     * <a href="https://developer.android.com/design-for-safety/privacy-sandbox/attribution-app-to-web#register-attribution">
+     * allowlist for registering web sources</a> and then set the
+     * {@link #ATTRIBUTION_BEHAVIOR_WEB_SOURCE_AND_WEB_TRIGGER} behavior.
+     *
+     * @see
+     * <a href="https://developer.android.com/design-for-safety/privacy-sandbox/attribution-app-to-web#register-attribution">How to apply to use web source</a>
+     * @see #ATTRIBUTION_BEHAVIOR_DISABLED
+     * @see #ATTRIBUTION_BEHAVIOR_APP_SOURCE_AND_WEB_TRIGGER
+     * @see #ATTRIBUTION_BEHAVIOR_WEB_SOURCE_AND_WEB_TRIGGER
+     * @see #ATTRIBUTION_BEHAVIOR_APP_SOURCE_AND_APP_TRIGGER
+     * @param settings Settings retrieved from {@link WebView#getSettings()}.
+     * @param behavior New behavior to use.
+     */
+    @RequiresFeature(name = WebViewFeature.ATTRIBUTION_REGISTRATION_BEHAVIOR,
+            enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
+    public static void setAttributionRegistrationBehavior(@NonNull WebSettings settings,
+            @AttributionRegistrationBehavior int behavior) {
+        final ApiFeature.NoFramework feature =
+                WebViewFeatureInternal.ATTRIBUTION_REGISTRATION_BEHAVIOR;
+        if (feature.isSupportedByWebView()) {
+            getAdapter(settings).setAttributionRegistrationBehavior(behavior);
+        } else {
+            throw WebViewFeatureInternal.getUnsupportedOperationException();
+        }
+    }
+
+    /**
+     * Read the current behavior for attribution registration.
+     *
+     * @see #setAttributionRegistrationBehavior(WebSettings, int)
+     * @see #ATTRIBUTION_BEHAVIOR_DISABLED
+     * @see #ATTRIBUTION_BEHAVIOR_APP_SOURCE_AND_WEB_TRIGGER
+     * @see #ATTRIBUTION_BEHAVIOR_WEB_SOURCE_AND_WEB_TRIGGER
+     * @see #ATTRIBUTION_BEHAVIOR_APP_SOURCE_AND_APP_TRIGGER
+     * @param settings Settings retrieved from {@link WebView#getSettings()}.
+     */
+    @RequiresFeature(name = WebViewFeature.ATTRIBUTION_REGISTRATION_BEHAVIOR,
+            enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
+    @AttributionRegistrationBehavior
+    public static int getAttributionRegistrationBehavior(@NonNull WebSettings settings) {
+        final ApiFeature.NoFramework feature =
+                WebViewFeatureInternal.ATTRIBUTION_REGISTRATION_BEHAVIOR;
+        if (feature.isSupportedByWebView()) {
+            return getAdapter(settings).getAttributionRegistrationBehavior();
+        } else {
+            throw WebViewFeatureInternal.getUnsupportedOperationException();
+        }
+    }
+
+    /**
+     * Sets permissions provided through
+     * {@link WebViewMediaIntegrityApiStatusConfig} for using the
+     * WebView Integrity API.
+     */
+    @RequiresFeature(name = WebViewFeature.WEBVIEW_MEDIA_INTEGRITY_API_STATUS,
+            enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
+    public static void setWebViewMediaIntegrityApiStatus(
+            @NonNull WebSettings settings,
+            @NonNull WebViewMediaIntegrityApiStatusConfig permissionConfig) {
+        final ApiFeature.NoFramework feature =
+                WebViewFeatureInternal.WEBVIEW_MEDIA_INTEGRITY_API_STATUS;
+        if (feature.isSupportedByWebView()) {
+            getAdapter(settings).setWebViewMediaIntegrityApiStatus(permissionConfig);
+        } else {
+            throw WebViewFeatureInternal.getUnsupportedOperationException();
+        }
+    }
+
+    /**
+     * Returns the {@link WebViewMediaIntegrityApiStatusConfig} currently in use.
+     */
+    @RequiresFeature(name = WebViewFeature.WEBVIEW_MEDIA_INTEGRITY_API_STATUS,
+            enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
+    @NonNull
+    public static WebViewMediaIntegrityApiStatusConfig getWebViewMediaIntegrityApiStatus(
+            @NonNull WebSettings settings) {
+        final ApiFeature.NoFramework feature =
+                WebViewFeatureInternal.WEBVIEW_MEDIA_INTEGRITY_API_STATUS;
+        if (feature.isSupportedByWebView()) {
+            return getAdapter(settings).getWebViewMediaIntegrityApiStatus();
+        } else {
+            throw WebViewFeatureInternal.getUnsupportedOperationException();
+        }
+    }
+
+    @IntDef({WEB_AUTHENTICATION_SUPPORT_NONE,
+            WEB_AUTHENTICATION_SUPPORT_APP})
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    @Retention(RetentionPolicy.SOURCE)
+    @interface WebAuthenticationSupport {
+    }
+
+    /**
+     * The support level that disables WebAuthn requests from WebView.
+     * <p>
+     * This is the default behavior.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public static final int WEB_AUTHENTICATION_SUPPORT_NONE =
+            WebSettingsBoundaryInterface.WebauthnSupport.NONE;
+    /**
+     * The support level that allows WebAuthn requests for the app in which the WebView is embedded.
+     * See
+     * <a href="https://developers.google.com/digital-asset-links">Digital Asset Links</a>
+     * to learn how to associate an app with a website.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public static final int WEB_AUTHENTICATION_SUPPORT_APP =
+            WebSettingsBoundaryInterface.WebauthnSupport.APP;
+
+    /**
+     * Sets the support level for the given {@link WebSettings}.
+     *
+     * <p>
+     * This method should only be called if
+     * {@link WebViewFeature#isFeatureSupported(String)} returns true for
+     * {@link WebViewFeature#WEB_AUTHENTICATION}.
+     *
+     * @param settings Settings retrieved from {@link WebView#getSettings()}.
+     * @param support  The new support level which this WebView will use.
+     * @see #WEB_AUTHENTICATION_SUPPORT_NONE
+     * @see #WEB_AUTHENTICATION_SUPPORT_APP
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    @RequiresFeature(name = WebViewFeature.WEB_AUTHENTICATION,
+            enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
+    public static void setWebAuthenticationSupport(@NonNull WebSettings settings,
+            @WebAuthenticationSupport int support) {
+        final ApiFeature.NoFramework feature =
+                WebViewFeatureInternal.WEB_AUTHENTICATION;
+        if (feature.isSupportedByWebView()) {
+            getAdapter(settings).setWebAuthenticationSupport(support);
+        } else {
+            throw WebViewFeatureInternal.getUnsupportedOperationException();
+        }
+    }
+
+    /**
+     * Returns the support level for the given {@link WebSettings}
+     *
+     * <p>
+     * This method should only be called if
+     * {@link WebViewFeature#isFeatureSupported(String)} returns true for
+     * {@link WebViewFeature#WEB_AUTHENTICATION}.
+     *
+     * @param settings Settings retrieved from {@link WebView#getSettings()}.
+     * @return the current support level.
+     * @see #setWebAuthenticationSupport(WebSettings, int)
+     * @see #WEB_AUTHENTICATION_SUPPORT_NONE
+     * @see #WEB_AUTHENTICATION_SUPPORT_APP
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    @RequiresFeature(name = WebViewFeature.WEB_AUTHENTICATION,
+            enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
+    @WebAuthenticationSupport
+    public static int getWebAuthenticationSupport(@NonNull WebSettings settings) {
+        final ApiFeature.NoFramework feature =
+                WebViewFeatureInternal.WEB_AUTHENTICATION;
+        if (feature.isSupportedByWebView()) {
+            return getAdapter(settings).getWebAuthenticationSupport();
+        } else {
+            throw WebViewFeatureInternal.getUnsupportedOperationException();
+        }
+    }
+
     private static WebSettingsAdapter getAdapter(WebSettings settings) {
         return WebViewGlueCommunicator.getCompatConverter().convertSettings(settings);
     }

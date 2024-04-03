@@ -151,7 +151,11 @@ internal fun startRuntimeMethodTracing(
     ) {
         startMethodTracingSampling(path, bufferSize, Arguments.profilerSampleFrequency)
     } else {
-        Debug.startMethodTracing(path, bufferSize, 0)
+        // NOTE: 0x10 flag enables low-overhead wall clock timing when ART module version supports
+        // it. Note that this doesn't affect trace parsing, since this doesn't affect wall clock,
+        // it only removes the expensive thread time clock which our parser doesn't use.
+        // TODO: switch to platform-defined constant once available (b/329499422)
+        Debug.startMethodTracing(path, bufferSize, 0x10)
     }
 
     return Profiler.ResultFile(
@@ -188,15 +192,20 @@ internal object StackSamplingLegacy : Profiler() {
 
 internal object MethodTracing : Profiler() {
     override fun start(traceUniqueName: String): ResultFile {
-        return startRuntimeMethodTracing(
-            traceFileName = traceName(traceUniqueName, "methodTracing"),
-            sampled = false,
-            profiler = this
-        )
+        hasBeenUsed = true
+        inMemoryTrace("startMethodTrace") {
+            return startRuntimeMethodTracing(
+                traceFileName = traceName(traceUniqueName, "methodTracing"),
+                sampled = false,
+                profiler = this
+            )
+        }
     }
 
     override fun stop() {
-        stopRuntimeMethodTracing()
+        inMemoryTrace("stopMethodTrace") {
+            stopRuntimeMethodTracing()
+        }
     }
 
     override val requiresSingleMeasurementIteration: Boolean = true
@@ -205,7 +214,11 @@ internal object MethodTracing : Profiler() {
         ArtTrace(profilerTrace)
             .writeAsPerfettoTrace(FileOutputStream(perfettoTrace, /* append = */ true))
     }
+
+    var hasBeenUsed: Boolean = false
+        private set
 }
+
 @SuppressLint("BanThreadSleep") // needed for connected profiling
 internal object ConnectedAllocation : Profiler() {
     override fun start(traceUniqueName: String): ResultFile? {

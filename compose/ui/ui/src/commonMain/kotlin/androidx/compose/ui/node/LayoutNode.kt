@@ -22,10 +22,15 @@ import androidx.compose.runtime.collection.mutableVectorOf
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusDirection.Companion.Exit
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Canvas
+import androidx.compose.ui.graphics.layer.GraphicsLayer
 import androidx.compose.ui.input.pointer.PointerInputFilter
 import androidx.compose.ui.input.pointer.PointerInputModifier
+import androidx.compose.ui.internal.checkPrecondition
+import androidx.compose.ui.internal.checkPreconditionNotNull
+import androidx.compose.ui.internal.requirePrecondition
 import androidx.compose.ui.layout.IntrinsicMeasurable
 import androidx.compose.ui.layout.IntrinsicMeasureScope
 import androidx.compose.ui.layout.LayoutCoordinates
@@ -64,7 +69,6 @@ import androidx.compose.ui.viewinterop.InteropViewFactoryHolder
 /**
  * Enable to log changes to the LayoutNode tree.  This logging is quite chatty.
  */
-@Suppress("ConstPropertyName")
 private const val DebugChanges = false
 
 private val DefaultDensity = Density(1f)
@@ -281,12 +285,12 @@ internal class LayoutNode(
      * then [instance] will become [attach]ed also. [instance] must have a `null` [parent].
      */
     internal fun insertAt(index: Int, instance: LayoutNode) {
-        check(instance._foldedParent == null) {
+        checkPrecondition(instance._foldedParent == null) {
             "Cannot insert $instance because it already has a parent." +
                 " This tree: " + debugTreeToString() +
                 " Other tree: " + instance._foldedParent?.debugTreeToString()
         }
-        check(instance.owner == null) {
+        checkPrecondition(instance.owner == null) {
             "Cannot insert $instance because it already has an owner." +
                 " This tree: " + debugTreeToString() +
                 " Other tree: " + instance.debugTreeToString()
@@ -327,7 +331,7 @@ internal class LayoutNode(
      * Removes one or more children, starting at [index].
      */
     internal fun removeAt(index: Int, count: Int) {
-        require(count >= 0) {
+        requirePrecondition(count >= 0) {
             "count ($count) must be greater than 0"
         }
         for (i in index + count - 1 downTo index) {
@@ -411,6 +415,7 @@ internal class LayoutNode(
         //  on a per-node level. This should preserve current behavior for now.
         requireOwner().onSemanticsChange()
     }
+
     internal val collapsedSemantics: SemanticsConfiguration?
         get() {
             if (!nodes.has(Nodes.Semantics) || _collapsedSemantics != null) {
@@ -439,10 +444,10 @@ internal class LayoutNode(
      * [owner] must match its [parent].[owner].
      */
     internal fun attach(owner: Owner) {
-        check(this.owner == null) {
+        checkPrecondition(this.owner == null) {
             "Cannot attach $this as it already is attached.  Tree: " + debugTreeToString()
         }
-        check(_foldedParent == null || _foldedParent?.owner == owner) {
+        checkPrecondition(_foldedParent == null || _foldedParent?.owner == owner) {
             "Attaching to a different owner($owner) than the parent's owner(${parent?.owner})." +
                 " This tree: " + debugTreeToString() +
                 " Parent tree: " + _foldedParent?.debugTreeToString()
@@ -473,14 +478,18 @@ internal class LayoutNode(
             // Favor lookahead root from parent than locally created scope, unless current node
             // is a virtual lookahead root
             lookaheadRoot = _foldedParent?.lookaheadRoot ?: lookaheadRoot
+            if (lookaheadRoot == null && nodes.has(Nodes.ApproachMeasure)) {
+                // This could happen when movableContent containing intermediateLayout is moved
+                lookaheadRoot = this
+            }
         }
-        if (!deactivated) {
+        if (!isDeactivated) {
             nodes.markAsAttached()
         }
         _foldedChildren.forEach { child ->
             child.attach(owner)
         }
-        if (!deactivated) {
+        if (!isDeactivated) {
             nodes.runAttachLifecycle()
         }
 
@@ -491,7 +500,7 @@ internal class LayoutNode(
         onAttach?.invoke(owner)
 
         layoutDelegate.updateParentData()
-        if (!deactivated) {
+        if (!isDeactivated) {
             invalidateFocusOnAttach()
         }
     }
@@ -503,7 +512,7 @@ internal class LayoutNode(
      */
     internal fun detach() {
         val owner = owner
-        checkNotNull(owner) {
+        checkPreconditionNotNull(owner) {
             "Cannot detach node that is already detached!  Tree: " + parent?.debugTreeToString()
         }
         invalidateFocusOnDetach()
@@ -632,7 +641,7 @@ internal class LayoutNode(
         set(value) {
             if (field != value) {
                 field = value
-                intrinsicsPolicy.updateFrom(measurePolicy)
+                intrinsicsPolicy?.updateFrom(measurePolicy)
                 invalidateMeasurements()
             }
         }
@@ -642,7 +651,37 @@ internal class LayoutNode(
      * correct remeasurement for layouts using the intrinsics of this layout
      * when the [measurePolicy] is changing.
      */
-    internal val intrinsicsPolicy = IntrinsicsPolicy(this)
+    private var intrinsicsPolicy: IntrinsicsPolicy? = null
+
+    private fun getOrCreateIntrinsicsPolicy(): IntrinsicsPolicy {
+        return intrinsicsPolicy ?: IntrinsicsPolicy(this, measurePolicy).also {
+            intrinsicsPolicy = it
+        }
+    }
+
+    fun minLookaheadIntrinsicWidth(height: Int) =
+        getOrCreateIntrinsicsPolicy().minLookaheadIntrinsicWidth(height)
+
+    fun minLookaheadIntrinsicHeight(width: Int) =
+        getOrCreateIntrinsicsPolicy().minLookaheadIntrinsicHeight(width)
+
+    fun maxLookaheadIntrinsicWidth(height: Int) =
+        getOrCreateIntrinsicsPolicy().maxLookaheadIntrinsicWidth(height)
+
+    fun maxLookaheadIntrinsicHeight(width: Int) =
+        getOrCreateIntrinsicsPolicy().maxLookaheadIntrinsicHeight(width)
+
+    fun minIntrinsicWidth(height: Int) =
+        getOrCreateIntrinsicsPolicy().minIntrinsicWidth(height)
+
+    fun minIntrinsicHeight(width: Int) =
+        getOrCreateIntrinsicsPolicy().minIntrinsicHeight(width)
+
+    fun maxIntrinsicWidth(height: Int) =
+        getOrCreateIntrinsicsPolicy().maxIntrinsicWidth(height)
+
+    fun maxIntrinsicHeight(width: Int) =
+        getOrCreateIntrinsicsPolicy().maxIntrinsicHeight(width)
 
     /**
      * The screen density to be used by this layout.
@@ -819,7 +858,7 @@ internal class LayoutNode(
             }
             val layerCoordinator = _innerLayerCoordinator
             if (layerCoordinator != null) {
-                checkNotNull(layerCoordinator.layer) { "layer was not set" }
+                checkPreconditionNotNull(layerCoordinator.layer) { "layer was not set" }
             }
             return layerCoordinator
         }
@@ -844,16 +883,17 @@ internal class LayoutNode(
      */
     override var modifier: Modifier = Modifier
         set(value) {
-            require(!isVirtual || modifier === Modifier) {
+            requirePrecondition(!isVirtual || modifier === Modifier) {
                 "Modifiers are not supported on virtual LayoutNodes"
+            }
+            requirePrecondition(!isDeactivated) {
+                "modifier is updated when deactivated"
             }
             field = value
             nodes.updateFrom(value)
             layoutDelegate.updateParentData()
-            if (nodes.has(Nodes.IntermediateMeasure)) {
-                if (lookaheadRoot == null) {
-                    lookaheadRoot = this
-                }
+            if (lookaheadRoot == null && nodes.has(Nodes.ApproachMeasure)) {
+                lookaheadRoot = this
             }
         }
 
@@ -894,14 +934,8 @@ internal class LayoutNode(
             // clear the intrinsics usage for everything that was requested previously.
             clearSubtreePlacementIntrinsicsUsage()
         }
-        with(measurePassDelegate) {
-            Placeable.PlacementScope.executeWithRtlMirroringValues(
-                measuredWidth,
-                layoutDirection,
-                parent?.innerCoordinator
-            ) {
-                placeRelative(x, y)
-            }
+        with(parent?.innerCoordinator?.placementScope ?: requireOwner().placementScope) {
+            measurePassDelegate.placeRelative(x, y)
         }
     }
 
@@ -926,7 +960,8 @@ internal class LayoutNode(
         lookaheadPassDelegate!!.replace()
     }
 
-    internal fun draw(canvas: Canvas) = outerCoordinator.draw(canvas)
+    internal fun draw(canvas: Canvas, graphicsLayer: GraphicsLayer?) =
+        outerCoordinator.draw(canvas, graphicsLayer)
 
     /**
      * Carries out a hit test on the [PointerInputModifier]s associated with this [LayoutNode] and
@@ -980,16 +1015,17 @@ internal class LayoutNode(
                 // this node was scheduled for remeasure or relayout while it was not
                 // placed. such requests are ignored for non-placed nodes so we have to
                 // re-schedule remeasure or relayout.
-                if (it.measurePending) {
-                    it.requestRemeasure(forceRequest = true)
-                } else if (it.layoutPending) {
-                    it.requestRelayout(forceRequest = true)
-                } else if (it.lookaheadMeasurePending) {
+                if (it.lookaheadMeasurePending) {
                     it.requestLookaheadRemeasure(forceRequest = true)
-                } else if (it.lookaheadLayoutPending) {
-                    it.requestLookaheadRelayout(forceRequest = true)
                 } else {
-                    // no extra work required and node is ready to be displayed
+                    if (it.lookaheadLayoutPending) {
+                        it.requestLookaheadRelayout(forceRequest = true)
+                    }
+                    if (it.measurePending) {
+                        it.requestRemeasure(forceRequest = true)
+                    } else if (it.layoutPending) {
+                        it.requestRelayout(forceRequest = true)
+                    }
                 }
             }
 
@@ -1023,7 +1059,7 @@ internal class LayoutNode(
         forceRequest: Boolean = false,
         scheduleMeasureAndLayout: Boolean = true
     ) {
-        check(lookaheadRoot != null) {
+        checkPrecondition(lookaheadRoot != null) {
             "Lookahead measure cannot be requested on a node that is not a part of the" +
                 "LookaheadScope"
         }
@@ -1051,6 +1087,12 @@ internal class LayoutNode(
         }
     }
 
+    internal fun invalidateOnPositioned() {
+        // If we've already scheduled a measure, the positioned callbacks will get called anyway
+        if (layoutPending || measurePending || needsOnPositionedDispatch) return
+        requireOwner().requestOnPositionedCallback(this)
+    }
+
     private fun invalidateFocusOnAttach() {
         if (nodes.has(FocusTarget or FocusProperties or FocusEvent)) {
             nodes.headToTail {
@@ -1064,7 +1106,12 @@ internal class LayoutNode(
     private fun invalidateFocusOnDetach() {
         nodes.tailToHead(FocusTarget) {
             if (it.focusState.isFocused) {
-                requireOwner().focusOwner.clearFocus(force = true, refreshFocusEvents = false)
+                requireOwner().focusOwner.clearFocus(
+                    force = true,
+                    refreshFocusEvents = false,
+                    clearOwnerFocus = true,
+                    @OptIn(ExperimentalComposeUiApi::class) Exit
+                )
                 it.scheduleInvalidationForFocusEvents()
             }
         }
@@ -1092,7 +1139,7 @@ internal class LayoutNode(
     }
 
     internal fun dispatchOnPositionedCallbacks() {
-        if (layoutState != Idle || layoutPending || measurePending) {
+        if (layoutState != Idle || layoutPending || measurePending || isDeactivated) {
             return // it hasn't yet been properly positioned, so don't make a call
         }
         if (!isPlaced) {
@@ -1327,29 +1374,44 @@ internal class LayoutNode(
     override val parentInfo: LayoutInfo?
         get() = parent
 
-    private var deactivated = false
+    override var isDeactivated = false
+        private set
 
     override fun onReuse() {
-        require(isAttached) { "onReuse is only expected on attached node" }
+        requirePrecondition(isAttached) { "onReuse is only expected on attached node" }
         interopViewFactoryHolder?.onReuse()
         subcompositionsState?.onReuse()
-        if (deactivated) {
-            deactivated = false
+        if (isDeactivated) {
+            isDeactivated = false
+            invalidateSemantics()
             // we don't need to reset state as it was done when deactivated
         } else {
             resetModifierState()
+            resetExplicitLayers()
         }
         // resetModifierState detaches all nodes, so we need to re-attach them upon reuse.
         semanticsId = generateSemanticsId()
         nodes.markAsAttached()
         nodes.runAttachLifecycle()
+        rescheduleRemeasureOrRelayout(this)
     }
 
     override fun onDeactivate() {
         interopViewFactoryHolder?.onDeactivate()
         subcompositionsState?.onDeactivate()
-        deactivated = true
+        isDeactivated = true
         resetModifierState()
+        // if the node is detached the semantics were already updated without this node.
+        if (isAttached) {
+            invalidateSemantics()
+        }
+        resetExplicitLayers()
+    }
+
+    private fun resetExplicitLayers() {
+        forEachCoordinatorIncludingInner {
+            it.releaseExplicitLayer()
+        }
     }
 
     override fun onRelease() {
@@ -1372,6 +1434,7 @@ internal class LayoutNode(
         /**
          * Constant used by [placeOrder].
          */
+        @Suppress("ConstPropertyName")
         internal const val NotPlacedPlaceOrder = Int.MAX_VALUE
 
         /**
@@ -1455,7 +1518,7 @@ internal class LayoutNode(
  */
 internal fun LayoutNode.requireOwner(): Owner {
     val owner = owner
-    checkNotNull(owner) {
+    checkPreconditionNotNull(owner) {
         "LayoutNode should be attached to an owner"
     }
     return owner

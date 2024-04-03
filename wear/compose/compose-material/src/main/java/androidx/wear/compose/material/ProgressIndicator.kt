@@ -181,7 +181,7 @@ public fun CircularProgressIndicator(
         infiniteRepeatable(
             animation = keyframes {
                 durationMillis = HeadAndTailAnimationDuration + HeadAndTailDelayDuration
-                0f at 0 with CircularEasing
+                0f at 0 using CircularEasing
                 JumpRotationAngle at HeadAndTailAnimationDuration
             }
         )
@@ -193,7 +193,7 @@ public fun CircularProgressIndicator(
         infiniteRepeatable(
             animation = keyframes {
                 durationMillis = HeadAndTailAnimationDuration + HeadAndTailDelayDuration
-                0f at HeadAndTailDelayDuration with CircularEasing
+                0f at HeadAndTailDelayDuration using CircularEasing
                 JumpRotationAngle at durationMillis
             }
         )
@@ -252,7 +252,7 @@ public object ProgressIndicatorDefaults {
      *
      * This can be customized with the `strokeWidth` parameter on [CircularProgressIndicator]
      */
-    internal val FullScreenStrokeWidth = 5.dp
+    public val FullScreenStrokeWidth = 5.dp
 
     /**
      * The default [AnimationSpec] that should be used when animating between progress in a

@@ -24,12 +24,12 @@ import org.gradle.api.file.FileCollection
 
 /** AndroidX configuration backed by Gradle properties. */
 abstract class AndroidConfigImpl(private val project: Project) : AndroidConfig {
-    override val buildToolsVersion: String = "34.0.0"
+    override val buildToolsVersion: String = "35.0.0-rc1"
 
     override val compileSdk: String by lazy { project.findProperty(COMPILE_SDK_VERSION).toString() }
 
-    override val minSdk: Int = 14
-    override val ndkVersion: String = "23.1.7779620"
+    override val minSdk: Int = 19
+    override val ndkVersion: String = "25.2.9519653"
 
     override val targetSdk: Int by lazy {
         project.findProperty(TARGET_SDK_VERSION).toString().toInt()

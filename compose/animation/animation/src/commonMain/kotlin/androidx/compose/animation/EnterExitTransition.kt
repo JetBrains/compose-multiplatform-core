@@ -107,10 +107,11 @@ sealed class EnterTransition {
     operator fun plus(enter: EnterTransition): EnterTransition {
         return EnterTransitionImpl(
             TransitionData(
-                fade = data.fade ?: enter.data.fade,
-                slide = data.slide ?: enter.data.slide,
-                changeSize = data.changeSize ?: enter.data.changeSize,
-                scale = data.scale ?: enter.data.scale,
+                fade = enter.data.fade ?: data.fade,
+                slide = enter.data.slide ?: data.slide,
+                changeSize = enter.data.changeSize ?: data.changeSize,
+                scale = enter.data.scale ?: data.scale,
+                // `enter` after plus operator to prioritize its values on the map
                 effectsMap = data.effectsMap + enter.data.effectsMap
             )
         )
@@ -192,11 +193,12 @@ sealed class ExitTransition {
     operator fun plus(exit: ExitTransition): ExitTransition {
         return ExitTransitionImpl(
             TransitionData(
-                fade = data.fade ?: exit.data.fade,
-                slide = data.slide ?: exit.data.slide,
-                changeSize = data.changeSize ?: exit.data.changeSize,
-                scale = data.scale ?: exit.data.scale,
-                hold = data.hold || exit.data.hold,
+                fade = exit.data.fade ?: data.fade,
+                slide = exit.data.slide ?: data.slide,
+                changeSize = exit.data.changeSize ?: data.changeSize,
+                scale = exit.data.scale ?: data.scale,
+                hold = exit.data.hold || data.hold,
+                // `exit` after plus operator to prioritize its values on the map
                 effectsMap = data.effectsMap + exit.data.effectsMap
             )
         )
@@ -209,12 +211,12 @@ sealed class ExitTransition {
     override fun toString(): String =
         when (this) {
             None -> "ExitTransition.None"
-            Hold -> "ExitTransition.Hold"
+            KeepUntilTransitionsFinished -> "ExitTransition.KeepUntilTransitionsFinished"
             else -> data.run {
                 "ExitTransition: \n" + "Fade - " + fade?.toString() + ",\nSlide - " +
                     slide?.toString() + ",\nShrink - " + changeSize?.toString() +
                     ",\nScale - " + scale?.toString() +
-                    ",\nHold - " + hold
+                    ",\nKeepUntilTransitionsFinished - " + hold
             }
         }
 
@@ -240,7 +242,8 @@ sealed class ExitTransition {
          * when dealing with one set of content entering OR exiting, such as AnimatedVisibility,
          * holding would not be meaningful.
          */
-        internal val Hold: ExitTransition = ExitTransitionImpl(TransitionData(hold = true))
+        internal val KeepUntilTransitionsFinished: ExitTransition =
+            ExitTransitionImpl(TransitionData(hold = true))
     }
 }
 

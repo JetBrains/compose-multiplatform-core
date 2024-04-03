@@ -32,7 +32,14 @@ object Outputs {
 
     private val formatter: SimpleDateFormat = SimpleDateFormat("yyyy-MM-dd-HH-mm-ss")
 
-    private val sanitizerRegex = Regex("(\\W+)")
+    /**
+     * Matches substrings to be removed from filenames.
+     *
+     * We only allow digits, ascii letters, `_` and `-` to remain.
+     *
+     * Note `-` is important for baseline profiles, see b/303034735
+     */
+    private val sanitizerRegex = Regex("([^0-9a-zA-Z._-]+)")
 
     /**
      * The intended output directory that respects the `additionalTestOutputDir`.
@@ -150,15 +157,15 @@ object Outputs {
     }
 
     fun sanitizeFilename(filename: String): String {
-        val index = filename.lastIndexOf('.')
-        return if (index <= 0) {
-            filename.replace(sanitizerRegex, "_")
-        } else {
-            val name = filename.substring(0 until index)
-            val extension = filename.substring(index)
-            val sanitized = name.replace(sanitizerRegex, "_")
-            "$sanitized$extension"
+        require(filename.length < 200) {
+            // Check length instead of sanitizing because in practice, names this long will
+            // break AGP/Studio/Desktop side tooling as well, at least on Linux.
+            // This threshold is conservative and operates on the input as, in practice, Studio
+            // tooling expands testnames into filenames a bit more than benchmark does.
+            "Filename too long (${filename.length} > 200) $filename - trim your test name, or" +
+                " parameterization string to avoid filename too long exceptions"
         }
+        return filename.replace(sanitizerRegex, "_")
     }
 
     fun testOutputFile(filename: String): File {

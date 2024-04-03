@@ -112,6 +112,10 @@ internal class HitPathTracker(private val rootCoordinates: LayoutCoordinates) {
         return dispatchHit
     }
 
+    fun clearPreviouslyHitModifierNodeCache() {
+        root.clear()
+    }
+
     /**
      * Dispatches cancel events to all tracked [PointerInputFilter]s to notify them that
      * [PointerInputFilter.onPointerEvent] will not be called again until all pointers have been
@@ -120,7 +124,7 @@ internal class HitPathTracker(private val rootCoordinates: LayoutCoordinates) {
      */
     fun processCancel() {
         root.dispatchCancel()
-        root.clear()
+        clearPreviouslyHitModifierNodeCache()
     }
 
     /**
@@ -276,7 +280,6 @@ internal class Node(val modifierNode: Modifier.Node) : NodeParent() {
     private var isIn = true
     private var hasExited = true
 
-    val vec = mutableVectorOf<Long>()
     override fun dispatchMainEventPass(
         changes: LongSparseArray<PointerInputChange>,
         parentCoordinates: LayoutCoordinates,
@@ -380,30 +383,35 @@ internal class Node(val modifierNode: Modifier.Node) : NodeParent() {
             val change = changes.valueAt(j)
 
             if (pointerIds.contains(keyValue)) {
-                // And translate their position relative to the parent coordinates, to give us a
-                // change local to the PointerInputFilter's coordinates
-                val historical = ArrayList<HistoricalChange>(change.historical.size)
-                change.historical.fastForEach {
-                    historical.add(
-                        HistoricalChange(
-                            it.uptimeMillis,
-                            coordinates!!.localPositionOf(parentCoordinates, it.position),
-                            it.originalEventPosition
-                        )
-                    )
-                }
+                val prevPosition = change.previousPosition
+                val currentPosition = change.position
 
-                relevantChanges.put(keyValue, change.copy(
-                    previousPosition = coordinates!!.localPositionOf(
-                        parentCoordinates,
-                        change.previousPosition
-                    ),
-                    currentPosition = coordinates!!.localPositionOf(
-                        parentCoordinates,
-                        change.position
-                    ),
-                    historical = historical
-                ))
+                if (prevPosition.isValid() && currentPosition.isValid()) {
+                    // And translate their position relative to the parent coordinates, to give us a
+                    // change local to the PointerInputFilter's coordinates
+                    val historical = ArrayList<HistoricalChange>(change.historical.size)
+                    change.historical.fastForEach {
+                        historical.add(
+                            HistoricalChange(
+                                it.uptimeMillis,
+                                coordinates!!.localPositionOf(parentCoordinates, it.position),
+                                it.originalEventPosition
+                            )
+                        )
+                    }
+
+                    relevantChanges.put(keyValue, change.copy(
+                        previousPosition = coordinates!!.localPositionOf(
+                            parentCoordinates,
+                            prevPosition
+                        ),
+                        currentPosition = coordinates!!.localPositionOf(
+                            parentCoordinates,
+                            currentPosition
+                        ),
+                        historical = historical
+                    ))
+                }
             }
         }
 
@@ -426,17 +434,19 @@ internal class Node(val modifierNode: Modifier.Node) : NodeParent() {
             changesList.add(relevantChanges.valueAt(i))
         }
         val event = PointerEvent(changesList, internalPointerEvent)
-        val enterExitChange = event.changes.fastFirstOrNull {
-            internalPointerEvent.issuesEnterExitEvent(it.id)
+
+        val activeHoverChange = event.changes.fastFirstOrNull {
+            internalPointerEvent.activeHoverEvent(it.id)
         }
-        if (enterExitChange != null) {
+
+        if (activeHoverChange != null) {
             if (!isInBounds) {
                 isIn = false
-            } else if (!isIn && (enterExitChange.pressed || enterExitChange.previousPressed)) {
+            } else if (!isIn && (activeHoverChange.pressed || activeHoverChange.previousPressed)) {
                 // We have to recalculate isIn because we didn't redo hit testing
                 val size = coordinates!!.size
                 @Suppress("DEPRECATION")
-                isIn = !enterExitChange.isOutOfBounds(size)
+                isIn = !activeHoverChange.isOutOfBounds(size)
             }
             if (isIn != wasIn &&
                 (
@@ -452,7 +462,7 @@ internal class Node(val modifierNode: Modifier.Node) : NodeParent() {
                 }
             } else if (event.type == PointerEventType.Enter && wasIn && !hasExited) {
                 event.type = PointerEventType.Move // We already knew that it was in.
-            } else if (event.type == PointerEventType.Exit && isIn && enterExitChange.pressed) {
+            } else if (event.type == PointerEventType.Exit && isIn && activeHoverChange.pressed) {
                 event.type = PointerEventType.Move // We are still in.
             }
         }
@@ -533,11 +543,17 @@ internal class Node(val modifierNode: Modifier.Node) : NodeParent() {
         wasIn = isIn
 
         event.changes.fastForEach { change ->
-            // If the pointer is released and doesn't support hover OR
-            // the pointer supports over and is released outside the area
-            val remove = !change.pressed &&
-                (!internalPointerEvent.issuesEnterExitEvent(change.id) || !isIn)
-            if (remove) {
+            // There are two scenarios where we need to remove the pointerIds:
+            //   1. Pointer is released AND event stream doesn't have an active hover.
+            //   2. Pointer is released AND is released outside the area.
+            val released = !change.pressed
+            val nonHoverEventStream = !internalPointerEvent.activeHoverEvent(change.id)
+            val outsideArea = !isIn
+
+            val removePointerId =
+                (released && nonHoverEventStream) || (released && outsideArea)
+
+            if (removePointerId) {
                 pointerIds.remove(change.id)
             }
         }

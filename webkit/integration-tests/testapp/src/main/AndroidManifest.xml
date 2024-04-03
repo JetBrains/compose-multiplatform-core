@@ -30,7 +30,9 @@
         android:usesCleartextTraffic="true"
         tools:ignore="UnusedAttribute">
         <!-- Top-level Activity -->
-        <activity android:name=".MainActivity">
+        <activity
+            android:name=".MainActivity"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -142,6 +144,15 @@
         <activity
             android:name=".ImageDragActivity"
             android:exported="false" />
+        <activity
+            android:name=".UserAgentMetadataActivity"
+            android:exported="true" />
+        <activity
+            android:name=".MultiProfileTestActivity"
+            android:exported="false" />
+        <activity
+            android:name=".MuteAudioActivity"
+            android:exported="true" />
 
         <provider
             android:authorities="com.example.androidx.webkit.DropDataProvider"

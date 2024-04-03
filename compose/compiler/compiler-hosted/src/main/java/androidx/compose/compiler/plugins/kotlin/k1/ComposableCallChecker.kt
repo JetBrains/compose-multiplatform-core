@@ -177,8 +177,11 @@ open class ComposableCallChecker :
                         return
                     }
 
-                    // TODO(lmr): in future, we should check for CALLS_IN_PLACE contract
-                    val isInlined = isInlinedArgument(
+                    val isResolvedInline = bindingContext.get(
+                        BindingContext.NEW_INFERENCE_IS_LAMBDA_FOR_OVERLOAD_RESOLUTION_INLINE,
+                        node.functionLiteral
+                    ) == true
+                    val isInlined = isResolvedInline || isInlinedArgument(
                         node.functionLiteral,
                         bindingContext,
                         true
