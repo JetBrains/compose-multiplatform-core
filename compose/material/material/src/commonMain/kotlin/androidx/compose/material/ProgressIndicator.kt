@@ -49,6 +49,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.offset
+import androidx.compose.ui.util.fastCoerceIn
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.max
@@ -108,7 +109,7 @@ fun LinearProgressIndicator(
     backgroundColor: Color = color.copy(alpha = IndicatorBackgroundOpacity),
     strokeCap: StrokeCap = StrokeCap.Butt,
 ) {
-    val coercedProgress = progress.coerceIn(0f, 1f)
+    val coercedProgress = progress.fastCoerceIn(0f, 1f)
     Canvas(
         modifier
             .increaseSemanticsBounds()
@@ -151,7 +152,7 @@ fun LinearProgressIndicator(
         infiniteRepeatable(
             animation = keyframes {
                 durationMillis = LinearAnimationDuration
-                0f at FirstLineHeadDelay with FirstLineHeadEasing
+                0f at FirstLineHeadDelay using FirstLineHeadEasing
                 1f at FirstLineHeadDuration + FirstLineHeadDelay
             }
         )
@@ -162,7 +163,7 @@ fun LinearProgressIndicator(
         infiniteRepeatable(
             animation = keyframes {
                 durationMillis = LinearAnimationDuration
-                0f at FirstLineTailDelay with FirstLineTailEasing
+                0f at FirstLineTailDelay using FirstLineTailEasing
                 1f at FirstLineTailDuration + FirstLineTailDelay
             }
         )
@@ -173,7 +174,7 @@ fun LinearProgressIndicator(
         infiniteRepeatable(
             animation = keyframes {
                 durationMillis = LinearAnimationDuration
-                0f at SecondLineHeadDelay with SecondLineHeadEasing
+                0f at SecondLineHeadDelay using SecondLineHeadEasing
                 1f at SecondLineHeadDuration + SecondLineHeadDelay
             }
         )
@@ -184,7 +185,7 @@ fun LinearProgressIndicator(
         infiniteRepeatable(
             animation = keyframes {
                 durationMillis = LinearAnimationDuration
-                0f at SecondLineTailDelay with SecondLineTailEasing
+                0f at SecondLineTailDelay using SecondLineTailEasing
                 1f at SecondLineTailDuration + SecondLineTailDelay
             }
         )
@@ -324,7 +325,7 @@ fun CircularProgressIndicator(
     backgroundColor: Color = Color.Transparent,
     strokeCap: StrokeCap = StrokeCap.Butt,
 ) {
-    val coercedProgress = progress.coerceIn(0f, 1f)
+    val coercedProgress = progress.fastCoerceIn(0f, 1f)
     val stroke = with(LocalDensity.current) {
         Stroke(width = strokeWidth.toPx(), cap = strokeCap)
     }
@@ -398,7 +399,7 @@ fun CircularProgressIndicator(
         infiniteRepeatable(
             animation = keyframes {
                 durationMillis = HeadAndTailAnimationDuration + HeadAndTailDelayDuration
-                0f at 0 with CircularEasing
+                0f at 0 using CircularEasing
                 JumpRotationAngle at HeadAndTailAnimationDuration
             }
         )
@@ -410,7 +411,7 @@ fun CircularProgressIndicator(
         infiniteRepeatable(
             animation = keyframes {
                 durationMillis = HeadAndTailAnimationDuration + HeadAndTailDelayDuration
-                0f at HeadAndTailDelayDuration with CircularEasing
+                0f at HeadAndTailDelayDuration using CircularEasing
                 JumpRotationAngle at durationMillis
             }
         )

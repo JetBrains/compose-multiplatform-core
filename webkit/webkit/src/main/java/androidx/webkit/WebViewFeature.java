@@ -102,6 +102,11 @@ public class WebViewFeature {
             ENTERPRISE_AUTHENTICATION_APP_LINK_POLICY,
             GET_COOKIE_INFO,
             REQUESTED_WITH_HEADER_ALLOW_LIST,
+            USER_AGENT_METADATA,
+            MULTI_PROFILE,
+            ATTRIBUTION_REGISTRATION_BEHAVIOR,
+            WEBVIEW_MEDIA_INTEGRITY_API_STATUS,
+            MUTE_AUDIO,
     })
     @Retention(RetentionPolicy.SOURCE)
     @Target({ElementType.PARAMETER, ElementType.METHOD})
@@ -532,6 +537,65 @@ public class WebViewFeature {
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public static final String REQUESTED_WITH_HEADER_ALLOW_LIST =
             "REQUESTED_WITH_HEADER_ALLOW_LIST";
+
+    /**
+     * Feature for {@link #isFeatureSupported(String)}.
+     * This feature covers
+     * {@link androidx.webkit.WebSettingsCompat#getUserAgentMetadata(WebSettings)}, and
+     * {@link androidx.webkit.WebSettingsCompat#setUserAgentMetadata(WebSettings, UserAgentMetadata)}.
+     */
+    public static final String USER_AGENT_METADATA = "USER_AGENT_METADATA";
+
+    /**
+     * Feature for {@link #isFeatureSupported(String)}.
+     * This feature covers
+     * {@link Profile#getName()}.
+     * {@link Profile#getWebStorage()}.
+     * {@link Profile#getCookieManager()}.
+     * {@link Profile#getGeolocationPermissions()}.
+     * {@link Profile#getServiceWorkerController()}.
+     * {@link ProfileStore#getProfile(String)}.
+     * {@link ProfileStore#getOrCreateProfile(String)}.
+     * {@link ProfileStore#getAllProfileNames()}.
+     * {@link ProfileStore#deleteProfile(String)}.
+     * {@link ProfileStore#getInstance()}.
+     */
+    public static final String MULTI_PROFILE = "MULTI_PROFILE";
+
+    /**
+     * Feature for {@link #isFeatureSupported(String)}.
+     * This feature covers
+     * {@link androidx.webkit.WebSettingsCompat#setAttributionRegistrationBehavior(WebSettings, int)}
+     * {@link androidx.webkit.WebSettingsCompat#getAttributionRegistrationBehavior(WebSettings)}
+     */
+    public static final String ATTRIBUTION_REGISTRATION_BEHAVIOR =
+            "ATTRIBUTION_REGISTRATION_BEHAVIOR";
+
+    /**
+     * Feature for {@link #isFeatureSupported(String)}.
+     * This feature covers
+     * {@link androidx.webkit.WebSettingsCompat#setWebViewMediaIntegrityApiStatus(WebSettings, WebViewMediaIntegrityApiStatusConfig)}
+     * {@link androidx.webkit.WebSettingsCompat#getWebViewMediaIntegrityApiStatus(WebSettings)}
+     */
+    public static final String WEBVIEW_MEDIA_INTEGRITY_API_STATUS =
+            "WEBVIEW_MEDIA_INTEGRITY_API_STATUS";
+
+    /**
+     * Feature for {@link #isFeatureSupported(String)}.
+     * This feature covers
+     * {@link androidx.webkit.WebViewCompat#isAudioMuted(WebView)}
+     * {@link androidx.webkit.WebViewCompat#setAudioMuted(WebView, boolean)}
+     */
+    public static final String MUTE_AUDIO = "MUTE_AUDIO";
+
+    /**
+     * Feature for {@link #isFeatureSupported(String)}
+     * This feature covers
+     * {@link androidx.webkit.WebSettingsCompat#setWebAuthenticationSupport(WebSettings, int)}
+     * {@link androidx.webkit.WebSettingsCompat#getWebAuthenticationSupport(WebSettings)}
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public static final String WEB_AUTHENTICATION = "WEB_AUTHENTICATION";
 
     /**
      * Return whether a feature is supported at run-time. On devices running Android version {@link

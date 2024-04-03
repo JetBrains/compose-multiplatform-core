@@ -14,21 +14,30 @@
  * limitations under the License.
  */
 
+/**
+ * This file was created using the `create_project.py` script located in the
+ * `<AndroidX root>/development/project-creator` directory.
+ *
+ * Please use that script when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
 import androidx.build.Publish
 
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
     id("kotlin-android")
+    alias(libs.plugins.kotlinSerialization)
 }
 
 dependencies {
-    api("androidx.fragment:fragment-ktx:1.6.0")
+    api("androidx.fragment:fragment-ktx:1.6.2")
     api(project(":navigation:navigation-runtime"))
     api("androidx.slidingpanelayout:slidingpanelayout:1.2.0")
     api(libs.kotlinStdlib)
+    implementation(libs.kotlinSerializationCore)
     androidTestImplementation(project(":navigation:navigation-testing"))
-    androidTestImplementation("androidx.fragment:fragment-testing:1.6.0")
+    androidTestImplementation("androidx.fragment:fragment-testing:1.6.2")
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.testCore)
     androidTestImplementation(libs.testRunner)
@@ -51,5 +60,8 @@ androidx {
 }
 
 android {
+    defaultConfig {
+        multiDexEnabled true
+    }
     namespace "androidx.navigation.fragment"
 }

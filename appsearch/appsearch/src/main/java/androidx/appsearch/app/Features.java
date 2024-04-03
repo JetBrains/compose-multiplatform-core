@@ -28,7 +28,7 @@ import androidx.annotation.RestrictTo;
  * Android API level, on that device.
  */
 
-// @exportToFramework:copyToPath(testing/testutils/src/android/app/appsearch/testutil/external/Features.java)
+// @exportToFramework:copyToPath(../../../cts/tests/appsearch/testutils/src/android/app/appsearch/testutil/external/Features.java)
 public interface Features {
 
     /**
@@ -182,4 +182,12 @@ public interface Features {
      * backend.
      */
     boolean isFeatureSupported(@NonNull String feature);
+
+    /**
+     * Returns the maximum amount of properties that can be indexed in a Document
+     * given the Android API level and AppSearch backend.
+     *
+     * <p>A property is defined as all values that are present at a particular path.
+     */
+    int getMaxIndexedProperties();
 }

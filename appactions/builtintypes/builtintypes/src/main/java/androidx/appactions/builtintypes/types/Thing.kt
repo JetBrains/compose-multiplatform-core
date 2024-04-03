@@ -15,7 +15,6 @@
  */
 package androidx.appactions.builtintypes.types
 
-import androidx.appactions.builtintypes.properties.DisambiguatingDescription
 import androidx.appactions.builtintypes.properties.Name
 import androidx.appsearch.`annotation`.Document
 import java.util.Objects
@@ -47,17 +46,6 @@ public interface Thing {
   @get:Document.Namespace
   public val namespace: String
     get() = ""
-
-  /**
-   * A sub property of description. A short description of the item used to disambiguate from other,
-   * similar items. Information from other properties (in particular, name) may be necessary for the
-   * description to be useful for disambiguation.
-   *
-   * See https://schema.org/disambiguatingDescription for more context.
-   */
-  @get:Document.DocumentProperty
-  public val disambiguatingDescription: DisambiguatingDescription?
-    get() = null
 
   /**
    * The identifier property represents any kind of identifier for any kind of Thing, such as ISBNs,
@@ -101,16 +89,6 @@ public interface Thing {
     @Suppress("DocumentExceptions")
     public fun setNamespace(namespace: String): Self = throw NotImplementedError()
 
-    /** Sets the `disambiguatingDescription` to [String]. */
-    public fun setDisambiguatingDescription(text: String): Self =
-      setDisambiguatingDescription(DisambiguatingDescription(text))
-
-    /** Sets the `disambiguatingDescription`. */
-    @Suppress("DocumentExceptions")
-    public fun setDisambiguatingDescription(
-      disambiguatingDescription: DisambiguatingDescription?
-    ): Self = throw NotImplementedError()
-
     /** Sets the `identifier`. */
     @Suppress("DocumentExceptions")
     public fun setIdentifier(text: String): Self = throw NotImplementedError()
@@ -135,8 +113,8 @@ public interface Thing {
  * )
  * class MyThing internal constructor(
  *   thing: Thing,
- *   val foo: String,
- *   val bars: List<Int>,
+ *   @Document.StringProperty val foo: String,
+ *   @Document.LongProperty val bars: List<Int>,
  * ) : AbstractThing<
  *   MyThing,
  *   MyThing.Builder
@@ -156,6 +134,7 @@ public interface Thing {
  *       .addBars(bars)
  *   }
  *
+ *   @Document.BuilderProducer
  *   class Builder :
  *     AbstractThing.Builder<
  *       Builder,
@@ -167,12 +146,13 @@ public interface Thing {
  */
 @Suppress("UNCHECKED_CAST")
 public abstract class AbstractThing<
-  Self : AbstractThing<Self, Builder>, Builder : AbstractThing.Builder<Builder, Self>>
+  Self : AbstractThing<Self, Builder>,
+  Builder : AbstractThing.Builder<Builder, Self>
+>
 internal constructor(
-  public final override val namespace: String,
-  public final override val disambiguatingDescription: DisambiguatingDescription?,
-  public final override val identifier: String,
-  public final override val name: Name?,
+  final override val namespace: String,
+  final override val identifier: String,
+  final override val name: Name?,
 ) : Thing {
   /**
    * Human readable name for the concrete [Self] class.
@@ -189,43 +169,35 @@ internal constructor(
   protected abstract val additionalProperties: Map<String, Any?>
 
   /** A copy-constructor that copies over properties from another [Thing] instance. */
-  public constructor(
-    thing: Thing
-  ) : this(thing.namespace, thing.disambiguatingDescription, thing.identifier, thing.name)
+  public constructor(thing: Thing) : this(thing.namespace, thing.identifier, thing.name)
 
   /** Returns a concrete [Builder] with the additional, non-[Thing] properties copied over. */
   protected abstract fun toBuilderWithAdditionalPropertiesOnly(): Builder
 
-  public final override fun toBuilder(): Builder =
+  final override fun toBuilder(): Builder =
     toBuilderWithAdditionalPropertiesOnly()
       .setNamespace(namespace)
-      .setDisambiguatingDescription(disambiguatingDescription)
       .setIdentifier(identifier)
       .setName(name)
 
-  public final override fun equals(other: Any?): Boolean {
+  final override fun equals(other: Any?): Boolean {
     if (this === other) return true
     if (other == null || this::class.java != other::class.java) return false
     other as Self
     if (namespace != other.namespace) return false
-    if (disambiguatingDescription != other.disambiguatingDescription) return false
     if (identifier != other.identifier) return false
     if (name != other.name) return false
     if (additionalProperties != other.additionalProperties) return false
     return true
   }
 
-  public final override fun hashCode(): Int =
-    Objects.hash(namespace, disambiguatingDescription, identifier, name, additionalProperties)
+  final override fun hashCode(): Int =
+    Objects.hash(namespace, identifier, name, additionalProperties)
 
-  public final override fun toString(): String {
+  final override fun toString(): String {
     val attributes = mutableMapOf<String, String>()
     if (namespace.isNotEmpty()) {
       attributes["namespace"] = namespace
-    }
-    if (disambiguatingDescription != null) {
-      attributes["disambiguatingDescription"] =
-        disambiguatingDescription.toString(includeWrapperName = false)
     }
     if (identifier.isNotEmpty()) {
       attributes["identifier"] = identifier
@@ -243,11 +215,13 @@ internal constructor(
    *
    * Allows for extension like:
    * ```kt
+   * @Document(...)
    * class MyThing :
    *   : AbstractThing<
    *     MyThing,
    *     MyThing.Builder>(...) {
    *
+   *   @Document.BuilderProducer
    *   class Builder
    *   : AbstractThing.Builder<
    *       Builder,
@@ -311,8 +285,6 @@ internal constructor(
 
     private var namespace: String = ""
 
-    private var disambiguatingDescription: DisambiguatingDescription? = null
-
     private var identifier: String = ""
 
     private var name: Name? = null
@@ -327,38 +299,29 @@ internal constructor(
      */
     @Suppress("BuilderSetStyle") protected abstract fun buildFromThing(thing: Thing): Built
 
-    public final override fun build(): Built =
-      buildFromThing(ThingImpl(namespace, disambiguatingDescription, identifier, name))
+    final override fun build(): Built = buildFromThing(ThingImpl(namespace, identifier, name))
 
-    public final override fun setNamespace(namespace: String): Self {
+    final override fun setNamespace(namespace: String): Self {
       this.namespace = namespace
       return this as Self
     }
 
-    public final override fun setDisambiguatingDescription(
-      disambiguatingDescription: DisambiguatingDescription?
-    ): Self {
-      this.disambiguatingDescription = disambiguatingDescription
-      return this as Self
-    }
-
-    public final override fun setIdentifier(text: String): Self {
+    final override fun setIdentifier(text: String): Self {
       this.identifier = text
       return this as Self
     }
 
-    public final override fun setName(name: Name?): Self {
+    final override fun setName(name: Name?): Self {
       this.name = name
       return this as Self
     }
 
     @Suppress("BuilderSetStyle")
-    public final override fun equals(other: Any?): Boolean {
+    final override fun equals(other: Any?): Boolean {
       if (this === other) return true
       if (other == null || this::class.java != other::class.java) return false
       other as Self
       if (namespace != other.namespace) return false
-      if (disambiguatingDescription != other.disambiguatingDescription) return false
       if (identifier != other.identifier) return false
       if (name != other.name) return false
       if (additionalProperties != other.additionalProperties) return false
@@ -366,18 +329,14 @@ internal constructor(
     }
 
     @Suppress("BuilderSetStyle")
-    public final override fun hashCode(): Int =
-      Objects.hash(namespace, disambiguatingDescription, identifier, name, additionalProperties)
+    final override fun hashCode(): Int =
+      Objects.hash(namespace, identifier, name, additionalProperties)
 
     @Suppress("BuilderSetStyle")
-    public final override fun toString(): String {
+    final override fun toString(): String {
       val attributes = mutableMapOf<String, String>()
       if (namespace.isNotEmpty()) {
         attributes["namespace"] = namespace
-      }
-      if (disambiguatingDescription != null) {
-        attributes["disambiguatingDescription"] =
-          disambiguatingDescription!!.toString(includeWrapperName = false)
       }
       if (identifier.isNotEmpty()) {
         attributes["identifier"] = identifier
@@ -402,10 +361,9 @@ private class ThingImpl : AbstractThing<ThingImpl, ThingImpl.Builder> {
 
   public constructor(
     namespace: String,
-    disambiguatingDescription: DisambiguatingDescription?,
     identifier: String,
     name: Name?,
-  ) : super(namespace, disambiguatingDescription, identifier, name)
+  ) : super(namespace, identifier, name)
 
   public constructor(thing: Thing) : super(thing)
 

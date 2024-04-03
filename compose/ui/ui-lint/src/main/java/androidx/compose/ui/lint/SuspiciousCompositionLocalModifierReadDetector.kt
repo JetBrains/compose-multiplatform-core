@@ -18,7 +18,6 @@ package androidx.compose.ui.lint
 
 import androidx.compose.lint.Names
 import androidx.compose.lint.Package
-import androidx.compose.lint.PackageName
 import androidx.compose.lint.isInPackageName
 import com.android.tools.lint.detector.api.Category
 import com.android.tools.lint.detector.api.Detector
@@ -31,10 +30,11 @@ import com.android.tools.lint.detector.api.SourceCodeScanner
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiMethod
 import java.util.EnumSet
+import org.jetbrains.uast.UBlockExpression
 import org.jetbrains.uast.UCallExpression
 import org.jetbrains.uast.UElement
+import org.jetbrains.uast.ULambdaExpression
 import org.jetbrains.uast.UMethod
-import org.jetbrains.uast.kotlin.KotlinUFunctionCallExpression
 
 @Suppress("UnstableApiUsage")
 class SuspiciousCompositionLocalModifierReadDetector : Detector(), SourceCodeScanner {
@@ -46,10 +46,11 @@ class SuspiciousCompositionLocalModifierReadDetector : Detector(), SourceCodeSca
 
     override fun visitMethodCall(context: JavaContext, node: UCallExpression, method: PsiMethod) {
         if (!method.isInPackageName(Names.Ui.Node.PackageName)) return
-        reportIfAnyParentIsNodeLifecycleCallback(context, node, node)
+        reportIfInNodeLifecycleCallback(context, node, node)
+        reportIfInLazyBlock(context, node, node)
     }
 
-    private tailrec fun reportIfAnyParentIsNodeLifecycleCallback(
+    private tailrec fun reportIfInNodeLifecycleCallback(
         context: JavaContext,
         node: UElement?,
         usage: UCallExpression
@@ -75,7 +76,21 @@ class SuspiciousCompositionLocalModifierReadDetector : Detector(), SourceCodeSca
                 }
             }
             return
-        } else if (node is KotlinUFunctionCallExpression && node.isLazyDelegate()) {
+        } else if (node is UBlockExpression && node.uastParent is ULambdaExpression) {
+            return
+        }
+
+        reportIfInNodeLifecycleCallback(context, node.uastParent, usage)
+    }
+
+    private tailrec fun reportIfInLazyBlock(
+        context: JavaContext,
+        node: UElement?,
+        usage: UCallExpression
+    ) {
+        if (node == null) {
+            return
+        } else if (node is UCallExpression && node.isLazyDelegate()) {
             report(context, usage) { localBeingRead ->
                 "Reading $localBeingRead lazily will only access the CompositionLocal's value " +
                     "once. To be notified of the latest value of the CompositionLocal, read " +
@@ -84,7 +99,7 @@ class SuspiciousCompositionLocalModifierReadDetector : Detector(), SourceCodeSca
             return
         }
 
-        reportIfAnyParentIsNodeLifecycleCallback(context, node.uastParent, usage)
+        reportIfInLazyBlock(context, node.uastParent, usage)
     }
 
     private inline fun report(
@@ -106,7 +121,7 @@ class SuspiciousCompositionLocalModifierReadDetector : Detector(), SourceCodeSca
         this?.implementsListTypes
             ?.any { it.canonicalText == ClConsumerModifierNode } == true
 
-    private fun KotlinUFunctionCallExpression.isLazyDelegate(): Boolean =
+    private fun UCallExpression.isLazyDelegate(): Boolean =
         resolve()?.run { isInPackageName(Package("kotlin")) && name == "lazy" } == true
 
     companion object {

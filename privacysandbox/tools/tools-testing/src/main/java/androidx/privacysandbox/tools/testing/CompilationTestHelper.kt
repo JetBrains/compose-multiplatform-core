@@ -50,6 +50,8 @@ object CompilationTestHelper {
                 classpath = extraClasspath,
                 symbolProcessorProviders = symbolProcessorProviders,
                 processorOptions = processorOptions,
+                // b/328813158 to remove targeting of Java 17
+                javacArguments = listOf("-source", "17", "-target", "17")
             )
         )
     }
@@ -116,10 +118,11 @@ class CompilationResultSubject(private val result: TestCompilationResult) {
         assertThat(getShortErrorMessages()).containsExactly(*errors)
     }
 
-    private fun getRawErrorMessages() =
-        (result.diagnostics[Diagnostic.Kind.ERROR] ?: emptyList()) +
+    private fun getRawErrorMessages(): List<DiagnosticMessage> {
+        return (result.diagnostics[Diagnostic.Kind.ERROR] ?: emptyList()) +
             (result.diagnostics[Diagnostic.Kind.WARNING] ?: emptyList()) +
             (result.diagnostics[Diagnostic.Kind.MANDATORY_WARNING] ?: emptyList())
+    }
 
     private fun getShortErrorMessages() =
         result.diagnostics[Diagnostic.Kind.ERROR]?.map(DiagnosticMessage::msg)

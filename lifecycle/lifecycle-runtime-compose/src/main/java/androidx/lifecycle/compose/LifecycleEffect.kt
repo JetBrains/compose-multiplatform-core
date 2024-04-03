@@ -23,7 +23,6 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
@@ -87,6 +86,7 @@ fun LifecycleEventEffect(
  * block and the ON_STOP effect will be within the
  * (onStopOrDispose clause)[LifecycleStartStopEffectScope.onStopOrDispose]:
  *
+ * ```
  * LifecycleStartEffect(lifecycleOwner) {
  *     // add ON_START effect here
  *
@@ -94,6 +94,7 @@ fun LifecycleEventEffect(
  *         // add clean up for work kicked off in the ON_START effect here
  *     }
  * }
+ * ```
  *
  * @sample androidx.lifecycle.compose.samples.lifecycleStartEffectSample
  *
@@ -133,7 +134,7 @@ fun LifecycleStartEffect(
     lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current,
     effects: LifecycleStartStopEffectScope.() -> LifecycleStopOrDisposeEffectResult
 ) {
-    val lifecycleStartStopEffectScope = remember(key1) {
+    val lifecycleStartStopEffectScope = remember(key1, lifecycleOwner) {
         LifecycleStartStopEffectScope(lifecycleOwner.lifecycle)
     }
     LifecycleStartEffectImpl(lifecycleOwner, lifecycleStartStopEffectScope, effects)
@@ -146,6 +147,7 @@ fun LifecycleStartEffect(
  * [effects] block and the ON_STOP effect will be within the
  * (onStopOrDispose clause)[LifecycleStartStopEffectScope.onStopOrDispose]:
  *
+ * ```
  * LifecycleStartEffect(lifecycleOwner) {
  *     // add ON_START effect here
  *
@@ -153,6 +155,7 @@ fun LifecycleStartEffect(
  *         // add clean up for work kicked off in the ON_START effect here
  *     }
  * }
+ * ```
  *
  * @sample androidx.lifecycle.compose.samples.lifecycleStartEffectSample
  *
@@ -194,7 +197,7 @@ fun LifecycleStartEffect(
     lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current,
     effects: LifecycleStartStopEffectScope.() -> LifecycleStopOrDisposeEffectResult
 ) {
-    val lifecycleStartStopEffectScope = remember(key1, key2) {
+    val lifecycleStartStopEffectScope = remember(key1, key2, lifecycleOwner) {
         LifecycleStartStopEffectScope(lifecycleOwner.lifecycle)
     }
     LifecycleStartEffectImpl(lifecycleOwner, lifecycleStartStopEffectScope, effects)
@@ -207,6 +210,7 @@ fun LifecycleStartEffect(
  * of the [effects] block and the ON_STOP effect will be within the
  * (onStopOrDispose clause)[LifecycleStartStopEffectScope.onStopOrDispose]:
  *
+ * ```
  * LifecycleStartEffect(lifecycleOwner) {
  *     // add ON_START effect here
  *
@@ -214,6 +218,7 @@ fun LifecycleStartEffect(
  *         // add clean up for work kicked off in the ON_START effect here
  *     }
  * }
+ * ```
  *
  * @sample androidx.lifecycle.compose.samples.lifecycleStartEffectSample
  *
@@ -257,7 +262,7 @@ fun LifecycleStartEffect(
     lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current,
     effects: LifecycleStartStopEffectScope.() -> LifecycleStopOrDisposeEffectResult
 ) {
-    val lifecycleStartStopEffectScope = remember(key1, key2, key3) {
+    val lifecycleStartStopEffectScope = remember(key1, key2, key3, lifecycleOwner) {
         LifecycleStartStopEffectScope(lifecycleOwner.lifecycle)
     }
     LifecycleStartEffectImpl(lifecycleOwner, lifecycleStartStopEffectScope, effects)
@@ -270,6 +275,7 @@ fun LifecycleStartEffect(
  * block and the ON_STOP effect will be within the
  * (onStopOrDispose clause)[LifecycleStartStopEffectScope.onStopOrDispose]:
  *
+ * ```
  * LifecycleStartEffect(lifecycleOwner) {
  *     // add ON_START effect here
  *
@@ -277,6 +283,7 @@ fun LifecycleStartEffect(
  *         // add clean up for work kicked off in the ON_START effect here
  *     }
  * }
+ * ```
  *
  * @sample androidx.lifecycle.compose.samples.lifecycleStartEffectSample
  *
@@ -316,11 +323,32 @@ fun LifecycleStartEffect(
     lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current,
     effects: LifecycleStartStopEffectScope.() -> LifecycleStopOrDisposeEffectResult
 ) {
-    val lifecycleStartStopEffectScope = remember(*keys) {
+    val lifecycleStartStopEffectScope = remember(*keys, lifecycleOwner) {
         LifecycleStartStopEffectScope(lifecycleOwner.lifecycle)
     }
     LifecycleStartEffectImpl(lifecycleOwner, lifecycleStartStopEffectScope, effects)
 }
+
+private const val LifecycleStartEffectNoParamError =
+    "LifecycleStartEffect must provide one or more 'key' parameters that define the identity of " +
+        "the LifecycleStartEffect and determine when its previous effect coroutine should be " +
+        "cancelled and a new effect launched for the new key."
+
+/**
+ * It is an error to call [LifecycleStartEffect] without at least one `key` parameter.
+ *
+ * This deprecated-error function shadows the varargs overload so that the varargs version is not
+ * used without key parameters.
+ *
+ * @see LifecycleStartEffect
+ */
+@Deprecated(LifecycleStartEffectNoParamError, level = DeprecationLevel.ERROR)
+@Composable
+@Suppress("UNUSED_PARAMETER")
+fun LifecycleStartEffect(
+    lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current,
+    effects: LifecycleStartStopEffectScope.() -> LifecycleStopOrDisposeEffectResult
+): Unit = error(LifecycleStartEffectNoParamError)
 
 @Composable
 private fun LifecycleStartEffectImpl(
@@ -391,6 +419,7 @@ class LifecycleStartStopEffectScope(override val lifecycle: Lifecycle) : Lifecyc
  * block and the ON_PAUSE effect will be within the
  * (onPauseOrDispose clause)[LifecycleResumePauseEffectScope.onPauseOrDispose]:
  *
+ * ```
  * LifecycleResumeEffect(lifecycleOwner) {
  *     // add ON_RESUME effect here
  *
@@ -398,6 +427,7 @@ class LifecycleStartStopEffectScope(override val lifecycle: Lifecycle) : Lifecyc
  *         // add clean up for work kicked off in the ON_RESUME effect here
  *     }
  * }
+ * ```
  *
  * @sample androidx.lifecycle.compose.samples.lifecycleResumeEffectSample
  *
@@ -437,7 +467,7 @@ fun LifecycleResumeEffect(
     lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current,
     effects: LifecycleResumePauseEffectScope.() -> LifecyclePauseOrDisposeEffectResult
 ) {
-    val lifecycleResumePauseEffectScope = remember(key1) {
+    val lifecycleResumePauseEffectScope = remember(key1, lifecycleOwner) {
         LifecycleResumePauseEffectScope(lifecycleOwner.lifecycle)
     }
     LifecycleResumeEffectImpl(lifecycleOwner, lifecycleResumePauseEffectScope, effects)
@@ -450,6 +480,7 @@ fun LifecycleResumeEffect(
  * [effects] block and the ON_PAUSE effect will be within the
  * (onPauseOrDispose clause)[LifecycleResumePauseEffectScope.onPauseOrDispose]:
  *
+ * ```
  * LifecycleResumeEffect(lifecycleOwner) {
  *     // add ON_RESUME effect here
  *
@@ -457,6 +488,7 @@ fun LifecycleResumeEffect(
  *         // add clean up for work kicked off in the ON_RESUME effect here
  *     }
  * }
+ * ```
  *
  * @sample androidx.lifecycle.compose.samples.lifecycleResumeEffectSample
  *
@@ -498,7 +530,7 @@ fun LifecycleResumeEffect(
     lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current,
     effects: LifecycleResumePauseEffectScope.() -> LifecyclePauseOrDisposeEffectResult
 ) {
-    val lifecycleResumePauseEffectScope = remember(key1, key2) {
+    val lifecycleResumePauseEffectScope = remember(key1, key2, lifecycleOwner) {
         LifecycleResumePauseEffectScope(lifecycleOwner.lifecycle)
     }
     LifecycleResumeEffectImpl(lifecycleOwner, lifecycleResumePauseEffectScope, effects)
@@ -511,6 +543,7 @@ fun LifecycleResumeEffect(
  * of the [effects] block and the ON_PAUSE effect will be within the
  * (onPauseOrDispose clause)[LifecycleResumePauseEffectScope.onPauseOrDispose]:
  *
+ * ```
  * LifecycleResumeEffect(lifecycleOwner) {
  *     // add ON_RESUME effect here
  *
@@ -518,6 +551,7 @@ fun LifecycleResumeEffect(
  *         // add clean up for work kicked off in the ON_RESUME effect here
  *     }
  * }
+ * ```
  *
  * @sample androidx.lifecycle.compose.samples.lifecycleResumeEffectSample
  *
@@ -561,7 +595,7 @@ fun LifecycleResumeEffect(
     lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current,
     effects: LifecycleResumePauseEffectScope.() -> LifecyclePauseOrDisposeEffectResult
 ) {
-    val lifecycleResumePauseEffectScope = remember(key1, key2, key3) {
+    val lifecycleResumePauseEffectScope = remember(key1, key2, key3, lifecycleOwner) {
         LifecycleResumePauseEffectScope(lifecycleOwner.lifecycle)
     }
     LifecycleResumeEffectImpl(lifecycleOwner, lifecycleResumePauseEffectScope, effects)
@@ -574,6 +608,7 @@ fun LifecycleResumeEffect(
  * block and the ON_PAUSE effect will be within the
  * (onPauseOrDispose clause)[LifecycleResumePauseEffectScope.onPauseOrDispose]:
  *
+ * ```
  * LifecycleResumeEffect(lifecycleOwner) {
  *     // add ON_RESUME effect here
  *
@@ -581,6 +616,7 @@ fun LifecycleResumeEffect(
  *         // add clean up for work kicked off in the ON_RESUME effect here
  *     }
  * }
+ * ```
  *
  * @sample androidx.lifecycle.compose.samples.lifecycleResumeEffectSample
  *
@@ -620,11 +656,32 @@ fun LifecycleResumeEffect(
     lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current,
     effects: LifecycleResumePauseEffectScope.() -> LifecyclePauseOrDisposeEffectResult
 ) {
-    val lifecycleResumePauseEffectScope = remember(*keys) {
+    val lifecycleResumePauseEffectScope = remember(*keys, lifecycleOwner) {
         LifecycleResumePauseEffectScope(lifecycleOwner.lifecycle)
     }
     LifecycleResumeEffectImpl(lifecycleOwner, lifecycleResumePauseEffectScope, effects)
 }
+
+private const val LifecycleResumeEffectNoParamError =
+    "LifecycleResumeEffect must provide one or more 'key' parameters that define the identity of " +
+        "the LifecycleResumeEffect and determine when its previous effect coroutine should be " +
+        "cancelled and a new effect launched for the new key."
+
+/**
+ * It is an error to call [LifecycleStartEffect] without at least one `key` parameter.
+ *
+ * This deprecated-error function shadows the varargs overload so that the varargs version is not
+ * used without key parameters.
+ *
+ * @see LifecycleResumeEffect
+ */
+@Deprecated(LifecycleResumeEffectNoParamError, level = DeprecationLevel.ERROR)
+@Composable
+@Suppress("UNUSED_PARAMETER")
+fun LifecycleResumeEffect(
+    lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current,
+    effects: LifecycleResumePauseEffectScope.() -> LifecyclePauseOrDisposeEffectResult
+): Unit = error(LifecycleResumeEffectNoParamError)
 
 @Composable
 private fun LifecycleResumeEffectImpl(

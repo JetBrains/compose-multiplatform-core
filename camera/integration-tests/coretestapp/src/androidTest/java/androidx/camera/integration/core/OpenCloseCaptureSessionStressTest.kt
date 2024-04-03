@@ -38,6 +38,7 @@ import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.LabTestRule
 import androidx.camera.testing.impl.StressTestRule
 import androidx.camera.testing.impl.SurfaceTextureProvider
+import androidx.camera.testing.impl.WakelockEmptyActivityRule
 import androidx.camera.testing.impl.fakes.FakeLifecycleOwner
 import androidx.camera.video.Recorder
 import androidx.camera.video.VideoCapture
@@ -84,6 +85,9 @@ class OpenCloseCaptureSessionStressTest(
     @get:Rule
     val repeatRule = RepeatRule()
 
+    @get:Rule
+    val wakelockEmptyActivityRule = WakelockEmptyActivityRule()
+
     private val context = ApplicationProvider.getApplicationContext<Context>()
 
     private lateinit var cameraProvider: ProcessCameraProvider
@@ -124,7 +128,7 @@ class OpenCloseCaptureSessionStressTest(
     fun cleanUp(): Unit = runBlocking {
         if (::cameraProvider.isInitialized) {
             withContext(Dispatchers.Main) {
-                cameraProvider.shutdown()[10000, TimeUnit.MILLISECONDS]
+                cameraProvider.shutdownAsync()[10000, TimeUnit.MILLISECONDS]
             }
         }
     }
@@ -168,16 +172,7 @@ class OpenCloseCaptureSessionStressTest(
     fun openCloseCaptureSessionStressTest_withPreviewVideoCaptureImageCapture(): Unit =
         runBlocking {
             val videoCapture = VideoCapture.withOutput(Recorder.Builder().build())
-            // TODO(b/297311194): allow stream sharing once processing pipeline supports
-            //  Camera2Interop
-            assumeTrue(
-                camera.isUseCasesCombinationSupported(
-                    false,
-                    preview,
-                    videoCapture,
-                    imageCapture
-                )
-            )
+            assumeTrue(camera.isUseCasesCombinationSupported(preview, videoCapture, imageCapture))
             bindUseCase_unbindAll_toCheckCameraSession_repeatedly(
                 preview,
                 videoCapture = videoCapture,
@@ -192,16 +187,7 @@ class OpenCloseCaptureSessionStressTest(
         runBlocking {
             val videoCapture = VideoCapture.withOutput(Recorder.Builder().build())
             val imageAnalysis = ImageAnalysis.Builder().build()
-            // TODO(b/297311194): allow stream sharing once processing pipeline supports
-            //  Camera2Interop
-            assumeTrue(
-                camera.isUseCasesCombinationSupported(
-                    false,
-                    preview,
-                    videoCapture,
-                    imageAnalysis
-                )
-            )
+            assumeTrue(camera.isUseCasesCombinationSupported(preview, videoCapture, imageCapture))
             bindUseCase_unbindAll_toCheckCameraSession_repeatedly(
                 preview,
                 videoCapture = videoCapture,

@@ -33,7 +33,7 @@ import com.squareup.kotlinpoet.javapoet.toKClassName
  */
 internal class KspFileMemberContainer(
     internal val env: KspProcessingEnv,
-    private val ksFile: KSFile
+    internal val ksFile: KSFile
 ) : KspMemberContainer,
     XAnnotated by KspAnnotated.create(
         env = env,
@@ -103,4 +103,8 @@ internal class KspFileMemberContainer(
             }?.value?.toString() ?: fileName.replace(".kt", "Kt")
         }
     }
+
+    override fun isFromJava(): Boolean = false
+
+    override fun isFromKotlin(): Boolean = true
 }

@@ -191,6 +191,8 @@ class ComposeViewAdapterTest {
                     ...|LazyColumnPreview.kt:49
                     ...|LazyColumnPreview.kt:50
                     ....|LazyColumnPreview.kt:53
+                    ....|LazyColumnPreview.kt:53
+                    ....|LazyColumnPreview.kt:53
                     .....|LazyColumnPreview.kt:54
                     ....|LazyColumnPreview.kt:53
                     .....|LazyColumnPreview.kt:54
@@ -443,6 +445,34 @@ class ComposeViewAdapterTest {
                 clock.infiniteTransitionClocks.values.map { it.animation.label })
             assertEquals(0, clock.animatedVisibilityClocks.size)
         }
+    }
+
+    @Test
+    fun animationIsFoundWithoutClock() {
+        findAnimationWithoutClock("AllAnimations")
+    }
+
+    @Test
+    fun materialAnimationIsFoundWithoutClock() {
+        findAnimationWithoutClock("MaterialPreview")
+    }
+
+    private fun findAnimationWithoutClock(preview: String) {
+        activityTestRule.runOnUiThread {
+            composeViewAdapter.init(
+                "androidx.compose.ui.tooling.TestAnimationPreviewKt",
+                preview
+            )
+            assertFalse(composeViewAdapter.hasAnimations())
+        }
+
+        waitFor(5, TimeUnit.SECONDS) {
+            // Handle the case where onLayout was called too soon. Calling requestLayout will
+            // make sure onLayout will be called again.
+            composeViewAdapter.requestLayout()
+            composeViewAdapter.hasAnimations()
+        }
+        assertTrue(composeViewAdapter.hasAnimations())
     }
 
     @Test

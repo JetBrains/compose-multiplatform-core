@@ -21,13 +21,11 @@ import androidx.arch.core.executor.testing.CountingTaskExecutorRule
 import androidx.kruth.assertThat
 import androidx.paging.PagingConfig
 import androidx.paging.PagingSource
-import androidx.paging.PagingSource.LoadParams
 import androidx.paging.PagingSource.LoadResult
 import androidx.paging.testing.TestPager
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.RoomSQLiteQuery
-import androidx.room.awaitPendingRefresh
 import androidx.room.util.getColumnIndexOrThrow
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -36,7 +34,6 @@ import androidx.testutils.FilteringExecutor
 import androidx.testutils.TestExecutor
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
-import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import kotlinx.coroutines.Dispatchers
@@ -315,6 +312,21 @@ class LimitOffsetPagingSourceTest {
     }
 
     @Test
+    fun load_invalidQuery() = runPagingSourceTest(
+        LimitOffsetPagingSourceImpl(
+            db = database,
+            queryString = "SELECT * FROM $tableName ORDER BY",
+        )
+    ) { pager, _ ->
+        dao.addAllItems(ITEMS_LIST)
+        val result = pager.refresh()
+
+        assertThat(result).isInstanceOf<LoadResult.Error<Int, Int>>()
+        val throwable = (result as LoadResult.Error).throwable
+        assertThat(throwable).isNotNull()
+    }
+
+    @Test
     fun invalidInitialKey_dbEmpty_returnsEmpty() = runPagingSourceTest { pager, _ ->
         assertThat(
             (pager.refresh(initialKey = 101) as LoadResult.Page).data
@@ -337,12 +349,12 @@ class LimitOffsetPagingSourceTest {
     @Test
     fun invalidInitialKey_negativeKey() = runPagingSourceTest { pager, _ ->
         dao.addAllItems(ITEMS_LIST)
-        // should throw error when initial key is negative
-        val expectedException = assertFailsWith<IllegalArgumentException> {
-            pager.refresh(initialKey = -1)
-        }
+        // should return error when initial key is negative
+        val result = pager.refresh(initialKey = -1)
+        assertThat(result).isInstanceOf<LoadResult.Error<Int, Int>>()
+        val message = (result as LoadResult.Error).throwable.message
         // default message from Paging 3 for negative initial key
-        assertThat(expectedException.message).isEqualTo(
+        assertThat(message).isEqualTo(
             "itemsBefore cannot be negative"
         )
     }
@@ -746,15 +758,15 @@ class LimitOffsetPagingSourceTestWithFilteringExecutor {
         )
 
         // blocks invalidation notification from Room
-        queryExecutor.filterFunction = { runnable ->
-            runnable !== db.invalidationTracker.refreshRunnable
+        queryExecutor.filterFunction = {
+            // TODO(b/): Avoid relying on function name, very brittle.
+            !it.toString().contains("refreshInvalidationAsync")
         }
 
         // now write to the database
         dao.deleteTestItem(ITEMS_LIST[30])
 
         // make sure room requests a refresh
-        db.invalidationTracker.awaitPendingRefresh()
         // and that this is blocked to simulate delayed notification from room
         queryExecutor.awaitDeferredSizeAtLeast(1)
 
@@ -777,15 +789,14 @@ class LimitOffsetPagingSourceTestWithFilteringExecutor {
         )
 
         // blocks invalidation notification from Room
-        queryExecutor.filterFunction = { runnable ->
-            runnable !== db.invalidationTracker.refreshRunnable
+        queryExecutor.filterFunction = {
+            !it.toString().contains("refreshInvalidationAsync")
         }
 
         // now write to the database
         dao.deleteTestItem(ITEMS_LIST[30])
 
         // make sure room requests a refresh
-        db.invalidationTracker.awaitPendingRefresh()
         // and that this is blocked to simulate delayed notification from room
         queryExecutor.awaitDeferredSizeAtLeast(1)
 

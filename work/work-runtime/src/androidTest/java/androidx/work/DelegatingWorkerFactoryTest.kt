@@ -25,6 +25,7 @@ import androidx.work.impl.utils.taskexecutor.WorkManagerTaskExecutor
 import androidx.work.worker.FailureWorker
 import androidx.work.worker.TestWorker
 import java.util.UUID
+import kotlinx.coroutines.Dispatchers
 import org.hamcrest.CoreMatchers.instanceOf
 import org.hamcrest.CoreMatchers.notNullValue
 import org.hamcrest.MatcherAssert.assertThat
@@ -98,6 +99,7 @@ class DelegatingWorkerFactoryTest : DatabaseTest() {
         1,
         0,
         SynchronousExecutor(),
+        Dispatchers.Default,
         WorkManagerTaskExecutor(SynchronousExecutor()),
         factory,
         progressUpdater,
@@ -107,9 +109,9 @@ class DelegatingWorkerFactoryTest : DatabaseTest() {
 
 class NoOpFactory : WorkerFactory() {
     override fun createWorker(
-        context: Context,
-        workerClass: String,
-        parameters: WorkerParameters
+        appContext: Context,
+        workerClassName: String,
+        workerParameters: WorkerParameters
     ): ListenableWorker? {
         return null
     }
@@ -117,10 +119,10 @@ class NoOpFactory : WorkerFactory() {
 
 class FailedWorkerFactory : WorkerFactory() {
     override fun createWorker(
-        context: Context,
-        workerClass: String,
-        parameters: WorkerParameters
-    ): ListenableWorker? {
-        return FailureWorker(context, parameters)
+        appContext: Context,
+        workerClassName: String,
+        workerParameters: WorkerParameters
+    ): ListenableWorker {
+        return FailureWorker(appContext, workerParameters)
     }
 }

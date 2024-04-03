@@ -14,11 +14,19 @@
  * limitations under the License.
  */
 
+/**
+ * This file was created using the `create_project.py` script located in the
+ * `<AndroidX root>/development/project-creator` directory.
+ *
+ * Please use that script when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
 import androidx.build.BuildServerConfigurationKt
 
 plugins {
     id("java-library")
     id("com.google.protobuf")
+    id("AndroidXPlugin")
 }
 
 dependencies {
@@ -41,6 +49,15 @@ protobuf {
                     option "lite"
                 }
             }
+        }
+    }
+}
+
+afterEvaluate {
+    lint {
+        lintOptions {
+            // protobuf generates unannotated methods
+            disable("UnknownNullness")
         }
     }
 }

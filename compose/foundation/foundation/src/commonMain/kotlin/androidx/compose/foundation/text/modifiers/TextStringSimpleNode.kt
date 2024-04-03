@@ -21,9 +21,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorProducer
 import androidx.compose.ui.graphics.Shadow
@@ -50,10 +47,10 @@ import androidx.compose.ui.semantics.SemanticsPropertyReceiver
 import androidx.compose.ui.semantics.clearTextSubstitution
 import androidx.compose.ui.semantics.getTextLayoutResult
 import androidx.compose.ui.semantics.isShowingTextSubstitution
-import androidx.compose.ui.semantics.originalText
 import androidx.compose.ui.semantics.setTextSubstitution
 import androidx.compose.ui.semantics.showTextSubstitution
 import androidx.compose.ui.semantics.text
+import androidx.compose.ui.semantics.textSubstitution
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextStyle
@@ -62,7 +59,7 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
-import kotlin.math.roundToInt
+import androidx.compose.ui.util.fastRoundToInt
 
 /**
  * Node that implements Text for [String].
@@ -183,12 +180,7 @@ internal class TextStringSimpleNode(
         textChanged: Boolean,
         layoutChanged: Boolean
     ) {
-        if (textChanged || (drawChanged && semanticsTextLayoutResult != null)) {
-            if (isAttached) {
-                invalidateSemantics()
-            }
-        }
-
+        // bring caches up to date even if the node is detached in case it is used again later
         if (textChanged || layoutChanged) {
             layoutCache.update(
                 text = text,
@@ -199,9 +191,18 @@ internal class TextStringSimpleNode(
                 maxLines = maxLines,
                 minLines = minLines
             )
-            if (isAttached) {
-                invalidateMeasurement()
-            }
+        }
+
+        if (!isAttached) {
+            // no-up for !isAttached. The node will invalidate when attaching again.
+            return
+        }
+        if (textChanged || (drawChanged && semanticsTextLayoutResult != null)) {
+            invalidateSemantics()
+        }
+
+        if (textChanged || layoutChanged) {
+            invalidateMeasurement()
             invalidateDraw()
         }
         if (drawChanged) {
@@ -216,7 +217,7 @@ internal class TextStringSimpleNode(
         var substitution: String,
         var isShowingSubstitution: Boolean = false,
         var layoutCache: ParagraphLayoutCache? = null,
-        // TODO(klikli): add animation
+        // TODO(b/283944749): add animation
     )
 
     private var textSubstitution: TextSubstitutionValue? by mutableStateOf(null)
@@ -275,30 +276,26 @@ internal class TextStringSimpleNode(
             semanticsTextLayoutResult = localSemanticsTextLayoutResult
         }
 
-        val currentTextSubstitution = textSubstitution
-        if (currentTextSubstitution == null) {
-            text = AnnotatedString(this@TextStringSimpleNode.text)
-        } else {
+        text = AnnotatedString(this@TextStringSimpleNode.text)
+        val currentTextSubstitution = this@TextStringSimpleNode.textSubstitution
+        if (currentTextSubstitution != null) {
             isShowingTextSubstitution = currentTextSubstitution.isShowingSubstitution
-            if (currentTextSubstitution.isShowingSubstitution) {
-                text = AnnotatedString(currentTextSubstitution.substitution)
-                originalText = AnnotatedString(currentTextSubstitution.original)
-            } else {
-                text = AnnotatedString(currentTextSubstitution.original)
-            }
+            textSubstitution = AnnotatedString(currentTextSubstitution.substitution)
         }
 
         setTextSubstitution { updatedText ->
             setSubstitution(updatedText.text)
+            // TODO: add test to cover the immediate semantics invalidation
+            invalidateSemantics()
 
             true
         }
         showTextSubstitution {
-            if (textSubstitution == null) {
+            if (this@TextStringSimpleNode.textSubstitution == null) {
                 return@showTextSubstitution false
             }
 
-            textSubstitution?.isShowingSubstitution = it
+            this@TextStringSimpleNode.textSubstitution?.isShowingSubstitution = it
 
             invalidateSemantics()
             invalidateMeasurement()
@@ -339,14 +336,14 @@ internal class TextStringSimpleNode(
             if (cache == null) {
                 cache = LinkedHashMap(2)
             }
-            cache[FirstBaseline] = paragraph.firstBaseline.roundToInt()
-            cache[LastBaseline] = paragraph.lastBaseline.roundToInt()
+            cache[FirstBaseline] = paragraph.firstBaseline.fastRoundToInt()
+            cache[LastBaseline] = paragraph.lastBaseline.fastRoundToInt()
             baselineCache = cache
         }
 
         // then allow children to measure _inside_ our final box, with the above placeholders
         val placeable = measurable.measure(
-            Constraints.fixed(
+            Constraints.fixedCoerceHeightAndWidthForBits(
                 layoutSize.width,
                 layoutSize.height
             )
@@ -357,7 +354,6 @@ internal class TextStringSimpleNode(
             layoutSize.height,
             baselineCache!!
         ) {
-            // this is basically a graphicsLayer
             placeable.place(0, 0)
         }
     }
@@ -388,15 +384,18 @@ internal class TextStringSimpleNode(
      * Optimized Text draw.
      */
     override fun ContentDrawScope.draw() {
+        if (!isAttached) {
+            // no-up for !isAttached. The node will invalidate when attaching again.
+            return
+        }
         val localParagraph = requireNotNull(layoutCache.paragraph) { "no paragraph" }
         drawIntoCanvas { canvas ->
             val willClip = layoutCache.didOverflow
             if (willClip) {
                 val width = layoutCache.layoutSize.width.toFloat()
                 val height = layoutCache.layoutSize.height.toFloat()
-                val bounds = Rect(Offset.Zero, Size(width, height))
                 canvas.save()
-                canvas.clipRect(bounds)
+                canvas.clipRect(left = 0f, top = 0f, right = width, bottom = height)
             }
             try {
                 val textDecoration = style.textDecoration ?: TextDecoration.None

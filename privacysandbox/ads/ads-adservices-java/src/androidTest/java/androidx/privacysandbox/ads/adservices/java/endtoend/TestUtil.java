@@ -44,10 +44,8 @@ public class TestUtil {
     }
     // Run shell command.
     private void runShellCommand(String command) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                mInstrumentation.getUiAutomation().executeShellCommand(command);
-            }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            mInstrumentation.getUiAutomation().executeShellCommand(command);
         }
     }
     public void overrideKillSwitches(boolean override) {
@@ -171,6 +169,11 @@ public class TestUtil {
 
     public void enableVerboseLogging() {
         runShellCommand("setprop log.tag.adservices VERBOSE");
+        runShellCommand("setprop log.tag.adservices.adid VERBOSE");
+        runShellCommand("setprop log.tag.adservices.appsetid VERBOSE");
+        runShellCommand("setprop log.tag.adservices.topics VERBOSE");
+        runShellCommand("setprop log.tag.adservices.fledge VERBOSE");
+        runShellCommand("setprop log.tag.adservices.measurement VERBOSE");
     }
 
     public void overrideFledgeSelectAdsKillSwitch(boolean override) {

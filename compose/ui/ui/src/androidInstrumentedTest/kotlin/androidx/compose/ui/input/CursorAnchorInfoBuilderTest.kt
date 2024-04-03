@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION")
+
 package androidx.compose.ui.input
 
 import android.graphics.Matrix
@@ -56,6 +58,7 @@ import kotlin.math.ceil
 import org.junit.Test
 import org.junit.runner.RunWith
 
+@Suppress("DEPRECATION")
 @SmallTest
 @RunWith(AndroidJUnit4::class)
 class CursorAnchorInfoBuilderTest {
@@ -229,6 +232,27 @@ class CursorAnchorInfoBuilderTest {
             .isEqualTo(cursorAnchorInfo2.insertionMarkerBaseline)
         assertThat(cursorAnchorInfo1.insertionMarkerFlags)
             .isEqualTo(cursorAnchorInfo2.insertionMarkerFlags)
+    }
+
+    @Test
+    fun testInsertionMarkerCursorClamped() {
+        val fontSize = 10.sp
+        val fontSizeInPx = with(defaultDensity) { fontSize.toPx() }
+
+        val textFieldValue = TextFieldValue("abc   ", selection = TextRange(5))
+        val width = 4 * fontSizeInPx
+        val textLayoutResult =
+            getTextLayoutResult(textFieldValue.text, fontSize = fontSize, width = width)
+
+        val cursorAnchorInfo =
+            CursorAnchorInfo.Builder().build(textFieldValue, textLayoutResult, matrix)
+
+        // The cursor position is clamped to the width of the layout.
+        assertThat(cursorAnchorInfo.insertionMarkerHorizontal).isEqualTo(width)
+        assertThat(cursorAnchorInfo.insertionMarkerTop).isEqualTo(0f)
+        assertThat(cursorAnchorInfo.insertionMarkerBottom).isEqualTo(fontSizeInPx)
+        assertThat(cursorAnchorInfo.insertionMarkerBaseline).isEqualTo(fontSizeInPx)
+        assertThat(cursorAnchorInfo.insertionMarkerFlags).isEqualTo(FLAG_HAS_VISIBLE_REGION)
     }
 
     @Test

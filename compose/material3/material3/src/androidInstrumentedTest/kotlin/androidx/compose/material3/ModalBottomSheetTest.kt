@@ -19,6 +19,7 @@ package androidx.compose.material3
 import android.content.ComponentCallbacks2
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
+import android.os.Build.VERSION.SDK_INT
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.compose.foundation.ScrollState
@@ -49,8 +50,8 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollDispatcher
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.SemanticsActions
@@ -68,8 +69,10 @@ import androidx.compose.ui.test.onParent
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.requestFocus
 import androidx.compose.ui.test.swipeDown
 import androidx.compose.ui.test.swipeUp
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.coerceAtMost
@@ -88,6 +91,8 @@ import junit.framework.TestCase.fail
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import org.junit.Assume
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -208,7 +213,7 @@ class ModalBottomSheetTest(private val edgeToEdgeWrapper: EdgeToEdgeWrapper) {
     }
 
     @Test
-    fun modalBottomSheet_wideScreen_sheetRespectsMaxWidthAndIsCentered() {
+    fun modalBottomSheet_wideScreen_fixedMaxWidth_sheetRespectsMaxWidthAndIsCentered() {
         rule.activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
         val latch = CountDownLatch(1)
 
@@ -242,7 +247,7 @@ class ModalBottomSheetTest(private val edgeToEdgeWrapper: EdgeToEdgeWrapper) {
                     )
                 }
             }
-
+            rule.waitForIdle()
             val simulatedRootWidth = rule.onNode(isPopup()).getUnclippedBoundsInRoot().width
             val maxSheetWidth = 640.dp
             val expectedSheetWidth = maxSheetWidth.coerceAtMost(simulatedRootWidth)
@@ -259,6 +264,58 @@ class ModalBottomSheetTest(private val edgeToEdgeWrapper: EdgeToEdgeWrapper) {
                     expectedLeft = expectedSheetLeft
                 )
                 .assertWidthIsEqualTo(expectedSheetWidth)
+        } catch (e: InterruptedException) {
+            fail("Unable to verify sheet width in landscape orientation")
+        } finally {
+            rule.activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+        }
+    }
+
+    // TODO(b/323385152): Flaky test.
+    @Test
+    @Ignore
+    fun modalBottomSheet_wideScreen_filledWidth_sheetFillsEntireWidth() {
+        rule.activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+        val latch = CountDownLatch(1)
+
+        rule.activity.application.registerComponentCallbacks(object : ComponentCallbacks2 {
+            override fun onConfigurationChanged(p0: Configuration) {
+                latch.countDown()
+            }
+
+            override fun onLowMemory() {
+                // NO-OP
+            }
+
+            override fun onTrimMemory(p0: Int) {
+                // NO-OP
+            }
+        })
+
+        try {
+            latch.await(3000, TimeUnit.MILLISECONDS)
+            var screenWidthPx by mutableStateOf(0)
+            rule.setContent {
+                val context = LocalContext.current
+                screenWidthPx = context.resources.displayMetrics.widthPixels
+                val windowInsets = if (edgeToEdgeWrapper.edgeToEdgeEnabled)
+                    WindowInsets(0) else BottomSheetDefaults.windowInsets
+                ModalBottomSheet(
+                    onDismissRequest = {},
+                    sheetMaxWidth = Dp.Unspecified,
+                    windowInsets = windowInsets
+                ) {
+                    Box(
+                        Modifier
+                            .testTag(sheetTag)
+                            .fillMaxHeight(0.4f)
+                    )
+                }
+            }
+            rule.waitForIdle()
+            val sheet = rule.onNodeWithTag(sheetTag).onParent().getUnclippedBoundsInRoot()
+            val sheetWidthPx = with(rule.density) { sheet.width.roundToPx() }
+            assertThat(sheetWidthPx).isEqualTo(screenWidthPx)
         } catch (e: InterruptedException) {
             fail("Unable to verify sheet width in landscape orientation")
         } finally {
@@ -320,11 +377,11 @@ class ModalBottomSheetTest(private val edgeToEdgeWrapper: EdgeToEdgeWrapper) {
                 )
             }
         }
-
+        rule.waitForIdle()
         screenHeightPx = with(rule.density) {
             rule.onNode(isPopup()).getUnclippedBoundsInRoot().height.toPx()
         }
-        assertThat(sheetState.currentValue).isEqualTo(SheetValue.PartiallyExpanded)
+        assertThat(sheetState.targetValue).isEqualTo(SheetValue.PartiallyExpanded)
         assertThat(sheetState.requireOffset())
             .isWithin(1f)
             .of(screenHeightPx / 2f)
@@ -448,6 +505,38 @@ class ModalBottomSheetTest(private val edgeToEdgeWrapper: EdgeToEdgeWrapper) {
         size = 30.dp
         rule.waitForIdle()
         assertThat(state.requireOffset()).isWithin(1f).of(expectedExpandedAnchor)
+    }
+
+    @Test
+    fun modalBottomSheet_sheetMaxWidth_sizeChanges_snapsToNewTarget() {
+        lateinit var sheetMaxWidth: MutableState<Dp>
+        var screenWidth by mutableStateOf(0.dp)
+        rule.setContent {
+            val windowInsets = if (edgeToEdgeWrapper.edgeToEdgeEnabled)
+                WindowInsets(0) else BottomSheetDefaults.windowInsets
+            sheetMaxWidth = remember { mutableStateOf(0.dp) }
+            val context = LocalContext.current
+            val density = LocalDensity.current
+            screenWidth = with(density) { context.resources.displayMetrics.widthPixels.toDp() }
+            ModalBottomSheet(
+                onDismissRequest = {},
+                sheetMaxWidth = sheetMaxWidth.value,
+                windowInsets = windowInsets
+            ) {
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .testTag(sheetTag)
+                )
+            }
+        }
+
+        for (dp in listOf(0.dp, 200.dp, 400.dp)) {
+            sheetMaxWidth.value = dp
+            val sheetWidth = rule.onNodeWithTag(sheetTag).getUnclippedBoundsInRoot().width
+            val expectedSheetWidth = minOf(sheetMaxWidth.value, screenWidth)
+            assertThat(sheetWidth).isEqualTo(expectedSheetWidth)
+        }
     }
 
     @Test
@@ -1186,50 +1275,54 @@ class ModalBottomSheetTest(private val edgeToEdgeWrapper: EdgeToEdgeWrapper) {
         assertThat(callCount).isEqualTo(expectedCallCount)
     }
 
+    @Ignore("b/307313354")
     @Test
-    fun modalBottomSheet_screenWidthConfigurationChange_matchWidthSize() {
-        var boxWidth = 0
-        var screenWidth by mutableStateOf(0)
-        lateinit var configuration: MutableState<Configuration>
-        val initialScreenWidth = 100
-        val finalScreenWidth = 500
+    fun modalBottomSheet_imePadding() {
+        // TODO: Include APIs < 30  when a solution is found for b/290893168.
+        // TODO: 33 > API > 29 does not use imePadding because of b/285746907, include when a better solution is found.
+        Assume.assumeTrue(SDK_INT >= 33)
 
+        val imeAnimationDuration = 1000000L
+        val textFieldTag = "sheetTextField"
+
+        lateinit var sheetState: SheetState
         rule.setContent {
-            val localConfig = LocalConfiguration.current
-            configuration = remember { mutableStateOf(Configuration(localConfig)) }
-
-            configuration.value.screenWidthDp = initialScreenWidth
-
             val windowInsets = if (edgeToEdgeWrapper.edgeToEdgeEnabled)
                 WindowInsets(0) else BottomSheetDefaults.windowInsets
-
-            CompositionLocalProvider(
-                LocalConfiguration provides configuration.value
+            sheetState = rememberModalBottomSheetState()
+            ModalBottomSheet(
+                sheetState = sheetState,
+                onDismissRequest = {},
+                windowInsets = windowInsets,
+                properties = ModalBottomSheetDefaults.properties(isFocusable = true)
             ) {
-                val context = LocalContext.current
-                screenWidth = context.resources.displayMetrics.widthPixels
-                ModalBottomSheet(
-                    onDismissRequest = {},
-                    windowInsets = windowInsets
-                ) {
-                    Box(
-                        Modifier
-                            .fillMaxWidth()
-                            .height(sheetHeight)
-                            .onSizeChanged { boxWidth = it.width }
+                Box(Modifier.testTag(sheetTag)) {
+                    TextField(
+                        value = "",
+                        onValueChange = {},
+                        modifier = Modifier.testTag(textFieldTag)
                     )
                 }
             }
         }
 
-        // Make sure that the BottomSheet's width is the same as the configuration's screen width
-        assertThat(boxWidth).isEqualTo(screenWidth)
+        // Stop auto advance for test consistency
+        rule.mainClock.autoAdvance = false
 
-        // Change the screen width
-        configuration.value.screenWidthDp = finalScreenWidth
+        val textFieldNode = rule.onNodeWithTag(textFieldTag)
+        var sheetNode = rule.onNodeWithTag(sheetTag)
+        val initialTop = sheetNode.getUnclippedBoundsInRoot().top
 
-        // Make sure that BottomSheet is updating and resizing to the new screen width
-        assertThat(boxWidth).isEqualTo(screenWidth)
+        // Focus on the text field to force ime visibility.
+        textFieldNode.requestFocus()
+
+        // Wait for the ime and bottom sheet to animate after text field is focused.
+        rule.mainClock.advanceTimeBy(imeAnimationDuration)
+        val finalTop = sheetNode.getUnclippedBoundsInRoot().top
+        rule.runOnIdle {
+            // The top of the bottom sheet should be higher now due to ime padding.
+            assertThat(finalTop).isLessThan(initialTop)
+        }
     }
 
     @Test

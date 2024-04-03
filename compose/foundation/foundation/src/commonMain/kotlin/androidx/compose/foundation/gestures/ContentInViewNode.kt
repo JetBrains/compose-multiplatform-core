@@ -27,6 +27,7 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.node.LayoutAwareModifierNode
+import androidx.compose.ui.node.requireLayoutCoordinates
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.toSize
 import kotlin.math.abs
@@ -82,8 +83,6 @@ internal class ContentInViewNode(
      */
     private val bringIntoViewRequests = BringIntoViewRequestPriorityQueue()
 
-    /** The [LayoutCoordinates] of this modifier (i.e. the scrollable container). */
-    private var coordinates: LayoutCoordinates? = null
     private var focusedChild: LayoutCoordinates? = null
 
     /**
@@ -103,8 +102,6 @@ internal class ContentInViewNode(
         private set
 
     private var isAnimationRunning = false
-    private val animationState =
-        UpdatableAnimationState(bringIntoViewSpec.scrollAnimationSpec)
 
     override fun calculateRectForParent(localRect: Rect): Rect {
         check(viewportSize != IntSize.Zero) {
@@ -132,10 +129,6 @@ internal class ContentInViewNode(
 
     fun onFocusBoundsChanged(newBounds: LayoutCoordinates?) {
         focusedChild = newBounds
-    }
-
-    override fun onPlaced(coordinates: LayoutCoordinates) {
-        this.coordinates = coordinates
     }
 
     override fun onRemeasured(size: IntSize) {
@@ -171,7 +164,8 @@ internal class ContentInViewNode(
     }
 
     private fun getFocusedChildBounds(): Rect? {
-        val coordinates = this.coordinates?.takeIf { it.isAttached } ?: return null
+        if (!isAttached) return null
+        val coordinates = requireLayoutCoordinates()
         val focusedChild = this.focusedChild?.takeIf { it.isAttached } ?: return null
         return coordinates.localBoundingBoxOf(focusedChild, clipBounds = false)
     }
@@ -180,7 +174,7 @@ internal class ContentInViewNode(
         check(!isAnimationRunning) { "launchAnimation called when previous animation was running" }
 
         if (DEBUG) println("[$TAG] launchAnimation")
-
+        val animationState = UpdatableAnimationState(bringIntoViewSpec.scrollAnimationSpec)
         coroutineScope.launch(start = CoroutineStart.UNDISPATCHED) {
             var cancellationException: CancellationException? = null
             val animationJob = coroutineContext.job

@@ -41,17 +41,22 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.unit.dp
 import androidx.paging.CombinedLoadStates
 import androidx.paging.LoadState
+import androidx.paging.LoadState.Loading
+import androidx.paging.LoadState.NotLoading
 import androidx.paging.LoadStates
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
+import androidx.paging.PagingData
 import androidx.paging.PagingSource
 import androidx.paging.TestPagingSource
 import androidx.paging.cachedIn
+import androidx.paging.loadStates
 import androidx.paging.localLoadStatesOf
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
@@ -268,11 +273,9 @@ class LazyPagingItemsTest {
         }
 
         rule.onNodeWithTag("-1")
-            .assertExists()
-            .assertIsNotDisplayed()
+            .assertIsDeactivated()
         rule.onNodeWithTag("0")
-            .assertExists()
-            .assertIsNotDisplayed()
+            .assertIsDeactivated()
 
         rule.runOnIdle {
             runBlocking {
@@ -282,8 +285,7 @@ class LazyPagingItemsTest {
         }
 
         rule.onNodeWithTag("-1")
-            .assertExists()
-            .assertIsNotDisplayed()
+            .assertIsDeactivated()
         // node reused
         rule.onNodeWithTag("0")
             .assertDoesNotExist()
@@ -345,11 +347,9 @@ class LazyPagingItemsTest {
         }
 
         rule.onNodeWithTag("-1")
-            .assertExists()
-            .assertIsNotDisplayed()
+            .assertIsDeactivated()
         rule.onNodeWithTag("0")
-            .assertExists()
-            .assertIsNotDisplayed()
+            .assertIsDeactivated()
 
         rule.runOnIdle {
             runBlocking {
@@ -359,8 +359,7 @@ class LazyPagingItemsTest {
         }
 
         rule.onNodeWithTag("-1")
-            .assertExists()
-            .assertIsNotDisplayed()
+            .assertIsDeactivated()
         // node reused
         rule.onNodeWithTag("0")
             .assertDoesNotExist()
@@ -406,11 +405,9 @@ class LazyPagingItemsTest {
         }
 
         rule.onNodeWithTag("-1")
-            .assertExists()
-            .assertIsNotDisplayed()
+            .assertIsDeactivated()
         rule.onNodeWithTag("0")
-            .assertExists()
-            .assertIsNotDisplayed()
+            .assertIsDeactivated()
 
         rule.runOnIdle {
             runBlocking {
@@ -420,8 +417,7 @@ class LazyPagingItemsTest {
         }
 
         rule.onNodeWithTag("-1")
-            .assertExists()
-            .assertIsNotDisplayed()
+            .assertIsDeactivated()
         // node reused
         rule.onNodeWithTag("0")
             .assertDoesNotExist()
@@ -540,7 +536,7 @@ class LazyPagingItemsTest {
 
     @Test
     fun itemCountIsObservable() {
-        val items = mutableListOf(0, 1)
+        var items = listOf(0, 1)
         val pager = createPager {
             TestPagingSource(items = items, loadDelay = 0)
         }
@@ -557,7 +553,7 @@ class LazyPagingItemsTest {
         }
 
         rule.runOnIdle {
-            items += 2
+            items = listOf(0, 1, 2)
             lazyPagingItems.refresh()
         }
 
@@ -566,8 +562,7 @@ class LazyPagingItemsTest {
         }
 
         rule.runOnIdle {
-            items.clear()
-            items.add(0)
+            items = listOf(0)
             lazyPagingItems.refresh()
         }
 
@@ -578,7 +573,7 @@ class LazyPagingItemsTest {
 
     @Test
     fun worksWhenUsedWithoutExtension() {
-        val items = mutableListOf(10, 20)
+        var items = listOf(10, 20)
         val pager = createPager {
             TestPagingSource(items = items, loadDelay = 0)
         }
@@ -601,8 +596,7 @@ class LazyPagingItemsTest {
             .assertIsDisplayed()
 
         rule.runOnIdle {
-            items.clear()
-            items.addAll(listOf(30, 20, 40))
+            items = listOf(30, 20, 40)
             lazyPagingItems.refresh()
         }
 
@@ -621,7 +615,7 @@ class LazyPagingItemsTest {
 
     @Test
     fun updatingItem() {
-        val items = mutableListOf(1, 2, 3)
+        var items = listOf(1, 2, 3)
         val pager = createPager(
             PagingConfig(
                 pageSize = 3,
@@ -648,8 +642,7 @@ class LazyPagingItemsTest {
         }
 
         rule.runOnIdle {
-            items.clear()
-            items.addAll(listOf(1, 4, 3))
+            items = listOf(1, 4, 3)
             lazyPagingItems.refresh()
         }
 
@@ -668,7 +661,7 @@ class LazyPagingItemsTest {
 
     @Test
     fun addingNewItem() {
-        val items = mutableListOf(1, 2)
+        var items = listOf(1, 2)
         val pager = createPager(
             PagingConfig(
                 pageSize = 3,
@@ -695,8 +688,7 @@ class LazyPagingItemsTest {
         }
 
         rule.runOnIdle {
-            items.clear()
-            items.addAll(listOf(1, 2, 3))
+            items = listOf(1, 2, 3)
             lazyPagingItems.refresh()
         }
 
@@ -712,7 +704,7 @@ class LazyPagingItemsTest {
 
     @Test
     fun removingItem() {
-        val items = mutableListOf(1, 2, 3)
+        var items = listOf(1, 2, 3)
         val pager = createPager(
             PagingConfig(
                 pageSize = 3,
@@ -742,8 +734,7 @@ class LazyPagingItemsTest {
         }
 
         rule.runOnIdle {
-            items.clear()
-            items.addAll(listOf(2, 3))
+            items = listOf(2, 3)
             lazyPagingItems.refresh()
         }
 
@@ -759,7 +750,7 @@ class LazyPagingItemsTest {
 
     @Test
     fun stateIsMovedWithItemWithCustomKey_items() {
-        val items = mutableListOf(1)
+        var items = listOf(1)
         val pager = createPager {
             TestPagingSource(items = items, loadDelay = 0)
         }
@@ -782,8 +773,7 @@ class LazyPagingItemsTest {
         }
 
         rule.runOnIdle {
-            items.clear()
-            items.addAll(listOf(0, 1))
+            items = listOf(0, 1)
             lazyPagingItems.refresh()
         }
 
@@ -925,6 +915,167 @@ class LazyPagingItemsTest {
             assertThat(lazyPagingItems.itemCount).isEqualTo(6)
             assertThat(lazyPagingItems.itemSnapshotList).isEqualTo(listOf(1, 2, 3, 4, 5, 6))
         }
+    }
+
+    @Test
+    fun cachedPagingDataFrom() {
+        val flow = MutableStateFlow(PagingData.from(items))
+        lateinit var lazyPagingItems: LazyPagingItems<Int>
+        val dispatcher = StandardTestDispatcher()
+        rule.setContent {
+            lazyPagingItems = flow.collectAsLazyPagingItems(dispatcher)
+        }
+
+        rule.waitForIdle()
+
+        // assert cached data is available right away prior to collection
+        assertThat(lazyPagingItems.itemSnapshotList).containsExactlyElementsIn(items).inOrder()
+        assertThat(lazyPagingItems.loadState).isEqualTo(localLoadStatesOf()) // NotLoading
+        dispatcher.scheduler.advanceUntilIdle()
+        // assert data is still the same after load
+        assertThat(lazyPagingItems.itemSnapshotList).containsExactlyElementsIn(items).inOrder()
+        assertThat(lazyPagingItems.loadState).isEqualTo(localLoadStatesOf()) // NotLoading
+    }
+
+    @Test
+    fun cachedPagingDataFromWithLoadStates() {
+        val flow = MutableStateFlow(
+            PagingData.from(
+                data = items,
+                sourceLoadStates = loadStates(refresh = Loading),
+            )
+        )
+        lateinit var lazyPagingItems: LazyPagingItems<Int>
+        val dispatcher = StandardTestDispatcher()
+        rule.setContent {
+            lazyPagingItems = flow.collectAsLazyPagingItems(dispatcher)
+        }
+
+        rule.waitForIdle()
+
+        // assert cached data is available right away prior to collection
+        assertThat(lazyPagingItems.itemSnapshotList).containsExactlyElementsIn(items).inOrder()
+        assertThat(lazyPagingItems.loadState).isEqualTo(localLoadStatesOf(refreshLocal = Loading))
+        dispatcher.scheduler.advanceUntilIdle()
+        // assert data is still the same after load
+        assertThat(lazyPagingItems.itemSnapshotList).containsExactlyElementsIn(items).inOrder()
+        assertThat(lazyPagingItems.loadState).isEqualTo(localLoadStatesOf(refreshLocal = Loading))
+    }
+
+    @Test
+    fun cachedPagingDataFromWithEmptyData() {
+        val flow = MutableStateFlow(PagingData.from(emptyList<Int>()))
+        lateinit var lazyPagingItems: LazyPagingItems<Int>
+        val dispatcher = StandardTestDispatcher()
+        rule.setContent {
+            lazyPagingItems = flow.collectAsLazyPagingItems(dispatcher)
+        }
+
+        rule.waitForIdle()
+
+        // assert before load
+        assertThat(lazyPagingItems.itemSnapshotList).isEmpty()
+        assertThat(lazyPagingItems.loadState).isEqualTo(localLoadStatesOf()) // NotLoading
+        dispatcher.scheduler.advanceUntilIdle()
+        // assert data is still the same after load
+        assertThat(lazyPagingItems.itemSnapshotList).isEmpty()
+        assertThat(lazyPagingItems.loadState).isEqualTo(localLoadStatesOf()) // NotLoading
+    }
+
+    @Test
+    fun cachedPagingDataFromWithEmptyDataAndLoadStates() {
+        val flow = MutableStateFlow(
+            PagingData.from(
+                emptyList<Int>(),
+                sourceLoadStates = loadStates(
+                    prepend = NotLoading(true),
+                    append = NotLoading(true)
+                )
+            )
+        )
+        lateinit var lazyPagingItems: LazyPagingItems<Int>
+        val restorationTester = StateRestorationTester(rule)
+        val dispatcher = StandardTestDispatcher()
+        restorationTester.setContent {
+            lazyPagingItems = flow.collectAsLazyPagingItems(dispatcher)
+        }
+
+        rule.waitForIdle()
+
+        // assert before load
+        assertThat(lazyPagingItems.itemSnapshotList).isEmpty()
+        assertThat(lazyPagingItems.loadState).isEqualTo(
+            localLoadStatesOf(
+                prependLocal = NotLoading(true),
+                appendLocal = NotLoading(true)
+            )
+        )
+        dispatcher.scheduler.advanceUntilIdle()
+        // assert data is still the same after load
+        assertThat(lazyPagingItems.itemSnapshotList).isEmpty()
+        assertThat(lazyPagingItems.loadState).isEqualTo(
+            localLoadStatesOf(
+                prependLocal = NotLoading(true),
+                appendLocal = NotLoading(true)
+            )
+        )
+    }
+
+    @Test
+    fun cachedPagingDataEmpty() {
+        val flow = MutableStateFlow(PagingData.empty<Int>())
+        lateinit var lazyPagingItems: LazyPagingItems<Int>
+        val dispatcher = StandardTestDispatcher()
+        rule.setContent {
+            lazyPagingItems = flow.collectAsLazyPagingItems(dispatcher)
+        }
+
+        rule.waitForIdle()
+
+        // assert before load
+        assertThat(lazyPagingItems.itemSnapshotList).isEmpty()
+        assertThat(lazyPagingItems.loadState).isEqualTo(localLoadStatesOf()) // NotLoading
+        dispatcher.scheduler.advanceUntilIdle()
+        // assert data is still the same after load
+        assertThat(lazyPagingItems.itemSnapshotList).isEmpty()
+        assertThat(lazyPagingItems.loadState).isEqualTo(localLoadStatesOf()) // NotLoading
+    }
+
+    @Test
+    fun cachedPagingDataEmptyWithLoadStates() {
+        val flow = MutableStateFlow(
+            PagingData.empty<Int>(
+                sourceLoadStates = loadStates(
+                    prepend = NotLoading(true),
+                    append = NotLoading(true)
+                )
+            )
+        )
+        lateinit var lazyPagingItems: LazyPagingItems<Int>
+        val dispatcher = StandardTestDispatcher()
+        rule.setContent {
+            lazyPagingItems = flow.collectAsLazyPagingItems(dispatcher)
+        }
+
+        rule.waitForIdle()
+
+        // assert before load
+        assertThat(lazyPagingItems.itemSnapshotList).isEmpty()
+        assertThat(lazyPagingItems.loadState).isEqualTo(
+            localLoadStatesOf(
+                prependLocal = NotLoading(true),
+                appendLocal = NotLoading(true)
+            )
+        )
+        dispatcher.scheduler.advanceUntilIdle()
+        // assert data is still the same after load
+        assertThat(lazyPagingItems.itemSnapshotList).isEmpty()
+        assertThat(lazyPagingItems.loadState).isEqualTo(
+            localLoadStatesOf(
+                prependLocal = NotLoading(true),
+                appendLocal = NotLoading(true)
+            )
+        )
     }
 
     @Test

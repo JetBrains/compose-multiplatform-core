@@ -16,7 +16,6 @@
 
 package androidx.tv.foundation.lazy.grid
 
-import android.annotation.SuppressLint
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.lazy.layout.LazyLayoutIntervalContent
 import androidx.compose.foundation.lazy.layout.MutableIntervalList
@@ -24,7 +23,6 @@ import androidx.compose.runtime.Composable
 import kotlin.math.min
 import kotlin.math.sqrt
 
-@Suppress("IllegalExperimentalApiUsage") // TODO (b/233188423): Address before moving to beta
 @OptIn(ExperimentalFoundationApi::class)
 internal class LazyGridSpanLayoutProvider(private val gridContent: LazyGridIntervalContent) {
     class LineConfiguration(val firstItemIndex: Int, val spans: List<TvGridItemSpan>)
@@ -264,7 +262,6 @@ internal class LazyGridIntervalContent(
         apply(content)
     }
 
-    @SuppressLint("PrimitiveInLambda")
     override fun item(
         key: Any?,
         span: (TvLazyGridItemSpanScope.() -> TvGridItemSpan)?,
@@ -283,7 +280,6 @@ internal class LazyGridIntervalContent(
         if (span != null) hasCustomSpans = true
     }
 
-    @SuppressLint("PrimitiveInLambda")
     override fun items(
         count: Int,
         key: ((index: Int) -> Any)?,

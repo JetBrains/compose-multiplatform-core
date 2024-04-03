@@ -17,8 +17,10 @@
 package androidx.compose.ui.input.pointer
 
 import androidx.collection.LongSparseArray
+import androidx.compose.ui.node.InternalCoreApi
 import java.awt.event.MouseEvent
 
+@OptIn(InternalCoreApi::class)
 internal actual class InternalPointerEvent constructor(
     val type: PointerEventType,
     actual val changes: LongSparseArray<PointerInputChange>,
@@ -40,5 +42,5 @@ internal actual class InternalPointerEvent constructor(
     actual var suppressMovementConsumption: Boolean = false
 
     // Assume that all changes are from mouse events for now
-    actual fun issuesEnterExitEvent(pointerId: PointerId): Boolean = true
+    actual fun activeHoverEvent(pointerId: PointerId): Boolean = true
 }

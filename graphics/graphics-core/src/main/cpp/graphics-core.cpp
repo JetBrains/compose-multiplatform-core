@@ -27,6 +27,7 @@
 #include <android/api-level.h>
 #include <android/native_window_jni.h>
 #include <android/hardware_buffer_jni.h>
+#include <android/data_space.h>
 #include <android/log.h>
 #include <android/sync.h>
 #include <sys/system_properties.h>
@@ -427,6 +428,16 @@ void JniBindings_nSetBufferTransform(JNIEnv *env,
     ASurfaceTransaction_setBufferTransform(st, sc, transformation);
 }
 
+void JniBindings_nSetDataSpace(JNIEnv *env,
+                                jclass,
+                                jlong surfaceTransaction,
+                                jlong surfaceControl,
+                                jint dataspace) {
+    auto st = reinterpret_cast<ASurfaceTransaction *>(surfaceTransaction);
+    auto sc = reinterpret_cast<ASurfaceControl *>(surfaceControl);
+
+    ASurfaceTransaction_setBufferDataSpace(st, sc, static_cast<ADataSpace>(dataspace));
+}
 
 void JniBindings_nSetGeometry(JNIEnv *env, jclass,
                                                                        jlong surfaceTransaction,
@@ -447,6 +458,15 @@ jstring JniBindings_nGetDisplayOrientation(JNIEnv *env, jclass) {
     char name[PROP_VALUE_MAX];
     __system_property_get("ro.surface_flinger.primary_display_orientation", name);
     return (*env).NewStringUTF(name);
+}
+
+jboolean JniBindings_nIsHwuiUsingVulkanRenderer(JNIEnv*, jclass) {
+    char value[PROP_VALUE_MAX];
+    __system_property_get("ro.hwui.use_vulkan", value);
+    bool device_is_vulkan = strcmp(value, "true") == 0;
+    __system_property_get("debug.hwui.renderer", value);
+    bool is_debug_vulkan = strcmp(value, "skiavk") == 0;
+    return device_is_vulkan || is_debug_vulkan;
 }
 
 jint JniBindings_nGetPreviousReleaseFenceFd(JNIEnv *env, jclass,
@@ -473,6 +493,28 @@ jint JniBindings_nGetPreviousReleaseFenceFd(JNIEnv *env, jclass,
         ASurfaceTransactionStats_releaseASurfaceControls(surfaceControls);
     }
     return static_cast<jint>(fd);
+}
+
+void JniBindings_nSetFrameRate(JNIEnv *env, jclass,
+                               jlong surfaceTransaction,
+                               jlong surfaceControl,
+                               jfloat framerate,
+                               jint compatibility,
+                               jint changeFrameRateStrategy) {
+    auto st = reinterpret_cast<ASurfaceTransaction *>(surfaceTransaction);
+    auto sc = reinterpret_cast<ASurfaceControl *>(surfaceControl);
+
+    if (android_get_device_api_level() >= 31) {
+        ASurfaceTransaction_setFrameRateWithChangeStrategy(
+                st,
+                sc,
+                framerate,
+                compatibility,
+                changeFrameRateStrategy
+        );
+    } else if (android_get_device_api_level() >= 30) {
+        ASurfaceTransaction_setFrameRate(st, sc, framerate, compatibility);
+    }
 }
 
 void loadRectInfo(JNIEnv *env) {
@@ -592,6 +634,11 @@ static const JNINativeMethod JNI_METHOD_TABLE[] = {
                 (void *) JniBindings_nSetBufferTransform
         },
         {
+                "nSetDataSpace",
+                "(JJI)V",
+                (void *) JniBindings_nSetDataSpace
+        },
+        {
                 "nSetGeometry",
                 "(JJIIIII)V",
                 (void *) JniBindings_nSetGeometry
@@ -605,6 +652,16 @@ static const JNINativeMethod JNI_METHOD_TABLE[] = {
             "nGetPreviousReleaseFenceFd",
                 "(JJ)I",
                 (void *)JniBindings_nGetPreviousReleaseFenceFd
+        },
+        {
+            "nSetFrameRate",
+                "(JJFII)V",
+                (void *) JniBindings_nSetFrameRate
+        },
+        {
+            "nIsHwuiUsingVulkanRenderer",
+                "()Z",
+                (void *) JniBindings_nIsHwuiUsingVulkanRenderer
         }
 };
 

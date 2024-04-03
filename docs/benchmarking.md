@@ -9,7 +9,7 @@ AndroidX repo, and our continuous testing / triage process.
 
 This page is for MICRO benchmarks measuring CPU performance of small sections of
 code. If you're looking for measuring startup or jank, see the guide for
-MACRObenchmarks [here](/company/teams/androidx/macrobenchmarking.md).
+MACRObenchmarks [here](/docs/macrobenchmarking.md).
 
 ### Writing the benchmark
 
@@ -144,35 +144,37 @@ when capturing samples.
 For more information on the `StackSampling` and `MethodTracing` profiling modes,
 see the
 [Studio Profiler recording configuration docs](https://developer.android.com/studio/profile/record-traces#configurations),
-specifically "Sample C/C++ Functions" (a confusing name for Simpleperf), and
-Java Method Tracing.
+specifically "Sample C/C++ Functions" (called "Callstack sample" in recent
+versions), and Java Method Tracing.
 
 ![Sample flame chart](benchmarking_images/profiling_flame_chart.png "Sample flame chart")
 
 ### Advanced: Connected Studio Profiler
 
-Profiling for allocations requires Studio to capture. This can also be used for
-Sampled profiling, though it is instead recommended to use instrumentation
-argument profiling for that, as it's simpler, and doesn't require
-`debuggable=true`
+Profiling for allocations requires Studio to capture, and a debuggable build. Do
+not commit the following changes.
 
-Studio profiling tools currently require `debuggable=true`. First, temporarily
-override it in your benchmark's `androidTest/AndroidManifest.xml`.
+First, set your benchmark to be debuggable in your benchmark module's
+`androidTest/AndroidManifest.xml`:
 
-Next choose which profiling you want to do: Allocation, or Sampled (SimplePerf)
+```
+  <application
+    ...
+    android:debuggable="false"
+    tools:ignore="HardcodedDebugMode"/>
+```
 
-`ConnectedAllocation` will help you measure the allocations in a single run of a
-benchmark loop, after warmup.
+Note that switching to the debug variant will likely not work, as Studio will
+fail to find the benchmark as a test source.
 
-`ConnectedSampled` will help you capture sampled profiling, but with the more
-detailed / accurate Simpleperf sampling.
-
-Set the profiling type in your benchmark module's `build.gradle`:
+Next select `ConnectedAllocation` in your benchmark module's `build.gradle`:
 
 ```
 android {
     defaultConfig {
-        // Local only, don't commit this!
+        // --- Local only, don't commit this! ---
+        // pause for manual profiler connection before/after a single run of
+        // the benchmark loop, after warmup
         testInstrumentationRunnerArgument 'androidx.benchmark.profiling.mode', 'ConnectedAllocation'
     }
 }
@@ -190,10 +192,29 @@ profiler:
 
 1.  Click the profiler tab at the bottom
 1.  Click the plus button in the top left, `<device name>`, `<process name>`
-1.  Next step depends on which you intend to capture
+1.  Click the memory section, and right click the window, and select `Record
+    allocations`.
+1.  Approximately 20 seconds later, right click again and select `Stop
+    recording`.
 
-#### Allocations
+If timed correctly, you'll have started and stopped collection around the single
+run of your benchmark loop, and see all allocations in detail with call stacks
+in Studio.
 
-Click the memory section, and right click the window, and select `Record
-allocations`. Approximately 20 seconds later, right click again and select `Stop
-recording`.
+## Minification / R8
+
+As many Android apps don't yet enable R8, the default for microbenchmarks in
+AndroidX is to run with R8 disabled to measure worst-case performance. It may
+still be useful to run your microbenchmarks with R8 enabled locally however, and
+that is supported experimentally. To enable, in your microbench module:
+
+```
+android {
+    buildTypes.release.androidTest.enableMinification = true
+}
+```
+
+Then, if you see any errors from classes not found at runtime, you can add
+proguard rules
+[here](https://cs.android.com/androidx/platform/frameworks/support/+/androidx-main:compose/benchmark-utils/proguard-rules.pro),
+or in a similar place for your module.

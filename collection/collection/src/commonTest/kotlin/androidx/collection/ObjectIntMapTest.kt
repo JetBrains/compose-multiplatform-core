@@ -246,6 +246,19 @@ class ObjectIntTest {
     }
 
     @Test
+    fun putWithDefault() {
+        val map = MutableObjectIntMap<String>()
+
+        var previous = map.put("Hello", 1, -1)
+        assertEquals(1, map["Hello"])
+        assertEquals(-1, previous)
+
+        previous = map.put("Hello", 2, -1)
+        assertEquals(2, map["Hello"])
+        assertEquals(1, previous)
+    }
+
+    @Test
     fun nullKey() {
         val map = MutableObjectIntMap<String?>()
         map[null] = 1
@@ -354,7 +367,7 @@ class ObjectIntTest {
 
         // Make sure reinserting an entry after filling the table
         // with "Deleted" markers works
-        map["Hola"] = 7
+        map["Hello"] = 7
 
         assertEquals(1, map.size)
         assertEquals(capacity, map.capacity)

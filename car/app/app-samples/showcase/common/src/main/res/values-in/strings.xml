@@ -165,7 +165,7 @@
     <string name="gas_station" msgid="1203313937444666161">"SPBU"</string>
     <string name="short_route" msgid="4831864276538141265">"Rute pendek"</string>
     <string name="less_busy" msgid="310625272281710983">"Tidak terlalu sibuk"</string>
-    <string name="hov_friendly" msgid="6956152104754594971">"Cocok untuk Kendaraan Padat Penumpang"</string>
+    <string name="hov_friendly" msgid="6956152104754594971">"Sesuai untuk kendaraan multi-penumpang"</string>
     <string name="long_route" msgid="4737969235741057506">"Rute panjang"</string>
     <string name="continue_start_nav" msgid="6231797535084469163">"Lanjutkan untuk memulai navigasi"</string>
     <string name="continue_route" msgid="5172258139245088080">"Lanjutkan ke rute"</string>
@@ -365,4 +365,8 @@
     <string name="route_options_demo_title" msgid="4599699012716426514">"Opsi rute"</string>
     <string name="avoid_highways_row_title" msgid="4711913426200490304">"Hindari jalan raya"</string>
     <string name="avoid_ferries_row_title" msgid="8232883866013711974">"Hindari feri"</string>
+    <string name="map_demos_title" msgid="2169766615521476592">"Demo Peta"</string>
+    <string name="map_with_content_demo_title" msgid="1032610482145018739">"Demo Peta Dengan Konten"</string>
+    <string name="map_with_message_demo_title" msgid="7007078234918054436">"Demo Peta Dengan Template Pesan"</string>
+    <string name="map_with_grid_demo_title" msgid="688667167861193192">"Demo Peta Dengan Template Petak"</string>
 </resources>

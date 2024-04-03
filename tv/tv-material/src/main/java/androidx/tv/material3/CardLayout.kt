@@ -51,12 +51,10 @@ import androidx.compose.ui.graphics.Color
  * @param description defines the [Composable] description placed below the subtitle in CardLayout.
  * @param contentColor [CardLayoutColors] defines the content color used in the CardLayout
  * for different interaction states. See [CardLayoutDefaults.contentColor].
- * @param interactionSource the [MutableInteractionSource] representing the stream of [Interaction]s
- * for this CardLayout. You can create and pass in your own `remember`ed instance to observe
- * [Interaction]s and customize the appearance / behavior of this card layout in different states.
+ * @param interactionSource a hoisted [MutableInteractionSource] for observing and emitting
+ * [Interaction]s for this CardLayout.
  * This interaction source param would also be forwarded to be used with the `imageCard` composable.
  */
-@ExperimentalTvMaterial3Api
 @Composable
 fun StandardCardLayout(
     imageCard: @Composable (interactionSource: MutableInteractionSource) -> Unit,
@@ -114,12 +112,10 @@ fun StandardCardLayout(
  * @param description defines the [Composable] description placed below the subtitle in CardLayout.
  * @param contentColor [CardLayoutColors] defines the content color used in the CardLayout
  * for different interaction states. See [CardLayoutDefaults.contentColor].
- * @param interactionSource the [MutableInteractionSource] representing the stream of [Interaction]s
- * for this CardLayout. You can create and pass in your own `remember`ed instance to observe
- * [Interaction]s and customize the appearance / behavior of this card layout in different states.
+ * @param interactionSource a hoisted [MutableInteractionSource] for observing and emitting
+ * [Interaction]s for this CardLayout.
  * This interaction source param would also be forwarded to be used with the `imageCard` composable.
  */
-@ExperimentalTvMaterial3Api
 @Composable
 fun WideCardLayout(
     imageCard: @Composable (interactionSource: MutableInteractionSource) -> Unit,
@@ -155,7 +151,6 @@ fun WideCardLayout(
     }
 }
 
-@OptIn(ExperimentalTvMaterial3Api::class)
 @Composable
 internal fun CardLayoutContent(
     title: @Composable () -> Unit,
@@ -168,7 +163,6 @@ internal fun CardLayoutContent(
     }
 }
 
-@ExperimentalTvMaterial3Api
 object CardLayoutDefaults {
     /**
      * Creates [CardLayoutColors] that represents the default content colors used in a
@@ -197,9 +191,9 @@ object CardLayoutDefaults {
      * This Card handles click events, calling its [onClick] lambda.
      *
      * @param onClick called when this card is clicked.
-     * @param interactionSource the [MutableInteractionSource] representing the stream of
-     * [Interaction]s for this card. When using with the CardLayout(s), it is recommended to
-     * pass in the interaction state obtained from the parent lambda.
+     * @param interactionSource a hoisted [MutableInteractionSource] for observing and
+     * emitting [Interaction]s for this card. When using with the CardLayout(s), it is recommended
+     * to pass in the interaction state obtained from the parent lambda.
      * @param modifier the [Modifier] to be applied to this card.
      * @param onLongClick called when this card is long clicked (long-pressed).
      * @param shape [CardShape] defines the shape of this card's container in different interaction
@@ -246,7 +240,6 @@ object CardLayoutDefaults {
 /**
  * Represents the [Color] of content in a CardLayout for different interaction states.
  */
-@ExperimentalTvMaterial3Api
 @Immutable
 class CardLayoutColors internal constructor(
     internal val contentColor: Color,

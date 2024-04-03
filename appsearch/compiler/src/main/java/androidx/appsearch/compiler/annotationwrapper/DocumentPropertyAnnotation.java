@@ -20,11 +20,17 @@ import static androidx.appsearch.compiler.IntrospectionHelper.APPSEARCH_SCHEMA_C
 import static androidx.appsearch.compiler.IntrospectionHelper.DOCUMENT_ANNOTATION_CLASS;
 
 import androidx.annotation.NonNull;
+import androidx.appsearch.compiler.IntrospectionHelper;
 
 import com.google.auto.value.AutoValue;
+import com.google.common.collect.ImmutableList;
 import com.squareup.javapoet.ClassName;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
+
+import javax.lang.model.type.TypeMirror;
 
 /**
  * An instance of the {@code @Document.DocumentProperty} annotation.
@@ -38,7 +44,12 @@ public abstract class DocumentPropertyAnnotation extends DataPropertyAnnotation 
             APPSEARCH_SCHEMA_CLASS.nestedClass("DocumentPropertyConfig");
 
     public DocumentPropertyAnnotation() {
-        super(CLASS_NAME, CONFIG_CLASS, /* genericDocSetterName= */"setPropertyDocument");
+        super(
+                CLASS_NAME,
+                CONFIG_CLASS,
+                /* genericDocGetterName= */"getPropertyDocument",
+                /* genericDocArrayGetterName= */"getPropertyDocumentArray",
+                /* genericDocSetterName= */"setPropertyDocument");
     }
 
     /**
@@ -49,10 +60,19 @@ public abstract class DocumentPropertyAnnotation extends DataPropertyAnnotation 
     static DocumentPropertyAnnotation parse(
             @NonNull Map<String, Object> annotationParams, @NonNull String defaultName) {
         String name = (String) annotationParams.get("name");
+        List<String> indexableNestedPropertiesList = new ArrayList<>();
+        Object indexableList = annotationParams.get("indexableNestedPropertiesList");
+        if (indexableList instanceof List) {
+            for (Object property : (List<?>) indexableList) {
+                indexableNestedPropertiesList.add(property.toString());
+            }
+        }
         return new AutoValue_DocumentPropertyAnnotation(
                 name.isEmpty() ? defaultName : name,
                 (boolean) annotationParams.get("required"),
-                (boolean) annotationParams.get("indexNestedProperties"));
+                (boolean) annotationParams.get("indexNestedProperties"),
+                ImmutableList.copyOf(indexableNestedPropertiesList),
+                (boolean) annotationParams.get("inheritIndexableNestedPropertiesFromSuperclass"));
     }
 
     /**
@@ -60,9 +80,28 @@ public abstract class DocumentPropertyAnnotation extends DataPropertyAnnotation 
      */
     public abstract boolean shouldIndexNestedProperties();
 
+    /**
+     * Returns the list of nested properties to index for the nested document other than the
+     * properties inherited from the type's parent.
+     */
+    @NonNull
+    public abstract ImmutableList<String> getIndexableNestedPropertiesList();
+
+    /**
+     * Specifies whether to inherit the parent class's definition for the indexable nested
+     * properties list.
+     */
+    public abstract boolean shouldInheritIndexableNestedPropertiesFromSuperClass();
+
     @NonNull
     @Override
     public final Kind getDataPropertyKind() {
         return Kind.DOCUMENT_PROPERTY;
+    }
+
+    @NonNull
+    @Override
+    public TypeMirror getUnderlyingTypeWithinGenericDoc(@NonNull IntrospectionHelper helper) {
+        return helper.mGenericDocumentType;
     }
 }

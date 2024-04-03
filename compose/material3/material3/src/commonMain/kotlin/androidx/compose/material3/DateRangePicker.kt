@@ -18,7 +18,6 @@ package androidx.compose.material3
 
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.spring
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -27,6 +26,15 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material3.internal.CalendarDate
+import androidx.compose.material3.internal.CalendarLocale
+import androidx.compose.material3.internal.CalendarModel
+import androidx.compose.material3.internal.CalendarMonth
+import androidx.compose.material3.internal.DaysInWeek
+import androidx.compose.material3.internal.Strings
+import androidx.compose.material3.internal.createCalendarModel
+import androidx.compose.material3.internal.defaultLocale
+import androidx.compose.material3.internal.getString
 import androidx.compose.material3.tokens.DatePickerModalTokens
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -126,7 +134,7 @@ fun DateRangePicker(
         ),
         headerMinHeight = DatePickerModalTokens.RangeSelectionHeaderContainerHeight -
             HeaderHeightOffset,
-        colors = colors
+        colors = colors,
     ) {
         SwitchableDateEntryContent(
             selectedStartDateMillis = state.selectedStartDateMillis,
@@ -232,6 +240,8 @@ interface DateRangePickerState {
 /**
  * Creates a [DateRangePickerState] for a [DateRangePicker] that is remembered across compositions.
  *
+ * To create a date range picker state outside composition, see the `DateRangePickerState` function.
+ *
  * @param initialSelectedStartDateMillis timestamp in _UTC_ milliseconds from the epoch that
  * represents an initial selection of a start date. Provide a `null` to indicate no selection.
  * @param initialSelectedEndDateMillis timestamp in _UTC_ milliseconds from the epoch that
@@ -256,7 +266,7 @@ fun rememberDateRangePickerState(
         initialSelectedStartDateMillis,
     yearRange: IntRange = DatePickerDefaults.YearRange,
     initialDisplayMode: DisplayMode = DisplayMode.Picker,
-    selectableDates: SelectableDates = object : SelectableDates {}
+    selectableDates: SelectableDates = DatePickerDefaults.AllDates
 ): DateRangePickerState {
     val locale = defaultLocale()
     return rememberSaveable(
@@ -273,6 +283,53 @@ fun rememberDateRangePickerState(
         )
     }
 }
+
+/**
+ * Creates a [DateRangePickerState].
+ *
+ * Note that in most cases, you are advised to use the [rememberDateRangePickerState] when in a
+ * composition.
+ *
+ * @param locale a [CalendarLocale] to be used when formatting dates, determining the input format,
+ * and more
+ * @param initialSelectedStartDateMillis timestamp in _UTC_ milliseconds from the epoch that
+ * represents an initial selection of a start date. Provide a `null` to indicate no selection.
+ * @param initialSelectedEndDateMillis timestamp in _UTC_ milliseconds from the epoch that
+ * represents an initial selection of an end date. Provide a `null` to indicate no selection.
+ * @param initialDisplayedMonthMillis timestamp in _UTC_ milliseconds from the epoch that
+ * represents an initial selection of a month to be displayed to the user. By default, in case
+ * an `initialSelectedStartDateMillis` is provided, the initial displayed month would be the
+ * month of the selected date. Otherwise, in case `null` is provided, the displayed month would
+ * be the current one.
+ * @param yearRange an [IntRange] that holds the year range that the date picker will be limited
+ * to
+ * @param initialDisplayMode an initial [DisplayMode] that this state will hold
+ * @param selectableDates a [SelectableDates] that is consulted to check if a date is allowed.
+ * In case a date is not allowed to be selected, it will appear disabled in the UI
+ * @see rememberDateRangePickerState
+ * @throws IllegalArgumentException if the initial timestamps do not fall within the year range
+ * this state is created with, or the end date precedes the start date, or when an end date is
+ * provided without a start date (e.g. the start date was null, while the end date was not).
+ */
+@ExperimentalMaterial3Api
+fun DateRangePickerState(
+    locale: CalendarLocale,
+    @Suppress("AutoBoxing") initialSelectedStartDateMillis: Long? = null,
+    @Suppress("AutoBoxing") initialSelectedEndDateMillis: Long? = null,
+    @Suppress("AutoBoxing") initialDisplayedMonthMillis: Long? =
+        initialSelectedStartDateMillis,
+    yearRange: IntRange = DatePickerDefaults.YearRange,
+    initialDisplayMode: DisplayMode = DisplayMode.Picker,
+    selectableDates: SelectableDates = DatePickerDefaults.AllDates
+): DateRangePickerState = DateRangePickerStateImpl(
+    initialSelectedStartDateMillis = initialSelectedStartDateMillis,
+    initialSelectedEndDateMillis = initialSelectedEndDateMillis,
+    initialDisplayedMonthMillis = initialDisplayedMonthMillis,
+    yearRange = yearRange,
+    initialDisplayMode = initialDisplayMode,
+    selectableDates = selectableDates,
+    locale = locale
+)
 
 /**
  * Contains default values used by the [DateRangePicker].
@@ -451,8 +508,10 @@ object DateRangePickerDefaults {
  * to
  * @param initialDisplayMode an initial [DisplayMode] that this state will hold
  * @param selectableDates a [SelectableDates] that is consulted to check if a date is allowed.
- * In case a date is not allowed to be selected, it will appear disabled in the UI.
- * @see rememberDatePickerState
+ * In case a date is not allowed to be selected, it will appear disabled in the UI
+ * @param locale a [CalendarLocale] to be used when formatting dates, determining the input format,
+ * and more
+ * @see rememberDateRangePickerState
  * @throws IllegalArgumentException if the initial timestamps do not fall within the year range
  * this state is created with, or the end date precedes the start date, or when an end date is
  * provided without a start date (e.g. the start date was null, while the end date was not).
@@ -779,7 +838,6 @@ private fun VerticalMonthsList(
                             ) ?: "-",
                             modifier = Modifier
                                 .padding(paddingValues = CalendarMonthSubheadPadding)
-                                .clickable { /* no-op (needed for customActions to operate */ }
                                 .semantics {
                                     customActions = customAccessibilityAction
                                 },

@@ -14,12 +14,16 @@
  * limitations under the License.
  */
 
-import androidx.build.KmpPlatformsKt
+/**
+ * This file was created using the `create_project.py` script located in the
+ * `<AndroidX root>/development/project-creator` directory.
+ *
+ * Please use that script when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
 import androidx.build.LibraryType
 import androidx.build.PlatformIdentifier
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
-import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
-import com.google.protobuf.gradle.ProtobufExtract
 
 plugins {
     id("AndroidXPlugin")
@@ -27,8 +31,6 @@ plugins {
     id("com.google.protobuf")
     id ("kotlin-parcelize")
 }
-
-def enableNative = KmpPlatformsKt.enableNative(project)
 
 android {
     externalNativeBuild {
@@ -44,9 +46,6 @@ protobuf {
     protoc {
         artifact = libs.protobufCompiler.get()
     }
-    // Generates the java proto-lite code for the protos in this project. See
-    // https://github.com/google/protobuf-gradle-plugin#customizing-protobuf-compilation
-    // for more information.
     generateProtoTasks {
         all().each { task ->
             task.builtins {
@@ -81,15 +80,20 @@ androidXMultiplatform {
             dependencies {
                 api(libs.kotlinStdlib)
                 api(libs.kotlinCoroutinesCore)
+                api("androidx.annotation:annotation:1.7.0")
             }
         }
-        jvmMain {
-            dependencies {
-                api("androidx.annotation:annotation:1.3.0")
-            }
+
+        commonJvmMain {
+            dependsOn(commonMain)
         }
+
         androidMain {
-            dependsOn(jvmMain)
+            dependsOn(commonJvmMain)
+        }
+
+        jvmMain {
+            dependsOn(commonJvmMain)
         }
 
         commonTest {
@@ -104,7 +108,8 @@ androidXMultiplatform {
             }
         }
 
-        jvmTest {
+        commonJvmTest {
+            dependsOn(commonTest)
             dependencies {
                 implementation(libs.junit)
                 implementation(libs.kotlinTest)
@@ -116,15 +121,19 @@ androidXMultiplatform {
             }
         }
 
+        jvmTest {
+            dependsOn(commonJvmTest)
+        }
+
         androidUnitTest {
-            dependsOn(jvmTest)
+            dependsOn(commonJvmTest)
             dependencies {
                 implementation(libs.protobufLite)
             }
         }
 
         androidInstrumentedTest {
-            dependsOn(jvmTest)
+            dependsOn(commonJvmTest)
             dependencies {
                 implementation(libs.protobufLite)
                 implementation(libs.truth)
@@ -138,20 +147,14 @@ androidXMultiplatform {
             }
         }
 
-        androidInstrumentedTest {
-            dependsOn(androidUnitTest)
+        nativeMain {
+            dependsOn(commonMain)
+            dependencies {
+                implementation(libs.atomicFu)
+            }
         }
-
-        if (enableNative) {
-            nativeMain {
-                dependsOn(commonMain)
-                dependencies {
-                    implementation(libs.atomicFu)
-                }
-            }
-            nativeTest {
-                dependsOn(commonTest)
-            }
+        nativeTest {
+            dependsOn(commonTest)
         }
 
         targets.all { target ->

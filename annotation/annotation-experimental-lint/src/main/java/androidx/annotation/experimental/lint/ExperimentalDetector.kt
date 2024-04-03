@@ -20,7 +20,9 @@ package androidx.annotation.experimental.lint
 
 import com.android.tools.lint.client.api.JavaEvaluator
 import com.android.tools.lint.detector.api.AnnotationUsageType
+import com.android.tools.lint.detector.api.AnnotationUsageType.ASSIGNMENT_RHS
 import com.android.tools.lint.detector.api.AnnotationUsageType.FIELD_REFERENCE
+import com.android.tools.lint.detector.api.AnnotationUsageType.METHOD_CALL_PARAMETER
 import com.android.tools.lint.detector.api.Category
 import com.android.tools.lint.detector.api.Detector
 import com.android.tools.lint.detector.api.Implementation
@@ -47,6 +49,7 @@ import com.intellij.psi.impl.source.PsiClassReferenceType
 import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.psi.util.PsiTypesUtil
+import org.jetbrains.kotlin.psi.KtProperty
 import org.jetbrains.kotlin.util.capitalizeDecapitalize.capitalizeAsciiOnly
 import org.jetbrains.kotlin.util.capitalizeDecapitalize.toLowerCaseAsciiOnly
 import org.jetbrains.uast.UAnnotated
@@ -70,8 +73,8 @@ import org.jetbrains.uast.UVariable
 import org.jetbrains.uast.UastFacade
 import org.jetbrains.uast.getContainingUClass
 import org.jetbrains.uast.getContainingUMethod
-import org.jetbrains.uast.java.JavaUAnnotation
 import org.jetbrains.uast.toUElement
+import org.jetbrains.uast.toUElementOfType
 import org.jetbrains.uast.tryResolve
 
 class ExperimentalDetector : Detector(), SourceCodeScanner {
@@ -95,13 +98,11 @@ class ExperimentalDetector : Detector(), SourceCodeScanner {
         // Infer the overridden method by taking the first (and only) abstract method from the
         // functional interface being implemented.
         val superClass = (lambda.functionalInterfaceType as? PsiClassReferenceType)?.resolve()
-        val superMethod = superClass?.allMethods
-            ?.first { method -> method.isAbstract() }
-            ?.toUElement()
-
-        if (superMethod is UMethod) {
-            checkMethodOverride(context, lambda, superMethod)
-        }
+        superClass?.toUElementOfType<UClass>()?.methods
+            ?.firstOrNull { method -> method.isAbstract() }
+            ?.let { superMethod ->
+                checkMethodOverride(context, lambda, superMethod)
+            }
     }
 
     override fun visitClass(
@@ -374,7 +375,7 @@ class ExperimentalDetector : Detector(), SourceCodeScanner {
             }
 
             if (relevantAnnotations.contains(signature)) {
-                val uAnnotation = JavaUAnnotation.wrap(annotation)
+                val uAnnotation = annotation.toUElementOfType<UAnnotation>() ?: continue
 
                 // Common case: there's just one annotation; no need to create a list copy
                 if (length == 1) {
@@ -441,9 +442,13 @@ class ExperimentalDetector : Detector(), SourceCodeScanner {
         allClassAnnotations: List<UAnnotation>,
         allPackageAnnotations: List<UAnnotation>
     ) {
-        // Are we visiting a Kotlin property as a field reference when it's actually a method?
-        // Ignore it, since we'll also visit it as a method.
-        if (isKotlin(usage.sourcePsi) && type == FIELD_REFERENCE && referenced is PsiMethod) {
+        // Don't visit values assigned to annotated fields or properties, parameters passed to
+        // annotated methods, or annotated properties being referenced as fields. We'll visit the
+        // annotated fields and methods separately.
+        if (referenced is PsiField && type == ASSIGNMENT_RHS ||
+            referenced is PsiMethod && type == ASSIGNMENT_RHS ||
+            referenced is PsiMethod && type == FIELD_REFERENCE ||
+            referenced is PsiMethod && type == METHOD_CALL_PARAMETER) {
             return
         }
 
@@ -468,7 +473,7 @@ class ExperimentalDetector : Detector(), SourceCodeScanner {
                 // compiler handles that already. Allow either Java or Kotlin annotations, since
                 // we can enforce both and it's possible that a Kotlin-sourced experimental library
                 // is being used from Java without the Kotlin stdlib in the classpath.
-                if (!isKotlin(usage.sourcePsi)) {
+                if (!isKotlin(usage.lang)) {
                     checkExperimentalUsage(
                         context,
                         annotation,
@@ -581,6 +586,15 @@ class ExperimentalDetector : Detector(), SourceCodeScanner {
             return true
         }
 
+        // For property accessors, check the property's annotation w/o use-site
+        // which is landed on the backing field if any
+        if (sourcePsi is KtProperty && this is UMethod) {
+            val backingField = (uastParent as? UClass)?.fields?.find { it.sourcePsi == sourcePsi }
+            if (backingField?.isDeclarationAnnotatedWith(annotationFqName) == true) {
+                return true
+            }
+        }
+
         return false
     }
 
@@ -617,8 +631,9 @@ class ExperimentalDetector : Detector(), SourceCodeScanner {
     ): LintFix {
         val propagateAnnotation = "@$annotation"
         val lintFixes = fix().alternatives()
+        var addedFix = false
         usage.getContainingUMethod()?.let { containingMethod ->
-            val isKotlin = isKotlin(usage.sourcePsi)
+            val isKotlin = isKotlin(usage.lang)
             val optInAnnotation = if (isKotlin) {
                 "@androidx.annotation.OptIn($annotation::class)"
             } else {
@@ -626,9 +641,12 @@ class ExperimentalDetector : Detector(), SourceCodeScanner {
             }
             lintFixes.add(createAnnotateFix(context, containingMethod, optInAnnotation))
             lintFixes.add(createAnnotateFix(context, containingMethod, propagateAnnotation))
+            addedFix = true
         }
-        usage.getContainingUClass()?.let { containingClass ->
-            lintFixes.add(createAnnotateFix(context, containingClass, propagateAnnotation))
+        if (!addedFix) { // workaround for b/301598518 : don't add all three fixes at once
+            usage.getContainingUClass()?.let { containingClass ->
+                lintFixes.add(createAnnotateFix(context, containingClass, propagateAnnotation))
+            }
         }
         return lintFixes.build()
     }
@@ -869,7 +887,7 @@ private fun PsiPackage.isAnnotatedWithOptInOf(
 ): Boolean = optInFqNames.any { optInFqName ->
     annotations.any { annotation ->
         annotation.hasQualifiedName(optInFqName) &&
-            ((annotation.toUElement() as? UAnnotation)?.hasMatchingAttributeValueClass(
+            ((annotation.toUElementOfType<UAnnotation>())?.hasMatchingAttributeValueClass(
                 "markerClass",
                 annotationFqName,
             ) ?: false)
@@ -900,4 +918,5 @@ private fun UElement.isDeclarationAnnotatedWithOptInOf(
 } == true
 
 private fun PsiModifierListOwner.isAbstract(): Boolean =
-    modifierList?.hasModifierProperty(PsiModifier.ABSTRACT) == true
+    modifierList?.hasModifierProperty(PsiModifier.ABSTRACT) == true ||
+        hasModifierProperty(PsiModifier.ABSTRACT)

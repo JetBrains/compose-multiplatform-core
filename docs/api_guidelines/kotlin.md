@@ -11,6 +11,32 @@ outlined at:
     [asynchronous and non-blocking APIs](https://android.googlesource.com/platform/developers/docs/+/refs/heads/master/api-guidelines/async.md)
 -   Library-specific guidance outlined below
 
+### Target language version {#kotlin-target}
+
+All projects in AndroidX compile using the same version of the Kotlin
+compiler -- typically the latest stable version -- and by default use a matching
+*target language version*. The target language version specifies which Kotlin
+features may be used in source code, which in turn specifies (1) which version
+of `kotlin-stdlib` is used as a dependency and thus (2) which version of the
+Kotlin compiler is required when the library is used as a dependency.
+
+Libraries may specify `kotlinTarget` in their `build.gradle` to override the
+default target language version. Using a higher language version will force
+clients to use a newer, typically less-stable Kotlin compiler but allows use of
+newer language features. Using a lower language version will allow clients to
+use an older Kotlin compiler when building their own projects.
+
+```
+androidx {
+    kotlinTarget = KotlinVersion.KOTLIN_1_7
+}
+```
+
+NOTE The client's Kotlin compiler version is bounded by their *transitive
+dependencies*. If your library uses target language version 1.7 but you depend
+on a library with target language version 1.9, the client will be forced to use
+1.9 or higher.
+
 ### Nullability
 
 #### Annotations on new Java APIs
@@ -308,6 +334,52 @@ Even when an extension function on a platform class does not collide with an
 existing API *yet*, there is a possibility that a conflicting API with a
 matching signature will be added in the future. As such, Jetpack libraries
 should avoid adding extension functions on platform classes.
+
+### Extension functions related to classes in the same module or file
+
+When the core type is in Java, one good use for extension functions is to create
+more Kotlin friendly versions of the API.
+
+```java
+public class MyClass {
+    public void addMyListener(Executor e, Consumer<Data> listener) { ... }
+    public void removeMyListener(Consumer<Data> listener) { ... }
+}
+```
+
+```kotlin
+fun MyClass.dataFlow(): Flow<Data>
+```
+
+When the core type is in Kotlin, extension functions may or may not be a good
+fit for the API. Ask if the extension is part of the core abstraction or a new
+layer of abstraction. One example of a new layer of abstraction is using a new
+dependency that does not otherwise interact with the core class. Another example
+is an abstraction that stands on its own such as a `Comparator` that implements
+a non-canonical ordering.
+
+In general when adding extension functions, consider splitting them across
+different files and naming the Java version of the files related to the use case
+as opposed to putting everything in one file and using a `Util` suffix.
+
+```kotlin {.bad}
+@file:JvmName("WindowSizeClassUtil")
+
+fun Set<WindowSizeClass>.widestClass() : WindowSizeClass { ... }
+
+fun WindowSizeClass.scoreWithinWidthDp(widthDp: Int) { ... }
+```
+
+```kotlin
+@file:JvmName("WindowSizeClassSelector")
+
+fun Set<WindowSizeClass>.widestClass() : WindowSizeClass { ... }
+
+// In another file
+@file:JvmName("WindowSizeClassScoreCalculator")
+
+fun WindowSizeClass.scoreWithinWidthDp(widthDp: Int) { ... }
+```
 
 ### Function parameters order {#kotlin-params-order}
 

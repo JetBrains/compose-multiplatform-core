@@ -16,8 +16,8 @@
 
 package androidx.build
 
-import androidx.build.buildInfo.CreateLibraryBuildInfoFileTask.Companion.getFrameworksSupportCommitShaAtHead
 import androidx.build.checkapi.shouldConfigureApiTasks
+import androidx.build.gitclient.getHeadShaProvider
 import androidx.build.transform.configureAarAsJarForConfiguration
 import groovy.lang.Closure
 import java.io.File
@@ -75,6 +75,8 @@ abstract class AndroidXExtension(val project: Project) : ExtensionAware, Android
         libraryGroupsByGroupId = versionService.libraryGroupsByGroupId
         overrideLibraryGroupsByProjectPath = versionService.overrideLibraryGroupsByProjectPath
 
+        // Always set a known default based on project path. see: b/302183954
+        setDefaultGroupFromProjectPath()
         mavenGroup = chooseLibraryGroup()
         chooseProjectVersion()
 
@@ -89,6 +91,7 @@ abstract class AndroidXExtension(val project: Project) : ExtensionAware, Android
             }
 
         kotlinTarget.set(KotlinTarget.DEFAULT)
+        kotlinTestTarget.set(kotlinTarget)
     }
 
     var name: Property<String?> = project.objects.property(String::class.java)
@@ -198,6 +201,21 @@ abstract class AndroidXExtension(val project: Project) : ExtensionAware, Android
         return result
     }
 
+    /**
+     * Sets a group for the project based on its path.
+     * This ensures we always use a known value for the project group instead of what Gradle assigns
+     * by default. Furthermore, it also helps make them consistent between the main build and
+     * the playground builds.
+     */
+    private fun setDefaultGroupFromProjectPath() {
+        project.group = project.path
+            .split(":")
+            .filter {
+                it.isNotEmpty()
+            }.dropLast(1)
+            .joinToString(separator = ".", prefix = "androidx.")
+    }
+
     private fun chooseProjectVersion() {
         val version: Version
         val group: String? = mavenGroup?.group
@@ -284,28 +302,6 @@ abstract class AndroidXExtension(val project: Project) : ExtensionAware, Android
     var description: String? = null
     var inceptionYear: String? = null
 
-    /**
-     * targetsJavaConsumers = true, if project is intended to be accessed from Java-language source
-     * code.
-     */
-    var targetsJavaConsumers = true
-        get() {
-            when (project.path) {
-            // add per-project overrides here
-            // for example
-            // the following project is intended to be accessed from Java
-            // ":compose:lint:internal-lint-checks" -> return true
-            // the following project is not intended to be accessed from Java
-            // ":annotation:annotation" -> return false
-            }
-            // TODO: rework this to use LibraryType. Fork Library and KolinOnlyLibrary?
-            if (project.path.contains("-ktx")) return false
-            if (project.path.contains("compose")) return false
-            if (project.path.startsWith(":ui")) return false
-            if (project.path.startsWith(":text:text")) return false
-            return field
-        }
-
     private var licenses: MutableCollection<License> = ArrayList()
 
     // Should only be used to override LibraryType.publish, if a library isn't ready to publish yet
@@ -354,6 +350,8 @@ abstract class AndroidXExtension(val project: Project) : ExtensionAware, Android
     var runApiTasks: RunApiTasks = RunApiTasks.Auto
         get() = if (field == RunApiTasks.Auto && type != LibraryType.UNSET) type.checkApi else field
 
+    var doNotDocumentReason: String? = null
+
     var type: LibraryType = LibraryType.UNSET
     var failOnDeprecationWarnings = true
 
@@ -367,6 +365,8 @@ abstract class AndroidXExtension(val project: Project) : ExtensionAware, Android
 
     val additionalDeviceTestTags: MutableList<String> by lazy {
         when {
+            project.path.startsWith(":privacysandbox:ads:") ->
+                mutableListOf("privacysandbox", "privacysandbox_ads")
             project.path.startsWith(":privacysandbox:") -> mutableListOf("privacysandbox")
             project.path.startsWith(":wear:") -> mutableListOf("wear")
             else -> mutableListOf()
@@ -391,9 +391,7 @@ abstract class AndroidXExtension(val project: Project) : ExtensionAware, Android
         configureAarAsJarForConfiguration(project, name)
     }
 
-    fun getReferenceSha(): Provider<String> {
-        return project.providers.provider { project.getFrameworksSupportCommitShaAtHead() }
-    }
+    fun getReferenceSha(): Provider<String> = getHeadShaProvider(project)
 
     /**
      * Specify the version for Kotlin API compatibility mode used during Kotlin compilation.
@@ -411,14 +409,32 @@ abstract class AndroidXExtension(val project: Project) : ExtensionAware, Android
         get() = kotlinTarget.map { project.getVersionByName(it.catalogVersion) }
 
     /**
-     * Whether to validate the androidx configuration block using validateProjectParser. This
-     * should always be set to true unless we are temporarily working around a bug.
+     * Specify the version for Kotlin API compatibility mode used during Kotlin compilation of
+     * tests.
+     */
+    abstract val kotlinTestTarget: Property<KotlinTarget>
+
+    override val kotlinTestApiVersion: Provider<KotlinVersion>
+        get() = kotlinTestTarget.map { it.apiVersion }
+
+    override val kotlinTestBomVersion: Provider<String>
+        get() = kotlinTestTarget.map { project.getVersionByName(it.catalogVersion) }
+
+    /**
+     * Whether to validate the androidx configuration block using validateProjectParser. This should
+     * always be set to true unless we are temporarily working around a bug.
      */
     var runProjectParser: Boolean = true
 
     companion object {
         const val DEFAULT_UNSPECIFIED_VERSION = "unspecified"
     }
+
+    /**
+     * Used to register a project that will be providing documentation samples for this project.
+     * Can only be called once so only one samples library can exist per library b/318840087.
+     */
+    fun samples(samplesProject: Project) = registerSamplesLibrary(samplesProject)
 }
 
 class License {

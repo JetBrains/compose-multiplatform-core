@@ -57,8 +57,11 @@ import androidx.camera.core.UseCaseGroup;
 import androidx.camera.core.ViewPort;
 import androidx.camera.core.concurrent.CameraCoordinator.CameraOperatingMode;
 import androidx.camera.core.impl.CameraConfig;
+import androidx.camera.core.impl.CameraConfigs;
+import androidx.camera.core.impl.CameraInfoInternal;
 import androidx.camera.core.impl.CameraInternal;
 import androidx.camera.core.impl.ExtendedCameraConfigProviderStore;
+import androidx.camera.core.impl.RestrictedCameraInfo;
 import androidx.camera.core.impl.utils.ContextUtil;
 import androidx.camera.core.impl.utils.Threads;
 import androidx.camera.core.impl.utils.executor.CameraXExecutors;
@@ -76,8 +79,10 @@ import com.google.common.util.concurrent.ListenableFuture;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.LinkedHashSet;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Executor;
 
@@ -113,6 +118,9 @@ public final class ProcessCameraProvider implements LifecycleCameraProvider {
             new LifecycleCameraRepository();
     private CameraX mCameraX;
     private Context mContext;
+    @GuardedBy("mLock")
+    private Map<CameraUseCaseAdapter.CameraId, RestrictedCameraInfo> mCameraInfoMap =
+            new HashMap<>();
 
     /**
      * Retrieves the {@link ProcessCameraProvider} associated with the current process.
@@ -272,20 +280,19 @@ public final class ProcessCameraProvider implements LifecycleCameraProvider {
      * Allows shutting down this {@link ProcessCameraProvider} instance so a new instance can be
      * retrieved by {@link #getInstance(Context)}.
      *
-     * <p>Once shutdown, a new instance can be retrieved with
+     * <p>Once shutdownAsync is invoked, a new instance can be retrieved with
      * {@link ProcessCameraProvider#getInstance(Context)}.
      *
-     * <p>This method, along with {@link #configureInstance(CameraXConfig)} allows the process
-     * camera provider to be used in test suites which may need to initialize CameraX in
-     * different ways in between tests.
+     * <p>This method should be used for testing purposes only. Along with
+     * {@link #configureInstance(CameraXConfig)}, this allows the process camera provider to be
+     * used in test suites which may need to initialize CameraX in different ways in between tests.
      *
      * @return A {@link ListenableFuture} representing the shutdown status. Cancellation of this
      * future is a no-op.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     @VisibleForTesting
     @NonNull
-    public ListenableFuture<Void> shutdown() {
+    public ListenableFuture<Void> shutdownAsync() {
         runOnMainSync(() -> {
             unbindAll();
             mLifecycleCameraRepository.clear();
@@ -302,6 +309,7 @@ public final class ProcessCameraProvider implements LifecycleCameraProvider {
             mCameraXConfigProvider = null;
             mCameraXInitializeFuture = null;
             mCameraXShutdownFuture = shutdownFuture;
+            mCameraInfoMap.clear();
         }
         mCameraX = null;
         mContext = null;
@@ -446,16 +454,6 @@ public final class ProcessCameraProvider implements LifecycleCameraProvider {
     @MainThread
     @NonNull
     public ConcurrentCamera bindToLifecycle(@NonNull List<SingleCameraConfig> singleCameraConfigs) {
-        if (!mContext.getPackageManager().hasSystemFeature(FEATURE_CAMERA_CONCURRENT)) {
-            throw new UnsupportedOperationException("Concurrent camera is not supported on the "
-                    + "device");
-        }
-
-        if (getCameraOperatingMode() == CAMERA_OPERATING_MODE_SINGLE) {
-            throw new UnsupportedOperationException("Camera is already running, call "
-                    + "unbindAll() before binding more cameras");
-        }
-
         if (singleCameraConfigs.size() < 2) {
             throw new IllegalArgumentException("Concurrent camera needs two camera configs");
         }
@@ -465,37 +463,81 @@ public final class ProcessCameraProvider implements LifecycleCameraProvider {
                     + "cameras at maximum.");
         }
 
-        List<CameraInfo> cameraInfosToBind = new ArrayList<>();
-        List<CameraInfo> availableCameraInfos = getAvailableCameraInfos();
-        CameraInfo firstCameraInfo = getCameraInfoFromCameraSelector(
-                singleCameraConfigs.get(0).getCameraSelector(),
-                availableCameraInfos);
-        CameraInfo secondCameraInfo = getCameraInfoFromCameraSelector(
-                singleCameraConfigs.get(1).getCameraSelector(),
-                availableCameraInfos);
-        if (firstCameraInfo == null || secondCameraInfo == null) {
-            throw new IllegalArgumentException("Invalid camera selectors in camera configs");
-        }
-        cameraInfosToBind.add(firstCameraInfo);
-        cameraInfosToBind.add(secondCameraInfo);
-        if (!getActiveConcurrentCameraInfos().isEmpty()
-                && !cameraInfosToBind.equals(getActiveConcurrentCameraInfos())) {
-            throw new UnsupportedOperationException("Cameras are already running, call "
-                    + "unbindAll() before binding more cameras");
-        }
-
-        setCameraOperatingMode(CAMERA_OPERATING_MODE_CONCURRENT);
         List<Camera> cameras = new ArrayList<>();
-        for (SingleCameraConfig config : singleCameraConfigs) {
-            Camera camera = bindToLifecycle(
-                    config.getLifecycleOwner(),
-                    config.getCameraSelector(),
-                    config.getUseCaseGroup().getViewPort(),
-                    config.getUseCaseGroup().getEffects(),
-                    config.getUseCaseGroup().getUseCases().toArray(new UseCase[0]));
+        if (Objects.equals(singleCameraConfigs.get(0).getCameraSelector().getLensFacing(),
+                singleCameraConfigs.get(1).getCameraSelector().getLensFacing())) {
+            if (getCameraOperatingMode() == CAMERA_OPERATING_MODE_CONCURRENT) {
+                throw new UnsupportedOperationException("Camera is already running, call "
+                        + "unbindAll() before binding more cameras");
+            }
+            if (!Objects.equals(singleCameraConfigs.get(0).getLifecycleOwner(),
+                    singleCameraConfigs.get(1).getLifecycleOwner())
+                    || !Objects.equals(singleCameraConfigs.get(0).getUseCaseGroup().getViewPort(),
+                    singleCameraConfigs.get(1).getUseCaseGroup().getViewPort())
+                    || !Objects.equals(singleCameraConfigs.get(0).getUseCaseGroup().getEffects(),
+                    singleCameraConfigs.get(1).getUseCaseGroup().getEffects())) {
+                throw new IllegalArgumentException("Two camera configs need to have the same "
+                        + "lifecycle owner, view port and effects");
+            }
+            LifecycleOwner lifecycleOwner = singleCameraConfigs.get(0).getLifecycleOwner();
+            CameraSelector cameraSelector = singleCameraConfigs.get(0).getCameraSelector();
+            ViewPort viewPort = singleCameraConfigs.get(0).getUseCaseGroup().getViewPort();
+            List<CameraEffect> effects = singleCameraConfigs.get(0).getUseCaseGroup().getEffects();
+            List<UseCase> useCases = new ArrayList<>();
+            for (SingleCameraConfig config : singleCameraConfigs) {
+                // Connect physical camera id with use case
+                for (UseCase useCase : config.getUseCaseGroup().getUseCases()) {
+                    useCase.setPhysicalCameraId(config.getCameraSelector().getPhysicalCameraId());
+                }
+                useCases.addAll(config.getUseCaseGroup().getUseCases());
+            }
+
+            setCameraOperatingMode(CAMERA_OPERATING_MODE_SINGLE);
+            Camera camera = bindToLifecycle(lifecycleOwner, cameraSelector, viewPort,
+                    effects, useCases.toArray(new UseCase[0]));
             cameras.add(camera);
+        } else {
+            if (!mContext.getPackageManager().hasSystemFeature(FEATURE_CAMERA_CONCURRENT)) {
+                throw new UnsupportedOperationException("Concurrent camera is not supported on the "
+                        + "device");
+            }
+
+            if (getCameraOperatingMode() == CAMERA_OPERATING_MODE_SINGLE) {
+                throw new UnsupportedOperationException("Camera is already running, call "
+                        + "unbindAll() before binding more cameras");
+            }
+
+            List<CameraInfo> cameraInfosToBind = new ArrayList<>();
+            CameraInfo firstCameraInfo;
+            CameraInfo secondCameraInfo;
+            try {
+                firstCameraInfo = getCameraInfo(
+                        singleCameraConfigs.get(0).getCameraSelector());
+                secondCameraInfo = getCameraInfo(
+                        singleCameraConfigs.get(1).getCameraSelector());
+            } catch (IllegalArgumentException e) {
+                throw new IllegalArgumentException("Invalid camera selectors in camera configs");
+            }
+            cameraInfosToBind.add(firstCameraInfo);
+            cameraInfosToBind.add(secondCameraInfo);
+            if (!getActiveConcurrentCameraInfos().isEmpty()
+                    && !cameraInfosToBind.equals(getActiveConcurrentCameraInfos())) {
+                throw new UnsupportedOperationException("Cameras are already running, call "
+                        + "unbindAll() before binding more cameras");
+            }
+
+            setCameraOperatingMode(CAMERA_OPERATING_MODE_CONCURRENT);
+            for (SingleCameraConfig config : singleCameraConfigs) {
+                Camera camera = bindToLifecycle(
+                        config.getLifecycleOwner(),
+                        config.getCameraSelector(),
+                        config.getUseCaseGroup().getViewPort(),
+                        config.getUseCaseGroup().getEffects(),
+                        config.getUseCaseGroup().getUseCases().toArray(new UseCase[0]));
+                cameras.add(camera);
+            }
+            setActiveConcurrentCameraInfos(cameraInfosToBind);
         }
-        setActiveConcurrentCameraInfos(cameraInfosToBind);
         return new ConcurrentCamera(cameras);
     }
 
@@ -567,34 +609,19 @@ public final class ProcessCameraProvider implements LifecycleCameraProvider {
             @NonNull UseCase... useCases) {
         Threads.checkMainThread();
         // TODO(b/153096869): override UseCase's target rotation.
-        // TODO(b/154939118) The filter appending should be removed after extensions are moved to
-        //  the CheckedCameraInternal
-        CameraSelector.Builder selectorBuilder =
-                CameraSelector.Builder.fromSelector(cameraSelector);
-        // Append the camera filter required internally if there's any.
-        for (UseCase useCase : useCases) {
-            CameraSelector selector = useCase.getCurrentConfig().getCameraSelector(null);
-            if (selector != null) {
-                for (CameraFilter filter : selector.getCameraFilterSet()) {
-                    selectorBuilder.addCameraFilter(filter);
-                }
-            }
-        }
 
-        CameraSelector modifiedSelector = selectorBuilder.build();
-
-        LinkedHashSet<CameraInternal> cameraInternals =
-                modifiedSelector.filter(mCameraX.getCameraRepository().getCameras());
-        if (cameraInternals.isEmpty()) {
-            throw new IllegalArgumentException("Provided camera selector unable to resolve a "
-                    + "camera for the given use case");
-        }
-        CameraUseCaseAdapter.CameraId cameraId =
-                CameraUseCaseAdapter.generateCameraId(cameraInternals);
+        // Get the LifecycleCamera if existed.
+        CameraInternal cameraInternal =
+                cameraSelector.select(mCameraX.getCameraRepository().getCameras());
+        RestrictedCameraInfo restrictedCameraInfo =
+                (RestrictedCameraInfo) getCameraInfo(cameraSelector);
 
         LifecycleCamera lifecycleCameraToBind =
-                mLifecycleCameraRepository.getLifecycleCamera(lifecycleOwner, cameraId);
+                mLifecycleCameraRepository.getLifecycleCamera(
+                        lifecycleOwner,
+                        CameraUseCaseAdapter.generateCameraId(restrictedCameraInfo));
 
+        // Check if there's another camera that has already been bound.
         Collection<LifecycleCamera> lifecycleCameras =
                 mLifecycleCameraRepository.getLifecycleCameras();
         for (UseCase useCase : useCases) {
@@ -609,41 +636,16 @@ public final class ProcessCameraProvider implements LifecycleCameraProvider {
             }
         }
 
-        // Try to get the camera before binding to the use case, and throw IllegalArgumentException
-        // if the camera not found.
+        // Create the LifecycleCamera if there's no existing one that can be used.
         if (lifecycleCameraToBind == null) {
             lifecycleCameraToBind =
                     mLifecycleCameraRepository.createLifecycleCamera(lifecycleOwner,
-                            new CameraUseCaseAdapter(cameraInternals,
+                            new CameraUseCaseAdapter(cameraInternal,
+                                    restrictedCameraInfo,
                                     mCameraX.getCameraFactory().getCameraCoordinator(),
                                     mCameraX.getCameraDeviceSurfaceManager(),
                                     mCameraX.getDefaultConfigFactory()));
         }
-
-        CameraConfig cameraConfig = null;
-
-        // Retrieves extended camera configs from ExtendedCameraConfigProviderStore
-        for (CameraFilter cameraFilter : cameraSelector.getCameraFilterSet()) {
-            if (cameraFilter.getIdentifier() != CameraFilter.DEFAULT_ID) {
-                CameraConfig extendedCameraConfig =
-                        ExtendedCameraConfigProviderStore.getConfigProvider(
-                                cameraFilter.getIdentifier()).getConfig(
-                                lifecycleCameraToBind.getCameraInfo(), mContext);
-                if (extendedCameraConfig == null) { // ignore IDs unrelated to camera configs.
-                    continue;
-                }
-
-                // Only allows one camera config now.
-                if (cameraConfig != null) {
-                    throw new IllegalArgumentException(
-                            "Cannot apply multiple extended camera configs at the same time.");
-                }
-                cameraConfig = extendedCameraConfig;
-            }
-        }
-
-        // Applies extended camera configs to the camera
-        lifecycleCameraToBind.setExtendedConfig(cameraConfig);
 
         if (useCases.length == 0) {
             return lifecycleCameraToBind;
@@ -657,6 +659,35 @@ public final class ProcessCameraProvider implements LifecycleCameraProvider {
                 mCameraX.getCameraFactory().getCameraCoordinator());
 
         return lifecycleCameraToBind;
+    }
+
+    @NonNull
+    private CameraConfig getCameraConfig(@NonNull CameraSelector cameraSelector,
+            @NonNull CameraInfo cameraInfo) {
+        CameraConfig cameraConfig = null;
+        for (CameraFilter cameraFilter : cameraSelector.getCameraFilterSet()) {
+            if (cameraFilter.getIdentifier() != CameraFilter.DEFAULT_ID) {
+                CameraConfig extendedCameraConfig =
+                        ExtendedCameraConfigProviderStore
+                                .getConfigProvider(cameraFilter.getIdentifier())
+                                .getConfig(cameraInfo, mContext);
+                if (extendedCameraConfig == null) { // ignore IDs unrelated to camera configs.
+                    continue;
+                }
+
+                // Only allows one camera config now.
+                if (cameraConfig != null) {
+                    throw new IllegalArgumentException(
+                            "Cannot apply multiple extended camera configs at the same time.");
+                }
+                cameraConfig = extendedCameraConfig;
+            }
+        }
+
+        if (cameraConfig == null) {
+            cameraConfig = CameraConfigs.defaultConfig();
+        }
+        return cameraConfig;
     }
 
     /**
@@ -766,7 +797,7 @@ public final class ProcessCameraProvider implements LifecycleCameraProvider {
      * operate concurrently on the device. Each list maps to one combination of these camera's
      * {@link CameraInfo}.
      *
-     * For example, to select a front camera and a back camera and bind to {@link LifecycleOwner}
+     * <p>For example, to select a front camera and a back camera and bind to {@link LifecycleOwner}
      * with preview {@link UseCase}, this function could be used with
      * {@link #bindToLifecycle(List)}.
      * <pre><code>
@@ -806,7 +837,6 @@ public final class ProcessCameraProvider implements LifecycleCameraProvider {
      * </code></pre>
      *
      * @return list of combinations of {@link CameraInfo}.
-     *
      */
     @NonNull
     public List<List<CameraInfo>> getAvailableConcurrentCameraInfos() {
@@ -814,21 +844,58 @@ public final class ProcessCameraProvider implements LifecycleCameraProvider {
         requireNonNull(mCameraX.getCameraFactory().getCameraCoordinator());
         List<List<CameraSelector>> concurrentCameraSelectorLists =
                 mCameraX.getCameraFactory().getCameraCoordinator().getConcurrentCameraSelectors();
-        List<CameraInfo> availableCameraInfos = getAvailableCameraInfos();
 
         List<List<CameraInfo>> availableConcurrentCameraInfos = new ArrayList<>();
         for (final List<CameraSelector> cameraSelectors : concurrentCameraSelectorLists) {
             List<CameraInfo> cameraInfos = new ArrayList<>();
             for (CameraSelector cameraSelector : cameraSelectors) {
-                CameraInfo cameraInfo = getCameraInfoFromCameraSelector(cameraSelector,
-                        availableCameraInfos);
-                if (cameraInfo != null) {
-                    cameraInfos.add(cameraInfo);
+                CameraInfo cameraInfo;
+                try {
+                    cameraInfo = getCameraInfo(cameraSelector);
+                } catch (IllegalArgumentException e) {
+                    continue;
                 }
+                cameraInfos.add(cameraInfo);
             }
             availableConcurrentCameraInfos.add(cameraInfos);
         }
         return availableConcurrentCameraInfos;
+    }
+
+    /**
+     * Returns the {@link CameraInfo} instance of the camera resulted from the
+     * specified {@link CameraSelector}.
+     *
+     * <p>The returned {@link CameraInfo} is corresponded to the camera that will be bound
+     * when calling {@link #bindToLifecycle} with the specified {@link CameraSelector}.
+     *
+     * @param cameraSelector the {@link CameraSelector} to get the {@link CameraInfo} that is
+     *                       corresponded to.
+     * @return the corresponding {@link CameraInfo}.
+     * @throws UnsupportedOperationException if the camera provider is not implemented properly.
+     * @throws IllegalArgumentException if the given {@link CameraSelector} can't result in a
+     * valid camera to provide the {@link CameraInfo}.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    @Override
+    @NonNull
+    public CameraInfo getCameraInfo(@NonNull CameraSelector cameraSelector) {
+        CameraInfoInternal cameraInfoInternal = cameraSelector.select(
+                mCameraX.getCameraRepository().getCameras()).getCameraInfoInternal();
+        CameraConfig cameraConfig = getCameraConfig(cameraSelector, cameraInfoInternal);
+
+        CameraUseCaseAdapter.CameraId key = CameraUseCaseAdapter.CameraId.create(
+                cameraInfoInternal.getCameraId(), cameraConfig.getCompatibilityId());
+        RestrictedCameraInfo restrictedCameraInfo;
+        synchronized (mLock) {
+            restrictedCameraInfo = mCameraInfoMap.get(key);
+            if (restrictedCameraInfo == null) {
+                restrictedCameraInfo = new RestrictedCameraInfo(cameraInfoInternal, cameraConfig);
+                mCameraInfoMap.put(key, restrictedCameraInfo);
+            }
+        }
+
+        return restrictedCameraInfo;
     }
 
     /**
@@ -873,14 +940,6 @@ public final class ProcessCameraProvider implements LifecycleCameraProvider {
         }
         mCameraX.getCameraFactory().getCameraCoordinator()
                 .setActiveConcurrentCameraInfos(cameraInfos);
-    }
-
-    @Nullable
-    private CameraInfo getCameraInfoFromCameraSelector(
-            @NonNull CameraSelector cameraSelector,
-            @NonNull List<CameraInfo> availableCameraInfos) {
-        List<CameraInfo> cameraInfos = cameraSelector.filter(availableCameraInfos);
-        return cameraInfos.isEmpty() ? null : cameraInfos.get(0);
     }
 
     private ProcessCameraProvider() {

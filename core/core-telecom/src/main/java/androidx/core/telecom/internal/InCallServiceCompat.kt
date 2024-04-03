@@ -27,19 +27,33 @@ import android.telecom.PhoneAccount
 import android.telecom.TelecomManager
 import android.util.Log
 import androidx.annotation.IntDef
+import androidx.annotation.NonNull
 import androidx.annotation.RequiresApi
+import androidx.annotation.VisibleForTesting
 import androidx.core.content.ContextCompat
 import androidx.core.telecom.CallsManager
+import androidx.core.telecom.util.ExperimentalAppActions
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 
 /**
  * This class defines the Jetpack ICS layer which will be leveraged as part of supporting VOIP app
  * actions.
  */
-@RequiresApi(Build.VERSION_CODES.M)
-internal class InCallServiceCompat(context: Context) : InCallService() {
-    private val mContext: Context = context
+@ExperimentalAppActions
+@RequiresApi(Build.VERSION_CODES.O)
+internal open class InCallServiceCompat() : InCallService() {
+    internal lateinit var mContext: Context
+    private lateinit var mScope: CoroutineScope
+    val mCallCompats = mutableListOf<CallCompat>()
+    @VisibleForTesting
+    var mExtensionLevelSupport = -1
 
     companion object {
+        private val TAG = InCallServiceCompat::class.simpleName
+
         /**
          * Constants used to denote the extension level supported by the VOIP app.
          */
@@ -51,52 +65,93 @@ internal class InCallServiceCompat(context: Context) : InCallService() {
         internal const val EXTRAS = 1
         internal const val CAPABILITY_EXCHANGE = 2
         internal const val UNKNOWN = 3
-
-        private val TAG = InCallServiceCompat::class.simpleName
     }
 
-    fun onCreateCall(call: Call): CallCompat {
-        Log.d(TAG, "onCreateCall: call = $call")
-        return with(this) {
-            CallCompat(call) {
-            }
-        }
+    override fun onCreate() {
+        super.onCreate()
+        mScope = CoroutineScope(Dispatchers.IO)
     }
 
-    fun onRemoveCall(call: CallCompat) {
-        Log.d(TAG, "onRemoveCall: call = $call")
+    override fun onDestroy() {
+        super.onDestroy()
+        // Todo: invoke CapabilityExchangeListener#onRemoveExtensions to inform the VOIP app
+        mScope.cancel()
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    override fun onCallAdded(@NonNull call: Call) {
+        super.onCallAdded(call)
+        processCallAdded(call)
     }
 
     /**
-     * Internal helper used by the [InCallService] to help resolve the call extension type. This
+     * Internal logic that leverages [resolveCallExtensionsType] to determine whether capability
+     * exchange is supported or not when [InCallService.onCallAdded] is invoked. If
+     * [resolveCallExtensionsType] returns [CAPABILITY_EXCHANGE] then this method leverages
+     * [CallCompat.startCapabilityExchange] to initiate the process of capability exchange.
+     */
+    internal fun processCallAdded(call: Call) {
+        Log.d(TAG, "processCallAdded for call = $call")
+        // invoke onCreateCallCompat and use CallCompat below
+        mExtensionLevelSupport = resolveCallExtensionsType(call)
+        Log.d(TAG, "onCallAdded: resolveCallExtensionsType returned " +
+            "$mExtensionLevelSupport for call = $call")
+        try {
+            when (mExtensionLevelSupport) {
+                // Case where the VOIP app is using V1.5 CS and ICS is using an extensions library:
+                EXTRAS -> {
+                    throw UnsupportedOperationException("resolveCallExtensionsType returned " +
+                        "EXTRAS; This is not yet supported.")
+                }
+
+                // Case when the VOIP app and InCallService both support capability exchange:
+                CAPABILITY_EXCHANGE -> {
+                    mScope.launch {
+                        val callCompat = onCreateCallCompat(call)
+                        mCallCompats.add(callCompat)
+                        callCompat.startCapabilityExchange()
+                    }
+                }
+            }
+        } catch (e: UnsupportedOperationException) {
+            Log.e(TAG, "$e")
+        }
+    }
+
+    open fun onCreateCallCompat(call: Call): CallCompat {
+        Log.d(TAG, "onCreateCallCompat for call = $call")
+        // By default, return CallCompat with no extensions:
+        return CallCompat.toCallCompat(call, mScope) {}
+    }
+
+    /**
+     * Internal helper used by the [CallCompat] to help resolve the call extension type. This
      * is invoked before capability exchange between the [InCallService] and VOIP app starts to
      * ensure the necessary features are enabled to support it.
      *
      * If the call is placed using the V1.5 ConnectionService + Extensions Library (Auto Case), the
      * call will have the [CallsManager.EXTRA_VOIP_API_VERSION] defined in the extras. The call
-     * extension would be resolved as [InCallServiceCompat.EXTRAS].
+     * extension would be resolved as [EXTRAS].
      *
      * If the call is using the v2 APIs and the phone account associated with the call supports
      * transactional ops (U+) or the call has the [CallsManager.PROPERTY_IS_TRANSACTIONAL] property
-     * defined (on V devices), then the extension type is [InCallServiceCompat.CAPABILITY_EXCHANGE].
+     * defined (on V devices), then the extension type is [CAPABILITY_EXCHANGE].
      *
      * If the call is added via CallsManager#addCall on pre-U devices and the
      * [CallsManager.EXTRA_VOIP_BACKWARDS_COMPATIBILITY_SUPPORTED] is present in the call extras,
-     * the extension type also resolves to [InCallServiceCompat.CAPABILITY_EXCHANGE].
+     * the extension type also resolves to [CAPABILITY_EXCHANGE].
      *
      * In the case that none of the cases above apply and the phone account is found not to support
      * transactional ops (assumes that caller has [android.Manifest.permission.READ_PHONE_NUMBERS]
-     * permission), then the extension type is [InCallServiceCompat.NONE].
+     * permission), then the extension type is [NONE].
      *
      * If the caller does not have the required permission to retrieve the phone account, then
-     * the extension type will be [InCallServiceCompat.UNKNOWN], until it can be resolved.
+     * the extension type will be [UNKNOWN], until it can be resolved.
      *
      * @param call to resolve the extension type for.
-     * @return the extension type [InCallServiceCompat.CapabilityExchangeType] resolved for the
+     * @return the extension type [CapabilityExchangeType] resolved for the
      * call.
      */
-    @RequiresApi(Build.VERSION_CODES.O)
-    @CapabilityExchangeType
     internal fun resolveCallExtensionsType(call: Call): Int {
         var callDetails = call.details
         val callExtras = callDetails?.extras ?: Bundle()
@@ -105,7 +160,7 @@ internal class InCallServiceCompat(context: Context) : InCallService() {
             return EXTRAS
         }
         if (callDetails?.hasProperty(CallsManager.PROPERTY_IS_TRANSACTIONAL) == true || callExtras
-            .containsKey(CallsManager.EXTRA_VOIP_BACKWARDS_COMPATIBILITY_SUPPORTED)) {
+                .containsKey(CallsManager.EXTRA_VOIP_BACKWARDS_COMPATIBILITY_SUPPORTED)) {
             return CAPABILITY_EXCHANGE
         }
         // Verify read phone numbers permission to see if phone account supports transactional ops.

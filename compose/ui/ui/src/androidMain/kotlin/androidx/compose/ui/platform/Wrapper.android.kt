@@ -36,6 +36,8 @@ import androidx.compose.ui.node.UiApplier
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
+import java.util.Collections
+import java.util.WeakHashMap
 
 // TODO(chuckj): This is a temporary work-around until subframes exist so that
 // nextFrame() inside recompose() doesn't really start a new frame, but a new subframe
@@ -83,6 +85,12 @@ private fun doSetContent(
     parent: CompositionContext,
     content: @Composable () -> Unit
 ): Composition {
+    if (isDebugInspectorInfoEnabled && owner.getTag(R.id.inspection_slot_table_set) == null) {
+        owner.setTag(
+            R.id.inspection_slot_table_set,
+            Collections.newSetFromMap(WeakHashMap<CompositionData, Boolean>())
+        )
+    }
     val original = Composition(UiApplier(owner.root), parent)
     val wrapped = owner.view.getTag(R.id.wrapped_composition_tag)
         as? WrappedComposition
@@ -90,6 +98,16 @@ private fun doSetContent(
             owner.view.setTag(R.id.wrapped_composition_tag, it)
         }
     wrapped.setContent(content)
+
+    // When the CoroutineContext between the owner and parent doesn't match, we need to reset it
+    // to this new parent's CoroutineContext, because the previous CoroutineContext was cancelled.
+    // This usually happens when the owner (AndroidComposeView) wasn't completely torn down during a
+    // config change. That expected scenario occurs when the manifest's configChanges includes
+    // 'screenLayout' and the user selects a pop-up view for the app.
+    if (owner.coroutineContext != parent.effectCoroutineContext) {
+        owner.coroutineContext = parent.effectCoroutineContext
+    }
+
     return wrapped
 }
 
@@ -125,7 +143,13 @@ private class WrappedComposition(
                             currentComposer.collectParameterInformation()
                         }
 
-                        LaunchedEffect(owner) { owner.boundsUpdatesEventLoop() }
+                        // TODO(mnuzen): Combine the two boundsUpdatesLoop() into one LaunchedEffect
+                        LaunchedEffect(owner) {
+                            owner.boundsUpdatesAccessibilityEventLoop()
+                        }
+                        LaunchedEffect(owner) {
+                            owner.boundsUpdatesContentCaptureEventLoop()
+                        }
 
                         CompositionLocalProvider(LocalInspectionTables provides inspectionTable) {
                             ProvideAndroidCompositionLocals(owner, content)

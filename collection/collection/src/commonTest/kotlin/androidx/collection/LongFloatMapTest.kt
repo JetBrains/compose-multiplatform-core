@@ -245,6 +245,19 @@ class LongFloatMapTest {
     }
 
     @Test
+    fun putWithDefault() {
+        val map = MutableLongFloatMap()
+
+        var previous = map.put(1L, 1f, -1f)
+        assertEquals(1f, map[1L])
+        assertEquals(-1f, previous)
+
+        previous = map.put(1L, 2f, -1f)
+        assertEquals(2f, map[1L])
+        assertEquals(1f, previous)
+    }
+
+    @Test
     fun findNonExistingKey() {
         val map = MutableLongFloatMap()
         map[1L] = 1f
@@ -340,7 +353,7 @@ class LongFloatMapTest {
 
         // Make sure reinserting an entry after filling the table
         // with "Deleted" markers works
-        map[7L] = 7f
+        map[1L] = 7f
 
         assertEquals(1, map.size)
         assertEquals(capacity, map.capacity)

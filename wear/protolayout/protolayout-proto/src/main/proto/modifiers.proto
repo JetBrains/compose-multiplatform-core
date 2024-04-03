@@ -22,6 +22,22 @@ message Clickable {
   // The action to perform when the element this modifier is attached to is
   // clicked.
   Action on_click = 2;
+
+  // The minimum width of the clickable area.
+  //
+  // The default value is 48dp, following the Material design accessibility
+  // guideline. Note that this value does not affect the layout, so the minimum
+  // clickable width is not guaranteed unless there is enough space around the
+  // element within its parent bounds.
+  DpProp minimum_clickable_width = 3;
+
+  // The minimum height of the clickable area.
+  //
+  // The default value is 48dp, following the Material design accessibility
+  // guideline. Note that this value does not affect the layout, so the minimum
+  // clickable height is not guaranteed unless there is enough space around the
+  // element within its parent bounds.
+  DpProp minimum_clickable_height = 4;
 }
 
 // The type of user interface element. Accessibility services might use this to
@@ -143,6 +159,32 @@ message ElementMetadata {
   bytes tag_data = 1;
 }
 
+// A modifier to apply transformations to the element. All of these transformations can be animated
+// by setting dynamic values. This modifier is not layout affecting.
+message Transformation {
+  // The horizontal offset of this element relative to the location where the element's layout
+  // placed it. If not set, defaults to zero.
+  DpProp translation_x = 1;
+  // The vertical offset of this element in addition to the location where the element's layout
+  // placed it. If not set, defaults to zero.
+  DpProp translation_y = 2;
+  // The scale of this element in the x direction around the pivot point, as a proportion of the
+  // element's unscaled width. If not set, defaults to one.
+  FloatProp scale_x = 3;
+  // The scale of this element in the y direction around the pivot point, as a proportion of the
+  // element's unscaled height. If not set, defaults to one.
+  FloatProp scale_y = 4;
+  // The clockwise Degrees that the element is rotated around the pivot point. If not set, defaults
+  // to zero.
+  DegreesProp rotation = 5;
+  // The x offset of the point around which the element is rotated
+  // and scaled. Dynamic value is supported. If not set, defaults to the element center.
+  PivotDimension pivot_x = 6;
+  // The y offset of the point around which the element is rotated
+  // and scaled. Dynamic value is supported. If not set, defaults to the element center.
+  PivotDimension pivot_y = 7;
+}
+
 // Modifiers for an element. These may change the way they are drawn (e.g.
 // Padding or Background), or change their behaviour (e.g. Clickable, or
 // Semantics).
@@ -174,18 +216,28 @@ message Modifiers {
   // underneath it.
   AnimatedVisibility content_update_animation = 7;
 
-  // Whether the attached element is hidden, or visible. If the element is
-  // hidden, then it will still consume space in the layout, but will not render
-  // any contents, nor will any children render any contents.
-  //
-  // Note that a hidden element also cannot be clickable (i.e. a Clickable
-  // modifier would be ignored).
-  //
-  // Defaults to false (i.e. not hidden).
+
+  // This field is deprecated and is only kept for backward compatibility.
   BoolProp hidden = 8;
 
   // The optional identifier for the layout element.
   string id = 9;
+
+  // Whether the attached element is visible, or hidden. If the element is
+  // hidden, then it will still consume space in the layout, but will not render
+  // any contents, nor will any children render any contents. Defaults to visible.
+  //
+  // Note that a hidden element also cannot be clickable (i.e. a Clickable
+  // modifier would be ignored).
+  BoolProp visible = 10;
+
+  // The transformation applied to the element post-layout
+  Transformation transformation = 11;
+
+  // The opacity of the element with a value from 0 to 1, where 0 means
+  // the element is completely transparent and 1 means the element is
+  // completely opaque. Dynamic value is supported.
+  FloatProp opacity = 12;
 }
 
 // The content transition of an element. Any update to the element or its
@@ -348,6 +400,11 @@ message ArcModifiers {
   // Adds metadata for the modified element, for example, screen reader content
   // descriptions.
   Semantics semantics = 2;
+
+  // The opacity of the element
+  FloatProp opacity = 4;
+
+  reserved 3;
 }
 
 // Modifiers that can be used with Span elements. These may change the way
@@ -356,4 +413,16 @@ message SpanModifiers {
   // Allows its wrapped element to have actions associated with it, which will
   // be executed when the element is tapped.
   Clickable clickable = 1;
+}
+
+// The shadow definition. The shadow is drawn as a blur region around the
+// element.
+message Shadow {
+  // The blur radius of the shadow. It controls the size of the blur that is
+  // drawn.
+  // When set to zero, the shadow is not drawn. Defaults to zero.
+  DpProp blur_radius = 1;
+
+  // The color used in the shadow. Defaults to Black.
+  ColorProp color = 2;
 }

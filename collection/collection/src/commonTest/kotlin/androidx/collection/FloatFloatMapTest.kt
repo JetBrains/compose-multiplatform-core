@@ -245,6 +245,19 @@ class FloatFloatMapTest {
     }
 
     @Test
+    fun putWithDefault() {
+        val map = MutableFloatFloatMap()
+
+        var previous = map.put(1f, 1f, -1f)
+        assertEquals(1f, map[1f])
+        assertEquals(-1f, previous)
+
+        previous = map.put(1f, 2f, -1f)
+        assertEquals(2f, map[1f])
+        assertEquals(1f, previous)
+    }
+
+    @Test
     fun findNonExistingKey() {
         val map = MutableFloatFloatMap()
         map[1f] = 1f
@@ -340,7 +353,7 @@ class FloatFloatMapTest {
 
         // Make sure reinserting an entry after filling the table
         // with "Deleted" markers works
-        map[7f] = 7f
+        map[1f] = 7f
 
         assertEquals(1, map.size)
         assertEquals(capacity, map.capacity)

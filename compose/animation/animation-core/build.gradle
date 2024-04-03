@@ -14,8 +14,14 @@
  * limitations under the License.
  */
 
+/**
+ * This file was created using the `create_project.py` script located in the
+ * `<AndroidX root>/development/project-creator` directory.
+ *
+ * Please use that script when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
 
-import androidx.build.KmpPlatformsKt
 import androidx.build.LibraryType
 import androidx.build.PlatformIdentifier
 
@@ -25,11 +31,9 @@ plugins {
     id("AndroidXComposePlugin")
 }
 
-def desktopEnabled = KmpPlatformsKt.enableDesktop(project)
-
 androidXMultiplatform {
     android()
-    if (desktopEnabled) desktop()
+    desktop()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
@@ -37,9 +41,11 @@ androidXMultiplatform {
         commonMain {
             dependencies {
                 implementation(project(":compose:runtime:runtime"))
-                implementation(project(":compose:ui:ui"))
-                implementation(project(":compose:ui:ui-unit"))
+                implementation("androidx.compose.ui:ui:1.6.0")
+                implementation("androidx.compose.ui:ui-unit:1.6.0")
+                implementation(project(":compose:ui:ui-graphics"))
                 implementation(project(":compose:ui:ui-util"))
+                implementation("androidx.collection:collection:1.4.0")
                 implementation(libs.kotlinStdlibCommon)
                 api(libs.kotlinCoroutinesCore)
             }
@@ -67,16 +73,9 @@ androidXMultiplatform {
             }
         }
 
-        if (desktopEnabled) {
-            desktopMain {
-                dependsOn(jvmMain)
-                dependencies {
-                    implementation(libs.kotlinStdlib)
-                    implementation(project(":compose:runtime:runtime"))
-                    implementation(project(":compose:ui:ui"))
-                    implementation(project(":compose:ui:ui-unit"))
-                    implementation(project(":compose:ui:ui-util"))
-                }
+        desktopMain {
+            dependsOn(jvmMain)
+            dependencies {
             }
         }
 
@@ -99,10 +98,6 @@ androidXMultiplatform {
             }
         }
 
-        // TODO(b/214407011): These dependencies leak into instrumented tests as well. If you
-        //  need to add Robolectric (which must be kept out of androidAndroidTest), use a top
-        //  level dependencies block instead:
-        //  `dependencies { testImplementation(libs.robolectric) }`
         androidUnitTest {
             dependsOn(jvmTest)
             dependencies {
@@ -114,10 +109,8 @@ androidXMultiplatform {
             }
         }
 
-        if (desktopEnabled) {
-            desktopTest {
-                dependsOn(jvmTest)
-            }
+        desktopTest {
+            dependsOn(jvmTest)
         }
     }
 }
@@ -128,7 +121,7 @@ dependencies {
 
 androidx {
     name = "Compose Animation Core"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = LibraryType.PUBLISHED_KOTLIN_ONLY_LIBRARY
     inceptionYear = "2019"
     description = "Animation engine and animation primitives that are the building blocks of the Compose animation library"
     legacyDisableKotlinStrictApiMode = true

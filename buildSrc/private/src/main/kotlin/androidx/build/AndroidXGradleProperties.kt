@@ -89,6 +89,11 @@ const val PLAYGROUND_SNAPSHOT_BUILD_ID = "androidx.playground.snapshotBuildId"
 const val PLAYGROUND_METALAVA_BUILD_ID = "androidx.playground.metalavaBuildId"
 
 /**
+ * Specifies to prepend the current time to each Gradle log message
+ */
+const val PRINT_TIMESTAMPS = "androidx.printTimestamps"
+
+/**
  * Filepath to the java agent of YourKit for profiling If this value is set, profiling via YourKit
  * will automatically be enabled
  */
@@ -111,6 +116,16 @@ const val VERIFY_UP_TO_DATE = "androidx.verifyUpToDate"
  * are in AOSP, where not all KMP features are enabled.
  */
 const val KMP_GITHUB_BUILD = "androidx.github.build"
+
+/**
+ * Specifies to give as much memory to Gradle as in a typical CI run
+ */
+const val HIGH_MEMORY = "androidx.highMemory"
+
+/**
+ * Negates the HIGH_MEMORY flag
+ */
+const val LOW_MEMORY = "androidx.lowMemory"
 
 /**
  * If true, don't require lint-checks project to exist. This should only be set in integration
@@ -142,16 +157,31 @@ const val SUPPRESS_COMPATIBILITY_OPT_OUT = "androidx.suppress.compatibility.opto
  */
 const val SUPPRESS_COMPATIBILITY_OPT_IN = "androidx.suppress.compatibility.optin"
 
+/**
+ * If true, include Jetpack library projects that live outside of `frameworks/support`.
+ */
+const val INCLUDE_OPTIONAL_PROJECTS = "androidx.includeOptionalProjects"
+
+/**
+ * If true, build compose compiler from source.
+ * Should be kept to "false" unless we are upgrading the Kotlin version in order to release a new
+ * stable Compose Compiler.
+ */
+const val UNPIN_COMPOSE_COMPILER = "androidx.unpinComposeCompiler"
+
 val ALL_ANDROIDX_PROPERTIES =
     setOf(
         ADD_GROUP_CONSTRAINTS,
         ALTERNATIVE_PROJECT_URL,
         VERSION_EXTRA_CHECK_ENABLED,
         VALIDATE_PROJECT_STRUCTURE,
+        UNPIN_COMPOSE_COMPILER,
         ENABLE_COMPOSE_COMPILER_METRICS,
         ENABLE_COMPOSE_COMPILER_REPORTS,
         DISPLAY_TEST_OUTPUT,
         ENABLE_DOCUMENTATION,
+        HIGH_MEMORY,
+        LOW_MEMORY,
         STUDIO_TYPE,
         SUMMARIZE_STANDARD_ERROR,
         USE_MAX_DEP_VERSIONS,
@@ -163,6 +193,7 @@ val ALL_ANDROIDX_PROPERTIES =
         AffectedModuleDetector.BASE_COMMIT_ARG,
         PLAYGROUND_SNAPSHOT_BUILD_ID,
         PLAYGROUND_METALAVA_BUILD_ID,
+        PRINT_TIMESTAMPS,
         PROFILE_YOURKIT_AGENT_PATH,
         KMP_GITHUB_BUILD,
         ENABLED_KMP_TARGET_PLATFORMS,
@@ -172,6 +203,7 @@ val ALL_ANDROIDX_PROPERTIES =
         UPDATE_SIGNATURES,
         FilteredAnchorTask.PROP_TASK_NAME,
         FilteredAnchorTask.PROP_PATH_PREFIX,
+        INCLUDE_OPTIONAL_PROJECTS,
     ) + AndroidConfigImpl.GRADLE_PROPERTIES
 
 val PREFIXED_ANDROIDX_PROPERTIES =
@@ -262,6 +294,24 @@ fun Project.isDocumentationEnabled(): Boolean {
 fun Project.usingMaxDepVersions(): Boolean {
     return project.hasProperty(USE_MAX_DEP_VERSIONS)
 }
+
+/**
+ * Returns whether we export compose compiler metrics
+ */
+fun Project.enableComposeCompilerMetrics() =
+    findBooleanProperty(ENABLE_COMPOSE_COMPILER_METRICS) ?: false
+
+/**
+ * Returns whether we export compose compiler metrics
+ */
+fun Project.isComposeCompilerUnpinned() =
+    findBooleanProperty(UNPIN_COMPOSE_COMPILER) ?: false
+
+/**
+ * Returns whether we export compose compiler reports
+ */
+fun Project.enableComposeCompilerReports() =
+    findBooleanProperty(ENABLE_COMPOSE_COMPILER_REPORTS) ?: false
 
 /**
  * Returns whether this is an integration test that is allowing lint checks to be skipped to save

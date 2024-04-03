@@ -18,6 +18,7 @@ package androidx.compose.material3
 
 import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.TweenSpec
+import androidx.compose.animation.core.animate
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -41,22 +42,38 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.material3.internal.AnchoredDraggableState
+import androidx.compose.material3.internal.DraggableAnchors
+import androidx.compose.material3.internal.Strings
+import androidx.compose.material3.internal.anchoredDraggable
+import androidx.compose.material3.internal.getString
+import androidx.compose.material3.internal.snapTo
+import androidx.compose.material3.internal.systemBarsForVisualComponents
+import androidx.compose.material3.tokens.ElevationTokens
 import androidx.compose.material3.tokens.NavigationDrawerTokens
 import androidx.compose.material3.tokens.ScrimTokens
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.State
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.GraphicsLayerScope
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalDensity
@@ -68,10 +85,12 @@ import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.lerp
 import kotlin.math.roundToInt
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
@@ -104,11 +123,12 @@ class DrawerState(
     confirmStateChange: (DrawerValue) -> Boolean = { true }
 ) {
 
-    @OptIn(ExperimentalMaterial3Api::class)
-    internal val swipeableState = SwipeableState(
+    internal val anchoredDraggableState = AnchoredDraggableState(
         initialValue = initialValue,
         animationSpec = AnimationSpec,
-        confirmStateChange = confirmStateChange
+        confirmValueChange = confirmStateChange,
+        positionalThreshold = { distance -> distance * DrawerPositionalThreshold },
+        velocityThreshold = { with(requireDensity()) { DrawerVelocityThreshold.toPx() } }
     )
 
     /**
@@ -130,19 +150,17 @@ class DrawerState(
      * currently in. If a swipe or an animation is in progress, this corresponds the state drawer
      * was in before the swipe or animation started.
      */
-    @OptIn(ExperimentalMaterial3Api::class)
     val currentValue: DrawerValue
         get() {
-            return swipeableState.currentValue
+            return anchoredDraggableState.currentValue
         }
 
     /**
      * Whether the state is currently animating.
      */
-    @OptIn(ExperimentalMaterial3Api::class)
     val isAnimationRunning: Boolean
         get() {
-            return swipeableState.isAnimationRunning
+            return anchoredDraggableState.isAnimationRunning
         }
 
     /**
@@ -152,7 +170,7 @@ class DrawerState(
      *
      * @return the reason the open animation ended
      */
-    suspend fun open() = animateTo(DrawerValue.Open, AnimationSpec)
+    suspend fun open() = animateTo(DrawerValue.Open)
 
     /**
      * Close the drawer with animation and suspend until it if fully closed or animation has been
@@ -161,7 +179,7 @@ class DrawerState(
      *
      * @return the reason the close animation ended
      */
-    suspend fun close() = animateTo(DrawerValue.Closed, AnimationSpec)
+    suspend fun close() = animateTo(DrawerValue.Closed)
 
     /**
      * Set the state of the drawer with specific animation
@@ -169,9 +187,12 @@ class DrawerState(
      * @param targetValue The new value to animate to.
      * @param anim The animation that will be used to animate to the new value.
      */
-    @OptIn(ExperimentalMaterial3Api::class)
+    @Deprecated(
+        message = "This method has been replaced by the open and close methods. The animation " +
+            "spec is now an implementation detail of ModalDrawer.",
+    )
     suspend fun animateTo(targetValue: DrawerValue, anim: AnimationSpec<Float>) {
-        swipeableState.animateTo(targetValue, anim)
+        animateTo(targetValue = targetValue, animationSpec = anim)
     }
 
     /**
@@ -179,9 +200,8 @@ class DrawerState(
      *
      * @param targetValue The new target value
      */
-    @OptIn(ExperimentalMaterial3Api::class)
     suspend fun snapTo(targetValue: DrawerValue) {
-        swipeableState.snapTo(targetValue)
+        anchoredDraggableState.snapTo(targetValue)
     }
 
     /**
@@ -191,16 +211,61 @@ class DrawerState(
      * swipe finishes. If an animation is running, this is the target value of that animation.
      * Finally, if no swipe or animation is in progress, this is the same as the [currentValue].
      */
-    @OptIn(ExperimentalMaterial3Api::class)
     val targetValue: DrawerValue
-        get() = swipeableState.targetValue
+        get() = anchoredDraggableState.targetValue
 
     /**
-     * The current position (in pixels) of the drawer container.
+     * The current position (in pixels) of the drawer sheet, or Float.NaN before the offset is
+     * initialized.
+     *
+     * @see [AnchoredDraggableState.offset] for more information.
      */
-    @OptIn(ExperimentalMaterial3Api::class)
-    val offset: State<Float>
-        get() = swipeableState.offset
+    @Deprecated(
+        message = "Please access the offset through currentOffset, which returns the value " +
+            "directly instead of wrapping it in a state object.",
+        replaceWith = ReplaceWith("currentOffset")
+    )
+    val offset: State<Float> = object : State<Float> {
+        override val value: Float get() = anchoredDraggableState.offset
+    }
+
+    /**
+     * The current position (in pixels) of the drawer sheet, or Float.NaN before the offset is
+     * initialized.
+     *
+     * @see [AnchoredDraggableState.offset] for more information.
+     */
+    val currentOffset: Float get() = anchoredDraggableState.offset
+
+    internal var density: Density? by mutableStateOf(null)
+
+    private fun requireDensity() = requireNotNull(density) {
+        "The density on BottomDrawerState ($this) was not set. Did you use BottomDrawer" +
+            " with the BottomDrawer composable?"
+    }
+
+    internal fun requireOffset(): Float = anchoredDraggableState.requireOffset()
+
+    private suspend fun animateTo(
+        targetValue: DrawerValue,
+        animationSpec: AnimationSpec<Float> = AnimationSpec,
+        velocity: Float = anchoredDraggableState.lastVelocity
+    ) {
+        anchoredDraggableState.anchoredDrag(targetValue = targetValue) { anchors, latestTarget ->
+            val targetOffset = anchors.positionOf(latestTarget)
+            if (!targetOffset.isNaN()) {
+                var prev = if (currentOffset.isNaN()) 0f else currentOffset
+                animate(prev, targetOffset, velocity, animationSpec) { value, velocity ->
+                    // Our onDrag coerces the value within the bounds, but an animation may
+                    // overshoot, for example a spring animation or an overshooting interpolator
+                    // We respect the user's intention and allow the overshoot, but still use
+                    // DraggableState's drag for its mutex.
+                    dragTo(value, velocity)
+                    prev = value
+                }
+            }
+        }
+    }
 
     companion object {
         /**
@@ -249,7 +314,6 @@ fun rememberDrawerState(
  * @param scrimColor color of the scrim that obscures content when the drawer is open
  * @param content content of the rest of the UI
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ModalNavigationDrawer(
     drawerContent: @Composable () -> Unit,
@@ -261,23 +325,29 @@ fun ModalNavigationDrawer(
 ) {
     val scope = rememberCoroutineScope()
     val navigationMenu = getString(Strings.NavigationMenu)
-    val minValue = -with(LocalDensity.current) { NavigationDrawerTokens.ContainerWidth.toPx() }
+    val density = LocalDensity.current
+    val minValue = -with(density) { NavigationDrawerTokens.ContainerWidth.toPx() }
     val maxValue = 0f
 
-    val anchors = mapOf(minValue to DrawerValue.Closed, maxValue to DrawerValue.Open)
+    SideEffect {
+        drawerState.density = density
+        drawerState.anchoredDraggableState.updateAnchors(
+            DraggableAnchors {
+                DrawerValue.Closed at minValue
+                DrawerValue.Open at maxValue
+            }
+        )
+    }
+
     val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
     Box(
         modifier
             .fillMaxSize()
-            .swipeable(
-                state = drawerState.swipeableState,
-                anchors = anchors,
-                thresholds = { _, _ -> FractionalThreshold(0.5f) },
+            .anchoredDraggable(
+                state = drawerState.anchoredDraggableState,
                 orientation = Orientation.Horizontal,
                 enabled = gesturesEnabled,
-                reverseDirection = isRtl,
-                velocityThreshold = DrawerVelocityThreshold,
-                resistance = null
+                reverseDirection = isRtl
             )
     ) {
         Box {
@@ -288,26 +358,32 @@ fun ModalNavigationDrawer(
             onClose = {
                 if (
                     gesturesEnabled &&
-                    drawerState.swipeableState.confirmStateChange(DrawerValue.Closed)
+                    drawerState.anchoredDraggableState.confirmValueChange(DrawerValue.Closed)
                 ) {
                     scope.launch { drawerState.close() }
                 }
             },
             fraction = {
-                calculateFraction(minValue, maxValue, drawerState.offset.value)
+                calculateFraction(minValue, maxValue, drawerState.requireOffset())
             },
             color = scrimColor
         )
         Box(
             Modifier
-                .offset { IntOffset(drawerState.offset.value.roundToInt(), 0) }
+                .offset {
+                    IntOffset(
+                        drawerState
+                            .requireOffset()
+                            .roundToInt(), 0
+                    )
+                }
                 .semantics {
                     paneTitle = navigationMenu
                     if (drawerState.isOpen) {
                         dismiss {
-                            if (
-                                drawerState.swipeableState
-                                    .confirmStateChange(DrawerValue.Closed)
+                            if (drawerState.anchoredDraggableState.confirmValueChange(
+                                    DrawerValue.Closed
+                                )
                             ) {
                                 scope.launch { drawerState.close() }
                             }; true
@@ -340,7 +416,6 @@ fun ModalNavigationDrawer(
  * @param gesturesEnabled whether or not the drawer can be interacted by gestures
  * @param content content of the rest of the UI
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DismissibleNavigationDrawer(
     drawerContent: @Composable () -> Unit,
@@ -349,36 +424,43 @@ fun DismissibleNavigationDrawer(
     gesturesEnabled: Boolean = true,
     content: @Composable () -> Unit
 ) {
+    val density = LocalDensity.current
     val drawerWidth = NavigationDrawerTokens.ContainerWidth
-    val drawerWidthPx = with(LocalDensity.current) { drawerWidth.toPx() }
+    val drawerWidthPx = with(density) { drawerWidth.toPx() }
     val minValue = -drawerWidthPx
     val maxValue = 0f
+
+    SideEffect {
+        drawerState.density = density
+        drawerState.anchoredDraggableState.updateAnchors(
+            DraggableAnchors {
+                DrawerValue.Closed at minValue
+                DrawerValue.Open at maxValue
+            }
+        )
+    }
 
     val scope = rememberCoroutineScope()
     val navigationMenu = getString(Strings.NavigationMenu)
 
-    val anchors = mapOf(minValue to DrawerValue.Closed, maxValue to DrawerValue.Open)
     val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
     Box(
-        modifier.swipeable(
-            state = drawerState.swipeableState,
-            anchors = anchors,
-            thresholds = { _, _ -> FractionalThreshold(0.5f) },
-            orientation = Orientation.Horizontal,
-            enabled = gesturesEnabled,
-            reverseDirection = isRtl,
-            velocityThreshold = DrawerVelocityThreshold,
-            resistance = null
-        )
+        modifier
+            .anchoredDraggable(
+                state = drawerState.anchoredDraggableState,
+                orientation = Orientation.Horizontal,
+                enabled = gesturesEnabled,
+                reverseDirection = isRtl
+            )
     ) {
         Layout(content = {
             Box(Modifier.semantics {
                 paneTitle = navigationMenu
                 if (drawerState.isOpen) {
                     dismiss {
-                        if (
-                            drawerState.swipeableState
-                                .confirmStateChange(DrawerValue.Closed)
+                        if (drawerState.anchoredDraggableState.confirmValueChange(
+                                DrawerValue.Closed
+                            )
                         ) {
                             scope.launch { drawerState.close() }
                         }; true
@@ -395,10 +477,10 @@ fun DismissibleNavigationDrawer(
             val contentPlaceable = measurables[1].measure(constraints)
             layout(contentPlaceable.width, contentPlaceable.height) {
                 contentPlaceable.placeRelative(
-                    sheetPlaceable.width + drawerState.offset.value.roundToInt(),
+                    sheetPlaceable.width + drawerState.requireOffset().roundToInt(),
                     0
                 )
-                sheetPlaceable.placeRelative(drawerState.offset.value.roundToInt(), 0)
+                sheetPlaceable.placeRelative(drawerState.requireOffset().roundToInt(), 0)
             }
         }
     }
@@ -437,6 +519,10 @@ fun PermanentNavigationDrawer(
 
 /**
  * Content inside of a modal navigation drawer.
+
+ * Note: This version of [ModalDrawerSheet] does not handle back by default. For automatic back
+ * handling and predictive back animations on Android 14+, use the [ModalDrawerSheet] that accepts
+ * `drawerState` as a param.
  *
  * @param modifier the [Modifier] to be applied to this drawer's content
  * @param drawerShape defines the shape of this drawer's container
@@ -455,13 +541,14 @@ fun PermanentNavigationDrawer(
 fun ModalDrawerSheet(
     modifier: Modifier = Modifier,
     drawerShape: Shape = DrawerDefaults.shape,
-    drawerContainerColor: Color = DrawerDefaults.containerColor,
+    drawerContainerColor: Color = DrawerDefaults.modalContainerColor,
     drawerContentColor: Color = contentColorFor(drawerContainerColor),
     drawerTonalElevation: Dp = DrawerDefaults.ModalDrawerElevation,
     windowInsets: WindowInsets = DrawerDefaults.windowInsets,
     content: @Composable ColumnScope.() -> Unit
 ) {
     DrawerSheet(
+        drawerPredictiveBackState = null,
         windowInsets,
         modifier,
         drawerShape,
@@ -473,7 +560,57 @@ fun ModalDrawerSheet(
 }
 
 /**
+ * Content inside of a modal navigation drawer.
+ *
+ * Note: This version of [ModalDrawerSheet] requires a [drawerState] to be provided and will handle
+ * back by default for all Android versions, as well as animate during predictive back on Android
+ * 14+.
+ *
+ * @param drawerState state of the drawer
+ * @param modifier the [Modifier] to be applied to this drawer's content
+ * @param drawerShape defines the shape of this drawer's container
+ * @param drawerContainerColor the color used for the background of this drawer. Use
+ * [Color.Transparent] to have no color.
+ * @param drawerContentColor the preferred color for content inside this drawer. Defaults to either
+ * the matching content color for [drawerContainerColor], or to the current [LocalContentColor] if
+ * [drawerContainerColor] is not a color from the theme.
+ * @param drawerTonalElevation when [drawerContainerColor] is [ColorScheme.surface], a translucent
+ * primary color overlay is applied on top of the container. A higher tonal elevation value will
+ * result in a darker color in light theme and lighter color in dark theme. See also: [Surface].
+ * @param windowInsets a window insets for the sheet.
+ * @param content content inside of a modal navigation drawer
+ */
+@Composable
+fun ModalDrawerSheet(
+    drawerState: DrawerState,
+    modifier: Modifier = Modifier,
+    drawerShape: Shape = DrawerDefaults.shape,
+    drawerContainerColor: Color = DrawerDefaults.modalContainerColor,
+    drawerContentColor: Color = contentColorFor(drawerContainerColor),
+    drawerTonalElevation: Dp = DrawerDefaults.ModalDrawerElevation,
+    windowInsets: WindowInsets = DrawerDefaults.windowInsets,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    DrawerPredictiveBackHandler(drawerState) { drawerPredictiveBackState ->
+        DrawerSheet(
+            drawerPredictiveBackState,
+            windowInsets,
+            modifier,
+            drawerShape,
+            drawerContainerColor,
+            drawerContentColor,
+            drawerTonalElevation,
+            content
+        )
+    }
+}
+
+/**
  * Content inside of a dismissible navigation drawer.
+ *
+ * Note: This version of [DismissibleDrawerSheet] does not handle back by default. For automatic
+ * back handling and predictive back animations on Android 14+, use the [DismissibleDrawerSheet]
+ * that accepts `drawerState` as a param.
  *
  * @param modifier the [Modifier] to be applied to this drawer's content
  * @param drawerShape defines the shape of this drawer's container
@@ -492,13 +629,14 @@ fun ModalDrawerSheet(
 fun DismissibleDrawerSheet(
     modifier: Modifier = Modifier,
     drawerShape: Shape = RectangleShape,
-    drawerContainerColor: Color = DrawerDefaults.containerColor,
+    drawerContainerColor: Color = DrawerDefaults.standardContainerColor,
     drawerContentColor: Color = contentColorFor(drawerContainerColor),
     drawerTonalElevation: Dp = DrawerDefaults.DismissibleDrawerElevation,
     windowInsets: WindowInsets = DrawerDefaults.windowInsets,
     content: @Composable ColumnScope.() -> Unit
 ) {
     DrawerSheet(
+        drawerPredictiveBackState = null,
         windowInsets,
         modifier,
         drawerShape,
@@ -507,6 +645,52 @@ fun DismissibleDrawerSheet(
         drawerTonalElevation,
         content
     )
+}
+
+/**
+ * Content inside of a dismissible navigation drawer.
+
+ * Note: This version of [DismissibleDrawerSheet] requires a [drawerState] to be provided and will
+ * handle back by default for all Android versions, as well as animate during predictive back on
+ * Android 14+.
+ *
+ * @param drawerState state of the drawer
+ * @param modifier the [Modifier] to be applied to this drawer's content
+ * @param drawerShape defines the shape of this drawer's container
+ * @param drawerContainerColor the color used for the background of this drawer. Use
+ * [Color.Transparent] to have no color.
+ * @param drawerContentColor the preferred color for content inside this drawer. Defaults to either
+ * the matching content color for [drawerContainerColor], or to the current [LocalContentColor] if
+ * [drawerContainerColor] is not a color from the theme.
+ * @param drawerTonalElevation when [drawerContainerColor] is [ColorScheme.surface], a translucent
+ * primary color overlay is applied on top of the container. A higher tonal elevation value will
+ * result in a darker color in light theme and lighter color in dark theme. See also: [Surface].
+ * @param windowInsets a window insets for the sheet.
+ * @param content content inside of a dismissible navigation drawer
+ */
+@Composable
+fun DismissibleDrawerSheet(
+    drawerState: DrawerState,
+    modifier: Modifier = Modifier,
+    drawerShape: Shape = RectangleShape,
+    drawerContainerColor: Color = DrawerDefaults.standardContainerColor,
+    drawerContentColor: Color = contentColorFor(drawerContainerColor),
+    drawerTonalElevation: Dp = DrawerDefaults.DismissibleDrawerElevation,
+    windowInsets: WindowInsets = DrawerDefaults.windowInsets,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    DrawerPredictiveBackHandler(drawerState) { drawerPredictiveBackState ->
+        DrawerSheet(
+            drawerPredictiveBackState,
+            windowInsets,
+            modifier,
+            drawerShape,
+            drawerContainerColor,
+            drawerContentColor,
+            drawerTonalElevation,
+            content
+        )
+    }
 }
 
 /**
@@ -529,7 +713,7 @@ fun DismissibleDrawerSheet(
 fun PermanentDrawerSheet(
     modifier: Modifier = Modifier,
     drawerShape: Shape = RectangleShape,
-    drawerContainerColor: Color = DrawerDefaults.containerColor,
+    drawerContainerColor: Color = DrawerDefaults.standardContainerColor,
     drawerContentColor: Color = contentColorFor(drawerContainerColor),
     drawerTonalElevation: Dp = DrawerDefaults.PermanentDrawerElevation,
     windowInsets: WindowInsets = DrawerDefaults.windowInsets,
@@ -537,6 +721,7 @@ fun PermanentDrawerSheet(
 ) {
     val navigationMenu = getString(Strings.NavigationMenu)
     DrawerSheet(
+        drawerPredictiveBackState = null,
         windowInsets,
         modifier.semantics {
             paneTitle = navigationMenu
@@ -550,58 +735,119 @@ fun PermanentDrawerSheet(
 }
 
 @Composable
-private fun DrawerSheet(
+internal fun DrawerSheet(
+    drawerPredictiveBackState: DrawerPredictiveBackState?,
     windowInsets: WindowInsets,
     modifier: Modifier = Modifier,
     drawerShape: Shape = RectangleShape,
-    drawerContainerColor: Color = DrawerDefaults.containerColor,
+    drawerContainerColor: Color = DrawerDefaults.standardContainerColor,
     drawerContentColor: Color = contentColorFor(drawerContainerColor),
     drawerTonalElevation: Dp = DrawerDefaults.PermanentDrawerElevation,
     content: @Composable ColumnScope.() -> Unit
 ) {
+    val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
+    val predictiveBackDrawerContainerModifier =
+        if (drawerPredictiveBackState != null) Modifier.predictiveBackDrawerContainer(
+            drawerPredictiveBackState,
+            isRtl
+        ) else Modifier
     Surface(
         modifier = modifier
             .sizeIn(
                 minWidth = MinimumDrawerWidth,
                 maxWidth = DrawerDefaults.MaximumDrawerWidth
             )
+            .then(predictiveBackDrawerContainerModifier)
             .fillMaxHeight(),
         shape = drawerShape,
         color = drawerContainerColor,
         contentColor = drawerContentColor,
         tonalElevation = drawerTonalElevation
     ) {
+        val predictiveBackDrawerChildModifier =
+            if (drawerPredictiveBackState != null) Modifier.predictiveBackDrawerChild(
+                drawerPredictiveBackState,
+                isRtl
+            ) else Modifier
         Column(
             Modifier
                 .sizeIn(
                     minWidth = MinimumDrawerWidth,
                     maxWidth = DrawerDefaults.MaximumDrawerWidth
                 )
+                .then(predictiveBackDrawerChildModifier)
                 .windowInsetsPadding(windowInsets),
             content = content
         )
     }
 }
 
+private fun Modifier.predictiveBackDrawerContainer(
+    drawerPredictiveBackState: DrawerPredictiveBackState,
+    isRtl: Boolean
+) = graphicsLayer {
+    scaleX = calculatePredictiveBackScaleX(drawerPredictiveBackState)
+    scaleY = calculatePredictiveBackScaleY(drawerPredictiveBackState)
+    transformOrigin = TransformOrigin(if (isRtl) 1f else 0f, 0.5f)
+}
+
+private fun Modifier.predictiveBackDrawerChild(
+    drawerPredictiveBackState: DrawerPredictiveBackState,
+    isRtl: Boolean
+) = graphicsLayer {
+    // Preserve the original aspect ratio and container alignment of the child
+    // content, and add content margins.
+    val containerScaleX = calculatePredictiveBackScaleX(drawerPredictiveBackState)
+    val containerScaleY = calculatePredictiveBackScaleY(drawerPredictiveBackState)
+    scaleX = if (containerScaleX != 0f) containerScaleY / containerScaleX else 1f
+    transformOrigin = TransformOrigin(if (isRtl) 0f else 1f, 0f)
+}
+
+private fun GraphicsLayerScope.calculatePredictiveBackScaleX(
+    drawerPredictiveBackState: DrawerPredictiveBackState
+): Float {
+    val width = size.width
+    return if (width.isNaN() || width == 0f) {
+        1f
+    } else {
+        val scaleXDirection = if (drawerPredictiveBackState.swipeEdgeMatchesDrawer) 1 else -1
+        1f + drawerPredictiveBackState.scaleXDistance * scaleXDirection / width
+    }
+}
+
+private fun GraphicsLayerScope.calculatePredictiveBackScaleY(
+    drawerPredictiveBackState: DrawerPredictiveBackState
+): Float {
+    val height = size.height
+    return if (height.isNaN() || height == 0f) {
+        1f
+    } else {
+        1f - drawerPredictiveBackState.scaleYDistance / height
+    }
+}
+
+@Composable
+internal expect fun DrawerPredictiveBackHandler(
+    drawerState: DrawerState,
+    content: @Composable (DrawerPredictiveBackState) -> Unit
+)
+
 /**
  * Object to hold default values for [ModalNavigationDrawer]
  */
 object DrawerDefaults {
     /**
-     * Default Elevation for drawer container in the [ModalNavigationDrawer] as specified in the
-     * Material specification.
+     * Default Elevation for drawer container in the [ModalNavigationDrawer].
      */
-    val ModalDrawerElevation = NavigationDrawerTokens.ModalContainerElevation
+    val ModalDrawerElevation = ElevationTokens.Level0
 
     /**
-     * Default Elevation for drawer container in the [PermanentNavigationDrawer] as specified in the
-     * Material specification.
+     * Default Elevation for drawer container in the [PermanentNavigationDrawer].
      */
     val PermanentDrawerElevation = NavigationDrawerTokens.StandardContainerElevation
 
     /**
-     * Default Elevation for drawer container in the [DismissibleNavigationDrawer] as specified in
-     * the Material specification.
+     * Default Elevation for drawer container in the [DismissibleNavigationDrawer].
      */
     val DismissibleDrawerElevation = NavigationDrawerTokens.StandardContainerElevation
 
@@ -613,7 +859,23 @@ object DrawerDefaults {
         @Composable get() = ScrimTokens.ContainerColor.value.copy(ScrimTokens.ContainerOpacity)
 
     /** Default container color for a navigation drawer */
-    val containerColor: Color @Composable get() = NavigationDrawerTokens.ContainerColor.value
+    @Deprecated(
+        message = "Please use standardContainerColor or modalContainerColor instead.",
+        replaceWith = ReplaceWith("standardContainerColor"),
+        level = DeprecationLevel.WARNING,
+    )
+    val containerColor: Color @Composable get() =
+        NavigationDrawerTokens.StandardContainerColor.value
+
+    /**
+     * Default container color for a [DismissibleNavigationDrawer] and [PermanentNavigationDrawer]
+     */
+    val standardContainerColor: Color @Composable get() =
+        NavigationDrawerTokens.StandardContainerColor.value
+
+    /** Default container color for a [ModalNavigationDrawer] */
+    val modalContainerColor: Color @Composable get() =
+        NavigationDrawerTokens.ModalContainerColor.value
 
     /** Default and maximum width of a navigation drawer */
     val MaximumDrawerWidth = NavigationDrawerTokens.ContainerWidth
@@ -643,9 +905,10 @@ object DrawerDefaults {
  * @param badge optional badge to show on this item from the end side
  * @param colors [NavigationDrawerItemColors] that will be used to resolve the colors used for this
  * item in different states. See [NavigationDrawerItemDefaults.colors].
- * @param interactionSource the [MutableInteractionSource] representing the stream of [Interaction]s
- * for this item. You can create and pass in your own `remember`ed instance to observe
- * [Interaction]s and customize the appearance / behavior of this item in different states.
+ * @param interactionSource an optional hoisted [MutableInteractionSource] for observing and
+ * emitting [Interaction]s for this item. You can use this to change the item's appearance
+ * or preview the item in different states. Note that if `null` is provided, interactions will
+ * still happen internally.
  */
 @Composable
 fun NavigationDrawerItem(
@@ -657,12 +920,13 @@ fun NavigationDrawerItem(
     badge: (@Composable () -> Unit)? = null,
     shape: Shape = NavigationDrawerTokens.ActiveIndicatorShape.value,
     colors: NavigationDrawerItemColors = NavigationDrawerItemDefaults.colors(),
-    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() }
+    interactionSource: MutableInteractionSource? = null
 ) {
     Surface(
         selected = selected,
         onClick = onClick,
-        modifier = modifier.semantics { role = Role.Tab }
+        modifier = modifier
+            .semantics { role = Role.Tab }
             .height(NavigationDrawerTokens.ActiveIndicatorHeight)
             .fillMaxWidth(),
         shape = shape,
@@ -748,7 +1012,7 @@ object NavigationDrawerItemDefaults {
     @Composable
     fun colors(
         selectedContainerColor: Color = NavigationDrawerTokens.ActiveIndicatorColor.value,
-        unselectedContainerColor: Color = NavigationDrawerTokens.ContainerColor.value,
+        unselectedContainerColor: Color = Color.Transparent,
         selectedIconColor: Color = NavigationDrawerTokens.ActiveIconColor.value,
         unselectedIconColor: Color = NavigationDrawerTokens.InactiveIconColor.value,
         selectedTextColor: Color = NavigationDrawerTokens.ActiveLabelTextColor.value,
@@ -771,6 +1035,36 @@ object NavigationDrawerItemDefaults {
      * specification.
      */
     val ItemPadding = PaddingValues(horizontal = 12.dp)
+}
+
+@Stable
+internal class DrawerPredictiveBackState {
+
+    var swipeEdgeMatchesDrawer by mutableStateOf(true)
+
+    var scaleXDistance by mutableFloatStateOf(0f)
+
+    var scaleYDistance by mutableFloatStateOf(0f)
+
+    fun update(
+        progress: Float,
+        swipeEdgeLeft: Boolean,
+        isRtl: Boolean,
+        maxScaleXDistanceGrow: Float,
+        maxScaleXDistanceShrink: Float,
+        maxScaleYDistance: Float
+    ) {
+        swipeEdgeMatchesDrawer = swipeEdgeLeft != isRtl
+        val maxScaleXDistance =
+            if (swipeEdgeMatchesDrawer) maxScaleXDistanceGrow else maxScaleXDistanceShrink
+        scaleXDistance = lerp(0f, maxScaleXDistance, progress)
+        scaleYDistance = lerp(0f, maxScaleYDistance, progress)
+    }
+    fun clear() {
+        swipeEdgeMatchesDrawer = true
+        scaleXDistance = 0f
+        scaleYDistance = 0f
+    }
 }
 
 private class DefaultDrawerItemsColor(
@@ -818,9 +1112,7 @@ private class DefaultDrawerItemsColor(
         if (selectedContainerColor != other.selectedContainerColor) return false
         if (unselectedContainerColor != other.unselectedContainerColor) return false
         if (selectedBadgeColor != other.selectedBadgeColor) return false
-        if (unselectedBadgeColor != other.unselectedBadgeColor) return false
-
-        return true
+        return unselectedBadgeColor == other.unselectedBadgeColor
     }
 
     override fun hashCode(): Int {
@@ -867,6 +1159,7 @@ private fun Scrim(
     }
 }
 
+private val DrawerPositionalThreshold = 0.5f
 private val DrawerVelocityThreshold = 400.dp
 private val MinimumDrawerWidth = 240.dp
 

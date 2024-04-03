@@ -14,7 +14,13 @@
  * limitations under the License.
  */
 
-import androidx.build.KmpPlatformsKt
+/**
+ * This file was created using the `create_project.py` script located in the
+ * `<AndroidX root>/development/project-creator` directory.
+ *
+ * Please use that script when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
 import androidx.build.LibraryType
 import androidx.build.PlatformIdentifier
 
@@ -24,12 +30,9 @@ plugins {
     id("com.android.library")
 }
 
-def desktopEnabled = KmpPlatformsKt.enableDesktop(project)
-
-
 androidXMultiplatform {
     android()
-    if (desktopEnabled) desktop()
+    desktop()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
@@ -43,7 +46,6 @@ androidXMultiplatform {
 
         commonTest {
             dependencies {
-
             }
         }
 
@@ -53,12 +55,9 @@ androidXMultiplatform {
             }
         }
 
-        if (desktopEnabled) {
-            skikoMain {
-                dependsOn(commonMain)
-                dependencies {
-                    api(project(":compose:runtime:runtime"))
-                }
+        skikoMain {
+            dependsOn(commonMain)
+            dependencies {
             }
         }
 
@@ -69,13 +68,10 @@ androidXMultiplatform {
             }
         }
 
-        if (desktopEnabled) {
-            desktopMain {
-                dependsOn(skikoMain)
-                dependsOn(jvmMain)
-                dependencies {
-
-                }
+        desktopMain {
+            dependsOn(skikoMain)
+            dependsOn(jvmMain)
+            dependencies {
             }
         }
 
@@ -98,12 +94,10 @@ androidXMultiplatform {
             }
         }
 
-        if (desktopEnabled) {
-            desktopTest {
-                dependsOn(jvmTest)
-                dependencies {
+        desktopTest {
+            dependsOn(jvmTest)
+            dependencies {
 
-                }
             }
         }
     }
@@ -111,7 +105,7 @@ androidXMultiplatform {
 
 androidx {
     name = "Compose UI Preview Tooling"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = LibraryType.PUBLISHED_KOTLIN_ONLY_LIBRARY
     inceptionYear = "2021"
     description = "Compose tooling library API. This library provides the API required to declare" +
             " @Preview composables in user apps."

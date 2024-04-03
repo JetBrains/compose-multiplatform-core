@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.text
 
+import androidx.annotation.IntRange
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.BlendMode
@@ -141,6 +142,9 @@ internal class SkiaParagraph(
         lineMetrics.getOrNull(lineIndex)?.let { line ->
             floor((line.baseline - line.ascent).toFloat())
         } ?: 0f
+
+    override fun getLineBaseline(lineIndex: Int) =
+        lineMetrics.getOrNull(lineIndex)?.baseline?.toFloat() ?: 0f
 
     override fun getLineBottom(lineIndex: Int) =
         lineMetrics.getOrNull(lineIndex)?.let { line ->
@@ -274,6 +278,14 @@ internal class SkiaParagraph(
         return para.getGlyphPositionAtCoordinate(position.x, position.y).position
     }
 
+    override fun getRangeForRect(
+        rect: Rect,
+        granularity: TextGranularity,
+        inclusionStrategy: TextInclusionStrategy
+    ): TextRange? {
+        return null
+    }
+
     override fun getBoundingBox(offset: Int): Rect {
         val box = getBoxForwardByOffset(offset) ?: getBoxBackwardByOffset(offset, text.length)!!
         return box.rect.toComposeRect()
@@ -282,7 +294,7 @@ internal class SkiaParagraph(
     override fun fillBoundingBoxes(
         range: TextRange,
         array: FloatArray,
-        arrayStart: Int
+        @IntRange(from = 0) arrayStart: Int
     ) {
         // TODO(siyamed) needs fillBoundingBoxes
     }

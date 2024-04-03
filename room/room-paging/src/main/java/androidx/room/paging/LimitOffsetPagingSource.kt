@@ -23,7 +23,6 @@ import androidx.paging.PagingSource
 import androidx.paging.PagingState
 import androidx.room.RoomDatabase
 import androidx.room.RoomSQLiteQuery
-import androidx.room.getQueryDispatcher
 import androidx.room.paging.util.INITIAL_ITEM_COUNT
 import androidx.room.paging.util.INVALID
 import androidx.room.paging.util.ThreadSafeInvalidationObserver
@@ -67,14 +66,18 @@ abstract class LimitOffsetPagingSource<Value : Any>(
     )
 
     override suspend fun load(params: LoadParams<Int>): LoadResult<Int, Value> {
-        return withContext(db.getQueryDispatcher()) {
+        return withContext(db.getQueryContext()) {
             observer.registerIfNecessary(db)
             val tempCount = itemCount.get()
             // if itemCount is < 0, then it is initial load
-            if (tempCount == INITIAL_ITEM_COUNT) {
-                initialLoad(params)
-            } else {
-                nonInitialLoad(params, tempCount)
+            try {
+                if (tempCount == INITIAL_ITEM_COUNT) {
+                    initialLoad(params)
+                } else {
+                    nonInitialLoad(params, tempCount)
+                }
+            } catch (e: Exception) {
+                LoadResult.Error(e)
             }
         }
     }

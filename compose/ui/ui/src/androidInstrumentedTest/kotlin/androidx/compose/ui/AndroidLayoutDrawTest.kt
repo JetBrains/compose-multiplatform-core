@@ -18,6 +18,7 @@
 
 package androidx.compose.ui
 
+import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.os.Build
@@ -57,12 +58,10 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
-import androidx.compose.ui.graphics.DefaultShadowColor
 import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.ReusableGraphicsLayerScope
 import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.ContentDrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -112,6 +111,7 @@ import androidx.compose.ui.unit.toOffset
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
+import com.google.common.truth.Truth
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
@@ -393,27 +393,10 @@ class AndroidLayoutDrawTest {
             ViewLayerContainer(activity),
             {},
             {}).apply {
-            updateLayerProperties(
-                scaleX = 1f,
-                scaleY = 1f,
-                alpha = 1f,
-                translationX = 0f,
-                translationY = 0f,
-                shadowElevation = 0f,
-                rotationX = 0f,
-                rotationY = 0f,
-                rotationZ = 0f,
-                cameraDistance = cameraDistance,
-                transformOrigin = TransformOrigin.Center,
-                shape = RectangleShape,
-                clip = true,
-                layoutDirection = LayoutDirection.Ltr,
-                density = Density(1f),
-                renderEffect = null,
-                ambientShadowColor = DefaultShadowColor,
-                spotShadowColor = DefaultShadowColor,
-                compositingStrategy = compositingStrategy
-            )
+            val scope = ReusableGraphicsLayerScope()
+            scope.cameraDistance = cameraDistance
+            scope.compositingStrategy = compositingStrategy
+            updateLayerProperties(scope, LayoutDirection.Ltr, Density(1f))
         }
         return expectedLayerType == view.layerType &&
             expectedOverlappingRendering == view.hasOverlappingRendering()
@@ -451,27 +434,9 @@ class AndroidLayoutDrawTest {
             {},
             {}
         ).apply {
-            updateLayerProperties(
-                scaleX = 1f,
-                scaleY = 1f,
-                alpha = 1f,
-                translationX = 0f,
-                translationY = 0f,
-                shadowElevation = 0f,
-                rotationX = 0f,
-                rotationY = 0f,
-                rotationZ = 0f,
-                cameraDistance = cameraDistance,
-                transformOrigin = TransformOrigin.Center,
-                shape = RectangleShape,
-                clip = true,
-                layoutDirection = LayoutDirection.Ltr,
-                density = Density(1f),
-                renderEffect = null,
-                ambientShadowColor = DefaultShadowColor,
-                spotShadowColor = DefaultShadowColor,
-                compositingStrategy = CompositingStrategy.Auto
-            )
+            val scope = ReusableGraphicsLayerScope()
+            scope.cameraDistance = cameraDistance
+            updateLayerProperties(scope, LayoutDirection.Ltr, Density(1f))
         }
         // Verify that the camera distance is applied properly even after accounting for
         // the internal dp conversion within View
@@ -3813,6 +3778,41 @@ class AndroidLayoutDrawTest {
         assertTrue(drawLatch.await(1, TimeUnit.SECONDS))
     }
 
+    @Test
+    fun attachingLayerDoesNotCauseRelayout() {
+        var latch = CountDownLatch(1)
+        lateinit var root: RequestLayoutTrackingFrameLayout
+        lateinit var composeView: ComposeView
+        var showLayer by mutableStateOf(false)
+
+        activityTestRule.runOnUiThread {
+            root = RequestLayoutTrackingFrameLayout(activity)
+            composeView = ComposeView(activity)
+
+            activity.setContentView(root)
+            root.addView(composeView)
+            composeView.setContent {
+                val modifier = if (showLayer) Modifier.graphicsLayer() else Modifier
+                Box(Modifier.drawBehind { latch.countDown() }.then(modifier))
+            }
+        }
+
+        assertTrue(latch.await(1, TimeUnit.SECONDS))
+
+        activityTestRule.runOnUiThread {
+            Truth.assertThat(root.requestLayoutCalled).isTrue()
+            latch = CountDownLatch(1)
+            root.requestLayoutCalled = false
+            showLayer = true
+        }
+
+        assertTrue(latch.await(1, TimeUnit.SECONDS))
+
+        activityTestRule.runOnUiThread {
+            Truth.assertThat(root.requestLayoutCalled).isFalse()
+        }
+    }
+
     private fun Modifier.layout(onLayout: () -> Unit) = layout { measurable, constraints ->
         val placeable = measurable.measure(constraints)
         layout(placeable.width, placeable.height) {
@@ -4515,4 +4515,13 @@ class LayoutScale(val scale: Float) : LayoutModifier {
 
 fun Modifier.latch(countDownLatch: CountDownLatch) = drawBehind {
     countDownLatch.countDown()
+}
+
+private class RequestLayoutTrackingFrameLayout(context: Context) : FrameLayout(context) {
+    var requestLayoutCalled = false
+
+    override fun requestLayout() {
+        super.requestLayout()
+        requestLayoutCalled = true
+    }
 }

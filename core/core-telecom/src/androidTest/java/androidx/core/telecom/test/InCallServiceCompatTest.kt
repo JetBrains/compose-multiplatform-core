@@ -28,6 +28,7 @@ import androidx.core.telecom.CallsManager
 import androidx.core.telecom.internal.InCallServiceCompat
 import androidx.core.telecom.internal.utils.Utils
 import androidx.core.telecom.test.utils.BaseTelecomTest
+import androidx.core.telecom.test.utils.MockInCallService
 import androidx.core.telecom.test.utils.TestUtils
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
@@ -37,18 +38,13 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert
-import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
 /**
- * This test class verifies the [InCallServiceCompat] functionality around resolving the call
- * extension type in order to determine the supported extensions between the VOIP app and the
- * associated InCallServices. This test constructs calls via TelecomManager and modifies the call
- * details (if required) to test each scenario. This is explained in more detail at the test level
- * for each of the applicable cases below.
+ * This test class can be used to verify the [InCallServiceCompat] functionality.
  *
  * Note: [Call] is package-private so we still need to leverage Telecom to create calls on our
  * behalf for testing. The call properties and extras fields aren't mutable so we need to ensure
@@ -78,7 +74,7 @@ class InCallServiceCompatTest : BaseTelecomTest() {
     @Before
     fun setUp() {
         Utils.resetUtils()
-        inCallServiceCompat = InCallServiceCompat(mContext)
+        inCallServiceCompat = InCallServiceCompat()
     }
 
     @After
@@ -94,6 +90,10 @@ class InCallServiceCompatTest : BaseTelecomTest() {
      * The contents of the call detail extras need to be modified to test calls using the V1.5
      * ConnectionService + Extensions library (until E2E testing can be supported for it). This
      * requires us to manually insert the [CallsManager.EXTRA_VOIP_API_VERSION] key into the bundle.
+     *
+     * Note: This portion of the logic in [InCallServiceCompat.onCallAdded] is not yet supported so
+     * for this test, we just configure the call and directly invoke
+     * [InCallServiceCompat.resolveCallExtensionsType] ensuring that it returns EXTRAS properly.
      */
     @LargeTest
     @Test(timeout = 10000)
@@ -109,7 +109,11 @@ class InCallServiceCompatTest : BaseTelecomTest() {
     /**
      * Assert that CAPABILITY_EXCHANGE is the extension type for calls that either have the
      * [CallsManager.PROPERTY_IS_TRANSACTIONAL] (V) defined as a property or the phone account
-     * supports transactional ops (U+). For pre-U devices, the call extras would define the
+     * supports transactional ops (U+) and that capability exchange between the VOIP app and
+     * associated ICS is successful. This is signaled from the ICS side when the feature setup is
+     * completed via CapabilityExchange#featureSetupComplete.
+     *
+     * For pre-U devices, the call extras would define the
      * [CallsManager.EXTRA_VOIP_BACKWARDS_COMPATIBILITY_SUPPORTED] key.
      *
      * Note: The version codes for V is not available so we need to enforce a strict manual check
@@ -118,30 +122,21 @@ class InCallServiceCompatTest : BaseTelecomTest() {
     @LargeTest
     @Test(timeout = 10000)
     fun testResolveCallExtension_CapabilityExchange() {
-        if (TestUtils.buildIsAtLeastU()) {
-            Log.w(TAG, "Setting up v2 tests for U+ device")
-            setUpV2Test()
-        } else {
-            Log.w(TAG, "Setting up backwards compatibility tests for pre-U device")
-            setUpBackwardsCompatTest()
-        }
-
         // Add EXTRA_VOIP_BACKWARDS_COMPATIBILITY_SUPPORTED for pre-U testing
-        val backwardsCompatExtra = if (!TestUtils.buildIsAtLeastU())
-            Pair(CallsManager.EXTRA_VOIP_BACKWARDS_COMPATIBILITY_SUPPORTED, true)
-        else null
+        val backwardsCompatExtra = configureCapabilityExchangeTypeTest()
         addAndVerifyCallExtensionType(
             TestUtils.OUTGOING_CALL_ATTRIBUTES,
             InCallServiceCompat.CAPABILITY_EXCHANGE,
             // Waiting is not required for U+ testing
             waitForCallDetailExtras = !TestUtils.buildIsAtLeastU(),
-            extraToInclude = backwardsCompatExtra
+            extraToInclude = backwardsCompatExtra,
         )
     }
 
     /**
      * Assert that NONE is the extension type for calls with phone accounts that do not support
-     * transactional ops. Note that the caller must have had the read phone numbers permission.
+     * transactional ops and that capability exchange does not succeed in this case. Note that the
+     * caller must have had the read phone numbers permission.
      *
      * Note: Ensure that all extras are cleared before asserting extension type so that the phone
      * account can be checked. For backwards compatibility tests, calls define the
@@ -163,7 +158,7 @@ class InCallServiceCompatTest : BaseTelecomTest() {
         addAndVerifyCallExtensionType(
             TestUtils.OUTGOING_CALL_ATTRIBUTES,
             InCallServiceCompat.NONE,
-            waitForCallDetailExtras = false
+            waitForCallDetailExtras = true
         )
     }
 
@@ -198,30 +193,65 @@ class InCallServiceCompatTest : BaseTelecomTest() {
         runBlocking {
             assertWithinTimeout_addCall(callAttributesCompat) {
                 launch {
-                    val call = TestUtils.waitOnInCallServiceToReachXCalls(1)
-                    Assert.assertNotNull("The returned Call object is <NULL>", call!!)
+                    try {
+                        // Enforce waiting logic to ensure that the call details extras are populated.
+                        val call = configureCallWithSanitizedExtras(
+                            waitForCallDetailExtras, extraToInclude)
 
-                    // Enforce waiting logic to ensure that the call details extras are populated.
-                    if (waitForCallDetailExtras) {
-                        TestUtils.waitOnCallExtras(call)
+                        Log.i(TAG, "Service bounded invoking resolveCallExtensionsType")
+
+                        // Assert call extension type.
+                        val ics = MockInCallService.getService()
+                        Assert.assertEquals(expectedType, ics?.resolveCallExtensionsType(call))
+                    } finally {
+                        // Always send disconnect signal if possible.
+                        Assert.assertEquals(
+                            CallControlResult.Success(),
+                            disconnect(DisconnectCause(DisconnectCause.LOCAL)))
                     }
-
-                    val callDetails = call.details
-                    // Clear out extras to isolate the testing scenarios.
-                    call.details.extras?.clear()
-                    // Add extraToInclude for testing.
-                    if (extraToInclude != null) {
-                        callDetails.extras?.putBoolean(extraToInclude.first, extraToInclude.second)
-                    }
-
-                    // Assert call extension type.
-                    assertEquals(expectedType, inCallServiceCompat.resolveCallExtensionsType(call))
-                    // Always send disconnect signal if possible.
-                    assertEquals(
-                        CallControlResult.Success(),
-                        disconnect(DisconnectCause(DisconnectCause.LOCAL)))
                 }
             }
         }
+    }
+
+    private fun configureCapabilityExchangeTypeTest(): Pair<String, Boolean>? {
+        if (TestUtils.buildIsAtLeastU()) {
+            Log.w(CallCompatTest.TAG, "Setting up v2 tests for U+ device")
+            setUpV2Test()
+        } else {
+            Log.w(CallCompatTest.TAG, "Setting up backwards compatibility tests for pre-U device")
+            setUpBackwardsCompatTest()
+        }
+
+        // Add EXTRA_VOIP_BACKWARDS_COMPATIBILITY_SUPPORTED for pre-U testing
+        return if (!TestUtils.buildIsAtLeastU())
+            Pair(CallsManager.EXTRA_VOIP_BACKWARDS_COMPATIBILITY_SUPPORTED, true)
+        else null
+    }
+
+    /**
+     * Helper to retrieve the call from MockInCallService and wait for any call detail extras
+     * to be populated, if needed.
+     */
+    private suspend fun configureCallWithSanitizedExtras(
+        waitForCallDetailExtras: Boolean,
+        extraToInclude: Pair<String, Boolean>? = null
+    ): Call {
+        val call = TestUtils.waitOnInCallServiceToReachXCalls(1)
+        Assert.assertNotNull("The returned Call object is <NULL>", call!!)
+
+        // Enforce waiting logic to ensure that the call details extras are populated.
+        if (waitForCallDetailExtras) {
+            TestUtils.waitOnCallExtras(call)
+        }
+
+        val callDetails = call.details
+        // Clear out extras to isolate the testing scenarios.
+        call.details.extras?.clear()
+        // Add extraToInclude for testing.
+        if (extraToInclude != null) {
+            callDetails.extras?.putBoolean(extraToInclude.first, extraToInclude.second)
+        }
+        return call
     }
 }

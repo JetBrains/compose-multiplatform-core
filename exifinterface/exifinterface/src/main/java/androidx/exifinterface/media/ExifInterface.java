@@ -1868,7 +1868,8 @@ public class ExifInterface {
      */
     public static final String TAG_GPS_SPEED_REF = "GPSSpeedRef";
     /**
-     *  <p>Indicates the speed of GPS receiver movement.</p>
+     * Indicates the speed of GPS receiver movement. The units are indicated by {@link
+     * #TAG_GPS_SPEED_REF}.
      *
      *  <ul>
      *      <li>Tag = 13</li>
@@ -4603,7 +4604,7 @@ public class ExifInterface {
             // Ignore exceptions in order to keep the compatibility with the old versions of
             // ExifInterface.
             if (DEBUG) {
-                Log.w(TAG, "Invalid image: ExifInterface got an unsupported image format file"
+                Log.w(TAG, "Invalid image: ExifInterface got an unsupported image format file "
                         + "(ExifInterface supports JPEG and some RAW image formats only) "
                         + "or a corrupted JPEG file to ExifInterface.", e);
             }
@@ -5224,7 +5225,8 @@ public class ExifInterface {
     }
 
     /**
-     * Returns number of milliseconds since Jan. 1, 1970, midnight UTC.
+     * Returns number of milliseconds since 1970-01-01 00:00:00 UTC.
+     *
      * @return null if the date time information is not available.
      */
     @SuppressLint("AutoBoxing") /* Not a performance-critical call, thus not a big concern. */
@@ -6219,6 +6221,16 @@ public class ExifInterface {
                     // TODO: Need to handle potential OutOfMemoryError
                     byte[] payload = new byte[chunkSize];
                     in.readFully(payload);
+
+                    // Skip a JPEG APP1 marker that some image libraries incorrectly include in the
+                    // Exif data in WebP images (e.g.
+                    // https://github.com/ImageMagick/ImageMagick/issues/3140)
+                    if (startsWith(payload, IDENTIFIER_EXIF_APP1)) {
+                        int adjustedChunkSize = chunkSize - IDENTIFIER_EXIF_APP1.length;
+                        payload = Arrays.copyOfRange(payload, IDENTIFIER_EXIF_APP1.length,
+                                adjustedChunkSize);
+                    }
+
                     // Save offset to EXIF data for handling thumbnail and attribute offsets.
                     mOffsetToExifData = bytesRead;
                     readExifSegment(payload, IFD_TYPE_PRIMARY);

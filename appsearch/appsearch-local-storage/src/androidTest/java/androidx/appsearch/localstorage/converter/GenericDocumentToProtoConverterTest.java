@@ -20,7 +20,7 @@ import static com.google.common.truth.Truth.assertThat;
 
 import androidx.appsearch.app.GenericDocument;
 import androidx.appsearch.localstorage.AppSearchConfigImpl;
-import androidx.appsearch.localstorage.DefaultIcingOptionsConfig;
+import androidx.appsearch.localstorage.LocalStorageIcingOptionsConfig;
 import androidx.appsearch.localstorage.UnlimitedLimitConfig;
 
 import com.google.android.icing.proto.DocumentProto;
@@ -119,7 +119,7 @@ public class GenericDocumentToProtoConverterTest {
         GenericDocument convertedGenericDocument =
                 GenericDocumentToProtoConverter.toGenericDocument(documentProto, PREFIX,
                         SCHEMA_MAP, new AppSearchConfigImpl(new UnlimitedLimitConfig(),
-                                new DefaultIcingOptionsConfig()));
+                                new LocalStorageIcingOptionsConfig()));
         DocumentProto convertedDocumentProto =
                 GenericDocumentToProtoConverter.toDocumentProto(document);
 
@@ -217,7 +217,7 @@ public class GenericDocumentToProtoConverterTest {
         GenericDocument convertedGenericDocument =
                 GenericDocumentToProtoConverter.toGenericDocument(documentProto, PREFIX,
                         schemaMap, new AppSearchConfigImpl(new UnlimitedLimitConfig(),
-                                new DefaultIcingOptionsConfig()));
+                                new LocalStorageIcingOptionsConfig()));
         DocumentProto convertedDocumentProto =
                 GenericDocumentToProtoConverter.toDocumentProto(document);
         assertThat(convertedDocumentProto).isEqualTo(documentProto);
@@ -346,13 +346,14 @@ public class GenericDocumentToProtoConverterTest {
         GenericDocument convertedGenericDocument =
                 GenericDocumentToProtoConverter.toGenericDocument(outerDocumentProto, PREFIX,
                         schemaMap, new AppSearchConfigImpl(new UnlimitedLimitConfig(),
-                                new DefaultIcingOptionsConfig()));
+                                new LocalStorageIcingOptionsConfig()));
         DocumentProto convertedDocumentProto =
                 GenericDocumentToProtoConverter.toDocumentProto(outerDocument);
         assertThat(convertedDocumentProto).isEqualTo(outerDocumentProto);
         assertThat(convertedGenericDocument).isEqualTo(outerDocument);
     }
-
+    // @exportToFramework:startStrip()
+    // TODO(b/274157614): setParentTypes is hidden
     @Test
     public void testConvertDocument_withParentTypes() throws Exception {
         // Create a type with a parent type.
@@ -408,13 +409,15 @@ public class GenericDocumentToProtoConverterTest {
         GenericDocument actualDocWithParentAsMetaField =
                 GenericDocumentToProtoConverter.toGenericDocument(documentProto, PREFIX,
                         schemaMap, new AppSearchConfigImpl(new UnlimitedLimitConfig(),
-                                new DefaultIcingOptionsConfig(),
-                                /* storeParentInfoAsSyntheticProperty= */ false));
+                                new LocalStorageIcingOptionsConfig(),
+                                /* storeParentInfoAsSyntheticProperty= */ false,
+                                /* shouldRetrieveParentInfo= */ true));
         GenericDocument actualDocWithParentAsSyntheticProperty =
                 GenericDocumentToProtoConverter.toGenericDocument(documentProto, PREFIX,
                         schemaMap, new AppSearchConfigImpl(new UnlimitedLimitConfig(),
-                                new DefaultIcingOptionsConfig(),
-                                /* storeParentInfoAsSyntheticProperty= */ true));
+                                new LocalStorageIcingOptionsConfig(),
+                                /* storeParentInfoAsSyntheticProperty= */ true,
+                                /* shouldRetrieveParentInfo= */ true));
 
         assertThat(actualDocWithParentAsMetaField).isEqualTo(expectedDocWithParentAsMetaField);
         assertThat(actualDocWithParentAsMetaField).isNotEqualTo(
@@ -425,4 +428,5 @@ public class GenericDocumentToProtoConverterTest {
         assertThat(actualDocWithParentAsSyntheticProperty).isNotEqualTo(
                 expectedDocWithParentAsMetaField);
     }
+    // @exportToFramework:endStrip()
 }

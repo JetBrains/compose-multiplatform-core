@@ -35,7 +35,8 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.tooling.animation.AnimateXAsStateComposeAnimation.Companion.parse
-import androidx.compose.ui.tooling.animation.Utils.searchForAnimation
+import androidx.compose.ui.tooling.animation.Utils.addAnimations
+import androidx.compose.ui.tooling.animation.Utils.hasAnimations
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
@@ -61,7 +62,7 @@ class AnimateXAsStateComposeAnimationTest {
     fun dpAnimation() {
         val search = AnimationSearch.AnimateXAsStateSearch { }
         var dpState: State<Dp>? = null
-        rule.searchForAnimation(search) {
+        rule.addAnimations(search) {
             dpState = animateDpAsState(targetValue = 10.dp)
         }
         val composeAnimation = checkDefaultState(search, "DpAnimation", 10.dp)
@@ -76,7 +77,7 @@ class AnimateXAsStateComposeAnimationTest {
     fun floatAnimation() {
         val search = AnimationSearch.AnimateXAsStateSearch { }
         var state: State<Float>? = null
-        rule.searchForAnimation(search) {
+        rule.addAnimations(search) {
             state = animateFloatAsState(targetValue = 10f)
         }
         val composeAnimation = checkDefaultState(search, "FloatAnimation", 10f)
@@ -91,7 +92,7 @@ class AnimateXAsStateComposeAnimationTest {
     fun intAnimation() {
         val search = AnimationSearch.AnimateXAsStateSearch { }
         var state: State<Int>? = null
-        rule.searchForAnimation(search) {
+        rule.addAnimations(search) {
             state = animateIntAsState(targetValue = 10)
         }
         val composeAnimation = checkDefaultState(search, "IntAnimation", 10)
@@ -106,7 +107,7 @@ class AnimateXAsStateComposeAnimationTest {
     fun intSizeAnimation() {
         val search = AnimationSearch.AnimateXAsStateSearch { }
         var state: State<IntSize>? = null
-        rule.searchForAnimation(search) {
+        rule.addAnimations(search) {
             state = animateIntSizeAsState(targetValue = IntSize(10, 20))
         }
         checkDefaultState(search, "IntSizeAnimation", IntSize(10, 20))
@@ -122,7 +123,7 @@ class AnimateXAsStateComposeAnimationTest {
     fun intOffsetAnimation() {
         val search = AnimationSearch.AnimateXAsStateSearch { }
         var state: State<IntOffset>? = null
-        rule.searchForAnimation(search) {
+        rule.addAnimations(search) {
             state = animateIntOffsetAsState(targetValue = IntOffset(10, 20))
         }
         val composeAnimation = checkDefaultState(search, "IntOffsetAnimation", IntOffset(10, 20))
@@ -137,7 +138,7 @@ class AnimateXAsStateComposeAnimationTest {
     fun offsetAnimation() {
         val search = AnimationSearch.AnimateXAsStateSearch { }
         var state: State<Offset>? = null
-        rule.searchForAnimation(search) {
+        rule.addAnimations(search) {
             state = animateOffsetAsState(targetValue = Offset(10f, 20f))
         }
         val composeAnimation = checkDefaultState(search, "OffsetAnimation", Offset(10f, 20f))
@@ -152,7 +153,7 @@ class AnimateXAsStateComposeAnimationTest {
     fun sizeAnimation() {
         val search = AnimationSearch.AnimateXAsStateSearch { }
         var state: State<Size>? = null
-        rule.searchForAnimation(search) {
+        rule.addAnimations(search) {
             state = animateSizeAsState(targetValue = Size(10f, 20f))
         }
         val composeAnimation = checkDefaultState(search, "SizeAnimation", Size(10f, 20f))
@@ -165,7 +166,7 @@ class AnimateXAsStateComposeAnimationTest {
     fun rectAnimation() {
         val search = AnimationSearch.AnimateXAsStateSearch { }
         var state: State<Rect>? = null
-        rule.searchForAnimation(search) {
+        rule.addAnimations(search) {
             state = animateRectAsState(targetValue = Rect(10f, 20f, 30f, 40f))
         }
         val composeAnimation = checkDefaultState(search, "RectAnimation", Rect(10f, 20f, 30f, 40f))
@@ -178,7 +179,7 @@ class AnimateXAsStateComposeAnimationTest {
     fun colorAnimation() {
         val search = AnimationSearch.AnimateXAsStateSearch { }
         var state: State<Color>? = null
-        rule.searchForAnimation(search) {
+        rule.addAnimations(search) {
             state = animateColorAsState(targetValue = Color(0.1f, 0.2f, 0.3f, 0.4f))
         }
         val composeAnimation =
@@ -192,7 +193,7 @@ class AnimateXAsStateComposeAnimationTest {
     fun customFloatAnimation() {
         val search = AnimationSearch.AnimateXAsStateSearch {}
         var state: State<Float>? = null
-        rule.searchForAnimation(search) {
+        rule.addAnimations(search) {
             state = animateValueAsState(10f, Float.VectorConverter)
         }
         val composeAnimation = checkDefaultState(search, "ValueAnimation", 10f)
@@ -205,7 +206,7 @@ class AnimateXAsStateComposeAnimationTest {
     fun nullableFloatAnimation() {
         val search = AnimationSearch.AnimateXAsStateSearch { }
         var state: State<Float?>? = null
-        rule.searchForAnimation(search) {
+        rule.addAnimations(search) {
             state = animateValueAsState(1f, Utils.nullableFloatConverter)
         }
         val composeAnimation = checkDefaultState(search, "ValueAnimation", 1f)
@@ -217,7 +218,7 @@ class AnimateXAsStateComposeAnimationTest {
     @Test
     fun nullableFloatAnimationWithNullState() {
         val search = AnimationSearch.AnimateXAsStateSearch { }
-        rule.searchForAnimation(search) {
+        rule.addAnimations(search) {
             animateValueAsState(null, Utils.nullableFloatConverter)
         }
         assertEquals(1, search.animations.size)
@@ -229,7 +230,7 @@ class AnimateXAsStateComposeAnimationTest {
     fun stringAnimation() {
         val search = AnimationSearch.AnimateXAsStateSearch { }
         var state: State<String>? = null
-        rule.searchForAnimation(search) {
+        rule.addAnimations(search) {
             state = animateValueAsState("11.0", Utils.stringConverter)
         }
         val composeAnimation = checkDefaultState(search, "ValueAnimation", "11.0")
@@ -242,7 +243,7 @@ class AnimateXAsStateComposeAnimationTest {
     fun enumAnimation() {
         val search = AnimationSearch.AnimateXAsStateSearch { }
         var state: State<Utils.EnumState>? = null
-        rule.searchForAnimation(search) {
+        rule.addAnimations(search) {
             state = animateValueAsState(Utils.EnumState.One, Utils.enumConverter)
         }
         val composeAnimation = checkDefaultState(search, "ValueAnimation", Utils.EnumState.One, 3)
@@ -255,13 +256,27 @@ class AnimateXAsStateComposeAnimationTest {
     fun nullableEnumAnimation() {
         val search = AnimationSearch.AnimateXAsStateSearch { }
         var state: State<Utils.EnumState?>? = null
-        rule.searchForAnimation(search) {
+        rule.addAnimations(search) {
             state = animateValueAsState(Utils.EnumState.One, Utils.nullableEnumConverter)
         }
         val composeAnimation = checkDefaultState(search, "ValueAnimation", Utils.EnumState.One, 3)
         composeAnimation.setState(Utils.EnumState.Three)
         rule.waitForIdle()
         assertEquals(Utils.EnumState.Three, state!!.value)
+    }
+
+    @Test
+    fun animationsAreNotCreated() {
+        val search = AnimationSearch.AnimateXAsStateSearch { }
+        var state: State<Int>? = null
+        val hasAnimations = rule.hasAnimations(search) {
+            state = animateIntAsState(targetValue = 10)
+        }
+        assertTrue(hasAnimations)
+        // No animations were created.
+        assertTrue(search.animations.isEmpty())
+        // No changes in state
+        assertEquals(10, state!!.value)
     }
 
     private fun checkDefaultState(

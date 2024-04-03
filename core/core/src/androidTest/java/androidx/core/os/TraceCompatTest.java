@@ -35,8 +35,9 @@ import androidx.test.filters.SmallTest;
 import androidx.test.platform.app.InstrumentationRegistry;
 
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
-import org.junit.Ignore;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
@@ -47,11 +48,14 @@ import java.util.regex.Pattern;
 
 @LargeTest
 @SdkSuppress(minSdkVersion = 21) // Required for UiAutomation#executeShellCommand()
+@SuppressWarnings("deprecation") // TraceCompat is now deprecated
 public final class TraceCompatTest {
 
     private static final int TRACE_BUFFER_SIZE = 8192;
 
     private static final boolean TRACE_AVAILABLE;
+
+    private static String sTracedPreviousState = null;
 
     static {
         // Check if tracing is available via debugfs or tracefs
@@ -60,6 +64,31 @@ public final class TraceCompatTest {
     }
 
     private ByteArrayOutputStream mByteArrayOutputStream;
+
+    @BeforeClass
+    public static void setUpClass() throws IOException {
+        if (TRACE_AVAILABLE && Build.VERSION.SDK_INT >= 30 && Build.VERSION.SDK_INT < 32) {
+            // On API 30 and 31, iorapd frequently uses perfetto, which competes for the trace
+            // buffer (see b/291108969, b/156260391, b/145554890, b/149790059 for more context).
+            // iorap was removed in API 32.
+            // Ensure perfetto's traced is disabled on affected API levels for the duration
+            // of the test so we're not competing for the trace buffer.
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            executeCommand("getprop persist.traced.enable", outputStream);
+            sTracedPreviousState = new String(outputStream.toByteArray(), UTF_8).trim();
+            if ("1".equals(sTracedPreviousState)) {
+                executeCommand("setprop persist.traced.enable 0");
+            }
+        }
+    }
+
+    @AfterClass
+    public static void tearDownClass() throws IOException {
+        // Re-enable traced if needed
+        if (TRACE_AVAILABLE && "1".equals(sTracedPreviousState)) {
+            executeCommand("setprop persist.traced.enable 1");
+        }
+    }
 
     @Before
     public void setUp() {
@@ -82,6 +111,7 @@ public final class TraceCompatTest {
     }
 
     @Test
+    @SdkSuppress(excludedSdks = { 30, 33 }) // Excluded due to flakes (b/328063273)
     public void beginAndEndSection() throws IOException {
         startTrace();
         TraceCompat.beginSection("beginAndEndSection");
@@ -93,7 +123,7 @@ public final class TraceCompatTest {
     }
 
     @Test
-    @Ignore("b/295944187")
+    @SdkSuppress(excludedSdks = { 30, 33 }) // Excluded due to flakes (b/295944187)
     public void beginAndEndSectionAsync() throws IOException {
         startTrace();
         TraceCompat.beginAsyncSection("beginAndEndSectionAsync", /*cookie=*/5099);
@@ -105,7 +135,7 @@ public final class TraceCompatTest {
     }
 
     @Test
-    @Ignore("b/294556417")
+    @SdkSuppress(excludedSdks = { 30, 33 }) // Excluded due to flakes (b/329119528)
     public void setCounter() throws IOException {
         startTrace();
         TraceCompat.setCounter("counterName", 42);
@@ -129,6 +159,7 @@ public final class TraceCompatTest {
 
     @SmallTest
     @Test
+    @SdkSuppress(excludedSdks = { 30, 33 }) // Excluded due to flakes (b/308151557)
     public void isNotEnabledWhenNotTracing() {
         assertThat(TraceCompat.isEnabled()).isFalse();
     }

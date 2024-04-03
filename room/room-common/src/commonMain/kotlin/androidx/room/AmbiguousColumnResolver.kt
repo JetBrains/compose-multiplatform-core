@@ -17,7 +17,7 @@
 package androidx.room
 
 import androidx.annotation.RestrictTo
-import java.util.Locale
+import kotlin.jvm.JvmStatic
 
 /**
  * Utility class for resolving and mapping ambiguous columns from a query result.
@@ -47,8 +47,25 @@ import java.util.Locale
  * are continuous.
  *
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public object AmbiguousColumnResolver {
+
+    /**
+     * Maps query result column indices to result object columns.
+     *
+     * @param resultColumns The ordered result column names.
+     * @param mappings      An array containing the list of result object column names that must be
+     *                      mapped to indices of `resultColumns`.
+     * @return An array with the same dimensions as `mappings` whose values correspond to the
+     * index in `resultColumns` that match the object column at `mappings[i][j]`.
+     */
+    @JvmStatic
+    public fun resolve(
+        resultColumns: List<String>,
+        mappings: Array<Array<String>>
+    ): Array<IntArray> {
+        return resolve(resultColumns.toTypedArray(), mappings)
+    }
 
     /**
      * Maps query result column indices to result object columns.
@@ -73,11 +90,11 @@ public object AmbiguousColumnResolver {
                 column.substring(1, column.length - 1)
             } else {
                 column
-            }.lowercase(Locale.US)
+            }.lowercase()
         }
         for (i in mappings.indices) {
             for (j in mappings[i].indices) {
-                mappings[i][j] = mappings[i][j].lowercase(Locale.US)
+                mappings[i][j] = mappings[i][j].lowercase()
             }
         }
 
@@ -188,7 +205,7 @@ public object AmbiguousColumnResolver {
         content[depth].forEach {
             current.add(it)
             dfs(content, current, depth + 1, block)
-            current.removeLast()
+            current.removeAt(current.lastIndex) // Avoiding removeLast() due to KT-64381
         }
     }
 

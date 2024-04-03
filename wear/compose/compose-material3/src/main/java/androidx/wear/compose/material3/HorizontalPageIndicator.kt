@@ -69,8 +69,8 @@ import androidx.wear.compose.materialcore.isRoundDevice
  * on the left and on the right
  * o O O O X O - current page is 9 out of 10, as there're no more items on the right
  *
- * [HorizontalPageIndicator] may be linear or curved, depending on [indicatorStyle]. By default
- * it depends on the screen shape of the device - for circular screens it will be curved,
+ * [HorizontalPageIndicator] is linear or curved, depending on the screen shape
+ * of the device - for circular screens it will be curved,
  * whilst for square screens it will be linear.
  *
  * @sample androidx.wear.compose.material3.samples.HorizontalPageIndicatorSample
@@ -78,8 +78,6 @@ import androidx.wear.compose.materialcore.isRoundDevice
  * @param pageIndicatorState The state object of a [HorizontalPageIndicator] to be used to
  * observe the Pager's state.
  * @param modifier Modifier to be applied to the [HorizontalPageIndicator]
- * @param indicatorStyle The style of [HorizontalPageIndicator] - may be linear or curved.
- * By default determined by the screen shape.
  * @param selectedColor The color of the selected [HorizontalPageIndicator] item
  * @param unselectedColor The color of unselected [HorizontalPageIndicator] items.
  * Defaults to [selectedColor] with 30% alpha
@@ -90,14 +88,14 @@ import androidx.wear.compose.materialcore.isRoundDevice
 public fun HorizontalPageIndicator(
     pageIndicatorState: PageIndicatorState,
     modifier: Modifier = Modifier,
-    indicatorStyle: PageIndicatorStyle = PageIndicatorDefaults.style(),
     selectedColor: Color = MaterialTheme.colorScheme.onBackground,
     unselectedColor: Color = selectedColor.copy(alpha = 0.3f),
     indicatorSize: Dp = 6.dp,
     spacing: Dp = 4.dp
 ) {
-    val selectedPage: Int = pageIndicatorState.selectedPageWithOffset().toInt()
-    val offset = pageIndicatorState.selectedPageWithOffset() - selectedPage
+    val isScreenRound = isRoundDevice()
+    val selectedPage: Int = pageIndicatorState.selectedPageWithOffsetFraction().toInt()
+    val offset = pageIndicatorState.selectedPageWithOffsetFraction() - selectedPage
 
     val pagesOnScreen = Integer.min(MaxNumberOfIndicators, pageIndicatorState.pageCount)
     val pagesState = remember(pageIndicatorState.pageCount) {
@@ -111,120 +109,93 @@ public fun HorizontalPageIndicator(
     val leftSpacerSize = (indicatorSize + spacing) * pagesState.leftSpacerSizeRatio
     val rightSpacerSize = (indicatorSize + spacing) * pagesState.rightSpacerSizeRatio
 
-    when (indicatorStyle) {
-        PageIndicatorStyle.Linear -> {
-            LinearPageIndicator(
-                modifier = modifier,
-                visibleDotIndex = pagesState.visibleDotIndex,
-                pagesOnScreen = pagesOnScreen,
-                indicator = { page ->
-                    LinearIndicator(
-                        page = page,
-                        pagesState = pagesState,
-                        unselectedColor = unselectedColor,
-                        indicatorSize = indicatorSize,
-                        spacing = spacing,
-                    )
-                },
-                selectedIndicator = {
-                    LinearSelectedIndicator(
-                        indicatorSize = indicatorSize,
-                        spacing = spacing,
-                        selectedColor = selectedColor,
-                        progress = offset
-                    )
-                },
-                spacerLeft = { LinearSpacer(leftSpacerSize) },
-                spacerRight = { LinearSpacer(rightSpacerSize) }
-            )
-        }
-
-        PageIndicatorStyle.Curved -> {
-            CurvedPageIndicator(
-                modifier = modifier,
-                visibleDotIndex = pagesState.visibleDotIndex,
-                pagesOnScreen = pagesOnScreen,
-                indicator = { page ->
-                    curvedIndicator(
-                        page = page,
-                        size = indicatorSize,
-                        unselectedColor = unselectedColor,
-                        pagesState = pagesState
-                    )
-                },
-                itemsSpacer = { curvedSpacer(indicatorSize + spacing) },
-                selectedIndicator = {
-                    curvedSelectedIndicator(
-                        indicatorSize = indicatorSize,
-                        spacing = spacing,
-                        selectedColor = selectedColor,
-                        progress = offset
-                    )
-                },
-                spacerLeft = { curvedSpacer(leftSpacerSize) },
-                spacerRight = { curvedSpacer(rightSpacerSize) }
-            )
-        }
-    }
-}
-
-/**
- * The style of [HorizontalPageIndicator]. May be Curved or Linear
- */
-@kotlin.jvm.JvmInline
-public value class PageIndicatorStyle internal constructor(internal val value: Int) {
-    companion object {
-        /**
-         * Curved style of [HorizontalPageIndicator]
-         */
-        public val Curved = PageIndicatorStyle(0)
-
-        /**
-         * Linear style of [HorizontalPageIndicator]
-         */
-        public val Linear = PageIndicatorStyle(1)
+    if (isScreenRound) {
+        CurvedPageIndicator(
+            modifier = modifier,
+            visibleDotIndex = pagesState.visibleDotIndex,
+            pagesOnScreen = pagesOnScreen,
+            indicator = { page ->
+                curvedIndicator(
+                    page = page,
+                    size = indicatorSize,
+                    unselectedColor = unselectedColor,
+                    pagesState = pagesState
+                )
+            },
+            itemsSpacer = { curvedSpacer(indicatorSize + spacing) },
+            selectedIndicator = {
+                curvedSelectedIndicator(
+                    indicatorSize = indicatorSize,
+                    spacing = spacing,
+                    selectedColor = selectedColor,
+                    progress = offset
+                )
+            },
+            spacerLeft = { curvedSpacer(leftSpacerSize) },
+            spacerRight = { curvedSpacer(rightSpacerSize) }
+        )
+    } else {
+        LinearPageIndicator(
+            modifier = modifier,
+            visibleDotIndex = pagesState.visibleDotIndex,
+            pagesOnScreen = pagesOnScreen,
+            indicator = { page ->
+                LinearIndicator(
+                    page = page,
+                    pagesState = pagesState,
+                    unselectedColor = unselectedColor,
+                    indicatorSize = indicatorSize,
+                    spacing = spacing,
+                )
+            },
+            selectedIndicator = {
+                LinearSelectedIndicator(
+                    indicatorSize = indicatorSize,
+                    spacing = spacing,
+                    selectedColor = selectedColor,
+                    progress = offset
+                )
+            },
+            spacerLeft = { LinearSpacer(leftSpacerSize) },
+            spacerRight = { LinearSpacer(rightSpacerSize) }
+        )
     }
 }
 
 /**
  * Contains the default values used by [HorizontalPageIndicator]
  */
-public object PageIndicatorDefaults {
+internal object PageIndicatorDefaults {
 
-    /**
-     * Default style of [HorizontalPageIndicator]. Depending on shape of device,
-     * it returns either Curved or Linear style.
-     */
-    @Composable
-    public fun style(): PageIndicatorStyle =
-        if (isRoundDevice()) PageIndicatorStyle.Curved
-        else PageIndicatorStyle.Linear
-
-    internal val MaxNumberOfIndicators = 6
+    val MaxNumberOfIndicators = 6
 }
 
 // TODO(b/290732498): Add rememberPageIndicatorState for HorizontalPager
 //  once HorizontalPager is stable
 
 /**
- * Creates and remembers [PageIndicatorState] based on [maxPages] and [selectedPageWithOffset]
- * parameters.
+ * Creates and remembers [PageIndicatorState] based on [pageCount] and
+ * [selectedPageWithOffsetFraction] parameters.
+ * @param pageCount Total number of pages.
+ * @param selectedPageWithOffsetFraction The currently selected page index with offset fraction.
+ * Integer part represents the selected page index and the fractional part represents
+ * the offset as a fraction of the transition from the selected page
+ * to the next page in the range 0f..1f
  */
 @ExperimentalWearMaterial3Api
 @Composable
 public fun rememberPageIndicatorState(
-    maxPages: Int,
-    @Suppress("PrimitiveInLambda")
-    selectedPageWithOffset: () -> Float
+    pageCount: Int,
+    selectedPageWithOffsetFraction: () -> Float
 ): PageIndicatorState =
-    remember(maxPages, selectedPageWithOffset) {
+    remember(pageCount, selectedPageWithOffsetFraction) {
         object : PageIndicatorState {
 
-            override val selectedPageWithOffset: () -> Float
-                get() = selectedPageWithOffset
+            override fun selectedPageWithOffsetFraction(): Float =
+                selectedPageWithOffsetFraction()
 
             override val pageCount: Int
-                get() = maxPages
+                get() = pageCount
         }
     }
 
@@ -233,18 +204,17 @@ public fun rememberPageIndicatorState(
  */
 public interface PageIndicatorState {
     /**
-     * The currently selected page index with offset.
+     * The currently selected page index with offset fraction.
      * Integer part represents the selected page index and the fractional part represents
      * the offset as a fraction of the transition from the selected page
      * to the next page in the range 0f..1f
      *
      * For example 5.5f equals to selectedPage = 5, offset 0.5f
      *
-     * Changes when a scroll (drag, swipe or fling) between pages happens in Pager.
+     * It changes when a scroll (drag, swipe or fling) happens between pages in Pager.
      */
-    @Suppress("PrimitiveInLambda")
-    @get:FloatRange(from = 0.0)
-    public val selectedPageWithOffset: () -> Float
+    @FloatRange(from = 0.0)
+    public fun selectedPageWithOffsetFraction(): Float
 
     /**
      * Total number of pages
@@ -258,7 +228,6 @@ private fun LinearPageIndicator(
     modifier: Modifier,
     visibleDotIndex: Int,
     pagesOnScreen: Int,
-    @Suppress("PrimitiveInLambda")
     indicator: @Composable (Int) -> Unit,
     selectedIndicator: @Composable () -> Unit,
     spacerLeft: @Composable () -> Unit,
@@ -377,7 +346,6 @@ private fun CurvedPageIndicator(
     modifier: Modifier,
     visibleDotIndex: Int,
     pagesOnScreen: Int,
-    @Suppress("PrimitiveInLambda")
     indicator: CurvedScope.(Int) -> Unit,
     itemsSpacer: CurvedScope.() -> Unit,
     selectedIndicator: CurvedScope.() -> Unit,

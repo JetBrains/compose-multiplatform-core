@@ -29,7 +29,6 @@ import android.view.ViewParent;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
-import androidx.core.os.CancellationSignal;
 import androidx.core.view.OneShotPreDrawListener;
 import androidx.core.view.ViewCompat;
 
@@ -79,7 +78,7 @@ public abstract class FragmentTransitionImpl {
      * containing the bounds relative to the screen that the view is in.
      */
     protected void getBoundsOnScreen(View view, Rect epicenter) {
-        if (!ViewCompat.isAttachedToWindow(view)) {
+        if (!view.isAttachedToWindow()) {
             return;
         }
 
@@ -191,7 +190,10 @@ public abstract class FragmentTransitionImpl {
     /**
      * Animate the transition to start.
      */
-    public void animateToStart(@NonNull Object transitionController) { }
+    public void animateToStart(
+            @NonNull Object transitionController,
+            @NonNull Runnable completeRunnable) {
+    }
 
     /**
      * Prepares for setting the shared element names by gathering the names of the incoming
@@ -271,8 +273,9 @@ public abstract class FragmentTransitionImpl {
      * @param transitionCompleteRunnable used to notify the FragmentManager when a transition is
      *                                   complete
      */
+    @SuppressWarnings("deprecation") // TODO(b/309499026): Migrate to platform-provided class.
     public void setListenerForTransitionEnd(@NonNull final Fragment outFragment,
-            @NonNull Object transition, @NonNull CancellationSignal signal,
+            @NonNull Object transition, @NonNull androidx.core.os.CancellationSignal signal,
             @NonNull Runnable transitionCompleteRunnable) {
         setListenerForTransitionEnd(
                 outFragment, transition, signal, null, transitionCompleteRunnable
@@ -287,7 +290,7 @@ public abstract class FragmentTransitionImpl {
      * cleaning up the transition when seeking is cancelled.
      *
      * If the transition is not seeking, you should use
-     * {@link #setListenerForTransitionEnd(Fragment, Object, CancellationSignal, Runnable)}.
+     * {@link #setListenerForTransitionEnd(Fragment, Object, androidx.core.os.CancellationSignal, Runnable)}.
      *
      * @param outFragment The first fragment that is exiting
      * @param transition all transitions to be executed on a single container
@@ -296,8 +299,9 @@ public abstract class FragmentTransitionImpl {
      * @param transitionCompleteRunnable used to notify the FragmentManager when a transition is
      *                                   complete
      */
+    @SuppressWarnings("deprecation")
     public void setListenerForTransitionEnd(@NonNull final Fragment outFragment,
-            @NonNull Object transition, @NonNull CancellationSignal signal,
+            @NonNull Object transition, @NonNull androidx.core.os.CancellationSignal signal,
             @Nullable Runnable cancelRunnable,
             @NonNull Runnable transitionCompleteRunnable) {
         transitionCompleteRunnable.run();

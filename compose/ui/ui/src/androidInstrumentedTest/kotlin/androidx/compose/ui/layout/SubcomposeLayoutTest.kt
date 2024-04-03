@@ -33,6 +33,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.ReusableContent
+import androidx.compose.runtime.ReusableContentHost
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -45,11 +46,13 @@ import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.testutils.expectAssertionError
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.background
 import androidx.compose.ui.composed
 import androidx.compose.ui.draw.assertColor
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.focus.isExactly
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asAndroidBitmap
@@ -58,7 +61,9 @@ import androidx.compose.ui.platform.AndroidOwnerExtraAssertionsRule
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.TestActivity
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertHeightIsEqualTo
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotDisplayed
@@ -67,6 +72,7 @@ import androidx.compose.ui.test.assertWidthIsEqualTo
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onChildren
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
@@ -909,8 +915,9 @@ class SubcomposeLayoutTest {
         }
 
         assertNodes(
-            exists = /*active*/ listOf(2, 3) + /*reusable*/ listOf(0, 1),
-            doesNotExist = /*disposed*/ listOf(4)
+            active = listOf(2, 3),
+            deactivated = listOf(0, 1),
+            disposed = listOf(4)
         )
     }
 
@@ -932,8 +939,9 @@ class SubcomposeLayoutTest {
         }
 
         assertNodes(
-            exists = /*active*/ listOf(2, 3, 5) + /*reusable*/ listOf(0),
-            doesNotExist = /*disposed*/ listOf(1, 4)
+            active = listOf(2, 3, 5),
+            deactivated = listOf(0),
+            disposed = listOf(1, 4)
         )
     }
 
@@ -955,7 +963,8 @@ class SubcomposeLayoutTest {
         }
 
         assertNodes(
-            exists = /*active*/ listOf(2, 3, 1) + /*reusable*/ listOf(0)
+            active = listOf(2, 3, 1),
+            deactivated = listOf(0)
         )
     }
 
@@ -979,7 +988,8 @@ class SubcomposeLayoutTest {
         }
 
         assertNodes(
-            exists = /*active*/ listOf(2, 3) + /*prefetch*/ listOf(5) + /*reusable*/ listOf(0)
+            active = listOf(2, 3) + /*prefetch*/ listOf(5),
+            deactivated = listOf(0)
         )
     }
 
@@ -1003,8 +1013,9 @@ class SubcomposeLayoutTest {
         }
 
         assertNodes(
-            exists = /*active*/ listOf(2) + /*prefetch*/ listOf(3) + /*reusable*/ listOf(0, 1),
-            doesNotExist = listOf(4)
+            active = listOf(2) + /*prefetch*/ listOf(3),
+            deactivated = listOf(0, 1),
+            disposed = listOf(4)
         )
     }
 
@@ -1020,8 +1031,8 @@ class SubcomposeLayoutTest {
         }
 
         assertNodes(
-            exists = listOf(2, 4),
-            doesNotExist = listOf(0, 1, 3)
+            active = listOf(2, 4),
+            disposed = listOf(0, 1, 3)
         )
     }
 
@@ -1037,8 +1048,9 @@ class SubcomposeLayoutTest {
         }
 
         assertNodes(
-            exists = /*active*/ listOf(0, 1) + /*reusable*/ listOf(2),
-            doesNotExist = /*disposed*/ listOf(3)
+            active = listOf(0, 1),
+            deactivated = listOf(2),
+            disposed = listOf(3)
         )
     }
 
@@ -1449,13 +1461,12 @@ class SubcomposeLayoutTest {
     fun reusableNodeIsKeptAsReusableAfterStateUpdate() {
         val layoutState = mutableStateOf(SubcomposeLayoutState(SubcomposeSlotReusePolicy(1)))
         val needChild = mutableStateOf(true)
-        var coordinates: LayoutCoordinates? = null
 
         rule.setContent {
             SubcomposeLayout(state = layoutState.value) { constraints ->
                 val node = if (needChild.value) {
                     subcompose(Unit) {
-                        Box(Modifier.onGloballyPositioned { coordinates = it })
+                        Box(Modifier.testTag("child"))
                     }.first().measure(constraints)
                 } else {
                     null
@@ -1466,34 +1477,30 @@ class SubcomposeLayoutTest {
             }
         }
 
-        rule.runOnIdle {
-            assertThat(coordinates!!.isAttached).isTrue()
-            needChild.value = false
-        }
+        rule.onNodeWithTag("child")
+            .assertExists()
 
-        rule.runOnIdle {
-            // the modifier is still attached
-            assertThat(coordinates!!.isAttached).isTrue()
-            layoutState.value = SubcomposeLayoutState(SubcomposeSlotReusePolicy(1))
-        }
+        needChild.value = false
 
-        rule.runOnIdle {
-            // the modifier is still attached
-            assertThat(coordinates!!.isAttached).isTrue()
-        }
+        rule.onNodeWithTag("child")
+            .assertIsDeactivated()
+
+        layoutState.value = SubcomposeLayoutState(SubcomposeSlotReusePolicy(1))
+
+        rule.onNodeWithTag("child")
+            .assertIsDeactivated()
     }
 
     @Test
     fun passingSmallerMaxSlotsToRetainForReuse() {
         val layoutState = mutableStateOf(SubcomposeLayoutState(SubcomposeSlotReusePolicy(1)))
         val needChild = mutableStateOf(true)
-        var coordinates: LayoutCoordinates? = null
 
         rule.setContent {
             SubcomposeLayout(state = layoutState.value) { constraints ->
                 val node = if (needChild.value) {
                     subcompose(Unit) {
-                        Box(Modifier.onGloballyPositioned { coordinates = it })
+                        Box(Modifier.testTag("child"))
                     }.first().measure(constraints)
                 } else {
                     null
@@ -1506,16 +1513,13 @@ class SubcomposeLayoutTest {
 
         rule.runOnIdle { needChild.value = false }
 
-        rule.runOnIdle {
-            // the node  in the reusable pool is still attached
-            assertThat(coordinates!!.isAttached).isTrue()
-            layoutState.value = SubcomposeLayoutState(SubcomposeSlotReusePolicy(0))
-        }
+        rule.onNodeWithTag("child")
+            .assertIsDeactivated()
 
-        rule.runOnIdle {
-            // detached as the new state has 0 as maxSlotsToRetainForReuse
-            assertThat(coordinates!!.isAttached).isFalse()
-        }
+        layoutState.value = SubcomposeLayoutState(SubcomposeSlotReusePolicy(0))
+
+        rule.onNodeWithTag("child")
+            .assertIsDetached()
     }
 
     @Test
@@ -1553,7 +1557,6 @@ class SubcomposeLayoutTest {
         val layoutState = SubcomposeLayoutState(SubcomposeSlotReusePolicy(1))
         val needChild = mutableStateOf(true)
         var composed = false
-        var coordinates: LayoutCoordinates? = null
 
         rule.setContent {
             SubcomposeLayout(state = layoutState) { constraints ->
@@ -1566,9 +1569,7 @@ class SubcomposeLayoutTest {
                                     composed = false
                                 }
                             }
-                            onGloballyPositioned {
-                                coordinates = it
-                            }
+                            testTag("child")
                         })
                     }.first().measure(constraints)
                 } else {
@@ -1580,22 +1581,20 @@ class SubcomposeLayoutTest {
             }
         }
 
-        rule.runOnIdle {
-            assertThat(composed).isTrue()
-            assertThat(coordinates!!.isAttached).isTrue()
-            needChild.value = false
-        }
+        rule.onNodeWithTag("child")
+            .assertExists()
 
-        rule.runOnIdle {
-            assertThat(composed).isFalse()
-            assertThat(coordinates!!.isAttached).isTrue()
-            needChild.value = true
-        }
+        assertThat(composed).isTrue()
+        needChild.value = false
 
-        rule.runOnIdle {
-            assertThat(composed).isTrue()
-            assertThat(coordinates!!.isAttached).isTrue()
-        }
+        rule.onNodeWithTag("child")
+            .assertIsDeactivated()
+        assertThat(composed).isFalse()
+        needChild.value = true
+
+        rule.onNodeWithTag("child")
+            .assertExists()
+        assertThat(composed).isTrue()
     }
 
     @Test
@@ -1622,8 +1621,9 @@ class SubcomposeLayoutTest {
         }
 
         assertNodes(
-            exists = /*active*/ listOf(0, 3) + /*reusable*/ listOf(2),
-            doesNotExist = /*disposed*/ listOf(1, 4)
+            active = listOf(0, 3),
+            deactivated = listOf(2),
+            disposed = listOf(1, 4)
         )
 
         rule.runOnIdle {
@@ -1631,8 +1631,8 @@ class SubcomposeLayoutTest {
         }
 
         assertNodes(
-            exists = /*active*/ listOf(0, 3, 5) + /*reusable*/ emptyList(),
-            doesNotExist = /*disposed*/ listOf(1, 2, 4)
+            active = listOf(0, 3, 5),
+            disposed = listOf(1, 2, 4)
         )
     }
 
@@ -1732,8 +1732,8 @@ class SubcomposeLayoutTest {
         }
 
         assertNodes(
-            exists = /*active*/ emptyList<Int>() + /*reusable*/ listOf(1, 3, 5),
-            doesNotExist = /*disposed*/ listOf(0, 2, 4, 6)
+            deactivated = listOf(1, 3, 5),
+            disposed = listOf(0, 2, 4, 6)
         )
 
         rule.runOnIdle {
@@ -1743,8 +1743,9 @@ class SubcomposeLayoutTest {
         }
 
         assertNodes(
-            exists = /*active*/ listOf(8, 9, 10) + /*reusable*/ listOf(1, 3),
-            doesNotExist = /*disposed*/ listOf(5)
+            active = listOf(8, 9, 10),
+            deactivated = listOf(1, 3),
+            disposed = listOf(5)
         )
     }
 
@@ -1769,15 +1770,16 @@ class SubcomposeLayoutTest {
             items.value = listOf()
         }
 
-        assertNodes(exists = /*active*/ emptyList<Int>() + /*reusable*/ listOf(0, 1, 2, 3))
+        assertNodes(deactivated = listOf(0, 1, 2, 3))
 
         rule.runOnIdle {
             items.value = listOf(10) // slot 2 should be reused
         }
 
         assertNodes(
-            exists = /*active*/ listOf(10) + /*reusable*/ listOf(0, 1, 3),
-            doesNotExist = /*disposed*/ listOf(2)
+            active = listOf(10),
+            deactivated = listOf(0, 1, 3),
+            disposed = listOf(2)
         )
     }
 
@@ -2012,8 +2014,8 @@ class SubcomposeLayoutTest {
         }
 
         assertNodes(
-            exists = /*prefetch*/ listOf(0),
-            doesNotExist = /*disposed*/ listOf(1)
+            active = /*prefetch*/ listOf(0),
+            disposed = listOf(1)
         )
     }
 
@@ -2361,12 +2363,12 @@ class SubcomposeLayoutTest {
             flag = false
         }
 
-        // the node will exist when after `need` was switched to false it will first cause
+        // the node will exist when after `flag` was switched to false it will first cause
         // remeasure, and because during the remeasure we will not subcompose the child
         // the node will be deactivated before its block recomposes causing the Box to be
         // removed from the hierarchy.
         rule.onNodeWithTag("tag")
-            .assertExists()
+            .assertIsDeactivated()
     }
 
     // Regression test of b/271156218
@@ -2404,6 +2406,47 @@ class SubcomposeLayoutTest {
 
         rule.runOnIdle { showContent = true }
         rule.onNodeWithTag("AndroidView").assertExists()
+    }
+
+    @Test
+    fun deactivatingDeeplyNestedLayoutDoesNotCauseRemeasure() {
+        var showContent by mutableStateOf(true)
+        val state = SubcomposeLayoutState(SubcomposeSlotReusePolicy(1))
+        rule.setContent {
+            SubcomposeLayout(
+                state = state,
+                modifier = Modifier.fillMaxSize()
+            ) { constraints ->
+                val content = if (showContent) {
+                    subcompose(0) {
+                        Box {
+                            var disposed by remember { mutableStateOf(false) }
+                            DisposableEffect(Unit) {
+                                onDispose { disposed = true }
+                            }
+                            Box(
+                                Modifier.layout { measurable, constraints ->
+                                    assertThat(disposed).isFalse()
+                                    val placeable = measurable.measure(constraints)
+                                    layout(placeable.width, placeable.height) {
+                                        placeable.place(0, 0)
+                                    }
+                                }
+                            )
+                        }
+                    }
+                } else emptyList()
+
+                val placeables = measure(content, constraints)
+                layout(100, 100) {
+                    placeables.placeChildren()
+                }
+            }
+        }
+
+        rule.runOnIdle { showContent = false }
+        rule.runOnIdle { showContent = true }
+        rule.waitForIdle()
     }
 
     @Test
@@ -2580,6 +2623,187 @@ class SubcomposeLayoutTest {
         }
     }
 
+    @Test
+    fun subcomposeCoordinates() {
+        var coords: LayoutCoordinates? = null
+        rule.setContent {
+            SubcomposeLayout { constraints ->
+                layout(constraints.maxWidth, constraints.maxHeight) {
+                    coords = coordinates
+                }
+            }
+        }
+        rule.runOnIdle {
+            assertThat(coords).isNotNull()
+        }
+    }
+
+    @Test
+    fun updatingModifierOnDetachedSubcomposition() {
+        var active by mutableStateOf(true)
+
+        var modifier by mutableStateOf<Modifier>(Modifier)
+
+        rule.setContent {
+            ReusableContentHost(active) {
+                SubcomposeLayout { constraints ->
+                    val placeable = subcompose(Unit) {
+                        Layout(
+                            modifier = modifier,
+                        ) { _, _ ->
+                            layout(10, 10) {}
+                        }
+                    }.first().measure(constraints)
+                    layout(placeable.width, placeable.height) {
+                        placeable.place(0, 0)
+                    }
+                }
+            }
+        }
+
+        rule.runOnIdle {
+            active = false
+            modifier = Modifier.drawBehind { }
+        }
+
+        rule.runOnIdle {
+            active = true
+        }
+
+        rule.runOnIdle {
+            // makes sure there will be no runtime crash
+        }
+    }
+
+    @Test
+    fun precomposeOnDetachedStateIsNoOp() {
+        var needSubcomposeLayout by mutableStateOf(true)
+        val state = SubcomposeLayoutState(SubcomposeSlotReusePolicy(1))
+        rule.setContent {
+            if (needSubcomposeLayout) {
+                SubcomposeLayout(state) { _ ->
+                    layout(10, 10) {}
+                }
+            }
+        }
+
+        rule.runOnIdle {
+            needSubcomposeLayout = false
+        }
+
+        rule.runOnIdle {
+            val handle = state.precompose(Unit) { Box(Modifier) }
+            assertThat(handle.placeablesCount).isEqualTo(0)
+        }
+    }
+
+    @Test
+    fun deactivatedNodesAreNotPartOfChildrenSemantics() {
+        val layoutState = mutableStateOf(SubcomposeLayoutState(SubcomposeSlotReusePolicy(1)))
+        val needChild = mutableStateOf(true)
+
+        rule.setContent {
+            SubcomposeLayout(
+                modifier = Modifier.testTag("layout"),
+                state = layoutState.value
+            ) { constraints ->
+                val node = if (needChild.value) {
+                    subcompose(Unit) {
+                        Box(Modifier.testTag("child"))
+                    }.first().measure(constraints)
+                } else {
+                    null
+                }
+                layout(10, 10) {
+                    node?.place(0, 0)
+                }
+            }
+        }
+
+        rule.onNodeWithTag("layout")
+            .onChildren().assertCountEquals(1)
+
+        needChild.value = false
+
+        rule.onNodeWithTag("layout")
+            .onChildren().assertCountEquals(0)
+    }
+
+    @Test
+    fun measureWidthTooLarge() {
+        var exception: IllegalStateException? = null
+        rule.setContent {
+            SubcomposeLayout {
+                try {
+                    layout(1 shl 24, 100) {}
+                } catch (e: IllegalStateException) {
+                    exception = e
+                    layout(0, 0) {}
+                }
+            }
+        }
+        rule.waitForIdle()
+        assertThat(exception).isNotNull()
+    }
+
+    @Test
+    fun measureHeightTooLarge() {
+        var exception: IllegalStateException? = null
+        rule.setContent {
+            SubcomposeLayout {
+                try {
+                    layout(100, 1 shl 24) {}
+                } catch (e: IllegalStateException) {
+                    exception = e
+                    layout(0, 0) {}
+                }
+            }
+        }
+        rule.waitForIdle()
+        assertThat(exception).isNotNull()
+    }
+
+    @Test
+    fun nestedDisposeIsCalledInOrder() {
+        val disposeOrder = mutableListOf<String>()
+        var active by mutableStateOf(true)
+        rule.setContent {
+            if (active) {
+                BoxWithConstraints {
+                    BoxWithConstraints {
+                        DisposableEffect(Unit) {
+                            onDispose {
+                                disposeOrder += "inner 1"
+                            }
+                        }
+                    }
+
+                    DisposableEffect(Unit) {
+                        onDispose {
+                            disposeOrder += "outer"
+                        }
+                    }
+
+                    BoxWithConstraints {
+                        DisposableEffect(Unit) {
+                            onDispose {
+                                disposeOrder += "inner 2"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        rule.runOnIdle {
+            active = false
+        }
+
+        rule.runOnIdle {
+            assertThat(disposeOrder).isExactly("inner 2", "outer", "inner 1")
+        }
+    }
+
     private fun SubcomposeMeasureScope.measure(
         slotId: Any,
         constraints: Constraints,
@@ -2613,14 +2837,30 @@ class SubcomposeLayoutTest {
                 .testTag("$index"))
     }
 
-    private fun assertNodes(exists: List<Int>, doesNotExist: List<Int> = emptyList()) {
-        exists.forEach {
+    private fun assertNodes(
+        active: List<Int> = emptyList(),
+        deactivated: List<Int> = emptyList(),
+        disposed: List<Int> = emptyList()
+    ) {
+        active.forEach {
             rule.onNodeWithTag("$it")
                 .assertExists()
         }
-        doesNotExist.forEach {
+        deactivated.forEach {
+            rule.onNodeWithTag("$it")
+                .assertIsDeactivated()
+        }
+        disposed.forEach {
             rule.onNodeWithTag("$it")
                 .assertDoesNotExist()
+        }
+    }
+
+    private fun SemanticsNodeInteraction.assertIsDetached() {
+        assertDoesNotExist()
+        // we want to verify the node is not deactivated, but such API does not exist yet
+        expectAssertionError {
+            assertIsDeactivated()
         }
     }
 }

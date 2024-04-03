@@ -246,6 +246,19 @@ class ObjectLongTest {
     }
 
     @Test
+    fun putWithDefault() {
+        val map = MutableObjectLongMap<String>()
+
+        var previous = map.put("Hello", 1L, -1L)
+        assertEquals(1L, map["Hello"])
+        assertEquals(-1L, previous)
+
+        previous = map.put("Hello", 2L, -1L)
+        assertEquals(2L, map["Hello"])
+        assertEquals(1L, previous)
+    }
+
+    @Test
     fun nullKey() {
         val map = MutableObjectLongMap<String?>()
         map[null] = 1L
@@ -354,7 +367,7 @@ class ObjectLongTest {
 
         // Make sure reinserting an entry after filling the table
         // with "Deleted" markers works
-        map["Hola"] = 7L
+        map["Hello"] = 7L
 
         assertEquals(1, map.size)
         assertEquals(capacity, map.capacity)

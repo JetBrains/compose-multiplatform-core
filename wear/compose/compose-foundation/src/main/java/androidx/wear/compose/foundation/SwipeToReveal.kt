@@ -98,19 +98,22 @@ public value class RevealValue private constructor(val value: Int) {
     companion object {
         /**
          * The default first value which generally represents the state where the revealable
-         * actions have not been revealed yet.
+         * actions have not been revealed yet. In this state, none of the actions have been
+         * triggered or performed yet.
          */
         val Covered = RevealValue(0)
 
         /**
          * The value which represents the state in which all the actions are revealed and the
-         * top content is not being swiped.
+         * top content is not being swiped. In this state, none of the actions have been
+         *  triggered or performed yet.
          */
         val Revealing = RevealValue(1)
 
         /**
          * The value which represents the state in which the whole revealable content is fully
-         * revealed.
+         * revealed. This also represents the state in which one of the actions has been
+         * triggered/performed.
          */
         val Revealed = RevealValue(2)
     }
@@ -304,14 +307,16 @@ public class RevealState internal constructor(
     }
 
     /**
-     * Resets last state if a different SwipeToReveal is being moved to new anchor.
+     * Resets last state if a different SwipeToReveal is being moved to new anchor and the
+     * last state is in [RevealValue.Revealing] mode which represents no action has been performed
+     * yet. In [RevealValue.Revealed], the action has been performed and it will not be reset.
      */
     private suspend fun resetLastState(
         currentState: RevealState
     ) {
         val oldState = SingleSwipeCoordinator.lastUpdatedState.getAndSet(currentState)
-        if (currentState != oldState) {
-            oldState?.animateTo(RevealValue.Covered)
+        if (currentState != oldState && oldState?.currentValue == RevealValue.Revealing) {
+            oldState.animateTo(RevealValue.Covered)
         }
     }
 
@@ -380,8 +385,8 @@ public fun rememberRevealState(
  * Example of SwipeToReveal with primary action and undo action
  * @sample androidx.wear.compose.foundation.samples.SwipeToRevealSample
  *
- * Example of SwipeToReveal using [RevealScope]
- * @sample androidx.wear.compose.foundation.samples.SwipeToRevealWithRevealOffset
+ * Example of SwipeToReveal using [RevealScope] to delay the appearance of primary action text
+ * @sample androidx.wear.compose.foundation.samples.SwipeToRevealWithDelayedText
  *
  * Example of SwipeToReveal used with Expandables
  * @sample androidx.wear.compose.foundation.samples.SwipeToRevealWithExpandables
@@ -504,10 +509,18 @@ public fun SwipeToReveal(
                             animationSpec = tween(durationMillis = QUICK_ANIMATION),
                             label = "SecondaryActionAnimationSpec"
                         )
-                        val actionContentAlpha = animateFloatAsState(
+                        val secondaryActionAlpha = animateFloatAsState(
+                            targetValue = if (!showSecondaryAction || hideActions) 0f else 1f,
+                            animationSpec = tween(
+                                durationMillis = QUICK_ANIMATION,
+                                easing = LinearEasing
+                            ),
+                            label = "SecondaryActionAlpha"
+                        )
+                        val primaryActionAlpha = animateFloatAsState(
                             targetValue = if (hideActions) 0f else 1f,
                             animationSpec = tween(durationMillis = 100, easing = LinearEasing),
-                            label = "ActionContentOpacity"
+                            label = "PrimaryActionAlpha"
                         )
                         val revealedContentAlpha = animateFloatAsState(
                             targetValue = if (swipeCompleted) 0f else 1f,
@@ -529,7 +542,7 @@ public fun SwipeToReveal(
                                 ActionSlot(
                                     revealScope,
                                     weight = secondaryActionWeight.value,
-                                    opacity = actionContentAlpha,
+                                    opacity = secondaryActionAlpha,
                                     content = secondaryAction,
                                 )
                             }
@@ -537,7 +550,7 @@ public fun SwipeToReveal(
                             ActionSlot(
                                 revealScope,
                                 content = primaryAction,
-                                opacity = actionContentAlpha
+                                opacity = primaryActionAlpha
                             )
                         }
                     }

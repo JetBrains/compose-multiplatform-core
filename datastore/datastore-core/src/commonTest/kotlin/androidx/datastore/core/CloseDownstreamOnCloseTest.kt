@@ -24,11 +24,13 @@ import androidx.kruth.assertThrows
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 
 abstract class CloseDownstreamOnCloseTest<F : TestFile<F>>(private val testIO: TestIO<F, *>) {
@@ -39,18 +41,21 @@ abstract class CloseDownstreamOnCloseTest<F : TestFile<F>>(private val testIO: T
 
     @BeforeTest
     fun createDataStore() {
+        val testFile: F = testIO.newTempFile()
         store = testIO.getStore(
             serializerConfig = TestingSerializerConfig(),
             scope = datastoreScope,
-            coordinatorProducer = { createSingleProcessCoordinator() }
-        ) { testIO.newTempFile() }
+            coordinatorProducer = { createSingleProcessCoordinator(testFile.path()) }
+        ) { testFile }
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun closeWhileCollecting() = testScope.runTest {
         val collector = async {
             store.data.toList().map { it.toInt() }
         }
+        runCurrent()
         store.updateData { 1 }
         datastoreScope.cancel()
         dispatcher.scheduler.advanceUntilIdle()

@@ -31,7 +31,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithCache
@@ -61,12 +60,12 @@ import androidx.compose.ui.unit.dp
  * See [CardDefaults.border].
  * @param glow [CardGlow] defines a shadow to be shown behind the card for different interaction
  * states. See [CardDefaults.glow].
- * @param interactionSource the [MutableInteractionSource] representing the stream of [Interaction]s
- * for this card. You can create and pass in your own `remember`ed instance to observe
- * [Interaction]s and customize the appearance / behavior of this card in different states.
+ * @param interactionSource an optional hoisted [MutableInteractionSource] for observing and
+ * emitting [Interaction]s for this card. You can use this to change the card's appearance
+ * or preview the card in different states. Note that if `null` is provided, interactions will
+ * still happen internally.
  * @param content defines the [Composable] content inside the Card.
  */
-@ExperimentalTvMaterial3Api
 @Composable
 fun Card(
     onClick: () -> Unit,
@@ -77,7 +76,7 @@ fun Card(
     scale: CardScale = CardDefaults.scale(),
     border: CardBorder = CardDefaults.border(),
     glow: CardGlow = CardDefaults.glow(),
-    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
+    interactionSource: MutableInteractionSource? = null,
     content: @Composable ColumnScope.() -> Unit
 ) {
     Surface(
@@ -124,11 +123,11 @@ fun Card(
  * @param glow [CardGlow] defines a shadow to be shown behind the card for different interaction
  * states. See [CardDefaults.glow].
  * @param contentPadding [PaddingValues] defines the inner padding applied to the card's content.
- * @param interactionSource the [MutableInteractionSource] representing the stream of [Interaction]s
- * for this card. You can create and pass in your own `remember`ed instance to observe
- * [Interaction]s and customize the appearance / behavior of this card in different states.
+ * @param interactionSource an optional hoisted [MutableInteractionSource] for observing and
+ * emitting [Interaction]s for this card. You can use this to change the card's appearance
+ * or preview the card in different states. Note that if `null` is provided, interactions will
+ * still happen internally.
  */
-@ExperimentalTvMaterial3Api
 @Composable
 fun ClassicCard(
     onClick: () -> Unit,
@@ -144,7 +143,7 @@ fun ClassicCard(
     border: CardBorder = CardDefaults.border(),
     glow: CardGlow = CardDefaults.glow(),
     contentPadding: PaddingValues = PaddingValues(),
-    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() }
+    interactionSource: MutableInteractionSource? = null
 ) {
     Card(
         onClick = onClick,
@@ -206,11 +205,11 @@ fun ClassicCard(
  * states. See [CardDefaults.glow].
  * @param scrimBrush [Brush] defines a brush/gradient to be used to draw the scrim over the image
  * in the background. See [CardDefaults.ContainerGradient].
- * @param interactionSource the [MutableInteractionSource] representing the stream of [Interaction]s
- * for this card. You can create and pass in your own `remember`ed instance to observe
- * [Interaction]s and customize the appearance / behavior of this card in different states.
+ * @param interactionSource an optional hoisted [MutableInteractionSource] for observing and
+ * emitting [Interaction]s for this card. You can use this to change the card's appearance
+ * or preview the card in different states. Note that if `null` is provided, interactions will
+ * still happen internally.
  */
-@ExperimentalTvMaterial3Api
 @Composable
 fun CompactCard(
     onClick: () -> Unit,
@@ -226,7 +225,7 @@ fun CompactCard(
     border: CardBorder = CardDefaults.border(),
     glow: CardGlow = CardDefaults.glow(),
     scrimBrush: Brush = CardDefaults.ContainerGradient,
-    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() }
+    interactionSource: MutableInteractionSource? = null
 ) {
     Card(
         onClick = onClick,
@@ -291,11 +290,11 @@ fun CompactCard(
  * @param glow [CardGlow] defines a shadow to be shown behind the card for different interaction
  * states. See [CardDefaults.glow].
  * @param contentPadding [PaddingValues] defines the inner padding applied to the card's content.
- * @param interactionSource the [MutableInteractionSource] representing the stream of [Interaction]s
- * for this card. You can create and pass in your own `remember`ed instance to observe
- * [Interaction]s and customize the appearance / behavior of this card in different states.
+ * @param interactionSource an optional hoisted [MutableInteractionSource] for observing and
+ * emitting [Interaction]s for this card. You can use this to change the card's appearance
+ * or preview the card in different states. Note that if `null` is provided, interactions will
+ * still happen internally.
  */
-@ExperimentalTvMaterial3Api
 @Composable
 fun WideClassicCard(
     onClick: () -> Unit,
@@ -311,7 +310,7 @@ fun WideClassicCard(
     border: CardBorder = CardDefaults.border(),
     glow: CardGlow = CardDefaults.glow(),
     contentPadding: PaddingValues = PaddingValues(),
-    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() }
+    interactionSource: MutableInteractionSource? = null
 ) {
     Card(
         onClick = onClick,
@@ -342,7 +341,6 @@ fun WideClassicCard(
     }
 }
 
-@OptIn(ExperimentalTvMaterial3Api::class)
 @Composable
 internal fun CardContent(
     title: @Composable () -> Unit,
@@ -367,7 +365,6 @@ internal fun CardContent(
 /**
  * Contains the default values used by all card types.
  */
-@ExperimentalTvMaterial3Api
 object CardDefaults {
     internal val ContentImageAlignment = Alignment.Center
 
@@ -545,7 +542,6 @@ object CardDefaults {
 private const val SubtitleAlpha = 0.6f
 private const val DescriptionAlpha = 0.8f
 
-@OptIn(ExperimentalTvMaterial3Api::class)
 private fun CardColors.toClickableSurfaceColors() =
     ClickableSurfaceColors(
         containerColor = containerColor,
@@ -558,7 +554,6 @@ private fun CardColors.toClickableSurfaceColors() =
         disabledContentColor = contentColor
     )
 
-@OptIn(ExperimentalTvMaterial3Api::class)
 private fun CardShape.toClickableSurfaceShape() =
     ClickableSurfaceShape(
         shape = shape,
@@ -568,7 +563,6 @@ private fun CardShape.toClickableSurfaceShape() =
         focusedDisabledShape = shape
     )
 
-@OptIn(ExperimentalTvMaterial3Api::class)
 private fun CardScale.toClickableSurfaceScale() =
     ClickableSurfaceScale(
         scale = scale,
@@ -578,7 +572,6 @@ private fun CardScale.toClickableSurfaceScale() =
         focusedDisabledScale = scale
     )
 
-@OptIn(ExperimentalTvMaterial3Api::class)
 private fun CardBorder.toClickableSurfaceBorder() =
     ClickableSurfaceBorder(
         border = border,
@@ -588,7 +581,6 @@ private fun CardBorder.toClickableSurfaceBorder() =
         focusedDisabledBorder = border
     )
 
-@OptIn(ExperimentalTvMaterial3Api::class)
 private fun CardGlow.toClickableSurfaceGlow() =
     ClickableSurfaceGlow(
         glow = glow,

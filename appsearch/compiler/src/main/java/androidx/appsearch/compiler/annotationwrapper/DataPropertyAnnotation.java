@@ -19,6 +19,7 @@ package androidx.appsearch.compiler.annotationwrapper;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appsearch.compiler.IntrospectionHelper;
+import androidx.appsearch.compiler.ProcessingException;
 
 import com.squareup.javapoet.ClassName;
 
@@ -52,14 +53,24 @@ public abstract class DataPropertyAnnotation implements PropertyAnnotation {
     private final ClassName mConfigClassName;
 
     @NonNull
+    private final String mGenericDocGetterName;
+
+    @NonNull
+    private final String mGenericDocArrayGetterName;
+
+    @NonNull
     private final String mGenericDocSetterName;
 
     DataPropertyAnnotation(
             @NonNull ClassName className,
             @NonNull ClassName configClassName,
+            @NonNull String genericDocGetterName,
+            @NonNull String genericDocArrayGetterName,
             @NonNull String genericDocSetterName) {
         mClassName = className;
         mConfigClassName = configClassName;
+        mGenericDocGetterName = genericDocGetterName;
+        mGenericDocArrayGetterName = genericDocArrayGetterName;
         mGenericDocSetterName = genericDocSetterName;
     }
 
@@ -68,12 +79,15 @@ public abstract class DataPropertyAnnotation implements PropertyAnnotation {
      *
      * @param defaultName The name to use for the annotated property in case the annotation
      *                    params do not mention an explicit name.
+     * @throws ProcessingException If the {@link AnnotationMirror} is a valid
+     *                             {@link DataPropertyAnnotation} but its params are malformed
+     *                             e.g. point to an illegal serializer class etc.
      */
     @Nullable
     public static DataPropertyAnnotation tryParse(
             @NonNull AnnotationMirror annotation,
             @NonNull String defaultName,
-            @NonNull IntrospectionHelper helper) {
+            @NonNull IntrospectionHelper helper) throws ProcessingException {
         Map<String, Object> annotationParams = helper.getAnnotationParams(annotation);
         String qualifiedClassName = annotation.getAnnotationType().toString();
         if (qualifiedClassName.equals(BooleanPropertyAnnotation.CLASS_NAME.canonicalName())) {
@@ -119,6 +133,23 @@ public abstract class DataPropertyAnnotation implements PropertyAnnotation {
     @NonNull
     public final ClassName getConfigClassName() {
         return mConfigClassName;
+    }
+
+    @Override
+    @NonNull
+    public final String getGenericDocGetterName() {
+        return mGenericDocGetterName;
+    }
+
+    /**
+     * The corresponding getter within {@link androidx.appsearch.app.GenericDocument} that
+     * returns and array.
+     *
+     * <p>For example, {@code getPropertyStringArray} for a {@link StringPropertyAnnotation}.
+     */
+    @NonNull
+    public final String getGenericDocArrayGetterName() {
+        return mGenericDocArrayGetterName;
     }
 
     @NonNull

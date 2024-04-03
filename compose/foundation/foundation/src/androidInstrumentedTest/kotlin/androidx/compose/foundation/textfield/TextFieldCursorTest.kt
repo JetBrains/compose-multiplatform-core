@@ -22,10 +22,14 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.FocusedWindowTest
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.testutils.assertContainsColor
+import androidx.compose.testutils.assertDoesNotContainColor
 import androidx.compose.testutils.assertPixelColor
 import androidx.compose.testutils.assertPixels
 import androidx.compose.testutils.assertShape
@@ -39,6 +43,8 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.toPixelMap
+import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.platform.WindowInfo
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.hasSetTextAction
@@ -49,6 +55,7 @@ import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
@@ -66,7 +73,7 @@ import org.junit.Rule
 import org.junit.Test
 
 @LargeTest
-class TextFieldCursorTest {
+class TextFieldCursorTest : FocusedWindowTest {
 
     private val motionDurationScale = object : MotionDurationScale {
         override var scaleFactor: Float by mutableStateOf(1f)
@@ -86,7 +93,7 @@ class TextFieldCursorTest {
         fontSize = 10.sp
     )
 
-    private val textFieldWidth = 10.dp
+    private val textFieldWidth = 40.dp
     private val textFieldHeight = 20.dp
     private val textFieldBgColor = Color.White
     private var isFocused = false
@@ -107,8 +114,7 @@ class TextFieldCursorTest {
     @Test
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     fun textFieldFocused_cursorRendered() = with(rule.density) {
-        rule.setContent {
-            Box(Modifier.padding(boxPadding)) {
+        rule.setTextFieldTestContent {
                 BasicTextField(
                     value = "",
                     onValueChange = {},
@@ -117,7 +123,6 @@ class TextFieldCursorTest {
                     cursorBrush = SolidColor(cursorColor),
                     onTextLayout = onTextLayout
                 )
-            }
         }
 
         focusAndWait()
@@ -134,31 +139,29 @@ class TextFieldCursorTest {
     @Test
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     fun textFieldFocused_cursorWithBrush() = with(rule.density) {
-        rule.setContent {
-            Box(Modifier.padding(boxPadding)) {
-                BasicTextField(
-                    value = "",
-                    onValueChange = {},
-                    textStyle = textStyle.copy(fontSize = textStyle.fontSize * 2),
-                    modifier = Modifier
-                        .size(textFieldWidth, textFieldHeight * 2)
-                        .then(bgModifier)
-                        .then(focusModifier),
-                    cursorBrush = Brush.verticalGradient(
-                        // make a brush double/triple color at the beginning and end so we have stable
-                        // colors at the ends.
-                        // Without triple bottom, the bottom color never hits to the provided color.
-                        listOf(
-                            Color.Blue,
-                            Color.Blue,
-                            Color.Green,
-                            Color.Green,
-                            Color.Green
-                        )
-                    ),
-                    onTextLayout = onTextLayout
-                )
-            }
+        rule.setTextFieldTestContent {
+            BasicTextField(
+                value = "",
+                onValueChange = {},
+                textStyle = textStyle.copy(fontSize = textStyle.fontSize * 2),
+                modifier = Modifier
+                    .size(textFieldWidth, textFieldHeight * 2)
+                    .then(bgModifier)
+                    .then(focusModifier),
+                cursorBrush = Brush.verticalGradient(
+                    // make a brush double/triple color at the beginning and end so we have stable
+                    // colors at the ends.
+                    // Without triple bottom, the bottom color never hits to the provided color.
+                    listOf(
+                        Color.Blue,
+                        Color.Blue,
+                        Color.Green,
+                        Color.Green,
+                        Color.Green
+                    )
+                ),
+                onTextLayout = onTextLayout
+            )
         }
 
         focusAndWait()
@@ -177,12 +180,179 @@ class TextFieldCursorTest {
 
     @Test
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
-    fun cursorBlinkingAnimation() = with(rule.density) {
-        rule.setContent {
-            // The padding helps if the test is run accidentally in landscape. Landscape makes
-            // the cursor to be next to the navigation bar which affects the red color to be a bit
-            // different - possibly anti-aliasing.
+    fun cursorPosition() = with(rule.density) {
+        val cursorOffset = 4
+        val textValue = mutableStateOf(TextFieldValue("test", selection = TextRange(cursorOffset)))
+        rule.setTextFieldTestContent {
             Box(Modifier.padding(boxPadding)) {
+                BasicTextField(
+                    value = textValue.value,
+                    onValueChange = {},
+                    textStyle = textStyle,
+                    modifier = textFieldModifier,
+                    cursorBrush = SolidColor(cursorColor),
+                    onTextLayout = { cursorRect = it.getCursorRect(cursorOffset) }
+                )
+            }
+        }
+
+        focusAndWait()
+
+        rule.mainClock.advanceTimeBy(100)
+
+        assertThat(cursorRect.left).isGreaterThan(0f)
+        assertThat(cursorRect.left).isLessThan(textFieldWidth.toPx())
+        rule.onNode(hasSetTextAction())
+            .captureToImage()
+            .assertCursor(2.dp, this, cursorRect)
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+    fun cursorPosition_rtl() = with(rule.density) {
+        val cursorOffset = 2
+        val textValue = mutableStateOf(
+            TextFieldValue(
+                "\u05D0\u05D1\u05D2",
+                selection = TextRange(cursorOffset)
+            )
+        )
+        rule.setTextFieldTestContent {
+            Box(Modifier.padding(boxPadding)) {
+                BasicTextField(
+                    value = textValue.value,
+                    onValueChange = {},
+                    textStyle = textStyle.copy(textDirection = TextDirection.Rtl),
+                    modifier = textFieldModifier,
+                    cursorBrush = SolidColor(cursorColor),
+                    onTextLayout = { cursorRect = it.getCursorRect(cursorOffset) }
+                )
+            }
+        }
+
+        focusAndWait()
+
+        rule.mainClock.advanceTimeBy(100)
+
+        assertThat(cursorRect.left).isGreaterThan(0f)
+        assertThat(cursorRect.left).isLessThan(textFieldWidth.toPx())
+        rule.onNode(hasSetTextAction())
+            .captureToImage()
+            .assertCursor(2.dp, this, cursorRect)
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+    fun cursorPosition_clamped() = with(rule.density) {
+        val cursorOffset = 20
+        val textValue = mutableStateOf(
+            TextFieldValue(
+                "test                      ",
+                selection = TextRange(cursorOffset)
+            )
+        )
+        rule.setTextFieldTestContent {
+            Box(Modifier.padding(boxPadding)) {
+                BasicTextField(
+                    value = textValue.value,
+                    onValueChange = {},
+                    textStyle = textStyle,
+                    modifier = textFieldModifier,
+                    cursorBrush = SolidColor(cursorColor),
+                    onTextLayout = { cursorRect = it.getCursorRect(cursorOffset) }
+                )
+            }
+        }
+
+        focusAndWait()
+
+        rule.mainClock.advanceTimeBy(100)
+
+        // Cursor is beyond the right edge of the text field
+        assertThat(cursorRect.left).isGreaterThan(textFieldWidth.toPx())
+        val cursorWidth = 2.dp
+        val clampedCursorHorizontal = (textFieldWidth - cursorWidth).toPx()
+        val clampedCursorRect = Rect(
+            clampedCursorHorizontal,
+            cursorRect.top,
+            clampedCursorHorizontal,
+            cursorRect.bottom
+        )
+        rule.onNode(hasSetTextAction())
+            .captureToImage()
+            .assertCursor(cursorWidth, this, clampedCursorRect)
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+    fun cursorPosition_rtl_clamped() = with(rule.density) {
+        val cursorOffset = 20
+        val textValue = mutableStateOf(
+            TextFieldValue(
+                "\u05D0\u05D1\u05D2                      ",
+                selection = TextRange(cursorOffset)
+            )
+        )
+        rule.setTextFieldTestContent {
+            Box(Modifier.padding(boxPadding)) {
+                BasicTextField(
+                    value = textValue.value,
+                    onValueChange = {},
+                    textStyle = textStyle.copy(textDirection = TextDirection.Rtl),
+                    modifier = textFieldModifier,
+                    cursorBrush = SolidColor(cursorColor),
+                    onTextLayout = { cursorRect = it.getCursorRect(cursorOffset) }
+                )
+            }
+        }
+
+        focusAndWait()
+
+        rule.mainClock.advanceTimeBy(100)
+
+        // Cursor is beyond the left edge of the text field
+        assertThat(cursorRect.left).isLessThan(0f)
+        val clampedCursorRect = Rect(0f, cursorRect.top, 0f, cursorRect.bottom)
+        rule.onNode(hasSetTextAction())
+            .captureToImage()
+            .assertCursor(2.dp, this, clampedCursorRect)
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+    fun cursorPosition_textFieldThinnerThanCursor() = with(rule.density) {
+        val cursorWidth = 2.dp
+        val thinSizeModifier = Modifier.size(cursorWidth - 0.5.dp, textFieldHeight)
+        val thinTextFieldModifier = thinSizeModifier
+            .then(bgModifier)
+            .then(focusModifier)
+        rule.setTextFieldTestContent {
+            Box(Modifier.padding(boxPadding)) {
+                BasicTextField(
+                    value = "",
+                    onValueChange = {},
+                    textStyle = textStyle,
+                    modifier = thinTextFieldModifier,
+                    cursorBrush = SolidColor(cursorColor),
+                    onTextLayout = onTextLayout
+                )
+            }
+        }
+
+        focusAndWait()
+
+        rule.mainClock.advanceTimeBy(100)
+
+        assertThat(cursorRect.left).isEqualTo(0f)
+        rule.onNode(hasSetTextAction())
+            .captureToImage()
+            .assertCursor(2.dp, this, cursorRect)
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+    fun cursorBlinkingAnimation() = with(rule.density) {
+        rule.setTextFieldTestContent {
                 BasicTextField(
                     value = "",
                     onValueChange = {},
@@ -191,7 +361,6 @@ class TextFieldCursorTest {
                     cursorBrush = SolidColor(cursorColor),
                     onTextLayout = onTextLayout
                 )
-            }
         }
 
         focusAndWait()
@@ -224,11 +393,7 @@ class TextFieldCursorTest {
     fun cursorBlinkingAnimation_whenSystemDisablesAnimations() = with(rule.density) {
         motionDurationScale.scaleFactor = 0f
 
-        rule.setContent {
-            // The padding helps if the test is run accidentally in landscape. Landscape makes
-            // the cursor to be next to the navigation bar which affects the red color to be a bit
-            // different - possibly anti-aliasing.
-            Box(Modifier.padding(boxPadding)) {
+        rule.setTextFieldTestContent {
                 BasicTextField(
                     value = "",
                     onValueChange = {},
@@ -237,7 +402,6 @@ class TextFieldCursorTest {
                     cursorBrush = SolidColor(cursorColor),
                     onTextLayout = onTextLayout
                 )
-            }
         }
 
         focusAndWait()
@@ -266,11 +430,7 @@ class TextFieldCursorTest {
     @Test
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     fun cursorUnsetColor_noCursor() = with(rule.density) {
-        rule.setContent {
-            // The padding helps if the test is run accidentally in landscape. Landscape makes
-            // the cursor to be next to the navigation bar which affects the red color to be a bit
-            // different - possibly anti-aliasing.
-            Box(Modifier.padding(boxPadding)) {
+        rule.setTextFieldTestContent {
                 BasicTextField(
                     value = "",
                     onValueChange = {},
@@ -278,7 +438,6 @@ class TextFieldCursorTest {
                     modifier = textFieldModifier,
                     cursorBrush = SolidColor(Color.Unspecified)
                 )
-            }
         }
 
         focusAndWait()
@@ -311,11 +470,7 @@ class TextFieldCursorTest {
     @Test
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     fun cursorNotBlinking_whileTyping() = with(rule.density) {
-        rule.setContent {
-            // The padding helps if the test is run accidentally in landscape. Landscape makes
-            // the cursor to be next to the navigation bar which affects the red color to be a bit
-            // different - possibly anti-aliasing.
-            Box(Modifier.padding(boxPadding)) {
+        rule.setTextFieldTestContent {
                 val text = remember { mutableStateOf("test") }
                 BasicTextField(
                     value = text.value,
@@ -325,7 +480,6 @@ class TextFieldCursorTest {
                     cursorBrush = SolidColor(cursorColor),
                     onTextLayout = onTextLayout
                 )
-            }
         }
 
         focusAndWait()
@@ -355,11 +509,7 @@ class TextFieldCursorTest {
     fun selectionChanges_cursorNotBlinking() = with(rule.density) {
         rule.mainClock.autoAdvance = false
         val textValue = mutableStateOf(TextFieldValue("test", selection = TextRange(2)))
-        rule.setContent {
-            // The padding helps if the test is run accidentally in landscape. Landscape makes
-            // the cursor to be next to the navigation bar which affects the red color to be a bit
-            // different - possibly anti-aliasing.
-            Box(Modifier.padding(boxPadding)) {
+        rule.setTextFieldTestContent {
                 BasicTextField(
                     value = textValue.value,
                     onValueChange = { textValue.value = it },
@@ -368,7 +518,6 @@ class TextFieldCursorTest {
                     cursorBrush = SolidColor(cursorColor),
                     onTextLayout = onTextLayout
                 )
-            }
         }
 
         focusAndWait()
@@ -398,8 +547,7 @@ class TextFieldCursorTest {
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     fun brushChanged_doesntResetTimer() {
         var cursorBrush by mutableStateOf(SolidColor(cursorColor))
-        rule.setContent {
-            Box(Modifier.padding(boxPadding)) {
+        rule.setTextFieldTestContent {
                 BasicTextField(
                     value = "",
                     onValueChange = {},
@@ -408,7 +556,6 @@ class TextFieldCursorTest {
                     cursorBrush = cursorBrush,
                     onTextLayout = onTextLayout
                 )
-            }
         }
 
         focusAndWait()
@@ -426,6 +573,94 @@ class TextFieldCursorTest {
                 backgroundColor = Color.White,
                 shapeOverlapPixelCount = 0.0f
             )
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+    fun cursorNotBlinking_whenWindowLostFocus() {
+        val focusWindow = mutableStateOf(true)
+        fun createWindowInfo(focused: Boolean) = object : WindowInfo {
+            override val isWindowFocused: Boolean
+                get() = focused
+        }
+        rule.setTextFieldTestContent {
+            CompositionLocalProvider(LocalWindowInfo provides createWindowInfo(focusWindow.value)) {
+                Box(Modifier.padding(boxPadding)) {
+                    BasicTextField(
+                        value = "",
+                        onValueChange = { },
+                        textStyle = textStyle,
+                        modifier = textFieldModifier,
+                        cursorBrush = SolidColor(cursorColor),
+                        onTextLayout = onTextLayout
+                    )
+                }
+            }
+        }
+
+        focusAndWait()
+
+        // cursor visible first 500ms
+        rule.mainClock.advanceTimeBy(100)
+        rule.onNode(hasSetTextAction())
+            .captureToImage()
+            .assertContainsColor(cursorColor)
+
+        // window loses focus
+        focusWindow.value = false
+        rule.waitForIdle()
+
+        // check that text field cursor disappeared even within visible 500ms
+        rule.mainClock.advanceTimeBy(100)
+        rule.onNode(hasSetTextAction())
+            .captureToImage()
+            .assertDoesNotContainColor(cursorColor)
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+    fun focusedTextField_resumeBlinking_whenWindowRegainsFocus() {
+        val focusWindow = mutableStateOf(true)
+        fun createWindowInfo(focused: Boolean) = object : WindowInfo {
+            override val isWindowFocused: Boolean
+                get() = focused
+        }
+        rule.setTextFieldTestContent {
+            CompositionLocalProvider(LocalWindowInfo provides createWindowInfo(focusWindow.value)) {
+                Box(Modifier.padding(boxPadding)) {
+                    BasicTextField(
+                        value = "",
+                        onValueChange = { },
+                        textStyle = textStyle,
+                        modifier = textFieldModifier,
+                        cursorBrush = SolidColor(cursorColor),
+                        onTextLayout = onTextLayout
+                    )
+                }
+            }
+        }
+
+        focusAndWait()
+
+        // window loses focus
+        focusWindow.value = false
+        rule.waitForIdle()
+
+        // check that text field cursor disappeared even within visible 500ms
+        rule.mainClock.advanceTimeBy(100)
+        rule.onNode(hasSetTextAction())
+            .captureToImage()
+            .assertDoesNotContainColor(cursorColor)
+
+        // window regains focus within 500ms
+        focusWindow.value = true
+        rule.waitForIdle()
+
+        rule.mainClock.advanceTimeBy(100)
+        rule.onNode(hasSetTextAction())
+            .captureToImage()
+            .assertContainsColor(cursorColor)
+            .assertCursor(2.dp, rule.density, cursorRect)
     }
 
     private fun focusAndWait() {

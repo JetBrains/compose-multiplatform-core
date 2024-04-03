@@ -17,6 +17,7 @@
 package androidx.build.docs
 
 import androidx.build.PROJECT_STRUCTURE_METADATA_FILENAME
+import androidx.build.configureTaskTimeouts
 import androidx.build.dackka.DackkaTask
 import androidx.build.dackka.GenerateMetadataTask
 import androidx.build.defaultAndroidConfig
@@ -29,6 +30,7 @@ import androidx.build.getLibraryByName
 import androidx.build.metalava.versionMetadataUsage
 import androidx.build.multiplatformUsage
 import androidx.build.versionCatalog
+import androidx.build.workaroundPrebuiltTakingPrecedenceOverProject
 import com.android.build.api.attributes.BuildTypeAttr
 import com.android.build.gradle.LibraryExtension
 import com.android.build.gradle.LibraryPlugin
@@ -168,6 +170,9 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
             multiplatformDocsSourcesConfiguration,
             mergedProjectMetadata
         )
+
+        project.configureTaskTimeouts()
+        project.workaroundPrebuiltTakingPrecedenceOverProject()
     }
 
     /**
@@ -228,7 +233,9 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
             task.into(destinationDirectory)
             task.from(
                 sources.elements.map { jars ->
-                    jars.map { jar ->
+                    // Now that we publish sample jars, they can get confused with normal source
+                    // jars. We want to handle sample jars separately, so filter by the name.
+                    jars.filter { "samples" !in it.toString() }.map { jar ->
                         localVar.zipTree(jar).matching { it.exclude("**/META-INF/MANIFEST.MF") }
                     }
                 }
@@ -461,8 +468,9 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
         val generatedDocsDir = project.layout.buildDirectory.dir("docs")
 
         val dackkaConfiguration =
-            project.configurations.create("dackka").apply {
-                dependencies.add(project.dependencies.create(project.getLibraryByName("dackka")))
+            project.configurations.create("dackka") {
+                it.dependencies.add(project.dependencies.create(project.getLibraryByName("dackka")))
+                it.isCanBeConsumed = false
             }
 
         val generateMetadataTask =
@@ -472,12 +480,12 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
                 task.getArtifactFiles().set(artifacts.map { result -> result.map { it.file } })
                 val multiplatformArtifacts =
                     multiplatformDocsConfiguration.incoming.artifacts.resolvedArtifacts
-                task.getMultiplatformArtifactIds().set(multiplatformArtifacts.map { result ->
-                    result.map { it.id }
-                })
-                task.getMultiplatformArtifactFiles().set(multiplatformArtifacts.map { result ->
-                    result.map { it.file }
-                })
+                task
+                    .getMultiplatformArtifactIds()
+                    .set(multiplatformArtifacts.map { result -> result.map { it.id } })
+                task
+                    .getMultiplatformArtifactFiles()
+                    .set(multiplatformArtifacts.map { result -> result.map { it.file } })
                 task.destinationFile.set(getMetadataRegularFile(project))
             }
 
@@ -487,9 +495,11 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
         val dackkaTask =
             project.tasks.register("docs", DackkaTask::class.java) { task ->
                 var taskStartTime: LocalDateTime? = null
-                task.argsJsonFile = File(
-                    project.rootProject.getDistributionDirectory(),
-                    "dackkaArgs-${project.name}.json"
+                task.argsJsonFile.set(
+                    File(
+                        project.rootProject.getDistributionDirectory(),
+                        "dackkaArgs-${project.name}.json"
+                    )
                 )
                 task.apply {
                     dependsOn(unzipJvmSourcesTask)
@@ -504,30 +514,39 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
 
                     dackkaClasspath.from(project.files(dackkaConfiguration))
                     destinationDir.set(generatedDocsDir)
-                    frameworkSamplesDir = File(project.rootDir, "samples")
+                    frameworkSamplesDir.set(
+                        project.rootProject.layout.projectDirectory.dir("samples")
+                    )
                     samplesDir.set(unzippedSamplesSources)
                     jvmSourcesDir.set(unzippedJvmSourcesDirectory)
                     multiplatformSourcesDir.set(unzippedMultiplatformSourcesDirectory)
-                    docsProjectDir = File(project.rootDir, "docs-public")
-                    dependenciesClasspath =
+                    projectListsDirectory.set(
+                        project.rootProject.layout.projectDirectory.dir("docs-public/package-lists")
+                    )
+                    dependenciesClasspath.from(
                         dependencyClasspath +
                             project.getAndroidJar() +
                             project.getExtraCommonDependencies()
-                    excludedPackages = hiddenPackages.toSet()
-                    excludedPackagesForJava = hiddenPackagesJava
-                    excludedPackagesForKotlin = emptySet()
+                    )
+                    excludedPackages.set(hiddenPackages.toSet())
+                    excludedPackagesForJava.set(hiddenPackagesJava)
+                    excludedPackagesForKotlin.set(emptySet())
                     libraryMetadataFile.set(getMetadataRegularFile(project))
                     projectStructureMetadataFile.set(mergedProjectMetadata)
-                    // See go/dackka-source-link for details on this link.
-                    baseSourceLink = "https://cs.android.com/search?" + "q=file:%s+class:%s"
-                    annotationsNotToDisplay = hiddenAnnotations
-                    annotationsNotToDisplayJava = hiddenAnnotationsJava
-                    annotationsNotToDisplayKotlin = hiddenAnnotationsKotlin
-                    hidingAnnotations = annotationsToHideApis
-                    versionMetadataFiles =
-                        versionMetadataConfiguration.incoming.artifacts.resolvedArtifacts.map {
-                            it.map { it.file }
-                        }
+                    // See go/dackka-source-link for details on these links.
+                    baseSourceLink.set("https://cs.android.com/search?q=file:%s+class:%s")
+                    baseFunctionSourceLink.set(
+                        "https://cs.android.com/search?q=file:%s+function:%s"
+                    )
+                    basePropertySourceLink.set("https://cs.android.com/search?q=file:%s+symbol:%s")
+                    annotationsNotToDisplay.set(hiddenAnnotations)
+                    annotationsNotToDisplayJava.set(hiddenAnnotationsJava)
+                    annotationsNotToDisplayKotlin.set(hiddenAnnotationsKotlin)
+                    hidingAnnotations.set(annotationsToHideApis)
+                    nullabilityAnnotations.set(validNullabilityAnnotations)
+                    versionMetadataFiles.from(
+                        versionMetadataConfiguration.incoming.artifactView { }.files
+                    )
                     task.doFirst { taskStartTime = LocalDateTime.now() }
                     task.doLast {
                         val taskEndTime = LocalDateTime.now()
@@ -671,6 +690,7 @@ private val hiddenPackagesJava =
     setOf(
         "androidx.*compose.*",
         "androidx.*glance.*",
+        "androidx\\.tv\\..*",
     )
 
 // List of annotations which should not be displayed in the docs
@@ -696,8 +716,17 @@ private val hiddenAnnotations: List<String> =
         // This annotations is not useful for developers but right now is @ShowAnnotation?
         "kotlin.js.JsName",
         // This annotation is intended to target the compiler and is general not useful for devs.
-        "java.lang.Override"
+        "java.lang.Override",
+        // This annotation is used by the room processor and isn't useful for developers
+        "androidx.room.Ignore"
     )
+
+val validNullabilityAnnotations = listOf(
+    "androidx.annotation.Nullable", "android.annotation.Nullable",
+    "androidx.annotation.NonNull", "android.annotation.NonNull",
+    // Required by media3
+    "org.checkerframework.checker.nullness.qual.Nullable",
+)
 
 // Annotations which should not be displayed in the Kotlin docs, in addition to hiddenAnnotations
 private val hiddenAnnotationsKotlin: List<String> = listOf("kotlin.ExtensionFunctionType")
@@ -706,7 +735,11 @@ private val hiddenAnnotationsKotlin: List<String> = listOf("kotlin.ExtensionFunc
 private val hiddenAnnotationsJava: List<String> = emptyList()
 
 // Annotations which mean the elements they are applied to should be hidden from the docs
-private val annotationsToHideApis: List<String> = listOf("androidx.annotation.RestrictTo")
+private val annotationsToHideApis: List<String> = listOf(
+    "androidx.annotation.RestrictTo",
+    // Appears in androidx.test sources
+    "dagger.internal.DaggerGenerated",
+)
 
 /** Data class that matches JSON structure of kotlin source set metadata */
 data class ProjectStructureMetadata(var sourceSets: List<SourceSetMetadata>)

@@ -22,6 +22,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.internal.Strings
+import androidx.compose.material3.internal.getString
 import androidx.compose.material3.tokens.NavigationDrawerTokens
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
@@ -61,17 +63,12 @@ import org.junit.runner.RunWith
 
 @MediumTest
 @RunWith(AndroidJUnit4::class)
-@OptIn(ExperimentalMaterial3Api::class)
 class ModalNavigationDrawerTest {
 
     @get:Rule
     val rule = createComposeRule()
 
-    private fun advanceClock() {
-        rule.mainClock.advanceTimeBy(100_000L)
-    }
-
-    val NavigationDrawerWidth = NavigationDrawerTokens.ContainerWidth
+    private val NavigationDrawerWidth = NavigationDrawerTokens.ContainerWidth
 
     @Test
     fun navigationDrawer_testOffset_whenOpen() {
@@ -251,11 +248,13 @@ class ModalNavigationDrawerTest {
         rule.onNodeWithTag(DrawerTestTag).assertLeftPositionInRootIsEqualTo(-NavigationDrawerWidth)
 
         // When the drawer state is set to Opened
+        @Suppress("DEPRECATION") // animateTo is deprecated, but we are testing it
         drawerState.animateTo(DrawerValue.Open, TweenSpec())
         // Then the drawer should be opened
         rule.onNodeWithTag(DrawerTestTag).assertLeftPositionInRootIsEqualTo(0.dp)
 
         // When the drawer state is set to Closed
+        @Suppress("DEPRECATION") // animateTo is deprecated, but we are testing it
         drawerState.animateTo(DrawerValue.Closed, TweenSpec())
         // Then the drawer should be closed
         rule.onNodeWithTag(DrawerTestTag).assertLeftPositionInRootIsEqualTo(-NavigationDrawerWidth)
@@ -658,4 +657,4 @@ class ModalNavigationDrawerTest {
     }
 }
 
-private val DrawerTestTag = "drawer"
+private const val DrawerTestTag = "drawer"

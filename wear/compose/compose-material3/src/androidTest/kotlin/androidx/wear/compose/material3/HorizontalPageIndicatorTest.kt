@@ -23,6 +23,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.test.DeviceConfigurationOverride
+import androidx.compose.ui.test.RoundScreen
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -38,11 +40,14 @@ class HorizontalPageIndicatorTest {
     @Test
     public fun supports_testtag_circular() {
         rule.setContentWithTheme {
-            HorizontalPageIndicator(
-                modifier = Modifier.testTag(TEST_TAG),
-                pageIndicatorState = pageIndicatorState(),
-                indicatorStyle = PageIndicatorStyle.Curved
-            )
+            DeviceConfigurationOverride(
+                DeviceConfigurationOverride.RoundScreen(isScreenRound = true)
+            ) {
+                HorizontalPageIndicator(
+                    modifier = Modifier.testTag(TEST_TAG),
+                    pageIndicatorState = pageIndicatorState()
+                )
+            }
         }
         rule.onNodeWithTag(TEST_TAG).assertExists()
     }
@@ -50,47 +55,51 @@ class HorizontalPageIndicatorTest {
     @Test
     public fun supports_testtag_linear() {
         rule.setContentWithTheme {
-            HorizontalPageIndicator(
-                modifier = Modifier.testTag(TEST_TAG),
-                pageIndicatorState = pageIndicatorState(),
-                indicatorStyle = PageIndicatorStyle.Linear
-            )
+            DeviceConfigurationOverride(
+                DeviceConfigurationOverride.RoundScreen(isScreenRound = false)
+            ) {
+                HorizontalPageIndicator(
+                    modifier = Modifier.testTag(TEST_TAG),
+                    pageIndicatorState = pageIndicatorState()
+                )
+            }
         }
         rule.onNodeWithTag(TEST_TAG).assertExists()
     }
 
     @Test
     public fun position_is_selected_circular() {
-        position_is_selected(PageIndicatorStyle.Curved)
+        position_is_selected(isRound = true)
     }
 
     @Test
     public fun position_is_selected_linear() {
-        position_is_selected(PageIndicatorStyle.Linear)
+        position_is_selected(isRound = false)
     }
 
     @Test
     public fun in_between_positions_circular() {
-        in_between_positions(PageIndicatorStyle.Curved)
+        in_between_positions(isRound = true)
     }
 
     @Test
     public fun in_between_positions_linear() {
-        in_between_positions(PageIndicatorStyle.Linear)
+        in_between_positions(isRound = false)
     }
 
-    private fun position_is_selected(indicatorStyle: PageIndicatorStyle) {
+    private fun position_is_selected(isRound: Boolean) {
         rule.setContentWithTheme {
-            HorizontalPageIndicator(
-                modifier = Modifier
-                    .testTag(TEST_TAG)
-                    .size(150.dp),
-                indicatorStyle = indicatorStyle,
-                pageIndicatorState = pageIndicatorState(),
-                selectedColor = selectedColor,
-                unselectedColor = unselectedColor,
-                indicatorSize = 20.dp
-            )
+            DeviceConfigurationOverride(DeviceConfigurationOverride.RoundScreen(isRound)) {
+                HorizontalPageIndicator(
+                    modifier = Modifier
+                        .testTag(TEST_TAG)
+                        .size(150.dp),
+                    pageIndicatorState = pageIndicatorState(),
+                    selectedColor = selectedColor,
+                    unselectedColor = unselectedColor,
+                    indicatorSize = 20.dp
+                )
+            }
         }
         rule.waitForIdle()
 
@@ -104,19 +113,20 @@ class HorizontalPageIndicatorTest {
             .assertColorInPercentageRange(unselectedColor, 3.8f..4.5f)
     }
 
-    private fun in_between_positions(indicatorStyle: PageIndicatorStyle) {
+    private fun in_between_positions(isRound: Boolean) {
         rule.setContentWithTheme {
-            HorizontalPageIndicator(
-                modifier = Modifier
-                    .testTag(TEST_TAG)
-                    .size(150.dp)
-                    .fillMaxWidth(),
-                pageIndicatorState = pageIndicatorState(pageOffset = 0.5f),
-                indicatorStyle = indicatorStyle,
-                selectedColor = selectedColor,
-                unselectedColor = unselectedColor,
-                indicatorSize = 20.dp
-            )
+            DeviceConfigurationOverride(DeviceConfigurationOverride.RoundScreen(isRound)) {
+                HorizontalPageIndicator(
+                    modifier = Modifier
+                        .testTag(TEST_TAG)
+                        .size(150.dp)
+                        .fillMaxWidth(),
+                    pageIndicatorState = pageIndicatorState(pageOffset = 0.5f),
+                    selectedColor = selectedColor,
+                    unselectedColor = unselectedColor,
+                    indicatorSize = 20.dp
+                )
+            }
         }
         rule.waitForIdle()
 
@@ -140,8 +150,8 @@ class HorizontalPageIndicatorTest {
             selectedPage: Int = 1,
             pageCount: Int = 4
         ) = object : PageIndicatorState {
-            override val selectedPageWithOffset: () -> Float
-                get() = { selectedPage + pageOffset }
+            override fun selectedPageWithOffsetFraction(): Float =
+                selectedPage + pageOffset
             override val pageCount: Int
                 get() = pageCount
         }

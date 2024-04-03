@@ -39,13 +39,14 @@ import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.width
+import androidx.compose.material3.internal.ProvideContentColorTextStyle
+import androidx.compose.material3.internal.animateElevation
 import androidx.compose.material3.tokens.ExtendedFabPrimaryTokens
 import androidx.compose.material3.tokens.FabPrimaryLargeTokens
 import androidx.compose.material3.tokens.FabPrimarySmallTokens
 import androidx.compose.material3.tokens.FabPrimaryTokens
 import androidx.compose.material3.tokens.MotionTokens
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.State
@@ -86,9 +87,10 @@ import kotlinx.coroutines.launch
  * different states. This controls the size of the shadow below the FAB. Additionally, when the
  * container color is [ColorScheme.surface], this controls the amount of primary color applied as an
  * overlay. See also: [Surface].
- * @param interactionSource the [MutableInteractionSource] representing the stream of [Interaction]s
- * for this FAB. You can create and pass in your own `remember`ed instance to observe [Interaction]s
- * and customize the appearance / behavior of this FAB in different states.
+ * @param interactionSource an optional hoisted [MutableInteractionSource] for observing and
+ * emitting [Interaction]s for this FAB. You can use this to change the FAB's appearance
+ * or preview the FAB in different states. Note that if `null` is provided, interactions will
+ * still happen internally.
  * @param content the content of this FAB, typically an [Icon]
  */
 @Composable
@@ -99,9 +101,11 @@ fun FloatingActionButton(
     containerColor: Color = FloatingActionButtonDefaults.containerColor,
     contentColor: Color = contentColorFor(containerColor),
     elevation: FloatingActionButtonElevation = FloatingActionButtonDefaults.elevation(),
-    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
+    interactionSource: MutableInteractionSource? = null,
     content: @Composable () -> Unit,
 ) {
+    @Suppress("NAME_SHADOWING")
+    val interactionSource = interactionSource ?: remember { MutableInteractionSource() }
     Surface(
         onClick = onClick,
         modifier = modifier.semantics { role = Role.Button },
@@ -110,25 +114,20 @@ fun FloatingActionButton(
         contentColor = contentColor,
         tonalElevation = elevation.tonalElevation(),
         shadowElevation = elevation.shadowElevation(interactionSource = interactionSource).value,
-        interactionSource = interactionSource,
+        interactionSource = interactionSource
     ) {
-        CompositionLocalProvider(LocalContentColor provides contentColor) {
-            // Adding the text style from [ExtendedFloatingActionButton] to all FAB variations. In
-            // the majority of cases this will have no impact, because icons are expected, but if a
-            // developer decides to put some short text to emulate an icon, (like "?") then it will
-            // have the correct styling.
-            ProvideTextStyle(
-                MaterialTheme.typography.fromToken(ExtendedFabPrimaryTokens.LabelTextFont),
-            ) {
-                Box(
-                    modifier = Modifier
-                        .defaultMinSize(
-                            minWidth = FabPrimaryTokens.ContainerWidth,
-                            minHeight = FabPrimaryTokens.ContainerHeight,
-                        ),
-                    contentAlignment = Alignment.Center,
-                ) { content() }
-            }
+        ProvideContentColorTextStyle(
+            contentColor = contentColor,
+            textStyle = MaterialTheme.typography.fromToken(ExtendedFabPrimaryTokens.LabelTextFont)
+        ) {
+            Box(
+                modifier = Modifier
+                    .defaultMinSize(
+                        minWidth = FabPrimaryTokens.ContainerWidth,
+                        minHeight = FabPrimaryTokens.ContainerHeight,
+                    ),
+                contentAlignment = Alignment.Center,
+            ) { content() }
         }
     }
 }
@@ -154,9 +153,10 @@ fun FloatingActionButton(
  * different states. This controls the size of the shadow below the FAB. Additionally, when the
  * container color is [ColorScheme.surface], this controls the amount of primary color applied as an
  * overlay. See also: [Surface].
- * @param interactionSource the [MutableInteractionSource] representing the stream of [Interaction]s
- * for this FAB. You can create and pass in your own `remember`ed instance to observe [Interaction]s
- * and customize the appearance / behavior of this FAB in different states.
+ * @param interactionSource an optional hoisted [MutableInteractionSource] for observing and
+ * emitting [Interaction]s for this FAB. You can use this to change the FAB's appearance
+ * or preview the FAB in different states. Note that if `null` is provided, interactions will
+ * still happen internally.
  * @param content the content of this FAB, typically an [Icon]
  */
 @Composable
@@ -167,7 +167,7 @@ fun SmallFloatingActionButton(
     containerColor: Color = FloatingActionButtonDefaults.containerColor,
     contentColor: Color = contentColorFor(containerColor),
     elevation: FloatingActionButtonElevation = FloatingActionButtonDefaults.elevation(),
-    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
+    interactionSource: MutableInteractionSource? = null,
     content: @Composable () -> Unit,
 ) {
     FloatingActionButton(
@@ -206,9 +206,10 @@ fun SmallFloatingActionButton(
  * different states. This controls the size of the shadow below the FAB. Additionally, when the
  * container color is [ColorScheme.surface], this controls the amount of primary color applied as an
  * overlay. See also: [Surface].
- * @param interactionSource the [MutableInteractionSource] representing the stream of [Interaction]s
- * for this FAB. You can create and pass in your own `remember`ed instance to observe [Interaction]s
- * and customize the appearance / behavior of this FAB in different states.
+ * @param interactionSource an optional hoisted [MutableInteractionSource] for observing and
+ * emitting [Interaction]s for this FAB. You can use this to change the FAB's appearance
+ * or preview the FAB in different states. Note that if `null` is provided, interactions will
+ * still happen internally.
  * @param content the content of this FAB, typically an [Icon]
  */
 @Composable
@@ -219,7 +220,7 @@ fun LargeFloatingActionButton(
     containerColor: Color = FloatingActionButtonDefaults.containerColor,
     contentColor: Color = contentColorFor(containerColor),
     elevation: FloatingActionButtonElevation = FloatingActionButtonDefaults.elevation(),
-    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
+    interactionSource: MutableInteractionSource? = null,
     content: @Composable () -> Unit,
 ) {
     FloatingActionButton(
@@ -261,9 +262,10 @@ fun LargeFloatingActionButton(
  * different states. This controls the size of the shadow below the FAB. Additionally, when the
  * container color is [ColorScheme.surface], this controls the amount of primary color applied as an
  * overlay. See also: [Surface].
- * @param interactionSource the [MutableInteractionSource] representing the stream of [Interaction]s
- * for this FAB. You can create and pass in your own `remember`ed instance to observe [Interaction]s
- * and customize the appearance / behavior of this FAB in different states.
+ * @param interactionSource an optional hoisted [MutableInteractionSource] for observing and
+ * emitting [Interaction]s for this FAB. You can use this to change the FAB's appearance
+ * or preview the FAB in different states. Note that if `null` is provided, interactions will
+ * still happen internally.
  * @param content the content of this FAB, typically a [Text] label
  */
 @Composable
@@ -274,7 +276,7 @@ fun ExtendedFloatingActionButton(
     containerColor: Color = FloatingActionButtonDefaults.containerColor,
     contentColor: Color = contentColorFor(containerColor),
     elevation: FloatingActionButtonElevation = FloatingActionButtonDefaults.elevation(),
-    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
+    interactionSource: MutableInteractionSource? = null,
     content: @Composable RowScope.() -> Unit,
 ) {
     FloatingActionButton(
@@ -329,9 +331,10 @@ fun ExtendedFloatingActionButton(
  * different states. This controls the size of the shadow below the FAB. Additionally, when the
  * container color is [ColorScheme.surface], this controls the amount of primary color applied as an
  * overlay. See also: [Surface].
- * @param interactionSource the [MutableInteractionSource] representing the stream of [Interaction]s
- * for this FAB. You can create and pass in your own `remember`ed instance to observe [Interaction]s
- * and customize the appearance / behavior of this FAB in different states.
+ * @param interactionSource an optional hoisted [MutableInteractionSource] for observing and
+ * emitting [Interaction]s for this FAB. You can use this to change the FAB's appearance
+ * or preview the FAB in different states. Note that if `null` is provided, interactions will
+ * still happen internally.
  */
 @Composable
 fun ExtendedFloatingActionButton(
@@ -344,7 +347,7 @@ fun ExtendedFloatingActionButton(
     containerColor: Color = FloatingActionButtonDefaults.containerColor,
     contentColor: Color = contentColorFor(containerColor),
     elevation: FloatingActionButtonElevation = FloatingActionButtonDefaults.elevation(),
-    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
+    interactionSource: MutableInteractionSource? = null,
 ) {
     FloatingActionButton(
         onClick = onClick,

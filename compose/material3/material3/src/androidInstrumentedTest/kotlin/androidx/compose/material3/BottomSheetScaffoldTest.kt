@@ -36,9 +36,16 @@ import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.internal.Strings
+import androidx.compose.material3.internal.getString
 import androidx.compose.material3.tokens.SheetBottomTokens
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.testutils.assertContainsColor
 import androidx.compose.testutils.assertShape
 import androidx.compose.ui.Modifier
@@ -53,6 +60,7 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.SemanticsActions
@@ -64,6 +72,7 @@ import androidx.compose.ui.test.assertLeftPositionInRootIsEqualTo
 import androidx.compose.ui.test.assertTopPositionInRootIsEqualTo
 import androidx.compose.ui.test.assertWidthIsEqualTo
 import androidx.compose.ui.test.captureToImage
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -74,9 +83,11 @@ import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeDown
 import androidx.compose.ui.test.swipeUp
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.coerceAtMost
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.width
 import androidx.compose.ui.zIndex
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
@@ -85,7 +96,6 @@ import com.google.common.truth.Truth.assertThat
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import junit.framework.TestCase
-import kotlin.IllegalStateException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -342,7 +352,7 @@ class BottomSheetScaffoldTest {
     }
 
     @Test
-    fun backdropScaffold_revealAndConceal_manually(): Unit = runBlocking(AutoTestFrameClock()) {
+    fun bottomSheetScaffold_revealAndConceal_manually(): Unit = runBlocking(AutoTestFrameClock()) {
         lateinit var bottomSheetState: SheetState
         rule.setContent {
             bottomSheetState = rememberStandardBottomSheetState(
@@ -664,6 +674,55 @@ class BottomSheetScaffoldTest {
         }
     }
 
+    @Test
+    fun bottomSheetScaffold_landscape_filledWidth_sheetFillsEntireWidth() {
+        rule.activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+        val latch = CountDownLatch(1)
+
+        rule.activity.application.registerComponentCallbacks(object : ComponentCallbacks2 {
+            override fun onConfigurationChanged(p0: Configuration) {
+                latch.countDown()
+            }
+
+            override fun onLowMemory() {
+                // NO-OP
+            }
+
+            override fun onTrimMemory(p0: Int) {
+                // NO-OP
+            }
+        })
+
+        try {
+            latch.await(1500, TimeUnit.MILLISECONDS)
+            var screenWidthPx by mutableStateOf(0)
+            rule.setContent {
+                val context = LocalContext.current
+                screenWidthPx = context.resources.displayMetrics.widthPixels
+                BottomSheetScaffold(
+                    sheetMaxWidth = Dp.Unspecified,
+                    sheetContent = {
+                        Box(
+                            Modifier
+                                .testTag(sheetTag)
+                                .fillMaxHeight(0.4f)
+                        )
+                    }
+                ) {
+                    Text("body")
+                }
+            }
+
+            val sheet = rule.onNodeWithTag(sheetTag).onParent().getUnclippedBoundsInRoot()
+            val sheetWidthPx = with(rule.density) { sheet.width.roundToPx() }
+            assertThat(sheetWidthPx).isEqualTo(screenWidthPx)
+        } catch (e: InterruptedException) {
+            TestCase.fail("Unable to verify sheet width in landscape orientation")
+        } finally {
+            rule.activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+        }
+    }
+
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun bottomSheetScaffold_testNestedScrollConnection() {
@@ -757,6 +816,38 @@ class BottomSheetScaffoldTest {
             .assertContainsColor(expectedPostScrolledContainerColor)
     }
 
+    @Test
+    fun bottomSheetScaffold_sheetMaxWidth_sizeChanges_snapsToNewTarget() {
+        lateinit var sheetMaxWidth: MutableState<Dp>
+        var screenWidth by mutableStateOf(0.dp)
+        rule.setContent {
+            sheetMaxWidth = remember { mutableStateOf(0.dp) }
+            val context = LocalContext.current
+            val density = LocalDensity.current
+            screenWidth = with(density) { context.resources.displayMetrics.widthPixels.toDp() }
+            BottomSheetScaffold(
+                sheetContent = {
+                    Box(
+                        Modifier
+                            .fillMaxSize()
+                            .testTag(sheetTag))
+                },
+                sheetPeekHeight = peekHeight,
+                sheetMaxWidth = sheetMaxWidth.value,
+                sheetDragHandle = null
+            ) {
+                Text("Content")
+            }
+        }
+
+        for (dp in listOf(0.dp, 200.dp, 400.dp)) {
+            sheetMaxWidth.value = dp
+            val sheetWidth = rule.onNodeWithTag(sheetTag).getUnclippedBoundsInRoot().width
+            val expectedSheetWidth = minOf(sheetMaxWidth.value, screenWidth)
+            assertThat(sheetWidth).isEqualTo(expectedSheetWidth)
+        }
+    }
+
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun bottomSheetScaffold_slotsPositionedAppropriately() {
@@ -774,7 +865,6 @@ class BottomSheetScaffoldTest {
         rule.setContent {
             dragHandleContentDescription = getString(Strings.BottomSheetDragHandleDescription)
             dragHandleColor = SheetBottomTokens.DockedDragHandleColor.value
-                .copy(SheetBottomTokens.DockedDragHandleOpacity)
             surface = MaterialTheme.colorScheme.surface
             density = LocalDensity.current
             BottomSheetScaffold(

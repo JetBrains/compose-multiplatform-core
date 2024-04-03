@@ -85,9 +85,6 @@ supportRoot="$(pwd)"
 checkoutRoot="$(cd $supportRoot/../.. && pwd)"
 tempDir="$checkoutRoot/simplify-tmp"
 
-# If the this script was run from a subdirectory, then we run our test command from the same subdirectory
-commandSubdir="$(echo $workingDir | sed "s|^$supportRoot|.|g")"
-
 if [ ! -e "$workingDir/gradlew" ]; then
   echo "Error; ./gradlew does not exist. Must cd to a dir containing a ./gradlew first"
   # so that this script knows which gradlew to use (in frameworks/support or frameworks/support/ui)
@@ -123,7 +120,7 @@ while [ "$1" != "" ]; do
     if [ "$1" == "" ]; then
       usage
     fi
-    testCommand="cd $commandSubdir && $1"
+    testCommand="$1"
     shift
     gradleCommand=""
     grepCommand=""
@@ -135,6 +132,8 @@ while [ "$1" != "" ]; do
   fi
   if [ "$arg" == "--check-lines-in" ]; then
     subfilePath="$1"
+    # normalize path
+    subfilePath="$(realpath $subfilePath --relative-to=.)"
     shift
     continue
   fi
@@ -228,14 +227,14 @@ if [ "$gradleCommand" != "" ]; then
       mkdir -p "$tempDir"
       cp -r "$referenceFailingDir" "$outTestDir"
       echo Doing first test build
-      if bash -c "cd "$outTestDir/$commandSubdir" && $gradleCommand $gradleTasks; $grepCommand"; then
+      if bash -c "cd "$outTestDir" && $gradleCommand $gradleTasks; $grepCommand"; then
         echo Reproduced the problem
       else
         echo Failed to reproduce the problem
         exit 1
       fi
       echo Doing another test build to determine if cleaning between builds is necessary
-      if bash -c "cd "$outTestDir/$commandSubdir" && $gradleCommand $gradleTasks; $grepCommand"; then
+      if bash -c "cd "$outTestDir" && $gradleCommand $gradleTasks; $grepCommand"; then
         echo Reproduced the problem even when not starting from a clean out/ dir
       else
         echo Did not reproduce the problem when starting from previous out/ dir
@@ -253,9 +252,9 @@ if [ "$gradleCommand" != "" ]; then
       rm "$outTestDir" -rf
       mkdir -p "$tempDir"
       cp -r "$supportRoot" "$outTestDir"
-      if bash -c "cd "$outTestDir/$commandSubdir" && OUT_DIR=out ./gradlew projects --no-daemon && cp -r out out-base && $gradleCommand $gradleTasks; $grepCommand"; then
+      if bash -c "cd "$outTestDir" && OUT_DIR=out ./gradlew projects --no-daemon && cp -r out out-base && $gradleCommand $gradleTasks; $grepCommand"; then
         echo Will reuse base out dir of "$startingOutDir"
-        cp -r "$outTestDir/$commandSubdir/out-base" "$startingOutDir"
+        cp -r "$outTestDir/out-base" "$startingOutDir"
       else
         echo Will start subsequent builds from empty out dir
         mkdir -p "$startingOutDir"
@@ -289,17 +288,17 @@ if [ "$gradleCommand" != "" ]; then
     # process output and split into files
     mkdir -p "$allTasks"
     taskListFile="$allTasksWork/tasklist"
-    cat "$allTasksWork/log" | grep '^:' | sed 's/ .*//' > "$taskListFile"
+    # A task line will start with one or more project names separated by ":", then have a task name, and lastly either end of line or " " followed by a status (like UP-TO-DATE)
+    # We want the task path so we search for task lines and remove any trailing status
+    cat "$allTasksWork/log" | grep '^\(:[a-zA-Z0-9\-]\+\)\+\( \|$\)' | sed 's/ .*//' > "$taskListFile"
     bash -c "cd $allTasks && split -l 1 '$taskListFile'"
     # also include the original tasks in case either we failed to compute the list of tasks (due to the build failing during project configuration) or there are too many tasks to fit in one command line invocation
     bash -c "cd $allTasks && echo '$gradleTasks' > givenTasks"
   fi
 
   # build command for passing to diff-filterer
-  # cd to ./ui if needed
-  testCommand="cd $commandSubdir"
   # set OUT_DIR
-  testCommand="$testCommand && export OUT_DIR=out"
+  testCommand="export OUT_DIR=out"
   # delete generated files if needed
   if [ "$gradle_prepareState_command" != "" ]; then
     testCommand="$testCommand && $gradle_prepareState_command"
@@ -397,9 +396,18 @@ else
 
   # set up command for running diff-filterer against diffs within files
   filtererOptions="--num-jobs $numJobs"
-  if echo $subfilePath | grep -v buildSrc >/dev/null 2>/dev/null; then
-    # If we're not making changes in buildSrc, then we want to keep the gradle caches around for more speed
-    # If we are making changes in buildSrc, then Gradle doesn't necessarily do up-to-date checks correctly, and we want to clear the caches between builds
+
+  # Determine whether we are willing to rely on incremental builds
+  # If we're making changes to buildSrc or gradlew then we can't rely on incremental builds to be reliable
+  incrementalBuildReliable=true
+  if [ "$subfilePath" == "" ]; then
+    incrementalBuildReliable=false
+  else
+    if echo $subfilePath | grep -v buildSrc >/dev/null 2>/dev/null; then
+      incrementalBuildReliable=false
+    fi
+  fi
+  if [ "$incrementalBuildReliable" == false ]; then
     filtererOptions="$filtererOptions --assume-no-side-effects"
   fi
 
@@ -425,7 +433,7 @@ else
     # TODO: maybe we should make diff-filterer.py directly support checking individual line differences within files rather than first running split.sh and asking diff-filterer.py to run join.sh
     # It would be harder to implement in diff-filterer.py though because diff-filterer.py would also need to support comparing against nonempty files too
     echo Running diff-filterer.py again to identify which function bodies can be removed
-    if "$supportRoot/development/file-utils/diff-filterer.py" --assume-input-states-are-correct $filtererOptions --work-path "$(cd $supportRoot/../.. && pwd)" "$noFunctionBodies_Passing" "$noFunctionBodies_goal" "${scriptPath}/impl/join.sh ${splitsPath} ${noFunctionBodies_sandbox} && cd ${noFunctionBodies_work} && $testCommand"; then
+    if "$supportRoot/development/file-utils/diff-filterer.py" $filtererOptions --allow-goal-passing --work-path "$(cd $supportRoot/../.. && pwd)" "$noFunctionBodies_Passing" "$noFunctionBodies_goal" "${scriptPath}/impl/join.sh ${splitsPath} ${noFunctionBodies_sandbox} && cd ${noFunctionBodies_work} && $testCommand"; then
       echo diff-filterer completed successfully
     else
       failed
