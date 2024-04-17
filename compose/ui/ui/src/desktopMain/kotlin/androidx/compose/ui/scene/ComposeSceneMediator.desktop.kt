@@ -24,6 +24,7 @@ import androidx.compose.ui.awt.AwtEventListener
 import androidx.compose.ui.awt.AwtEventListeners
 import androidx.compose.ui.awt.OnlyValidPrimaryMouseButtonFilter
 import androidx.compose.ui.awt.SwingInteropContainer
+import androidx.compose.ui.awt.SwingPanelContainer
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.geometry.Offset
@@ -163,6 +164,10 @@ internal class ComposeSceneMediator(
 
         override fun componentAdded(e: ContainerEvent) {
             val component = e.child
+            if (component !is SwingPanelContainer) {
+                // It means that some external component was added to [ComposePanel]
+                return
+            }
             if (useInteropBlending) {
                 // In case of interop blending, compose might draw content above this [component].
                 // But due to implementation of [JLayeredPane]'s lightweight/heavyweight mixing

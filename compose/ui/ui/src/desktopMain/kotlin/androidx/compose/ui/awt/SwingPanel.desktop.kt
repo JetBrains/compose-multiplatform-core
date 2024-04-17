@@ -183,7 +183,7 @@ public fun <T : Component> SwingPanel(
  * @param key The unique identifier for the panel container.
  * @param focusComponent The component that should receive focus.
  */
-private class SwingPanelContainer(
+internal class SwingPanelContainer(
     key: Int,
     private val focusComponent: Component
 ): JPanel() {
