@@ -28,6 +28,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.pointer.AwaitPointerEventScope
 import androidx.compose.ui.input.pointer.PointerEvent
+import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.PointerInputScope
 import androidx.compose.ui.input.pointer.SuspendingPointerInputModifierNode
@@ -91,20 +92,23 @@ internal class MouseWheelScrollNode(
 
     private suspend fun PointerInputScope.mouseWheelInput() = awaitPointerEventScope {
         while (coroutineScope.isActive) {
-            val event = awaitScrollEvent()
-            if (!event.isConsumed) {
-                val consumed = onMouseWheel(event)
-                if (consumed) {
-                    event.consume()
-                }
+            var event = awaitScrollEvent(PointerEventPass.Main)
+            val isScrollingAxis = onMouseWheel(event)
+            if (!isScrollingAxis) {
+                // If we cannot consume scroll in this direction and it wasn't consumed during
+                // Main pass, try to consume it across the axis.
+                event = awaitScrollEvent(PointerEventPass.Final)
+                onMouseWheel(event, acrossAxis = true)
             }
         }
     }
 
-    private suspend fun AwaitPointerEventScope.awaitScrollEvent(): PointerEvent {
+    private suspend fun AwaitPointerEventScope.awaitScrollEvent(
+        pass: PointerEventPass = PointerEventPass.Main
+    ): PointerEvent {
         var event: PointerEvent
         do {
-            event = awaitPointerEvent()
+            event = awaitPointerEvent(pass)
         } while (event.type != PointerEventType.Scroll)
         return event
     }
@@ -143,20 +147,29 @@ internal class MouseWheelScrollNode(
         scroll(MutatePriority.UserInput, block)
     }
 
-    private fun PointerInputScope.onMouseWheel(pointerEvent: PointerEvent): Boolean {
+    private fun PointerInputScope.onMouseWheel(
+        pointerEvent: PointerEvent,
+        acrossAxis: Boolean = false
+    ): Boolean {
+        if (pointerEvent.isConsumed) return false
         val scrollDelta = with(mouseWheelScrollConfig) {
             calculateMouseWheelScroll(pointerEvent, size)
-        }
-        return if (scrollingLogic.canConsumeDelta(scrollDelta)) {
-            channel.trySend(MouseWheelScrollDelta(
+        }.let { if (acrossAxis) Offset(x = it.y, y = it.x) else it }
+        if (scrollingLogic.canConsumeDelta(scrollDelta)) {
+            val result = channel.trySend(MouseWheelScrollDelta(
                 value = scrollDelta,
                 shouldApplyImmediately = !mouseWheelScrollConfig.isSmoothScrollingEnabled
 
                     // In case of high-resolution wheel, such as a freely rotating wheel with
                     // no notches or trackpads, delta should apply immediately, without any delays.
                     || mouseWheelScrollConfig.isPreciseWheelScroll(pointerEvent)
-            )).isSuccess
-        } else false
+            ))
+            if (result.isSuccess) {
+                pointerEvent.consume()
+            }
+            return true
+        }
+        return scrollingLogic.isScrollingAxis(scrollDelta)
     }
 
     private fun Channel<MouseWheelScrollDelta>.sumOrNull() =
@@ -199,6 +212,11 @@ internal class MouseWheelScrollNode(
         } else {
             scrollableState.canScrollBackward
         }
+    }
+
+    private fun ScrollingLogic.isScrollingAxis(scrollDelta: Offset): Boolean {
+        val delta = scrollDelta.reverseIfNeeded().toFloat() // Use only current axis
+        return delta != 0f
     }
 
     private suspend fun ScrollingLogic.dispatchMouseWheelScroll(
