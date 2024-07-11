@@ -14,7 +14,10 @@ androidXMultiplatform {
     jvm()
     mac()
     linux()
+    linuxArm64()
     ios()
+    watchos()
+    tvos()
 
     defaultPlatform(PlatformIdentifier.JVM)
 
