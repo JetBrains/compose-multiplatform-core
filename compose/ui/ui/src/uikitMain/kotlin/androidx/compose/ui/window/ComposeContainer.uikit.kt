@@ -28,6 +28,7 @@ import androidx.compose.ui.hapticfeedback.CupertinoHapticFeedback
 import androidx.compose.ui.interop.LocalUIViewController
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalInternalViewModelStoreOwner
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformWindowContext
 import androidx.compose.ui.scene.CanvasLayersComposeScene
@@ -57,6 +58,7 @@ import kotlin.native.runtime.NativeRuntimeApi
 import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.CValue
 import kotlinx.cinterop.ExportObjCClass
+import kotlinx.cinterop.ObjCAction
 import kotlinx.cinterop.readValue
 import kotlinx.cinterop.useContents
 import kotlinx.coroutines.Dispatchers
@@ -67,6 +69,7 @@ import org.jetbrains.skiko.available
 import platform.CoreGraphics.CGRect
 import platform.CoreGraphics.CGSize
 import platform.CoreGraphics.CGSizeEqualToSize
+import platform.Foundation.NSSelectorFromString
 import platform.Foundation.NSStringFromClass
 import platform.UIKit.UIApplication
 import platform.UIKit.UIColor
@@ -82,6 +85,11 @@ import platform.UIKit.UIContentSizeCategoryExtraSmall
 import platform.UIKit.UIContentSizeCategoryLarge
 import platform.UIKit.UIContentSizeCategoryMedium
 import platform.UIKit.UIContentSizeCategorySmall
+import platform.UIKit.UIGestureRecognizerStateBegan
+import platform.UIKit.UIGestureRecognizerStateChanged
+import platform.UIKit.UIGestureRecognizerStateEnded
+import platform.UIKit.UIRectEdgeLeft
+import platform.UIKit.UIScreenEdgePanGestureRecognizer
 import platform.UIKit.UIStatusBarAnimation
 import platform.UIKit.UIStatusBarStyle
 import platform.UIKit.UITraitCollection
@@ -104,6 +112,8 @@ internal class ComposeContainer(
     // TODO: Rename and make private
     val lifecycleOwner = ViewControllerBasedLifecycleOwner()
     val hapticFeedback = CupertinoHapticFeedback()
+
+    val backEventHandler = BackEventHandler()
 
     private var isInsideSwiftUI = false
     private var mediator: ComposeSceneMediator? = null
@@ -187,7 +197,54 @@ internal class ComposeContainer(
         super.viewDidLoad()
         PlistSanityCheck.performIfNeeded()
         configuration.delegate.viewDidLoad()
+
+        val edgePanGestureRecognizer = UIScreenEdgePanGestureRecognizer(
+            target = this,
+            action = NSSelectorFromString("handleEdgePan:")
+        )
+        edgePanGestureRecognizer.edges = UIRectEdgeLeft
+        view.addGestureRecognizer(edgePanGestureRecognizer)
+
         systemThemeState.value = traitCollection.userInterfaceStyle.asComposeSystemTheme()
+    }
+
+    @ObjCAction
+    fun handleEdgePan(recognizer: UIScreenEdgePanGestureRecognizer) {
+        val translation = recognizer.translationInView(view = view)
+
+        when (recognizer.state) {
+            UIGestureRecognizerStateBegan -> {
+                backEventHandler.recreate()
+            }
+            UIGestureRecognizerStateChanged -> {
+                translation.useContents {
+                    val xTranslation = this.x
+                    val yTranslation = this.y
+                    view.bounds.useContents {
+                        backEventHandler.handleOnBackProgressed(xTranslation, yTranslation, xTranslation / this.size.width)
+                    }
+                }
+            }
+            UIGestureRecognizerStateEnded -> {
+                val velocity = recognizer.velocityInView(view)
+                translation.useContents translation@{
+                    val xTranslation = this@translation.x
+                    velocity.useContents velocity@{
+                        val xVelocity = this@velocity.x
+                        view.bounds.useContents {
+                            if (xTranslation > this.size.width / 2f || xVelocity > 1000) {
+                                backEventHandler.close()
+                            } else {
+                                backEventHandler.cancel()
+                            }
+                        }
+                    }
+                }
+            }
+            4L -> {
+                backEventHandler.cancel()
+            }
+        }
     }
 
     override fun traitCollectionDidChange(previousTraitCollection: UITraitCollection?) {
@@ -466,6 +523,7 @@ internal fun ProvideContainerCompositionLocals(
     content: @Composable () -> Unit,
 ) = with(composeContainer) {
     CompositionLocalProvider(
+        LocalBackEventHandler provides backEventHandler,
         LocalHapticFeedback provides hapticFeedback,
         LocalUIViewController provides this,
         LocalInterfaceOrientation provides interfaceOrientationState.value,
