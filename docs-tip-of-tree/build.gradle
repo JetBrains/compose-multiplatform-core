@@ -112,7 +112,6 @@ dependencies {
     samples(project(":compose:runtime:runtime-saveable:runtime-saveable-samples"))
     docs(project(":compose:runtime:runtime-tracing"))
     kmpDocs(project(":compose:ui:ui"))
-    docs(project(":compose:ui:ui-android-stubs"))
     kmpDocs(project(":compose:ui:ui-geometry"))
     kmpDocs(project(":compose:ui:ui-graphics"))
     samples(project(":compose:ui:ui-graphics:ui-graphics-samples"))
