@@ -53,6 +53,7 @@ val libraryToComponents = mapOf(
         ComposeComponent(":compose:material3:material3-common"),
         ComposeComponent(":compose:material:material-icons-core"),
         ComposeComponent(":compose:material:material-ripple"),
+        ComposeComponent(":compose:material:material-navigation"),
         ComposeComponent(":compose:material3:material3-window-size-class"),
         ComposeComponent(":compose:runtime:runtime", supportedPlatforms = ComposePlatforms.ALL),
         ComposeComponent(":compose:runtime:runtime-saveable", supportedPlatforms = ComposePlatforms.ALL),
@@ -81,6 +82,11 @@ val libraryToComponents = mapOf(
         ComposeComponent(":compose:ui:ui-unit"),
         ComposeComponent(":compose:ui:ui-util"),
     ),
+    "COMPOSE_MATERIAL3_ADAPTIVE" to listOf(
+        ComposeComponent(":compose:material3:adaptive:adaptive"),
+        ComposeComponent(":compose:material3:adaptive:adaptive-layout"),
+        ComposeComponent(":compose:material3:adaptive:adaptive-navigation"),
+    ),
     "LIFECYCLE" to listOf(
         ComposeComponent(
             path = ":lifecycle:lifecycle-common",
@@ -106,6 +112,9 @@ val libraryToComponents = mapOf(
     ),
     "SAVEDSTATE" to listOf(
         ComposeComponent(":savedstate:savedstate", viewModelPlatforms),
+    ),
+    "WINDOW" to listOf(
+        ComposeComponent(":window:window-core", viewModelPlatforms),
     ),
 )
 
@@ -194,6 +203,7 @@ tasks.register("testUIKit") {
     val uikitTestSubtaskName = "uikit$suffix"
     val instrumentedTestSubtaskName = "uikitInstrumented$suffix"
 
+    dependsOn(":compose:runtime:runtime:$uikitTestSubtaskName")
     dependsOn(":compose:ui:ui-text:$uikitTestSubtaskName")
     dependsOn(":compose:ui:ui:$uikitTestSubtaskName")
     dependsOn(":compose:ui:ui:$instrumentedTestSubtaskName")

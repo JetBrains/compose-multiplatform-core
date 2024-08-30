@@ -14,25 +14,59 @@
  * limitations under the License.
  */
 
+/**
+ * This file was created using the `create_project.py` script located in the
+ * `<AndroidX root>/development/project-creator` directory.
+ *
+ * Please use that script when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
+
+import androidx.build.JetbrainsAndroidXPlugin
 import androidx.build.LibraryType
 import androidx.build.PlatformIdentifier
+import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
+    id("JetbrainsAndroidXPlugin")
 }
 
-androidXMultiplatform {
-    jvm()
-    android()
+JetbrainsAndroidXPlugin.applyAndConfigure(project)
 
-    defaultPlatform(PlatformIdentifier.JVM)
+androidXMultiplatform {
+    desktop()
+    android()
+    mac()
+    linux()
+    ios()
+    js()
+    wasm()
+
+    defaultPlatform(PlatformIdentifier.ANDROID)
+}
+
+kotlin {
+    js {
+        browser()
+    }
+    wasmJs()
+
+    watchosArm64()
+    watchosArm32()
+    watchosX64()
+    watchosSimulatorArm64()
+    tvosArm64()
+    tvosX64()
+    tvosSimulatorArm64()
+    mingwX64()
 
     sourceSets {
         commonMain {
             dependencies {
                 api(libs.kotlinStdlib)
-                api("androidx.annotation:annotation:1.7.0")
+                api(project(":annotation:annotation"))
             }
         }
 
@@ -44,6 +78,19 @@ androidXMultiplatform {
                 // TODO remove when https://youtrack.jetbrains.com/issue/KT-62368/Kotlin-1.9.X-fails-to-detect-kotlin.test.Test-annotation-reference-on-commonTest-source-set-when-targeting-JVMAndroid
                 // is fixed
                 implementation(libs.kotlinTestJunit)
+            }
+        }
+
+        jvmMain.dependsOn(commonMain)
+        androidMain.dependsOn(jvmMain)
+        desktopMain.dependsOn(jvmMain)
+        nonJvmMain.dependsOn(commonMain)
+
+        targets.all { target ->
+            if (target.platformType !in [KotlinPlatformType.jvm, KotlinPlatformType.androidJvm, KotlinPlatformType.common]) {
+                target.compilations["main"].defaultSourceSet {
+                    dependsOn(nonJvmMain)
+                }
             }
         }
     }
@@ -58,5 +105,9 @@ androidx {
     type = LibraryType.PUBLISHED_LIBRARY
     inceptionYear = "2022"
     description = "WindowManager Core Library."
-    metalavaK2UastEnabled = true
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
 }

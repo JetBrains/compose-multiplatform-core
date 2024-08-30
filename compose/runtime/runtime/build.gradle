@@ -165,7 +165,12 @@ if(AndroidXComposePlugin.isMultiplatformEnabled(project)) {
             jsTest.dependsOn(jbTest)
             nativeTest.dependsOn(jbTest)
 
-            wasmJsMain.dependsOn(jsWasmMain)
+            wasmJsMain {
+                dependsOn(jsWasmMain)
+                dependencies {
+                    implementation(libs.kotlinXw3c)
+                }
+            }
             wasmJsTest.dependsOn(jbTest)
 
             nativeMain {
@@ -174,6 +179,8 @@ if(AndroidXComposePlugin.isMultiplatformEnabled(project)) {
                     implementation(libs.atomicFu)
                 }
             }
+
+            posixMain.dependsOn(nativeMain)
 
             jbMain {
                 dependsOn(commonMain)
@@ -184,8 +191,12 @@ if(AndroidXComposePlugin.isMultiplatformEnabled(project)) {
             desktopMain.dependsOn(jbMain)
             jsNativeMain.dependsOn(jbMain)
 
+            darwinMain {
+                dependsOn(posixMain)
+            }
+
             linuxMain {
-                dependsOn(nativeMain)
+                dependsOn(posixMain)
             }
 
             linuxTest {

@@ -16,10 +16,8 @@
 
 package androidx.compose.ui.input
 
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.TextField
 import androidx.compose.runtime.SideEffect
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.OnCanvasTests
 import androidx.compose.ui.events.InputEvent
@@ -30,8 +28,6 @@ import androidx.compose.ui.events.keyDownEvent
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.sendFromScope
-import androidx.compose.ui.window.CanvasBasedWindow
-import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -40,17 +36,8 @@ import kotlinx.browser.document
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.test.runTest
-import org.w3c.dom.HTMLCanvasElement
 
 class TextInputTests : OnCanvasTests  {
-
-    @BeforeTest
-    fun setup() {
-        // Because AfterTest is fixed only in kotlin 2.0
-        // https://youtrack.jetbrains.com/issue/KT-61888
-        commonAfterTest()
-        createCanvasAndAttach()
-    }
 
     @Test
     fun keyboardEventPassedToTextField() = runTest {
@@ -59,12 +46,9 @@ class TextInputTests : OnCanvasTests  {
             1, onBufferOverflow = BufferOverflow.DROP_OLDEST
         )
 
-        val canvas = document.getElementById(canvasId) as HTMLCanvasElement
-
         val (firstFocusRequester, secondFocusRequester) = FocusRequester.createRefs()
 
-        CanvasBasedWindow(canvasElementId = canvasId) {
-
+        createComposeWindow {
             TextField(
                 value = "",
                 onValueChange = { value ->
@@ -89,36 +73,43 @@ class TextInputTests : OnCanvasTests  {
 
         assertNull(document.querySelector("textarea"))
 
-        canvas.dispatchEvent(keyDownEvent("s"))
-        canvas.dispatchEvent(keyDownEvent("t"))
-        canvas.dispatchEvent(keyDownEvent("e"))
-        canvas.dispatchEvent(keyDownEvent("p"))
-        canvas.dispatchEvent(keyDownEvent("1"))
+        dispatchEvents(
+            keyDownEvent("s"),
+            keyDownEvent("t"),
+            keyDownEvent("e"),
+            keyDownEvent("p"),
+            keyDownEvent("1")
+        )
+
 
         assertEquals("step1", textInputChannel.receive())
         assertNull(document.querySelector("textarea"))
 
         // trigger virtual keyboard
-        canvas.dispatchEvent(createTouchEvent("touchstart"))
+        dispatchEvents(createTouchEvent("touchstart"))
         secondFocusRequester.requestFocus()
 
         assertNotNull(document.querySelector("textarea"))
 
-        canvas.dispatchEvent(keyDownEvent("s"))
-        canvas.dispatchEvent(keyDownEvent("t"))
-        canvas.dispatchEvent(keyDownEvent("e"))
-        canvas.dispatchEvent(keyDownEvent("p"))
-        canvas.dispatchEvent(keyDownEvent("2"))
+        dispatchEvents(
+            keyDownEvent("s"),
+            keyDownEvent("t"),
+            keyDownEvent("e"),
+            keyDownEvent("p"),
+            keyDownEvent("2")
+        )
 
         assertEquals("step2", textInputChannel.receive())
 
         val backingField = document.querySelector("textarea")!!
 
-        backingField.dispatchEvent(keyDownEvent("s"))
-        backingField.dispatchEvent(keyDownEvent("t"))
-        backingField.dispatchEvent(keyDownEvent("e"))
-        backingField.dispatchEvent(keyDownEvent("p"))
-        backingField.dispatchEvent(keyDownEvent("3"))
+        dispatchEvents(
+            keyDownEvent("s"),
+            keyDownEvent("t"),
+            keyDownEvent("e"),
+            keyDownEvent("p"),
+            keyDownEvent("3")
+        )
 
         assertEquals("step2step3", textInputChannel.receive())
 
@@ -131,14 +122,16 @@ class TextInputTests : OnCanvasTests  {
         assertEquals("step2step3step4", textInputChannel.receive())
 
         // trigger hardware keyboard
-        canvas.dispatchEvent(createMouseEvent("mousedown"))
+        dispatchEvents(createMouseEvent("mousedown"))
         firstFocusRequester.requestFocus()
 
-        canvas.dispatchEvent(keyDownEvent("s"))
-        canvas.dispatchEvent(keyDownEvent("t"))
-        canvas.dispatchEvent(keyDownEvent("e"))
-        canvas.dispatchEvent(keyDownEvent("p"))
-        canvas.dispatchEvent(keyDownEvent("5"))
+        dispatchEvents(
+            keyDownEvent("s"),
+            keyDownEvent("t"),
+            keyDownEvent("e"),
+            keyDownEvent("p"),
+            keyDownEvent("5")
+        )
 
         assertEquals("step1step5", textInputChannel.receive())
     }

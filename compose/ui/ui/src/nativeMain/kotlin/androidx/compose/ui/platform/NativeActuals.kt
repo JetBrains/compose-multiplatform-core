@@ -16,8 +16,6 @@
 
 package androidx.compose.ui.platform
 
-internal actual fun Any.nativeClass(): Any = this::class
-
 internal actual fun simpleIdentityToString(obj: Any, name: String?): String {
     val className = name ?: obj::class.qualifiedName ?: "<object>"
     return "$className@${obj.hashCode()}"

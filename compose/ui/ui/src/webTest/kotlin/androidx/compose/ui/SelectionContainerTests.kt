@@ -28,13 +28,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.platform.ViewConfiguration
-import androidx.compose.ui.window.CanvasBasedWindow
-import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
-import kotlinx.browser.document
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
@@ -47,13 +44,6 @@ import org.w3c.dom.events.MouseEventInit
 
 class SelectionContainerTests : OnCanvasTests {
 
-    @BeforeTest
-    fun setup() {
-        // Because AfterTest is fixed only in kotlin 2.0
-        // https://youtrack.jetbrains.com/issue/KT-61888
-        commonAfterTest()
-    }
-
     private fun HTMLCanvasElement.doClick() {
         dispatchEvent(MouseEvent("mousedown", MouseEventInit(5, 5, 5, 5, buttons = 1, button = 1)))
         dispatchEvent(MouseEvent("mouseup", MouseEventInit(5, 5, 5, 5, buttons = 0, button = 1)))
@@ -61,14 +51,13 @@ class SelectionContainerTests : OnCanvasTests {
 
     @Test
     fun canSelectOneWordUsingDoubleClick() = runTest {
-        createCanvasAndAttach()
         val syncChannel = Channel<Selection?>(
             1, onBufferOverflow = BufferOverflow.DROP_OLDEST
         )
 
         var viewConfiguration: ViewConfiguration? = null
 
-        CanvasBasedWindow(canvasElementId = canvasId) {
+        createComposeWindow {
             var selection by remember { mutableStateOf<Selection?>(null) }
 
             androidx.compose.foundation.text.selection.SelectionContainer(
@@ -89,7 +78,7 @@ class SelectionContainerTests : OnCanvasTests {
             )
         }
 
-        val canvas = document.getElementById(canvasId) as HTMLCanvasElement
+        val canvas = getCanvas()
         canvas.dispatchEvent(MouseEvent("mouseenter"))
 
         // single click - no selection expected
@@ -124,15 +113,13 @@ class SelectionContainerTests : OnCanvasTests {
 
     @Test
     fun canSelectOneLineUsingTripleClick() = runTest {
-        createCanvasAndAttach()
-
         val syncChannel = Channel<Selection?>(
             1, onBufferOverflow = BufferOverflow.DROP_OLDEST
         )
 
         var viewConfiguration: ViewConfiguration? = null
 
-        CanvasBasedWindow(canvasElementId = canvasId) {
+        createComposeWindow {
             var selection by remember { mutableStateOf<Selection?>(null) }
 
             androidx.compose.foundation.text.selection.SelectionContainer(
@@ -153,7 +140,7 @@ class SelectionContainerTests : OnCanvasTests {
             )
         }
 
-        val canvas = document.getElementById(canvasId) as HTMLCanvasElement
+        val canvas = getCanvas()
         canvas.dispatchEvent(MouseEvent("mouseenter"))
 
         // triple click
@@ -177,8 +164,6 @@ class SelectionContainerTests : OnCanvasTests {
 
     @Test
     fun twoSingleClicksDoNotTriggerSelection() = runTest {
-        createCanvasAndAttach()
-
         val syncChannel = Channel<Selection?>(
             5, onBufferOverflow = BufferOverflow.DROP_OLDEST
         )
@@ -186,7 +171,7 @@ class SelectionContainerTests : OnCanvasTests {
 
         var viewConfiguration: ViewConfiguration? = null
 
-        CanvasBasedWindow(canvasElementId = canvasId) {
+        createComposeWindow {
             var selection by remember { mutableStateOf<Selection?>(null) }
 
             androidx.compose.foundation.text.selection.SelectionContainer(
@@ -208,7 +193,7 @@ class SelectionContainerTests : OnCanvasTests {
             )
         }
 
-        val canvas = document.getElementById(canvasId) as HTMLCanvasElement
+        val canvas = getCanvas()
         canvas.dispatchEvent(MouseEvent("mouseenter"))
 
         // first single click

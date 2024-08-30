@@ -21,7 +21,6 @@ import androidx.compose.runtime.Composition
 import androidx.compose.runtime.CompositionContext
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Canvas
@@ -91,7 +90,7 @@ private class PlatformLayersComposeSceneImpl(
     composeSceneContext = composeSceneContext,
     invalidate = invalidate
 ) {
-    private val mainOwner by lazy {
+    private val mainOwner: RootNodeOwner by lazy {
         RootNodeOwner(
             density = density,
             layoutDirection = layoutDirection,
@@ -129,6 +128,10 @@ private class PlatformLayersComposeSceneImpl(
 
     override val focusManager: ComposeSceneFocusManager = ComposeSceneFocusManager(
         focusOwner = { mainOwner.focusOwner }
+    )
+
+    override val dropTarget = ComposeSceneDropTarget(
+        activeDragAndDropManager = { mainOwner.dragAndDropManager }
     )
 
     init {
