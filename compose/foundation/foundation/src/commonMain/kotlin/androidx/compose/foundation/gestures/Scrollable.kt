@@ -54,6 +54,7 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollSource.Companion.UserI
 import androidx.compose.ui.input.nestedscroll.nestedScrollModifierNode
 import androidx.compose.ui.input.pointer.PointerEvent
 import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.PointerInputChange
 import androidx.compose.ui.input.pointer.PointerType
 import androidx.compose.ui.node.CompositionLocalConsumerModifierNode
@@ -506,19 +507,6 @@ private class ScrollableNode(
 
     override fun onPreKeyEvent(event: KeyEvent) = false
 
-    override fun onPointerEvent(
-        pointerEvent: PointerEvent,
-        pass: PointerEventPass,
-        bounds: IntSize
-    ) {
-        if (pointerEvent.changes.fastAny { canDrag.invoke(it) }) {
-            super.onPointerEvent(pointerEvent, pass, bounds)
-        }
-        if (pass == PointerEventPass.Main && pointerEvent.type == PointerEventType.Scroll) {
-            processMouseWheelEvent(pointerEvent, bounds)
-        }
-    }
-
     override fun SemanticsPropertyReceiver.applySemantics() {
         if (enabled && (scrollByAction == null || scrollByOffsetAction == null)) {
             setScrollSemanticsActions()
@@ -557,7 +545,9 @@ private class ScrollableNode(
         pass: PointerEventPass,
         bounds: IntSize
     ) {
-        super.onPointerEvent(pointerEvent, pass, bounds)
+        if (pointerEvent.changes.fastAny { canDrag.invoke(it) }) {
+            super.onPointerEvent(pointerEvent, pass, bounds)
+        }
         mouseWheelScrollNode.pointerInputNode.onPointerEvent(pointerEvent, pass, bounds)
     }
 
