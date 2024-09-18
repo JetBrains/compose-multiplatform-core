@@ -30,20 +30,17 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.Measurable
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
 import java.awt.Cursor
 import java.awt.Dimension
 import java.awt.MouseInfo
 import java.awt.Point
 import java.awt.Window
 
-internal val DefaultBorderThickness = 8.dp
-
 internal class UndecoratedWindowResizer(
     private val window: Window,
-    private var borderThickness: Dp = DefaultBorderThickness
 ) {
     var enabled: Boolean by mutableStateOf(false)
+    var resizerThickness: Dp by mutableStateOf(WindowDecorationDefaults.ResizerThickness)
 
     private var initialPointPos = Point()
     private var initialWindowPos = Point()
@@ -51,46 +48,46 @@ internal class UndecoratedWindowResizer(
 
     @Composable
     fun Content(modifier: Modifier) {
-        if (enabled) {
-            Layout(
-                {
-                    Side(Cursor.W_RESIZE_CURSOR, Side.Left)
-                    Side(Cursor.E_RESIZE_CURSOR, Side.Right)
-                    Side(Cursor.N_RESIZE_CURSOR, Side.Top)
-                    Side(Cursor.S_RESIZE_CURSOR, Side.Bottom)
-                    Side(Cursor.NW_RESIZE_CURSOR, Side.Left or Side.Top)
-                    Side(Cursor.NE_RESIZE_CURSOR, Side.Right or Side.Top)
-                    Side(Cursor.SW_RESIZE_CURSOR, Side.Left or Side.Bottom)
-                    Side(Cursor.SE_RESIZE_CURSOR, Side.Right or Side.Bottom)
-                },
-                modifier = modifier,
-                measurePolicy = { measurables, constraints ->
-                    val b = borderThickness.roundToPx()
-                    fun Measurable.measureSide(width: Int, height: Int) = measure(
-                        Constraints.fixed(width.coerceAtLeast(0), height.coerceAtLeast(0))
-                    )
+        if (!enabled) return
 
-                    val left = measurables[0].measureSide(b, constraints.maxHeight - 2 * b)
-                    val right = measurables[1].measureSide(b, constraints.maxHeight - 2 * b)
-                    val top = measurables[2].measureSide(constraints.maxWidth - 2 * b, b)
-                    val bottom = measurables[3].measureSide(constraints.maxWidth - 2 * b, b)
-                    val leftTop = measurables[4].measureSide(b, b)
-                    val rightTop = measurables[5].measureSide(b, b)
-                    val leftBottom = measurables[6].measureSide(b, b)
-                    val rightBottom = measurables[7].measureSide(b, b)
-                    layout(constraints.maxWidth, constraints.maxHeight) {
-                        left.place(0, b)
-                        right.place(constraints.maxWidth - b, b)
-                        top.place(b, 0)
-                        bottom.place(0, constraints.maxHeight - b)
-                        leftTop.place(0, 0)
-                        rightTop.place(constraints.maxWidth - b, 0)
-                        leftBottom.place(0, constraints.maxHeight - b)
-                        rightBottom.place(constraints.maxWidth - b, constraints.maxHeight - b)
-                    }
+        Layout(
+            {
+                Side(Cursor.W_RESIZE_CURSOR, Side.Left)
+                Side(Cursor.E_RESIZE_CURSOR, Side.Right)
+                Side(Cursor.N_RESIZE_CURSOR, Side.Top)
+                Side(Cursor.S_RESIZE_CURSOR, Side.Bottom)
+                Side(Cursor.NW_RESIZE_CURSOR, Side.Left or Side.Top)
+                Side(Cursor.NE_RESIZE_CURSOR, Side.Right or Side.Top)
+                Side(Cursor.SW_RESIZE_CURSOR, Side.Left or Side.Bottom)
+                Side(Cursor.SE_RESIZE_CURSOR, Side.Right or Side.Bottom)
+            },
+            modifier = modifier,
+            measurePolicy = { measurables, constraints ->
+                val b = resizerThickness.roundToPx()
+                fun Measurable.measureSide(width: Int, height: Int) = measure(
+                    Constraints.fixed(width.coerceAtLeast(0), height.coerceAtLeast(0))
+                )
+
+                val left = measurables[0].measureSide(b, constraints.maxHeight - 2 * b)
+                val right = measurables[1].measureSide(b, constraints.maxHeight - 2 * b)
+                val top = measurables[2].measureSide(constraints.maxWidth - 2 * b, b)
+                val bottom = measurables[3].measureSide(constraints.maxWidth - 2 * b, b)
+                val leftTop = measurables[4].measureSide(b, b)
+                val rightTop = measurables[5].measureSide(b, b)
+                val leftBottom = measurables[6].measureSide(b, b)
+                val rightBottom = measurables[7].measureSide(b, b)
+                layout(constraints.maxWidth, constraints.maxHeight) {
+                    left.place(0, b)
+                    right.place(constraints.maxWidth - b, b)
+                    top.place(b, 0)
+                    bottom.place(0, constraints.maxHeight - b)
+                    leftTop.place(0, 0)
+                    rightTop.place(constraints.maxWidth - b, 0)
+                    leftBottom.place(0, constraints.maxHeight - b)
+                    rightBottom.place(constraints.maxWidth - b, constraints.maxHeight - b)
                 }
-            )
-        }
+            }
+        )
     }
 
     private fun Modifier.resizeOnDrag(sides: Int) = pointerInput(Unit) {

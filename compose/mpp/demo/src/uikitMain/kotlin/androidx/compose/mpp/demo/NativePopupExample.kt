@@ -64,7 +64,7 @@ import platform.Foundation.*
  * limitations under the License.
  */
 
-val NativeModalWithNaviationExample = Screen.Example("Native modal with navigation") {
+val NativeModalWithNavigationExample = Screen.Example("Native modal with navigation") {
     NativeModalWithNavigation()
 }
 @Composable

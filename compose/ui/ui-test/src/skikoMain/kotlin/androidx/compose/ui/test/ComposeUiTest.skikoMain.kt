@@ -222,7 +222,7 @@ class SkikoComposeUiTest @InternalTestApi constructor(
         density = density,
         size = size,
         coroutineContext = coroutineContext,
-        composeSceneContext = TestComposeSceneContext(),
+        platformContext = TestContext(),
         invalidate = { }
     )
 
@@ -419,17 +419,13 @@ class SkikoComposeUiTest @InternalTestApi constructor(
     private inner class TestContext : PlatformContext by PlatformContext.Empty {
         override val windowInfo: WindowInfo = TestWindowInfo()
 
-        override val textInputService: PlatformTextInputService = TestTextInputService()
+        override val textInputService = TestTextInputService()
 
         override val rootForTestListener: PlatformContext.RootForTestListener
             get() = composeRootRegistry
 
         override val semanticsOwnerListener: PlatformContext.SemanticsOwnerListener?
             get() = this@SkikoComposeUiTest.semanticsOwnerListener
-    }
-
-    private inner class TestComposeSceneContext : ComposeSceneContext {
-        override val platformContext = TestContext()
     }
 }
 

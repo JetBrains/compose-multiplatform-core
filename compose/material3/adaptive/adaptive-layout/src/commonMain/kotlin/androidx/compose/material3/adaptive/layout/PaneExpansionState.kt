@@ -218,7 +218,9 @@ private fun List<PaneExpansionAnchor>.toPositions(
             anchors.add(maxExpansionWidth * anchor.percentage / 100)
         }
     }
-    anchors.sort()
+    //the reason is https://youtrack.jetbrains.com/issue/KT-70005
+    //it was fixed in androidx.collection:collection:1.5.0-alpha01, but we redirect on 1.4.0 yet
+    if (anchors.isNotEmpty()) anchors.sort()
     return anchors
 }
 

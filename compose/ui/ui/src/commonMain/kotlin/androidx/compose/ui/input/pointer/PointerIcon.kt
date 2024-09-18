@@ -16,7 +16,6 @@
 
 package androidx.compose.ui.input.pointer
 
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.PointerEventPass.Main
@@ -78,7 +77,7 @@ internal interface PointerIconService {
  * @param icon The icon to set
  * @param overrideDescendants when false (by default) descendants are able to set their own pointer
  * icon. If true, no descendants under this parent are eligible to change the icon (it will be set
- * to the this [the parent's] icon).
+ * to this [the parent's] icon).
  */
 @Stable
 fun Modifier.pointerHoverIcon(icon: PointerIcon, overrideDescendants: Boolean = false) =

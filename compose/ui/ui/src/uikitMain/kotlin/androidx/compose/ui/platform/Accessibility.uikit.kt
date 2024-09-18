@@ -80,8 +80,6 @@ import platform.darwin.NSObject
 
 private val DUMMY_UI_ACCESSIBILITY_CONTAINER = NSObject()
 
-// TODO: Impl for UIKit interop views
-
 /**
  * An interface for logging accessibility debug messages.
  */

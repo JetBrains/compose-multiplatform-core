@@ -16,10 +16,9 @@
 
 package androidx.compose.ui.draganddrop
 
-import androidx.compose.ui.DragData
 import androidx.compose.ui.ExperimentalComposeUiApi
-import androidx.compose.ui.dragData
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.painter.Painter
 import java.awt.datatransfer.Transferable
 import java.awt.dnd.DropTargetDragEvent
 import java.awt.dnd.DropTargetDropEvent
@@ -73,8 +72,19 @@ class DragAndDropTransferAction private constructor(private val name: String) {
     }
 
     companion object {
+        /**
+         * Indicates the dragged object should be copied into the target.
+         */
         val Copy = DragAndDropTransferAction("Copy")
+
+        /**
+         * Indicates the dragged object should be moved ("cut" and "pasted") into the target.
+         */
         val Move = DragAndDropTransferAction("Move")
+
+        /**
+         * Indicates the dragged object should be linked to at the target.
+         */
         val Link = DragAndDropTransferAction("Link")
     }
 }
@@ -138,6 +148,47 @@ val DragAndDropEvent.awtTransferable: Transferable
  */
 @ExperimentalComposeUiApi
 fun DragAndDropEvent.dragData(): DragData = awtTransferable.dragData()
+
+/**
+ * Represent data that is being dragged (or dropped) to a component from outside an application.
+ */
+@ExperimentalComposeUiApi
+interface DragData {
+    /**
+     * Represents list of files drag and dropped to a component.
+     */
+    interface FilesList : DragData {
+        /**
+         * Returns list of file paths drag and droppped to an application in a URI format.
+         */
+        fun readFiles(): List<String>
+    }
+
+    /**
+     * Represents an image drag and dropped to a component.
+     */
+    interface Image : DragData {
+        /**
+         * Returns an image drag and dropped to an application as a [Painter] type.
+         */
+        fun readImage(): Painter
+    }
+
+    /**
+     * Represent text drag and dropped to a component.
+     */
+    interface Text : DragData {
+        /**
+         * Provides the best MIME type that describes text returned in [readText]
+         */
+        val bestMimeType: String
+
+        /**
+         * Returns a text dropped to an application.
+         */
+        fun readText(): String
+    }
+}
 
 internal actual val DragAndDropEvent.positionInRoot: Offset
     get() = positionInRootImpl

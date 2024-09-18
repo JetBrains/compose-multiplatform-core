@@ -21,6 +21,7 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.layout.layoutId
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.window.FrameWindowScope
 import androidx.compose.ui.window.UndecoratedWindowResizer
 import androidx.compose.ui.window.WindowExceptionHandler
@@ -159,6 +160,11 @@ class ComposeWindow @ExperimentalComposeUiApi constructor(
             )
         }
     }
+
+    /**
+     * The thickness of the resizers used when the window is undecorated and resizable.
+     */
+    var undecoratedResizerThickness: Dp by undecoratedWindowResizer::resizerThickness
 
     override fun dispose() {
         composePanel.dispose()

@@ -39,6 +39,8 @@ import kotlin.math.roundToInt
  */
 @Composable
 private fun rememberCursorPosition(): Offset? {
+    // TODO: Migrate to [LocalComposeSceneContext]
+    @Suppress("DEPRECATION")
     val scene = LocalComposeScene.current
     return remember { scene?.lastKnownPointerPosition }
 }

@@ -46,6 +46,7 @@ import java.awt.Window
 import org.junit.Test
 
 @OptIn(ExperimentalComposeUiApi::class)
+@Suppress("DEPRECATION_ERROR")
 class ExternalDragTest {
     @Test
     fun `drag inside component that close to top left corner`() = runApplicationTest {

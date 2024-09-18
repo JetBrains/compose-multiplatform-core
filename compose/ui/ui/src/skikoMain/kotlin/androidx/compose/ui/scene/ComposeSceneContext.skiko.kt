@@ -16,11 +16,30 @@
 
 package androidx.compose.ui.scene
 
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionContext
+import androidx.compose.runtime.CompositionLocal
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.InternalComposeUiApi
+import androidx.compose.ui.node.LayoutNode
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
+
+/**
+ * Represents a static [CompositionLocal] key for a [ComposeSceneContext] in Jetpack Compose.
+ *
+ * @see ComposeSceneContext
+ */
+internal val LocalComposeSceneContext = staticCompositionLocalOf<ComposeSceneContext?> { null }
+
+/**
+ * The local [ComposeSceneContext] is typically not-null. This extension can be used in these cases.
+ */
+@Composable
+internal fun CompositionLocal<ComposeSceneContext?>.requireCurrent(): ComposeSceneContext {
+    return current ?: error("CompositionLocal LocalComposeSceneContext not provided")
+}
 
 /**
  * Interface representing the context for [ComposeScene].
@@ -34,15 +53,17 @@ interface ComposeSceneContext {
     val platformContext: PlatformContext get() = PlatformContext.Empty
 
     /**
-     * Creates a platform-specific layer for the [ComposeScene].
+     * Creates a scene layer to display content as a new [LayoutNode] tree.
      *
      * @param density The density of the layer.
      * @param layoutDirection The layout direction of the layer.
      * @param focusable Indicates whether the layer is focusable.
      * @param compositionContext The composition context for the layer.
-     * @return The created [ComposeSceneLayer] representing the platform-specific layer.
+     * @return The created [ComposeSceneLayer] representing the scene layer.
+     *
+     * @see ComposeSceneLayer
      */
-    fun createPlatformLayer(
+    fun createLayer(
         density: Density,
         layoutDirection: LayoutDirection,
         focusable: Boolean,

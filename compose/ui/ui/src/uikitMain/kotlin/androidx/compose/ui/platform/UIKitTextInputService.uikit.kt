@@ -24,7 +24,6 @@ import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.type
-import androidx.compose.ui.scene.getConstraintsToFillParent
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.input.CommitTextCommand
 import androidx.compose.ui.text.input.EditCommand
@@ -38,7 +37,8 @@ import androidx.compose.ui.text.input.SetComposingRegionCommand
 import androidx.compose.ui.text.input.SetComposingTextCommand
 import androidx.compose.ui.text.input.SetSelectionCommand
 import androidx.compose.ui.text.input.TextFieldValue
-import androidx.compose.ui.unit.Density
+import androidx.compose.ui.uikit.density
+import androidx.compose.ui.uikit.embedSubview
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.asCGRect
 import androidx.compose.ui.unit.toDpRect
@@ -50,17 +50,16 @@ import kotlin.math.min
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
 import org.jetbrains.skia.BreakIterator
-import platform.UIKit.NSLayoutConstraint
 import platform.UIKit.UIPress
 import platform.UIKit.UIView
 import platform.UIKit.reloadInputViews
 
 internal class UIKitTextInputService(
     private val updateView: () -> Unit,
-    private val rootViewProvider: () -> UIView,
-    private val densityProvider: () -> Density,
+    private val rootView: UIView,
     private val viewConfiguration: ViewConfiguration,
-    private val focusStack: FocusStack<UIView>?,
+    private val focusStack: FocusStack?,
+    private val onInputStarted: () -> Unit,
     /**
      * Callback to handle keyboard presses. The parameter is a [Set] of [UIPress] objects.
      * Erasure happens due to K/N not supporting Obj-C lightweight generics.
@@ -68,7 +67,6 @@ internal class UIKitTextInputService(
     private val onKeyboardPresses: (Set<*>) -> Unit,
 ) : PlatformTextInputService, TextToolbar {
 
-    private val rootView get() = rootViewProvider()
     private var currentInput: CurrentInput? = null
     private var currentImeOptions: ImeOptions? = null
     private var currentImeActionHandler: ((ImeAction) -> Unit)? = null
@@ -137,7 +135,27 @@ internal class UIKitTextInputService(
         currentImeActionHandler = onImeActionPerformed
 
         attachIntermediateTextInputView()
-        textUIView?.input = createSkikoInput(value)
+        textUIView?.input = createSkikoInput()
+        textUIView?.inputTraits = getUITextInputTraits(imeOptions)
+
+        showSoftwareKeyboard()
+        onInputStarted()
+    }
+
+    fun startInput(
+        value: TextFieldValue,
+        imeOptions: ImeOptions,
+        editProcessor: EditProcessor?,
+        onEditCommand: (List<EditCommand>) -> Unit,
+        onImeActionPerformed: (ImeAction) -> Unit
+    ) {
+        currentInput = CurrentInput(value, onEditCommand)
+        _tempCurrentInputSession = editProcessor
+        currentImeOptions = imeOptions
+        currentImeActionHandler = onImeActionPerformed
+
+        attachIntermediateTextInputView()
+        textUIView?.input = createSkikoInput()
         textUIView?.inputTraits = getUITextInputTraits(imeOptions)
 
         showSoftwareKeyboard()
@@ -248,9 +266,7 @@ internal class UIKitTextInputService(
     private fun sendEditCommand(vararg commands: EditCommand) {
         val commandList = commands.toList()
         _tempCurrentInputSession?.apply(commandList)
-        currentInput?.let { input ->
-            input.onEditCommand(commandList)
-        }
+        currentInput?.onEditCommand?.invoke(commandList)
     }
 
     private fun getCursorPos(): Int? {
@@ -309,7 +325,7 @@ internal class UIKitTextInputService(
             updateView()
         }
         textUIView?.showTextMenu(
-            targetRect = rect.toDpRect(densityProvider()).asCGRect(),
+            targetRect = rect.toDpRect(rootView.density).asCGRect(),
             textActions = object : TextActions {
                 override val copy: (() -> Unit)? = onCopyRequested
                 override val cut: (() -> Unit)? = onCutRequested
@@ -342,11 +358,7 @@ internal class UIKitTextInputService(
             viewConfiguration = viewConfiguration
         ).also {
             it.onKeyboardPresses = onKeyboardPresses
-            rootView.addSubview(it)
-            it.translatesAutoresizingMaskIntoConstraints = false
-            NSLayoutConstraint.activateConstraints(
-                getConstraintsToFillParent(it, rootView)
-            )
+            rootView.embedSubview(it)
         }
     }
 
@@ -360,19 +372,19 @@ internal class UIKitTextInputService(
         textUIView = null
     }
 
-    private fun createSkikoInput(value: TextFieldValue) = object : IOSSkikoInput {
+    private fun createSkikoInput() = object : IOSSkikoInput {
 
         private var floatingCursorTranslation : Offset? = null
 
         override fun beginFloatingCursor(offset: DpOffset) {
             val cursorPos = getCursorPos() ?: getState()?.selection?.start ?: return
             val cursorRect = textLayoutResult?.getCursorRect(cursorPos) ?: return
-            floatingCursorTranslation = cursorRect.center - offset.toOffset(densityProvider())
+            floatingCursorTranslation = cursorRect.center - offset.toOffset(rootView.density)
         }
 
         override fun updateFloatingCursor(offset: DpOffset) {
             val translation = floatingCursorTranslation ?: return
-            val offsetPx = offset.toOffset(densityProvider())
+            val offsetPx = offset.toOffset(rootView.density)
             val pos = textLayoutResult
                 ?.getOffsetForPosition(offsetPx + translation) ?: return
 

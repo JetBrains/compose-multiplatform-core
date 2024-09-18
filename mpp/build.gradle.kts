@@ -53,8 +53,10 @@ val libraryToComponents = mapOf(
         ComposeComponent(":compose:material3:material3-common"),
         ComposeComponent(":compose:material:material-icons-core"),
         ComposeComponent(":compose:material:material-ripple"),
-        ComposeComponent(":compose:material:material-navigation"),
+        //disable 'material-navigation' publication until Google releases its version
+        //ComposeComponent(":compose:material:material-navigation"),
         ComposeComponent(":compose:material3:material3-window-size-class"),
+        ComposeComponent(":compose:material3:material3-adaptive-navigation-suite"),
         ComposeComponent(":compose:runtime:runtime", supportedPlatforms = ComposePlatforms.ALL),
         ComposeComponent(":compose:runtime:runtime-saveable", supportedPlatforms = ComposePlatforms.ALL),
         ComposeComponent(":compose:ui:ui"),

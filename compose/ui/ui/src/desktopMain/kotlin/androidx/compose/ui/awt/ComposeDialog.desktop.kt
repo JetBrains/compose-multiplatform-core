@@ -23,6 +23,7 @@ import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.layout.layoutId
 import androidx.compose.ui.semantics.dialog
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.window.DialogWindowScope
 import androidx.compose.ui.window.UndecoratedWindowResizer
 import androidx.compose.ui.window.WindowExceptionHandler
@@ -219,6 +220,11 @@ class ComposeDialog : JDialog {
             )
         }
     }
+
+    /**
+     * The thickness of the resizers used when the dialog is undecorated and resizable.
+     */
+    var undecoratedResizerThickness: Dp by undecoratedWindowResizer::resizerThickness
 
     override fun dispose() {
         composePanel.dispose()

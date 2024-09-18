@@ -359,9 +359,7 @@ internal class ComposeContainer(
                     density = density,
                     layoutDirection = layoutDirection,
                     coroutineContext = mediator.coroutineContext,
-                    composeSceneContext = createComposeSceneContext(
-                        platformContext = mediator.platformContext
-                    ),
+                    platformContext = mediator.platformContext,
                     invalidate = mediator::onComposeInvalidation,
                 )
             else -> PlatformLayersComposeScene(
@@ -471,12 +469,12 @@ internal class ComposeContainer(
     private inner class ComposeSceneContextImpl(
         override val platformContext: PlatformContext,
     ) : ComposeSceneContext {
-        override fun createPlatformLayer(
+        override fun createLayer(
             density: Density,
             layoutDirection: LayoutDirection,
             focusable: Boolean,
             compositionContext: CompositionContext
-        ): ComposeSceneLayer = this@ComposeContainer.createPlatformLayer(
+        ): ComposeSceneLayer = createPlatformLayer(
             density = density,
             layoutDirection = layoutDirection,
             focusable = focusable,

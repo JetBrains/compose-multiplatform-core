@@ -27,7 +27,6 @@ import androidx.compose.ui.unit.isSpecified
 import androidx.compose.ui.window.WindowPlacement
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.density
-import androidx.compose.ui.window.layoutDirection
 import androidx.compose.ui.window.layoutDirectionFor
 import java.awt.Component
 import java.awt.Dialog
@@ -120,7 +119,6 @@ private fun Window.setSizeImpl(size: DpSize) {
         if (isWidthSpecified) width else computedPreferredSize!!.width,
         if (isHeightSpecified) height else computedPreferredSize!!.height,
     )
-    revalidate()  // Calls doLayout on the ComposeLayer, causing it to update its size
 }
 
 internal fun Window.setPositionImpl(

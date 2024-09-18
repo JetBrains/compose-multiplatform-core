@@ -16,8 +16,15 @@
 
 package androidx.compose.mpp.demo
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.material.TextField
 import androidx.compose.runtime.Composable
@@ -27,15 +34,18 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.viewinterop.UIKitView
-import androidx.compose.ui.viewinterop.UIKitViewController
-import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.findRootCoordinates
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.UIKitInteropProperties
+import androidx.compose.ui.viewinterop.UIKitView
+import androidx.compose.ui.viewinterop.UIKitViewController
 import kotlinx.cinterop.ObjCAction
 import kotlinx.cinterop.objcPtr
 import kotlinx.cinterop.readValue
@@ -178,28 +188,39 @@ val InteropExample = Screen.Example("Interop") {
             )
         }
         items(100) { index ->
-            when (index % 5) {
-                0 -> Text("material.Text $index", Modifier.fillMaxSize().height(40.dp))
-                1 -> UIKitView(
-                    factory = {
-                        val label = UILabel(frame = CGRectZero.readValue())
-                        label.text = "UILabel $index"
-                        label.textColor = UIColor.blackColor
-                        label
-                    },
+            when (index % 3) {
+                0 -> Row(
                     modifier = Modifier.fillMaxWidth().height(40.dp),
-                    properties = UIKitInteropProperties(
-                        interactionMode = null
+                ) {
+                    Text(
+                        text = "material.Text $index",
+                        modifier = Modifier.weight(0.5f).height(40.dp)
+                            .wrapContentHeight(Alignment.CenterVertically),
+                        letterSpacing = 0.sp,
+                        style = MaterialTheme.typography.body1
                     )
-                )
-
-                2 -> UIKitView(
+                    UIKitView(
+                        factory = {
+                            val label = UILabel(frame = CGRectZero.readValue())
+                            label.text = "UIKit.UILabel $index"
+                            label.textColor = UIColor.blackColor
+                            label
+                        },
+                        modifier = Modifier.weight(0.5f).height(40.dp)
+                            .border(1.dp, Color.Blue),
+                        onReset = { /* Just to make it reusable */ },
+                        properties = UIKitInteropProperties(
+                            interactionMode = null
+                        )
+                    )
+                }
+                1 -> UIKitView(
                     factory = { TouchReactingView() },
                     modifier = Modifier.fillMaxWidth().height(40.dp),
                 )
 
-                3 -> TextField(text, onValueChange = { text = it }, Modifier.fillMaxWidth())
-                4 -> ComposeUITextField(
+                2 -> TextField(text, onValueChange = { text = it }, Modifier.fillMaxWidth())
+                3 -> ComposeUITextField(
                     text,
                     onValueChange = { text = it },
                     Modifier.fillMaxWidth().height(40.dp)

@@ -54,7 +54,6 @@ internal actual fun legacyTextInputServiceAdapterAndService():
             }
 
             override fun stopInput() {
-                service.stopInput()
                 session?.dispose()
                 session = null
             }

@@ -22,13 +22,10 @@ import androidx.compose.runtime.InternalComposeApi
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.LocalSystemTheme
-import androidx.compose.ui.draganddrop.DragAndDropTransferData
 import androidx.compose.ui.events.EventTargetListener
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.asComposeCanvas
-import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.input.InputMode
 import androidx.compose.ui.input.InputModeManager
 import androidx.compose.ui.input.key.toComposeEvent
@@ -41,7 +38,6 @@ import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
 import androidx.compose.ui.input.pointer.PointerType
 import androidx.compose.ui.input.pointer.composeButton
 import androidx.compose.ui.input.pointer.composeButtons
-import androidx.compose.ui.native.ComposeLayer
 import androidx.compose.ui.platform.DefaultInputModeManager
 import androidx.compose.ui.platform.LocalInternalViewModelStoreOwner
 import androidx.compose.ui.platform.PlatformContext
@@ -49,9 +45,7 @@ import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.platform.WebTextInputService
 import androidx.compose.ui.platform.WindowInfoImpl
 import androidx.compose.ui.scene.CanvasLayersComposeScene
-import androidx.compose.ui.scene.ComposeSceneContext
 import androidx.compose.ui.scene.ComposeScenePointer
-import androidx.compose.ui.scene.platformContext
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
@@ -212,14 +206,6 @@ internal class ComposeWindow(
                 canvas.style.cursor = pointerIcon.id
             }
         }
-
-        override fun startDrag(
-            transferData: DragAndDropTransferData,
-            decorationSize: Size,
-            drawDragDecoration: DrawScope.() -> Unit
-        ): Boolean {
-            TODO("Drag&drop isn't implemented")
-        }
     }
 
     private val skiaLayer: SkiaLayer = SkiaLayer().apply {
@@ -232,16 +218,9 @@ internal class ComposeWindow(
 
     private val scene = CanvasLayersComposeScene(
         coroutineContext = Dispatchers.Main,
-        composeSceneContext = object : ComposeSceneContext {
-            override val platformContext get() = this@ComposeWindow.platformContext
-        },
+        platformContext = platformContext,
         density = density,
         invalidate = skiaLayer::needRedraw,
-    )
-
-    private val layer = ComposeLayer(
-        layer = skiaLayer,
-        scene = scene
     )
 
     private val systemThemeObserver = getSystemThemeObserver()
@@ -342,7 +321,7 @@ internal class ComposeWindow(
 
         scene.density = density
 
-        layer.setContent {
+        scene.setContent {
             CompositionLocalProvider(
                 LocalSystemTheme provides systemThemeObserver.currentSystemTheme.value,
                 LocalLifecycleOwner provides this,
@@ -377,9 +356,10 @@ internal class ComposeWindow(
 
         _windowInfo.containerSize = IntSize(width, height)
 
-        layer.layer.attachTo(canvas)
-        layer.setSize(width, height)
-        layer.layer.needRedraw()
+        // TODO: Align with Container/Mediator architecture
+        skiaLayer.attachTo(canvas)
+        scene.size = IntSize(width, height)
+        skiaLayer.needRedraw()
     }
 
     // TODO: need to call .dispose() on window close.
@@ -389,7 +369,7 @@ internal class ComposeWindow(
         viewModelStore.clear()
 
         scene.close()
-        layer.dispose()
+        skiaLayer.detach()
 
         systemThemeObserver.dispose()
         state.dispose()
@@ -403,7 +383,7 @@ internal class ComposeWindow(
         event: TouchEvent,
         offset: Offset,
     ) {
-        val inputModeManager = scene.platformContext.inputModeManager
+        val inputModeManager = platformContext.inputModeManager
         if (inputModeManager.inputMode != InputMode.Touch) {
             inputModeManager.requestInputMode(InputMode.Touch)
         }

@@ -20,6 +20,7 @@ import androidx.compose.mpp.demo.Screen
 import androidx.compose.mpp.demo.components.material3.ButtonWithDropdown
 import androidx.compose.mpp.demo.components.material3.TextFieldWithExposedDropdown
 import androidx.compose.ui.window.Popup
+import androidx.compose.ui.window.PopupProperties
 
 val Popups = Screen.Selection(
     "Popups",
@@ -33,7 +34,11 @@ val Popups = Screen.Selection(
         }
     },
     Screen.Example("ExposedDropdownMenuBox inside Popup") {
-        Popup {
+        Popup(
+            properties = PopupProperties(
+                clippingEnabled = false
+            )
+        ) {
             TextFieldWithExposedDropdown()
         }
     }

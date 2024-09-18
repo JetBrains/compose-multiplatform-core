@@ -17,6 +17,7 @@
 package androidx.compose.ui.window
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.scene.ComposeHostingViewController
 import androidx.compose.ui.uikit.ComposeUIViewControllerConfiguration
 import platform.UIKit.UIViewController
 
@@ -26,7 +27,7 @@ fun ComposeUIViewController(content: @Composable () -> Unit): UIViewController =
 fun ComposeUIViewController(
     configure: ComposeUIViewControllerConfiguration.() -> Unit = {},
     content: @Composable () -> Unit
-): UIViewController = ComposeContainer(
+): UIViewController = ComposeHostingViewController(
     configuration = ComposeUIViewControllerConfiguration().apply(configure),
     content = content,
 )

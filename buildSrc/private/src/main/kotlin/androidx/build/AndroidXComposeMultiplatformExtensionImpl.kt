@@ -18,7 +18,6 @@ package androidx.build
 
 import java.io.ByteArrayOutputStream
 import javax.inject.Inject
-import org.gradle.api.Action
 import org.gradle.api.Project
 import org.gradle.api.attributes.Attribute
 import org.gradle.api.tasks.Copy
@@ -32,7 +31,6 @@ import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTargetWithSimulatorTests
 import org.jetbrains.kotlin.gradle.targets.js.dsl.ExperimentalWasmDsl
-import org.jetbrains.kotlin.gradle.targets.js.testing.KotlinJsTest
 import org.jetbrains.kotlin.gradle.targets.native.DefaultSimulatorTestRun
 import org.jetbrains.kotlin.konan.target.KonanTarget
 import org.tomlj.Toml
@@ -95,18 +93,18 @@ open class AndroidXComposeMultiplatformExtensionImpl @Inject constructor(
     override fun wasm(): Unit = multiplatformExtension.run {
         wasmJs {
             browser {
-                testTask(Action<KotlinJsTest> {
+                testTask {
                     it.useKarma {
                         useChrome()
                         useConfigDirectory(
                             project.rootProject.projectDir.resolve("mpp/karma.config.d/wasm")
                         )
                     }
-                })
+                }
             }
         }
 
-        val resourcesDir = "${project.buildDir}/resources"
+        val resourcesDir = project.buildDir.resolve("resources")
         val skikoWasm by project.configurations.creating
 
         // Below code helps configure the tests for k/wasm targets
@@ -114,29 +112,18 @@ open class AndroidXComposeMultiplatformExtensionImpl @Inject constructor(
             skikoWasm("org.jetbrains.skiko:skiko-js-wasm-runtime:${skikoVersion}")
         }
 
-        val unzipTask = project.tasks.register("unzipSkikoForKWasm", Copy::class.java) {
+        val fetchSkikoWasmRuntime = project.tasks.register("fetchSkikoWasmRuntime", Copy::class.java) {
             it.destinationDir = project.file(resourcesDir)
-            it.from(skikoWasm.map { project.zipTree(it) })
-        }
-
-        val loadTestsTask = project.tasks.register("loadTests", Copy::class.java) {
-            it.destinationDir = project.file(resourcesDir)
-            it.from(
-                project.rootProject.projectDir.resolve(
-                    "mpp/load-wasm-tests/load-test-template.mjs"
-                )
-            )
-            it.filter {
-                it.replace("{module-name}", getDashedProjectName())
-            }
-        }
-
-        project.tasks.getByName("wasmJsTestProcessResources").apply {
-            dependsOn(loadTestsTask)
+            it.from(skikoWasm.map { artifact ->
+                project.zipTree(artifact)
+                    .matching { pattern ->
+                        pattern.include("skiko.wasm", "skiko.mjs")
+                    }
+            })
         }
 
         project.tasks.getByName("wasmJsBrowserTest").apply {
-            dependsOn(unzipTask)
+            dependsOn(fetchSkikoWasmRuntime)
         }
 
         val commonMain = sourceSets.getByName("commonMain")
@@ -145,7 +132,7 @@ open class AndroidXComposeMultiplatformExtensionImpl @Inject constructor(
 
         sourceSets.getByName("wasmJsTest").also {
             it.resources.setSrcDirs(it.resources.srcDirs)
-            it.resources.srcDirs(unzipTask.map { it.destinationDir })
+            it.resources.srcDirs(fetchSkikoWasmRuntime.map { it.destinationDir })
         }
     }
 
@@ -271,22 +258,6 @@ open class AndroidXComposeMultiplatformExtensionImpl @Inject constructor(
     // https://youtrack.jetbrains.com/issue/KT-55751/MPP-Gradle-Consumable-configurations-must-have-unique-attributes
     private val instrumentedTestAttribute = Attribute.of("instrumentedTest", String::class.java)
     private val instrumentedTestCompilationAttribute = Attribute.of("instrumentedTestCompilation", String::class.java)
-
-//    The consumer was configured to find a library for use during 'kotlin-metadata',
-//    preferably optimized for non-jvm, as well as
-//    attribute 'org.jetbrains.kotlin.platform.type'
-//        with value 'native',
-//    attribute 'org.jetbrains.kotlin.native.target'
-//        with value 'ios_simulator_arm64',
-//    attribute 'instrumentedTest'
-//        with value 'Test'.
-//    However we cannot choose between the following variants of project :compose:ui:ui:
-//        - uikitInstrumentedSimArm64ApiElements
-//        - uikitInstrumentedSimArm64MetadataElements
-//        - uikitSimArm64ApiElements
-//        - uikitSimArm64MetadataElements
-
-
     override fun iosInstrumentedTest(): Unit =
         multiplatformExtension.run {
             fun getDeviceName(): String? {

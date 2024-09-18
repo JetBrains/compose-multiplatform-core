@@ -16,7 +16,11 @@
 
 package androidx.compose.ui.platform
 
-// TODO(https://youtrack.jetbrains.com/issue/COMPOSE-733/Merge-1.6.-Apply-changes-for-the-new-text-input) implement
+import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.text.input.TextFieldValue
+
 actual interface PlatformTextInputSession {
     actual suspend fun startInputMethod(request: PlatformTextInputMethodRequest): Nothing
+    @ExperimentalComposeUiApi
+    fun updateSelectionState(newState: TextFieldValue) = Unit
 }

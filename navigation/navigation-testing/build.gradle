@@ -21,39 +21,85 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
+
+import androidx.build.PlatformIdentifier
+import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 import androidx.build.LibraryType
 
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("org.jetbrains.kotlin.android")
     alias(libs.plugins.kotlinSerialization)
 }
 
-dependencies {
-    api(project(":navigation:navigation-runtime"))
-    api("androidx.lifecycle:lifecycle-runtime-testing:2.3.1")
-    implementation(libs.kotlinSerializationCore)
+androidXMultiplatform {
+    android()
+    desktop()
+    mac()
+    linux()
+    ios()
+    js { browser() }
+    wasm()
 
-    androidTestImplementation(project(":internal-testutils-navigation"), {
-        exclude group: "androidx.navigation", module: "navigation-common"
-    })
-    androidTestImplementation(libs.testCore)
-    androidTestImplementation(libs.testExtJunit)
-    androidTestImplementation(libs.testExtTruth)
-    androidTestImplementation(libs.testRunner)
-    androidTestImplementation(libs.testRules)
-    androidTestImplementation(libs.truth)
-    androidTestImplementation(libs.kotlinTestJunit)
+    defaultPlatform(PlatformIdentifier.ANDROID)
 
-    testImplementation(libs.testCore)
-    testImplementation(libs.testExtJunit)
-    testImplementation(libs.testExtTruth)
-    testImplementation(libs.testRunner)
-    testImplementation(libs.testRules)
-    testImplementation(libs.truth)
-    testImplementation(libs.kotlinTestJunit)
-    testImplementation(libs.robolectric)
+    sourceSets {
+        commonMain {
+            dependencies {
+                api(project(":navigation:navigation-runtime"))
+                api(project(":lifecycle:lifecycle-runtime-testing"))
+                implementation(libs.kotlinSerializationCore)
+            }
+        }
+
+        commonTest {
+            dependencies {
+                implementation(libs.kotlinTest)
+                implementation(libs.kotlinCoroutinesTest)
+                implementation(project(":internal-testutils-navigation"))
+                implementation(project(":kruth:kruth"))
+            }
+        }
+
+        androidInstrumentedTest {
+            dependencies {
+                implementation(project(":internal-testutils-navigation"))
+                implementation(libs.testCore)
+                implementation(libs.testExtJunit)
+                implementation(libs.testExtTruth)
+                implementation(libs.testRunner)
+                implementation(libs.testRules)
+                implementation(libs.truth)
+            }
+        }
+
+        jbMain.dependsOn(commonMain)
+        jbTest.dependsOn(commonTest)
+
+        targets.all { target ->
+            if (target.platformType !in [
+                    KotlinPlatformType.androidJvm,
+                    KotlinPlatformType.common
+            ]) {
+                target.compilations["main"].defaultSourceSet {
+                    dependsOn(jbMain)
+                }
+                target.compilations["test"].defaultSourceSet {
+                    dependsOn(jbTest)
+                }
+            }
+        }
+    }
+}
+
+kotlin {
+    watchosArm64()
+    watchosArm32()
+    watchosX64()
+    watchosSimulatorArm64()
+    tvosArm64()
+    tvosX64()
+    tvosSimulatorArm64()
 }
 
 androidx {
@@ -61,7 +107,6 @@ androidx {
     type = LibraryType.PUBLISHED_LIBRARY
     inceptionYear = "2017"
     description = "Android Navigation-Testing"
-    metalavaK2UastEnabled = true
     legacyDisableKotlinStrictApiMode = true
 }
 

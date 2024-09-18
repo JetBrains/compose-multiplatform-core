@@ -26,6 +26,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.AwtWindowDragTargetListener.WindowDragValue
+import androidx.compose.ui.draganddrop.deprecatedDragData
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.painter.Painter
@@ -45,14 +46,23 @@ import java.awt.dnd.DropTargetListener
 /**
  * Represent data that is being dragged (or dropped) to a component from outside an application.
  */
+@Deprecated(
+    level = DeprecationLevel.ERROR,
+    message = "Use the new drag-and-drop API: Modifier.dragAndDropTarget"
+)
+@Suppress("DEPRECATION_ERROR")
 @ExperimentalComposeUiApi
 interface DragData {
     /**
      * Represents list of files drag and dropped to a component.
      */
+    @Deprecated(
+        level = DeprecationLevel.ERROR,
+        message = "Use the new drag-and-drop API: Modifier.dragAndDropTarget"
+    )
     interface FilesList : DragData {
         /**
-         * Returns list of file paths drag and droppped to an application in a URI format.
+         * Returns list of file paths drag and dropped to an application in a URI format.
          */
         fun readFiles(): List<String>
     }
@@ -60,6 +70,10 @@ interface DragData {
     /**
      * Represents an image drag and dropped to a component.
      */
+    @Deprecated(
+        level = DeprecationLevel.ERROR,
+        message = "Use the new drag-and-drop API: Modifier.dragAndDropTarget"
+    )
     interface Image : DragData {
         /**
          * Returns an image drag and dropped to an application as a [Painter] type.
@@ -70,6 +84,10 @@ interface DragData {
     /**
      * Represent text drag and dropped to a component.
      */
+    @Deprecated(
+        level = DeprecationLevel.ERROR,
+        message = "Use the new drag-and-drop API: Modifier.dragAndDropTarget"
+    )
     interface Text : DragData {
         /**
          * Provides the best MIME type that describes text returned in [readText]
@@ -89,6 +107,10 @@ interface DragData {
  *
  * @see onExternalDrag
  */
+@Deprecated(
+    level = DeprecationLevel.ERROR,
+    message = "Use the new drag-and-drop API: Modifier.dragAndDropTarget"
+)
 @ExperimentalComposeUiApi
 @Immutable
 class ExternalDragValue(
@@ -99,6 +121,7 @@ class ExternalDragValue(
     /**
      * Data that it being dragged (or dropped) in a component bounds
      */
+    @Suppress("DEPRECATION_ERROR")
     val dragData: DragData
 )
 
@@ -110,6 +133,11 @@ class ExternalDragValue(
  * @param onDragExit is called if the pointer exited the component bounds.
  * @param onDrop is called when the pointer is released.
  */
+@Deprecated(
+    level = DeprecationLevel.ERROR,
+    message = "Use the new drag-and-drop API: Modifier.dragAndDropTarget"
+)
+@Suppress("DEPRECATION_ERROR")
 @ExperimentalComposeUiApi
 @Composable
 fun Modifier.onExternalDrag(
@@ -176,6 +204,7 @@ fun Modifier.onExternalDrag(
  *
  * [Window] allows having only one [DropTarget], so this is the main [DropTarget] that handles all the drag subscriptions
  */
+@Suppress("DEPRECATION_ERROR")
 @OptIn(ExperimentalComposeUiApi::class)
 internal class AwtWindowDropTarget(
     private val window: Window
@@ -398,6 +427,7 @@ internal class AwtWindowDropTarget(
     }
 }
 
+@Suppress("DEPRECATION_ERROR")
 @OptIn(ExperimentalComposeUiApi::class)
 internal class AwtWindowDragTargetListener(
     private val window: Window,
@@ -412,7 +442,7 @@ internal class AwtWindowDragTargetListener(
         onDragEnterWindow(
             WindowDragValue(
                 dtde.location.windowOffset(),
-                dtde.transferable.dragData()
+                dtde.transferable.deprecatedDragData()
             )
         )
     }
@@ -421,7 +451,7 @@ internal class AwtWindowDragTargetListener(
         onDragInsideWindow(
             WindowDragValue(
                 dtde.location.windowOffset(),
-                dtde.transferable.dragData()
+                dtde.transferable.deprecatedDragData()
             )
         )
     }
@@ -447,7 +477,7 @@ internal class AwtWindowDragTargetListener(
 
         val transferable = dtde.transferable
         try {
-            onDrop(WindowDragValue(dtde.location.windowOffset(), transferable.dragData()))
+            onDrop(WindowDragValue(dtde.location.windowOffset(), transferable.deprecatedDragData()))
             dtde.dropComplete(true)
         } catch (e: Exception) {
             onDragExit()

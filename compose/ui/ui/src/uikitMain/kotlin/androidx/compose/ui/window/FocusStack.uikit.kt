@@ -21,41 +21,26 @@ import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
 import platform.UIKit.UIView
 
-/**
- * Stack to remember previously focused UIView.
- */
-internal interface FocusStack<V> {
-
-    /**
-     * Add new view to stack and focus on it.
-     */
-    fun pushAndFocus(view: V)
-
-    /**
-     * Pop all elements until some element. Also pop this element too.
-     * Last remaining element in Stack will be focused.
-     */
-    fun popUntilNext(view: V)
-
-    /**
-     * Return first added view or null
-     */
-    fun first(): V?
-}
-
-internal class FocusStackImpl : FocusStack<UIView> {
+internal class FocusStack {
 
     private var activeViews = emptyList<UIView>()
     private var resignedViews = emptyList<UIView>()
     private val mainScope = MainScope()
 
-    override fun pushAndFocus(view: UIView) {
+    /**
+     * Add new view to stack and focus on it.
+     */
+    fun pushAndFocus(view: UIView) {
         activeViews += view
         resignedViews -= view
         view.becomeFirstResponder()
     }
 
-    override fun popUntilNext(view: UIView) {
+    /**
+     * Pop all elements until some element. Also pop this element too.
+     * Last remaining element in Stack will be focused.
+     */
+    fun popUntilNext(view: UIView) {
         if (activeViews.contains(view)) {
             val index = activeViews.indexOf(view)
             resignedViews += activeViews.subList(index, activeViews.size)
@@ -71,5 +56,8 @@ internal class FocusStackImpl : FocusStack<UIView> {
         }
     }
 
-    override fun first(): UIView? = activeViews.firstOrNull()
+    /**
+     * Return first added view or null
+     */
+    fun first(): UIView? = activeViews.firstOrNull()
 }

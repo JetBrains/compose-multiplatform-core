@@ -16,6 +16,8 @@
 
 package androidx.compose.ui.graphics
 
+import androidx.compose.ui.InternalComposeUiApi
+import kotlin.math.abs
 import org.jetbrains.skia.Matrix33
 
 internal fun identityMatrix33() = Matrix33(
@@ -23,3 +25,53 @@ internal fun identityMatrix33() = Matrix33(
     0f, 1f, 0f,
     0f, 0f, 1f
 )
+
+@InternalComposeUiApi
+fun prepareTransformationMatrix(
+    matrix: Matrix,
+    pivotX: Float,
+    pivotY: Float,
+    translationX: Float,
+    translationY: Float,
+    rotationX: Float,
+    rotationY: Float,
+    rotationZ: Float,
+    scaleX: Float,
+    scaleY: Float,
+    cameraDistance: Float,
+) {
+    matrix.reset()
+    matrix.translate(x = -pivotX, y = -pivotY)
+    matrix *= Matrix().apply {
+        rotateZ(rotationZ)
+        rotateY(rotationY)
+        rotateX(rotationX)
+        scale(scaleX, scaleY)
+    }
+    // Perspective transform should be applied only in case of rotations to avoid
+    // multiply application in hierarchies.
+    // See Android's frameworks/base/libs/hwui/RenderProperties.cpp for reference
+    if (!rotationX.isZero() || !rotationY.isZero()) {
+        matrix *= Matrix().apply {
+            // The camera location is passed in inches, set in pt
+            val depth = cameraDistance * 72f
+            this[2, 3] = -1f / depth
+        }
+    }
+    matrix *= Matrix().apply {
+        translate(x = pivotX + translationX, y = pivotY + translationY)
+    }
+
+    // Third column and row are irrelevant for 2D space.
+    // Zeroing required to get correct inverse transformation matrix.
+    matrix[2, 0] = 0f
+    matrix[2, 1] = 0f
+    matrix[2, 3] = 0f
+    matrix[0, 2] = 0f
+    matrix[1, 2] = 0f
+    matrix[3, 2] = 0f
+}
+
+// Copy from Android's frameworks/base/libs/hwui/utils/MathUtils.h
+private const val NON_ZERO_EPSILON = 0.001f
+private inline fun Float.isZero(): Boolean = abs(this) <= NON_ZERO_EPSILON

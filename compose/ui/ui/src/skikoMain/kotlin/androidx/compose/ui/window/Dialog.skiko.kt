@@ -192,7 +192,7 @@ private fun DialogLayout(
     content: @Composable () -> Unit
 ) {
     val currentContent by rememberUpdatedState(content)
-    val platformInsets = properties.platformInsets
+
     val layer = rememberComposeSceneLayer(
         focusable = true
     )
@@ -200,6 +200,7 @@ private fun DialogLayout(
     layer.setKeyEventListener(onPreviewKeyEvent, onKeyEvent)
     layer.setOutsidePointerEventListener(onOutsidePointerEvent)
     layer.Content {
+        val platformInsets = properties.platformInsets
         val containerSize = LocalWindowInfo.current.containerSize
         val measurePolicy = rememberDialogMeasurePolicy(
             layer = layer,

@@ -680,7 +680,10 @@ class KeyframesSpec<T>(val config: KeyframesSpecConfig<T>) : DurationBasedAnimat
         if (!config.keyframes.contains(config.durationMillis)) {
             timestamps.add(config.durationMillis)
         }
-        timestamps.sort()
+
+        //the reason is https://youtrack.jetbrains.com/issue/KT-70005
+        //it was fixed in androidx.collection:collection:1.5.0-alpha01, but we redirect on 1.4.0 yet
+        if (timestamps.isNotEmpty()) timestamps.sort()
 
         return VectorizedKeyframesSpec(
             timestamps = timestamps,
@@ -788,7 +791,10 @@ class KeyframesWithSplineSpec<T>(
         if (!config.keyframes.contains(config.durationMillis)) {
             timestamps.add(config.durationMillis)
         }
-        timestamps.sort()
+
+        //the reason is https://youtrack.jetbrains.com/issue/KT-70005
+        //it was fixed in androidx.collection:collection:1.5.0-alpha01, but we redirect on 1.4.0 yet
+        if (timestamps.isNotEmpty()) timestamps.sort()
         return VectorizedMonoSplineKeyframesSpec(
             timestamps = timestamps,
             keyframes = timeToVectorMap,

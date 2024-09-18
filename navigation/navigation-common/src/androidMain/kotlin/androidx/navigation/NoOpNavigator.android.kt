@@ -21,7 +21,8 @@ import androidx.annotation.RestrictTo
 /** A [Navigator] that only supports creating destinations. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @Navigator.Name("NoOp")
-public actual class NoOpNavigator : Navigator<NavDestination>() {
+public actual class NoOpNavigator
+    actual constructor(): Navigator<NavDestination>() {
     public actual override fun createDestination(): NavDestination = NavDestination(this)
 
     public actual override fun navigate(

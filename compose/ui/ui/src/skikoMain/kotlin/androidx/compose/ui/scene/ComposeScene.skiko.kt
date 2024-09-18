@@ -55,15 +55,8 @@ import org.jetbrains.skiko.currentNanoTime
  *
  * @see ComposeScene
  */
+@Deprecated("Use LocalComposeSceneContext instead")
 internal val LocalComposeScene = staticCompositionLocalOf<ComposeScene?> { null }
-
-/**
- * The local [ComposeScene] is typically not-null. This extension can be used in these cases.
- */
-@Composable
-internal fun CompositionLocal<ComposeScene?>.requireCurrent(): ComposeScene {
-    return current ?: error("CompositionLocal LocalComposeScene not provided")
-}
 
 /**
  * A virtual container that encapsulates Compose UI content. UI content can be constructed via
@@ -121,7 +114,7 @@ interface ComposeScene {
      * The object through which drag-and-drop implementations report drop-target events to the
      * scene.
      */
-    val dropTarget: ComposeSceneDropTarget
+    val dragAndDropTarget: ComposeSceneDragAndDropTarget
 
     /**
      * Close all resources and subscriptions. Not calling this method when [ComposeScene] is no
@@ -247,25 +240,6 @@ interface ComposeScene {
      * @return The [InteropView] associated with the resulting node in case there is any, or null.
      */
     fun hitTestInteropView(position: Offset): InteropView?
-
-    /**
-     * Creates a new [ComposeSceneLayer] with the specified parameters.
-     * It's used to create a new layer for [Popup] or [Dialog].
-     *
-     * @see rememberComposeSceneLayer
-     *
-     * @param density The density of the layer.
-     * @param layoutDirection The layout direction of the layer.
-     * @param focusable Indicates whether the layer is focusable.
-     * @param compositionContext The composition context for the layer.
-     * @return The created [ComposeSceneLayer].
-     */
-    fun createLayer(
-        density: Density,
-        layoutDirection: LayoutDirection,
-        focusable: Boolean,
-        compositionContext: CompositionContext,
-    ): ComposeSceneLayer
 }
 
 private fun currentTimeForEvent(): Long =

@@ -22,6 +22,7 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.OverlayLayout
+import androidx.compose.ui.node.GlobalPositionAwareModifierNode
 import androidx.compose.ui.node.LayoutAwareModifierNode
 import androidx.compose.ui.node.LayoutNode
 import androidx.compose.ui.node.ModifierNodeElement
@@ -177,19 +178,33 @@ private const val TRAVERSAL_NODE_KEY =
  */
 internal class TrackInteropPlacementModifierNode(
     var interopViewHolder: InteropViewHolder?,
-) : Modifier.Node(), TraversableNode, LayoutAwareModifierNode, OnUnplacedModifierNode {
+) : Modifier.Node(), TraversableNode, LayoutAwareModifierNode, OnUnplacedModifierNode,
+    GlobalPositionAwareModifierNode {
+    private var isPlaced = false
     override val traverseKey = TRAVERSAL_NODE_KEY
 
     override fun onPlaced(coordinates: LayoutCoordinates) {
         interopViewHolder?.place()
+        isPlaced = true
     }
 
     override fun onUnplaced() {
         interopViewHolder?.unplace()
+        isPlaced = false
+    }
+
+    override fun onGloballyPositioned(coordinates: LayoutCoordinates) {
+        // TODO: Remove workaround for missing [onPlaced] after merging https://r.android.com/3245141
+        if (!isPlaced) {
+            onPlaced(coordinates)
+        }
     }
 
     override fun onDetach() {
-        onUnplaced()
+        // TODO: Remove workaround for missing [onUnplaced] once it will be reliable implemented in AOSP
+        if (isPlaced) {
+            onUnplaced()
+        }
         super.onDetach()
     }
 }

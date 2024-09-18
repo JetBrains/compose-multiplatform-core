@@ -171,13 +171,13 @@ interface ComposeSceneLayer {
 internal fun rememberComposeSceneLayer(
     focusable: Boolean = false
 ): ComposeSceneLayer {
-    val scene = LocalComposeScene.requireCurrent()
+    val sceneContext = LocalComposeSceneContext.requireCurrent()
     val density = LocalDensity.current
     val layoutDirection = LocalLayoutDirection.current
     val parentComposition = rememberCompositionContext()
     val compositionLocalContext = currentCompositionLocalContext
     val layer = remember {
-        scene.createLayer(
+        sceneContext.createLayer(
             density = density,
             layoutDirection = layoutDirection,
             focusable = focusable,

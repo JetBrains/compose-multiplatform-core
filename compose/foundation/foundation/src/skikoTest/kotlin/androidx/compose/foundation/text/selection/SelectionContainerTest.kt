@@ -144,6 +144,12 @@ class SelectionContainerTest {
         }
         assertTrue(selection.exists())
     }
+
+    @Test
+    fun selectionMagnifierShouldNotCrash() {
+        val sm = SelectionManager(SelectionRegistrarImpl())
+        Modifier.selectionMagnifier(sm)
+    }
 }
 
 private fun Selection?.exists() = (this != null) && !this.toTextRange().collapsed

@@ -42,6 +42,7 @@ import androidx.compose.ui.graphics.asComposeCanvas
 import androidx.compose.ui.graphics.asSkiaPath
 import androidx.compose.ui.graphics.layer.GraphicsLayer
 import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.prepareTransformationMatrix
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.toSkiaRRect
 import androidx.compose.ui.graphics.toSkiaRect
@@ -190,37 +191,19 @@ internal class RenderNodeLayer(
     private fun updateMatrix() {
         val pivotX = transformOrigin.pivotFractionX * size.width
         val pivotY = transformOrigin.pivotFractionY * size.height
-
-        matrix.reset()
-        matrix.translate(x = -pivotX, y = -pivotY)
-        matrix *= Matrix().apply {
-            rotateZ(rotationZ)
-            rotateY(rotationY)
-            rotateX(rotationX)
-            scale(scaleX, scaleY)
-        }
-        // Perspective transform should be applied only in case of rotations to avoid
-        // multiply application in hierarchies.
-        // See Android's frameworks/base/libs/hwui/RenderProperties.cpp for reference
-        if (!rotationX.isZero() || !rotationY.isZero()) {
-            matrix *= Matrix().apply {
-                // The camera location is passed in inches, set in pt
-                val depth = cameraDistance * 72f
-                this[2, 3] = -1f / depth
-            }
-        }
-        matrix *= Matrix().apply {
-            translate(x = pivotX + translationX, y = pivotY + translationY)
-        }
-
-        // Third column and row are irrelevant for 2D space.
-        // Zeroing required to get correct inverse transformation matrix.
-        matrix[2, 0] = 0f
-        matrix[2, 1] = 0f
-        matrix[2, 3] = 0f
-        matrix[0, 2] = 0f
-        matrix[1, 2] = 0f
-        matrix[3, 2] = 0f
+        prepareTransformationMatrix(
+            matrix = matrix,
+            pivotX = pivotX,
+            pivotY = pivotY,
+            translationX = translationX,
+            translationY = translationY,
+            rotationX = rotationX,
+            rotationY = rotationY,
+            rotationZ = rotationZ,
+            scaleX = scaleX,
+            scaleY = scaleY,
+            cameraDistance = cameraDistance
+        )
     }
 
     override fun invalidate() {

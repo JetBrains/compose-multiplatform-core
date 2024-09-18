@@ -19,9 +19,8 @@ package androidx.compose.ui.window
 import androidx.compose.ui.uikit.utils.CMPMetalDrawablesHandler
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.trace
-import androidx.compose.ui.viewinterop.UIKitInteropState
+import androidx.compose.ui.viewinterop.UIKitInteropAction
 import androidx.compose.ui.viewinterop.UIKitInteropTransaction
-import androidx.compose.ui.viewinterop.isNotEmpty
 import kotlin.math.roundToInt
 import kotlinx.cinterop.*
 import org.jetbrains.skia.*
@@ -84,7 +83,7 @@ private class DisplayLinkConditions(
     /**
      * Mark next [FRAMES_COUNT_TO_SCHEDULE_ON_NEED_REDRAW] frames to issue a draw dispatch and unpause displayLink if needed.
      */
-    fun needRedraw() {
+    fun setNeedsRedraw() {
         scheduledRedrawsCount = FRAMES_COUNT_TO_SCHEDULE_ON_NEED_REDRAW
     }
 
@@ -102,22 +101,6 @@ private class DisplayLinkConditions(
          */
         const val FRAMES_COUNT_TO_SCHEDULE_ON_NEED_REDRAW = 2
     }
-}
-
-internal interface MetalRedrawerCallbacks {
-    /**
-     * Perform time step and encode draw operations into canvas.
-     *
-     * @param canvas Canvas to encode draw operations into.
-     * @param targetTimestamp Timestamp indicating the expected draw result presentation time. Implementation should forward its internal time clock to this targetTimestamp to achieve smooth visual change cadence.
-     */
-    fun render(canvas: Canvas, targetTimestamp: NSTimeInterval)
-
-    /**
-     * Create an interop transaction by flushing the list of all pending actions
-     * that need to be synchronized with Metal rendering using CATransaction mechanism.
-     */
-    fun retrieveInteropTransaction(): UIKitInteropTransaction
 }
 
 internal class InflightCommandBuffers(
@@ -143,7 +126,8 @@ internal class InflightCommandBuffers(
 
 internal class MetalRedrawer(
     private val metalLayer: CAMetalLayer,
-    private val callbacks: MetalRedrawerCallbacks
+    private var retrieveInteropTransaction: () -> UIKitInteropTransaction,
+    private var render: (Canvas, targetTimestamp: NSTimeInterval) -> Unit
 ) {
     /**
      * A wrapper around CAMetalLayer that allows to perform operations on its drawables without
@@ -176,18 +160,25 @@ internal class MetalRedrawer(
             caDisplayLink?.preferredFramesPerSecond = value
         }
 
+    private val displayLinkConditions = DisplayLinkConditions { paused ->
+        caDisplayLink?.paused = paused
+    }
+
     /**
      * Set to `true` if need always running invalidation-independent displayLink for forcing UITouch
      * events to come at the fastest possible cadence.
      * Otherwise, touch events can come at rate lower than actual display refresh rate.
      */
-    var needsProactiveDisplayLink: Boolean
-        get() = displayLinkConditions.needsToBeProactive
-        set(value) {
-            displayLinkConditions.needsToBeProactive = value
-        }
+    var needsProactiveDisplayLink by displayLinkConditions::needsToBeProactive
 
-    var opaque: Boolean = true
+    /**
+     * True if Metal layer can be opaque. In this case if no interop views are present, Metal
+     * rendering will be optimized for direct-to-screen rendering.
+     *
+     * In some scenarios like using this layer as a canvas for dialog and popup layers, it's never the
+     * case.
+     */
+    var canBeOpaque: Boolean = true
         set(value) {
             field = value
 
@@ -199,19 +190,21 @@ internal class MetalRedrawer(
      */
     private var isInteropActive = false
         set(value) {
-            field = value
-
-            // If active, make metalLayer transparent, opaque otherwise.
-            // Rendering into opaque CAMetalLayer allows direct-to-screen optimization.
-            updateLayerOpacity()
-            metalLayer.drawsAsynchronously = !value
+            if (field != value) {
+                field = value
+                // If active, make metalLayer transparent, opaque otherwise.
+                // Rendering into opaque CAMetalLayer allows direct-to-screen optimization.
+                updateLayerOpacity()
+                metalLayer.drawsAsynchronously = !value
+            }
         }
 
     private fun updateLayerOpacity() {
-        metalLayer.setOpaque(!isInteropActive && opaque)
+        metalLayer.setOpaque(!isInteropActive && canBeOpaque)
     }
 
     /**
+     * Display link for driving the rendering loop.
      * null after [dispose] call
      */
     private var caDisplayLink: CADisplayLink? = CADisplayLink.displayLinkWithTarget(
@@ -227,10 +220,6 @@ internal class MetalRedrawer(
 
     private val currentTargetTimestamp: NSTimeInterval?
         get() = caDisplayLink?.targetTimestamp
-
-    private val displayLinkConditions = DisplayLinkConditions { paused ->
-        caDisplayLink?.paused = paused
-    }
 
     private val applicationForegroundStateListener = ApplicationForegroundStateListener { isApplicationActive ->
         displayLinkConditions.isApplicationActive = isApplicationActive
@@ -260,6 +249,15 @@ internal class MetalRedrawer(
     fun dispose() {
         check(caDisplayLink != null) { "MetalRedrawer.dispose() was called more than once" }
 
+        retrieveInteropTransaction = {
+            object : UIKitInteropTransaction {
+                override val isInteropActive: Boolean = false
+                override val actions = emptyList<UIKitInteropAction>()
+            }
+        }
+
+        render = { _, _ -> }
+
         releaseCachedCommandQueue(queue)
 
         applicationForegroundStateListener.dispose()
@@ -275,7 +273,7 @@ internal class MetalRedrawer(
      * Marks current state as dirty and unpauses display link if needed and enables draw dispatch operation on
      * next vsync
      */
-    fun needRedraw() = displayLinkConditions.needRedraw()
+    fun setNeedsRedraw() = displayLinkConditions.setNeedsRedraw()
 
     /**
      * Immediately dispatch draw and block the thread until it's finished and presented on the screen.
@@ -288,6 +286,14 @@ internal class MetalRedrawer(
         draw(waitUntilCompletion = true, CACurrentMediaTime())
     }
 
+    /**
+     * Encodes the frame and presents it on the screen.
+     *
+     * @param waitUntilCompletion if `true`, the method will block the thread until the frame is
+     * presented on the screen. If false, the method will just dispatch GPU workload and return.
+     * @param targetTimestamp the target timestamp for the frame to drive vsync-dependant time clock.
+     */
+    @OptIn(BetaInteropApi::class)
     private fun draw(waitUntilCompletion: Boolean, targetTimestamp: NSTimeInterval) = trace("MetalRedrawer:draw") {
         check(NSThread.isMainThread)
 
@@ -312,8 +318,8 @@ internal class MetalRedrawer(
                         height.toFloat()
                     )
                 ).also { canvas ->
-                    canvas.clear(if (metalLayer.opaque) Color.WHITE else Color.TRANSPARENT)
-                    callbacks.render(canvas, lastRenderTimestamp)
+                    canvas.clear(if (metalLayer.isOpaque()) Color.WHITE else Color.TRANSPARENT)
+                    render(canvas, lastRenderTimestamp)
                 }
 
                 pictureRecorder.finishRecordingAsPicture()
@@ -335,8 +341,11 @@ internal class MetalRedrawer(
                 return@autoreleasepool
             }
 
-            val renderTarget =
-                BackendRenderTarget.makeMetal(width, height, metalDrawablesHandler.drawableTexture(metalDrawable).rawValue)
+            val renderTarget = BackendRenderTarget.makeMetal(
+                width,
+                height,
+                texturePtr = metalDrawablesHandler.drawableTexture(metalDrawable).rawValue
+            )
 
             val surface = Surface.makeFromBackendRenderTarget(
                 context,
@@ -357,13 +366,17 @@ internal class MetalRedrawer(
                 return@autoreleasepool
             }
 
-            val interopTransaction = callbacks.retrieveInteropTransaction()
-            if (interopTransaction.state == UIKitInteropState.BEGAN) {
+            val interopTransaction = retrieveInteropTransaction()
+
+            val presentsWithTransaction =
+                isForcedToPresentWithTransactionEveryFrame
+                    || interopTransaction.actions.isNotEmpty()
+                    || isInteropActive != interopTransaction.isInteropActive
+            metalLayer.presentsWithTransaction = presentsWithTransaction
+
+            if (interopTransaction.isInteropActive) {
                 isInteropActive = true
             }
-            val presentsWithTransaction =
-                isForcedToPresentWithTransactionEveryFrame || interopTransaction.isNotEmpty()
-            metalLayer.presentsWithTransaction = presentsWithTransaction
 
             // TODO: encoding on separate thread requires investigation for reported crashes
             //  https://github.com/JetBrains/compose-multiplatform/issues/3862
@@ -407,7 +420,7 @@ internal class MetalRedrawer(
                             it.invoke()
                         }
 
-                        if (interopTransaction.state == UIKitInteropState.ENDED) {
+                        if (interopTransaction.isInteropActive.not()) {
                             isInteropActive = false
                         }
                     }
@@ -487,6 +500,7 @@ internal class MetalRedrawer(
 private class DisplayLinkProxy(
     private val callback: () -> Unit
 ) : NSObject() {
+    @OptIn(BetaInteropApi::class)
     @ObjCAction
     fun handleDisplayLinkTick() {
         callback()

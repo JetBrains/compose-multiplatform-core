@@ -45,6 +45,7 @@ import androidx.compose.ui.isEqualTo
 import androidx.compose.ui.platform.InsetsConfig
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformInsets
 import androidx.compose.ui.platform.PlatformInsetsConfig
 import androidx.compose.ui.platform.WindowInfoImpl
@@ -750,9 +751,8 @@ class PopupTest {
             scene.render(surface.canvas.asComposeCanvas(), 1)
         }
         scene = CanvasLayersComposeScene(
-            composeSceneContext = object : ComposeSceneContext {
-            }.also {
-                val windowInfo = it.platformContext.windowInfo as WindowInfoImpl
+            platformContext = PlatformContext.Empty.also {
+                val windowInfo = it.windowInfo as WindowInfoImpl
                 windowInfo.containerSize = IntSize(50, 50)
             },
             coroutineContext = coroutineContext,

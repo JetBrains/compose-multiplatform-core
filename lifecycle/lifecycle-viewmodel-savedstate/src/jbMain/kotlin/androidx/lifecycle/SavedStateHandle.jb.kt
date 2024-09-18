@@ -296,10 +296,29 @@ actual class SavedStateHandle {
 
                 // References
                 is Bundle,
+                is String,
                 is CharSequence -> true
 
                 // Scalar arrays
-                is ByteArray -> true
+                is BooleanArray,
+                is ByteArray,
+                is CharArray,
+                is DoubleArray,
+                is FloatArray,
+                is IntArray,
+                is LongArray,
+                is ShortArray -> true
+
+                // Reference arrays
+                // [bundleOf] might support [List] instead of [ArrayList] in some cases.
+                is List<*> -> {
+                    // Unlike JVM, there is no reflection available to check component type
+                    when (value.firstOrNull()) {
+                        is Int,
+                        is String -> true
+                        else -> value.isEmpty()
+                    }
+                }
 
                 else -> false
             }

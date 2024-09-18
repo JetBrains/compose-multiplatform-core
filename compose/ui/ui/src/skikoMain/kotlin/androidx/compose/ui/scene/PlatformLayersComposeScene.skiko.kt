@@ -18,7 +18,6 @@ package androidx.compose.ui.scene
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Composition
-import androidx.compose.runtime.CompositionContext
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.InternalComposeUiApi
@@ -40,7 +39,7 @@ import kotlinx.coroutines.Dispatchers
 
 /**
  * Constructs a single-layer [ComposeScene] using the specified parameters. It utilizes
- * [ComposeSceneContext.createPlatformLayer] to position a new [LayoutNode] tree.
+ * [ComposeSceneContext.createLayer] to position a new [LayoutNode] tree.
  *
  * After [ComposeScene] will no longer needed, you should call [ComposeScene.close] method, so
  * all resources and subscriptions will be properly closed. Otherwise, there can be a memory leak.
@@ -83,11 +82,10 @@ private class PlatformLayersComposeSceneImpl(
     layoutDirection: LayoutDirection,
     size: IntSize?,
     coroutineContext: CoroutineContext,
-    composeSceneContext: ComposeSceneContext,
+    override val composeSceneContext: ComposeSceneContext,
     invalidate: () -> Unit,
 ) : BaseComposeScene(
     coroutineContext = coroutineContext,
-    composeSceneContext = composeSceneContext,
     invalidate = invalidate
 ) {
     private val mainOwner: RootNodeOwner by lazy {
@@ -126,13 +124,9 @@ private class PlatformLayersComposeSceneImpl(
             mainOwner.size = value
         }
 
-    override val focusManager: ComposeSceneFocusManager = ComposeSceneFocusManager(
-        focusOwner = { mainOwner.focusOwner }
-    )
+    override val focusManager = ComposeSceneFocusManager { mainOwner.focusOwner }
 
-    override val dropTarget = ComposeSceneDropTarget(
-        activeDragAndDropManager = { mainOwner.dragAndDropManager }
-    )
+    override val dragAndDropTarget = ComposeSceneDragAndDropTarget { mainOwner.dragAndDropOwner }
 
     init {
         onOwnerAppended(mainOwner)
@@ -180,18 +174,6 @@ private class PlatformLayersComposeSceneImpl(
     override fun draw(canvas: Canvas) {
         mainOwner.draw(canvas)
     }
-
-    override fun createLayer(
-        density: Density,
-        layoutDirection: LayoutDirection,
-        focusable: Boolean,
-        compositionContext: CompositionContext,
-    ): ComposeSceneLayer = composeSceneContext.createPlatformLayer(
-        density = density,
-        layoutDirection = layoutDirection,
-        focusable = focusable,
-        compositionContext = compositionContext
-    )
 
     private fun onOwnerAppended(owner: RootNodeOwner) {
         semanticsOwnerListener?.onSemanticsOwnerAppended(owner.semanticsOwner)

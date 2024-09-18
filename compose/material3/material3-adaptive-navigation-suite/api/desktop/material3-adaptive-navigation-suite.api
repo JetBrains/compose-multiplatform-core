@@ -1,0 +1,79 @@
+public final class androidx/compose/material3/adaptive/navigationsuite/ComposableSingletons$NavigationSuiteScaffoldKt {
+	public static final field INSTANCE Landroidx/compose/material3/adaptive/navigationsuite/ComposableSingletons$NavigationSuiteScaffoldKt;
+	public static field lambda-1 Lkotlin/jvm/functions/Function2;
+	public static field lambda-2 Lkotlin/jvm/functions/Function2;
+	public fun <init> ()V
+	public final fun getLambda-1$material3_adaptive_navigation_suite ()Lkotlin/jvm/functions/Function2;
+	public final fun getLambda-2$material3_adaptive_navigation_suite ()Lkotlin/jvm/functions/Function2;
+}
+
+public abstract interface annotation class androidx/compose/material3/adaptive/navigationsuite/ExperimentalMaterial3AdaptiveNavigationSuiteApi : java/lang/annotation/Annotation {
+}
+
+public final class androidx/compose/material3/adaptive/navigationsuite/NavigationSuiteColors {
+	public static final field $stable I
+	public final fun getNavigationBarContainerColor-0d7_KjU ()J
+	public final fun getNavigationBarContentColor-0d7_KjU ()J
+	public final fun getNavigationDrawerContainerColor-0d7_KjU ()J
+	public final fun getNavigationDrawerContentColor-0d7_KjU ()J
+	public final fun getNavigationRailContainerColor-0d7_KjU ()J
+	public final fun getNavigationRailContentColor-0d7_KjU ()J
+}
+
+public final class androidx/compose/material3/adaptive/navigationsuite/NavigationSuiteDefaults {
+	public static final field $stable I
+	public static final field INSTANCE Landroidx/compose/material3/adaptive/navigationsuite/NavigationSuiteDefaults;
+	public final fun colors-5tl4gsc (JJJJJJLandroidx/compose/runtime/Composer;II)Landroidx/compose/material3/adaptive/navigationsuite/NavigationSuiteColors;
+	public final fun itemColors (Landroidx/compose/material3/NavigationBarItemColors;Landroidx/compose/material3/NavigationRailItemColors;Landroidx/compose/material3/NavigationDrawerItemColors;Landroidx/compose/runtime/Composer;II)Landroidx/compose/material3/adaptive/navigationsuite/NavigationSuiteItemColors;
+}
+
+public final class androidx/compose/material3/adaptive/navigationsuite/NavigationSuiteItemColors {
+	public static final field $stable I
+	public fun <init> (Landroidx/compose/material3/NavigationBarItemColors;Landroidx/compose/material3/NavigationRailItemColors;Landroidx/compose/material3/NavigationDrawerItemColors;)V
+	public final fun getNavigationBarItemColors ()Landroidx/compose/material3/NavigationBarItemColors;
+	public final fun getNavigationDrawerItemColors ()Landroidx/compose/material3/NavigationDrawerItemColors;
+	public final fun getNavigationRailItemColors ()Landroidx/compose/material3/NavigationRailItemColors;
+}
+
+public final class androidx/compose/material3/adaptive/navigationsuite/NavigationSuiteScaffoldDefaults {
+	public static final field $stable I
+	public static final field INSTANCE Landroidx/compose/material3/adaptive/navigationsuite/NavigationSuiteScaffoldDefaults;
+	public final fun calculateFromAdaptiveInfo-JYfApLo (Landroidx/compose/material3/adaptive/WindowAdaptiveInfo;)Ljava/lang/String;
+	public final fun getContainerColor (Landroidx/compose/runtime/Composer;I)J
+	public final fun getContentColor (Landroidx/compose/runtime/Composer;I)J
+}
+
+public final class androidx/compose/material3/adaptive/navigationsuite/NavigationSuiteScaffoldKt {
+	public static final synthetic fun NavigationSuite-Og0-EV8 (Landroidx/compose/ui/Modifier;Ljava/lang/String;Landroidx/compose/material3/adaptive/navigationsuite/NavigationSuiteColors;Lkotlin/jvm/functions/Function1;Landroidx/compose/runtime/Composer;II)V
+	public static final fun NavigationSuite-koyC03U (Landroidx/compose/ui/Modifier;Ljava/lang/String;Landroidx/compose/material3/adaptive/navigationsuite/NavigationSuiteColors;Lkotlin/jvm/functions/Function1;Landroidx/compose/runtime/Composer;II)V
+	public static final synthetic fun NavigationSuiteScaffold-Fin9vsw (Lkotlin/jvm/functions/Function1;Landroidx/compose/ui/Modifier;Ljava/lang/String;Landroidx/compose/material3/adaptive/navigationsuite/NavigationSuiteColors;JJLkotlin/jvm/functions/Function2;Landroidx/compose/runtime/Composer;II)V
+	public static final fun NavigationSuiteScaffold-thDv9LQ (Lkotlin/jvm/functions/Function1;Landroidx/compose/ui/Modifier;Ljava/lang/String;Landroidx/compose/material3/adaptive/navigationsuite/NavigationSuiteColors;JJLkotlin/jvm/functions/Function2;Landroidx/compose/runtime/Composer;II)V
+	public static final synthetic fun NavigationSuiteScaffoldLayout-Yk5QHw8 (Lkotlin/jvm/functions/Function2;Ljava/lang/String;Lkotlin/jvm/functions/Function2;Landroidx/compose/runtime/Composer;II)V
+	public static final fun NavigationSuiteScaffoldLayout-zTpdPhI (Lkotlin/jvm/functions/Function2;Ljava/lang/String;Lkotlin/jvm/functions/Function2;Landroidx/compose/runtime/Composer;II)V
+}
+
+public abstract interface class androidx/compose/material3/adaptive/navigationsuite/NavigationSuiteScope {
+	public abstract fun item (ZLkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function2;Landroidx/compose/ui/Modifier;ZLkotlin/jvm/functions/Function2;ZLkotlin/jvm/functions/Function2;Landroidx/compose/material3/adaptive/navigationsuite/NavigationSuiteItemColors;Landroidx/compose/foundation/interaction/MutableInteractionSource;)V
+	public static synthetic fun item$default (Landroidx/compose/material3/adaptive/navigationsuite/NavigationSuiteScope;ZLkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function2;Landroidx/compose/ui/Modifier;ZLkotlin/jvm/functions/Function2;ZLkotlin/jvm/functions/Function2;Landroidx/compose/material3/adaptive/navigationsuite/NavigationSuiteItemColors;Landroidx/compose/foundation/interaction/MutableInteractionSource;ILjava/lang/Object;)V
+}
+
+public final class androidx/compose/material3/adaptive/navigationsuite/NavigationSuiteType {
+	public static final field Companion Landroidx/compose/material3/adaptive/navigationsuite/NavigationSuiteType$Companion;
+	public static final synthetic fun box-impl (Ljava/lang/String;)Landroidx/compose/material3/adaptive/navigationsuite/NavigationSuiteType;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final class androidx/compose/material3/adaptive/navigationsuite/NavigationSuiteType$Companion {
+	public final fun getNavigationBar-QfFTkUs ()Ljava/lang/String;
+	public final fun getNavigationDrawer-QfFTkUs ()Ljava/lang/String;
+	public final fun getNavigationRail-QfFTkUs ()Ljava/lang/String;
+	public final fun getNone-QfFTkUs ()Ljava/lang/String;
+}
+

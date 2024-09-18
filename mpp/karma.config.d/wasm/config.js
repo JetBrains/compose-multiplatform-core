@@ -13,38 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+// This particular config is based on the approach used in libraries/tools/kotlin-test-js-runner/src/KarmaWebpackOutputFramework.mjs from kotlin repo
 
-const path = require("path");
-const fs = require('fs');
+const path = require("node:path");
 
 config.browserConsoleLogOptions.level = "debug";
 
 const basePath = config.basePath;
-const projectPath = path.resolve(basePath, "..", "..", "..", "..");
-const generatedAssetsPath = path.resolve(projectPath, "build", "karma-webpack-out")
-
-const debug = message => console.log(`[karma-config] ${message}`);
+const rootPath = path.resolve(basePath, "..", "..", "..", "..", "..", "..");
+const configPath = path.resolve(rootPath, "mpp", "karma.config.d", "wasm");
 
 // https://github.com/JetBrains/compose-multiplatform-core/pull/1008#issuecomment-1956354231
 config.client.mocha = config.client.mocha || {};
 config.client.mocha.timeout = 10000;
 
-debug(`karma basePath: ${basePath}`);
-debug(`karma generatedAssetsPath: ${generatedAssetsPath}`);
-
-config.proxies["/resources"] = path.resolve(basePath, "kotlin");
-
-config.files = [
-    {pattern: path.resolve(generatedAssetsPath, "**/*"), included: false, served: true, watched: false},
-    {pattern: path.resolve(basePath, "kotlin", "**/*.png"), included: false, served: true, watched: false},
-    {pattern: path.resolve(basePath, "kotlin", "**/*.gif"), included: false, served: true, watched: false},
-    {pattern: path.resolve(basePath, "kotlin", "**/*.ttf"), included: false, served: true, watched: false},
-    {pattern: path.resolve(basePath, "kotlin", "**/*.txt"), included: false, served: true, watched: false},
-    {pattern: path.resolve(basePath, "kotlin", "**/*.json"), included: false, served: true, watched: false},
-].concat(config.files);
+// This enables running tests on a custom html page without iframe
+config.client.useIframe = false
+config.client.runInParent = true
+config.customClientContextFile = path.resolve(configPath, "static", "client_with_context.html")
 
 function KarmaWebpackOutputFramework(config) {
-    // This controller is instantiated and set during the preprocessor phase.
+    // This controller is instantiated and set during the preprocessor phase by the karma-webpack plugin
     const controller = config.__karmaWebpackController;
 
     // only if webpack has instantiated its controller

@@ -29,5 +29,12 @@ import org.jetbrains.skia.Image
  * stream, but stream will not be closed after this method.
  * @return the decoded SVG image associated with the resource
  */
+@Deprecated("Migrate to the Compose resources library. See https://www.jetbrains.com/help/kotlin-multiplatform-dev/compose-images-resources.html",
+    replaceWith = ReplaceWith(
+        "inputStream.readAllBytes().decodeToImageBitmap()",
+        "org.jetbrains.compose.resources.decodeToImageBitmap",
+        "java.io.InputStream"
+    )
+)
 fun loadImageBitmap(inputStream: InputStream): ImageBitmap =
     Image.makeFromEncoded(inputStream.readAllBytes()).toComposeImageBitmap()

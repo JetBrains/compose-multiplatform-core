@@ -38,10 +38,9 @@ import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
 import androidx.compose.ui.input.pointer.PointerType
 import androidx.compose.ui.node.SnapshotInvalidationTracker
 import androidx.compose.ui.platform.GlobalSnapshotManager
-import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.util.trace
-import kotlin.coroutines.CoroutineContext
 import kotlin.concurrent.Volatile
+import kotlin.coroutines.CoroutineContext
 
 /**
  * BaseComposeScene is an internal abstract class that implements the ComposeScene interface.
@@ -53,7 +52,6 @@ import kotlin.concurrent.Volatile
 @OptIn(InternalComposeUiApi::class)
 internal abstract class BaseComposeScene(
     coroutineContext: CoroutineContext,
-    val composeSceneContext: ComposeSceneContext,
     private val invalidate: () -> Unit,
 ) : ComposeScene {
     protected val snapshotInvalidationTracker = SnapshotInvalidationTracker(::updateInvalidations)
@@ -75,6 +73,8 @@ internal abstract class BaseComposeScene(
     protected val compositionContext: CompositionContext
         get() = recomposer.compositionContext
 
+    abstract val composeSceneContext: ComposeSceneContext
+
     protected var isClosed = false
         private set
 
@@ -89,6 +89,7 @@ internal abstract class BaseComposeScene(
             snapshotInvalidationTracker.sendAndPerformSnapshotChanges()
             snapshotInvalidationTracker.performSnapshotChangesSynchronously(block)
         } finally {
+            snapshotInvalidationTracker.sendAndPerformSnapshotChanges()
             isInvalidationDisabled = false
         }.also {
             updateInvalidations()
@@ -141,7 +142,9 @@ internal abstract class BaseComposeScene(
         composition?.dispose()
         composition = createComposition {
             CompositionLocalProvider(
+                @Suppress("DEPRECATION")
                 LocalComposeScene provides this,
+                LocalComposeSceneContext provides composeSceneContext,
                 content = content
             )
         }
@@ -149,7 +152,13 @@ internal abstract class BaseComposeScene(
         recomposer.performScheduledRecomposerTasks()
     }
 
-    override fun render(canvas: Canvas, nanoTime: Long) =
+    override fun render(canvas: Canvas, nanoTime: Long) {
+        // This is a no-op if the scene is closed, this situation can happen if the scene is
+        // in the list for rendering, but recomposition in another scene from the same list
+        // processed earlier has closed it.
+
+        if (isClosed) return
+
         postponeInvalidation("BaseComposeScene:render") {
             // We try to run the phases here in the same order Android does.
 
@@ -182,6 +191,7 @@ internal abstract class BaseComposeScene(
             snapshotInvalidationTracker.onDraw()
             draw(canvas)
         }
+    }
 
     override fun sendPointerEvent(
         eventType: PointerEventType,
@@ -205,6 +215,7 @@ internal abstract class BaseComposeScene(
             nativeEvent = nativeEvent,
             button = button
         )
+        recomposer.performScheduledEffects()
     }
 
     // TODO(demin): return Boolean (when it is consumed)
@@ -229,10 +240,13 @@ internal abstract class BaseComposeScene(
             nativeEvent = nativeEvent,
             button = button
         )
+        recomposer.performScheduledEffects()
     }
 
     override fun sendKeyEvent(keyEvent: KeyEvent): Boolean = postponeInvalidation("BaseComposeScene:sendKeyEvent") {
-        inputHandler.onKeyEvent(keyEvent)
+        inputHandler.onKeyEvent(keyEvent).also {
+            recomposer.performScheduledEffects()
+        }
     }
 
     private fun doMeasureAndLayout() {
@@ -253,13 +267,6 @@ internal abstract class BaseComposeScene(
 
 internal val BaseComposeScene.semanticsOwnerListener
     get() = composeSceneContext.platformContext.semanticsOwnerListener
-
-// TODO: Remove the cast once there is a way to obtain [PlatformContext] without the scene
-internal val ComposeScene.platformContext: PlatformContext
-    get() {
-        this as BaseComposeScene
-        return composeSceneContext.platformContext
-    }
 
 // TODO: Remove the cast once there is a way to obtain it from [PlatformContext]
 internal val ComposeScene.lastKnownPointerPosition: Offset?

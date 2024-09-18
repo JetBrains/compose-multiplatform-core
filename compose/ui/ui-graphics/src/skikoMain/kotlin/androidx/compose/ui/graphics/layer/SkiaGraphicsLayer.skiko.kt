@@ -16,12 +16,17 @@
 
 package androidx.compose.ui.graphics.layer
 
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.neverEqualPolicy
+import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.RoundRect
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.geometry.center
 import androidx.compose.ui.geometry.isUnspecified
+import androidx.compose.ui.geometry.toRect
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.graphics.Color
@@ -40,26 +45,28 @@ import androidx.compose.ui.graphics.drawscope.CanvasDrawScope
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.draw
 import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.prepareTransformationMatrix
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.toSkia
+import androidx.compose.ui.graphics.toSkiaRect
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
+import kotlin.math.abs
 import org.jetbrains.skia.Picture
 import org.jetbrains.skia.PictureRecorder
 import org.jetbrains.skia.Point3
 
-// TODO https://youtrack.jetbrains.com/issue/COMPOSE-1254/Integration.-Implement-GraphicsLayer
-// TODO https://youtrack.jetbrains.com/issue/CMP-5892/Apply-changes-from-1.7.0-beta06-from-AndroidGraphicsLayer.android.kt
-
 actual class GraphicsLayer internal constructor() {
-
     private val pictureDrawScope = CanvasDrawScope()
     private val pictureRecorder = PictureRecorder()
     private var picture: Picture? = null
+
+    // Composable state marker for tracking drawing invalidations.
+    private val drawState = mutableStateOf(Unit, neverEqualPolicy())
 
     private var matrixDirty = true
     private val matrix = Matrix()
@@ -88,61 +95,81 @@ actual class GraphicsLayer internal constructor() {
         private set
 
     actual var alpha: Float = 1f
+        set(value) {
+            field = value
+            requestDraw()
+        }
 
     actual var scaleX: Float = 1f
         set(value) {
-            invalidateMatrix()
             field = value
+            invalidateMatrix()
         }
     actual var scaleY: Float = 1f
         set(value) {
-            invalidateMatrix()
             field = value
+            invalidateMatrix()
         }
     actual var translationX: Float = 0f
         set(value) {
-            invalidateMatrix()
             field = value
+            invalidateMatrix()
         }
     actual var translationY: Float = 0f
         set(value) {
-            invalidateMatrix()
             field = value
+            invalidateMatrix()
         }
     actual var shadowElevation: Float = 0f
+        set(value) {
+            field = value
+            requestDraw()
+        }
+
     actual var rotationX: Float = 0f
         set(value) {
-            invalidateMatrix()
             field = value
+            invalidateMatrix()
         }
     actual var rotationY: Float = 0f
         set(value) {
-            invalidateMatrix()
             field = value
+            invalidateMatrix()
         }
     actual var rotationZ: Float = 0f
         set(value) {
-            invalidateMatrix()
             field = value
+            invalidateMatrix()
         }
 
     actual var cameraDistance: Float = DefaultCameraDistance
         set(value) {
-            invalidateMatrix()
             field = value
+            invalidateMatrix()
         }
 
     actual var renderEffect: RenderEffect? = null
+        set(value) {
+            field = value
+            requestDraw()
+        }
 
     private var density: Density = Density(1f)
 
-    private fun invalidateMatrix() {
+    private fun invalidateMatrix(requestDraw: Boolean = true) {
         matrixDirty = true
+        if (requestDraw) {
+            requestDraw()
+        }
     }
 
-    private fun updateLayerConfiguration() {
+    private fun requestDraw() {
+        drawState.value = Unit
+    }
+
+    private fun updateLayerConfiguration(requestDraw: Boolean = true) {
         this.outlineDirty = true
-        invalidateMatrix()
+        invalidateMatrix(requestDraw)
     }
 
     actual fun record(
@@ -151,17 +178,19 @@ actual class GraphicsLayer internal constructor() {
         size: IntSize,
         block: DrawScope.() -> Unit
     ) {
+        // Close previous picture
+        picture?.close()
+        picture = null
+
         this.density = density
         this.size = size
-        updateLayerConfiguration()
-        val x = topLeft.x.toFloat()
-        val y = topLeft.y.toFloat()
-        val bounds = org.jetbrains.skia.Rect(
-            x,
-            y,
-            x + size.width.toFloat(),
-            y + size.height.toFloat()
+        updateLayerConfiguration(
+            // [record] doesn't change the state and should not explicitly request drawing
+            // (happens only on the next frame) to avoid infinity invalidation loop.
+            // It's designed to be handled externally.
+            requestDraw = false
         )
+        val bounds = size.toSize().toRect().toSkiaRect()
         val canvas = pictureRecorder.beginRecording(bounds)
         val skiaCanvas = canvas.asComposeCanvas() as SkiaBackedCanvas
         skiaCanvas.alphaMultiplier = if (compositingStrategy == CompositingStrategy.ModulateAlpha) {
@@ -191,6 +220,10 @@ actual class GraphicsLayer internal constructor() {
     }
 
     actual var clip: Boolean = false
+        set(value) {
+            field = value
+            requestDraw()
+        }
 
     private inline fun createOutlineWithPosition(
         outlineTopLeft: Offset,
@@ -219,20 +252,20 @@ actual class GraphicsLayer internal constructor() {
                     if (roundRectCornerRadius > 0f) {
                         Outline.Rounded(
                             RoundRect(
-                                outlineTopLeft.x.toFloat(),
-                                outlineTopLeft.y.toFloat(),
-                                outlineTopLeft.x.toFloat() + outlineSize.width,
-                                outlineTopLeft.y.toFloat() + outlineSize.height,
-                                CornerRadius(roundRectCornerRadius)
+                                left = outlineTopLeft.x,
+                                top = outlineTopLeft.y,
+                                right = outlineTopLeft.x + outlineSize.width,
+                                bottom = outlineTopLeft.y + outlineSize.height,
+                                cornerRadius = CornerRadius(roundRectCornerRadius)
                             )
                         )
                     } else {
                         Outline.Rectangle(
                             Rect(
-                                outlineTopLeft.x.toFloat(),
-                                outlineTopLeft.y.toFloat(),
-                                outlineTopLeft.x.toFloat() + outlineSize.width,
-                                outlineTopLeft.y.toFloat() + outlineSize.height
+                                left = outlineTopLeft.x,
+                                top = outlineTopLeft.y,
+                                right = outlineTopLeft.x + outlineSize.width,
+                                bottom = outlineTopLeft.y + outlineSize.height
                             )
                         )
                     }
@@ -245,17 +278,22 @@ actual class GraphicsLayer internal constructor() {
     }
 
     internal actual fun draw(canvas: Canvas, parentLayer: GraphicsLayer?) {
-        if (isReleased) {
-            return
-        }
+        if (isReleased) return
 
+        var restoreCount = 0
         parentLayer?.addSubLayer(this)
+
+        // Read the state because any changes to the state should trigger re-drawing.
+        drawState.value
 
         picture?.let {
             configureOutline()
 
             updateMatrix()
+
             canvas.save()
+            restoreCount++
+
             canvas.concat(matrix)
             canvas.translate(topLeft.x.toFloat(), topLeft.y.toFloat())
 
@@ -265,6 +303,7 @@ actual class GraphicsLayer internal constructor() {
 
             if (clip || shadowElevation > 0f) {
                 canvas.save()
+                restoreCount++
 
                 when (val outline = internalOutline) {
                     is Outline.Rectangle ->
@@ -292,19 +331,17 @@ actual class GraphicsLayer internal constructor() {
                         }
                     }
                 )
+                restoreCount++
             } else {
                 canvas.save()
+                restoreCount++
             }
 
             canvas.nativeCanvas.drawPicture(it, null, null)
 
-            canvas.restore()
-
-            if (clip) {
+            repeat(restoreCount) {
                 canvas.restore()
             }
-
-            canvas.restore()
         }
     }
 
@@ -326,13 +363,21 @@ actual class GraphicsLayer internal constructor() {
 
     actual var pivotOffset: Offset = Offset.Unspecified
         set(value) {
-            invalidateMatrix()
             field = value
+            invalidateMatrix()
         }
 
     actual var blendMode: BlendMode = BlendMode.SrcOver
+        set(value) {
+            field = value
+            requestDraw()
+        }
 
     actual var colorFilter: ColorFilter? = null
+        set(value) {
+            field = value
+            requestDraw()
+        }
 
     private fun resetOutlineParams() {
         internalOutline = null
@@ -370,32 +415,31 @@ actual class GraphicsLayer internal constructor() {
     }
 
     private fun updateMatrix() {
-        if (matrixDirty) {
-            val pivotX: Float
-            val pivotY: Float
-            if (pivotOffset.isUnspecified) {
-                pivotX = size.width / 2f
-                pivotY = size.height / 2f
-            } else {
-                pivotX = pivotOffset.x
-                pivotY = pivotOffset.y
-            }
-            matrix.reset()
-            matrix *= Matrix().apply {
-                translate(x = -pivotX, y = -pivotY)
-            }
-            matrix *= Matrix().apply {
-                translate(translationX, translationY)
-                rotateX(rotationX)
-                rotateY(rotationY)
-                rotateZ(rotationZ)
-                scale(scaleX, scaleY)
-            }
-            matrix *= Matrix().apply {
-                translate(x = pivotX, y = pivotY)
-            }
-            matrixDirty = false
+        if (!matrixDirty) return
+
+        val pivotX: Float
+        val pivotY: Float
+        if (pivotOffset.isUnspecified) {
+            pivotX = size.width / 2f
+            pivotY = size.height / 2f
+        } else {
+            pivotX = pivotOffset.x
+            pivotY = pivotOffset.y
         }
+        prepareTransformationMatrix(
+            matrix = matrix,
+            pivotX = pivotX,
+            pivotY = pivotY,
+            translationX = translationX,
+            translationY = translationY,
+            rotationX = rotationX,
+            rotationY = rotationY,
+            rotationZ = rotationZ,
+            scaleX = scaleX,
+            scaleY = scaleY,
+            cameraDistance = cameraDistance
+        )
+        matrixDirty = false
     }
 
     actual var isReleased: Boolean = false
@@ -414,8 +458,16 @@ actual class GraphicsLayer internal constructor() {
     }
 
     actual var ambientShadowColor: Color = Color.Black
+        set(value) {
+            field = value
+            requestDraw()
+        }
 
     actual var spotShadowColor: Color = Color.Black
+        set(value) {
+            field = value
+            requestDraw()
+        }
 
     private fun requiresLayer(): Boolean {
         val alphaNeedsLayer = alpha < 1f && compositingStrategy != CompositingStrategy.ModulateAlpha

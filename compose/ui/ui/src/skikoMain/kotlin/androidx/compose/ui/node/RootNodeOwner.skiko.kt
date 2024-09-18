@@ -59,6 +59,7 @@ import androidx.compose.ui.modifier.ModifierLocalManager
 import androidx.compose.ui.platform.DefaultAccessibilityManager
 import androidx.compose.ui.platform.DefaultHapticFeedback
 import androidx.compose.ui.platform.DelegatingSoftwareKeyboardController
+import androidx.compose.ui.platform.GraphicsLayerOwnerLayer
 import androidx.compose.ui.platform.PlatformClipboardManager
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformRootForTest
@@ -67,7 +68,6 @@ import androidx.compose.ui.platform.RenderNodeLayer
 import androidx.compose.ui.scene.ComposeScene
 import androidx.compose.ui.scene.ComposeSceneInputHandler
 import androidx.compose.ui.scene.ComposeScenePointer
-import androidx.compose.ui.scene.OwnerDragAndDropManager
 import androidx.compose.ui.semantics.EmptySemanticsElement
 import androidx.compose.ui.semantics.EmptySemanticsModifier
 import androidx.compose.ui.semantics.SemanticsOwner
@@ -89,7 +89,6 @@ import androidx.compose.ui.viewinterop.pointerInteropFilter
 import kotlin.coroutines.CoroutineContext
 import kotlin.math.max
 import kotlin.math.min
-import kotlinx.coroutines.awaitCancellation
 
 /**
  * Owner of root [LayoutNode].
@@ -122,8 +121,7 @@ internal class RootNodeOwner(
             platformContext.parentFocusManager.clearFocus(true)
         },
     )
-
-    val dragAndDropManager = OwnerDragAndDropManager(platformContext)
+    val dragAndDropOwner = DragAndDropOwner(platformContext.dragAndDropManager)
 
     private val rootSemanticsNode = EmptySemanticsModifier()
 
@@ -140,7 +138,7 @@ internal class RootNodeOwner(
             }
         }
         .then(focusOwner.modifier)
-        .then(dragAndDropManager.modifier)
+        .then(dragAndDropOwner.modifier)
         .semantics {
             // This makes the reported role of the root node "PANEL", which is ignored by VoiceOver
             // (which is what we want).
@@ -223,7 +221,10 @@ internal class RootNodeOwner(
     }
 
     fun draw(canvas: Canvas) = trace("RootNodeOwner:draw") {
-        owner.root.draw(canvas, graphicsLayer = null)
+        owner.root.draw(
+            canvas = canvas,
+            graphicsLayer = null // the root node will provide the root graphics layer
+        )
         clearInvalidObservations()
     }
 
@@ -320,17 +321,16 @@ internal class RootNodeOwner(
         override val autofillTree = AutofillTree()
         override val autofill: Autofill?  get() = null
         override val density get() = this@RootNodeOwner.density
-        override val textInputService = TextInputService(platformContext.textInputService)
+        override val textInputService =
+            TextInputService(platformContext.textInputService)
         override val softwareKeyboardController =
             DelegatingSoftwareKeyboardController(textInputService)
 
-        // TODO https://youtrack.jetbrains.com/issue/COMPOSE-733/Merge-1.6.-Apply-changes-for-the-new-text-input
         override suspend fun textInputSession(
             session: suspend PlatformTextInputSessionScope.() -> Nothing
-        ): Nothing {
-            awaitCancellation()
-        }
-        override val dragAndDropManager = this@RootNodeOwner.dragAndDropManager
+        ) = platformContext.textInputSession(session)
+
+        override val dragAndDropManager = this@RootNodeOwner.dragAndDropOwner
         override val pointerIconService = PointerIconServiceImpl()
         override val focusOwner get() = this@RootNodeOwner.focusOwner
         override val windowInfo get() = platformContext.windowInfo
@@ -433,21 +433,45 @@ internal class RootNodeOwner(
             drawBlock: (canvas: Canvas, parentLayer: GraphicsLayer?) -> Unit,
             invalidateParentLayer: () -> Unit,
             explicitLayer: GraphicsLayer?,
-        ) = RenderNodeLayer(
-            density = Snapshot.withoutReadObservation {
-                // density is a mutable state that is observed whenever layer is created. the layer
-                // is updated manually on draw, so not observing the density changes here helps with
-                // performance in layout.
-                density
-            },
-            measureDrawBounds = platformContext.measureDrawLayerBounds,
-            invalidateParentLayer = {
-                invalidateParentLayer()
-                snapshotInvalidationTracker.requestDraw()
-            },
-            drawBlock = drawBlock,
-            onDestroy = { needClearObservations = true }
-        )
+        ) = if (explicitLayer != null) {
+                GraphicsLayerOwnerLayer(
+                    graphicsLayer = explicitLayer,
+                    context = null,
+                    drawBlock = drawBlock,
+                    invalidateParentLayer = {
+                        invalidateParentLayer()
+                        snapshotInvalidationTracker.requestDraw()
+                    },
+                )
+            } else {
+                /*
+                TODO: Use GraphicsLayerOwnerLayer instead of RenderNodeLayer
+                GraphicsLayerOwnerLayer(
+                    graphicsLayer = graphicsContext.createGraphicsLayer(),
+                    context = graphicsContext,
+                    drawBlock = drawBlock,
+                    invalidateParentLayer = {
+                        invalidateParentLayer()
+                        snapshotInvalidationTracker.requestDraw()
+                    },
+                )
+                */
+                RenderNodeLayer(
+                    density = Snapshot.withoutReadObservation {
+                        // density is a mutable state that is observed whenever layer is created. the layer
+                        // is updated manually on draw, so not observing the density changes here helps with
+                        // performance in layout.
+                        density
+                    },
+                    measureDrawBounds = platformContext.measureDrawLayerBounds,
+                    invalidateParentLayer = {
+                        invalidateParentLayer()
+                        snapshotInvalidationTracker.requestDraw()
+                    },
+                    drawBlock = drawBlock,
+                    onDestroy = { needClearObservations = true }
+                )
+            }
 
         override fun onSemanticsChange() {
             platformContext.semanticsOwnerListener?.onSemanticsChange(semanticsOwner)
@@ -528,6 +552,7 @@ internal class RootNodeOwner(
 
     private inner class PlatformRootForTestImpl : PlatformRootForTest {
         override val density get() = this@RootNodeOwner.density
+        @Suppress("OVERRIDE_DEPRECATION")
         override val textInputService get() = owner.textInputService
         override val semanticsOwner get() = this@RootNodeOwner.semanticsOwner
         override val visibleBounds: Rect

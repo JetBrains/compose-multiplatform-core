@@ -26,11 +26,11 @@ import androidx.compose.runtime.snapshots.SnapshotStateObserver
  */
 internal class UIKitInteropContainer(
     override val root: InteropViewGroup,
-    val requestRedraw: () -> Unit
+    private var requestRedraw: () -> Unit
 ) : InteropContainer {
     override var rootModifier: TrackInteropPlacementModifierNode? = null
     private var interopViews = mutableMapOf<InteropView, InteropViewHolder>()
-    private var transaction = UIKitInteropMutableTransaction()
+    private var transaction = UIKitInteropMutableTransaction(isInteropActive = false)
 
     // TODO: Android reuses `owner.snapshotObserver`. We should probably do the same with RootNodeOwner.
     /**
@@ -56,9 +56,10 @@ internal class UIKitInteropContainer(
 
     /**
      * Dispose by immediately executing all UIKit interop actions that can't be deferred to be
-     * synchronized with rendering because scene will never be rendered past that moment.
+     * synchronized with rendering because scene will never be rendered again past that moment.
      */
     fun dispose() {
+        requestRedraw = {}
         val lastTransaction = retrieveTransaction()
 
         for (action in lastTransaction.actions) {
@@ -74,7 +75,9 @@ internal class UIKitInteropContainer(
      */
     fun retrieveTransaction(): UIKitInteropTransaction {
         val result = transaction
-        transaction = UIKitInteropMutableTransaction()
+        transaction = UIKitInteropMutableTransaction(
+            isInteropActive = interopViews.isNotEmpty()
+        )
         return result
     }
 
@@ -82,7 +85,7 @@ internal class UIKitInteropContainer(
         val interopView = checkNotNull(holder.getInteropView())
 
         if (interopViews.isEmpty()) {
-            transaction.state = UIKitInteropState.BEGAN
+            transaction.isInteropActive = true
             snapshotObserver.start()
         }
 
@@ -107,7 +110,7 @@ internal class UIKitInteropContainer(
         interopViews.remove(interopView)
 
         if (interopViews.isEmpty()) {
-            transaction.state = UIKitInteropState.ENDED
+            transaction.isInteropActive = false
             snapshotObserver.stop()
         }
 

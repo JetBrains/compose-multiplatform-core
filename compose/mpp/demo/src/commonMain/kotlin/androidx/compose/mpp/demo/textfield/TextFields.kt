@@ -16,9 +16,14 @@
 
 package androidx.compose.mpp.demo.textfield
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.material.OutlinedTextField
 import androidx.compose.material.Text
 import androidx.compose.material.TextField
@@ -72,6 +77,20 @@ val TextFields = Screen.Selection(
     Screen.Example("BasicTextField") {
         var text by remember { mutableStateOf("usage of BasicTextField") }
         BasicTextField(text, { text = it })
+    },
+
+    Screen.Example("BasicTextField2") {
+        var textFieldState by remember { mutableStateOf("I am TextField") }
+        val textFieldState2 = remember { TextFieldState("I am TextField 2") }
+        Column(Modifier.fillMaxWidth()) {
+            BasicTextField(
+                textFieldState,
+                onValueChange = { textFieldState = it },
+                Modifier.padding(16.dp).fillMaxWidth()
+            )
+            Box(Modifier.height(16.dp))
+            BasicTextField(textFieldState2, Modifier.padding(16.dp).fillMaxWidth())
+        }
     },
 
     Screen.Example("RTL and BiDi") {

@@ -172,6 +172,11 @@ if(AndroidXComposePlugin.isMultiplatformEnabled(project)) {
                     implementation(libs.skikoCurrentOs)
                 }
             }
+
+            configureEach {
+                languageSettings.optIn("androidx.compose.ui.ExperimentalComposeUiApi")
+                languageSettings.optIn("androidx.compose.ui.InternalComposeUiApi")
+            }
         }
     }
     dependencies {

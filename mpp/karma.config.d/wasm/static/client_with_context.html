@@ -1,0 +1,61 @@
+<!--
+  ~ Copyright 2024 The Android Open Source Project
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~      http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<!DOCTYPE html>
+<!--This file is based on the from the karma project with the following modifications introduced -->
+<!--  * injecting %SCRIPT% instead of %SCRIPT_URL_ARRAY%-->
+<!--  * removing custom css styling-->
+<!--  * inject %SCRIPT% instead of  %SCRIPT_URL_ARRAY% -->
+
+<!--
+This is the combined client and execution context.
+Is used for single-shot tests.
+-->
+<html>
+<head>
+
+  <title>Karma</title>
+  <link href="favicon.ico" rel="icon" type="image/x-icon">
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <style type="text/css">
+    html, body {
+      height: 100%;
+      padding: 0;
+      margin: 0;
+    }
+  </style>
+</head>
+<body>
+<script src="socket.io/socket.io.min.js"></script>
+<script src="karma.js"></script>
+<script src="context.js"></script>
+<!-- The scripts need to be at the end of body, so that some test running frameworks
+     (Angular Scenario, for example) need the body to be loaded so that it can insert its magic
+     into it. If it is before body, then it fails to find the body and crashes and burns in an epic
+     manner. -->
+<script type="text/javascript">
+  // sets window.__karma__ and overrides console and error handling
+  %CLIENT_CONFIG%
+  window.__karma__.setupContext(window);
+
+  // All served files with the latest timestamps
+  %MAPPINGS%
+</script>
+
+%SCRIPTS%
+</body>
+</html>

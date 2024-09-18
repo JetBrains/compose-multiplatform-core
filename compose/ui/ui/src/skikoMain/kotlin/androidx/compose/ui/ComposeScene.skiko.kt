@@ -54,7 +54,7 @@ import org.jetbrains.skiko.currentNanoTime
 )
 class ComposeScene internal constructor(
     coroutineContext: CoroutineContext,
-    composeSceneContext: ComposeSceneContext,
+    platformContext: PlatformContext,
     density: Density,
     layoutDirection: LayoutDirection,
     invalidate: () -> Unit
@@ -105,10 +105,8 @@ class ComposeScene internal constructor(
         invalidate: () -> Unit = {}
     ) : this(
         coroutineContext = coroutineContext,
-        composeSceneContext = object : ComposeSceneContext {
-            override val platformContext = object : PlatformContext by PlatformContext.Empty {
-                override val textInputService get() = textInputService
-            }
+        platformContext = object : PlatformContext by PlatformContext.Empty {
+            override val textInputService get() = textInputService
         },
         density = density,
         layoutDirection = layoutDirection,
@@ -165,7 +163,7 @@ class ComposeScene internal constructor(
         density = density,
         layoutDirection = layoutDirection,
         coroutineContext = coroutineContext,
-        composeSceneContext = composeSceneContext,
+        platformContext = platformContext,
         invalidate = invalidate,
     )
 

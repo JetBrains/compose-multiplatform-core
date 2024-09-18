@@ -59,9 +59,9 @@ import kotlinx.coroutines.Dispatchers
 
 /**
  * Constructs a multi-layer [ComposeScene] using the specified parameters. Unlike
- * [PlatformLayersComposeScene], this version doesn't employ [ComposeSceneContext.createPlatformLayer]
- * to position a new [LayoutNode] tree. Rather, it keeps track of the added layers on its own in
- * order to render (and also divide input among them) everything on a single canvas.
+ * [PlatformLayersComposeScene], this version implement [ComposeSceneContext] itself and keeps
+ * track of the added layers on its own in order to render (and also divide input among them)
+ * everything on a single canvas.
  *
  * After [ComposeScene] will no longer needed, you should call [ComposeScene.close] method, so
  * all resources and subscriptions will be properly closed. Otherwise, there can be a memory leak.
@@ -72,8 +72,7 @@ import kotlinx.coroutines.Dispatchers
  * determined by the content.
  * @param coroutineContext Context which will be used to launch effects ([LaunchedEffect],
  * [rememberCoroutineScope]) and run recompositions.
- * @param composeSceneContext The context to share resources between multiple scenes and provide
- * a way for platform interaction.
+ * @param platformContext The the platform-specific context used for platform interaction.
  * @param invalidate The function to be called when the content need to be recomposed or
  * re-rendered. If you draw your content using [ComposeScene.render] method, in this callback you
  * should schedule the next [ComposeScene.render] in your rendering loop.
@@ -88,14 +87,14 @@ fun CanvasLayersComposeScene(
     size: IntSize? = null,
     // TODO: Remove `Dispatchers.Unconfined` as a default
     coroutineContext: CoroutineContext = Dispatchers.Unconfined,
-    composeSceneContext: ComposeSceneContext = ComposeSceneContext.Empty,
+    platformContext: PlatformContext = PlatformContext.Empty,
     invalidate: () -> Unit = {},
 ): ComposeScene = CanvasLayersComposeSceneImpl(
     density = density,
     layoutDirection = layoutDirection,
     size = size,
     coroutineContext = coroutineContext,
-    composeSceneContext = composeSceneContext,
+    platformContext = platformContext,
     invalidate = invalidate
 )
 
@@ -104,13 +103,12 @@ private class CanvasLayersComposeSceneImpl(
     layoutDirection: LayoutDirection,
     size: IntSize?,
     coroutineContext: CoroutineContext,
-    composeSceneContext: ComposeSceneContext,
+    override val platformContext: PlatformContext,
     invalidate: () -> Unit = {},
 ) : BaseComposeScene(
     coroutineContext = coroutineContext,
-    composeSceneContext = composeSceneContext,
     invalidate = invalidate
-) {
+), ComposeSceneContext {
     private val mainOwner = RootNodeOwner(
         density = density,
         layoutDirection = layoutDirection,
@@ -120,6 +118,9 @@ private class CanvasLayersComposeSceneImpl(
         snapshotInvalidationTracker = snapshotInvalidationTracker,
         inputHandler = inputHandler,
     )
+
+    override val composeSceneContext: ComposeSceneContext
+        get() = this
 
     override var density: Density = density
         set(value) {
@@ -146,13 +147,9 @@ private class CanvasLayersComposeSceneImpl(
             forEachLayer { it.owner.size = value }
         }
 
-    override val focusManager: ComposeSceneFocusManager = ComposeSceneFocusManager(
-        focusOwner = { focusedOwner.focusOwner }
-    )
+    override val focusManager = ComposeSceneFocusManager { focusedOwner.focusOwner }
 
-    override val dropTarget = ComposeSceneDropTarget(
-        activeDragAndDropManager = { focusedOwner.dragAndDropManager }
-    )
+    override val dragAndDropTarget = ComposeSceneDragAndDropTarget { focusedOwner.dragAndDropOwner }
 
     private val layers = mutableListOf<AttachedComposeSceneLayer>()
     private val _layersCopyCache = CopiedList {
@@ -598,7 +595,7 @@ private val PointerInputEvent.isGestureInProgress get() = pointers.fastAny { it.
 private fun PointerInputEvent.isMouseOrSingleTouch() =
     button != null || pointers.size == 1
 
-private class CopiedList<T>(
+internal class CopiedList<T>(
     private val populate: (MutableList<T>) -> Unit
 ) : MutableList<T> by mutableListOf() {
     inline fun withCopy(

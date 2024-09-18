@@ -269,12 +269,26 @@ private object YieldFrameClock : MonotonicFrameClock {
     }
 }
 
-private class ApplicationApplier : Applier<Unit> {
-    override val current: Unit = Unit
-    override fun down(node: Unit) = Unit
+private class ApplicationApplier : Applier<Any> {
+    override val current: Any = Unit
+    override fun down(node: Any) = Unit
     override fun up() = Unit
-    override fun insertTopDown(index: Int, instance: Unit) = Unit
-    override fun insertBottomUp(index: Int, instance: Unit) = Unit
+    override fun insertTopDown(index: Int, instance: Any) {
+        if (instance !is Unit) {
+            throw IllegalStateException(
+                "Composable content may not be added directly into " +
+                    ApplicationScope::class.simpleName
+            )
+        }
+    }
+    override fun insertBottomUp(index: Int, instance: Any) {
+        if (instance !is Unit) {
+            throw IllegalStateException(
+                "Composable content may not be added directly into " +
+                    ApplicationScope::class.simpleName
+            )
+        }
+    }
     override fun remove(index: Int, count: Int) = Unit
     override fun move(from: Int, to: Int, count: Int) = Unit
     override fun clear() = Unit

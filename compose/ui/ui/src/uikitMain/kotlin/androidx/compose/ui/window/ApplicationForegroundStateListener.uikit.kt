@@ -33,7 +33,7 @@ internal class ApplicationForegroundStateListener(
     /**
      * Callback which will be called with `true` when the app becomes active, and `false` when the app goes background
      */
-    private val onApplicationForegroundStateChanged: (Boolean) -> Unit
+    private var onApplicationForegroundStateChanged: (Boolean) -> Unit
 ) : NSObject() {
     init {
         notificationCenter.addObserver(
@@ -65,6 +65,7 @@ internal class ApplicationForegroundStateListener(
      * Deregister from [NSNotificationCenter]
      */
     fun dispose() {
+        onApplicationForegroundStateChanged = {}
         notificationCenter.removeObserver(observer = this, name = UIApplicationWillEnterForegroundNotification, `object` = null)
         notificationCenter.removeObserver(observer = this, name = UIApplicationDidEnterBackgroundNotification, `object` = null)
     }

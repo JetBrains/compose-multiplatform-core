@@ -469,6 +469,10 @@ public final class androidx/compose/ui/graphics/LinearGradient : androidx/compos
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class androidx/compose/ui/graphics/Matrices_skikoKt {
+	public static final fun prepareTransformationMatrix-ao2toNE ([FFFFFFFFFFF)V
+}
+
 public final class androidx/compose/ui/graphics/Matrix {
 	public static final field Companion Landroidx/compose/ui/graphics/Matrix$Companion;
 	public static final field Perspective0 I

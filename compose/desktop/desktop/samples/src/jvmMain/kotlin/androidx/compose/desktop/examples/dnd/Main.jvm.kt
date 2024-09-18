@@ -16,10 +16,12 @@
 
 package androidx.compose.desktop.examples.dnd
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.draganddrop.dragAndDropTarget
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.MaterialTheme
@@ -29,29 +31,59 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.DragData
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draganddrop.DragAndDropEvent
+import androidx.compose.ui.draganddrop.DragAndDropTarget
+import androidx.compose.ui.draganddrop.DragData
+import androidx.compose.ui.draganddrop.dragData
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.onExternalDrag
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.singleWindowApplication
 
-@OptIn(ExperimentalComposeUiApi::class)
+@OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
 fun main() = singleWindowApplication(
-    title = "External dnd demo"
+    title = "Drag target demo"
 ) {
     MaterialTheme {
-        val size = 200.dp
-
         var isDragging by remember { mutableStateOf(false) }
         var text by remember { mutableStateOf<String?>(null) }
         var painter by remember { mutableStateOf<Painter?>(null) }
 
-        Column(modifier = Modifier.padding(20.dp)) {
+        val dragAndDropTarget = remember {
+            object: DragAndDropTarget {
+
+                override fun onStarted(event: DragAndDropEvent) {
+                    isDragging = true
+                }
+
+                override fun onEnded(event: DragAndDropEvent) {
+                    isDragging = false
+                }
+
+                override fun onDrop(event: DragAndDropEvent): Boolean {
+                    val dragData = event.dragData()
+                    text = dragData.toString()
+                    if (dragData is DragData.Image) {
+                        painter = dragData.readImage()
+                    }
+                    isDragging = false
+
+                    return true
+                }
+            }
+        }
+
+
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
             Box(
-                modifier = Modifier.size(size, size)
+                modifier = Modifier
+                    .size(200.dp)
                     .background(
                         when {
                             isDragging -> Color.Green
@@ -59,26 +91,17 @@ fun main() = singleWindowApplication(
                             else -> Color.Red
                         }
                     )
-                    .onExternalDrag(
-                        onDragStart = {
-                            isDragging = true
-                        },
-                        onDragExit = {
-                            isDragging = false
-                        },
-                        onDrag = {
-
-                        },
-                        onDrop = { state ->
-                            val dragData = state.dragData
-                            text = dragData.toString()
-                            if (dragData is DragData.Image) {
-                                painter = dragData.readImage()
-                            }
-                            isDragging = false
-                        })
+                    .dragAndDropTarget(
+                        shouldStartDragAndDrop = { true },
+                        target = dragAndDropTarget
+                    )
+                    .padding(16.dp),
+                contentAlignment = Alignment.Center
             ) {
-                Text(text ?: "Try to drag some files or image here", modifier = Modifier.align(Alignment.Center))
+                Text(
+                    text = text ?: "Try to drag some files or image here",
+                    textAlign = TextAlign.Center,
+                )
                 val currentPainter = painter
                 if (currentPainter != null) {
                     Image(currentPainter, contentDescription = "Pasted Image")

@@ -127,6 +127,8 @@ private class NativeKeyboardVisibilityListener : NSObject() {
         keyboardFrame = arg.endFrame
     }
 
+    // Be aware that animation parameters may not correspond to the real visual keyboard
+    // animation parameters.
     private val NSNotification.duration: Double
         get() {
             return userInfo?.get(UIKeyboardAnimationDurationUserInfoKey) as? Double ?: 0.0
