@@ -22,7 +22,7 @@ import androidx.compose.ui.platform.Translations
 @Suppress("UnusedReceiverParameter", "DuplicatedCode")
 internal fun Translations.ne() = mapOf(
     Strings.SelectAll to "सबैलाई चयन गर्नुहोस्",
-    Strings.Cut to "काट्नुहोस्",
+    Strings.Cut to "कट् गर्नुहोस्",
     Strings.Copy to "कपी गर्नुहोस्",
     Strings.Paste to "टाँस्नुहोस्",
 )

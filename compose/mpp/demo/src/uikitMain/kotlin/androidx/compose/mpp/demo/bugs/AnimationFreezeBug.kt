@@ -25,15 +25,19 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import platform.Foundation.NSURL.Companion.URLWithString
 import platform.UIKit.UIApplication
-import platform.Foundation.NSURL
 
 val AnimationFreezeBug = Screen.Example("AnimationFreezeBug") {
     Column(modifier = Modifier.fillMaxSize()) {
         var state by remember { mutableStateOf(true) }
         Switch(checked = state, onCheckedChange = {
             state = it
-            UIApplication.sharedApplication.openURL(NSURL.URLWithString("app-settings:")!!)
+            UIApplication.sharedApplication.openURL(
+                url = URLWithString("app-settings:")!!,
+                options = emptyMap<Any?, Any>(),
+                completionHandler = null
+            )
         })
     }
 }

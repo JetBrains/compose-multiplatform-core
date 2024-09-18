@@ -17,6 +17,8 @@
 package androidx.compose.ui.platform
 
 import org.jetbrains.skia.Rect as SkRect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.neverEqualPolicy
 import androidx.compose.ui.geometry.MutableRect
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
@@ -33,7 +35,6 @@ import androidx.compose.ui.graphics.Matrix
 import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.RenderEffect
 import androidx.compose.ui.graphics.ReusableGraphicsLayerScope
 import androidx.compose.ui.graphics.TransformOrigin
@@ -50,7 +51,6 @@ import androidx.compose.ui.node.OwnedLayer
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
 import kotlin.math.abs
@@ -84,6 +84,9 @@ internal class RenderNodeLayer(
     private val bbhFactory = if (measureDrawBounds) RTreeFactory() else null
     private var picture: Picture? = null
     private var isDestroyed = false
+
+    // Composable state marker for tracking drawing invalidations.
+    private val drawState = mutableStateOf(Unit, neverEqualPolicy())
 
     private var transformOrigin: TransformOrigin = TransformOrigin.Center
     private var translationX: Float = 0f
@@ -211,10 +214,15 @@ internal class RenderNodeLayer(
             picture?.close()
             picture = null
         }
+        drawState.value = Unit
         invalidateParentLayer()
     }
 
     override fun drawLayer(canvas: Canvas, parentLayer: GraphicsLayer?) {
+
+        // Read the state because any changes to the state should trigger re-drawing.
+        drawState.value
+
         if (picture == null) {
             val measureDrawBounds = !clip || shadowElevation > 0
             val bounds = size.toSize().toRect()

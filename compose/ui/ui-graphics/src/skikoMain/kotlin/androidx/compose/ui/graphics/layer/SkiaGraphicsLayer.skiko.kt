@@ -18,13 +18,12 @@ package androidx.compose.ui.graphics.layer
 
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.neverEqualPolicy
-import androidx.compose.ui.InternalComposeUiApi
+import androidx.compose.runtime.snapshots.SnapshotStateObserver
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.RoundRect
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.geometry.center
 import androidx.compose.ui.geometry.isUnspecified
 import androidx.compose.ui.geometry.toRect
 import androidx.compose.ui.graphics.BlendMode
@@ -55,12 +54,13 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
-import kotlin.math.abs
 import org.jetbrains.skia.Picture
 import org.jetbrains.skia.PictureRecorder
 import org.jetbrains.skia.Point3
 
-actual class GraphicsLayer internal constructor() {
+actual class GraphicsLayer internal constructor(
+    private val snapshotObserver: SnapshotStateObserver
+) {
     private val pictureDrawScope = CanvasDrawScope()
     private val pictureRecorder = PictureRecorder()
     private var picture: Picture? = null
@@ -198,9 +198,7 @@ actual class GraphicsLayer internal constructor() {
         } else {
             1.0f
         }
-        childDependenciesTracker.withTracking(
-            onDependencyRemoved = { it.onRemovedFromParentLayer() }
-        ) {
+        trackRecord {
             pictureDrawScope.draw(
                 density,
                 layoutDirection,
@@ -211,6 +209,18 @@ actual class GraphicsLayer internal constructor() {
             )
         }
         picture = pictureRecorder.finishRecordingAsPicture()
+    }
+
+    private fun trackRecord(block: () -> Unit) {
+        childDependenciesTracker.withTracking(
+            onDependencyRemoved = { it.onRemovedFromParentLayer() }
+        ) {
+            snapshotObserver.observeReads(
+                scope = this,
+                onValueChangedForScope = { it.requestDraw() },
+                block = block
+            )
+        }
     }
 
     private fun addSubLayer(graphicsLayer: GraphicsLayer) {

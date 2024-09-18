@@ -993,7 +993,7 @@ public final class androidx/compose/ui/graphics/SkiaColorFilter_skikoKt {
 }
 
 public final class androidx/compose/ui/graphics/SkiaGraphicsContext_skikoKt {
-	public static final fun GraphicsContext ()Landroidx/compose/ui/graphics/GraphicsContext;
+	public static final fun GraphicsContext (Landroidx/compose/runtime/snapshots/SnapshotStateObserver;)Landroidx/compose/ui/graphics/GraphicsContext;
 }
 
 public final class androidx/compose/ui/graphics/SkiaImageAsset_skikoKt {

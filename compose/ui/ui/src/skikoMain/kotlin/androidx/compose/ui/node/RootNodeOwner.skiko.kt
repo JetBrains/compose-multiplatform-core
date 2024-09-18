@@ -124,6 +124,7 @@ internal class RootNodeOwner(
     val dragAndDropOwner = DragAndDropOwner(platformContext.dragAndDropManager)
 
     private val rootSemanticsNode = EmptySemanticsModifier()
+    private val snapshotObserver = snapshotInvalidationTracker.snapshotObserver()
 
     private val rootModifier = EmptySemanticsElement(rootSemanticsNode)
         .focusProperties {
@@ -162,7 +163,6 @@ internal class RootNodeOwner(
         }
 
     private val rootForTest = PlatformRootForTestImpl()
-    private val snapshotObserver = snapshotInvalidationTracker.snapshotObserver()
     private val pointerInputEventProcessor = PointerInputEventProcessor(owner.root)
     private val measureAndLayoutDelegate = MeasureAndLayoutDelegate(owner.root)
     private var isDisposed = false
@@ -316,7 +316,7 @@ internal class RootNodeOwner(
         override val inputModeManager get() = platformContext.inputModeManager
         override val clipboardManager = PlatformClipboardManager()
         override val accessibilityManager = DefaultAccessibilityManager()
-        override val graphicsContext: GraphicsContext = GraphicsContext()
+        override val graphicsContext = GraphicsContext(this@RootNodeOwner.snapshotObserver.observer)
         override val textToolbar get() = platformContext.textToolbar
         override val autofillTree = AutofillTree()
         override val autofill: Autofill?  get() = null

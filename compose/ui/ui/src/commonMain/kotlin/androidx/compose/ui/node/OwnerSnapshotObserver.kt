@@ -25,7 +25,7 @@ import androidx.compose.runtime.snapshots.SnapshotStateObserver
 @Suppress("CallbackName") // TODO rename this and SnapshotStateObserver. b/173401548
 internal class OwnerSnapshotObserver(onChangedExecutor: (callback: () -> Unit) -> Unit) {
 
-    private val observer = SnapshotStateObserver(onChangedExecutor)
+    internal val observer = SnapshotStateObserver(onChangedExecutor)
 
     private val onCommitAffectingLookaheadMeasure: (LayoutNode) -> Unit = { layoutNode ->
         if (layoutNode.isValidOwnerScope) {

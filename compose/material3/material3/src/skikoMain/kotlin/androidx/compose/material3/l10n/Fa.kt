@@ -38,7 +38,7 @@ internal fun Translations.fa() = mapOf(
     Strings.DatePickerTitle to "انتخاب تاریخ",
     Strings.DatePickerHeadline to "تاریخ انتخابی",
     Strings.DatePickerSwitchToYearSelection to "رفتن به انتخاب سال",
-    Strings.DatePickerSwitchToDaySelection to "برای انتخاب سال، تند بکشید یا برای برگشتن به انتخاب روز، ضربه بزنید",
+    Strings.DatePickerSwitchToDaySelection to "برای انتخاب سال، تند بکشید یا برای برگشتن به انتخاب روز، تک‌ضرب بزنید",
     Strings.DatePickerSwitchToNextMonth to "تغییر به ماه بعدی",
     Strings.DatePickerSwitchToPreviousMonth to "تغییر به ماه قبلی",
     Strings.DatePickerNavigateToYearDescription to "‏پیمایش به سال %1\$s",

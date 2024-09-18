@@ -18,13 +18,9 @@ package androidx.compose.ui.graphics
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.layer.drawLayer
-import androidx.compose.ui.platform.LocalGraphicsContext
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.runSkikoComposeUiTest
 import androidx.compose.ui.unit.dp
@@ -34,34 +30,24 @@ import kotlin.test.assertEquals
 @ExperimentalTestApi
 class GraphicsLayerTest {
 
+    // TODO: Add test timeout once available
     @Test // Bug: https://youtrack.jetbrains.com/issue/CMP-6660
-    fun recordInvalidation() = runSkikoComposeUiTest {
-        var backgroundCompositions = 0
-        var foregroundCompositions = 0
+    fun layerDrawingWithRecording() = runSkikoComposeUiTest {
+        var drawCount = 0
         setContent {
-            val graphicsContext = LocalGraphicsContext.current
-            val graphicsLayer = remember { graphicsContext.createGraphicsLayer() }
+            val graphicsLayer = rememberGraphicsLayer()
             Box(Modifier.size(100.dp).drawWithContent {
-                backgroundCompositions++
-                graphicsLayer.record {
-                    this@drawWithContent.drawContent()
-                }
-            })
-            Box(Modifier.size(50.dp).drawBehind {
-                foregroundCompositions++
+                drawCount++
+                graphicsLayer.record { this@drawWithContent.drawContent() }
                 drawLayer(graphicsLayer)
             })
-            DisposableEffect(graphicsLayer) {
-                onDispose { graphicsContext.releaseGraphicsLayer(graphicsLayer) }
-            }
         }
         waitForIdle()
 
-        // UnconfinedTestDispatcher makes some difference here: instead of possible infinite
+        // UnconfinedTestDispatcher might make some difference here: instead of possible infinite
         // invalidation cycle, it resolves invalidations during the same render.
         // But even in this case, with incorrect behaviour composition counters won't be equal 1
 
-        assertEquals(1, backgroundCompositions)
-        assertEquals(1, foregroundCompositions)
+        assertEquals(1, drawCount)
     }
 }

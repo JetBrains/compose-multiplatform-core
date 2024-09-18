@@ -135,7 +135,7 @@ if(AndroidXComposePlugin.isMultiplatformEnabled(project)) {
 
             commonTest {
                 dependencies {
-                    implementation(kotlin("test"))
+                    implementation(libs.kotlinTest)
                 }
             }
 
@@ -163,14 +163,24 @@ if(AndroidXComposePlugin.isMultiplatformEnabled(project)) {
                 implementation(libs.junit)
             }
 
-            desktopTest {
-                resources.srcDirs += "src/desktopTest/res"
+            skikoTest {
+                dependsOn(commonTest)
                 dependencies {
                     implementation(project(":compose:ui:ui-test-junit4"))
+                }
+            }
+
+            desktopTest {
+                dependsOn(skikoTest)
+                resources.srcDirs += "src/desktopTest/res"
+                dependencies {
                     implementation(libs.junit)
                     implementation(libs.truth)
                     implementation(libs.skikoCurrentOs)
                 }
+            }
+            nativeTest {
+                dependsOn(skikoTest)
             }
 
             configureEach {

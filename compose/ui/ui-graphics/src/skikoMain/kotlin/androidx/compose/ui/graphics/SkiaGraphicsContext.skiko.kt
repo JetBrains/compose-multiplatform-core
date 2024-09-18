@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.graphics
 
+import androidx.compose.runtime.snapshots.SnapshotStateObserver
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.graphics.layer.GraphicsLayer
 import kotlin.js.JsName
@@ -25,12 +26,14 @@ import kotlin.js.JsName
  */
 @InternalComposeUiApi
 @JsName("createGraphicsContext")
-fun GraphicsContext(): GraphicsContext =
-    SkiaGraphicsContext()
+fun GraphicsContext(snapshotObserver: SnapshotStateObserver): GraphicsContext =
+    SkiaGraphicsContext(snapshotObserver)
 
-private class SkiaGraphicsContext : GraphicsContext {
+private class SkiaGraphicsContext(
+    private val snapshotObserver: SnapshotStateObserver
+) : GraphicsContext {
     override fun createGraphicsLayer(): GraphicsLayer {
-        return GraphicsLayer()
+        return GraphicsLayer(snapshotObserver)
     }
 
     override fun releaseGraphicsLayer(layer: GraphicsLayer) {
