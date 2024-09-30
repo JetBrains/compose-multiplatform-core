@@ -23,7 +23,6 @@ import androidx.compose.foundation.text.input.internal.TransformedTextFieldState
  * Initializes either an actual TextFieldMagnifierNode implementation or No-op node according to
  * whether magnifier is supported.
  */
-// TODO https://youtrack.jetbrains.com/issue/COMPOSE-737/TextField2.-Implement-textFieldMagnifierNode
 internal actual fun textFieldMagnifierNode(
     textFieldState: TransformedTextFieldState,
     textFieldSelectionState: TextFieldSelectionState,
