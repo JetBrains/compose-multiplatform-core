@@ -31,10 +31,11 @@ import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.uikit.utils.CMPAccessibilityContainer
 import androidx.compose.ui.uikit.utils.CMPAccessibilityElement
 import androidx.compose.ui.unit.toSize
-import androidx.compose.ui.viewinterop.NativeAccessibilityViewSemanticsKey
 import androidx.compose.ui.viewinterop.InteropWrappingView
+import androidx.compose.ui.viewinterop.NativeAccessibilityViewSemanticsKey
 import kotlin.coroutines.CoroutineContext
 import kotlin.time.measureTime
+import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.CValue
 import kotlinx.cinterop.ExportObjCClass
 import kotlinx.cinterop.readValue
@@ -81,17 +82,6 @@ import platform.darwin.NSObject
 private val DUMMY_UI_ACCESSIBILITY_CONTAINER = NSObject()
 
 /**
- * An interface for logging accessibility debug messages.
- */
-@ExperimentalComposeApi
-interface AccessibilityDebugLogger {
-    /**
-     * Logs the given [message].
-     */
-    fun log(message: Any?)
-}
-
-/**
  * Enum class representing different kinds of accessibility invalidation.
  */
 private enum class SemanticsTreeInvalidationKind {
@@ -133,7 +123,7 @@ private object CachedAccessibilityPropertyKeys {
  * resides.
  *
  */
-@OptIn(ExperimentalComposeApi::class)
+@OptIn(BetaInteropApi::class)
 @ExportObjCClass
 private class AccessibilityElement(
     private var semanticsNode: SemanticsNode,
@@ -851,7 +841,7 @@ private class AccessibilityElement(
  * https://github.com/flutter/engine/blob/main/shell/platform/darwin/ios/framework/Source/SemanticsObject.h
  *
  */
-@OptIn(ExperimentalComposeApi::class)
+@OptIn(BetaInteropApi::class)
 @ExportObjCClass
 private class AccessibilityContainer(
     /**
@@ -955,51 +945,55 @@ private class NodesSyncResult(
  * A sealed class that represents the options for syncing the Compose SemanticsNode tree with the iOS UIAccessibility tree.
  */
 @ExperimentalComposeApi
-sealed class AccessibilitySyncOptions(
-    internal val debugLogger: AccessibilityDebugLogger?
-) {
+enum class AccessibilitySyncOptions {
     /**
      * Never sync the tree.
      */
-    data object Never: AccessibilitySyncOptions(debugLogger = null)
+    Never,
 
     /**
      * Sync the tree only when the accessibility services are running.
-     *
-     * @param debugLogger Optional [AccessibilityDebugLogger] to log into the info about the
-     * accessibility tree syncing and interactions.
      */
-    class WhenRequiredByAccessibilityServices(debugLogger: AccessibilityDebugLogger?): AccessibilitySyncOptions(debugLogger)
+    WhenRequiredByAccessibilityServices,
 
     /**
      * Always sync the tree, can be quite handy for debugging and testing.
      * Be aware that there is a significant overhead associated with doing it that can degrade
      * the visual performance of the app.
-     *
-     * @param debugLogger Optional [AccessibilityDebugLogger] to log into the info about the
-     * accessibility tree syncing and interactions.
      */
-    class Always(debugLogger: AccessibilityDebugLogger?): AccessibilitySyncOptions(debugLogger = debugLogger)
+    Always
 }
+
+/**
+ * An interface for logging accessibility debug messages.
+ */
+internal interface AccessibilityDebugLogger {
+    /**
+     * Logs the given [message].
+     */
+    fun log(message: Any?)
+}
+
+private val accessibilityDebugLogger: AccessibilityDebugLogger? = null
+// Uncomment for debugging:
+// private val accessibilityDebugLogger = object : AccessibilityDebugLogger {
+//     override fun log(message: Any?) {
+//         if (message == null) {
+//             println()
+//         } else {
+//             println("[a11y]: $message")
+//         }
+//     }
+// }
 
 @OptIn(ExperimentalComposeApi::class)
 private val AccessibilitySyncOptions.shouldPerformSync
     get() =
         when (this) {
-            is AccessibilitySyncOptions.Never -> false
-            is AccessibilitySyncOptions.WhenRequiredByAccessibilityServices -> UIAccessibilityIsVoiceOverRunning()
-            is AccessibilitySyncOptions.Always -> true
+            AccessibilitySyncOptions.Never -> false
+            AccessibilitySyncOptions.WhenRequiredByAccessibilityServices -> UIAccessibilityIsVoiceOverRunning()
+            AccessibilitySyncOptions.Always -> true
         }
-
-@OptIn(ExperimentalComposeApi::class)
-private val AccessibilitySyncOptions.debugLoggerIfEnabled: AccessibilityDebugLogger?
-    get() =
-        if (shouldPerformSync) {
-            debugLogger
-        } else {
-            null
-        }
-
 
 /**
  * A class responsible for mediating between the tree of specific SemanticsOwner and the iOS accessibility tree.
@@ -1071,7 +1065,7 @@ internal class AccessibilityMediator(
     private val accessibilityElementsMap = mutableMapOf<Int, AccessibilityElement>()
 
     init {
-        getAccessibilitySyncOptions().debugLoggerIfEnabled?.log("AccessibilityMediator for ${view} created")
+        accessibilityDebugLogger?.log("AccessibilityMediator for $view created")
 
         coroutineScope.launch {
             // The main loop that listens for invalidations and performs the tree syncing
@@ -1089,11 +1083,7 @@ internal class AccessibilityMediator(
 
                 val shouldPerformSync = syncOptions.shouldPerformSync
 
-                debugLogger = if (shouldPerformSync) {
-                    syncOptions.debugLogger
-                } else {
-                    null
-                }
+                debugLogger = accessibilityDebugLogger.takeIf { shouldPerformSync }
 
                 if (shouldPerformSync) {
                     var result: NodesSyncResult
@@ -1218,7 +1208,7 @@ internal class AccessibilityMediator(
                 .filter {
                     it.isValid
                 }
-                .sortedByAccesibilityOrder()
+                .sortedByAccessibilityOrder()
 
             for (childNode in childSemanticsNodesInAccessibilityOrder) {
                 val childElement = traverseSemanticsNode(childNode)
@@ -1346,7 +1336,6 @@ internal class AccessibilityMediator(
  * Traverse the accessibility tree starting from [accessibilityObject] using the same(assumed) logic
  * as iOS Accessibility services, and prints its debug data.
  */
-@OptIn(ExperimentalComposeApi::class)
 private fun debugTraverse(debugLogger: AccessibilityDebugLogger, accessibilityObject: Any, depth: Int = 0) {
     val indent = " ".repeat(depth * 2)
 
@@ -1425,7 +1414,7 @@ private fun debugContainmentChain(accessibilityObject: Any): String {
  *
  * TODO: investigate if it's a bug, or some assumptions about the order are wrong.
  */
-private fun List<SemanticsNode>.sortedByAccesibilityOrder(): List<SemanticsNode> {
+private fun List<SemanticsNode>.sortedByAccessibilityOrder(): List<SemanticsNode> {
     return sortedWith { lhs, rhs ->
         val result = lhs.boundsInWindow.topLeft.y.compareTo(rhs.boundsInWindow.topLeft.y)
 

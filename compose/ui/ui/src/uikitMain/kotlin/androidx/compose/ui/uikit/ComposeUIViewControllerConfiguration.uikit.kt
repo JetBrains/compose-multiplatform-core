@@ -20,6 +20,7 @@ import androidx.compose.runtime.ExperimentalComposeApi
 import androidx.compose.ui.platform.AccessibilitySyncOptions
 import platform.UIKit.UIStatusBarAnimation
 import platform.UIKit.UIStatusBarStyle
+import platform.UIKit.UIViewController
 
 /**
  * Configuration of ComposeUIViewController behavior.
@@ -47,7 +48,7 @@ class ComposeUIViewControllerConfiguration {
      */
     @ExperimentalComposeApi
     var accessibilitySyncOptions: AccessibilitySyncOptions =
-        AccessibilitySyncOptions.WhenRequiredByAccessibilityServices(debugLogger = null)
+        AccessibilitySyncOptions.WhenRequiredByAccessibilityServices
         
     /**
      * Determines whether the Compose view should have an opaque background.
@@ -67,7 +68,7 @@ class ComposeUIViewControllerConfiguration {
 /**
  * Interface for UIViewController to allow injecting logic which otherwise is impossible due to ComposeUIViewController
  * implementation being internal.
- * All of those callbacks are invoked at the very end of overriden function and properties implementation.
+ * All of those callbacks are invoked at the very end of overridden function and properties implementation.
  * Default implementations do nothing and return Unit/null (indicating that UIKit default will be used).
  */
 interface ComposeUIViewControllerDelegate {
@@ -103,15 +104,11 @@ sealed interface OnFocusBehavior {
     /**
      * The Compose view will stay on the current position.
      */
-    object DoNothing : OnFocusBehavior
+    data object DoNothing : OnFocusBehavior
 
     /**
      * The Compose view will be panned in "y" coordinates.
      * A focusable element should be displayed above the keyboard.
      */
-    object FocusableAboveKeyboard : OnFocusBehavior
-
-    // TODO Better to control OnFocusBehavior with existing WindowInsets.
-    // Definition: object: FocusableBetweenInsets(insets: WindowInsets) : OnFocusBehavior
-    // Usage: onFocusBehavior = FocusableBetweenInsets(WindowInsets.ime.union(WindowInsets.systemBars))
+    data object FocusableAboveKeyboard : OnFocusBehavior
 }
