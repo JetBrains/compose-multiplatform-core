@@ -18,6 +18,7 @@ package androidx.compose.ui.graphics
 
 import androidx.compose.ui.test.InternalTestApi
 import androidx.compose.ui.test.junit4.DesktopScreenshotTestRule
+import androidx.compose.ui.test.junit4.ScreenshotTestRule
 import org.jetbrains.skia.Surface
 import org.junit.After
 import org.junit.Rule
@@ -47,5 +48,9 @@ abstract class DesktopGraphicsTest {
     @After
     fun teardown() {
         _surface?.close()
+    }
+
+    fun ScreenshotTestRule.snap(surface: Surface) {
+        assertImageAgainstGolden(surface.makeImageSnapshot())
     }
 }
