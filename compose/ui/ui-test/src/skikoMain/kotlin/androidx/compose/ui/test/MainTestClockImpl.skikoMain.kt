@@ -16,17 +16,13 @@
 
 package androidx.compose.ui.test
 
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestCoroutineScheduler
 
-@OptIn(ExperimentalCoroutinesApi::class)
 internal class MainTestClockImpl(
     testScheduler: TestCoroutineScheduler,
-    frameDelayMillis: Long,
-    onTimeAdvanced: (Long) -> Unit
+    frameDelayMillis: Long
 ) : AbstractMainTestClock(
     testScheduler = testScheduler,
     frameDelayMillis = frameDelayMillis,
-    runOnUiThread = ::runOnUiThread,
-    onTimeAdvanced = onTimeAdvanced
+    runOnUiThread = ::runOnUiThread
 )

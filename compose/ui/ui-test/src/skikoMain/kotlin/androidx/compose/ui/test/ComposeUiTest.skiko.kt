@@ -163,8 +163,7 @@ class SkikoComposeUiTest @InternalTestApi constructor(
     private val testScope = TestScope(coroutineDispatcher)
     override val mainClock: MainTestClock = MainTestClockImpl(
         testScheduler = coroutineDispatcher.scheduler,
-        frameDelayMillis = FRAME_DELAY_MILLIS,
-        onTimeAdvanced = ::render
+        frameDelayMillis = FRAME_DELAY_MILLIS
     )
     private val uncaughtExceptionHandler = UncaughtExceptionHandler()
     private val infiniteAnimationPolicy = object : InfiniteAnimationPolicy {
