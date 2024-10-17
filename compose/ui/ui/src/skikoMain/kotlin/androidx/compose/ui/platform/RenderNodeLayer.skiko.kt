@@ -66,6 +66,7 @@ import org.jetbrains.skia.ShadowUtils
 internal class RenderNodeLayer(
     private var density: Density,
     measureDrawBounds: Boolean,
+    private val requiresStateWorkaround: () -> Boolean,
     private val invalidateParentLayer: () -> Unit,
     private val drawBlock: (canvas: Canvas, parentLayer: GraphicsLayer?) -> Unit,
     private val onDestroy: () -> Unit = {}
@@ -218,12 +219,14 @@ internal class RenderNodeLayer(
             picture?.close()
             picture = null
         }
-        drawState.value = Unit
+        if (requiresStateWorkaround()) {
+            drawState.value = Unit
+        }
         invalidateParentLayer()
     }
 
     override fun drawLayer(canvas: Canvas, parentLayer: GraphicsLayer?) {
-        if (parentLayer != null) {
+        if (requiresStateWorkaround() && parentLayer != null) {
             // Read the state because any changes to the state should trigger re-drawing of [GraphicsLayer].
             drawState.value
         }

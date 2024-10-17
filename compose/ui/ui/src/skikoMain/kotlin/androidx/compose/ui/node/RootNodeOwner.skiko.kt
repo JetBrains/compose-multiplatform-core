@@ -475,6 +475,7 @@ internal class RootNodeOwner(
                         density
                     },
                     measureDrawBounds = platformContext.measureDrawLayerBounds,
+                    requiresStateWorkaround = { graphicsContext.activeGraphicsLayersCount > 0 },
                     invalidateParentLayer = {
                         invalidateParentLayer()
                         snapshotInvalidationTracker.requestDraw()

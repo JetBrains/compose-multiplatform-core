@@ -596,6 +596,7 @@ class RenderNodeLayerTest {
     ) = RenderNodeLayer(
         Density(1f, 1f),
         measureDrawBounds = false,
+        requiresStateWorkaround = { false },
         invalidateParentLayer = invalidateParentLayer,
         drawBlock = drawBlock,
     )
