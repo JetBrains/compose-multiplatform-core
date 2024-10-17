@@ -127,13 +127,14 @@ internal class ComposeHostingViewController(
         get() {
             // Modern: https://developer.apple.com/documentation/uikit/uiwindowscene/3198088-interfaceorientation?language=objc
             // Deprecated: https://developer.apple.com/documentation/uikit/uiapplication/1623026-statusbarorientation?language=objc
-            return if (available(OS.Ios to OSVersion(13))) {
-                view.window?.windowScene?.interfaceOrientation?.let {
-                    InterfaceOrientation.getByRawValue(it)
+            return InterfaceOrientation.getByRawValue(
+                if (available(OS.Ios to OSVersion(13))) {
+                    view.window?.windowScene?.interfaceOrientation
+                        ?: UIApplication.sharedApplication.statusBarOrientation
+                } else {
+                    UIApplication.sharedApplication.statusBarOrientation
                 }
-            } else {
-                InterfaceOrientation.getByRawValue(UIApplication.sharedApplication.statusBarOrientation)
-            }
+            )
         }
 
     override fun preferredStatusBarStyle(): UIStatusBarStyle =
@@ -184,11 +185,15 @@ internal class ComposeHostingViewController(
             view
         }
 
+        updateInterfaceOrientationState()
+
+        windowContext.setWindowContainer(windowContainer)
+    }
+
+    private fun updateInterfaceOrientationState() {
         currentInterfaceOrientation?.let {
             interfaceOrientationState.value = it
         }
-
-        windowContext.setWindowContainer(windowContainer)
     }
 
     override fun viewWillTransitionToSize(
@@ -196,6 +201,8 @@ internal class ComposeHostingViewController(
         withTransitionCoordinator: UIViewControllerTransitionCoordinatorProtocol
     ) {
         super.viewWillTransitionToSize(size, withTransitionCoordinator)
+
+        updateInterfaceOrientationState()
 
         if (isInsideSwiftUI || presentingViewController != null) {
             // SwiftUI will do full layout and scene constraints update on each frame of orientation change animation
