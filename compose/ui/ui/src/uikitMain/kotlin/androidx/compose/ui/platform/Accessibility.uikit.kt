@@ -20,21 +20,26 @@ import androidx.compose.runtime.ExperimentalComposeApi
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.node.LayoutNode
+import androidx.compose.ui.semantics.AccessibilityAction
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.ScrollAxisRange
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsConfiguration
 import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.semantics.SemanticsOwner
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.SemanticsProperties.HideFromAccessibility
+import androidx.compose.ui.semantics.SemanticsPropertyKey
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.uikit.utils.CMPAccessibilityContainer
 import androidx.compose.ui.uikit.utils.CMPAccessibilityElement
 import androidx.compose.ui.unit.toSize
-import androidx.compose.ui.viewinterop.NativeAccessibilityViewSemanticsKey
 import androidx.compose.ui.viewinterop.InteropWrappingView
+import androidx.compose.ui.viewinterop.NativeAccessibilityViewSemanticsKey
 import kotlin.coroutines.CoroutineContext
 import kotlin.time.measureTime
+import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.CValue
 import kotlinx.cinterop.ExportObjCClass
 import kotlinx.cinterop.readValue
@@ -133,7 +138,7 @@ private object CachedAccessibilityPropertyKeys {
  * resides.
  *
  */
-@OptIn(ExperimentalComposeApi::class)
+@OptIn(ExperimentalComposeApi::class, BetaInteropApi::class)
 @ExportObjCClass
 private class AccessibilityElement(
     private var semanticsNode: SemanticsNode,
@@ -407,10 +412,12 @@ private class AccessibilityElement(
 
         val unclippedRect = semanticsNode.unclippedBoundsInWindow
 
-        mediator.debugLogger?.log(listOf(
-            "scrollableAncestorRect: $scrollableAncestorRect",
-            "unclippedRect: $unclippedRect"
-        ))
+        mediator.debugLogger?.log(
+            listOf(
+                "scrollableAncestorRect: $scrollableAncestorRect",
+                "unclippedRect: $unclippedRect"
+            )
+        )
 
         // TODO: consider safe areas?
         // TODO: is RTL working properly?
@@ -446,7 +453,7 @@ private class AccessibilityElement(
             return
         }
 
-        // if has scrollBy action, invoke it, otherwise try to scroll the parent
+        // if it has scrollBy action, invoke it, otherwise try to scroll the parent
         val action = cachedConfig.getOrNull(SemanticsActions.ScrollBy)?.action
 
         if (action != null) {
@@ -456,90 +463,95 @@ private class AccessibilityElement(
         }
     }
 
-    private fun scrollIfPossible(direction: UIAccessibilityScrollDirection): AccessibilityElement? {
+    private fun scrollIfPossible(
+        direction: UIAccessibilityScrollDirection
+    ): AccessibilityScrollEventResult? {
         val config = cachedConfig
 
-        when (direction) {
+        val deltaX: Int
+        val deltaY: Int
+        val isForward: Boolean
+        val pageAction: SemanticsPropertyKey<AccessibilityAction<() -> Boolean>>
+        val rangeProperty = if (direction.isHorizontal) {
+            SemanticsProperties.HorizontalScrollAxisRange
+        } else {
+            SemanticsProperties.VerticalScrollAxisRange
+        }
+
+        // TODO: is RTL working properly?
+        val axisRange = config.getOrNull(rangeProperty)
+        val normalisedDirection = if (axisRange?.reverseScrolling == true) {
+            when (direction) {
+                UIAccessibilityScrollDirectionUp -> UIAccessibilityScrollDirectionDown
+                UIAccessibilityScrollDirectionDown -> UIAccessibilityScrollDirectionUp
+                UIAccessibilityScrollDirectionRight -> UIAccessibilityScrollDirectionLeft
+                UIAccessibilityScrollDirectionLeft -> UIAccessibilityScrollDirectionRight
+                else -> return null
+            }
+        } else {
+            direction
+        }
+
+        when (normalisedDirection) {
             UIAccessibilityScrollDirectionUp -> {
-                var result = config.getOrNull(SemanticsActions.PageUp)?.action?.invoke()
-
-                if (result != null) {
-                    return if (result) this else null
-                }
-
-                result = config.getOrNull(SemanticsActions.ScrollBy)?.action?.invoke(
-                    0f,
-                    -semanticsNode.size.height.toFloat()
-                )
-
-                if (result != null) {
-                    return if (result) this else null
-                }
+                deltaX = 0
+                deltaY = -semanticsNode.size.height
+                isForward = false
+                pageAction = SemanticsActions.PageUp
             }
 
             UIAccessibilityScrollDirectionDown -> {
-                var result = config.getOrNull(SemanticsActions.PageDown)?.action?.invoke()
-
-                if (result != null) {
-                    return if (result) this else null
-                }
-
-                result = config.getOrNull(SemanticsActions.ScrollBy)?.action?.invoke(
-                    0f,
-                    semanticsNode.size.height.toFloat()
-                )
-
-                if (result != null) {
-                    return if (result) this else null
-                }
-            }
-
-            UIAccessibilityScrollDirectionLeft -> {
-                var result = config.getOrNull(SemanticsActions.PageLeft)?.action?.invoke()
-
-                if (result != null) {
-                    return if (result) this else null
-                }
-
-                // TODO: check RTL support
-                result = config.getOrNull(SemanticsActions.ScrollBy)?.action?.invoke(
-                    -semanticsNode.size.width.toFloat(),
-                    0f,
-                )
-
-                if (result != null) {
-                    return if (result) this else null
-                }
+                deltaX = 0
+                deltaY = semanticsNode.size.height
+                isForward = true
+                pageAction = SemanticsActions.PageDown
             }
 
             UIAccessibilityScrollDirectionRight -> {
-                var result = config.getOrNull(SemanticsActions.PageRight)?.action?.invoke()
-
-                if (result != null) {
-                    return if (result) this else null
-                }
-
-                // TODO: check RTL support
-                result = config.getOrNull(SemanticsActions.ScrollBy)?.action?.invoke(
-                    semanticsNode.size.width.toFloat(),
-                    0f,
-                )
-
-                if (result != null) {
-                    return if (result) this else null
-                }
+                deltaX = -semanticsNode.size.width
+                deltaY = 0
+                isForward = false
+                pageAction = SemanticsActions.PageLeft
             }
 
-            else -> {
-                // TODO: UIAccessibilityScrollDirectionPrevious, UIAccessibilityScrollDirectionNext
+            UIAccessibilityScrollDirectionLeft -> {
+                deltaX = semanticsNode.size.width
+                deltaY = 0
+                isForward = true
+                pageAction = SemanticsActions.PageRight
             }
+
+            else -> return null
         }
 
-        parent?.let {
-            return it.scrollIfPossible(direction)
-        }
+        val succeeded = config.getOrNull(pageAction)?.action?.invoke()
+            ?: config.getOrNull(SemanticsActions.ScrollBy)
+                ?.action
+                ?.invoke(deltaX.toFloat(), deltaY.toFloat())
 
-        return null
+        return when (succeeded) {
+            true -> AccessibilityScrollEventResult(
+                announceMessage = {
+                    announceMessage(isForward, cachedConfig.getOrNull(rangeProperty))
+                }
+            )
+
+            false -> null
+            null -> parent?.scrollIfPossible(direction)
+        }
+    }
+
+    private fun announceMessage(isForward: Boolean, range: ScrollAxisRange?): String? {
+        range ?: return null
+        return if (range.value() == 0f) {
+            getString(Strings.FirstPage)
+        } else if (range.value() == range.maxValue()) {
+            getString(Strings.LastPage)
+        } else if (isForward) {
+            getString(Strings.NextPage)
+        } else {
+            getString(Strings.PreviousPage)
+        }
     }
 
     override fun accessibilityScroll(direction: UIAccessibilityScrollDirection): Boolean {
@@ -554,9 +566,10 @@ private class AccessibilityElement(
         val frame = semanticsNode.boundsInWindow
         val approximateScrollAnimationDuration = 350L
 
-        val scrollableElement = scrollIfPossible(direction)
-        return if (scrollableElement != null) {
+        val result = scrollIfPossible(direction)
+        return if (result != null) {
             mediator.notifyScrollCompleted(
+                scrollResult = result,
                 delay = approximateScrollAnimationDuration,
                 focusedNode = semanticsNode,
                 focusedRectInWindow = frame
@@ -571,7 +584,7 @@ private class AccessibilityElement(
         getOrElse(CachedAccessibilityPropertyKeys.isAccessibilityElement) {
             val config = cachedConfig
 
-            if (config.contains(SemanticsProperties.InvisibleToUser)) {
+            if (config.contains(HideFromAccessibility)) {
                 false
             } else {
                 // TODO: investigate if it can it be one of those _and_ contain properties that should
@@ -851,7 +864,7 @@ private class AccessibilityElement(
  * https://github.com/flutter/engine/blob/main/shell/platform/darwin/ios/framework/Source/SemanticsObject.h
  *
  */
-@OptIn(ExperimentalComposeApi::class)
+@OptIn(ExperimentalComposeApi::class, BetaInteropApi::class)
 @ExportObjCClass
 private class AccessibilityContainer(
     /**
@@ -1071,7 +1084,7 @@ internal class AccessibilityMediator(
     private val accessibilityElementsMap = mutableMapOf<Int, AccessibilityElement>()
 
     init {
-        getAccessibilitySyncOptions().debugLoggerIfEnabled?.log("AccessibilityMediator for ${view} created")
+        getAccessibilitySyncOptions().debugLoggerIfEnabled?.log("AccessibilityMediator for $view created")
 
         coroutineScope.launch {
             // The main loop that listens for invalidations and performs the tree syncing
@@ -1121,6 +1134,7 @@ internal class AccessibilityMediator(
     }
 
     fun notifyScrollCompleted(
+        scrollResult: AccessibilityScrollEventResult,
         delay: Long,
         focusedNode: SemanticsNode,
         focusedRectInWindow: Rect
@@ -1134,7 +1148,7 @@ internal class AccessibilityMediator(
 
             UIAccessibilityPostNotification(
                 UIAccessibilityPageScrolledNotification,
-                null
+                scrollResult.announceMessage()
             )
 
             debugLogger?.log("PageScrolled")
@@ -1218,7 +1232,7 @@ internal class AccessibilityMediator(
                 .filter {
                     it.isValid
                 }
-                .sortedByAccesibilityOrder()
+                .sortedByAccessibilityOrder()
 
             for (childNode in childSemanticsNodesInAccessibilityOrder) {
                 val childElement = traverseSemanticsNode(childNode)
@@ -1425,7 +1439,7 @@ private fun debugContainmentChain(accessibilityObject: Any): String {
  *
  * TODO: investigate if it's a bug, or some assumptions about the order are wrong.
  */
-private fun List<SemanticsNode>.sortedByAccesibilityOrder(): List<SemanticsNode> {
+private fun List<SemanticsNode>.sortedByAccessibilityOrder(): List<SemanticsNode> {
     return sortedWith { lhs, rhs ->
         val result = lhs.boundsInWindow.topLeft.y.compareTo(rhs.boundsInWindow.topLeft.y)
 
@@ -1463,3 +1477,10 @@ private val SemanticsNode.scrollableByAncestor: SemanticsNode?
 
         return null
     }
+
+private val UIAccessibilityScrollDirection.isHorizontal get() =
+    this == UIAccessibilityScrollDirectionRight || this == UIAccessibilityScrollDirectionLeft
+
+internal data class AccessibilityScrollEventResult(
+    val announceMessage: () -> String?,
+)
