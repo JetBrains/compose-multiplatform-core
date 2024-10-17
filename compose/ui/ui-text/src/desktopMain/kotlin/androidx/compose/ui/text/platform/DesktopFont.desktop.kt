@@ -27,6 +27,7 @@ import org.jetbrains.skia.FontWidth
 
 actual sealed class PlatformFont : Font {
     actual abstract val identity: String
+    actual abstract val variationSettings: FontVariation.Settings
     internal actual val cacheKey: String
         get() = "${this::class.qualifiedName}|$identity|weight=${weight.weight}|style=$style"
 }
@@ -47,7 +48,8 @@ actual sealed class PlatformFont : Font {
 class ResourceFont internal constructor(
     val name: String,
     override val weight: FontWeight = FontWeight.Normal,
-    override val style: FontStyle = FontStyle.Normal
+    override val style: FontStyle = FontStyle.Normal,
+    override val variationSettings: FontVariation.Settings = FontVariation.Settings(weight, style),
 ) : PlatformFont() {
     override val identity
         get() = name
@@ -63,18 +65,20 @@ class ResourceFont internal constructor(
 
         if (name != other.name) return false
         if (weight != other.weight) return false
-        return style == other.style
+        if (style != other.style) return false
+        return variationSettings.settings == other.variationSettings.settings
     }
 
     override fun hashCode(): Int {
         var result = name.hashCode()
         result = 31 * result + weight.hashCode()
         result = 31 * result + style.hashCode()
+        result = 31 * result + variationSettings.hashCode()
         return result
     }
 
     override fun toString(): String {
-        return "ResourceFont(name='$name', weight=$weight, style=$style)"
+        return "ResourceFont(name='$name', weight=$weight, style=$style, variationSettings=${variationSettings.settings})"
     }
 }
 
@@ -93,8 +97,9 @@ class ResourceFont internal constructor(
 fun Font(
     resource: String,
     weight: FontWeight = FontWeight.Normal,
-    style: FontStyle = FontStyle.Normal
-): Font = ResourceFont(resource, weight, style)
+    style: FontStyle = FontStyle.Normal,
+    variationSettings: FontVariation.Settings = FontVariation.Settings(weight, style)
+): Font = ResourceFont(resource, weight, style, variationSettings)
 
 /**
  * Defines a Font using a file path.
@@ -112,6 +117,7 @@ class FileFont internal constructor(
     val file: File,
     override val weight: FontWeight = FontWeight.Normal,
     override val style: FontStyle = FontStyle.Normal,
+    override val variationSettings: FontVariation.Settings = FontVariation.Settings(weight, style),
 ) : PlatformFont() {
     override val identity
         get() = file.toString()
@@ -127,18 +133,20 @@ class FileFont internal constructor(
 
         if (file != other.file) return false
         if (weight != other.weight) return false
-        return style == other.style
+        if (style != other.style) return false
+        return variationSettings.settings == other.variationSettings.settings
     }
 
     override fun hashCode(): Int {
         var result = file.hashCode()
         result = 31 * result + weight.hashCode()
         result = 31 * result + style.hashCode()
+        result = 31 * result + variationSettings.hashCode()
         return result
     }
 
     override fun toString(): String {
-        return "FileFont(file=$file, weight=$weight, style=$style)"
+        return "FileFont(file=$file, weight=$weight, style=$style, variationSettings=${variationSettings.settings})"
     }
 }
 
@@ -157,14 +165,15 @@ class FileFont internal constructor(
 fun Font(
     file: File,
     weight: FontWeight = FontWeight.Normal,
-    style: FontStyle = FontStyle.Normal
-): Font = FileFont(file, weight, style)
+    style: FontStyle = FontStyle.Normal,
+    variationSettings: FontVariation.Settings = FontVariation.Settings(weight, style)
+): Font = FileFont(file, weight, style, variationSettings)
 
 internal actual fun loadTypeface(font: Font): SkTypeface {
     if (font !is PlatformFont) {
         throw IllegalArgumentException("Unsupported font type: $font")
     }
-    return when (font) {
+    val typeface = when (font) {
         is ResourceFont -> typefaceResource(font.name)
         // TODO: replace with FontMgr.makeFromFile(font.file.toString())
         is FileFont -> FontMgr.default.makeFromFile(font.file.toString())
@@ -172,6 +181,7 @@ internal actual fun loadTypeface(font: Font): SkTypeface {
         is SystemFont -> FontMgr.default.matchFamilyStyle(font.identity, font.skFontStyle)
     } ?: (FontMgr.default.legacyMakeTypeface(font.identity, font.skFontStyle)
         ?: error("loadTypeface legacyMakeTypeface failed"))
+    return typeface.cloneWithVariationSettings(font.variationSettings)
 }
 
 private fun typefaceResource(resourceName: String): SkTypeface {

@@ -16,13 +16,17 @@
 
 package androidx.compose.mpp.demo.components.text
 
-import androidx.compose.mpp.demo.Screen
+import kotlinx.cinterop.readBytes
+import platform.Foundation.NSBundle
+import platform.Foundation.NSData
+import platform.Foundation.dataWithContentsOfFile
 
-val TextDemos = Screen.Selection(
-    "Text",
-    Screen.Example("FontFamilies") { FontFamilies() },
-    Screen.Example("VariableFonts") { VariableFonts() },
-    Screen.Example("FontRasterization") { FontRasterization() },
-    Screen.Example("LineHeightStyle") { LineHeightStyleDemo() },
-    Screen.Example("TextDirection") { TextDirection() },
-)
+actual suspend fun loadResource(file: String): ByteArray? {
+    val lastDotIndex = file.lastIndexOf('.')
+    val name = file.substring(0, lastDotIndex)
+    val extension = file.substring(lastDotIndex + 1)
+    val filePath = NSBundle.mainBundle.pathForResource(name, extension)
+    val fileData = filePath?.let { NSData.dataWithContentsOfFile(it) }
+        ?: throw Error("failed reading $file")
+    return fileData.bytes!!.readBytes(fileData.length.toInt())
+}

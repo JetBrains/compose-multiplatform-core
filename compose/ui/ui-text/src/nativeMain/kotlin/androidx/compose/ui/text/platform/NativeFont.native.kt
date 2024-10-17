@@ -16,8 +16,8 @@
 package androidx.compose.ui.text.platform
 
 import kotlin.native.Platform as NativePlatform
-import org.jetbrains.skia.Typeface as SkTypeface
 import org.jetbrains.skia.FontStyle as SkFontStyle
+import org.jetbrains.skia.Typeface as SkTypeface
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontStyle
 import org.jetbrains.skia.Data
@@ -37,7 +37,7 @@ internal actual fun loadTypeface(font: Font): SkTypeface {
             ?: error("loadTypeface legacyMakeTypeface failed")
         // TODO: compilation fails without `else` see https://youtrack.jetbrains.com/issue/KT-43875
         else -> throw IllegalArgumentException("Unsupported font type: $font")
-    }
+    }.cloneWithVariationSettings(font.variationSettings)
 }
 
 private val Font.skFontStyle: SkFontStyle
