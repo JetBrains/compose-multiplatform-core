@@ -24,8 +24,7 @@ import kotlinx.coroutines.test.TestCoroutineScheduler
 internal abstract class AbstractMainTestClock(
     private val testScheduler: TestCoroutineScheduler,
     private val frameDelayMillis: Long,
-    private val runOnUiThread: (action: () -> Unit) -> Unit,
-    private val onTimeAdvanced: ((currentTime: Long) -> Unit)? = null,
+    private val runOnUiThread: (action: () -> Unit) -> Unit
 ) : MainTestClock {
 
     override val currentTime: Long
@@ -67,8 +66,6 @@ internal abstract class AbstractMainTestClock(
             testScheduler.advanceTimeBy(millis)
             // So finish with a call to runCurrent() to run all tasks at the new time
             testScheduler.runCurrent()
-
-            onTimeAdvanced?.invoke(currentTime)
         }
     }
 }
