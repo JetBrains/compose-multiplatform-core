@@ -16,11 +16,16 @@
 
 package androidx.compose.foundation.selection
 
+import androidx.compose.foundation.Indication
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.key.Key.Companion.Spacebar
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.state.ToggleableState
 
 private val SPACE_KEY_CODE = Spacebar.keyCode
 /**
@@ -32,3 +37,37 @@ internal actual val KeyEvent.isToggle: Boolean
         SPACE_KEY_CODE -> true
         else -> false
     }
+
+@Deprecated("Maintained for binary compatibility", level = DeprecationLevel.HIDDEN)
+fun Modifier.toggleable(
+    value: Boolean,
+    interactionSource: MutableInteractionSource,
+    indication: Indication?,
+    enabled: Boolean = true,
+    role: Role? = null,
+    onValueChange: (Boolean) -> Unit
+): Modifier = toggleable(
+    value = value,
+    interactionSource = interactionSource as MutableInteractionSource?,
+    indication = indication,
+    enabled = enabled,
+    role = role,
+    onValueChange = onValueChange
+)
+
+@Deprecated("Maintained for binary compatibility", level = DeprecationLevel.HIDDEN)
+fun Modifier.triStateToggleable(
+    state: ToggleableState,
+    interactionSource: MutableInteractionSource,
+    indication: Indication?,
+    enabled: Boolean = true,
+    role: Role? = null,
+    onClick: () -> Unit
+): Modifier = triStateToggleable(
+    state = state,
+    interactionSource = interactionSource as MutableInteractionSource?,
+    indication = indication,
+    enabled = enabled,
+    role = role,
+    onClick = onClick
+)
