@@ -299,8 +299,7 @@ internal class ComposeTransferHandler(private val rootContainer: JComponent) : T
                 0,
                 false
             ),
-            // This seems to be ignored, and the initial action is MOVE regardless
-            MOVE
+            transferData.initialAction.awtAction
         )
     }
 
