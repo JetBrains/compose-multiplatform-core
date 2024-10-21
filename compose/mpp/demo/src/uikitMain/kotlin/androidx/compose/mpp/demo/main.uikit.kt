@@ -1,6 +1,8 @@
 // Use `xcodegen` first, then `open ./SkikoSample.xcodeproj` and then Run button in XCode.
 package androidx.compose.mpp.demo
 
+import androidx.compose.mpp.demo.bugs.IosBugs
+import androidx.compose.mpp.demo.bugs.StartRecompositionCheck
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ExperimentalComposeApi
 import androidx.compose.runtime.remember
@@ -9,14 +11,6 @@ import androidx.compose.ui.main.defaultUIKitMain
 import androidx.compose.ui.platform.AccessibilityDebugLogger
 import androidx.compose.ui.platform.AccessibilitySyncOptions
 import androidx.compose.ui.window.ComposeUIViewController
-import androidx.compose.mpp.demo.bugs.IosBugs
-import androidx.compose.mpp.demo.bugs.StartRecompositionCheck
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.uikit.ComposeUIViewControllerDelegate
-import platform.UIKit.UIStatusBarAnimation
-import platform.UIKit.UIStatusBarStyle
 import platform.UIKit.UIViewController
 
 @OptIn(ExperimentalComposeApi::class, ExperimentalComposeUiApi::class)
@@ -34,17 +28,6 @@ fun main(vararg args: String) {
                 }
             }
         })
-
-        delegate = object : ComposeUIViewControllerDelegate {
-            override val preferredStatusBarStyle: UIStatusBarStyle?
-                get() = preferredStatusBarStyleValue
-
-            override val prefersStatusBarHidden: Boolean?
-                get() = prefersStatusBarHiddenValue
-
-            override val preferredStatysBarAnimation: UIStatusBarAnimation?
-                get() = preferredStatysBarAnimationValue
-        }
     }) {
         IosDemo(arg)
     })

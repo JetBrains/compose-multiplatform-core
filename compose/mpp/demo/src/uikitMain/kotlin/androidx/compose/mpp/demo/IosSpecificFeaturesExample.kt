@@ -55,7 +55,6 @@ val IosSpecificFeatures = Screen.Selection(
     LazyColumnWithInteropViewsExample,
     AccessibilityLiveRegionExample,
     InteropViewAndSemanticsConfigMerge,
-    StatusBarStateExample,
     InteropExample,
     ReusableMapsExample,
     UpdatableInteropPropertiesExample

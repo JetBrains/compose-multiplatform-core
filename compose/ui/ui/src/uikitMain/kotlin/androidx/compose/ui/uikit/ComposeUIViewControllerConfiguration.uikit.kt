@@ -20,6 +20,7 @@ import androidx.compose.runtime.ExperimentalComposeApi
 import androidx.compose.ui.platform.AccessibilitySyncOptions
 import platform.UIKit.UIStatusBarAnimation
 import platform.UIKit.UIStatusBarStyle
+import platform.UIKit.UIViewController
 
 /**
  * Configuration of ComposeUIViewController behavior.
@@ -34,6 +35,12 @@ class ComposeUIViewControllerConfiguration {
      * Reassign this property with an object implementing [ComposeUIViewControllerDelegate] to interact with APIs
      * that otherwise would require subclassing internal implementation of [UIViewController], which is impossible.
      */
+    @Deprecated(
+        message = "Use parent view controller to override the methods of the UIViewController class." +
+            "Read more about child-parent view controller relationships here:" +
+            "https://developer.apple.com/documentation/uikit/uiviewcontroller#1652844"
+    )
+    @Suppress("DEPRECATION")
     var delegate: ComposeUIViewControllerDelegate = object : ComposeUIViewControllerDelegate {}
 
     @ExperimentalComposeApi
@@ -48,7 +55,7 @@ class ComposeUIViewControllerConfiguration {
     @ExperimentalComposeApi
     var accessibilitySyncOptions: AccessibilitySyncOptions =
         AccessibilitySyncOptions.WhenRequiredByAccessibilityServices(debugLogger = null)
-        
+
     /**
      * Determines whether the Compose view should have an opaque background.
      * Warning: disabling opaque layer may affect performance.
@@ -67,9 +74,14 @@ class ComposeUIViewControllerConfiguration {
 /**
  * Interface for UIViewController to allow injecting logic which otherwise is impossible due to ComposeUIViewController
  * implementation being internal.
- * All of those callbacks are invoked at the very end of overriden function and properties implementation.
+ * All of those callbacks are invoked at the very end of overridden function and properties implementation.
  * Default implementations do nothing and return Unit/null (indicating that UIKit default will be used).
  */
+@Deprecated(
+    message = "Use parent view controller to override the methods of the UIViewController class." +
+        "Read more about child-parent view controller relationships here:" +
+        "https://developer.apple.com/documentation/uikit/uiviewcontroller#1652844"
+)
 interface ComposeUIViewControllerDelegate {
     /**
      * https://developer.apple.com/documentation/uikit/uiviewcontroller/1621416-preferredstatusbarstyle?language=objc
@@ -110,8 +122,4 @@ sealed interface OnFocusBehavior {
      * A focusable element should be displayed above the keyboard.
      */
     object FocusableAboveKeyboard : OnFocusBehavior
-
-    // TODO Better to control OnFocusBehavior with existing WindowInsets.
-    // Definition: object: FocusableBetweenInsets(insets: WindowInsets) : OnFocusBehavior
-    // Usage: onFocusBehavior = FocusableBetweenInsets(WindowInsets.ime.union(WindowInsets.systemBars))
 }
