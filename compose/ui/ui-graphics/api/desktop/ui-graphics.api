@@ -1003,6 +1003,7 @@ public final class androidx/compose/ui/graphics/SkiaGraphicsContext : androidx/c
 	public fun <init> ()V
 	public fun createGraphicsLayer ()Landroidx/compose/ui/graphics/layer/GraphicsLayer;
 	public final fun dispose ()V
+	public final fun getActiveGraphicsLayersCount ()I
 	public fun releaseGraphicsLayer (Landroidx/compose/ui/graphics/layer/GraphicsLayer;)V
 }
 

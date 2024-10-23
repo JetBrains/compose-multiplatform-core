@@ -26,6 +26,10 @@ class SkiaGraphicsContext() : GraphicsContext {
         command()
     }
 
+    // Temporary workaround to disable state tracking workaround inside old internal layers
+    var activeGraphicsLayersCount = 0
+        private set
+
     init {
         snapshotObserver.start()
     }
@@ -36,10 +40,14 @@ class SkiaGraphicsContext() : GraphicsContext {
     }
 
     override fun createGraphicsLayer(): GraphicsLayer {
+        activeGraphicsLayersCount++
         return GraphicsLayer(snapshotObserver)
     }
 
     override fun releaseGraphicsLayer(layer: GraphicsLayer) {
-        layer.release()
+        if (!layer.isReleased) {
+            activeGraphicsLayersCount--
+            layer.release()
+        }
     }
 }
