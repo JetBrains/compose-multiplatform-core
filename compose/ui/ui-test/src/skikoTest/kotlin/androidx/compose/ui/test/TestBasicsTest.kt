@@ -232,6 +232,22 @@ class TestBasicsTest {
     }
 
     @Test
+    fun advancingClockByLessThanFrameDoesNotRecompose() = runComposeUiTest {
+        mainClock.autoAdvance = false
+        var value by mutableIntStateOf(1)
+        var compositionValue = 0
+        setContent {
+            compositionValue = value
+        }
+        assertEquals(1, compositionValue)
+        value = 2
+        mainClock.advanceTimeBy(1, ignoreFrameDuration = true)
+        assertEquals(1, compositionValue)
+        mainClock.advanceTimeByFrame()
+        assertEquals(2, compositionValue)
+    }
+
+    @Test
     fun launchedEffectsRunAfterComposition() = runComposeUiTest {
         val actions = mutableListOf<String>()
         setContent {
