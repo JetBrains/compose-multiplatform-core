@@ -41,6 +41,13 @@ actual class DragAndDropTransferData(
     val supportedActions: Iterable<DragAndDropTransferAction>,
 
     /**
+     * The initial transfer action when the drag starts; must be one of the values in
+     * [supportedActions].
+     */
+    @property:ExperimentalComposeUiApi
+    val initialAction: DragAndDropTransferAction,
+
+    /**
      * The offset of the pointer relative to the drag decoration.
      */
     @property:ExperimentalComposeUiApi
