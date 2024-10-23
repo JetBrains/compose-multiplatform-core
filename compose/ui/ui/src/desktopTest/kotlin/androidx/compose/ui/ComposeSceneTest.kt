@@ -78,6 +78,7 @@ import androidx.compose.ui.node.invalidateDraw
 import androidx.compose.ui.platform.renderingTest
 import androidx.compose.ui.test.InternalTestApi
 import androidx.compose.ui.test.junit4.DesktopScreenshotTestRule
+import androidx.compose.ui.test.junit4.ScreenshotTestRule
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performKeyPress
@@ -94,6 +95,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
+import org.jetbrains.skia.Surface
 import org.junit.Assert.assertFalse
 import org.junit.Ignore
 import org.junit.Rule
@@ -106,6 +108,10 @@ class ComposeSceneTest {
 
     @get:Rule
     val composeRule = createComposeRule()
+
+    private fun ScreenshotTestRule.snap(surface: Surface, idSuffix: String? = null) {
+        assertImageAgainstGolden(surface.makeImageSnapshot(), idSuffix)
+    }
 
     @Test(timeout = 5000)
     fun `rendering of Box state change`() = renderingTest(width = 40, height = 40) {

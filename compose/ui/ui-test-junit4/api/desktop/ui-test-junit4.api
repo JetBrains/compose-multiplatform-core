@@ -78,91 +78,15 @@ public final class androidx/compose/ui/test/junit4/DesktopComposeTestRule_deskto
 	public static synthetic fun createComposeRule$default (Lkotlin/coroutines/CoroutineContext;ILjava/lang/Object;)Landroidx/compose/ui/test/junit4/ComposeContentTestRule;
 }
 
-public final class androidx/compose/ui/test/junit4/GoldenConfig {
-	public static final field $stable I
-	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
-	public final fun component1 ()Ljava/lang/String;
-	public final fun component2 ()Ljava/lang/String;
-	public final fun component3 ()Ljava/lang/String;
-	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Landroidx/compose/ui/test/junit4/GoldenConfig;
-	public static synthetic fun copy$default (Landroidx/compose/ui/test/junit4/GoldenConfig;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Landroidx/compose/ui/test/junit4/GoldenConfig;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getFsGoldenPath ()Ljava/lang/String;
-	public final fun getModulePrefix ()Ljava/lang/String;
-	public final fun getRepoGoldenPath ()Ljava/lang/String;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class androidx/compose/ui/test/junit4/ScreenshotResultProto {
-	public static final field $stable I
-	public fun <init> (Landroidx/compose/ui/test/junit4/ScreenshotResultProto$Status;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
-	public final fun component1 ()Landroidx/compose/ui/test/junit4/ScreenshotResultProto$Status;
-	public final fun component2 ()Ljava/lang/String;
-	public final fun component3 ()Ljava/lang/String;
-	public final fun component4 ()Ljava/lang/String;
-	public final fun component5 ()Ljava/lang/String;
-	public final fun component6 ()Ljava/lang/String;
-	public final fun component7 ()Ljava/lang/String;
-	public final fun copy (Landroidx/compose/ui/test/junit4/ScreenshotResultProto$Status;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Landroidx/compose/ui/test/junit4/ScreenshotResultProto;
-	public static synthetic fun copy$default (Landroidx/compose/ui/test/junit4/ScreenshotResultProto;Landroidx/compose/ui/test/junit4/ScreenshotResultProto$Status;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Landroidx/compose/ui/test/junit4/ScreenshotResultProto;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getComparisonStatistics ()Ljava/lang/String;
-	public final fun getCurrentScreenshotFileName ()Ljava/lang/String;
-	public final fun getDiffImageFileName ()Ljava/lang/String;
-	public final fun getExpectedImageFileName ()Ljava/lang/String;
-	public final fun getLocationOfGoldenInRepo ()Ljava/lang/String;
-	public final fun getRepoRootPath ()Ljava/lang/String;
-	public final fun getResult ()Landroidx/compose/ui/test/junit4/ScreenshotResultProto$Status;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class androidx/compose/ui/test/junit4/ScreenshotResultProto$Status : java/lang/Enum {
-	public static final field FAILED Landroidx/compose/ui/test/junit4/ScreenshotResultProto$Status;
-	public static final field MISSING_GOLDEN Landroidx/compose/ui/test/junit4/ScreenshotResultProto$Status;
-	public static final field PASSED Landroidx/compose/ui/test/junit4/ScreenshotResultProto$Status;
-	public static final field SIZE_MISMATCH Landroidx/compose/ui/test/junit4/ScreenshotResultProto$Status;
-	public static final field UNSPECIFIED Landroidx/compose/ui/test/junit4/ScreenshotResultProto$Status;
-	public static fun getEntries ()Lkotlin/enums/EnumEntries;
-	public static fun valueOf (Ljava/lang/String;)Landroidx/compose/ui/test/junit4/ScreenshotResultProto$Status;
-	public static fun values ()[Landroidx/compose/ui/test/junit4/ScreenshotResultProto$Status;
+public final class androidx/compose/ui/test/junit4/DesktopScreenshotTestRule_desktopKt {
+	public static final fun DesktopScreenshotTestRule (Ljava/lang/String;Ljava/lang/String;)Landroidx/compose/ui/test/junit4/ScreenshotTestRule;
+	public static synthetic fun DesktopScreenshotTestRule$default (Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Landroidx/compose/ui/test/junit4/ScreenshotTestRule;
 }
 
 public final class androidx/compose/ui/test/junit4/ScreenshotTestRule : org/junit/rules/TestRule {
 	public static final field $stable I
 	public fun apply (Lorg/junit/runners/model/Statement;Lorg/junit/runner/Description;)Lorg/junit/runners/model/Statement;
-	public final fun getConfig ()Landroidx/compose/ui/test/junit4/GoldenConfig;
-	public final fun getExecutionQueue ()Ljava/util/LinkedList;
-	public final fun snap (Lorg/jetbrains/skia/Surface;Ljava/lang/String;)V
-	public static synthetic fun snap$default (Landroidx/compose/ui/test/junit4/ScreenshotTestRule;Lorg/jetbrains/skia/Surface;Ljava/lang/String;ILjava/lang/Object;)V
-	public final fun write (Lorg/jetbrains/skia/Image;Ljava/lang/String;)V
-	public static synthetic fun write$default (Landroidx/compose/ui/test/junit4/ScreenshotTestRule;Lorg/jetbrains/skia/Image;Ljava/lang/String;ILjava/lang/Object;)V
-}
-
-public final class androidx/compose/ui/test/junit4/SkiaTestAlbum {
-	public static final field $stable I
-	public fun <init> (Landroidx/compose/ui/test/junit4/GoldenConfig;)V
-	public final fun check ()Landroidx/compose/ui/test/junit4/SkiaTestAlbum$Report;
-	public final fun getConfig ()Landroidx/compose/ui/test/junit4/GoldenConfig;
-	public final fun snap (Lorg/jetbrains/skia/Surface;Ljava/lang/String;)V
-	public final fun write (Lorg/jetbrains/skia/Image;Ljava/lang/String;)V
-}
-
-public final class androidx/compose/ui/test/junit4/SkiaTestAlbum$Report {
-	public static final field $stable I
-	public fun <init> (Ljava/util/Map;)V
-	public final fun component1 ()Ljava/util/Map;
-	public final fun copy (Ljava/util/Map;)Landroidx/compose/ui/test/junit4/SkiaTestAlbum$Report;
-	public static synthetic fun copy$default (Landroidx/compose/ui/test/junit4/SkiaTestAlbum$Report;Ljava/util/Map;ILjava/lang/Object;)Landroidx/compose/ui/test/junit4/SkiaTestAlbum$Report;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getScreenshots ()Ljava/util/Map;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class androidx/compose/ui/test/junit4/SkiaTest_desktopKt {
-	public static final fun DesktopScreenshotTestRule (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Landroidx/compose/ui/test/junit4/ScreenshotTestRule;
-	public static synthetic fun DesktopScreenshotTestRule$default (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Landroidx/compose/ui/test/junit4/ScreenshotTestRule;
+	public final fun assertImageAgainstGolden (Lorg/jetbrains/skia/Image;Ljava/lang/String;D)V
+	public static synthetic fun assertImageAgainstGolden$default (Landroidx/compose/ui/test/junit4/ScreenshotTestRule;Lorg/jetbrains/skia/Image;Ljava/lang/String;DILjava/lang/Object;)V
 }
 

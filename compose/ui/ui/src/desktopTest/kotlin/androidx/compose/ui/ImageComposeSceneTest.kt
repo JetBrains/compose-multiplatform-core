@@ -65,7 +65,7 @@ class ImageComposeSceneTest {
         ) {
             Box(Modifier.fillMaxSize().padding(1.dp).background(Color.Red))
         }
-        screenshotRule.write(image)
+        screenshotRule.assertImageAgainstGolden(image)
     }
 
     @Ignore("enable when we make a fork of golden repo")
@@ -88,10 +88,10 @@ class ImageComposeSceneTest {
             targetSize = 100f
             scene.render() // start animation
 
-            screenshotRule.write(scene.render(0.seconds), "frame1")
-            screenshotRule.write(scene.render(10.seconds), "frame2")
-            screenshotRule.write(scene.render(50.seconds), "frame3")
-            screenshotRule.write(scene.render(100.seconds), "frame4")
+            screenshotRule.assertImageAgainstGolden(scene.render(0.seconds), "frame1")
+            screenshotRule.assertImageAgainstGolden(scene.render(10.seconds), "frame2")
+            screenshotRule.assertImageAgainstGolden(scene.render(50.seconds), "frame3")
+            screenshotRule.assertImageAgainstGolden(scene.render(100.seconds), "frame4")
         }
     }
 
@@ -105,7 +105,7 @@ class ImageComposeSceneTest {
                 Box(Modifier.size(20.dp).background(Color.Red))
             }
         }
-        screenshotRule.write(image)
+        screenshotRule.assertImageAgainstGolden(image)
     }
 
     @Test
