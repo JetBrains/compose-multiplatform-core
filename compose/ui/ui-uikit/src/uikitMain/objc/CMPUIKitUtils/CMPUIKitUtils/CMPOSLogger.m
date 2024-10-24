@@ -69,3 +69,13 @@
 
 
 @end
+
+static CMPOSLogger *_globalAppTraceLogger = nil;
+
+void CMPOSInitializeAppTraceLogger(NSString *name) {
+    _globalAppTraceLogger = [[CMPOSLogger alloc] initWithCategoryName:name];
+}
+
+CMPOSLogger * _Nullable CMPOSAppTraceLogger(void) {
+    return _globalAppTraceLogger;
+}

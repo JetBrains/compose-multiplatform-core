@@ -29,3 +29,6 @@ NS_ASSUME_NONNULL_BEGIN
 @end
 
 NS_ASSUME_NONNULL_END
+
+void CMPOSInitializeAppTraceLogger(NSString * _Nonnull name);
+CMPOSLogger * _Nullable CMPOSAppTraceLogger(void);
