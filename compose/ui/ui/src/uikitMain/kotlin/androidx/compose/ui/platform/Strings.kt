@@ -21,15 +21,14 @@ import androidx.compose.ui.platform.l10n.en
 import androidx.compose.ui.platform.l10n.translationFor
 
 @Immutable
-@JvmInline
 internal value class Strings private constructor(@Suppress("unused") private val value: Int) {
     companion object {
-        val Copy = Strings(0)
-        val Cut = Strings(1)
-        val Paste = Strings(2)
-        val SelectAll = Strings(3)
+        val NextPage = Strings(0)
+        val PreviousPage = Strings(1)
+        val FirstPage = Strings(2)
+        val LastPage = Strings(3)
         // When adding values here, make sure to also add them in ui/build.gradle,
-        // updateTranslationsDesktop task (stringByResourceName parameter), and re-run the task
+        // updateTranslationsIos task (stringByResourceName parameter), and re-run the task
     }
 }
 

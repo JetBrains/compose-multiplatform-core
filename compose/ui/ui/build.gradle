@@ -354,7 +354,7 @@ if(AndroidXComposePlugin.isMultiplatformEnabled(project)) {
     }
 }
 
-// This task updates the translations of the localizable strings in this module.
+// This task updates the translations of the localizable strings for the desktopMain target.
 // It obtains them from Android's base repository.
 tasks.register("updateTranslations", UpdateTranslationsTask.class) {
     group = "localization"
@@ -383,6 +383,93 @@ tasks.register("updateTranslations", UpdateTranslationsTask.class) {
             "ms", "my", "nb", "ne", "nl", "or", "pa", "pl", "pt", "pt_BR", "pt_PT", "ro", "ru",
             "si", "sk", "sl", "sq", "sr", "sv", "sw", "ta", "te", "th", "tl", "tr", "uk", "ur",
             "uz", "vi", "zh_CN", "zh_HK", "zh_TW", "zu"
+    ]
+}
+
+// This task updates the translations of the localizable strings for the uikitMain target.
+// It obtains them from compose multiplatform repository.
+// See also `scripts/convertCrowdinToStringsXml.sh`.
+tasks.register("updateTranslationsIos", UpdateTranslationsTask.class) {
+    group = "localization"
+    gitRepo = "https://github.com/JetBrains/compose-multiplatform-core"
+    repoResDirectories = ["compose/ui/ui/src/uikitMain/res"]
+    targetDirectory = project.file("src/uikitMain/kotlin/androidx/compose/ui/platform/l10n")
+    targetPackageName = "androidx.compose.ui.platform.l10n"
+    kotlinStringsPackageName = "androidx.compose.ui.platform"
+    stringByResourceName = [
+            "first_page": "FirstPage",
+            "last_page": "LastPage",
+            "next_page": "NextPage",
+            "previous_page": "PreviousPage"
+    ]
+
+    // Currently, strings are used in accessibility features, which limits the language list to the
+    // languages supported in accessibility on iOS: https://support.apple.com/en-us/111748.
+    locales = [
+            "ar", // Arabic
+            "eu", // Basque
+            "bn", // Bengali (India)
+            // "bh_IN", // Bhojpuri (India)
+            "bg", // Bulgarian
+            "zh_HK", // Cantonese (Hong Kong)
+            "ca", // Catalan
+            "hr", // Croatian
+            "cs", // Czech
+            "da", // Danish
+            "nl_BE", // Dutch (Belgium)
+            "nl", // Dutch (Netherlands)
+            "en_AU", // English (Australia)
+            "en_IN", // English (India)
+            "en_IE", // English (Ireland)
+            "en_GB", // English (Scotland)
+            "en_ZA", // English (South Africa)
+            "en_GB", // English (UK)
+            "en", // English (US)
+            "fa", // Farsi
+            "fi", // Finnish
+            "fr_BE", // French (Belgium)
+            "fr_CA", // French (Canada)
+            "fr", // French (France)
+            "gl", // Galician
+            "de", // German
+            "el", // Greek
+            "iw", // Hebrew
+            "hi", // Hindi
+            "hu", // Hungarian
+            "in", // Indonesian
+            "it", // Italian
+            "ja", // Japanese
+            "kn", // Kannada
+            "ko", // Korean
+            "ms", // Malay
+            "zh_CN", // Chinese (China mainland)
+            // "zh_CN", // Chinese (Liaoning, China mainland)
+            // "zh_CN", // Chinese (Shaanxi, China mainland)
+            // "zh_CN", // Chinese (Sichuan, China mainland)
+            "zh_TW", // Chinese (Taiwan)
+            "mr", // Marathi
+            "nb", // Norwegian
+            "pl", // Polish
+            "pt_BR", // Portuguese (Brazil)
+            "pt", // Portuguese (Portugal)
+            "ro", // Romanian
+            "ru", // Russian
+            // "zh_CN", // Shanghainese (China mainland)
+            "sk", // Slovak
+            "sl", // Slovenian
+            "es_AR", // Spanish (Argentina)
+            "es_CL", // Spanish (Chile)
+            "es_CO", // Spanish (Colombia)
+            "es_MX", // Spanish (Mexico)
+            "es", // Spanish (Spain)
+            "sv", // Swedish
+            "th", // Thai
+            "tr", // Turkish
+            "ta", // Tamil
+            "te", // Telugu
+            "uk", // Ukrainian
+            "ca_ES", // Valencian
+            "vi", // Vietnamese
     ]
 }
 
