@@ -16,13 +16,8 @@
 
 package androidx.compose.mpp.demo.components.text
 
-import androidx.compose.mpp.demo.Screen
+import androidx.compose.mpp.demo.getResourceBytes
 
-val TextDemos = Screen.Selection(
-    "Text",
-    Screen.Example("FontFamilies") { FontFamilies() },
-    Screen.Example("VariableFonts") { VariableFonts() },
-    Screen.Example("FontRasterization") { FontRasterization() },
-    Screen.Example("LineHeightStyle") { LineHeightStyleDemo() },
-    Screen.Example("TextDirection") { TextDirection() },
-)
+actual suspend fun loadResource(file: String): ByteArray? {
+    return getResourceBytes(file)
+}

@@ -16,13 +16,19 @@
 
 package androidx.compose.mpp.demo.components.text
 
-import androidx.compose.mpp.demo.Screen
+import kotlinx.browser.window
+import kotlinx.coroutines.await
+import org.khronos.webgl.ArrayBuffer
+import org.khronos.webgl.Int8Array
+import org.w3c.fetch.Response
 
-val TextDemos = Screen.Selection(
-    "Text",
-    Screen.Example("FontFamilies") { FontFamilies() },
-    Screen.Example("VariableFonts") { VariableFonts() },
-    Screen.Example("FontRasterization") { FontRasterization() },
-    Screen.Example("LineHeightStyle") { LineHeightStyleDemo() },
-    Screen.Example("TextDirection") { TextDirection() },
-)
+
+actual suspend fun loadResource(file: String): ByteArray? {
+    return fetch(file).arrayBuffer().await().asByteArray()
+}
+
+private suspend fun fetch(url: String): Response =
+    window.fetch(url).await()
+
+@Suppress("CAST_NEVER_SUCCEEDS")
+fun ArrayBuffer?.asByteArray(): ByteArray? = this?.run { Int8Array(this) as ByteArray }

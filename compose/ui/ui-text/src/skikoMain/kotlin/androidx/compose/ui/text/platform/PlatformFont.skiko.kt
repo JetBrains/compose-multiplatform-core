@@ -25,6 +25,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontListFontFamily
 import androidx.compose.ui.text.font.FontLoadingStrategy
 import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontVariation
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.font.GenericFontFamily
 import androidx.compose.ui.text.font.LoadedFontFamily
@@ -36,6 +37,7 @@ import org.jetbrains.skia.paragraph.TypefaceFontProviderWithFallback
 
 expect sealed class PlatformFont() : Font {
     abstract val identity: String
+    abstract val variationSettings: FontVariation.Settings
     internal val cacheKey: String
 }
 
@@ -54,10 +56,18 @@ expect sealed class PlatformFont() : Font {
 class SystemFont(
     override val identity: String,
     override val weight: FontWeight = FontWeight.Normal,
-    override val style: FontStyle = FontStyle.Normal
+    override val style: FontStyle = FontStyle.Normal,
+    override val variationSettings: FontVariation.Settings = FontVariation.Settings(weight, style),
 ) : PlatformFont() {
+
+    constructor(
+        identity: String,
+        weight: FontWeight = FontWeight.Normal,
+        style: FontStyle = FontStyle.Normal
+    ) : this(identity, weight, style, variationSettings = FontVariation.Settings())
+
     override fun toString(): String {
-        return "SystemFont(identity='$identity', weight=$weight, style=$style)"
+        return "SystemFont(identity='$identity', weight=$weight, style=$style, variationSettings=${variationSettings.settings})"
     }
 }
 
@@ -77,8 +87,17 @@ class LoadedFont internal constructor(
     override val identity: String,
     internal val getData: () -> ByteArray,
     override val weight: FontWeight,
-    override val style: FontStyle
+    override val style: FontStyle,
+    override val variationSettings: FontVariation.Settings = FontVariation.Settings(weight, style),
 ) : PlatformFont() {
+
+    constructor(
+        identity: String,
+        getData: () -> ByteArray,
+        weight: FontWeight,
+        style: FontStyle
+    ) : this(identity, getData, weight, style, FontVariation.Settings())
+
     @ExperimentalTextApi
     override val loadingStrategy: FontLoadingStrategy = FontLoadingStrategy.Blocking
 
@@ -89,18 +108,20 @@ class LoadedFont internal constructor(
         if (other !is LoadedFont) return false
         if (identity != other.identity) return false
         if (weight != other.weight) return false
-        return style == other.style
+        if (style != other.style) return false
+        return variationSettings.settings == other.variationSettings.settings
     }
 
     override fun hashCode(): Int {
         var result = identity.hashCode()
         result = 31 * result + weight.hashCode()
         result = 31 * result + style.hashCode()
+        result = 31 * result + variationSettings.settings.hashCode()
         return result
     }
 
     override fun toString(): String {
-        return "LoadedFont(identity='$identity', weight=$weight, style=$style)"
+        return "LoadedFont(identity='$identity', weight=$weight, style=$style, variationSettings=${variationSettings.settings})"
     }
 }
 
@@ -121,7 +142,39 @@ fun Font(
     getData: () -> ByteArray,
     weight: FontWeight = FontWeight.Normal,
     style: FontStyle = FontStyle.Normal
-): Font = LoadedFont(identity, getData, weight, style)
+): Font = LoadedFont(identity, getData, weight, style, FontVariation.Settings())
+
+/**
+ * Creates a Font using byte array with loaded font data.
+ *
+ * @param identity Unique identity for a font. Used internally to distinguish fonts.
+ * @param getData should return Byte array with loaded font data.
+ * @param weight The weight of the font. The system uses this to match a font to a font request
+ * that is given in a [androidx.compose.ui.text.SpanStyle]. For non-variable fonts, this directly
+ * affects the font style.
+ * @param style The style of the font, normal or italic. The system uses this to match a font to a
+ * font request that is given in a [androidx.compose.ui.text.SpanStyle]. For non-variable fonts,
+ * this directly affects the font style.
+ * @param variationSettings Specifies the variation settings for the font. This allows for fine-tuned
+ * control over font characteristics such as weight and style. It can be used to create custom
+ * font variations within a single font file, if the font supports variable axes. By default,
+ * it uses the provided weight and style parameters.
+ *
+ * Note on font style determination:
+ * 1. For non-variable fonts, the font style is defined only by the weight and style parameters.
+ * 2. For variable fonts, the font style is determined solely by the variationSettings.
+ * 3. When weight, style, and variationSettings are all set for variable fonts, the font style
+ *    will be determined by variationSettings, as its default values are derived from weight and style.
+ *
+ * @see FontFamily
+ */
+fun Font(
+    identity: String,
+    getData: () -> ByteArray,
+    weight: FontWeight = FontWeight.Normal,
+    style: FontStyle = FontStyle.Normal,
+    variationSettings: FontVariation.Settings = FontVariation.Settings(weight, style)
+): Font = LoadedFont(identity, getData, weight, style, variationSettings)
 
 private class SkiaBackedTypeface(
     alias: String?,
@@ -153,6 +206,45 @@ fun Font(
     getData = { data },
     weight = weight,
     style = style,
+    variationSettings = FontVariation.Settings(),
+)
+
+/**
+ * Creates a Font using byte array with loaded font data.
+ *
+ * @param identity Unique identity for a font. Used internally to distinguish fonts.
+ * @param data Byte array with loaded font data.
+ * @param weight The weight of the font. The system uses this to match a font to a font request
+ * that is given in a [androidx.compose.ui.text.SpanStyle]. For non-variable fonts, this directly
+ * affects the font style.
+ * @param style The style of the font, normal or italic. The system uses this to match a font to a
+ * font request that is given in a [androidx.compose.ui.text.SpanStyle]. For non-variable fonts,
+ * this directly affects the font style.
+ * @param variationSettings Specifies the variation settings for the font. This allows for fine-tuned
+ * control over font characteristics such as weight and style. It can be used to create custom
+ * font variations within a single font file, if the font supports variable axes. By default,
+ * it uses the provided weight and style parameters.
+ *
+ * Note on font style determination:
+ * 1. For non-variable fonts, the font style is defined only by the weight and style parameters.
+ * 2. For variable fonts, the font style is determined solely by the variationSettings.
+ * 3. When weight, style, and variationSettings are all set for variable fonts, the font style
+ *    will be determined by variationSettings, as its default values are derived from weight and style.
+ *
+ * @see FontFamily
+ */
+fun Font(
+    identity: String,
+    data: ByteArray,
+    weight: FontWeight = FontWeight.Normal,
+    style: FontStyle = FontStyle.Normal,
+    variationSettings: FontVariation.Settings = FontVariation.Settings(weight, style)
+): Font = Font(
+    identity = identity,
+    getData = { data },
+    weight = weight,
+    style = style,
+    variationSettings = variationSettings,
 )
 
 /**
@@ -319,4 +411,22 @@ private val GenericFontFamiliesMapping: Map<String, List<String>> by lazy {
                 FontFamily.Cursive.name to listOf("Comic Sans MS")
             )
     }
+}
+
+internal fun FontVariation.Settings.toSkiaFontVariationList(): List<org.jetbrains.skia.FontVariation> {
+    return settings.map { setting ->
+        org.jetbrains.skia.FontVariation(setting.axisName, setting.toVariationValue(null))
+    }
+}
+
+/**
+ * Clones the SkTypeface with specified font variation settings.
+ *
+ * @param variationSettings Font variations to apply. If empty, returns the original typeface.
+ * @return A new SkTypeface with applied variations, or the original if no variations.
+ */
+internal fun SkTypeface.cloneWithVariationSettings(variationSettings: FontVariation.Settings): SkTypeface {
+    if (variationSettings.settings.isEmpty()) return this
+    val variations = variationSettings.toSkiaFontVariationList()
+    return makeClone(variations.toTypedArray())
 }
