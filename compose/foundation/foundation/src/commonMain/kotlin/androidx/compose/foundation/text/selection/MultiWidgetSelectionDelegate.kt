@@ -16,6 +16,8 @@
 
 package androidx.compose.foundation.text.selection
 
+import androidx.compose.foundation.platform.SynchronizedObject
+import androidx.compose.foundation.platform.synchronized
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.isUnspecified
@@ -24,8 +26,6 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextRange
 import kotlin.math.max
-import kotlinx.atomicfu.locks.SynchronizedObject
-import kotlinx.atomicfu.locks.synchronized
 
 internal class MultiWidgetSelectionDelegate(
     override val selectableId: Long,

@@ -16,12 +16,9 @@
 
 package androidx.compose.ui.platform
 
-// TODO: Replace with another copy for expect/actual posix implementation
+internal expect class SynchronizedObject
 
-internal class SynchronizedObject : kotlinx.atomicfu.locks.SynchronizedObject()
-
-internal fun createSynchronizedObject() = SynchronizedObject()
+internal expect fun createSynchronizedObject(): SynchronizedObject
 
 @PublishedApi
-internal inline fun <R> synchronized(lock: SynchronizedObject, block: () -> R): R =
-    kotlinx.atomicfu.locks.synchronized(lock, block)
+internal expect inline fun <R> synchronized(lock: SynchronizedObject, block: () -> R): R
