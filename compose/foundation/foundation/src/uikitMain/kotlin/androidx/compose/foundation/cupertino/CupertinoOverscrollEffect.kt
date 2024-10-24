@@ -16,7 +16,10 @@
 
 package androidx.compose.foundation.cupertino
 
-import androidx.compose.animation.core.*
+import androidx.compose.animation.core.AnimationState
+import androidx.compose.animation.core.VectorConverter
+import androidx.compose.animation.core.animateTo
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.OverscrollEffect
 import androidx.compose.foundation.layout.offset
@@ -30,10 +33,17 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.layout.onPlaced
-import androidx.compose.ui.unit.*
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.Velocity
+import androidx.compose.ui.unit.round
+import androidx.compose.ui.unit.toOffset
+import androidx.compose.ui.unit.toSize
 import kotlin.coroutines.coroutineContext
 import kotlin.math.abs
 import kotlin.math.sign
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.isActive
 
 private enum class CupertinoScrollSource {
@@ -109,7 +119,7 @@ class CupertinoOverscrollEffect(
      */
     private var overscrollOffset: Offset by mutableStateOf(Offset.Zero)
 
-    private var lastFlingUncosumedDelta: Offset = Offset.Zero
+    private var lastFlingUnconsumedDelta: Offset = Offset.Zero
     private val visibleOverscrollOffset: IntOffset
         get() =
             overscrollOffset.reverseHorizontalIfNeeded().rubberBanded().round()
@@ -215,14 +225,14 @@ class CupertinoOverscrollEffect(
                 // [unconsumedDelta] is going into overscroll again in case a user drags and hits the
                 // overscroll->content->overscroll or content->overscroll scenario within single frame
                 overscrollOffset += unconsumedDelta
-                lastFlingUncosumedDelta = Offset.Zero
+                lastFlingUnconsumedDelta = Offset.Zero
                 delta - unconsumedDelta
             }
 
             CupertinoScrollSource.FLING -> {
                 // If unconsumedDelta is not Zero, [CupertinoFlingEffect] will cancel fling and
                 // start spring animation instead
-                lastFlingUncosumedDelta = unconsumedDelta
+                lastFlingUnconsumedDelta = unconsumedDelta
                 delta - unconsumedDelta
             }
         }
@@ -233,6 +243,9 @@ class CupertinoOverscrollEffect(
         source: NestedScrollSource,
         performScroll: (Offset) -> Offset
     ): Offset {
+        springAnimationScope?.cancel()
+        springAnimationScope = null
+
         direction = direction.combinedWith(delta.toCupertinoOverscrollDirection())
 
         return source.toCupertinoScrollSource()?.let {
@@ -249,7 +262,7 @@ class CupertinoOverscrollEffect(
         val postFlingVelocity = availableFlingVelocity - velocityConsumedByFling
 
         playSpringAnimation(
-            lastFlingUncosumedDelta.toFloat(),
+            lastFlingUnconsumedDelta.toFloat(),
             postFlingVelocity.toFloat(),
             CupertinoSpringAnimationReason.POSSIBLE_SPRING_IN_THE_END
         )
@@ -326,6 +339,8 @@ class CupertinoOverscrollEffect(
         }
     }
 
+    private var springAnimationScope: CoroutineScope? = null
+
     private suspend fun playSpringAnimation(
         unconsumedDelta: Float,
         initialVelocity: Float,
@@ -346,6 +361,7 @@ class CupertinoOverscrollEffect(
                     visibilityThreshold = visibilityThreshold
                 )
             }
+
             CupertinoSpringAnimationReason.POSSIBLE_SPRING_IN_THE_END -> {
                 spring(
                     stiffness = 120f,
@@ -354,26 +370,34 @@ class CupertinoOverscrollEffect(
             }
         }
 
-        AnimationState(
-            Float.VectorConverter,
-            initialValue / density,
-            initialVelocity / density
-        ).animateTo(
-            targetValue = 0f,
-            animationSpec = spec
-        ) {
-            overscrollOffset = (value * density).toOffset()
-            currentVelocity = velocity * density
+        springAnimationScope?.cancel()
+        springAnimationScope = CoroutineScope(coroutineContext)
+        springAnimationScope?.run {
+            AnimationState(
+                Float.VectorConverter,
+                initialValue / density,
+                initialVelocity / density
+            ).animateTo(
+                targetValue = 0f,
+                animationSpec = spec
+            ) {
+                overscrollOffset = (value * density).toOffset()
+                currentVelocity = velocity * density
 
-            // If it was fling from overscroll, cancel animation and return velocity
-            if (reason == CupertinoSpringAnimationReason.FLING_FROM_OVERSCROLL && initialSign != 0f && sign(value) != initialSign) {
-                this.cancelAnimation()
+                // If it was fling from overscroll, cancel animation and return velocity
+                if (reason == CupertinoSpringAnimationReason.FLING_FROM_OVERSCROLL &&
+                    initialSign != 0f &&
+                    sign(value) != initialSign
+                ) {
+                    this.cancelAnimation()
+                }
             }
+            springAnimationScope = null
         }
 
         if (coroutineContext.isActive) {
-            // The spring is critically damped, so in case spring-fling-spring sequence
-            // is slightly offset and velocity is of the opposite sign, it will end up with no animation
+            // The spring is critically damped, so in case spring-fling-spring sequence is slightly
+            // offset and velocity is of the opposite sign, it will end up with no animation
             overscrollOffset = Offset.Zero
         }
 
