@@ -26,17 +26,20 @@ import androidx.compose.ui.semantics.SemanticsConfiguration
 import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.semantics.SemanticsOwner
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.SemanticsProperties.HideFromAccessibility
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.uikit.utils.CMPAccessibilityContainer
 import androidx.compose.ui.uikit.utils.CMPAccessibilityElement
 import androidx.compose.ui.unit.toSize
-import androidx.compose.ui.viewinterop.NativeAccessibilityViewSemanticsKey
 import androidx.compose.ui.viewinterop.InteropWrappingView
+import androidx.compose.ui.viewinterop.NativeAccessibilityViewSemanticsKey
 import kotlin.coroutines.CoroutineContext
 import kotlin.time.measureTime
+import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.CValue
 import kotlinx.cinterop.ExportObjCClass
+import kotlinx.cinterop.ObjCAction
 import kotlinx.cinterop.readValue
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -48,6 +51,8 @@ import platform.CoreGraphics.CGRect
 import platform.CoreGraphics.CGRectMake
 import platform.CoreGraphics.CGRectZero
 import platform.Foundation.NSNotFound
+import platform.Foundation.NSNotificationCenter
+import platform.Foundation.NSSelectorFromString
 import platform.UIKit.NSStringFromCGRect
 import platform.UIKit.UIAccessibilityCustomAction
 import platform.UIKit.UIAccessibilityFocusedElement
@@ -70,6 +75,8 @@ import platform.UIKit.UIAccessibilityTraitNotEnabled
 import platform.UIKit.UIAccessibilityTraitSelected
 import platform.UIKit.UIAccessibilityTraitUpdatesFrequently
 import platform.UIKit.UIAccessibilityTraits
+import platform.UIKit.UIAccessibilityVoiceOverStatusChanged
+import platform.UIKit.UIAccessibilityVoiceOverStatusDidChangeNotification
 import platform.UIKit.UIView
 import platform.UIKit.UIWindow
 import platform.UIKit.accessibilityCustomActions
@@ -133,7 +140,7 @@ private object CachedAccessibilityPropertyKeys {
  * resides.
  *
  */
-@OptIn(ExperimentalComposeApi::class)
+@OptIn(ExperimentalComposeApi::class, BetaInteropApi::class)
 @ExportObjCClass
 private class AccessibilityElement(
     private var semanticsNode: SemanticsNode,
@@ -571,7 +578,9 @@ private class AccessibilityElement(
         getOrElse(CachedAccessibilityPropertyKeys.isAccessibilityElement) {
             val config = cachedConfig
 
-            if (config.contains(SemanticsProperties.InvisibleToUser)) {
+            if (config.contains(SemanticsProperties.InvisibleToUser) ||
+                config.contains(HideFromAccessibility)
+            ) {
                 false
             } else {
                 // TODO: investigate if it can it be one of those _and_ contain properties that should
@@ -851,7 +860,7 @@ private class AccessibilityElement(
  * https://github.com/flutter/engine/blob/main/shell/platform/darwin/ios/framework/Source/SemanticsObject.h
  *
  */
-@OptIn(ExperimentalComposeApi::class)
+@OptIn(ExperimentalComposeApi::class, BetaInteropApi::class)
 @ExportObjCClass
 private class AccessibilityContainer(
     /**
@@ -1007,7 +1016,7 @@ private val AccessibilitySyncOptions.debugLoggerIfEnabled: AccessibilityDebugLog
 @OptIn(ExperimentalComposeApi::class)
 internal class AccessibilityMediator(
     val view: UIView,
-    private val owner: SemanticsOwner,
+    val owner: SemanticsOwner,
     coroutineContext: CoroutineContext,
     private val getAccessibilitySyncOptions: () -> AccessibilitySyncOptions,
 
@@ -1017,7 +1026,7 @@ internal class AccessibilityMediator(
      */
     val convertToAppWindowCGRect: (Rect, UIWindow) -> CValue<CGRect>,
     val performEscape: () -> Boolean
-) {
+): NSObject() {
     /**
      * Indicates that this mediator was just created and the accessibility focus should be set on the
      * first eligible element.
@@ -1028,6 +1037,8 @@ internal class AccessibilityMediator(
     private var inflightScrollsCount = 0
     private val needsRedundantRefocusingOnSameElement: Boolean
         get() = inflightScrollsCount > 0
+
+    private val notificationCenter = NSNotificationCenter.defaultCenter
 
     /**
      * The kind of invalidation that determines what kind of logic will be executed in the next sync.
@@ -1073,6 +1084,13 @@ internal class AccessibilityMediator(
     init {
         getAccessibilitySyncOptions().debugLoggerIfEnabled?.log("AccessibilityMediator for ${view} created")
 
+        notificationCenter.addObserver(
+            observer = this,
+            selector = NSSelectorFromString(::voiceOverStatusDidChange.name),
+            name = UIAccessibilityVoiceOverStatusDidChangeNotification,
+            `object` = null
+        )
+
         coroutineScope.launch {
             // The main loop that listens for invalidations and performs the tree syncing
             // Will exit on CancellationException from within await on `invalidationChannel.receive()`
@@ -1112,6 +1130,13 @@ internal class AccessibilityMediator(
                 invalidatedBoundsNodeIds.clear()
             }
         }
+    }
+
+    @OptIn(BetaInteropApi::class)
+    @ObjCAction
+    private fun voiceOverStatusDidChange() {
+        invalidationKind = SemanticsTreeInvalidationKind.COMPLETE
+        invalidationChannel.trySend(Unit)
     }
 
     fun convertToAppWindowCGRect(rect: Rect): CValue<CGRect> {
@@ -1178,6 +1203,12 @@ internal class AccessibilityMediator(
         for (element in accessibilityElementsMap.values) {
             element.dispose()
         }
+
+        notificationCenter.removeObserver(
+            observer = this,
+            name = UIAccessibilityVoiceOverStatusChanged,
+            `object` = null
+        )
     }
 
     private fun createOrUpdateAccessibilityElementForSemanticsNode(node: SemanticsNode): AccessibilityElement {
