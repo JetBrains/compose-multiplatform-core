@@ -25,9 +25,7 @@ fun ParsedApi.getOnlyService(): AnnotatedInterface {
 
 fun ParsedApi.hasSuspendFunctions(): Boolean {
     val annotatedInterfaces = services + interfaces + callbacks
-    return annotatedInterfaces
-        .flatMap(AnnotatedInterface::methods)
-        .any(Method::isSuspend)
+    return annotatedInterfaces.flatMap(AnnotatedInterface::methods).any(Method::isSuspend)
 }
 
 fun ParsedApi.containsSdkActivityLauncher(): Boolean {
@@ -38,11 +36,12 @@ fun ParsedApi.containsSdkActivityLauncher(): Boolean {
 }
 
 private fun AnnotatedInterface.containsSdkActivityLauncher(): Boolean {
-    val isInReturns = methods
-        .any { it.returnType.qualifiedName == Types.sdkActivityLauncher.qualifiedName }
-    val isInParams = methods
-        .flatMap { it.parameters }
-        .any { it.type.qualifiedName == Types.sdkActivityLauncher.qualifiedName }
+    val isInReturns =
+        methods.any { it.returnType.qualifiedName == Types.sdkActivityLauncher.qualifiedName }
+    val isInParams =
+        methods
+            .flatMap { it.parameters }
+            .any { it.type.qualifiedName == Types.sdkActivityLauncher.qualifiedName }
 
     return isInReturns || isInParams
 }
@@ -64,32 +63,33 @@ object Types {
     val string = Type(packageName = "kotlin", simpleName = "String")
     val char = Type(packageName = "kotlin", simpleName = "Char")
     val short = Type(packageName = "kotlin", simpleName = "Short")
-    val primitiveTypes = setOf(unit, boolean, int, long, float, double, string, char, short)
+    val byte = Type(packageName = "kotlin", simpleName = "Byte")
+    val primitiveTypes = setOf(unit, boolean, int, long, float, double, string, char, short, byte)
 
     val any = Type("kotlin", simpleName = "Any")
     val bundle = Type("android.os", "Bundle")
     val sandboxedUiAdapter =
         Type(packageName = "androidx.privacysandbox.ui.core", simpleName = "SandboxedUiAdapter")
-    val sdkActivityLauncher = Type(
-        packageName = "androidx.privacysandbox.activity.core",
-        simpleName = "SdkActivityLauncher"
-    )
+    val sdkActivityLauncher =
+        Type(
+            packageName = "androidx.privacysandbox.activity.core",
+            simpleName = "SdkActivityLauncher"
+        )
 
-    fun list(elementType: Type) = Type(
-        packageName = "kotlin.collections",
-        simpleName = "List",
-        typeParameters = listOf(elementType)
-    )
+    fun list(elementType: Type) =
+        Type(
+            packageName = "kotlin.collections",
+            simpleName = "List",
+            typeParameters = listOf(elementType)
+        )
 
     fun Type.asNullable(): Type {
-        if (isNullable)
-            return this
+        if (isNullable) return this
         return copy(isNullable = true)
     }
 
     fun Type.asNonNull(): Type {
-        if (isNullable)
-            return copy(isNullable = false)
+        if (isNullable) return copy(isNullable = false)
         return this
     }
 }

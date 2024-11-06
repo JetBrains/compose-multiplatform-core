@@ -5,7 +5,7 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.Publish
+import androidx.build.LibraryType
 
 plugins {
     id("AndroidXPlugin")
@@ -37,15 +37,16 @@ android {
 }
 
 dependencies {
+    api(libs.jspecify)
     api(project(":emoji2:emoji2"))
 
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.testCore)
     androidTestImplementation(libs.testRunner)
     androidTestImplementation(libs.testRules)
-    androidTestImplementation(libs.espressoCore, excludes.espresso)
-    androidTestImplementation(libs.mockitoCore, excludes.bytebuddy) // DexMaker has it"s own MockMaker
-    androidTestImplementation(libs.dexmakerMockito, excludes.bytebuddy) // DexMaker has it"s own MockMaker
+    androidTestImplementation(libs.espressoCore)
+    androidTestImplementation(libs.mockitoCore)
+    androidTestImplementation(libs.dexmakerMockito)
     androidTestImplementation project(':internal-testutils-runtime')
 
     // view tests that use font are in this module as well; for licensing reasons
@@ -54,18 +55,17 @@ dependencies {
 
 androidx {
     name = "Emoji2 Bundled"
-    publish = Publish.SNAPSHOT_AND_RELEASE
+    type = LibraryType.PUBLISHED_LIBRARY
     inceptionYear = "2017"
     description = "Library bundled with assets to enable emoji compatibility in Kitkat and newer " +
             "devices to avoid the empty emoji characters."
-    metalavaK2UastEnabled = true
 
-    license {
+    extraLicense {
         name = "SIL Open Font License, Version 1.1"
         url = "http://scripts.sil.org/cms/scripts/page.php?item_id=OFL_web"
     }
 
-    license {
+    extraLicense {
         name = "Unicode, Inc. License"
         url = "http://www.unicode.org/copyright.html#License"
     }

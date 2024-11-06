@@ -19,28 +19,26 @@ import android.os.Bundle
 import kotlinx.coroutines.flow.StateFlow
 
 /**
- * A Navigator built specifically for [NavGraph] elements. Handles navigating to the
- * correct destination when the NavGraph is the target of navigation actions.
+ * A Navigator built specifically for [NavGraph] elements. Handles navigating to the correct
+ * destination when the NavGraph is the target of navigation actions.
  *
- * Construct a Navigator capable of routing incoming navigation requests to the proper
- * destination within a [NavGraph].
+ * Construct a Navigator capable of routing incoming navigation requests to the proper destination
+ * within a [NavGraph].
  *
- * @param navigatorProvider NavigatorProvider used to retrieve the correct
- * [Navigator] to navigate to the start destination
+ * @param navigatorProvider NavigatorProvider used to retrieve the correct [Navigator] to navigate
+ *   to the start destination
  */
 @Navigator.Name("navigation")
-public open class NavGraphNavigator(
-    private val navigatorProvider: NavigatorProvider
-) : Navigator<NavGraph>() {
+public open class NavGraphNavigator(private val navigatorProvider: NavigatorProvider) :
+    Navigator<NavGraph>() {
 
-    /**
-     * Gets the backstack of [NavBackStackEntry] associated with this Navigator
-     */
+    /** Gets the backstack of [NavBackStackEntry] associated with this Navigator */
     public val backStack: StateFlow<List<NavBackStackEntry>>
         get() = state.backStack
 
     /**
      * Creates a new [NavGraph] associated with this navigator.
+     *
      * @return The created [NavGraph].
      */
     override fun createDestination(): NavGraph {
@@ -73,11 +71,12 @@ public open class NavGraphNavigator(
         check(startId != 0 || startRoute != null) {
             ("no start destination defined via app:startDestination for ${destination.displayName}")
         }
-        val startDestination = if (startRoute != null) {
-            destination.findNode(startRoute, false)
-        } else {
-            destination.findNode(startId, false)
-        }
+        val startDestination =
+            if (startRoute != null) {
+                destination.findNode(startRoute, false)
+            } else {
+                destination.nodes[startId]
+            }
         requireNotNull(startDestination) {
             val dest = destination.startDestDisplayName
             throw IllegalArgumentException(
@@ -85,25 +84,44 @@ public open class NavGraphNavigator(
             )
         }
         if (startRoute != null) {
-            val matchingArgs = startDestination.matchDeepLink(startRoute)?.matchingArgs
-            if (matchingArgs != null && !matchingArgs.isEmpty) {
-                val bundle = Bundle()
-                // we need to add args from startRoute, but it should not override existing args
-                bundle.putAll(matchingArgs)
-                args?.let { bundle.putAll(args) }
-                args = bundle
+            // If startRoute contains only placeholders, we fallback to default arg values.
+            // This is to maintain existing behavior of using default value for startDestination
+            // while also adding support for args declared in startRoute.
+            if (startRoute != startDestination.route) {
+                val matchingArgs = startDestination.matchRoute(startRoute)?.matchingArgs
+                if (matchingArgs != null && !matchingArgs.isEmpty) {
+                    val bundle = Bundle()
+                    // we need to add args from startRoute, but it should not override existing args
+                    bundle.putAll(matchingArgs)
+                    args?.let { bundle.putAll(args) }
+                    args = bundle
+                }
+            }
+            // by this point, the bundle should contain all arguments that don't have
+            // default values (regardless of whether the actual default value is known or not).
+            if (startDestination.arguments.isNotEmpty()) {
+                val missingRequiredArgs =
+                    startDestination.arguments.missingRequiredArguments { key ->
+                        if (args == null) true else !args.containsKey(key)
+                    }
+                require(missingRequiredArgs.isEmpty()) {
+                    "Cannot navigate to startDestination $startDestination. " +
+                        "Missing required arguments [$missingRequiredArgs]"
+                }
             }
         }
 
-        val navigator = navigatorProvider.getNavigator<Navigator<NavDestination>>(
-            startDestination.navigatorName
-        )
-        val startDestinationEntry = state.createBackStackEntry(
-            startDestination,
-            // could contain default args, restored args, args passed during setGraph,
-            // and args from route
-            startDestination.addInDefaultArgs(args)
-        )
+        val navigator =
+            navigatorProvider.getNavigator<Navigator<NavDestination>>(
+                startDestination.navigatorName
+            )
+        val startDestinationEntry =
+            state.createBackStackEntry(
+                startDestination,
+                // could contain default args, restored args, args passed during setGraph,
+                // and args from route
+                startDestination.addInDefaultArgs(args)
+            )
         navigator.navigate(listOf(startDestinationEntry), navOptions, navigatorExtras)
     }
 }

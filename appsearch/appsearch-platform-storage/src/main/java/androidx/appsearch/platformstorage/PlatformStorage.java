@@ -20,9 +20,13 @@ import android.app.appsearch.AppSearchManager;
 import android.content.Context;
 import android.os.Build;
 
+import androidx.annotation.DoNotInline;
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
+import androidx.appsearch.app.AppSearchEnvironmentFactory;
 import androidx.appsearch.app.AppSearchSession;
+import androidx.appsearch.app.EnterpriseGlobalSearchSession;
+import androidx.appsearch.app.Features;
 import androidx.appsearch.app.GlobalSearchSession;
 import androidx.appsearch.exceptions.AppSearchException;
 import androidx.appsearch.platformstorage.converter.SearchContextToPlatformConverter;
@@ -33,7 +37,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.function.Consumer;
 
 /**
  * An AppSearch storage system which stores data in the central AppSearch service, available on
@@ -56,6 +60,14 @@ public final class PlatformStorage {
             mContext = Preconditions.checkNotNull(context);
             mDatabaseName = Preconditions.checkNotNull(databaseName);
             mExecutor = Preconditions.checkNotNull(executor);
+        }
+
+        /**
+         * Returns the {@link Context} associated with the {@link AppSearchSession}
+         */
+        @NonNull
+        public Context getContext() {
+            return mContext;
         }
 
         /**
@@ -149,6 +161,14 @@ public final class PlatformStorage {
         }
 
         /**
+         * Returns the {@link Context} associated with the {@link GlobalSearchSession}
+         */
+        @NonNull
+        public Context getContext() {
+            return mContext;
+        }
+
+        /**
          * Returns the worker executor associated with {@link GlobalSearchSession}.
          *
          * <p>If an executor is not provided to {@link Builder}, the AppSearch default executor will
@@ -201,7 +221,8 @@ public final class PlatformStorage {
     // execute() won't return anything, we will hang forever waiting for the execution.
     // AppSearch multi-thread execution is guarded by Read & Write Lock in AppSearchImpl, all
     // mutate requests will need to gain write lock and query requests need to gain read lock.
-    static final Executor EXECUTOR = Executors.newCachedThreadPool();
+    static final Executor EXECUTOR = AppSearchEnvironmentFactory.getEnvironmentInstance()
+            .createCachedThreadPoolExecutor();
 
     /**
      * Opens a new {@link AppSearchSession} on this storage.
@@ -224,7 +245,7 @@ public final class PlatformStorage {
                     if (result.isSuccess()) {
                         future.set(
                                 new SearchSessionImpl(result.getResultValue(), context.mExecutor,
-                                        new FeaturesImpl(context.mContext)));
+                                        context.mContext));
                     } else {
                         // Without the SuppressLint annotation on the method, this line causes a
                         // lint error because getResultCode isn't defined as returning a value from
@@ -265,5 +286,57 @@ public final class PlatformStorage {
                     }
                 });
         return future;
+    }
+
+    /**
+     * Opens a new {@link EnterpriseGlobalSearchSession} on this storage.
+     */
+    @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
+    @SuppressLint("WrongConstant")
+    @NonNull
+    public static ListenableFuture<EnterpriseGlobalSearchSession>
+            createEnterpriseGlobalSearchSessionAsync(@NonNull GlobalSearchContext context) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+            throw new UnsupportedOperationException(
+                    Features.ENTERPRISE_GLOBAL_SEARCH_SESSION
+                            + " is not supported on this AppSearch implementation");
+        }
+        Preconditions.checkNotNull(context);
+        AppSearchManager appSearchManager =
+                context.mContext.getSystemService(AppSearchManager.class);
+        ResolvableFuture<EnterpriseGlobalSearchSession> future = ResolvableFuture.create();
+        ApiHelperForV.createEnterpriseGlobalSearchSession(
+                appSearchManager,
+                context.mExecutor,
+                result -> {
+                    if (result.isSuccess()) {
+                        future.set(new EnterpriseGlobalSearchSessionImpl(
+                                result.getResultValue(), context.mExecutor,
+                                new FeaturesImpl(context.mContext)));
+                    } else {
+                        // Without the SuppressLint annotation on the method, this line causes a
+                        // lint error because getResultCode isn't defined as returning a value from
+                        // AppSearchResult.ResultCode
+                        future.setException(
+                                new AppSearchException(
+                                        result.getResultCode(), result.getErrorMessage()));
+                    }
+                });
+        return future;
+    }
+
+    @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
+    private static class ApiHelperForV {
+        private ApiHelperForV() {
+            // This class is not instantiable.
+        }
+
+        @DoNotInline
+        static void createEnterpriseGlobalSearchSession(@NonNull AppSearchManager appSearchManager,
+                @NonNull Executor executor,
+                @NonNull Consumer<android.app.appsearch.AppSearchResult<
+                        android.app.appsearch.EnterpriseGlobalSearchSession>> callback) {
+            appSearchManager.createEnterpriseGlobalSearchSession(executor, callback);
+        }
     }
 }

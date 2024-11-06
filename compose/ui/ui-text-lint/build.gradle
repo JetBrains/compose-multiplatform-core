@@ -15,6 +15,7 @@
  */
 
 import androidx.build.BundleInsideHelper
+import androidx.build.KotlinTarget
 import androidx.build.LibraryType
 
 plugins {
@@ -38,7 +39,8 @@ dependencies {
 
 androidx {
     name = "Compose UI Text Lint Checks"
-    type = LibraryType.LINT
+    type = LibraryType.STANDALONE_PUBLISHED_LINT
     inceptionYear = "2024"
     description = "Lint checks for Compose UI Text"
+    kotlinTarget = KotlinTarget.KOTLIN_1_9
 }

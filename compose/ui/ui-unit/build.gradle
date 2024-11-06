@@ -21,28 +21,46 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
+
+import androidx.build.KotlinTarget
 import androidx.build.LibraryType
 import androidx.build.PlatformIdentifier
 
 plugins {
     id("AndroidXPlugin")
-    id("com.android.library")
     id("AndroidXComposePlugin")
 }
 
 androidXMultiplatform {
-    android()
-    desktop()
+    androidLibrary {
+        namespace = "androidx.compose.ui.unit"
+        withAndroidTestOnDeviceBuilder {
+            it.compilationName = "instrumentedTest"
+            it.defaultSourceSetName = "androidInstrumentedTest"
+            it.sourceSetTreeName = "test"
+        }
+        withAndroidTestOnJvmBuilder {
+            it.defaultSourceSetName = "androidUnitTest"
+        }
+        optimization {
+            it.consumerKeepRules.publish = true
+            it.consumerKeepRules.files.add(
+                    new File(project.projectDir, "proguard-rules.pro")
+            )
+        }
+    }
+    jvmStubs()
+    linuxX64Stubs()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
     sourceSets {
         commonMain {
             dependencies {
-                implementation(libs.kotlinStdlibCommon)
-                api("androidx.annotation:annotation:1.1.0")
+                implementation(libs.kotlinStdlib)
+                api("androidx.annotation:annotation:1.8.1")
                 api(project(":compose:ui:ui-geometry"))
-                implementation("androidx.collection:collection:1.4.0")
+                implementation("androidx.collection:collection:1.4.2")
                 implementation(project(":compose:runtime:runtime"))
                 implementation(project(":compose:ui:ui-util"))
             }
@@ -57,66 +75,59 @@ androidXMultiplatform {
         jvmMain {
             dependsOn(commonMain)
             dependencies {
-                implementation(libs.kotlinStdlib)
             }
         }
-
 
         androidMain {
             dependsOn(jvmMain)
             dependencies {
-                api("androidx.annotation:annotation:1.1.0")
-                api("androidx.annotation:annotation-experimental:1.4.0")
-                implementation('androidx.collection:collection-ktx:1.2.0')
+                api("androidx.annotation:annotation-experimental:1.4.1")
+                implementation("androidx.collection:collection-ktx:1.4.2")
             }
         }
 
-        desktopMain {
-            dependsOn(jvmMain)
-            dependencies {
-            }
+        commonStubsMain {
+            dependsOn(commonMain)
         }
 
-        jvmTest {
-            dependencies {
-            }
+        jvmStubsMain {
+            dependsOn(commonStubsMain)
+        }
+
+        linuxx64StubsMain {
+            dependsOn(commonStubsMain)
         }
 
         androidInstrumentedTest {
-            dependsOn(jvmTest)
+            dependsOn(commonTest)
             dependencies {
                 implementation(libs.testRules)
                 implementation(libs.testRunner)
                 implementation(libs.testExtJunit)
                 implementation(libs.espressoCore)
                 implementation(libs.truth)
-                implementation('androidx.collection:collection-ktx:1.2.0')
+                implementation("androidx.collection:collection-ktx:1.4.2")
             }
         }
 
         androidUnitTest {
-            dependsOn(jvmTest)
+            dependsOn(commonTest)
             dependencies {
                 implementation(libs.truth)
-                implementation('androidx.collection:collection-ktx:1.2.0')
+                implementation("androidx.collection:collection-ktx:1.4.2")
             }
-        }
-
-        desktopTest {
-            dependsOn(jvmTest)
         }
     }
 }
 
 androidx {
     name = "Compose Unit"
-    type = LibraryType.PUBLISHED_KOTLIN_ONLY_LIBRARY
+    type = LibraryType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     inceptionYear = "2020"
     description = "Compose classes for simple units"
     legacyDisableKotlinStrictApiMode = true
+    metalavaK2UastEnabled = false
     samples(project(":compose:ui:ui-unit:ui-unit-samples"))
+    kotlinTarget = KotlinTarget.KOTLIN_1_9
 }
 
-android {
-    namespace "androidx.compose.ui.unit"
-}

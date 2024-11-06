@@ -1,0 +1,24 @@
+plugins {
+    id("AndroidXPlugin")
+    id("AndroidXComposePlugin")
+    id("com.android.application")
+    id("org.jetbrains.kotlin.android")
+}
+
+android {
+    namespace 'androidx.compose.material3.integration.macrobenchmark.target'
+
+    buildTypes {
+        release {
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+    compileSdkVersion 35
+}
+
+dependencies {
+    implementation(project(":activity:activity-compose"))
+    implementation(project(":compose:material3:material3"))
+    implementation("androidx.compose.material:material-icons-core:1.6.8")
+}

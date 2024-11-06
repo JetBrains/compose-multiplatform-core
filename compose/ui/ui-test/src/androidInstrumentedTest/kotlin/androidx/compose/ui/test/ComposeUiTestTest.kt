@@ -18,8 +18,7 @@ package androidx.compose.ui.test
 
 import androidx.activity.ComponentActivity
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.LocalOverscrollConfiguration
+import androidx.compose.foundation.LocalOverscrollFactory
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.gestures.FlingBehavior
 import androidx.compose.foundation.gestures.ScrollScope
@@ -58,9 +57,7 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 
-/**
- * Smoke test to see if ComposeUiTest provides basic functionality.
- */
+/** Smoke test to see if ComposeUiTest provides basic functionality. */
 @LargeTest
 @RunWith(AndroidJUnit4::class)
 @OptIn(ExperimentalTestApi::class)
@@ -81,20 +78,14 @@ class ComposeUiTestTest {
     }
 
     @Composable
-    private fun ClickCounter(
-        clicks: MutableState<Int> = remember { mutableStateOf(0) }
-    ) {
+    private fun ClickCounter(clicks: MutableState<Int> = remember { mutableStateOf(0) }) {
         Column {
-            Button(onClick = { clicks.value++ }) {
-                Text("Click me")
-            }
+            Button(onClick = { clicks.value++ }) { Text("Click me") }
             Text("Click count: ${clicks.value}")
         }
     }
 
-    /**
-     * Check that basic scenarios work: a composition that is recomposed due to a state change.
-     */
+    /** Check that basic scenarios work: a composition that is recomposed due to a state change. */
     @Test
     fun testStateChange() = runComposeUiTest {
         val clicks = mutableStateOf(0)
@@ -123,9 +114,9 @@ class ComposeUiTestTest {
     }
 
     /**
-     * Check that animation scenarios work: a composition with an animation in its initial state
-     * is idle, stays non-idle while the animation animates to a new target and is idle again
-     * after that.
+     * Check that animation scenarios work: a composition with an animation in its initial state is
+     * idle, stays non-idle while the animation animates to a new target and is idle again after
+     * that.
      */
     @Test
     fun testAnimation() = runComposeUiTest {
@@ -133,12 +124,7 @@ class ComposeUiTestTest {
         setContent {
             val offset = animateFloatAsState(target)
             Box(Modifier.fillMaxSize()) {
-                Box(
-                    Modifier
-                        .size(10.dp)
-                        .offset(x = offset.value.dp)
-                        .testTag("box")
-                )
+                Box(Modifier.size(10.dp).offset(x = offset.value.dp).testTag("box"))
             }
         }
         onNodeWithTag("box").assertLeftPositionInRootIsEqualTo(0.dp)
@@ -147,10 +133,9 @@ class ComposeUiTestTest {
     }
 
     /**
-     * Check that scrolling and controlling the clock works: a scrollable receives a swipe while
-     * the clock is paused, when the clock is resumed it performs the fling.
+     * Check that scrolling and controlling the clock works: a scrollable receives a swipe while the
+     * clock is paused, when the clock is resumed it performs the fling.
      */
-    @OptIn(ExperimentalFoundationApi::class)
     @Test
     fun testControlledScrolling() = runComposeUiTest {
         // Define constants used in the test
@@ -163,24 +148,14 @@ class ComposeUiTestTest {
         setContent {
             WithTouchSlop(touchSlop = touchSlop) {
                 // turn off visual overscroll for calculation correctness
-                CompositionLocalProvider(LocalOverscrollConfiguration provides null) {
+                CompositionLocalProvider(LocalOverscrollFactory provides null) {
                     Box(Modifier.fillMaxSize()) {
                         Column(
-                            Modifier
-                                .requiredSize(200.dp)
-                                .verticalScroll(
-                                    scrollState,
-                                    flingBehavior = flingBehavior
-                                )
+                            Modifier.requiredSize(200.dp)
+                                .verticalScroll(scrollState, flingBehavior = flingBehavior)
                                 .testTag("list")
                         ) {
-                            repeat(n) {
-                                Spacer(
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .height(30.dp)
-                                )
-                            }
+                            repeat(n) { Spacer(Modifier.fillMaxWidth().height(30.dp)) }
                         }
                     }
                 }
@@ -192,9 +167,7 @@ class ComposeUiTestTest {
         mainClock.autoAdvance = false
         onNodeWithTag("list").performTouchInput {
             down(bottomCenter)
-            repeat(10) {
-                moveTo(bottomCenter - percentOffset(y = (it + 1) / 10f))
-            }
+            repeat(10) { moveTo(bottomCenter - percentOffset(y = (it + 1) / 10f)) }
             up()
         }
         waitForIdle()
@@ -220,16 +193,13 @@ class ComposeUiTestTest {
 
         override suspend fun ScrollScope.performFling(initialVelocity: Float): Float {
             for (delta in deltas) {
-                withFrameNanos {
-                    scrollBy(delta.toFloat())
-                }
+                withFrameNanos { scrollBy(delta.toFloat()) }
             }
             return 0f
         }
     }
 
     @Test
-    fun getActivityTest() = runAndroidComposeUiTest<ComponentActivity> {
-        assertThat(activity).isNotNull()
-    }
+    fun getActivityTest() =
+        runAndroidComposeUiTest<ComponentActivity> { assertThat(activity).isNotNull() }
 }

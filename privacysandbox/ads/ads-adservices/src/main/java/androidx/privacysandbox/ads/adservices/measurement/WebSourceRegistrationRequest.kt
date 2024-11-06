@@ -16,8 +16,13 @@
 
 package androidx.privacysandbox.ads.adservices.measurement
 
+import android.annotation.SuppressLint
 import android.net.Uri
+import android.os.Build
+import android.os.ext.SdkExtensions
 import android.view.InputEvent
+import androidx.annotation.RequiresExtension
+import androidx.privacysandbox.ads.adservices.measurement.WebSourceParams.Companion.convertWebSourceParams
 
 /**
  * Class to hold input to measurement source registration calls from web context.
@@ -25,24 +30,25 @@ import android.view.InputEvent
  * @param webSourceParams Registration info to fetch sources.
  * @param topOriginUri Top level origin of publisher.
  * @param inputEvent User Interaction {@link InputEvent} used by the AttributionReporting API to
- * distinguish clicks from views.
+ *   distinguish clicks from views.
  * @param appDestination App destination of the source. It is the android app {@link Uri} where
- * corresponding conversion is expected. At least one of app destination or web destination is
- * required.
+ *   corresponding conversion is expected. At least one of app destination or web destination is
+ *   required.
  * @param webDestination Web destination of the source. It is the website {@link Uri} where
- * corresponding conversion is expected. At least one of app destination or web destination is
- * required.
+ *   corresponding conversion is expected. At least one of app destination or web destination is
+ *   required.
  * @param verifiedDestination Verified destination by the caller. This is where the user actually
- * landed.
+ *   landed.
  */
-class WebSourceRegistrationRequest public constructor(
+class WebSourceRegistrationRequest
+public constructor(
     val webSourceParams: List<WebSourceParams>,
     val topOriginUri: Uri,
     val inputEvent: InputEvent? = null,
     val appDestination: Uri? = null,
     val webDestination: Uri? = null,
     val verifiedDestination: Uri? = null
-    ) {
+) {
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -79,17 +85,34 @@ class WebSourceRegistrationRequest public constructor(
     }
 
     override fun toString(): String {
-        val vals = "WebSourceParams=[$webSourceParams], TopOriginUri=$topOriginUri, " +
-            "InputEvent=$inputEvent, AppDestination=$appDestination, " +
-            "WebDestination=$webDestination, VerifiedDestination=$verifiedDestination"
+        val vals =
+            "WebSourceParams=[$webSourceParams], TopOriginUri=$topOriginUri, " +
+                "InputEvent=$inputEvent, AppDestination=$appDestination, " +
+                "WebDestination=$webDestination, VerifiedDestination=$verifiedDestination"
         return "WebSourceRegistrationRequest { $vals }"
+    }
+
+    @SuppressLint("ClassVerificationFailure", "NewApi")
+    @RequiresExtension(extension = SdkExtensions.AD_SERVICES, version = 4)
+    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 9)
+    internal fun convertToAdServices():
+        android.adservices.measurement.WebSourceRegistrationRequest {
+        return android.adservices.measurement.WebSourceRegistrationRequest.Builder(
+                convertWebSourceParams(webSourceParams),
+                topOriginUri
+            )
+            .setWebDestination(webDestination)
+            .setAppDestination(appDestination)
+            .setInputEvent(inputEvent)
+            .setVerifiedDestination(verifiedDestination)
+            .build()
     }
 
     /**
      * Builder for [WebSourceRegistrationRequest].
      *
-     * @param webSourceParams source parameters containing source registration parameters, the
-     *     list should not be empty
+     * @param webSourceParams source parameters containing source registration parameters, the list
+     *   should not be empty
      * @param topOriginUri source publisher [Uri]
      */
     public class Builder(
@@ -105,12 +128,10 @@ class WebSourceRegistrationRequest public constructor(
          * Setter for input event.
          *
          * @param inputEvent User Interaction InputEvent used by the AttributionReporting API to
-         *     distinguish clicks from views.
+         *   distinguish clicks from views.
          * @return builder
          */
-        fun setInputEvent(inputEvent: InputEvent): Builder = apply {
-            this.inputEvent = inputEvent
-        }
+        fun setInputEvent(inputEvent: InputEvent): Builder = apply { this.inputEvent = inputEvent }
 
         /**
          * Setter for app destination. It is the android app {@link Uri} where corresponding

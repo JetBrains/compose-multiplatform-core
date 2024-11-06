@@ -22,23 +22,26 @@ import android.util.AttributeSet
 import android.widget.TextView
 
 /**
- * Custom view that represents a TextView that invalidates itself during every draw which
- * is mainly used for testing invalidation paths.
+ * Custom view that represents a TextView that invalidates itself during every draw which is mainly
+ * used for testing invalidation paths.
  *
- * The view invalidates up to the amount of times specified in [timesToInvalidate] then it will
- * no longer invalidate upon drawing.
+ * The view invalidates up to the amount of times specified in [timesToInvalidate] then it will no
+ * longer invalidate upon drawing.
  */
 class InvalidatedTextView : TextView {
     var timesDrawn: Int = 0
     var timesToInvalidate: Int = 0
+    var onDraw: () -> Unit = {}
 
     constructor(context: Context?) : super(context)
+
     constructor(context: Context?, attrs: AttributeSet?) : super(context, attrs)
-    constructor(context: Context?, attrs: AttributeSet?, defStyleAttr: Int) : super(
-        context,
-        attrs,
-        defStyleAttr
-    )
+
+    constructor(
+        context: Context?,
+        attrs: AttributeSet?,
+        defStyleAttr: Int
+    ) : super(context, attrs, defStyleAttr)
 
     override fun draw(canvas: Canvas) {
         if (timesDrawn < timesToInvalidate) {
@@ -46,5 +49,6 @@ class InvalidatedTextView : TextView {
         }
         super.draw(canvas)
         ++timesDrawn
+        onDraw()
     }
 }

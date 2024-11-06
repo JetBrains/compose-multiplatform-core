@@ -16,14 +16,12 @@
 
 package androidx.window.testing.embedding
 
-import androidx.window.core.ExperimentalWindowApi
 import androidx.window.embedding.SplitAttributes
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.mockito.kotlin.mock
 
 /** Test class to verify [TestSplitInfo] */
-@OptIn(ExperimentalWindowApi::class)
 class SplitInfoTestingTest {
 
     /** Verifies the default value of [TestSplitInfo]. */
@@ -38,7 +36,8 @@ class SplitInfoTestingTest {
                 .setSplitType(SplitAttributes.SplitType.SPLIT_TYPE_EQUAL)
                 .setLayoutDirection(SplitAttributes.LayoutDirection.LOCALE)
                 .build(),
-            splitInfo.splitAttributes)
+            splitInfo.splitAttributes
+        )
     }
 
     /** Verifies [TestSplitInfo] */
@@ -46,10 +45,11 @@ class SplitInfoTestingTest {
     fun testSplitInfoWithNonEmptyActivityStacks() {
         val primaryActivityStack = TestActivityStack(listOf(mock()), isEmpty = false)
         val secondaryActivityStack = TestActivityStack(listOf(mock()), isEmpty = false)
-        val splitAttributes = SplitAttributes.Builder()
-            .setSplitType(SplitAttributes.SplitType.SPLIT_TYPE_HINGE)
-            .setLayoutDirection(SplitAttributes.LayoutDirection.TOP_TO_BOTTOM)
-            .build()
+        val splitAttributes =
+            SplitAttributes.Builder()
+                .setSplitType(SplitAttributes.SplitType.SPLIT_TYPE_HINGE)
+                .setLayoutDirection(SplitAttributes.LayoutDirection.TOP_TO_BOTTOM)
+                .build()
 
         val splitInfo = TestSplitInfo(primaryActivityStack, secondaryActivityStack, splitAttributes)
 

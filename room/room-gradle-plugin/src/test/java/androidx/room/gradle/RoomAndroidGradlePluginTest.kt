@@ -29,8 +29,7 @@ import org.junit.runner.RunWith
 @Suppress("JUnitMalformedDeclaration") // Using TestParameterInjector in test functions.
 @RunWith(TestParameterInjector::class)
 class RoomAndroidGradlePluginTest {
-    @get:Rule
-    val projectSetup = ProjectSetupRule()
+    @get:Rule val projectSetup = ProjectSetupRule()
 
     private val roomVersion by lazy {
         projectSetup.getLibraryLatestVersionInLocalRepo("androidx/room/room-compiler")
@@ -57,39 +56,43 @@ class RoomAndroidGradlePluginTest {
             }
         }
 
-        val additionalPluginsBlock = when (backend) {
-            ProcessingBackend.JAVAC ->
-                """
+        val additionalPluginsBlock =
+            when (backend) {
+                ProcessingBackend.JAVAC ->
+                    """
                 |    id('kotlin-android')
-                """.trimMargin()
-            ProcessingBackend.KAPT ->
                 """
+                        .trimMargin()
+                ProcessingBackend.KAPT ->
+                    """
                 |    id('kotlin-android')
                 |    id('kotlin-kapt')
-                """.trimMargin()
-            ProcessingBackend.KSP ->
                 """
+                        .trimMargin()
+                ProcessingBackend.KSP ->
+                    """
                 |    id('kotlin-android')
                 |    id('com.google.devtools.ksp')
-                """.trimMargin()
-        }
+                """
+                        .trimMargin()
+            }
 
         val repositoriesBlock = buildString {
             appendLine("repositories {")
-            projectSetup.allRepositoryPaths.forEach {
-                appendLine("""maven { url "$it" }""")
-            }
+            projectSetup.allRepositoryPaths.forEach { appendLine("""maven { url "$it" }""") }
             appendLine("}")
         }
 
-        val processorConfig = when (backend) {
-            ProcessingBackend.JAVAC -> "annotationProcessor"
-            ProcessingBackend.KAPT -> "kapt"
-            ProcessingBackend.KSP -> "ksp"
-        }
+        val processorConfig =
+            when (backend) {
+                ProcessingBackend.JAVAC -> "annotationProcessor"
+                ProcessingBackend.KAPT -> "kapt"
+                ProcessingBackend.KSP -> "ksp"
+            }
 
-        val kotlinJvmTargetBlock = if (backend.isForKotlin) {
-            """
+        val kotlinJvmTargetBlock =
+            if (backend.isForKotlin) {
+                """
             tasks.withType(
                 org.jetbrains.kotlin.gradle.tasks.KotlinCompile
             ).configureEach {
@@ -97,14 +100,16 @@ class RoomAndroidGradlePluginTest {
                     jvmTarget = "1.8"
                 }
             }
-            """.trimIndent()
-        } else {
-            ""
-        }
+            """
+                    .trimIndent()
+            } else {
+                ""
+            }
 
         // set up build file
-        File(projectRoot, "build.gradle").writeText(
-            """
+        File(projectRoot, "build.gradle")
+            .writeText(
+                """
             |plugins {
             |    id('com.android.application')
             |    id('androidx.room')
@@ -133,11 +138,12 @@ class RoomAndroidGradlePluginTest {
             |
             |room {
             |${schemaDslLines.joinToString(separator = "\n")}
+            |    generateKotlin = false
             |}
             |
-            """.trimMargin()
-
-        )
+            """
+                    .trimMargin()
+            )
     }
 
     @Test
@@ -204,12 +210,16 @@ class RoomAndroidGradlePluginTest {
         }
 
         // Add a new file, it does not change the schema
-        projectSetup.rootDir.resolve("src/main/java/room/testapp/NewUtil.java")
-            .writeText("""
+        projectSetup.rootDir
+            .resolve("src/main/java/room/testapp/NewUtil.java")
+            .writeText(
+                """
             package room.testapp;
             public class NewUtil {
             }
-            """.trimIndent())
+            """
+                    .trimIndent()
+            )
 
         // Incremental build, compile task re-runs because of new source, but no schema is copied
         // since Room processor didn't even run.
@@ -255,14 +265,16 @@ class RoomAndroidGradlePluginTest {
         setup(
             projectName = "flavored-project",
             backend = backend,
-            schemaDslLines = listOf(
-                "schemaDirectory(\"flavorOne\", \"\$projectDir/schemas/flavorOne\")",
-                "schemaDirectory(\"flavorTwo\", \"\$projectDir/schemas/flavorTwo\")"
-            )
+            schemaDslLines =
+                listOf(
+                    "schemaDirectory(\"flavorOne\", \"\$projectDir/schemas/flavorOne\")",
+                    "schemaDirectory(\"flavorTwo\", \"\$projectDir/schemas/flavorTwo\")",
+                )
         )
 
-        File(projectSetup.rootDir, "build.gradle").appendText(
-            """
+        File(projectSetup.rootDir, "build.gradle")
+            .appendText(
+                """
             android {
                 flavorDimensions "mode"
                 productFlavors {
@@ -274,26 +286,78 @@ class RoomAndroidGradlePluginTest {
                     }
                 }
             }
-            """.trimIndent()
-        )
+            """
+                    .trimIndent()
+            )
 
         runGradleTasks(
-            CLEAN_TASK,
-            "compileFlavorOneDebugJavaWithJavac",
-            "compileFlavorTwoDebugJavaWithJavac"
-        ).let { result ->
-            result.assertTaskOutcome(":compileFlavorOneDebugJavaWithJavac", TaskOutcome.SUCCESS)
-            result.assertTaskOutcome(":compileFlavorTwoDebugJavaWithJavac", TaskOutcome.SUCCESS)
-            result.assertTaskOutcome(":copyRoomSchemasFlavorOne", TaskOutcome.SUCCESS)
-            result.assertTaskOutcome(":copyRoomSchemasFlavorTwo", TaskOutcome.SUCCESS)
-        }
+                CLEAN_TASK,
+                "compileFlavorOneDebugJavaWithJavac",
+                "compileFlavorTwoDebugJavaWithJavac"
+            )
+            .let { result ->
+                result.assertTaskOutcome(":compileFlavorOneDebugJavaWithJavac", TaskOutcome.SUCCESS)
+                result.assertTaskOutcome(":compileFlavorTwoDebugJavaWithJavac", TaskOutcome.SUCCESS)
+                result.assertTaskOutcome(":copyRoomSchemasFlavorOne", TaskOutcome.SUCCESS)
+                result.assertTaskOutcome(":copyRoomSchemasFlavorTwo", TaskOutcome.SUCCESS)
+            }
         // Check schema files are generated for both flavor, each in its own folder.
-        val flavorOneSchema = projectSetup.rootDir.resolve(
-            "schemas/flavorOne/room.testapp.MyDatabase/1.json"
+        val flavorOneSchema =
+            projectSetup.rootDir.resolve("schemas/flavorOne/room.testapp.MyDatabase/1.json")
+        val flavorTwoSchema =
+            projectSetup.rootDir.resolve("schemas/flavorTwo/room.testapp.MyDatabase/1.json")
+        assertThat(flavorOneSchema.exists()).isTrue()
+        assertThat(flavorTwoSchema.exists()).isTrue()
+        // Check the schemas in both flavors are different
+        assertThat(flavorOneSchema.readText()).isNotEqualTo(flavorTwoSchema.readText())
+    }
+
+    @Test
+    fun testFlavoredProjectPriority() {
+        setup(
+            projectName = "flavored-project",
+            schemaDslLines =
+                listOf(
+                    "schemaDirectory(\"\$projectDir/schemasAll/\")",
+                    "schemaDirectory(\"flavorOne\", \"\$projectDir/schemas/flavorOne\")",
+                    "schemaDirectory(\"flavorTwo\", \"\$projectDir/schemas/flavorTwo\")",
+                )
         )
-        val flavorTwoSchema = projectSetup.rootDir.resolve(
-            "schemas/flavorTwo/room.testapp.MyDatabase/1.json"
-        )
+
+        File(projectSetup.rootDir, "build.gradle")
+            .appendText(
+                """
+            android {
+                flavorDimensions "mode"
+                productFlavors {
+                    flavorOne {
+                        dimension "mode"
+                    }
+                    flavorTwo {
+                        dimension "mode"
+                    }
+                }
+            }
+            """
+                    .trimIndent()
+            )
+
+        runGradleTasks(
+                CLEAN_TASK,
+                "compileFlavorOneDebugJavaWithJavac",
+                "compileFlavorTwoDebugJavaWithJavac"
+            )
+            .let { result ->
+                result.assertTaskOutcome(":compileFlavorOneDebugJavaWithJavac", TaskOutcome.SUCCESS)
+                result.assertTaskOutcome(":compileFlavorTwoDebugJavaWithJavac", TaskOutcome.SUCCESS)
+                result.assertTaskOutcome(":copyRoomSchemasFlavorOne", TaskOutcome.SUCCESS)
+                result.assertTaskOutcome(":copyRoomSchemasFlavorTwo", TaskOutcome.SUCCESS)
+            }
+        // Check schema files are generated for both flavor, each in its own folder.
+        val flavorOneSchema =
+            projectSetup.rootDir.resolve("schemas/flavorOne/room.testapp.MyDatabase/1.json")
+        val flavorTwoSchema =
+            projectSetup.rootDir.resolve("schemas/flavorTwo/room.testapp.MyDatabase/1.json")
         assertThat(flavorOneSchema.exists()).isTrue()
         assertThat(flavorTwoSchema.exists()).isTrue()
         // Check the schemas in both flavors are different
@@ -305,14 +369,16 @@ class RoomAndroidGradlePluginTest {
         setup(
             projectName = "simple-project",
             backend = backend,
-            schemaDslLines = listOf(
-                "schemaDirectory(\"\$projectDir/schemas\")",
-                "schemaDirectory(\"staging\", \"\$projectDir/schemas/staging\")"
-            )
+            schemaDslLines =
+                listOf(
+                    "schemaDirectory(\"\$projectDir/schemas\")",
+                    "schemaDirectory(\"staging\", \"\$projectDir/schemas/staging\")"
+                )
         )
 
-        File(projectSetup.rootDir, "build.gradle").appendText(
-            """
+        File(projectSetup.rootDir, "build.gradle")
+            .appendText(
+                """
             android {
                 buildTypes {
                     staging {
@@ -321,44 +387,41 @@ class RoomAndroidGradlePluginTest {
                     }
                 }
             }
-            """.trimIndent()
-        )
+            """
+                    .trimIndent()
+            )
 
         runGradleTasks(CLEAN_TASK, "compileStagingJavaWithJavac").let { result ->
             result.assertTaskOutcome(":compileStagingJavaWithJavac", TaskOutcome.SUCCESS)
             result.assertTaskOutcome(":copyRoomSchemasStaging", TaskOutcome.SUCCESS)
         }
-        val schemeFile = projectSetup.rootDir.resolve(
-            "schemas/staging/room.testapp.MyDatabase/1.json"
-        )
+        val schemeFile =
+            projectSetup.rootDir.resolve("schemas/staging/room.testapp.MyDatabase/1.json")
         assertThat(schemeFile.exists()).isTrue()
     }
 
     @Test
     fun testMissingConfigProject() {
-        setup(
-            projectName = "simple-project",
-            schemaDslLines = listOf()
-        )
+        setup(projectName = "simple-project", schemaDslLines = listOf())
 
         runGradleTasks(CLEAN_TASK, COMPILE_TASK, expectFailure = true).let { result ->
-            assertThat(result.output).contains(
-                "The Room Gradle plugin was applied but no schema location was specified."
-            )
+            assertThat(result.output)
+                .contains(
+                    "The Room Gradle plugin was applied but no schema location was specified."
+                )
         }
     }
 
     @Test
     fun testEmptyDirConfigProject() {
-        setup(
-            projectName = "simple-project",
-            schemaDslLines = listOf("schemaDirectory(\"\")")
-        )
+        setup(projectName = "simple-project", schemaDslLines = listOf("schemaDirectory(\"\")"))
 
         runGradleTasks(CLEAN_TASK, COMPILE_TASK, expectFailure = true).let { result ->
-            assertThat(result.output).contains(
-                "The Room schema directory path for Android variant 'debug' must not be empty."
-            )
+            assertThat(result.output)
+                .contains(
+                    "Failed to query the value of task ':copyRoomSchemas' property 'schemaDirectory'."
+                )
+            assertThat(result.output).contains("path may not be null or empty string.")
         }
     }
 
@@ -366,13 +429,15 @@ class RoomAndroidGradlePluginTest {
     fun testMissingConfigFlavoredProject() {
         setup(
             projectName = "flavored-project",
-            schemaDslLines = listOf(
-                "schemaDirectory(\"flavorOne\", \"\$projectDir/schemas/flavorOne\")",
-            )
+            schemaDslLines =
+                listOf(
+                    "schemaDirectory(\"flavorOne\", \"\$projectDir/schemas/flavorOne\")",
+                )
         )
 
-        File(projectSetup.rootDir, "build.gradle").appendText(
-            """
+        File(projectSetup.rootDir, "build.gradle")
+            .appendText(
+                """
             android {
                 flavorDimensions "mode"
                 productFlavors {
@@ -384,19 +449,22 @@ class RoomAndroidGradlePluginTest {
                     }
                 }
             }
-            """.trimIndent()
-        )
+            """
+                    .trimIndent()
+            )
 
         runGradleTasks(
-            CLEAN_TASK,
-            "compileFlavorOneDebugJavaWithJavac",
-            "compileFlavorTwoDebugJavaWithJavac",
-            expectFailure = true
-        ).let { result ->
-            assertThat(result.output).contains(
-                "No matching Room schema directory for Android variant 'flavorTwoDebug'."
+                CLEAN_TASK,
+                "compileFlavorOneDebugJavaWithJavac",
+                "compileFlavorTwoDebugJavaWithJavac",
+                expectFailure = true
             )
-        }
+            .let { result ->
+                assertThat(result.output)
+                    .contains(
+                        "No matching Room schema directory for Android variant 'flavorTwoDebug'."
+                    )
+            }
     }
 
     @Test
@@ -404,13 +472,15 @@ class RoomAndroidGradlePluginTest {
         setup(
             projectName = "flavored-project",
             backend = backend,
-            schemaDslLines = listOf(
-                "schemaDirectory(\"\$projectDir/schemas\")",
-            )
+            schemaDslLines =
+                listOf(
+                    "schemaDirectory(\"\$projectDir/schemas\")",
+                )
         )
 
-        File(projectSetup.rootDir, "build.gradle").appendText(
-            """
+        File(projectSetup.rootDir, "build.gradle")
+            .appendText(
+                """
             android {
                 flavorDimensions "mode"
                 productFlavors {
@@ -422,23 +492,24 @@ class RoomAndroidGradlePluginTest {
                     }
                 }
             }
-            """.trimIndent()
-        )
+            """
+                    .trimIndent()
+            )
 
         runGradleTasks(
-            CLEAN_TASK,
-            "compileFlavorOneDebugJavaWithJavac",
-            "compileFlavorTwoDebugJavaWithJavac",
-            expectFailure = true
-        ).let { result ->
-            result.assertTaskOutcome(":compileFlavorOneDebugJavaWithJavac", TaskOutcome.SUCCESS)
-            result.assertTaskOutcome(":compileFlavorTwoDebugJavaWithJavac", TaskOutcome.SUCCESS)
-            result.assertTaskOutcome(":copyRoomSchemas", TaskOutcome.FAILED)
-
-            assertThat(result.output).contains(
-                "Inconsistency detected exporting Room schema files"
+                CLEAN_TASK,
+                "compileFlavorOneDebugJavaWithJavac",
+                "compileFlavorTwoDebugJavaWithJavac",
+                expectFailure = true
             )
-        }
+            .let { result ->
+                result.assertTaskOutcome(":compileFlavorOneDebugJavaWithJavac", TaskOutcome.SUCCESS)
+                result.assertTaskOutcome(":compileFlavorTwoDebugJavaWithJavac", TaskOutcome.SUCCESS)
+                result.assertTaskOutcome(":copyRoomSchemas", TaskOutcome.FAILED)
+
+                assertThat(result.output)
+                    .contains("Inconsistency detected exporting Room schema files")
+            }
     }
 
     private fun runGradleTasks(
@@ -447,13 +518,7 @@ class RoomAndroidGradlePluginTest {
         expectFailure: Boolean = false
     ) = runGradle(*args, projectDir = projectDir, expectFailure = expectFailure)
 
-    private fun searchAndReplace(file: File, search: String, replace: String) {
-        file.writeText(file.readText().replace(search, replace))
-    }
-
-    enum class ProcessingBackend(
-        val isForKotlin: Boolean
-    ) {
+    enum class ProcessingBackend(val isForKotlin: Boolean) {
         JAVAC(false),
         KAPT(true),
         KSP(true)

@@ -46,6 +46,8 @@
     <string name="close_sheet">"Close sheet"</string>
     <!-- Default accessibility error text for an editable text field. -->
     <string name="default_error_message">"Invalid input"</string>
+    <!-- Spoken description of an empty editable text field -->
+    <string name="state_empty">Empty</string>
     <!-- Default title of the popup window to be read by a screen reader. -->
     <string name="default_popup_window_title" tools:ignore="ExtraTranslation">"Pop-Up Window"</string>
 
@@ -53,4 +55,6 @@
     <string name="range_start">"Range start"</string>
     <!-- Spoken content description of the end seek control in a range slider. -->
     <string name="range_end">"Range end"</string>
+    <!-- Accessibility pane title for a snackbar -->
+    <string name="snackbar_pane_title">Alert</string>
 </resources>

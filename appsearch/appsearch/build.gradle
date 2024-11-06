@@ -21,7 +21,7 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.Publish
+import androidx.build.LibraryType
 
 plugins {
     id('AndroidXPlugin')
@@ -29,10 +29,8 @@ plugins {
 }
 
 android {
-    defaultConfig {
-        multiDexEnabled true
-    }
-    buildTypes.all {
+    compileSdk 35
+    buildTypes.configureEach {
         consumerProguardFiles "proguard-rules.pro"
     }
     namespace "androidx.appsearch"
@@ -43,9 +41,11 @@ dependencies {
     api(libs.guavaListenableFuture)
     api(libs.autoServiceAnnotations)
 
-    implementation('androidx.collection:collection:1.2.0')
+    implementation("androidx.collection:collection:1.4.2")
     implementation('androidx.concurrent:concurrent-futures:1.0.0')
-    implementation("androidx.core:core:1.6.0")
+    implementation("androidx.core:core:1.9.0")
+
+    annotationProcessor project(':appsearch:appsearch-compiler')
 
     androidTestAnnotationProcessor project(':appsearch:appsearch-compiler')
     androidTestImplementation project(':appsearch:appsearch-builtin-types')
@@ -60,18 +60,15 @@ dependencies {
     androidTestImplementation(libs.testCore)
     androidTestImplementation(libs.testRules)
     androidTestImplementation(libs.truth)
-    //TODO(b/149787478) upgrade and link to Dependencies.kt
     androidTestImplementation(libs.junit)
     // This dependency is unused by the test implementation, but it's here to validate that
     // icing's jarjar'ing of the Protobuf_lite doesn't conflict with external dependencies.
     androidTestImplementation(libs.protobufLite)
-    androidTestImplementation(libs.multidex)
 }
 
 androidx {
     name = "AppSearch"
-    publish = Publish.SNAPSHOT_AND_RELEASE
+    type = LibraryType.PUBLISHED_LIBRARY
     inceptionYear = '2019'
     description = 'AndroidX AppSearch - App Indexing'
-    metalavaK2UastEnabled = true
 }

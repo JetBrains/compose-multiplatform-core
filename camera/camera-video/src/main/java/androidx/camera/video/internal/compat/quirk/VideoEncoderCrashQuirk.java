@@ -21,7 +21,6 @@ import static androidx.camera.core.CameraSelector.LENS_FACING_FRONT;
 import android.os.Build;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.camera.core.impl.CameraInfoInternal;
 import androidx.camera.video.Quality;
 
@@ -34,7 +33,6 @@ import androidx.camera.video.Quality;
  *                  others work fine.
  *     Device(s): Positivo Twist 2 Pro (twist 2 pro)
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public class VideoEncoderCrashQuirk implements VideoQualityQuirk {
     static boolean load() {
         return isPositivoTwist2Pro();
@@ -50,14 +48,10 @@ public class VideoEncoderCrashQuirk implements VideoQualityQuirk {
     public boolean isProblematicVideoQuality(@NonNull CameraInfoInternal cameraInfo,
             @NonNull Quality quality) {
         if (isPositivoTwist2Pro()) {
+            // The problem can not be workaround by enabling surface processing. See
+            // b/218841498#comment5.
             return cameraInfo.getLensFacing() == LENS_FACING_FRONT && quality == Quality.SD;
         }
-        return false;
-    }
-
-    @Override
-    public boolean workaroundBySurfaceProcessing() {
-        // Failed to record video for front camera + SD quality. See b/218841498 comment#5.
         return false;
     }
 }

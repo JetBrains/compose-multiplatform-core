@@ -12,6 +12,10 @@ package androidx.wear.phone.interactions {
 
   public static final class PhoneTypeHelper.Companion {
     method public int getPhoneDeviceType(android.content.Context context);
+    property public static final int DEVICE_TYPE_ANDROID;
+    property public static final int DEVICE_TYPE_ERROR;
+    property public static final int DEVICE_TYPE_IOS;
+    property public static final int DEVICE_TYPE_UNKNOWN;
   }
 
 }
@@ -54,6 +58,8 @@ package androidx.wear.phone.interactions.authentication {
   }
 
   public static final class OAuthRequest.Companion {
+    property public static final String WEAR_REDIRECT_URL_PREFIX;
+    property public static final String WEAR_REDIRECT_URL_PREFIX_CN;
   }
 
   public final class OAuthResponse {
@@ -95,6 +101,13 @@ package androidx.wear.phone.interactions.authentication {
 
   public static final class RemoteAuthClient.Companion {
     method public androidx.wear.phone.interactions.authentication.RemoteAuthClient create(android.content.Context context);
+    property public static final int ERROR_PHONE_UNAVAILABLE;
+    property public static final int ERROR_UNSUPPORTED;
+    property public static final int NO_ERROR;
+    property public static final int STATUS_AVAILABLE;
+    property public static final int STATUS_TEMPORARILY_UNAVAILABLE;
+    property public static final int STATUS_UNAVAILABLE;
+    property public static final int STATUS_UNKNOWN;
   }
 
   public interface RemoteAuthRequestHandler {

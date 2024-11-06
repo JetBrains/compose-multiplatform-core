@@ -5,7 +5,7 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.Publish
+import androidx.build.LibraryType
 
 plugins {
     id("AndroidXPlugin")
@@ -21,18 +21,19 @@ dependencies {
         implementation(project(":core:core-testing"))
     }
 
-    api("androidx.annotation:annotation:1.6.0")
-    api("androidx.annotation:annotation-experimental:1.4.0")
+    api("androidx.annotation:annotation:1.8.1")
+    api("androidx.annotation:annotation-experimental:1.4.1")
     api("androidx.lifecycle:lifecycle-runtime:2.6.2")
     api("androidx.versionedparcelable:versionedparcelable:1.1.1")
-    implementation("androidx.collection:collection:1.0.0")
+    implementation("androidx.collection:collection:1.4.2")
     implementation("androidx.concurrent:concurrent-futures:1.0.0")
     implementation("androidx.interpolator:interpolator:1.0.0")
+    implementation("androidx.tracing:tracing:1.2.0")
 
     api(libs.kotlinStdlib)
 
     // We don't ship this as a public artifact, so it must remain a project-type dependency.
-    annotationProcessor(projectOrArtifact(":versionedparcelable:versionedparcelable-compiler"))
+    annotationProcessor(project(":versionedparcelable:versionedparcelable-compiler"))
 
     androidTestImplementation(libs.junit)
     androidTestImplementation(libs.kotlinStdlib)
@@ -41,9 +42,8 @@ dependencies {
     androidTestImplementation(libs.testRunner)
     androidTestImplementation(libs.testRules)
     androidTestImplementation(libs.truth)
-    androidTestImplementation(libs.espressoCore, excludes.espresso)
-    androidTestImplementation(libs.mockitoCore, excludes.bytebuddy) // DexMaker has it"s own MockMaker
-    androidTestImplementation(libs.multidex)
+    androidTestImplementation(libs.espressoCore)
+    androidTestImplementation(libs.mockitoCore)
     androidTestImplementation(libs.testUiautomator)
 
     androidTestImplementation("androidx.lifecycle:lifecycle-runtime-testing:2.6.2")
@@ -51,14 +51,15 @@ dependencies {
     // Including both dexmakers allows support for all API levels plus final mocking support on
     // API 28+. The implementation is swapped based on the finality of the mock type. This
     // delegation is handled manually inside androidx.core.util.mockito.CustomMockMaker.
-    androidTestImplementation(libs.dexmakerMockito, excludes.bytebuddy) // DexMaker has it"s own MockMaker
-    androidTestImplementation(libs.dexmakerMockitoInline, excludes.bytebuddy) // DexMaker has it"s own MockMaker
+    androidTestImplementation(libs.dexmakerMockito)
+    androidTestImplementation(libs.dexmakerMockitoInline)
     androidTestImplementation("androidx.appcompat:appcompat:1.1.0") {
         exclude group: "androidx.core", module: "core"
     }
     androidTestImplementation(project(":internal-testutils-runtime"), {
         exclude group: "androidx.core", module: "core"
     })
+    androidTestImplementation(project(":internal-testutils-lifecycle"))
     androidTestImplementation(project(":internal-testutils-fonts"))
     androidTestImplementation(project(":internal-testutils-mockito"))
 
@@ -71,6 +72,7 @@ dependencies {
 }
 
 android {
+    compileSdk = 35
     buildFeatures {
         aidl = true
     }
@@ -78,7 +80,7 @@ android {
     aaptOptions {
         noCompress "ttf"
     }
-    buildTypes.all {
+    buildTypes.configureEach {
         consumerProguardFiles "proguard-rules.pro"
 
         stableAidl {
@@ -93,19 +95,16 @@ android {
                 "mockito-extensions/org.mockito.plugins.StackTraceCleanerProvider"
         ]
     }
-    defaultConfig {
-        multiDexEnabled = true
-    }
     namespace "androidx.core"
 }
 
 androidx {
     name = "Core"
-    publish = Publish.SNAPSHOT_AND_RELEASE
+    type = LibraryType.PUBLISHED_LIBRARY
     mavenVersion = LibraryVersions.CORE
     inceptionYear = "2015"
     description = "Provides backward-compatible implementations of Android platform APIs and " +
             "features."
     failOnDeprecationWarnings = false
-    metalavaK2UastEnabled = true
+    samples(project(":core:core:core-samples"))
 }

@@ -37,7 +37,6 @@ import androidx.camera.camera2.pipe.compat.SessionConfigData
 import kotlin.reflect.KClass
 
 /** Fake implementation of [CameraDeviceWrapper] for tests. */
-@RequiresApi(21)
 internal class FakeCameraDeviceWrapper(val fakeCamera: RobolectricCameras.FakeCamera) :
     CameraDeviceWrapper {
     override val cameraId: CameraId
@@ -114,12 +113,12 @@ internal class FakeCameraDeviceWrapper(val fakeCamera: RobolectricCameras.FakeCa
         return true
     }
 
-    @RequiresApi(Build.VERSION_CODES.R)
+    @RequiresApi(30)
     override fun getCameraAudioRestriction(): AudioRestrictionMode {
         return AudioRestrictionMode(fakeCamera.cameraDevice.cameraAudioRestriction)
     }
 
-    @RequiresApi(Build.VERSION_CODES.R)
+    @RequiresApi(30)
     override fun onCameraAudioRestrictionUpdated(mode: AudioRestrictionMode) {
         fakeCamera.cameraDevice.cameraAudioRestriction = mode.value
     }

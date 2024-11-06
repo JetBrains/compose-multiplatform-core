@@ -40,6 +40,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 private const val PARENT_FRAGMENT_CONTAINER_ID = 1
+
 @LargeTest
 @RunWith(AndroidJUnit4::class)
 class FragmentRecreateTest {
@@ -48,33 +49,22 @@ class FragmentRecreateTest {
         with(ActivityScenario.launch(EmptyTestActivity::class.java)) {
             var fragment: Fragment? = null
 
-            val content = @Composable {
-                AndroidFragment<SimpleEditTextFragment> {
-                    fragment = it
-                }
-            }
-            withActivity {
-                setContent(content = content)
-            }
+            val content = @Composable { AndroidFragment<SimpleEditTextFragment> { fragment = it } }
+            withActivity { setContent(content = content) }
 
             assertThat(fragment!!.requireView().parent).isNotNull()
             val editText: EditText = fragment!!.requireView().findViewById(R.id.edit_text)
             assertThat(editText.text.toString()).isEqualTo("Default")
 
             // Update the state to make sure it gets saved and restored properly
-            withActivity {
-                editText.setText("Updated")
-            }
+            withActivity { editText.setText("Updated") }
 
             recreate()
 
             fragment = null
-            withActivity {
-                setContent(content = content)
-            }
+            withActivity { setContent(content = content) }
             assertThat(fragment!!.requireView().parent).isNotNull()
-            val recreatedEditText: EditText =
-                fragment!!.requireView().findViewById(R.id.edit_text)
+            val recreatedEditText: EditText = fragment!!.requireView().findViewById(R.id.edit_text)
             assertThat(recreatedEditText.text.toString()).isEqualTo("Updated")
         }
     }
@@ -89,15 +79,14 @@ class FragmentRecreateTest {
             }
 
             assertWithMessage("Fragment should be added as a child fragment")
-                .that(fragment).isNotNull()
+                .that(fragment)
+                .isNotNull()
             assertThat(fragment.requireView().parent).isNotNull()
             val editText: EditText = fragment.requireView().findViewById(R.id.edit_text)
             assertThat(editText.text.toString()).isEqualTo("Default")
 
             // Update the state to make sure it gets saved and restored properly
-            withActivity {
-                editText.setText("Updated")
-            }
+            withActivity { editText.setText("Updated") }
 
             recreate()
 
@@ -107,7 +96,56 @@ class FragmentRecreateTest {
                 )
             }
             assertWithMessage("Fragment should be added as a child fragment")
-                .that(recreatedFragment).isNotNull()
+                .that(recreatedFragment)
+                .isNotNull()
+            assertThat(recreatedFragment.requireView().parent).isNotNull()
+            val recreatedEditText: EditText =
+                recreatedFragment.requireView().findViewById(R.id.edit_text)
+            assertThat(recreatedEditText.text.toString()).isEqualTo("Updated")
+        }
+    }
+
+    @Test
+    fun testReplaceParentFragment() {
+        with(ActivityScenario.launch(ChildInflatedFragmentActivity::class.java)) {
+            val fragment = withActivity {
+                FragmentManager.findFragment<SimpleEditTextFragment>(
+                    findViewById(R.id.fragment_layout)
+                )
+            }
+
+            assertWithMessage("Fragment should be added as a child fragment")
+                .that(fragment)
+                .isNotNull()
+            assertThat(fragment.requireView().parent).isNotNull()
+            val editText: EditText = fragment.requireView().findViewById(R.id.edit_text)
+            assertThat(editText.text.toString()).isEqualTo("Default")
+
+            // Update the state to make sure it gets saved and restored properly
+            withActivity { editText.setText("Updated") }
+
+            val replaceFragment = MyFragment()
+            withActivity {
+                supportFragmentManager.commit {
+                    setReorderingAllowed(true)
+                    replace(PARENT_FRAGMENT_CONTAINER_ID, replaceFragment)
+                    addToBackStack(null)
+                }
+                supportFragmentManager.executePendingTransactions()
+            }
+
+            // Now pop the back stack and go back to the parent fragment
+            withActivity { supportFragmentManager.popBackStackImmediate() }
+
+            val recreatedFragment = withActivity {
+                FragmentManager.findFragment<SimpleEditTextFragment>(
+                    findViewById(R.id.fragment_layout)
+                )
+            }
+            assertWithMessage("Fragment should be re-added").that(recreatedFragment).isNotNull()
+            assertWithMessage("Fragment should be added as a child fragment")
+                .that(recreatedFragment.parentFragment)
+                .isNotNull()
             assertThat(recreatedFragment.requireView().parent).isNotNull()
             val recreatedEditText: EditText =
                 recreatedFragment.requireView().findViewById(R.id.edit_text)
@@ -119,11 +157,7 @@ class FragmentRecreateTest {
 class ChildInflatedFragmentActivity : FragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(
-            FragmentContainerView(this).apply {
-                id = PARENT_FRAGMENT_CONTAINER_ID
-            }
-        )
+        setContentView(FragmentContainerView(this).apply { id = PARENT_FRAGMENT_CONTAINER_ID })
         if (savedInstanceState == null) {
             supportFragmentManager.commit {
                 setReorderingAllowed(true)
@@ -137,8 +171,6 @@ class ChildInflatedFragmentActivity : FragmentActivity() {
             inflater: LayoutInflater,
             container: ViewGroup?,
             savedInstanceState: Bundle?
-        ) = content {
-            AndroidFragment<SimpleEditTextFragment>()
-        }
+        ) = content { AndroidFragment<SimpleEditTextFragment>() }
     }
 }

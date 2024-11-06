@@ -17,7 +17,6 @@
 package androidx.compose.ui.text.font
 
 import android.graphics.Typeface
-import androidx.annotation.DoNotInline
 import androidx.annotation.RequiresApi
 
 internal val FontWeight.Companion.AndroidBold
@@ -60,14 +59,13 @@ internal fun getAndroidTypefaceStyle(isBold: Boolean, isItalic: Boolean): Int {
 }
 
 /**
- * This class is here to ensure that the classes that use this API will get verified and can be
- * AOT compiled. It is expected that this class will soft-fail verification, but the classes
- * which use this method will pass.
+ * This class is here to ensure that the classes that use this API will get verified and can be AOT
+ * compiled. It is expected that this class will soft-fail verification, but the classes which use
+ * this method will pass.
  */
 @RequiresApi(28)
 internal object TypefaceHelperMethodsApi28 {
     @RequiresApi(28)
-    @DoNotInline
     fun create(typeface: Typeface, finalFontWeight: Int, finalFontStyle: Boolean) =
         Typeface.create(typeface, finalFontWeight, finalFontStyle)
 }

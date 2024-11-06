@@ -14,12 +14,9 @@
  * limitations under the License.
  */
 
-@file:RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
-
 package androidx.camera.camera2.pipe.integration.compat.workaround
 
 import android.util.Size
-import androidx.annotation.RequiresApi
 import androidx.camera.camera2.pipe.integration.compat.quirk.DeviceQuirks
 import androidx.camera.camera2.pipe.integration.compat.quirk.RepeatingStreamConstraintForVideoRecordingQuirk
 import androidx.camera.core.impl.utils.CompareSizesByArea
@@ -27,7 +24,7 @@ import androidx.camera.core.impl.utils.CompareSizesByArea
 private val MINI_PREVIEW_SIZE_HUAWEI_MATE_9 = Size(320, 240)
 private val SIZE_COMPARATOR: Comparator<Size> = CompareSizesByArea()
 
-fun Array<Size>.getSupportedRepeatingSurfaceSizes(): Array<Size> {
+public fun Array<Size>.getSupportedRepeatingSurfaceSizes(): Array<Size> {
     DeviceQuirks[RepeatingStreamConstraintForVideoRecordingQuirk::class.java] ?: return this
 
     val supportedSizes = mutableListOf<Size>()

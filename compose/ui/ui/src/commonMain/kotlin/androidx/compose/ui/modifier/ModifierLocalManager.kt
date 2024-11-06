@@ -17,7 +17,6 @@
 package androidx.compose.ui.modifier
 
 import androidx.compose.runtime.collection.mutableVectorOf
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.node.BackwardsCompatNode
 import androidx.compose.ui.node.LayoutNode
@@ -32,14 +31,12 @@ import androidx.compose.ui.node.visitSubtreeIf
  * ModiferLocalProviders get added/removed in the tree somewhere dynamically. This can be quite
  * costly, so we attempt to do this in a way where we don't waste time on nodes that are being
  * inserted for the first time and thus don't have any consumers below them that need to be
- * invalidated, and also ignore the case where a provider is being detached because a chunk of UI
- * is being removed, meaning that no consumers below them are going to be around to be updated
- * anyway.
+ * invalidated, and also ignore the case where a provider is being detached because a chunk of UI is
+ * being removed, meaning that no consumers below them are going to be around to be updated anyway.
  *
  * I think we need to have a bigger discussion around what modifier locals should look like in the
  * Modifer.Node world.
  */
-@OptIn(ExperimentalComposeUiApi::class)
 internal class ModifierLocalManager(val owner: Owner) {
     private val inserted = mutableVectorOf<BackwardsCompatNode>()
     private val insertedLocal = mutableVectorOf<ModifierLocal<*>>()

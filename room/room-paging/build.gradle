@@ -14,52 +14,87 @@
  * limitations under the License.
  */
 
-/**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
- *
- * Please use that script when creating a new project, rather than copying an existing project and
- * modifying its settings.
- */
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import androidx.build.PlatformIdentifier
 import androidx.build.LibraryType
-import androidx.build.Publish
+import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 
 plugins {
     id("AndroidXPlugin")
-    id("com.android.library")
-    id("kotlin-android")
     id("com.google.devtools.ksp")
+    id("com.android.library")
+}
+
+androidXMultiplatform {
+    android()
+    jvm()
+    mac()
+    linux()
+    ios()
+
+    defaultPlatform(PlatformIdentifier.ANDROID)
+
+    sourceSets {
+        commonMain {
+            dependencies {
+                api(libs.kotlinStdlib)
+                api("androidx.paging:paging-common:3.3.2")
+                api(project(":room:room-runtime"))
+                implementation(libs.atomicFu)
+            }
+        }
+
+        commonTest {
+            dependencies {
+                implementation(libs.kotlinCoroutinesTest)
+                implementation(project(":kruth:kruth"))
+            }
+        }
+
+        androidMain {
+            dependsOn(commonMain)
+        }
+
+        jvmNativeMain {
+            dependsOn(commonMain)
+        }
+
+        jvmMain {
+            dependsOn(jvmNativeMain)
+        }
+
+        nativeMain {
+            dependsOn(jvmNativeMain)
+        }
+
+        androidInstrumentedTest {
+            dependsOn(commonTest)
+            dependencies {
+                implementation(libs.junit)
+                implementation(project(":internal-testutils-common"))
+                implementation(libs.kotlinTestJunit)
+                implementation(libs.testExtJunit)
+                implementation(libs.testCore)
+                implementation(libs.testRunner)
+                implementation("androidx.arch.core:core-testing:2.2.0")
+                implementation("androidx.paging:paging-testing:3.3.2")
+            }
+        }
+        targets.configureEach { target ->
+            if (target.platformType == KotlinPlatformType.native) {
+                target.compilations["main"].defaultSourceSet {
+                    dependsOn(nativeMain)
+                }
+            }
+        }
+    }
 }
 
 android {
-    defaultConfig {
-        multiDexEnabled true
-    }
     namespace "androidx.room.paging"
 }
 
 dependencies {
-    api(libs.kotlinStdlib)
-
-    api(project(":room:room-runtime"))
-    implementation(project(":room:room-ktx"))
-    api("androidx.paging:paging-common:3.1.1")
-
-    androidTestImplementation(libs.kotlinCoroutinesTest)
-    androidTestImplementation(libs.multidex)
-    androidTestImplementation(libs.kotlinTestJunit)
-    androidTestImplementation(libs.junit)
-    androidTestImplementation(libs.testExtJunit)
-    androidTestImplementation(libs.testCore)
-    androidTestImplementation(libs.testRunner)
-    kspAndroidTest(
-            project(path: ":room:room-compiler", configuration: "shadowAndImplementation")
-    )
-    androidTestImplementation(project(":kruth:kruth"))
-    androidTestImplementation("androidx.arch.core:core-testing:2.2.0")
-    androidTestImplementation(project(":internal-testutils-common"))
-    androidTestImplementation(projectOrArtifact(":paging:paging-testing"))
+    add("kspAndroidAndroidTest", project(":room:room-compiler"))
 }
 
 androidx {
@@ -67,6 +102,5 @@ androidx {
     type = LibraryType.PUBLISHED_LIBRARY
     inceptionYear = "2021"
     description = "Room Paging integration"
-    publish = Publish.SNAPSHOT_AND_RELEASE
-    metalavaK2UastEnabled = true
+    metalavaK2UastEnabled = false // Due to b/360195094
 }

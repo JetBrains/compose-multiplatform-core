@@ -29,6 +29,7 @@ import android.os.Build;
 import android.os.Build.VERSION_CODES;
 import android.text.InputFilter;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.ActionMode;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
@@ -87,6 +88,7 @@ import java.util.concurrent.Future;
 public class AppCompatTextView extends TextView implements TintableBackgroundView,
         TintableCompoundDrawablesView, AutoSizeableTextView, EmojiCompatConfigurationView {
 
+    private static final String TAG = "AppCompatTextView";
     private final AppCompatBackgroundHelper mBackgroundTintHelper;
     private final AppCompatTextHelper mTextHelper;
     private final AppCompatTextClassifierHelper mTextClassifierHelper;
@@ -95,6 +97,31 @@ public class AppCompatTextView extends TextView implements TintableBackgroundVie
     private AppCompatEmojiTextHelper mEmojiTextViewHelper;
 
     private boolean mIsSetTypefaceProcessing = false;
+
+    /**
+     * Equivalent to Typeface.mOriginalTypeface.
+     * Used to correctly emulate the behavior of getTypeface(), because we need to call setTypeface
+     * directly in order to implement caching of variation instances of typefaces.
+     */
+    private Typeface mOriginalTypeface;
+
+    /**
+     * The last Typeface we are aware of being set on {@link #getPaint()}.
+     * Used to detect if it has been changed out from under us via directly calling
+     * {@link android.graphics.Paint#setTypeface(Typeface)} or
+     * {@link android.graphics.Paint#setFontVariationSettings(String)}
+     * (which is not supported, so this is a best-effort workaround).
+     *
+     * @see #setTypefaceInternal(Typeface)
+     */
+    private Typeface mLastKnownTypefaceSetOnPaint;
+
+    /**
+     * The currently applied font variation settings.
+     * Used to make getFontVariationSettings somewhat more accurate with Typeface instance caching,
+     * as we don't call super.setFontVariationSettings.
+     */
+    private String mFontVariationSettings;
 
     @Nullable
     private SuperCaller mSuperCaller = null;
@@ -160,7 +187,6 @@ public class AppCompatTextView extends TextView implements TintableBackgroundVie
     /**
      * This should be accessed via
      * {@link androidx.core.view.ViewCompat#setBackgroundTintList(android.view.View, ColorStateList)}
-     *
      */
     @RestrictTo(LIBRARY_GROUP_PREFIX)
     @Override
@@ -173,7 +199,6 @@ public class AppCompatTextView extends TextView implements TintableBackgroundVie
     /**
      * This should be accessed via
      * {@link androidx.core.view.ViewCompat#getBackgroundTintList(android.view.View)}
-     *
      */
     @RestrictTo(LIBRARY_GROUP_PREFIX)
     @Override
@@ -186,7 +211,6 @@ public class AppCompatTextView extends TextView implements TintableBackgroundVie
     /**
      * This should be accessed via
      * {@link androidx.core.view.ViewCompat#setBackgroundTintMode(android.view.View, PorterDuff.Mode)}
-     *
      */
     @RestrictTo(LIBRARY_GROUP_PREFIX)
     @Override
@@ -199,7 +223,6 @@ public class AppCompatTextView extends TextView implements TintableBackgroundVie
     /**
      * This should be accessed via
      * {@link androidx.core.view.ViewCompat#getBackgroundTintMode(android.view.View)}
-     *
      */
     @RestrictTo(LIBRARY_GROUP_PREFIX)
     @Override
@@ -215,6 +238,49 @@ public class AppCompatTextView extends TextView implements TintableBackgroundVie
         if (mTextHelper != null) {
             mTextHelper.onSetTextAppearance(context, resId);
         }
+    }
+
+    /**
+     * Set font variation settings.
+     * See {@link TextView#setFontVariationSettings(String)} for details.
+     * <p>
+     * <em>Note:</em> Due to performance optimizations,
+     * {@code getPaint().getFontVariationSettings()} will be less reliable than if not using
+     * AppCompatTextView.  You should prefer {@link #getFontVariationSettings()}, which will be more
+     * accurate. However, neither approach will work correctly if using Typeface objects with
+     * embedded font variation settings.
+     */
+    // Reference comparison with mLastKnownTypefaceSetOnPaint is intended;
+    // it should in fact be the exact instance, because we set it.
+    @SuppressWarnings("ReferenceEquality")
+    @RequiresApi(26)
+    @Override
+    public boolean setFontVariationSettings(@Nullable String fontVariationSettings) {
+        Typeface baseTypeface = mOriginalTypeface;
+        // Try to work around apps mutating the result of getPaint()
+        // See setTypefaceInternal doc comment for details.
+        if (mLastKnownTypefaceSetOnPaint != getPaint().getTypeface()) {
+            Log.w(TAG, "getPaint().getTypeface() changed unexpectedly."
+                    + " App code should not modify the result of getPaint().");
+            // Best effort: use that new Typeface instead.
+            baseTypeface = getPaint().getTypeface();
+        }
+        Typeface variationTypefaceInstance = AppCompatTextHelper.Api26Impl.createVariationInstance(
+                baseTypeface, fontVariationSettings);
+        if (variationTypefaceInstance != null) {
+            setTypefaceInternal(variationTypefaceInstance);
+            mFontVariationSettings = fontVariationSettings;
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    @Nullable
+    @RequiresApi(26)
+    @Override
+    public String getFontVariationSettings() {
+        return mFontVariationSettings;
     }
 
     @Override
@@ -754,6 +820,39 @@ public class AppCompatTextView extends TextView implements TintableBackgroundVie
         mTextHelper.applyCompoundDrawablesTints();
     }
 
+    // Never call super.setTypeface directly, always use this or setTypefaceInternal
+    // See docs on setTypefaceInternal for the differences
+    @Override
+    public void setTypeface(@Nullable Typeface tf) {
+        mOriginalTypeface = tf;
+        setTypefaceInternal(tf);
+    }
+
+    /**
+     * Call this when setting the typeface in any way that the user didn't directly ask for
+     * (that is, any case where TextView itself does not call through to setTypeface or otherwise
+     * set its mOriginalTypeface).  Otherwise, use {@link #setTypeface(Typeface)} (or something
+     * that calls it).
+     * <p>
+     * Calls the superclass setTypeface, but does not set mOriginalTypeface.
+     * Also tracks what we set it to, in order to detect when it's been changed out from under us
+     * via modifying the Paint object directly.
+     * This isn't officially supported ({@link TextView#getPaint()} specifically says not to modify
+     * it), but at least one app is known to have done this, so we're providing best-effort support.
+     */
+    private void setTypefaceInternal(@Nullable Typeface tf) {
+        mLastKnownTypefaceSetOnPaint = tf;
+        super.setTypeface(tf);
+    }
+
+    @Override
+    @Nullable
+    // Code inspection reveals that the superclass method can return null.
+    @SuppressWarnings("InvalidNullabilityOverride")
+    public Typeface getTypeface() {
+        return mOriginalTypeface;
+    }
+
     @Override
     public void setTypeface(@Nullable Typeface tf, int style) {
         if (mIsSetTypefaceProcessing) {
@@ -763,14 +862,16 @@ public class AppCompatTextView extends TextView implements TintableBackgroundVie
             // TODO(nona): Remove this once Android X minSdkVersion moves to API21.
             return;
         }
-        Typeface finalTypeface = null;
+        final Typeface finalTypeface;
         if (tf != null && style > 0) {
             finalTypeface = TypefaceCompat.create(getContext(), tf, style);
+        } else {
+            finalTypeface = tf;
         }
 
         mIsSetTypefaceProcessing = true;
         try {
-            super.setTypeface(finalTypeface != null ? finalTypeface : tf, style);
+            super.setTypeface(finalTypeface, style);
         } finally {
             mIsSetTypefaceProcessing = false;
         }

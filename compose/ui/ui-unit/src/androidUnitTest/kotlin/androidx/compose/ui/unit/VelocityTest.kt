@@ -24,50 +24,40 @@ import org.junit.runners.JUnit4
 
 @RunWith(JUnit4::class)
 class VelocityTest {
-
     private val velocity1 = Velocity(3f, -7f)
     private val velocity2 = Velocity(5f, 13f)
 
     @Test
     fun operatorUnaryMinus() {
-        Truth.assertThat(-velocity1)
-            .isEqualTo(Velocity(-3f, 7f))
-        Truth.assertThat(-velocity2)
-            .isEqualTo(Velocity(-5f, -13f))
+        Truth.assertThat(-velocity1).isEqualTo(Velocity(-3f, 7f))
+        Truth.assertThat(-velocity2).isEqualTo(Velocity(-5f, -13f))
     }
 
     @Test
     fun operatorPlus() {
-        Truth.assertThat(velocity2 + velocity1)
-            .isEqualTo(Velocity(8f, 6f))
-        Truth.assertThat(velocity1 + velocity2)
-            .isEqualTo(Velocity(8f, 6f))
+        Truth.assertThat(velocity2 + velocity1).isEqualTo(Velocity(8f, 6f))
+        Truth.assertThat(velocity1 + velocity2).isEqualTo(Velocity(8f, 6f))
     }
 
     @Test
     fun operatorMinus() {
-        Truth.assertThat(velocity1 - velocity2)
-            .isEqualTo(Velocity(-2f, -20f))
-        Truth.assertThat(velocity2 - velocity1)
-            .isEqualTo(Velocity(2f, 20f))
+        Truth.assertThat(velocity1 - velocity2).isEqualTo(Velocity(-2f, -20f))
+        Truth.assertThat(velocity2 - velocity1).isEqualTo(Velocity(2f, 20f))
     }
 
     @Test
     fun operatorDivide() {
-        Truth.assertThat(velocity1 / 10f)
-            .isEqualTo(Velocity(0.3f, -0.7f))
+        Truth.assertThat(velocity1 / 10f).isEqualTo(Velocity(0.3f, -0.7f))
     }
 
     @Test
     fun operatorTimes() {
-        Truth.assertThat(velocity1 * 10f)
-            .isEqualTo(Velocity(30f, -70f))
+        Truth.assertThat(velocity1 * 10f).isEqualTo(Velocity(30f, -70f))
     }
 
     @Test
     fun operatorRem() {
-        Truth.assertThat(velocity1 % 3f)
-            .isEqualTo(Velocity(0f, -1f))
+        Truth.assertThat(velocity1 % 3f).isEqualTo(Velocity(0f, -1f))
     }
 
     @Test

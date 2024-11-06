@@ -31,9 +31,6 @@ plugins {
 }
 
 android {
-    defaultConfig {
-        multiDexEnabled = true
-    }
     namespace "androidx.window.rxjava3"
 }
 
@@ -43,16 +40,15 @@ dependencies {
     api(libs.kotlinCoroutinesRx3)
     api(libs.rxjava3)
     api(project(":window:window"))
-    implementation("androidx.annotation:annotation:1.5.0")
+    implementation("androidx.annotation:annotation:1.8.1")
 
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.testRunner)
     androidTestImplementation(libs.testRules)
-    androidTestImplementation(libs.dexmakerMockito, excludes.bytebuddy)
-    androidTestImplementation(libs.mockitoCore, excludes.bytebuddy)
-    androidTestImplementation(libs.mockitoKotlin, excludes.bytebuddy)
+    androidTestImplementation(libs.dexmakerMockito)
+    androidTestImplementation(libs.mockitoCore)
+    androidTestImplementation(libs.mockitoKotlin)
     androidTestImplementation(libs.kotlinCoroutinesTest)
-    androidTestImplementation(libs.multidex)
 }
 
 androidx {
@@ -60,5 +56,5 @@ androidx {
     type = LibraryType.PUBLISHED_LIBRARY
     inceptionYear = "2021"
     description = "WindowManager RxJava 3 Support"
-    metalavaK2UastEnabled = true
+    legacyDisableKotlinStrictApiMode = true
 }

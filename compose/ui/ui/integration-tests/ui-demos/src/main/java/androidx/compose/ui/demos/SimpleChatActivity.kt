@@ -48,7 +48,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.semantics
@@ -75,7 +74,6 @@ class SimpleChatActivity : ComponentActivity() {
 private data class Message(val content: String, val isReceived: Boolean = true)
 
 @SuppressLint("NullAnnotationGroup")
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 private fun SimpleChatPage() {
     val messages = remember { mutableStateListOf<Message>() }
@@ -107,11 +105,7 @@ private fun SimpleChatPage() {
         Box(modifier = Modifier.padding(contentPadding)) {
             // testTagsAsResourceId and testTag is for compose to map testTag to resource-id.
             // https://developer.android.com/jetpack/compose/testing#uiautomator-interop
-            SelectionContainer() {
-                Column {
-                    Conversation(messages, listState)
-                }
-            }
+            SelectionContainer() { Column { Conversation(messages, listState) } }
         }
     }
 }
@@ -119,9 +113,7 @@ private fun SimpleChatPage() {
 @Composable
 private fun Conversation(messages: List<Message>, state: LazyListState) {
     LazyColumn(
-        modifier = Modifier
-            .testTag("messages")
-            .fillMaxSize(),
+        modifier = Modifier.testTag("messages").fillMaxSize(),
         state = state,
         verticalArrangement = Arrangement.Bottom,
     ) {
@@ -139,9 +131,8 @@ private fun MessageCard(message: Message) {
             Text(
                 message.content,
                 fontSize = 20.sp,
-                modifier = Modifier.testTag(
-                    if (message.isReceived) "message_received" else "message_sent"
-                )
+                modifier =
+                    Modifier.testTag(if (message.isReceived) "message_received" else "message_sent")
             )
             Spacer(modifier = Modifier.height(16.dp))
         }

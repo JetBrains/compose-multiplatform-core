@@ -24,7 +24,6 @@ import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.SideEffect
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
@@ -39,13 +38,11 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 
-@ExperimentalComposeUiApi
 @LargeTest
 @RunWith(AndroidJUnit4::class)
 class LocalSoftwareKeyboardControllerTest {
 
-    @get:Rule
-    val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule()
 
     @Test
     fun whenButtonClicked_performsHide_realisticAppTestCase() {
@@ -54,9 +51,7 @@ class LocalSoftwareKeyboardControllerTest {
         fun TestComposable() {
             val softwareKeyboardController = LocalSoftwareKeyboardController.current
             // Box instead of Button in this file for module dependency reasons
-            Box(Modifier.clickable { softwareKeyboardController?.hide() }) {
-                BasicText("Click Me")
-            }
+            Box(Modifier.clickable { softwareKeyboardController?.hide() }) { BasicText("Click Me") }
         }
 
         // arrange
@@ -73,9 +68,7 @@ class LocalSoftwareKeyboardControllerTest {
         rule.onNodeWithText("Click Me").performClick()
 
         // assert
-        rule.runOnIdle {
-            verify(mockSoftwareKeyboardController).hide()
-        }
+        rule.runOnIdle { verify(mockSoftwareKeyboardController).hide() }
     }
 
     @Test
@@ -85,23 +78,16 @@ class LocalSoftwareKeyboardControllerTest {
 
         rule.setContent {
             val controller = LocalSoftwareKeyboardController.current
-            SideEffect {
-                controller?.hide()
-            }
+            SideEffect { controller?.hide() }
         }
 
-        rule.runOnIdle {
-            verify(platformTextInputService, times(1))
-                .hideSoftwareKeyboard()
-        }
+        rule.runOnIdle { verify(platformTextInputService, times(1)).hideSoftwareKeyboard() }
     }
 
     @Test
     fun showHideSoftKeyboard_dontCrash_beforeSession() {
         var keyboardController: SoftwareKeyboardController? = null
-        rule.setContent {
-            keyboardController = LocalSoftwareKeyboardController.current
-        }
+        rule.setContent { keyboardController = LocalSoftwareKeyboardController.current }
         keyboardController!!.show()
         keyboardController!!.hide()
     }

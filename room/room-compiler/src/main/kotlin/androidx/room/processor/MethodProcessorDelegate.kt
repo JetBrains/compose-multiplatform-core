@@ -37,8 +37,7 @@ import androidx.room.solver.prepared.binder.PreparedQueryResultBinder
 import androidx.room.solver.query.result.CoroutineResultBinder
 import androidx.room.solver.query.result.QueryResultBinder
 import androidx.room.solver.shortcut.binder.CoroutineDeleteOrUpdateMethodBinder
-import androidx.room.solver.shortcut.binder.CoroutineInsertMethodBinder
-import androidx.room.solver.shortcut.binder.CoroutineUpsertMethodBinder
+import androidx.room.solver.shortcut.binder.CoroutineInsertOrUpsertMethodBinder
 import androidx.room.solver.shortcut.binder.DeleteOrUpdateMethodBinder
 import androidx.room.solver.shortcut.binder.InsertOrUpsertMethodBinder
 import androidx.room.solver.transaction.binder.CoroutineTransactionMethodBinder
@@ -49,9 +48,7 @@ import androidx.room.vo.QueryParameter
 import androidx.room.vo.ShortcutQueryParameter
 import androidx.room.vo.TransactionMethod
 
-/**
- *  Delegate class with common functionality for DAO method processors.
- */
+/** Delegate class with common functionality for DAO method processors. */
 abstract class MethodProcessorDelegate(
     val context: Context,
     val containing: XType,
@@ -63,16 +60,16 @@ abstract class MethodProcessorDelegate(
     abstract fun extractParams(): List<XExecutableParameterElement>
 
     fun extractQueryParams(query: ParsedQuery): List<QueryParameter> {
-        return extractParams().map { variableElement ->
+        return extractParams().map { parameterElement ->
             QueryParameterProcessor(
-                baseContext = context,
-                containing = containing,
-                element = variableElement,
-                sqlName = variableElement.name,
-                bindVarSection = query.bindSections.firstOrNull {
-                    it.varName == variableElement.name
-                }
-            ).process()
+                    baseContext = context,
+                    containing = containing,
+                    element = parameterElement,
+                    sqlName = parameterElement.name,
+                    bindVarSection =
+                        query.bindSections.firstOrNull { it.varName == parameterElement.name }
+                )
+                .process()
         }
     }
 
@@ -111,44 +108,24 @@ abstract class MethodProcessorDelegate(
         ): MethodProcessorDelegate {
             val asMember = executableElement.asMemberOf(containing)
             return if (asMember.isSuspendFunction()) {
-                SuspendMethodProcessorDelegate(
-                    context,
-                    containing,
-                    executableElement,
-                    asMember
-                )
+                SuspendMethodProcessorDelegate(context, containing, executableElement, asMember)
             } else {
-                DefaultMethodProcessorDelegate(
-                    context,
-                    containing,
-                    executableElement,
-                    asMember
-                )
+                DefaultMethodProcessorDelegate(context, containing, executableElement, asMember)
             }
         }
     }
 }
 
-fun MethodProcessorDelegate.isSuspendAndReturnsDeferredType(): Boolean {
-    if (!executableElement.isSuspendFunction()) {
-        return false
-    }
-
-    val deferredTypes = DEFERRED_TYPES.mapNotNull {
-        context.processingEnv.findType(it.canonicalName)
-    }
-
+fun MethodProcessorDelegate.returnsDeferredType(): Boolean {
+    val deferredTypes =
+        DEFERRED_TYPES.mapNotNull { context.processingEnv.findType(it.canonicalName) }
     val returnType = extractReturnType()
-    val hasDeferredReturnType = deferredTypes.any { deferredType ->
+    return deferredTypes.any { deferredType ->
         deferredType.rawType.isAssignableFrom(returnType.rawType)
     }
-
-    return hasDeferredReturnType
 }
 
-/**
- * Default delegate for DAO methods.
- */
+/** Default delegate for DAO methods. */
 class DefaultMethodProcessorDelegate(
     context: Context,
     containing: XType,
@@ -168,39 +145,31 @@ class DefaultMethodProcessorDelegate(
         extrasCreator: TypeAdapterExtras.() -> Unit
     ) = context.typeAdapterStore.findQueryResultBinder(returnType, query, extrasCreator)
 
-    override fun findPreparedResultBinder(
-        returnType: XType,
-        query: ParsedQuery
-    ) = context.typeAdapterStore.findPreparedQueryResultBinder(returnType, query)
+    override fun findPreparedResultBinder(returnType: XType, query: ParsedQuery) =
+        context.typeAdapterStore.findPreparedQueryResultBinder(returnType, query)
 
-    override fun findInsertMethodBinder(
-        returnType: XType,
-        params: List<ShortcutQueryParameter>
-    ) = context.typeAdapterStore.findInsertMethodBinder(returnType, params)
+    override fun findInsertMethodBinder(returnType: XType, params: List<ShortcutQueryParameter>) =
+        context.typeAdapterStore.findInsertMethodBinder(returnType, params)
 
     override fun findDeleteOrUpdateMethodBinder(returnType: XType) =
         context.typeAdapterStore.findDeleteOrUpdateMethodBinder(returnType)
 
-    override fun findUpsertMethodBinder(
-        returnType: XType,
-        params: List<ShortcutQueryParameter>
-    ) = context.typeAdapterStore.findUpsertMethodBinder(returnType, params)
+    override fun findUpsertMethodBinder(returnType: XType, params: List<ShortcutQueryParameter>) =
+        context.typeAdapterStore.findUpsertMethodBinder(returnType, params)
 
     override fun findTransactionMethodBinder(callType: TransactionMethod.CallType) =
         InstantTransactionMethodBinder(
             returnType = executableElement.returnType,
-            adapter = TransactionMethodAdapter(
-                methodName = executableElement.name,
-                jvmMethodName = executableElement.jvmName,
-                callType = callType
-            ),
-            javaLambdaSyntaxAvailable = context.processingEnv.jvmVersion >= 8
+            adapter =
+                TransactionMethodAdapter(
+                    methodName = executableElement.name,
+                    jvmMethodName = executableElement.jvmName,
+                    callType = callType
+                ),
         )
 }
 
-/**
- * Delegate for DAO methods that are a suspend function.
- */
+/** Delegate for DAO methods that are a suspend function. */
 class SuspendMethodProcessorDelegate(
     context: Context,
     containing: XType,
@@ -209,11 +178,9 @@ class SuspendMethodProcessorDelegate(
 ) : MethodProcessorDelegate(context, containing, executableElement) {
 
     private val continuationParam: XVariableElement by lazy {
-        val continuationType = context.processingEnv
-            .requireType(KotlinTypeNames.CONTINUATION).rawType
-        executableElement.parameters.last {
-            it.type.rawType == continuationType
-        }
+        val continuationType =
+            context.processingEnv.requireType(KotlinTypeNames.CONTINUATION).rawType
+        executableElement.parameters.last { it.type.rawType == continuationType }
     }
 
     override fun extractReturnType(): XType {
@@ -221,46 +188,39 @@ class SuspendMethodProcessorDelegate(
     }
 
     override fun extractParams() =
-        executableElement.parameters.filterNot {
-            it == continuationParam
-        }
+        executableElement.parameters.filterNot { it == continuationParam }
 
     override fun findResultBinder(
         returnType: XType,
         query: ParsedQuery,
         extrasCreator: TypeAdapterExtras.() -> Unit
-    ) = CoroutineResultBinder(
-        typeArg = returnType,
-        adapter =
-            context.typeAdapterStore.findQueryResultAdapter(returnType, query, extrasCreator),
-        continuationParamName = continuationParam.name
-    )
+    ) =
+        CoroutineResultBinder(
+            typeArg = returnType,
+            adapter =
+                context.typeAdapterStore.findQueryResultAdapter(returnType, query, extrasCreator),
+            continuationParamName = continuationParam.name
+        )
 
-    override fun findPreparedResultBinder(
-        returnType: XType,
-        query: ParsedQuery
-    ) = CoroutinePreparedQueryResultBinder(
-        adapter = context.typeAdapterStore.findPreparedQueryResultAdapter(returnType, query),
-        continuationParamName = continuationParam.name
-    )
+    override fun findPreparedResultBinder(returnType: XType, query: ParsedQuery) =
+        CoroutinePreparedQueryResultBinder(
+            adapter = context.typeAdapterStore.findPreparedQueryResultAdapter(returnType, query),
+            continuationParamName = continuationParam.name
+        )
 
-    override fun findInsertMethodBinder(
-        returnType: XType,
-        params: List<ShortcutQueryParameter>
-    ) = CoroutineInsertMethodBinder(
-        typeArg = returnType,
-        adapter = context.typeAdapterStore.findInsertAdapter(returnType, params),
-        continuationParamName = continuationParam.name
-    )
+    override fun findInsertMethodBinder(returnType: XType, params: List<ShortcutQueryParameter>) =
+        CoroutineInsertOrUpsertMethodBinder(
+            typeArg = returnType,
+            adapter = context.typeAdapterStore.findInsertAdapter(returnType, params),
+            continuationParamName = continuationParam.name
+        )
 
-    override fun findUpsertMethodBinder(
-        returnType: XType,
-        params: List<ShortcutQueryParameter>
-    ) = CoroutineUpsertMethodBinder(
-        typeArg = returnType,
-        adapter = context.typeAdapterStore.findUpsertAdapter(returnType, params),
-        continuationParamName = continuationParam.name
-    )
+    override fun findUpsertMethodBinder(returnType: XType, params: List<ShortcutQueryParameter>) =
+        CoroutineInsertOrUpsertMethodBinder(
+            typeArg = returnType,
+            adapter = context.typeAdapterStore.findUpsertAdapter(returnType, params),
+            continuationParamName = continuationParam.name
+        )
 
     override fun findDeleteOrUpdateMethodBinder(returnType: XType) =
         CoroutineDeleteOrUpdateMethodBinder(
@@ -272,13 +232,13 @@ class SuspendMethodProcessorDelegate(
     override fun findTransactionMethodBinder(callType: TransactionMethod.CallType) =
         CoroutineTransactionMethodBinder(
             returnType = executableElement.returnType,
-            adapter = TransactionMethodAdapter(
-                methodName = executableElement.name,
-                jvmMethodName = executableElement.jvmName,
-                callType = callType
-            ),
-            continuationParamName = continuationParam.name,
-            javaLambdaSyntaxAvailable = context.processingEnv.jvmVersion >= 8
+            adapter =
+                TransactionMethodAdapter(
+                    methodName = executableElement.name,
+                    jvmMethodName = executableElement.jvmName,
+                    callType = callType
+                ),
+            continuationParamName = continuationParam.name
         )
 
     private fun XCodeBlock.Builder.addCoroutineExecuteStatement(
@@ -286,21 +246,23 @@ class SuspendMethodProcessorDelegate(
         dbProperty: XPropertySpec
     ) {
         when (context.codeLanguage) {
-            CodeLanguage.JAVA -> addStatement(
-                "return %T.execute(%N, %L, %L, %N)",
-                COROUTINES_ROOM,
-                dbProperty,
-                "true", // inTransaction
-                callableImpl,
-                continuationParam.name
-            )
-            CodeLanguage.KOTLIN -> addStatement(
-                "return %T.execute(%N, %L, %L)",
-                COROUTINES_ROOM,
-                dbProperty,
-                "true", // inTransaction
-                callableImpl
-            )
+            CodeLanguage.JAVA ->
+                addStatement(
+                    "return %T.execute(%N, %L, %L, %N)",
+                    COROUTINES_ROOM,
+                    dbProperty,
+                    "true", // inTransaction
+                    callableImpl,
+                    continuationParam.name
+                )
+            CodeLanguage.KOTLIN ->
+                addStatement(
+                    "return %T.execute(%N, %L, %L)",
+                    COROUTINES_ROOM,
+                    dbProperty,
+                    "true", // inTransaction
+                    callableImpl
+                )
         }
     }
 }

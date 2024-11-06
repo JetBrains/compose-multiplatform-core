@@ -16,6 +16,7 @@
 
 package androidx.compose.runtime
 
+import androidx.compose.runtime.mock.InlineLinear
 import androidx.compose.runtime.mock.Linear
 import androidx.compose.runtime.mock.MockViewValidator
 import androidx.compose.runtime.mock.View
@@ -52,19 +53,13 @@ class MovableContentTests {
         @Composable
         fun Test() {
             if (portrait) {
-                Column {
-                    content()
-                }
+                Column { content() }
             } else {
-                Row {
-                    content()
-                }
+                Row { content() }
             }
         }
 
-        compose {
-            Test()
-        }
+        compose { Test() }
 
         validate {
             fun MockViewValidator.value() {
@@ -73,13 +68,9 @@ class MovableContentTests {
             }
 
             if (portrait) {
-                Column {
-                    this.value()
-                }
+                Column { this.value() }
             } else {
-                Row {
-                    this.value()
-                }
+                Row { this.value() }
             }
         }
 
@@ -105,19 +96,13 @@ class MovableContentTests {
         @Composable
         fun Test() {
             if (portrait) {
-                Column {
-                    content()
-                }
+                Column { content() }
             } else {
-                Row {
-                    content()
-                }
+                Row { content() }
             }
         }
 
-        compose {
-            Test()
-        }
+        compose { Test() }
 
         fun MockViewValidator.value() {
             Text("Some text")
@@ -126,13 +111,9 @@ class MovableContentTests {
 
         validate {
             if (portrait) {
-                Column {
-                    this.value()
-                }
+                Column { this.value() }
             } else {
-                Row {
-                    this.value()
-                }
+                Row { this.value() }
             }
         }
 
@@ -153,9 +134,7 @@ class MovableContentTests {
 
         @Composable
         fun addRememberedObject() {
-            remember {
-                RememberedObject().also { rememberedObject.add(it) }
-            }
+            remember { RememberedObject().also { rememberedObject.add(it) } }
         }
 
         val content = movableContentOf {
@@ -227,9 +206,7 @@ class MovableContentTests {
 
         @Composable
         fun addRememberObject() {
-            remember {
-                RememberedObject().also { rememberObservers.add(it) }
-            }
+            remember { RememberedObject().also { rememberObservers.add(it) } }
         }
 
         val content = movableContentOf {
@@ -304,14 +281,8 @@ class MovableContentTests {
 
         validate()
 
-        for (newPosition in listOf(
-            inSubcompose1,
-            inSubcompose2,
-            inSubcompose1,
-            inMain,
-            inSubcompose2,
-            inMain
-        )) {
+        for (newPosition in
+            listOf(inSubcompose1, inSubcompose2, inSubcompose1, inMain, inSubcompose2, inMain)) {
             position = newPosition
             expectChanges()
             validate()
@@ -321,9 +292,7 @@ class MovableContentTests {
     @Test
     fun normalMoveWithContentMove() = compositionTest {
         val random = Random(1337)
-        val list = mutableStateListOf(
-            *List(10) { it }.toTypedArray()
-        )
+        val list = mutableStateListOf(*List(10) { it }.toTypedArray())
 
         val content = movableContentOf { Marker() }
         var position by mutableStateOf(-1)
@@ -387,10 +356,8 @@ class MovableContentTests {
                 Column {
                     repeat(10) { item ->
                         key(item) {
-                            if (skipItem != item)
-                                Text("Item $item")
-                            if (position == item)
-                                content()
+                            if (skipItem != item) Text("Item $item")
+                            if (position == item) content()
                         }
                     }
                 }
@@ -405,10 +372,8 @@ class MovableContentTests {
                     if (position == -1) Marker()
                     Column {
                         repeat(10) { item ->
-                            if (skipItem != item)
-                                Text("Item $item")
-                            if (position == item)
-                                Marker()
+                            if (skipItem != item) Text("Item $item")
+                            if (position == item) Marker()
                         }
                     }
                 }
@@ -458,9 +423,7 @@ class MovableContentTests {
     fun invalidationsMoveWithContent() = compositionTest {
         var data by mutableStateOf(0)
         var position by mutableStateOf(-1)
-        val content = movableContentOf {
-            Text("data = $data")
-        }
+        val content = movableContentOf { Text("data = $data") }
 
         compose {
             Row {
@@ -503,9 +466,7 @@ class MovableContentTests {
             var right by mutableStateOf(right)
 
             fun validateNode(validator: MockViewValidator) {
-                with(validator) {
-                    Marker(value)
-                }
+                with(validator) { Marker(value) }
                 left?.validateNode(validator)
                 right?.validateNode(validator)
             }
@@ -544,13 +505,9 @@ class MovableContentTests {
             }
         }
 
-        compose {
-            contents[tree]?.invoke()
-        }
+        compose { contents[tree]?.invoke() }
 
-        validate {
-            tree.validateNode(this)
-        }
+        validate { tree.validateNode(this) }
 
         tree.forEach { it.swap() }
 
@@ -567,7 +524,6 @@ class MovableContentTests {
 
     @Test
     fun multipleContentsMovingIntoCommonParent() = compositionTest {
-
         val content1 = movableContentOf {
             Text("1-1")
             Text("1-2")
@@ -701,8 +657,7 @@ class MovableContentTests {
             val result = mutableMapOf<String?, View>()
             fun collect(view: View) {
                 if (view.name == "Text") {
-                    if (view.text?.contains('-') == false)
-                        result[view.text] = view
+                    if (view.text?.contains('-') == false) result[view.text] = view
                 }
                 for (child in view.children) {
                     collect(child)
@@ -741,9 +696,7 @@ class MovableContentTests {
 
     @Test
     fun childIndexesAreCorrectlyCalculated() = compositionTest {
-        val content = movableContentOf {
-            Marker(0)
-        }
+        val content = movableContentOf { Marker(0) }
 
         var vertical by mutableStateOf(false)
         compose {
@@ -762,13 +715,9 @@ class MovableContentTests {
 
         validate {
             if (vertical) {
-                Row {
-                    Marker(0)
-                }
+                Row { Marker(0) }
             } else {
-                Column {
-                    Marker(0)
-                }
+                Column { Marker(0) }
             }
         }
 
@@ -781,25 +730,11 @@ class MovableContentTests {
     fun validateRecomposeScopesDoNotGetLost() = compositionTest {
         var isHorizontal by mutableStateOf(false)
         val displayValue = mutableStateOf(0)
-        val content = movableContentOf {
-            DisplayInt(displayValue)
-        }
+        val content = movableContentOf { DisplayInt(displayValue) }
 
-        compose {
-            Stack(isHorizontal) {
-                Row {
-                    content()
-                }
-            }
-        }
+        compose { Stack(isHorizontal) { Row { content() } } }
 
-        validate {
-            Stack(isHorizontal) {
-                Row {
-                    DisplayInt(displayValue)
-                }
-            }
-        }
+        validate { Stack(isHorizontal) { Row { DisplayInt(displayValue) } } }
 
         displayValue.value++
         expectChanges()
@@ -817,9 +752,7 @@ class MovableContentTests {
     @Test
     fun compositionLocalsShouldBeAvailable() = compositionTest {
         var someValue by mutableStateOf(0)
-        val local = staticCompositionLocalOf<Int> {
-            error("No value provided for local")
-        }
+        val local = staticCompositionLocalOf<Int> { error("No value provided for local") }
 
         compose {
             Wrap(20) {
@@ -830,10 +763,7 @@ class MovableContentTests {
                         Text("Local = ${local.current}")
                         Text("SomeValue = $someValue")
                     }
-                    if (someValue % 2 == 0)
-                        content()
-                    else
-                        content()
+                    if (someValue % 2 == 0) content() else content()
                 }
             }
         }
@@ -852,15 +782,9 @@ class MovableContentTests {
     @Test
     fun compositionLocalsShouldBeAvailableInNestedContent() = compositionTest {
         var someValue by mutableStateOf(0)
-        val local = staticCompositionLocalOf<Int> {
-            error("No value provided for local")
-        }
+        val local = staticCompositionLocalOf<Int> { error("No value provided for local") }
 
-        val parent = movableContentOf<@Composable () -> Unit> { child ->
-            Wrap {
-                child()
-            }
-        }
+        val parent = movableContentOf<@Composable () -> Unit> { child -> Wrap { child() } }
 
         val child = movableContentOf {
             Text("Local = ${local.current}")
@@ -913,17 +837,14 @@ class MovableContentTests {
         var useInSub1 by mutableStateOf(false)
         var useInSub2 by mutableStateOf(false)
 
-        @Composable fun use() {
+        @Composable
+        fun use() {
             remember { rememberObject }
         }
         compose {
             if (useInMain) use()
-            Subcompose {
-                if (useInSub1) use()
-            }
-            Subcompose {
-                if (useInSub2) use()
-            }
+            Subcompose { if (useInSub1) use() }
+            Subcompose { if (useInSub2) use() }
         }
 
         fun expectUnused() {
@@ -975,22 +896,17 @@ class MovableContentTests {
 
         @Suppress("UNUSED_VARIABLE") // Object not remembered without
         val rememberTheObject = movableContentOf {
-            val obj = remember {
-                rememberObject
-            }
+            val obj = remember { rememberObject }
         }
 
-        @Composable fun use() {
+        @Composable
+        fun use() {
             rememberTheObject()
         }
         compose {
             if (useInMain) use()
-            Subcompose {
-                if (useInSub1) use()
-            }
-            Subcompose {
-                if (useInSub2) use()
-            }
+            Subcompose { if (useInSub1) use() }
+            Subcompose { if (useInSub2) use() }
         }
 
         fun expectUnused() {
@@ -1198,9 +1114,7 @@ class MovableContentTests {
     @Test
     fun movableContentParameters_One() = compositionTest {
         val data = mutableStateOf(0)
-        val content = movableContentOf<Int> { p1 ->
-            Text("Value p1=$p1, data=${data.value}")
-        }
+        val content = movableContentOf<Int> { p1 -> Text("Value p1=$p1, data=${data.value}") }
 
         compose {
             content(1)
@@ -1220,9 +1134,10 @@ class MovableContentTests {
     @Test
     fun movableContentParameters_Two() = compositionTest {
         val data = mutableStateOf(0)
-        val content = movableContentOf<Int, Int> { p1, p2 ->
-            Text("Value p1=$p1, p2=$p2, data=${data.value}")
-        }
+        val content =
+            movableContentOf<Int, Int> { p1, p2 ->
+                Text("Value p1=$p1, p2=$p2, data=${data.value}")
+            }
 
         compose {
             content(1, 2)
@@ -1242,9 +1157,10 @@ class MovableContentTests {
     @Test
     fun movableContentParameters_Three() = compositionTest {
         val data = mutableStateOf(0)
-        val content = movableContentOf<Int, Int, Int> { p1, p2, p3 ->
-            Text("Value p1=$p1, p2=$p2, p3=$p3, data=${data.value}")
-        }
+        val content =
+            movableContentOf<Int, Int, Int> { p1, p2, p3 ->
+                Text("Value p1=$p1, p2=$p2, p3=$p3, data=${data.value}")
+            }
 
         compose {
             content(1, 2, 3)
@@ -1264,9 +1180,10 @@ class MovableContentTests {
     @Test
     fun movableContentParameters_Four() = compositionTest {
         val data = mutableStateOf(0)
-        val content = movableContentOf<Int, Int, Int, Int> { p1, p2, p3, p4 ->
-            Text("Value p1=$p1, p2=$p2, p3=$p3, p4=$p4, data=${data.value}")
-        }
+        val content =
+            movableContentOf<Int, Int, Int, Int> { p1, p2, p3, p4 ->
+                Text("Value p1=$p1, p2=$p2, p3=$p3, p4=$p4, data=${data.value}")
+            }
 
         compose {
             content(1, 2, 3, 4)
@@ -1286,9 +1203,8 @@ class MovableContentTests {
     @Test
     fun movableContentReceiver_None() = compositionTest {
         val data = mutableStateOf(0)
-        val content = movableContentWithReceiverOf<Int>() {
-            Text("Value this=$this, data=${data.value}")
-        }
+        val content =
+            movableContentWithReceiverOf<Int>() { Text("Value this=$this, data=${data.value}") }
         val receiver1 = 100
         val receiver2 = 200
 
@@ -1310,9 +1226,10 @@ class MovableContentTests {
     @Test
     fun movableContentReceiver_One() = compositionTest {
         val data = mutableStateOf(0)
-        val content = movableContentWithReceiverOf<Int, Int>() { p1 ->
-            Text("Value this=$this, p1=$p1, data=${data.value}")
-        }
+        val content =
+            movableContentWithReceiverOf<Int, Int>() { p1 ->
+                Text("Value this=$this, p1=$p1, data=${data.value}")
+            }
         val receiver1 = 100
         val receiver2 = 200
 
@@ -1334,9 +1251,10 @@ class MovableContentTests {
     @Test
     fun movableContentReceiver_Two() = compositionTest {
         val data = mutableStateOf(0)
-        val content = movableContentWithReceiverOf<Int, Int, Int>() { p1, p2 ->
-            Text("Value this=$this, p1=$p1, p2=$p2, data=${data.value}")
-        }
+        val content =
+            movableContentWithReceiverOf<Int, Int, Int>() { p1, p2 ->
+                Text("Value this=$this, p1=$p1, p2=$p2, data=${data.value}")
+            }
         val receiver1 = 100
         val receiver2 = 200
 
@@ -1358,9 +1276,10 @@ class MovableContentTests {
     @Test
     fun movableContentReceiver_Three() = compositionTest {
         val data = mutableStateOf(0)
-        val content = movableContentWithReceiverOf<Int, Int, Int, Int>() { p1, p2, p3 ->
-            Text("Value this=$this, p1=$p1, p2=$p2, p3=$p3, data=${data.value}")
-        }
+        val content =
+            movableContentWithReceiverOf<Int, Int, Int, Int>() { p1, p2, p3 ->
+                Text("Value this=$this, p1=$p1, p2=$p2, p3=$p3, data=${data.value}")
+            }
         val receiver1 = 100
         val receiver2 = 200
 
@@ -1383,28 +1302,18 @@ class MovableContentTests {
     fun movableContentParameters_changedParameter() = compositionTest {
         val data = mutableStateOf(0)
         val location = mutableStateOf(0)
-        val content = movableContentOf<Int> { d ->
-            Text("d=$d")
-        }
+        val content = movableContentOf<Int> { d -> Text("d=$d") }
 
         compose {
             if (location.value == 0) content(data.value)
-            Column {
-                if (location.value == 1) content(data.value)
-            }
-            Row {
-                if (location.value == 2) content(data.value)
-            }
+            Column { if (location.value == 1) content(data.value) }
+            Row { if (location.value == 2) content(data.value) }
         }
 
         validate {
             if (location.value == 0) Text("d=${data.value}")
-            Column {
-                if (location.value == 1) Text("d=${data.value}")
-            }
-            Row {
-                if (location.value == 2) Text("d=${data.value}")
-            }
+            Column { if (location.value == 1) Text("d=${data.value}") }
+            Row { if (location.value == 2) Text("d=${data.value}") }
         }
 
         location.value++
@@ -1426,12 +1335,8 @@ class MovableContentTests {
     fun movableContentOfTheSameFunctionShouldHaveStableKeys() = compositionTest {
         val hashList1 = mutableListOf<Int>()
         val hashList2 = mutableListOf<Int>()
-        val composable1: @Composable () -> Unit = {
-            hashList1.add(currentCompositeKeyHash)
-        }
-        val composable2: @Composable () -> Unit = {
-            hashList2.add(currentCompositeKeyHash)
-        }
+        val composable1: @Composable () -> Unit = { hashList1.add(currentCompositeKeyHash) }
+        val composable2: @Composable () -> Unit = { hashList2.add(currentCompositeKeyHash) }
         val movableContent1A = movableContentOf(composable1)
         val movableContent1B = movableContentOf(composable1)
         val movableContent2A = movableContentOf(composable2)
@@ -1461,13 +1366,9 @@ class MovableContentTests {
             hashList.add(currentCompositeKeyHash)
             Text("counter=${counter.value}")
         }
-        compose {
-            movableContent()
-        }
+        compose { movableContent() }
 
-        validate {
-            Text("counter=${counter.value}")
-        }
+        validate { Text("counter=${counter.value}") }
 
         counter.value++
         expectChanges()
@@ -1481,19 +1382,13 @@ class MovableContentTests {
     fun parameterPassingThroughDeferredSubcompose() = compositionTest {
         var state by mutableStateOf(false)
         var lastSeen: Boolean? = null
-        val content = movableContentOf { parameter: Boolean ->
-            Container {
-                lastSeen = parameter
-            }
-        }
+        val content = movableContentOf { parameter: Boolean -> Container { lastSeen = parameter } }
 
         compose {
             if (state) {
                 content(true)
             } else {
-                DeferredSubcompose {
-                    content(state)
-                }
+                DeferredSubcompose { content(state) }
             }
         }
 
@@ -1526,9 +1421,7 @@ class MovableContentTests {
 
         compose {
             if (deferred) {
-                DeferredSubcompose {
-                    content()
-                }
+                DeferredSubcompose { content() }
                 SideEffect {
                     state++
                     scope?.invalidate()
@@ -1553,26 +1446,18 @@ class MovableContentTests {
     fun movableContent_moveRow() = compositionTest {
         var condition by mutableStateOf(true)
 
-        val movableContent1 = movableContentOf {
-            Text("First")
-        }
-        val movableContent2 = movableContentOf {
-            Text("Second")
-        }
+        val movableContent1 = movableContentOf { Text("First") }
+        val movableContent2 = movableContentOf { Text("Second") }
 
         compose {
             if (condition) {
                 Linear {
-                    Linear {
-                        movableContent1()
-                    }
+                    Linear { movableContent1() }
                     movableContent2()
                 }
             } else {
                 Linear {
-                    Linear {
-                        movableContent1()
-                    }
+                    Linear { movableContent1() }
                     movableContent2()
                 }
             }
@@ -1580,9 +1465,7 @@ class MovableContentTests {
 
         validate {
             Linear {
-                Linear {
-                    Text("First")
-                }
+                Linear { Text("First") }
                 Text("Second")
             }
         }
@@ -1592,14 +1475,140 @@ class MovableContentTests {
 
         revalidate()
     }
+
+    @Test
+    fun movableContent_rememberOrdering() = compositionTest {
+        val movableContent1 = movableContentOf { repeat(100) { Text("Some content") } }
+        var includeContent by mutableStateOf(true)
+        var rememberKey by mutableStateOf(0)
+
+        compose {
+            if (includeContent) {
+                movableContent1()
+            }
+            val a = remember(rememberKey) { SimpleRememberedObject("Key $rememberKey") }
+            Text(a.name)
+        }
+
+        rememberKey++
+        expectChanges()
+
+        includeContent = false
+        rememberKey++
+        expectChanges()
+    }
+
+    @Test
+    fun movableContent_nestedMovableContent() = compositionTest {
+        var data = 0
+
+        var condition by mutableStateOf(true)
+
+        val nestedContent = movableContentOf {
+            val state = remember { data++ }
+            Text("Generated state: $state")
+        }
+
+        val contentHost = movableContentOf {
+            Text("Host")
+            if (condition) {
+                nestedContent()
+            }
+        }
+
+        compose {
+            if (condition) {
+                contentHost()
+            }
+            Text("Outer")
+            if (!condition) {
+                contentHost()
+                nestedContent()
+            }
+        }
+
+        validate {
+            if (condition) {
+                Text("Host")
+                Text("Generated state: 0")
+            }
+            Text("Outer")
+            if (!condition) {
+                Text("Host")
+                Text("Generated state: 0")
+            }
+        }
+
+        condition = false
+        expectChanges()
+        revalidate()
+        condition = true
+        expectChanges()
+        revalidate()
+    }
+
+    @Test // 343178423
+    fun movableContent_movingContentOutOfDeferredSubcomposition() = compositionTest {
+        var toggle by mutableStateOf(true)
+        val content = movableContentOf { Text("Toggle = $toggle") }
+
+        compose {
+            if (toggle) {
+                DeferredSubcompose { content() }
+            } else {
+                content()
+            }
+        }
+        advanceTimeBy(5_000)
+
+        validate {
+            if (toggle) {
+                DeferredSubcompose { Text("Toggle = $toggle") }
+            } else {
+                Text("Toggle = false")
+            }
+        }
+
+        toggle = !toggle
+        expectChanges()
+        revalidate()
+    }
+
+    @Test // 365802563
+    fun movableContent_movingChildOfDeletedNode() = compositionTest {
+        var index by mutableIntStateOf(0)
+        val content = movableContentOf { Text("Some text") }
+        compose {
+            for (i in index..3) {
+                InlineLinear { content() }
+            }
+            for (i in 0..index) {
+                InlineLinear { content() }
+            }
+        }
+        validate {
+            for (i in index..3) {
+                Linear { Text("Some text") }
+            }
+            for (i in 0..index) {
+                Linear { Text("Some text") }
+            }
+        }
+
+        index++
+        advance()
+
+        index++
+        advance()
+
+        index++
+        advance()
+    }
 }
 
 @Composable
 private fun Row(content: @Composable () -> Unit) {
-    ComposeNode<View, ViewApplier>(
-        factory = { View().also { it.name = "Row" } },
-        update = { }
-    ) {
+    ComposeNode<View, ViewApplier>(factory = { View().also { it.name = "Row" } }, update = {}) {
         content()
     }
 }
@@ -1610,16 +1619,12 @@ private fun MockViewValidator.Row(block: MockViewValidator.() -> Unit) {
 
 @Composable
 private fun Column(content: @Composable () -> Unit) {
-    ComposeNode<View, ViewApplier>(
-        factory = { View().also { it.name = "Column" } },
-        update = { }
-    ) {
+    ComposeNode<View, ViewApplier>(factory = { View().also { it.name = "Column" } }, update = {}) {
         content()
     }
 }
 
-@Composable
-private fun Empty() { }
+@Composable private fun Empty() {}
 
 private fun MockViewValidator.Column(block: MockViewValidator.() -> Unit) {
     view("Column", block)
@@ -1629,9 +1634,7 @@ private fun MockViewValidator.Column(block: MockViewValidator.() -> Unit) {
 private fun Text(text: String) {
     ComposeNode<View, ViewApplier>(
         factory = { View().also { it.name = "Text" } },
-        update = {
-            set(text) { attributes["text"] = it }
-        }
+        update = { set(text) { attributes["text"] = it } }
     )
 }
 
@@ -1642,10 +1645,7 @@ private fun MockViewValidator.Text(text: String) {
 
 @Composable
 private fun Marker() {
-    ComposeNode<View, ViewApplier>(
-        factory = { View().also { it.name = "Marker" } },
-        update = { }
-    )
+    ComposeNode<View, ViewApplier>(factory = { View().also { it.name = "Marker" } }, update = {})
 }
 
 private fun MockViewValidator.Marker() {
@@ -1656,9 +1656,7 @@ private fun MockViewValidator.Marker() {
 private fun Marker(value: Int) {
     ComposeNode<View, ViewApplier>(
         factory = { View().also { it.name = "Marker" } },
-        update = {
-            set(value) { attributes["value"] = it }
-        }
+        update = { set(value) { attributes["value"] = it } }
     )
 }
 
@@ -1696,27 +1694,21 @@ private fun MockViewValidator.Marker(value: Int) {
 @Composable
 private fun Subcompose(content: @Composable () -> Unit) {
     val host = View().also { it.name = "SubcomposeHost" }
-    ComposeNode<View, ViewApplier>(factory = { host }, update = { })
+    ComposeNode<View, ViewApplier>(factory = { host }, update = {})
     val parent = rememberCompositionContext()
     val composition = Composition(ViewApplier(host), parent)
     composition.setContent(content)
-    DisposableEffect(Unit) {
-        onDispose { composition.dispose() }
-    }
+    DisposableEffect(Unit) { onDispose { composition.dispose() } }
 }
 
 @Composable
 private fun DeferredSubcompose(content: @Composable () -> Unit) {
     val host = View().also { it.name = "DeferredSubcompose" }
-    ComposeNode<View, ViewApplier>(factory = { host }, update = { })
+    ComposeNode<View, ViewApplier>(factory = { host }, update = {})
     val parent = rememberCompositionContext()
     val composition = remember { Composition(ViewApplier(host), parent) }
-    LaunchedEffect(content as Any) {
-        composition.setContent(content)
-    }
-    DisposableEffect(Unit) {
-        onDispose { composition.dispose() }
-    }
+    LaunchedEffect(content as Any) { composition.setContent(content) }
+    DisposableEffect(Unit) { onDispose { composition.dispose() } }
 }
 
 private fun MockViewValidator.Subcompose(content: MockViewValidator.() -> Unit) {
@@ -1729,7 +1721,9 @@ private fun MockViewValidator.DeferredSubcompose(content: MockViewValidator.() -
 
 class RememberedObject : RememberObserver {
     var count: Int = 0
-    val isLive: Boolean get() = count > 0
+    val isLive: Boolean
+        get() = count > 0
+
     private var rememberedCount = 0
     private var forgottenCount = 0
     private var abandonedCount = 0
@@ -1755,4 +1749,12 @@ class RememberedObject : RememberObserver {
         count--
         if (count == 0) died = true
     }
+}
+
+class SimpleRememberedObject(val name: String) : RememberObserver {
+    override fun onRemembered() {}
+
+    override fun onForgotten() {}
+
+    override fun onAbandoned() {}
 }

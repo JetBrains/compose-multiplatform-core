@@ -19,7 +19,6 @@ package androidx.compose.ui.node
 import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.RecomposeScope
 import androidx.compose.runtime.currentRecomposeScope
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusState
 import androidx.compose.ui.focus.focusTarget
@@ -37,8 +36,7 @@ import org.junit.runner.RunWith
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class NodeCoordinatorInitializationTest {
-    @get:Rule
-    val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule()
 
     @Test
     fun initializeIsCalledWhenFocusNodeIsCreated() {
@@ -46,30 +44,19 @@ class NodeCoordinatorInitializationTest {
         var focusState: FocusState? = null
 
         // Act.
-        rule.setContent {
-            Box(
-                Modifier
-                    .onFocusChanged { focusState = it }
-                    .focusTarget()
-            )
-        }
+        rule.setContent { Box(Modifier.onFocusChanged { focusState = it }.focusTarget()) }
 
         // Assert.
-        rule.runOnIdle {
-            assertThat(focusState).isNotNull()
-        }
+        rule.runOnIdle { assertThat(focusState).isNotNull() }
     }
 
-    @OptIn(ExperimentalComposeUiApi::class)
     @Test
     fun initializeIsCalledWhenPointerInputNodeWrapperIsCreated() {
         // Arrange.
         val pointerInputModifier = PointerInteropFilter()
 
         // Act.
-        rule.setContent {
-            Box(modifier = pointerInputModifier)
-        }
+        rule.setContent { Box(modifier = pointerInputModifier) }
 
         // Assert.
         rule.runOnIdle {
@@ -77,7 +64,6 @@ class NodeCoordinatorInitializationTest {
         }
     }
 
-    @ExperimentalComposeUiApi
     @Test
     fun initializeIsCalledWhenPointerInputNodeIsReused() {
         // Arrange.
@@ -100,15 +86,12 @@ class NodeCoordinatorInitializationTest {
 
     @Test
     fun delegatedNodeGetsCoordinator() {
-        val node = object : DelegatingNode() {
-            val inner = delegate(
-                object : Modifier.Node() { }
-            )
-        }
+        val node =
+            object : DelegatingNode() {
+                val inner = delegate(object : Modifier.Node() {})
+            }
 
-        rule.setContent {
-            Box(modifier = Modifier.elementOf(node))
-        }
+        rule.setContent { Box(modifier = Modifier.elementOf(node)) }
 
         rule.runOnIdle {
             assertThat(node.isAttached).isTrue()

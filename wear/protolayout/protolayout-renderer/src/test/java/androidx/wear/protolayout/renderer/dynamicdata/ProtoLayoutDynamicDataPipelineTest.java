@@ -41,6 +41,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
+import androidx.vectordrawable.graphics.drawable.SeekableAnimatedVectorDrawable;
 import androidx.wear.protolayout.expression.AppDataKey;
 import androidx.wear.protolayout.expression.DynamicBuilders;
 import androidx.wear.protolayout.expression.pipeline.FixedQuotaManagerImpl;
@@ -83,7 +84,6 @@ import androidx.wear.protolayout.proto.TriggerProto.OnVisibleOnceTrigger;
 import androidx.wear.protolayout.proto.TriggerProto.OnVisibleTrigger;
 import androidx.wear.protolayout.proto.TriggerProto.Trigger;
 import androidx.wear.protolayout.proto.TriggerProto.Trigger.InnerCase;
-import androidx.wear.protolayout.renderer.common.SeekableAnimatedVectorDrawable;
 import androidx.wear.protolayout.renderer.dynamicdata.ProtoLayoutDynamicDataPipeline.PipelineMaker;
 import androidx.wear.protolayout.renderer.inflater.DefaultAndroidSeekableAnimatedImageResourceByResIdResolver;
 import androidx.wear.protolayout.renderer.inflater.ResourceResolvers.ResourceAccessException;
@@ -94,7 +94,6 @@ import com.google.common.collect.Range;
 import com.google.common.truth.Expect;
 
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -112,9 +111,9 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-// Note: Most of the functionality of DynamicDataPipeline should be tested using //
-// DynamicDataPipelineProtoTest instead. This test class only exists for the cases that cannot be //
-// trivially tested there (e.g. throwing exceptions in response to feature flags or handling //
+// Note: Most of the functionality of DynamicDataPipeline should be tested using
+// DynamicDataPipelineProtoTest instead. This test class only exists for the cases that cannot be
+// trivially tested there (e.g. throwing exceptions in response to feature flags or handling
 // animations).
 @RunWith(AndroidJUnit4.class)
 public class ProtoLayoutDynamicDataPipelineTest {
@@ -569,7 +568,8 @@ public class ProtoLayoutDynamicDataPipelineTest {
         shadowOf(getMainLooper()).idle();
         assertThat(results).containsExactly(3, 4, 5, 6).inOrder();
 
-        // Remove node NODE_1_1_1. NODE_1_1, NODE_1_11 and NODE_1_2 should remain in the pipeline.
+        // Remove node NODE_1_1_1.
+        // NODE_1_1, NODE_1_11 and NODE_1_2 should remain in the pipeline.
         pipeline.removeChildNodesFor(NODE_1_1);
         assertThat(pipeline.size()).isEqualTo(5);
     }
@@ -1119,7 +1119,6 @@ public class ProtoLayoutDynamicDataPipelineTest {
     }
 
     @Test
-    @Ignore("b/286028644")
     public void resolvedSeekableAnimatedImage_canStoreAndRegisterWithAnimatableFixedFloat() {
         ProtoLayoutDynamicDataPipeline pipeline =
                 new ProtoLayoutDynamicDataPipeline(
@@ -1152,7 +1151,6 @@ public class ProtoLayoutDynamicDataPipelineTest {
     }
 
     @Test
-    @Ignore("b/286028644")
     public void resolvedSeekableAnimatedImage_canStoreAndRegisterWithAnimatableDynamicFloat() {
         ProtoLayoutDynamicDataPipeline pipeline =
                 new ProtoLayoutDynamicDataPipeline(
@@ -1198,7 +1196,6 @@ public class ProtoLayoutDynamicDataPipelineTest {
     }
 
     @Test
-    @Ignore("b/286028644")
     public void resolvedSeekableAnimatedImage_getSeekableAnimationTotalDurationMillis() {
         ProtoLayoutDynamicDataPipeline pipeline =
                 new ProtoLayoutDynamicDataPipeline(
@@ -1388,7 +1385,7 @@ public class ProtoLayoutDynamicDataPipelineTest {
 
         // one running, delayed animation is not started yet.
         expect.that(pipeline.getRunningAnimationsCount()).isEqualTo(1);
-        assertThat(results2).hasSize(0);
+        assertThat(results2).isEmpty();
 
         shadowOf(getMainLooper()).idleFor(100, TimeUnit.MILLISECONDS);
         assertAnimation(results1, start1, end1);
@@ -1441,7 +1438,7 @@ public class ProtoLayoutDynamicDataPipelineTest {
 
         // one running, delayed animation is not started yet.
         expect.that(pipeline.getRunningAnimationsCount()).isEqualTo(1);
-        assertThat(results2).hasSize(0);
+        assertThat(results2).isEmpty();
 
         shadowOf(getMainLooper()).idle();
         assertAnimation(results1, start1, end1);
@@ -1461,7 +1458,9 @@ public class ProtoLayoutDynamicDataPipelineTest {
         float end1 = 10.0f;
         float end2 = 50.0f;
 
-        // 0~100: forward animation 100~300: reverse delay 300~400: reverse animation
+        // 0~100: forward animation
+        // 100~300: reverse delay
+        // 300~400: reverse animation
         DynamicFloat dynamicFloat1 =
                 animatableFixedFloat(start1, end1, /* duration= */ 100, /* delay= */ 0, 200, 2);
         List<Float> results1 = new ArrayList<>();

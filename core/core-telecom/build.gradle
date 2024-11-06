@@ -33,12 +33,13 @@ dependencies {
     // core-telecom dependencies
     api(libs.kotlinStdlib)
     api(libs.guavaListenableFuture)
-    implementation("androidx.annotation:annotation:1.4.0")
+    implementation("androidx.annotation:annotation:1.8.1")
     // @OptIn annotations
-    api("androidx.annotation:annotation-experimental:1.4.0")
+    api("androidx.annotation:annotation-experimental:1.4.1")
     implementation("androidx.core:core:1.9.0")
     implementation(libs.kotlinCoroutinesCore)
     implementation(libs.kotlinCoroutinesGuava)
+    implementation("androidx.lifecycle:lifecycle-service:2.8.1")
     // Test dependencies
     androidTestImplementation(project(":internal-testutils-common"))
     androidTestImplementation(libs.kotlinStdlib)
@@ -48,7 +49,6 @@ dependencies {
     androidTestImplementation(libs.testRules)
     androidTestImplementation(libs.truth)
     androidTestImplementation(libs.espressoCore)
-    androidTestImplementation(libs.multidex)
     androidTestImplementation(libs.kotlinCoroutinesTest)
 }
 
@@ -65,5 +65,4 @@ androidx {
     mavenVersion = LibraryVersions.CORE_TELECOM
     inceptionYear = "2023"
     description = "Integrate VoIP calls with the Telecom framework."
-    metalavaK2UastEnabled = true
 }

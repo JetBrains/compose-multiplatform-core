@@ -14,11 +14,8 @@
  * limitations under the License.
  */
 
-@file:RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
-
 package androidx.camera.camera2.pipe.integration.impl
 
-import androidx.annotation.RequiresApi
 import androidx.camera.camera2.pipe.CameraId
 import androidx.camera.camera2.pipe.CameraMetadata
 import androidx.camera.camera2.pipe.integration.config.CameraConfig
@@ -26,15 +23,17 @@ import androidx.camera.camera2.pipe.integration.config.CameraScope
 import javax.inject.Inject
 
 /** Pre-computed camera properties */
-interface CameraProperties {
-    val cameraId: CameraId
-    val metadata: CameraMetadata
+public interface CameraProperties {
+    public val cameraId: CameraId
+    public val metadata: CameraMetadata
 
     // TODO: Consider exposing additional properties, such as quirks.
 }
 
 @CameraScope
-class CameraPipeCameraProperties @Inject constructor(
+public class CameraPipeCameraProperties
+@Inject
+constructor(
     private val cameraConfig: CameraConfig,
     private val cameraMetadata: CameraMetadata?,
 ) : CameraProperties {

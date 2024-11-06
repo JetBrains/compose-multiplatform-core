@@ -17,9 +17,8 @@ package androidx.room
 
 import android.os.Build
 import androidx.annotation.RequiresApi
-import androidx.arch.core.executor.ArchTaskExecutor
-import androidx.arch.core.executor.testing.CountingTaskExecutorRule
 import androidx.kruth.assertThat
+import androidx.kruth.assertThrows
 import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.SQLiteDriver
 import androidx.sqlite.SQLiteStatement
@@ -27,17 +26,22 @@ import java.lang.ref.WeakReference
 import java.util.Locale
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
-import kotlin.test.assertFailsWith
+import kotlin.collections.removeFirst as removeFirstKt
 import kotlinx.atomicfu.atomic
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withTimeout
 import org.junit.After
 import org.junit.AssumptionViolatedException
 import org.junit.Before
-import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
@@ -46,12 +50,11 @@ import org.mockito.kotlin.mock
 @RunWith(JUnit4::class)
 class InvalidationTrackerTest {
 
+    private val testCoroutineScope = TestScope()
+
     private lateinit var tracker: InvalidationTracker
     private lateinit var sqliteDriver: FakeSQLiteDriver
     private lateinit var roomDatabase: FakeRoomDatabase
-
-    @get:Rule
-    val taskExecutorRule = CountingTaskExecutorRule()
 
     @Before
     @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
@@ -62,16 +65,10 @@ class InvalidationTrackerTest {
             put("C", "C_content")
             put("d", "a")
         }
-        val viewTables = buildMap {
-            put("e", setOf("a"))
-        }
+        val viewTables = buildMap { put("e", setOf("a")) }
         val tableNames = arrayOf("a", "B", "i", "C", "d")
         sqliteDriver = FakeSQLiteDriver()
-        roomDatabase = FakeRoomDatabase(
-            shadowTables,
-            viewTables,
-            tableNames
-        )
+        roomDatabase = FakeRoomDatabase(shadowTables, viewTables, tableNames)
         roomDatabase.init(
             DatabaseConfiguration(
                 context = mock(),
@@ -81,8 +78,8 @@ class InvalidationTrackerTest {
                 callbacks = null,
                 allowMainThreadQueries = true,
                 journalMode = RoomDatabase.JournalMode.WRITE_AHEAD_LOGGING,
-                queryExecutor = ArchTaskExecutor.getIOThreadExecutor(),
-                transactionExecutor = ArchTaskExecutor.getIOThreadExecutor(),
+                queryExecutor = { error("Should never be called") },
+                transactionExecutor = { error("Should never be called") },
                 multiInstanceInvalidationServiceIntent = null,
                 requireMigration = true,
                 allowDestructiveMigrationOnDowngrade = false,
@@ -95,7 +92,7 @@ class InvalidationTrackerTest {
                 autoMigrationSpecs = emptyList(),
                 allowDestructiveMigrationForAllTables = false,
                 sqliteDriver = sqliteDriver,
-                queryCoroutineContext = null,
+                queryCoroutineContext = testCoroutineScope.coroutineContext,
             )
         )
         tracker = roomDatabase.invalidationTracker
@@ -104,17 +101,16 @@ class InvalidationTrackerTest {
     @After
     fun after() {
         Locale.setDefault(Locale.US)
-
-        taskExecutorRule.drainTasks(1, TimeUnit.SECONDS)
-        assertThat(taskExecutorRule.isIdle).isTrue()
     }
 
     @Test
     fun observerWithNoExistingTable() = runTest {
-        assertFailsWith<IllegalArgumentException>(message = "There is no table with name x") {
-            val observer: InvalidationTracker.Observer = LatchObserver(1, "x")
-            tracker.subscribe(observer)
-        }
+        assertThrows<IllegalArgumentException> {
+                val observer: InvalidationTracker.Observer = LatchObserver(1, "x")
+                tracker.addObserver(observer)
+            }
+            .hasMessageThat()
+            .isEqualTo("There is no table with name x")
     }
 
     @Test
@@ -126,7 +122,7 @@ class InvalidationTrackerTest {
     @Test
     fun observeOneTable() = runTest {
         val observer = LatchObserver(1, "a")
-        tracker.subscribe(observer)
+        tracker.addObserver(observer)
 
         // Mark 'a' as invalidated and expect a notification
         sqliteDriver.setInvalidatedTables(0)
@@ -152,7 +148,7 @@ class InvalidationTrackerTest {
     @Test
     fun observeTwoTables() = runTest {
         val observer = LatchObserver(1, "A", "B")
-        tracker.subscribe(observer)
+        tracker.addObserver(observer)
 
         // Mark 'a' and 'B' as invalidated and expect a notification
         sqliteDriver.setInvalidatedTables(0, 1)
@@ -186,7 +182,7 @@ class InvalidationTrackerTest {
     @Test
     fun observeFtsTable() = runTest {
         val observer = LatchObserver(1, "C")
-        tracker.subscribe(observer)
+        tracker.addObserver(observer)
 
         // Mark 'C' as invalidated and expect a notification
         sqliteDriver.setInvalidatedTables(3)
@@ -212,7 +208,7 @@ class InvalidationTrackerTest {
     @Test
     fun observeExternalContentFtsTable() = runTest {
         val observer = LatchObserver(1, "d")
-        tracker.subscribe(observer)
+        tracker.addObserver(observer)
 
         // Mark 'a' as invalidated and expect a notification, 'a' is the content table of 'd'
         sqliteDriver.setInvalidatedTables(0)
@@ -238,7 +234,7 @@ class InvalidationTrackerTest {
     @Test
     fun observeExternalContentFtsTableAndContentTable() = runTest {
         val observer = LatchObserver(1, "d", "a")
-        tracker.subscribe(observer)
+        tracker.addObserver(observer)
 
         // Mark 'a' as invalidated and expect a notification of both 'a' and 'd' since 'd' is
         // backed by 'a'
@@ -266,8 +262,8 @@ class InvalidationTrackerTest {
     fun observeExternalContentFatsTableAndContentTableSeparately() = runTest {
         val observerA = LatchObserver(1, "a")
         val observerD = LatchObserver(1, "d")
-        tracker.subscribe(observerA)
-        tracker.subscribe(observerD)
+        tracker.addObserver(observerA)
+        tracker.addObserver(observerD)
 
         // Mark 'a' as invalidated and expect a notification of both 'a' and 'd' since 'a' is
         // the content table for 'd'
@@ -296,7 +292,7 @@ class InvalidationTrackerTest {
     @Test
     fun observeView() = runTest {
         val observer = LatchObserver(1, "E")
-        tracker.subscribe(observer)
+        tracker.addObserver(observer)
 
         // Mark 'a' and 'B' as invalidated and expect a notification, the view 'E' is backed by 'a'
         sqliteDriver.setInvalidatedTables(0, 1)
@@ -326,13 +322,10 @@ class InvalidationTrackerTest {
         tracker.refreshAsync()
         tracker.refreshAsync()
 
-        taskExecutorRule.drainTasks(1, TimeUnit.SECONDS)
+        testScheduler.advanceUntilIdle()
 
-        assertThat(
-            sqliteDriver.preparedQueries.filter {
-                it == SELECT_INVALIDATED_QUERY
-            }
-        ).hasSize(1)
+        assertThat(sqliteDriver.preparedQueries.filter { it == SELECT_INVALIDATED_QUERY })
+            .hasSize(1)
     }
 
     @Test
@@ -354,16 +347,18 @@ class InvalidationTrackerTest {
         // Validates that a slow observer will finish notification after database closing
         val invalidatedLatch = CountDownLatch(1)
         val invalidated = atomic(false)
-        tracker.addObserver(object : InvalidationTracker.Observer("a") {
-            override fun onInvalidated(tables: Set<String>) {
-                invalidatedLatch.countDown()
-                assertThat(invalidated.compareAndSet(expect = false, update = true)).isTrue()
-                runBlocking { delay(100) }
+        tracker.addObserver(
+            object : InvalidationTracker.Observer("a") {
+                override fun onInvalidated(tables: Set<String>) {
+                    invalidatedLatch.countDown()
+                    assertThat(invalidated.compareAndSet(expect = false, update = true)).isTrue()
+                    runBlocking { delay(100) }
+                }
             }
-        })
+        )
         sqliteDriver.setInvalidatedTables(0)
         tracker.refreshAsync()
-        taskExecutorRule.drainTasks(200, TimeUnit.MILLISECONDS)
+        testScheduler.advanceUntilIdle()
         invalidatedLatch.await()
         roomDatabase.close()
         assertThat(invalidated.value).isTrue()
@@ -376,30 +371,27 @@ class InvalidationTrackerTest {
         val triggers = listOf("INSERT", "UPDATE", "DELETE")
 
         val observer = LatchObserver(1, "a")
-        tracker.subscribe(observer)
-        tracker.sync()
+        tracker.addObserver(observer)
 
         // Verifies the 'invalidated' column is reset when tracking starts
-        assertThat(sqliteDriver.preparedQueries).contains(
-            "INSERT OR IGNORE INTO room_table_modification_log VALUES(0, 0)"
-        )
+        assertThat(sqliteDriver.preparedQueries)
+            .contains("INSERT OR IGNORE INTO room_table_modification_log VALUES(0, 0)")
         // Verifies triggers created for observed table
         triggers.forEach { trigger ->
-            assertThat(sqliteDriver.preparedQueries).contains(
-                "CREATE TEMP TRIGGER IF NOT EXISTS " +
-                    "`room_table_modification_trigger_a_$trigger` " +
-                    "AFTER $trigger ON `a` BEGIN UPDATE " +
-                    "room_table_modification_log SET invalidated = 1 WHERE table_id = 0 " +
-                    "AND invalidated = 0; END"
-            )
+            assertThat(sqliteDriver.preparedQueries)
+                .contains(
+                    "CREATE TEMP TRIGGER IF NOT EXISTS " +
+                        "`room_table_modification_trigger_a_$trigger` " +
+                        "AFTER $trigger ON `a` BEGIN UPDATE " +
+                        "room_table_modification_log SET invalidated = 1 WHERE table_id = 0 " +
+                        "AND invalidated = 0; END"
+                )
         }
 
-        tracker.unsubscribe(observer)
-        tracker.sync()
+        tracker.removeObserver(observer)
         triggers.forEach { trigger ->
-            assertThat(sqliteDriver.preparedQueries).contains(
-                "DROP TRIGGER IF EXISTS `room_table_modification_trigger_a_$trigger`"
-            )
+            assertThat(sqliteDriver.preparedQueries)
+                .contains("DROP TRIGGER IF EXISTS `room_table_modification_trigger_a_$trigger`")
         }
     }
 
@@ -410,44 +402,50 @@ class InvalidationTrackerTest {
         val triggers = listOf("INSERT", "UPDATE", "DELETE")
 
         val observer = LatchObserver(1, "C")
-        tracker.subscribe(observer)
-        tracker.sync()
+        tracker.addObserver(observer)
 
         // Verifies the 'invalidated' column is reset when tracking starts
-        assertThat(sqliteDriver.preparedQueries).contains(
-            "INSERT OR IGNORE INTO room_table_modification_log VALUES(3, 0)"
-        )
+        assertThat(sqliteDriver.preparedQueries)
+            .contains("INSERT OR IGNORE INTO room_table_modification_log VALUES(3, 0)")
         // Verifies that when tracking a table ('C') that has an external content table
         // that triggers are installed in the content table and not the virtual table
         triggers.forEach { trigger ->
-            assertThat(sqliteDriver.preparedQueries).contains(
-                "CREATE TEMP TRIGGER IF NOT EXISTS " +
-                    "`room_table_modification_trigger_c_content_$trigger` " +
-                    "AFTER $trigger ON `c_content` BEGIN UPDATE " +
-                    "room_table_modification_log SET invalidated = 1 WHERE table_id = 3 " +
-                    "AND invalidated = 0; END"
-            )
+            assertThat(sqliteDriver.preparedQueries)
+                .contains(
+                    "CREATE TEMP TRIGGER IF NOT EXISTS " +
+                        "`room_table_modification_trigger_c_content_$trigger` " +
+                        "AFTER $trigger ON `c_content` BEGIN UPDATE " +
+                        "room_table_modification_log SET invalidated = 1 WHERE table_id = 3 " +
+                        "AND invalidated = 0; END"
+                )
         }
 
-        tracker.unsubscribe(observer)
-        tracker.sync()
+        tracker.removeObserver(observer)
         // Validates trigger are removed when tracking stops
         triggers.forEach { trigger ->
-            assertThat(sqliteDriver.preparedQueries).contains(
-                "DROP TRIGGER IF EXISTS `room_table_modification_trigger_c_content_$trigger`"
-            )
+            assertThat(sqliteDriver.preparedQueries)
+                .contains(
+                    "DROP TRIGGER IF EXISTS `room_table_modification_trigger_c_content_$trigger`"
+                )
         }
+    }
+
+    @Test
+    fun createFlowWithNoExistingTable() {
+        // Validate that sending a bad createFlow table name fails quickly
+        assertThrows<IllegalArgumentException> { tracker.createFlow(tables = arrayOf("x")) }
+            .hasMessageThat()
+            .isEqualTo("There is no table with name x")
     }
 
     @Test
     fun createLiveDataWithNoExistingTable() {
         // Validate that sending a bad createLiveData table name fails quickly
-        assertFailsWith<IllegalArgumentException>(message = "There is no table with name x") {
-            tracker.createLiveData(
-                tableNames = arrayOf("x"),
-                inTransaction = false
-            ) {}
-        }
+        assertThrows<IllegalArgumentException> {
+                tracker.createLiveData(tableNames = arrayOf("x"), inTransaction = false) {}
+            }
+            .hasMessageThat()
+            .isEqualTo("There is no table with name x")
     }
 
     @Test
@@ -474,13 +472,14 @@ class InvalidationTrackerTest {
     }
 
     @Test
-    fun weakObserver() {
+    fun weakObserver() = runTest {
         val invalidated = atomic(0)
-        var observer: InvalidationTracker.Observer? = object : InvalidationTracker.Observer("a") {
-            override fun onInvalidated(tables: Set<String>) {
-                invalidated.incrementAndGet()
+        var observer: InvalidationTracker.Observer? =
+            object : InvalidationTracker.Observer("a") {
+                override fun onInvalidated(tables: Set<String>) {
+                    invalidated.incrementAndGet()
+                }
             }
-        }
         tracker.addWeakObserver(observer!!)
 
         sqliteDriver.setInvalidatedTables(0)
@@ -515,15 +514,94 @@ class InvalidationTrackerTest {
         assertThat(invalidated.value).isEqualTo(1)
     }
 
-    private fun InvalidationTracker.awaitRefreshAsync() {
-        refreshAsync()
-        taskExecutorRule.drainTasks(200, TimeUnit.MILLISECONDS)
+    @Test
+    fun flowObserver() = runTest {
+        // Note: This tests validate triggers that are an impl (but important)
+        // detail of the tracker, but in theory this is already covered by tests with observers
+        val triggers = listOf("INSERT", "UPDATE", "DELETE")
+
+        val flow = tracker.createFlow("a")
+        testScheduler.advanceUntilIdle()
+
+        // Validate just creating a flow will not install triggers (they are cold).
+        assertThat(sqliteDriver.preparedQueries).isEmpty()
+
+        val initialCollectLatch = Mutex(locked = true)
+        val collectJob =
+            backgroundScope.launch(Dispatchers.IO) {
+                // Collect forever in the background, we'll cancel it soon and assert on cleanup
+                flow.collect { initialCollectLatch.unlock() }
+            }
+
+        // Wait at least for one emission
+        testScheduler.advanceUntilIdle()
+        initialCollectLatch.withLock {}
+
+        // Verifies triggers created for flow table
+        triggers.forEach { trigger ->
+            assertThat(sqliteDriver.preparedQueries)
+                .contains(
+                    "CREATE TEMP TRIGGER IF NOT EXISTS " +
+                        "`room_table_modification_trigger_a_$trigger` " +
+                        "AFTER $trigger ON `a` BEGIN UPDATE " +
+                        "room_table_modification_log SET invalidated = 1 WHERE table_id = 0 " +
+                        "AND invalidated = 0; END"
+                )
+        }
+
+        // Cancel flow collection
+        collectJob.cancelAndJoin()
+        // Due do quick cancellation, flows won't sync triggers immediately after marking tables
+        // no longer needed to be observed, hence the need to sync() here manually. In practice
+        // this is fine because new flows, observers or write operations sync triggers.
+        tracker.sync()
+        // Validates trigger are removed when observing stops and triggers are synced
+        triggers.forEach { trigger ->
+            assertThat(sqliteDriver.preparedQueries)
+                .contains("DROP TRIGGER IF EXISTS `room_table_modification_trigger_a_$trigger`")
+        }
     }
 
-    private class LatchObserver(
-        count: Int,
-        vararg tableNames: String
-    ) : InvalidationTracker.Observer(arrayOf(*tableNames)) {
+    @Test
+    fun selfRemovingObserver() = runTest {
+        // Add an observer that manipulates the observer list during invalidation, we are trying to
+        // verify no ConcurrentModificationException is thrown.
+        val observer =
+            object : InvalidationTracker.Observer("a") {
+                override fun onInvalidated(tables: Set<String>) {
+                    roomDatabase.invalidationTracker.removeObserver(this)
+                }
+            }
+        roomDatabase.invalidationTracker.addObserver(observer)
+        // Add two more observers, since we are validating modification we need more than one
+        // item in the observer map.
+        repeat(2) { roomDatabase.invalidationTracker.addObserver(LatchObserver(1, "a")) }
+
+        // Invalidate table 'a', it should cause the first observer to self remove.
+        sqliteDriver.setInvalidatedTables(0)
+        tracker.awaitRefreshAsync()
+    }
+
+    private fun runTest(testBody: suspend TestScope.() -> Unit) =
+        testCoroutineScope.runTest {
+            testBody.invoke(this)
+            roomDatabase.close()
+        }
+
+    /**
+     * Start invalidation async and await for it to be done.
+     *
+     * This is used as opposed so [InvalidationTracker.refresh] to validate the async things and
+     * because only the sync versions expect at-least one call to the async one to flush
+     * invalidation.
+     */
+    private fun InvalidationTracker.awaitRefreshAsync() {
+        refreshAsync()
+        testCoroutineScope.testScheduler.advanceUntilIdle()
+    }
+
+    private class LatchObserver(count: Int, vararg tableNames: String) :
+        InvalidationTracker.Observer(arrayOf(*tableNames)) {
         private var latch: CountDownLatch
 
         var invalidatedTables: Set<String>? = null
@@ -555,23 +633,24 @@ class InvalidationTrackerTest {
     ) : RoomDatabase() {
 
         override fun createInvalidationTracker(): InvalidationTracker {
-            return InvalidationTracker(
-                this,
-                shadowTablesMap,
-                viewTables,
-                *tableNames
-            )
+            return InvalidationTracker(this, shadowTablesMap, viewTables, *tableNames)
         }
 
         override fun createOpenDelegate(): RoomOpenDelegateMarker {
-            return object : RoomOpenDelegate(0, "") {
+            return object : RoomOpenDelegate(0, "", "") {
                 override fun onCreate(connection: SQLiteConnection) {}
+
                 override fun onPreMigrate(connection: SQLiteConnection) {}
+
                 override fun onValidateSchema(connection: SQLiteConnection) =
                     ValidationResult(true, null)
+
                 override fun onPostMigrate(connection: SQLiteConnection) {}
+
                 override fun onOpen(connection: SQLiteConnection) {}
+
                 override fun createAllTables(connection: SQLiteConnection) {}
+
                 override fun dropAllTables(connection: SQLiteConnection) {}
             }
         }
@@ -599,28 +678,31 @@ class InvalidationTrackerTest {
                 preparedQueries.add(sql)
                 val invalidatedTables =
                     if (sql == SELECT_INVALIDATED_QUERY && invalidateTablesQueue.isNotEmpty()) {
-                        invalidateTablesQueue.removeFirst()
+                        invalidateTablesQueue.removeFirstKt()
                     } else {
                         null
                     }
                 return FakeSQLiteStatement(invalidatedTables)
             }
 
-            override fun close() {
-            }
+            override fun close() {}
         }
 
-        private inner class FakeSQLiteStatement(
-            private val invalidateTables: IntArray?
-        ) : SQLiteStatement {
+        private inner class FakeSQLiteStatement(private val invalidateTables: IntArray?) :
+            SQLiteStatement {
 
             private var position = -1
 
             override fun bindBlob(index: Int, value: ByteArray) {}
+
             override fun bindDouble(index: Int, value: Double) {}
+
             override fun bindLong(index: Int, value: Long) {}
+
             override fun bindText(index: Int, value: String) {}
+
             override fun bindNull(index: Int) {}
+
             override fun getBlob(index: Int): ByteArray {
                 error("Should not be called")
             }
@@ -653,6 +735,10 @@ class InvalidationTrackerTest {
                 error("Should not be called")
             }
 
+            override fun getColumnType(index: Int): Int {
+                error("Should not be called")
+            }
+
             override fun step(): Boolean {
                 if (invalidateTables != null) {
                     return ++position < invalidateTables.size
@@ -662,7 +748,9 @@ class InvalidationTrackerTest {
             }
 
             override fun reset() {}
+
             override fun clearBindings() {}
+
             override fun close() {}
         }
     }

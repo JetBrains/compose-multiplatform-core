@@ -38,40 +38,60 @@ class TransactionMethodProcessor(
         context.checker.check(
             executableElement.isOverrideableIgnoringContainer() &&
                 (!executableElement.isAbstract() || hasKotlinDefaultImpl),
-            executableElement, ProcessorErrors.TRANSACTION_METHOD_MODIFIERS
+            executableElement,
+            ProcessorErrors.TRANSACTION_METHOD_MODIFIERS
         )
 
         val returnType = delegate.extractReturnType()
         val rawReturnType = returnType.rawType
 
-        DEFERRED_TYPES.firstOrNull { className ->
-            context.processingEnv.findType(className.canonicalName)
-                ?.rawType?.isAssignableFrom(rawReturnType) ?: false
-        }?.let { returnTypeName ->
+        val deferredReturnTypeName =
+            DEFERRED_TYPES.firstOrNull { className ->
+                context.processingEnv
+                    .findType(className.canonicalName)
+                    ?.rawType
+                    ?.isAssignableFrom(rawReturnType) ?: false
+            }
+        if (deferredReturnTypeName != null) {
             context.logger.e(
-                ProcessorErrors.transactionMethodAsync(returnTypeName.toString()),
+                ProcessorErrors.transactionMethodAsync(
+                    deferredReturnTypeName.toString(context.codeLanguage)
+                ),
                 executableElement
             )
         }
 
-        val callType = when {
-            containingElement.isInterface() && executableElement.isJavaDefault() ->
-                TransactionMethod.CallType.DEFAULT_JAVA8
-            containingElement.isInterface() && hasKotlinDefaultImpl ->
-                TransactionMethod.CallType.DEFAULT_KOTLIN
-            else ->
-                TransactionMethod.CallType.CONCRETE
+        val isSuspendFunction = delegate.executableElement.isSuspendFunction()
+        if (
+            !isSuspendFunction && deferredReturnTypeName == null && !context.isAndroidOnlyTarget()
+        ) {
+            // A blocking transaction wrapper function is not allowed if the target platforms
+            // include non-Android targets.
+            context.logger.e(
+                executableElement,
+                ProcessorErrors.INVALID_BLOCKING_DAO_FUNCTION_NON_ANDROID
+            )
         }
 
-        val parameters = delegate.extractParams()
-        val processedParamNames = parameters.map { param ->
-            // Apply spread operator when delegating to a vararg parameter in Kotlin.
-            if (context.codeLanguage == CodeLanguage.KOTLIN && param.isVarArgs()) {
-                "*${param.name}"
-            } else {
-                param.name
+        val callType =
+            when {
+                containingElement.isInterface() && executableElement.isJavaDefault() ->
+                    TransactionMethod.CallType.DEFAULT_JAVA8
+                containingElement.isInterface() && hasKotlinDefaultImpl ->
+                    TransactionMethod.CallType.DEFAULT_KOTLIN
+                else -> TransactionMethod.CallType.CONCRETE
             }
-        }
+
+        val parameters = delegate.extractParams()
+        val processedParamNames =
+            parameters.map { param ->
+                // Apply spread operator when delegating to a vararg parameter in Kotlin.
+                if (context.codeLanguage == CodeLanguage.KOTLIN && param.isVarArgs()) {
+                    "*${param.name}"
+                } else {
+                    param.name
+                }
+            }
 
         return TransactionMethod(
             element = executableElement,

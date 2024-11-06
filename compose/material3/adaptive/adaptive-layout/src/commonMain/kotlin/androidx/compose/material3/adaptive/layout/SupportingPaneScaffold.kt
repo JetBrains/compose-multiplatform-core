@@ -22,46 +22,118 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 
 /**
- * A Material opinionated implementation of [ThreePaneScaffold] that will display the provided three
- * panes in a canonical supporting-pane layout.
+ * An opinionated implementation of [ThreePaneScaffold] following Material guidelines that displays
+ * the provided three panes in a canonical [supporting pane layout](
+ * https://m3.material.io/foundations/layout/canonical-layouts/supporting-pane).
+ *
+ * This overload takes a [ThreePaneScaffoldValue] describing the adapted value of each pane within
+ * the scaffold.
  *
  * @param directive The top-level directives about how the scaffold should arrange its panes.
- * @param value The current adapted value of the scaffold, which indicates how each pane of
- *        the scaffold is adapted.
+ * @param value The current adapted value of the scaffold, which indicates how each pane of the
+ *   scaffold is adapted.
  * @param mainPane the main pane of the scaffold, which is supposed to hold the major content of an
- *        app, for example, the editing screen of a doc app. See [SupportingPaneScaffoldRole.Main].
+ *   app, for example, the editing screen of a doc app. See [SupportingPaneScaffoldRole.Main].
  * @param supportingPane the supporting pane of the scaffold, which is supposed to hold the support
- *        content of an app, for example, the comment list of a doc app. See
- *        [SupportingPaneScaffoldRole.Supporting].
+ *   content of an app, for example, the comment list of a doc app. See
+ *   [SupportingPaneScaffoldRole.Supporting].
  * @param modifier [Modifier] of the scaffold layout.
  * @param extraPane the extra pane of the scaffold, which is supposed to hold any additional content
- *        besides the main and the supporting panes, for example, a styling panel in a doc app.
- *        See [SupportingPaneScaffoldRole.Extra].
+ *   besides the main and the supporting panes, for example, a styling panel in a doc app. See
+ *   [SupportingPaneScaffoldRole.Extra].
+ * @param paneMotions The specified motion of the panes. By default the value will be calculated by
+ *   [calculateSupportingPaneScaffoldMotion] according to the target [ThreePaneScaffoldValue].
+ * @param paneExpansionDragHandle provide a custom pane expansion drag handle to allow users to
+ *   resize panes and change the pane expansion state by dragging. This is `null` by default, which
+ *   renders no drag handle. Even there's no drag handle, you can still change pane size directly
+ *   via modifying [paneExpansionState].
+ * @param paneExpansionState the state object of pane expansion.
  */
 @ExperimentalMaterial3AdaptiveApi
 @Composable
 fun SupportingPaneScaffold(
     directive: PaneScaffoldDirective,
     value: ThreePaneScaffoldValue,
-    mainPane: @Composable ThreePaneScaffoldScope.() -> Unit,
-    supportingPane: @Composable ThreePaneScaffoldScope.() -> Unit,
+    mainPane: @Composable ThreePaneScaffoldPaneScope.() -> Unit,
+    supportingPane: @Composable ThreePaneScaffoldPaneScope.() -> Unit,
     modifier: Modifier = Modifier,
-    extraPane: (@Composable ThreePaneScaffoldScope.() -> Unit)? = null,
+    extraPane: (@Composable ThreePaneScaffoldPaneScope.() -> Unit)? = null,
+    paneMotions: ThreePaneMotion = calculateSupportingPaneScaffoldMotion(value),
+    paneExpansionDragHandle: (@Composable ThreePaneScaffoldScope.(PaneExpansionState) -> Unit)? =
+        null,
+    paneExpansionState: PaneExpansionState = rememberPaneExpansionState(value),
 ) {
     ThreePaneScaffold(
         modifier = modifier.fillMaxSize(),
         scaffoldDirective = directive,
         scaffoldValue = value,
-        paneOrder = ThreePaneScaffoldDefaults.SupportingPaneLayoutPaneOrder,
+        paneOrder = SupportingPaneScaffoldDefaults.PaneOrder,
         secondaryPane = supportingPane,
         tertiaryPane = extraPane,
+        paneMotions = paneMotions,
+        paneExpansionDragHandle = paneExpansionDragHandle,
+        paneExpansionState = paneExpansionState,
         primaryPane = mainPane
     )
 }
 
 /**
- * Provides default values of [SupportingPaneScaffold].
+ * An opinionated implementation of [ThreePaneScaffold] following Material guidelines that displays
+ * the provided three panes in a canonical [supporting pane layout](
+ * https://m3.material.io/foundations/layout/canonical-layouts/supporting-pane).
+ *
+ * This overload takes a [ThreePaneScaffoldState] describing the current [ThreePaneScaffoldValue]
+ * and any pane transitions or animations in progress.
+ *
+ * @param directive The top-level directives about how the scaffold should arrange its panes.
+ * @param scaffoldState The current state of the scaffold, containing information about the adapted
+ *   value of each pane of the scaffold and the transitions/animations in progress.
+ * @param mainPane the main pane of the scaffold, which is supposed to hold the major content of an
+ *   app, for example, the editing screen of a doc app. See [SupportingPaneScaffoldRole.Main].
+ * @param supportingPane the supporting pane of the scaffold, which is supposed to hold the support
+ *   content of an app, for example, the comment list of a doc app. See
+ *   [SupportingPaneScaffoldRole.Supporting].
+ * @param modifier [Modifier] of the scaffold layout.
+ * @param extraPane the extra pane of the scaffold, which is supposed to hold any additional content
+ *   besides the main and the supporting panes, for example, a styling panel in a doc app. See
+ *   [SupportingPaneScaffoldRole.Extra].
+ * @param paneMotions The specified motion of the panes. By default the value will be calculated by
+ *   [calculateSupportingPaneScaffoldMotion] according to the target [ThreePaneScaffoldValue].
+ * @param paneExpansionDragHandle provide a custom pane expansion drag handle to allow users to
+ *   resize panes and change the pane expansion state by dragging. This is `null` by default, which
+ *   renders no drag handle. Even there's no drag handle, you can still change pane size directly
+ *   via modifying [paneExpansionState].
+ * @param paneExpansionState the state object of pane expansion.
  */
+@ExperimentalMaterial3AdaptiveApi
+@Composable
+fun SupportingPaneScaffold(
+    directive: PaneScaffoldDirective,
+    scaffoldState: ThreePaneScaffoldState,
+    mainPane: @Composable ThreePaneScaffoldPaneScope.() -> Unit,
+    supportingPane: @Composable ThreePaneScaffoldPaneScope.() -> Unit,
+    modifier: Modifier = Modifier,
+    extraPane: (@Composable ThreePaneScaffoldPaneScope.() -> Unit)? = null,
+    paneMotions: ThreePaneMotion = scaffoldState.calculateSupportingPaneScaffoldMotion(),
+    paneExpansionDragHandle: (@Composable ThreePaneScaffoldScope.(PaneExpansionState) -> Unit)? =
+        null,
+    paneExpansionState: PaneExpansionState = rememberPaneExpansionState(scaffoldState.targetState),
+) {
+    ThreePaneScaffold(
+        modifier = modifier.fillMaxSize(),
+        scaffoldDirective = directive,
+        scaffoldState = scaffoldState,
+        paneOrder = SupportingPaneScaffoldDefaults.PaneOrder,
+        secondaryPane = supportingPane,
+        tertiaryPane = extraPane,
+        paneMotions = paneMotions,
+        paneExpansionDragHandle = paneExpansionDragHandle,
+        paneExpansionState = paneExpansionState,
+        primaryPane = mainPane
+    )
+}
+
+/** Provides default values of [SupportingPaneScaffold]. */
 @ExperimentalMaterial3AdaptiveApi
 object SupportingPaneScaffoldDefaults {
     /**
@@ -81,12 +153,24 @@ object SupportingPaneScaffoldDefaults {
             supportingPaneAdaptStrategy,
             extraPaneAdaptStrategy
         )
+
+    /**
+     * Denotes [ThreePaneScaffold] to use the supporting-pane pane-order to arrange its panes
+     * horizontally, which allocates panes in the order of primary, secondary, and tertiary from
+     * start to end.
+     */
+    internal val PaneOrder =
+        ThreePaneScaffoldHorizontalOrder(
+            ThreePaneScaffoldRole.Primary,
+            ThreePaneScaffoldRole.Secondary,
+            ThreePaneScaffoldRole.Tertiary
+        )
 }
 
 /**
  * The set of the available pane roles of [SupportingPaneScaffold]. Those roles map to their
- * corresponding [ThreePaneScaffoldRole], which is a generic role definition across all types
- * of three pane scaffolds. We suggest you to use the values defined here instead of the raw
+ * corresponding [ThreePaneScaffoldRole], which is a generic role definition across all types of
+ * three pane scaffolds. We suggest you to use the values defined here instead of the raw
  * [ThreePaneScaffoldRole] under the context of [SupportingPaneScaffold] for better code clarity.
  */
 @ExperimentalMaterial3AdaptiveApi

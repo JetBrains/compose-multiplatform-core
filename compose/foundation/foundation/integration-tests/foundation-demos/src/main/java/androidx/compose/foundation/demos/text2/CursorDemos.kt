@@ -14,11 +14,8 @@
  * limitations under the License.
  */
 
-@file:OptIn(ExperimentalFoundationApi::class)
-
 package androidx.compose.foundation.demos.text2
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -47,9 +44,8 @@ import androidx.compose.ui.window.Dialog
 @Composable
 fun TextFieldCursorNotBlinkingInUnfocusedWindowDemo() {
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        val textFieldDecoration = Modifier
-            .border(2.dp, Color.DarkGray, RoundedCornerShape(5.dp))
-            .padding(8.dp)
+        val textFieldDecoration =
+            Modifier.border(2.dp, Color.DarkGray, RoundedCornerShape(5.dp)).padding(8.dp)
 
         val textState = rememberTextFieldState("hello")
         BasicTextField(textState, textFieldDecoration)
@@ -67,14 +63,11 @@ fun TextFieldCursorNotBlinkingInUnfocusedWindowDemo() {
                     val dialogFocusRequester = remember { FocusRequester() }
                     Text(
                         "Hello! This is a dialog.",
-                        Modifier
-                            .padding(20.dp)
+                        Modifier.padding(20.dp)
                             .focusRequester(dialogFocusRequester)
                             .background(Color.DarkGray)
                     )
-                    LaunchedEffect(Unit) {
-                        dialogFocusRequester.requestFocus()
-                    }
+                    LaunchedEffect(Unit) { dialogFocusRequester.requestFocus() }
                 }
             }
         }

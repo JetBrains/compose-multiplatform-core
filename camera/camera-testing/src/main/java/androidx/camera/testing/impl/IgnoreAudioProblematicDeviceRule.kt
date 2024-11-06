@@ -16,7 +16,6 @@
 
 package androidx.camera.testing.impl
 
-import androidx.annotation.RequiresApi
 import androidx.camera.testing.impl.IgnoreProblematicDeviceRule.Companion.isPixel2Api26Emulator
 import androidx.camera.testing.impl.IgnoreProblematicDeviceRule.Companion.isPixel2Api30Emulator
 import org.junit.AssumptionViolatedException
@@ -24,11 +23,8 @@ import org.junit.rules.TestRule
 import org.junit.runner.Description
 import org.junit.runners.model.Statement
 
-/**
- * Test class to set the TestRule that should not be run on the audio problematically devices.
- */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
-class IgnoreAudioProblematicDeviceRule : TestRule {
+/** Test class to set the TestRule that should not be run on the audio problematically devices. */
+public class IgnoreAudioProblematicDeviceRule : TestRule {
     private val isProblematicDevices = isPixel2Api26Emulator || isPixel2Api30Emulator
 
     override fun apply(base: Statement, description: Description): Statement {
@@ -37,7 +33,8 @@ class IgnoreAudioProblematicDeviceRule : TestRule {
                 if (isProblematicDevices) {
                     throw AssumptionViolatedException(
                         "AudioRecord of the emulator may not be well prepared for related" +
-                            " tests. Ignore the test: " + description.displayName +
+                            " tests. Ignore the test: " +
+                            description.displayName +
                             ". To test on emulator devices, please remove the" +
                             " IgnoreAudioProblematicallyDeviceRule from the test class."
                     )

@@ -46,14 +46,13 @@ import androidx.compose.ui.semantics.semantics
  * @param modifier the [Modifier] to be applied to this tab
  * @param onClick called when this tab is clicked (with D-Pad Center)
  * @param enabled controls the enabled state of this tab. When `false`, this component will not
- * respond to user input, and it will appear visually disabled and disabled to accessibility
- * services.
- * @param colors these will be used by the tab when in different states (focused,
- * selected, etc.)
+ *   respond to user input, and it will appear visually disabled and disabled to accessibility
+ *   services.
+ * @param colors these will be used by the tab when in different states (focused, selected, etc.)
  * @param interactionSource an optional hoisted [MutableInteractionSource] for observing and
- * emitting [Interaction]s for this tab. You can use this to change the tab's appearance
- * or preview the tab in different states. Note that if `null` is provided, interactions will
- * still happen internally.
+ *   emitting [Interaction]s for this tab. You can use this to change the tab's appearance or
+ *   preview the tab in different states. Note that if `null` is provided, interactions will still
+ *   happen internally.
  * @param content content of the [Tab]
  */
 @Composable
@@ -61,32 +60,34 @@ fun TabRowScope.Tab(
     selected: Boolean,
     onFocus: () -> Unit,
     modifier: Modifier = Modifier,
-    onClick: () -> Unit = { },
+    onClick: () -> Unit = {},
     enabled: Boolean = true,
     colors: TabColors = TabDefaults.pillIndicatorTabColors(),
     interactionSource: MutableInteractionSource? = null,
     content: @Composable RowScope.() -> Unit
 ) {
     Surface(
-        checked = selected,
-        onCheckedChange = { onClick() },
-        modifier = modifier
-            .onFocusChanged {
-                if (it.isFocused) {
-                    onFocus()
+        selected = selected,
+        onClick = onClick,
+        modifier =
+            modifier
+                .onFocusChanged {
+                    if (it.isFocused) {
+                        onFocus()
+                    }
                 }
-            }
-            .semantics {
-                this.selected = selected
-                this.role = Role.Tab
-            },
-        colors = colors.toToggleableSurfaceColors(
-            doesTabRowHaveFocus = hasFocus,
-            enabled = enabled,
-        ),
+                .semantics {
+                    this.selected = selected
+                    this.role = Role.Tab
+                },
+        colors =
+            colors.toSelectableSurfaceColors(
+                doesTabRowHaveFocus = hasFocus,
+                enabled = enabled,
+            ),
         enabled = enabled,
-        scale = ToggleableSurfaceScale.None,
-        shape = ToggleableSurfaceDefaults.shape(shape = RectangleShape),
+        scale = SelectableSurfaceScale.None,
+        shape = SelectableSurfaceDefaults.shape(shape = RectangleShape),
         interactionSource = interactionSource,
     ) {
         Row(
@@ -99,11 +100,10 @@ fun TabRowScope.Tab(
 
 /**
  * Represents the colors used in a tab in different states.
- *
  * - See [TabDefaults.pillIndicatorTabColors] for the default colors used in a [Tab] when using a
- * Pill indicator.
+ *   Pill indicator.
  * - See [TabDefaults.underlinedIndicatorTabColors] for the default colors used in a [Tab] when
- * using an Underlined indicator
+ *   using an Underlined indicator
  */
 class TabColors
 internal constructor(
@@ -150,14 +150,15 @@ object TabDefaults {
      * [Tab]'s content colors to in conjunction with underlined indicator
      *
      * @param contentColor applied when the any of the other tabs is focused
-     * @param inactiveContentColor the default color of the tab's content when none of the tabs are focused
+     * @param inactiveContentColor the default color of the tab's content when none of the tabs are
+     *   focused
      * @param selectedContentColor applied when the current tab is selected
      * @param focusedContentColor applied when the current tab is focused
      * @param focusedSelectedContentColor applied when the current tab is both focused and selected
-     * @param disabledContentColor applied when any of the other tabs is focused and the
-     * current tab is disabled
-     * @param disabledInactiveContentColor applied when the current tab is disabled and none of the tabs are
-     * focused
+     * @param disabledContentColor applied when any of the other tabs is focused and the current tab
+     *   is disabled
+     * @param disabledInactiveContentColor applied when the current tab is disabled and none of the
+     *   tabs are focused
      * @param disabledSelectedContentColor applied when the current tab is disabled and selected
      */
     @Composable
@@ -186,14 +187,15 @@ object TabDefaults {
      * [Tab]'s content colors to in conjunction with pill indicator
      *
      * @param contentColor applied when the any of the other tabs is focused
-     * @param inactiveContentColor the default color of the tab's content when none of the tabs are focused
+     * @param inactiveContentColor the default color of the tab's content when none of the tabs are
+     *   focused
      * @param selectedContentColor applied when the current tab is selected
      * @param focusedContentColor applied when the current tab is focused
      * @param focusedSelectedContentColor applied when the current tab is both focused and selected
-     * @param disabledContentColor applied when any of the other tabs is focused and the
-     * current tab is disabled
-     * @param disabledInactiveContentColor applied when the current tab is disabled and none of the tabs are
-     * focused
+     * @param disabledContentColor applied when any of the other tabs is focused and the current tab
+     *   is disabled
+     * @param disabledInactiveContentColor applied when the current tab is disabled and none of the
+     *   tabs are focused
      * @param disabledSelectedContentColor applied when the current tab is disabled and selected
      */
     @Composable
@@ -220,17 +222,17 @@ object TabDefaults {
 }
 
 @Composable
-internal fun TabColors.toToggleableSurfaceColors(
+internal fun TabColors.toSelectableSurfaceColors(
     doesTabRowHaveFocus: Boolean,
     enabled: Boolean,
 ) =
-    ToggleableSurfaceDefaults.colors(
+    SelectableSurfaceDefaults.colors(
         contentColor = if (doesTabRowHaveFocus) contentColor else inactiveContentColor,
         selectedContentColor = if (enabled) selectedContentColor else disabledSelectedContentColor,
         focusedContentColor = focusedContentColor,
         focusedSelectedContentColor = focusedSelectedContentColor,
         disabledContentColor =
-        if (doesTabRowHaveFocus) disabledContentColor else disabledInactiveContentColor,
+            if (doesTabRowHaveFocus) disabledContentColor else disabledInactiveContentColor,
         containerColor = Color.Transparent,
         focusedContainerColor = Color.Transparent,
         pressedContainerColor = Color.Transparent,

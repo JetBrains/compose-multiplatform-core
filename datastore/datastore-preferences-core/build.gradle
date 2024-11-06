@@ -21,7 +21,8 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.BundleInsideHelper
+
+import androidx.build.KotlinTarget
 import androidx.build.LibraryType
 import androidx.build.PlatformIdentifier
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
@@ -38,12 +39,14 @@ androidXMultiplatform {
     mac()
     linux()
     ios()
+    watchos()
+    tvos()
     // NOTE, if you add android target here, make sure to add the proguard file as well.
 
     defaultPlatform(PlatformIdentifier.JVM)
 
     sourceSets {
-        all {
+        configureEach {
             languageSettings.optIn("kotlin.RequiresOptIn")
         }
 
@@ -67,6 +70,9 @@ androidXMultiplatform {
         }
         jvmMain {
             dependsOn(commonMain)
+            dependencies {
+                implementation(project(":datastore:datastore-preferences-proto"))
+            }
         }
         jvmTest {
             dependsOn(commonTest)
@@ -94,7 +100,7 @@ androidXMultiplatform {
             }
         }
 
-        targets.all { target ->
+        targets.configureEach { target ->
             if (target.platformType == KotlinPlatformType.native) {
                 target.compilations["main"].defaultSourceSet {
                     dependsOn(nativeMain)
@@ -107,23 +113,12 @@ androidXMultiplatform {
     }
 }
 
-BundleInsideHelper.forInsideJarKmp(
-        project,
-        /* from = */ "com.google.protobuf",
-        /* to =   */ "androidx.datastore.preferences.protobuf",
-        // proto-lite dependency includes .proto files, which are not used and would clash if
-        // users also use proto library directly
-        /* dropResourcesWithSuffix = */ ".proto"
-)
-
-dependencies {
-    bundleInside(project(":datastore:datastore-preferences-proto"))
-}
-
 androidx {
     name = "Preferences DataStore Core"
     type = LibraryType.PUBLISHED_LIBRARY
     inceptionYear = "2020"
     description = "Android Preferences DataStore without the Android Dependencies"
     legacyDisableKotlinStrictApiMode = true
+    metalavaK2UastEnabled = false
+    kotlinTarget = KotlinTarget.KOTLIN_1_9
 }

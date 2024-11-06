@@ -19,7 +19,6 @@ package androidx.wear.protolayout.expression;
 import static androidx.wear.protolayout.expression.Preconditions.checkNotNull;
 
 import android.annotation.SuppressLint;
-import android.os.Build;
 
 import androidx.annotation.ColorInt;
 import androidx.annotation.IntDef;
@@ -39,6 +38,7 @@ import androidx.wear.protolayout.expression.FixedValueBuilders.FixedInstant;
 import androidx.wear.protolayout.expression.FixedValueBuilders.FixedInt32;
 import androidx.wear.protolayout.expression.FixedValueBuilders.FixedString;
 import androidx.wear.protolayout.expression.proto.DynamicProto;
+import androidx.wear.protolayout.expression.util.DynamicFormatter;
 import androidx.wear.protolayout.protobuf.CodedInputStream;
 import androidx.wear.protolayout.protobuf.CodedOutputStream;
 import androidx.wear.protolayout.protobuf.ExtensionRegistryLite;
@@ -708,7 +708,7 @@ public final class DynamicBuilders {
                 return this;
             }
 
-            /** Sets the name space for the state key. */
+            /** Sets the namespace for the state key. */
             @RequiresSchemaVersion(major = 1, minor = 200)
             @NonNull
             public Builder setSourceNamespace(@NonNull String sourceNamespace) {
@@ -1255,7 +1255,7 @@ public final class DynamicBuilders {
             /** Sets the value to start animating from. */
             @RequiresSchemaVersion(major = 1, minor = 200)
             @NonNull
-            public AnimatableFixedInt32.Builder setFromValue(int fromValue) {
+            public Builder setFromValue(int fromValue) {
                 mImpl.setFromValue(fromValue);
                 mFingerprint.recordPropertyUpdate(1, fromValue);
                 return this;
@@ -1264,7 +1264,7 @@ public final class DynamicBuilders {
             /** Sets the value to animate to. */
             @RequiresSchemaVersion(major = 1, minor = 200)
             @NonNull
-            public AnimatableFixedInt32.Builder setToValue(int toValue) {
+            public Builder setToValue(int toValue) {
                 mImpl.setToValue(toValue);
                 mFingerprint.recordPropertyUpdate(2, toValue);
                 return this;
@@ -1398,7 +1398,7 @@ public final class DynamicBuilders {
             /** Sets the value to watch, and animate when it changes. */
             @RequiresSchemaVersion(major = 1, minor = 200)
             @NonNull
-            public AnimatableDynamicInt32.Builder setInput(@NonNull DynamicInt32 input) {
+            public Builder setInput(@NonNull DynamicInt32 input) {
                 mImpl.setInput(input.toDynamicInt32Proto());
                 mFingerprint.recordPropertyUpdate(
                         1, checkNotNull(input.getFingerprint()).aggregateValueAsInt());
@@ -1690,7 +1690,7 @@ public final class DynamicBuilders {
         }
 
         /**
-         * Creates a {@link DynamicFlaot} containing the result of adding a {@link DynamicFloat} to
+         * Creates a {@link DynamicFloat} containing the result of adding a {@link DynamicFloat} to
          * this {@link DynamicInt32}; As an example, the following is equal to {@code
          * DynamicFloat.constant(13.5f)}
          *
@@ -1741,7 +1741,7 @@ public final class DynamicBuilders {
         }
 
         /**
-         * Creates a {@link DynamicFlaot} containing the result of adding a float to this {@link
+         * Creates a {@link DynamicFloat} containing the result of adding a float to this {@link
          * DynamicInt32}; As an example, the following is equal to {@code
          * DynamicFloat.constant(13.5f)}
          *
@@ -2413,7 +2413,7 @@ public final class DynamicBuilders {
 
             /** Returns whether digit grouping is used or not. */
             public boolean isGroupingUsed() {
-                return mInt32FormatOp.getGroupingUsed();
+                return mInt32FormatOp.isGroupingUsed();
             }
 
             /** Builder to create {@link IntFormatter} objects. */
@@ -2579,7 +2579,7 @@ public final class DynamicBuilders {
          * locale. If not defined, defaults to false. For example, for locale en_US, using grouping
          * with 1234 would yield "1,234".
          */
-        public boolean getGroupingUsed() {
+        public boolean isGroupingUsed() {
             return mImpl.getGroupingUsed();
         }
 
@@ -2638,13 +2638,13 @@ public final class DynamicBuilders {
                     + ", minIntegerDigits="
                     + getMinIntegerDigits()
                     + ", groupingUsed="
-                    + getGroupingUsed()
+                    + isGroupingUsed()
                     + "}";
         }
 
         /** Builder for {@link Int32FormatOp}. */
         public static final class Builder implements DynamicString.Builder {
-            final DynamicProto.Int32FormatOp.Builder mImpl =
+            private final DynamicProto.Int32FormatOp.Builder mImpl =
                     DynamicProto.Int32FormatOp.newBuilder();
             private final Fingerprint mFingerprint = new Fingerprint(196209833);
 
@@ -2792,7 +2792,7 @@ public final class DynamicBuilders {
                 return this;
             }
 
-            /** Sets the name space for the state key. */
+            /** Sets the namespace for the state key. */
             @RequiresSchemaVersion(major = 1, minor = 200)
             @NonNull
             public Builder setSourceNamespace(@NonNull String sourceNamespace) {
@@ -3143,7 +3143,7 @@ public final class DynamicBuilders {
          * locale. If not defined, defaults to false. For example, for locale en_US, using grouping
          * with 1234.56 would yield "1,234.56".
          */
-        public boolean getGroupingUsed() {
+        public boolean isGroupingUsed() {
             return mImpl.getGroupingUsed();
         }
 
@@ -3206,7 +3206,7 @@ public final class DynamicBuilders {
                     + ", minIntegerDigits="
                     + getMinIntegerDigits()
                     + ", groupingUsed="
-                    + getGroupingUsed()
+                    + isGroupingUsed()
                     + "}";
         }
 
@@ -3385,6 +3385,18 @@ public final class DynamicBuilders {
         @RequiresSchemaVersion(major = 1, minor = 200)
         static DynamicString constant(@NonNull String constant) {
             return new FixedString.Builder().setValue(constant).build();
+        }
+
+        /**
+         * Equivalent of {@link String#format} but supports {@link DynamicType}s, and returns a
+         * {@link DynamicString}.
+         *
+         * @see DynamicFormatter
+         */
+        @NonNull
+        @RequiresSchemaVersion(major = 1, minor = 200)
+        static DynamicString format(@NonNull String format, @NonNull Object... args) {
+            return new DynamicFormatter().format(format, args);
         }
 
         /**
@@ -3736,7 +3748,7 @@ public final class DynamicBuilders {
                 return this;
             }
 
-            /** Sets the name space for the state key. */
+            /** Sets the namespace for the state key. */
             @RequiresSchemaVersion(major = 1, minor = 200)
             @NonNull
             public Builder setSourceNamespace(@NonNull String sourceNamespace) {
@@ -4363,7 +4375,7 @@ public final class DynamicBuilders {
         /**
          * Creates a {@link DynamicFloat} containing the result of adding another {@link
          * DynamicFloat} to this {@link DynamicFloat}; As an example, the following is equal to
-         * {@code DynamicFloat.constant(13f)}
+         * {@code DynamicFloat.constant(12f)}
          *
          * <pre>
          *   DynamicFloat.constant(7f).plus(DynamicFloat.constant(5f));
@@ -4389,7 +4401,7 @@ public final class DynamicBuilders {
         /**
          * Creates a {@link DynamicFloat} containing the result of adding a float to this {@link
          * DynamicFloat}; As an example, the following is equal to {@code
-         * DynamicFloat.constant(13f)}
+         * DynamicFloat.constant(12f)}
          *
          * <pre>
          *   DynamicFloat.constant(7f).plus(5f);
@@ -4415,7 +4427,7 @@ public final class DynamicBuilders {
         /**
          * Creates a {@link DynamicFloat} containing the result of adding a {@link DynamicInt32} to
          * this {@link DynamicFloat}; As an example, the following is equal to {@code
-         * DynamicFloat.constant(13f)}
+         * DynamicFloat.constant(12f)}
          *
          * <pre>
          *   DynamicFloat.constant(7f).plus(DynamicInt32.constant(5));
@@ -4465,7 +4477,7 @@ public final class DynamicBuilders {
         }
 
         /**
-         * Creates a {@link DynamicFloat} containing the result of subtracting a flaot from this
+         * Creates a {@link DynamicFloat} containing the result of subtracting a float from this
          * {@link DynamicFloat}; As an example, the following is equal to {@code
          * DynamicFloat.constant(2f)}
          *
@@ -4544,7 +4556,7 @@ public final class DynamicBuilders {
 
         /**
          * Creates a {@link DynamicFloat} containing the result of multiplying this {@link
-         * DynamicFloat} by a flaot; As an example, the following is equal to {@code
+         * DynamicFloat} by a float; As an example, the following is equal to {@code
          * DynamicFloat.constant(35f)}
          *
          * <pre>
@@ -5012,7 +5024,7 @@ public final class DynamicBuilders {
 
             /** Returns whether digit grouping is used or not. */
             public boolean isGroupingUsed() {
-                return mFloatFormatOp.getGroupingUsed();
+                return mFloatFormatOp.isGroupingUsed();
             }
 
             /** Builder to create {@link FloatFormatter} objects. */
@@ -5228,8 +5240,8 @@ public final class DynamicBuilders {
         @NonNull
         public DynamicProto.DynamicBool toDynamicBoolProto(boolean withFingerprint) {
             if (withFingerprint) {
-                return DynamicProto.DynamicBool.newBuilder().
-                        setStateSource(mImpl)
+                return DynamicProto.DynamicBool.newBuilder()
+                        .setStateSource(mImpl)
                         .setFingerprint(checkNotNull(mFingerprint).toProto())
                         .build();
             }
@@ -5265,7 +5277,7 @@ public final class DynamicBuilders {
                 return this;
             }
 
-            /** Sets the name space for the state key. */
+            /** Sets the namespace for the state key. */
             @RequiresSchemaVersion(major = 1, minor = 200)
             @NonNull
             public Builder setSourceNamespace(@NonNull String sourceNamespace) {
@@ -6144,7 +6156,7 @@ public final class DynamicBuilders {
                 return this;
             }
 
-            /** Sets the name space for the state key. */
+            /** Sets the namespace for the state key. */
             @RequiresSchemaVersion(major = 1, minor = 200)
             @NonNull
             public Builder setSourceNamespace(@NonNull String sourceNamespace) {
@@ -6600,7 +6612,6 @@ public final class DynamicBuilders {
         @RestrictTo(Scope.LIBRARY_GROUP)
         @NonNull
         DynamicProto.DynamicColor toDynamicColorProto(boolean withFingerprint);
-
 
         /**
          * Creates a {@link DynamicColor} from a byte array generated by {@link
@@ -7240,7 +7251,7 @@ public final class DynamicBuilders {
          *      .getYear(ZoneId.of("Europe/London"));
          * </pre>
          */
-        @RequiresSchemaVersion(major=1,minor=300)
+        @RequiresSchemaVersion(major = 1, minor = 300)
         @NonNull
         default DynamicInt32 getYear(@NonNull ZoneId zoneId) {
             return this.atZone(zoneId).getYear();
@@ -7255,7 +7266,7 @@ public final class DynamicBuilders {
          *      .getMonth(ZoneId.of("Europe/London"));
          * </pre>
          */
-        @RequiresSchemaVersion(major=1,minor=300)
+        @RequiresSchemaVersion(major = 1, minor = 300)
         @NonNull
         default DynamicInt32 getMonth(@NonNull ZoneId zoneId) {
             return this.atZone(zoneId).getMonth();
@@ -7270,7 +7281,7 @@ public final class DynamicBuilders {
          *      .getDayOfMonth(ZoneId.of("Europe/London"));
          * </pre>
          */
-        @RequiresSchemaVersion(major=1,minor=300)
+        @RequiresSchemaVersion(major = 1, minor = 300)
         @NonNull
         default DynamicInt32 getDayOfMonth(@NonNull ZoneId zoneId) {
             return this.atZone(zoneId).getDayOfMonth();
@@ -7286,7 +7297,7 @@ public final class DynamicBuilders {
          *      .getDayOfWeek(ZoneId.of("Europe/London"));
          * </pre>
          */
-        @RequiresSchemaVersion(major=1,minor=300)
+        @RequiresSchemaVersion(major = 1, minor = 300)
         @NonNull
         default DynamicInt32 getDayOfWeek(@NonNull ZoneId zoneId) {
             return this.atZone(zoneId).getDayOfWeek();
@@ -7301,7 +7312,7 @@ public final class DynamicBuilders {
          *      .getHour(ZoneId.of("Europe/London"));
          * </pre>
          */
-        @RequiresSchemaVersion(major=1,minor=300)
+        @RequiresSchemaVersion(major = 1, minor = 300)
         @NonNull
         default DynamicInt32 getHour(@NonNull ZoneId zoneId) {
             return this.atZone(zoneId).getHour();
@@ -7316,7 +7327,7 @@ public final class DynamicBuilders {
          *      .getMinute(ZoneId.of("Europe/London"));
          * </pre>
          */
-        @RequiresSchemaVersion(major=1,minor=300)
+        @RequiresSchemaVersion(major = 1, minor = 300)
         @NonNull
         default DynamicInt32 getMinute(@NonNull ZoneId zoneId) {
             return this.atZone(zoneId).getMinute();
@@ -7331,7 +7342,7 @@ public final class DynamicBuilders {
          *      .getSecond(ZoneId.of("Europe/London"));
          * </pre>
          */
-        @RequiresSchemaVersion(major=1,minor=300)
+        @RequiresSchemaVersion(major = 1, minor = 300)
         @NonNull
         default DynamicInt32 getSecond(@NonNull ZoneId zoneId) {
             return this.atZone(zoneId).getSecond();
@@ -8216,7 +8227,6 @@ public final class DynamicBuilders {
         @RestrictTo(Scope.LIBRARY_GROUP)
         @NonNull
         DynamicProto.DynamicDuration toDynamicDurationProto(boolean withFingerprint);
-
 
         /**
          * Creates a {@link DynamicDuration} from a byte array generated by {@link

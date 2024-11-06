@@ -18,8 +18,11 @@
 
 package androidx.glance.appwidget.samples
 
+import android.appwidget.AppWidgetManager
+import android.appwidget.AppWidgetProviderInfo.WIDGET_CATEGORY_KEYGUARD
 import android.content.Context
 import androidx.annotation.Sampled
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
@@ -33,6 +36,7 @@ import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
+import androidx.glance.appwidget.LocalAppWidgetOptions
 import androidx.glance.appwidget.provideContent
 import androidx.glance.appwidget.updateAll
 import androidx.glance.text.Text
@@ -50,9 +54,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-/**
- *  This sample demonstrates how to do create a simple [GlanceAppWidget] and update the widget.
- */
+/** This sample demonstrates how to do create a simple [GlanceAppWidget] and update the widget. */
 @Sampled
 fun provideGlanceSample() {
     class MyWidget : GlanceAppWidget() {
@@ -73,13 +75,14 @@ fun provideGlanceSample() {
                 val scope = rememberCoroutineScope()
                 Text(
                     text = "Hello ${data[Name]}",
-                    modifier = GlanceModifier.clickable("changeName") {
-                        scope.launch {
-                            store.updateData {
-                                it.toMutablePreferences().apply { set(Name, "Changed") }
+                    modifier =
+                        GlanceModifier.clickable("changeName") {
+                            scope.launch {
+                                store.updateData {
+                                    it.toMutablePreferences().apply { set(Name, "Changed") }
+                                }
                             }
                         }
-                    }
                 )
             }
         }
@@ -100,15 +103,13 @@ fun provideGlanceSample() {
 // Without this declaration, the class reference to WeatherWidgetWorker::class.java below does not
 // work because it is defined in that function after it is referenced. This will not show up in the
 // sample.
-class WeatherWidgetWorker(
-    appContext: Context,
-    params: WorkerParameters
-) : CoroutineWorker(appContext, params) {
+class WeatherWidgetWorker(appContext: Context, params: WorkerParameters) :
+    CoroutineWorker(appContext, params) {
     override suspend fun doWork() = Result.success()
 }
 
 /**
- *  This sample demonstrates how to do periodic updates using a unique periodic [CoroutineWorker].
+ * This sample demonstrates how to do periodic updates using a unique periodic [CoroutineWorker].
  */
 @Sampled
 fun provideGlancePeriodicWorkSample() {
@@ -128,22 +129,24 @@ fun provideGlancePeriodicWorkSample() {
         override suspend fun provideGlance(context: Context, id: GlanceId) {
             coroutineScope {
                 val store = context.weatherWidgetStore
-                val currentDegrees = store.data
-                    .map { prefs -> prefs[CurrentDegrees] }
-                    .stateIn(this@coroutineScope)
+                val currentDegrees =
+                    store.data.map { prefs -> prefs[CurrentDegrees] }.stateIn(this@coroutineScope)
 
                 // Load the current weather if there is not a current value present.
                 if (currentDegrees.value == null) store.loadWeather()
 
                 // Create unique periodic work to keep this widget updated at a regular interval.
-                WorkManager.getInstance(context).enqueueUniquePeriodicWork(
-                    "weatherWidgetWorker",
-                    ExistingPeriodicWorkPolicy.KEEP,
-                    PeriodicWorkRequest.Builder(
-                        WeatherWidgetWorker::class.java,
-                        15.minutes.toJavaDuration()
-                    ).setInitialDelay(15.minutes.toJavaDuration()).build()
-                )
+                WorkManager.getInstance(context)
+                    .enqueueUniquePeriodicWork(
+                        "weatherWidgetWorker",
+                        ExistingPeriodicWorkPolicy.KEEP,
+                        PeriodicWorkRequest.Builder(
+                                WeatherWidgetWorker::class.java,
+                                15.minutes.toJavaDuration()
+                            )
+                            .setInitialDelay(15.minutes.toJavaDuration())
+                            .build()
+                    )
 
                 // Note: you can also set `android:updatePeriodMillis` to control how often the
                 // launcher requests an update, but this does not support periods less than
@@ -157,10 +160,8 @@ fun provideGlancePeriodicWorkSample() {
         }
     }
 
-    class WeatherWidgetWorker(
-        appContext: Context,
-        params: WorkerParameters
-    ) : CoroutineWorker(appContext, params) {
+    class WeatherWidgetWorker(appContext: Context, params: WorkerParameters) :
+        CoroutineWorker(appContext, params) {
         override suspend fun doWork(): Result {
             WeatherWidget().apply {
                 applicationContext.weatherWidgetStore.loadWeather()
@@ -168,6 +169,41 @@ fun provideGlancePeriodicWorkSample() {
                 updateAll(applicationContext)
             }
             return Result.success()
+        }
+    }
+}
+
+/** This sample demonstrates how to implement [GlanceAppWidget.providePreview], */
+@Sampled
+fun providePreviewSample() {
+    class MyWidgetWithPreview : GlanceAppWidget() {
+        override suspend fun provideGlance(context: Context, id: GlanceId) {
+            provideContent {
+                val widgetCategory =
+                    LocalAppWidgetOptions.current.getInt(
+                        AppWidgetManager.OPTION_APPWIDGET_HOST_CATEGORY
+                    )
+                Content(isPreview = false, widgetCategory)
+            }
+        }
+
+        override suspend fun providePreview(context: Context, widgetCategory: Int) {
+            provideContent { Content(isPreview = true, widgetCategory) }
+        }
+
+        @Composable
+        fun Content(
+            isPreview: Boolean,
+            widgetCategory: Int,
+        ) {
+            val text = if (isPreview) "preview" else "bound widget"
+            Text("This is a $text.")
+            // Avoid showing personal information if this preview or widget is showing on the
+            // lockscreen/keyguard.
+            val isKeyguardWidget = widgetCategory.and(WIDGET_CATEGORY_KEYGUARD) != 0
+            if (!isKeyguardWidget) {
+                Text("Some personal info.")
+            }
         }
     }
 }

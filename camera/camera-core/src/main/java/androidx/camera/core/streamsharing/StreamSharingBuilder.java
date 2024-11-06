@@ -20,10 +20,7 @@ import static androidx.camera.core.impl.UseCaseConfig.OPTION_CAPTURE_TYPE;
 import static androidx.camera.core.internal.TargetConfig.OPTION_TARGET_CLASS;
 import static androidx.camera.core.internal.TargetConfig.OPTION_TARGET_NAME;
 
-import android.os.Build;
-
 import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.camera.core.UseCase;
 import androidx.camera.core.impl.CaptureConfig;
@@ -44,7 +41,6 @@ import java.util.UUID;
  * constructor directly. This class exists because the {@link UseCase#getUseCaseConfigBuilder}
  * method requires a builder for each {@link UseCase}.
  */
-@RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
 class StreamSharingBuilder implements
         UseCaseConfig.Builder<StreamSharing, StreamSharingConfig, StreamSharingBuilder> {
 
@@ -151,13 +147,6 @@ class StreamSharingBuilder implements
     public StreamSharingBuilder setTargetName(@NonNull String targetName) {
         getMutableConfig().insertOption(OPTION_TARGET_NAME, targetName);
         return this;
-    }
-
-    @NonNull
-    @Override
-    public StreamSharingBuilder setUseCaseEventCallback(
-            @NonNull UseCase.EventCallback eventCallback) {
-        throw new UnsupportedOperationException(UNSUPPORTED_MESSAGE);
     }
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)

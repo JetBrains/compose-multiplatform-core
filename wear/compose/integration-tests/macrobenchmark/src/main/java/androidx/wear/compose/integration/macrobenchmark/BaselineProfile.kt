@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package androidx.wear.compose.integration.macrobenchmark.test
+package androidx.wear.compose.integration.macrobenchmark
 
 import android.content.Intent
 import androidx.benchmark.macro.MacrobenchmarkScope
@@ -25,6 +25,7 @@ import androidx.test.uiautomator.By
 import androidx.test.uiautomator.BySelector
 import androidx.test.uiautomator.Until
 import androidx.testutils.createCompilationParams
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runners.Parameterized
@@ -41,7 +42,8 @@ import org.junit.runners.Parameterized
 // 4) Run profileparser for each of wear.compose.material, wear.compose.foundation and
 //    wear.compose.navigation. From <workspace>/frameworks/support:
 //    /usr/bin/java -jar
-//      ../../out/androidx/wear/compose/integration-tests/profileparser/build/libs/profileparser-all.jar
+//
+// ../../out/androidx/wear/compose/integration-tests/profileparser/build/libs/profileparser-all.jar
 //      <input-generated-file eg ./wear/compose/BaselineProfile_profile-baseline-prof.txt>
 //      <library-name e.g. androidx/wear/compose/material>
 //      <output-file eg ./wear/compose/compose-material/src/main/baseline-prof.txt>
@@ -49,8 +51,7 @@ import org.junit.runners.Parameterized
 @SdkSuppress(minSdkVersion = 29)
 class BaselineProfile {
 
-    @get:Rule
-    val baselineRule = BaselineProfileRule()
+    @get:Rule val baselineRule = BaselineProfileRule()
 
     private val ALERT_DIALOG = "alert-dialog"
     private val BUTTONS = "buttons"
@@ -69,18 +70,20 @@ class BaselineProfile {
     private val PROGRESSINDICATORS = "progressindicators"
     private val PROGRESS_INDICATOR_INDETERMINATE = "progress-indicator-indeterminate"
     private val RADIO_BUTTON = "radio-button"
+    private val SELECTABLE_CHIP = "selectable-chip"
     private val SLIDER = "slider"
     private val STEPPER = "stepper"
     private val SWIPE_TO_REVEAL = "swipe-to-reveal"
     private val SWITCH = "switch"
 
     @Test
+    @Ignore("b/366137664")
     fun profile() {
         baselineRule.collect(
             packageName = PACKAGE_NAME,
             profileBlock = {
                 val intent = Intent()
-                intent.action = ACTION
+                intent.action = BASELINE_ACTIVITY
                 startActivityAndWait(intent)
                 testDestination(description = BUTTONS)
                 testDestination(description = CARDS)
@@ -100,26 +103,26 @@ class BaselineProfile {
 
     private fun MacrobenchmarkScope.testChips() {
         findAndClick(By.desc(CHIPS))
-        device.waitForIdle()
         findAndClick(By.desc(CHECKBOX))
         findAndClick(By.desc(RADIO_BUTTON))
         findAndClick(By.desc(SWITCH))
+        findAndClick(By.desc(SELECTABLE_CHIP))
+        device.waitForIdle()
         device.pressBack()
         device.waitForIdle()
     }
 
     private fun MacrobenchmarkScope.testDialogs() {
         findAndClick(By.desc(DIALOGS))
-        device.waitForIdle()
         testDestination(description = ALERT_DIALOG)
         testDestination(description = CONFIRMATION_DIALOG)
+        device.waitForIdle()
         device.pressBack()
         device.waitForIdle()
     }
 
     private fun MacrobenchmarkScope.testExpandables() {
         findAndClick(By.desc(EXPANDABLES))
-        device.waitForIdle()
         // Expand the bottom expandable first for other to be on screen
         findAndClick(By.desc(EXPAND_TEXT))
         findAndClick(By.desc(EXPAND_ITEMS))
@@ -131,11 +134,10 @@ class BaselineProfile {
     private fun MacrobenchmarkScope.testProgressIndicators() {
         // swipe down for the "Progress Indicator" button to be on screen
         device.executeShellCommand("input swipe 250 200 250 100 300")
-        device.waitForIdle()
         findAndClick(By.desc(PROGRESSINDICATORS))
-        device.waitForIdle()
         testDestination(description = PROGRESS_INDICATOR)
         testDestination(description = PROGRESS_INDICATOR_INDETERMINATE)
+        device.waitForIdle()
         device.pressBack()
         device.waitForIdle()
     }
@@ -148,14 +150,22 @@ class BaselineProfile {
     }
 
     private fun MacrobenchmarkScope.findAndClick(selector: BySelector) {
-        device.wait(Until.findObject(selector), 3000)
-        device.findObject(selector).click()
+        device.waitForIdle()
+        var clicked = false
+        do {
+            val obj = device.wait(Until.findObject(selector), 5000)
+            try {
+                obj.click()
+                clicked = true
+            } catch (_: Exception) {
+                device.waitForIdle()
+            }
+        } while (!clicked)
     }
 
     companion object {
         private const val PACKAGE_NAME = "androidx.wear.compose.integration.macrobenchmark.target"
-        private const val ACTION =
-            "androidx.wear.compose.integration.macrobenchmark.target.BASELINE_ACTIVITY"
+        private const val BASELINE_ACTIVITY = "${PACKAGE_NAME}.BASELINE_ACTIVITY"
 
         @Parameterized.Parameters(name = "compilation={0}")
         @JvmStatic

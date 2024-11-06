@@ -28,7 +28,6 @@ import android.os.Parcelable;
 import android.support.v4.media.session.MediaSessionCompat;
 import android.text.TextUtils;
 
-import androidx.annotation.DoNotInline;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
@@ -393,8 +392,9 @@ public final class MediaDescriptionCompat implements Parcelable {
             bob.setIconBitmap(Api21Impl.getIconBitmap(description));
             bob.setIconUri(Api21Impl.getIconUri(description));
             Bundle extras = Api21Impl.getExtras(description);
+            extras = MediaSessionCompat.unparcelWithClassLoader(extras);
             if (extras != null) {
-                extras = MediaSessionCompat.unparcelWithClassLoader(extras);
+                extras = new Bundle(extras);
             }
             Uri mediaUri = null;
             if (extras != null) {
@@ -572,95 +572,79 @@ public final class MediaDescriptionCompat implements Parcelable {
     private static class Api21Impl {
         private Api21Impl() {}
 
-        @DoNotInline
         static MediaDescription.Builder createBuilder() {
             return new MediaDescription.Builder();
         }
 
-        @DoNotInline
         static void setMediaId(MediaDescription.Builder builder,
                 @Nullable String mediaId) {
             builder.setMediaId(mediaId);
         }
 
-        @DoNotInline
         static void setTitle(MediaDescription.Builder builder,
                 @Nullable CharSequence title) {
             builder.setTitle(title);
         }
 
-        @DoNotInline
         static void setSubtitle(MediaDescription.Builder builder,
                 @Nullable CharSequence subtitle) {
             builder.setSubtitle(subtitle);
         }
 
-        @DoNotInline
         static void setDescription(MediaDescription.Builder builder,
                 @Nullable CharSequence description) {
             builder.setDescription(description);
         }
 
-        @DoNotInline
         static void setIconBitmap(MediaDescription.Builder builder,
                 @Nullable Bitmap icon) {
             builder.setIconBitmap(icon);
         }
 
-        @DoNotInline
         static void setIconUri(MediaDescription.Builder builder,
                 @Nullable Uri iconUri) {
             builder.setIconUri(iconUri);
         }
 
-        @DoNotInline
         static void setExtras(MediaDescription.Builder builder,
                 @Nullable Bundle extras) {
             builder.setExtras(extras);
         }
 
-        @DoNotInline
         static MediaDescription build(MediaDescription.Builder builder) {
             return builder.build();
         }
 
-        @DoNotInline
         @Nullable
         static String getMediaId(MediaDescription description) {
             return description.getMediaId();
         }
 
-        @DoNotInline
         @Nullable
         static CharSequence getTitle(MediaDescription description) {
             return description.getTitle();
         }
 
-        @DoNotInline
         @Nullable
         static CharSequence getSubtitle(MediaDescription description) {
             return description.getSubtitle();
         }
 
-        @DoNotInline
         @Nullable
         static CharSequence getDescription(MediaDescription description) {
             return description.getDescription();
         }
 
-        @DoNotInline
         @Nullable
         static Bitmap getIconBitmap(MediaDescription description) {
             return description.getIconBitmap();
         }
 
-        @DoNotInline
         @Nullable
         static Uri getIconUri(MediaDescription description) {
             return description.getIconUri();
         }
 
-        @DoNotInline
         @Nullable
         static Bundle getExtras(MediaDescription description) {
             return description.getExtras();
@@ -671,13 +655,11 @@ public final class MediaDescriptionCompat implements Parcelable {
     private static class Api23Impl {
         private Api23Impl() {}
 
-        @DoNotInline
         static void setMediaUri(MediaDescription.Builder builder,
                 @Nullable Uri mediaUri) {
             builder.setMediaUri(mediaUri);
         }
 
-        @DoNotInline
         @Nullable
         static Uri getMediaUri(MediaDescription description) {
             return description.getMediaUri();

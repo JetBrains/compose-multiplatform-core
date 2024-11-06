@@ -21,7 +21,7 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.Publish
+import androidx.build.LibraryType
 
 plugins {
     id("AndroidXPlugin")
@@ -31,7 +31,7 @@ plugins {
 }
 
 dependencies {
-    api("androidx.annotation:annotation:1.1.0")
+    api("androidx.annotation:annotation:1.8.1")
     api("androidx.core:core:1.6.0")
     api("androidx.wear:wear:1.2.0")
     api(libs.kotlinStdlib)
@@ -63,7 +63,7 @@ android {
     buildFeatures {
         aidl = true
     }
-    buildTypes.all {
+    buildTypes.configureEach {
         stableAidl {
             version 1
         }
@@ -73,10 +73,10 @@ android {
 
 androidx {
     name = "Android Wear Phone Interactions"
-    publish = Publish.SNAPSHOT_AND_RELEASE
+    type = LibraryType.PUBLISHED_LIBRARY
     mavenVersion = LibraryVersions.WEAR_PHONE_INTERACTIONS
     inceptionYear = "2021"
     description = "Android Wear Phone Interactions"
-    metalavaK2UastEnabled = true
+    legacyDisableKotlinStrictApiMode = true
     samples(project(":wear:wear-phone-interactions-samples"))
 }

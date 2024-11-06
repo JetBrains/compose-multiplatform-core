@@ -16,23 +16,24 @@
 
 package androidx.compose.ui.semantics
 
+import androidx.collection.MutableScatterMap
+import androidx.collection.mutableScatterMapOf
 import androidx.compose.ui.platform.simpleIdentityToString
 
 /**
  * Describes the semantic information associated with the owning component
  *
- * The information provided in the configuration is used to to generate the
- * semantics tree.
+ * The information provided in the configuration is used to to generate the semantics tree.
  */
 class SemanticsConfiguration :
-    SemanticsPropertyReceiver,
-    Iterable<Map.Entry<SemanticsPropertyKey<*>, Any?>> {
+    SemanticsPropertyReceiver, Iterable<Map.Entry<SemanticsPropertyKey<*>, Any?>> {
 
-    private val props: MutableMap<SemanticsPropertyKey<*>, Any?> = mutableMapOf()
+    internal val props: MutableScatterMap<SemanticsPropertyKey<*>, Any?> = mutableScatterMapOf()
+    private var mapWrapper: Map<SemanticsPropertyKey<*>, Any?>? = null
 
     /**
-     * Retrieves the value for the given property, if one has been set.
-     * If a value has not been set, throws [IllegalStateException]
+     * Retrieves the value for the given property, if one has been set. If a value has not been set,
+     * throws [IllegalStateException]
      */
     // Unavoidable, guaranteed by [set]
     @Suppress("UNCHECKED_CAST")
@@ -55,16 +56,15 @@ class SemanticsConfiguration :
     }
 
     override fun iterator(): Iterator<Map.Entry<SemanticsPropertyKey<*>, Any?>> {
-        return props.iterator()
+        @Suppress("AsCollectionCall")
+        val mapWrapper = mapWrapper ?: props.asMap().apply { mapWrapper = this }
+        return mapWrapper.iterator()
     }
 
     override fun <T> set(key: SemanticsPropertyKey<T>, value: T) {
         if (value is AccessibilityAction<*> && contains(key)) {
             val prev = props[key] as AccessibilityAction<*>
-            props[key] = AccessibilityAction(
-                value.label ?: prev.label,
-                value.action ?: prev.action
-            )
+            props[key] = AccessibilityAction(value.label ?: prev.label, value.action ?: prev.action)
         } else {
             props[key] = value
         }
@@ -75,15 +75,14 @@ class SemanticsConfiguration :
     }
 
     internal fun containsImportantForAccessibility() =
-        props.keys.any { it.isImportantForAccessibility }
+        props.any { key, _ -> key.isImportantForAccessibility }
 
     /**
-     * Whether the semantic information provided by the owning component and
-     * all of its descendants should be treated as one logical entity.
+     * Whether the semantic information provided by the owning component and all of its descendants
+     * should be treated as one logical entity.
      *
-     * If set to true, the descendants of the owning component's
-     * [SemanticsNode] will merge their semantic information into the
-     * [SemanticsNode] representing the owning component.
+     * If set to true, the descendants of the owning component's [SemanticsNode] will merge their
+     * semantic information into the [SemanticsNode] representing the owning component.
      */
     var isMergingSemanticsOfDescendants: Boolean = false
     var isClearingSemantics: Boolean = false
@@ -93,13 +92,12 @@ class SemanticsConfiguration :
     /**
      * Absorb the semantic information from a child SemanticsNode into this configuration.
      *
-     * This merges the child's semantic configuration using the `merge()` method defined
-     * on the key.  This is used when mergeDescendants is specified (for accessibility focusable
-     * nodes).
+     * This merges the child's semantic configuration using the `merge()` method defined on the key.
+     * This is used when mergeDescendants is specified (for accessibility focusable nodes).
      */
     @Suppress("UNCHECKED_CAST")
     internal fun mergeChild(child: SemanticsConfiguration) {
-        for ((key, nextValue) in child.props) {
+        child.props.forEach { key, nextValue ->
             val existingValue = props[key]
             val mergeResult = (key as SemanticsPropertyKey<Any?>).merge(existingValue, nextValue)
             if (mergeResult != null) {
@@ -111,8 +109,8 @@ class SemanticsConfiguration :
     /**
      * Absorb the semantic information from a peer modifier into this configuration.
      *
-     * This is repeatedly called for each semantics {} modifier on one LayoutNode to collapse
-     * them into one SemanticsConfiguration. If a key is already seen and the value is
+     * This is repeatedly called for each semantics {} modifier on one LayoutNode to collapse them
+     * into one SemanticsConfiguration. If a key is already seen and the value is
      * AccessibilityAction, the resulting AccessibilityAction's label/action will be the
      * label/action of the outermost modifier with this key and nonnull label/action, or null if no
      * nonnull label/action is found. If the value is not AccessibilityAction, values with a key
@@ -126,15 +124,16 @@ class SemanticsConfiguration :
         if (peer.isClearingSemantics) {
             isClearingSemantics = true
         }
-        for ((key, nextValue) in peer.props) {
+        peer.props.forEach { key, nextValue ->
             if (!props.contains(key)) {
                 props[key] = nextValue
             } else if (nextValue is AccessibilityAction<*>) {
                 val value = props[key] as AccessibilityAction<*>
-                props[key] = AccessibilityAction(
-                    value.label ?: nextValue.label,
-                    value.action ?: nextValue.action
-                )
+                props[key] =
+                    AccessibilityAction(
+                        value.label ?: nextValue.label,
+                        value.action ?: nextValue.action
+                    )
             }
         }
     }
@@ -182,7 +181,7 @@ class SemanticsConfiguration :
             nextSeparator = ", "
         }
 
-        for ((key, value) in props) {
+        props.forEach { key, value ->
             propsString.append(nextSeparator)
             propsString.append(key.name)
             propsString.append(" : ")

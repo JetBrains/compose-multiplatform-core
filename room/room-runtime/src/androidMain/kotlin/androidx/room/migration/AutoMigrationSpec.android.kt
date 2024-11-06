@@ -22,15 +22,20 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 /**
  * Interface for defining an automatic migration specification for Room databases.
  *
- * The methods defined in this interface will be called on a background thread from the executor
- * set in Room's builder. It is important to note that the methods are all in a transaction when
- * it is called.
+ * The methods defined in this interface will be called on a background thread from the executor set
+ * in Room's builder. It is important to note that the methods are all in a transaction when it is
+ * called.
  *
  * @see [androidx.room.AutoMigration]
  */
 actual interface AutoMigrationSpec {
     /**
      * Invoked after the migration is completed.
+     *
+     * This function is only called when Room is configured without a driver. If a driver is set
+     * using [androidx.room.RoomDatabase.Builder.setDriver], then only the version that receives a
+     * [SQLiteConnection] is called.
+     *
      * @param db The SQLite database.
      */
     fun onPostMigrate(db: SupportSQLiteDatabase) {}

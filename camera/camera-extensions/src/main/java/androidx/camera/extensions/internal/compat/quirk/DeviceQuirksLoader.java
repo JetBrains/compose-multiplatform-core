@@ -17,8 +17,8 @@
 package androidx.camera.extensions.internal.compat.quirk;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.camera.core.impl.Quirk;
+import androidx.camera.core.impl.QuirkSettings;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,7 +26,6 @@ import java.util.List;
 /**
  * Loads all device specific quirks required for the current device
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public class DeviceQuirksLoader {
 
     private DeviceQuirksLoader() {
@@ -37,19 +36,31 @@ public class DeviceQuirksLoader {
      * on the current device.
      */
     @NonNull
-    static List<Quirk> loadQuirks() {
+    static List<Quirk> loadQuirks(@NonNull QuirkSettings quirkSettings) {
         final List<Quirk> quirks = new ArrayList<>();
 
-        if (ExtensionDisabledQuirk.load()) {
+        if (quirkSettings.shouldEnableQuirk(
+                ExtensionDisabledQuirk.class,
+                ExtensionDisabledQuirk.load())) {
             quirks.add(new ExtensionDisabledQuirk());
         }
 
-        if (CrashWhenOnDisableTooSoon.load()) {
+        if (quirkSettings.shouldEnableQuirk(
+                CrashWhenOnDisableTooSoon.class,
+                CrashWhenOnDisableTooSoon.load())) {
             quirks.add(new CrashWhenOnDisableTooSoon());
         }
 
-        if (GetAvailableKeysNeedsOnInit.load()) {
+        if (quirkSettings.shouldEnableQuirk(
+                GetAvailableKeysNeedsOnInit.class,
+                GetAvailableKeysNeedsOnInit.load())) {
             quirks.add(new GetAvailableKeysNeedsOnInit());
+        }
+
+        if (quirkSettings.shouldEnableQuirk(
+                CaptureOutputSurfaceOccupiedQuirk.class,
+                CaptureOutputSurfaceOccupiedQuirk.load())) {
+            quirks.add(new CaptureOutputSurfaceOccupiedQuirk());
         }
 
         return quirks;

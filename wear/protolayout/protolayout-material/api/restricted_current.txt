@@ -141,6 +141,7 @@ package androidx.wear.protolayout.material {
     method public androidx.wear.protolayout.TypeBuilders.StringProp? getContentDescription();
     method public String? getIconContent();
     method public String getText();
+    method public boolean hasText();
   }
 
   public static final class CompactChip.Builder {
@@ -194,6 +195,7 @@ package androidx.wear.protolayout.material {
     method public androidx.wear.protolayout.material.Text.Builder setModifiers(androidx.wear.protolayout.ModifiersBuilders.Modifiers);
     method public androidx.wear.protolayout.material.Text.Builder setMultilineAlignment(int);
     method public androidx.wear.protolayout.material.Text.Builder setOverflow(int);
+    method public androidx.wear.protolayout.material.Text.Builder setScalable(boolean);
     method public androidx.wear.protolayout.material.Text.Builder setTypography(int);
     method public androidx.wear.protolayout.material.Text.Builder setUnderline(boolean);
     method public androidx.wear.protolayout.material.Text.Builder setWeight(int);
@@ -267,9 +269,8 @@ package androidx.wear.protolayout.material.layouts {
   }
 
   public class LayoutDefaults {
+    field public static final androidx.wear.protolayout.DimensionBuilders.DpProp DEFAULT_LARGE_VERTICAL_SPACER_HEIGHT;
     field public static final androidx.wear.protolayout.DimensionBuilders.DpProp DEFAULT_VERTICAL_SPACER_HEIGHT;
-    field public static final androidx.wear.protolayout.DimensionBuilders.DpProp EDGE_CONTENT_LAYOUT_CONTENT_AND_SECONDARY_LABEL_SPACING_DP;
-    field public static final androidx.wear.protolayout.DimensionBuilders.DpProp EDGE_CONTENT_LAYOUT_LARGE_CONTENT_AND_SECONDARY_LABEL_SPACING_DP;
     field public static final float EDGE_CONTENT_LAYOUT_PADDING_ABOVE_MAIN_CONTENT_DP = 6.0f;
     field public static final float EDGE_CONTENT_LAYOUT_PADDING_BELOW_MAIN_CONTENT_DP = 8.0f;
     field @Deprecated public static final int MULTI_BUTTON_MAX_NUMBER = 7; // 0x7

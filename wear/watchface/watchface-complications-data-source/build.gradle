@@ -21,7 +21,7 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.Publish
+import androidx.build.LibraryType
 
 plugins {
     id("AndroidXPlugin")
@@ -30,7 +30,7 @@ plugins {
 }
 
 dependencies {
-    api("androidx.annotation:annotation:1.1.0")
+    api("androidx.annotation:annotation:1.8.1")
     api(project(":wear:watchface:watchface-complications"))
     api(project(":wear:watchface:watchface-complications-data"))
 
@@ -62,8 +62,8 @@ android {
 
 androidx {
     name = "Android Wear Complications Data Source"
-    publish = Publish.SNAPSHOT_AND_RELEASE
+    type = LibraryType.PUBLISHED_LIBRARY
     inceptionYear = "2020"
     description = "Android Wear Complications Data Source"
-    metalavaK2UastEnabled = true
+    legacyDisableKotlinStrictApiMode = true
 }

@@ -16,13 +16,13 @@
 
 package androidx.camera.testing.impl.fakes;
 
+import android.graphics.Bitmap;
 import android.graphics.Rect;
 import android.media.Image;
 
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.camera.core.ExperimentalGetImage;
 import androidx.camera.core.ImageInfo;
 import androidx.camera.core.ImageProxy;
@@ -34,7 +34,6 @@ import com.google.common.util.concurrent.ListenableFuture;
 /**
  * A fake implementation of {@link ImageProxy} where the values are settable.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public final class FakeImageProxy implements ImageProxy {
     private Rect mCropRect = new Rect();
     private int mFormat = 0;
@@ -49,6 +48,8 @@ public final class FakeImageProxy implements ImageProxy {
     @NonNull
     private ImageInfo mImageInfo;
     private Image mImage;
+    @Nullable
+    private Bitmap mBitmap;
     @SuppressWarnings("WeakerAccess") /* synthetic accessor */
     final Object mReleaseLock = new Object();
     @SuppressWarnings("WeakerAccess") /* synthetic accessor */
@@ -60,6 +61,11 @@ public final class FakeImageProxy implements ImageProxy {
 
     public FakeImageProxy(@NonNull ImageInfo imageInfo) {
         mImageInfo = imageInfo;
+    }
+
+    public FakeImageProxy(@NonNull ImageInfo imageInfo, @NonNull Bitmap bitmap) {
+        mImageInfo = imageInfo;
+        mBitmap = bitmap;
     }
 
     @Override
@@ -197,5 +203,14 @@ public final class FakeImageProxy implements ImageProxy {
             }
             return mReleaseFuture;
         }
+    }
+
+    @NonNull
+    @Override
+    public Bitmap toBitmap() {
+        if (mBitmap != null) {
+            return mBitmap;
+        }
+        return ImageProxy.super.toBitmap();
     }
 }

@@ -73,6 +73,10 @@ public class PowerRecord(
         return result
     }
 
+    override fun toString(): String {
+        return "PowerRecord(startTime=$startTime, startZoneOffset=$startZoneOffset, endTime=$endTime, endZoneOffset=$endZoneOffset, samples=$samples, metadata=$metadata)"
+    }
+
     companion object {
         private const val TYPE = "PowerSeries"
         private const val POWER_FIELD = "power"
@@ -124,7 +128,6 @@ public class PowerRecord(
      *
      * @param time The point in time when the measurement was taken.
      * @param power Power generated, in [Power] unit. Valid range: 0-100000 Watts.
-     *
      * @see PowerRecord
      */
     public class Sample(
@@ -157,6 +160,10 @@ public class PowerRecord(
             var result = time.hashCode()
             result = 31 * result + power.hashCode()
             return result
+        }
+
+        override fun toString(): String {
+            return "Sample(time=$time, power=$power)"
         }
     }
 }

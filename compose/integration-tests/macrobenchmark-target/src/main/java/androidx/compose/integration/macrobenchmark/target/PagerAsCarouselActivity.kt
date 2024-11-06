@@ -19,7 +19,6 @@ package androidx.compose.integration.macrobenchmark.target
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -38,7 +37,6 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 
 class PagerAsCarouselActivity : ComponentActivity() {
-    @OptIn(ExperimentalFoundationApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -47,15 +45,13 @@ class PagerAsCarouselActivity : ComponentActivity() {
         setContent {
             val pagerState = rememberPagerState { itemCount }
             Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.White),
+                modifier = Modifier.fillMaxSize().background(Color.White),
                 contentAlignment = Alignment.Center
             ) {
                 HorizontalPager(
-                    modifier = Modifier
-                        .semantics { contentDescription = "Carousel" }
-                        .background(Color.White),
+                    modifier =
+                        Modifier.semantics { contentDescription = "Carousel" }
+                            .background(Color.White),
                     state = pagerState,
                     pageSize = PageSize.Fixed(200.dp)
                 ) {
@@ -74,12 +70,7 @@ class PagerAsCarouselActivity : ComponentActivity() {
 
 @Composable
 private fun PagerItem(index: Int) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(200.dp)
-            .background(Color.Black)
-    ) {
+    Box(modifier = Modifier.fillMaxWidth().height(200.dp).background(Color.Black)) {
         Text(text = index.toString(), color = Color.White)
     }
 }

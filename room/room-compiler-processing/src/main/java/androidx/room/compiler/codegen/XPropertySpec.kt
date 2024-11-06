@@ -22,10 +22,10 @@ import androidx.room.compiler.codegen.java.NULLABLE_ANNOTATION
 import androidx.room.compiler.codegen.java.toJavaVisibilityModifier
 import androidx.room.compiler.codegen.kotlin.KotlinPropertySpec
 import androidx.room.compiler.codegen.kotlin.toKotlinVisibilityModifier
+import androidx.room.compiler.processing.PropertySpecHelper
+import androidx.room.compiler.processing.XMethodElement
 import androidx.room.compiler.processing.XNullability
-import com.squareup.javapoet.FieldSpec
-import com.squareup.kotlinpoet.PropertySpec
-import javax.lang.model.element.Modifier
+import androidx.room.compiler.processing.XType
 
 interface XPropertySpec : TargetLanguage {
 
@@ -33,11 +33,16 @@ interface XPropertySpec : TargetLanguage {
 
     interface Builder : TargetLanguage {
         fun addAnnotation(annotation: XAnnotationSpec): Builder
+
         fun initializer(initExpr: XCodeBlock): Builder
+
+        fun getter(code: XCodeBlock): Builder
+
         fun build(): XPropertySpec
     }
 
     companion object {
+        @JvmStatic
         fun builder(
             language: CodeLanguage,
             name: String,
@@ -46,47 +51,46 @@ interface XPropertySpec : TargetLanguage {
             isMutable: Boolean = false,
         ): Builder {
             return when (language) {
-                CodeLanguage.JAVA -> JavaPropertySpec.Builder(
-                    name,
-                    FieldSpec.builder(typeName.java, name).apply {
-                        val visibilityModifier = visibility.toJavaVisibilityModifier()
-                        // TODO(b/247242374) Add nullability annotations for non-private fields
-                        if (visibilityModifier != Modifier.PRIVATE) {
-                            if (typeName.nullability == XNullability.NULLABLE) {
-                                addAnnotation(NULLABLE_ANNOTATION)
-                            } else if (typeName.nullability == XNullability.NONNULL) {
-                                addAnnotation(NONNULL_ANNOTATION)
+                CodeLanguage.JAVA ->
+                    JavaPropertySpec.Builder(
+                        JPropertySpec.builder(typeName.java, name).apply {
+                            val visibilityModifier = visibility.toJavaVisibilityModifier()
+                            // TODO(b/247242374) Add nullability annotations for non-private fields
+                            if (visibilityModifier != JModifier.PRIVATE) {
+                                if (typeName.nullability == XNullability.NULLABLE) {
+                                    addAnnotation(NULLABLE_ANNOTATION)
+                                } else if (typeName.nullability == XNullability.NONNULL) {
+                                    addAnnotation(NONNULL_ANNOTATION)
+                                }
+                            }
+                            addModifiers(visibilityModifier)
+                            if (!isMutable) {
+                                addModifiers(JModifier.FINAL)
                             }
                         }
-                        addModifiers(visibilityModifier)
-                        if (!isMutable) {
-                            addModifiers(Modifier.FINAL)
+                    )
+                CodeLanguage.KOTLIN ->
+                    KotlinPropertySpec.Builder(
+                        KPropertySpec.builder(name, typeName.kotlin).apply {
+                            mutable(isMutable)
+                            addModifiers(visibility.toKotlinVisibilityModifier())
                         }
-                    }
-                )
-                CodeLanguage.KOTLIN -> KotlinPropertySpec.Builder(
-                    name,
-                    PropertySpec.builder(name, typeName.kotlin).apply {
-                        mutable(isMutable)
-                        addModifiers(visibility.toKotlinVisibilityModifier())
-                    }
-                )
+                    )
             }
         }
 
-        fun XPropertySpec.Builder.apply(
-            javaFieldBuilder: com.squareup.javapoet.FieldSpec.Builder.() -> Unit,
-            kotlinPropertyBuilder: com.squareup.kotlinpoet.PropertySpec.Builder.() -> Unit,
-        ): XPropertySpec.Builder = apply {
-            when (language) {
-                CodeLanguage.JAVA -> {
-                    check(this is JavaPropertySpec.Builder)
-                    this.actual.javaFieldBuilder()
-                }
-                CodeLanguage.KOTLIN -> {
-                    check(this is KotlinPropertySpec.Builder)
-                    this.actual.kotlinPropertyBuilder()
-                }
+        @JvmStatic
+        fun overridingBuilder(
+            language: CodeLanguage,
+            element: XMethodElement,
+            owner: XType
+        ): Builder {
+            require(element.isKotlinPropertyMethod())
+            return when (language) {
+                CodeLanguage.JAVA ->
+                    error("Overriding a property is not supported when code language is Java.")
+                CodeLanguage.KOTLIN ->
+                    KotlinPropertySpec.Builder(PropertySpecHelper.overriding(element, owner))
             }
         }
     }

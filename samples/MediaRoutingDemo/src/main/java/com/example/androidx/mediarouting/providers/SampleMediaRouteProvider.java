@@ -31,7 +31,6 @@ import android.os.Bundle;
 import android.provider.Settings;
 import android.util.Log;
 
-import androidx.annotation.DoNotInline;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
@@ -361,7 +360,7 @@ public class SampleMediaRouteProvider extends MediaRouteProvider {
 
         RouteControlHelper(String routeId) {
             mRouteId = routeId;
-            mPlayer = Player.create(getContext(), null, null);
+            mPlayer = Player.createPlayerForOverlay(getContext());
             mSessionManager.setPlayer(mPlayer);
             mSessionManager.setCallback(new SessionManager.Callback() {
                 @Override
@@ -735,7 +734,6 @@ public class SampleMediaRouteProvider extends MediaRouteProvider {
             // This class is not instantiable.
         }
 
-        @DoNotInline
         static boolean canDrawOverlays(Context context) {
             return Settings.canDrawOverlays(context);
         }

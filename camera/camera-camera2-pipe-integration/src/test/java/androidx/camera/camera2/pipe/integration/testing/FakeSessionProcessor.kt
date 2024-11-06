@@ -17,8 +17,6 @@
 package androidx.camera.camera2.pipe.integration.testing
 
 import android.hardware.camera2.CameraDevice
-import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.camera.camera2.pipe.core.Log
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.ImageAnalysis
@@ -29,8 +27,8 @@ import androidx.camera.core.impl.RequestProcessor
 import androidx.camera.core.impl.SessionConfig
 import androidx.camera.core.impl.SessionProcessor
 import androidx.camera.core.impl.SessionProcessorSurface
+import androidx.camera.core.impl.TagBundle
 
-@RequiresApi(Build.VERSION_CODES.LOLLIPOP)
 class FakeSessionProcessor : SessionProcessor {
     val previewOutputConfigId = 0
     val imageCaptureOutputConfigId = 1
@@ -44,33 +42,32 @@ class FakeSessionProcessor : SessionProcessor {
         outputSurfaceConfiguration: OutputSurfaceConfiguration,
     ): SessionConfig {
         Log.debug { "$this#initSession" }
-        val previewSurface = SessionProcessorSurface(
-            outputSurfaceConfiguration.previewOutputSurface.surface,
-            previewOutputConfigId
-        ).also {
-            it.setContainerClass(Preview::class.java)
-        }
-        val imageCaptureSurface = SessionProcessorSurface(
-            outputSurfaceConfiguration.imageCaptureOutputSurface.surface,
-            imageCaptureOutputConfigId
-        ).also {
-            it.setContainerClass(ImageCapture::class.java)
-        }
+        val previewSurface =
+            SessionProcessorSurface(
+                    outputSurfaceConfiguration.previewOutputSurface.surface,
+                    previewOutputConfigId
+                )
+                .also { it.setContainerClass(Preview::class.java) }
+        val imageCaptureSurface =
+            SessionProcessorSurface(
+                    outputSurfaceConfiguration.imageCaptureOutputSurface.surface,
+                    imageCaptureOutputConfigId
+                )
+                .also { it.setContainerClass(ImageCapture::class.java) }
         val imageAnalysisSurface =
             outputSurfaceConfiguration.imageAnalysisOutputSurface?.surface?.let { surface ->
-                SessionProcessorSurface(
-                    surface,
-                    imageAnalysisOutputConfigId
-                ).also {
+                SessionProcessorSurface(surface, imageAnalysisOutputConfigId).also {
                     it.setContainerClass(ImageAnalysis::class.java)
                 }
             }
-        return SessionConfig.Builder().apply {
-            setTemplateType(CameraDevice.TEMPLATE_PREVIEW)
-            addSurface(previewSurface)
-            addSurface(imageCaptureSurface)
-            imageAnalysisSurface?.let { addSurface(it) }
-        }.build()
+        return SessionConfig.Builder()
+            .apply {
+                setTemplateType(CameraDevice.TEMPLATE_PREVIEW)
+                addSurface(previewSurface)
+                addSurface(imageCaptureSurface)
+                imageAnalysisSurface?.let { addSurface(it) }
+            }
+            .build()
     }
 
     override fun deInitSession() {
@@ -90,7 +87,10 @@ class FakeSessionProcessor : SessionProcessor {
         Log.debug { "$this#onCaptureSessionEnd" }
     }
 
-    override fun startRepeating(callback: SessionProcessor.CaptureCallback): Int {
+    override fun startRepeating(
+        tagBundle: TagBundle,
+        callback: SessionProcessor.CaptureCallback
+    ): Int {
         Log.debug { "$this#startRepeating" }
         return 0
     }
@@ -101,6 +101,7 @@ class FakeSessionProcessor : SessionProcessor {
 
     override fun startCapture(
         postviewEnabled: Boolean,
+        tagBundle: TagBundle,
         callback: SessionProcessor.CaptureCallback
     ): Int {
         Log.debug { "$this#startCapture" }

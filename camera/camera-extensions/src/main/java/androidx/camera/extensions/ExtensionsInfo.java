@@ -23,7 +23,6 @@ import android.util.Size;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.annotation.VisibleForTesting;
 import androidx.camera.core.CameraFilter;
 import androidx.camera.core.CameraInfo;
@@ -37,6 +36,7 @@ import androidx.camera.core.impl.Identifier;
 import androidx.camera.core.impl.SessionProcessor;
 import androidx.camera.extensions.internal.AdvancedVendorExtender;
 import androidx.camera.extensions.internal.BasicVendorExtender;
+import androidx.camera.extensions.internal.ClientVersion;
 import androidx.camera.extensions.internal.ExtensionVersion;
 import androidx.camera.extensions.internal.ExtensionsUseCaseConfigFactory;
 import androidx.camera.extensions.internal.VendorExtender;
@@ -54,7 +54,6 @@ import java.util.List;
  * to get the specified {@link CameraSelector} to bind use cases and enable the extension mode on
  * the camera.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 final class ExtensionsInfo {
     private static final String EXTENDED_CAMERA_CONFIG_PROVIDER_ID_PREFIX = ":camera:camera"
             + "-extensions-";
@@ -272,7 +271,8 @@ final class ExtensionsInfo {
     }
 
     private static boolean isAdvancedExtenderSupported() {
-        if (ExtensionVersion.getRuntimeVersion().compareTo(Version.VERSION_1_2) < 0) {
+        if (ClientVersion.isMaximumCompatibleVersion(Version.VERSION_1_1)
+                || ExtensionVersion.isMaximumCompatibleVersion(Version.VERSION_1_1)) {
             return false;
         }
         return ExtensionVersion.isAdvancedExtenderSupported();

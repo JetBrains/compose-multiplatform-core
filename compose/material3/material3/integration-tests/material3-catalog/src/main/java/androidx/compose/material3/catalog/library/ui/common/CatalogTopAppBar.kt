@@ -40,8 +40,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.isTraversalGroup
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.traversalIndex
 import androidx.compose.ui.text.style.TextOverflow
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -64,6 +68,11 @@ fun CatalogTopAppBar(
 ) {
     var moreMenuExpanded by remember { mutableStateOf(false) }
     TopAppBar(
+        modifier =
+            Modifier.semantics {
+                traversalIndex = -2f
+                isTraversalGroup = true
+            },
         title = {
             Text(
                 text = title,
@@ -78,10 +87,9 @@ fun CatalogTopAppBar(
                         Icon(
                             imageVector =
                                 if (favorite) Icons.Filled.PushPin else Icons.Outlined.PushPin,
-                            tint = if (favorite)
-                                MaterialTheme.colorScheme.primary
-                            else
-                                LocalContentColor.current,
+                            tint =
+                                if (favorite) MaterialTheme.colorScheme.primary
+                                else LocalContentColor.current,
                             contentDescription = stringResource(id = R.string.favorite_button)
                         )
                     }
@@ -158,10 +166,7 @@ private fun MoreMenu(
     onPrivacyClick: () -> Unit,
     onLicensesClick: () -> Unit,
 ) {
-    DropdownMenu(
-        expanded = expanded,
-        onDismissRequest = onDismissRequest
-    ) {
+    DropdownMenu(expanded = expanded, onDismissRequest = onDismissRequest) {
         DropdownMenuItem(
             text = { Text(stringResource(id = R.string.view_design_guidelines)) },
             onClick = onGuidelinesClick

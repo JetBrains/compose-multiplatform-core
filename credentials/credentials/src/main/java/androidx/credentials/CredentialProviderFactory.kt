@@ -23,10 +23,10 @@ import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
 import androidx.annotation.VisibleForTesting
+import androidx.credentials.ClearCredentialStateRequest.Companion.TYPE_CLEAR_RESTORE_CREDENTIAL
 
-/**
- * Factory that returns the credential provider to be used by Credential Manager.
- */
+/** Factory that returns the credential provider to be used by Credential Manager. */
+@OptIn(ExperimentalDigitalCredentialApi::class)
 internal class CredentialProviderFactory(val context: Context) {
 
     @set:VisibleForTesting
@@ -51,16 +51,43 @@ internal class CredentialProviderFactory(val context: Context) {
         private const val TAG = "CredProviderFactory"
         private const val MAX_CRED_MAN_PRE_FRAMEWORK_API_LEVEL = Build.VERSION_CODES.TIRAMISU
 
-        /** The metadata key to be used when specifying the provider class name in the
-         * android manifest file. */
+        /**
+         * The metadata key to be used when specifying the provider class name in the android
+         * manifest file.
+         */
         private const val CREDENTIAL_PROVIDER_KEY = "androidx.credentials.CREDENTIAL_PROVIDER_KEY"
     }
 
     /**
-     * Returns the best available provider.
-     * Pre-U, the provider is determined by the provider library that the developer includes in
-     * the app. Developer must not add more than one provider library.
-     * Post-U, providers will be registered with the framework, and enabled by the user.
+     * Returns the best available provider. The best available provider is determined by the
+     * provided [request]. If the provided request is for the use-case of [RestoreCredential], then
+     * the pre-U provider is used. If not, then the provider is determined by the API level.
+     *
+     * @param request is a credential request of either [CreateRestoreCredentialRequest],
+     *   [TYPE_CLEAR_RESTORE_CREDENTIAL], or [GetCredentialRequest] that can determine
+     *   [CredentialProvider] type.
+     * @return the best available provider, or null if no provider is available.
+     */
+    fun getBestAvailableProvider(
+        request: Any,
+        shouldFallbackToPreU: Boolean = true
+    ): CredentialProvider? {
+        if (request is CreateRestoreCredentialRequest || request == TYPE_CLEAR_RESTORE_CREDENTIAL) {
+            return tryCreatePreUOemProvider()
+        } else if (request is GetCredentialRequest) {
+            for (option in request.credentialOptions) {
+                if (option is GetRestoreCredentialOption || option is GetDigitalCredentialOption) {
+                    return tryCreatePreUOemProvider()
+                }
+            }
+        }
+        return getBestAvailableProvider(shouldFallbackToPreU)
+    }
+
+    /**
+     * Returns the best available provider. Pre-U, the provider is determined by the provider
+     * library that the developer includes in the app. Developer must not add more than one provider
+     * library. Post-U, providers will be registered with the framework, and enabled by the user.
      */
     fun getBestAvailableProvider(shouldFallbackToPreU: Boolean = true): CredentialProvider? {
         if (Build.VERSION.SDK_INT >= 34) { // Android U
@@ -116,14 +143,17 @@ internal class CredentialProviderFactory(val context: Context) {
         return null
     }
 
-    private fun instantiatePreUProvider(classNames: List<String>, context: Context):
-        CredentialProvider? {
+    private fun instantiatePreUProvider(
+        classNames: List<String>,
+        context: Context
+    ): CredentialProvider? {
         var provider: CredentialProvider? = null
         for (className in classNames) {
             try {
                 val klass = Class.forName(className)
-                val p = klass.getConstructor(Context::class.java).newInstance(context) as
-                    CredentialProvider
+                val p =
+                    klass.getConstructor(Context::class.java).newInstance(context)
+                        as CredentialProvider
                 if (p.isAvailableOnDevice()) {
                     if (provider != null) {
                         Log.i(TAG, "Only one active OEM CredentialProvider allowed")
@@ -131,23 +161,22 @@ internal class CredentialProviderFactory(val context: Context) {
                     }
                     provider = p
                 }
-            } catch (_: Throwable) {
-            }
+            } catch (_: Throwable) {}
         }
         return provider
     }
 
     @Suppress("deprecation")
     private fun getAllowedProvidersFromManifest(context: Context): List<String> {
-        val packageInfo = context.packageManager
-            .getPackageInfo(
-                context.packageName, PackageManager.GET_META_DATA or
-                    PackageManager.GET_SERVICES
+        val packageInfo =
+            context.packageManager.getPackageInfo(
+                context.packageName,
+                PackageManager.GET_META_DATA or PackageManager.GET_SERVICES
             )
 
         val classNames = mutableListOf<String>()
         if (packageInfo.services != null) {
-            for (serviceInfo in packageInfo.services) {
+            for (serviceInfo in packageInfo.services!!) {
                 if (serviceInfo.metaData != null) {
                     val className = serviceInfo.metaData.getString(CREDENTIAL_PROVIDER_KEY)
                     if (className != null) {

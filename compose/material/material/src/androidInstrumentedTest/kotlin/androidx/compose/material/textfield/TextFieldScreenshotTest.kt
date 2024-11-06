@@ -22,6 +22,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.text.input.TextFieldLineLimits
+import androidx.compose.foundation.text.input.rememberTextFieldState
+import androidx.compose.material.AnimationDuration
 import androidx.compose.material.GOLDEN_MATERIAL
 import androidx.compose.material.Icon
 import androidx.compose.material.LocalContentColor
@@ -47,7 +50,6 @@ import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeLeft
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
@@ -64,21 +66,18 @@ import org.junit.runner.RunWith
 @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
 class TextFieldScreenshotTest {
     private val TextFieldTag = "TextField"
-    private val longText = TextFieldValue(
+    private val longText =
         "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do " +
             "eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam," +
             " quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. " +
             "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu " +
             "fugiat nulla pariatur."
-    )
 
-    @get:Rule
-    val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule()
 
     private val platformTextStyle = defaultPlatformTextStyle()
 
-    @get:Rule
-    val screenshotRule = AndroidXScreenshotTestRule(GOLDEN_MATERIAL)
+    @get:Rule val screenshotRule = AndroidXScreenshotTestRule(GOLDEN_MATERIAL)
 
     @Test
     fun textField_withInput() {
@@ -86,8 +85,7 @@ class TextFieldScreenshotTest {
             Box(Modifier.semantics(mergeDescendants = true) {}.testTag(TextFieldTag)) {
                 val text = "Text"
                 TextField(
-                    value = TextFieldValue(text = text, selection = TextRange(text.length)),
-                    onValueChange = {},
+                    state = rememberTextFieldState(text, TextRange(text.length)),
                     label = { Text("Label") },
                     modifier = Modifier.requiredWidth(280.dp)
                 )
@@ -102,8 +100,7 @@ class TextFieldScreenshotTest {
         rule.setMaterialContent {
             Box(Modifier.semantics(mergeDescendants = true) {}.testTag(TextFieldTag)) {
                 TextField(
-                    value = "",
-                    onValueChange = {},
+                    state = rememberTextFieldState(),
                     label = { Text("Label") },
                     modifier = Modifier.requiredWidth(280.dp)
                 )
@@ -118,8 +115,7 @@ class TextFieldScreenshotTest {
         rule.setMaterialContent {
             Box(Modifier.semantics(mergeDescendants = true) {}.testTag(TextFieldTag)) {
                 TextField(
-                    value = "",
-                    onValueChange = {},
+                    state = rememberTextFieldState(),
                     label = { Text("Label") },
                     modifier = Modifier.requiredWidth(280.dp)
                 )
@@ -137,8 +133,7 @@ class TextFieldScreenshotTest {
             CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
                 Box(Modifier.semantics(mergeDescendants = true) {}.testTag(TextFieldTag)) {
                     TextField(
-                        value = "",
-                        onValueChange = {},
+                        state = rememberTextFieldState(),
                         label = { Text("Label") },
                         modifier = Modifier.requiredWidth(280.dp)
                     )
@@ -153,11 +148,12 @@ class TextFieldScreenshotTest {
 
     @Test
     fun textField_error_focused() {
+        // stop animation of blinking cursor
+        rule.mainClock.autoAdvance = false
         rule.setMaterialContent {
             val text = "Input"
             TextField(
-                value = TextFieldValue(text = text, selection = TextRange(text.length)),
-                onValueChange = {},
+                state = rememberTextFieldState(text, TextRange(text.length)),
                 label = { Text("Label") },
                 isError = true,
                 modifier = Modifier.requiredWidth(280.dp).testTag(TextFieldTag)
@@ -165,10 +161,7 @@ class TextFieldScreenshotTest {
         }
 
         rule.onNodeWithTag(TextFieldTag).focus()
-        rule.runOnIdle {
-            // stop animation of blinking cursor
-            rule.mainClock.autoAdvance = false
-        }
+        rule.mainClock.advanceTimeBy(AnimationDuration.toLong())
 
         assertAgainstGolden("filled_textField_focused_errorState")
     }
@@ -177,8 +170,7 @@ class TextFieldScreenshotTest {
     fun textField_error_notFocused() {
         rule.setMaterialContent {
             TextField(
-                value = "",
-                onValueChange = {},
+                state = rememberTextFieldState(),
                 label = { Text("Label") },
                 isError = true,
                 modifier = Modifier.requiredWidth(280.dp).testTag(TextFieldTag)
@@ -194,8 +186,7 @@ class TextFieldScreenshotTest {
             CompositionLocalProvider(LocalContentColor provides Color.Green) {
                 val text = "Hello, world!"
                 TextField(
-                    value = TextFieldValue(text = text, selection = TextRange(text.length)),
-                    onValueChange = {},
+                    state = rememberTextFieldState(text, TextRange(text.length)),
                     modifier = Modifier.requiredWidth(280.dp).testTag(TextFieldTag)
                 )
             }
@@ -209,12 +200,10 @@ class TextFieldScreenshotTest {
         rule.setMaterialContent {
             val text = "Text"
             TextField(
-                value = TextFieldValue(text = text, selection = TextRange(text.length)),
-                onValueChange = {},
+                state = rememberTextFieldState(text, TextRange(text.length)),
                 label = { Text("Label") },
-                modifier = Modifier.requiredHeight(300.dp)
-                    .requiredWidth(280.dp)
-                    .testTag(TextFieldTag)
+                modifier =
+                    Modifier.requiredHeight(300.dp).requiredWidth(280.dp).testTag(TextFieldTag)
             )
         }
 
@@ -226,11 +215,9 @@ class TextFieldScreenshotTest {
         rule.setMaterialContent {
             val text = "Text"
             TextField(
-                value = TextFieldValue(text = text, selection = TextRange(text.length)),
-                onValueChange = {},
-                modifier = Modifier.requiredHeight(300.dp)
-                    .requiredWidth(280.dp)
-                    .testTag(TextFieldTag)
+                state = rememberTextFieldState(text, TextRange(text.length)),
+                modifier =
+                    Modifier.requiredHeight(300.dp).requiredWidth(280.dp).testTag(TextFieldTag)
             )
         }
 
@@ -241,13 +228,11 @@ class TextFieldScreenshotTest {
     fun textField_multiLine_withLabel_placeholderAlignedToTop() {
         rule.setMaterialContent {
             TextField(
-                value = "",
-                onValueChange = {},
+                state = rememberTextFieldState(),
                 label = { Text("Label") },
                 placeholder = { Text("placeholder") },
-                modifier = Modifier.requiredHeight(300.dp)
-                    .requiredWidth(280.dp)
-                    .testTag(TextFieldTag)
+                modifier =
+                    Modifier.requiredHeight(300.dp).requiredWidth(280.dp).testTag(TextFieldTag)
             )
         }
 
@@ -260,12 +245,10 @@ class TextFieldScreenshotTest {
     fun textField_multiLine_withoutLabel_placeholderAlignedToTop() {
         rule.setMaterialContent {
             TextField(
-                value = "",
-                onValueChange = {},
+                state = rememberTextFieldState(),
                 placeholder = { Text("placeholder") },
-                modifier = Modifier.requiredHeight(300.dp)
-                    .requiredWidth(280.dp)
-                    .testTag(TextFieldTag)
+                modifier =
+                    Modifier.requiredHeight(300.dp).requiredWidth(280.dp).testTag(TextFieldTag)
             )
         }
 
@@ -278,12 +261,10 @@ class TextFieldScreenshotTest {
     fun textField_multiLine_labelAlignedToTop() {
         rule.setMaterialContent {
             TextField(
-                value = "",
-                onValueChange = {},
+                state = rememberTextFieldState(),
                 label = { Text("Label") },
-                modifier = Modifier.requiredHeight(300.dp)
-                    .requiredWidth(280.dp)
-                    .testTag(TextFieldTag)
+                modifier =
+                    Modifier.requiredHeight(300.dp).requiredWidth(280.dp).testTag(TextFieldTag)
             )
         }
 
@@ -295,9 +276,8 @@ class TextFieldScreenshotTest {
         rule.setMaterialContent {
             val text = "Text"
             TextField(
-                value = TextFieldValue(text = text, selection = TextRange(text.length)),
-                onValueChange = {},
-                singleLine = true,
+                state = rememberTextFieldState(text, TextRange(text.length)),
+                lineLimits = TextFieldLineLimits.SingleLine,
                 label = { Text("Label") },
                 modifier = Modifier.requiredWidth(280.dp).testTag(TextFieldTag)
             )
@@ -311,9 +291,8 @@ class TextFieldScreenshotTest {
         rule.setMaterialContent {
             val text = "Text"
             TextField(
-                value = TextFieldValue(text = text, selection = TextRange(text.length)),
-                onValueChange = {},
-                singleLine = true,
+                state = rememberTextFieldState(text, TextRange(text.length)),
+                lineLimits = TextFieldLineLimits.SingleLine,
                 modifier = Modifier.requiredWidth(280.dp).testTag(TextFieldTag)
             )
         }
@@ -325,11 +304,10 @@ class TextFieldScreenshotTest {
     fun textField_singleLine_withLabel_placeholderAlignedToTop() {
         rule.setMaterialContent {
             TextField(
-                value = "",
-                onValueChange = {},
+                state = rememberTextFieldState(),
                 placeholder = { Text("placeholder") },
                 label = { Text("Label") },
-                singleLine = true,
+                lineLimits = TextFieldLineLimits.SingleLine,
                 modifier = Modifier.requiredWidth(280.dp).testTag(TextFieldTag)
             )
         }
@@ -343,10 +321,9 @@ class TextFieldScreenshotTest {
     fun textField_singleLine_withoutLabel_placeholderCenteredVertically() {
         rule.setMaterialContent {
             TextField(
-                value = "",
-                onValueChange = {},
+                state = rememberTextFieldState(),
                 placeholder = { Text("placeholder") },
-                singleLine = true,
+                lineLimits = TextFieldLineLimits.SingleLine,
                 modifier = Modifier.requiredWidth(280.dp).testTag(TextFieldTag)
             )
         }
@@ -359,12 +336,12 @@ class TextFieldScreenshotTest {
     }
 
     @Test
-    fun textField_singleLine_labelCenteredVetically() {
+    fun textField_singleLine_labelCenteredVertically() {
         rule.setMaterialContent {
             TextField(
-                value = "",
-                onValueChange = {},
+                state = rememberTextFieldState(),
                 label = { Text("Label") },
+                lineLimits = TextFieldLineLimits.SingleLine,
                 modifier = Modifier.requiredWidth(280.dp).testTag(TextFieldTag)
             )
         }
@@ -376,10 +353,9 @@ class TextFieldScreenshotTest {
     fun textField_disabled() {
         rule.setMaterialContent {
             TextField(
-                value = TextFieldValue("Text"),
-                onValueChange = {},
+                state = rememberTextFieldState("Text"),
                 modifier = Modifier.requiredWidth(280.dp).testTag(TextFieldTag),
-                singleLine = true,
+                lineLimits = TextFieldLineLimits.SingleLine,
                 enabled = false
             )
         }
@@ -391,9 +367,8 @@ class TextFieldScreenshotTest {
     fun textField_disabled_notFocusable() {
         rule.setMaterialContent {
             TextField(
-                value = TextFieldValue("Text"),
-                onValueChange = {},
-                singleLine = true,
+                state = rememberTextFieldState("Text"),
+                lineLimits = TextFieldLineLimits.SingleLine,
                 modifier = Modifier.requiredWidth(280.dp).testTag(TextFieldTag),
                 enabled = false
             )
@@ -408,9 +383,8 @@ class TextFieldScreenshotTest {
     fun textField_disabled_notScrolled() {
         rule.setMaterialContent {
             TextField(
-                value = longText,
-                onValueChange = { },
-                singleLine = true,
+                state = rememberTextFieldState(longText),
+                lineLimits = TextFieldLineLimits.SingleLine,
                 modifier = Modifier.testTag(TextFieldTag).requiredWidth(300.dp),
                 enabled = false
             )
@@ -431,8 +405,7 @@ class TextFieldScreenshotTest {
     fun textField_readOnly() {
         rule.setMaterialContent {
             TextField(
-                value = TextFieldValue("Text"),
-                onValueChange = {},
+                state = rememberTextFieldState("Text"),
                 modifier = Modifier.requiredWidth(280.dp).testTag(TextFieldTag),
                 enabled = true,
                 readOnly = true
@@ -446,8 +419,7 @@ class TextFieldScreenshotTest {
     fun textField_readOnly_focused() {
         rule.setMaterialContent {
             TextField(
-                value = TextFieldValue("Text"),
-                onValueChange = {},
+                state = rememberTextFieldState("Text"),
                 modifier = Modifier.requiredWidth(280.dp).testTag(TextFieldTag),
                 enabled = true,
                 readOnly = true
@@ -463,10 +435,9 @@ class TextFieldScreenshotTest {
     fun textField_readOnly_scrolled() {
         rule.setMaterialContent {
             TextField(
-                value = longText,
-                onValueChange = { },
+                state = rememberTextFieldState(longText),
                 modifier = Modifier.testTag(TextFieldTag).requiredWidth(300.dp),
-                singleLine = true,
+                lineLimits = TextFieldLineLimits.SingleLine,
                 enabled = true,
                 readOnly = true
             )
@@ -487,14 +458,11 @@ class TextFieldScreenshotTest {
         rule.setMaterialContent {
             val text = "Hello world"
             TextField(
-                value = TextFieldValue(text = text, selection = TextRange(text.length)),
-                onValueChange = {},
+                state = rememberTextFieldState(text, TextRange(text.length)),
                 modifier = Modifier.width(300.dp).testTag(TextFieldTag),
-                textStyle = TextStyle(
-                    textAlign = TextAlign.Center,
-                    platformStyle = platformTextStyle
-                ),
-                singleLine = true
+                textStyle =
+                    TextStyle(textAlign = TextAlign.Center, platformStyle = platformTextStyle),
+                lineLimits = TextFieldLineLimits.SingleLine
             )
         }
 
@@ -506,11 +474,10 @@ class TextFieldScreenshotTest {
         rule.setMaterialContent {
             val text = "Hello world"
             TextField(
-                value = TextFieldValue(text = text, selection = TextRange(text.length)),
-                onValueChange = {},
+                state = rememberTextFieldState(text, TextRange(text.length)),
                 modifier = Modifier.fillMaxWidth().testTag(TextFieldTag),
                 textStyle = TextStyle(textAlign = TextAlign.End, platformStyle = platformTextStyle),
-                singleLine = true
+                lineLimits = TextFieldLineLimits.SingleLine
             )
         }
 
@@ -521,8 +488,7 @@ class TextFieldScreenshotTest {
     fun textField_leadingTrailingIcons() {
         rule.setMaterialContent {
             TextField(
-                value = "",
-                onValueChange = {},
+                state = rememberTextFieldState(),
                 label = { Text("Label") },
                 modifier = Modifier.width(300.dp).testTag(TextFieldTag),
                 leadingIcon = { Icon(Icons.Default.Call, null) },
@@ -537,8 +503,7 @@ class TextFieldScreenshotTest {
     fun textField_leadingTrailingIcons_error() {
         rule.setMaterialContent {
             TextField(
-                value = "",
-                onValueChange = {},
+                state = rememberTextFieldState(),
                 label = { Text("Label") },
                 modifier = Modifier.width(300.dp).testTag(TextFieldTag),
                 leadingIcon = { Icon(Icons.Default.Call, null) },
@@ -552,11 +517,16 @@ class TextFieldScreenshotTest {
 
     private fun SemanticsNodeInteraction.focus() {
         // split click into (down) and (move, up) to enforce a composition in between
-        this.performTouchInput { down(center) }.performTouchInput { move(); up() }
+        this.performTouchInput { down(center) }
+            .performTouchInput {
+                move()
+                up()
+            }
     }
 
     private fun assertAgainstGolden(goldenIdentifier: String) {
-        rule.onNodeWithTag(TextFieldTag)
+        rule
+            .onNodeWithTag(TextFieldTag)
             .captureToImage()
             .assertAgainstGolden(screenshotRule, goldenIdentifier)
     }

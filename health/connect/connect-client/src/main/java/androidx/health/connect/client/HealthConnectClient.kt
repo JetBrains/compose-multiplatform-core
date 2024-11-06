@@ -21,8 +21,6 @@ import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.UserManager
-import androidx.annotation.ChecksSdkIntAtLeast
-import androidx.annotation.DoNotInline
 import androidx.annotation.IntDef
 import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
@@ -31,6 +29,8 @@ import androidx.health.connect.client.aggregate.AggregateMetric
 import androidx.health.connect.client.aggregate.AggregationResult
 import androidx.health.connect.client.aggregate.AggregationResultGroupedByDuration
 import androidx.health.connect.client.aggregate.AggregationResultGroupedByPeriod
+import androidx.health.connect.client.feature.ExperimentalFeatureAvailabilityApi
+import androidx.health.connect.client.feature.HealthConnectFeaturesUnavailableImpl
 import androidx.health.connect.client.impl.HealthConnectClientImpl
 import androidx.health.connect.client.impl.HealthConnectClientUpsideDownImpl
 import androidx.health.connect.client.records.Record
@@ -54,6 +54,11 @@ interface HealthConnectClient {
 
     /** Access operations related to permissions. */
     val permissionController: PermissionController
+
+    /** Access operations related to feature availability. */
+    @ExperimentalFeatureAvailabilityApi
+    val features: HealthConnectFeatures
+        get() = HealthConnectFeaturesUnavailableImpl
 
     /**
      * Inserts one or more [Record] and returns newly assigned
@@ -129,7 +134,7 @@ interface HealthConnectClient {
      * filtered to [Record] belonging to the calling application). Deletion of multiple [Record] is
      * executed in a transaction - if one fails, none is deleted.
      *
-     * @param recordType Which type of [Record] to delete, such as `Steps::class`
+     * @param recordType Which type of [Record] to delete, such as `StepsRecord::class`
      * @param timeRangeFilter The [TimeRangeFilter] to delete from
      * @throws android.os.RemoteException For any IPC transportation failures.
      * @throws SecurityException For requests with unpermitted access.
@@ -373,13 +378,17 @@ interface HealthConnectClient {
             context: Context,
             providerPackageName: String = DEFAULT_PROVIDER_PACKAGE_NAME,
         ): Int {
-            if (!isSdkVersionSufficient() || isProfileInAndroidU(context)) {
-                return SDK_UNAVAILABLE
+            return when (Build.VERSION.SDK_INT) {
+                in Build.VERSION_CODES.UPSIDE_DOWN_CAKE..Int.MAX_VALUE ->
+                    Api34Impl.getSdkStatus(context)
+                in Build.VERSION_CODES.P..Build.VERSION_CODES.TIRAMISU ->
+                    if (isPackageInstalled(context.packageManager, providerPackageName)) {
+                        SDK_AVAILABLE
+                    } else {
+                        SDK_UNAVAILABLE_PROVIDER_UPDATE_REQUIRED
+                    }
+                else -> return SDK_UNAVAILABLE
             }
-            if (!isProviderAvailable(context, providerPackageName)) {
-                return SDK_UNAVAILABLE_PROVIDER_UPDATE_REQUIRED
-            }
-            return SDK_AVAILABLE
         }
 
         /**
@@ -412,9 +421,7 @@ interface HealthConnectClient {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
                 return HealthConnectClientUpsideDownImpl(context)
             }
-            return HealthConnectClientImpl(
-                HealthDataService.getClient(context, providerPackageName)
-            )
+            return HealthConnectClientImpl(context, providerPackageName)
         }
 
         /**
@@ -436,35 +443,13 @@ interface HealthConnectClient {
             val manageDataIntent = Intent(ACTION_HEALTH_CONNECT_MANAGE_DATA)
 
             return if (
-                isProviderAvailable(context, providerPackageName) &&
+                getSdkStatus(context, providerPackageName) == SDK_AVAILABLE &&
                     pm.resolveActivity(manageDataIntent, /* flags */ 0) != null
             ) {
                 manageDataIntent
             } else {
                 Intent(ACTION_HEALTH_CONNECT_SETTINGS)
             }
-        }
-
-        @ChecksSdkIntAtLeast(api = Build.VERSION_CODES.P)
-        internal fun isSdkVersionSufficient() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.P
-
-        /**
-         * Determines whether an implementation of [HealthConnectClient] is available on this device
-         * at the moment.
-         */
-        internal fun isProviderAvailable(
-            context: Context,
-            providerPackageName: String = DEFAULT_PROVIDER_PACKAGE_NAME,
-            providerVersionCode: Int = DEFAULT_PROVIDER_MIN_VERSION_CODE
-        ): Boolean {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-                return true
-            }
-            return isPackageInstalled(
-                context.packageManager,
-                providerPackageName,
-                providerVersionCode
-            )
         }
 
         private fun isPackageInstalled(
@@ -479,7 +464,7 @@ interface HealthConnectClient {
                 } catch (e: PackageManager.NameNotFoundException) {
                     return false
                 }
-            return packageInfo.applicationInfo.enabled &&
+            return (packageInfo.applicationInfo?.enabled == true) &&
                 (packageName != DEFAULT_PROVIDER_PACKAGE_NAME ||
                     PackageInfoCompat.getLongVersionCode(packageInfo) >= versionCode) &&
                 hasBindableService(packageManager, packageName)
@@ -496,21 +481,27 @@ interface HealthConnectClient {
             return packageManager.queryIntentServices(bindIntent, 0).isNotEmpty()
         }
 
-        private fun isProfileInAndroidU(context: Context): Boolean {
-            return Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE &&
-                Api33Impl.isProfile(context)
-        }
-
         /** Tag used in SDK debug logs. */
         @RestrictTo(RestrictTo.Scope.LIBRARY)
         internal const val HEALTH_CONNECT_CLIENT_TAG = "HealthConnectClient"
     }
 
-    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-    private object Api33Impl {
+    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+    private object Api34Impl {
         @JvmStatic
-        @DoNotInline
-        fun isProfile(context: Context): Boolean {
+        @AvailabilityStatus
+        fun getSdkStatus(context: Context): Int {
+            return if (
+                isProfile(context) ||
+                    context.getSystemService(Context.HEALTHCONNECT_SERVICE) == null
+            ) {
+                SDK_UNAVAILABLE
+            } else {
+                SDK_AVAILABLE
+            }
+        }
+
+        private fun isProfile(context: Context): Boolean {
             return (context.getSystemService(Context.USER_SERVICE) as UserManager).isProfile
         }
     }

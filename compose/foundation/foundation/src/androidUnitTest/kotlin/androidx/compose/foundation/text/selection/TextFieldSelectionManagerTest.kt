@@ -16,11 +16,13 @@
 
 package androidx.compose.foundation.text.selection
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.text.HandleState
-import androidx.compose.foundation.text.InternalFoundationTextApi
 import androidx.compose.foundation.text.LegacyTextFieldState
 import androidx.compose.foundation.text.TextDelegate
 import androidx.compose.foundation.text.TextLayoutResultProxy
+import androidx.compose.ui.autofill.AutofillManager
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
@@ -30,6 +32,7 @@ import androidx.compose.ui.platform.ClipboardManager
 import androidx.compose.ui.platform.TextToolbar
 import androidx.compose.ui.platform.TextToolbarStatus
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.MultiParagraph
 import androidx.compose.ui.text.TextLayoutInput
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextRange
@@ -89,8 +92,9 @@ class TextFieldSelectionManagerTest {
     private val textToolbar = mock<TextToolbar>()
     private val hapticFeedback = mock<HapticFeedback>()
     private val focusRequester = mock<FocusRequester>()
+    private val multiParagraph = mock<MultiParagraph>()
+    private val autofillManager = mock<AutofillManager>()
 
-    @OptIn(InternalFoundationTextApi::class)
     @Before
     fun setup() {
         manager = TextFieldSelectionManager()
@@ -101,63 +105,61 @@ class TextFieldSelectionManagerTest {
         manager.textToolbar = textToolbar
         manager.hapticFeedBack = hapticFeedback
         manager.focusRequester = focusRequester
+        manager.autofillManager = autofillManager
 
-        whenever(layoutResult.layoutInput).thenReturn(
-            TextLayoutInput(
-                text = textAnnotatedString,
-                style = TextStyle.Default,
-                placeholders = mock(),
-                maxLines = maxLines,
-                softWrap = true,
-                overflow = TextOverflow.Ellipsis,
-                density = density,
-                layoutDirection = LayoutDirection.Ltr,
-                fontFamilyResolver = mock(),
-                constraints = Constraints()
+        whenever(layoutResult.layoutInput)
+            .thenReturn(
+                TextLayoutInput(
+                    text = textAnnotatedString,
+                    style = TextStyle.Default,
+                    placeholders = mock(),
+                    maxLines = maxLines,
+                    softWrap = true,
+                    overflow = TextOverflow.Ellipsis,
+                    density = density,
+                    layoutDirection = LayoutDirection.Ltr,
+                    fontFamilyResolver = mock(),
+                    constraints = Constraints()
+                )
             )
-        )
 
         whenever(layoutResult.lineCount).thenReturn(maxLines)
         whenever(layoutResult.getWordBoundary(beginOffset))
             .thenAnswer(TextRangeAnswer(fakeTextRange))
         whenever(layoutResult.getWordBoundary(dragOffset))
             .thenAnswer(TextRangeAnswer(dragTextRange))
-        whenever(layoutResult.getBidiRunDirection(any()))
-            .thenReturn(ResolvedTextDirection.Ltr)
+        whenever(layoutResult.getBidiRunDirection(any())).thenReturn(ResolvedTextDirection.Ltr)
         whenever(layoutResult.getBoundingBox(any())).thenReturn(Rect.Zero)
+        whenever(layoutResult.multiParagraph).thenReturn(multiParagraph)
         // left or right handle drag
         whenever(layoutResult.getOffsetForPosition(dragBeginPosition)).thenReturn(beginOffset)
         whenever(layoutResult.getOffsetForPosition(dragBeginPosition + dragDistance))
             .thenReturn(dragOffset)
         // touch drag
-        whenever(
-            layoutResultProxy.getOffsetForPosition(dragBeginPosition, false)
-        ).thenReturn(beginOffset)
-        whenever(
-            layoutResultProxy.getOffsetForPosition(dragBeginPosition, true)
-        ).thenReturn(beginOffset)
-        whenever(
-            layoutResultProxy.getOffsetForPosition(dragBeginPosition + dragDistance, false)
-        ).thenReturn(dragOffset)
-        whenever(
-            layoutResultProxy.getOffsetForPosition(dragBeginPosition + dragDistance, true)
-        ).thenReturn(dragOffset)
+        whenever(layoutResultProxy.getOffsetForPosition(dragBeginPosition, false))
+            .thenReturn(beginOffset)
+        whenever(layoutResultProxy.getOffsetForPosition(dragBeginPosition, true))
+            .thenReturn(beginOffset)
+        whenever(layoutResultProxy.getOffsetForPosition(dragBeginPosition + dragDistance, false))
+            .thenReturn(dragOffset)
+        whenever(layoutResultProxy.getOffsetForPosition(dragBeginPosition + dragDistance, true))
+            .thenReturn(dragOffset)
 
         whenever(
-            layoutResultProxy.translateInnerToDecorationCoordinates(matchesOffset(dragDistance))
-        ).thenAnswer(OffsetAnswer(dragDistance))
+                layoutResultProxy.translateInnerToDecorationCoordinates(matchesOffset(dragDistance))
+            )
+            .thenAnswer(OffsetAnswer(dragDistance))
 
         whenever(layoutResultProxy.value).thenReturn(layoutResult)
 
-        val textDelegate = mock<TextDelegate> {
-            on { this.text }.thenReturn(textAnnotatedString)
-        }
+        val textDelegate = mock<TextDelegate> { on { this.text }.thenReturn(textAnnotatedString) }
 
-        state = LegacyTextFieldState(
-            textDelegate = textDelegate,
-            recomposeScope = mock(),
-            keyboardController = null
-        )
+        state =
+            LegacyTextFieldState(
+                textDelegate = textDelegate,
+                recomposeScope = mock(),
+                keyboardController = null
+            )
         state.layoutResult = layoutResultProxy
         manager.state = state
         whenever(state.textDelegate.density).thenReturn(density)
@@ -177,18 +179,12 @@ class TextFieldSelectionManagerTest {
 
         manager.touchSelectionObserver.onStart(dragBeginPosition)
 
-        assertThat(state.handleState).isEqualTo(HandleState.Selection)
+        assertThat(state.handleState).isEqualTo(HandleState.None)
         assertThat(state.showFloatingToolbar).isFalse()
         assertThat(value.selection).isEqualTo(fakeTextRange)
-        verify(
-            hapticFeedback,
-            times(1)
-        ).performHapticFeedback(HapticFeedbackType.TextHandleMove)
+        verify(hapticFeedback, times(1)).performHapticFeedback(HapticFeedbackType.TextHandleMove)
 
-        verify(
-            focusRequester,
-            times(1)
-        ).requestFocus()
+        verify(focusRequester, times(1)).requestFocus()
     }
 
     @Test
@@ -202,18 +198,12 @@ class TextFieldSelectionManagerTest {
         manager.touchSelectionObserver.onStart(dragBeginPosition)
 
         // Assert
-        assertThat(state.handleState).isEqualTo(HandleState.Cursor)
+        assertThat(state.handleState).isEqualTo(HandleState.None)
         assertThat(state.showFloatingToolbar).isFalse()
         assertThat(value.selection).isEqualTo(TextRange(fakeLineEnd))
-        verify(
-            hapticFeedback,
-            times(1)
-        ).performHapticFeedback(HapticFeedbackType.TextHandleMove)
+        verify(hapticFeedback, times(1)).performHapticFeedback(HapticFeedbackType.TextHandleMove)
 
-        verify(
-            focusRequester,
-            times(1)
-        ).requestFocus()
+        verify(focusRequester, times(1)).requestFocus()
     }
 
     @Test
@@ -223,22 +213,25 @@ class TextFieldSelectionManagerTest {
         manager.touchSelectionObserver.onStart(dragBeginPosition)
         manager.touchSelectionObserver.onDrag(dragDistance)
 
+        assertThat(state.handleState).isEqualTo(HandleState.None)
         assertThat(value.selection).isEqualTo(TextRange(0, text.length))
         assertThat(state.showFloatingToolbar).isFalse()
-        verify(
-            hapticFeedback,
-            times(2)
-        ).performHapticFeedback(HapticFeedbackType.TextHandleMove)
+        verify(hapticFeedback, times(2)).performHapticFeedback(HapticFeedbackType.TextHandleMove)
     }
 
     @Test
     fun TextFieldSelectionManager_touchSelectionObserver_onStop() {
+        whenever(layoutResultProxy.isPositionOnText(dragBeginPosition)).thenReturn(true)
+
         manager.touchSelectionObserver.onStart(dragBeginPosition)
         manager.touchSelectionObserver.onDrag(dragDistance)
-
+        manager.value = value
         manager.touchSelectionObserver.onStop()
 
+        assertThat(state.handleState).isEqualTo(HandleState.Selection)
+        assertThat(value.selection).isEqualTo(TextRange(0, text.length))
         assertThat(state.showFloatingToolbar).isTrue()
+        verify(hapticFeedback, times(2)).performHapticFeedback(HapticFeedbackType.TextHandleMove)
     }
 
     @Test
@@ -248,10 +241,7 @@ class TextFieldSelectionManagerTest {
         assertThat(manager.draggingHandle).isNotNull()
         assertThat(state.showFloatingToolbar).isFalse()
         verify(spyLambda, times(0)).invoke(any())
-        verify(
-            hapticFeedback,
-            times(0)
-        ).performHapticFeedback(HapticFeedbackType.TextHandleMove)
+        verify(hapticFeedback, times(0)).performHapticFeedback(HapticFeedbackType.TextHandleMove)
     }
 
     @Test
@@ -261,10 +251,7 @@ class TextFieldSelectionManagerTest {
         assertThat(manager.draggingHandle).isNotNull()
         assertThat(state.showFloatingToolbar).isFalse()
         verify(spyLambda, times(0)).invoke(any())
-        verify(
-            hapticFeedback,
-            times(0)
-        ).performHapticFeedback(HapticFeedbackType.TextHandleMove)
+        verify(hapticFeedback, times(0)).performHapticFeedback(HapticFeedbackType.TextHandleMove)
     }
 
     @Test
@@ -275,10 +262,7 @@ class TextFieldSelectionManagerTest {
 
         assertThat(state.showFloatingToolbar).isFalse()
         assertThat(value.selection).isEqualTo(TextRange(text.length, "Hello".length))
-        verify(
-            hapticFeedback,
-            times(1)
-        ).performHapticFeedback(HapticFeedbackType.TextHandleMove)
+        verify(hapticFeedback, times(1)).performHapticFeedback(HapticFeedbackType.TextHandleMove)
     }
 
     @Test
@@ -289,10 +273,7 @@ class TextFieldSelectionManagerTest {
 
         assertThat(state.showFloatingToolbar).isFalse()
         assertThat(value.selection).isEqualTo(TextRange(0, dragOffset))
-        verify(
-            hapticFeedback,
-            times(1)
-        ).performHapticFeedback(HapticFeedbackType.TextHandleMove)
+        verify(hapticFeedback, times(1)).performHapticFeedback(HapticFeedbackType.TextHandleMove)
     }
 
     @Test
@@ -300,19 +281,13 @@ class TextFieldSelectionManagerTest {
         manager.handleDragObserver(false).onStart(Offset.Zero)
         manager.handleDragObserver(false).onDrag(Offset.Zero)
 
-        verify(
-            hapticFeedback,
-            times(1)
-        ).performHapticFeedback(HapticFeedbackType.TextHandleMove)
+        verify(hapticFeedback, times(1)).performHapticFeedback(HapticFeedbackType.TextHandleMove)
 
         manager.handleDragObserver(false).onStop()
 
         assertThat(manager.draggingHandle).isNull()
         assertThat(state.showFloatingToolbar).isTrue()
-        verify(
-            hapticFeedback,
-            times(1)
-        ).performHapticFeedback(HapticFeedbackType.TextHandleMove)
+        verify(hapticFeedback, times(1)).performHapticFeedback(HapticFeedbackType.TextHandleMove)
     }
 
     @Test
@@ -322,10 +297,7 @@ class TextFieldSelectionManagerTest {
         assertThat(manager.draggingHandle).isNotNull()
         assertThat(state.showFloatingToolbar).isFalse()
         verify(spyLambda, times(0)).invoke(any())
-        verify(
-            hapticFeedback,
-            times(0)
-        ).performHapticFeedback(HapticFeedbackType.TextHandleMove)
+        verify(hapticFeedback, times(0)).performHapticFeedback(HapticFeedbackType.TextHandleMove)
     }
 
     @Test
@@ -336,19 +308,18 @@ class TextFieldSelectionManagerTest {
 
         assertThat(state.showFloatingToolbar).isFalse()
         assertThat(value.selection).isEqualTo(TextRange(dragOffset, dragOffset))
-        verify(
-            hapticFeedback,
-            times(1)
-        ).performHapticFeedback(HapticFeedbackType.TextHandleMove)
+        verify(hapticFeedback, times(1)).performHapticFeedback(HapticFeedbackType.TextHandleMove)
     }
 
     @Test
     fun TextFieldSelectionManager_cursorDragObserver_onDrag_withVisualTransformation() {
         // there is a placeholder after every other char in the original value
-        val offsetMapping = object : OffsetMapping {
-            override fun originalToTransformed(offset: Int) = 2 * offset
-            override fun transformedToOriginal(offset: Int) = offset / 2
-        }
+        val offsetMapping =
+            object : OffsetMapping {
+                override fun originalToTransformed(offset: Int) = 2 * offset
+
+                override fun transformedToOriginal(offset: Int) = offset / 2
+            }
         manager.value = TextFieldValue(text = "H*e*l*l*o* *W*o*r*l*d", selection = TextRange(0, 0))
         manager.offsetMapping = offsetMapping
         manager.visualTransformation = VisualTransformation { original ->
@@ -368,19 +339,13 @@ class TextFieldSelectionManagerTest {
         manager.handleDragObserver(false).onStart(Offset.Zero)
         manager.handleDragObserver(false).onDrag(Offset.Zero)
 
-        verify(
-            hapticFeedback,
-            times(1)
-        ).performHapticFeedback(HapticFeedbackType.TextHandleMove)
+        verify(hapticFeedback, times(1)).performHapticFeedback(HapticFeedbackType.TextHandleMove)
 
         manager.cursorDragObserver().onStop()
 
         assertThat(manager.draggingHandle).isNull()
         assertThat(state.showFloatingToolbar).isFalse()
-        verify(
-            hapticFeedback,
-            times(1)
-        ).performHapticFeedback(HapticFeedbackType.TextHandleMove)
+        verify(hapticFeedback, times(1)).performHapticFeedback(HapticFeedbackType.TextHandleMove)
     }
 
     @Test
@@ -392,6 +357,17 @@ class TextFieldSelectionManagerTest {
 
         verify(textToolbar, times(1)).hide()
         assertThat(value.selection).isEqualTo(TextRange("Hello".length))
+        assertThat(state.handleState).isEqualTo(HandleState.None)
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    @Test
+    fun autofill_selection_collapse() {
+        manager.value = TextFieldValue(text = text, selection = TextRange(4, 4))
+
+        manager.autofill()
+
+        verify(autofillManager, times(1)).requestAutofillForActiveElement()
         assertThat(state.handleState).isEqualTo(HandleState.None)
     }
 
@@ -417,10 +393,8 @@ class TextFieldSelectionManagerTest {
 
     @Test
     fun copy_selection_reversed() {
-        manager.value = TextFieldValue(
-            text = text,
-            selection = TextRange("Hello".length, "He".length)
-        )
+        manager.value =
+            TextFieldValue(text = text, selection = TextRange("Hello".length, "He".length))
 
         manager.copy()
 
@@ -450,10 +424,8 @@ class TextFieldSelectionManagerTest {
     @Test
     fun paste_clipBoardManager_not_empty() {
         whenever(clipboardManager.getText()).thenReturn(AnnotatedString("Hello"))
-        manager.value = TextFieldValue(
-            text = text,
-            selection = TextRange("Hel".length, "Hello Wo".length)
-        )
+        manager.value =
+            TextFieldValue(text = text, selection = TextRange("Hel".length, "Hello Wo".length))
 
         manager.paste()
 
@@ -465,10 +437,8 @@ class TextFieldSelectionManagerTest {
     @Test
     fun paste_selection_reversed() {
         whenever(clipboardManager.getText()).thenReturn(AnnotatedString("i"))
-        manager.value = TextFieldValue(
-            text = text,
-            selection = TextRange("Hello".length, "H".length)
-        )
+        manager.value =
+            TextFieldValue(text = text, selection = TextRange("Hello".length, "H".length))
 
         manager.paste()
 
@@ -488,10 +458,8 @@ class TextFieldSelectionManagerTest {
 
     @Test
     fun cut_selection_not_null() {
-        manager.value = TextFieldValue(
-            text = text + text,
-            selection = TextRange("Hello".length, text.length)
-        )
+        manager.value =
+            TextFieldValue(text = text + text, selection = TextRange("Hello".length, text.length))
 
         manager.cut()
 
@@ -503,10 +471,8 @@ class TextFieldSelectionManagerTest {
 
     @Test
     fun cut_selection_reversed() {
-        manager.value = TextFieldValue(
-            text = text,
-            selection = TextRange("Hello".length, "He".length)
-        )
+        manager.value =
+            TextFieldValue(text = text, selection = TextRange("Hello".length, "He".length))
 
         manager.cut()
 
@@ -518,10 +484,7 @@ class TextFieldSelectionManagerTest {
 
     @Test
     fun selectAll() {
-        manager.value = TextFieldValue(
-            text = text,
-            selection = TextRange(0)
-        )
+        manager.value = TextFieldValue(text = text, selection = TextRange(0))
 
         manager.selectAll()
 
@@ -534,10 +497,7 @@ class TextFieldSelectionManagerTest {
 
     @Test
     fun selectAll_whenPartiallySelected() {
-        manager.value = TextFieldValue(
-            text = text,
-            selection = TextRange(0, 5)
-        )
+        manager.value = TextFieldValue(text = text, selection = TextRange(0, 5))
 
         manager.selectAll()
 
@@ -551,42 +511,35 @@ class TextFieldSelectionManagerTest {
     @Test
     fun showSelectionToolbar_trigger_textToolbar_showMenu_noText_inClipboard_not_show_paste() {
         whenever(clipboardManager.hasText()).thenReturn(false)
-        manager.value = TextFieldValue(
-            text = text + text,
-            selection = TextRange("Hello".length, text.length)
-        )
+        manager.value =
+            TextFieldValue(text = text + text, selection = TextRange("Hello".length, text.length))
 
         manager.showSelectionToolbar()
 
-        verify(textToolbar, times(1)).showMenu(any(), any(), isNull(), any(), anyOrNull())
+        verify(textToolbar, times(1)).showMenu(any(), any(), isNull(), any(), anyOrNull(), isNull())
     }
 
     @Test
     fun showSelectionToolbar_trigger_textToolbar_showMenu_hasText_inClipboard_show_paste() {
         whenever(clipboardManager.hasText()).thenReturn(true)
-        manager.value = TextFieldValue(
-            text = text + text,
-            selection = TextRange("Hello".length, text.length)
-        )
+        manager.value =
+            TextFieldValue(text = text + text, selection = TextRange("Hello".length, text.length))
 
         manager.showSelectionToolbar()
 
         verify(textToolbar, times(1))
-            .showMenu(anyOrNull(), anyOrNull(), any(), anyOrNull(), anyOrNull())
+            .showMenu(anyOrNull(), anyOrNull(), any(), anyOrNull(), anyOrNull(), isNull())
     }
 
     @Test
     fun showSelectionToolbar_trigger_textToolbar_showMenu_selection_collapse_not_show_copy_cut() {
         whenever(clipboardManager.getText()).thenReturn(AnnotatedString(text))
         whenever(clipboardManager.hasText()).thenReturn(true)
-        manager.value = TextFieldValue(
-            text = text + text,
-            selection = TextRange(0, 0)
-        )
+        manager.value = TextFieldValue(text = text + text, selection = TextRange(0, 0))
 
         manager.showSelectionToolbar()
 
-        verify(textToolbar, times(1)).showMenu(any(), isNull(), any(), isNull(), anyOrNull())
+        verify(textToolbar, times(1)).showMenu(any(), isNull(), any(), isNull(), anyOrNull(), any())
     }
 
     @Test
@@ -596,7 +549,7 @@ class TextFieldSelectionManagerTest {
 
         manager.showSelectionToolbar()
 
-        verify(textToolbar, times(1)).showMenu(any(), isNull(), any(), isNull(), isNull())
+        verify(textToolbar, times(1)).showMenu(any(), isNull(), any(), isNull(), isNull(), any())
     }
 
     @Test
@@ -607,7 +560,7 @@ class TextFieldSelectionManagerTest {
 
         manager.showSelectionToolbar()
 
-        verify(textToolbar, times(1)).showMenu(any(), isNull(), isNull(), isNull(), isNull())
+        verify(textToolbar, times(1)).showMenu(any(), isNull(), isNull(), isNull(), isNull(), any())
     }
 
     @Test
@@ -619,7 +572,8 @@ class TextFieldSelectionManagerTest {
 
         manager.showSelectionToolbar()
 
-        verify(textToolbar, times(1)).showMenu(any(), isNull(), any(), isNull(), anyOrNull())
+        verify(textToolbar, times(1))
+            .showMenu(any(), isNull(), any(), isNull(), anyOrNull(), isNull())
     }
 
     @Test
@@ -636,6 +590,46 @@ class TextFieldSelectionManagerTest {
 
         assertThat(manager.isTextChanged()).isFalse()
     }
+
+    @Test
+    fun getHandleLineHeight_valid() {
+        val selection = TextRange(1, text.length - 1)
+        manager.value = TextFieldValue(text = text, selection = selection)
+        val selectionStartLineHeight = 10f
+        val selectionEndLineHeight = 20f
+
+        whenever(multiParagraph.getLineForOffset(selection.start)).thenReturn(0)
+        whenever(multiParagraph.getLineForOffset(selection.end)).thenReturn(1)
+        whenever(multiParagraph.getLineHeight(0)).thenReturn(selectionStartLineHeight)
+        whenever(multiParagraph.getLineHeight(1)).thenReturn(selectionEndLineHeight)
+        whenever(multiParagraph.getLineEnd(0)).thenReturn(selection.start + 1)
+        whenever(multiParagraph.getLineEnd(1)).thenReturn(selection.end + 1)
+        whenever(multiParagraph.lineCount).thenReturn(2)
+        whenever(multiParagraph.maxLines).thenReturn(2)
+
+        assertThat(manager.getHandleLineHeight(isStartHandle = true))
+            .isEqualTo(selectionStartLineHeight)
+        assertThat(manager.getHandleLineHeight(isStartHandle = false))
+            .isEqualTo(selectionEndLineHeight)
+    }
+
+    @Test
+    fun getHandleLineHeight_selection_out_of_lines_limit_return_zero() {
+        val selection = TextRange(1, text.length - 1)
+        manager.value = TextFieldValue(text = text, selection = selection)
+        val selectionEndLineHeight = 20f
+
+        whenever(multiParagraph.getLineForOffset(selection.start)).thenReturn(2)
+        whenever(multiParagraph.getLineForOffset(selection.end)).thenReturn(3)
+        whenever(multiParagraph.getLineHeight(any())).thenReturn(selectionEndLineHeight)
+        whenever(multiParagraph.getLineEnd(2)).thenReturn(text.length)
+        whenever(multiParagraph.getLineEnd(3)).thenReturn(text.length)
+        whenever(multiParagraph.lineCount).thenReturn(2)
+        whenever(multiParagraph.maxLines).thenReturn(2)
+
+        assertThat(manager.getHandleLineHeight(isStartHandle = true)).isZero()
+        assertThat(manager.getHandleLineHeight(isStartHandle = false)).isZero()
+    }
 }
 
 // This class is a workaround for the bug that mockito can't stub a method returning inline class.
@@ -646,8 +640,7 @@ internal class TextRangeAnswer(private val textRange: TextRange) : Answer<Any> {
 }
 
 internal class OffsetAnswer(private val offset: Offset) : Answer<Any> {
-    override fun answer(invocation: InvocationOnMock?): Any =
-        packFloats(offset.x, offset.y)
+    override fun answer(invocation: InvocationOnMock?): Any = packFloats(offset.x, offset.y)
 }
 
 // Another workaround for matching an Offset

@@ -13,6 +13,11 @@ package androidx.activity.compose {
     method public static void setContent(androidx.activity.ComponentActivity, optional androidx.compose.runtime.CompositionContext? parent, kotlin.jvm.functions.Function0<kotlin.Unit> content);
   }
 
+  public final class LocalActivityKt {
+    method public static androidx.compose.runtime.ProvidableCompositionLocal<android.app.Activity?> getLocalActivity();
+    property public static final androidx.compose.runtime.ProvidableCompositionLocal<android.app.Activity?> LocalActivity;
+  }
+
   public final class LocalActivityResultRegistryOwner {
     method @androidx.compose.runtime.Composable public androidx.activity.result.ActivityResultRegistryOwner? getCurrent();
     method public infix androidx.compose.runtime.ProvidedValue<androidx.activity.result.ActivityResultRegistryOwner?> provides(androidx.activity.result.ActivityResultRegistryOwner registryOwner);
@@ -42,12 +47,12 @@ package androidx.activity.compose {
   }
 
   public final class PredictiveBackHandlerKt {
-    method @androidx.compose.runtime.Composable public static void PredictiveBackHandler(optional boolean enabled, kotlin.jvm.functions.Function2<kotlinx.coroutines.flow.Flow<androidx.activity.BackEventCompat>,? super kotlin.coroutines.Continuation<kotlin.Unit>,?> onBack);
+    method @androidx.compose.runtime.Composable public static void PredictiveBackHandler(optional boolean enabled, kotlin.jvm.functions.Function2<kotlinx.coroutines.flow.Flow<androidx.activity.BackEventCompat>,? super kotlin.coroutines.Continuation<kotlin.Unit>,? extends java.lang.Object?> onBack);
   }
 
   public final class ReportDrawnKt {
     method @androidx.compose.runtime.Composable public static void ReportDrawn();
-    method @androidx.compose.runtime.Composable public static void ReportDrawnAfter(kotlin.jvm.functions.Function1<? super kotlin.coroutines.Continuation<? super kotlin.Unit>,?> block);
+    method @androidx.compose.runtime.Composable public static void ReportDrawnAfter(kotlin.jvm.functions.Function1<? super kotlin.coroutines.Continuation<? super kotlin.Unit>,? extends java.lang.Object?> block);
     method @androidx.compose.runtime.Composable public static void ReportDrawnWhen(kotlin.jvm.functions.Function0<java.lang.Boolean> predicate);
   }
 

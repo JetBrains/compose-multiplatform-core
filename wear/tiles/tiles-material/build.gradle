@@ -21,7 +21,7 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.Publish
+import androidx.build.LibraryType
 import androidx.build.LibraryType
 
 plugins {
@@ -32,7 +32,7 @@ plugins {
 }
 
 dependencies {
-    api("androidx.annotation:annotation:1.2.0")
+    api("androidx.annotation:annotation:1.8.1")
     api(project(":wear:tiles:tiles"))
     implementation(project(":wear:tiles:tiles-proto"))
 
@@ -44,8 +44,6 @@ dependencies {
     androidTestImplementation("androidx.core:core:1.7.0")
     androidTestImplementation(project(":test:screenshot:screenshot"))
     androidTestImplementation(project(":wear:tiles:tiles-renderer"))
-    androidTestRuntimeOnly(project(path: ":wear:tiles:tiles-proto", configuration: "shadow"))
-    androidTestImplementation(libs.protobuf)
 
     testImplementation(libs.junit)
     testImplementation(libs.mockitoCore4)
@@ -79,8 +77,7 @@ android {
 androidx {
     name = "Android Wear Tiles Material"
     type = LibraryType.PUBLISHED_LIBRARY
-    publish = Publish.SNAPSHOT_AND_RELEASE
     inceptionYear = "2021"
     description = "Material components library for Android Wear Tiles."
-    metalavaK2UastEnabled = true
+    legacyDisableKotlinStrictApiMode = true
 }

@@ -28,6 +28,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.text.style.TextGeometricTransform
 import androidx.compose.ui.text.style.TextIndent
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.em
@@ -44,12 +45,31 @@ import org.junit.runner.RunWith
 @SmallTest
 class ParagraphFillBoundingBoxesTest {
     private val fontFamilyMeasureFont = FontTestData.BASIC_MEASURE_FONT.toFontFamily()
-    private val fontFamilyResolver = createFontFamilyResolver(
-        InstrumentationRegistry.getInstrumentation().context
-    )
+    private val fontFamilyResolver =
+        createFontFamilyResolver(InstrumentationRegistry.getInstrumentation().context)
     private val defaultDensity = Density(density = 1f)
     private val fontSize = 10.sp
     private val fontSizeInPx = with(defaultDensity) { fontSize.toPx() }
+
+    private fun hasEdgeLetterSpacingBugFix(): Boolean {
+        val text = "a"
+        val fontSize = 10.sp
+        val singleLetterLetterSpacing =
+            Paragraph(
+                text = text,
+                style = TextStyle(fontSize = fontSize, letterSpacing = 10.sp),
+                width = Float.MAX_VALUE
+            )
+
+        val singleLetterWithoutLetterSpacing =
+            Paragraph(text = text, style = TextStyle(fontSize = fontSize), width = Float.MAX_VALUE)
+
+        // If the platform has a letter spacing fix, the letter spacing will not be added before and
+        // after the visually left most letter and visually right most letter. Therefore, if the fix
+        // is available, the letter spacing is no-op for single letter text.
+        return singleLetterLetterSpacing.getLineWidth(0) ==
+            singleLetterWithoutLetterSpacing.getLineWidth(0)
+    }
 
     @Test(expected = IllegalArgumentException::class)
     fun negativeStart() {
@@ -109,9 +129,8 @@ class ParagraphFillBoundingBoxesTest {
         val text = "a"
         val paragraph = Paragraph(text)
 
-        assertThat(
-            paragraph.getBoundingBoxes(TextRange(0, text.length))
-        ).isEqualToWithTolerance(ltrCharacterBoundariesForTestFont(text))
+        assertThat(paragraph.getBoundingBoxes(TextRange(0, text.length)))
+            .isEqualToWithTolerance(ltrCharacterBoundariesForTestFont(text))
     }
 
     @Test
@@ -151,17 +170,15 @@ class ParagraphFillBoundingBoxesTest {
         val paragraph1 = Paragraph(text, style = TextStyle(fontSize = fontSize))
         paragraph1.fillBoundingBoxes(range, array, 0)
 
-        assertThat(array.asRectArray()).isEqualToWithTolerance(
-            ltrCharacterBoundariesForTestFont(text, fontSizeInPx)
-        )
+        assertThat(array.asRectArray())
+            .isEqualToWithTolerance(ltrCharacterBoundariesForTestFont(text, fontSizeInPx))
 
         val paragraph2 = Paragraph(text, style = TextStyle(fontSize = (fontSize * 2)))
         paragraph2.fillBoundingBoxes(range, array, 0)
 
         // the same array is overridden with new and different values
-        assertThat(array.asRectArray()).isEqualToWithTolerance(
-            ltrCharacterBoundariesForTestFont(text, fontSizeInPx * 2)
-        )
+        assertThat(array.asRectArray())
+            .isEqualToWithTolerance(ltrCharacterBoundariesForTestFont(text, fontSizeInPx * 2))
     }
 
     @Test
@@ -172,9 +189,8 @@ class ParagraphFillBoundingBoxesTest {
 
         // first line line height is ignored, therefore the result is the same as without line
         // height
-        assertThat(
-            paragraph.getBoundingBoxes(TextRange(0, text.length))
-        ).isEqualToWithTolerance(ltrCharacterBoundariesForTestFont(text))
+        assertThat(paragraph.getBoundingBoxes(TextRange(0, text.length)))
+            .isEqualToWithTolerance(ltrCharacterBoundariesForTestFont(text))
     }
 
     @Test
@@ -182,29 +198,27 @@ class ParagraphFillBoundingBoxesTest {
         val lineHeight = fontSize * 2
         val lineHeightInPx = with(defaultDensity) { lineHeight.toPx() }
         val text = "a"
-        val paragraph = Paragraph(
-            text,
-            style = TextStyle(
-                lineHeight = lineHeight,
-                platformStyle = @Suppress("DEPRECATION") PlatformTextStyle(
-                    includeFontPadding = false
-                ),
-                lineHeightStyle = LineHeightStyle(
-                    alignment = Alignment.Proportional,
-                    trim = Trim.None
-                )
-            ),
-        )
-
-        assertThat(
-            paragraph.getBoundingBoxes(TextRange(0, text.length))
-        ).isEqualToWithTolerance(
-            ltrCharacterBoundariesForTestFont(
-                text = text,
-                fontSizeInPx = fontSizeInPx,
-                lineHeightInPx = lineHeightInPx
+        val paragraph =
+            Paragraph(
+                text,
+                style =
+                    TextStyle(
+                        lineHeight = lineHeight,
+                        platformStyle =
+                            @Suppress("DEPRECATION") PlatformTextStyle(includeFontPadding = false),
+                        lineHeightStyle =
+                            LineHeightStyle(alignment = Alignment.Proportional, trim = Trim.None)
+                    ),
             )
-        )
+
+        assertThat(paragraph.getBoundingBoxes(TextRange(0, text.length)))
+            .isEqualToWithTolerance(
+                ltrCharacterBoundariesForTestFont(
+                    text = text,
+                    fontSizeInPx = fontSizeInPx,
+                    lineHeightInPx = lineHeightInPx
+                )
+            )
     }
 
     @Test
@@ -213,44 +227,42 @@ class ParagraphFillBoundingBoxesTest {
         val lineHeightInPx = with(defaultDensity) { lineHeight.toPx() }
         val text = "a\na\na"
         @Suppress("DEPRECATION")
-        val paragraph = Paragraph(
-            text,
-            style = TextStyle(
-                lineHeight = lineHeight,
-                lineHeightStyle = LineHeightStyle(
-                    alignment = Alignment.Proportional,
-                    trim = Trim.None
-                ),
-                platformStyle = @Suppress("DEPRECATION") PlatformTextStyle(
-                    includeFontPadding = false
+        val paragraph =
+            Paragraph(
+                text,
+                style =
+                    TextStyle(
+                        lineHeight = lineHeight,
+                        lineHeightStyle =
+                            LineHeightStyle(alignment = Alignment.Proportional, trim = Trim.None),
+                        platformStyle =
+                            @Suppress("DEPRECATION") PlatformTextStyle(includeFontPadding = false)
+                    )
+            )
+
+        assertThat(paragraph.getBoundingBoxes(TextRange(0, text.length)))
+            .isEqualToWithTolerance(
+                ltrCharacterBoundariesForTestFont(
+                    text = text,
+                    fontSizeInPx = fontSizeInPx,
+                    lineHeightInPx = lineHeightInPx
                 )
             )
-        )
-
-        assertThat(
-            paragraph.getBoundingBoxes(TextRange(0, text.length))
-        ).isEqualToWithTolerance(
-            ltrCharacterBoundariesForTestFont(
-                text = text,
-                fontSizeInPx = fontSizeInPx,
-                lineHeightInPx = lineHeightInPx
-            )
-        )
     }
 
     @Test
     fun singleCharacterRtl() {
         val text = "\u05D0"
         val width = text.length * 2 * fontSizeInPx // a width wider than text
-        val paragraph = Paragraph(
-            text = text,
-            width = width,
-            style = TextStyle(textDirection = TextDirection.Content)
-        )
+        val paragraph =
+            Paragraph(
+                text = text,
+                width = width,
+                style = TextStyle(textDirection = TextDirection.Content)
+            )
 
-        assertThat(
-            paragraph.getBoundingBoxes(TextRange(0, text.length))
-        ).isEqualToWithTolerance(rtlCharacterBoundariesForTestFont(text, width))
+        assertThat(paragraph.getBoundingBoxes(TextRange(0, text.length)))
+            .isEqualToWithTolerance(rtlCharacterBoundariesForTestFont(text, width))
     }
 
     @Test
@@ -258,9 +270,8 @@ class ParagraphFillBoundingBoxesTest {
         val text = "abc"
         val paragraph = Paragraph(text)
 
-        assertThat(
-            paragraph.getBoundingBoxes(TextRange(0, text.length))
-        ).isEqualToWithTolerance(ltrCharacterBoundariesForTestFont(text))
+        assertThat(paragraph.getBoundingBoxes(TextRange(0, text.length)))
+            .isEqualToWithTolerance(ltrCharacterBoundariesForTestFont(text))
     }
 
     @Test
@@ -269,9 +280,8 @@ class ParagraphFillBoundingBoxesTest {
         val width = text.length * 2 * fontSizeInPx // a width wider than text
         val paragraph = Paragraph(text, width = width)
 
-        assertThat(
-            paragraph.getBoundingBoxes(TextRange(0, text.length))
-        ).isEqualToWithTolerance(rtlCharacterBoundariesForTestFont(text, width))
+        assertThat(paragraph.getBoundingBoxes(TextRange(0, text.length)))
+            .isEqualToWithTolerance(rtlCharacterBoundariesForTestFont(text, width))
     }
 
     @Test
@@ -281,9 +291,8 @@ class ParagraphFillBoundingBoxesTest {
 
         val expected = ltrCharacterBoundariesForTestFont(text)
         // text with indices 0123 is rendered as 0213
-        assertThat(
-            paragraph.getBoundingBoxes(TextRange(0, text.length))
-        ).isEqualToWithTolerance(arrayOf(expected[0], expected[2], expected[1], expected[3]))
+        assertThat(paragraph.getBoundingBoxes(TextRange(0, text.length)))
+            .isEqualToWithTolerance(arrayOf(expected[0], expected[2], expected[1], expected[3]))
     }
 
     @Test
@@ -294,9 +303,8 @@ class ParagraphFillBoundingBoxesTest {
 
         val expected = rtlCharacterBoundariesForTestFont(text, width)
         // text with indices 0123 is rendered as 3120
-        assertThat(
-            paragraph.getBoundingBoxes(TextRange(0, text.length))
-        ).isEqualToWithTolerance(arrayOf(expected[0], expected[2], expected[1], expected[3]))
+        assertThat(paragraph.getBoundingBoxes(TextRange(0, text.length)))
+            .isEqualToWithTolerance(arrayOf(expected[0], expected[2], expected[1], expected[3]))
     }
 
     @Test
@@ -304,9 +312,8 @@ class ParagraphFillBoundingBoxesTest {
         val text = "a\nb\nc"
         val paragraph = Paragraph(text)
 
-        assertThat(
-            paragraph.getBoundingBoxes(TextRange(0, text.length))
-        ).isEqualToWithTolerance(ltrCharacterBoundariesForTestFont(text))
+        assertThat(paragraph.getBoundingBoxes(TextRange(0, text.length)))
+            .isEqualToWithTolerance(ltrCharacterBoundariesForTestFont(text))
     }
 
     @Test
@@ -315,9 +322,8 @@ class ParagraphFillBoundingBoxesTest {
         val width = 3 * fontSizeInPx // a width wider than paragraph
         val paragraph = Paragraph(width = width, text = text)
 
-        assertThat(
-            paragraph.getBoundingBoxes(TextRange(0, text.length))
-        ).isEqualToWithTolerance(rtlCharacterBoundariesForTestFont(text, width))
+        assertThat(paragraph.getBoundingBoxes(TextRange(0, text.length)))
+            .isEqualToWithTolerance(rtlCharacterBoundariesForTestFont(text, width))
     }
 
     @Test
@@ -336,9 +342,10 @@ class ParagraphFillBoundingBoxesTest {
         val initialRect = expected[0]
         assertThat(initialRect.width).isNonZero()
         for (index in 1 until expected.size) {
-            assertThat(expected[index]).isEqualToWithTolerance(
-                Rect(initialRect.right, initialRect.top, initialRect.right, initialRect.bottom)
-            )
+            assertThat(expected[index])
+                .isEqualToWithTolerance(
+                    Rect(initialRect.right, initialRect.top, initialRect.right, initialRect.bottom)
+                )
         }
     }
 
@@ -353,13 +360,15 @@ class ParagraphFillBoundingBoxesTest {
         val firstIndentInPx = with(defaultDensity) { firstIndent.toPx() }
         val restIndentInPx = with(defaultDensity) { restIndent.toPx() }
         val text = "abcd\ne"
-        val paragraph = Paragraph(
-            width = 3f * fontSizeInPx, // first indent is 2 char + 1 char will reach line break
-            text = text,
-            style = TextStyle(
-                textIndent = TextIndent(firstLine = firstIndent, restLine = restIndent)
+        val paragraph =
+            Paragraph(
+                width = 3f * fontSizeInPx, // first indent is 2 char + 1 char will reach line break
+                text = text,
+                style =
+                    TextStyle(
+                        textIndent = TextIndent(firstLine = firstIndent, restLine = restIndent)
+                    )
             )
-        )
 
         // will be rendered as
         // _ _ a
@@ -369,34 +378,33 @@ class ParagraphFillBoundingBoxesTest {
         val firstLeft = firstIndentInPx
         val restLeft = restIndentInPx
 
-        assertThat(
-            paragraph.getBoundingBoxes(TextRange(0, text.length))
-        ).isEqualToWithTolerance(
-            arrayOf(
-                // a
-                Rect(firstLeft, 0f, firstLeft + fontSizeInPx, fontSizeInPx),
-                // b
-                Rect(restLeft, fontSizeInPx, restLeft + fontSizeInPx, 2 * fontSizeInPx),
-                // c
-                Rect(
-                    restLeft + fontSizeInPx,
-                    fontSizeInPx,
-                    restLeft + 2 * fontSizeInPx,
-                    2 * fontSizeInPx
-                ),
-                // d
-                Rect(restLeft, 2 * fontSizeInPx, restLeft + fontSizeInPx, 3 * fontSizeInPx),
-                // \n
-                Rect(
-                    restLeft + fontSizeInPx,
-                    2 * fontSizeInPx,
-                    restLeft + fontSizeInPx,
-                    3 * fontSizeInPx
-                ),
-                // e
-                Rect(firstLeft, 3 * fontSizeInPx, firstLeft + fontSizeInPx, 4 * fontSizeInPx),
+        assertThat(paragraph.getBoundingBoxes(TextRange(0, text.length)))
+            .isEqualToWithTolerance(
+                arrayOf(
+                    // a
+                    Rect(firstLeft, 0f, firstLeft + fontSizeInPx, fontSizeInPx),
+                    // b
+                    Rect(restLeft, fontSizeInPx, restLeft + fontSizeInPx, 2 * fontSizeInPx),
+                    // c
+                    Rect(
+                        restLeft + fontSizeInPx,
+                        fontSizeInPx,
+                        restLeft + 2 * fontSizeInPx,
+                        2 * fontSizeInPx
+                    ),
+                    // d
+                    Rect(restLeft, 2 * fontSizeInPx, restLeft + fontSizeInPx, 3 * fontSizeInPx),
+                    // \n
+                    Rect(
+                        restLeft + fontSizeInPx,
+                        2 * fontSizeInPx,
+                        restLeft + fontSizeInPx,
+                        3 * fontSizeInPx
+                    ),
+                    // e
+                    Rect(firstLeft, 3 * fontSizeInPx, firstLeft + fontSizeInPx, 4 * fontSizeInPx),
+                )
             )
-        )
     }
 
     @Test
@@ -405,129 +413,177 @@ class ParagraphFillBoundingBoxesTest {
         val doubleFontSizeInPx = with(defaultDensity) { doubleFontSize.toPx() }
         val text = buildAnnotatedString {
             append("a")
-            withStyle(SpanStyle(fontSize = doubleFontSize)) {
-                append("b")
-            }
+            withStyle(SpanStyle(fontSize = doubleFontSize)) { append("b") }
             append("c")
             toAnnotatedString()
         }
         val paragraph = Paragraph(text)
 
-        assertThat(
-            paragraph.getBoundingBoxes(TextRange(0, text.length))
-        ).isEqualToWithTolerance(
-            arrayOf(
-                // 1 width for a, height is doubleFontSize since line metrics change
-                Rect(0f, 0f, fontSizeInPx, doubleFontSizeInPx),
-                // 2 width for b
-                Rect(fontSizeInPx, 0f, 3 * fontSizeInPx, doubleFontSizeInPx),
-                // 1 width for c
-                Rect(3 * fontSizeInPx, 0f, 4 * fontSizeInPx, doubleFontSizeInPx)
+        assertThat(paragraph.getBoundingBoxes(TextRange(0, text.length)))
+            .isEqualToWithTolerance(
+                arrayOf(
+                    // 1 width for a, height is doubleFontSize since line metrics change
+                    Rect(0f, 0f, fontSizeInPx, doubleFontSizeInPx),
+                    // 2 width for b
+                    Rect(fontSizeInPx, 0f, 3 * fontSizeInPx, doubleFontSizeInPx),
+                    // 1 width for c
+                    Rect(3 * fontSizeInPx, 0f, 4 * fontSizeInPx, doubleFontSizeInPx)
+                )
             )
-        )
     }
 
     @Test
     fun letterSpacing() {
         val text = "abc\nde"
-        val paragraph = Paragraph(
-            text = text,
-            style = TextStyle(letterSpacing = 1.em)
-        )
+        val paragraph = Paragraph(text = text, style = TextStyle(letterSpacing = 1.em))
 
-        assertThat(
-            paragraph.getBoundingBoxes(TextRange(0, text.length))
-        ).isEqualToWithTolerance(
-            arrayOf(
-                // a
-                Rect(0f, 0f, 2 * fontSizeInPx, fontSizeInPx),
-                // b
-                Rect(2 * fontSizeInPx, 0f, 4 * fontSizeInPx, fontSizeInPx),
-                // c
-                Rect(4 * fontSizeInPx, 0f, 6 * fontSizeInPx, fontSizeInPx),
-                // \n
-                Rect(6 * fontSizeInPx, 0f, 6 * fontSizeInPx, fontSizeInPx),
-                // c
-                Rect(0f, fontSizeInPx, 2 * fontSizeInPx, 2 * fontSizeInPx),
-                // d
-                Rect(2 * fontSizeInPx, fontSizeInPx, 4 * fontSizeInPx, 2 * fontSizeInPx)
+        assertThat(paragraph.getBoundingBoxes(TextRange(0, text.length)))
+            .isEqualToWithTolerance(
+                if (hasEdgeLetterSpacingBugFix()) {
+                    // If the letter spacing bugfix is included, the first and last letters in a
+                    // line
+                    // will not have leading and trailing letter spacing.
+                    val letterSpaceHalf = fontSizeInPx / 2
+                    arrayOf(
+                        // a
+                        Rect(
+                            0f,
+                            0f,
+                            2 * fontSizeInPx - letterSpaceHalf, // left letter spacing is not added.
+                            fontSizeInPx
+                        ),
+                        // b
+                        Rect(
+                            2 * fontSizeInPx -
+                                letterSpaceHalf, // the prev letter width is half letter
+                            // spacing smaller because there is no
+                            // left letter spacing.
+                            0f,
+                            4 * fontSizeInPx - letterSpaceHalf,
+                            fontSizeInPx
+                        ),
+                        // c
+                        Rect(
+                            4 * fontSizeInPx - letterSpaceHalf,
+                            0f,
+                            6 * fontSizeInPx - letterSpaceHalf * 2, // right letter spacing is not
+                            // added.
+                            fontSizeInPx
+                        ),
+                        // \n
+                        Rect(
+                            6 * fontSizeInPx - letterSpaceHalf * 2,
+                            0f,
+                            6 * fontSizeInPx - letterSpaceHalf * 2,
+                            fontSizeInPx
+                        ),
+                        // c
+                        Rect(
+                            0f,
+                            fontSizeInPx,
+                            2 * fontSizeInPx - letterSpaceHalf, // left letter spacing is not added.
+                            2 * fontSizeInPx
+                        ),
+                        // d
+                        Rect(
+                            2 * fontSizeInPx - letterSpaceHalf,
+                            fontSizeInPx,
+                            4 * fontSizeInPx - letterSpaceHalf * 2,
+                            2 * fontSizeInPx
+                        )
+                    )
+                } else {
+                    arrayOf(
+                        // a
+                        Rect(0f, 0f, 2 * fontSizeInPx, fontSizeInPx),
+                        // b
+                        Rect(2 * fontSizeInPx, 0f, 4 * fontSizeInPx, fontSizeInPx),
+                        // c
+                        Rect(4 * fontSizeInPx, 0f, 6 * fontSizeInPx, fontSizeInPx),
+                        // \n
+                        Rect(6 * fontSizeInPx, 0f, 6 * fontSizeInPx, fontSizeInPx),
+                        // c
+                        Rect(0f, fontSizeInPx, 2 * fontSizeInPx, 2 * fontSizeInPx),
+                        // d
+                        Rect(2 * fontSizeInPx, fontSizeInPx, 4 * fontSizeInPx, 2 * fontSizeInPx)
+                    )
+                }
             )
-        )
     }
 
     @Test
     fun textAlignCenter() {
         val text = "ab"
-        val paragraph = Paragraph(
-            width = text.length * fontSizeInPx * 2,
-            text = text,
-            style = TextStyle(textAlign = TextAlign.Center)
-        )
-
-        assertThat(
-            paragraph.getBoundingBoxes(TextRange(0, text.length))
-        ).isEqualToWithTolerance(
-            arrayOf(
-                Rect(fontSizeInPx, 0f, 2 * fontSizeInPx, fontSizeInPx),
-                Rect(2 * fontSizeInPx, 0f, 3 * fontSizeInPx, fontSizeInPx),
+        val paragraph =
+            Paragraph(
+                width = text.length * fontSizeInPx * 2,
+                text = text,
+                style = TextStyle(textAlign = TextAlign.Center)
             )
-        )
+
+        assertThat(paragraph.getBoundingBoxes(TextRange(0, text.length)))
+            .isEqualToWithTolerance(
+                arrayOf(
+                    Rect(fontSizeInPx, 0f, 2 * fontSizeInPx, fontSizeInPx),
+                    Rect(2 * fontSizeInPx, 0f, 3 * fontSizeInPx, fontSizeInPx),
+                )
+            )
     }
 
     @Test
     fun textAlignEnd() {
         val text = "ab"
-        val paragraph = Paragraph(
-            width = text.length * fontSizeInPx * 2,
-            text = text,
-            style = TextStyle(textAlign = TextAlign.End)
-        )
-
-        assertThat(
-            paragraph.getBoundingBoxes(TextRange(0, text.length))
-        ).isEqualToWithTolerance(
-            arrayOf(
-                Rect(2 * fontSizeInPx, 0f, 3 * fontSizeInPx, fontSizeInPx),
-                Rect(3 * fontSizeInPx, 0f, 4 * fontSizeInPx, fontSizeInPx),
+        val paragraph =
+            Paragraph(
+                width = text.length * fontSizeInPx * 2,
+                text = text,
+                style = TextStyle(textAlign = TextAlign.End)
             )
-        )
+
+        assertThat(paragraph.getBoundingBoxes(TextRange(0, text.length)))
+            .isEqualToWithTolerance(
+                arrayOf(
+                    Rect(2 * fontSizeInPx, 0f, 3 * fontSizeInPx, fontSizeInPx),
+                    Rect(3 * fontSizeInPx, 0f, 4 * fontSizeInPx, fontSizeInPx),
+                )
+            )
     }
 
     @Test
     fun withTextGeometricTransformScaleX() {
         val text = "ab"
-        val paragraph = Paragraph(
-            text = text,
-            style = TextStyle(textGeometricTransform = TextGeometricTransform(scaleX = 2.0f))
-        )
-
-        assertThat(
-            paragraph.getBoundingBoxes(TextRange(0, text.length))
-        ).isEqualToWithTolerance(
-            arrayOf(
-                Rect(0f, 0f, 2 * fontSizeInPx, fontSizeInPx),
-                Rect(2 * fontSizeInPx, 0f, 4 * fontSizeInPx, fontSizeInPx)
+        val paragraph =
+            Paragraph(
+                text = text,
+                style = TextStyle(textGeometricTransform = TextGeometricTransform(scaleX = 2.0f))
             )
-        )
+
+        assertThat(paragraph.getBoundingBoxes(TextRange(0, text.length)))
+            .isEqualToWithTolerance(
+                arrayOf(
+                    Rect(0f, 0f, 2 * fontSizeInPx, fontSizeInPx),
+                    Rect(2 * fontSizeInPx, 0f, 4 * fontSizeInPx, fontSizeInPx)
+                )
+            )
     }
 
     @Test
     fun textGeometricTransformSkewX() {
         val text = "ab"
-        val paragraph = Paragraph(
-            text = text,
-            style = TextStyle(textGeometricTransform = TextGeometricTransform(skewX = -1f))
-        )
+        val paragraph =
+            Paragraph(
+                text = text,
+                style = TextStyle(textGeometricTransform = TextGeometricTransform(skewX = -1f))
+            )
 
         // skew does not change the boundary, character glyph goes outside of boundary
-        assertThat(
-            paragraph.getBoundingBoxes(TextRange(0, text.length))
-        ).isEqualToWithTolerance(
-            arrayOf(
-                Rect(0f, 0f, fontSizeInPx, fontSizeInPx),
-                Rect(fontSizeInPx, 0f, 2 * fontSizeInPx, fontSizeInPx)
+        assertThat(paragraph.getBoundingBoxes(TextRange(0, text.length)))
+            .isEqualToWithTolerance(
+                arrayOf(
+                    Rect(0f, 0f, fontSizeInPx, fontSizeInPx),
+                    Rect(fontSizeInPx, 0f, 2 * fontSizeInPx, fontSizeInPx)
+                )
             )
-        )
     }
 
     @Test
@@ -537,10 +593,7 @@ class ParagraphFillBoundingBoxesTest {
         val text = buildAnnotatedString {
             append("a")
             withStyle(
-                SpanStyle(
-                    baselineShift = BaselineShift.Superscript,
-                    fontSize = shiftedFontSize
-                )
+                SpanStyle(baselineShift = BaselineShift.Superscript, fontSize = shiftedFontSize)
             ) {
                 append("b")
             }
@@ -552,18 +605,17 @@ class ParagraphFillBoundingBoxesTest {
         val shiftedStart = fontSizeInPx
         val shiftedEnd = shiftedStart + shiftedFontSizeInPx
         // shifted bottom and top still points to line bottom and top
-        assertThat(
-            paragraph.getBoundingBoxes(TextRange(0, text.length))
-        ).isEqualToWithTolerance(
-            arrayOf(
-                // a
-                Rect(0f, 0f, fontSizeInPx, fontSizeInPx),
-                // b
-                Rect(shiftedStart, 0f, shiftedEnd, fontSizeInPx),
-                // c
-                Rect(shiftedEnd, 0f, shiftedEnd + fontSizeInPx, fontSizeInPx)
+        assertThat(paragraph.getBoundingBoxes(TextRange(0, text.length)))
+            .isEqualToWithTolerance(
+                arrayOf(
+                    // a
+                    Rect(0f, 0f, fontSizeInPx, fontSizeInPx),
+                    // b
+                    Rect(shiftedStart, 0f, shiftedEnd, fontSizeInPx),
+                    // c
+                    Rect(shiftedEnd, 0f, shiftedEnd + fontSizeInPx, fontSizeInPx)
+                )
             )
-        )
     }
 
     @Test
@@ -571,30 +623,32 @@ class ParagraphFillBoundingBoxesTest {
         val doubleFontSize = fontSize * 2
         val doubleFontSizeInPx = with(defaultDensity) { doubleFontSize.toPx() }
         val text = "abc"
-        val paragraph = Paragraph(
-            text = text,
-            placeholders = listOf(
-                AnnotatedString.Range(
-                    item = Placeholder(
-                        width = doubleFontSize,
-                        height = doubleFontSize,
-                        placeholderVerticalAlign = PlaceholderVerticalAlign.Top
-                    ),
-                    start = 1,
-                    end = 2
+        val paragraph =
+            Paragraph(
+                text = text,
+                placeholders =
+                    listOf(
+                        AnnotatedString.Range(
+                            item =
+                                Placeholder(
+                                    width = doubleFontSize,
+                                    height = doubleFontSize,
+                                    placeholderVerticalAlign = PlaceholderVerticalAlign.Top
+                                ),
+                            start = 1,
+                            end = 2
+                        )
+                    )
+            )
+
+        assertThat(paragraph.getBoundingBoxes(TextRange(0, text.length)))
+            .isEqualToWithTolerance(
+                arrayOf(
+                    Rect(0f, 0f, fontSizeInPx, doubleFontSizeInPx),
+                    Rect(fontSizeInPx, 0f, 3 * fontSizeInPx, doubleFontSizeInPx),
+                    Rect(3 * fontSizeInPx, 0f, 4 * fontSizeInPx, doubleFontSizeInPx)
                 )
             )
-        )
-
-        assertThat(
-            paragraph.getBoundingBoxes(TextRange(0, text.length))
-        ).isEqualToWithTolerance(
-            arrayOf(
-                Rect(0f, 0f, fontSizeInPx, doubleFontSizeInPx),
-                Rect(fontSizeInPx, 0f, 3 * fontSizeInPx, doubleFontSizeInPx),
-                Rect(3 * fontSizeInPx, 0f, 4 * fontSizeInPx, doubleFontSizeInPx)
-            )
-        )
     }
 
     private fun AndroidParagraph.getBoundingBoxes(range: TextRange): Array<Rect> {
@@ -631,18 +685,21 @@ class ParagraphFillBoundingBoxesTest {
     ): AndroidParagraph {
         return Paragraph(
             text = text.text,
-            style = TextStyle(
-                fontSize = fontSize,
-                fontFamily = fontFamilyMeasureFont,
-                textDirection = TextDirection.Content
-            ).merge(style),
+            style =
+                TextStyle(
+                        fontSize = fontSize,
+                        fontFamily = fontFamilyMeasureFont,
+                        textDirection = TextDirection.Content
+                    )
+                    .merge(style),
             spanStyles = text.spanStyles,
             placeholders = placeholders,
             maxLines = Int.MAX_VALUE,
-            ellipsis = false,
+            overflow = TextOverflow.Clip,
             constraints = Constraints(maxWidth = width.ceilToInt()),
             density = defaultDensity,
             fontFamilyResolver = fontFamilyResolver
-        ) as AndroidParagraph
+        )
+            as AndroidParagraph
     }
 }

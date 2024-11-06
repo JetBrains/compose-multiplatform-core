@@ -23,8 +23,8 @@ import androidx.compose.ui.graphics.Color
 /**
  * Tonal Palette structure in Material.
  *
- * A tonal palette is comprised of 5 tonal ranges. Each tonal range includes the 13 stops, or
- * tonal swatches.
+ * A tonal palette is comprised of 5 tonal ranges. Each tonal range includes the 13 stops, or tonal
+ * swatches.
  *
  * Tonal range names are:
  * - Neutral (N)
@@ -33,7 +33,6 @@ import androidx.compose.ui.graphics.Color
  * - Secondary (S)
  * - Tertiary (T)
  */
-@ExperimentalMaterial3CommonApi
 class TonalPalette(
     // The neutral tonal range from the generated dynamic color palette.
     // Ordered from the lightest shade [neutral100] to the darkest shade [neutral0].
@@ -139,11 +138,8 @@ class TonalPalette(
     val tertiary0: Color
 )
 
-@ExperimentalMaterial3CommonApi
 object TonalPaletteDefaults {
-    /**
-     * Baseline colors in Material.
-     */
+    /** Baseline colors in Material. */
     @Stable
     val BaselineTonalPalette =
         TonalPalette(

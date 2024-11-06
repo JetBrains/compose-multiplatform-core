@@ -23,12 +23,8 @@ import androidx.room.compiler.processing.XType
 import androidx.room.parser.SQLTypeAffinity
 import androidx.room.solver.CodeGenScope
 
-class ByteArrayColumnTypeAdapter private constructor(
-    out: XType
-) : ColumnTypeAdapter(
-    out = out,
-    typeAffinity = SQLTypeAffinity.BLOB
-) {
+class ByteArrayColumnTypeAdapter private constructor(out: XType) :
+    ColumnTypeAdapter(out = out, typeAffinity = SQLTypeAffinity.BLOB) {
     override fun readFromCursor(
         outVarName: String,
         cursorVarName: String,
@@ -74,15 +70,11 @@ class ByteArrayColumnTypeAdapter private constructor(
             val arrayType = env.getArrayType(env.requireType(XTypeName.PRIMITIVE_BYTE))
             return if (env.backend == XProcessingEnv.Backend.KSP) {
                 listOf(
-                    ByteArrayColumnTypeAdapter(arrayType.makeNonNullable()),
-                    ByteArrayColumnTypeAdapter(arrayType.makeNullable())
+                    ByteArrayColumnTypeAdapter(arrayType.makeNullable()),
+                    ByteArrayColumnTypeAdapter(arrayType.makeNonNullable())
                 )
             } else {
-                listOf(
-                    ByteArrayColumnTypeAdapter(
-                        out = arrayType
-                    )
-                )
+                listOf(ByteArrayColumnTypeAdapter(out = arrayType))
             }
         }
     }

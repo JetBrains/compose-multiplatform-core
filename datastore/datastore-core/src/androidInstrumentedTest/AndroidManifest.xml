@@ -15,16 +15,5 @@
   -->
 
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <application>
-        <service android:name="androidx.datastore.core.twoWayIpc.TwoWayIpcService"
-            android:enabled="true"
-            android:exported="false"
-            android:process=":TwoWayIpcService" />
-        <service android:name="androidx.datastore.core.twoWayIpc.TwoWayIpcService2"
-            android:enabled="true"
-            android:exported="false"
-            android:process=":TwoWayIpcService2" />
-    </application>
-
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 </manifest>

@@ -16,7 +16,6 @@
 
 package androidx.compose.foundation.demos.text2
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.demos.text.TagLine
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -42,12 +41,7 @@ import kotlin.math.roundToInt
 
 @Composable
 fun TextFieldLineLimitsDemos() {
-    Column(
-        Modifier
-            .imePadding()
-            .verticalScroll(rememberScrollState())
-            .padding(16.dp)
-    ) {
+    Column(Modifier.imePadding().verticalScroll(rememberScrollState()).padding(16.dp)) {
         TagLine(tag = "Default")
         DefaultLineLimits()
 
@@ -59,7 +53,6 @@ fun TextFieldLineLimitsDemos() {
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun DefaultLineLimits() {
     Text("Default")
@@ -72,7 +65,6 @@ fun DefaultLineLimits() {
     )
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun SingleLineLimits() {
     Text("Single Line")
@@ -85,7 +77,6 @@ fun SingleLineLimits() {
     )
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun MultiLineLimits() {
     Text("Multi Line")
@@ -97,9 +88,7 @@ fun MultiLineLimits() {
         Text("Min: $minLines")
         Slider(
             value = minLines.toFloat(),
-            onValueChange = {
-                minLines = it.roundToInt()
-            },
+            onValueChange = { minLines = it.roundToInt() },
             valueRange = 1f..10f,
             steps = 9
         )
@@ -109,9 +98,7 @@ fun MultiLineLimits() {
         Text("Max: $maxLines")
         Slider(
             value = maxLines.toFloat(),
-            onValueChange = {
-                maxLines = it.roundToInt()
-            },
+            onValueChange = { maxLines = it.roundToInt() },
             valueRange = 1f..10f,
             steps = 9
         )
@@ -121,10 +108,8 @@ fun MultiLineLimits() {
 
     BasicTextField(
         state = rememberTextFieldState(),
-        lineLimits = TextFieldLineLimits.MultiLine(
-            minHeightInLines = minLines,
-            maxHeightInLines = maxLines
-        ),
+        lineLimits =
+            TextFieldLineLimits.MultiLine(minHeightInLines = minLines, maxHeightInLines = maxLines),
         textStyle = LocalTextStyle.current,
         modifier = demoTextFieldModifiers
     )

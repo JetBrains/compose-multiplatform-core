@@ -17,16 +17,21 @@
 package androidx.wear.compose.material3
 
 import android.os.Build
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.testutils.assertAgainstGolden
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
@@ -40,14 +45,11 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
 class RadioButtonScreenshotTest {
-    @get:Rule
-    val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule()
 
-    @get:Rule
-    val screenshotRule = AndroidXScreenshotTestRule(SCREENSHOT_GOLDEN_PATH)
+    @get:Rule val screenshotRule = AndroidXScreenshotTestRule(SCREENSHOT_GOLDEN_PATH)
 
-    @get:Rule
-    val testName = TestName()
+    @get:Rule val testName = TestName()
 
     @Test
     fun radio_button_selected() = verifyScreenshot {
@@ -177,23 +179,27 @@ class RadioButtonScreenshotTest {
             )
         }
 
+    @Test
+    fun split_radio_button_customized_padding_6dp() = verifyScreenshot {
+        sampleSplitRadioButton(contentPadding = PaddingValues(6.dp))
+    }
+
+    @Test
+    fun split_radio_button_customized_horizontal_padding_24dp() = verifyScreenshot {
+        sampleSplitRadioButton(contentPadding = PaddingValues(horizontal = 24.dp, vertical = 8.dp))
+    }
+
     @Composable
     private fun sampleRadioButton(
         enabled: Boolean = true,
         selected: Boolean = true,
-        selectionControl: @Composable SelectionControlScope.() -> Unit = { Radio() },
     ) {
         RadioButton(
             icon = { TestIcon() },
-            label = {
-                Text("RadioButton")
-            },
-            secondaryLabel = {
-                Text("Secondary label")
-            },
+            label = { Text("RadioButton") },
+            secondaryLabel = { Text("Secondary label") },
             selected = selected,
             enabled = enabled,
-            selectionControl = selectionControl,
             onSelect = {},
             modifier = Modifier.testTag(TEST_TAG),
         )
@@ -203,23 +209,18 @@ class RadioButtonScreenshotTest {
     private fun sampleSplitRadioButton(
         selected: Boolean = true,
         enabled: Boolean = true,
-        selectionControl: @Composable SelectionControlScope.() -> Unit = { Radio() }
+        contentPadding: PaddingValues = RadioButtonDefaults.ContentPadding,
     ) {
         SplitRadioButton(
-            label = {
-                Text("SplitRadioButton")
-            },
-            secondaryLabel = {
-                Text("Secondary label")
-            },
+            label = { Text("SplitRadioButton") },
+            secondaryLabel = { Text("Secondary label") },
             selected = selected,
             enabled = enabled,
-            selectionControl = {
-                selectionControl()
-            },
-            onSelect = {},
-            onClick = {},
+            onSelectionClick = {},
+            onContainerClick = {},
+            selectionContentDescription = null,
             modifier = Modifier.testTag(TEST_TAG),
+            contentPadding = contentPadding,
         )
     }
 
@@ -229,11 +230,12 @@ class RadioButtonScreenshotTest {
     ) {
         rule.setContentWithTheme {
             CompositionLocalProvider(LocalLayoutDirection provides layoutDirection) {
-                content()
+                Box(modifier = Modifier.background(Color.Black)) { content() }
             }
         }
 
-        rule.onNodeWithTag(TEST_TAG)
+        rule
+            .onNodeWithTag(TEST_TAG)
             .captureToImage()
             .assertAgainstGolden(screenshotRule, testName.methodName)
     }

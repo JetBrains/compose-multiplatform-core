@@ -17,6 +17,7 @@
 package androidx.compose.animation.core
 
 import androidx.annotation.RestrictTo
+import androidx.compose.ui.util.fastIsFinite
 import kotlin.math.abs
 import kotlin.math.exp
 import kotlin.math.ln
@@ -30,11 +31,9 @@ import kotlin.math.sqrt
  */
 private const val MAX_LONG_MILLIS: Long = Long.MAX_VALUE / 1_000_000
 
-/**
- * Returns the estimated time that the spring will last be at [delta]
- */
+/** Returns the estimated time that the spring will last be at [delta] */
 @RestrictTo(RestrictTo.Scope.LIBRARY)
-fun estimateAnimationDurationMillis(
+public fun estimateAnimationDurationMillis(
     stiffness: Float,
     dampingRatio: Float,
     initialVelocity: Float,
@@ -55,11 +54,9 @@ fun estimateAnimationDurationMillis(
     )
 }
 
-/**
- * Returns the estimated time that the spring will last be at [delta]
- */
+/** Returns the estimated time that the spring will last be at [delta] */
 @RestrictTo(RestrictTo.Scope.LIBRARY)
-fun estimateAnimationDurationMillis(
+public fun estimateAnimationDurationMillis(
     stiffness: Double,
     dampingRatio: Double,
     initialVelocity: Double,
@@ -71,12 +68,17 @@ fun estimateAnimationDurationMillis(
     // Compute the roots of the polynomial [a]x^2+[b]x+[c]=0 which may be complex.
     // Here a is set to the constant 1.0, and folded into the other computations
     val partialRoot = dampingCoefficient * dampingCoefficient - 4.0 * stiffness
-    val firstRoot = (-dampingCoefficient + complexSqrt(partialRoot)) * 0.5
-    val secondRoot = (-dampingCoefficient - complexSqrt(partialRoot)) * 0.5
+    val partialRootReal = if (partialRoot < 0.0) 0.0 else sqrt(partialRoot)
+    val partialRootImaginary = if (partialRoot < 0.0) sqrt(abs(partialRoot)) else 0.0
+
+    val firstRootReal = (-dampingCoefficient + partialRootReal) * 0.5
+    val firstRootImaginary = partialRootImaginary * 0.5
+    val secondRootReal = (-dampingCoefficient - partialRootReal) * 0.5
 
     return estimateDurationInternal(
-        firstRoot,
-        secondRoot,
+        firstRootReal,
+        firstRootImaginary,
+        secondRootReal,
         dampingRatio,
         initialVelocity,
         initialDisplacement,
@@ -84,11 +86,9 @@ fun estimateAnimationDurationMillis(
     )
 }
 
-/**
- * Returns the estimated time that the spring will last be at [delta]
- */
+/** Returns the estimated time that the spring will last be at [delta] */
 @RestrictTo(RestrictTo.Scope.LIBRARY)
-fun estimateAnimationDurationMillis(
+public fun estimateAnimationDurationMillis(
     springConstant: Double,
     dampingCoefficient: Double,
     mass: Double,
@@ -102,12 +102,17 @@ fun estimateAnimationDurationMillis(
     // Compute the roots of the polynomial [a]x^2+[b]x+[c]=0 which may be complex.
     val partialRoot = dampingCoefficient * dampingCoefficient - 4.0 * mass * springConstant
     val divisor = 1.0 / (2.0 * mass)
-    val firstRoot = (-dampingCoefficient + complexSqrt(partialRoot)) * divisor
-    val secondRoot = (-dampingCoefficient - complexSqrt(partialRoot)) * divisor
+    val partialRootReal = if (partialRoot < 0.0) 0.0 else sqrt(partialRoot)
+    val partialRootImaginary = if (partialRoot < 0.0) sqrt(abs(partialRoot)) else 0.0
+
+    val firstRootReal = (-dampingCoefficient + partialRootReal) * divisor
+    val firstRootImaginary = partialRootImaginary * divisor
+    val secondRootReal = (-dampingCoefficient - partialRootReal) * divisor
 
     return estimateDurationInternal(
-        firstRoot,
-        secondRoot,
+        firstRootReal,
+        firstRootImaginary,
+        secondRootReal,
         dampingRatio,
         initialVelocity,
         initialDisplacement,
@@ -116,55 +121,58 @@ fun estimateAnimationDurationMillis(
 }
 
 /**
- * In the under-damped case we simply calculate the envelope of the function.
- * The general solution is of the form x(t) = c_1*e^(r*t)*cos(...) + c_2*e^(r*t)sin(...)
- * which simplifies to x(t) = c*e^(r*t)*cos(...) where c*e^(r*t) is the envelope of x(t)
+ * In the under-damped case we simply calculate the envelope of the function. The general solution
+ * is of the form x(t) = c_1*e^(r*t)*cos(...) + c_2*e^(r*t)sin(...) which simplifies to x(t) =
+ * c*e^(r*t)*cos(...) where c*e^(r*t) is the envelope of x(t)
  */
 private fun estimateUnderDamped(
-    firstRoot: ComplexDouble,
+    firstRootReal: Double,
+    firstRootImaginary: Double,
     p0: Double,
     v0: Double,
     delta: Double
 ): Double {
-    val r = firstRoot.real
+    val r = firstRootReal
     val c1 = p0
-    val c2 = (v0 - r * c1) / firstRoot.imaginary
+    val c2 = (v0 - r * c1) / firstRootImaginary
     val c = sqrt(c1 * c1 + c2 * c2)
 
     return ln(delta / c) / r
 }
 
 /**
- * In the critically-damped case we apply Newton-Raphson's iterative numerical method of solving
- * the equation x(t) = c_1*e^(r*t) + c_2*t*e^(r*t)
+ * In the critically-damped case we apply Newton-Raphson's iterative numerical method of solving the
+ * equation x(t) = c_1*e^(r*t) + c_2*t*e^(r*t)
  */
 private fun estimateCriticallyDamped(
-    firstRoot: ComplexDouble,
+    firstRootReal: Double,
     p0: Double,
     v0: Double,
     delta: Double
 ): Double {
-    val r = firstRoot.real
+    val r = firstRootReal
     val c1 = p0
     val c2 = v0 - r * c1
 
     // For our initial guess, determine the max t of c_1*e^(r*t) = delta and
     // c_2*t*e^(r*t) = delta
     val t1 = ln(abs(delta / c1)) / r
-    val t2 = run {
-        // Application of Lambert's W function to solve te^t
-        val guess = ln(abs(delta / c2))
-        var t = guess
-        for (i in 0..5) {
-            t = (guess - ln(abs(t / r)))
+    val t2 =
+        run {
+            // Application of Lambert's W function to solve te^t
+            val guess = ln(abs(delta / c2))
+            var t = guess
+            for (i in 0..5) {
+                t = (guess - ln(abs(t / r)))
+            }
+            t
+        } / r
+    var tCurr =
+        when {
+            t1.isNotFinite() -> t2
+            t2.isNotFinite() -> t1
+            else -> max(t1, t2)
         }
-        t
-    } / r
-    var tCurr = when {
-        t1.isNotFinite() -> t2
-        t2.isNotFinite() -> t1
-        else -> max(t1, t2)
-    }
 
     // Calculate the inflection time. This is important if the inflection is in t > 0
     val tInflection = -(r * c1 + c2) / (r * c2)
@@ -172,39 +180,41 @@ private fun estimateCriticallyDamped(
 
     // For inflection that does not exist in real time, we always solve for x(t)=delta. Note
     // the system is manipulated such that p0 is always positive.
-    val signedDelta = if (tInflection.isNaN() || tInflection <= 0.0) {
-        -delta
-    } else if (tInflection > 0.0 && -xInflection < delta) {
-        // In this scenario the first crossing with the threshold is to be found. Note that
-        // the inflection does not exceed delta. As such, we search from the left.
-        if (c2 < 0 && c1 > 0) {
-            tCurr = 0.0
+    val signedDelta =
+        if (tInflection.isNaN() || tInflection <= 0.0) {
+            -delta
+        } else if (tInflection > 0.0 && -xInflection < delta) {
+            // In this scenario the first crossing with the threshold is to be found. Note that
+            // the inflection does not exceed delta. As such, we search from the left.
+            if (c2 < 0 && c1 > 0) {
+                tCurr = 0.0
+            }
+            -delta
+        } else {
+            // In this scenario there are three total crossings of the threshold, once from
+            // above, and then once when the inflection exceeds the threshold and then one last
+            // one when x(t) finally decays to zero. The point of determining concavity is to
+            // find the final crossing.
+            //
+            // By finding a point between when concavity changes, and when the inflection point is,
+            // Newton's method will always converge onto the rightmost point (in this case),
+            // the one that we are interested in.
+            val tConcavChange = -(2.0 / r) - (c1 / c2)
+            tCurr = tConcavChange
+            delta
         }
-        -delta
-    } else {
-        // In this scenario there are three total crossings of the threshold, once from
-        // above, and then once when the inflection exceeds the threshold and then one last
-        // one when x(t) finally decays to zero. The point of determining concavity is to
-        // find the final crossing.
-        //
-        // By finding a point between when concavity changes, and when the inflection point is,
-        // Newton's method will always converge onto the rightmost point (in this case),
-        // the one that we are interested in.
-        val tConcavChange = -(2.0 / r) - (c1 / c2)
-        tCurr = tConcavChange
-        delta
-    }
 
     var tDelta = Double.MAX_VALUE
     var iterations = 0
     while (tDelta > 0.001 && iterations < 100) {
         iterations++
         val tLast = tCurr
-        tCurr = iterateNewtonsMethod(
-            tCurr,
-            { t -> (c1 + c2 * t) * exp(r * t) + signedDelta },
-            { t -> (c2 * (r * t + 1) + c1 * r) * exp(r * t) }
-        )
+        tCurr =
+            iterateNewtonsMethod(
+                tCurr,
+                { t -> (c1 + c2 * t) * exp(r * t) + signedDelta },
+                { t -> (c2 * (r * t + 1) + c1 * r) * exp(r * t) }
+            )
         tDelta = abs(tLast - tCurr)
     }
 
@@ -212,18 +222,18 @@ private fun estimateCriticallyDamped(
 }
 
 /**
- * In the over-damped case we apply Newton-Raphson's iterative numerical method of solving
- * the equation x(t) = c_1*e^(r_1*t) + c_2*e^(r_2*t)
+ * In the over-damped case we apply Newton-Raphson's iterative numerical method of solving the
+ * equation x(t) = c_1*e^(r_1*t) + c_2*e^(r_2*t)
  */
 private fun estimateOverDamped(
-    firstRoot: ComplexDouble,
-    secondRoot: ComplexDouble,
+    firstRootReal: Double,
+    secondRootReal: Double,
     p0: Double,
     v0: Double,
     delta: Double
 ): Double {
-    val r1 = firstRoot.real
-    val r2 = secondRoot.real
+    val r1 = firstRootReal
+    val r2 = secondRootReal
     val c2 = (r1 * p0 - v0) / (r1 - r2)
     val c1 = p0 - c2
 
@@ -232,11 +242,12 @@ private fun estimateOverDamped(
     val t1 = ln(abs(delta / c1)) / r1
     val t2 = ln(abs(delta / c2)) / r2
 
-    var tCurr = when {
-        t1.isNotFinite() -> t2
-        t2.isNotFinite() -> t1
-        else -> max(t1, t2)
-    }
+    var tCurr =
+        when {
+            t1.isNotFinite() -> t2
+            t2.isNotFinite() -> t1
+            else -> max(t1, t2)
+        }
 
     // Calculate the inflection time. This is important if the inflection is in t > 0
     val tInflection = ln((c1 * r1) / (-c2 * r2)) / (r2 - r1)
@@ -244,28 +255,29 @@ private fun estimateOverDamped(
 
     // For inflection that does not exist in real time, we always solve for x(t)=delta. Note
     // the system is manipulated such that p0 is always positive.
-    val signedDelta = if (tInflection.isNaN() || tInflection <= 0.0) {
-        -delta
-    } else if (tInflection > 0.0 && -xInflection() < delta) {
-        // In this scenario the first crossing with the threshold is to be found. Note that
-        // the inflection does not exceed delta. As such, we search from the left.
-        if (c2 > 0.0 && c1 < 0.0) {
-            tCurr = 0.0
+    val signedDelta =
+        if (tInflection.isNaN() || tInflection <= 0.0) {
+            -delta
+        } else if (tInflection > 0.0 && -xInflection() < delta) {
+            // In this scenario the first crossing with the threshold is to be found. Note that
+            // the inflection does not exceed delta. As such, we search from the left.
+            if (c2 > 0.0 && c1 < 0.0) {
+                tCurr = 0.0
+            }
+            -delta
+        } else {
+            // In this scenario there are three total crossings of the threshold, once from
+            // above, and then once when the inflection exceeds the threshold and then one last
+            // one when x(t) finally decays to zero. The point of determining concavity is to
+            // find the final crossing.
+            //
+            // By finding a point between when concavity changes, and when the inflection point is,
+            // Newton's method will always converge onto the rightmost point (in this case),
+            // the one that we are interested in.
+            val tConcavChange = ln(-(c2 * r2 * r2) / (c1 * r1 * r1)) / (r1 - r2)
+            tCurr = tConcavChange
+            delta
         }
-        -delta
-    } else {
-        // In this scenario there are three total crossings of the threshold, once from
-        // above, and then once when the inflection exceeds the threshold and then one last
-        // one when x(t) finally decays to zero. The point of determining concavity is to
-        // find the final crossing.
-        //
-        // By finding a point between when concavity changes, and when the inflection point is,
-        // Newton's method will always converge onto the rightmost point (in this case),
-        // the one that we are interested in.
-        val tConcavChange = ln(-(c2 * r2 * r2) / (c1 * r1 * r1)) / (r1 - r2)
-        tCurr = tConcavChange
-        delta
-    }
 
     // For a good initial guess, simply return
     if (abs(c1 * r1 * exp(r1 * tCurr) + c2 * r2 * exp(r2 * tCurr)) < 0.0001) {
@@ -278,11 +290,12 @@ private fun estimateOverDamped(
     while (tDelta > 0.001 && iterations < 100) {
         iterations++
         val tLast = tCurr
-        tCurr = iterateNewtonsMethod(
-            tCurr,
-            { t -> c1 * exp(r1 * t) + c2 * exp(r2 * t) + signedDelta },
-            { t -> c1 * r1 * exp(r1 * t) + c2 * r2 * exp(r2 * t) }
-        )
+        tCurr =
+            iterateNewtonsMethod(
+                tCurr,
+                { t -> c1 * exp(r1 * t) + c2 * exp(r2 * t) + signedDelta },
+                { t -> c1 * r1 * exp(r1 * t) + c2 * r2 * exp(r2 * t) }
+            )
         tDelta = abs(tLast - tCurr)
     }
 
@@ -292,8 +305,9 @@ private fun estimateOverDamped(
 // Applies Newton-Raphson's method to solve for the estimated time the spring mass system will
 // last be at [delta].
 private fun estimateDurationInternal(
-    firstRoot: ComplexDouble,
-    secondRoot: ComplexDouble,
+    firstRootReal: Double,
+    firstRootImaginary: Double,
+    secondRootReal: Double,
     dampingRatio: Double,
     initialVelocity: Double,
     initialPosition: Double,
@@ -306,29 +320,20 @@ private fun estimateDurationInternal(
     val v0 = if (initialPosition < 0) -initialVelocity else initialVelocity
     val p0 = abs(initialPosition)
 
-    return (
-        when {
-            dampingRatio > 1.0 -> estimateOverDamped(
-                firstRoot = firstRoot,
-                secondRoot = secondRoot,
-                v0 = v0,
-                p0 = p0,
-                delta = delta
-            )
-            dampingRatio < 1.0 -> estimateUnderDamped(
-                firstRoot = firstRoot,
-                v0 = v0,
-                p0 = p0,
-                delta = delta
-            )
-            else -> estimateCriticallyDamped(
-                firstRoot = firstRoot,
-                v0 = v0,
-                p0 = p0,
-                delta = delta
-            )
-        } * 1000.0
-    ).toLong()
+    return (when {
+            dampingRatio > 1.0 ->
+                estimateOverDamped(firstRootReal, secondRootReal, p0 = p0, v0 = v0, delta = delta)
+            dampingRatio < 1.0 ->
+                estimateUnderDamped(
+                    firstRootReal,
+                    firstRootImaginary,
+                    v0 = v0,
+                    p0 = p0,
+                    delta = delta
+                )
+            else -> estimateCriticallyDamped(firstRootReal, p0 = p0, v0 = v0, delta = delta)
+        } * 1000.0)
+        .toLong()
 }
 
 private inline fun iterateNewtonsMethod(
@@ -339,5 +344,4 @@ private inline fun iterateNewtonsMethod(
     return x - fn(x) / fnPrime(x)
 }
 
-@Suppress("NOTHING_TO_INLINE")
-private inline fun Double.isNotFinite() = !isFinite()
+@Suppress("NOTHING_TO_INLINE") private inline fun Double.isNotFinite() = !fastIsFinite()

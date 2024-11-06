@@ -16,6 +16,7 @@
 
 package androidx.wear.compose.material3
 
+import android.content.res.Configuration
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
@@ -26,13 +27,17 @@ import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.remember
 import androidx.compose.testutils.assertAgainstGolden
 import androidx.compose.testutils.assertContainsColor
+import androidx.compose.testutils.assertShape
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
@@ -41,11 +46,15 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsNode
+import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.SemanticsNodeInteraction
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertHeightIsEqualTo
 import androidx.compose.ui.test.assertTouchHeightIsEqualTo
 import androidx.compose.ui.test.assertTouchWidthIsEqualTo
@@ -54,6 +63,7 @@ import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.ComposeContentTestRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextStyle
@@ -67,12 +77,80 @@ import androidx.compose.ui.unit.toSize
 import androidx.test.screenshot.AndroidXScreenshotTestRule
 import kotlin.math.abs
 import org.junit.Assert
+import org.junit.rules.TestName
 
-/**
- * Constant to emulate very big but finite constraints
- */
+/** Constant to emulate very big but finite constraints */
 val BigTestMaxWidth = 5000.dp
 val BigTestMaxHeight = 5000.dp
+
+/** Screen size constants for screenshot tests */
+val SCREEN_SIZE_SMALL = 192
+val SCREEN_SIZE_LARGE = 228
+
+enum class ScreenSize(val size: Int) {
+    SMALL(SCREEN_SIZE_SMALL),
+    LARGE(SCREEN_SIZE_LARGE)
+}
+
+enum class ScreenShape(val isRound: Boolean) {
+    ROUND_DEVICE(true),
+    SQUARE_DEVICE(false)
+}
+
+/**
+ * Provides a composable function that allows you to place your content in different screen
+ * configurations within your UI tests. This is useful for testing how your composables behave on
+ * different screen sizes and form factors (e.g. round or square screens).
+ *
+ * @param screenSizeDp The desired screen size in dp. The composable will be placed into a square
+ *   box with this side length.
+ * @param isRound An optional boolean value to specify if the simulated screen should be round. If
+ *   `true`, the screen is considered round. If `false`, it is considered rectangular. If `null`,
+ *   the original device's roundness setting is used.
+ * @param content The composable content to be tested within the modified screen configuration.
+ */
+@Composable
+fun ScreenConfiguration(
+    screenSizeDp: Int,
+    isRound: Boolean? = null,
+    content: @Composable () -> Unit
+) {
+    val originalConfiguration = LocalConfiguration.current
+    val originalContext = LocalContext.current
+
+    val fixedScreenSizeConfiguration =
+        remember(originalConfiguration) {
+            Configuration(originalConfiguration).apply {
+                screenWidthDp = screenSizeDp
+                screenHeightDp = screenSizeDp
+                if (isRound != null) {
+                    screenLayout =
+                        if (isRound) Configuration.SCREENLAYOUT_ROUND_YES
+                        else Configuration.SCREENLAYOUT_ROUND_NO
+                }
+            }
+        }
+    originalContext.resources.configuration.updateFrom(fixedScreenSizeConfiguration)
+
+    CompositionLocalProvider(
+        LocalContext provides originalContext,
+        LocalConfiguration provides fixedScreenSizeConfiguration
+    ) {
+        Box(
+            modifier =
+                Modifier.size(screenSizeDp.dp).background(MaterialTheme.colorScheme.background),
+        ) {
+            content()
+        }
+    }
+}
+
+/**
+ * Valid characters for golden identifiers are [A-Za-z0-9_-] TestParameterInjector adds '[' +
+ * parameter_values + ']' + ',' to the test name.
+ */
+fun TestName.goldenIdentifier(): String =
+    methodName.replace("[", "_").replace("]", "").replace(",", "_")
 
 internal const val TEST_TAG = "test-item"
 
@@ -80,10 +158,9 @@ internal const val TEST_TAG = "test-item"
 fun TestImage(iconLabel: String = "TestIcon") {
     val testImage = Icons.Outlined.Add
     Image(
-        testImage, iconLabel,
-        modifier = Modifier
-            .fillMaxSize()
-            .testTag(iconLabel),
+        testImage,
+        iconLabel,
+        modifier = Modifier.fillMaxSize().testTag(iconLabel),
         contentScale = ContentScale.Fit,
         alignment = Alignment.Center
     )
@@ -100,13 +177,8 @@ fun TestIcon(modifier: Modifier = Modifier, iconLabel: String = "TestIcon") {
 }
 
 @Composable
-fun CenteredText(
-    text: String
-) {
-    Column(
-        modifier = Modifier.fillMaxHeight(),
-        verticalArrangement = Arrangement.Center
-    ) {
+fun CenteredText(text: String) {
+    Column(modifier = Modifier.fillMaxHeight(), verticalArrangement = Arrangement.Center) {
         Text(text)
     }
 }
@@ -120,10 +192,8 @@ fun ComposeContentTestRule.setContentWithThemeForSizeAssertions(
     setContent {
         MaterialTheme {
             Box(
-                Modifier.sizeIn(
-                    maxWidth = parentMaxWidth,
-                    maxHeight = parentMaxHeight
-                ).testTag("containerForSizeAssertion")
+                Modifier.sizeIn(maxWidth = parentMaxWidth, maxHeight = parentMaxHeight)
+                    .testTag("containerForSizeAssertion")
             ) {
                 content()
             }
@@ -135,10 +205,11 @@ fun ComposeContentTestRule.setContentWithThemeForSizeAssertions(
 
 fun ComposeContentTestRule.textStyleOf(text: String): TextStyle {
     val textLayoutResults = mutableListOf<TextLayoutResult>()
-    onNodeWithText(text, useUnmergedTree = true)
-        .performSemanticsAction(SemanticsActions.GetTextLayoutResult) {
-            it(textLayoutResults)
-        }
+    onNodeWithText(text, useUnmergedTree = true).performSemanticsAction(
+        SemanticsActions.GetTextLayoutResult
+    ) {
+        it(textLayoutResults)
+    }
     return textLayoutResults[0].layoutInput.style
 }
 
@@ -146,20 +217,14 @@ fun ComposeContentTestRule.setContentWithTheme(
     modifier: Modifier = Modifier,
     composable: @Composable BoxScope.() -> Unit
 ) {
-    setContent {
-        MaterialTheme {
-            Box(modifier = modifier, content = composable)
-        }
-    }
+    setContent { MaterialTheme { Box(modifier = modifier, content = composable) } }
 }
 
 internal fun ComposeContentTestRule.verifyTapSize(
     expectedSize: Dp,
     content: @Composable (modifier: Modifier) -> Unit
 ) {
-    setContentWithTheme {
-        content(Modifier.testTag(TEST_TAG))
-    }
+    setContentWithTheme { content(Modifier.testTag(TEST_TAG)) }
     waitForIdle()
 
     onNodeWithTag(TEST_TAG)
@@ -171,14 +236,10 @@ internal fun ComposeContentTestRule.verifyActualSize(
     expectedSize: Dp,
     content: @Composable (modifier: Modifier) -> Unit
 ) {
-    setContentWithTheme {
-        content(Modifier.testTag(TEST_TAG))
-    }
+    setContentWithTheme { content(Modifier.testTag(TEST_TAG)) }
     waitForIdle()
 
-    onNodeWithTag(TEST_TAG)
-        .assertHeightIsEqualTo(expectedSize)
-        .assertWidthIsEqualTo(expectedSize)
+    onNodeWithTag(TEST_TAG).assertHeightIsEqualTo(expectedSize).assertWidthIsEqualTo(expectedSize)
 }
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -196,33 +257,26 @@ internal fun ComposeContentTestRule.verifyColors(
     setContentWithTheme {
         finalExpectedContainerColor =
             if (status.enabled() || !applyAlphaForDisabled) {
-                expectedContainerColor()
-            } else {
-                expectedContainerColor().copy(DisabledContentAlpha)
-            }.compositeOver(testBackgroundColor)
+                    expectedContainerColor()
+                } else {
+                    expectedContainerColor().copy(DisabledContentAlpha)
+                }
+                .compositeOver(testBackgroundColor)
         finalExpectedContent =
             if (status.enabled() || !applyAlphaForDisabled) {
                 expectedContentColor()
             } else {
                 expectedContentColor().copy(DisabledContentAlpha)
             }
-        Box(
-            Modifier
-                .fillMaxSize()
-                .background(testBackgroundColor)
-        ) {
+        Box(Modifier.fillMaxSize().background(testBackgroundColor)) {
             actualContentColor = content()
         }
     }
     Assert.assertEquals(finalExpectedContent, actualContentColor)
-    onNodeWithTag(TEST_TAG)
-        .captureToImage()
-        .assertContainsColor(finalExpectedContainerColor)
+    onNodeWithTag(TEST_TAG).captureToImage().assertContainsColor(finalExpectedContainerColor)
 }
 
-/**
- * Checks that [expectedColor]  is in the percentage [range] of an [ImageBitmap] color histogram
- */
+/** Checks that [expectedColor] is in the percentage [range] of an [ImageBitmap] color histogram */
 fun ImageBitmap.assertColorInPercentageRange(
     expectedColor: Color,
     range: ClosedFloatingPointRange<Float> = 50.0f..100.0f
@@ -260,13 +314,25 @@ private fun SemanticsNodeInteraction.withUnclippedBoundsInRoot(
     assertion: (DpRect) -> Unit
 ): SemanticsNodeInteraction {
     val node = fetchSemanticsNode("Failed to retrieve bounds of the node.")
-    val bounds = with(node.root!!.density) {
-        node.unclippedBoundsInRoot.let {
-            DpRect(it.left.toDp(), it.top.toDp(), it.right.toDp(), it.bottom.toDp())
+    val bounds =
+        with(node.root!!.density) {
+            node.unclippedBoundsInRoot.let {
+                DpRect(it.left.toDp(), it.top.toDp(), it.right.toDp(), it.bottom.toDp())
+            }
         }
-    }
     assertion.invoke(bounds)
     return this
+}
+
+internal fun SemanticsNodeInteraction.assertOnLongClickLabelMatches(
+    expectedValue: String
+): SemanticsNodeInteraction {
+    return assert(
+        SemanticsMatcher("onLongClickLabel = '$expectedValue'") {
+            it.config.getOrElseNullable(SemanticsActions.OnLongClick) { null }?.label ==
+                expectedValue
+        }
+    )
 }
 
 private val SemanticsNode.unclippedBoundsInRoot: Rect
@@ -279,9 +345,9 @@ private val SemanticsNode.unclippedBoundsInRoot: Rect
     }
 
 /**
- * Returns if this value is equal to the [reference], within a given [tolerance]. If the
- * reference value is [Float.NaN], [Float.POSITIVE_INFINITY] or [Float.NEGATIVE_INFINITY], this
- * only returns true if this value is exactly the same (tolerance is disregarded).
+ * Returns if this value is equal to the [reference], within a given [tolerance]. If the reference
+ * value is [Float.NaN], [Float.POSITIVE_INFINITY] or [Float.NEGATIVE_INFINITY], this only returns
+ * true if this value is exactly the same (tolerance is disregarded).
  */
 private fun Dp.isWithinTolerance(reference: Dp, tolerance: Dp): Boolean {
     return when {
@@ -302,15 +368,12 @@ private fun Dp.isWithinTolerance(reference: Dp, tolerance: Dp): Boolean {
  * @param expected The expected value to which this one should be equal to.
  * @param subject Used in the error message to identify which item this assertion failed on.
  * @param tolerance The tolerance within which the values should be treated as equal.
- *
  * @throws AssertionError if comparison fails.
  */
 internal fun Dp.assertIsEqualTo(expected: Dp, subject: String, tolerance: Dp = Dp(.5f)) {
     if (!isWithinTolerance(expected, tolerance)) {
         // Comparison failed, report the error in DPs
-        throw AssertionError(
-            "Actual $subject is $this, expected $expected (tolerance: $tolerance)"
-        )
+        throw AssertionError("Actual $subject is $this, expected $expected (tolerance: $tolerance)")
     }
 }
 
@@ -325,17 +388,59 @@ internal fun ComposeContentTestRule.verifyScreenshot(
     setContentWithTheme {
         CompositionLocalProvider(LocalLayoutDirection provides layoutDirection) {
             Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.background)
+                modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)
             ) {
                 content()
             }
         }
     }
 
-    onNodeWithTag(testTag).captureToImage()
-        .assertAgainstGolden(screenshotRule, methodName)
+    onNodeWithTag(testTag).captureToImage().assertAgainstGolden(screenshotRule, methodName)
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
+fun ComposeContentTestRule.verifyRoundedButtonTapAnimationEnd(
+    baseShape: RoundedCornerShape,
+    pressedShape: RoundedCornerShape,
+    targetProgress: Float,
+    expectedFramesUntilTarget: Int,
+    color: @Composable () -> Color,
+    antiAliasingGap: Float = 2f,
+    content: @Composable (Modifier) -> Unit
+) {
+    val expectedAnimationEnd =
+        AnimatedRoundedCornerShape(baseShape, pressedShape) { targetProgress }
+    var fillColor = Color.Transparent
+
+    setContent {
+        fillColor = color()
+        content(Modifier.testTag(TEST_TAG))
+    }
+
+    mainClock.autoAdvance = false
+    onNodeWithTag(TEST_TAG).performClick()
+
+    /**
+     * We are manually advancing by a fixed amount of frames since
+     * 1) the RoundButton.animateButtonShape is internal and therefore we cannot modify the
+     *    animation spec being used. Otherwise, we could set a custom animation time isolated and
+     *    known to this test we could wait for.
+     * 2) rule.mainClock.waitUntil expects a condition. However, the shape validations for
+     *    ImageBitMap only includes of assets
+     */
+    repeat(expectedFramesUntilTarget) { mainClock.advanceTimeByFrame() }
+
+    onNodeWithTag(TEST_TAG)
+        .captureToImage()
+        .assertShape(
+            density = density,
+            horizontalPadding = 0.dp,
+            verticalPadding = 0.dp,
+            shapeColor = fillColor,
+            backgroundColor = Color.Transparent,
+            antiAliasingGap = antiAliasingGap,
+            shape = expectedAnimationEnd,
+        )
 }
 
 private fun ImageBitmap.histogram(): MutableMap<Color, Long> {
@@ -356,3 +461,5 @@ internal enum class Status {
 
     fun enabled() = this == Enabled
 }
+
+class StableRef<T>(var value: T)

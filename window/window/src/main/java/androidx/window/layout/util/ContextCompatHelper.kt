@@ -19,15 +19,8 @@ package androidx.window.layout.util
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
-import android.graphics.Rect
 import android.inputmethodservice.InputMethodService
-import android.os.Build
-import android.view.WindowManager
-import androidx.annotation.DoNotInline
-import androidx.annotation.RequiresApi
 import androidx.annotation.UiContext
-import androidx.core.view.WindowInsetsCompat
-import androidx.window.layout.WindowMetrics
 
 internal object ContextCompatHelper {
     /**
@@ -57,46 +50,5 @@ internal object ContextCompatHelper {
         //  this ambiguity will no longer exist. Again for clarity, on APIs before R, UiContexts are
         //  Activities or InputMethodServices, so we should never reach this point.
         throw IllegalArgumentException("Context $context is not a UiContext")
-    }
-}
-
-@RequiresApi(Build.VERSION_CODES.N)
-internal object ContextCompatHelperApi24 {
-    fun isInMultiWindowMode(activity: Activity): Boolean {
-        return activity.isInMultiWindowMode
-    }
-}
-
-@RequiresApi(Build.VERSION_CODES.R)
-internal object ContextCompatHelperApi30 {
-
-    fun currentWindowMetrics(@UiContext context: Context): WindowMetrics {
-        val wm = context.getSystemService(WindowManager::class.java)
-        val insets = WindowInsetsCompat.toWindowInsetsCompat(wm.currentWindowMetrics.windowInsets)
-        return WindowMetrics(wm.currentWindowMetrics.bounds, insets)
-    }
-
-    fun currentWindowBounds(@UiContext context: Context): Rect {
-        val wm = context.getSystemService(WindowManager::class.java)
-        return wm.currentWindowMetrics.bounds
-    }
-
-    fun maximumWindowBounds(@UiContext context: Context): Rect {
-        val wm = context.getSystemService(WindowManager::class.java)
-        return wm.maximumWindowMetrics.bounds
-    }
-
-    /**
-     * Computes the [WindowInsetsCompat] for platforms above [Build.VERSION_CODES.R], inclusive.
-     * @DoNotInline required for implementation-specific class method to prevent it from being
-     * inlined.
-     *
-     * @see androidx.window.layout.WindowMetrics.getWindowInsets
-     */
-    @DoNotInline
-    fun currentWindowInsets(@UiContext context: Context): WindowInsetsCompat {
-        val platformInsets = context.getSystemService(WindowManager::class.java)
-            .currentWindowMetrics.windowInsets
-        return WindowInsetsCompat.toWindowInsetsCompat(platformInsets)
     }
 }

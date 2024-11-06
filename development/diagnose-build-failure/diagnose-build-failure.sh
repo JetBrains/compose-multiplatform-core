@@ -113,6 +113,17 @@ fi
 COLOR_WHITE="\e[97m"
 COLOR_GREEN="\e[32m"
 
+function outputAdvice() {
+  adviceName="$1"
+  cd "$scriptPath"
+  adviceFilepath="classifications/${adviceName}.md"
+  echo >&2
+  echo "Advice ${scriptPath}/${adviceFilepath}:" >&2
+  echo >&2
+  cat "$adviceFilepath" >&2
+  exit 0
+}
+
 function checkStatusRepo() {
   repo status >&2
 }
@@ -213,15 +224,7 @@ echo "diagnose-build-failure making sure that we can reproduce the build failure
 if runBuild ./gradlew -Pandroidx.summarizeStderr $gradleArgs; then
   echo >&2
   echo "This script failed to reproduce the build failure." >&2
-  echo "If the build failure you were observing was in Android Studio, then:"
-  echo '  Were you launching Android Studio by running `./studiow`?'
-  echo "  Try asking a team member why Android Studio is failing but gradlew is succeeding"
-  echo "If you previously observed a build failure, then this means one of:"
-  echo "  The state of your build is different than when you started your previous build"
-  echo "    You could ask a team member if they've seen this error."
-  echo "  The build is nondeterministic"
-  echo "    If this seems likely to you, then please open a bug."
-  exit 1
+  outputAdvice "subsequent-success"
 else
   echo >&2
   echo "Reproduced build failure" >&2
@@ -255,10 +258,7 @@ cd "$supportRoot"
 if runBuild ./gradlew --no-daemon $gradleArgs; then
   echo >&2
   echo "The build passed when disabling the Gradle Daemon" >&2
-  echo "This suggests that there is some state saved in the Gradle Daemon that is causing a failure." >&2
-  echo "Unfortunately, this script does not know how to diagnose this further." >&2
-  echo "You could ask a team member if they've seen this error." >&2
-  exit 1
+  outputAdvice "memory-state"
 else
   echo >&2
   echo "The build failed even with the Gradle Daemon disabled." >&2
@@ -282,9 +282,7 @@ if runBuild ./gradlew --no-daemon $gradleArgs; then
 else
   echo >&2
   echo "The clean build also reproduced the issue." >&2
-  echo "This may mean that everyone is observing this issue" >&2
-  echo "This may mean that something about this checkout is different from others'" >&2
-  echo "You may be interested in running development/simplify-build-failure/simplify-build-failure.sh to identify the minimal set of source files required to reproduce this error" >&2
+  outputAdvice "clean-error"
   echo "Checking the status of the checkout:" >&2
   checkStatus
   exit 1
@@ -309,13 +307,7 @@ restoreState "$tempDir/prev"
 if runBuild ./gradlew --no-daemon $gradleArgs; then
   echo >&2
   echo "After restoring the saved state, the build passed." >&2
-  echo "This might mean that there is additional state being saved somewhere else that this script does not know about" >&2
-  echo "This might mean that the success or failure status of the build is dependent on timestamps." >&2
-  echo "This might mean that the build is nondeterministic." >&2
-  echo "Unfortunately, this script does not know how to diagnose this further." >&2
-  echo "You could:" >&2
-  echo "  Ask a team member if they know where the state may be stored" >&2
-  echo "  Ask a team member if they recognize the build error" >&2
+  outputAdvice "unknown-state"
   exit 1
 else
   echo >&2

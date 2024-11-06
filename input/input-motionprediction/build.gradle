@@ -30,7 +30,7 @@ plugins {
 }
 
 dependencies {
-    api("androidx.annotation:annotation:1.2.0")
+    api("androidx.annotation:annotation:1.8.1")
 
     implementation("androidx.core:core:1.10.1")
 
@@ -49,7 +49,6 @@ dependencies {
 
 android {
     defaultConfig {
-        minSdkVersion 19
     }
     namespace "androidx.input.motionprediction"
 }
@@ -60,5 +59,5 @@ androidx {
     mavenVersion = LibraryVersions.INPUT_MOTIONPREDICTION
     inceptionYear = "2022"
     description = "reduce the latency of input interactions by predicting future MotionEvents"
-    metalavaK2UastEnabled = true
+    legacyDisableKotlinStrictApiMode = true
 }

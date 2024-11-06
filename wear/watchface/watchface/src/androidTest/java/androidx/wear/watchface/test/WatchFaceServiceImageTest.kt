@@ -133,8 +133,7 @@ public class ComplicationTapActivity : Activity() {
 @RequiresApi(Build.VERSION_CODES.O_MR1)
 public class WatchFaceServiceImageTest {
 
-    @get:Rule
-    val mocks = MockitoJUnit.rule()
+    @get:Rule val mocks = MockitoJUnit.rule()
 
     @Mock private lateinit var surfaceHolder: SurfaceHolder
 
@@ -417,7 +416,7 @@ public class WatchFaceServiceImageTest {
     public fun testSetGreenStyle() {
         handler.post {
             initCanvasWatchFace()
-            assertThat(engineWrapper.mutableWatchState.watchFaceInstanceId.value)
+            assertThat(engineWrapper.watchFaceDetails!!.mutableWatchState.watchFaceInstanceId.value)
                 .isEqualTo(INTERACTIVE_INSTANCE_ID)
         }
         assertThat(initLatch.await(TIMEOUT_MS, TimeUnit.MILLISECONDS)).isTrue()
@@ -432,7 +431,8 @@ public class WatchFaceServiceImageTest {
         sendComplications()
 
         handler.post {
-            assertThat(engineWrapper.mutableWatchState.watchFaceInstanceId.value).isEqualTo(newId)
+            assertThat(engineWrapper.watchFaceDetails!!.mutableWatchState.watchFaceInstanceId.value)
+                .isEqualTo(newId)
             engineWrapper.draw(engineWrapper.getWatchFaceImplOrNull())
         }
 
@@ -466,7 +466,8 @@ public class WatchFaceServiceImageTest {
         // Latch that countsDown when the complication below has been delivered.
         val complicationReceivedLatch = CountDownLatch(2)
         CoroutineScope(handler.asCoroutineDispatcher()).launch {
-            engineWrapper.deferredWatchFaceImpl
+            engineWrapper.watchFaceDetails!!
+                .deferredWatchFaceImpl
                 .await()
                 .complicationSlotsManager[EXAMPLE_CANVAS_WATCHFACE_LEFT_COMPLICATION_ID]!!
                 .complicationData
@@ -477,7 +478,8 @@ public class WatchFaceServiceImageTest {
                 }
         }
         CoroutineScope(handler.asCoroutineDispatcher()).launch {
-            engineWrapper.deferredWatchFaceImpl
+            engineWrapper.watchFaceDetails!!
+                .deferredWatchFaceImpl
                 .await()
                 .complicationSlotsManager[EXAMPLE_CANVAS_WATCHFACE_RIGHT_COMPLICATION_ID]!!
                 .complicationData
@@ -833,7 +835,7 @@ public class WatchFaceServiceImageTest {
         val engineWrapper = service.onCreateEngine() as WatchFaceService.EngineWrapper
 
         // Make sure init has completed before trying to draw.
-        runBlocking { engineWrapper.deferredWatchFaceImpl.await() }
+        runBlocking { engineWrapper.watchFaceDetails!!.deferredWatchFaceImpl.await() }
 
         handler.post { engineWrapper.draw(engineWrapper.getWatchFaceImplOrNull()) }
 

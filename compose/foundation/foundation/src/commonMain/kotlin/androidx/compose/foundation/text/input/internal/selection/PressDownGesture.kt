@@ -18,12 +18,11 @@ package androidx.compose.foundation.text.input.internal.selection
 
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.PointerInputScope
 import androidx.compose.ui.util.fastAny
 
-/**
- * Detects pointer down and up events. This detector does not require events to be unconsumed.
- */
+/** Detects pointer down and up events. This detector does not require events to be unconsumed. */
 internal suspend fun PointerInputScope.detectPressDownGesture(
     onDown: TapOnPosition,
     onUp: (() -> Unit)? = null
@@ -40,4 +39,8 @@ internal suspend fun PointerInputScope.detectPressDownGesture(
             onUp.invoke()
         }
     }
+}
+
+internal fun interface TapOnPosition {
+    fun onEvent(offset: Offset)
 }

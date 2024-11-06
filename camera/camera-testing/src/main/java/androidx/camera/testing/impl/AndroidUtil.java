@@ -20,12 +20,9 @@ import static org.junit.Assume.assumeFalse;
 
 import android.os.Build;
 
-import androidx.annotation.RequiresApi;
-
 /**
  * Utility methods for testing related to Android OS.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public final class AndroidUtil {
 
     private AndroidUtil() {
@@ -38,6 +35,7 @@ public final class AndroidUtil {
         return Build.FINGERPRINT.startsWith("generic")
                 || Build.FINGERPRINT.startsWith("unknown")
                 || Build.MODEL.contains("google_sdk")
+                || Build.MODEL.contains("gphone")
                 || Build.MODEL.contains("Emulator")
                 || Build.MODEL.contains("Cuttlefish")
                 || Build.MODEL.contains("Android SDK built for x86")
@@ -55,6 +53,13 @@ public final class AndroidUtil {
     }
 
     /**
+     * Checks if the current device is emulator with API 21.
+     */
+    public static boolean isEmulator(int apiLevel) {
+        return Build.VERSION.SDK_INT == apiLevel && isEmulator();
+    }
+
+    /**
      * Skips the test if the current device is emulator that doesn't support video recording.
      */
     public static void skipVideoRecordingTestIfNotSupportedByEmulator() {
@@ -67,6 +72,16 @@ public final class AndroidUtil {
         assumeFalse(
                 "Emulator API 21 has empty supported qualities. Unable to test.",
                 AndroidUtil.isEmulatorAndAPI21()
+        );
+        // Skip test for b/331618729
+        assumeFalse(
+                "Emulator API 28 crashes running this test.",
+                Build.VERSION.SDK_INT == 28 && isEmulator()
+        );
+        // Skip test for b/331618729
+        assumeFalse(
+                "Emulator API 30 crashes running this test.",
+                Build.VERSION.SDK_INT == 30 && isEmulator()
         );
     }
 }

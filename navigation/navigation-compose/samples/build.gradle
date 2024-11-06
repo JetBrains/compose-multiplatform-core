@@ -21,7 +21,10 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
+
+import androidx.build.KotlinTarget
 import androidx.build.LibraryType
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     id("AndroidXPlugin")
@@ -33,16 +36,28 @@ plugins {
 }
 
 dependencies {
-    implementation(libs.kotlinStdlib)
+    api(libs.kotlinStdlib)
 
     compileOnly(project(":annotation:annotation-sampled"))
-    implementation("androidx.compose.foundation:foundation:1.0.1")
-    implementation("androidx.compose.ui:ui-tooling:1.4.0")
-    implementation(projectOrArtifact(":navigation:navigation-compose"))
+    implementation(project(":compose:animation:animation"))
+    implementation(project(":compose:animation:animation-core"))
+    implementation(project(":compose:foundation:foundation"))
+    implementation(project(":compose:foundation:foundation-layout"))
+    implementation(project(":compose:runtime:runtime"))
+    implementation(project(":compose:runtime:runtime-saveable"))
+    implementation(project(":compose:ui:ui"))
+    implementation(project(":compose:ui:ui-graphics"))
+    implementation(project(":compose:ui:ui-text"))
+    implementation(project(":compose:ui:ui-tooling-preview"))
+    implementation(project(":compose:ui:ui-unit"))
+    implementation(project(":navigation:navigation-compose"))
+    implementation(project(":navigation:navigation-common"))
+    implementation(project(":navigation:navigation-runtime"))
     implementation("androidx.compose.material:material:1.0.1")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.0.1")
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.5.0")
-    implementation("androidx.savedstate:savedstate-ktx:1.2.1")
+    implementation("androidx.compose.ui:ui-tooling:1.4.0")
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.2")
+    implementation(libs.kotlinSerializationCore)
+    implementation(libs.kotlinSerializationJson)
 }
 
 androidx {
@@ -50,22 +65,10 @@ androidx {
     type = LibraryType.SAMPLES
     inceptionYear = "2020"
     description = "Samples for Compose integration with Navigation"
+    kotlinTarget = KotlinTarget.KOTLIN_2_0
 }
 
 android {
+    compileSdk 35
     namespace "androidx.navigation.compose.samples"
-}
-
-// Workaround for https://github.com/gradle/gradle/issues/19882
-configurations.all {
-    resolutionStrategy.dependencySubstitution {
-        substitute(module("androidx.lifecycle:lifecycle-viewmodel:")).
-                using project(":lifecycle:lifecycle-viewmodel")
-        substitute(module("androidx.lifecycle:lifecycle-viewmodel-ktx:")).
-                using project(":lifecycle:lifecycle-viewmodel-ktx")
-        substitute(module("androidx.lifecycle:lifecycle-viewmodel-savedstate:")).
-                using project(":lifecycle:lifecycle-viewmodel-savedstate")
-        substitute(module("androidx.lifecycle:lifecycle-runtime-ktx:")).
-                using project(":lifecycle:lifecycle-runtime-ktx")
-    }
 }

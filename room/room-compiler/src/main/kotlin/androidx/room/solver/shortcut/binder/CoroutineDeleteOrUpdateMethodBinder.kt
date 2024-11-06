@@ -16,22 +16,20 @@
 
 package androidx.room.solver.shortcut.binder
 
-import androidx.room.compiler.codegen.CodeLanguage
-import androidx.room.compiler.codegen.XMemberName.Companion.packageMember
+import androidx.room.compiler.codegen.XCodeBlock
 import androidx.room.compiler.codegen.XPropertySpec
 import androidx.room.compiler.codegen.XTypeSpec
 import androidx.room.compiler.codegen.box
 import androidx.room.compiler.processing.XType
-import androidx.room.ext.Function1TypeSpec
-import androidx.room.ext.RoomTypeNames
+import androidx.room.ext.InvokeWithLambdaParameter
+import androidx.room.ext.LambdaSpec
+import androidx.room.ext.RoomMemberNames.DB_UTIL_PERFORM_SUSPENDING
 import androidx.room.ext.SQLiteDriverTypeNames
 import androidx.room.solver.CodeGenScope
 import androidx.room.solver.shortcut.result.DeleteOrUpdateMethodAdapter
 import androidx.room.vo.ShortcutQueryParameter
 
-/**
- * Binder for suspending delete and update methods.
- */
+/** Binder for suspending delete and update methods. */
 class CoroutineDeleteOrUpdateMethodBinder(
     val typeArg: XType,
     adapter: DeleteOrUpdateMethodAdapter?,
@@ -44,80 +42,36 @@ class CoroutineDeleteOrUpdateMethodBinder(
         dbProperty: XPropertySpec,
         scope: CodeGenScope
     ) {
-        when (scope.language) {
-            CodeLanguage.JAVA -> convertAndReturnJava(
-                parameters, adapters, dbProperty, scope
-            )
-            CodeLanguage.KOTLIN -> convertAndReturnKotlin(
-                parameters, adapters, dbProperty, scope
-            )
-        }
-    }
-
-    private fun convertAndReturnJava(
-        parameters: List<ShortcutQueryParameter>,
-        adapters: Map<String, Pair<XPropertySpec, Any>>,
-        dbProperty: XPropertySpec,
-        scope: CodeGenScope
-    ) {
         if (adapter == null) {
             return
         }
         val connectionVar = scope.getTmpVar("_connection")
-        scope.builder.addStatement(
-            "return %M(%N, %L, %L, %L, %L)",
-            RoomTypeNames.DB_UTIL.packageMember("performSuspending"),
-            dbProperty,
-            false, // isReadOnly
-            true, // inTransaction
-            Function1TypeSpec(
-                language = scope.language,
-                parameterTypeName = SQLiteDriverTypeNames.CONNECTION,
-                parameterName = connectionVar,
-                returnTypeName = adapter.returnType.asTypeName().box()
-            ) {
-                val functionScope = scope.fork()
-                val functionCode = functionScope.builder.apply {
-                    adapter.generateMethodBody(
-                        scope = functionScope,
-                        parameters = parameters,
-                        adapters = adapters,
-                        connectionVar = connectionVar
-                    )
-                }.build()
-                this.addCode(functionCode)
-            },
-            continuationParamName
-        )
-    }
-
-    private fun convertAndReturnKotlin(
-        parameters: List<ShortcutQueryParameter>,
-        adapters: Map<String, Pair<XPropertySpec, Any>>,
-        dbProperty: XPropertySpec,
-        scope: CodeGenScope
-    ) {
-        if (adapter == null) {
-            return
-        }
-        val connectionVar = scope.getTmpVar("_connection")
-        scope.builder.apply {
-            beginControlFlow(
-                "return %M(%N, %L, %L) { %L ->",
-                RoomTypeNames.DB_UTIL.packageMember("performSuspending"),
-                dbProperty,
-                false, // isReadOnly
-                true, // inTransaction
-                connectionVar
-            ).apply {
-                adapter.generateMethodBody(
-                    scope = scope,
-                    parameters = parameters,
-                    adapters = adapters,
-                    connectionVar = connectionVar
-                )
-            }.endControlFlow()
-        }
+        val performBlock =
+            InvokeWithLambdaParameter(
+                scope = scope,
+                functionName = DB_UTIL_PERFORM_SUSPENDING,
+                argFormat = listOf("%N", "%L", "%L"),
+                args = listOf(dbProperty, /* isReadOnly= */ false, /* inTransaction= */ true),
+                continuationParamName = continuationParamName,
+                lambdaSpec =
+                    object :
+                        LambdaSpec(
+                            parameterTypeName = SQLiteDriverTypeNames.CONNECTION,
+                            parameterName = connectionVar,
+                            returnTypeName = adapter.returnType.asTypeName().box(),
+                            javaLambdaSyntaxAvailable = scope.javaLambdaSyntaxAvailable
+                        ) {
+                        override fun XCodeBlock.Builder.body(scope: CodeGenScope) {
+                            adapter.generateMethodBody(
+                                scope = scope,
+                                parameters = parameters,
+                                adapters = adapters,
+                                connectionVar = connectionVar
+                            )
+                        }
+                    }
+            )
+        scope.builder.add("return %L", performBlock)
     }
 
     override fun convertAndReturnCompat(

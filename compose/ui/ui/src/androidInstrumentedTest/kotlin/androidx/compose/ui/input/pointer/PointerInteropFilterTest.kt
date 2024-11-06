@@ -24,7 +24,6 @@ import android.view.MotionEvent.ACTION_POINTER_DOWN
 import android.view.MotionEvent.ACTION_POINTER_UP
 import android.view.MotionEvent.ACTION_UP
 import android.view.MotionEvent.TOOL_TYPE_UNKNOWN
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
@@ -49,10 +48,8 @@ import org.junit.runner.RunWith
 
 @SmallTest
 @RunWith(AndroidJUnit4::class)
-@OptIn(ExperimentalComposeUiApi::class)
 class PointerInteropFilterTest {
-    @get:Rule
-    val rule = createAndroidComposeRule<TestActivity>()
+    @get:Rule val rule = createAndroidComposeRule<TestActivity>()
 
     private lateinit var pointerInteropFilter: PointerInteropFilter
     private val dispatchedMotionEvents = mutableListOf<MotionEvent>()
@@ -163,14 +160,8 @@ class PointerInteropFilterTest {
                 ACTION_POINTER_DOWN,
                 2,
                 1,
-                arrayOf(
-                    PointerProperties(0),
-                    PointerProperties(1)
-                ),
-                arrayOf(
-                    PointerCoords(3f, 4f),
-                    PointerCoords(10f, 11f)
-                )
+                arrayOf(PointerProperties(0), PointerProperties(1)),
+                arrayOf(PointerCoords(3f, 4f), PointerCoords(10f, 11f))
             )
 
         pointerInteropFilter.pointerInputFilter::onPointerEvent.invokeOverAllPasses(
@@ -214,14 +205,8 @@ class PointerInteropFilterTest {
                 ACTION_POINTER_DOWN,
                 2,
                 0,
-                arrayOf(
-                    PointerProperties(1),
-                    PointerProperties(0)
-                ),
-                arrayOf(
-                    PointerCoords(10f, 11f),
-                    PointerCoords(3f, 4f)
-                )
+                arrayOf(PointerProperties(1), PointerProperties(0)),
+                arrayOf(PointerCoords(10f, 11f), PointerCoords(3f, 4f))
             )
         pointerInteropFilter.pointerInputFilter::onPointerEvent.invokeOverAllPasses(
             pointerEventOf(aDown, motionEvent = downMotionEvent)
@@ -263,14 +248,8 @@ class PointerInteropFilterTest {
                 ACTION_POINTER_DOWN,
                 2,
                 1,
-                arrayOf(
-                    PointerProperties(0),
-                    PointerProperties(1)
-                ),
-                arrayOf(
-                    PointerCoords(3f, 4f),
-                    PointerCoords(10f, 11f)
-                )
+                arrayOf(PointerProperties(0), PointerProperties(1)),
+                arrayOf(PointerCoords(3f, 4f), PointerCoords(10f, 11f))
             )
 
         val aMove2 = aMove1.moveTo(13, 3f, 4f)
@@ -282,14 +261,8 @@ class PointerInteropFilterTest {
                 ACTION_POINTER_UP,
                 2,
                 1,
-                arrayOf(
-                    PointerProperties(0),
-                    PointerProperties(1)
-                ),
-                arrayOf(
-                    PointerCoords(3f, 4f),
-                    PointerCoords(10f, 11f)
-                )
+                arrayOf(PointerProperties(0), PointerProperties(1)),
+                arrayOf(PointerCoords(3f, 4f), PointerCoords(10f, 11f))
             )
 
         pointerInteropFilter.pointerInputFilter::onPointerEvent.invokeOverAllPasses(
@@ -335,14 +308,8 @@ class PointerInteropFilterTest {
                 ACTION_POINTER_DOWN,
                 2,
                 1,
-                arrayOf(
-                    PointerProperties(0),
-                    PointerProperties(1)
-                ),
-                arrayOf(
-                    PointerCoords(3f, 4f),
-                    PointerCoords(10f, 11f)
-                )
+                arrayOf(PointerProperties(0), PointerProperties(1)),
+                arrayOf(PointerCoords(3f, 4f), PointerCoords(10f, 11f))
             )
 
         val aMove2 = aMove1.moveTo(13, 3f, 4f)
@@ -353,14 +320,8 @@ class PointerInteropFilterTest {
                 ACTION_POINTER_UP,
                 2,
                 0,
-                arrayOf(
-                    PointerProperties(0),
-                    PointerProperties(1)
-                ),
-                arrayOf(
-                    PointerCoords(10f, 11f),
-                    PointerCoords(3f, 4f)
-                )
+                arrayOf(PointerProperties(0), PointerProperties(1)),
+                arrayOf(PointerCoords(10f, 11f), PointerCoords(3f, 4f))
             )
 
         pointerInteropFilter.pointerInputFilter::onPointerEvent.invokeOverAllPasses(
@@ -440,14 +401,8 @@ class PointerInteropFilterTest {
                 ACTION_POINTER_DOWN,
                 2,
                 0,
-                arrayOf(
-                    PointerProperties(0),
-                    PointerProperties(1)
-                ),
-                arrayOf(
-                    PointerCoords(13f, 14f),
-                    PointerCoords(3f, 4f)
-                )
+                arrayOf(PointerProperties(0), PointerProperties(1)),
+                arrayOf(PointerCoords(13f, 14f), PointerCoords(3f, 4f))
             )
 
         val aMove2 = aMove1.moveTo(15, 8f, 9f)
@@ -459,14 +414,8 @@ class PointerInteropFilterTest {
                 ACTION_MOVE,
                 2,
                 0,
-                arrayOf(
-                    PointerProperties(0),
-                    PointerProperties(1)
-                ),
-                arrayOf(
-                    PointerCoords(8f, 9f),
-                    PointerCoords(18f, 19f)
-                )
+                arrayOf(PointerProperties(0), PointerProperties(1)),
+                arrayOf(PointerCoords(8f, 9f), PointerCoords(18f, 19f))
             )
 
         pointerInteropFilter.pointerInputFilter::onPointerEvent.invokeOverAllPasses(
@@ -513,14 +462,8 @@ class PointerInteropFilterTest {
                 ACTION_POINTER_DOWN,
                 2,
                 0,
-                arrayOf(
-                    PointerProperties(0),
-                    PointerProperties(1)
-                ),
-                arrayOf(
-                    PointerCoords(13f, 14f),
-                    PointerCoords(3f, 4f)
-                )
+                arrayOf(PointerProperties(0), PointerProperties(1)),
+                arrayOf(PointerCoords(13f, 14f), PointerCoords(3f, 4f))
             )
 
         val aMove2 = aMove1.moveTo(15, 8f, 9f)
@@ -531,14 +474,8 @@ class PointerInteropFilterTest {
                 ACTION_MOVE,
                 2,
                 0,
-                arrayOf(
-                    PointerProperties(0),
-                    PointerProperties(1)
-                ),
-                arrayOf(
-                    PointerCoords(18f, 19f),
-                    PointerCoords(8f, 9f)
-                )
+                arrayOf(PointerProperties(0), PointerProperties(1)),
+                arrayOf(PointerCoords(18f, 19f), PointerCoords(8f, 9f))
             )
 
         pointerInteropFilter.pointerInputFilter::onPointerEvent.invokeOverAllPasses(
@@ -621,14 +558,8 @@ class PointerInteropFilterTest {
                 ACTION_CANCEL,
                 2,
                 0,
-                arrayOf(
-                    PointerProperties(0),
-                    PointerProperties(1)
-                ),
-                arrayOf(
-                    PointerCoords(3f, 4f),
-                    PointerCoords(10f, 11f)
-                )
+                arrayOf(PointerProperties(0), PointerProperties(1)),
+                arrayOf(PointerCoords(3f, 4f), PointerCoords(10f, 11f))
             )
 
         pointerInteropFilter.pointerInputFilter::onPointerEvent.invokeOverAllPasses(
@@ -671,14 +602,8 @@ class PointerInteropFilterTest {
                 ACTION_POINTER_DOWN,
                 2,
                 1,
-                arrayOf(
-                    PointerProperties(0),
-                    PointerProperties(1)
-                ),
-                arrayOf(
-                    PointerCoords(3f, 4f),
-                    PointerCoords(10f, 11f)
-                )
+                arrayOf(PointerProperties(0), PointerProperties(1)),
+                arrayOf(PointerCoords(3f, 4f), PointerCoords(10f, 11f))
             )
 
         val aMove2 = aMove1.moveTo(13, 3f, 4f)
@@ -689,14 +614,8 @@ class PointerInteropFilterTest {
                 ACTION_CANCEL,
                 2,
                 0,
-                arrayOf(
-                    PointerProperties(0),
-                    PointerProperties(1)
-                ),
-                arrayOf(
-                    PointerCoords(3f, 4f),
-                    PointerCoords(10f, 11f)
-                )
+                arrayOf(PointerProperties(0), PointerProperties(1)),
+                arrayOf(PointerCoords(3f, 4f), PointerCoords(10f, 11f))
             )
 
         pointerInteropFilter.pointerInputFilter::onPointerEvent.invokeOverAllPasses(
@@ -731,9 +650,7 @@ class PointerInteropFilterTest {
                 arrayOf(PointerProperties(0)),
                 arrayOf(PointerCoords(3f, 4f))
             )
-        val moveConsumed =
-            down.moveTo(7, 8f, 9f)
-                .apply { consume() }
+        val moveConsumed = down.moveTo(7, 8f, 9f).apply { consume() }
         val expected =
             MotionEvent(
                 7,
@@ -779,19 +696,12 @@ class PointerInteropFilterTest {
                 ACTION_POINTER_DOWN,
                 2,
                 1,
-                arrayOf(
-                    PointerProperties(0),
-                    PointerProperties(1)
-                ),
-                arrayOf(
-                    PointerCoords(3f, 4f),
-                    PointerCoords(13f, 14f)
-                )
+                arrayOf(PointerProperties(0), PointerProperties(1)),
+                arrayOf(PointerCoords(3f, 4f), PointerCoords(13f, 14f))
             )
 
         val aMove2 = aMove1.moveTo(15, 8f, 9f)
-        val bMoveConsumed =
-            bDown.moveTo(15, 18f, 19f).apply { consume() }
+        val bMoveConsumed = bDown.moveTo(15, 18f, 19f).apply { consume() }
 
         val expected =
             MotionEvent(
@@ -799,14 +709,8 @@ class PointerInteropFilterTest {
                 ACTION_CANCEL,
                 2,
                 0,
-                arrayOf(
-                    PointerProperties(0),
-                    PointerProperties(1)
-                ),
-                arrayOf(
-                    PointerCoords(8f, 9f),
-                    PointerCoords(18f, 19f)
-                )
+                arrayOf(PointerProperties(0), PointerProperties(1)),
+                arrayOf(PointerCoords(8f, 9f), PointerCoords(18f, 19f))
             )
 
         pointerInteropFilter.pointerInputFilter::onPointerEvent.invokeOverAllPasses(
@@ -1042,8 +946,7 @@ class PointerInteropFilterTest {
                 arrayOf(PointerCoords(3f, 4f))
             )
 
-        val move1Consumed =
-            down.moveTo(5, 6f, 7f).apply { consume() }
+        val move1Consumed = down.moveTo(5, 6f, 7f).apply { consume() }
         val motionEvent2 =
             MotionEvent(
                 5,
@@ -1195,12 +1098,8 @@ class PointerInteropFilterTest {
                 ACTION_UP,
                 1,
                 0,
-                arrayOf(
-                    PointerProperties(0)
-                ),
-                arrayOf(
-                    PointerCoords(3f, 4f)
-                )
+                arrayOf(PointerProperties(0)),
+                arrayOf(PointerCoords(3f, 4f))
             )
 
         val bDown = down(11, 12, 13f, 14f)
@@ -1210,12 +1109,8 @@ class PointerInteropFilterTest {
                 ACTION_DOWN,
                 1,
                 0,
-                arrayOf(
-                    PointerProperties(0)
-                ),
-                arrayOf(
-                    PointerCoords(13f, 14f)
-                )
+                arrayOf(PointerProperties(0)),
+                arrayOf(PointerCoords(13f, 14f))
             )
 
         pointerInteropFilter.pointerInputFilter::onPointerEvent.invokeOverAllPasses(
@@ -1908,12 +1803,8 @@ class PointerInteropFilterTest {
                 ACTION_DOWN,
                 1,
                 0,
-                arrayOf(
-                    PointerProperties(0)
-                ),
-                arrayOf(
-                    PointerCoords(13f, 14f)
-                )
+                arrayOf(PointerProperties(0)),
+                arrayOf(PointerCoords(13f, 14f))
             )
 
         pointerInteropFilter.pointerInputFilter::onPointerEvent.invokeOverAllPasses(
@@ -2445,14 +2336,8 @@ class PointerInteropFilterTest {
                 ACTION_POINTER_DOWN,
                 2,
                 1,
-                arrayOf(
-                    PointerProperties(0),
-                    PointerProperties(1)
-                ),
-                arrayOf(
-                    PointerCoords(3f, 4f),
-                    PointerCoords(13f, 14f)
-                )
+                arrayOf(PointerProperties(0), PointerProperties(1)),
+                arrayOf(PointerCoords(3f, 4f), PointerCoords(13f, 14f))
             )
 
         val aMove2 = aMove1.moveBy(15, 8f, 9f)
@@ -2463,14 +2348,8 @@ class PointerInteropFilterTest {
                 ACTION_MOVE,
                 2,
                 1,
-                arrayOf(
-                    PointerProperties(0),
-                    PointerProperties(1)
-                ),
-                arrayOf(
-                    PointerCoords(8f, 9f),
-                    PointerCoords(18f, 19f)
-                )
+                arrayOf(PointerProperties(0), PointerProperties(1)),
+                arrayOf(PointerCoords(8f, 9f), PointerCoords(18f, 19f))
             )
 
         retVal = true
@@ -2519,14 +2398,8 @@ class PointerInteropFilterTest {
                 ACTION_POINTER_DOWN,
                 2,
                 1,
-                arrayOf(
-                    PointerProperties(0),
-                    PointerProperties(1)
-                ),
-                arrayOf(
-                    PointerCoords(3f, 4f),
-                    PointerCoords(13f, 14f)
-                )
+                arrayOf(PointerProperties(0), PointerProperties(1)),
+                arrayOf(PointerCoords(3f, 4f), PointerCoords(13f, 14f))
             )
 
         val aMove2 = aMove1.moveBy(15, 8f, 9f)
@@ -2537,14 +2410,8 @@ class PointerInteropFilterTest {
                 ACTION_MOVE,
                 2,
                 1,
-                arrayOf(
-                    PointerProperties(0),
-                    PointerProperties(1)
-                ),
-                arrayOf(
-                    PointerCoords(8f, 9f),
-                    PointerCoords(18f, 19f)
-                )
+                arrayOf(PointerProperties(0), PointerProperties(1)),
+                arrayOf(PointerCoords(8f, 9f), PointerCoords(18f, 19f))
             )
 
         retVal = true
@@ -2626,12 +2493,8 @@ class PointerInteropFilterTest {
                 ACTION_UP,
                 1,
                 0,
-                arrayOf(
-                    PointerProperties(0)
-                ),
-                arrayOf(
-                    PointerCoords(3f, 4f)
-                )
+                arrayOf(PointerProperties(0)),
+                arrayOf(PointerCoords(3f, 4f))
             )
         retVal = true
 
@@ -2755,36 +2618,22 @@ class PointerInteropFilterTest {
                 ACTION_POINTER_DOWN,
                 2,
                 1,
-                arrayOf(
-                    PointerProperties(0),
-                    PointerProperties(1)
-                ),
-                arrayOf(
-                    PointerCoords(3f, 4f),
-                    PointerCoords(13f, 14f)
-                )
+                arrayOf(PointerProperties(0), PointerProperties(1)),
+                arrayOf(PointerCoords(3f, 4f), PointerCoords(13f, 14f))
             )
 
         val aMove2 = aMove1.moveTo(15, 8f, 9f)
         val xMove = 18f
         val yMove = 19f
-        val bMoveConsumed =
-            bDown.moveTo(15, xMove, yMove)
-                .apply { consume() }
+        val bMoveConsumed = bDown.moveTo(15, xMove, yMove).apply { consume() }
         val motionEvent3 =
             MotionEvent(
                 7,
                 ACTION_MOVE,
                 2,
                 1,
-                arrayOf(
-                    PointerProperties(0),
-                    PointerProperties(1)
-                ),
-                arrayOf(
-                    PointerCoords(8f, 9f),
-                    PointerCoords(18f, 19f)
-                )
+                arrayOf(PointerProperties(0), PointerProperties(1)),
+                arrayOf(PointerCoords(8f, 9f), PointerCoords(18f, 19f))
             )
 
         pointerInteropFilter.pointerInputFilter::onPointerEvent.invokeOverAllPasses(
@@ -2880,12 +2729,8 @@ class PointerInteropFilterTest {
                 ACTION_UP,
                 1,
                 0,
-                arrayOf(
-                    PointerProperties(0)
-                ),
-                arrayOf(
-                    PointerCoords(3f, 4f)
-                )
+                arrayOf(PointerProperties(0)),
+                arrayOf(PointerCoords(3f, 4f))
             )
         val bDown = down(11, 12, 13f, 14f)
         val motionEvent3 =
@@ -3719,14 +3564,8 @@ class PointerInteropFilterTest {
                 ACTION_CANCEL,
                 2,
                 0,
-                arrayOf(
-                    PointerProperties(0),
-                    PointerProperties(1)
-                ),
-                arrayOf(
-                    PointerCoords(3f, 4f),
-                    PointerCoords(10f, 11f)
-                )
+                arrayOf(PointerProperties(0), PointerProperties(1)),
+                arrayOf(PointerCoords(3f, 4f), PointerCoords(10f, 11f))
             )
 
         pointerInteropFilter.pointerInputFilter::onPointerEvent.invokeOverAllPasses(
@@ -3816,9 +3655,7 @@ class PointerInteropFilterTest {
                 arrayOf(PointerProperties(0)),
                 arrayOf(PointerCoords(3f, 4f))
             )
-        val moveConsumed =
-            down.moveTo(7, 8f, 9f)
-                .apply { consume() }
+        val moveConsumed = down.moveTo(7, 8f, 9f).apply { consume() }
         val motionEvent2 =
             MotionEvent(
                 7,
@@ -3877,8 +3714,7 @@ class PointerInteropFilterTest {
             )
 
         val aMove2 = aMove1.moveTo(15, 8f, 9f)
-        val bMoveConsumed =
-            bDown.moveTo(15, 18f, 19f).apply { consume() }
+        val bMoveConsumed = bDown.moveTo(15, 18f, 19f).apply { consume() }
         val motionEvent3 =
             MotionEvent(
                 7,
@@ -4335,26 +4171,32 @@ class PointerInteropFilterTest {
     fun testInspectorValue() {
         val onTouchEvent: (MotionEvent) -> Boolean = { true }
         rule.setContent {
-            val modifier = Modifier.pointerInteropFilter(disallowInterceptRequester, onTouchEvent)
-                as InspectableValue
+            val modifier =
+                Modifier.pointerInteropFilter(disallowInterceptRequester, onTouchEvent)
+                    as InspectableValue
             assertThat(modifier.nameFallback).isEqualTo("pointerInteropFilter")
             assertThat(modifier.valueOverride).isNull()
-            assertThat(modifier.inspectableElements.asIterable()).containsExactly(
-                ValueElement("requestDisallowInterceptTouchEvent", disallowInterceptRequester),
-                ValueElement("onTouchEvent", onTouchEvent)
-            )
+            assertThat(modifier.inspectableElements.asIterable())
+                .containsExactly(
+                    ValueElement("requestDisallowInterceptTouchEvent", disallowInterceptRequester),
+                    ValueElement("onTouchEvent", onTouchEvent)
+                )
         }
     }
 
     private class MockCoordinates : LayoutCoordinates {
         override val size: IntSize
             get() = IntSize.Zero
+
         override val providedAlignmentLines: Set<AlignmentLine>
             get() = emptySet()
+
         override val parentLayoutCoordinates: LayoutCoordinates?
             get() = null
+
         override val parentCoordinates: LayoutCoordinates?
             get() = null
+
         override val isAttached: Boolean
             get() = true
 
@@ -4363,6 +4205,7 @@ class PointerInteropFilterTest {
         override fun localToWindow(relativeToLocal: Offset): Offset = Offset.Zero
 
         override fun localToRoot(relativeToLocal: Offset): Offset = Offset.Zero
+
         override fun localPositionOf(
             sourceCoordinates: LayoutCoordinates,
             relativeToSource: Offset
@@ -4387,21 +4230,22 @@ private fun MotionEvent(
     pointerProperties: Array<MotionEvent.PointerProperties>,
     pointerCoords: Array<MotionEvent.PointerCoords>,
     downTime: Long = 0
-) = MotionEvent.obtain(
-    downTime,
-    eventTime.toLong(),
-    action + (actionIndex shl MotionEvent.ACTION_POINTER_INDEX_SHIFT),
-    numPointers,
-    pointerProperties,
-    pointerCoords,
-    0,
-    0,
-    0f,
-    0f,
-    0,
-    0,
-    0,
-    0
-)
+) =
+    MotionEvent.obtain(
+        downTime,
+        eventTime.toLong(),
+        action + (actionIndex shl MotionEvent.ACTION_POINTER_INDEX_SHIFT),
+        numPointers,
+        pointerProperties,
+        pointerCoords,
+        0,
+        0,
+        0f,
+        0f,
+        0,
+        0,
+        0,
+        0
+    )
 
 internal typealias PointerEventHandler = (PointerEvent, PointerEventPass, IntSize) -> Unit

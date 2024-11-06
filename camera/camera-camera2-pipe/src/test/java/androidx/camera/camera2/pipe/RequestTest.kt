@@ -31,8 +31,7 @@ internal class RequestTest {
     private val request =
         Request(
             listOf(StreamId(1)),
-            parameters =
-            mapOf(CaptureRequest.EDGE_MODE to CaptureRequest.EDGE_MODE_HIGH_QUALITY),
+            parameters = mapOf(CaptureRequest.EDGE_MODE to CaptureRequest.EDGE_MODE_HIGH_QUALITY),
             extras = mapOf(FakeMetadata.TEST_KEY to 42)
         )
 
@@ -64,9 +63,21 @@ internal class RequestTest {
         assertThat("$request1").contains("1")
         assertThat("$request1").contains("Request")
 
-        assertThat("$request").contains("42")
-        assertThat("$request").contains("parameters")
-        assertThat("$request").contains("extras")
+        val requestString = request.toStringVerbose()
+        assertThat(requestString).contains("42")
+        assertThat(requestString).contains("parameters")
+        assertThat(requestString).contains("extras")
+    }
+
+    @Test
+    fun requestHasNiceLoggingString_notEqual() {
+        val request1 = Request(listOf(StreamId(1)))
+        val request2 = Request(listOf(StreamId(1)))
+
+        assertThat(request1).isNotEqualTo(request2)
+
+        // The Request string should be different if the Requests themselves are different.
+        assertThat("$request1").isNotEqualTo("$request2")
     }
 
     @Test
@@ -88,10 +99,11 @@ internal class RequestTest {
         // Check with an invalid test key
         assertThat(request.get(CaptureRequest.CONTROL_AE_MODE)).isNull()
         assertThat(
-            request.getOrDefault(
-                CaptureRequest.CONTROL_AE_MODE, default = CaptureRequest.CONTROL_AE_MODE_ON
+                request.getOrDefault(
+                    CaptureRequest.CONTROL_AE_MODE,
+                    default = CaptureRequest.CONTROL_AE_MODE_ON
+                )
             )
-        )
             .isEqualTo(CaptureRequest.CONTROL_AE_MODE_ON)
     }
 }

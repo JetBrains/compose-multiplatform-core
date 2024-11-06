@@ -20,7 +20,6 @@ import android.hardware.camera2.CameraAccessException
 import android.hardware.camera2.CameraManager
 import android.os.Build
 import androidx.annotation.GuardedBy
-import androidx.annotation.RequiresApi
 import androidx.camera.camera2.pipe.CameraId
 import androidx.camera.camera2.pipe.core.Debug
 import androidx.camera.camera2.pipe.core.Log
@@ -30,7 +29,6 @@ import javax.inject.Provider
 import javax.inject.Singleton
 import kotlinx.coroutines.withContext
 
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 @Singleton
 internal class Camera2DeviceCache
 @Inject
@@ -40,11 +38,9 @@ constructor(
 ) {
     private val lock = Any()
 
-    @GuardedBy("lock")
-    private var openableCameras: List<CameraId>? = null
+    @GuardedBy("lock") private var openableCameras: List<CameraId>? = null
 
-    @GuardedBy("lock")
-    private var concurrentCameras: Set<Set<CameraId>>? = null
+    @GuardedBy("lock") private var concurrentCameras: Set<Set<CameraId>>? = null
 
     suspend fun getCameraIds(): List<CameraId> {
         val cameras = synchronized(lock) { openableCameras }
@@ -138,8 +134,8 @@ constructor(
                 Log.warn(e) { "Failed to query CameraManager#getConcurrentStreamingCameraIds" }
                 return null
             }
-        return cameraIdsSet.map {
-            it.map { cameraIdString -> CameraId(cameraIdString) }.toSet()
-        }.toSet()
+        return cameraIdsSet
+            .map { it.map { cameraIdString -> CameraId(cameraIdString) }.toSet() }
+            .toSet()
     }
 }

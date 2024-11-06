@@ -19,6 +19,7 @@ package androidx.compose.testutils
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -27,12 +28,18 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.FocusState
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.focusTarget
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
+import com.google.common.truth.Truth.assertThat
 import kotlin.coroutines.suspendCoroutine
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -46,263 +53,258 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class AndroidComposeTestCaseRunnerTest {
 
-    @get:Rule
-    val composeTestRule = createAndroidComposeRule<ComponentActivity>()
+    @get:Rule val composeTestRule = createAndroidComposeRule<ComponentActivity>()
 
     internal fun <A : ComponentActivity> AndroidComposeTestRule<ActivityScenarioRule<A>, A>
-        .forGivenContent(
-        composable: @Composable () -> Unit
-    ): ComposeTestCaseSetup {
-        return forGivenTestCase(object : ComposeTestCase {
-            @Composable
-            override fun Content() {
-                composable()
+        .forGivenContent(composable: @Composable () -> Unit): ComposeTestCaseSetup {
+        return forGivenTestCase(
+            object : ComposeTestCase {
+                @Composable
+                override fun Content() {
+                    composable()
+                }
             }
-        })
+        )
     }
 
     @Test
     fun foreverRecomposing_viaModel_shouldFail() {
         val count = mutableStateOf(0)
-        composeTestRule.forGivenContent {
-            Text("Hello ${count.value}")
-            count.value++
-        }.performTestWithEventsControl {
-            // Force the first recompose as the changes during initial composition are not
-            // considered to invalidate the composition.
-            count.value++
-            assertFailsWith<AssertionError>(
-                "Changes are still pending after '10' frames."
-            ) {
-                doFramesAssertAllHadChangesExceptLastOne(10)
+        composeTestRule
+            .forGivenContent {
+                Text("Hello ${count.value}")
+                count.value++
             }
-        }
+            .performTestWithEventsControl {
+                // Force the first recompose as the changes during initial composition are not
+                // considered to invalidate the composition.
+                count.value++
+                assertFailsWith<AssertionError>("Changes are still pending after '10' frames.") {
+                    doFramesAssertAllHadChangesExceptLastOne(10)
+                }
+            }
     }
 
     // @Test //- TODO: Does not work, performs only 1 frame until stable
     fun foreverRecomposing_viaState_shouldFail() {
-        composeTestRule.forGivenContent {
-            val state = remember { mutableStateOf(0) }
-            Text("Hello ${state.value}")
-            state.value++
-        }.performTestWithEventsControl {
-            assertFailsWith<AssertionError>(
-                "Changes are still pending after '10' frames."
-            ) {
-                doFramesAssertAllHadChangesExceptLastOne(10)
+        composeTestRule
+            .forGivenContent {
+                val state = remember { mutableStateOf(0) }
+                Text("Hello ${state.value}")
+                state.value++
             }
-        }
+            .performTestWithEventsControl {
+                assertFailsWith<AssertionError>("Changes are still pending after '10' frames.") {
+                    doFramesAssertAllHadChangesExceptLastOne(10)
+                }
+            }
     }
 
     // @Test //- TODO: Does not work, performs only 1 frame until stable
     fun foreverRecomposing_viaStatePreCommit_shouldFail() {
-        composeTestRule.forGivenContent {
-            val state = remember { mutableStateOf(0) }
-            Text("Hello ${state.value}")
-            SideEffect {
-                state.value++
+        composeTestRule
+            .forGivenContent {
+                val state = remember { mutableStateOf(0) }
+                Text("Hello ${state.value}")
+                SideEffect { state.value++ }
             }
-        }.performTestWithEventsControl {
-            assertFailsWith<AssertionError>(
-                "Changes are still pending after '10' frames."
-            ) {
-                doFramesAssertAllHadChangesExceptLastOne(10)
+            .performTestWithEventsControl {
+                assertFailsWith<AssertionError>("Changes are still pending after '10' frames.") {
+                    doFramesAssertAllHadChangesExceptLastOne(10)
+                }
             }
-        }
     }
 
     @Test
     fun recomposeZeroTime() {
-        composeTestRule.forGivenContent {
-            // Just empty composable
-        }.performTestWithEventsControl {
-            doFrame()
-            assertNoPendingChanges()
-        }
+        composeTestRule
+            .forGivenContent {
+                // Just empty composable
+            }
+            .performTestWithEventsControl {
+                doFrame()
+                assertNoPendingChanges()
+            }
     }
 
     @Test
     fun recomposeZeroTime2() {
-        composeTestRule.forGivenContent {
-            Text("Hello")
-        }.performTestWithEventsControl {
-            doFrame()
-            assertNoPendingChanges()
-        }
+        composeTestRule
+            .forGivenContent { Text("Hello") }
+            .performTestWithEventsControl {
+                doFrame()
+                assertNoPendingChanges()
+            }
     }
 
     @Test
     fun recomposeOnce() {
-        composeTestRule.forGivenContent {
-            val state = remember { mutableStateOf(0) }
-            if (state.value < 1) {
-                state.value++
+        composeTestRule
+            .forGivenContent {
+                val state = remember { mutableStateOf(0) }
+                if (state.value < 1) {
+                    state.value++
+                }
             }
-        }.performTestWithEventsControl {
-            doFrame()
-            assertNoPendingChanges()
-        }
+            .performTestWithEventsControl {
+                doFrame()
+                assertNoPendingChanges()
+            }
     }
 
     // @Test //- TODO: Does not work, performs only 1 frame until stable
     fun recomposeTwice() {
-        composeTestRule.forGivenContent {
-            val state = remember { mutableStateOf(0) }
-            if (state.value < 2) {
-                state.value++
+        composeTestRule
+            .forGivenContent {
+                val state = remember { mutableStateOf(0) }
+                if (state.value < 2) {
+                    state.value++
+                }
             }
-        }.performTestWithEventsControl {
-            doFramesAssertAllHadChangesExceptLastOne(2)
-        }
+            .performTestWithEventsControl { doFramesAssertAllHadChangesExceptLastOne(2) }
     }
 
     @Test
     fun recomposeTwice2() {
         val count = mutableStateOf(0)
-        composeTestRule.forGivenContent {
-            Text("Hello ${count.value}")
-            if (count.value < 3) {
-                count.value++
+        composeTestRule
+            .forGivenContent {
+                Text("Hello ${count.value}")
+                if (count.value < 3) {
+                    count.value++
+                }
             }
-        }.performTestWithEventsControl {
-            // Force the first recompose as the changes during initial composition are not
-            // considered to invalidate the composition.
-            count.value++
-            doFramesAssertAllHadChangesExceptLastOne(2)
-        }
+            .performTestWithEventsControl {
+                // Force the first recompose as the changes during initial composition are not
+                // considered to invalidate the composition.
+                count.value++
+                doFramesAssertAllHadChangesExceptLastOne(2)
+            }
     }
 
     @Test
     fun measurePositiveOnEmptyShouldFail() {
-        composeTestRule.forGivenContent {
-            // Just empty composable
-        }.performTestWithEventsControl {
-            doFrame()
-            assertFailsWith<AssertionError> {
-                assertMeasureSizeIsPositive()
+        composeTestRule
+            .forGivenContent {
+                // Just empty composable
             }
-        }
+            .performTestWithEventsControl {
+                doFrame()
+                assertFailsWith<AssertionError> { assertMeasureSizeIsPositive() }
+            }
     }
 
     @Test
     fun measurePositive() {
-        composeTestRule.forGivenContent {
-            Box {
-                Text("Hello")
+        composeTestRule
+            .forGivenContent { Box { Text("Hello") } }
+            .performTestWithEventsControl {
+                doFrame()
+                assertMeasureSizeIsPositive()
             }
-        }.performTestWithEventsControl {
-            doFrame()
-            assertMeasureSizeIsPositive()
-        }
+    }
+
+    @Test
+    fun layout_preservesActiveFocus() {
+        lateinit var focusState: FocusState
+        composeTestRule
+            .forGivenContent {
+                val focusRequester = FocusRequester()
+                Box(
+                    Modifier.fillMaxSize()
+                        .onFocusChanged { focusState = it }
+                        .focusRequester(focusRequester)
+                        .focusTarget()
+                )
+                LaunchedEffect(Unit) { focusRequester.requestFocus() }
+            }
+            .performTestWithEventsControl {
+                doFrame()
+                assertThat(focusState.isFocused).isTrue()
+            }
     }
 
     @Test
     fun countLaunchedCoroutines_noContentLaunches() {
-        composeTestRule.forGivenContent {
-            Box {
-                Text("Hello")
-            }
-        }.performTestWithEventsControl {
-            assertCoroutinesCount(0)
-        }
+        composeTestRule
+            .forGivenContent { Box { Text("Hello") } }
+            .performTestWithEventsControl { assertCoroutinesCount(0) }
     }
 
     @Test
     fun countLaunchedCoroutines_modifierLaunches() {
-        val node = object : Modifier.Node() {
-            override fun onAttach() {
-                super.onAttach()
-                coroutineScope.launch { }
+        val node =
+            object : Modifier.Node() {
+                override fun onAttach() {
+                    super.onAttach()
+                    coroutineScope.launch {}
+                }
             }
-        }
-        val element = object : ModifierNodeElement<Modifier.Node>() {
-            override fun create(): Modifier.Node = node
+        val element =
+            object : ModifierNodeElement<Modifier.Node>() {
+                override fun create(): Modifier.Node = node
 
-            override fun update(node: Modifier.Node) {
-                // no op
+                override fun update(node: Modifier.Node) {
+                    // no op
+                }
+
+                override fun hashCode(): Int = 0
+
+                override fun equals(other: Any?): Boolean = false
             }
-
-            override fun hashCode(): Int = 0
-
-            override fun equals(other: Any?): Boolean = false
-        }
-        composeTestRule.forGivenContent {
-            Box(Modifier.then(element)) {
-                Text("Hello")
-            }
-        }.performTestWithEventsControl {
-            assertCoroutinesCount(1)
-        }
+        composeTestRule
+            .forGivenContent { Box(Modifier.then(element)) { Text("Hello") } }
+            .performTestWithEventsControl { assertCoroutinesCount(1) }
     }
 
     @Test
     fun countLaunchedCoroutines_launchedEffect() {
-        composeTestRule.forGivenContent {
-            LaunchedEffect(Unit) {
-                launch { }
-            }
-        }.performTestWithEventsControl {
-            assertCoroutinesCount(2)
-        }
+        composeTestRule
+            .forGivenContent { LaunchedEffect(Unit) { launch {} } }
+            .performTestWithEventsControl { assertCoroutinesCount(2) }
     }
 
     @Test
     fun countLaunchedCoroutines_scopeLaunches_lazy() {
-        composeTestRule.forGivenContent {
-            val scope = rememberCoroutineScope()
-            Box(Modifier.clickable {
-                scope.launch { }
-            }) {
-                Text("Hello")
+        composeTestRule
+            .forGivenContent {
+                val scope = rememberCoroutineScope()
+                Box(Modifier.clickable { scope.launch {} }) { Text("Hello") }
             }
-        }.performTestWithEventsControl {
-            assertCoroutinesCount(0)
-        }
+            .performTestWithEventsControl { assertCoroutinesCount(0) }
     }
 
     @Test
     fun countLaunchedCoroutines_suspend() {
-        composeTestRule.forGivenContent {
-            LaunchedEffect(Unit) {
-                suspendCancellableCoroutine {}
-            }
+        composeTestRule
+            .forGivenContent {
+                LaunchedEffect(Unit) { suspendCancellableCoroutine {} }
 
-            LaunchedEffect(Unit) {
-                suspendCoroutine {}
+                LaunchedEffect(Unit) { suspendCoroutine {} }
             }
-        }.performTestWithEventsControl {
-            assertCoroutinesCount(2)
-        }
+            .performTestWithEventsControl { assertCoroutinesCount(2) }
     }
 
     @Test
     fun countLaunchedCoroutines_delay() {
-        composeTestRule.forGivenContent {
-            LaunchedEffect(Unit) {
-                delay(1_000L)
-            }
+        composeTestRule
+            .forGivenContent {
+                LaunchedEffect(Unit) { delay(1_000L) }
 
-            LaunchedEffect(Unit) {
-                launch { }
+                LaunchedEffect(Unit) { launch {} }
             }
-        }.performTestWithEventsControl {
-            assertCoroutinesCount(3)
-        }
+            .performTestWithEventsControl { assertCoroutinesCount(3) }
     }
 
     @Test
     fun countLaunchedCoroutines_yield() {
-        composeTestRule.forGivenContent {
-            LaunchedEffect(Unit) {
-                yield()
-            }
+        composeTestRule
+            .forGivenContent {
+                LaunchedEffect(Unit) { yield() }
 
-            LaunchedEffect(Unit) {
-                launch { }
+                LaunchedEffect(Unit) { launch {} }
             }
-        }.performTestWithEventsControl {
-            assertCoroutinesCount(3)
-        }
+            .performTestWithEventsControl { assertCoroutinesCount(3) }
     }
 
     private inline fun <reified T : Throwable> assertFailsWith(
@@ -317,8 +319,7 @@ class AndroidComposeTestCaseRunnerTest {
             }
             if (expectedErrorMessage != null && e.localizedMessage != expectedErrorMessage) {
                 throw AssertionError(
-                    "Expected error message not found, received: '" +
-                        "${e.localizedMessage}'"
+                    "Expected error message not found, received: '" + "${e.localizedMessage}'"
                 )
             }
             return

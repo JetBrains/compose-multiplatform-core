@@ -16,15 +16,12 @@
 
 package androidx.camera.camera2.pipe.integration.compat.quirk
 
-import androidx.annotation.RequiresApi
 import androidx.camera.core.impl.Quirk
 
 /**
- * A quirk interface which denotes CameraX should use torch for flash when flashMode is
- * ON or AUTO.
+ * A quirk interface which denotes CameraX should use torch for flash when flashMode is ON or AUTO.
  *
  * Subclasses of this interface can denote the reason why torch is required instead of AE
  * pre-capture.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
-interface UseTorchAsFlashQuirk : Quirk
+public interface UseTorchAsFlashQuirk : Quirk

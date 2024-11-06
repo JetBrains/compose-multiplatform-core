@@ -23,11 +23,12 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.testutils.expectError
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.semantics.editable
 import androidx.compose.ui.semantics.insertTextAtCursor
+import androidx.compose.ui.semantics.isEditable
 import androidx.compose.ui.semantics.onImeAction
 import androidx.compose.ui.semantics.requestFocus
 import androidx.compose.ui.semantics.semantics
@@ -50,8 +51,7 @@ class TextActionsTest {
 
     private val fieldTag = "Field"
 
-    @get:Rule
-    val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule()
 
     @Composable
     fun TextFieldUi(
@@ -63,9 +63,7 @@ class TextActionsTest {
     ) {
         val state = remember { mutableStateOf("") }
         BasicTextField(
-            modifier = Modifier
-                .testTag(fieldTag)
-                .border(0.dp, Color.Black),
+            modifier = Modifier.testTag(fieldTag).border(0.dp, Color.Black),
             value = state.value,
             keyboardOptions = KeyboardOptions(imeAction = imeAction),
             keyboardActions = keyboardActions,
@@ -81,10 +79,13 @@ class TextActionsTest {
     @Test
     fun sendText_requestFocusNotSupported_shouldFail() {
         rule.setContent {
-            BoundaryNode(testTag = "node", Modifier.semantics {
-                editable()
-                setText { true }
-            })
+            BoundaryNode(
+                testTag = "node",
+                Modifier.semantics {
+                    isEditable = true
+                    setText { true }
+                }
+            )
         }
 
         expectErrorMessageStartsWith(
@@ -92,18 +93,21 @@ class TextActionsTest {
                 "Failed to assert the following: (RequestFocus is defined)\n" +
                 "Semantics of the node:"
         ) {
-            rule.onNodeWithTag("node")
-                .performTextInput("hello")
+            rule.onNodeWithTag("node").performTextInput("hello")
         }
     }
 
     @Test
     fun performTextInput_setTextNotSupported_shouldFail() {
         rule.setContent {
-            BoundaryNode(fieldTag, Modifier.semantics {
-                editable()
-                insertTextAtCursor { true }
-            })
+            BoundaryNode(
+                fieldTag,
+                Modifier.semantics {
+                    isEditable = true
+                    insertTextAtCursor { true }
+                    requestFocus { true }
+                }
+            )
         }
 
         expectErrorMessageStartsWith(
@@ -111,19 +115,21 @@ class TextActionsTest {
                 "Failed to assert the following: (SetText is defined)\n" +
                 "Semantics of the node:"
         ) {
-            rule.onNodeWithTag(fieldTag)
-                .performTextInput("")
+            rule.onNodeWithTag(fieldTag).performTextInput("")
         }
     }
 
     @Test
     fun performTextInput_insertTextAtCursorNotSupported_shouldFail() {
         rule.setContent {
-            BoundaryNode(fieldTag, Modifier.semantics {
-                editable()
-                setText { true }
-                requestFocus { true }
-            })
+            BoundaryNode(
+                fieldTag,
+                Modifier.semantics {
+                    isEditable = true
+                    setText { true }
+                    requestFocus { true }
+                }
+            )
         }
 
         expectErrorMessageStartsWith(
@@ -131,63 +137,40 @@ class TextActionsTest {
                 "Failed to assert the following: (InsertTextAtCursor is defined)\n" +
                 "Semantics of the node:"
         ) {
-            rule.onNodeWithTag(fieldTag)
-                .performTextInput("")
+            rule.onNodeWithTag(fieldTag).performTextInput("")
         }
     }
 
     @Test
     fun sendText_clearText() {
         var lastSeenText = ""
-        rule.setContent {
-            TextFieldUi {
-                lastSeenText = it
-            }
-        }
+        rule.setContent { TextFieldUi { lastSeenText = it } }
 
-        rule.onNodeWithTag(fieldTag)
-            .performTextInput("Hello!")
+        rule.onNodeWithTag(fieldTag).performTextInput("Hello!")
 
-        rule.runOnIdle {
-            assertThat(lastSeenText).isEqualTo("Hello!")
-        }
+        rule.runOnIdle { assertThat(lastSeenText).isEqualTo("Hello!") }
 
-        rule.onNodeWithTag(fieldTag)
-            .performTextClearance()
+        rule.onNodeWithTag(fieldTag).performTextClearance()
 
-        rule.runOnIdle {
-            assertThat(lastSeenText).isEqualTo("")
-        }
+        rule.runOnIdle { assertThat(lastSeenText).isEqualTo("") }
     }
 
     @Test
     fun sendTextRepeatedly_shouldAppend() {
         var lastSeenText = ""
-        rule.setContent {
-            TextFieldUi {
-                lastSeenText = it
-            }
-        }
+        rule.setContent { TextFieldUi { lastSeenText = it } }
 
-        rule.onNodeWithTag(fieldTag)
-            .performTextInput("Hello")
+        rule.onNodeWithTag(fieldTag).performTextInput("Hello")
 
         // "Type" one character at a time.
-        " world!".forEach {
-            rule.onNodeWithTag(fieldTag)
-                .performTextInput(it.toString())
-        }
+        " world!".forEach { rule.onNodeWithTag(fieldTag).performTextInput(it.toString()) }
 
-        rule.runOnIdle {
-            assertThat(lastSeenText).isEqualTo("Hello world!")
-        }
+        rule.runOnIdle { assertThat(lastSeenText).isEqualTo("Hello world!") }
     }
 
     @Test
     fun sendText_whenDisabled_shouldFail() {
-        rule.setContent {
-            TextFieldUi(enabled = false)
-        }
+        rule.setContent { TextFieldUi(enabled = false) }
 
         expectErrorMessageStartsWith(
             "Failed to perform text input.\n" +
@@ -201,38 +184,24 @@ class TextActionsTest {
     @Test
     fun sendText_whenReadOnly_isNotAllowed() {
         var lastSeenText = ""
-        rule.setContent {
-            TextFieldUi(readOnly = true)
-        }
+        rule.setContent { TextFieldUi(readOnly = true) }
 
-        rule.onNodeWithTag(fieldTag).performTextInput("hi")
-        rule.runOnIdle {
-            assertThat(lastSeenText).isEqualTo("")
-        }
+        expectError<AssertionError> { rule.onNodeWithTag(fieldTag).performTextInput("hi") }
+        rule.runOnIdle { assertThat(lastSeenText).isEqualTo("") }
     }
 
     @Test
     fun replaceText() {
         var lastSeenText = ""
-        rule.setContent {
-            TextFieldUi {
-                lastSeenText = it
-            }
-        }
+        rule.setContent { TextFieldUi { lastSeenText = it } }
 
-        rule.onNodeWithTag(fieldTag)
-            .performTextInput("Hello")
+        rule.onNodeWithTag(fieldTag).performTextInput("Hello")
 
-        rule.runOnIdle {
-            assertThat(lastSeenText).isEqualTo("Hello")
-        }
+        rule.runOnIdle { assertThat(lastSeenText).isEqualTo("Hello") }
 
-        rule.onNodeWithTag(fieldTag)
-            .performTextReplacement("world")
+        rule.onNodeWithTag(fieldTag).performTextReplacement("world")
 
-        rule.runOnIdle {
-            assertThat(lastSeenText).isEqualTo("world")
-        }
+        rule.runOnIdle { assertThat(lastSeenText).isEqualTo("world") }
     }
 
     @Test
@@ -259,12 +228,9 @@ class TextActionsTest {
         }
         assertThat(actionPerformed).isFalse()
 
-        rule.onNodeWithTag(fieldTag)
-            .performImeAction()
+        rule.onNodeWithTag(fieldTag).performImeAction()
 
-        rule.runOnIdle {
-            assertThat(actionPerformed).isTrue()
-        }
+        rule.runOnIdle { assertThat(actionPerformed).isTrue() }
     }
 
     @Test
@@ -306,56 +272,56 @@ class TextActionsTest {
                 "Failed to assert the following: (NOT (ImeAction = 'Default'))\n" +
                 "Semantics of the node:"
         ) {
-            rule.onNodeWithTag(fieldTag)
-                .performImeAction()
+            rule.onNodeWithTag(fieldTag).performImeAction()
         }
     }
 
     @Test
     fun performImeAction_actionReturnsFalse_shouldFail() {
         rule.setContent {
-            BoundaryNode(fieldTag, Modifier.semantics {
-                editable()
-                setText { true }
-                requestFocus { true }
-                insertTextAtCursor { true }
-                onImeAction(ImeAction.Done) { false }
-            })
+            BoundaryNode(
+                fieldTag,
+                Modifier.semantics {
+                    isEditable = true
+                    setText { true }
+                    requestFocus { true }
+                    insertTextAtCursor { true }
+                    onImeAction(ImeAction.Done) { false }
+                }
+            )
         }
 
         expectErrorMessageStartsWith(
-            "Failed to perform IME action, handler returned false.\n" +
-                "Semantics of the node:"
+            "Failed to perform IME action, handler returned false.\n" + "Semantics of the node:"
         ) {
-            rule.onNodeWithTag(fieldTag)
-                .performImeAction()
+            rule.onNodeWithTag(fieldTag).performImeAction()
         }
     }
 
     @Test
     fun performImeAction_inputNotSupported_shouldFail() {
-        rule.setContent {
-            BoundaryNode(fieldTag)
-        }
+        rule.setContent { BoundaryNode(fieldTag) }
 
         expectErrorMessageStartsWith(
             "Failed to perform IME action.\n" +
                 "Failed to assert the following: (PerformImeAction is defined)\n" +
                 "Semantics of the node:"
         ) {
-            rule.onNodeWithTag(fieldTag)
-                .performImeAction()
+            rule.onNodeWithTag(fieldTag).performImeAction()
         }
     }
 
     @Test
     fun performImeAction_focusNotSupported_shouldFail() {
         rule.setContent {
-            BoundaryNode(testTag = "node", Modifier.semantics {
-                editable()
-                setText { true }
-                onImeAction(ImeAction.Done) { true }
-            })
+            BoundaryNode(
+                testTag = "node",
+                Modifier.semantics {
+                    isEditable = true
+                    setText { true }
+                    onImeAction(ImeAction.Done) { true }
+                }
+            )
         }
 
         expectErrorMessageStartsWith(
@@ -363,19 +329,13 @@ class TextActionsTest {
                 "Failed to assert the following: (RequestFocus is defined)\n" +
                 "Semantics of the node:"
         ) {
-            rule.onNodeWithTag("node")
-                .performImeAction()
+            rule.onNodeWithTag("node").performImeAction()
         }
     }
 
     @Test
     fun performImeAction_whenDisabled_shouldFail() {
-        rule.setContent {
-            TextFieldUi(
-                imeAction = ImeAction.Done,
-                enabled = false
-            )
-        }
+        rule.setContent { TextFieldUi(imeAction = ImeAction.Done, enabled = false) }
 
         expectErrorMessageStartsWith(
             "Failed to perform IME action.\n" +
@@ -398,8 +358,6 @@ class TextActionsTest {
         }
 
         rule.onNodeWithTag(fieldTag).performImeAction()
-        rule.runOnIdle {
-            assertThat(actionPerformed).isTrue()
-        }
+        rule.runOnIdle { assertThat(actionPerformed).isTrue() }
     }
 }

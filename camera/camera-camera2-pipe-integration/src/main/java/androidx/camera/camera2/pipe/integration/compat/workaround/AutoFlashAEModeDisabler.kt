@@ -14,13 +14,10 @@
  * limitations under the License.
  */
 
-@file:RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
-
 package androidx.camera.camera2.pipe.integration.compat.workaround
 
 import android.hardware.camera2.CameraMetadata.CONTROL_AE_MODE_ON
 import android.hardware.camera2.CameraMetadata.CONTROL_AE_MODE_ON_AUTO_FLASH
-import androidx.annotation.RequiresApi
 import androidx.camera.camera2.pipe.integration.compat.quirk.CameraQuirks
 import androidx.camera.camera2.pipe.integration.compat.quirk.CrashWhenTakingPhotoWithAutoFlashAEModeQuirk
 import androidx.camera.camera2.pipe.integration.compat.quirk.DeviceQuirks
@@ -32,14 +29,14 @@ import dagger.Provides
  * A workaround to turn off the auto flash AE mode if device has the
  * [CrashWhenTakingPhotoWithAutoFlashAEModeQuirk] or [ImageCaptureFailWithAutoFlashQuirk].
  */
-interface AutoFlashAEModeDisabler {
-    fun getCorrectedAeMode(aeMode: Int): Int
+public interface AutoFlashAEModeDisabler {
+    public fun getCorrectedAeMode(aeMode: Int): Int
 
     @Module
-    abstract class Bindings {
-        companion object {
+    public abstract class Bindings {
+        public companion object {
             @Provides
-            fun provideAEModeDisabler(cameraQuirks: CameraQuirks): AutoFlashAEModeDisabler {
+            public fun provideAEModeDisabler(cameraQuirks: CameraQuirks): AutoFlashAEModeDisabler {
                 val isFailWithAutoFlashQuirkEnabled =
                     cameraQuirks.quirks.contains(ImageCaptureFailWithAutoFlashQuirk::class.java)
 
@@ -54,18 +51,17 @@ interface AutoFlashAEModeDisabler {
     }
 }
 
-object AutoFlashAEModeDisablerImpl : AutoFlashAEModeDisabler {
+public object AutoFlashAEModeDisablerImpl : AutoFlashAEModeDisabler {
 
     /**
      * Get AE mode corrected by the [CrashWhenTakingPhotoWithAutoFlashAEModeQuirk] and
      * [ImageCaptureFailWithAutoFlashQuirk].
      */
     override fun getCorrectedAeMode(aeMode: Int): Int {
-        return if (aeMode == CONTROL_AE_MODE_ON_AUTO_FLASH) CONTROL_AE_MODE_ON
-        else aeMode
+        return if (aeMode == CONTROL_AE_MODE_ON_AUTO_FLASH) CONTROL_AE_MODE_ON else aeMode
     }
 }
 
-object NoOpAutoFlashAEModeDisabler : AutoFlashAEModeDisabler {
+public object NoOpAutoFlashAEModeDisabler : AutoFlashAEModeDisabler {
     override fun getCorrectedAeMode(aeMode: Int): Int = aeMode
 }

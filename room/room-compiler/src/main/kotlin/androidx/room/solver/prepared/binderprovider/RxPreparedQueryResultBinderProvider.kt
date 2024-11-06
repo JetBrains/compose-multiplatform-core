@@ -18,19 +18,20 @@ package androidx.room.solver.prepared.binderprovider
 
 import androidx.room.compiler.processing.XRawType
 import androidx.room.compiler.processing.XType
+import androidx.room.ext.KotlinTypeNames
 import androidx.room.parser.ParsedQuery
 import androidx.room.processor.Context
 import androidx.room.solver.RxType
-import androidx.room.solver.prepared.binder.CallablePreparedQueryResultBinder.Companion.createPreparedBinder
+import androidx.room.solver.prepared.binder.LambdaPreparedQueryResultBinder
 import androidx.room.solver.prepared.binder.PreparedQueryResultBinder
 
-open class RxPreparedQueryResultBinderProvider internal constructor(
-    val context: Context,
-    private val rxType: RxType
-) : PreparedQueryResultBinderProvider {
+open class RxPreparedQueryResultBinderProvider
+internal constructor(val context: Context, private val rxType: RxType) :
+    PreparedQueryResultBinderProvider {
 
     private val hasRxJavaArtifact by lazy {
-        context.processingEnv.findTypeElement(rxType.version.rxRoomClassName.canonicalName) != null
+        context.processingEnv.findTypeElement(rxType.version.rxMarkerClassName.canonicalName) !=
+            null
     }
 
     override fun matches(declared: XType): Boolean =
@@ -45,32 +46,30 @@ open class RxPreparedQueryResultBinderProvider internal constructor(
             context.logger.e(rxType.version.missingArtifactMessage)
         }
         val typeArg = extractTypeArg(declared)
-        return createPreparedBinder(
+        return LambdaPreparedQueryResultBinder(
             returnType = typeArg,
+            functionName = rxType.factoryMethodName,
             adapter = context.typeAdapterStore.findPreparedQueryResultAdapter(typeArg, query)
-        ) { callableImpl, _ ->
-            addStatement("return %T.fromCallable(%L)", rxType.className, callableImpl)
-        }
+        )
     }
 
     open fun extractTypeArg(declared: XType): XType = declared.typeArguments.first()
 
     companion object {
-        fun getAll(context: Context) = listOf(
-            RxSingleOrMaybePreparedQueryResultBinderProvider(context, RxType.RX2_SINGLE),
-            RxSingleOrMaybePreparedQueryResultBinderProvider(context, RxType.RX2_MAYBE),
-            RxCompletablePreparedQueryResultBinderProvider(context, RxType.RX2_COMPLETABLE),
-            RxSingleOrMaybePreparedQueryResultBinderProvider(context, RxType.RX3_SINGLE),
-            RxSingleOrMaybePreparedQueryResultBinderProvider(context, RxType.RX3_MAYBE),
-            RxCompletablePreparedQueryResultBinderProvider(context, RxType.RX3_COMPLETABLE)
-        )
+        fun getAll(context: Context) =
+            listOf(
+                RxSingleOrMaybePreparedQueryResultBinderProvider(context, RxType.RX2_SINGLE),
+                RxSingleOrMaybePreparedQueryResultBinderProvider(context, RxType.RX2_MAYBE),
+                RxCompletablePreparedQueryResultBinderProvider(context, RxType.RX2_COMPLETABLE),
+                RxSingleOrMaybePreparedQueryResultBinderProvider(context, RxType.RX3_SINGLE),
+                RxSingleOrMaybePreparedQueryResultBinderProvider(context, RxType.RX3_MAYBE),
+                RxCompletablePreparedQueryResultBinderProvider(context, RxType.RX3_COMPLETABLE)
+            )
     }
 }
 
-private class RxCompletablePreparedQueryResultBinderProvider(
-    context: Context,
-    rxType: RxType
-) : RxPreparedQueryResultBinderProvider(context, rxType) {
+private class RxCompletablePreparedQueryResultBinderProvider(context: Context, rxType: RxType) :
+    RxPreparedQueryResultBinderProvider(context, rxType) {
 
     private val completableType: XRawType? by lazy {
         context.processingEnv.findType(rxType.className.canonicalName)?.rawType
@@ -84,21 +83,17 @@ private class RxCompletablePreparedQueryResultBinderProvider(
     }
 
     /**
-     * Since Completable is not a generic, the supported return type should be Void (nullable).
-     * Like this, the generated Callable.call method will return Void.
+     * Since Completable has no type argument, the supported return type is Unit (non-nullable)
+     * since the 'createCompletable" factory method take a Kotlin lambda.
      */
     override fun extractTypeArg(declared: XType): XType =
-        context.COMMON_TYPES.VOID.makeNullable()
+        context.processingEnv.requireType(KotlinTypeNames.UNIT)
 }
 
-private class RxSingleOrMaybePreparedQueryResultBinderProvider(
-    context: Context,
-    rxType: RxType
-) : RxPreparedQueryResultBinderProvider(context, rxType) {
+private class RxSingleOrMaybePreparedQueryResultBinderProvider(context: Context, rxType: RxType) :
+    RxPreparedQueryResultBinderProvider(context, rxType) {
 
-    /**
-     * Since Maybe can have null values, the Callable returned must allow for null values.
-     */
+    /** Since Maybe can have null values, the lambda returned must allow for null values. */
     override fun extractTypeArg(declared: XType): XType =
         declared.typeArguments.first().makeNullable()
 }

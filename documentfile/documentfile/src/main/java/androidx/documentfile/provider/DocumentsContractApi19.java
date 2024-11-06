@@ -28,7 +28,7 @@ import android.provider.DocumentsContract;
 import android.text.TextUtils;
 import android.util.Log;
 
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 class DocumentsContractApi19 {
     private static final String TAG = "DocumentFile";
@@ -41,18 +41,15 @@ class DocumentsContractApi19 {
         return (getFlags(context, self) & FLAG_VIRTUAL_DOCUMENT) != 0;
     }
 
-    @Nullable
-    public static String getName(Context context, Uri self) {
+    public static @Nullable String getName(Context context, Uri self) {
         return queryForString(context, self, DocumentsContract.Document.COLUMN_DISPLAY_NAME, null);
     }
 
-    @Nullable
-    private static String getRawType(Context context, Uri self) {
+    private static @Nullable String getRawType(Context context, Uri self) {
         return queryForString(context, self, DocumentsContract.Document.COLUMN_MIME_TYPE, null);
     }
 
-    @Nullable
-    public static String getType(Context context, Uri self) {
+    public static @Nullable String getType(Context context, Uri self) {
         final String rawType = getRawType(context, self);
         if (DocumentsContract.Document.MIME_TYPE_DIR.equals(rawType)) {
             return null;
@@ -150,8 +147,7 @@ class DocumentsContractApi19 {
         }
     }
 
-    @Nullable
-    private static String queryForString(Context context, Uri self, String column,
+    private static @Nullable String queryForString(Context context, Uri self, String column,
             @Nullable String defaultValue) {
         final ContentResolver resolver = context.getContentResolver();
 

@@ -34,87 +34,74 @@ import java.util.Objects
  *
  * @sample androidx.core.haptics.samples.PlaySystemStandardClick
  */
-class HapticAttributes @JvmOverloads constructor(
+public class HapticAttributes
+@JvmOverloads
+constructor(
 
-    /**
-     * The usage to apply the correct system policies and user settings to the vibration.
-     */
-    @Usage val usage: Int,
+    /** The usage to apply the correct system policies and user settings to the vibration. */
+    @Usage public val usage: Int,
 
-    /**
-     * The flags to control the vibration behavior.
-     */
-    @Flag val flags: Int = 0,
+    /** The flags to control the vibration behavior. */
+    @Flag public val flags: Int = 0,
 ) {
 
-    /**
-     * Creates a [HapticAttributes] mapping fields from given [VibrationAttributes].
-     */
+    /** Creates a [HapticAttributes] mapping fields from given [VibrationAttributes]. */
     @RequiresApi(Build.VERSION_CODES.R)
-    constructor(attrs: VibrationAttributes) : this(
+    public constructor(
+        attrs: VibrationAttributes
+    ) : this(
         HapticAttributesConverter.usageFromVibrationAttributes(attrs),
         HapticAttributesConverter.flagsFromVibrationAttributes(attrs),
     )
 
-    /**
-     * Creates a [HapticAttributes] mapping fields from given [AudioAttributes].
-     */
+    /** Creates a [HapticAttributes] mapping fields from given [AudioAttributes]. */
     @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
-    constructor(attrs: AudioAttributes) : this(
+    public constructor(
+        attrs: AudioAttributes
+    ) : this(
         HapticAttributesConverter.usageFromAudioAttributes(attrs),
         flags = 0,
     )
 
-    /**
-     * Builder class for [HapticAttributes].
-     */
-    class Builder private constructor(
+    /** Builder class for [HapticAttributes]. */
+    public class Builder
+    private constructor(
         @Usage private var usage: Int,
         @Flag private var flags: Int,
     ) {
 
-        /**
-         * Creates a builder for [HapticAttributes] with given usage.
-         */
-        constructor(@Usage usage: Int) : this(usage, flags = 0)
+        /** Creates a builder for [HapticAttributes] with given usage. */
+        public constructor(@Usage usage: Int) : this(usage, flags = 0)
 
-        /**
-         * Creates a builder for [HapticAttributes] copying all fields from given attributes.
-         */
-        constructor(attrs: HapticAttributes) : this(attrs.usage, attrs.flags)
+        /** Creates a builder for [HapticAttributes] copying all fields from given attributes. */
+        public constructor(attrs: HapticAttributes) : this(attrs.usage, attrs.flags)
 
-        /**
-         * Creates a builder for [HapticAttributes] copying mapped fields from given attributes.
-         */
+        /** Creates a builder for [HapticAttributes] copying mapped fields from given attributes. */
         @RequiresApi(Build.VERSION_CODES.R)
-        constructor(attrs: VibrationAttributes) : this(
+        public constructor(
+            attrs: VibrationAttributes
+        ) : this(
             HapticAttributesConverter.usageFromVibrationAttributes(attrs),
             HapticAttributesConverter.flagsFromVibrationAttributes(attrs),
         )
 
-        /**
-         * Creates a builder for [HapticAttributes] copying mapped fields from given attributes.
-         */
+        /** Creates a builder for [HapticAttributes] copying mapped fields from given attributes. */
         @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
-        constructor(attrs: AudioAttributes) : this(
+        public constructor(
+            attrs: AudioAttributes
+        ) : this(
             HapticAttributesConverter.usageFromAudioAttributes(attrs),
             flags = 0,
         )
 
-        /**
-         * Sets the usage that maps correct system policies and user settings to the vibration.
-         */
-        fun setUsage(@Usage usage: Int) = apply { this.usage = usage }
+        /** Sets the usage that maps correct system policies and user settings to the vibration. */
+        public fun setUsage(@Usage usage: Int): Builder = apply { this.usage = usage }
 
-        /**
-         * Sets the flags to control the vibration behavior.
-         */
-        fun setFlags(@Flag flags: Int) = apply { this.flags = flags }
+        /** Sets the flags to control the vibration behavior. */
+        public fun setFlags(@Flag flags: Int): Builder = apply { this.flags = flags }
 
-        /**
-         * Returns a built [HapticAttributes].
-         */
-        fun build() = HapticAttributes(usage, flags)
+        /** Returns a built [HapticAttributes]. */
+        public fun build(): HapticAttributes = HapticAttributes(usage, flags)
     }
 
     override fun equals(other: Any?): Boolean {
@@ -131,41 +118,35 @@ class HapticAttributes @JvmOverloads constructor(
 
     internal fun toAttributes(): AttributesWrapper? = HapticAttributesConverter.toAttributes(this)
 
-    companion object {
+    public companion object {
         // Values from VibrationAttributes.USAGE_* and VibrationAttributes.FLAG_*
 
-        /**
-         * Usage value to use for accessibility vibrations, such as with a screen reader.
-         */
-        const val USAGE_ACCESSIBILITY = 66
+        /** Usage value to use for accessibility vibrations, such as with a screen reader. */
+        public const val USAGE_ACCESSIBILITY: Int = 66
 
-        /**
-         * Usage value to use for alarm vibrations.
-         */
-        const val USAGE_ALARM = 1
+        /** Usage value to use for alarm vibrations. */
+        public const val USAGE_ALARM: Int = 1
 
         /**
          * Usage value to use for vibrations which mean a request to enter/end a communication with
          * the user, such as a voice prompt.
          */
-        const val USAGE_COMMUNICATION_REQUEST = 65
+        public const val USAGE_COMMUNICATION_REQUEST: Int = 65
 
         /**
          * Usage value to use for vibrations which provide a feedback for hardware component
          * interaction, such as a fingerprint sensor.
          */
-        const val USAGE_HARDWARE_FEEDBACK = 50
+        public const val USAGE_HARDWARE_FEEDBACK: Int = 50
 
         /**
          * Usage value to use for media vibrations, such as music, movie, soundtrack, animations,
          * games, or any interactive media that isn't for touch feedback specifically.
          */
-        const val USAGE_MEDIA = 19
+        public const val USAGE_MEDIA: Int = 19
 
-        /**
-         * Usage value to use for notification vibrations.
-         */
-        const val USAGE_NOTIFICATION = 49
+        /** Usage value to use for notification vibrations. */
+        public const val USAGE_NOTIFICATION: Int = 49
 
         /**
          * Usage value to use for vibrations which emulate physical hardware reactions, such as edge
@@ -175,12 +156,10 @@ class HapticAttributes @JvmOverloads constructor(
          * [USAGE_TOUCH], and that on-screen "physical" animations like bouncing would be
          * [USAGE_MEDIA].
          */
-        const val USAGE_PHYSICAL_EMULATION = 34
+        public const val USAGE_PHYSICAL_EMULATION: Int = 34
 
-        /**
-         * Usage value to use for ringtone vibrations.
-         */
-        const val USAGE_RINGTONE = 33
+        /** Usage value to use for ringtone vibrations. */
+        public const val USAGE_RINGTONE: Int = 33
 
         /**
          * Usage value to use for touch vibrations.
@@ -188,12 +167,10 @@ class HapticAttributes @JvmOverloads constructor(
          * Most typical haptic feedback should be classed as touch feedback. Examples include
          * vibrations for tap, long press, drag and scroll.
          */
-        const val USAGE_TOUCH = 18
+        public const val USAGE_TOUCH: Int = 18
 
-        /**
-         * Usage value to use when usage is unknown.
-         */
-        const val USAGE_UNKNOWN = 0
+        /** Usage value to use when usage is unknown. */
+        public const val USAGE_UNKNOWN: Int = 0
 
         /**
          * Flag requesting vibration effect to be played even under limited interruptions.
@@ -201,7 +178,7 @@ class HapticAttributes @JvmOverloads constructor(
          * Only privileged apps can ignore user settings that limit interruptions, and this flag
          * will be ignored otherwise.
          */
-        const val FLAG_BYPASS_INTERRUPTION_POLICY = 1
+        public const val FLAG_BYPASS_INTERRUPTION_POLICY: Int = 1
     }
 
     /** Typedef for the usage attribute. */
@@ -224,9 +201,10 @@ class HapticAttributes @JvmOverloads constructor(
     /** Typedef for the flag attribute. */
     @IntDef(
         flag = true,
-        value = [
-            FLAG_BYPASS_INTERRUPTION_POLICY,
-        ],
+        value =
+            [
+                FLAG_BYPASS_INTERRUPTION_POLICY,
+            ],
     )
     @RestrictTo(RestrictTo.Scope.LIBRARY)
     @Retention(AnnotationRetention.SOURCE)

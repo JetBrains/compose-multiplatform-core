@@ -16,8 +16,6 @@
 
 package androidx.camera.camera2.pipe.core
 
-import android.os.Build
-import androidx.annotation.RequiresApi
 import kotlin.coroutines.intrinsics.COROUTINE_SUSPENDED
 import kotlin.coroutines.intrinsics.intercepted
 import kotlin.coroutines.intrinsics.startCoroutineUninterceptedOrReturn
@@ -36,17 +34,17 @@ import kotlinx.coroutines.sync.Mutex
 
 /**
  * [CoroutineMutex] is a shared [Mutex] instance with extension functions to allow callers to lock
- * the mutex from a non-coroutine function, while ensuring that the locked execution block is
- * always suspended (Which avoids synchronously running code that should be executed on a different
- * thread). This guaranteed suspension, plus the additional extension functions to make it easier
- * to correctly lock and run suspending code from a non-suspending function, is the primary
- * difference from using a [Mutex] object directly.
+ * the mutex from a non-coroutine function, while ensuring that the locked execution block is always
+ * suspended (Which avoids synchronously running code that should be executed on a different
+ * thread). This guaranteed suspension, plus the additional extension functions to make it easier to
+ * correctly lock and run suspending code from a non-suspending function, is the primary difference
+ * from using a [Mutex] object directly.
  *
  * This should not be used to run long running operations, since the lock will be held for the
  * entire duration. In addition, kotlin [Mutex] objects are non-reentrant, unlike standard java
  * `synchronized` locks.
  */
-class CoroutineMutex {
+public class CoroutineMutex {
     internal val mutex = Mutex()
 }
 
@@ -54,7 +52,7 @@ class CoroutineMutex {
  * Execute the provided [block] within the current [CoroutineMutex] while ensuring that only one
  * operation is executed at a time.
  */
-fun <T> CoroutineMutex.withLockAsync(
+public fun <T> CoroutineMutex.withLockAsync(
     scope: CoroutineScope,
     block: suspend CoroutineScope.() -> T
 ): Deferred<T> {
@@ -76,7 +74,7 @@ fun <T> CoroutineMutex.withLockAsync(
  * Execute the provided [block] after acquiring a lock to the [CoroutineMutex] in the provided
  * [CoroutineScope].
  */
-fun CoroutineMutex.withLockLaunch(
+public fun CoroutineMutex.withLockLaunch(
     scope: CoroutineScope,
     block: suspend CoroutineScope.() -> Unit
 ): Job {
@@ -96,17 +94,15 @@ fun CoroutineMutex.withLockLaunch(
 /**
  * Acquire a lock on the provided mutex, suspending if the lock could not be immediately acquired.
  */
-@RequiresApi(Build.VERSION_CODES.LOLLIPOP)
 internal suspend inline fun Mutex.acquireToken(): Token {
     lock()
     return MutexToken(this)
 }
 
 /**
- * Acquire a lock on the provided mutex and suspend. This can be used with coroutines that are
- * are started as `UNDISPATCHED` to ensure they are dispatched onto the correct context.
+ * Acquire a lock on the provided mutex and suspend. This can be used with coroutines that are are
+ * started as `UNDISPATCHED` to ensure they are dispatched onto the correct context.
  */
-@RequiresApi(Build.VERSION_CODES.LOLLIPOP)
 internal suspend inline fun Mutex.acquireTokenAndSuspend(): Token {
     lockAndSuspend()
     return MutexToken(this)
@@ -116,7 +112,6 @@ internal suspend inline fun Mutex.acquireTokenAndSuspend(): Token {
  * Acquire a lock on the provided mutex without suspending. Returns null if the lock could not be
  * immediately acquired.
  */
-@RequiresApi(Build.VERSION_CODES.LOLLIPOP)
 internal fun Mutex.tryAcquireToken(): Token? {
     if (tryLock()) {
         return MutexToken(this)
@@ -124,7 +119,6 @@ internal fun Mutex.tryAcquireToken(): Token? {
     return null
 }
 
-@RequiresApi(Build.VERSION_CODES.LOLLIPOP)
 internal class MutexToken(private val mutex: Mutex) : Token {
     private val _released = atomic(false)
     override val released: Boolean
@@ -167,10 +161,8 @@ private suspend inline fun <T> Mutex.withLockSuspend(action: () -> T): T {
 private suspend fun Mutex.lockAndSuspend() {
     val lockFn = Mutex::lockWithoutOwner
     return suspendCoroutineUninterceptedOrReturn { continuation ->
-        if (lockFn.startCoroutineUninterceptedOrReturn(
-                this,
-                continuation
-            ) !== COROUTINE_SUSPENDED
+        if (
+            lockFn.startCoroutineUninterceptedOrReturn(this, continuation) !== COROUTINE_SUSPENDED
         ) {
             // If the mutex.lock call did *not* suspend (likely because the lock was acquired
             // immediately), intercept the continuation block, which will schedule it for execution.

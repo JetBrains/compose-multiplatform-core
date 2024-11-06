@@ -19,8 +19,10 @@ package androidx.camera.testing.impl;
 import static android.graphics.BitmapFactory.decodeByteArray;
 import static android.graphics.ImageFormat.JPEG;
 import static android.graphics.ImageFormat.JPEG_R;
+import static android.graphics.ImageFormat.RAW_SENSOR;
 import static android.graphics.ImageFormat.YUV_420_888;
 
+import static androidx.camera.testing.impl.ImageProxyUtil.createRawImagePlanes;
 import static androidx.camera.testing.impl.ImageProxyUtil.createYUV420ImagePlanes;
 import static androidx.core.util.Preconditions.checkState;
 
@@ -33,13 +35,12 @@ import android.graphics.Paint;
 import android.graphics.Rect;
 import android.os.Build;
 
-import androidx.annotation.DoNotInline;
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.VisibleForTesting;
 import androidx.camera.core.ImageInfo;
 import androidx.camera.core.internal.CameraCaptureResultImageInfo;
-import androidx.camera.testing.impl.fakes.FakeCameraCaptureResult;
+import androidx.camera.testing.fakes.FakeCameraCaptureResult;
 import androidx.camera.testing.impl.fakes.FakeImageProxy;
 import androidx.camera.testing.impl.fakes.FakeJpegPlaneProxy;
 
@@ -74,7 +75,6 @@ import java.io.ByteArrayOutputStream;
  * ------------------
  * </pre>
  */
-@RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
 public class TestImageUtil {
 
     @VisibleForTesting
@@ -101,6 +101,20 @@ public class TestImageUtil {
         FakeImageProxy image = new FakeImageProxy(imageInfo);
         image.setFormat(YUV_420_888);
         image.setPlanes(createYUV420ImagePlanes(width, height, 1, 1, false, false));
+        image.setWidth(width);
+        image.setHeight(height);
+        return image;
+    }
+
+    /**
+     * Creates a [FakeImageProxy] with [RAW_SENSOR] format.
+     */
+    @NonNull
+    public static FakeImageProxy createRawFakeImageProxy(@NonNull ImageInfo imageInfo,
+            int width, int height) {
+        FakeImageProxy image = new FakeImageProxy(imageInfo);
+        image.setFormat(RAW_SENSOR);
+        image.setPlanes(createRawImagePlanes(width, height, 2, false));
         image.setWidth(width);
         image.setHeight(height);
         return image;
@@ -335,12 +349,10 @@ public class TestImageUtil {
 
     @RequiresApi(34)
     private static class Api34Impl {
-        @DoNotInline
         static Gainmap createGainmap(@NonNull Bitmap bitmap) {
             return new Gainmap(bitmap);
         }
 
-        @DoNotInline
         static void setGainmap(@NonNull Bitmap bitmap, @NonNull Gainmap gainmap) {
             bitmap.setGainmap(gainmap);
         }

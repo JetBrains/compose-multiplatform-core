@@ -21,20 +21,18 @@ import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraManager
 import android.hardware.camera2.CaptureRequest
 import android.hardware.camera2.CaptureResult
-import android.hardware.camera2.params.SessionConfiguration
 import android.os.Build
 import android.util.Pair
 import android.util.Range
 import android.util.Size
 import androidx.camera.core.impl.RestrictedCameraInfo
-import androidx.camera.extensions.impl.CaptureStageImpl
-import androidx.camera.extensions.impl.ImageCaptureExtenderImpl
 import androidx.camera.extensions.impl.advanced.AdvancedExtenderImpl
 import androidx.camera.extensions.impl.advanced.Camera2SessionConfigImpl
 import androidx.camera.extensions.impl.advanced.OutputSurfaceConfigurationImpl
 import androidx.camera.extensions.impl.advanced.OutputSurfaceImpl
 import androidx.camera.extensions.impl.advanced.RequestProcessorImpl
 import androidx.camera.extensions.impl.advanced.SessionProcessorImpl
+import androidx.camera.extensions.internal.fake.FakeImageCaptureExtenderImpl
 import androidx.camera.testing.fakes.FakeCameraInfoInternal
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
@@ -56,9 +54,7 @@ import org.robolectric.shadows.ShadowCameraManager
     minSdk = Build.VERSION_CODES.LOLLIPOP,
     instrumentedPackages = arrayOf("androidx.camera.extensions.internal")
 )
-class SupportedCameraOperationsTest(
-    private val extenderType: String
-) {
+class SupportedCameraOperationsTest(private val extenderType: String) {
     val context = RuntimeEnvironment.getApplication()
 
     companion object {
@@ -68,20 +64,23 @@ class SupportedCameraOperationsTest(
             return listOf("basic", "advanced")
         }
     }
+
     private fun setCameraXExtensionsVersion(version: String) {
         ClientVersion.setCurrentVersion(ClientVersion(version))
     }
 
     private fun setExtensionRuntimeVersion(version: String) {
-        ExtensionVersion.injectInstance(object : ExtensionVersion() {
-            override fun isAdvancedExtenderSupportedInternal(): Boolean {
-                return false
-            }
+        ExtensionVersion.injectInstance(
+            object : ExtensionVersion() {
+                override fun isAdvancedExtenderSupportedInternal(): Boolean {
+                    return false
+                }
 
-            override fun getVersionObject(): Version {
-                return Version.parse(version)!!
+                override fun getVersionObject(): Version {
+                    return Version.parse(version)!!
+                }
             }
-        })
+        )
     }
 
     @Before
@@ -95,18 +94,20 @@ class SupportedCameraOperationsTest(
         val characteristics = ShadowCameraCharacteristics.newCameraCharacteristics()
         val shadowCharacteristics = Shadow.extract<ShadowCameraCharacteristics>(characteristics)
         shadowCharacteristics.set(
-            CameraCharacteristics.LENS_FACING, CameraCharacteristics.LENS_FACING_BACK
+            CameraCharacteristics.LENS_FACING,
+            CameraCharacteristics.LENS_FACING_BACK
         )
         shadowCharacteristics.set(
-            CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES, arrayOf(
+            CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES,
+            arrayOf(
                 CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES_BACKWARD_COMPATIBLE,
                 CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES_LOGICAL_MULTI_CAMERA
             )
         )
-        val cameraManager = ApplicationProvider.getApplicationContext<Context>()
-            .getSystemService(Context.CAMERA_SERVICE) as CameraManager
-        (Shadow.extract<Any>(cameraManager) as ShadowCameraManager)
-            .addCamera("0", characteristics)
+        val cameraManager =
+            ApplicationProvider.getApplicationContext<Context>()
+                .getSystemService(Context.CAMERA_SERVICE) as CameraManager
+        (Shadow.extract<Any>(cameraManager) as ShadowCameraManager).addCamera("0", characteristics)
     }
 
     private fun testSupportedCameraOperation(
@@ -115,14 +116,12 @@ class SupportedCameraOperationsTest(
     ) {
         var vendorExtender: VendorExtender? = null
         if (extenderType == "basic") {
-            val fakeImageCaptureExtenderImpl = FakeImageCaptureExtenderImpl(
-                supportedRequestKeys = supportedCaptureRequestKeys
-            )
+            val fakeImageCaptureExtenderImpl =
+                FakeImageCaptureExtenderImpl(supportedRequestKeys = supportedCaptureRequestKeys)
             vendorExtender = BasicVendorExtender(fakeImageCaptureExtenderImpl, null)
         } else if (extenderType == "advanced") {
-            val fakeAdvancedExtenderImpl = FakeAdvancedVendorExtenderImpl(
-                supportedRequestKeys = supportedCaptureRequestKeys
-            )
+            val fakeAdvancedExtenderImpl =
+                FakeAdvancedVendorExtenderImpl(supportedRequestKeys = supportedCaptureRequestKeys)
             vendorExtender = AdvancedVendorExtender(fakeAdvancedExtenderImpl)
         }
 
@@ -137,12 +136,8 @@ class SupportedCameraOperationsTest(
     @Test
     fun supportedCameraOperations_zoomIsEnabled_androidR() {
         testSupportedCameraOperation(
-            supportedCaptureRequestKeys = listOf(
-                CaptureRequest.CONTROL_ZOOM_RATIO
-            ),
-            expectSupportedOperations = setOf(
-                RestrictedCameraInfo.CAMERA_OPERATION_ZOOM
-            )
+            supportedCaptureRequestKeys = listOf(CaptureRequest.CONTROL_ZOOM_RATIO),
+            expectSupportedOperations = setOf(RestrictedCameraInfo.CAMERA_OPERATION_ZOOM)
         )
     }
 
@@ -150,12 +145,8 @@ class SupportedCameraOperationsTest(
     @Test
     fun supportedCameraOperations_cropregion_zoomIsEnabled_androidR() {
         testSupportedCameraOperation(
-            supportedCaptureRequestKeys = listOf(
-                CaptureRequest.SCALER_CROP_REGION
-            ),
-            expectSupportedOperations = setOf(
-                RestrictedCameraInfo.CAMERA_OPERATION_ZOOM
-            )
+            supportedCaptureRequestKeys = listOf(CaptureRequest.SCALER_CROP_REGION),
+            expectSupportedOperations = setOf(RestrictedCameraInfo.CAMERA_OPERATION_ZOOM)
         )
     }
 
@@ -163,99 +154,83 @@ class SupportedCameraOperationsTest(
     @Test
     fun supportedCameraOperations_zoomIsEnabled() {
         testSupportedCameraOperation(
-            supportedCaptureRequestKeys = listOf(
-                CaptureRequest.SCALER_CROP_REGION
-            ),
-            expectSupportedOperations = setOf(
-                RestrictedCameraInfo.CAMERA_OPERATION_ZOOM
-            )
+            supportedCaptureRequestKeys = listOf(CaptureRequest.SCALER_CROP_REGION),
+            expectSupportedOperations = setOf(RestrictedCameraInfo.CAMERA_OPERATION_ZOOM)
         )
     }
 
     @Test
     fun supportedCameraOperations_autoFocusIsEnabled() {
         testSupportedCameraOperation(
-            supportedCaptureRequestKeys = listOf(
-                CaptureRequest.CONTROL_AF_MODE,
-                CaptureRequest.CONTROL_AF_TRIGGER
-            ),
-            expectSupportedOperations = setOf(
-                RestrictedCameraInfo.CAMERA_OPERATION_AUTO_FOCUS
-            )
+            supportedCaptureRequestKeys =
+                listOf(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_TRIGGER),
+            expectSupportedOperations = setOf(RestrictedCameraInfo.CAMERA_OPERATION_AUTO_FOCUS)
         )
     }
 
     @Test
     fun supportedCameraOperations_afRegionIsEnabled() {
         testSupportedCameraOperation(
-            supportedCaptureRequestKeys = listOf(
-                CaptureRequest.CONTROL_AF_REGIONS,
-            ),
-            expectSupportedOperations = setOf(
-                RestrictedCameraInfo.CAMERA_OPERATION_AF_REGION
-            )
+            supportedCaptureRequestKeys =
+                listOf(
+                    CaptureRequest.CONTROL_AF_REGIONS,
+                ),
+            expectSupportedOperations = setOf(RestrictedCameraInfo.CAMERA_OPERATION_AF_REGION)
         )
     }
 
     @Test
     fun supportedCameraOperations_aeRegionIsEnabled() {
         testSupportedCameraOperation(
-            supportedCaptureRequestKeys = listOf(
-                CaptureRequest.CONTROL_AE_REGIONS,
-            ),
-            expectSupportedOperations = setOf(
-                RestrictedCameraInfo.CAMERA_OPERATION_AE_REGION
-            )
+            supportedCaptureRequestKeys =
+                listOf(
+                    CaptureRequest.CONTROL_AE_REGIONS,
+                ),
+            expectSupportedOperations = setOf(RestrictedCameraInfo.CAMERA_OPERATION_AE_REGION)
         )
     }
 
     @Test
     fun supportedCameraOperations_awbRegionIsEnabled() {
         testSupportedCameraOperation(
-            supportedCaptureRequestKeys = listOf(
-                CaptureRequest.CONTROL_AWB_REGIONS,
-            ),
-            expectSupportedOperations = setOf(
-                RestrictedCameraInfo.CAMERA_OPERATION_AWB_REGION
-            )
+            supportedCaptureRequestKeys =
+                listOf(
+                    CaptureRequest.CONTROL_AWB_REGIONS,
+                ),
+            expectSupportedOperations = setOf(RestrictedCameraInfo.CAMERA_OPERATION_AWB_REGION)
         )
     }
 
     @Test
     fun supportedCameraOperations_torchIsEnabled() {
         testSupportedCameraOperation(
-            supportedCaptureRequestKeys = listOf(
-                CaptureRequest.CONTROL_AE_MODE,
-                CaptureRequest.FLASH_MODE
-            ),
-            expectSupportedOperations = setOf(
-                RestrictedCameraInfo.CAMERA_OPERATION_TORCH
-            )
+            supportedCaptureRequestKeys =
+                listOf(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.FLASH_MODE),
+            expectSupportedOperations = setOf(RestrictedCameraInfo.CAMERA_OPERATION_TORCH)
         )
     }
 
     @Test
     fun supportedCameraOperations_flashIsEnabled() {
         testSupportedCameraOperation(
-            supportedCaptureRequestKeys = listOf(
-                CaptureRequest.CONTROL_AE_MODE,
-                CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER
-            ),
-            expectSupportedOperations = setOf(
-                RestrictedCameraInfo.CAMERA_OPERATION_FLASH
-            )
+            supportedCaptureRequestKeys =
+                listOf(
+                    CaptureRequest.CONTROL_AE_MODE,
+                    CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER
+                ),
+            expectSupportedOperations = setOf(RestrictedCameraInfo.CAMERA_OPERATION_FLASH)
         )
     }
 
     @Test
     fun supportedCameraOperations_exposureCompensationIsEnabled() {
         testSupportedCameraOperation(
-            supportedCaptureRequestKeys = listOf(
-                CaptureRequest.CONTROL_AE_EXPOSURE_COMPENSATION,
-            ),
-            expectSupportedOperations = setOf(
-                RestrictedCameraInfo.CAMERA_OPERATION_EXPOSURE_COMPENSATION
-            )
+            supportedCaptureRequestKeys =
+                listOf(
+                    CaptureRequest.CONTROL_AE_EXPOSURE_COMPENSATION,
+                ),
+            expectSupportedOperations =
+                setOf(RestrictedCameraInfo.CAMERA_OPERATION_EXPOSURE_COMPENSATION)
         )
     }
 
@@ -263,12 +238,12 @@ class SupportedCameraOperationsTest(
     @Test
     fun supportedCameraOperations_extensionStrengthIsEnabled() {
         testSupportedCameraOperation(
-            supportedCaptureRequestKeys = listOf(
-                CaptureRequest.EXTENSION_STRENGTH,
-            ),
-            expectSupportedOperations = setOf(
-                RestrictedCameraInfo.CAMERA_OPERATION_EXTENSION_STRENGTH
-            )
+            supportedCaptureRequestKeys =
+                listOf(
+                    CaptureRequest.EXTENSION_STRENGTH,
+                ),
+            expectSupportedOperations =
+                setOf(RestrictedCameraInfo.CAMERA_OPERATION_EXTENSION_STRENGTH)
         )
     }
 
@@ -280,16 +255,17 @@ class SupportedCameraOperationsTest(
         setCameraXExtensionsVersion("1.3.0")
         testSupportedCameraOperation(
             supportedCaptureRequestKeys = emptyList(),
-            expectSupportedOperations = setOf(
-                RestrictedCameraInfo.CAMERA_OPERATION_ZOOM,
-                RestrictedCameraInfo.CAMERA_OPERATION_AUTO_FOCUS,
-                RestrictedCameraInfo.CAMERA_OPERATION_TORCH,
-                RestrictedCameraInfo.CAMERA_OPERATION_AF_REGION,
-                RestrictedCameraInfo.CAMERA_OPERATION_AE_REGION,
-                RestrictedCameraInfo.CAMERA_OPERATION_AWB_REGION,
-                RestrictedCameraInfo.CAMERA_OPERATION_EXPOSURE_COMPENSATION,
-                RestrictedCameraInfo.CAMERA_OPERATION_FLASH
-            )
+            expectSupportedOperations =
+                setOf(
+                    RestrictedCameraInfo.CAMERA_OPERATION_ZOOM,
+                    RestrictedCameraInfo.CAMERA_OPERATION_AUTO_FOCUS,
+                    RestrictedCameraInfo.CAMERA_OPERATION_TORCH,
+                    RestrictedCameraInfo.CAMERA_OPERATION_AF_REGION,
+                    RestrictedCameraInfo.CAMERA_OPERATION_AE_REGION,
+                    RestrictedCameraInfo.CAMERA_OPERATION_AWB_REGION,
+                    RestrictedCameraInfo.CAMERA_OPERATION_EXPOSURE_COMPENSATION,
+                    RestrictedCameraInfo.CAMERA_OPERATION_FLASH
+                )
         )
     }
 
@@ -299,65 +275,21 @@ class SupportedCameraOperationsTest(
         setExtensionRuntimeVersion("1.2.0")
         setCameraXExtensionsVersion("1.3.0")
         testSupportedCameraOperation(
-            supportedCaptureRequestKeys = listOf(
-                CaptureRequest.SCALER_CROP_REGION,
-                CaptureRequest.CONTROL_AF_MODE,
-                CaptureRequest.CONTROL_AF_TRIGGER,
-                CaptureRequest.CONTROL_AF_REGIONS,
-                CaptureRequest.CONTROL_AE_REGIONS,
-                CaptureRequest.CONTROL_AWB_REGIONS,
-                CaptureRequest.CONTROL_AE_MODE,
-                CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER,
-                CaptureRequest.FLASH_MODE,
-                CaptureRequest.CONTROL_AE_EXPOSURE_COMPENSATION
-            ),
+            supportedCaptureRequestKeys =
+                listOf(
+                    CaptureRequest.SCALER_CROP_REGION,
+                    CaptureRequest.CONTROL_AF_MODE,
+                    CaptureRequest.CONTROL_AF_TRIGGER,
+                    CaptureRequest.CONTROL_AF_REGIONS,
+                    CaptureRequest.CONTROL_AE_REGIONS,
+                    CaptureRequest.CONTROL_AWB_REGIONS,
+                    CaptureRequest.CONTROL_AE_MODE,
+                    CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER,
+                    CaptureRequest.FLASH_MODE,
+                    CaptureRequest.CONTROL_AE_EXPOSURE_COMPENSATION
+                ),
             expectSupportedOperations = emptySet() // No ops should be supported.
         )
-    }
-
-    private class FakeImageCaptureExtenderImpl(
-        val supportedRequestKeys: List<CaptureRequest.Key<out Any>>
-    ) : ImageCaptureExtenderImpl {
-        override fun isExtensionAvailable(
-            cameraId: String,
-            cameraCharacteristics: CameraCharacteristics
-        ): Boolean = true
-        override fun init(cameraId: String, cameraCharacteristics: CameraCharacteristics) {
-        }
-        override fun getCaptureProcessor() = null
-        override fun getCaptureStages(): List<CaptureStageImpl> = emptyList()
-        override fun getMaxCaptureStage() = 2
-        override fun getSupportedResolutions() = null
-        override fun getEstimatedCaptureLatencyRange(size: Size?) = null
-        override fun getAvailableCaptureRequestKeys(): List<CaptureRequest.Key<out Any>> {
-            return supportedRequestKeys
-        }
-
-        override fun getAvailableCaptureResultKeys(): List<CaptureResult.Key<Any>> {
-            return mutableListOf()
-        }
-
-        override fun getSupportedPostviewResolutions(
-            captureSize: Size
-        ): MutableList<Pair<Int, Array<Size>>>? = null
-
-        override fun isCaptureProcessProgressAvailable() = false
-
-        override fun getRealtimeCaptureLatency(): Pair<Long, Long>? = null
-        override fun isPostviewAvailable() = false
-        override fun onInit(
-            cameraId: String,
-            cameraCharacteristics: CameraCharacteristics,
-            context: Context
-        ) {}
-
-        override fun onDeInit() {}
-        override fun onPresetSession(): CaptureStageImpl? = null
-
-        override fun onEnableSession(): CaptureStageImpl? = null
-
-        override fun onDisableSession(): CaptureStageImpl? = null
-        override fun onSessionType(): Int = SessionConfiguration.SESSION_REGULAR
     }
 
     private class FakeAdvancedVendorExtenderImpl(
@@ -372,14 +304,17 @@ class SupportedCameraOperationsTest(
             cameraId: String,
             characteristicsMap: MutableMap<String, CameraCharacteristics>
         ) {}
+
         override fun getEstimatedCaptureLatencyRange(
             cameraId: String,
             captureOutputSize: Size?,
             imageFormat: Int
         ): Range<Long>? = null
+
         override fun getSupportedPreviewOutputResolutions(
             cameraId: String
         ): Map<Int, MutableList<Size>> = emptyMap()
+
         override fun getSupportedCaptureOutputResolutions(
             cameraId: String
         ): Map<Int, MutableList<Size>> = emptyMap()
@@ -387,14 +322,22 @@ class SupportedCameraOperationsTest(
         override fun getSupportedPostviewResolutions(
             captureSize: Size
         ): Map<Int, MutableList<Size>> = emptyMap()
+
         override fun getSupportedYuvAnalysisResolutions(cameraId: String) = null
+
         override fun createSessionProcessor(): SessionProcessorImpl = DummySessionProcessorImpl()
-        override fun getAvailableCaptureRequestKeys():
-            List<CaptureRequest.Key<out Any>> = supportedRequestKeys
+
+        override fun getAvailableCaptureRequestKeys(): List<CaptureRequest.Key<out Any>> =
+            supportedRequestKeys
 
         override fun getAvailableCaptureResultKeys(): List<CaptureResult.Key<Any>> = emptyList()
+
         override fun isCaptureProcessProgressAvailable() = false
+
         override fun isPostviewAvailable() = false
+
+        override fun getAvailableCharacteristicsKeyValues():
+            List<Pair<CameraCharacteristics.Key<Any>, Any>> = emptyList()
     }
 
     private class DummySessionProcessorImpl : SessionProcessorImpl {
@@ -406,6 +349,7 @@ class SupportedCameraOperationsTest(
         ): Camera2SessionConfigImpl {
             throw UnsupportedOperationException("Not supported")
         }
+
         override fun initSession(
             cameraId: String,
             cameraCharacteristicsMap: MutableMap<String, CameraCharacteristics>,

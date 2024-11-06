@@ -16,6 +16,7 @@
 
 package androidx.camera.integration.avsync
 
+import androidx.camera.integration.avsync.model.CameraHelper.Companion.CameraImplementation
 import androidx.camera.integration.avsync.ui.theme.LightOff
 import androidx.camera.integration.avsync.ui.theme.LightOn
 import androidx.camera.integration.avsync.ui.widget.AdvancedFloatingActionButton
@@ -48,13 +49,14 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 fun SignalGeneratorScreen(
     beepFrequency: Int,
     beepEnabled: Boolean,
+    cameraImplementation: CameraImplementation,
     viewModel: SignalGeneratorViewModel = viewModel()
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
 
     LaunchedEffect(true) {
-        viewModel.initialRecorder(context, lifecycleOwner)
+        viewModel.initialRecorder(context, lifecycleOwner, cameraImplementation)
         viewModel.initialSignalGenerator(context, beepFrequency, beepEnabled)
     }
 
@@ -114,21 +116,14 @@ private fun MainContent(
 @Composable
 private fun LightingScreen(modifier: Modifier = Modifier, isOn: Boolean = false) {
     val backgroundColor = if (isOn) LightOn else LightOff
-    Box(
-        modifier = modifier.fillMaxSize().background(color = backgroundColor)
-    )
+    Box(modifier = modifier.fillMaxSize().background(color = backgroundColor))
 }
 
 @Composable
-private fun ControlPanel(
-    modifier: Modifier = Modifier,
-    content: @Composable () -> Unit
-) {
+private fun ControlPanel(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
     Column(modifier = modifier.fillMaxSize()) {
         Spacer(modifier = Modifier.weight(2f))
-        Box(modifier = Modifier.weight(1f)) {
-            content()
-        }
+        Box(modifier = Modifier.weight(1f)) { content() }
     }
 }
 

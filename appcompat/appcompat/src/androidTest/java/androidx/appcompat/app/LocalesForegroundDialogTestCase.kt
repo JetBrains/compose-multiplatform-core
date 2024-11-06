@@ -25,7 +25,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
-import androidx.testutils.LifecycleOwnerUtils.waitUntilState
+import androidx.testutils.lifecycle.LifecycleOwnerUtils.waitUntilState
 import junit.framework.TestCase.assertNotSame
 import org.junit.Before
 import org.junit.Ignore
@@ -37,8 +37,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 @SdkSuppress(maxSdkVersion = 32)
 class LocalesForegroundDialogTestCase {
-    @get:Rule
-    val rule = LocalesActivityTestRule(LocalesUpdateActivity::class.java)
+    @get:Rule val rule = LocalesActivityTestRule(LocalesUpdateActivity::class.java)
     private var baseLocales = LocaleListCompat.getEmptyLocaleList()
 
     @Before
@@ -60,10 +59,7 @@ class LocalesForegroundDialogTestCase {
         }
 
         // Now change the locales for the foreground activity.
-        setLocalesAndWaitForRecreate(
-            firstActivity,
-            CUSTOM_LOCALE_LIST
-        )
+        setLocalesAndWaitForRecreate(firstActivity, CUSTOM_LOCALE_LIST)
 
         // Ensure that it was recreated.
         assertNotSame(rule.activity, firstActivity)

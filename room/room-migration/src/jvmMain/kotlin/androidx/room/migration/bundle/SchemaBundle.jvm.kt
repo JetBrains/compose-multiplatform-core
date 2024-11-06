@@ -22,19 +22,15 @@ import java.io.OutputStream
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.decodeFromStream
 import kotlinx.serialization.json.encodeToStream
 
-/**
- * Data class that holds the information about a database schema export.
- */
+/** Data class that holds the information about a database schema export. */
 @Serializable
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-actual class SchemaBundle actual constructor(
-    @SerialName("formatVersion")
-    actual val formatVersion: Int,
-    @SerialName("database")
-    actual val database: DatabaseBundle
+actual class SchemaBundle
+actual constructor(
+    @SerialName("formatVersion") actual val formatVersion: Int,
+    @SerialName("database") actual val database: DatabaseBundle
 ) : SchemaEquality<SchemaBundle> {
 
     actual override fun isSchemaEqual(other: SchemaBundle): Boolean {
@@ -43,16 +39,16 @@ actual class SchemaBundle actual constructor(
     }
 
     companion object {
-        @OptIn(ExperimentalSerializationApi::class) // For decodeFromStream() with InputStream
-        fun deserialize(fis: InputStream): SchemaBundle = fis.use {
-            json.decodeFromStream(it)
-        }
+        fun deserialize(fis: InputStream): SchemaBundle =
+            fis.use {
+                // TODO: Try to use decodeFromStream if possible, currently blocked by
+                //       https://github.com/Kotlin/kotlinx.serialization/issues/2457
+                json.decodeFromString(it.bufferedReader().readText())
+            }
 
         @OptIn(ExperimentalSerializationApi::class) // For encodeToStream() with OutputStream
         fun serialize(bundle: SchemaBundle, outputStream: OutputStream) {
-            outputStream.use {
-                json.encodeToStream(bundle, it)
-            }
+            outputStream.use { json.encodeToStream(bundle, it) }
         }
     }
 }

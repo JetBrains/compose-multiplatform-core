@@ -16,23 +16,55 @@
 
 package androidx.compose.ui.node
 
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.Placeable
+import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.platform.InspectorInfo
 
 /**
- * Remove the root modifier nodes as they are not relevant from the perspective of the tests.
- * There are 5 nodes: FocusTargetNode, FocusPropertiesNode, KeyInputNode, RotaryInputNode,
- * SemanticsNode and DragAndDropNode.
+ * Remove the root modifier nodes as they are not relevant from the perspective of the tests. There
+ * are 5 nodes: FocusTargetNode, KeyInputNode, RotaryInputNode, SemanticsNode and DragAndDropNode.
  */
-internal fun <T> List<T>.trimRootModifierNodes(): List<T> = dropLast(6)
+internal fun <T> List<T>.trimRootModifierNodes(): List<T> = dropLast(5)
 
 internal fun Modifier.elementOf(node: Modifier.Node): Modifier {
     return this.then(ElementOf { node })
 }
-private data class ElementOf<T : Modifier.Node>(
-    val factory: () -> T
-) : ModifierNodeElement<T>() {
+
+private data class ElementOf<T : Modifier.Node>(val factory: () -> T) : ModifierNodeElement<T>() {
     override fun create(): T = factory()
+
     override fun update(node: T) {}
-    override fun InspectorInfo.inspectableProperties() { name = "testNode" }
+
+    override fun InspectorInfo.inspectableProperties() {
+        name = "testNode"
+    }
 }
+
+@Composable
+internal fun ReverseMeasureLayout(modifier: Modifier, vararg contents: @Composable () -> Unit) =
+    SubcomposeLayout(modifier) { constraints ->
+        var layoutWidth = constraints.minWidth
+        var layoutHeight = constraints.minHeight
+        val subcomposes = mutableListOf<List<Placeable>>()
+
+        // Measure in reverse order
+        contents.reversed().forEachIndexed { index, content ->
+            subcomposes.add(
+                0,
+                subcompose(index, content).map {
+                    it.measure(constraints).also { placeable ->
+                        layoutWidth = maxOf(layoutWidth, placeable.width)
+                        layoutHeight = maxOf(layoutHeight, placeable.height)
+                    }
+                }
+            )
+        }
+
+        layout(layoutWidth, layoutHeight) {
+
+            // But place in direct order - it sets direct draw order
+            subcomposes.forEach { placeables -> placeables.forEach { it.place(0, 0) } }
+        }
+    }

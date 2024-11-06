@@ -34,28 +34,18 @@ plugins {
 android {
     namespace "androidx.core.location.altitude"
 
-    buildTypes.all {
+    buildTypes.configureEach {
         consumerProguardFiles "proguard-rules.pro"
     }
 }
 
-BundleInsideHelper.forInsideAar(
-        project,
-        /* from = */ "com.google.protobuf",
-        /* to =   */ "androidx.core.location.altitude.impl.proto",
-        // proto-lite dependency includes .proto files, which are not used and would clash if
-        // users also use proto library directly
-        /* dropResourcesWithSuffix = */ ".proto"
-)
-
 dependencies {
     api(libs.kotlinStdlib)
-    api("androidx.annotation:annotation:1.5.0")
+    api("androidx.annotation:annotation:1.8.1")
 
-    bundleInside(project(":core:core-location-altitude-proto"))
-
+    implementation(project(":core:core-location-altitude-proto"))
     implementation(libs.autoValueAnnotations)
-    implementation(project(":core:core"))
+    implementation("androidx.core:core:1.13.0")
     implementation("androidx.room:room-runtime:2.4.3")
 
     annotationProcessor(libs.autoValue)
@@ -74,5 +64,4 @@ androidx {
     mavenVersion = LibraryVersions.CORE_LOCATION_ALTITUDE
     inceptionYear = "2022"
     description = "Provides compatibility APIs concerning location altitudes."
-    metalavaK2UastEnabled = true
 }

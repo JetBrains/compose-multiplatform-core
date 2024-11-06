@@ -26,71 +26,67 @@ import androidx.wear.compose.foundation.LocalSwipeToDismissBackgroundScrimColor
 import androidx.wear.compose.foundation.LocalSwipeToDismissContentScrimColor
 
 /**
- * MaterialTheme defines the styling principles from the Wear Material3 design specification
- * which extends the Material design specification.
+ * MaterialTheme defines the styling principles from the Wear Material3 design specification which
+ * extends the Material design specification.
  *
- * Wear Material components from package/sub-packages in [androidx.wear.compose.material3]
- * use values provided here when retrieving default values.
- *
- * TODO(b/273543423) Update references to Material3 design specs
+ * Wear Material components from package/sub-packages in [androidx.wear.compose.material3] use
+ * values provided here when retrieving default values.
  *
  * All values may be set by providing this component with the [colors][ColorScheme],
- * [typography][Typography], and [shapes][Shapes] attributes. Use this to configure the
- * overall theme of elements within this MaterialTheme.
+ * [typography][Typography], and [shapes][Shapes] attributes. Use this to configure the overall
+ * theme of elements within this MaterialTheme.
  *
  * Any values that are not set will inherit the current value from the theme, falling back to the
- * defaults if there is no parent MaterialTheme. This allows using a MaterialTheme at the
- * top of your application, and then separate MaterialTheme(s) for different screens / parts of
- * your UI, overriding only the parts of the theme definition that need to change.
+ * defaults if there is no parent MaterialTheme. This allows using a MaterialTheme at the top of
+ * your application, and then separate MaterialTheme(s) for different screens / parts of your UI,
+ * overriding only the parts of the theme definition that need to change.
  *
  * For more information, see the
- * [Theming](https://developer.android.com/training/wearables/components/theme)
- * guide.
+ * [Theming](https://developer.android.com/training/wearables/components/theme) guide.
  *
  * @param colorScheme A complete definition of the Wear Material Color theme for this hierarchy
  * @param typography A set of text styles to be used as this hierarchy's typography system
  * @param shapes A set of shapes to be used by the components in this hierarchy
+ * @param motionScheme a set of motion specs used to animate content for this hierarchy.
+ * @param content Slot for composable content displayed with this theme
  */
+// TODO(b/273543423) Update references to Material3 design specs
 @Composable
 fun MaterialTheme(
     colorScheme: ColorScheme = MaterialTheme.colorScheme,
     typography: Typography = MaterialTheme.typography,
     shapes: Shapes = MaterialTheme.shapes,
+    motionScheme: MotionScheme = MaterialTheme.motionScheme,
     content: @Composable () -> Unit
 ) {
-    val rippleIndication = rippleOrFallbackImplementation()
+    val rippleIndication = ripple()
     val selectionColors = rememberTextSelectionColors(colorScheme)
-    @Suppress("DEPRECATION_ERROR")
     CompositionLocalProvider(
         LocalColorScheme provides colorScheme,
         LocalShapes provides shapes,
         LocalTypography provides typography,
+        LocalMotionScheme provides motionScheme,
         LocalIndication provides rippleIndication,
-        // TODO: b/304985887 - remove after one stable release
-        androidx.compose.material.ripple.LocalRippleTheme provides CompatRippleTheme,
         LocalTextSelectionColors provides selectionColors,
         LocalSwipeToDismissBackgroundScrimColor provides colorScheme.background,
         LocalSwipeToDismissContentScrimColor provides colorScheme.background
-        ) {
+    ) {
         ProvideTextStyle(value = typography.bodyLarge, content = content)
     }
 }
 
 object MaterialTheme {
     val colorScheme: ColorScheme
-        @ReadOnlyComposable
-        @Composable
-        get() = LocalColorScheme.current
+        @ReadOnlyComposable @Composable get() = LocalColorScheme.current
 
     val typography: Typography
-        @ReadOnlyComposable
-        @Composable
-        get() = LocalTypography.current
+        @ReadOnlyComposable @Composable get() = LocalTypography.current
 
     val shapes: Shapes
-        @ReadOnlyComposable
-        @Composable
-        get() = LocalShapes.current
+        @ReadOnlyComposable @Composable get() = LocalShapes.current
+
+    val motionScheme: MotionScheme
+        @ReadOnlyComposable @Composable get() = LocalMotionScheme.current
 }
 
 @Composable

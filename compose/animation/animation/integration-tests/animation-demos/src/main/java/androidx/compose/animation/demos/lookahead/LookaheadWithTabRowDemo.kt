@@ -16,6 +16,8 @@
 
 package androidx.compose.animation.demos.lookahead
 
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.animateBounds
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -43,7 +45,6 @@ import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.LookaheadScope
@@ -51,20 +52,22 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 
-@OptIn(ExperimentalComposeUiApi::class)
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Preview
 @Composable
 fun LookaheadWithTabRowDemo() {
     LookaheadScope {
-        val isWide by produceState(false) {
-            while (true) {
-                delay(5000)
-                value = !value
+        val isWide by
+            produceState(false) {
+                while (true) {
+                    delay(5000)
+                    value = !value
+                }
             }
-        }
         Column(
             Modifier.fillMaxWidth()
                 .animateBounds(
+                    this@LookaheadScope,
                     if (isWide) Modifier else Modifier.padding(end = 100.dp)
                 )
                 .fillMaxHeight()
@@ -101,14 +104,11 @@ fun FancyTabs() {
 fun FancyTab(title: String, onClick: () -> Unit, selected: Boolean) {
     Tab(selected, onClick) {
         Column(
-            Modifier
-                .padding(10.dp)
-                .height(50.dp),
+            Modifier.padding(10.dp).height(50.dp),
             verticalArrangement = Arrangement.SpaceBetween
         ) {
             Box(
-                Modifier
-                    .size(10.dp)
+                Modifier.size(10.dp)
                     .align(Alignment.CenterHorizontally)
                     .background(color = if (selected) Color.Red else Color.White)
             )
@@ -121,22 +121,22 @@ fun FancyTab(title: String, onClick: () -> Unit, selected: Boolean) {
     }
 }
 
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun ScrollingTextTabs() {
     var state by remember { mutableIntStateOf(0) }
-    val titles = listOf(
-        "Tab 1",
-        "Tab 2",
-        "Tab 3 with lots of text",
-        "Tab 4",
-        "Tab 5",
-        "Tab 6 with lots of text",
-        "Tab 7",
-        "Tab 8",
-        "Tab 9 with lots of text",
-        "Tab 10"
-    )
+    val titles =
+        listOf(
+            "Tab 1",
+            "Tab 2",
+            "Tab 3 with lots of text",
+            "Tab 4",
+            "Tab 5",
+            "Tab 6 with lots of text",
+            "Tab 7",
+            "Tab 8",
+            "Tab 9 with lots of text",
+            "Tab 10"
+        )
     Column {
         ScrollableTabRow(selectedTabIndex = state) {
             LookaheadScope {
@@ -160,35 +160,30 @@ fun ScrollingTextTabs() {
 @Composable
 fun ScrollingFancyIndicatorContainerTabs() {
     var state by remember { mutableIntStateOf(0) }
-    val titles = listOf(
-        "Tab 1",
-        "Tab 2",
-        "Tab 3 with lots of text",
-        "Tab 4",
-        "Tab 5",
-        "Tab 6 with lots of text",
-        "Tab 7",
-        "Tab 8",
-        "Tab 9 with lots of text",
-        "Tab 10"
-    )
+    val titles =
+        listOf(
+            "Tab 1",
+            "Tab 2",
+            "Tab 3 with lots of text",
+            "Tab 4",
+            "Tab 5",
+            "Tab 6 with lots of text",
+            "Tab 7",
+            "Tab 8",
+            "Tab 9 with lots of text",
+            "Tab 10"
+        )
 
     // Reuse the default offset animation modifier, but use our own indicator
-    val indicator = @Composable { tabPositions: List<TabPosition> ->
-        FancyIndicator(Color.White, Modifier.tabIndicatorOffset(tabPositions[state]))
-    }
+    val indicator =
+        @Composable { tabPositions: List<TabPosition> ->
+            FancyIndicator(Color.White, Modifier.tabIndicatorOffset(tabPositions[state]))
+        }
 
     Column {
-        ScrollableTabRow(
-            selectedTabIndex = state,
-            indicator = indicator
-        ) {
+        ScrollableTabRow(selectedTabIndex = state, indicator = indicator) {
             titles.forEachIndexed { index, title ->
-                Tab(
-                    selected = state == index,
-                    onClick = { state = index },
-                    text = { Text(title) }
-                )
+                Tab(selected = state == index, onClick = { state = index }, text = { Text(title) })
             }
         }
         Text(

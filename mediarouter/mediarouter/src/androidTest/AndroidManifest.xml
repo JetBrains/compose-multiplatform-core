@@ -17,8 +17,11 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <application
-        android:supportsRtl="true"
-        android:name="androidx.multidex.MultiDexApplication">
+        android:supportsRtl="true">
+
+        <receiver android:name="androidx.mediarouter.media.MediaTransferReceiver"
+            android:exported="true" />
+
         <activity
             android:name="androidx.mediarouter.app.MediaRouteChooserDialogTestActivity"
             android:label="MediaRouteChooserDialogTestActivity"
@@ -30,7 +33,13 @@
             android:exported="true">
             <intent-filter>
                 <action android:name="android.media.MediaRouteProviderService" />
-                <action android:name="android.media.MediaRoute2ProviderService" />
+            </intent-filter>
+        </service>
+        <service
+            android:name="androidx.mediarouter.media.StubDynamicMediaRouteProviderService"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.media.MediaRouteProviderService" />
             </intent-filter>
         </service>
 

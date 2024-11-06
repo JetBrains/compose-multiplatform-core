@@ -16,20 +16,23 @@
 
 package androidx.appsearch.safeparcel;
 
+import android.annotation.SuppressLint;
 import android.os.Parcel;
+import android.os.Parcelable;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
-import androidx.annotation.VisibleForTesting;
 import androidx.appsearch.annotation.CanIgnoreReturnValue;
+import androidx.appsearch.annotation.CurrentTimeMillisLong;
 import androidx.appsearch.app.AppSearchSchema;
 import androidx.appsearch.app.AppSearchSession;
+import androidx.appsearch.app.EmbeddingVector;
 import androidx.appsearch.app.GenericDocument;
-import androidx.appsearch.safeparcel.stub.StubCreators.GenericDocumentParcelCreator;
 import androidx.collection.ArrayMap;
 
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -41,9 +44,11 @@ import java.util.Set;
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 @SafeParcelable.Class(creator = "GenericDocumentParcelCreator")
-public final class GenericDocumentParcel extends AbstractSafeParcelable {
+// This won't be used to send data over binder, and we have to use Parcelable for code sync purpose.
+@SuppressLint("BanParcelableUsage")
+public final class GenericDocumentParcel extends AbstractSafeParcelable implements Parcelable {
     @NonNull
-    public static final GenericDocumentParcelCreator CREATOR =
+    public static final Parcelable.Creator<GenericDocumentParcel> CREATOR =
             new GenericDocumentParcelCreator();
 
     /** The default score of document. */
@@ -83,7 +88,15 @@ public final class GenericDocumentParcel extends AbstractSafeParcelable {
      */
     @Field(id = 7, getter = "getProperties")
     @NonNull
-    private final PropertyParcel[] mProperties;
+    private final List<PropertyParcel> mProperties;
+
+    /**
+     * Contains all parent properties for this {@link GenericDocument} in a list.
+     *
+     */
+    @Field(id = 8, getter = "getParentTypes")
+    @Nullable
+    private final List<String> mParentTypes;
 
     /**
      * Contains all properties in {@link GenericDocument} to support getting properties via name
@@ -110,9 +123,10 @@ public final class GenericDocumentParcel extends AbstractSafeParcelable {
             @Param(id = 4) long creationTimestampMillis,
             @Param(id = 5) long ttlMillis,
             @Param(id = 6) int score,
-            @Param(id = 7) @NonNull PropertyParcel[] properties) {
+            @Param(id = 7) @NonNull List<PropertyParcel> properties,
+            @Param(id = 8) @Nullable List<String> parentTypes) {
         this(namespace, id, schemaType, creationTimestampMillis, ttlMillis, score,
-                properties, createPropertyMapFromPropertyArray(properties));
+                properties, createPropertyMapFromPropertyArray(properties), parentTypes);
     }
 
     /**
@@ -128,8 +142,9 @@ public final class GenericDocumentParcel extends AbstractSafeParcelable {
             long creationTimestampMillis,
             long ttlMillis,
             int score,
-            @NonNull PropertyParcel[] properties,
-            @NonNull Map<String, PropertyParcel> propertyMap) {
+            @NonNull List<PropertyParcel> properties,
+            @NonNull Map<String, PropertyParcel> propertyMap,
+            @Nullable List<String> parentTypes) {
         mNamespace = Objects.requireNonNull(namespace);
         mId = Objects.requireNonNull(id);
         mSchemaType = Objects.requireNonNull(schemaType);
@@ -138,14 +153,23 @@ public final class GenericDocumentParcel extends AbstractSafeParcelable {
         mScore = score;
         mProperties = Objects.requireNonNull(properties);
         mPropertyMap = Objects.requireNonNull(propertyMap);
+        mParentTypes = parentTypes;
+    }
+
+    /** Returns the {@link GenericDocumentParcel} object from the given {@link GenericDocument}. */
+    @NonNull
+    public static GenericDocumentParcel fromGenericDocument(
+            @NonNull GenericDocument genericDocument) {
+        Objects.requireNonNull(genericDocument);
+        return genericDocument.getDocumentParcel();
     }
 
     private static Map<String, PropertyParcel> createPropertyMapFromPropertyArray(
-            @NonNull PropertyParcel[] properties) {
+            @NonNull List<PropertyParcel> properties) {
         Objects.requireNonNull(properties);
-        Map<String, PropertyParcel> propertyMap = new ArrayMap<>(properties.length);
-        for (int i = 0; i < properties.length; ++i) {
-            PropertyParcel property = properties[i];
+        Map<String, PropertyParcel> propertyMap = new ArrayMap<>(properties.size());
+        for (int i = 0; i < properties.size(); ++i) {
+            PropertyParcel property = properties.get(i);
             propertyMap.put(property.getPropertyName(), property);
         }
         return propertyMap;
@@ -170,7 +194,7 @@ public final class GenericDocumentParcel extends AbstractSafeParcelable {
     }
 
     /** Returns the creation timestamp of the {@link GenericDocument}, in milliseconds. */
-    /*@exportToFramework:CurrentTimeMillisLong*/
+    @CurrentTimeMillisLong
     public long getCreationTimestampMillis() {
         return mCreationTimestampMillis;
     }
@@ -193,7 +217,7 @@ public final class GenericDocumentParcel extends AbstractSafeParcelable {
 
     /** Returns all the properties the document has. */
     @NonNull
-    public PropertyParcel[] getProperties() {
+    public List<PropertyParcel> getProperties() {
         return mProperties;
     }
 
@@ -201,6 +225,12 @@ public final class GenericDocumentParcel extends AbstractSafeParcelable {
     @NonNull
     public Map<String, PropertyParcel> getPropertyMap() {
         return mPropertyMap;
+    }
+
+    /** Returns the list of parent types for the {@link GenericDocument}. */
+    @Nullable
+    public List<String> getParentTypes() {
+        return mParentTypes;
     }
 
     @Override
@@ -218,8 +248,9 @@ public final class GenericDocumentParcel extends AbstractSafeParcelable {
                 && mTtlMillis == otherDocument.mTtlMillis
                 && mCreationTimestampMillis == otherDocument.mCreationTimestampMillis
                 && mScore == otherDocument.mScore
-                && Arrays.equals(mProperties, otherDocument.mProperties)
-                && Objects.equals(mPropertyMap, otherDocument.mPropertyMap);
+                && Objects.equals(mProperties, otherDocument.mProperties)
+                && Objects.equals(mPropertyMap, otherDocument.mPropertyMap)
+                && Objects.equals(mParentTypes, otherDocument.mParentTypes);
     }
 
     @Override
@@ -232,8 +263,9 @@ public final class GenericDocumentParcel extends AbstractSafeParcelable {
                     mTtlMillis,
                     mScore,
                     mCreationTimestampMillis,
-                    Arrays.hashCode(mProperties),
-                    mPropertyMap.hashCode());
+                    Objects.hashCode(mProperties),
+                    Objects.hashCode(mPropertyMap),
+                    Objects.hashCode(mParentTypes));
         }
         return mHashCode;
     }
@@ -252,10 +284,10 @@ public final class GenericDocumentParcel extends AbstractSafeParcelable {
         private long mTtlMillis;
         private int mScore;
         private Map<String, PropertyParcel> mPropertyMap;
-        private boolean mBuilt = false;
+        @Nullable private List<String> mParentTypes;
 
         /**
-         * Creates a new {@link GenericDocument.Builder}.
+         * Creates a new {@link GenericDocumentParcel.Builder}.
          *
          * <p>Document IDs are unique within a namespace.
          *
@@ -275,7 +307,6 @@ public final class GenericDocumentParcel extends AbstractSafeParcelable {
          * Creates a new {@link GenericDocumentParcel.Builder} from the given
          * {@link GenericDocumentParcel}.
          */
-        @VisibleForTesting
         public Builder(@NonNull GenericDocumentParcel documentSafeParcel) {
             Objects.requireNonNull(documentSafeParcel);
 
@@ -292,6 +323,10 @@ public final class GenericDocumentParcel extends AbstractSafeParcelable {
             for (PropertyParcel value : propertyMap.values()) {
                 mPropertyMap.put(value.getPropertyName(), value);
             }
+
+            // We don't need to create a shallow copy here, as in the setter for ParentTypes we
+            // will create a new list anyway.
+            mParentTypes = documentSafeParcel.mParentTypes;
         }
 
         /**
@@ -306,7 +341,6 @@ public final class GenericDocumentParcel extends AbstractSafeParcelable {
         @NonNull
         public Builder setNamespace(@NonNull String namespace) {
             Objects.requireNonNull(namespace);
-            resetIfBuilt();
             mNamespace = namespace;
             return this;
         }
@@ -321,7 +355,6 @@ public final class GenericDocumentParcel extends AbstractSafeParcelable {
         @NonNull
         public Builder setId(@NonNull String id) {
             Objects.requireNonNull(id);
-            resetIfBuilt();
             mId = id;
             return this;
         }
@@ -330,13 +363,12 @@ public final class GenericDocumentParcel extends AbstractSafeParcelable {
          * Sets the schema type of this document, changing the value provided in the constructor.
          *
          * <p>To successfully index a document, the schema type must match the name of an {@link
-         * AppSearchSchema} object previously provided to {@link AppSearchSession#setSchema}.
+         * AppSearchSchema} object previously provided to {@link AppSearchSession#setSchemaAsync}.
          */
         @CanIgnoreReturnValue
         @NonNull
         public Builder setSchemaType(@NonNull String schemaType) {
             Objects.requireNonNull(schemaType);
-            resetIfBuilt();
             mSchemaType = schemaType;
             return this;
         }
@@ -345,7 +377,6 @@ public final class GenericDocumentParcel extends AbstractSafeParcelable {
         @CanIgnoreReturnValue
         @NonNull
         public Builder setScore(int score) {
-            resetIfBuilt();
             mScore = score;
             return this;
         }
@@ -363,8 +394,7 @@ public final class GenericDocumentParcel extends AbstractSafeParcelable {
         @CanIgnoreReturnValue
         @NonNull
         public Builder setCreationTimestampMillis(
-                /*@exportToFramework:CurrentTimeMillisLong*/ long creationTimestampMillis) {
-            resetIfBuilt();
+                @CurrentTimeMillisLong long creationTimestampMillis) {
             mCreationTimestampMillis = creationTimestampMillis;
             return this;
         }
@@ -377,7 +407,8 @@ public final class GenericDocumentParcel extends AbstractSafeParcelable {
          * System#currentTimeMillis} time base, the document will be auto-deleted.
          *
          * <p>The default value is 0, which means the document is permanent and won't be
-         * auto-deleted until the app is uninstalled or {@link AppSearchSession#remove} is called.
+         * auto-deleted until the app is uninstalled or {@link AppSearchSession#removeAsync} is
+         * called.
          *
          * @param ttlMillis a non-negative duration in milliseconds.
          * @throws IllegalArgumentException if ttlMillis is negative.
@@ -388,8 +419,20 @@ public final class GenericDocumentParcel extends AbstractSafeParcelable {
             if (ttlMillis < 0) {
                 throw new IllegalArgumentException("Document ttlMillis cannot be negative.");
             }
-            resetIfBuilt();
             mTtlMillis = ttlMillis;
+            return this;
+        }
+
+        /**
+         * Sets the list of parent types of the {@link GenericDocument}'s type.
+         *
+         * <p>Child types must appear before parent types in the list.
+         */
+        @CanIgnoreReturnValue
+        @NonNull
+        public Builder setParentTypes(@NonNull List<String> parentTypes) {
+            Objects.requireNonNull(parentTypes);
+            mParentTypes = new ArrayList<>(parentTypes);
             return this;
         }
 
@@ -404,40 +447,43 @@ public final class GenericDocumentParcel extends AbstractSafeParcelable {
         @NonNull
         public Builder clearProperty(@NonNull String name) {
             Objects.requireNonNull(name);
-            resetIfBuilt();
             mPropertyMap.remove(name);
             return this;
         }
 
         /** puts an array of {@link String} in property map. */
+        @CanIgnoreReturnValue
         @NonNull
         public Builder putInPropertyMap(@NonNull String name, @NonNull String[] values)
                 throws IllegalArgumentException {
-            mPropertyMap.put(name,
+            putInPropertyMap(name,
                     new PropertyParcel.Builder(name).setStringValues(values).build());
             return this;
         }
 
         /** puts an array of boolean in property map. */
+        @CanIgnoreReturnValue
         @NonNull
         public Builder putInPropertyMap(@NonNull String name, @NonNull boolean[] values) {
-            mPropertyMap.put(name,
+            putInPropertyMap(name,
                     new PropertyParcel.Builder(name).setBooleanValues(values).build());
             return this;
         }
 
         /** puts an array of double in property map. */
+        @CanIgnoreReturnValue
         @NonNull
         public Builder putInPropertyMap(@NonNull String name, @NonNull double[] values) {
-            mPropertyMap.put(name,
+            putInPropertyMap(name,
                     new PropertyParcel.Builder(name).setDoubleValues(values).build());
             return this;
         }
 
         /** puts an array of long in property map. */
+        @CanIgnoreReturnValue
         @NonNull
         public Builder putInPropertyMap(@NonNull String name, @NonNull long[] values) {
-            mPropertyMap.put(name,
+            putInPropertyMap(name,
                     new PropertyParcel.Builder(name).setLongValues(values).build());
             return this;
         }
@@ -445,26 +491,47 @@ public final class GenericDocumentParcel extends AbstractSafeParcelable {
         /**
          * Converts and saves a byte[][] into {@link #mProperties}.
          */
+        @CanIgnoreReturnValue
         @NonNull
         public Builder putInPropertyMap(@NonNull String name, @NonNull byte[][] values) {
-            mPropertyMap.put(name,
+            putInPropertyMap(name,
                     new PropertyParcel.Builder(name).setBytesValues(values).build());
             return this;
         }
 
         /** puts an array of {@link GenericDocumentParcel} in property map. */
+        @CanIgnoreReturnValue
         @NonNull
         public Builder putInPropertyMap(@NonNull String name,
                 @NonNull GenericDocumentParcel[] values) {
-            mPropertyMap.put(name,
+            putInPropertyMap(name,
                     new PropertyParcel.Builder(name).setDocumentValues(values).build());
+            return this;
+        }
+
+        /** puts an array of {@link EmbeddingVector} in property map. */
+        @CanIgnoreReturnValue
+        @NonNull
+        public Builder putInPropertyMap(@NonNull String name,
+                @NonNull EmbeddingVector[] values) {
+            putInPropertyMap(name,
+                    new PropertyParcel.Builder(name).setEmbeddingValues(values).build());
+            return this;
+        }
+
+        /** Directly puts a {@link PropertyParcel} in property map. */
+        @CanIgnoreReturnValue
+        @NonNull
+        public Builder putInPropertyMap(@NonNull String name,
+                @NonNull PropertyParcel value) {
+            Objects.requireNonNull(value);
+            mPropertyMap.put(name, value);
             return this;
         }
 
         /** Builds the {@link GenericDocument} object. */
         @NonNull
         public GenericDocumentParcel build() {
-            mBuilt = true;
             // Set current timestamp for creation timestamp by default.
             if (mCreationTimestampMillis == INVALID_CREATION_TIMESTAMP_MILLIS) {
                 mCreationTimestampMillis = System.currentTimeMillis();
@@ -476,19 +543,8 @@ public final class GenericDocumentParcel extends AbstractSafeParcelable {
                     mCreationTimestampMillis,
                     mTtlMillis,
                     mScore,
-                    mPropertyMap.values().toArray(new PropertyParcel[0]));
-        }
-
-        void resetIfBuilt() {
-            if (mBuilt) {
-                Map<String, PropertyParcel> propertyMap = mPropertyMap;
-                mPropertyMap = new ArrayMap<>(propertyMap.size());
-                for (PropertyParcel value : propertyMap.values()) {
-                    // PropertyParcel is not deep copied since it is not mutable.
-                    mPropertyMap.put(value.getPropertyName(), value);
-                }
-                mBuilt = false;
-            }
+                    new ArrayList<>(mPropertyMap.values()),
+                    mParentTypes);
         }
     }
 }

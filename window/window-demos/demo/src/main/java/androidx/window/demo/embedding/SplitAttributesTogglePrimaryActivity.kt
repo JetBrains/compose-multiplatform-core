@@ -21,16 +21,21 @@ import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
 import android.view.View
+import android.widget.ArrayAdapter
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.window.WindowSdkExtensions
+import androidx.window.core.ExperimentalWindowApi
+import androidx.window.demo.R
 import androidx.window.embedding.ActivityStack
 import androidx.window.embedding.SplitInfo
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 
-class SplitAttributesTogglePrimaryActivity : SplitAttributesToggleMainActivity(),
-    View.OnClickListener {
+@OptIn(ExperimentalWindowApi::class)
+class SplitAttributesTogglePrimaryActivity :
+    SplitAttributesToggleMainActivity(), View.OnClickListener {
 
     private lateinit var secondaryActivityIntent: Intent
     private var activityStacks: Set<ActivityStack> = emptySet()
@@ -40,10 +45,9 @@ class SplitAttributesTogglePrimaryActivity : SplitAttributesToggleMainActivity()
 
         viewBinding.rootSplitActivityLayout.setBackgroundColor(Color.parseColor("#e8f5e9"))
 
-        secondaryActivityIntent = Intent(
-            this,
-            SplitAttributesToggleSecondaryActivity::class.java
-        )
+        val isRuntimeApiSupported = WindowSdkExtensions.getInstance().extensionVersion >= 3
+
+        secondaryActivityIntent = Intent(this, SplitAttributesToggleSecondaryActivity::class.java)
 
         if (intent.getBooleanExtra(EXTRA_LAUNCH_SECONDARY, false)) {
             startActivity(secondaryActivityIntent)
@@ -54,6 +58,30 @@ class SplitAttributesTogglePrimaryActivity : SplitAttributesToggleMainActivity()
 
         // Enable to finish secondary ActivityStacks for primary Activity.
         viewBinding.finishSecondaryActivitiesDivider.visibility = View.VISIBLE
+        val finishSecondaryActivitiesButton =
+            viewBinding.finishSecondaryActivitiesButton.apply {
+                visibility = View.VISIBLE
+                if (!isRuntimeApiSupported) {
+                    isEnabled = false
+                } else {
+                    setOnClickListener(this@SplitAttributesTogglePrimaryActivity)
+                }
+            }
+
+        // Animation background
+        if (WindowSdkExtensions.getInstance().extensionVersion >= 5) {
+            val animationBackgroundDropdown = viewBinding.animationBackgroundDropdown
+            animationBackgroundDropdown.visibility = View.VISIBLE
+            viewBinding.animationBackgroundDivider.visibility = View.VISIBLE
+            viewBinding.animationBackgroundTextView.visibility = View.VISIBLE
+            animationBackgroundDropdown.adapter =
+                ArrayAdapter(
+                    this,
+                    android.R.layout.simple_spinner_dropdown_item,
+                    DemoActivityEmbeddingController.ANIMATION_BACKGROUND_TEXTS
+                )
+            animationBackgroundDropdown.onItemSelectedListener = this
+        }
 
         lifecycleScope.launch {
             // The block passed to repeatOnLifecycle is executed when the lifecycle
@@ -64,11 +92,13 @@ class SplitAttributesTogglePrimaryActivity : SplitAttributesToggleMainActivity()
                     .splitInfoList(this@SplitAttributesTogglePrimaryActivity)
                     .onEach { updateUiFromRules() }
                     .collect { splitInfoList ->
-                        activityStacks = splitInfoList.mapTo(mutableSetOf()) { splitInfo ->
-                            splitInfo.getTheOtherActivityStack(
-                                this@SplitAttributesTogglePrimaryActivity
-                            )
-                        }
+                        finishSecondaryActivitiesButton.isEnabled = splitInfoList.isNotEmpty()
+                        activityStacks =
+                            splitInfoList.mapTo(mutableSetOf()) { splitInfo ->
+                                splitInfo.getTheOtherActivityStack(
+                                    this@SplitAttributesTogglePrimaryActivity
+                                )
+                            }
                     }
             }
         }
@@ -80,4 +110,14 @@ class SplitAttributesTogglePrimaryActivity : SplitAttributesToggleMainActivity()
         } else {
             primaryActivityStack
         }
+
+    override fun onClick(button: View) {
+        super.onClick(button)
+        when (button.id) {
+            R.id.finish_secondary_activities_button -> {
+                applyRules()
+                activityEmbeddingController.finishActivityStacks(activityStacks)
+            }
+        }
+    }
 }

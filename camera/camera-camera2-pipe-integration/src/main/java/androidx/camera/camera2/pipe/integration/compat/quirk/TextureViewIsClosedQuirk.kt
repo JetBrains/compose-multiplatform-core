@@ -17,7 +17,6 @@ package androidx.camera.camera2.pipe.integration.compat.quirk
 
 import android.annotation.SuppressLint
 import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.camera.camera2.pipe.CameraMetadata
 import androidx.camera.core.impl.Quirk
 
@@ -34,11 +33,10 @@ import androidx.camera.core.impl.Quirk
  * TODO(b/270421716): enable CameraXQuirksClassDetector lint check when kotlin is supported.
  */
 @SuppressLint("CameraXQuirksClassDetector")
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
-class TextureViewIsClosedQuirk : Quirk {
-    companion object {
+public class TextureViewIsClosedQuirk : Quirk {
+    public companion object {
         @Suppress("UNUSED_PARAMETER")
-        fun isEnabled(cameraMetadata: CameraMetadata): Boolean {
+        public fun isEnabled(cameraMetadata: CameraMetadata): Boolean {
             return Build.VERSION.SDK_INT <= Build.VERSION_CODES.M
         }
     }

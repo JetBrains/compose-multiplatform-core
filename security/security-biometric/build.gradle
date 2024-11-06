@@ -21,7 +21,7 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.Publish
+import androidx.build.LibraryType
 
 plugins {
     id("AndroidXPlugin")
@@ -30,7 +30,7 @@ plugins {
 }
 
 dependencies {
-    api("androidx.annotation:annotation:1.1.0")
+    api("androidx.annotation:annotation:1.8.1")
 
     implementation("com.google.crypto.tink:tink-android:1.3.0")
 
@@ -51,9 +51,9 @@ android {
 
 androidx {
     name = "Security Biometric"
-    publish = Publish.SNAPSHOT_AND_RELEASE
+    type = LibraryType.PUBLISHED_LIBRARY
     mavenVersion = LibraryVersions.SECURITY_BIOMETRIC
     inceptionYear = "2020"
     description = "AndroidX Security Biometric"
-    metalavaK2UastEnabled = true
+    legacyDisableKotlinStrictApiMode = true
 }

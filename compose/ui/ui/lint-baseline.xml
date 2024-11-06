@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<issues format="6" by="lint 8.4.0-alpha09" type="baseline" client="gradle" dependencies="false" name="AGP (8.4.0-alpha09)" variant="all" version="8.4.0-alpha09">
+<issues format="6" by="lint 8.8.0-alpha06" type="baseline" client="gradle" dependencies="false" name="AGP (8.8.0-alpha06)" variant="all" version="8.8.0-alpha06">
 
     <issue
         id="BanThreadSleep"
         message="Uses Thread.sleep()"
-        errorLine1="                Thread.sleep(sleepTime)"
-        errorLine2="                       ~~~~~">
+        errorLine1="            rule.runOnUiThread { Thread.sleep(sleepTime) }"
+        errorLine2="                                        ~~~~~">
         <location
             file="src/androidInstrumentedTest/kotlin/androidx/compose/ui/input/pointer/AndroidPointerInputTest.kt"/>
     </issue>
@@ -20,30 +20,12 @@
     </issue>
 
     <issue
-        id="ExperimentalPropertyAnnotation"
-        message="This property does not have all required annotations to correctly mark it as experimental."
-        errorLine1="    @ExperimentalComposeUiApi"
-        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~">
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `Build.VERSION.SDK_INT &lt; Build.VERSION_CODES.S` is never true here"
+        errorLine1="            if (Build.VERSION.SDK_INT &lt; Build.VERSION_CODES.S) {"
+        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/commonMain/kotlin/androidx/compose/ui/semantics/SemanticsProperties.kt"/>
-    </issue>
-
-    <issue
-        id="ExperimentalPropertyAnnotation"
-        message="This property does not have all required annotations to correctly mark it as experimental."
-        errorLine1="    @get:ExperimentalComposeUiApi"
-        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/commonMain/kotlin/androidx/compose/ui/platform/WindowInfo.kt"/>
-    </issue>
-
-    <issue
-        id="ExperimentalPropertyAnnotation"
-        message="This property does not have all required annotations to correctly mark it as experimental."
-        errorLine1="    @get:ExperimentalComposeUiApi"
-        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/commonMain/kotlin/androidx/compose/ui/platform/WindowInfo.kt"/>
+            file="src/androidMain/kotlin/androidx/compose/ui/contentcapture/AndroidContentCaptureManager.android.kt"/>
     </issue>
 
     <issue
@@ -67,19 +49,10 @@
     <issue
         id="PrimitiveInCollection"
         message="variable deltas with type List&lt;? extends Offset>: replace with LongList"
-        errorLine1="    val deltas = items.fastZipWithNext { el1, el2 ->"
+        errorLine1="    val deltas ="
         errorLine2="    ^">
         <location
             file="src/androidMain/kotlin/androidx/compose/ui/platform/accessibility/CollectionInfo.android.kt"/>
-    </issue>
-
-    <issue
-        id="PrimitiveInCollection"
-        message="return type Map&lt;LayoutNode, Integer> of getMapOfOriginalDepth: replace with ObjectIntMap"
-        errorLine1="    private val mapOfOriginalDepth by lazy(LazyThreadSafetyMode.NONE) {"
-        errorLine2="                ~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/commonMain/kotlin/androidx/compose/ui/node/DepthSortedSet.kt"/>
     </issue>
 
     <issue
@@ -102,27 +75,27 @@
 
     <issue
         id="PrimitiveInCollection"
-        message="return type Map&lt;AlignmentLine, Integer> of getLastCalculation: replace with ObjectIntMap"
-        errorLine1="    fun getLastCalculation(): Map&lt;AlignmentLine, Int> = alignmentLineMap"
-        errorLine2="                              ~~~~~~~~~~~~~~~~~~~~~~~">
+        message="return type Map&lt;? extends AlignmentLine, Integer> of getLastCalculation: replace with ObjectIntMap"
+        errorLine1="    fun getLastCalculation(): Map&lt;out AlignmentLine, Int> = alignmentLineMap"
+        errorLine2="                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/commonMain/kotlin/androidx/compose/ui/node/LayoutNodeAlignmentLines.kt"/>
     </issue>
 
     <issue
         id="PrimitiveInCollection"
-        message="return type Map&lt;AlignmentLine, Integer> of getAlignmentLinesMap: replace with ObjectIntMap"
-        errorLine1="    protected abstract val NodeCoordinator.alignmentLinesMap: Map&lt;AlignmentLine, Int>"
-        errorLine2="                                                              ~~~~~~~~~~~~~~~~~~~~~~~">
+        message="return type Map&lt;? extends AlignmentLine, Integer> of getAlignmentLinesMap: replace with ObjectIntMap"
+        errorLine1="    protected abstract val NodeCoordinator.alignmentLinesMap: Map&lt;out AlignmentLine, Int>"
+        errorLine2="                                                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/commonMain/kotlin/androidx/compose/ui/node/LayoutNodeAlignmentLines.kt"/>
     </issue>
 
     <issue
         id="PrimitiveInCollection"
-        message="return type Map&lt;AlignmentLine, Integer> of calculateAlignmentLines: replace with ObjectIntMap"
-        errorLine1="    fun calculateAlignmentLines(): Map&lt;AlignmentLine, Int>"
-        errorLine2="                                   ~~~~~~~~~~~~~~~~~~~~~~~">
+        message="return type Map&lt;? extends AlignmentLine, Integer> of calculateAlignmentLines: replace with ObjectIntMap"
+        errorLine1="    fun calculateAlignmentLines(): Map&lt;out AlignmentLine, Int>"
+        errorLine2="                                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/commonMain/kotlin/androidx/compose/ui/node/LayoutNodeLayoutDelegate.kt"/>
     </issue>
@@ -138,52 +111,25 @@
 
     <issue
         id="PrimitiveInCollection"
-        message="field cachedAlignmentLinesMap with type Map&lt;AlignmentLine, Integer>: replace with ObjectIntMap"
-        errorLine1="    protected val cachedAlignmentLinesMap = mutableMapOf&lt;AlignmentLine, Int>()"
-        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/commonMain/kotlin/androidx/compose/ui/node/LookaheadDelegate.kt"/>
-    </issue>
-
-    <issue
-        id="PrimitiveInCollection"
-        message="return type Map&lt;AlignmentLine, Integer> of getCachedAlignmentLinesMap: replace with ObjectIntMap"
-        errorLine1="    protected val cachedAlignmentLinesMap = mutableMapOf&lt;AlignmentLine, Int>()"
-        errorLine2="                  ~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/commonMain/kotlin/androidx/compose/ui/node/LookaheadDelegate.kt"/>
-    </issue>
-
-    <issue
-        id="PrimitiveInCollection"
-        message="return type Map&lt;AlignmentLine, Integer> of getAlignmentLines: replace with ObjectIntMap"
-        errorLine1="    val alignmentLines: Map&lt;AlignmentLine, Int>"
-        errorLine2="                        ~~~~~~~~~~~~~~~~~~~~~~~">
+        message="return type Map&lt;? extends AlignmentLine, Integer> of getAlignmentLines: replace with ObjectIntMap"
+        errorLine1="    val alignmentLines: Map&lt;out AlignmentLine, Int>"
+        errorLine2="                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/commonMain/kotlin/androidx/compose/ui/layout/MeasureResult.kt"/>
     </issue>
 
     <issue
         id="PrimitiveInCollection"
-        message="method layout has parameter alignmentLines with type Map&lt;AlignmentLine, Integer>: replace with ObjectIntMap"
-        errorLine1="        alignmentLines: Map&lt;AlignmentLine, Int> = emptyMap(),"
-        errorLine2="                        ~~~~~~~~~~~~~~~~~~~~~~~">
+        message="method layout has parameter alignmentLines with type Map&lt;? extends AlignmentLine, Integer>: replace with ObjectIntMap"
+        errorLine1="        alignmentLines: Map&lt;out AlignmentLine, Int> = emptyMap(),"
+        errorLine2="                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/commonMain/kotlin/androidx/compose/ui/layout/MeasureScope.kt"/>
     </issue>
 
     <issue
         id="PrimitiveInCollection"
-        message="field oldAlignmentLines with type Map&lt;AlignmentLine, Integer>: replace with ObjectIntMap"
-        errorLine1="    private var oldAlignmentLines: MutableMap&lt;AlignmentLine, Int>? = null"
-        errorLine2="                                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/commonMain/kotlin/androidx/compose/ui/node/NodeCoordinator.kt"/>
-    </issue>
-
-    <issue
-        id="PrimitiveInCollection"
-        message="variable alignmentLines with type Map&lt;AlignmentLine, ? extends Integer>: replace with ObjectIntMap"
+        message="variable alignmentLines with type Map&lt;? extends AlignmentLine, ? extends Integer>: replace with ObjectIntMap"
         errorLine1="                val alignmentLines = coordinator._measureResult?.alignmentLines"
         errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location

@@ -14,11 +14,8 @@
  * limitations under the License.
  */
 
-@file:RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
-
 package androidx.camera.camera2.pipe.integration.config
 
-import androidx.annotation.RequiresApi
 import androidx.camera.camera2.pipe.CameraGraph
 import androidx.camera.camera2.pipe.CameraStream
 import androidx.camera.camera2.pipe.StreamId
@@ -42,23 +39,23 @@ import dagger.Subcomponent
 import java.util.concurrent.CancellationException
 import javax.inject.Scope
 
-@Scope
-annotation class UseCaseCameraScope
+@Scope public annotation class UseCaseCameraScope
 
 /** Dependency bindings for building a [UseCaseCamera] */
 @Module(
-    includes = [
-        UseCaseCameraImpl.Bindings::class,
-        UseCaseCameraRequestControlImpl.Bindings::class,
-    ]
+    includes =
+        [
+            UseCaseCameraImpl.Bindings::class,
+            UseCaseCameraRequestControlImpl.Bindings::class,
+        ]
 )
-abstract class UseCaseCameraModule {
+public abstract class UseCaseCameraModule {
     // Used for dagger provider methods that are static.
-    companion object {
+    public companion object {
 
         @UseCaseCameraScope
         @Provides
-        fun provideCapturePipeline(
+        public fun provideCapturePipeline(
             capturePipelineImpl: CapturePipelineImpl,
             capturePipelineTorchCorrection: CapturePipelineTorchCorrection
         ): CapturePipeline {
@@ -73,7 +70,7 @@ abstract class UseCaseCameraModule {
 
 /** Dagger module for binding the [UseCase]'s to the [UseCaseCamera]. */
 @Module
-class UseCaseCameraConfig(
+public class UseCaseCameraConfig(
     private val useCases: List<UseCase>,
     private val sessionConfigAdapter: SessionConfigAdapter,
     private val cameraStateAdapter: CameraStateAdapter,
@@ -83,29 +80,29 @@ class UseCaseCameraConfig(
 ) {
     @UseCaseCameraScope
     @Provides
-    fun provideUseCaseList(): java.util.ArrayList<UseCase> {
+    public fun provideUseCaseList(): java.util.ArrayList<UseCase> {
         return java.util.ArrayList(useCases)
     }
 
     @UseCaseCameraScope
     @Provides
-    fun provideSessionConfigAdapter(): SessionConfigAdapter {
+    public fun provideSessionConfigAdapter(): SessionConfigAdapter {
         return sessionConfigAdapter
     }
 
     @UseCaseCameraScope
     @Provides
-    fun provideSessionProcessorManager(): SessionProcessorManager? {
+    public fun provideSessionProcessorManager(): SessionProcessorManager? {
         return sessionProcessorManager
     }
 
     /**
-     * [UseCaseGraphConfig] would store the CameraGraph and related surface map that would
-     * be used for [UseCaseCamera].
+     * [UseCaseGraphConfig] would store the CameraGraph and related surface map that would be used
+     * for [UseCaseCamera].
      */
     @UseCaseCameraScope
     @Provides
-    fun provideUseCaseGraphConfig(
+    public fun provideUseCaseGraphConfig(
         useCaseSurfaceManager: UseCaseSurfaceManager,
         cameraInteropStateCallbackRepository: CameraInteropStateCallbackRepository
     ): UseCaseGraphConfig {
@@ -115,33 +112,30 @@ class UseCaseCameraConfig(
 
         val surfaceToStreamMap = mutableMapOf<DeferrableSurface, StreamId>()
         streamConfigMap.forEach { (streamConfig, deferrableSurface) ->
-            cameraGraph.streams[streamConfig]?.let {
-                surfaceToStreamMap[deferrableSurface] = it.id
-            }
+            cameraGraph.streams[streamConfig]?.let { surfaceToStreamMap[deferrableSurface] = it.id }
         }
 
-        Log.debug {
-            "Prepare UseCaseCameraGraphConfig: $cameraGraph "
-        }
+        Log.debug { "Prepare UseCaseCameraGraphConfig: $cameraGraph " }
 
         if (!sessionConfigAdapter.isSessionProcessorEnabled) {
             Log.debug { "Setting up Surfaces with UseCaseSurfaceManager" }
             if (sessionConfigAdapter.isSessionConfigValid()) {
-                useCaseSurfaceManager.setupAsync(
-                    cameraGraph,
-                    sessionConfigAdapter,
-                    surfaceToStreamMap,
-                ).invokeOnCompletion { throwable ->
-                    // Only show logs for error cases, ignore CancellationException since the task
-                    // could be cancelled by UseCaseSurfaceManager#stopAsync().
-                    if (throwable != null && throwable !is CancellationException) {
-                        Log.error(throwable) { "Surface setup error!" }
+                useCaseSurfaceManager
+                    .setupAsync(
+                        cameraGraph,
+                        sessionConfigAdapter,
+                        surfaceToStreamMap,
+                    )
+                    .invokeOnCompletion { throwable ->
+                        // Only show logs for error cases, ignore CancellationException since the
+                        // task
+                        // could be cancelled by UseCaseSurfaceManager#stopAsync().
+                        if (throwable != null && throwable !is CancellationException) {
+                            Log.error(throwable) { "Surface setup error!" }
+                        }
                     }
-                }
             } else {
-                Log.error {
-                    "Unable to create capture session due to conflicting configurations"
-                }
+                Log.error { "Unable to create capture session due to conflicting configurations" }
             }
         }
 
@@ -155,19 +149,17 @@ class UseCaseCameraConfig(
     }
 }
 
-data class UseCaseGraphConfig(
+public data class UseCaseGraphConfig(
     val graph: CameraGraph,
     val surfaceToStreamMap: Map<DeferrableSurface, StreamId>,
     val cameraStateAdapter: CameraStateAdapter,
 ) {
-    fun getStreamIdsFromSurfaces(
+    public fun getStreamIdsFromSurfaces(
         deferrableSurfaces: Collection<DeferrableSurface>
     ): Set<StreamId> {
         val streamIds = mutableSetOf<StreamId>()
         deferrableSurfaces.forEach {
-            surfaceToStreamMap[it]?.let { streamId ->
-                streamIds.add(streamId)
-            }
+            surfaceToStreamMap[it]?.let { streamId -> streamIds.add(streamId) }
         }
         return streamIds
     }
@@ -175,20 +167,16 @@ data class UseCaseGraphConfig(
 
 /** Dagger subcomponent for a single [UseCaseCamera] instance. */
 @UseCaseCameraScope
-@Subcomponent(
-    modules = [
-        UseCaseCameraModule::class,
-        UseCaseCameraConfig::class
-    ]
-)
-interface UseCaseCameraComponent {
-    fun getUseCaseCamera(): UseCaseCamera
+@Subcomponent(modules = [UseCaseCameraModule::class, UseCaseCameraConfig::class])
+public interface UseCaseCameraComponent {
+    public fun getUseCaseCamera(): UseCaseCamera
 
-    fun getUseCaseGraphConfig(): UseCaseGraphConfig
+    public fun getUseCaseGraphConfig(): UseCaseGraphConfig
 
     @Subcomponent.Builder
-    interface Builder {
-        fun config(config: UseCaseCameraConfig): Builder
-        fun build(): UseCaseCameraComponent
+    public interface Builder {
+        public fun config(config: UseCaseCameraConfig): Builder
+
+        public fun build(): UseCaseCameraComponent
     }
 }

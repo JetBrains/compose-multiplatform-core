@@ -19,14 +19,15 @@ package androidx.room.processor
 import androidx.room.compiler.processing.XTypeElement
 import androidx.room.compiler.processing.util.Source
 import androidx.room.compiler.processing.util.XTestInvocation
-import androidx.room.compiler.processing.util.runProcessorTest
+import androidx.room.runProcessorTestWithK1
 import androidx.room.testing.context
 import androidx.room.vo.Entity
 import java.io.File
 
 abstract class BaseEntityParserTest {
     companion object {
-        const val ENTITY_PREFIX = """
+        const val ENTITY_PREFIX =
+            """
             package foo.bar;
             import androidx.room.*;
             import androidx.annotation.NonNull;
@@ -49,9 +50,10 @@ abstract class BaseEntityParserTest {
         if (attributes.isEmpty()) {
             attributesReplacement = ""
         } else {
-            attributesReplacement = "(" +
-                attributes.entries.joinToString(",") { "${it.key} = ${it.value}" } +
-                ")".trimIndent()
+            attributesReplacement =
+                "(" +
+                    attributes.entries.joinToString(",") { "${it.key} = ${it.value}" } +
+                    ")".trimIndent()
         }
         val baseClassReplacement: String
         if (baseClass == "") {
@@ -59,25 +61,25 @@ abstract class BaseEntityParserTest {
         } else {
             baseClassReplacement = " extends $baseClass"
         }
-        runProcessorTest(
-            sources = sources + Source.java(
-                qName = "foo.bar.MyEntity",
-                code = ENTITY_PREFIX.format(attributesReplacement, baseClassReplacement) +
-                    input + ENTITY_SUFFIX
-            ),
+        runProcessorTestWithK1(
+            sources =
+                sources +
+                    Source.java(
+                        qName = "foo.bar.MyEntity",
+                        code =
+                            ENTITY_PREFIX.format(attributesReplacement, baseClassReplacement) +
+                                input +
+                                ENTITY_SUFFIX
+                    ),
+            options = mapOf(Context.BooleanProcessorOptions.GENERATE_KOTLIN.argName to "false"),
             classpath = classpathFiles
         ) { invocation ->
-            val entity = invocation.roundEnv
-                .getElementsAnnotatedWith(
-                    androidx.room.Entity::class.qualifiedName!!
-                ).filterIsInstance<XTypeElement>()
-                .first {
-                    it.qualifiedName == "foo.bar.MyEntity"
-                }
-            val parser = TableEntityProcessor(
-                invocation.context,
-                entity
-            )
+            val entity =
+                invocation.roundEnv
+                    .getElementsAnnotatedWith(androidx.room.Entity::class.qualifiedName!!)
+                    .filterIsInstance<XTypeElement>()
+                    .first { it.qualifiedName == "foo.bar.MyEntity" }
+            val parser = TableEntityProcessor(invocation.context, entity)
             val parsedQuery = parser.process()
             handler(parsedQuery, invocation)
         }

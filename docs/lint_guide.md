@@ -628,6 +628,64 @@ The Lint tool processes files in a predefined order:
 It is often necessary to process the sources more than once. This can be done by
 using `context.driver.requestRepeat(detector, scope)`.
 
+### Debugging custom lint checks
+
+Using Android Studio, there are a few ways to debug custom lint checks:
+
+#### Debug against lint running from the command line
+
+1.  Set breakpoint(s) in the desired lint detector sources
+1.  Click the `Gradle` icon on the right menu bar
+1.  Run the `lintDebug` Gradle task and then hit the `Stop` icon in the top menu
+    bar. This creates a Run configuration.
+1.  Click the `Debug` icon in the top menu bar for the newly-selected Run
+    configuration
+1.  Breakpoint will get hit
+
+#### Debug against a single lint check test
+
+1.  Set breakpoint(s) in the desired lint detector sources
+1.  Open a lint check test, such as
+    [`AnnotationRetentionDetectorTest`](https://cs.android.com/androidx/platform/frameworks/support/+/androidx-main:annotation/annotation-experimental-lint/src/test/kotlin/androidx/annotation/experimental/lint/AnnotationRetentionDetectorTest.kt)
+1.  Right-click on a test method and select `Debug`
+1.  Breakpoint will get hit
+
+#### Debug against lint running inside Android Studio
+
+The UAST environment can be different when a lint check is running on the fly
+inside Android Studio, instead of the command line (for example b/191508358). To
+debug issues with a lint check that only occur inside the IDE, you can debug the
+lint check when it runs inside Studio.
+
+1.  Set breakpoint(s) in the desired lint detector sources (make sure that the
+    sources you have match the sources being used in the library version you
+    want to test against)
+2.  Download a separate Studio instance (such as latest canary), and open it.
+3.  With the new Studio instance, go to Help -> Edit Custom VM Options - this
+    will open up studio.vmoptions. Add the following lines:
+
+```
+-Xdebug
+-Xrunjdwp:transport=dt_socket,address=5005,server=y,suspend=y
+```
+
+1.  Then close Android Studio. This will allow attaching a debugger next time
+    this Studio instance is opened.
+2.  In the original (AndroidX) Studio instance, create a
+    [remote JVM debug configuration](https://www.jetbrains.com/help/idea/tutorial-remote-debug.html#create-run-configurations).
+    The default configuration should be correct, double check that the port
+    specified is the same as the address you specified in studio.vmoptions in
+    the previous step.
+3.  Launch the separate Studio instance: it should wait for a debugger to be
+    attached
+4.  In the AndroidX Studio instance, press debug with the remote configuration -
+    this should attach the debugger, and the separate Studio instance should
+    continue to open normally
+5.  In the separate Studio instance, open / create a sample project that uses
+    the library with the lint check you want to debug, and add some code that
+    should trigger / not trigger an error accordingly.
+6.  Breakpoint will get hit
+
 ## Helpful tips {#tips}
 
 ### Useful classes/packages
@@ -654,7 +712,18 @@ Don't just update the checksum -- delete the binary file arguments and re-run th
   ...
 ```
 
-Here are the steps to fix this:
+To fix this, you will need access to `kotlinc` (Kotlin Compiler) to generate a
+bytecode replacement. While Studio does include `kotlinc`, it is not available
+to the terminal and the permissions can not be changed to allow you to use it.
+That means you need your own `kotlinc` available in the terminal.
+
+For instructions on how install the compiler, please read
+[this Kotlin page](https://kotlinlang.org/docs/command-line.html#install-the-compiler).
+
+Important Note: It's best practice to match the compiler version you install to
+the kotlin version in your project to avoid issues.
+
+Otherwise, below are the steps to generate the bytecode:
 
 1.  Remove the arguments in `compiled()`:
 

@@ -21,6 +21,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.setValue
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
@@ -33,13 +34,12 @@ import kotlinx.coroutines.launch
  * spends most of its time delayed so that's a ton of wasted frames. Pure coroutine delays, however,
  * will not cause any work to be done until the delay is over.
  */
-internal class CursorAnimationState {
+internal class CursorAnimationState(val animate: Boolean) {
 
     private var animationJob = AtomicReference<Job?>(null)
 
     /**
-     * The alpha value that should be used to draw the cursor.
-     * Will always be in the range [0, 1].
+     * The alpha value that should be used to draw the cursor. Will always be in the range [0, 1].
      */
     var cursorAlpha by mutableFloatStateOf(0f)
         private set
@@ -62,33 +62,35 @@ internal class CursorAnimationState {
             // Even though we're launching a new coroutine, because of structured concurrency, the
             // restart function won't return until the animation is finished, and cancelling the
             // calling coroutine will cancel the animation.
-            animationJob.compareAndSet(null, launch {
-                // Join the old job after cancelling to ensure it finishes its finally block before
-                // we start changing the cursor alpha, so we don't end up interleaving alpha
-                // updates.
-                oldJob?.cancelAndJoin()
+            animationJob.compareAndSet(
+                null,
+                launch {
+                    // Join the old job after cancelling to ensure it finishes its finally block
+                    // before
+                    // we start changing the cursor alpha, so we don't end up interleaving alpha
+                    // updates.
+                    oldJob?.cancelAndJoin()
 
-                // Start the new animation and run until cancelled.
-                try {
-                    while (true) {
+                    // Start the new animation and run until cancelled.
+                    try {
                         cursorAlpha = 1f
-                        // Ignore MotionDurationScale – the cursor should blink even when animations
-                        // are disabled by the system.
-                        delay(500)
+                        if (!animate) awaitCancellation()
+                        while (true) {
+                            delay(500)
+                            cursorAlpha = 0f
+                            delay(500)
+                            cursorAlpha = 1f
+                        }
+                    } finally {
+                        // Hide cursor when the animation is cancelled.
                         cursorAlpha = 0f
-                        delay(500)
                     }
-                } finally {
-                    // Hide cursor when the animation is cancelled.
-                    cursorAlpha = 0f
                 }
-            })
+            )
         }
     }
 
-    /**
-     * Immediately cancels the cursor animation and hides the cursor (sets [cursorAlpha] to 0f).
-     */
+    /** Immediately cancels the cursor animation and hides the cursor (sets [cursorAlpha] to 0f). */
     fun cancelAndHide() {
         val job = animationJob.getAndSet(null)
         job?.cancel()

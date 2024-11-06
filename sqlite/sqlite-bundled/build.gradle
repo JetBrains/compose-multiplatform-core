@@ -24,7 +24,7 @@
 import androidx.build.AndroidXConfig
 import androidx.build.PlatformIdentifier
 import androidx.build.ProjectLayoutType
-import androidx.build.Publish
+import androidx.build.LibraryType
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 import org.jetbrains.kotlin.konan.target.Family
 import org.jetbrains.kotlin.konan.target.KonanTarget
@@ -38,22 +38,27 @@ apply(from: "PrepareSqliteSourcesTask.groovy")
 
 // List of flags we use to compile SQLite.
 // See: https://www.sqlite.org/compile.html
-// TODO(b/310681164): Validate these flags and compare to other platforms.
 def SQLITE_COMPILE_FLAGS = [
         "-DHAVE_USLEEP=1",
+        "-DSQLITE_DEFAULT_AUTOVACUUM=1",
         "-DSQLITE_DEFAULT_MEMSTATUS=0",
-        "-DSQLITE_ENABLE_COLUMN_METADATA=1",
-        "-DSQLITE_ENABLE_FTS3=1",
-        "-DSQLITE_ENABLE_FTS3_PARENTHESIS=1",
-        "-DSQLITE_ENABLE_FTS4=1",
-        "-DSQLITE_ENABLE_FTS5=1",
-        "-DSQLITE_ENABLE_JSON1=1",
-        "-DSQLITE_ENABLE_LOAD_EXTENSION=1",
-        "-DSQLITE_ENABLE_NORMALIZE=1",
-        "-DSQLITE_ENABLE_RBU=1",
-        "-DSQLITE_ENABLE_RTREE=1",
-        "-DSQLITE_ENABLE_STAT4=1",
-        "-DSQLITE_OMIT_PROGRESS_CALLBACK=0",
+        "-DSQLITE_DEFAULT_WAL_SYNCHRONOUS=1",
+        "-DSQLITE_ENABLE_COLUMN_METADATA",
+        "-DSQLITE_ENABLE_FTS3",
+        "-DSQLITE_ENABLE_FTS3_PARENTHESIS",
+        "-DSQLITE_ENABLE_FTS4",
+        "-DSQLITE_ENABLE_FTS5",
+        "-DSQLITE_ENABLE_JSON1",
+        "-DSQLITE_ENABLE_NORMALIZE",
+        "-DSQLITE_ENABLE_RTREE",
+        "-DSQLITE_ENABLE_STAT4",
+        "-DSQLITE_HAVE_ISNAN",
+        "-DSQLITE_OMIT_BUILTIN_TEST",
+        "-DSQLITE_OMIT_DEPRECATED",
+        "-DSQLITE_OMIT_PROGRESS_CALLBACK",
+        "-DSQLITE_OMIT_SHARED_CACHE",
+        "-DSQLITE_SECURE_DELETE",
+        "-DSQLITE_TEMP_STORE=3",
         "-DSQLITE_THREADSAFE=2",
 ]
 
@@ -65,12 +70,12 @@ def prepareSqliteSourcesTask = registerPrepareSqliteSourcesTask(
         project, // project
         "prepareSqliteSourcesTask" // task name
 ) {
-    it.sqliteVersion.set("3.42.0")
-    it.sqliteReleaseYear.set(2023)
+    it.sqliteVersion.set("3.46.0")
+    it.sqliteReleaseYear.set(2024)
     it.destinationDirectory.set(project.layout.buildDirectory.dir("sqlite3/src"))
     if (!ProjectLayoutType.isPlayground(project)) {
         it.sqlitePrebuiltsDirectory.set(
-                new File(AndroidXConfig.getExternalProjectPath(project), "sqlite/dist/orig")
+                new File(AndroidXConfig.getExternalProjectPath(project), "sqlite/src")
         )
     }
 }
@@ -106,7 +111,9 @@ androidXMultiplatform {
             KonanTarget.ANDROID_X86,
             KonanTarget.MACOS_ARM64,
             KonanTarget.MACOS_X64,
+            KonanTarget.MINGW_X64,
             KonanTarget.LINUX_X64,
+            KonanTarget.LINUX_ARM64,
     ].collect { it.INSTANCE } // Use INSTANCE to get object class instance from kotlin
 
     // Define C compilation of SQLite (sqlite3.c)
@@ -144,7 +151,7 @@ androidXMultiplatform {
     )
 
     // Define C++ compilation of JNI
-    def jvmArtJniImplementation = createNativeCompilation("jvmArtJniImplementation") {
+    def jvmArtJniImplementation = createNativeCompilation("sqliteJni") {
         configureEachTarget { nativeCompilation ->
             // add JNI headers as sources
             nativeCompilation.addJniHeaders()
@@ -154,10 +161,14 @@ androidXMultiplatform {
             )
             // add our JNI sources, i.e. the SQLite bindings
             nativeCompilation.sources.from(
-                    fileTree("src/androidJvmCommonMain/jni").matching { include "**/*.cpp" }
+                    fileTree("src/jvmAndroidMain/jni").matching { include "**/*.cpp" }
             )
             // statically include the output of SQLite compilation
             nativeCompilation.include(sqliteCompilation)
+            if (nativeCompilation.konanTarget.family == Family.ANDROID) {
+                // b/341639198: Link to Android's Atomic lib, important for older ARM devices
+                nativeCompilation.linkerArgs.add("-latomic")
+            }
             if (nativeCompilation.konanTarget.family == Family.OSX) {
                 // KT-57848
                 nativeCompilation.freeArgs.addAll("-Dat_quick_exit=atexit", "-Dquick_exit=exit")
@@ -178,7 +189,7 @@ androidXMultiplatform {
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
-    targets.all { target ->
+    targets.configureEach { target ->
         if (target.platformType == KotlinPlatformType.native) {
             // Configure this native target to the SQLite compilation.
             // This list likely only adds the iOS targets when they are enabled as the desktop
@@ -193,7 +204,7 @@ androidXMultiplatform {
         //                                 commonMain
         //              ┌───────────────────────────────────────────┐
         //              ▼                                           ▼
-        //     androidJvmCommonMain                             nativeMain
+        //       jvmAndroidMain                                 nativeMain
         //     ┌────────────────┐                       ┌──────────┬────────────┐
         //     │                │                       │          │            │
         //     ▼                ▼                       ▼          ▼            ▼
@@ -204,15 +215,14 @@ androidXMultiplatform {
                 api(project(":sqlite:sqlite"))
             }
         }
-        androidJvmCommonMain {
-            // common code between android and jvm
+        jvmAndroidMain {
             dependsOn(commonMain)
         }
         jvmMain {
-            dependsOn(androidJvmCommonMain)
+            dependsOn(jvmAndroidMain)
         }
         androidMain {
-            dependsOn(androidJvmCommonMain)
+            dependsOn(jvmAndroidMain)
         }
         nativeMain {
             dependsOn(commonMain)
@@ -220,7 +230,7 @@ androidXMultiplatform {
                 implementation(project(":sqlite:sqlite-framework"))
             }
         }
-        targets.all { target ->
+        targets.configureEach { target ->
             if (target.platformType == KotlinPlatformType.native) {
                 target.compilations["main"].defaultSourceSet {
                     dependsOn(nativeMain)
@@ -236,7 +246,7 @@ android {
 
 androidx {
     name = "SQLite Bundled Integration"
-    publish = Publish.SNAPSHOT_AND_RELEASE
+    type = LibraryType.PUBLISHED_LIBRARY
     inceptionYear = "2023"
     description = "The implementation of SQLite library using the bundled SQLite."
     metalavaK2UastEnabled = false

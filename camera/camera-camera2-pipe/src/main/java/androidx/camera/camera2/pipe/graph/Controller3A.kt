@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-@file:RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
-
 package androidx.camera.camera2.pipe.graph
 
 import android.hardware.camera2.CameraMetadata.CONTROL_AE_MODE_OFF
@@ -45,7 +43,6 @@ import androidx.camera.camera2.pipe.FrameMetadata
 import androidx.camera.camera2.pipe.Lock3ABehavior
 import androidx.camera.camera2.pipe.Result3A
 import androidx.camera.camera2.pipe.Result3A.Status
-import androidx.camera.camera2.pipe.TorchState
 import androidx.camera.camera2.pipe.core.Log.debug
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Deferred
@@ -68,7 +65,8 @@ internal class Controller3A(
 
         private val awbConvergedStateList =
             listOf(
-                CaptureResult.CONTROL_AWB_STATE_CONVERGED, CaptureResult.CONTROL_AWB_STATE_LOCKED
+                CaptureResult.CONTROL_AWB_STATE_CONVERGED,
+                CaptureResult.CONTROL_AWB_STATE_LOCKED
             )
 
         private val afConvergedStateList =
@@ -154,24 +152,27 @@ internal class Controller3A(
         private val unlock3APostCaptureUnlockAeParams =
             mapOf<CaptureRequest.Key<*>, Any>(CONTROL_AE_LOCK to false)
 
-        private val aePrecaptureCancelParams = mapOf<CaptureRequest.Key<*>, Any>(
-            CONTROL_AE_PRECAPTURE_TRIGGER to CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER_CANCEL
-        )
+        private val aePrecaptureCancelParams =
+            mapOf<CaptureRequest.Key<*>, Any>(
+                CONTROL_AE_PRECAPTURE_TRIGGER to CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER_CANCEL
+            )
 
-        private val aePrecaptureAndAfCancelParams = mapOf<CaptureRequest.Key<*>, Any>(
-            CONTROL_AF_TRIGGER to CONTROL_AF_TRIGGER_CANCEL,
-            CONTROL_AE_PRECAPTURE_TRIGGER to CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER_CANCEL
-        )
+        private val aePrecaptureAndAfCancelParams =
+            mapOf<CaptureRequest.Key<*>, Any>(
+                CONTROL_AF_TRIGGER to CONTROL_AF_TRIGGER_CANCEL,
+                CONTROL_AE_PRECAPTURE_TRIGGER to CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER_CANCEL
+            )
 
-        private val unlock3APostCaptureAfUnlockedCondition = mapOf<CaptureResult.Key<*>, List<Any>>(
-            CaptureResult.CONTROL_AF_STATE to afUnlockedStateList
-        ).toConditionChecker()
+        private val unlock3APostCaptureAfUnlockedCondition =
+            mapOf<CaptureResult.Key<*>, List<Any>>(
+                    CaptureResult.CONTROL_AF_STATE to afUnlockedStateList
+                )
+                .toConditionChecker()
     }
 
     // Keep track of the result associated with latest call to update3A. If update3A is called again
     // and the current result is not complete, we will cancel the current result.
-    @GuardedBy("this")
-    private var lastUpdate3AResult: Deferred<Result3A>? = null
+    @GuardedBy("this") private var lastUpdate3AResult: Deferred<Result3A>? = null
 
     fun update3A(
         aeMode: AeMode? = null,
@@ -184,7 +185,7 @@ internal class Controller3A(
     ): Deferred<Result3A> {
         // If the GraphProcessor does not have a repeating request we should update the current
         // parameters, but should not invalidate or trigger set a new listener.
-        if (!graphProcessor.hasRepeatingRequest()) {
+        if (graphProcessor.repeatingRequest == null) {
             graphState3A.update(
                 aeMode,
                 afMode,
@@ -213,13 +214,14 @@ internal class Controller3A(
 
         val result = listener.result
         synchronized(this) {
+            debug { "Controller3A#update3A: cancelling previous request $lastUpdate3AResult" }
             lastUpdate3AResult?.cancel("A newer call for 3A state update initiated.")
             lastUpdate3AResult = result
         }
         return result
     }
 
-    suspend fun submit3A(
+    fun submit3A(
         aeMode: AeMode? = null,
         afMode: AfMode? = null,
         awbMode: AwbMode? = null,
@@ -228,9 +230,10 @@ internal class Controller3A(
         awbRegions: List<MeteringRectangle>? = null
     ): Deferred<Result3A> {
         // If the GraphProcessor does not have a repeating request, we should fail immediately.
-        if (!graphProcessor.hasRepeatingRequest()) {
+        if (graphProcessor.repeatingRequest == null) {
             return deferredResult3ASubmitFailed
         }
+
         // Add the listener to a global pool of 3A listeners to monitor the state change to the
         // desired one.
         val listener = createListenerFor3AParams(aeMode, afMode, awbMode)
@@ -244,7 +247,7 @@ internal class Controller3A(
         afRegions?.let { extra3AParams.put(CaptureRequest.CONTROL_AF_REGIONS, it.toTypedArray()) }
         awbRegions?.let { extra3AParams.put(CaptureRequest.CONTROL_AWB_REGIONS, it.toTypedArray()) }
 
-        if (!graphProcessor.trySubmit(extra3AParams)) {
+        if (!graphProcessor.submit(extra3AParams)) {
             graphListener3A.removeListener(listener)
             return deferredResult3ASubmitFailed
         }
@@ -270,10 +273,11 @@ internal class Controller3A(
      * If the operation is not supported by the camera device then this method returns early with
      * Result3A made of 'OK' status and 'null' metadata.
      *
-     * Note: the frameLimit and timeLimitNs applies to each of the above steps (a) and (b) and not
-     * as a whole for the whole lock3A method. Thus, in the worst case this method including the
-     * completion of returned Deferred<Result3A> can take 2 * min(time equivalent of frameLimit,
-     * timeLimit) to complete
+     * Note: the frameLimit, convergedTimeLimitNs and lockedTimeLimitNs applies to each of the above
+     * steps (a) and (b) and not as a whole for the whole lock3A method. Thus, in the worst case
+     * this method including the completion of returned Deferred<Result3A> can take min(time
+     * equivalent of frameLimit, convergedTimeLimitNs) + min(time equivalent of frameLimit,
+     * lockedTimeLimitNs) to complete.
      */
     suspend fun lock3A(
         aeRegions: List<MeteringRectangle>? = null,
@@ -286,7 +290,8 @@ internal class Controller3A(
         convergedCondition: ((FrameMetadata) -> Boolean)? = null,
         lockedCondition: ((FrameMetadata) -> Boolean)? = null,
         frameLimit: Int = DEFAULT_FRAME_LIMIT,
-        timeLimitNs: Long? = DEFAULT_TIME_LIMIT_NS
+        convergedTimeLimitNs: Long? = DEFAULT_TIME_LIMIT_NS,
+        lockedTimeLimitNs: Long? = DEFAULT_TIME_LIMIT_NS
     ): Deferred<Result3A> {
         var afLockBehaviorSanitized = afLockBehavior
         if (!metadata.supportsAutoFocusTrigger) {
@@ -303,7 +308,7 @@ internal class Controller3A(
 
         // If the GraphProcessor does not have a repeating request we should update the current
         // parameters, but should not invalidate or trigger set a new listener.
-        if (!graphProcessor.hasRepeatingRequest()) {
+        if (graphProcessor.repeatingRequest == null) {
             return deferredResult3ASubmitFailed
         }
 
@@ -311,23 +316,31 @@ internal class Controller3A(
         // a single request with TRIGGER = TRIGGER_CANCEL so that af can start a fresh scan.
         if (afLockBehaviorSanitized.shouldUnlockAf()) {
             debug { "lock3A - sending a request to unlock af first." }
-            if (!graphProcessor.trySubmit(parameterForAfTriggerCancel)) {
+            if (!graphProcessor.submit(parameterForAfTriggerCancel)) {
                 return deferredResult3ASubmitFailed
             }
         }
 
         // As needed unlock ae, awb and wait for ae, af and awb to converge.
-        if (aeLockBehavior.shouldWaitForAeToConverge() ||
-            afLockBehaviorSanitized.shouldWaitForAfToConverge() ||
-            awbLockBehavior.shouldWaitForAwbToConverge()
-        ) {
-            val converged3AExitConditions = convergedCondition ?: createConverged3AExitConditions(
-                aeLockBehavior.shouldWaitForAeToConverge(),
-                afLockBehaviorSanitized.shouldWaitForAfToConverge(),
+        if (
+            aeLockBehavior.shouldWaitForAeToConverge() ||
+                afLockBehaviorSanitized.shouldWaitForAfToConverge() ||
                 awbLockBehavior.shouldWaitForAwbToConverge()
-            ).toConditionChecker()
+        ) {
+            val converged3AExitConditions =
+                convergedCondition
+                    ?: createConverged3AExitConditions(
+                            aeLockBehavior.shouldWaitForAeToConverge(),
+                            afLockBehaviorSanitized.shouldWaitForAfToConverge(),
+                            awbLockBehavior.shouldWaitForAwbToConverge()
+                        )
+                        .toConditionChecker()
             val listener =
-                Result3AStateListenerImpl(converged3AExitConditions, frameLimit, timeLimitNs)
+                Result3AStateListenerImpl(
+                    converged3AExitConditions,
+                    frameLimit,
+                    convergedTimeLimitNs
+                )
             graphListener3A.addListener(listener)
 
             // If we have to explicitly unlock ae, awb, then update the 3A state of the camera
@@ -369,7 +382,7 @@ internal class Controller3A(
             afTriggerStartAeMode,
             lockedCondition,
             frameLimit,
-            timeLimitNs
+            lockedTimeLimitNs
         )
     }
 
@@ -381,7 +394,7 @@ internal class Controller3A(
      * There are two requests involved in this operation, (a) a single request with af trigger =
      * cancel, to unlock af, and then (a) a repeating request to unlock ae, awb.
      */
-    suspend fun unlock3A(
+    fun unlock3A(
         ae: Boolean? = null,
         af: Boolean? = null,
         awb: Boolean? = null,
@@ -397,25 +410,25 @@ internal class Controller3A(
             return CompletableDeferred(Result3A(Status.OK, /* frameMetadata= */ null))
         }
         // If the GraphProcessor does not have a repeating request, we should fail immediately.
-        if (!graphProcessor.hasRepeatingRequest()) {
+        if (graphProcessor.repeatingRequest == null) {
             return deferredResult3ASubmitFailed
         }
         // If we explicitly need to unlock af first before proceeding to lock it, we need to send
         // a single request with TRIGGER = TRIGGER_CANCEL so that af can start a fresh scan.
         if (afSanitized == true) {
             debug { "unlock3A - sending a request to unlock af first." }
-            if (!graphProcessor.trySubmit(parameterForAfTriggerCancel)) {
-                debug { "unlock3A - request to unlock af failed, returning early." }
-                return deferredResult3ASubmitFailed
-            }
+            graphProcessor.submit(parameterForAfTriggerCancel)
         }
 
         // As needed unlock ae, awb and wait for ae, af and awb to converge.
-        val unlocked3AExitConditions = unlockedCondition ?: createUnLocked3AExitConditions(
-            ae == true,
-            afSanitized == true,
-            awb == true,
-        ).toConditionChecker()
+        val unlocked3AExitConditions =
+            unlockedCondition
+                ?: createUnLocked3AExitConditions(
+                        ae == true,
+                        afSanitized == true,
+                        awb == true,
+                    )
+                    .toConditionChecker()
         val listener = Result3AStateListenerImpl(unlocked3AExitConditions, frameLimit, timeLimitNs)
         graphListener3A.addListener(listener)
 
@@ -443,21 +456,21 @@ internal class Controller3A(
      * `lock3AForCapture(triggerCondition, lockedCondition, frameLimit, timeLimitNs)` for details.
      *
      * @param lockedCondition Optional customized exit condition for the result.
-     *
      * @return A [Deferred] containing a [Result3A] which will contain the latest frame number at
-     *  which the locks were applied or the frame number at which the method returned early because
-     *  either frame limit or time limit was reached.
+     *   which the locks were applied or the frame number at which the method returned early because
+     *   either frame limit or time limit was reached.
      */
-    suspend fun lock3AForCapture(
+    fun lock3AForCapture(
         lockedCondition: ((FrameMetadata) -> Boolean)? = null,
         frameLimit: Int = DEFAULT_FRAME_LIMIT,
         timeLimitNs: Long = DEFAULT_TIME_LIMIT_NS,
-    ) = lock3AForCapture(
-        triggerCondition = null,
-        lockedCondition = lockedCondition,
-        frameLimit = frameLimit,
-        timeLimitNs = timeLimitNs,
-    )
+    ) =
+        lock3AForCapture(
+            triggerCondition = null,
+            lockedCondition = lockedCondition,
+            frameLimit = frameLimit,
+            timeLimitNs = timeLimitNs,
+        )
 
     /**
      * Triggers 3A state updates and waits for locking/convergence for high quality image capture.
@@ -474,31 +487,32 @@ internal class Controller3A(
      * precapture trigger or scenery change. So, this method will still wait for AF to be converged
      * for these AF modes even if the AF trigger is disabled.
      *
-     * @param triggerAf     Whether to trigger AF.
-     * @param waitForAwb    Whether to wait for AWB to converge/lock.
-     *
+     * @param triggerAf Whether to trigger AF.
+     * @param waitForAwb Whether to wait for AWB to converge/lock.
      * @return A [Deferred] containing a [Result3A] which will contain the latest frame number at
-     *  which the locks were applied or the frame number at which the method returned early because
-     *  either frame limit or time limit was reached.
+     *   which the locks were applied or the frame number at which the method returned early because
+     *   either frame limit or time limit was reached.
      */
-    suspend fun lock3AForCapture(
+    fun lock3AForCapture(
         triggerAf: Boolean = true,
         waitForAwb: Boolean = false,
         frameLimit: Int = DEFAULT_FRAME_LIMIT,
         timeLimitNs: Long = DEFAULT_TIME_LIMIT_NS,
     ): Deferred<Result3A> {
-        val triggerCondition = if (triggerAf) {
-            parametersForAePrecaptureAndAfTrigger
-        } else {
-            parametersForAePrecapture
-        }
+        val triggerCondition =
+            if (triggerAf) {
+                parametersForAePrecaptureAndAfTrigger
+            } else {
+                parametersForAePrecapture
+            }
 
         return lock3AForCapture(
             triggerCondition = triggerCondition,
-            lockedCondition = createLock3AForCaptureExitConditions(
-                isAfTriggered = triggerAf,
-                waitForAwb = waitForAwb
-            ),
+            lockedCondition =
+                createLock3AForCaptureExitConditions(
+                    isAfTriggered = triggerAf,
+                    waitForAwb = waitForAwb
+                ),
             frameLimit = frameLimit,
             timeLimitNs = timeLimitNs,
         )
@@ -512,24 +526,23 @@ internal class Controller3A(
      * state (unless they were already locked). Use the [lock3A] method afterwards if locking AE/AWB
      * is also required.
      *
-     * @param triggerCondition  Customized trigger condition. If not provided, both AE precapture
-     *                          and AF.
-     * @param lockedCondition   Customized exit condition for the result. If not provided,
-     *                          `createLock3AForCaptureExitConditions(isAfTriggered = true,
-     *                          waitForAwb = false)` will be used for default condition.
-     *
+     * @param triggerCondition Customized trigger condition. If not provided, both AE precapture and
+     *   AF.
+     * @param lockedCondition Customized exit condition for the result. If not provided,
+     *   `createLock3AForCaptureExitConditions(isAfTriggered = true, waitForAwb = false)` will be
+     *   used for default condition.
      * @return A [Deferred] containing a [Result3A] which will contain the latest frame number at
-     *  which the locks were applied or the frame number at which the method returned early because
-     *  either frame limit or time limit was reached.
+     *   which the locks were applied or the frame number at which the method returned early because
+     *   either frame limit or time limit was reached.
      */
-    private suspend fun lock3AForCapture(
+    private fun lock3AForCapture(
         triggerCondition: Map<CaptureRequest.Key<*>, Any>? = null,
         lockedCondition: ((FrameMetadata) -> Boolean)? = null,
         frameLimit: Int = DEFAULT_FRAME_LIMIT,
         timeLimitNs: Long = DEFAULT_TIME_LIMIT_NS,
     ): Deferred<Result3A> {
         // If the GraphProcessor does not have a repeating request, we should fail immediately.
-        if (!graphProcessor.hasRepeatingRequest()) {
+        if (graphProcessor.repeatingRequest == null) {
             return deferredResult3ASubmitFailed
         }
 
@@ -541,34 +554,31 @@ internal class Controller3A(
             }
         }
 
-        val listener = Result3AStateListenerImpl(
-            lockedCondition ?: createLock3AForCaptureExitConditions(
-                isAfTriggered = isAfTriggered,
-                waitForAwb = false, // no need to wait for AWB in default case
-            ),
-            frameLimit,
-            timeLimitNs
-        )
+        val listener =
+            Result3AStateListenerImpl(
+                lockedCondition
+                    ?: createLock3AForCaptureExitConditions(
+                        isAfTriggered = isAfTriggered,
+                        waitForAwb = false, // no need to wait for AWB in default case
+                    ),
+                frameLimit,
+                timeLimitNs
+            )
 
         graphListener3A.addListener(listener)
-
         debug { "lock3AForCapture - sending a request to trigger ae precapture metering and af." }
-        if (!graphProcessor.trySubmit(finalTriggerCondition)) {
-            debug {
-                "lock3AForCapture - request to trigger ae precapture metering and af failed, " +
-                    "returning early."
-            }
+
+        if (!graphProcessor.submit(finalTriggerCondition)) {
             graphListener3A.removeListener(listener)
             return deferredResult3ASubmitFailed
         }
-
         graphProcessor.invalidate()
         return listener.result
     }
 
-    suspend fun unlock3APostCapture(cancelAf: Boolean = true): Deferred<Result3A> {
+    fun unlock3APostCapture(cancelAf: Boolean = true): Deferred<Result3A> {
         // If the GraphProcessor does not have a repeating request, we should fail immediately.
-        if (!graphProcessor.hasRepeatingRequest()) {
+        if (graphProcessor.repeatingRequest == null) {
             return deferredResult3ASubmitFailed
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -583,20 +593,15 @@ internal class Controller3A(
      * REF :
      * https://developer.android.com/reference/android/hardware/camera2/CaptureRequest#CONTROL_AE_PRECAPTURE_TRIGGER
      */
-    private suspend fun unlock3APostCaptureAndroidLAndBelow(
-        cancelAf: Boolean = true
-    ): Deferred<Result3A> {
+    private fun unlock3APostCaptureAndroidLAndBelow(cancelAf: Boolean = true): Deferred<Result3A> {
         debug { "unlock3AForCapture - sending a request to cancel af and turn on ae." }
-        if (!graphProcessor.trySubmit(
-                if (cancelAf) {
-                    unlock3APostCaptureLockAeAndCancelAfParams
-                } else {
-                    unlock3APostCaptureLockAeParams
-                }
-        )) {
-            debug { "unlock3AForCapture - request to cancel af and lock ae as failed." }
-            return deferredResult3ASubmitFailed
-        }
+        val cancelParams =
+            if (cancelAf) {
+                unlock3APostCaptureLockAeAndCancelAfParams
+            } else {
+                unlock3APostCaptureLockAeParams
+            }
+        if (!graphProcessor.submit(cancelParams)) return deferredResult3ASubmitFailed
 
         // Listener to monitor when we receive the capture result corresponding to the request
         // below.
@@ -604,8 +609,7 @@ internal class Controller3A(
         graphListener3A.addListener(listener)
 
         debug { "unlock3AForCapture - sending a request to turn off ae." }
-        if (!graphProcessor.trySubmit(unlock3APostCaptureUnlockAeParams)) {
-            debug { "unlock3AForCapture - request to unlock ae failed." }
+        if (!graphProcessor.submit(unlock3APostCaptureUnlockAeParams)) {
             graphListener3A.removeListener(listener)
             return deferredResult3ASubmitFailed
         }
@@ -619,16 +623,10 @@ internal class Controller3A(
      * https://developer.android.com/reference/android/hardware/camera2/CaptureRequest#CONTROL_AE_PRECAPTURE_TRIGGER
      */
     @RequiresApi(23)
-    private suspend fun unlock3APostCaptureAndroidMAndAbove(
-        cancelAf: Boolean = true
-    ): Deferred<Result3A> {
+    private fun unlock3APostCaptureAndroidMAndAbove(cancelAf: Boolean = true): Deferred<Result3A> {
         debug { "unlock3APostCapture - sending a request to reset af and ae precapture metering." }
         val cancelParams = if (cancelAf) aePrecaptureAndAfCancelParams else aePrecaptureCancelParams
-        if (!graphProcessor.trySubmit(cancelParams)) {
-            debug {
-                "unlock3APostCapture - request to reset af and ae precapture metering failed, " +
-                    "returning early."
-            }
+        if (!graphProcessor.submit(cancelParams)) {
             return deferredResult3ASubmitFailed
         }
 
@@ -636,31 +634,37 @@ internal class Controller3A(
         // on the ae state, so we don't need to listen for a specific state. As long as the request
         // successfully reaches the camera device and the capture request corresponding to that
         // request arrives back, it should suffice.
-        val listener = if (cancelAf) {
-            Result3AStateListenerImpl(unlock3APostCaptureAfUnlockedCondition)
-        } else {
-            Result3AStateListenerImpl(emptyMap())
-        }
+        val listener =
+            if (cancelAf) {
+                Result3AStateListenerImpl(unlock3APostCaptureAfUnlockedCondition)
+            } else {
+                Result3AStateListenerImpl(emptyMap())
+            }
         graphListener3A.addListener(listener)
         graphProcessor.invalidate()
         return listener.result
     }
 
-    fun setTorch(torchState: TorchState): Deferred<Result3A> {
-        // Determine the flash mode based on the torch state.
-        val flashMode = if (torchState == TorchState.ON) FlashMode.TORCH else FlashMode.OFF
-        // To use the flash control, AE mode must be set to ON or OFF.
+    /**
+     * Enables the torch which may require changing the [AeMode].
+     *
+     * To use [FlashMode.TORCH], either [AeMode.ON] or [AeMode.OFF] needs to be used, otherwise, the
+     * flash mode is a no-op. If the current AE mode is neither of them, this function changes the
+     * AE mode to [AeMode.ON] in order to enable the torch.
+     */
+    fun setTorchOn(): Deferred<Result3A> {
         val currAeMode = graphState3A.aeMode
         val desiredAeMode =
             if (currAeMode == AeMode.ON || currAeMode == AeMode.OFF) null else AeMode.ON
-        return update3A(aeMode = desiredAeMode, flashMode = flashMode)
+        return update3A(aeMode = desiredAeMode, flashMode = FlashMode.TORCH)
     }
 
-    internal fun onStopRepeating() {
-        graphListener3A.onStopRepeating()
+    /** Disables the torch and sets a new AE mode if provided. */
+    fun setTorchOff(aeMode: AeMode? = null): Deferred<Result3A> {
+        return update3A(aeMode = aeMode, flashMode = FlashMode.OFF)
     }
 
-    private suspend fun lock3ANow(
+    private fun lock3ANow(
         aeLockBehavior: Lock3ABehavior?,
         afLockBehavior: Lock3ABehavior?,
         awbLockBehavior: Lock3ABehavior?,
@@ -673,14 +677,15 @@ internal class Controller3A(
         val finalAwbLockValue = if (awbLockBehavior == null) null else true
         val locked3AExitConditions =
             createLocked3AExitConditions(
-                finalAeLockValue != null, afLockBehavior != null, finalAwbLockValue != null
+                finalAeLockValue != null,
+                afLockBehavior != null,
+                finalAwbLockValue != null
             )
 
         var resultForLocked: Deferred<Result3A>? = null
         if (lockedCondition != null || locked3AExitConditions.isNotEmpty()) {
             val exitCondition = lockedCondition ?: locked3AExitConditions.toConditionChecker()
-            val listener =
-                Result3AStateListenerImpl(exitCondition, frameLimit, timeLimitNs)
+            val listener = Result3AStateListenerImpl(exitCondition, frameLimit, timeLimitNs)
             graphListener3A.addListener(listener)
             graphState3A.update(aeLock = finalAeLockValue, awbLock = finalAwbLockValue)
             debug {
@@ -702,7 +707,9 @@ internal class Controller3A(
         }
 
         debug { "lock3A - submitting a request to lock af." }
-        val submitSuccess = graphProcessor.trySubmit(parameterForAfTriggerStart)
+        if (!graphProcessor.submit(parameterForAfTriggerStart)) {
+            return deferredResult3ASubmitFailed
+        }
 
         lastAeMode?.let {
             graphState3A.update(aeMode = it)
@@ -710,14 +717,6 @@ internal class Controller3A(
             //  by making sure invalidate() and submit() don't interleave
             //  w.r.t. building the parameter snapshot
             graphProcessor.invalidate()
-        }
-
-        if (!submitSuccess) {
-            // TODO(sushilnath@): Change the error code to a more specific code so it's clear
-            // that one of the request in sequence of requests failed and the caller should
-            // unlock 3A to bring the 3A system to an initial state and then try again if they
-            // want to. The other option is to reset or restore the 3A state here.
-            return deferredResult3ASubmitFailed
         }
         return resultForLocked!!
     }
@@ -769,38 +768,45 @@ internal class Controller3A(
         waitForAwb: Boolean,
     ): ((FrameMetadata) -> Boolean) = { frameMetadata ->
         val afMode = AfMode(frameMetadata[CaptureResult.CONTROL_AF_MODE] ?: CONTROL_AF_MODE_OFF)
-        val meetsAfCondition = if (afMode.isOn()) {
-            if (isAfTriggered) {
-                afLockedStateList.contains(frameMetadata[CaptureResult.CONTROL_AF_STATE])
-                frameMetadata[CaptureResult.CONTROL_AF_STATE].isNullOrIn(afLockedStateList)
-            } else if (afMode.isContinuous()) {
-                // Even if AF is not triggered, we can still wait for PASSIVE_FOCUS in this case
-                afConvergedStateList.contains(frameMetadata[CaptureResult.CONTROL_AF_STATE])
+        val meetsAfCondition =
+            if (afMode.isOn()) {
+                if (isAfTriggered) {
+                    afLockedStateList.contains(frameMetadata[CaptureResult.CONTROL_AF_STATE])
+                    frameMetadata[CaptureResult.CONTROL_AF_STATE].isNullOrIn(afLockedStateList)
+                } else if (afMode.isContinuous()) {
+                    // Even if AF is not triggered, we can still wait for PASSIVE_FOCUS in this case
+                    afConvergedStateList.contains(frameMetadata[CaptureResult.CONTROL_AF_STATE])
+                } else {
+                    true
+                }
             } else {
                 true
             }
-        } else {
-            true
-        }
 
         // AE/AWB state may be null in some devices and thus should not be waited for in such case
 
         val aeMode = AeMode(frameMetadata[CaptureResult.CONTROL_AE_MODE] ?: CONTROL_AE_MODE_OFF)
-        val meetsAeCondition = if (aeMode.isOn()) {
-            frameMetadata[CaptureResult.CONTROL_AE_STATE].isNullOrIn(aePostPrecaptureStateList)
-        } else {
-            true
-        }
+        val meetsAeCondition =
+            if (aeMode.isOn()) {
+                frameMetadata[CaptureResult.CONTROL_AE_STATE].isNullOrIn(aePostPrecaptureStateList)
+            } else {
+                true
+            }
 
         val awbMode = AwbMode(frameMetadata[CaptureResult.CONTROL_AWB_MODE] ?: CONTROL_AWB_MODE_OFF)
-        val meetsAwbCondition = if (awbMode.isOn() && waitForAwb) {
-            frameMetadata[CaptureResult.CONTROL_AWB_STATE].isNullOrIn(awbPostPrecaptureStateList)
-        } else {
-            true
-        }
+        val meetsAwbCondition =
+            if (awbMode.isOn() && waitForAwb) {
+                frameMetadata[CaptureResult.CONTROL_AWB_STATE].isNullOrIn(
+                    awbPostPrecaptureStateList
+                )
+            } else {
+                true
+            }
 
-        debug { "lock3AForCapture result: meetsAeCondition = $meetsAeCondition" +
-            ", meetsAfCondition = $meetsAfCondition, meetsAwbCondition = $meetsAwbCondition" }
+        debug {
+            "lock3AForCapture result: meetsAeCondition = $meetsAeCondition" +
+                ", meetsAfCondition = $meetsAfCondition, meetsAwbCondition = $meetsAwbCondition"
+        }
 
         meetsAeCondition && meetsAfCondition && meetsAwbCondition
     }

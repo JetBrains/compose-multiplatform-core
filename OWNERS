@@ -15,10 +15,10 @@ juliamcclellan@google.com
 lpf@google.com
 mount@google.com
 natnaelbelay@google.com
+omarismail@google.com
 owengray@google.com
 radhanakade@google.com
 romainguy@android.com
-sergeyv@google.com
 siyamed@google.com
 sumir@google.com
 tiem@google.com
@@ -26,12 +26,20 @@ yboyar@google.com
 
 per-file *settings.gradle = set noparent
 per-file *settings.gradle = alanv@google.com, aurimas@google.com
+# Core-Telecom
+per-file *libraryversions.toml = breadley@google.com, tgunn@google.com, tjstuart@google.com
 # Wear
-per-file *libraryversions.toml = jnichol@google.com, flerda@google.com, ashleyingram@google.com
+per-file *libraryversions.toml = ashleyingram@google.com, flerda@google.com, gregbullock@google.com
 per-file *libraryversions.toml = diegovela@google.com, akulian@google.com, kchyn@google.com
 # WebKit
 per-file *libraryversions.toml = pbirk@google.com, elabadysayed@google.com
 per-file *docs-public/build.gradle = juanrdz@google.com, diegovela@google.com
+# Compose *
+per-file *libraryversions.toml = juanrdz@google.com
+# Glance
+per-file *libraryversions.toml = zakcohen@google.com
+# AppSearch
+per-file *libraryversions.toml = adorokhine@google.com, tjbarron@google.com, xyj@google.com
 
 # Copybara can self-approve CLs within synced docs.
 per-file docs/** = copybara-worker-blackhole@google.com

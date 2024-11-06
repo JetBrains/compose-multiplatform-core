@@ -16,7 +16,6 @@
 
 package androidx.compose.foundation.demos.relocation
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -35,7 +34,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun RequestRectangleOnScreenDemo() {
     val bringIntoViewRequester = remember { BringIntoViewRequester() }
@@ -47,8 +45,7 @@ fun RequestRectangleOnScreenDemo() {
         }
         Spacer(Modifier.weight(weight = 1f, fill = true))
         Box(
-            Modifier
-                .size(50.dp)
+            Modifier.size(50.dp)
                 .background(Color.Blue)
                 .bringIntoViewRequester(bringIntoViewRequester)
         )

@@ -49,45 +49,38 @@ import org.junit.runners.Parameterized
 @OptIn(ExperimentalFoundationApi::class)
 @LargeTest
 @RunWith(Parameterized::class)
-class PagerPrefetcherTest(
-    private val paramConfig: ParamConfig
-) : BasePagerTest(paramConfig) {
+class PagerPrefetcherTest(private val paramConfig: ParamConfig) : BasePagerTest(paramConfig) {
 
     var pageSizePx = 300
     val pageSizeDp = with(rule.density) { pageSizePx.toDp() }
     var touchSlope: Float = 0.0f
+    private val scheduler = TestPrefetchScheduler()
 
     @Test
     fun notPrefetchingForwardInitially() {
         composePager()
 
-        rule.onNodeWithTag("${paramConfig.beyondViewportPageCount + 2}")
-            .assertDoesNotExist()
+        rule.onNodeWithTag("${paramConfig.beyondViewportPageCount + 2}").assertDoesNotExist()
     }
 
     @Test
     fun notPrefetchingBackwardInitially() {
         composePager(initialPage = 2)
 
-        rule.onNodeWithTag("0")
-            .assertDoesNotExist()
+        rule.onNodeWithTag("0").assertDoesNotExist()
     }
 
     @Test
     fun prefetchingForwardAfterSmallScroll_programmatically() {
         composePager()
         val preFetchIndex = 2
-        rule.runOnIdle {
-            runBlocking {
-                pagerState.scrollBy(5f)
-            }
-        }
+        rule.runOnIdle { runBlocking { pagerState.scrollBy(5f) } }
 
-        waitForPrefetch(preFetchIndex)
+        waitForPrefetch()
 
-        rule.onNodeWithTag("$preFetchIndex")
-            .assertExists()
-        rule.onNodeWithTag("${paramConfig.beyondViewportPageCount + preFetchIndex + 1}")
+        rule.onNodeWithTag("$preFetchIndex").assertExists()
+        rule
+            .onNodeWithTag("${paramConfig.beyondViewportPageCount + preFetchIndex + 1}")
             .assertDoesNotExist()
     }
 
@@ -96,17 +89,13 @@ class PagerPrefetcherTest(
         composePager(initialPage = 5, initialPageOffsetFraction = 10 / pageSizePx.toFloat())
 
         val preFetchIndex = 4
-        rule.runOnIdle {
-            runBlocking {
-                pagerState.scrollBy(-5f)
-            }
-        }
+        rule.runOnIdle { runBlocking { pagerState.scrollBy(-5f) } }
 
-        waitForPrefetch(preFetchIndex)
+        waitForPrefetch()
 
-        rule.onNodeWithTag("$preFetchIndex")
-            .assertExists()
-        rule.onNodeWithTag("${preFetchIndex - paramConfig.beyondViewportPageCount - 1}")
+        rule.onNodeWithTag("$preFetchIndex").assertExists()
+        rule
+            .onNodeWithTag("${preFetchIndex - paramConfig.beyondViewportPageCount - 1}")
             .assertDoesNotExist()
     }
 
@@ -126,11 +115,11 @@ class PagerPrefetcherTest(
             up()
         }
 
-        waitForPrefetch(preFetchIndex)
+        waitForPrefetch()
 
-        rule.onNodeWithTag("$preFetchIndex")
-            .assertExists()
-        rule.onNodeWithTag("${paramConfig.beyondViewportPageCount + preFetchIndex + 1}")
+        rule.onNodeWithTag("$preFetchIndex").assertExists()
+        rule
+            .onNodeWithTag("${paramConfig.beyondViewportPageCount + preFetchIndex + 1}")
             .assertDoesNotExist()
     }
 
@@ -151,11 +140,11 @@ class PagerPrefetcherTest(
             up()
         }
 
-        waitForPrefetch(preFetchIndex)
+        waitForPrefetch()
 
-        rule.onNodeWithTag("$preFetchIndex")
-            .assertExists()
-        rule.onNodeWithTag("${preFetchIndex - paramConfig.beyondViewportPageCount - 1}")
+        rule.onNodeWithTag("$preFetchIndex").assertExists()
+        rule
+            .onNodeWithTag("${preFetchIndex - paramConfig.beyondViewportPageCount - 1}")
             .assertDoesNotExist()
     }
 
@@ -164,17 +153,13 @@ class PagerPrefetcherTest(
         val initialIndex = 5
         composePager(initialPage = initialIndex)
 
-        rule.runOnIdle {
-            runBlocking {
-                pagerState.scrollBy(5f)
-            }
-        }
+        rule.runOnIdle { runBlocking { pagerState.scrollBy(5f) } }
         var prefetchIndex = initialIndex + 2
-        waitForPrefetch(prefetchIndex)
+        waitForPrefetch()
 
-        rule.onNodeWithTag("$prefetchIndex")
-            .assertExists()
-        rule.onNodeWithTag("${prefetchIndex - paramConfig.beyondViewportPageCount - 3}")
+        rule.onNodeWithTag("$prefetchIndex").assertExists()
+        rule
+            .onNodeWithTag("${prefetchIndex - paramConfig.beyondViewportPageCount - 3}")
             .assertDoesNotExist()
 
         rule.runOnIdle {
@@ -185,11 +170,11 @@ class PagerPrefetcherTest(
         }
 
         prefetchIndex -= 3
-        waitForPrefetch(prefetchIndex)
+        waitForPrefetch()
 
-        rule.onNodeWithTag("$prefetchIndex")
-            .assertExists()
-        rule.onNodeWithTag("${prefetchIndex + paramConfig.beyondViewportPageCount + 3}")
+        rule.onNodeWithTag("$prefetchIndex").assertExists()
+        rule
+            .onNodeWithTag("${prefetchIndex + paramConfig.beyondViewportPageCount + 3}")
             .assertDoesNotExist()
     }
 
@@ -197,13 +182,9 @@ class PagerPrefetcherTest(
     fun prefetchingForwardTwice() {
         composePager()
 
-        rule.runOnIdle {
-            runBlocking {
-                pagerState.scrollBy(5f)
-            }
-        }
+        rule.runOnIdle { runBlocking { pagerState.scrollBy(5f) } }
 
-        waitForPrefetch(2)
+        waitForPrefetch()
 
         rule.runOnIdle {
             runBlocking {
@@ -214,13 +195,12 @@ class PagerPrefetcherTest(
 
         val prefetchIndex = 3
 
-        waitForPrefetch(prefetchIndex)
+        waitForPrefetch()
 
-        rule.onNodeWithTag("${prefetchIndex - 1}")
-            .assertIsDisplayed()
-        rule.onNodeWithTag("$prefetchIndex")
-            .assertExists()
-        rule.onNodeWithTag("${prefetchIndex + paramConfig.beyondViewportPageCount + 1}")
+        rule.onNodeWithTag("${prefetchIndex - 1}").assertIsDisplayed()
+        rule.onNodeWithTag("$prefetchIndex").assertExists()
+        rule
+            .onNodeWithTag("${prefetchIndex + paramConfig.beyondViewportPageCount + 1}")
             .assertDoesNotExist()
     }
 
@@ -230,13 +210,9 @@ class PagerPrefetcherTest(
 
         val preFetchIndex = 3
 
-        rule.runOnIdle {
-            runBlocking {
-                pagerState.scrollBy(-5f)
-            }
-        }
+        rule.runOnIdle { runBlocking { pagerState.scrollBy(-5f) } }
 
-        waitForPrefetch(preFetchIndex)
+        waitForPrefetch()
 
         rule.runOnIdle {
             runBlocking {
@@ -245,13 +221,12 @@ class PagerPrefetcherTest(
             }
         }
 
-        waitForPrefetch(preFetchIndex - 1)
+        waitForPrefetch()
 
-        rule.onNodeWithTag("$preFetchIndex")
-            .assertIsDisplayed()
-        rule.onNodeWithTag("${preFetchIndex - 1}")
-            .assertExists()
-        rule.onNodeWithTag("${preFetchIndex - 1 - paramConfig.beyondViewportPageCount - 1}")
+        rule.onNodeWithTag("$preFetchIndex").assertIsDisplayed()
+        rule.onNodeWithTag("${preFetchIndex - 1}").assertExists()
+        rule
+            .onNodeWithTag("${preFetchIndex - 1 - paramConfig.beyondViewportPageCount - 1}")
             .assertDoesNotExist()
     }
 
@@ -260,19 +235,15 @@ class PagerPrefetcherTest(
         val initialIndex = 5
         composePager(initialPage = initialIndex, reverseLayout = true)
 
-        rule.runOnIdle {
-            runBlocking {
-                pagerState.scrollBy(5f)
-            }
-        }
+        rule.runOnIdle { runBlocking { pagerState.scrollBy(5f) } }
 
         var prefetchIndex = initialIndex + 2
 
-        waitForPrefetch(prefetchIndex)
+        waitForPrefetch()
 
-        rule.onNodeWithTag("$prefetchIndex")
-            .assertExists()
-        rule.onNodeWithTag("${prefetchIndex - paramConfig.beyondViewportPageCount - 3}")
+        rule.onNodeWithTag("$prefetchIndex").assertExists()
+        rule
+            .onNodeWithTag("${prefetchIndex - paramConfig.beyondViewportPageCount - 3}")
             .assertDoesNotExist()
 
         rule.runOnIdle {
@@ -283,11 +254,11 @@ class PagerPrefetcherTest(
         }
 
         prefetchIndex -= 3
-        waitForPrefetch(prefetchIndex)
+        waitForPrefetch()
 
-        rule.onNodeWithTag("$prefetchIndex")
-            .assertExists()
-        rule.onNodeWithTag("${prefetchIndex + paramConfig.beyondViewportPageCount + 3}")
+        rule.onNodeWithTag("$prefetchIndex").assertExists()
+        rule
+            .onNodeWithTag("${prefetchIndex + paramConfig.beyondViewportPageCount + 3}")
             .assertDoesNotExist()
     }
 
@@ -301,42 +272,32 @@ class PagerPrefetcherTest(
             contentPadding = PaddingValues(mainAxis = halfItemSize)
         )
 
-        rule.onNodeWithTag("${initialIndex - 1}")
-            .assertIsDisplayed()
-        rule.onNodeWithTag("$initialIndex")
-            .assertIsDisplayed()
-        rule.onNodeWithTag("${initialIndex + 1}")
-            .assertIsDisplayed()
-        rule.onNodeWithTag("${initialIndex - paramConfig.beyondViewportPageCount - 2}")
+        rule.onNodeWithTag("${initialIndex - 1}").assertIsDisplayed()
+        rule.onNodeWithTag("$initialIndex").assertIsDisplayed()
+        rule.onNodeWithTag("${initialIndex + 1}").assertIsDisplayed()
+        rule
+            .onNodeWithTag("${initialIndex - paramConfig.beyondViewportPageCount - 2}")
             .assertDoesNotExist()
-        rule.onNodeWithTag("${initialIndex + paramConfig.beyondViewportPageCount + 2}")
+        rule
+            .onNodeWithTag("${initialIndex + paramConfig.beyondViewportPageCount + 2}")
             .assertDoesNotExist()
 
-        rule.runOnIdle {
-            runBlocking {
-                pagerState.scrollBy(5f)
-            }
-        }
+        rule.runOnIdle { runBlocking { pagerState.scrollBy(5f) } }
 
         var prefetchIndex = initialIndex + 1
-        waitForPrefetch(prefetchIndex)
+        waitForPrefetch()
 
-        rule.onNodeWithTag("${prefetchIndex + 1}")
-            .assertExists()
-        rule.onNodeWithTag("${prefetchIndex - paramConfig.beyondViewportPageCount - 3}")
+        rule.onNodeWithTag("${prefetchIndex + 1}").assertExists()
+        rule
+            .onNodeWithTag("${prefetchIndex - paramConfig.beyondViewportPageCount - 3}")
             .assertDoesNotExist()
 
-        rule.runOnIdle {
-            runBlocking {
-                pagerState.scrollBy(-2f)
-            }
-        }
+        rule.runOnIdle { runBlocking { pagerState.scrollBy(-2f) } }
 
         prefetchIndex -= 3
-        waitForPrefetch(prefetchIndex)
+        waitForPrefetch()
 
-        rule.onNodeWithTag("$prefetchIndex")
-            .assertExists()
+        rule.onNodeWithTag("$prefetchIndex").assertExists()
     }
 
     @Test
@@ -345,45 +306,42 @@ class PagerPrefetcherTest(
         lateinit var remeasure: Remeasurement
         rule.setContent {
             SubcomposeLayout(
-                modifier = object : RemeasurementModifier {
-                    override fun onRemeasurementAvailable(remeasurement: Remeasurement) {
-                        remeasure = remeasurement
-                    }
-                }
-            ) { constraints ->
-                val placeable = if (emit) {
-                    subcompose(Unit) {
-                        pagerState = rememberPagerState { 1000 }
-                        HorizontalOrVerticalPager(
-                            modifier = Modifier.mainAxisSize(pageSizeDp * 1.5f),
-                            state = pagerState
-                        ) {
-                            Spacer(
-                                Modifier
-                                    .mainAxisSize(pageSizeDp)
-                                    .then(
-                                        if (vertical)
-                                            Modifier.fillMaxWidth()
-                                        else
-                                            Modifier.fillMaxHeight()
-                                    )
-                            )
+                modifier =
+                    object : RemeasurementModifier {
+                        override fun onRemeasurementAvailable(remeasurement: Remeasurement) {
+                            remeasure = remeasurement
                         }
-                    }.first().measure(constraints)
-                } else {
-                    null
-                }
-                layout(constraints.maxWidth, constraints.maxHeight) {
-                    placeable?.place(0, 0)
-                }
+                    }
+            ) { constraints ->
+                val placeable =
+                    if (emit) {
+                        subcompose(Unit) {
+                                pagerState = rememberPagerState { 1000 }
+                                HorizontalOrVerticalPager(
+                                    modifier = Modifier.mainAxisSize(pageSizeDp * 1.5f),
+                                    state = pagerState
+                                ) {
+                                    Spacer(
+                                        Modifier.mainAxisSize(pageSizeDp)
+                                            .then(
+                                                if (vertical) Modifier.fillMaxWidth()
+                                                else Modifier.fillMaxHeight()
+                                            )
+                                    )
+                                }
+                            }
+                            .first()
+                            .measure(constraints)
+                    } else {
+                        null
+                    }
+                layout(constraints.maxWidth, constraints.maxHeight) { placeable?.place(0, 0) }
             }
         }
 
         rule.runOnIdle {
             // this will schedule the prefetching
-            runBlocking(AutoTestFrameClock()) {
-                pagerState.scrollBy(pageSize.toFloat())
-            }
+            runBlocking(AutoTestFrameClock()) { pagerState.scrollBy(pageSize.toFloat()) }
             // then we synchronously dispose LazyColumn
             emit = false
             remeasure.forceRemeasure()
@@ -403,14 +361,8 @@ class PagerPrefetcherTest(
             ) {
                 composedItems.add(it)
                 Spacer(
-                    Modifier
-                        .mainAxisSize(pageSizeDp)
-                        .then(
-                            if (vertical)
-                                Modifier.fillMaxWidth()
-                            else
-                                Modifier.fillMaxHeight()
-                        )
+                    Modifier.mainAxisSize(pageSizeDp)
+                        .then(if (vertical) Modifier.fillMaxWidth() else Modifier.fillMaxHeight())
                 )
             }
         }
@@ -432,9 +384,7 @@ class PagerPrefetcherTest(
         rule.waitForIdle()
         rule.waitForIdle()
 
-        rule.runOnIdle {
-            assertThat(composedItems).doesNotContain(3)
-        }
+        rule.runOnIdle { assertThat(composedItems).doesNotContain(3) }
     }
 
     @Test
@@ -457,7 +407,7 @@ class PagerPrefetcherTest(
             }
         }
 
-        waitForPrefetch(7)
+        waitForPrefetch()
 
         rule.runOnIdle {
             runBlocking(AutoTestFrameClock()) {
@@ -466,25 +416,20 @@ class PagerPrefetcherTest(
             }
         }
 
-        rule.runOnIdle {
-            assertThat(activeNodes).doesNotContain(3)
-        }
+        rule.runOnIdle { assertThat(activeNodes).doesNotContain(3) }
     }
 
     private suspend fun PagerState.scrollBy(delta: Float): Float {
         val consumed = (this as ScrollableState).scrollBy(delta)
-        scroll { } // cancel fling animation
+        scroll {} // cancel fling animation
         return consumed
     }
 
-    private fun waitForPrefetch(index: Int) {
-        rule.waitUntil {
-            activeNodes.contains(index) && activeMeasuredNodes.contains(index)
-        }
+    private fun waitForPrefetch() {
+        rule.runOnIdle { scheduler.executeActiveRequests() }
     }
 
     private val activeNodes = mutableSetOf<Int>()
-    private val activeMeasuredNodes = mutableSetOf<Int>()
 
     private fun composePager(
         initialPage: Int = 0,
@@ -499,6 +444,7 @@ class PagerPrefetcherTest(
             beyondViewportPageCount = paramConfig.beyondViewportPageCount,
             initialPage = initialPage,
             initialPageOffsetFraction = initialPageOffsetFraction,
+            prefetchScheduler = scheduler,
             pageCount = { 100 },
             pageSize = {
                 object : PageSize {
@@ -514,24 +460,16 @@ class PagerPrefetcherTest(
             touchSlope = LocalViewConfiguration.current.touchSlop
             DisposableEffect(it) {
                 activeNodes.add(it)
-                onDispose {
-                    activeNodes.remove(it)
-                    activeMeasuredNodes.remove(it)
-                }
+                onDispose { activeNodes.remove(it) }
             }
 
             Spacer(
-                Modifier
-                    .mainAxisSize(pageSizeDp)
-                    .fillMaxCrossAxis()
-                    .testTag("$it")
-                    .layout { measurable, constraints ->
-                        val placeable = measurable.measure(constraints)
-                        activeMeasuredNodes.add(it)
-                        layout(placeable.width, placeable.height) {
-                            placeable.place(0, 0)
-                        }
-                    }
+                Modifier.mainAxisSize(pageSizeDp).fillMaxCrossAxis().testTag("$it").layout {
+                    measurable,
+                    constraints ->
+                    val placeable = measurable.measure(constraints)
+                    layout(placeable.width, placeable.height) { placeable.place(0, 0) }
+                }
             )
         }
     }
@@ -539,11 +477,12 @@ class PagerPrefetcherTest(
     companion object {
         @JvmStatic
         @Parameterized.Parameters(name = "{0}")
-        fun params(): Array<Any> = arrayOf(
-            ParamConfig(Orientation.Vertical, beyondViewportPageCount = 0),
-            ParamConfig(Orientation.Vertical, beyondViewportPageCount = 1),
-            ParamConfig(Orientation.Horizontal, beyondViewportPageCount = 0),
-            ParamConfig(Orientation.Horizontal, beyondViewportPageCount = 1)
-        )
+        fun params(): Array<Any> =
+            arrayOf(
+                ParamConfig(Orientation.Vertical, beyondViewportPageCount = 0),
+                ParamConfig(Orientation.Vertical, beyondViewportPageCount = 1),
+                ParamConfig(Orientation.Horizontal, beyondViewportPageCount = 0),
+                ParamConfig(Orientation.Horizontal, beyondViewportPageCount = 1)
+            )
     }
 }

@@ -25,7 +25,6 @@ import android.view.MotionEvent
 import android.view.SurfaceControlViewHost
 import android.view.SurfaceView
 import android.view.View
-import androidx.annotation.RequiresApi
 import androidx.privacysandbox.ui.provider.TouchFocusTransferringView
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.action.ViewActions.click
@@ -36,6 +35,7 @@ import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
+import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.UiScrollable
@@ -44,14 +44,13 @@ import androidx.testutils.withActivity
 import com.google.common.truth.Truth.assertThat
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
-import org.junit.Assume
 import org.junit.Before
 import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-@RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+@SdkSuppress(minSdkVersion = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
 @RunWith(AndroidJUnit4::class)
 @LargeTest
 class BinderAdapterDelegateTest {
@@ -62,14 +61,12 @@ class BinderAdapterDelegateTest {
         const val SURFACE_VIEW_RES = "androidx.privacysandbox.ui.provider.test:id/surface_view"
     }
 
-    @get:Rule
-    val activityScenarioRule = ActivityScenarioRule(MainActivity::class.java)
+    @get:Rule val activityScenarioRule = ActivityScenarioRule(MainActivity::class.java)
 
     private val transferTouchFocusLatch = CountDownLatch(1)
 
     @Before
     fun setUp() {
-        Assume.assumeTrue(Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val activity = activityScenarioRule.withActivity { this }
         UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
@@ -77,7 +74,11 @@ class BinderAdapterDelegateTest {
             val surfaceView = activity.findViewById<SurfaceView>(R.id.surface_view)
             val surfaceControlViewHost =
                 GestureTransferringSurfaceControlViewHost(
-                    activity, activity.display!!, Binder(), transferTouchFocusLatch)
+                    activity,
+                    activity.display!!,
+                    Binder(),
+                    transferTouchFocusLatch
+                )
             val touchFocusTransferringView =
                 TouchFocusTransferringView(context, surfaceControlViewHost)
             touchFocusTransferringView.addView(TestView(context))

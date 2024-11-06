@@ -16,7 +16,6 @@
 
 package androidx.compose.foundation.demos.text2
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.demos.text.TagLine
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -59,11 +58,7 @@ import androidx.compose.ui.unit.dp
 
 @Composable
 fun BasicTextFieldOutputTransformationDemos() {
-    Column(
-        modifier = Modifier
-            .imePadding()
-            .verticalScroll(rememberScrollState())
-    ) {
+    Column(modifier = Modifier.imePadding().verticalScroll(rememberScrollState())) {
         TagLine("Insert, replace, delete")
         InsertReplaceDeleteDemo()
 
@@ -75,7 +70,6 @@ fun BasicTextFieldOutputTransformationDemos() {
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun InsertReplaceDeleteDemo() {
     val state = remember { TextFieldState("abc def ghi") }
@@ -129,7 +123,7 @@ private fun InsertReplaceDeleteDemo() {
         Text("Deletion ")
         Text("s/def//", style = MaterialTheme.typography.caption)
     }
-    Row(/*verticalAlignment = Alignment.CenterVertically*/) {
+    Row(/*verticalAlignment = Alignment.CenterVertically*/ ) {
         var textLayoutResultProvider: () -> TextLayoutResult? by remember {
             mutableStateOf({ null })
         }
@@ -137,36 +131,36 @@ private fun InsertReplaceDeleteDemo() {
         BasicTextField(
             state = state,
             onTextLayout = { textLayoutResultProvider = it },
-            modifier = Modifier
-                .alignByBaseline()
-                .weight(0.5f)
-                .then(demoTextFieldModifiers)
-                .onFocusChanged { isFirstFieldFocused = it.isFocused }
-                .drawWithContent {
-                    drawContent()
+            modifier =
+                Modifier.alignByBaseline()
+                    .weight(0.5f)
+                    .then(demoTextFieldModifiers)
+                    .onFocusChanged { isFirstFieldFocused = it.isFocused }
+                    .drawWithContent {
+                        drawContent()
 
-                    // Only draw selection outline when not focused.
-                    if (isFirstFieldFocused) return@drawWithContent
-                    val textLayoutResult = textLayoutResultProvider() ?: return@drawWithContent
-                    val selection = state.selection
-                    if (selection.collapsed) {
-                        val cursorRect = textLayoutResult.getCursorRect(selection.start)
-                        drawLine(
-                            Color.Blue,
-                            start = cursorRect.topCenter,
-                            end = cursorRect.bottomCenter
-                        )
-                    } else {
-                        val selectionPath =
-                            textLayoutResult.getPathForRange(selection.min, selection.max)
-                        drawPath(
-                            selectionPath,
-                            Color.Blue,
-                            alpha = 0.8f,
-                            style = Stroke(width = 1.dp.toPx())
-                        )
-                    }
-                },
+                        // Only draw selection outline when not focused.
+                        if (isFirstFieldFocused) return@drawWithContent
+                        val textLayoutResult = textLayoutResultProvider() ?: return@drawWithContent
+                        val selection = state.selection
+                        if (selection.collapsed) {
+                            val cursorRect = textLayoutResult.getCursorRect(selection.start)
+                            drawLine(
+                                Color.Blue,
+                                start = cursorRect.topCenter,
+                                end = cursorRect.bottomCenter
+                            )
+                        } else {
+                            val selectionPath =
+                                textLayoutResult.getPathForRange(selection.min, selection.max)
+                            drawPath(
+                                selectionPath,
+                                Color.Blue,
+                                alpha = 0.8f,
+                                style = Stroke(width = 1.dp.toPx())
+                            )
+                        }
+                    },
         )
         Icon(
             Icons.AutoMirrored.Default.KeyboardArrowRight,
@@ -175,10 +169,7 @@ private fun InsertReplaceDeleteDemo() {
         )
         BasicTextField(
             state = state,
-            modifier = Modifier
-                .alignByBaseline()
-                .weight(0.5f)
-                .then(demoTextFieldModifiers),
+            modifier = Modifier.alignByBaseline().weight(0.5f).then(demoTextFieldModifiers),
             outputTransformation = {
                 if (prefixEnabled) {
                     insert(0, prefix.text.toString())
@@ -195,7 +186,9 @@ private fun InsertReplaceDeleteDemo() {
                 }
                 if (middleWedge) {
                     val index = asCharSequence().indexOf("ghi")
-                    insert(index, middle.text.toString())
+                    if (index > 0) {
+                        insert(index, middle.text.toString())
+                    }
                 }
                 if (suffixEnabled) {
                     append(suffix.text)
@@ -206,7 +199,6 @@ private fun InsertReplaceDeleteDemo() {
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun PhoneNumberAsYouTypeDemo() {
     BasicTextField(
@@ -218,7 +210,6 @@ private fun PhoneNumberAsYouTypeDemo() {
     )
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun PhoneNumberFullTemplateDemo() {
     BasicTextField(
@@ -232,19 +223,15 @@ private fun PhoneNumberFullTemplateDemo() {
     )
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Stable
-private data class PhoneNumberOutputTransformation(
-    private val pad: Boolean
-) : OutputTransformation {
+private data class PhoneNumberOutputTransformation(private val pad: Boolean) :
+    OutputTransformation {
     override fun TextFieldBuffer.transformOutput() {
         if (pad) {
             // Pad the text with placeholder chars if too short.
             // (___) ___-____
             val padCount = 10 - length
-            repeat(padCount) {
-                append('_')
-            }
+            repeat(padCount) { append('_') }
         }
 
         // (123) 456-7890
@@ -254,7 +241,6 @@ private data class PhoneNumberOutputTransformation(
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 private object OnlyDigitsFilter : InputTransformation {
     override fun TextFieldBuffer.transformInput() {
         if ("""\D""".toRegex().containsMatchIn(asCharSequence())) {
@@ -263,9 +249,6 @@ private object OnlyDigitsFilter : InputTransformation {
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 private val demoDecorationBox = TextFieldDecorator { innerField ->
-    Box(Modifier.padding(16.dp)) {
-        innerField()
-    }
+    Box(Modifier.padding(16.dp)) { innerField() }
 }

@@ -22,14 +22,14 @@ import androidx.compose.runtime.Immutable
 /**
  * Properties used to customize the behavior of a [Dialog].
  *
- * @property dismissOnBackPress whether the popup can be dismissed by pressing the back button
- *  * on Android or escape key on desktop.
- * If true, pressing the back button will call onDismissRequest.
+ * @property dismissOnBackPress whether the popup can be dismissed by pressing the back or escape
+ *   buttons on Android or the escape key on desktop. If true, pressing the back button will call
+ *   onDismissRequest.
  * @property dismissOnClickOutside whether the dialog can be dismissed by clicking outside the
- * dialog's bounds. If true, clicking outside the dialog will call onDismissRequest.
+ *   dialog's bounds. If true, clicking outside the dialog will call onDismissRequest.
  * @property usePlatformDefaultWidth Whether the width of the dialog's content should be limited to
- * the platform default, which is smaller than the screen width.
- * **Might be used only as named argument**.
+ *   the platform default, which is smaller than the screen width. **Might be used only as named
+ *   argument**.
  */
 @Immutable
 expect class DialogProperties(
@@ -45,18 +45,17 @@ expect class DialogProperties(
 /**
  * Opens a dialog with the given content.
  *
- * A dialog is a small window that prompts the user to make a decision or enter
- * additional information. A dialog does not fill the screen and is normally used
- * for modal events that require users to take an action before they can proceed.
+ * A dialog is a small window that prompts the user to make a decision or enter additional
+ * information. A dialog does not fill the screen and is normally used for modal events that require
+ * users to take an action before they can proceed.
  *
- * The dialog is visible as long as it is part of the composition hierarchy.
- * In order to let the user dismiss the Dialog, the implementation of [onDismissRequest] should
- * contain a way to remove the dialog from the composition hierarchy.
+ * The dialog is visible as long as it is part of the composition hierarchy. In order to let the
+ * user dismiss the Dialog, the implementation of [onDismissRequest] should contain a way to remove
+ * the dialog from the composition hierarchy.
  *
  * Example usage:
  *
  * @sample androidx.compose.ui.samples.DialogSample
- *
  * @param onDismissRequest Executes when the user tries to dismiss the dialog.
  * @param properties [DialogProperties] for further customization of this dialog's behavior.
  * @param content The content to be displayed inside the dialog.

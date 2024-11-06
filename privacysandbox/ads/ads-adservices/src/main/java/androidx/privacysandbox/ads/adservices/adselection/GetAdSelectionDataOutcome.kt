@@ -28,16 +28,15 @@ import androidx.privacysandbox.ads.adservices.common.ExperimentalFeatures
  * [AdSelectionManager#getAdSelectionData] call.
  *
  * @param adSelectionId An ID unique only to a device user that identifies a successful ad
- *     selection.
+ *   selection.
  * @param adSelectionData The adSelectionData that is collected from device.
  */
 @ExperimentalFeatures.Ext10OptIn
-class GetAdSelectionDataOutcome public constructor(
-    val adSelectionId: Long,
-    val adSelectionData: ByteArray? = null
-) {
+class GetAdSelectionDataOutcome
+@JvmOverloads
+public constructor(val adSelectionId: Long, val adSelectionData: ByteArray? = null) {
 
-    /** Checks whether two [GetAdSelectionDataOutcome] objects contain the same information.  */
+    /** Checks whether two [GetAdSelectionDataOutcome] objects contain the same information. */
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is GetAdSelectionDataOutcome) return false
@@ -45,19 +44,20 @@ class GetAdSelectionDataOutcome public constructor(
             this.adSelectionData.contentEquals(other.adSelectionData)
     }
 
-    /** Returns the hash of the [GetAdSelectionDataOutcome] object's data.  */
+    /** Returns the hash of the [GetAdSelectionDataOutcome] object's data. */
     override fun hashCode(): Int {
         var hash = adSelectionId.hashCode()
         hash = 31 * hash + adSelectionData.hashCode()
         return hash
     }
 
-    /** Overrides the toString method.  */
+    /** Overrides the toString method. */
     override fun toString(): String {
         return "GetAdSelectionDataOutcome: adSelectionId=$adSelectionId, " +
             "adSelectionData=$adSelectionData"
     }
 
+    @Suppress("DEPRECATION")
     @RestrictTo(RestrictTo.Scope.LIBRARY)
     @RequiresExtension(extension = SdkExtensions.AD_SERVICES, version = 10)
     @RequiresExtension(extension = Build.VERSION_CODES.S, version = 10)

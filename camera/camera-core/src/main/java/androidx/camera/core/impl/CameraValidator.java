@@ -22,20 +22,27 @@ import android.os.Build;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.OptIn;
 import androidx.annotation.RequiresApi;
 import androidx.camera.core.CameraSelector;
+import androidx.camera.core.ExperimentalLensFacing;
 import androidx.camera.core.Logger;
+
+import java.util.Set;
 
 /**
  * Validation methods to verify the camera is initialized successfully, more info please reference
  * b/167201193.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
+@OptIn(markerClass = ExperimentalLensFacing.class)
 public final class CameraValidator {
     private CameraValidator() {
     }
 
     private static final String TAG = "CameraValidator";
+    private static final CameraSelector EXTERNAL_LENS_FACING =
+            new CameraSelector.Builder().requireLensFacing(
+                    CameraSelector.LENS_FACING_EXTERNAL).build();
 
     /**
      * Verifies the initialized camera instance in the CameraRepository
@@ -54,6 +61,23 @@ public final class CameraValidator {
             @NonNull CameraRepository cameraRepository,
             @Nullable CameraSelector availableCamerasSelector)
             throws CameraIdListIncorrectException {
+
+        // Check if running on a virtual device with Android U or higher
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE
+                && Api34Impl.getDeviceId(context) != Context.DEVICE_ID_DEFAULT) {
+
+            // Get the list of cameras available for this virtual device
+            Set<CameraInternal> availableCameras = cameraRepository.getCameras();
+            if (availableCameras.isEmpty()) {
+                // No cameras found, throw an exception
+                throw new CameraIdListIncorrectException("No cameras available", 0, null);
+            }
+
+            // Log details and skip validation since we have at least one camera
+            Logger.d(TAG, "Virtual device with ID: " + Api34Impl.getDeviceId(context)
+                    + " has " + availableCameras.size() + " cameras. Skipping validation.");
+            return;
+        }
 
         Integer lensFacing = null;
         try {
@@ -104,6 +128,13 @@ public final class CameraValidator {
             Logger.w(TAG, "Camera LENS_FACING_FRONT verification failed", e);
             exception = e;
         }
+        try {
+            // Verifies the EXTERNAL camera.
+            EXTERNAL_LENS_FACING.select(cameraRepository.getCameras());
+            Logger.d(TAG, "Found a LENS_FACING_EXTERNAL camera");
+            availableCameraCount++;
+        } catch (IllegalArgumentException e) {
+        }
 
         if (exception != null) {
             Logger.e(TAG, "Camera LensFacing verification failed, existing cameras: "
@@ -126,6 +157,16 @@ public final class CameraValidator {
 
         public int getAvailableCameraCount() {
             return mAvailableCameraCount;
+        }
+    }
+
+    @RequiresApi(34)
+    private static class Api34Impl {
+        private Api34Impl() {
+        }
+
+        static int getDeviceId(@NonNull Context context) {
+            return context.getDeviceId();
         }
     }
 }

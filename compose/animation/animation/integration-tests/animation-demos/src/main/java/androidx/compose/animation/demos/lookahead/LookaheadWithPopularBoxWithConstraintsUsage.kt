@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-@file:OptIn(ExperimentalComposeUiApi::class)
-
 package androidx.compose.animation.demos.lookahead
 
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.animateBounds
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.demos.R
 import androidx.compose.animation.demos.gesture.pastelColors
@@ -42,7 +42,6 @@ import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.LookaheadScope
@@ -53,24 +52,25 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Preview
 @Composable
 fun LookaheadWithPopularBoxWithConstraintsUsage() {
-    val padding by produceState(initialValue = 0.dp) {
-        while (true) {
-            delay(2000)
-            if (value == 0.dp) {
-                value = 100.dp
-            } else {
-                value = 0.dp
+    val padding by
+        produceState(initialValue = 0.dp) {
+            while (true) {
+                delay(2000)
+                if (value == 0.dp) {
+                    value = 100.dp
+                } else {
+                    value = 0.dp
+                }
             }
         }
-    }
     LookaheadScope {
         Box(
-            Modifier
-                .fillMaxSize()
-                .animateBounds(Modifier.padding(padding))
+            Modifier.fillMaxSize()
+                .animateBounds(this, Modifier.padding(padding))
                 .background(pastelColors[3])
         ) {
             DetailsContent()
@@ -85,9 +85,7 @@ fun DetailsContent() {
         BoxWithConstraints {
             Surface {
                 Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .verticalScroll(scrollState),
+                    modifier = Modifier.fillMaxSize().verticalScroll(scrollState),
                 ) {
                     Header(this@BoxWithConstraints.maxHeight)
                     Content(this@BoxWithConstraints.maxHeight)
@@ -134,9 +132,7 @@ fun Property(label: String, value: String) {
 fun Header(containerHeight: Dp) {
     val height by animateDpAsState(containerHeight)
     Image(
-        modifier = Modifier
-            .heightIn(max = height / 2)
-            .fillMaxWidth(),
+        modifier = Modifier.heightIn(max = height / 2).fillMaxWidth(),
         painter = painterResource(id = R.drawable.android),
         contentScale = ContentScale.Crop,
         contentDescription = null

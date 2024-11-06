@@ -17,55 +17,66 @@
 package androidx.core.uwb
 
 /** Interface for controller client session that is established between nearby UWB devices. */
-interface UwbControllerSessionScope : UwbClientSessionScope {
+public interface UwbControllerSessionScope : UwbClientSessionScope {
     /**
      * The local device's complex channel which can be used for ranging.
      *
-     * A complex channel can only be used for a single ranging session. After the ranging session
-     * is ended, a new channel will be allocated.
+     * A complex channel can only be used for a single ranging session. After the ranging session is
+     * ended, a new channel will be allocated.
      *
      * Ranging session duration may also be limited to prevent channels from being used for too
      * long. In this case, your ranging session would be suspended and clients would need to
      * exchange the new channel with their peer before starting again.
      */
-    val uwbComplexChannel: UwbComplexChannel
+    public val uwbComplexChannel: UwbComplexChannel
 
     /**
-     * Dynamically adds a controlee to an active ranging session. The controlee to be added
-     * must be configured with the a set of parameters that can join the existing connection.
+     * Dynamically adds a controlee to an active ranging session. The controlee to be added must be
+     * configured with the a set of parameters that can join the existing connection.
      *
-     * @throws [IllegalStateException] if the ranging is inactive or if the ranging profile
-     * is that of a unicast profile.
+     * @throws [IllegalStateException] if the ranging is inactive or if the ranging profile is that
+     *   of a unicast profile.
      *
      * Otherwise, this method will return successfully, and clients are expected to handle either
      * [RangingResult.RangingResultPosition] or [RangingResult.RangingResultPeerDisconnected] to
      * listen for starts or failures.
      */
-    suspend fun addControlee(address: UwbAddress)
+    public suspend fun addControlee(address: UwbAddress)
 
     /**
      * Dynamically removes a controlee from an active ranging session.
      *
-     * @throws [IllegalStateException] if the ranging is inactive, if the ranging profile is
-     * that of a unicast profile, or if the requested device is not being ranged to.
-     *
-     * @throws [androidx.core.uwb.exceptions.UwbSystemCallbackException] if the operation failed
-     * due to hardware or firmware issues.
+     * @throws [IllegalStateException] if the ranging is inactive, if the ranging profile is that of
+     *   a unicast profile, or if the requested device is not being ranged to.
+     * @throws [androidx.core.uwb.exceptions.UwbSystemCallbackException] if the operation failed due
+     *   to hardware or firmware issues.
      *
      * Otherwise, this method will return successfully, and clients are expected to handle
      * [RangingResult.RangingResultPeerDisconnected] to listen for disconnects.
      */
-    suspend fun removeControlee(address: UwbAddress)
+    public suspend fun removeControlee(address: UwbAddress)
 
     /**
      * Dynamically reconfigures ranging interval to an active ranging session.
      *
      * @throws [IllegalStateException] if the ranging is inactive.
      *
-     * Otherwise, this method will return successfully with the ranging session reconfigured to
-     * skip number of ranging intervals set in intervalSkipCount. If intervalSkipCount
-     * is set to 0, the ranging interval will be set to the interval used when startRanging
-     * was called.
+     * Otherwise, this method will return successfully with the ranging session reconfigured to skip
+     * number of ranging intervals set in intervalSkipCount. If intervalSkipCount is set to 0, the
+     * ranging interval will be set to the interval used when startRanging was called.
      */
-    suspend fun reconfigureRangingInterval(intervalSkipCount: Int)
+    public suspend fun reconfigureRangingInterval(intervalSkipCount: Int)
+
+    /**
+     * Dynamically adds a controlee to an active ranging session. The controlee to be added must be
+     * configured with the a set of parameters that can join the existing connection.
+     *
+     * @throws [IllegalStateException] if the ranging is inactive or if the ranging profile is not
+     *   the provisioned STS individual key case.
+     *
+     * Otherwise, this method will return successfully, and clients are expected to handle either
+     * [RangingResult.RangingResultPosition] or [RangingResult.RangingResultPeerDisconnected] to
+     * listen for starts or failures.
+     */
+    public suspend fun addControlee(address: UwbAddress, parameters: RangingControleeParameters)
 }

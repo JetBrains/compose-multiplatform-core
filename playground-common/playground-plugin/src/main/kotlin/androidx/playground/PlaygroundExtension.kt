@@ -16,6 +16,7 @@
 
 package androidx.playground
 
+import BuildDirectoryHelper
 import ProjectDependencyGraph
 import SkikoSetup
 import androidx.build.SettingsParser
@@ -110,20 +111,23 @@ open class PlaygroundExtension @Inject constructor(
         val propertiesFile = File(supportRoot, "playground-common/playground.properties")
         playgroundProperties.load(propertiesFile.inputStream())
         settings.gradle.beforeProject { project ->
+            project.extensions.extraProperties["supportRootFolder"] = supportRoot
             // load playground properties. These are not kept in the playground projects to prevent
             // AndroidX build from reading them.
             playgroundProperties.forEach {
                 project.extensions.extraProperties[it.key as String] = it.value
             }
+            BuildDirectoryHelper.chooseBuildDirectory(
+                supportRoot,
+                settings.rootProject.name,
+                project
+            )
         }
 
         settings.rootProject.buildFileName = relativePathToBuild
 
         // allow public repositories
         System.setProperty("ALLOW_PUBLIC_REPOS", "true")
-
-        // specify out dir location
-        System.setProperty("CHECKOUT_ROOT", supportRoot.path)
     }
 
     /**
@@ -138,9 +142,10 @@ open class PlaygroundExtension @Inject constructor(
             throw RuntimeException("Must call setupPlayground() first.")
         }
         val supportSettingsFile = File(supportRootDir, "settings.gradle")
-        val playgroundProjectDependencyGraph = ProjectDependencyGraph(settings, true /*isPlayground*/)
+        val playgroundProjectDependencyGraph =
+            ProjectDependencyGraph(settings, true /*isPlayground*/, false /*constraintsEnabled*/)
         // also get full graph that treats projectOrArtifact equal to project
-        val aospProjectDependencyGraph = ProjectDependencyGraph(settings, false /*isPlayground*/)
+        val aospProjectDependencyGraph = ProjectDependencyGraph(settings, false /*isPlayground*/, false /*constraintsEnabled*/)
 
         SettingsParser.findProjects(supportSettingsFile).forEach {
             playgroundProjectDependencyGraph.addToAllProjects(
@@ -167,7 +172,9 @@ open class PlaygroundExtension @Inject constructor(
 
         // find the list of projects that we cannot build on GitHub. These are projects which are known to be
         // incompatible or incompatible because they have a project dependency to an incompatible project.
-        val projectOrArtifactDisallowList = buildProjectOrArtifactDisallowList(playgroundProjectDependencyGraph)
+        val projectOrArtifactDisallowList = buildProjectOrArtifactDisallowList(
+            playgroundProjectDependencyGraph
+        )
         // track implicitly added projects for reporting purposes
         val implicitlyAddedProjects = mutableSetOf<String>()
         aospProjectDependencyGraph
@@ -196,14 +203,20 @@ open class PlaygroundExtension @Inject constructor(
                 unsupportedProjects.forEach {
                     appendLine("Unsupported Playground Project: $it")
                     appendLine("dependency path to $it from explicitly requested projects:")
-                    playgroundProjectDependencyGraph.findPathsBetween(selectedGradlePaths, it).forEach {
+                    playgroundProjectDependencyGraph.findPathsBetween(
+                        selectedGradlePaths,
+                        it
+                    ).forEach {
                         appendLine(it)
                     }
                     appendLine("""
                         dependency path to $it from implicitly added projects. If the following list is
                         not empty, please file a bug on AndroidX/Github component.
                     """.trimIndent())
-                    playgroundProjectDependencyGraph.findPathsBetween(implicitlyAddedProjects, it).forEach {
+                    playgroundProjectDependencyGraph.findPathsBetween(
+                        implicitlyAddedProjects,
+                        it
+                    ).forEach {
                         appendLine(it)
                     }
                     appendLine("----")
@@ -226,7 +239,9 @@ open class PlaygroundExtension @Inject constructor(
             }
     }
 
-    private fun buildProjectOrArtifactDisallowList(projectDependencyGraph: ProjectDependencyGraph) : Set<String> {
+    private fun buildProjectOrArtifactDisallowList(
+        projectDependencyGraph: ProjectDependencyGraph
+    ): Set<String> {
         return UNSUPPORTED_PROJECTS.flatMap {
             projectDependencyGraph.findAllProjectsDependingOn(it)
         }.toSet()

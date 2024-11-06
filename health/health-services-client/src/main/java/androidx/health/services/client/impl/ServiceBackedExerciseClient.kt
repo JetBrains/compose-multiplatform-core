@@ -24,6 +24,7 @@ import androidx.health.services.client.ExerciseClient
 import androidx.health.services.client.ExerciseUpdateCallback
 import androidx.health.services.client.data.BatchingMode
 import androidx.health.services.client.data.DataType
+import androidx.health.services.client.data.DebouncedGoal
 import androidx.health.services.client.data.ExerciseCapabilities
 import androidx.health.services.client.data.ExerciseConfig
 import androidx.health.services.client.data.ExerciseGoal
@@ -41,6 +42,7 @@ import androidx.health.services.client.impl.ipc.internal.ConnectionManager
 import androidx.health.services.client.impl.request.AutoPauseAndResumeConfigRequest
 import androidx.health.services.client.impl.request.BatchingModeConfigRequest
 import androidx.health.services.client.impl.request.CapabilitiesRequest
+import androidx.health.services.client.impl.request.DebouncedGoalRequest
 import androidx.health.services.client.impl.request.ExerciseGoalRequest
 import androidx.health.services.client.impl.request.FlushRequest
 import androidx.health.services.client.impl.request.PrepareExerciseRequest
@@ -52,10 +54,7 @@ import com.google.common.util.concurrent.ListenableFuture
 import com.google.common.util.concurrent.SettableFuture
 import java.util.concurrent.Executor
 
-/**
- * [ExerciseClient] implementation that is backed by Health Services.
- *
- */
+/** [ExerciseClient] implementation that is backed by Health Services. */
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 internal class ServiceBackedExerciseClient(
     private val context: Context,
@@ -139,18 +138,13 @@ internal class ServiceBackedExerciseClient(
         setUpdateCallback(ContextCompat.getMainExecutor(context), callback)
     }
 
-    override fun setUpdateCallback(
-        executor: Executor,
-        callback: ExerciseUpdateCallback
-    ) {
+    override fun setUpdateCallback(executor: Executor, callback: ExerciseUpdateCallback) {
         val listenerStub =
             ExerciseUpdateListenerStub.ExerciseUpdateListenerCache.INSTANCE.create(
                 callback,
                 executor,
                 requestedDataTypesProvider = {
-                    synchronized(requestedDataTypesLock) {
-                        requestedDataTypes.toSet()
-                    }
+                    synchronized(requestedDataTypesLock) { requestedDataTypes.toSet() }
                 }
             )
         val future =
@@ -168,7 +162,8 @@ internal class ServiceBackedExerciseClient(
                     callback.onRegistrationFailed(t)
                 }
             },
-            executor)
+            executor
+        )
     }
 
     @Suppress("UNCHECKED_CAST")
@@ -186,13 +181,12 @@ internal class ServiceBackedExerciseClient(
 
     override fun addGoalToActiveExerciseAsync(
         exerciseGoal: ExerciseGoal<*>
-    ): ListenableFuture<Void> =
-        execute { service, resultFuture ->
-            service.addGoalToActiveExercise(
-                ExerciseGoalRequest(packageName, exerciseGoal),
-                StatusCallback(resultFuture)
-            )
-        }
+    ): ListenableFuture<Void> = execute { service, resultFuture ->
+        service.addGoalToActiveExercise(
+            ExerciseGoalRequest(packageName, exerciseGoal),
+            StatusCallback(resultFuture)
+        )
+    }
 
     override fun removeGoalFromActiveExerciseAsync(
         exerciseGoal: ExerciseGoal<*>
@@ -244,6 +238,34 @@ internal class ServiceBackedExerciseClient(
                 )
             },
             3
+        )
+    }
+
+    override fun addDebouncedGoalToActiveExerciseAsync(
+        debouncedGoal: DebouncedGoal<*>
+    ): ListenableFuture<Void> {
+        return executeWithVersionCheck(
+            { service, resultFuture ->
+                service.addDebouncedGoalToActiveExercise(
+                    DebouncedGoalRequest(packageName, debouncedGoal),
+                    StatusCallback(resultFuture),
+                )
+            },
+            /* minApiVersion = */ 7,
+        )
+    }
+
+    override fun removeDebouncedGoalFromActiveExerciseAsync(
+        debouncedGoal: DebouncedGoal<*>
+    ): ListenableFuture<Void> {
+        return executeWithVersionCheck(
+            { service, resultFuture ->
+                service.removeDebouncedGoalFromActiveExercise(
+                    DebouncedGoalRequest(packageName, debouncedGoal),
+                    StatusCallback(resultFuture),
+                )
+            },
+            /* minApiVersion = */ 7,
         )
     }
 

@@ -19,13 +19,12 @@ package androidx.camera.testing.impl.fakes;
 import static androidx.camera.core.impl.ImageFormatConstants.INTERNAL_DEFINED_IMAGE_FORMAT_PRIVATE;
 
 import android.util.Pair;
+import android.util.Range;
 import android.util.Size;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.camera.core.DynamicRange;
 import androidx.camera.core.MirrorMode;
-import androidx.camera.core.UseCase;
 import androidx.camera.core.impl.CaptureConfig;
 import androidx.camera.core.impl.Config;
 import androidx.camera.core.impl.ImageInputConfig;
@@ -42,7 +41,6 @@ import java.util.List;
 import java.util.UUID;
 
 /** A fake configuration for {@link FakeUseCase}. */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public class FakeUseCaseConfig implements UseCaseConfig<FakeUseCase>, ImageOutputConfig {
 
     private final Config mConfig;
@@ -70,7 +68,6 @@ public class FakeUseCaseConfig implements UseCaseConfig<FakeUseCase>, ImageOutpu
     }
 
     /** Builder for an empty Config */
-    @RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
     public static final class Builder implements
             UseCaseConfig.Builder<FakeUseCase, FakeUseCaseConfig, FakeUseCaseConfig.Builder>,
             ImageOutputConfig.Builder<FakeUseCaseConfig.Builder>,
@@ -189,13 +186,6 @@ public class FakeUseCaseConfig implements UseCaseConfig<FakeUseCase>, ImageOutpu
             return this;
         }
 
-        @Override
-        @NonNull
-        public Builder setUseCaseEventCallback(@NonNull UseCase.EventCallback eventCallback) {
-            getMutableConfig().insertOption(OPTION_USE_CASE_EVENT_CALLBACK, eventCallback);
-            return this;
-        }
-
         @NonNull
         @Override
         public Builder setTargetAspectRatio(int aspectRatio) {
@@ -287,6 +277,15 @@ public class FakeUseCaseConfig implements UseCaseConfig<FakeUseCase>, ImageOutpu
         @Override
         public Builder setCaptureType(@NonNull CaptureType captureType) {
             getMutableConfig().insertOption(OPTION_CAPTURE_TYPE, captureType);
+            return this;
+        }
+
+        /**
+         * Sets specific target frame rate to the fake use case.
+         */
+        @NonNull
+        public Builder setTargetFrameRate(@NonNull Range<Integer> targetFrameRate) {
+            getMutableConfig().insertOption(OPTION_TARGET_FRAME_RATE, targetFrameRate);
             return this;
         }
     }

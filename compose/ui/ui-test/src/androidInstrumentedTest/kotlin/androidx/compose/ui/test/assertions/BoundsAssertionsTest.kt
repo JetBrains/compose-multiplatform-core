@@ -23,7 +23,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.testutils.WithMinimumTouchTargetSize
@@ -32,11 +35,15 @@ import androidx.compose.testutils.expectError
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.HorizontalAlignmentLine
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.text
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertHeightIsEqualTo
@@ -49,11 +56,22 @@ import androidx.compose.ui.test.assertWidthIsAtLeast
 import androidx.compose.ui.test.assertWidthIsEqualTo
 import androidx.compose.ui.test.getAlignmentLinePosition
 import androidx.compose.ui.test.getBoundsInRoot
+import androidx.compose.ui.test.getFirstLinkBounds
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.LinkAnnotation
+import androidx.compose.ui.text.LinkAnnotation.Url
+import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withLink
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.DpOffset
+import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -71,22 +89,17 @@ class BoundsAssertionsTest {
         private const val tag = "box"
     }
 
-    @get:Rule
-    val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule()
 
     private fun composeBox() {
         rule.setContent {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .wrapContentSize(Alignment.TopStart)
-            ) {
+            Box(modifier = Modifier.fillMaxSize().wrapContentSize(Alignment.TopStart)) {
                 Box(modifier = Modifier.padding(start = 50.dp, top = 100.dp)) {
                     Box(
-                        modifier = Modifier
-                            .testTag(tag)
-                            .requiredSize(80.dp, 100.dp)
-                            .background(color = Color.Black)
+                        modifier =
+                            Modifier.testTag(tag)
+                                .requiredSize(80.dp, 100.dp)
+                                .background(color = Color.Black)
                     )
                 }
             }
@@ -94,15 +107,10 @@ class BoundsAssertionsTest {
     }
 
     @Composable
-    private fun SmallBox(
-        modifier: Modifier = Modifier,
-        tag: String = BoundsAssertionsTest.tag
-    ) {
+    private fun SmallBox(modifier: Modifier = Modifier, tag: String = BoundsAssertionsTest.tag) {
         Box(
-            modifier = modifier
-                .testTag(tag)
-                .requiredSize(10.dp, 10.dp)
-                .background(color = Color.Black)
+            modifier =
+                modifier.testTag(tag).requiredSize(10.dp, 10.dp).background(color = Color.Black)
         )
     }
 
@@ -110,16 +118,15 @@ class BoundsAssertionsTest {
     fun assertSizeEquals() {
         composeBox()
 
-        rule.onNodeWithTag(tag)
-            .assertWidthIsEqualTo(80.dp)
-            .assertHeightIsEqualTo(100.dp)
+        rule.onNodeWithTag(tag).assertWidthIsEqualTo(80.dp).assertHeightIsEqualTo(100.dp)
     }
 
     @Test
     fun assertSizeAtLeast() {
         composeBox()
 
-        rule.onNodeWithTag(tag)
+        rule
+            .onNodeWithTag(tag)
             .assertWidthIsAtLeast(80.dp)
             .assertWidthIsAtLeast(79.dp)
             .assertHeightIsAtLeast(100.dp)
@@ -130,69 +137,46 @@ class BoundsAssertionsTest {
     fun assertSizeEquals_fail() {
         composeBox()
 
-        expectError<AssertionError> {
-            rule.onNodeWithTag(tag)
-                .assertWidthIsEqualTo(70.dp)
-        }
+        expectError<AssertionError> { rule.onNodeWithTag(tag).assertWidthIsEqualTo(70.dp) }
 
-        expectError<AssertionError> {
-            rule.onNodeWithTag(tag)
-                .assertHeightIsEqualTo(90.dp)
-        }
+        expectError<AssertionError> { rule.onNodeWithTag(tag).assertHeightIsEqualTo(90.dp) }
     }
 
     @Test
     fun assertSizeAtLeast_fail() {
         composeBox()
 
-        expectError<AssertionError> {
-            rule.onNodeWithTag(tag)
-                .assertWidthIsAtLeast(81.dp)
-        }
+        expectError<AssertionError> { rule.onNodeWithTag(tag).assertWidthIsAtLeast(81.dp) }
 
-        expectError<AssertionError> {
-            rule.onNodeWithTag(tag)
-                .assertHeightIsAtLeast(101.dp)
-        }
+        expectError<AssertionError> { rule.onNodeWithTag(tag).assertHeightIsAtLeast(101.dp) }
     }
 
     @Test
     fun assertTouchSizeEquals() {
         rule.setContent {
-            WithMinimumTouchTargetSize(DpSize(20.dp, 20.dp)) {
-                SmallBox(Modifier.clickable {})
-            }
+            WithMinimumTouchTargetSize(DpSize(20.dp, 20.dp)) { SmallBox(Modifier.clickable {}) }
         }
 
-        rule.onNodeWithTag(tag)
-            .assertTouchWidthIsEqualTo(20.dp)
-            .assertTouchHeightIsEqualTo(20.dp)
+        rule.onNodeWithTag(tag).assertTouchWidthIsEqualTo(20.dp).assertTouchHeightIsEqualTo(20.dp)
     }
 
     @Test
     fun assertTouchSizeEquals_fail() {
         rule.setContent {
-            WithMinimumTouchTargetSize(DpSize(20.dp, 20.dp)) {
-                SmallBox(Modifier.clickable {})
-            }
+            WithMinimumTouchTargetSize(DpSize(20.dp, 20.dp)) { SmallBox(Modifier.clickable {}) }
         }
 
-        expectError<AssertionError> {
-            rule.onNodeWithTag(tag)
-                .assertTouchWidthIsEqualTo(19.dp)
-        }
+        expectError<AssertionError> { rule.onNodeWithTag(tag).assertTouchWidthIsEqualTo(19.dp) }
 
-        expectError<AssertionError> {
-            rule.onNodeWithTag(tag)
-                .assertTouchHeightIsEqualTo(21.dp)
-        }
+        expectError<AssertionError> { rule.onNodeWithTag(tag).assertTouchHeightIsEqualTo(21.dp) }
     }
 
     @Test
     fun assertPosition() {
         composeBox()
 
-        rule.onNodeWithTag(tag)
+        rule
+            .onNodeWithTag(tag)
             .assertPositionInRootIsEqualTo(expectedLeft = 50.dp, expectedTop = 100.dp)
             .assertLeftPositionInRootIsEqualTo(50.dp)
             .assertTopPositionInRootIsEqualTo(100.dp)
@@ -203,12 +187,14 @@ class BoundsAssertionsTest {
         composeBox()
 
         expectError<AssertionError> {
-            rule.onNodeWithTag(tag)
+            rule
+                .onNodeWithTag(tag)
                 .assertPositionInRootIsEqualTo(expectedLeft = 51.dp, expectedTop = 101.dp)
         }
 
         expectError<AssertionError> {
-            rule.onNodeWithTag(tag)
+            rule
+                .onNodeWithTag(tag)
                 .assertPositionInRootIsEqualTo(expectedLeft = 49.dp, expectedTop = 99.dp)
         }
     }
@@ -216,19 +202,16 @@ class BoundsAssertionsTest {
     private fun composeClippedBox() {
         rule.setContent {
             Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .clipToBounds()
-                    .wrapContentSize(Alignment.TopStart)
+                modifier = Modifier.fillMaxSize().clipToBounds().wrapContentSize(Alignment.TopStart)
             ) {
                 // Box is shifted 30dp to the left and 10dp to the top,
                 // so it is clipped to a size of 50 x 90
                 Box(
-                    modifier = Modifier
-                        .offset((-30).dp, (-10).dp)
-                        .testTag(tag)
-                        .requiredSize(80.dp, 100.dp)
-                        .background(color = Color.Black)
+                    modifier =
+                        Modifier.offset((-30).dp, (-10).dp)
+                            .testTag(tag)
+                            .requiredSize(80.dp, 100.dp)
+                            .background(color = Color.Black)
                 )
             }
         }
@@ -239,7 +222,8 @@ class BoundsAssertionsTest {
         composeClippedBox()
 
         // Node is clipped, but position should be unaffected
-        rule.onNodeWithTag(tag)
+        rule
+            .onNodeWithTag(tag)
             .assertPositionInRootIsEqualTo(expectedLeft = (-30).dp, expectedTop = (-10).dp)
             .assertLeftPositionInRootIsEqualTo((-30).dp)
             .assertTopPositionInRootIsEqualTo((-10).dp)
@@ -250,19 +234,13 @@ class BoundsAssertionsTest {
         composeClippedBox()
 
         // Node is clipped, but width and height should be unaffected
-        rule.onNodeWithTag(tag)
-            .assertWidthIsEqualTo(80.dp)
-            .assertHeightIsEqualTo(100.dp)
+        rule.onNodeWithTag(tag).assertWidthIsEqualTo(80.dp).assertHeightIsEqualTo(100.dp)
     }
 
     @Test
     fun getPosition_measuredNotPlaced() {
         // When we have a node that is measure but not placed
-        getPositionTest {
-            DoNotPlace {
-                Box(Modifier.testTag(tag).requiredSize(10.dp))
-            }
-        }
+        getPositionTest { DoNotPlace { Box(Modifier.testTag(tag).requiredSize(10.dp)) } }
     }
 
     @Test
@@ -289,9 +267,7 @@ class BoundsAssertionsTest {
 
     @Composable
     private fun TouchTargetTestContent(tag: String) {
-        WithMinimumTouchTargetSize(DpSize(20.dp, 20.dp)) {
-            SmallBox(Modifier.clickable {}, tag)
-        }
+        WithMinimumTouchTargetSize(DpSize(20.dp, 20.dp)) { SmallBox(Modifier.clickable {}, tag) }
     }
 
     @Test
@@ -329,11 +305,10 @@ class BoundsAssertionsTest {
         }
 
         fun SemanticsNodeInteraction.verifyBoundsInRoot() {
-            getBoundsInRoot()
-                .let {
-                    it.left.assertIsEqualTo(20.dp)
-                    it.top.assertIsEqualTo(20.dp)
-                }
+            getBoundsInRoot().let {
+                it.left.assertIsEqualTo(20.dp)
+                it.top.assertIsEqualTo(20.dp)
+            }
         }
 
         rule.onNodeWithTag("default-density").verifyBoundsInRoot()
@@ -365,11 +340,7 @@ class BoundsAssertionsTest {
     @Test
     fun getPosition_notMeasuredNotPlaced() {
         // When we have a node that is not measure and not placed
-        getPositionTest {
-            DoNotMeasure {
-                Box(Modifier.testTag(tag).requiredSize(10.dp))
-            }
-        }
+        getPositionTest { DoNotMeasure { Box(Modifier.testTag(tag).requiredSize(10.dp)) } }
     }
 
     private fun getPositionTest(content: @Composable () -> Unit) {
@@ -404,21 +375,13 @@ class BoundsAssertionsTest {
     @Test
     fun getSize_measuredNotPlaced() {
         // When we have a node that is measure but not placed
-        getSizeTest {
-            DoNotPlace {
-                Box(Modifier.testTag(tag).requiredSize(10.dp))
-            }
-        }
+        getSizeTest { DoNotPlace { Box(Modifier.testTag(tag).requiredSize(10.dp)) } }
     }
 
     @Test
     fun getSize_notMeasuredNotPlaced() {
         // When we have a node that is not measure and not placed
-        getSizeTest {
-            DoNotMeasure {
-                Box(Modifier.testTag(tag).requiredSize(10.dp))
-            }
-        }
+        getSizeTest { DoNotMeasure { Box(Modifier.testTag(tag).requiredSize(10.dp)) } }
     }
 
     private fun getSizeTest(content: @Composable () -> Unit) {
@@ -432,8 +395,7 @@ class BoundsAssertionsTest {
         node.assertWidthIsAtLeast(Dp.Unspecified)
         node.assertHeightIsAtLeast(Dp.Unspecified)
 
-        fun notEqual(subject: String) =
-            "Actual $subject is Dp.Unspecified, expected 10.0.dp \\(.*"
+        fun notEqual(subject: String) = "Actual $subject is Dp.Unspecified, expected 10.0.dp \\(.*"
         fun notAtLeast(subject: String) =
             "Actual $subject is Dp.Unspecified, expected at least 10.0.dp \\(.*"
 
@@ -455,9 +417,7 @@ class BoundsAssertionsTest {
     fun getAlignmentLine_measuredNotPlaced() {
         // When we have a node with an alignment line that is measured but not placed
         getAlignmentLineTest(expectedPosition = TestLinePosition) {
-            DoNotPlace {
-                BoxWithAlignmentLine(Modifier.testTag(tag))
-            }
+            DoNotPlace { BoxWithAlignmentLine(Modifier.testTag(tag)) }
         }
     }
 
@@ -465,9 +425,7 @@ class BoundsAssertionsTest {
     fun getAlignmentLine_notMeasuredNotPlaced() {
         // When we have a node with an alignment line that is not measured and not placed
         getAlignmentLineTest(expectedPosition = Dp.Unspecified) {
-            DoNotMeasure {
-                BoxWithAlignmentLine(Modifier.testTag(tag))
-            }
+            DoNotMeasure { BoxWithAlignmentLine(Modifier.testTag(tag)) }
         }
     }
 
@@ -476,9 +434,7 @@ class BoundsAssertionsTest {
         rule.setContent(content)
 
         // Then we can still query the alignment line
-        rule.onNodeWithTag(tag)
-            .getAlignmentLinePosition(TestLine)
-            .assertIsEqualTo(expectedPosition)
+        rule.onNodeWithTag(tag).getAlignmentLinePosition(TestLine).assertIsEqualTo(expectedPosition)
     }
 
     @Composable
@@ -510,4 +466,236 @@ class BoundsAssertionsTest {
             ) {}
         }
     }
+
+    @Test
+    fun getFirstLinkBounds_multipleMatches_handleSecond() {
+        lateinit var textLayoutResult: TextLayoutResult
+        var count = -1
+        rule.setContent {
+            BasicText(
+                buildAnnotatedString {
+                    append("a")
+                    withLink(LinkAnnotation.Url("url1")) { append("link1") }
+                    withLink(LinkAnnotation.Url("url2")) { append("link2") }
+                    withLink(LinkAnnotation.Clickable("tag1") {}) { append("link3") }
+                },
+                onTextLayout = { textLayoutResult = it },
+            )
+        }
+
+        val textNode = rule.onNodeWithText("a", substring = true)
+        assertThat(
+                textNode.getFirstLinkBounds {
+                    count++
+                    count == 1
+                }
+            )
+            .isEqualTo(
+                Rect(
+                    textLayoutResult.getBoundingBox(6).left,
+                    textLayoutResult.getBoundingBox(6).top,
+                    textLayoutResult.getBoundingBox(10).right,
+                    textLayoutResult.getBoundingBox(10).bottom
+                )
+            )
+    }
+
+    @Test
+    fun getFirstLinkBounds_forSpecificUrl_multipleMatches_firstReturn() {
+        lateinit var textLayoutResult: TextLayoutResult
+        rule.setContent {
+            BasicText(
+                buildAnnotatedString {
+                    append("a")
+                    withLink(LinkAnnotation.Url("url1")) { append("link1") }
+                    withLink(LinkAnnotation.Url("url2")) { append("link2") }
+                    withLink(LinkAnnotation.Url("url1") {}) { append("link3") }
+                    withLink(LinkAnnotation.Clickable("tag2") {}) { append("link4") }
+                },
+                onTextLayout = { textLayoutResult = it },
+            )
+        }
+
+        val textNode = rule.onNodeWithText("a", substring = true)
+        assertThat(textNode.getFirstLinkBounds { (it.item as? LinkAnnotation.Url)?.url == "url1" })
+            .isEqualTo(
+                Rect(
+                    textLayoutResult.getBoundingBox(1).left,
+                    textLayoutResult.getBoundingBox(1).top,
+                    textLayoutResult.getBoundingBox(5).right,
+                    textLayoutResult.getBoundingBox(5).bottom
+                )
+            )
+    }
+
+    @Test
+    fun getFirstLinkBounds_forAllClickable_multipleMatches_returnsFirst() {
+        lateinit var textLayoutResult: TextLayoutResult
+        rule.setContent {
+            BasicText(
+                buildAnnotatedString {
+                    append("a")
+                    withLink(LinkAnnotation.Clickable("tag1") {}) { append("link1") }
+                    withLink(LinkAnnotation.Url("url2")) { append("link2") }
+                    withLink(LinkAnnotation.Clickable("tag2") {}) { append("link3") }
+                },
+                onTextLayout = { textLayoutResult = it },
+            )
+        }
+
+        val textNode = rule.onNodeWithText("a", substring = true)
+        assertThat(textNode.getFirstLinkBounds { it.item is LinkAnnotation.Clickable })
+            .isEqualTo(
+                Rect(
+                    textLayoutResult.getBoundingBox(1).left,
+                    textLayoutResult.getBoundingBox(1).top,
+                    textLayoutResult.getBoundingBox(5).right,
+                    textLayoutResult.getBoundingBox(5).bottom
+                )
+            )
+    }
+
+    @Test
+    fun getFirstLinkBounds_ZeroMatches() {
+        rule.setContent { BasicText(AnnotatedString("a")) }
+        assertThat(rule.onNodeWithText("a").getFirstLinkBounds { true }).isNull()
+    }
+
+    @Test
+    fun getFirstLinkBounds_explicitZeroMatches() {
+        rule.setContent {
+            BasicText(buildAnnotatedString { withLink(LinkAnnotation.Url("url")) { append("a") } })
+        }
+        assertThat(rule.onNodeWithText("a").getFirstLinkBounds { false }).isNull()
+    }
+
+    @Test
+    fun getFirstLinkBounds_relativeToTextNode() {
+        lateinit var textLayoutResult: TextLayoutResult
+        val offset = with(rule.density) { 17f.toDp() }
+        rule.setContent {
+            BasicText(
+                buildAnnotatedString { withLink(Url("url")) { append("a") } },
+                onTextLayout = { textLayoutResult = it },
+                modifier = Modifier.offset(offset, offset)
+            )
+        }
+
+        val textNode = rule.onNodeWithText("a")
+        assertThat(textNode.getBoundsInRoot().topLeft).isEqualTo(DpOffset(offset, offset))
+        assertThat(textLayoutResult.getBoundingBox(0).topLeft).isEqualTo(Offset(0f, 0f))
+        assertThat(textNode.getFirstLinkBounds { true }!!.topLeft).isEqualTo(Offset(0f, 0f))
+    }
+
+    @Test(expected = AssertionError::class)
+    fun getFirstLinkBounds_expectMatchingTextForTextLayoutResult() {
+        val TAG = "text node"
+        rule.setContent {
+            BasicText(
+                buildAnnotatedString { withLink(LinkAnnotation.Url("url")) { append("link") } },
+                modifier = Modifier.testTag(TAG).semantics { text = AnnotatedString("other text") }
+            )
+        }
+        rule.onNodeWithTag(TAG).getFirstLinkBounds { true }
+    }
+
+    @Test
+    fun getFirstLinkBounds_mergedNode_expectMatchingTextForTextLayoutResult() {
+        lateinit var textLayoutResult: TextLayoutResult
+        val TAG = "box node"
+        rule.setContent {
+            Box(Modifier.semantics(true) {}.testTag(TAG)) {
+                Box(Modifier.size(10.dp).semantics { text = AnnotatedString("no link text") })
+                BasicText(
+                    buildAnnotatedString { withLink(LinkAnnotation.Url("url")) { append("a") } },
+                    onTextLayout = { textLayoutResult = it }
+                )
+            }
+        }
+
+        val textNode = rule.onNodeWithTag(TAG)
+        assertThat(textNode.getFirstLinkBounds { true })
+            .isEqualTo(textLayoutResult.getBoundingBox(0))
+    }
+
+    @Test
+    fun getFirstLinkBounds_link_inMiddle_spansMultipleLines_returnsFirstLineBounds() {
+        lateinit var textLayoutResult: TextLayoutResult
+
+        rule.setContent {
+            BasicText(
+                buildAnnotatedString {
+                    append("a")
+                    withLink(Url("url")) { append("bc") }
+                },
+                modifier = Modifier.width(20.dp),
+                style = TextStyle(fontSize = with(rule.density) { 20.dp.toSp() }),
+                onTextLayout = { textLayoutResult = it }
+            )
+        }
+
+        val textNode = rule.onNodeWithText("abc")
+        val expected =
+            Rect(
+                textLayoutResult.getBoundingBox(1).left,
+                textLayoutResult.getBoundingBox(1).top,
+                textLayoutResult.getBoundingBox(1).right,
+                textLayoutResult.getBoundingBox(1).bottom
+            )
+        assertThat(textLayoutResult.lineCount).isEqualTo(3)
+        assertThat(textNode.getFirstLinkBounds { true }).isEqualTo(expected)
+    }
+
+    @Test
+    fun getFirstLinkBounds_linkSpansMultipleLines_returnsFirstLineBounds() {
+        lateinit var textLayoutResult: TextLayoutResult
+        rule.setContent {
+            BasicText(
+                buildAnnotatedString { withLink(Url("url")) { append("abc") } },
+                modifier = Modifier.width(30.dp),
+                style = TextStyle(fontSize = with(rule.density) { 20.dp.toSp() }),
+                onTextLayout = { textLayoutResult = it }
+            )
+        }
+
+        val textNode = rule.onNodeWithText("abc")
+        val expected =
+            Rect(
+                textLayoutResult.getBoundingBox(0).left,
+                textLayoutResult.getBoundingBox(0).top,
+                textLayoutResult.getBoundingBox(1).right,
+                textLayoutResult.getBoundingBox(1).bottom
+            )
+        assertThat(textLayoutResult.lineCount).isEqualTo(2)
+        assertThat(textNode.getFirstLinkBounds { true }).isEqualTo(expected)
+    }
+
+    @Test
+    fun getFirstLinkBounds_rtlText() {
+        lateinit var textLayoutResult: TextLayoutResult
+        rule.setContent {
+            BasicText(
+                buildAnnotatedString {
+                    append("\u05D1\u05D2\u05D3\u05D0\u05D1")
+                    addLink(Url("url"), 1, 4)
+                },
+                modifier = Modifier.testTag("tag"),
+                onTextLayout = { textLayoutResult = it }
+            )
+        }
+
+        val textNode = rule.onNodeWithTag("tag")
+        val expectedBounds =
+            textLayoutResult.run {
+                val right = getBoundingBox(1).right
+                val top = getBoundingBox(1).top
+                val left = getBoundingBox(3).left
+                val bottom = getBoundingBox(3).bottom
+                Rect(left, top, right, bottom)
+            }
+        assertThat(textNode.getFirstLinkBounds { true }).isEqualTo(expectedBounds)
+    }
+
+    private val DpRect.topLeft: DpOffset
+        get() = DpOffset(left, top)
 }

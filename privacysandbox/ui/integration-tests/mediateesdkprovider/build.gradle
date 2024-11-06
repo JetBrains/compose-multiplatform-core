@@ -26,6 +26,7 @@ android {
     defaultConfig {
         applicationId "androidx.privacysandbox.ui.integration.mediateesdkprovider"
         minSdk 33
+        compileSdk 35
     }
 
     buildTypes {
@@ -37,9 +38,10 @@ android {
 
 dependencies {
     api(libs.kotlinStdlib)
-    api("androidx.annotation:annotation:1.6.0")
+    api("androidx.annotation:annotation:1.8.1")
     implementation project(':privacysandbox:ui:integration-tests:testaidl')
     implementation project(':privacysandbox:ui:ui-core')
     implementation project(':privacysandbox:ui:ui-provider')
     implementation project(':privacysandbox:sdkruntime:sdkruntime-client')
+    implementation project(':privacysandbox:ui:integration-tests:sdkproviderutils')
 }

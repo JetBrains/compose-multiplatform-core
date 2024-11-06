@@ -15,6 +15,7 @@
  */
 package androidx.health.connect.client.time
 
+import androidx.annotation.RestrictTo
 import androidx.health.connect.client.records.Record
 import java.time.Instant
 import java.time.LocalDateTime
@@ -30,15 +31,16 @@ import java.time.LocalDateTime
  * Time can be specified in one of the two ways:
  * - use [Instant] for a specific point in time such as "2021-01-03 at 10:00 UTC+1";
  * - use [LocalDateTime] for a user experienced time concept such as "2021-01-03 at 10 o'clock",
- * without knowing which time zone the user was at that time. [Record] without specifying zoneOffset
- * will assume the current system zone offset at query time.
+ *   without knowing which time zone the user was at that time. [Record] without specifying
+ *   zoneOffset will assume the current system zone offset at query time.
  */
 class TimeRangeFilter
-internal constructor(
-    internal val startTime: Instant? = null,
-    internal val endTime: Instant? = null,
-    internal val localStartTime: LocalDateTime? = null,
-    internal val localEndTime: LocalDateTime? = null,
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+constructor(
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) val startTime: Instant? = null,
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) val endTime: Instant? = null,
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) val localStartTime: LocalDateTime? = null,
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) val localEndTime: LocalDateTime? = null,
 ) {
     companion object {
         /**
@@ -52,7 +54,6 @@ internal constructor(
          * @param startTime start time of the filter.
          * @param endTime end time of the filter.
          * @return a [TimeRangeFilter] for filtering [Record]s.
-         *
          * @see before for time range with open-ended [startTime].
          * @see after for time range with open-ended [endTime].
          */
@@ -69,7 +70,6 @@ internal constructor(
          * @param startTime start time of the filter.
          * @param endTime end time of the filter.
          * @return a [TimeRangeFilter] for filtering [Record]s.
-         *
          * @see before for time range with open-ended [startTime].
          * @see after for time range with open-ended [endTime].
          */
@@ -89,7 +89,6 @@ internal constructor(
          *
          * @param endTime end time of the filter.
          * @return a [TimeRangeFilter] for filtering [Record]s.
-         *
          * @see between for closed-ended time range.
          * @see after for time range with open-ended [endTime]
          */
@@ -101,7 +100,6 @@ internal constructor(
          *
          * @param endTime end time of the filter.
          * @return a [TimeRangeFilter] for filtering [Record]s.
-         *
          * @see between for closed-ended time range.
          * @see after for time range with open-ended [endTime]
          */
@@ -119,7 +117,6 @@ internal constructor(
          *
          * @param startTime start time of the filter.
          * @return a [TimeRangeFilter] for filtering [Record]s.
-         *
          * @see between for closed-ended time range.
          * @see after for time range with open-ended [startTime]
          */
@@ -130,7 +127,6 @@ internal constructor(
          *
          * @param startTime start time of the filter.
          * @return a [TimeRangeFilter] for filtering [Record]s.
-         *
          * @see between for closed-ended time range.
          * @see after for time range with open-ended [startTime]
          */

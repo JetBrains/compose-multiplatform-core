@@ -14,21 +14,16 @@
  * limitations under the License.
  */
 
-@file:RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
-
 package androidx.camera.camera2.pipe.integration.compat.workaround
 
 import android.hardware.camera2.CameraDevice
 import android.hardware.camera2.CaptureRequest
-import androidx.annotation.RequiresApi
 import androidx.camera.camera2.pipe.Request
 import androidx.camera.camera2.pipe.integration.compat.quirk.DeviceQuirks
 import androidx.camera.camera2.pipe.integration.compat.quirk.StillCaptureFlashStopRepeatingQuirk
 
-/**
- * Returns whether or not repeating should be stopped before submitting capture request.
- */
-fun List<Request>.shouldStopRepeatingBeforeCapture(): Boolean {
+/** Returns whether or not repeating should be stopped before submitting capture request. */
+public fun List<Request>.shouldStopRepeatingBeforeCapture(): Boolean {
     DeviceQuirks[StillCaptureFlashStopRepeatingQuirk::class.java] ?: return false
 
     var isStillCapture = false
@@ -39,11 +34,12 @@ fun List<Request>.shouldStopRepeatingBeforeCapture(): Boolean {
             isStillCapture = true
         }
 
-        isFlashEnabled = when (request[CaptureRequest.CONTROL_AE_MODE]) {
-            CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH,
-            CaptureRequest.CONTROL_AE_MODE_ON_ALWAYS_FLASH -> true
-            else -> isFlashEnabled
-        }
+        isFlashEnabled =
+            when (request[CaptureRequest.CONTROL_AE_MODE]) {
+                CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH,
+                CaptureRequest.CONTROL_AE_MODE_ON_ALWAYS_FLASH -> true
+                else -> isFlashEnabled
+            }
     }
 
     return isStillCapture && isFlashEnabled

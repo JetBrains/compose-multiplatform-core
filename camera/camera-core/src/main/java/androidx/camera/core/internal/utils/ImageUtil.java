@@ -35,7 +35,6 @@ import android.util.Size;
 import androidx.annotation.IntRange;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.camera.core.ImageProcessingUtil;
 import androidx.camera.core.ImageProxy;
 import androidx.camera.core.Logger;
@@ -50,7 +49,6 @@ import java.nio.ByteBuffer;
 /**
  * Utility class for image related operations.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public final class ImageUtil {
     private static final String TAG = "ImageUtil";
 
@@ -340,6 +338,11 @@ public final class ImageUtil {
     /** True if the given image format is JPEG or JPEG/R. */
     public static boolean isJpegFormats(int imageFormat) {
         return imageFormat == ImageFormat.JPEG || imageFormat == ImageFormat.JPEG_R;
+    }
+
+    /** True if the given image format is RAW_SENSOR. */
+    public static boolean isRawFormats(int imageFormat) {
+        return imageFormat == ImageFormat.RAW_SENSOR;
     }
 
     /** True if the given aspect ratio is meaningful and has effect on the given size. */

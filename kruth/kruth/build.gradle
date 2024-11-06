@@ -38,7 +38,11 @@ androidXMultiplatform {
     mac()
     linux()
     ios()
+    watchosDeviceArm64()
+    watchos()
+    tvos()
     androidNative()
+    mingwX64()
 
     defaultPlatform(PlatformIdentifier.JVM)
 
@@ -67,6 +71,7 @@ androidXMultiplatform {
         }
 
         jvmTest {
+            dependsOn(commonTest)
             dependencies {
                 api(libs.kotlinCoroutinesTest)
             }
@@ -80,7 +85,7 @@ androidXMultiplatform {
             dependsOn(commonTest)
         }
 
-        targets.all { target ->
+        targets.configureEach { target ->
             if (target.platformType == org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType.native) {
                 target.compilations["main"].defaultSourceSet {
                     dependsOn(nativeMain)
@@ -105,4 +110,5 @@ androidx {
     runApiTasks = new RunApiTasks.Yes() // Used to diff against Google Truth
     type = LibraryType.INTERNAL_TEST_LIBRARY
     doNotDocumentReason = "Not shipped externally"
+    metalavaK2UastEnabled = false
 }

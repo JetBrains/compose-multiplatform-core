@@ -16,6 +16,10 @@
 
 package androidx.room.compiler.codegen.java
 
+import androidx.room.compiler.codegen.JCodeBlock
+import androidx.room.compiler.codegen.JFunSpec
+import androidx.room.compiler.codegen.JFunSpecBuilder
+import androidx.room.compiler.codegen.JParameterSpec
 import androidx.room.compiler.codegen.L
 import androidx.room.compiler.codegen.VisibilityModifier
 import androidx.room.compiler.codegen.XAnnotationSpec
@@ -23,31 +27,22 @@ import androidx.room.compiler.codegen.XCodeBlock
 import androidx.room.compiler.codegen.XFunSpec
 import androidx.room.compiler.codegen.XTypeName
 import androidx.room.compiler.processing.XNullability
-import com.squareup.javapoet.CodeBlock
-import com.squareup.javapoet.MethodSpec
-import com.squareup.javapoet.ParameterSpec
 import com.squareup.kotlinpoet.javapoet.JTypeName
 import javax.lang.model.element.Modifier
 
-internal class JavaFunSpec(
-    override val name: String,
-    internal val actual: MethodSpec
-) : JavaLang(), XFunSpec {
+internal class JavaFunSpec(internal val actual: JFunSpec) : JavaLang(), XFunSpec {
+    override val name: String = actual.name
+
     override fun toString() = actual.toString()
 
-    internal class Builder(
-        override val name: String,
-        internal val actual: MethodSpec.Builder
-    ) : JavaLang(), XFunSpec.Builder {
+    internal class Builder(internal val actual: JFunSpecBuilder) : JavaLang(), XFunSpec.Builder {
 
         override fun addAnnotation(annotation: XAnnotationSpec) = apply {
             require(annotation is JavaAnnotationSpec)
             actual.addAnnotation(annotation.actual)
         }
 
-        override fun addAbstractModifier() = apply {
-            actual.addModifiers(Modifier.ABSTRACT)
-        }
+        override fun addAbstractModifier() = apply { actual.addModifiers(Modifier.ABSTRACT) }
 
         override fun addCode(code: XCodeBlock) = apply {
             require(code is JavaCodeBlock)
@@ -59,15 +54,19 @@ internal class JavaFunSpec(
             name: String,
             annotations: List<XAnnotationSpec>
         ) = apply {
+            val paramSpec = JParameterSpec.builder(typeName.java, name, Modifier.FINAL)
             actual.addParameter(
-                ParameterSpec.builder(typeName.java, name, Modifier.FINAL)
-                    .apply {
-                        if (typeName.nullability == XNullability.NULLABLE) {
-                            addAnnotation(NULLABLE_ANNOTATION)
-                        } else if (typeName.nullability == XNullability.NONNULL) {
-                            addAnnotation(NONNULL_ANNOTATION)
-                        }
+                // Adding nullability annotation to primitive parameters is redundant as
+                // primitives can never be null.
+                if (typeName.isPrimitive) {
+                    paramSpec.build()
+                } else {
+                    when (typeName.nullability) {
+                        XNullability.NULLABLE -> paramSpec.addAnnotation(NULLABLE_ANNOTATION)
+                        XNullability.NONNULL -> paramSpec.addAnnotation(NONNULL_ANNOTATION)
+                        else -> paramSpec
                     }.build()
+                }
             )
             // TODO(b/247247439): Add other annotations
         }
@@ -75,7 +74,7 @@ internal class JavaFunSpec(
         override fun callSuperConstructor(vararg args: XCodeBlock) = apply {
             actual.addStatement(
                 "super($L)",
-                CodeBlock.join(
+                JCodeBlock.join(
                     args.map {
                         check(it is JavaCodeBlock)
                         it.actual
@@ -100,13 +99,14 @@ internal class JavaFunSpec(
             actual.returns(typeName.java)
         }
 
-        override fun build() = JavaFunSpec(name, actual.build())
+        override fun build() = JavaFunSpec(actual.build())
     }
 }
 
-internal fun VisibilityModifier.toJavaVisibilityModifier() = when (this) {
-    VisibilityModifier.PUBLIC -> Modifier.PUBLIC
-    VisibilityModifier.PROTECTED -> Modifier.PROTECTED
-    VisibilityModifier.INTERNAL -> Modifier.PUBLIC
-    VisibilityModifier.PRIVATE -> Modifier.PRIVATE
-}
+internal fun VisibilityModifier.toJavaVisibilityModifier() =
+    when (this) {
+        VisibilityModifier.PUBLIC -> Modifier.PUBLIC
+        VisibilityModifier.PROTECTED -> Modifier.PROTECTED
+        VisibilityModifier.INTERNAL -> Modifier.PUBLIC
+        VisibilityModifier.PRIVATE -> Modifier.PRIVATE
+    }

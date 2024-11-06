@@ -20,16 +20,11 @@ import androidx.annotation.RestrictTo
 import androidx.privacysandbox.sdkruntime.core.controller.SdkSandboxControllerCompat
 
 /**
- * List of features using Client-Core internal API.
- * Each feature available since particular ([ClientApiVersion]).
+ * List of features using Client-Core internal API. Each feature available since particular
+ * ([ClientApiVersion]).
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 enum class ClientFeature {
-    /**
-     * Support for retrieving [SdkSandboxControllerCompat] on SDK side.
-     */
-    SDK_SANDBOX_CONTROLLER,
-
     /**
      * Support for starting SDK Activity:
      * [SdkSandboxControllerCompat.registerSdkSandboxActivityHandler]
@@ -43,10 +38,7 @@ enum class ClientFeature {
      */
     APP_OWNED_INTERFACES,
 
-    /**
-     * Support for loading SDKs by other SDKs:
-     * [SdkSandboxControllerCompat.loadSdk]
-     */
+    /** Support for loading SDKs by other SDKs: [SdkSandboxControllerCompat.loadSdk] */
     LOAD_SDK,
 
     /**

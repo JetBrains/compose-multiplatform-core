@@ -17,6 +17,7 @@
 package androidx.compose.foundation.text.modifiers
 
 import androidx.compose.foundation.text.DefaultMinLines
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.ColorProducer
 import androidx.compose.ui.node.ModifierNodeElement
@@ -46,46 +47,50 @@ internal class TextAnnotatedStringElement(
     private val onPlaceholderLayout: ((List<Rect?>) -> Unit)? = null,
     private val selectionController: SelectionController? = null,
     private val color: ColorProducer? = null,
+    private val autoSize: TextAutoSize? = null,
     private val onShowTranslation: ((TextAnnotatedStringNode.TextSubstitutionValue) -> Unit)? = null
 ) : ModifierNodeElement<TextAnnotatedStringNode>() {
 
-    override fun create(): TextAnnotatedStringNode = TextAnnotatedStringNode(
-        text,
-        style,
-        fontFamilyResolver,
-        onTextLayout,
-        overflow,
-        softWrap,
-        maxLines,
-        minLines,
-        placeholders,
-        onPlaceholderLayout,
-        selectionController,
-        color,
-        onShowTranslation
-    )
+    override fun create(): TextAnnotatedStringNode =
+        TextAnnotatedStringNode(
+            text,
+            style,
+            fontFamilyResolver,
+            onTextLayout,
+            overflow,
+            softWrap,
+            maxLines,
+            minLines,
+            placeholders,
+            onPlaceholderLayout,
+            selectionController,
+            color,
+            autoSize,
+            onShowTranslation
+        )
 
     override fun update(node: TextAnnotatedStringNode) {
         node.doInvalidations(
             drawChanged = node.updateDraw(color, style),
-            textChanged = node.updateText(
-                text = text
-            ),
-            layoutChanged = node.updateLayoutRelatedArgs(
-                style = style,
-                placeholders = placeholders,
-                minLines = minLines,
-                maxLines = maxLines,
-                softWrap = softWrap,
-                fontFamilyResolver = fontFamilyResolver,
-                overflow = overflow
-            ),
-            callbacksChanged = node.updateCallbacks(
-                onTextLayout = onTextLayout,
-                onPlaceholderLayout = onPlaceholderLayout,
-                selectionController = selectionController,
-                onShowTranslation = onShowTranslation
-            )
+            textChanged = node.updateText(text = text),
+            layoutChanged =
+                node.updateLayoutRelatedArgs(
+                    style = style,
+                    placeholders = placeholders,
+                    minLines = minLines,
+                    maxLines = maxLines,
+                    softWrap = softWrap,
+                    fontFamilyResolver = fontFamilyResolver,
+                    overflow = overflow,
+                    autoSize = autoSize
+                ),
+            callbacksChanged =
+                node.updateCallbacks(
+                    onTextLayout = onTextLayout,
+                    onPlaceholderLayout = onPlaceholderLayout,
+                    selectionController = selectionController,
+                    onShowTranslation = onShowTranslation
+                )
         )
     }
 
@@ -102,15 +107,15 @@ internal class TextAnnotatedStringElement(
 
         // these are equally unlikely to change
         if (fontFamilyResolver != other.fontFamilyResolver) return false
-        if (onTextLayout != other.onTextLayout) return false
-        if (onShowTranslation != other.onShowTranslation) return false
+        if (onTextLayout !== other.onTextLayout) return false
+        if (onShowTranslation !== other.onShowTranslation) return false
         if (overflow != other.overflow) return false
         if (softWrap != other.softWrap) return false
         if (maxLines != other.maxLines) return false
         if (minLines != other.minLines) return false
 
         // these never change, but check anyway for correctness
-        if (onPlaceholderLayout != other.onPlaceholderLayout) return false
+        if (onPlaceholderLayout !== other.onPlaceholderLayout) return false
         if (selectionController != other.selectionController) return false
 
         return true

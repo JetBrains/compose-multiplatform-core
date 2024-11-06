@@ -31,8 +31,6 @@ internal actual fun AnnotatedString.transform(
     transform: (String, Int, Int) -> String
 ): AnnotatedString {
     val transitions = sortedSetOf(0, text.length)
-    collectRangeTransitions(spanStylesOrNull, transitions)
-    collectRangeTransitions(paragraphStylesOrNull, transitions)
     collectRangeTransitions(annotations, transitions)
 
     var resultStr = ""
@@ -41,24 +39,11 @@ internal actual fun AnnotatedString.transform(
         resultStr += transform(text, start, end)
         offsetMap.put(end, resultStr.length)
     }
+    // The offset map must have mapping entry from all style start, end position.
+    val newAnnotations =
+        annotations?.fastMap { Range(it.item, offsetMap[it.start]!!, offsetMap[it.end]!!) }
 
-    val newSpanStyles = spanStylesOrNull?.fastMap {
-        // The offset map must have mapping entry from all style start, end position.
-        Range(it.item, offsetMap[it.start]!!, offsetMap[it.end]!!)
-    }
-    val newParaStyles = paragraphStylesOrNull?.fastMap {
-        Range(it.item, offsetMap[it.start]!!, offsetMap[it.end]!!)
-    }
-    val newAnnotations = annotations?.fastMap {
-        Range(it.item, offsetMap[it.start]!!, offsetMap[it.end]!!)
-    }
-
-    return AnnotatedString(
-        text = resultStr,
-        spanStylesOrNull = newSpanStyles,
-        paragraphStylesOrNull = newParaStyles,
-        annotations = newAnnotations
-    )
+    return AnnotatedString(text = resultStr, annotations = newAnnotations)
 }
 
 /**
@@ -67,10 +52,7 @@ internal actual fun AnnotatedString.transform(
  * @param ranges The list of AnnotatedString.Range
  * @param target The output list
  */
-private fun collectRangeTransitions(
-    ranges: List<Range<*>>?,
-    target: SortedSet<Int>
-) {
+private fun collectRangeTransitions(ranges: List<Range<*>>?, target: SortedSet<Int>) {
     ranges?.fastFold(target) { acc, range ->
         acc.apply {
             add(range.start)

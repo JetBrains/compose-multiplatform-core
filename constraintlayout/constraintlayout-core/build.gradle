@@ -30,7 +30,7 @@ plugins {
 }
 
 dependencies {
-    api("androidx.annotation:annotation:1.5.0")
+    api("androidx.annotation:annotation:1.8.1")
     testImplementation(libs.junit)
 }
 
@@ -40,5 +40,4 @@ androidx {
     mavenVersion = LibraryVersions.CONSTRAINTLAYOUT_CORE
     inceptionYear = "2022"
     description = "This library contains engines and algorithms for constraint based layout and complex animations (it is used by the ConstraintLayout library)"
-    metalavaK2UastEnabled = true
 }

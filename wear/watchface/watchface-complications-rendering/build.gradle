@@ -22,7 +22,7 @@
  * modifying its settings.
  */
 import androidx.build.RunApiTasks
-import androidx.build.Publish
+import androidx.build.LibraryType
 
 plugins {
     id("AndroidXPlugin")
@@ -31,7 +31,7 @@ plugins {
 }
 
 dependencies {
-    api("androidx.annotation:annotation:1.1.0")
+    api("androidx.annotation:annotation:1.8.1")
     api(project(":wear:watchface:watchface-complications-data"))
     api(project(":wear:watchface:watchface"))
 
@@ -69,8 +69,8 @@ android {
 
 androidx {
     name = "Android Wear Watchface Complication Rendering"
-    publish = Publish.SNAPSHOT_AND_RELEASE
+    type = LibraryType.PUBLISHED_LIBRARY
     inceptionYear = "2020"
     description = "Support for rendering complications on the watch face"
-    metalavaK2UastEnabled = true
+    legacyDisableKotlinStrictApiMode = true
 }

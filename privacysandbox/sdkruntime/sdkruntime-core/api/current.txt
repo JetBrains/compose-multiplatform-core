@@ -24,6 +24,12 @@ package androidx.privacysandbox.sdkruntime.core {
   }
 
   public static final class LoadSdkCompatException.Companion {
+    property public static final int LOAD_SDK_ALREADY_LOADED;
+    property public static final int LOAD_SDK_INTERNAL_ERROR;
+    property public static final int LOAD_SDK_NOT_FOUND;
+    property public static final int LOAD_SDK_SDK_DEFINED_ERROR;
+    property public static final int LOAD_SDK_SDK_SANDBOX_DISABLED;
+    property public static final int SDK_SANDBOX_PROCESS_NOT_AVAILABLE;
   }
 
   public final class SandboxedSdkCompat {

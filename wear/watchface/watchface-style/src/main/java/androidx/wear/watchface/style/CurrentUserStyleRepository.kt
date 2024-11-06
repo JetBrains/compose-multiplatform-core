@@ -24,6 +24,7 @@ import androidx.annotation.RestrictTo
 import androidx.wear.watchface.complications.IllegalNodeException
 import androidx.wear.watchface.complications.iterate
 import androidx.wear.watchface.style.UserStyleSetting.ComplicationSlotsUserStyleSetting.ComplicationSlotsOption
+import androidx.wear.watchface.style.UserStyleSetting.LargeCustomValueUserStyleSetting.Companion.CUSTOM_VALUE_USER_STYLE_SETTING_ID
 import androidx.wear.watchface.style.UserStyleSetting.Option
 import androidx.wear.watchface.style.data.UserStyleSchemaWireFormat
 import androidx.wear.watchface.style.data.UserStyleWireFormat
@@ -49,12 +50,13 @@ import org.xmlpull.v1.XmlPullParserException
  *
  * To modify the user style, you should call [toMutableUserStyle] and construct a new [UserStyle]
  * instance with [MutableUserStyle.toUserStyle].
- *
+ */
+public class UserStyle
+/**
  * @param selectedOptions The [UserStyleSetting.Option] selected for each [UserStyleSetting]
  * @param copySelectedOptions Whether to create a copy of the provided [selectedOptions]. If
  *   `false`, no mutable copy of the [selectedOptions] map should be retained outside this class.
  */
-public class UserStyle
 private constructor(
     selectedOptions: Map<UserStyleSetting, UserStyleSetting.Option>,
     copySelectedOptions: Boolean
@@ -70,6 +72,8 @@ private constructor(
      *
      * A copy of the [selectedOptions] map will be created, so that changed to the map will not be
      * reflected by this object.
+     *
+     * @param selectedOptions The [UserStyleSetting.Option] selected for each [UserStyleSetting]
      */
     public constructor(
         selectedOptions: Map<UserStyleSetting, UserStyleSetting.Option>
@@ -376,10 +380,20 @@ public class UserStyleData(public val userStyleMap: Map<String, ByteArray>) {
         "{" +
             userStyleMap.entries.joinToString(
                 transform = {
-                    try {
-                        it.key + "=" + it.value.decodeToString()
-                    } catch (e: Exception) {
-                        it.key + "=" + it.value
+                    when (it.key) {
+                        /**
+                         * For CustomValueUserStyleSetting and LargeCustomValueUserStyleSetting, we
+                         * display only the length of the value. These style settings is always use
+                         * the same key (CustomValue).
+                         */
+                        CUSTOM_VALUE_USER_STYLE_SETTING_ID ->
+                            it.key + "=[binary data, length: ${it.value.size}]"
+                        else ->
+                            try {
+                                it.key + "=" + it.value.decodeToString()
+                            } catch (e: Exception) {
+                                it.key + "=" + it.value
+                            }
                     }
                 }
             ) +

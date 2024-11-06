@@ -1,0 +1,103 @@
+/*
+ * Copyright (C) 2024 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/**
+ * This file was created using the `create_project.py` script located in the
+ * `<AndroidX root>/development/project-creator` directory.
+ *
+ * Please use that script when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
+
+import androidx.build.LibraryType
+import androidx.build.PlatformIdentifier
+
+plugins {
+    id("AndroidXPlugin")
+}
+
+androidXMultiplatform {
+  jvm()
+  androidLibrary {
+    namespace = "androidx.ink.brush"
+    withAndroidTestOnDeviceBuilder {
+      it.compilationName = "instrumentedTest"
+      it.defaultSourceSetName = "androidInstrumentedTest"
+      it.sourceSetTreeName = "test"
+    }
+  }
+
+  defaultPlatform(PlatformIdentifier.JVM)
+
+  sourceSets {
+    commonMain {}
+
+    commonTest {}
+
+    jvmAndroidMain {
+      dependsOn(commonMain)
+      dependencies {
+        api(libs.androidx.annotation)
+        implementation(libs.kotlinStdlib)
+        implementation("androidx.collection:collection:1.4.3")
+        implementation(project(":ink:ink-geometry"))
+        implementation(project(":ink:ink-nativeloader"))
+      }
+    }
+
+    jvmAndroidTest {
+      dependsOn(commonTest)
+      dependencies {
+        implementation(libs.junit)
+        implementation(libs.kotlinTest)
+        implementation(libs.truth)
+      }
+    }
+
+    androidMain {
+      dependsOn(jvmAndroidMain)
+    }
+
+    androidInstrumentedTest {
+      dependsOn(jvmAndroidTest)
+      dependencies {
+        implementation(libs.testExtJunit)
+        implementation(libs.testRules)
+        implementation(libs.testRunner)
+        implementation(libs.espressoCore)
+        implementation(libs.junit)
+        implementation(libs.truth)
+      }
+    }
+
+    jvmMain {
+      dependsOn(jvmAndroidMain)
+    }
+
+    jvmTest {
+      // TODO: b/362697089 - add `dependsOn(jvmAndroidTest)` to run the tests
+      //   in a JVM environment in addition to on Android emulators, once the
+      //   mysterious SIGSEGV is resolved.
+    }
+  }
+}
+
+androidx {
+    name = "Ink Brush"
+    type = LibraryType.PUBLISHED_LIBRARY
+    inceptionYear = "2024"
+    description = "Define brushes for freehand input."
+}

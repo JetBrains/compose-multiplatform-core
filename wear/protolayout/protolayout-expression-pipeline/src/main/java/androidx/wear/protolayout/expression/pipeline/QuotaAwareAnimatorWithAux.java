@@ -23,7 +23,6 @@ import android.animation.TypeEvaluator;
 import android.animation.ValueAnimator;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.core.os.HandlerCompat;
 import androidx.wear.protolayout.expression.pipeline.AnimationsHelper.RepeatDelays;
 import androidx.wear.protolayout.expression.proto.AnimationParameterProto.AnimationSpec;
@@ -51,7 +50,7 @@ class QuotaAwareAnimatorWithAux extends QuotaAwareAnimator {
             @NonNull QuotaManager quotaManager,
             @NonNull AnimationSpec spec,
             @NonNull AnimationSpec auxSpec,
-            @Nullable TypeEvaluator<?> evaluator) {
+            @NonNull TypeEvaluator<?> evaluator) {
         super(quotaManager, spec, evaluator, /* alwaysPauseWhenRepeatForward= */ true);
 
         mAuxAnimator = new ValueAnimator();
@@ -81,44 +80,52 @@ class QuotaAwareAnimatorWithAux extends QuotaAwareAnimator {
         mAnimator.addUpdateListener(
                 animation -> {
                     if (!mSuppressForwardUpdate && !mAnimator.isPaused()) {
-                        updateCallback.onUpdate(animation.getAnimatedValue());
+                        mLastAnimatedValue = animation.getAnimatedValue();
+                        updateCallback.onUpdate(mLastAnimatedValue);
                     }
                 });
 
         mAuxAnimator.addUpdateListener(
                 animation -> {
                     if (!mSuppressReverseUpdate && !mAuxAnimator.isPaused()) {
-                        updateCallback.onUpdate(animation.getAnimatedValue());
+                        mLastAnimatedValue = animation.getAnimatedValue();
+                        updateCallback.onUpdate(mLastAnimatedValue);
                     }
                 });
     }
 
     @Override
-    void setFloatValues(float... values) {
+    public void setFloatValues(@NonNull float... values) {
         super.setFloatValues(values);
 
-        // reverse the value array
+        // Create a copy of the values array before reversing it
+        float[] reversedValues = values.clone();
+
+        // reverse the copied array
         float temp;
-        for (int i = 0; i < values.length / 2; i++) {
-            temp = values[i];
-            values[i] = values[values.length - 1 - i];
-            values[values.length - 1 - i] = temp;
+        for (int i = 0; i < reversedValues.length / 2; i++) {
+            temp = reversedValues[i];
+            reversedValues[i] = reversedValues[reversedValues.length - 1 - i];
+            reversedValues[reversedValues.length - 1 - i] = temp;
         }
-        setFloatValues(mAuxAnimator, mEvaluator, values);
+        setFloatValues(mAuxAnimator, mEvaluator, reversedValues);
     }
 
     @Override
-    void setIntValues(int... values) {
+    public void setIntValues(@NonNull int... values) {
         super.setIntValues(values);
 
-        // reverse the value array
+        // Create a copy of the values array before reversing it
+        int[] reversedValues = values.clone();
+
+        // reverse the copied array
         int temp;
-        for (int i = 0; i < values.length / 2; i++) {
-            temp = values[i];
-            values[i] = values[values.length - 1 - i];
-            values[values.length - 1 - i] = temp;
+        for (int i = 0; i < reversedValues.length / 2; i++) {
+            temp = reversedValues[i];
+            reversedValues[i] = reversedValues[reversedValues.length - 1 - i];
+            reversedValues[reversedValues.length - 1 - i] = temp;
         }
-        setIntValues(mAuxAnimator, mEvaluator, values);
+        setIntValues(mAuxAnimator, mEvaluator, reversedValues);
     }
 
     @Override
@@ -182,5 +189,21 @@ class QuotaAwareAnimatorWithAux extends QuotaAwareAnimator {
         return super.isPaused()
                 && mAuxAnimator.isPaused()
                 && !HandlerCompat.hasCallbacks(mUiHandler, mAuxListener.mResumeRepeatRunnable);
+    }
+
+    @Override
+    public void advanceToAnimationTime(long newTime) {
+        if (newTime < mAuxAnimator.getStartDelay()) {
+            super.advanceToAnimationTime(newTime);
+        } else {
+            // Adjust time for the auxiliary animator
+            long adjustedTime = newTime - mAuxAnimator.getStartDelay();
+            mAuxAnimator.setCurrentPlayTime(adjustedTime);
+        }
+    }
+
+    @Override
+    public long getDurationMs() {
+        return mAnimator.getDuration() + mAuxAnimator.getDuration();
     }
 }

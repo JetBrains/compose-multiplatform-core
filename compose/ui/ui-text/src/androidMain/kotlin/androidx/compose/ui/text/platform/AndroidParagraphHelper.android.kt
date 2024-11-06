@@ -25,9 +25,7 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.DefaultIncludeFontPadding
 import androidx.compose.ui.text.EmojiSupportMatch
 import androidx.compose.ui.text.Placeholder
-import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.android.InternalPlatformTextApi
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontSynthesis
@@ -46,49 +44,48 @@ import androidx.emoji2.text.EmojiCompat
 import androidx.emoji2.text.EmojiCompat.REPLACE_STRATEGY_ALL
 import androidx.emoji2.text.EmojiCompat.REPLACE_STRATEGY_DEFAULT
 
-@OptIn(InternalPlatformTextApi::class)
+@Suppress("UNCHECKED_CAST")
 internal fun createCharSequence(
     text: String,
     contextFontSize: Float,
     contextTextStyle: TextStyle,
-    spanStyles: List<AnnotatedString.Range<SpanStyle>>,
+    annotations: List<AnnotatedString.Range<out AnnotatedString.Annotation>>,
     placeholders: List<AnnotatedString.Range<Placeholder>>,
     density: Density,
     resolveTypeface: (FontFamily?, FontWeight, FontStyle, FontSynthesis) -> Typeface,
     useEmojiCompat: Boolean,
 ): CharSequence {
 
-    val currentText = if (useEmojiCompat && EmojiCompat.isConfigured()) {
-        val emojiSupportMatch = contextTextStyle.platformStyle?.paragraphStyle?.emojiSupportMatch
-        val replaceStrategy = if (emojiSupportMatch == EmojiSupportMatch.All) {
-            REPLACE_STRATEGY_ALL
+    val currentText =
+        if (useEmojiCompat && EmojiCompat.isConfigured()) {
+            val emojiSupportMatch =
+                contextTextStyle.platformStyle?.paragraphStyle?.emojiSupportMatch
+            val replaceStrategy =
+                if (emojiSupportMatch == EmojiSupportMatch.All) {
+                    REPLACE_STRATEGY_ALL
+                } else {
+                    REPLACE_STRATEGY_DEFAULT
+                }
+            EmojiCompat.get().process(text, 0, text.length, Int.MAX_VALUE, replaceStrategy)!!
         } else {
-            REPLACE_STRATEGY_DEFAULT
+            text
         }
-        EmojiCompat.get().process(
-            text,
-            0,
-            text.length,
-            Int.MAX_VALUE,
-            replaceStrategy
-        )!!
-    } else {
-        text
-    }
 
-    if (spanStyles.isEmpty() &&
-        placeholders.isEmpty() &&
-        contextTextStyle.textIndent == TextIndent.None &&
-        contextTextStyle.lineHeight.isUnspecified
+    if (
+        annotations.isEmpty() &&
+            placeholders.isEmpty() &&
+            contextTextStyle.textIndent == TextIndent.None &&
+            contextTextStyle.lineHeight.isUnspecified
     ) {
         return currentText
     }
 
-    val spannableString = if (currentText is Spannable) {
-        currentText
-    } else {
-        SpannableString(currentText)
-    }
+    val spannableString =
+        if (currentText is Spannable) {
+            currentText
+        } else {
+            SpannableString(currentText)
+        }
 
     // b/199939617
     // Due to a bug in the platform's native drawText stack, some CJK characters cause a bolder
@@ -99,8 +96,8 @@ internal fun createCharSequence(
         spannableString.setSpan(NoopSpan, 0, text.length)
     }
 
-    if (contextTextStyle.isIncludeFontPaddingEnabled() &&
-        contextTextStyle.lineHeightStyle == null
+    if (
+        contextTextStyle.isIncludeFontPaddingEnabled() && contextTextStyle.lineHeightStyle == null
     ) {
         // keep the existing line height behavior for includeFontPadding=true
         spannableString.setLineHeight(
@@ -120,12 +117,7 @@ internal fun createCharSequence(
 
     spannableString.setTextIndent(contextTextStyle.textIndent, contextFontSize, density)
 
-    spannableString.setSpanStyles(
-        contextTextStyle,
-        spanStyles,
-        density,
-        resolveTypeface
-    )
+    spannableString.setSpanStyles(contextTextStyle, annotations, density, resolveTypeface)
 
     spannableString.setPlaceholders(placeholders, density)
 
@@ -136,6 +128,7 @@ internal fun TextStyle.isIncludeFontPaddingEnabled(): Boolean {
     return platformStyle?.paragraphStyle?.includeFontPadding ?: DefaultIncludeFontPadding
 }
 
-private val NoopSpan = object : CharacterStyle() {
-    override fun updateDrawState(p0: TextPaint?) {}
-}
+private val NoopSpan =
+    object : CharacterStyle() {
+        override fun updateDrawState(p0: TextPaint?) {}
+    }

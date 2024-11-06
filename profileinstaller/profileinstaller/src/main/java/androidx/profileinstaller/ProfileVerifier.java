@@ -33,7 +33,6 @@ import android.content.pm.PackageManager;
 import android.content.res.AssetFileDescriptor;
 import android.os.Build;
 
-import androidx.annotation.DoNotInline;
 import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -73,7 +72,8 @@ import java.util.Objects;
  */
 public final class ProfileVerifier {
     private static final String REF_PROFILES_BASE_DIR = "/data/misc/profiles/ref/";
-    private static final String CUR_PROFILES_BASE_DIR = "/data/misc/profiles/cur/0/";
+    private static final String CUR_PROFILES_BASE_DIR = "/data/misc/profiles/cur/"
+            + UserInfo.getCurrentUserId() + "/";
     private static final String PROFILE_FILE_NAME = "primary.prof";
     private static final String PROFILE_INSTALLED_CACHE_FILE_NAME = "profileInstalled";
     private static final ResolvableFuture<CompilationStatus> sFuture = ResolvableFuture.create();
@@ -618,7 +618,6 @@ public final class ProfileVerifier {
         private Api33Impl() {
         }
 
-        @DoNotInline
         static PackageInfo getPackageInfo(
                 PackageManager packageManager,
                 Context context) throws PackageManager.NameNotFoundException {

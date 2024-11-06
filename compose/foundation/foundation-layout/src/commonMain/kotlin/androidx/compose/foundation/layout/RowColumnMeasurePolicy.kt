@@ -16,12 +16,15 @@
 
 package androidx.compose.foundation.layout
 
+import androidx.compose.foundation.layout.internal.checkPrecondition
 import androidx.compose.ui.layout.AlignmentLine
 import androidx.compose.ui.layout.Measurable
 import androidx.compose.ui.layout.MeasureResult
 import androidx.compose.ui.layout.MeasureScope
 import androidx.compose.ui.layout.Placeable
 import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.util.fastCoerceAtLeast
+import androidx.compose.ui.util.fastCoerceIn
 import androidx.compose.ui.util.fastRoundToInt
 import kotlin.math.max
 import kotlin.math.min
@@ -29,7 +32,9 @@ import kotlin.math.sign
 
 internal interface RowColumnMeasurePolicy {
     fun Placeable.mainAxisSize(): Int
+
     fun Placeable.crossAxisSize(): Int
+
     fun populateMainAxisPositions(
         mainAxisLayoutSize: Int,
         childrenMainAxisSize: IntArray,
@@ -63,13 +68,11 @@ internal interface RowColumnMeasurePolicy {
  * Measures the row and column
  *
  * @param measureScope The measure scope to retrieve density
- * @param startIndex The startIndex (inclusive) when examining measurables, placeable
- * and parentData
- * @param endIndex The ending index (exclusive) when examining measurable, placeable
- * and parentData
+ * @param startIndex The startIndex (inclusive) when examining measurables, placeable and parentData
+ * @param endIndex The ending index (exclusive) when examining measurable, placeable and parentData
  * @param crossAxisOffset The offset to apply to the cross axis when placing
  * @param currentLineIndex The index of the current line if in a multi-row/column setting like
- * [FlowRow]
+ *   [FlowRow]
  */
 internal fun RowColumnMeasurePolicy.measure(
     mainAxisMin: Int,
@@ -111,31 +114,34 @@ internal fun RowColumnMeasurePolicy.measure(
             totalWeight += weight
             ++weightChildrenCount
         } else {
-            val crossAxisDesiredSize = if (crossAxisMax == Constraints.Infinity) null else
-                parentData?.flowLayoutData?.let {
-                    (it.fillCrossAxisFraction * crossAxisMax).fastRoundToInt()
-                }
+            val crossAxisDesiredSize =
+                if (crossAxisMax == Constraints.Infinity) null
+                else
+                    parentData?.flowLayoutData?.let {
+                        (it.fillCrossAxisFraction * crossAxisMax).fastRoundToInt()
+                    }
             val remaining = mainAxisMax - fixedSpace
-            val placeable = placeables[i] ?: child.measure(
-                // Ask for preferred main axis size.
-                createConstraints(
-                    mainAxisMin = 0,
-                    crossAxisMin = crossAxisDesiredSize ?: 0,
-                    mainAxisMax = if (mainAxisMax == Constraints.Infinity) {
-                        Constraints.Infinity
-                    } else {
-                        remaining.coerceAtLeast(0)
-                    },
-                    crossAxisMax = crossAxisDesiredSize ?: crossAxisMax
-                )
-            )
+            val placeable =
+                placeables[i]
+                    ?: child.measure(
+                        // Ask for preferred main axis size.
+                        createConstraints(
+                            mainAxisMin = 0,
+                            crossAxisMin = crossAxisDesiredSize ?: 0,
+                            mainAxisMax =
+                                if (mainAxisMax == Constraints.Infinity) {
+                                    Constraints.Infinity
+                                } else {
+                                    remaining.fastCoerceAtLeast(0)
+                                },
+                            crossAxisMax = crossAxisDesiredSize ?: crossAxisMax
+                        )
+                    )
             val placeableMainAxisSize = placeable.mainAxisSize()
             val placeableCrossAxisSize = placeable.crossAxisSize()
             childrenMainAxisSize[i - startIndex] = placeableMainAxisSize
-            spaceAfterLastNoWeight = min(
-                arrangementSpacingInt,
-                (remaining - placeableMainAxisSize).coerceAtLeast(0)
-            )
+            spaceAfterLastNoWeight =
+                min(arrangementSpacingInt, (remaining - placeableMainAxisSize).fastCoerceAtLeast(0))
             fixedSpace += placeableMainAxisSize + spaceAfterLastNoWeight
             crossAxisSpace = max(crossAxisSpace, placeableCrossAxisSize)
             placeables[i] = placeable
@@ -156,14 +162,15 @@ internal fun RowColumnMeasurePolicy.measure(
             }
         val arrangementSpacingTotal = arrangementSpacingPx * (weightChildrenCount - 1)
         val remainingToTarget =
-            (targetSpace - fixedSpace - arrangementSpacingTotal).coerceAtLeast(0)
+            (targetSpace - fixedSpace - arrangementSpacingTotal).fastCoerceAtLeast(0)
 
         val weightUnitSpace = remainingToTarget / totalWeight
         var remainder = remainingToTarget
         for (i in startIndex until endIndex) {
             val measurable = measurables[i]
-            remainder -=
-                (weightUnitSpace * measurable.rowColumnParentData.weight).fastRoundToInt()
+            val itemWeight = measurable.rowColumnParentData.weight
+            val weightedSize = (weightUnitSpace * itemWeight)
+            remainder -= weightedSize.fastRoundToInt()
         }
 
         for (i in startIndex until endIndex) {
@@ -171,33 +178,33 @@ internal fun RowColumnMeasurePolicy.measure(
                 val child = measurables[i]
                 val parentData = child.rowColumnParentData
                 val weight = parentData.weight
-                val crossAxisDesiredSize = if (crossAxisMax == Constraints.Infinity) null else
-                    parentData?.flowLayoutData?.let {
-                        (it.fillCrossAxisFraction * crossAxisMax).fastRoundToInt()
-                    }
-                check(weight > 0) { "All weights <= 0 should have placeables" }
+                val crossAxisDesiredSize =
+                    if (crossAxisMax == Constraints.Infinity) null
+                    else
+                        parentData?.flowLayoutData?.let {
+                            (it.fillCrossAxisFraction * crossAxisMax).fastRoundToInt()
+                        }
+                checkPrecondition(weight > 0) { "All weights <= 0 should have placeables" }
                 // After the weightUnitSpace rounding, the total space going to be occupied
                 // can be smaller or larger than remainingToTarget. Here we distribute the
                 // loss or gain remainder evenly to the first children.
                 val remainderUnit = remainder.sign
                 remainder -= remainderUnit
-                val childMainAxisSize = max(
-                    0,
-                    (weightUnitSpace * weight).fastRoundToInt() + remainderUnit
-                )
-                val childConstraints = createConstraints(
-                    mainAxisMin = if (parentData.fill &&
-                        childMainAxisSize != Constraints.Infinity
-                    ) {
-                        childMainAxisSize
-                    } else {
-                        0
-                    },
-                    crossAxisMin = crossAxisDesiredSize ?: 0,
-                    mainAxisMax = childMainAxisSize,
-                    crossAxisMax = crossAxisDesiredSize ?: crossAxisMax,
-                    isPrioritizing = true
-                )
+                val weightedSize = (weightUnitSpace * weight)
+                val childMainAxisSize = max(0, weightedSize.fastRoundToInt() + remainderUnit)
+                val childConstraints: Constraints =
+                    createConstraints(
+                        mainAxisMin =
+                            if (parentData.fill && childMainAxisSize != Constraints.Infinity) {
+                                childMainAxisSize
+                            } else {
+                                0
+                            },
+                        crossAxisMin = crossAxisDesiredSize ?: 0,
+                        mainAxisMax = childMainAxisSize,
+                        crossAxisMax = crossAxisDesiredSize ?: crossAxisMax,
+                        isPrioritizing = true
+                    )
                 val placeable = child.measure(childConstraints)
                 val placeableMainAxisSize = placeable.mainAxisSize()
                 val placeableCrossAxisSize = placeable.crossAxisSize()
@@ -207,9 +214,10 @@ internal fun RowColumnMeasurePolicy.measure(
                 placeables[i] = placeable
             }
         }
-        weightedSpace = (weightedSpace + arrangementSpacingTotal)
-            .toInt()
-            .coerceIn(0, mainAxisMax - fixedSpace)
+        weightedSpace =
+            (weightedSpace + arrangementSpacingTotal)
+                .toInt()
+                .fastCoerceIn(0, mainAxisMax - fixedSpace)
     }
 
     // we've done this check in weights as to avoid going through another loop
@@ -217,36 +225,38 @@ internal fun RowColumnMeasurePolicy.measure(
         for (i in startIndex until endIndex) {
             val placeable = placeables[i]
             val parentData = placeable!!.rowColumnParentData
-            val alignmentLinePosition = parentData.crossAxisAlignment
-                ?.calculateAlignmentLinePosition(placeable)
+            val alignmentLinePosition =
+                parentData.crossAxisAlignment?.calculateAlignmentLinePosition(placeable)
             alignmentLinePosition?.let {
                 val placeableCrossAxisSize = placeable.crossAxisSize()
-                beforeCrossAxisAlignmentLine = max(
-                    beforeCrossAxisAlignmentLine,
-                    if (it != AlignmentLine.Unspecified) alignmentLinePosition else 0
-                )
-                afterCrossAxisAlignmentLine = max(
-                    afterCrossAxisAlignmentLine,
-                    placeableCrossAxisSize - if (it != AlignmentLine.Unspecified) {
-                        it
-                    } else {
-                        placeableCrossAxisSize
-                    }
-                )
+                beforeCrossAxisAlignmentLine =
+                    max(
+                        beforeCrossAxisAlignmentLine,
+                        if (it != AlignmentLine.Unspecified) alignmentLinePosition else 0
+                    )
+                afterCrossAxisAlignmentLine =
+                    max(
+                        afterCrossAxisAlignmentLine,
+                        placeableCrossAxisSize -
+                            if (it != AlignmentLine.Unspecified) {
+                                it
+                            } else {
+                                placeableCrossAxisSize
+                            }
+                    )
             }
         }
     }
 
     // Compute the Row or Column size and position the children.
-    val mainAxisLayoutSize = max(
-        (fixedSpace + weightedSpace).coerceAtLeast(0),
-        mainAxisMin
-    )
-    val crossAxisLayoutSize = max(
-        crossAxisSpace,
-        max(crossAxisMin, beforeCrossAxisAlignmentLine + afterCrossAxisAlignmentLine)
-    )
-    val mainAxisPositions = IntArray(subSize) { 0 }
+    val mainAxisLayoutSize = max((fixedSpace + weightedSpace).fastCoerceAtLeast(0), mainAxisMin)
+    val crossAxisLayoutSize =
+        maxOf(
+            crossAxisSpace,
+            crossAxisMin,
+            beforeCrossAxisAlignmentLine + afterCrossAxisAlignmentLine
+        )
+    val mainAxisPositions = IntArray(subSize)
     populateMainAxisPositions(
         mainAxisLayoutSize,
         childrenMainAxisSize,

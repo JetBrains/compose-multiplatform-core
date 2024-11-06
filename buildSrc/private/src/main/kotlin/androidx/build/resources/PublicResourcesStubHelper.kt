@@ -13,11 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:Suppress("TYPEALIAS_EXPANSION_DEPRECATION")
 
 package androidx.build.resources
 
+import androidx.build.DeprecatedKotlinMultiplatformAndroidTarget
 import androidx.build.getSupportRootFolder
-import com.android.build.api.dsl.KotlinMultiplatformAndroidTarget
 import com.android.build.api.variant.LibraryVariant
 import java.io.File
 import org.gradle.api.Project
@@ -29,28 +30,29 @@ import org.jetbrains.kotlin.gradle.plugin.KotlinCompilation
 fun configurePublicResourcesStub(
     libraryVariant: LibraryVariant,
     copyPublicResourcesDirTask: TaskProvider<CopyPublicResourcesDirTask>
-) = libraryVariant.sources.res.also {
-    it?.addGeneratedSourceDirectory(
-        copyPublicResourcesDirTask, CopyPublicResourcesDirTask::outputFolder
-    )
-}
+) =
+    libraryVariant.sources.res.also {
+        it?.addGeneratedSourceDirectory(
+            copyPublicResourcesDirTask,
+            CopyPublicResourcesDirTask::outputFolder
+        )
+    }
 
 fun Project.configurePublicResourcesStub(kmpExtension: KotlinMultiplatformExtension) {
     val targetRes = project.layout.buildDirectory.dir("generated/res/public-stub")
 
-    val generatePublicResourcesStub = tasks.register(
-        "generatePublicResourcesStub",
-        Copy::class.java
-    ) { task ->
-        task.from(File(project.getSupportRootFolder(), "buildSrc/res"))
-        task.into(targetRes)
-    }
-    val sourceSet = kmpExtension
-        .targets
-        .withType(KotlinMultiplatformAndroidTarget::class.java)
-        .single()
-        .compilations
-        .getByName(KotlinCompilation.MAIN_COMPILATION_NAME).defaultSourceSet
+    val generatePublicResourcesStub =
+        tasks.register("generatePublicResourcesStub", Copy::class.java) { task ->
+            task.from(File(project.getSupportRootFolder(), "buildSrc/res"))
+            task.into(targetRes)
+        }
+    val sourceSet =
+        kmpExtension.targets
+            .withType(DeprecatedKotlinMultiplatformAndroidTarget::class.java)
+            .single()
+            .compilations
+            .getByName(KotlinCompilation.MAIN_COMPILATION_NAME)
+            .defaultSourceSet
     sourceSet.resources.srcDir(
         generatePublicResourcesStub.flatMap { project.provider { it.destinationDir } }
     )

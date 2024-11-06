@@ -25,15 +25,16 @@ import androidx.room.solver.query.result.QueryResultAdapter
 import androidx.room.solver.query.result.QueryResultBinder
 import androidx.room.solver.query.result.RxQueryResultBinder
 
-class RxQueryResultBinderProvider private constructor(
-    context: Context,
-    private val rxType: RxType
-) : ObservableQueryResultBinderProvider(context) {
+/** Generic result binder for Rx classes that are reactive. */
+class RxQueryResultBinderProvider
+private constructor(context: Context, private val rxType: RxType) :
+    ObservableQueryResultBinderProvider(context) {
     private val rawRxType: XRawType? by lazy {
         context.processingEnv.findType(rxType.className.canonicalName)?.rawType
     }
 
-    override fun extractTypeArg(declared: XType): XType = declared.typeArguments.first()
+    override fun extractTypeArg(declared: XType): XType =
+        declared.typeArguments.first().makeNullable()
 
     override fun create(
         typeArg: XType,
@@ -59,17 +60,20 @@ class RxQueryResultBinderProvider private constructor(
     }
 
     companion object {
-        fun getAll(context: Context) = listOf(
-            RxType.RX2_FLOWABLE,
-            RxType.RX2_OBSERVABLE,
-            RxType.RX3_FLOWABLE,
-            RxType.RX3_OBSERVABLE
-        ).map {
-            RxQueryResultBinderProvider(context, it).requireArtifact(
-                context = context,
-                requiredType = it.version.rxRoomClassName,
-                missingArtifactErrorMsg = it.version.missingArtifactMessage
-            )
-        }
+        fun getAll(context: Context) =
+            listOf(
+                    RxType.RX2_FLOWABLE,
+                    RxType.RX2_OBSERVABLE,
+                    RxType.RX3_FLOWABLE,
+                    RxType.RX3_OBSERVABLE
+                )
+                .map {
+                    RxQueryResultBinderProvider(context, it)
+                        .requireArtifact(
+                            context = context,
+                            requiredType = it.version.rxMarkerClassName,
+                            missingArtifactErrorMsg = it.version.missingArtifactMessage
+                        )
+                }
     }
 }

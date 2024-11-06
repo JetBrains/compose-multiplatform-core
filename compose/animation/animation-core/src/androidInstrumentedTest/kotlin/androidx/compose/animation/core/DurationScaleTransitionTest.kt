@@ -34,9 +34,11 @@ class DurationScaleTransitionTest {
     @OptIn(ExperimentalTestApi::class, ExperimentalTransitionApi::class)
     @Test
     fun childTransitionWithDurationScale() {
-        val motionDurationScale = object : MotionDurationScale {
-            override val scaleFactor: Float get() = 4f
-        }
+        val motionDurationScale =
+            object : MotionDurationScale {
+                override val scaleFactor: Float
+                    get() = 4f
+            }
         runComposeUiTest(effectContext = motionDurationScale) {
             mainClock.autoAdvance = false
             val state = MutableTransitionState(0)
@@ -45,17 +47,21 @@ class DurationScaleTransitionTest {
             var withChild by mutableStateOf(false)
             setContent {
                 val transition = rememberTransition(transitionState = state)
-                val animatedValue1 by transition.animateFloat(
-                    { tween(160, easing = LinearEasing) },
-                ) { if (it == 0) 0f else 1000f }
+                val animatedValue1 by
+                    transition.animateFloat(
+                        { tween(160, easing = LinearEasing) },
+                    ) {
+                        if (it == 0) 0f else 1000f
+                    }
                 value1 = animatedValue1
                 if (withChild) {
-                    val child = transition.createChildTransition {
-                        it
-                    }
-                    val animatedValue2 by child.animateFloat(
-                        { tween(160, easing = LinearEasing) },
-                    ) { if (it == 0) 0f else 1000f }
+                    val child = transition.createChildTransition { it }
+                    val animatedValue2 by
+                        child.animateFloat(
+                            { tween(160, easing = LinearEasing) },
+                        ) {
+                            if (it == 0) 0f else 1000f
+                        }
                     value2 = animatedValue2
                 }
             }
@@ -86,9 +92,11 @@ class DurationScaleTransitionTest {
     @OptIn(ExperimentalTestApi::class, ExperimentalTransitionApi::class)
     @Test
     fun childTransitionWithDurationScaleSeekableTransition() {
-        val motionDurationScale = object : MotionDurationScale {
-            override val scaleFactor: Float get() = 4f
-        }
+        val motionDurationScale =
+            object : MotionDurationScale {
+                override val scaleFactor: Float
+                    get() = 4f
+            }
         runComposeUiTest(effectContext = motionDurationScale) {
             mainClock.autoAdvance = false
             val state = SeekableTransitionState(0)
@@ -99,23 +107,27 @@ class DurationScaleTransitionTest {
             setContent {
                 coroutineScope = rememberCoroutineScope()
                 val transition = rememberTransition(transitionState = state)
-                val animatedValue1 by transition.animateFloat(
-                    { tween(160, easing = LinearEasing) },
-                ) { if (it == 0) 0f else 1000f }
+                val animatedValue1 by
+                    transition.animateFloat(
+                        { tween(160, easing = LinearEasing) },
+                    ) {
+                        if (it == 0) 0f else 1000f
+                    }
                 value1 = animatedValue1
                 if (withChild) {
-                    val child = transition.createChildTransition {
-                        it
-                    }
-                    val animatedValue2 by child.animateFloat(
-                        { tween(160, easing = LinearEasing) },
-                    ) { if (it == 0) 0f else 1000f }
+                    val child = transition.createChildTransition { it }
+                    val animatedValue2 by
+                        child.animateFloat(
+                            { tween(160, easing = LinearEasing) },
+                        ) {
+                            if (it == 0) 0f else 1000f
+                        }
                     value2 = animatedValue2
                 }
             }
             mainClock.advanceTimeByFrame() // let everything settle
-            val seekTo = coroutineScope.async {
-                state.seekTo(fraction = 0f, targetState = 1)
+            val seekTo = runOnUiThread {
+                coroutineScope.async { state.seekTo(fraction = 0f, targetState = 1) }
             }
             mainClock.advanceTimeByFrame() // recompose
             assertThat(seekTo.isCompleted).isTrue()
@@ -123,9 +135,7 @@ class DurationScaleTransitionTest {
             assertThat(value1).isEqualTo(0f)
             assertThat(value2).isEqualTo(-1f) // not set until withChild = true
 
-            coroutineScope.launch {
-                state.animateTo(targetState = 1)
-            }
+            runOnUiThread { coroutineScope.launch { state.animateTo(targetState = 1) } }
             mainClock.advanceTimeByFrame() // lock in the animation clock
             mainClock.advanceTimeBy(320) // half way through transition
             assertThat(value1).isWithin(0.1f).of(500f)
@@ -147,9 +157,11 @@ class DurationScaleTransitionTest {
     @OptIn(ExperimentalTestApi::class, ExperimentalTransitionApi::class)
     @Test
     fun childTransitionWithDurationScaleSeekTransition() {
-        val motionDurationScale = object : MotionDurationScale {
-            override val scaleFactor: Float get() = 4f
-        }
+        val motionDurationScale =
+            object : MotionDurationScale {
+                override val scaleFactor: Float
+                    get() = 4f
+            }
         runComposeUiTest(effectContext = motionDurationScale) {
             mainClock.autoAdvance = false
             val state = SeekableTransitionState(0)
@@ -160,23 +172,27 @@ class DurationScaleTransitionTest {
             setContent {
                 coroutineScope = rememberCoroutineScope()
                 val transition = rememberTransition(transitionState = state)
-                val animatedValue1 by transition.animateFloat(
-                    { tween(160, easing = LinearEasing) },
-                ) { if (it == 0) 0f else 1000f }
+                val animatedValue1 by
+                    transition.animateFloat(
+                        { tween(160, easing = LinearEasing) },
+                    ) {
+                        if (it == 0) 0f else 1000f
+                    }
                 value1 = animatedValue1
                 if (withChild) {
-                    val child = transition.createChildTransition {
-                        it
-                    }
-                    val animatedValue2 by child.animateFloat(
-                        { tween(160, easing = LinearEasing) },
-                    ) { if (it == 0) 0f else 1000f }
+                    val child = transition.createChildTransition { it }
+                    val animatedValue2 by
+                        child.animateFloat(
+                            { tween(160, easing = LinearEasing) },
+                        ) {
+                            if (it == 0) 0f else 1000f
+                        }
                     value2 = animatedValue2
                 }
             }
             mainClock.advanceTimeByFrame() // let everything settle
-            val seekTo = coroutineScope.async {
-                state.seekTo(fraction = 0.5f, targetState = 1)
+            val seekTo = runOnUiThread {
+                coroutineScope.async { state.seekTo(fraction = 0.5f, targetState = 1) }
             }
             mainClock.advanceTimeByFrame() // recompose
             assertThat(seekTo.isCompleted).isTrue()
@@ -192,17 +208,17 @@ class DurationScaleTransitionTest {
             assertThat(value1).isWithin(0.1f).of(750f)
             assertThat(value2).isWithin(0.1f).of(250f)
 
-            coroutineScope.launch {
-                state.seekTo(fraction = 0.75f) // 1125ms
+            runOnUiThread {
+                coroutineScope.launch {
+                    state.seekTo(fraction = 0.75f) // 1125ms
+                }
             }
             mainClock.advanceTimeByFrame()
 
             assertThat(value1).isEqualTo(1000f)
             assertThat(value2).isWithin(0.1f).of(625f)
 
-            coroutineScope.launch {
-                state.seekTo(fraction = 1f)
-            }
+            runOnUiThread { coroutineScope.launch { state.seekTo(fraction = 1f) } }
             mainClock.advanceTimeByFrame()
 
             assertThat(value1).isEqualTo(1000f)

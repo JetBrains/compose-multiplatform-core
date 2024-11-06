@@ -19,7 +19,6 @@ package androidx.camera.core.impl;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.camera.core.impl.utils.futures.Futures;
 import androidx.core.util.Preconditions;
 
@@ -27,6 +26,7 @@ import com.google.auto.value.AutoValue;
 import com.google.common.util.concurrent.ListenableFuture;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -56,7 +56,6 @@ import java.util.concurrent.atomic.AtomicReference;
  *
  * @param <T> The state type.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public abstract class StateObservable<T> implements Observable<T> {
     private static final int INITIAL_VERSION = 0;
 
@@ -170,6 +169,17 @@ public abstract class StateObservable<T> implements Observable<T> {
     public void removeObserver(@NonNull Observer<? super T> observer) {
         synchronized (mLock) {
             removeObserverLocked(observer);
+        }
+    }
+
+    /**
+     * Remove all the observers currently added.
+     */
+    public void removeObservers() {
+        synchronized (mLock) {
+            for (Observer<? super T> observer : new HashSet<>(mWrapperMap.keySet())) {
+                removeObserverLocked(observer);
+            }
         }
     }
 

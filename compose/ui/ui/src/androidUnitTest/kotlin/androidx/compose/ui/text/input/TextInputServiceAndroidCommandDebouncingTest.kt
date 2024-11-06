@@ -40,18 +40,26 @@ import org.mockito.kotlin.whenever
 class TextInputServiceAndroidCommandDebouncingTest {
 
     private val view = mock<View>()
+    private val parentView = mock<View>()
     private val inputMethodManager = TestInputMethodManager()
     private val executor = Executor { runnable -> scope.launch { runnable.run() } }
-    private val service = TextInputServiceAndroid(
-        view, mock(), inputMethodManager, inputCommandProcessorExecutor = executor
-    )
+    private val service =
+        TextInputServiceAndroid(
+            view,
+            mock(),
+            inputMethodManager,
+            inputCommandProcessorExecutor = executor
+        )
     private val dispatcher = StandardTestDispatcher()
     private val scope = TestScope(dispatcher + Job())
 
     @Before
     fun setUp() {
-        // Default the view to focused because when it's not focused commands should be ignored.
+        // Default the view to focused. When it is not focused the commands should be processed
+        // according to whether the new focused View is an Editor.
         whenever(view.isFocused).thenReturn(true)
+        whenever(view.rootView).thenReturn(parentView)
+        whenever(parentView.findFocus()).thenReturn(null)
     }
 
     @After
@@ -162,9 +170,7 @@ class TextInputServiceAndroidCommandDebouncingTest {
 
     @Test
     fun multipleShowCallsAreDebounced() {
-        repeat(10) {
-            service.showSoftwareKeyboard()
-        }
+        repeat(10) { service.showSoftwareKeyboard() }
         scope.advanceUntilIdle()
 
         assertThat(inputMethodManager.showSoftInputCalls).isEqualTo(1)
@@ -172,9 +178,7 @@ class TextInputServiceAndroidCommandDebouncingTest {
 
     @Test
     fun multipleHideCallsAreDebounced() {
-        repeat(10) {
-            service.hideSoftwareKeyboard()
-        }
+        repeat(10) { service.hideSoftwareKeyboard() }
         scope.advanceUntilIdle()
 
         assertThat(inputMethodManager.hideSoftInputCalls).isEqualTo(1)
@@ -249,15 +253,29 @@ class TextInputServiceAndroidCommandDebouncingTest {
     }
 
     @Test
-    fun commandsAreDrained_whenProcessedWithoutFocus() {
+    fun commandsAreNotDrained_whenProcessedWithoutFocus_and_focusDidNotSwitchToAnEditor() {
         whenever(view.isFocused).thenReturn(false)
+        val newFocusedView = mock<View>()
+        whenever(newFocusedView.onCheckIsTextEditor()).thenReturn(false)
+        whenever(parentView.findFocus()).thenReturn(newFocusedView)
         service.showSoftwareKeyboard()
-        service.hideSoftwareKeyboard()
-        scope.advanceUntilIdle()
-        whenever(view.isFocused).thenReturn(true)
         scope.advanceUntilIdle()
 
-        assertThat(inputMethodManager.showSoftInputCalls).isEqualTo(0)
+        assertThat(inputMethodManager.showSoftInputCalls).isEqualTo(1)
+    }
+
+    @Test
+    fun commandsAreDrained_whenProcessedWithoutFocus_and_focusSwitchedToAnEditor() {
+        whenever(view.isFocused).thenReturn(false)
+        val newFocusedView = mock<View>()
+        whenever(newFocusedView.onCheckIsTextEditor()).thenReturn(true)
+        whenever(parentView.findFocus()).thenReturn(newFocusedView)
+        service.stopInput()
+        service.hideSoftwareKeyboard()
+        scope.advanceUntilIdle()
+
+        assertThat(inputMethodManager.restartCalls).isEqualTo(0)
+        assertThat(inputMethodManager.hideSoftInputCalls).isEqualTo(0)
     }
 
     @Test
@@ -301,18 +319,15 @@ class TextInputServiceAndroidCommandDebouncingTest {
             hideSoftInputCalls++
         }
 
-        override fun updateExtractedText(token: Int, extractedText: ExtractedText) {
-        }
+        override fun updateExtractedText(token: Int, extractedText: ExtractedText) {}
 
         override fun updateSelection(
             selectionStart: Int,
             selectionEnd: Int,
             compositionStart: Int,
             compositionEnd: Int
-        ) {
-        }
+        ) {}
 
-        override fun updateCursorAnchorInfo(cursorAnchorInfo: CursorAnchorInfo) {
-        }
+        override fun updateCursorAnchorInfo(cursorAnchorInfo: CursorAnchorInfo) {}
     }
 }

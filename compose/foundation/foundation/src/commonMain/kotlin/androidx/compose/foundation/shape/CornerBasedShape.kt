@@ -16,6 +16,7 @@
 
 package androidx.compose.foundation.shape
 
+import androidx.compose.foundation.internal.requirePrecondition
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Shape
@@ -25,12 +26,11 @@ import androidx.compose.ui.unit.LayoutDirection
 /**
  * Base class for [Shape]s defined by four [CornerSize]s.
  *
- * @see RoundedCornerShape for an example of the usage.
- *
  * @param topStart a size of the top start corner
  * @param topEnd a size of the top end corner
  * @param bottomEnd a size of the bottom end corner
  * @param bottomStart a size of the bottom start corner
+ * @see RoundedCornerShape for an example of the usage.
  */
 abstract class CornerBasedShape(
     val topStart: CornerSize,
@@ -59,7 +59,9 @@ abstract class CornerBasedShape(
             topEnd *= scale
             bottomEnd *= scale
         }
-        require(topStart >= 0.0f && topEnd >= 0.0f && bottomEnd >= 0.0f && bottomStart >= 0.0f) {
+        requirePrecondition(
+            topStart >= 0.0f && topEnd >= 0.0f && bottomEnd >= 0.0f && bottomStart >= 0.0f
+        ) {
             "Corner size in Px can't be negative(topStart = $topStart, topEnd = $topEnd, " +
                 "bottomEnd = $bottomEnd, bottomStart = $bottomStart)!"
         }
@@ -109,6 +111,7 @@ abstract class CornerBasedShape(
 
     /**
      * Creates a copy of this Shape with a new corner size.
+     *
      * @param all a size to apply for all four corners
      */
     fun copy(all: CornerSize): CornerBasedShape = copy(all, all, all, all)

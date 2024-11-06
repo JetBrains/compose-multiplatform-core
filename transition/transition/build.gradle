@@ -5,7 +5,7 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.Publish
+import androidx.build.LibraryType
 
 plugins {
     id("AndroidXPlugin")
@@ -14,10 +14,10 @@ plugins {
 }
 
 dependencies {
-    api("androidx.annotation:annotation:1.2.0")
-    api(project(":core:core"))
-    implementation("androidx.collection:collection:1.1.0")
-    compileOnly(projectOrArtifact(":fragment:fragment"))
+    api("androidx.annotation:annotation:1.8.1")
+    api("androidx.core:core:1.13.0")
+    implementation("androidx.collection:collection:1.4.2")
+    compileOnly("androidx.fragment:fragment:1.7.0")
     compileOnly("androidx.appcompat:appcompat:1.0.1")
     implementation("androidx.dynamicanimation:dynamicanimation:1.0.0")
 
@@ -27,35 +27,31 @@ dependencies {
     androidTestImplementation(libs.testRunner)
     androidTestImplementation(libs.testRules)
     androidTestImplementation(libs.truth)
-    androidTestImplementation(libs.espressoCore, excludes.espresso)
-    androidTestImplementation(libs.mockitoCore, excludes.bytebuddy) // DexMaker has it"s own MockMaker
-    androidTestImplementation(libs.dexmakerMockito, excludes.bytebuddy) // DexMaker has it"s own MockMaker
+    androidTestImplementation(libs.espressoCore)
+    androidTestImplementation(libs.mockitoCore)
+    androidTestImplementation(libs.dexmakerMockito)
     androidTestImplementation(libs.opentest4j)
     androidTestImplementation(project(":fragment:fragment"))
     androidTestImplementation("androidx.appcompat:appcompat:1.1.0")
     androidTestImplementation(project(":internal-testutils-runtime"), {
         exclude group: "androidx.fragment", module: "fragment"
     })
-    androidTestImplementation(libs.multidex)
 }
 
 android {
-    buildTypes.all {
+    buildTypes.configureEach {
         consumerProguardFiles "proguard-rules.pro"
     }
     aaptOptions {
         additionalParameters "--no-version-transitions"
-    }
-    defaultConfig {
-        multiDexEnabled = true
     }
     namespace "androidx.transition"
 }
 
 androidx {
     name = "Transition"
-    publish = Publish.SNAPSHOT_AND_RELEASE
+    type = LibraryType.PUBLISHED_LIBRARY
     inceptionYear = "2016"
     description = "Android Transition Support Library"
-    metalavaK2UastEnabled = true
+    legacyDisableKotlinStrictApiMode = true
 }

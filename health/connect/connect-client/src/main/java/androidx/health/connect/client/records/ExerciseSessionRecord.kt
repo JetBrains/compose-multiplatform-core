@@ -65,6 +65,7 @@ internal constructor(
      * session.
      */
     val exerciseRouteResult: ExerciseRouteResult = ExerciseRouteResult.NoData(),
+    val plannedExerciseSessionId: String? = null
 ) : IntervalRecord {
 
     @JvmOverloads
@@ -83,6 +84,11 @@ internal constructor(
         segments: List<ExerciseSegment> = emptyList(),
         laps: List<ExerciseLap> = emptyList(),
         exerciseRoute: ExerciseRoute? = null,
+        /**
+         * The planned exercise session this workout was based upon. Optional field. Requires
+         * [androidx.health.connect.client.HealthConnectFeatures.FEATURE_PLANNED_EXERCISE].
+         */
+        plannedExerciseSessionId: String? = null,
     ) : this(
         startTime,
         startZoneOffset,
@@ -94,7 +100,8 @@ internal constructor(
         metadata,
         segments,
         laps,
-        exerciseRoute?.let { ExerciseRouteResult.Data(it) } ?: ExerciseRouteResult.NoData()
+        exerciseRoute?.let { ExerciseRouteResult.Data(it) } ?: ExerciseRouteResult.NoData(),
+        plannedExerciseSessionId,
     )
 
     init {
@@ -176,6 +183,10 @@ internal constructor(
         result = 31 * result + metadata.hashCode()
         result = 31 * result + exerciseRouteResult.hashCode()
         return result
+    }
+
+    override fun toString(): String {
+        return "ExerciseSessionRecord(startTime=$startTime, startZoneOffset=$startZoneOffset, endTime=$endTime, endZoneOffset=$endZoneOffset, exerciseType=$exerciseType, title=$title, notes=$notes, metadata=$metadata, segments=$segments, laps=$laps, exerciseRouteResult=$exerciseRouteResult)"
     }
 
     companion object {

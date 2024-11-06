@@ -29,14 +29,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.longClick
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.style.ResolvedTextDirection
 import org.junit.Test
 
-@OptIn(ExperimentalTestApi::class)
 internal abstract class TextSelectionGesturesBidiTest : AbstractSelectionGesturesTest() {
 
     override val pointerAreaTag = "selectionContainer"
@@ -46,8 +44,7 @@ internal abstract class TextSelectionGesturesBidiTest : AbstractSelectionGesture
     protected abstract val textContent: MutableState<String>
     protected abstract var asserter: TextSelectionAsserter
 
-    @Composable
-    abstract fun TextContent()
+    @Composable abstract fun TextContent()
 
     @Composable
     override fun Content() {
@@ -64,9 +61,7 @@ internal abstract class TextSelectionGesturesBidiTest : AbstractSelectionGesture
 
     @Test
     fun whenTouch_withLongPress_selectsSingleWord() {
-        performTouchGesture {
-            longClick(characterPosition(26, isRtl = false))
-        }
+        performTouchGesture { longClick(characterPosition(26, isRtl = false)) }
 
         asserter.applyAndAssert {
             selection = 24 to 29
@@ -80,10 +75,10 @@ internal abstract class TextSelectionGesturesBidiTest : AbstractSelectionGesture
     fun whenTouch_withLongPressThenDragLeftAndBack_selectsWordsThenChars() {
         touchLongPressThenDragForwardsAndBackTest(
             forwardOffset = characterPosition(22, isRtl = true),
-            forwardSelection = 24 to 22,
+            forwardSelection = 29 to 18,
             forwardEndDirection = ResolvedTextDirection.Rtl,
             backwardOffset = characterPosition(19, isRtl = true),
-            backwardSelection = 24 to 19,
+            backwardSelection = 29 to 18,
             backwardEndDirection = ResolvedTextDirection.Rtl,
         )
     }
@@ -92,10 +87,10 @@ internal abstract class TextSelectionGesturesBidiTest : AbstractSelectionGesture
     fun whenTouch_withLongPressThenDragUpAndBack_ltrToRtl_selectsWordsThenChars() {
         touchLongPressThenDragForwardsAndBackTest(
             forwardOffset = characterPosition(3, isRtl = false),
-            forwardSelection = 24 to 0,
+            forwardSelection = 29 to 0,
             forwardEndDirection = ResolvedTextDirection.Ltr,
             backwardOffset = characterPosition(8, isRtl = true),
-            backwardSelection = 24 to 8,
+            backwardSelection = 29 to 6,
             backwardEndDirection = ResolvedTextDirection.Rtl,
         )
     }
@@ -104,10 +99,10 @@ internal abstract class TextSelectionGesturesBidiTest : AbstractSelectionGesture
     fun whenTouch_withLongPressThenDragUpAndBack_rtlToLtr_selectsWordsThenChars() {
         touchLongPressThenDragForwardsAndBackTest(
             forwardOffset = characterPosition(8, isRtl = true),
-            forwardSelection = 24 to 6,
+            forwardSelection = 29 to 6,
             forwardEndDirection = ResolvedTextDirection.Rtl,
             backwardOffset = characterPosition(13, isRtl = false),
-            backwardSelection = 24 to 13,
+            backwardSelection = 29 to 12,
             backwardEndDirection = ResolvedTextDirection.Ltr,
         )
     }
@@ -116,11 +111,11 @@ internal abstract class TextSelectionGesturesBidiTest : AbstractSelectionGesture
     fun whenTouch_withLongPressThenDragRightAndBack_selectsWordsThenChars() {
         touchLongPressThenDragForwardsAndBackTest(
             forwardOffset = characterPosition(31, isRtl = true),
-            forwardSelection = 24 to 31,
-            forwardEndDirection = ResolvedTextDirection.Rtl,
+            forwardSelection = 24 to 35,
+            forwardEndDirection = ResolvedTextDirection.Ltr,
             backwardOffset = characterPosition(34, isRtl = true),
-            backwardSelection = 24 to 34,
-            backwardEndDirection = ResolvedTextDirection.Rtl,
+            backwardSelection = 24 to 35,
+            backwardEndDirection = ResolvedTextDirection.Ltr,
         )
     }
 
@@ -131,8 +126,8 @@ internal abstract class TextSelectionGesturesBidiTest : AbstractSelectionGesture
             forwardSelection = 24 to 53,
             forwardEndDirection = ResolvedTextDirection.Ltr,
             backwardOffset = characterPosition(44, isRtl = true),
-            backwardSelection = 24 to 44,
-            backwardEndDirection = ResolvedTextDirection.Rtl,
+            backwardSelection = 24 to 47,
+            backwardEndDirection = ResolvedTextDirection.Ltr,
         )
     }
 
@@ -143,7 +138,7 @@ internal abstract class TextSelectionGesturesBidiTest : AbstractSelectionGesture
             forwardSelection = 24 to 47,
             forwardEndDirection = ResolvedTextDirection.Ltr,
             backwardOffset = characterPosition(38, isRtl = false),
-            backwardSelection = 24 to 38,
+            backwardSelection = 24 to 41,
             backwardEndDirection = ResolvedTextDirection.Ltr,
         )
     }
@@ -156,9 +151,7 @@ internal abstract class TextSelectionGesturesBidiTest : AbstractSelectionGesture
         backwardSelection: TextRange?,
         backwardEndDirection: ResolvedTextDirection,
     ) {
-        performTouchGesture {
-            longPress(characterPosition(26, isRtl = false))
-        }
+        performTouchGesture { longPress(characterPosition(26, isRtl = false)) }
 
         asserter.applyAndAssert {
             selection = 24 to 29
@@ -180,12 +173,10 @@ internal abstract class TextSelectionGesturesBidiTest : AbstractSelectionGesture
         asserter.applyAndAssert {
             selection = backwardSelection
             endLayoutDirection = backwardEndDirection
-            hapticsCount++
+            if (forwardSelection != backwardSelection) hapticsCount++
         }
 
-        performTouchGesture {
-            up()
-        }
+        performTouchGesture { up() }
 
         asserter.applyAndAssert {
             textToolbarShown = true
@@ -195,13 +186,9 @@ internal abstract class TextSelectionGesturesBidiTest : AbstractSelectionGesture
 
     @Test
     fun whenMouse_withSingleClick_collapsedSelectionAtClick() {
-        performMouseGesture {
-            click(characterPosition(26, isRtl = false))
-        }
+        performMouseGesture { click(characterPosition(26, isRtl = false)) }
 
-        asserter.applyAndAssert {
-            selection = 26.collapsed
-        }
+        asserter.applyAndAssert { selection = 26.collapsed }
     }
 
     @Test
@@ -211,13 +198,9 @@ internal abstract class TextSelectionGesturesBidiTest : AbstractSelectionGesture
             press()
         }
 
-        asserter.applyAndAssert {
-            selection = 26.collapsed
-        }
+        asserter.applyAndAssert { selection = 26.collapsed }
 
-        performMouseGesture {
-            release()
-        }
+        performMouseGesture { release() }
 
         asserter.assert()
     }
@@ -254,10 +237,7 @@ internal abstract class TextSelectionGesturesBidiTest : AbstractSelectionGesture
         )
     }
 
-    private fun mouseSingleClickThenDragTest(
-        endOffset: Offset,
-        endSelection: TextRange?
-    ) {
+    private fun mouseSingleClickThenDragTest(endOffset: Offset, endSelection: TextRange?) {
         mouseClicksThenDragTest(
             numClicks = 1,
             firstOffset = characterPosition(26, isRtl = false),
@@ -272,13 +252,9 @@ internal abstract class TextSelectionGesturesBidiTest : AbstractSelectionGesture
 
     @Test
     fun whenMouse_withDoubleClick_selectsWord() {
-        performMouseGesture {
-            repeat(2) { click(characterPosition(26, isRtl = false)) }
-        }
+        performMouseGesture { repeat(2) { click(characterPosition(26, isRtl = false)) } }
 
-        asserter.applyAndAssert {
-            selection = 24 to 29
-        }
+        asserter.applyAndAssert { selection = 24 to 29 }
     }
 
     @Test
@@ -336,9 +312,7 @@ internal abstract class TextSelectionGesturesBidiTest : AbstractSelectionGesture
 
     @Test
     fun whenMouse_withTripleClick_selectsParagraph() {
-        performMouseGesture {
-            repeat(3) { click(characterPosition(26, isRtl = false)) }
-        }
+        performMouseGesture { repeat(3) { click(characterPosition(26, isRtl = false)) } }
 
         asserter.applyAndAssert {
             selection = 18 to 35
@@ -435,9 +409,7 @@ internal abstract class TextSelectionGesturesBidiTest : AbstractSelectionGesture
             endLayoutDirection = secondEndDirection
         }
 
-        performMouseGesture {
-            release()
-        }
+        performMouseGesture { release() }
 
         asserter.assert()
     }

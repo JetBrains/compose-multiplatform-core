@@ -16,28 +16,26 @@
 
 package androidx.window.core.layout
 
-import androidx.window.core.layout.WindowHeightSizeClass.Companion.COMPACT
-import androidx.window.core.layout.WindowHeightSizeClass.Companion.EXPANDED
-import androidx.window.core.layout.WindowHeightSizeClass.Companion.MEDIUM
 import kotlin.jvm.JvmField
 
 /**
  * A class to represent the height size buckets for a viewport. The possible values are [COMPACT],
  * [MEDIUM], and [EXPANDED]. [WindowHeightSizeClass] should not be used as a proxy for the device
- * type. It is possible to have resizeable windows in different device types.
- * The viewport might change from a [COMPACT] all the way to an [EXPANDED] size class.
+ * type. It is possible to have resizeable windows in different device types. The viewport might
+ * change from a [COMPACT] all the way to an [EXPANDED] size class.
  */
-class WindowHeightSizeClass private constructor(
-    private val rawValue: Int
-) {
+@Suppress("DEPRECATION")
+@Deprecated("WindowHeightSizeClass will not be developed further, use WindowSizeClass instead.")
+class WindowHeightSizeClass private constructor(private val rawValue: Int) {
 
     override fun toString(): String {
-        val name = when (this) {
-            COMPACT -> "COMPACT"
-            MEDIUM -> "MEDIUM"
-            EXPANDED -> "EXPANDED"
-            else -> "UNKNOWN"
-        }
+        val name =
+            when (this) {
+                COMPACT -> "COMPACT"
+                MEDIUM -> "MEDIUM"
+                EXPANDED -> "EXPANDED"
+                else -> "UNKNOWN"
+            }
         return "WindowHeightSizeClass: $name"
     }
 
@@ -56,32 +54,33 @@ class WindowHeightSizeClass private constructor(
     }
 
     companion object {
-        /**
-         * A bucket to represent a compact height, typical for a phone that is in landscape.
-         */
+        /** A bucket to represent a compact height, typical for a phone that is in landscape. */
+        @Deprecated("WindowHeightSizeClass not be developed further.")
         @JvmField
         val COMPACT: WindowHeightSizeClass = WindowHeightSizeClass(0)
 
-        /**
-         * A bucket to represent a medium height, typical for a phone in portrait or a tablet.
-         */
+        /** A bucket to represent a medium height, typical for a phone in portrait or a tablet. */
+        @Deprecated("WindowHeightSizeClass not be developed further.")
         @JvmField
         val MEDIUM: WindowHeightSizeClass = WindowHeightSizeClass(1)
 
         /**
-         * A bucket to represent an expanded height window, typical for a large tablet or a
-         * desktop form-factor.
+         * A bucket to represent an expanded height window, typical for a large tablet or a desktop
+         * form-factor.
          */
+        @Deprecated("WindowHeightSizeClass not be developed further.")
         @JvmField
         val EXPANDED: WindowHeightSizeClass = WindowHeightSizeClass(2)
 
         /**
-         * Returns a recommended [WindowHeightSizeClass] for the height of a window given the
-         * height in DP.
+         * Returns a recommended [WindowHeightSizeClass] for the height of a window given the height
+         * in DP.
+         *
          * @param dpHeight the height of the window in DP
          * @return A recommended size class for the height
          * @throws IllegalArgumentException if the height is negative
          */
+        @Deprecated("WindowHeightSizeClass not be developed further.")
         internal fun compute(dpHeight: Float): WindowHeightSizeClass {
             require(dpHeight >= 0) { "Height must be positive, received $dpHeight" }
             return when {

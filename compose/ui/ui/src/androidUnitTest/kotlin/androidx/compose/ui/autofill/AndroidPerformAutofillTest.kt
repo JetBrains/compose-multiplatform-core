@@ -20,7 +20,6 @@ import android.app.Activity
 import android.util.SparseArray
 import android.view.View
 import android.view.autofill.AutofillValue
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.geometry.Rect
 import com.google.common.truth.Truth
 import org.junit.Before
@@ -30,7 +29,6 @@ import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
-@OptIn(ExperimentalComposeUiApi::class)
 @RunWith(RobolectricTestRunner::class)
 @Config(minSdk = 26)
 class AndroidPerformAutofillTest {
@@ -51,15 +49,18 @@ class AndroidPerformAutofillTest {
         // Arrange.
         val expectedValue = "Name"
         var autofilledValue = ""
-        val autofillNode = AutofillNode(
-            onFill = { autofilledValue = it },
-            autofillTypes = listOf(AutofillType.PersonFullName),
-            boundingBox = Rect(0f, 0f, 0f, 0f)
-        )
+        val autofillNode =
+            AutofillNode(
+                onFill = { autofilledValue = it },
+                autofillTypes = listOf(AutofillType.PersonFullName),
+                boundingBox = Rect(0f, 0f, 0f, 0f)
+            )
         autofillTree += autofillNode
 
-        val autofillValues = SparseArray<AutofillValue>()
-            .apply { append(autofillNode.id, AutofillValue.forText(expectedValue)) }
+        val autofillValues =
+            SparseArray<AutofillValue>().apply {
+                append(autofillNode.id, AutofillValue.forText(expectedValue))
+            }
 
         // Act.
         androidAutofill.performAutofill(autofillValues)
@@ -73,15 +74,18 @@ class AndroidPerformAutofillTest {
         // Arrange.
         val expectedValue = "email@google.com"
         var autofilledValue = ""
-        val autofillNode = AutofillNode(
-            onFill = { autofilledValue = it },
-            autofillTypes = listOf(AutofillType.EmailAddress),
-            boundingBox = Rect(0f, 0f, 0f, 0f)
-        )
+        val autofillNode =
+            AutofillNode(
+                onFill = { autofilledValue = it },
+                autofillTypes = listOf(AutofillType.EmailAddress),
+                boundingBox = Rect(0f, 0f, 0f, 0f)
+            )
         autofillTree += autofillNode
 
-        val autofillValues = SparseArray<AutofillValue>()
-            .apply { append(autofillNode.id, AutofillValue.forText(expectedValue)) }
+        val autofillValues =
+            SparseArray<AutofillValue>().apply {
+                append(autofillNode.id, AutofillValue.forText(expectedValue))
+            }
 
         // Act.
         androidAutofill.performAutofill(autofillValues)

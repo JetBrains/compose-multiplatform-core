@@ -1,0 +1,156 @@
+// Klib ABI Dump
+// Targets: [iosArm64, iosSimulatorArm64, iosX64, linuxArm64, linuxX64, macosArm64, macosX64]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <androidx.savedstate:savedstate>
+abstract interface androidx.savedstate/SavedStateRegistryOwner : androidx.lifecycle/LifecycleOwner { // androidx.savedstate/SavedStateRegistryOwner|null[0]
+    abstract val savedStateRegistry // androidx.savedstate/SavedStateRegistryOwner.savedStateRegistry|{}savedStateRegistry[0]
+        abstract fun <get-savedStateRegistry>(): androidx.savedstate/SavedStateRegistry // androidx.savedstate/SavedStateRegistryOwner.savedStateRegistry.<get-savedStateRegistry>|<get-savedStateRegistry>(){}[0]
+}
+
+final class androidx.savedstate/SavedState { // androidx.savedstate/SavedState|null[0]
+    constructor <init>(kotlin.collections/MutableMap<kotlin/String, kotlin/Any?> = ...) // androidx.savedstate/SavedState.<init>|<init>(kotlin.collections.MutableMap<kotlin.String,kotlin.Any?>){}[0]
+
+    final val map // androidx.savedstate/SavedState.map|{}map[0]
+        final fun <get-map>(): kotlin.collections/MutableMap<kotlin/String, kotlin/Any?> // androidx.savedstate/SavedState.map.<get-map>|<get-map>(){}[0]
+}
+
+final class androidx.savedstate/SavedStateRegistry { // androidx.savedstate/SavedStateRegistry|null[0]
+    final val isRestored // androidx.savedstate/SavedStateRegistry.isRestored|{}isRestored[0]
+        final fun <get-isRestored>(): kotlin/Boolean // androidx.savedstate/SavedStateRegistry.isRestored.<get-isRestored>|<get-isRestored>(){}[0]
+
+    final fun consumeRestoredStateForKey(kotlin/String): androidx.savedstate/SavedState? // androidx.savedstate/SavedStateRegistry.consumeRestoredStateForKey|consumeRestoredStateForKey(kotlin.String){}[0]
+    final fun getSavedStateProvider(kotlin/String): androidx.savedstate/SavedStateRegistry.SavedStateProvider? // androidx.savedstate/SavedStateRegistry.getSavedStateProvider|getSavedStateProvider(kotlin.String){}[0]
+    final fun registerSavedStateProvider(kotlin/String, androidx.savedstate/SavedStateRegistry.SavedStateProvider) // androidx.savedstate/SavedStateRegistry.registerSavedStateProvider|registerSavedStateProvider(kotlin.String;androidx.savedstate.SavedStateRegistry.SavedStateProvider){}[0]
+    final fun unregisterSavedStateProvider(kotlin/String) // androidx.savedstate/SavedStateRegistry.unregisterSavedStateProvider|unregisterSavedStateProvider(kotlin.String){}[0]
+
+    abstract fun interface SavedStateProvider { // androidx.savedstate/SavedStateRegistry.SavedStateProvider|null[0]
+        abstract fun saveState(): androidx.savedstate/SavedState // androidx.savedstate/SavedStateRegistry.SavedStateProvider.saveState|saveState(){}[0]
+    }
+}
+
+final class androidx.savedstate/SavedStateRegistryController { // androidx.savedstate/SavedStateRegistryController|null[0]
+    final val savedStateRegistry // androidx.savedstate/SavedStateRegistryController.savedStateRegistry|{}savedStateRegistry[0]
+        final fun <get-savedStateRegistry>(): androidx.savedstate/SavedStateRegistry // androidx.savedstate/SavedStateRegistryController.savedStateRegistry.<get-savedStateRegistry>|<get-savedStateRegistry>(){}[0]
+
+    final fun performAttach() // androidx.savedstate/SavedStateRegistryController.performAttach|performAttach(){}[0]
+    final fun performRestore(androidx.savedstate/SavedState?) // androidx.savedstate/SavedStateRegistryController.performRestore|performRestore(androidx.savedstate.SavedState?){}[0]
+    final fun performSave(androidx.savedstate/SavedState) // androidx.savedstate/SavedStateRegistryController.performSave|performSave(androidx.savedstate.SavedState){}[0]
+
+    final object Companion { // androidx.savedstate/SavedStateRegistryController.Companion|null[0]
+        final fun create(androidx.savedstate/SavedStateRegistryOwner): androidx.savedstate/SavedStateRegistryController // androidx.savedstate/SavedStateRegistryController.Companion.create|create(androidx.savedstate.SavedStateRegistryOwner){}[0]
+    }
+}
+
+final value class androidx.savedstate/SavedStateReader { // androidx.savedstate/SavedStateReader|null[0]
+    constructor <init>(androidx.savedstate/SavedState) // androidx.savedstate/SavedStateReader.<init>|<init>(androidx.savedstate.SavedState){}[0]
+
+    final val source // androidx.savedstate/SavedStateReader.source|{}source[0]
+        final fun <get-source>(): androidx.savedstate/SavedState // androidx.savedstate/SavedStateReader.source.<get-source>|<get-source>(){}[0]
+
+    final fun contentDeepEquals(androidx.savedstate/SavedState): kotlin/Boolean // androidx.savedstate/SavedStateReader.contentDeepEquals|contentDeepEquals(androidx.savedstate.SavedState){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // androidx.savedstate/SavedStateReader.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // androidx.savedstate/SavedStateReader.hashCode|hashCode(){}[0]
+    final fun toMap(): kotlin.collections/Map<kotlin/String, kotlin/Any?> // androidx.savedstate/SavedStateReader.toMap|toMap(){}[0]
+    final fun toString(): kotlin/String // androidx.savedstate/SavedStateReader.toString|toString(){}[0]
+    final inline fun contains(kotlin/String): kotlin/Boolean // androidx.savedstate/SavedStateReader.contains|contains(kotlin.String){}[0]
+    final inline fun getBoolean(kotlin/String): kotlin/Boolean // androidx.savedstate/SavedStateReader.getBoolean|getBoolean(kotlin.String){}[0]
+    final inline fun getBooleanArray(kotlin/String): kotlin/BooleanArray // androidx.savedstate/SavedStateReader.getBooleanArray|getBooleanArray(kotlin.String){}[0]
+    final inline fun getBooleanArrayOrElse(kotlin/String, kotlin/Function0<kotlin/BooleanArray>): kotlin/BooleanArray // androidx.savedstate/SavedStateReader.getBooleanArrayOrElse|getBooleanArrayOrElse(kotlin.String;kotlin.Function0<kotlin.BooleanArray>){}[0]
+    final inline fun getBooleanOrElse(kotlin/String, kotlin/Function0<kotlin/Boolean>): kotlin/Boolean // androidx.savedstate/SavedStateReader.getBooleanOrElse|getBooleanOrElse(kotlin.String;kotlin.Function0<kotlin.Boolean>){}[0]
+    final inline fun getChar(kotlin/String): kotlin/Char // androidx.savedstate/SavedStateReader.getChar|getChar(kotlin.String){}[0]
+    final inline fun getCharArray(kotlin/String): kotlin/CharArray // androidx.savedstate/SavedStateReader.getCharArray|getCharArray(kotlin.String){}[0]
+    final inline fun getCharArrayOrElse(kotlin/String, kotlin/Function0<kotlin/CharArray>): kotlin/CharArray // androidx.savedstate/SavedStateReader.getCharArrayOrElse|getCharArrayOrElse(kotlin.String;kotlin.Function0<kotlin.CharArray>){}[0]
+    final inline fun getCharOrElse(kotlin/String, kotlin/Function0<kotlin/Char>): kotlin/Char // androidx.savedstate/SavedStateReader.getCharOrElse|getCharOrElse(kotlin.String;kotlin.Function0<kotlin.Char>){}[0]
+    final inline fun getDouble(kotlin/String): kotlin/Double // androidx.savedstate/SavedStateReader.getDouble|getDouble(kotlin.String){}[0]
+    final inline fun getDoubleArray(kotlin/String): kotlin/DoubleArray // androidx.savedstate/SavedStateReader.getDoubleArray|getDoubleArray(kotlin.String){}[0]
+    final inline fun getDoubleArrayOrElse(kotlin/String, kotlin/Function0<kotlin/DoubleArray>): kotlin/DoubleArray // androidx.savedstate/SavedStateReader.getDoubleArrayOrElse|getDoubleArrayOrElse(kotlin.String;kotlin.Function0<kotlin.DoubleArray>){}[0]
+    final inline fun getDoubleOrElse(kotlin/String, kotlin/Function0<kotlin/Double>): kotlin/Double // androidx.savedstate/SavedStateReader.getDoubleOrElse|getDoubleOrElse(kotlin.String;kotlin.Function0<kotlin.Double>){}[0]
+    final inline fun getFloat(kotlin/String): kotlin/Float // androidx.savedstate/SavedStateReader.getFloat|getFloat(kotlin.String){}[0]
+    final inline fun getFloatArray(kotlin/String): kotlin/FloatArray // androidx.savedstate/SavedStateReader.getFloatArray|getFloatArray(kotlin.String){}[0]
+    final inline fun getFloatArrayOrElse(kotlin/String, kotlin/Function0<kotlin/FloatArray>): kotlin/FloatArray // androidx.savedstate/SavedStateReader.getFloatArrayOrElse|getFloatArrayOrElse(kotlin.String;kotlin.Function0<kotlin.FloatArray>){}[0]
+    final inline fun getFloatOrElse(kotlin/String, kotlin/Function0<kotlin/Float>): kotlin/Float // androidx.savedstate/SavedStateReader.getFloatOrElse|getFloatOrElse(kotlin.String;kotlin.Function0<kotlin.Float>){}[0]
+    final inline fun getInt(kotlin/String): kotlin/Int // androidx.savedstate/SavedStateReader.getInt|getInt(kotlin.String){}[0]
+    final inline fun getIntArray(kotlin/String): kotlin/IntArray // androidx.savedstate/SavedStateReader.getIntArray|getIntArray(kotlin.String){}[0]
+    final inline fun getIntArrayOrElse(kotlin/String, kotlin/Function0<kotlin/IntArray>): kotlin/IntArray // androidx.savedstate/SavedStateReader.getIntArrayOrElse|getIntArrayOrElse(kotlin.String;kotlin.Function0<kotlin.IntArray>){}[0]
+    final inline fun getIntList(kotlin/String): kotlin.collections/List<kotlin/Int> // androidx.savedstate/SavedStateReader.getIntList|getIntList(kotlin.String){}[0]
+    final inline fun getIntListOrElse(kotlin/String, kotlin/Function0<kotlin.collections/List<kotlin/Int>>): kotlin.collections/List<kotlin/Int> // androidx.savedstate/SavedStateReader.getIntListOrElse|getIntListOrElse(kotlin.String;kotlin.Function0<kotlin.collections.List<kotlin.Int>>){}[0]
+    final inline fun getIntOrElse(kotlin/String, kotlin/Function0<kotlin/Int>): kotlin/Int // androidx.savedstate/SavedStateReader.getIntOrElse|getIntOrElse(kotlin.String;kotlin.Function0<kotlin.Int>){}[0]
+    final inline fun getLong(kotlin/String): kotlin/Long // androidx.savedstate/SavedStateReader.getLong|getLong(kotlin.String){}[0]
+    final inline fun getLongArray(kotlin/String): kotlin/LongArray // androidx.savedstate/SavedStateReader.getLongArray|getLongArray(kotlin.String){}[0]
+    final inline fun getLongArrayOrElse(kotlin/String, kotlin/Function0<kotlin/LongArray>): kotlin/LongArray // androidx.savedstate/SavedStateReader.getLongArrayOrElse|getLongArrayOrElse(kotlin.String;kotlin.Function0<kotlin.LongArray>){}[0]
+    final inline fun getLongOrElse(kotlin/String, kotlin/Function0<kotlin/Long>): kotlin/Long // androidx.savedstate/SavedStateReader.getLongOrElse|getLongOrElse(kotlin.String;kotlin.Function0<kotlin.Long>){}[0]
+    final inline fun getSavedState(kotlin/String): androidx.savedstate/SavedState // androidx.savedstate/SavedStateReader.getSavedState|getSavedState(kotlin.String){}[0]
+    final inline fun getSavedStateOrElse(kotlin/String, kotlin/Function0<androidx.savedstate/SavedState>): androidx.savedstate/SavedState // androidx.savedstate/SavedStateReader.getSavedStateOrElse|getSavedStateOrElse(kotlin.String;kotlin.Function0<androidx.savedstate.SavedState>){}[0]
+    final inline fun getString(kotlin/String): kotlin/String // androidx.savedstate/SavedStateReader.getString|getString(kotlin.String){}[0]
+    final inline fun getStringArray(kotlin/String): kotlin/Array<kotlin/String> // androidx.savedstate/SavedStateReader.getStringArray|getStringArray(kotlin.String){}[0]
+    final inline fun getStringArrayOrElse(kotlin/String, kotlin/Function0<kotlin/Array<kotlin/String>>): kotlin/Array<kotlin/String> // androidx.savedstate/SavedStateReader.getStringArrayOrElse|getStringArrayOrElse(kotlin.String;kotlin.Function0<kotlin.Array<kotlin.String>>){}[0]
+    final inline fun getStringList(kotlin/String): kotlin.collections/List<kotlin/String> // androidx.savedstate/SavedStateReader.getStringList|getStringList(kotlin.String){}[0]
+    final inline fun getStringListOrElse(kotlin/String, kotlin/Function0<kotlin.collections/List<kotlin/String>>): kotlin.collections/List<kotlin/String> // androidx.savedstate/SavedStateReader.getStringListOrElse|getStringListOrElse(kotlin.String;kotlin.Function0<kotlin.collections.List<kotlin.String>>){}[0]
+    final inline fun getStringOrElse(kotlin/String, kotlin/Function0<kotlin/String>): kotlin/String // androidx.savedstate/SavedStateReader.getStringOrElse|getStringOrElse(kotlin.String;kotlin.Function0<kotlin.String>){}[0]
+    final inline fun isEmpty(): kotlin/Boolean // androidx.savedstate/SavedStateReader.isEmpty|isEmpty(){}[0]
+    final inline fun isNull(kotlin/String): kotlin/Boolean // androidx.savedstate/SavedStateReader.isNull|isNull(kotlin.String){}[0]
+    final inline fun size(): kotlin/Int // androidx.savedstate/SavedStateReader.size|size(){}[0]
+}
+
+final value class androidx.savedstate/SavedStateWriter { // androidx.savedstate/SavedStateWriter|null[0]
+    constructor <init>(androidx.savedstate/SavedState) // androidx.savedstate/SavedStateWriter.<init>|<init>(androidx.savedstate.SavedState){}[0]
+
+    final val source // androidx.savedstate/SavedStateWriter.source|{}source[0]
+        final fun <get-source>(): androidx.savedstate/SavedState // androidx.savedstate/SavedStateWriter.source.<get-source>|<get-source>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // androidx.savedstate/SavedStateWriter.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // androidx.savedstate/SavedStateWriter.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // androidx.savedstate/SavedStateWriter.toString|toString(){}[0]
+    final inline fun clear() // androidx.savedstate/SavedStateWriter.clear|clear(){}[0]
+    final inline fun putAll(androidx.savedstate/SavedState) // androidx.savedstate/SavedStateWriter.putAll|putAll(androidx.savedstate.SavedState){}[0]
+    final inline fun putBoolean(kotlin/String, kotlin/Boolean) // androidx.savedstate/SavedStateWriter.putBoolean|putBoolean(kotlin.String;kotlin.Boolean){}[0]
+    final inline fun putBooleanArray(kotlin/String, kotlin/BooleanArray) // androidx.savedstate/SavedStateWriter.putBooleanArray|putBooleanArray(kotlin.String;kotlin.BooleanArray){}[0]
+    final inline fun putChar(kotlin/String, kotlin/Char) // androidx.savedstate/SavedStateWriter.putChar|putChar(kotlin.String;kotlin.Char){}[0]
+    final inline fun putCharArray(kotlin/String, kotlin/CharArray) // androidx.savedstate/SavedStateWriter.putCharArray|putCharArray(kotlin.String;kotlin.CharArray){}[0]
+    final inline fun putDouble(kotlin/String, kotlin/Double) // androidx.savedstate/SavedStateWriter.putDouble|putDouble(kotlin.String;kotlin.Double){}[0]
+    final inline fun putDoubleArray(kotlin/String, kotlin/DoubleArray) // androidx.savedstate/SavedStateWriter.putDoubleArray|putDoubleArray(kotlin.String;kotlin.DoubleArray){}[0]
+    final inline fun putFloat(kotlin/String, kotlin/Float) // androidx.savedstate/SavedStateWriter.putFloat|putFloat(kotlin.String;kotlin.Float){}[0]
+    final inline fun putFloatArray(kotlin/String, kotlin/FloatArray) // androidx.savedstate/SavedStateWriter.putFloatArray|putFloatArray(kotlin.String;kotlin.FloatArray){}[0]
+    final inline fun putInt(kotlin/String, kotlin/Int) // androidx.savedstate/SavedStateWriter.putInt|putInt(kotlin.String;kotlin.Int){}[0]
+    final inline fun putIntArray(kotlin/String, kotlin/IntArray) // androidx.savedstate/SavedStateWriter.putIntArray|putIntArray(kotlin.String;kotlin.IntArray){}[0]
+    final inline fun putIntList(kotlin/String, kotlin.collections/List<kotlin/Int>) // androidx.savedstate/SavedStateWriter.putIntList|putIntList(kotlin.String;kotlin.collections.List<kotlin.Int>){}[0]
+    final inline fun putLong(kotlin/String, kotlin/Long) // androidx.savedstate/SavedStateWriter.putLong|putLong(kotlin.String;kotlin.Long){}[0]
+    final inline fun putLongArray(kotlin/String, kotlin/LongArray) // androidx.savedstate/SavedStateWriter.putLongArray|putLongArray(kotlin.String;kotlin.LongArray){}[0]
+    final inline fun putNull(kotlin/String) // androidx.savedstate/SavedStateWriter.putNull|putNull(kotlin.String){}[0]
+    final inline fun putSavedState(kotlin/String, androidx.savedstate/SavedState) // androidx.savedstate/SavedStateWriter.putSavedState|putSavedState(kotlin.String;androidx.savedstate.SavedState){}[0]
+    final inline fun putString(kotlin/String, kotlin/String) // androidx.savedstate/SavedStateWriter.putString|putString(kotlin.String;kotlin.String){}[0]
+    final inline fun putStringArray(kotlin/String, kotlin/Array<kotlin/String>) // androidx.savedstate/SavedStateWriter.putStringArray|putStringArray(kotlin.String;kotlin.Array<kotlin.String>){}[0]
+    final inline fun putStringList(kotlin/String, kotlin.collections/List<kotlin/String>) // androidx.savedstate/SavedStateWriter.putStringList|putStringList(kotlin.String;kotlin.collections.List<kotlin.String>){}[0]
+    final inline fun remove(kotlin/String) // androidx.savedstate/SavedStateWriter.remove|remove(kotlin.String){}[0]
+}
+
+final const val androidx.savedstate/DEFAULT_BOOLEAN // androidx.savedstate/DEFAULT_BOOLEAN|{}DEFAULT_BOOLEAN[0]
+    final fun <get-DEFAULT_BOOLEAN>(): kotlin/Boolean // androidx.savedstate/DEFAULT_BOOLEAN.<get-DEFAULT_BOOLEAN>|<get-DEFAULT_BOOLEAN>(){}[0]
+final const val androidx.savedstate/DEFAULT_CHAR // androidx.savedstate/DEFAULT_CHAR|{}DEFAULT_CHAR[0]
+    final fun <get-DEFAULT_CHAR>(): kotlin/Char // androidx.savedstate/DEFAULT_CHAR.<get-DEFAULT_CHAR>|<get-DEFAULT_CHAR>(){}[0]
+final const val androidx.savedstate/DEFAULT_DOUBLE // androidx.savedstate/DEFAULT_DOUBLE|{}DEFAULT_DOUBLE[0]
+    final fun <get-DEFAULT_DOUBLE>(): kotlin/Double // androidx.savedstate/DEFAULT_DOUBLE.<get-DEFAULT_DOUBLE>|<get-DEFAULT_DOUBLE>(){}[0]
+final const val androidx.savedstate/DEFAULT_FLOAT // androidx.savedstate/DEFAULT_FLOAT|{}DEFAULT_FLOAT[0]
+    final fun <get-DEFAULT_FLOAT>(): kotlin/Float // androidx.savedstate/DEFAULT_FLOAT.<get-DEFAULT_FLOAT>|<get-DEFAULT_FLOAT>(){}[0]
+final const val androidx.savedstate/DEFAULT_INT // androidx.savedstate/DEFAULT_INT|{}DEFAULT_INT[0]
+    final fun <get-DEFAULT_INT>(): kotlin/Int // androidx.savedstate/DEFAULT_INT.<get-DEFAULT_INT>|<get-DEFAULT_INT>(){}[0]
+final const val androidx.savedstate/DEFAULT_LONG // androidx.savedstate/DEFAULT_LONG|{}DEFAULT_LONG[0]
+    final fun <get-DEFAULT_LONG>(): kotlin/Long // androidx.savedstate/DEFAULT_LONG.<get-DEFAULT_LONG>|<get-DEFAULT_LONG>(){}[0]
+
+final fun <#A: kotlin/Any> (androidx.savedstate/SavedStateRegistryOwner).androidx.savedstate.serialization/saved(kotlin/String, kotlinx.serialization/KSerializer<#A>, kotlin/Function0<#A>): kotlin.properties/ReadWriteProperty<kotlin/Any?, #A> // androidx.savedstate.serialization/saved|saved@androidx.savedstate.SavedStateRegistryOwner(kotlin.String;kotlinx.serialization.KSerializer<0:0>;kotlin.Function0<0:0>){0§<kotlin.Any>}[0]
+final fun <#A: kotlin/Any> (androidx.savedstate/SavedStateRegistryOwner).androidx.savedstate.serialization/saved(kotlinx.serialization/KSerializer<#A>, kotlin/Function0<#A>): kotlin.properties/ReadWriteProperty<kotlin/Any?, #A> // androidx.savedstate.serialization/saved|saved@androidx.savedstate.SavedStateRegistryOwner(kotlinx.serialization.KSerializer<0:0>;kotlin.Function0<0:0>){0§<kotlin.Any>}[0]
+final fun <#A: kotlin/Any> androidx.savedstate.serialization/decodeFromSavedState(kotlinx.serialization/DeserializationStrategy<#A>, androidx.savedstate/SavedState): #A // androidx.savedstate.serialization/decodeFromSavedState|decodeFromSavedState(kotlinx.serialization.DeserializationStrategy<0:0>;androidx.savedstate.SavedState){0§<kotlin.Any>}[0]
+final fun <#A: kotlin/Any> androidx.savedstate.serialization/encodeToSavedState(kotlinx.serialization/SerializationStrategy<#A>, #A): androidx.savedstate/SavedState // androidx.savedstate.serialization/encodeToSavedState|encodeToSavedState(kotlinx.serialization.SerializationStrategy<0:0>;0:0){0§<kotlin.Any>}[0]
+final inline fun <#A: kotlin/Any?> (androidx.savedstate/SavedState).androidx.savedstate/read(kotlin/Function1<androidx.savedstate/SavedStateReader, #A>): #A // androidx.savedstate/read|read@androidx.savedstate.SavedState(kotlin.Function1<androidx.savedstate.SavedStateReader,0:0>){0§<kotlin.Any?>}[0]
+final inline fun <#A: kotlin/Any?> (androidx.savedstate/SavedState).androidx.savedstate/write(kotlin/Function1<androidx.savedstate/SavedStateWriter, #A>): #A // androidx.savedstate/write|write@androidx.savedstate.SavedState(kotlin.Function1<androidx.savedstate.SavedStateWriter,0:0>){0§<kotlin.Any?>}[0]
+final inline fun <#A: reified kotlin/Any> (androidx.savedstate/SavedStateRegistryOwner).androidx.savedstate.serialization/saved(kotlin/String, noinline kotlin/Function0<#A>): kotlin.properties/ReadWriteProperty<kotlin/Any?, #A> // androidx.savedstate.serialization/saved|saved@androidx.savedstate.SavedStateRegistryOwner(kotlin.String;kotlin.Function0<0:0>){0§<kotlin.Any>}[0]
+final inline fun <#A: reified kotlin/Any> (androidx.savedstate/SavedStateRegistryOwner).androidx.savedstate.serialization/saved(noinline kotlin/Function0<#A>): kotlin.properties/ReadWriteProperty<kotlin/Any?, #A> // androidx.savedstate.serialization/saved|saved@androidx.savedstate.SavedStateRegistryOwner(kotlin.Function0<0:0>){0§<kotlin.Any>}[0]
+final inline fun <#A: reified kotlin/Any> androidx.savedstate.serialization/decodeFromSavedState(androidx.savedstate/SavedState): #A // androidx.savedstate.serialization/decodeFromSavedState|decodeFromSavedState(androidx.savedstate.SavedState){0§<kotlin.Any>}[0]
+final inline fun <#A: reified kotlin/Any> androidx.savedstate.serialization/encodeToSavedState(#A): androidx.savedstate/SavedState // androidx.savedstate.serialization/encodeToSavedState|encodeToSavedState(0:0){0§<kotlin.Any>}[0]
+final inline fun androidx.savedstate/keyNotFoundError(kotlin/String): kotlin/Nothing // androidx.savedstate/keyNotFoundError|keyNotFoundError(kotlin.String){}[0]
+final inline fun androidx.savedstate/savedState(kotlin.collections/Map<kotlin/String, kotlin/Any?> = ..., kotlin/Function1<androidx.savedstate/SavedStateWriter, kotlin/Unit> = ...): androidx.savedstate/SavedState // androidx.savedstate/savedState|savedState(kotlin.collections.Map<kotlin.String,kotlin.Any?>;kotlin.Function1<androidx.savedstate.SavedStateWriter,kotlin.Unit>){}[0]
+final inline fun androidx.savedstate/valueNotFoundError(kotlin/String): kotlin/Nothing // androidx.savedstate/valueNotFoundError|valueNotFoundError(kotlin.String){}[0]

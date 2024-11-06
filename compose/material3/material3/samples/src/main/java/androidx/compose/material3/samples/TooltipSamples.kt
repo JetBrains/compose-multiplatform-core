@@ -24,7 +24,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material3.CaretProperties
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -41,6 +40,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 
@@ -50,21 +50,12 @@ import kotlinx.coroutines.launch
 @Composable
 fun PlainTooltipSample() {
     TooltipBox(
-        positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
-        tooltip = {
-            PlainTooltip {
-                Text("Add to favorites")
-            }
-        },
+        positionProvider = TooltipDefaults.rememberTooltipPositionProvider(),
+        tooltip = { PlainTooltip { Text("Add to favorites") } },
         state = rememberTooltipState()
     ) {
-        IconButton(
-            onClick = { /* Icon button's click event */ }
-        ) {
-            Icon(
-                imageVector = Icons.Filled.Favorite,
-                contentDescription = "Localized Description"
-            )
+        IconButton(onClick = { /* Icon button's click event */ }) {
+            Icon(imageVector = Icons.Filled.Favorite, contentDescription = "Localized Description")
         }
     }
 }
@@ -76,27 +67,16 @@ fun PlainTooltipSample() {
 fun PlainTooltipWithManualInvocationSample() {
     val tooltipState = rememberTooltipState()
     val scope = rememberCoroutineScope()
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
         TooltipBox(
-            positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
-            tooltip = {
-                PlainTooltip {
-                    Text("Add to list")
-                }
-            },
+            positionProvider = TooltipDefaults.rememberTooltipPositionProvider(),
+            tooltip = { PlainTooltip { Text("Add to list") } },
             state = tooltipState
         ) {
-            Icon(
-                imageVector = Icons.Filled.AddCircle,
-                contentDescription = "Localized Description"
-            )
+            Icon(imageVector = Icons.Filled.AddCircle, contentDescription = "Localized Description")
         }
         Spacer(Modifier.requiredHeight(30.dp))
-        OutlinedButton(
-            onClick = { scope.launch { tooltipState.show() } }
-        ) {
+        OutlinedButton(onClick = { scope.launch { tooltipState.show() } }) {
             Text("Display tooltip")
         }
     }
@@ -107,23 +87,14 @@ fun PlainTooltipWithManualInvocationSample() {
 @Composable
 fun PlainTooltipWithCaret() {
     TooltipBox(
-        positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
+        positionProvider = TooltipDefaults.rememberTooltipPositionProvider(),
         tooltip = {
-            PlainTooltip(
-                caretProperties = TooltipDefaults.caretProperties
-            ) {
-                Text("Add to favorites")
-            }
+            PlainTooltip(caretSize = TooltipDefaults.caretSize) { Text("Add to favorites") }
         },
         state = rememberTooltipState()
     ) {
-        IconButton(
-            onClick = { /* Icon button's click event */ }
-        ) {
-            Icon(
-                imageVector = Icons.Filled.Favorite,
-                contentDescription = "Localized Description"
-            )
+        IconButton(onClick = { /* Icon button's click event */ }) {
+            Icon(imageVector = Icons.Filled.Favorite, contentDescription = "Localized Description")
         }
     }
 }
@@ -133,23 +104,12 @@ fun PlainTooltipWithCaret() {
 @Composable
 fun PlainTooltipWithCustomCaret() {
     TooltipBox(
-        positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
-        tooltip = {
-            PlainTooltip(
-                caretProperties = CaretProperties(12.dp, 24.dp)
-            ) {
-                Text("Add to favorites")
-            }
-        },
+        positionProvider = TooltipDefaults.rememberTooltipPositionProvider(),
+        tooltip = { PlainTooltip(caretSize = DpSize(24.dp, 12.dp)) { Text("Add to favorites") } },
         state = rememberTooltipState()
     ) {
-        IconButton(
-            onClick = { /* Icon button's click event */ }
-        ) {
-            Icon(
-                imageVector = Icons.Filled.Favorite,
-                contentDescription = "Localized Description"
-            )
+        IconButton(onClick = { /* Icon button's click event */ }) {
+            Icon(imageVector = Icons.Filled.Favorite, contentDescription = "Localized Description")
         }
     }
 }
@@ -161,14 +121,14 @@ fun RichTooltipSample() {
     val tooltipState = rememberTooltipState(isPersistent = true)
     val scope = rememberCoroutineScope()
     TooltipBox(
-        positionProvider = TooltipDefaults.rememberRichTooltipPositionProvider(),
+        positionProvider = TooltipDefaults.rememberTooltipPositionProvider(),
         tooltip = {
             RichTooltip(
                 title = { Text(richTooltipSubheadText) },
                 action = {
-                    TextButton(
-                        onClick = { scope.launch { tooltipState.dismiss() } }
-                    ) { Text(richTooltipActionText) }
+                    TextButton(onClick = { scope.launch { tooltipState.dismiss() } }) {
+                        Text(richTooltipActionText)
+                    }
                 }
             ) {
                 Text(richTooltipText)
@@ -176,13 +136,8 @@ fun RichTooltipSample() {
         },
         state = tooltipState
     ) {
-        IconButton(
-            onClick = { /* Icon button's click event */ }
-        ) {
-            Icon(
-                imageVector = Icons.Filled.Info,
-                contentDescription = "Localized Description"
-            )
+        IconButton(onClick = { /* Icon button's click event */ }) {
+            Icon(imageVector = Icons.Filled.Info, contentDescription = "Localized Description")
         }
     }
 }
@@ -193,36 +148,27 @@ fun RichTooltipSample() {
 fun RichTooltipWithManualInvocationSample() {
     val tooltipState = rememberTooltipState(isPersistent = true)
     val scope = rememberCoroutineScope()
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
         TooltipBox(
-            positionProvider = TooltipDefaults.rememberRichTooltipPositionProvider(),
+            positionProvider = TooltipDefaults.rememberTooltipPositionProvider(),
             tooltip = {
                 RichTooltip(
                     title = { Text(richTooltipSubheadText) },
                     action = {
-                        TextButton(
-                            onClick = {
-                                scope.launch {
-                                    tooltipState.dismiss()
-                                }
-                            }
-                        ) { Text(richTooltipActionText) }
+                        TextButton(onClick = { scope.launch { tooltipState.dismiss() } }) {
+                            Text(richTooltipActionText)
+                        }
                     }
-                ) { Text(richTooltipText) }
+                ) {
+                    Text(richTooltipText)
+                }
             },
             state = tooltipState
         ) {
-            Icon(
-                imageVector = Icons.Filled.Info,
-                contentDescription = "Localized Description"
-            )
+            Icon(imageVector = Icons.Filled.Info, contentDescription = "Localized Description")
         }
         Spacer(Modifier.requiredHeight(30.dp))
-        OutlinedButton(
-            onClick = { scope.launch { tooltipState.show() } }
-        ) {
+        OutlinedButton(onClick = { scope.launch { tooltipState.show() } }) {
             Text("Display tooltip")
         }
     }
@@ -235,29 +181,24 @@ fun RichTooltipWithCaretSample() {
     val tooltipState = rememberTooltipState(isPersistent = true)
     val scope = rememberCoroutineScope()
     TooltipBox(
-        positionProvider = TooltipDefaults.rememberRichTooltipPositionProvider(),
+        positionProvider = TooltipDefaults.rememberTooltipPositionProvider(),
         tooltip = {
             RichTooltip(
                 title = { Text(richTooltipSubheadText) },
                 action = {
-                    TextButton(
-                        onClick = { scope.launch { tooltipState.dismiss() } }
-                    ) { Text(richTooltipActionText) }
+                    TextButton(onClick = { scope.launch { tooltipState.dismiss() } }) {
+                        Text(richTooltipActionText)
+                    }
                 },
-                caretProperties = TooltipDefaults.caretProperties
+                caretSize = TooltipDefaults.caretSize
             ) {
                 Text(richTooltipText)
             }
         },
         state = tooltipState
     ) {
-        IconButton(
-            onClick = { /* Icon button's click event */ }
-        ) {
-            Icon(
-                imageVector = Icons.Filled.Info,
-                contentDescription = "Localized Description"
-            )
+        IconButton(onClick = { /* Icon button's click event */ }) {
+            Icon(imageVector = Icons.Filled.Info, contentDescription = "Localized Description")
         }
     }
 }
@@ -269,29 +210,24 @@ fun RichTooltipWithCustomCaretSample() {
     val tooltipState = rememberTooltipState(isPersistent = true)
     val scope = rememberCoroutineScope()
     TooltipBox(
-        positionProvider = TooltipDefaults.rememberRichTooltipPositionProvider(),
+        positionProvider = TooltipDefaults.rememberTooltipPositionProvider(),
         tooltip = {
             RichTooltip(
                 title = { Text(richTooltipSubheadText) },
                 action = {
-                    TextButton(
-                        onClick = { scope.launch { tooltipState.dismiss() } }
-                    ) { Text(richTooltipActionText) }
+                    TextButton(onClick = { scope.launch { tooltipState.dismiss() } }) {
+                        Text(richTooltipActionText)
+                    }
                 },
-                caretProperties = CaretProperties(16.dp, 32.dp)
+                caretSize = DpSize(32.dp, 16.dp)
             ) {
                 Text(richTooltipText)
             }
         },
         state = tooltipState
     ) {
-        IconButton(
-            onClick = { /* Icon button's click event */ }
-        ) {
-            Icon(
-                imageVector = Icons.Filled.Info,
-                contentDescription = "Localized Description"
-            )
+        IconButton(onClick = { /* Icon button's click event */ }) {
+            Icon(imageVector = Icons.Filled.Info, contentDescription = "Localized Description")
         }
     }
 }

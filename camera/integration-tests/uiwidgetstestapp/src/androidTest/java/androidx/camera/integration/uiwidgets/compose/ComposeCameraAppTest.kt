@@ -30,6 +30,7 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.performClick
 import androidx.test.core.app.ActivityScenario
 import androidx.test.filters.LargeTest
+import androidx.test.filters.SdkSuppress
 import androidx.test.rule.GrantPermissionRule
 import androidx.testutils.RepeatRule
 import com.google.common.truth.Truth
@@ -46,18 +47,13 @@ class ComposeCameraAppTest {
     // Provide permissions to app via ComposeCameraActivity
     @get:Rule
     val permissionRule: GrantPermissionRule =
-        GrantPermissionRule.grant(
-            *ComposeCameraActivity.REQUIRED_PERMISSIONS
-        )
+        GrantPermissionRule.grant(*ComposeCameraActivity.REQUIRED_PERMISSIONS)
 
-    @get: Rule
-    val androidComposeTestRule = createAndroidComposeRule<ComposeCameraActivity>()
+    @get:Rule val androidComposeTestRule = createAndroidComposeRule<ComposeCameraActivity>()
 
-    @get:Rule
-    val labTest: LabTestRule = LabTestRule()
+    @get:Rule val labTest: LabTestRule = LabTestRule()
 
-    @get: Rule
-    val repeatRule = RepeatRule()
+    @get:Rule val repeatRule = RepeatRule()
 
     @Before
     fun setup() {
@@ -74,6 +70,7 @@ class ComposeCameraAppTest {
 
     // Activity launch will render ImageCaptureScreen
     // Ensure that ImageCapture screen's PreviewView is streaming properly
+    @SdkSuppress(maxSdkVersion = 33) // b/360867144: Module crashes on API34
     @Test
     @RepeatRule.Repeat(times = 10)
     fun testPreviewViewStreamStateOnActivityLaunch() {
@@ -89,19 +86,23 @@ class ComposeCameraAppTest {
     @Test
     @LabTestRule.LabTestOnly
     @RepeatRule.Repeat(times = 10)
+    @SdkSuppress(maxSdkVersion = 33) // b/360867144: Module crashes on API34
     fun testPreviewViewStreamStateOnNavigation() {
 
         // Get VideoCapture Navigation Tab (Node)
-        val node = androidComposeTestRule.onNode(
-            SemanticsMatcher.expectValue(
-                SemanticsProperties.Role, Role.Tab,
-            ).and(
+        val node =
+            androidComposeTestRule.onNode(
                 SemanticsMatcher.expectValue(
-                    SemanticsProperties.ContentDescription,
-                    listOf("VideoCapture")
-                )
+                        SemanticsProperties.Role,
+                        Role.Tab,
+                    )
+                    .and(
+                        SemanticsMatcher.expectValue(
+                            SemanticsProperties.ContentDescription,
+                            listOf("VideoCapture")
+                        )
+                    )
             )
-        )
 
         // Ensure that Tab is selected after we click on it
         node.performClick().assertIsSelected()
@@ -120,21 +121,22 @@ class ComposeCameraAppTest {
         expectedScreen: ComposeCameraScreen,
         expectedState: PreviewView.StreamState,
         scenario: ActivityScenario<ComposeCameraActivity>,
-    ) = runBlocking<Unit> {
-        lateinit var result: Deferred<Boolean>
+    ) =
+        runBlocking<Unit> {
+            lateinit var result: Deferred<Boolean>
 
-        scenario.onActivity { activity ->
-            // Make async Coroutine to wait the result, not block the test thread.
-            result = async {
-                activity.waitForStreamState(
-                    expectedScreen = expectedScreen,
-                    expectedState = expectedState
-                )
+            scenario.onActivity { activity ->
+                // Make async Coroutine to wait the result, not block the test thread.
+                result = async {
+                    activity.waitForStreamState(
+                        expectedScreen = expectedScreen,
+                        expectedState = expectedState
+                    )
+                }
             }
-        }
 
-        Truth.assertThat(result.await()).isTrue()
-    }
+            Truth.assertThat(result.await()).isTrue()
+        }
 
     companion object {
         private const val TAG = "ComposeCameraAppTest"

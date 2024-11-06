@@ -21,7 +21,7 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.Publish
+import androidx.build.LibraryType
 import androidx.build.AndroidXConfig
 
 plugins {
@@ -52,7 +52,7 @@ android {
 }
 
 dependencies {
-    api("androidx.annotation:annotation:1.3.0")
+    api("androidx.annotation:annotation:1.8.1")
     implementation("androidx.startup:startup-runtime:1.1.1")
     implementation(libs.kotlinStdlib)
     androidTestImplementation(libs.testExtJunit)
@@ -66,14 +66,17 @@ dependencies {
 
 androidx {
     name = "Tracing Perfetto"
-    publish = Publish.SNAPSHOT_AND_RELEASE
+    type = LibraryType.PUBLISHED_LIBRARY
     inceptionYear = "2022"
     description = "AndroidX Tracing: Perfetto SDK"
-    metalavaK2UastEnabled = true
+    legacyDisableKotlinStrictApiMode = true
+    deviceTests {
+        enableAlsoRunningOnPhysicalDevices = true
+    }
 }
 
 android {
-    buildTypes.all {
+    buildTypes.configureEach {
         consumerProguardFiles "proguard-rules.pro"
     }
     namespace "androidx.tracing.perfetto"

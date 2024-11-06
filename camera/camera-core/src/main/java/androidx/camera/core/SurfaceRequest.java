@@ -32,7 +32,6 @@ import androidx.annotation.GuardedBy;
 import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.camera.core.impl.CameraInternal;
 import androidx.camera.core.impl.DeferrableSurface;
@@ -85,7 +84,6 @@ import java.util.concurrent.atomic.AtomicReference;
  *
  * <img src="/images/reference/androidx/camera/camera-core/surface_request_work_flow.svg"/>
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public final class SurfaceRequest {
 
     /**
@@ -106,6 +104,7 @@ public final class SurfaceRequest {
 
     private final Range<Integer> mExpectedFrameRate;
     private final CameraInternal mCamera;
+    private final boolean mIsPrimary;
 
     // For the camera to retrieve the surface from the user
     @SuppressWarnings("WeakerAccess") /*synthetic accessor */
@@ -159,9 +158,28 @@ public final class SurfaceRequest {
             @NonNull DynamicRange dynamicRange,
             @NonNull Range<Integer> expectedFrameRate,
             @NonNull Runnable onInvalidated) {
+        this(resolution, camera, true, dynamicRange,
+                expectedFrameRate, onInvalidated);
+    }
+
+    /**
+     * Creates a new surface request with the given resolution, {@link Camera}, dynamic range, and
+     * expected frame rate and whether it's primary or secondary camera.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public SurfaceRequest(
+            @NonNull Size resolution,
+            @NonNull CameraInternal camera,
+            boolean isPrimary,
+            @NonNull DynamicRange dynamicRange,
+            @NonNull Range<Integer> expectedFrameRate,
+            @NonNull Runnable onInvalidated) {
         super();
         mResolution = resolution;
         mCamera = camera;
+        mIsPrimary = isPrimary;
+        Preconditions.checkArgument(dynamicRange.isFullySpecified(),
+                "SurfaceRequest's DynamicRange must always be fully specified.");
         mDynamicRange = dynamicRange;
         mExpectedFrameRate = expectedFrameRate;
 
@@ -333,6 +351,12 @@ public final class SurfaceRequest {
      * {@link android.graphics.ImageFormat} that can support ten bits of dynamic range, such as
      * {@link android.graphics.ImageFormat#PRIVATE} or
      * {@link android.graphics.ImageFormat#YCBCR_P010}.
+     *
+     * <p>The dynamic range returned here will always be fully specified. That is, it will never
+     * have an {@link DynamicRange#getEncoding() encoding} of
+     * {@link DynamicRange#ENCODING_UNSPECIFIED} or {@link DynamicRange#ENCODING_HDR_UNSPECIFIED}
+     * and will never have {@link DynamicRange#getBitDepth() bit depth} of
+     * {@link DynamicRange#BIT_DEPTH_UNSPECIFIED}.
      */
     @NonNull
     public DynamicRange getDynamicRange() {
@@ -372,6 +396,15 @@ public final class SurfaceRequest {
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public CameraInternal getCamera() {
         return mCamera;
+    }
+
+    /**
+     * Returns whether the {@link Camera} is primary or secondary in dual camera case.
+     * The value is always true for single camera case.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public boolean isPrimary() {
+        return mIsPrimary;
     }
 
     /**

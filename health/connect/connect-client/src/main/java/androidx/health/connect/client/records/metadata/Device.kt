@@ -54,6 +54,10 @@ public class Device(
         return result
     }
 
+    override fun toString(): String {
+        return "Device(manufacturer=$manufacturer, model=$model, type=$type)"
+    }
+
     companion object {
         const val TYPE_UNKNOWN = 0
         const val TYPE_WATCH = 1
@@ -66,9 +70,7 @@ public class Device(
         const val TYPE_SMART_DISPLAY = 8
     }
 
-    /**
-     * List of supported device types on Health Platform.
-     */
+    /** List of supported device types on Health Platform. */
     @Retention(AnnotationRetention.SOURCE)
     @IntDef(
         value =

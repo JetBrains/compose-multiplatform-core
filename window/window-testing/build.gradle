@@ -31,9 +31,6 @@ plugins {
 }
 
 android {
-    defaultConfig {
-        multiDexEnabled = true
-    }
     namespace "androidx.window.testing"
 }
 
@@ -42,14 +39,13 @@ dependencies {
     api(project(":window:window"))
     api(libs.junit)
     implementation("androidx.core:core:1.8.0")
-    implementation("androidx.annotation:annotation:1.7.0")
+    implementation("androidx.annotation:annotation:1.8.1")
 
     androidTestImplementation(libs.testCore)
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.testRunner)
     androidTestImplementation(libs.testRules)
     androidTestImplementation(libs.kotlinCoroutinesTest)
-    androidTestImplementation(libs.multidex)
     androidTestImplementation(libs.truth)
 
     testImplementation(libs.robolectric)
@@ -67,5 +63,5 @@ androidx {
     type = LibraryType.PUBLISHED_TEST_LIBRARY
     inceptionYear = "2021"
     description = "WindowManager Test Library"
-    metalavaK2UastEnabled = true
+    legacyDisableKotlinStrictApiMode = true
 }

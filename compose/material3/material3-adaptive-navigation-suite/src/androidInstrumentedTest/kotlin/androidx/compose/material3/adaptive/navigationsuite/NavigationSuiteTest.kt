@@ -28,32 +28,22 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-@OptIn(ExperimentalMaterial3AdaptiveNavigationSuiteApi::class)
 @SmallTest
 @RunWith(AndroidJUnit4::class)
 class NavigationSuiteTest {
-    @get:Rule
-    val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule()
 
     @Test
     fun navigationLayoutTypeTest_None() {
         val layoutType = NavigationSuiteType.None
 
-        rule.setContent {
-            SampleNavigationSuite(layoutType = layoutType)
-        }
+        rule.setContent { SampleNavigationSuite(layoutType = layoutType) }
 
         rule.onNodeWithTag("NavigationSuite").assertIsNotDisplayed()
     }
 }
 
-@OptIn(ExperimentalMaterial3AdaptiveNavigationSuiteApi::class)
 @Composable
-private fun SampleNavigationSuite(
-    layoutType: NavigationSuiteType
-) {
-    NavigationSuite(
-        modifier = Modifier.testTag("NavigationSuite"),
-        layoutType = layoutType
-    ) {}
+private fun SampleNavigationSuite(layoutType: NavigationSuiteType) {
+    NavigationSuite(modifier = Modifier.testTag("NavigationSuite"), layoutType = layoutType) {}
 }

@@ -16,8 +16,11 @@
 
 package androidx.compose.foundation.text.input.internal
 
+import android.os.CancellationSignal
 import android.view.KeyEvent
+import android.view.inputmethod.HandwritingGesture
 import android.view.inputmethod.InputConnection
+import android.view.inputmethod.PreviewableHandwritingGesture
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.content.TransferableContent
 import androidx.compose.foundation.text.input.TextFieldCharSequence
@@ -30,7 +33,7 @@ import androidx.compose.ui.text.input.TextFieldValue
  * [StatelessInputConnection] from [TextFieldState] for testability.
  */
 @OptIn(ExperimentalFoundationApi::class)
-internal interface TextInputSession {
+internal interface TextInputSession : ImeEditCommandScope {
 
     /**
      * The current [TextFieldValue] in this input session. This value is typically supplied by a
@@ -38,30 +41,24 @@ internal interface TextInputSession {
      */
     val text: TextFieldCharSequence
 
-    /**
-     * Callback to execute for InputConnection to communicate the changes requested by the IME.
-     *
-     * @param block Lambda scoped to an EditingBuffer to apply changes direct onto a buffer.
-     */
-    fun requestEdit(block: EditingBuffer.() -> Unit)
-
-    /**
-     * Delegates IME requested KeyEvents.
-     */
+    /** Delegates IME requested KeyEvents. */
     fun sendKeyEvent(keyEvent: KeyEvent)
 
-    /**
-     * Callback to run when IME sends an action via [InputConnection.performEditorAction]
-     */
+    /** Callback to run when IME sends an action via [InputConnection.performEditorAction] */
     fun onImeAction(imeAction: ImeAction)
 
-    /**
-     * Callback to run when IME sends a content via [InputConnection.commitContent]
-     */
+    /** Callback to run when IME sends a content via [InputConnection.commitContent] */
     fun onCommitContent(transferableContent: TransferableContent): Boolean
 
-    /**
-     * Called from [InputConnection.requestCursorUpdates].
-     */
+    /** Called from [InputConnection.requestCursorUpdates]. */
     fun requestCursorUpdates(cursorUpdateMode: Int)
+
+    /** Called from [InputConnection.performHandwritingGesture]. */
+    fun performHandwritingGesture(gesture: HandwritingGesture): Int
+
+    /** Called from [InputConnection.previewHandwritingGesture]. */
+    fun previewHandwritingGesture(
+        gesture: PreviewableHandwritingGesture,
+        cancellationSignal: CancellationSignal?
+    ): Boolean
 }

@@ -15,20 +15,19 @@
  */
 
 package androidx.room.solver.shortcut.binderprovider
+
 import androidx.room.compiler.processing.XRawType
 import androidx.room.compiler.processing.XType
+import androidx.room.ext.KotlinTypeNames
 import androidx.room.processor.Context
 import androidx.room.solver.RxType
-import androidx.room.solver.shortcut.binder.CallableDeleteOrUpdateMethodBinder.Companion.createDeleteOrUpdateBinder
 import androidx.room.solver.shortcut.binder.DeleteOrUpdateMethodBinder
+import androidx.room.solver.shortcut.binder.LambdaDeleteOrUpdateMethodBinder
 
-/**
- * Provider for Rx Callable binders.
- */
-open class RxCallableDeleteOrUpdateMethodBinderProvider internal constructor(
-    val context: Context,
-    private val rxType: RxType
-) : DeleteOrUpdateMethodBinderProvider {
+/** Provider for Rx Callable binders. */
+open class RxCallableDeleteOrUpdateMethodBinderProvider
+internal constructor(val context: Context, private val rxType: RxType) :
+    DeleteOrUpdateMethodBinderProvider {
 
     /**
      * [Single] and [Maybe] are generics but [Completable] is not so each implementation of this
@@ -46,57 +45,52 @@ open class RxCallableDeleteOrUpdateMethodBinderProvider internal constructor(
     override fun provide(declared: XType): DeleteOrUpdateMethodBinder {
         val typeArg = extractTypeArg(declared)
         val adapter = context.typeAdapterStore.findDeleteOrUpdateAdapter(typeArg)
-        return createDeleteOrUpdateBinder(typeArg, adapter) { callableImpl, _ ->
-            addStatement("return %T.fromCallable(%L)", rxType.className, callableImpl)
-        }
+        return LambdaDeleteOrUpdateMethodBinder(
+            typeArg = typeArg,
+            functionName = rxType.factoryMethodName,
+            adapter = adapter
+        )
     }
 
     companion object {
-        fun getAll(context: Context) = listOf(
-            RxSingleOrMaybeDeleteOrUpdateMethodBinderProvider(context, RxType.RX2_SINGLE),
-            RxSingleOrMaybeDeleteOrUpdateMethodBinderProvider(context, RxType.RX2_MAYBE),
-            RxCompletableDeleteOrUpdateMethodBinderProvider(context, RxType.RX2_COMPLETABLE),
-            RxSingleOrMaybeDeleteOrUpdateMethodBinderProvider(context, RxType.RX3_SINGLE),
-            RxSingleOrMaybeDeleteOrUpdateMethodBinderProvider(context, RxType.RX3_MAYBE),
-            RxCompletableDeleteOrUpdateMethodBinderProvider(context, RxType.RX3_COMPLETABLE)
-        )
+        fun getAll(context: Context) =
+            listOf(
+                RxSingleOrMaybeDeleteOrUpdateMethodBinderProvider(context, RxType.RX2_SINGLE),
+                RxSingleOrMaybeDeleteOrUpdateMethodBinderProvider(context, RxType.RX2_MAYBE),
+                RxCompletableDeleteOrUpdateMethodBinderProvider(context, RxType.RX2_COMPLETABLE),
+                RxSingleOrMaybeDeleteOrUpdateMethodBinderProvider(context, RxType.RX3_SINGLE),
+                RxSingleOrMaybeDeleteOrUpdateMethodBinderProvider(context, RxType.RX3_MAYBE),
+                RxCompletableDeleteOrUpdateMethodBinderProvider(context, RxType.RX3_COMPLETABLE)
+            )
     }
 }
 
-private class RxCompletableDeleteOrUpdateMethodBinderProvider(
-    context: Context,
-    rxType: RxType
-) : RxCallableDeleteOrUpdateMethodBinderProvider(context, rxType) {
+private class RxCompletableDeleteOrUpdateMethodBinderProvider(context: Context, rxType: RxType) :
+    RxCallableDeleteOrUpdateMethodBinderProvider(context, rxType) {
 
     private val completableType: XRawType? by lazy {
         context.processingEnv.findType(rxType.className.canonicalName)?.rawType
     }
 
     /**
-     * Since Completable is not a generic, the supported return type should be Void (nullable).
-     * Like this, the generated Callable.call method will return Void.
+     * Since Completable has no type argument, the supported return type is Unit (non-nullable)
+     * since the 'createCompletable" factory method take a Kotlin lambda.
      */
     override fun extractTypeArg(declared: XType): XType =
-        context.COMMON_TYPES.VOID.makeNullable()
+        context.processingEnv.requireType(KotlinTypeNames.UNIT)
 
     override fun matches(declared: XType): Boolean = isCompletable(declared)
 
     private fun isCompletable(declared: XType): Boolean {
-        if (completableType == null) {
-            return false
-        }
-        return declared.rawType.isAssignableFrom(completableType!!)
+        val completableType = this.completableType ?: return false
+        return declared.rawType.isAssignableFrom(completableType)
     }
 }
 
-private class RxSingleOrMaybeDeleteOrUpdateMethodBinderProvider(
-    context: Context,
-    rxType: RxType
-) : RxCallableDeleteOrUpdateMethodBinderProvider(context, rxType) {
+private class RxSingleOrMaybeDeleteOrUpdateMethodBinderProvider(context: Context, rxType: RxType) :
+    RxCallableDeleteOrUpdateMethodBinderProvider(context, rxType) {
 
-    /**
-     * Since Maybe can have null values, the Callable returned must allow for null values.
-     */
+    /** Since Maybe can have null values, the lambda returned must allow for null values. */
     override fun extractTypeArg(declared: XType): XType =
         declared.typeArguments.first().makeNullable()
 }

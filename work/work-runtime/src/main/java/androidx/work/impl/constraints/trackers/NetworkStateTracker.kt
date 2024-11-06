@@ -22,6 +22,10 @@ import android.net.ConnectivityManager
 import android.net.ConnectivityManager.NetworkCallback
 import android.net.Network
 import android.net.NetworkCapabilities
+import android.net.NetworkCapabilities.NET_CAPABILITY_INTERNET
+import android.net.NetworkCapabilities.NET_CAPABILITY_NOT_METERED
+import android.net.NetworkCapabilities.NET_CAPABILITY_NOT_ROAMING
+import android.net.NetworkCapabilities.NET_CAPABILITY_VALIDATED
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
@@ -38,17 +42,14 @@ import androidx.work.impl.utils.unregisterNetworkCallbackCompat
 /**
  * A [ConstraintTracker] for monitoring network state.
  *
- *
  * For API 24 and up: Network state is tracked using a registered [NetworkCallback] with
  * [ConnectivityManager.registerDefaultNetworkCallback], added in API 24.
  *
+ * For API 23 and below: Network state is tracked using a [android.content.BroadcastReceiver]. Much
+ * less efficient than tracking with [NetworkCallback]s and [ConnectivityManager].
  *
- * For API 23 and below: Network state is tracked using a [android.content.BroadcastReceiver].
- * Much less efficient than tracking with [NetworkCallback]s and [ConnectivityManager].
- *
- *
- * Based on [android.app.job.JobScheduler]'s ConnectivityController on API 26.
- * {@see https://android.googlesource.com/platform/frameworks/base/+/oreo-release/services/core/java/com/android/server/job/controllers/ConnectivityController.java}
+ * Based on [android.app.job.JobScheduler]'s ConnectivityController on API 26. {@see
+ * https://android.googlesource.com/platform/frameworks/base/+/oreo-release/services/core/java/com/android/server/job/controllers/ConnectivityController.java}
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 fun NetworkStateTracker(
@@ -66,17 +67,20 @@ fun NetworkStateTracker(
 private val TAG = Logger.tagWithPrefix("NetworkStateTracker")
 
 internal val ConnectivityManager.isActiveNetworkValidated: Boolean
-    get() = if (Build.VERSION.SDK_INT < 23) {
-        false // NET_CAPABILITY_VALIDATED not available until API 23. Used on API 26+.
-    } else try {
-        val network = getActiveNetworkCompat()
-        val capabilities = getNetworkCapabilitiesCompat(network)
-        (capabilities?.hasCapabilityCompat(NetworkCapabilities.NET_CAPABILITY_VALIDATED)) ?: false
-    } catch (exception: SecurityException) {
-        // b/163342798
-        Logger.get().error(TAG, "Unable to validate active network", exception)
-        false
-    }
+    get() =
+        if (Build.VERSION.SDK_INT < 23) {
+            false // NET_CAPABILITY_VALIDATED not available until API 23. Used on API 26+.
+        } else
+            try {
+                val network = getActiveNetworkCompat()
+                val capabilities = getNetworkCapabilitiesCompat(network)
+                (capabilities?.hasCapabilityCompat(NetworkCapabilities.NET_CAPABILITY_VALIDATED))
+                    ?: false
+            } catch (exception: SecurityException) {
+                // b/163342798
+                Logger.get().error(TAG, "Unable to validate active network", exception)
+                false
+            }
 
 @Suppress("DEPRECATION")
 internal val ConnectivityManager.activeNetworkState: NetworkState
@@ -89,6 +93,16 @@ internal val ConnectivityManager.activeNetworkState: NetworkState
         val isNotRoaming = info != null && !info.isRoaming
         return NetworkState(isConnected, isValidated, isMetered, isNotRoaming)
     } // b/163342798
+
+@get:RequiresApi(28)
+internal val NetworkCapabilities.activeNetworkState: NetworkState
+    get() {
+        val isConnected = hasCapability(NET_CAPABILITY_INTERNET)
+        val isValidated = hasCapability(NET_CAPABILITY_VALIDATED)
+        val isMetered = !hasCapability(NET_CAPABILITY_NOT_METERED) // API 28 only
+        val isNotRoaming = hasCapability(NET_CAPABILITY_NOT_ROAMING) // API 28 only
+        return NetworkState(isConnected, isValidated, isMetered, isNotRoaming)
+    }
 
 internal class NetworkStateTrackerPre24(context: Context, taskExecutor: TaskExecutor) :
     BroadcastReceiverConstraintTracker<NetworkState>(context, taskExecutor) {
@@ -120,17 +134,30 @@ internal class NetworkStateTracker24(context: Context, taskExecutor: TaskExecuto
 
     override fun readSystemState(): NetworkState = connectivityManager.activeNetworkState
 
-    private val networkCallback = object : NetworkCallback() {
-        override fun onCapabilitiesChanged(network: Network, capabilities: NetworkCapabilities) {
-            // The Network parameter is unreliable when a VPN app is running - use active network.
-            Logger.get().debug(TAG, "Network capabilities changed: $capabilities")
-            state = connectivityManager.activeNetworkState
+    private val networkCallback =
+        object : NetworkCallback() {
+            override fun onCapabilitiesChanged(
+                network: Network,
+                capabilities: NetworkCapabilities
+            ) {
+                // The Network parameter is unreliable when a VPN app is running - use active
+                // network.
+                Logger.get().debug(TAG, "Network capabilities changed: $capabilities")
+                state =
+                    if (Build.VERSION.SDK_INT >= 28) {
+                        // Get the active network state from the capabilities itself.
+                        // b/323479909
+                        capabilities.activeNetworkState
+                    } else {
+                        connectivityManager.activeNetworkState
+                    }
+            }
+
+            override fun onLost(network: Network) {
+                Logger.get().debug(TAG, "Network connection lost")
+                state = connectivityManager.activeNetworkState
+            }
         }
-        override fun onLost(network: Network) {
-            Logger.get().debug(TAG, "Network connection lost")
-            state = connectivityManager.activeNetworkState
-        }
-    }
 
     override fun startTracking() {
         try {

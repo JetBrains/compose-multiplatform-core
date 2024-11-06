@@ -20,6 +20,10 @@ import android.content.Context
 import androidx.startup.Initializer
 import androidx.window.WindowSdkExtensions
 import androidx.window.demo.R
+import androidx.window.demo.embedding.OverlayActivityBase.Companion.OVERLAY_FEATURE_MINIMUM_REQUIRED_VERSION
+import androidx.window.demo.embedding.OverlayActivityBase.OverlayMode.Companion.OVERLAY_MODE_CHANGE_WITH_ORIENTATION
+import androidx.window.demo.embedding.OverlayActivityBase.OverlayMode.Companion.OVERLAY_MODE_CUSTOMIZATION
+import androidx.window.demo.embedding.OverlayActivityBase.OverlayMode.Companion.OVERLAY_MODE_SIMPLE
 import androidx.window.demo.embedding.SplitAttributesToggleMainActivity.Companion.PREFIX_FULLSCREEN_TOGGLE
 import androidx.window.demo.embedding.SplitAttributesToggleMainActivity.Companion.PREFIX_PLACEHOLDER
 import androidx.window.demo.embedding.SplitAttributesToggleMainActivity.Companion.TAG_CUSTOMIZED_SPLIT_ATTRIBUTES
@@ -30,7 +34,13 @@ import androidx.window.demo.embedding.SplitDeviceStateActivityBase.Companion.TAG
 import androidx.window.demo.embedding.SplitDeviceStateActivityBase.Companion.TAG_SHOW_FULLSCREEN_IN_PORTRAIT
 import androidx.window.demo.embedding.SplitDeviceStateActivityBase.Companion.TAG_SHOW_HORIZONTAL_LAYOUT_IN_TABLETOP
 import androidx.window.demo.embedding.SplitDeviceStateActivityBase.Companion.TAG_SHOW_LAYOUT_FOLLOWING_HINGE_WHEN_SEPARATING
-import androidx.window.demo.embedding.SplitDeviceStateActivityBase.Companion.TAG_USE_DEFAULT_SPLIT_ATTRIBUTES
+import androidx.window.embedding.ActivityEmbeddingController
+import androidx.window.embedding.EmbeddingBounds
+import androidx.window.embedding.EmbeddingConfiguration
+import androidx.window.embedding.EmbeddingConfiguration.DimAreaBehavior.Companion.ON_TASK
+import androidx.window.embedding.OverlayAttributes
+import androidx.window.embedding.OverlayAttributesCalculatorParams
+import androidx.window.embedding.OverlayController
 import androidx.window.embedding.RuleController
 import androidx.window.embedding.SplitAttributes
 import androidx.window.embedding.SplitAttributes.LayoutDirection.Companion.BOTTOM_TO_TOP
@@ -47,21 +57,34 @@ import androidx.window.layout.FoldingFeature
 import androidx.window.layout.WindowLayoutInfo
 import androidx.window.layout.WindowMetrics
 
-/**
- * Initializes SplitController with a set of statically defined rules.
- */
+/** Initializes SplitController with a set of statically defined rules. */
 class ExampleWindowInitializer : Initializer<RuleController> {
 
-    private val mDemoActivityEmbeddingController = DemoActivityEmbeddingController.getInstance()
+    private val demoActivityEmbeddingController = DemoActivityEmbeddingController.getInstance()
+
+    private lateinit var splitController: SplitController
+
+    private val extensionVersion = WindowSdkExtensions.getInstance().extensionVersion
 
     override fun create(context: Context): RuleController {
-        SplitController.getInstance(context).apply {
-            if (WindowSdkExtensions.getInstance().extensionVersion >= 2) {
-                setSplitAttributesCalculator(::sampleSplitAttributesCalculator)
+        splitController = SplitController.getInstance(context)
+
+        if (extensionVersion >= 2) {
+            splitController.setSplitAttributesCalculator(::sampleSplitAttributesCalculator)
+        }
+        if (extensionVersion >= OVERLAY_FEATURE_MINIMUM_REQUIRED_VERSION) {
+            OverlayController.getInstance(context)
+                .setOverlayAttributesCalculator(::sampleOverlayAttributesCalculator)
+        }
+        ActivityEmbeddingController.getInstance(context).apply {
+            if (WindowSdkExtensions.getInstance().extensionVersion >= 5) {
+                setEmbeddingConfiguration(
+                    EmbeddingConfiguration.Builder().setDimAreaBehavior(ON_TASK).build()
+                )
             }
         }
         return RuleController.getInstance(context).apply {
-            if (SplitController.getInstance(context).splitSupportStatus == SPLIT_AVAILABLE) {
+            if (splitController.splitSupportStatus == SPLIT_AVAILABLE) {
                 setRules(RuleController.parseRules(context, R.xml.main_split_config))
             }
         }
@@ -77,11 +100,11 @@ class ExampleWindowInitializer : Initializer<RuleController> {
     ): SplitAttributes {
         val tag = params.splitRuleTag
         // The SplitAttributes to occupy the whole task bounds
-        val expandContainersAttrs = SplitAttributes.Builder()
-            .setSplitType(SPLIT_TYPE_EXPAND)
-            .build()
-        if (tag?.startsWith(PREFIX_FULLSCREEN_TOGGLE) == true &&
-            mDemoActivityEmbeddingController.shouldExpandSecondaryContainer.get()
+        val expandContainersAttrs =
+            SplitAttributes.Builder().setSplitType(SPLIT_TYPE_EXPAND).build()
+        if (
+            tag?.startsWith(PREFIX_FULLSCREEN_TOGGLE) == true &&
+                demoActivityEmbeddingController.shouldExpandSecondaryContainer.get()
         ) {
             return expandContainersAttrs
         }
@@ -92,23 +115,24 @@ class ExampleWindowInitializer : Initializer<RuleController> {
         val config = params.parentConfiguration
         val shouldReversed = tag?.contains(SUFFIX_REVERSED) ?: false
         // Make a copy of the default splitAttributes, but replace the animation background
-        // color to what is configured in the Demo app.
-        val defaultSplitAttributes = SplitAttributes.Builder()
-            .setLayoutDirection(params.defaultSplitAttributes.layoutDirection)
-            .setSplitType(params.defaultSplitAttributes.splitType)
-            .build()
-        when (tag
-            ?.removePrefix(PREFIX_FULLSCREEN_TOGGLE)
-            ?.removePrefix(PREFIX_PLACEHOLDER)
-            ?.removeSuffix(SUFFIX_REVERSED)
-        ) {
-            TAG_USE_DEFAULT_SPLIT_ATTRIBUTES, null -> {
-                return if (params.areDefaultConstraintsSatisfied) {
-                    defaultSplitAttributes
-                } else {
-                    expandContainersAttrs
+        // to what is configured in the Demo app.
+        val animationBackground = demoActivityEmbeddingController.animationBackground
+        val defaultSplitAttributes =
+            SplitAttributes.Builder()
+                .setLayoutDirection(params.defaultSplitAttributes.layoutDirection)
+                .setSplitType(params.defaultSplitAttributes.splitType)
+                .setAnimationBackground(animationBackground)
+                .apply {
+                    if (extensionVersion >= 6) {
+                        setDividerAttributes(params.defaultSplitAttributes.dividerAttributes)
+                    }
                 }
-            }
+                .build()
+        when (
+            tag?.removePrefix(PREFIX_FULLSCREEN_TOGGLE)
+                ?.removePrefix(PREFIX_PLACEHOLDER)
+                ?.removeSuffix(SUFFIX_REVERSED)
+        ) {
             TAG_SHOW_FULLSCREEN_IN_PORTRAIT -> {
                 if (isPortrait) {
                     return expandContainersAttrs
@@ -125,6 +149,7 @@ class ExampleWindowInitializer : Initializer<RuleController> {
                                 TOP_TO_BOTTOM
                             }
                         )
+                        .setAnimationBackground(animationBackground)
                         .build()
                 } else if (isPortrait) {
                     return expandContainersAttrs
@@ -141,6 +166,7 @@ class ExampleWindowInitializer : Initializer<RuleController> {
                                 TOP_TO_BOTTOM
                             }
                         )
+                        .setAnimationBackground(animationBackground)
                         .build()
                 }
             }
@@ -155,6 +181,7 @@ class ExampleWindowInitializer : Initializer<RuleController> {
                                 TOP_TO_BOTTOM
                             }
                         )
+                        .setAnimationBackground(animationBackground)
                         .build()
                 } else {
                     SplitAttributes.Builder()
@@ -166,6 +193,7 @@ class ExampleWindowInitializer : Initializer<RuleController> {
                                 LEFT_TO_RIGHT
                             }
                         )
+                        .setAnimationBackground(animationBackground)
                         .build()
                 }
             }
@@ -182,6 +210,7 @@ class ExampleWindowInitializer : Initializer<RuleController> {
                                 TOP_TO_BOTTOM
                             }
                         )
+                        .setAnimationBackground(animationBackground)
                         .build()
                 } else {
                     SplitAttributes.Builder()
@@ -193,6 +222,7 @@ class ExampleWindowInitializer : Initializer<RuleController> {
                                 LEFT_TO_RIGHT
                             }
                         )
+                        .setAnimationBackground(animationBackground)
                         .build()
                 }
             }
@@ -206,31 +236,65 @@ class ExampleWindowInitializer : Initializer<RuleController> {
                             } else {
                                 SplitAttributes.SplitType.ratio(0.3f)
                             }
-                        ).setLayoutDirection(
-                            if (
-                                foldingState.orientation
-                                    == FoldingFeature.Orientation.HORIZONTAL
-                            ) {
+                        )
+                        .setLayoutDirection(
+                            if (foldingState.orientation == FoldingFeature.Orientation.HORIZONTAL) {
                                 if (shouldReversed) BOTTOM_TO_TOP else TOP_TO_BOTTOM
                             } else {
                                 if (shouldReversed) RIGHT_TO_LEFT else LEFT_TO_RIGHT
                             }
                         )
+                        .setAnimationBackground(animationBackground)
                         .build()
                 }
             }
             TAG_CUSTOMIZED_SPLIT_ATTRIBUTES -> {
                 return SplitAttributes.Builder()
-                    .setSplitType(mDemoActivityEmbeddingController.customizedSplitType)
-                    .setLayoutDirection(mDemoActivityEmbeddingController.customizedLayoutDirection)
+                    .setSplitType(demoActivityEmbeddingController.customizedSplitType)
+                    .setLayoutDirection(demoActivityEmbeddingController.customizedLayoutDirection)
+                    .setAnimationBackground(animationBackground)
                     .build()
             }
         }
-        return defaultSplitAttributes
+
+        return if (params.areDefaultConstraintsSatisfied) {
+            defaultSplitAttributes
+        } else {
+            expandContainersAttrs
+        }
     }
 
-    private fun WindowMetrics.isPortrait(): Boolean =
-        bounds.height() > bounds.width()
+    private fun sampleOverlayAttributesCalculator(
+        params: OverlayAttributesCalculatorParams
+    ): OverlayAttributes =
+        when (val mode = demoActivityEmbeddingController.overlayMode.get()) {
+            // Put the overlay to the right
+            OVERLAY_MODE_SIMPLE.value -> params.defaultOverlayAttributes
+            // Update the overlay with orientation:
+            // - Put the overlay to the bottom if the device is in portrait
+            // - Otherwise, put the overlay to the right if the device is in landscape
+            OVERLAY_MODE_CHANGE_WITH_ORIENTATION.value ->
+                OverlayAttributes(
+                    if (params.parentWindowMetrics.isPortrait()) {
+                        EmbeddingBounds(
+                            EmbeddingBounds.Alignment.ALIGN_BOTTOM,
+                            width = EmbeddingBounds.Dimension.DIMENSION_EXPANDED,
+                            height = EmbeddingBounds.Dimension.ratio(0.4f)
+                        )
+                    } else {
+                        EmbeddingBounds(
+                            EmbeddingBounds.Alignment.ALIGN_RIGHT,
+                            width = EmbeddingBounds.Dimension.ratio(0.5f),
+                            height = EmbeddingBounds.Dimension.ratio(0.8f)
+                        )
+                    }
+                )
+            // Fully customized overlay presentation
+            OVERLAY_MODE_CUSTOMIZATION.value -> demoActivityEmbeddingController.overlayAttributes
+            else -> throw IllegalStateException("Unknown mode $mode")
+        }
+
+    private fun WindowMetrics.isPortrait(): Boolean = bounds.height() > bounds.width()
 
     private fun WindowLayoutInfo.isTabletop(): Boolean {
         val foldingFeature = getFoldingFeature()

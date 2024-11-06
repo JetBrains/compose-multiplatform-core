@@ -21,48 +21,40 @@ import android.content.Context;
 import android.content.ContextWrapper;
 import android.os.Build;
 
-import androidx.annotation.DoNotInline;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 
+import java.util.Objects;
+
 /**
  * Utility class for {@link Context} related operations.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public final class ContextUtil {
     /**
-     * Gets the application context and preserves the attribution tag.
+     * Gets the application context and preserves the attribution tag and device id.
      */
     @NonNull
     public static Context getApplicationContext(@NonNull Context context) {
-        Context applicationContext = context.getApplicationContext();
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            String attributeTag = Api30Impl.getAttributionTag(context);
-
-            if (attributeTag != null) {
-                return Api30Impl.createAttributionContext(applicationContext, attributeTag);
+        Context resultContext  = context.getApplicationContext();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            int deviceIdContext = Api34Impl.getDeviceId(context);
+            int deviceIdResultContext = Api34Impl.getDeviceId(resultContext);
+            if (deviceIdContext != deviceIdResultContext) {
+                resultContext = Api34Impl.createDeviceContext(resultContext, deviceIdContext);
             }
         }
-        return applicationContext;
-    }
-
-    /**
-     * Gets the base context and preserves the attribution tag.
-     */
-    @NonNull
-    public static Context getBaseContext(@NonNull ContextWrapper context) {
-        Context baseContext = context.getBaseContext();
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            String attributeTag = Api30Impl.getAttributionTag(context);
-
-            if (attributeTag != null) {
-                return Api30Impl.createAttributionContext(baseContext, attributeTag);
+            String attributeTagContext = Api30Impl.getAttributionTag(context);
+            String attributeTagResultContext = Api30Impl.getAttributionTag(resultContext);
+            if (!Objects.equals(attributeTagContext, attributeTagResultContext)) {
+                resultContext = Api30Impl.createAttributionContext(
+                        resultContext, attributeTagContext);
             }
         }
-
-        return baseContext;
+        return resultContext;
     }
+
 
     /**
      * Attempts to retrieve an {@link Application} object from the provided {@link Context}.
@@ -71,6 +63,12 @@ public final class ContextUtil {
      * return an {@code Application} object, this method will attempt to retrieve the
      * {@code Application} by unwrapping the context via {@link ContextWrapper#getBaseContext()} if
      * {@code Context.getApplicationContext()}} does not succeed.
+     *
+     * <p>Since the purpose of this method is to retrieve the {@link Application} instance, it is
+     * not necessary to keep the attribution and device id info and also invoking
+     * {@link Context#createAttributionContext(String)} or {@link Context#createDeviceContext(int)}
+     * will create a non-ContextWrapper instance which could fail to invoke
+     * {@link ContextWrapper#getBaseContext()}.
      */
     @Nullable
     public static Application getApplicationFromContext(@NonNull Context context) {
@@ -81,7 +79,7 @@ public final class ContextUtil {
                 application = (Application) appContext;
                 break;
             } else {
-                appContext = getBaseContext((ContextWrapper) appContext);
+                appContext = ((ContextWrapper) appContext).getBaseContext();
             }
         }
         return application;
@@ -99,17 +97,30 @@ public final class ContextUtil {
         private Api30Impl() {
         }
 
-        @DoNotInline
         @NonNull
         static Context createAttributionContext(@NonNull Context context,
                 @Nullable String attributeTag) {
             return context.createAttributionContext(attributeTag);
         }
 
-        @DoNotInline
         @Nullable
         static String getAttributionTag(@NonNull Context context) {
             return context.getAttributionTag();
+        }
+    }
+
+    @RequiresApi(34)
+    private static class Api34Impl {
+        private Api34Impl() {
+        }
+
+        @NonNull
+        static Context createDeviceContext(@NonNull Context context, int deviceId) {
+            return context.createDeviceContext(deviceId);
+        }
+
+        static int getDeviceId(@NonNull Context context) {
+            return context.getDeviceId();
         }
     }
 }

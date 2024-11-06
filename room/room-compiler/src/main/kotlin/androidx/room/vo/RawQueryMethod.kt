@@ -21,13 +21,14 @@ import androidx.room.compiler.processing.XMethodElement
 import androidx.room.compiler.processing.XType
 import androidx.room.compiler.processing.isKotlinUnit
 import androidx.room.ext.CommonTypeNames
+import androidx.room.ext.RoomTypeNames
 import androidx.room.ext.SupportDbTypeNames
 import androidx.room.ext.isNotVoid
 import androidx.room.solver.query.result.QueryResultBinder
 
 /**
- * A class that holds information about a method annotated with RawQuery.
- * It is self sufficient and must have all generics etc resolved once created.
+ * A class that holds information about a method annotated with RawQuery. It is self sufficient and
+ * must have all generics etc resolved once created.
  */
 data class RawQueryMethod(
     val element: XMethodElement,
@@ -37,15 +38,13 @@ data class RawQueryMethod(
     val runtimeQueryParam: RuntimeQueryParameter?,
     val queryResultBinder: QueryResultBinder
 ) {
-    val returnsValue by lazy {
-        returnType.isNotVoid() && !returnType.isKotlinUnit()
-    }
+    val returnsValue by lazy { returnType.isNotVoid() && !returnType.isKotlinUnit() }
 
-    data class RuntimeQueryParameter(
-        val paramName: String,
-        val typeName: XTypeName
-    ) {
+    data class RuntimeQueryParameter(val paramName: String, val typeName: XTypeName) {
         fun isString() = CommonTypeNames.STRING == typeName
+
         fun isSupportQuery() = SupportDbTypeNames.QUERY == typeName
+
+        fun isRawQuery() = RoomTypeNames.RAW_QUERY == typeName
     }
 }

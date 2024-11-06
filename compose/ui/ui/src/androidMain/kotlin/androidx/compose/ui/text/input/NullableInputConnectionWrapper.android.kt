@@ -18,59 +18,59 @@ package androidx.compose.ui.text.input
 
 import android.os.Build
 import android.os.Bundle
+import android.os.CancellationSignal
 import android.os.Handler
 import android.view.KeyEvent
 import android.view.inputmethod.CompletionInfo
 import android.view.inputmethod.CorrectionInfo
 import android.view.inputmethod.ExtractedText
 import android.view.inputmethod.ExtractedTextRequest
+import android.view.inputmethod.HandwritingGesture
 import android.view.inputmethod.InputConnection
 import android.view.inputmethod.InputContentInfo
+import android.view.inputmethod.PreviewableHandwritingGesture
 import androidx.annotation.RequiresApi
+import java.util.concurrent.Executor
+import java.util.function.IntConsumer
 
 /**
  * Creates a [NullableInputConnectionWrapper] – see the kdoc on that interface for more info.
  *
  * @param delegate The [InputConnection] that will receive all calls on this object until
- * `disposeDelegate` or `closeConnection` are called.
+ *   `disposeDelegate` or `closeConnection` are called.
  * @param onConnectionClosed A callback that will be invoked the first time `closeConnection` is
- * called. Will not be invoked by `disposeDelegate`, and will not be invoked if `disposeDelegate` is
- * called before `closeConnection`.
+ *   called. Will not be invoked by `disposeDelegate`, and will not be invoked if `disposeDelegate`
+ *   is called before `closeConnection`. Passed in [NullableInputConnectionWrapper] is the same
+ *   instance that is created here.
  */
 internal fun NullableInputConnectionWrapper(
     delegate: InputConnection,
-    onConnectionClosed: () -> Unit
-): NullableInputConnectionWrapper = when {
-    Build.VERSION.SDK_INT >= 25 -> NullableInputConnectionWrapperApi25(
-        delegate,
-        onConnectionClosed
-    )
-
-    Build.VERSION.SDK_INT >= 24 -> NullableInputConnectionWrapperApi24(
-        delegate,
-        onConnectionClosed
-    )
-
-    else -> NullableInputConnectionWrapperApi21(
-        delegate,
-        onConnectionClosed
-    )
-}
+    onConnectionClosed: (NullableInputConnectionWrapper) -> Unit
+): NullableInputConnectionWrapper =
+    when {
+        Build.VERSION.SDK_INT >= 34 ->
+            NullableInputConnectionWrapperApi34(delegate, onConnectionClosed)
+        Build.VERSION.SDK_INT >= 25 ->
+            NullableInputConnectionWrapperApi25(delegate, onConnectionClosed)
+        Build.VERSION.SDK_INT >= 24 ->
+            NullableInputConnectionWrapperApi24(delegate, onConnectionClosed)
+        else -> NullableInputConnectionWrapperApi21(delegate, onConnectionClosed)
+    }
 
 /**
  * An [InputConnection] that will delegate all calls to a delegate [InputConnection]. This is
  * similar to the platform `InputConnectionWrapper` class, but no-ops when the delegate is null
  * instead of throwing.
  *
- * This class allows the PlatformTextInput system to make stronger guarantees about the lifetime
- * of [InputConnection]s – see [PlatformTextInputMethodRequest.createInputConnection] for
- * documentation about what these guarantees are.
+ * This class allows the PlatformTextInput system to make stronger guarantees about the lifetime of
+ * [InputConnection]s – see [PlatformTextInputMethodRequest.createInputConnection] for documentation
+ * about what these guarantees are.
  *
  * This class has two responsibilities besides basic delegation:
- *  - Clear its reference to its delegate as eagerly as possible, so even if this instance is leaked
- *    by the system the underlying [InputConnection] is not.
- *  - Ensure that [InputConnection.closeConnection] is invoked on the delegate on every API level
- *    where it's available (24+), as soon as possible.
+ * - Clear its reference to its delegate as eagerly as possible, so even if this instance is leaked
+ *   by the system the underlying [InputConnection] is not.
+ * - Ensure that [InputConnection.closeConnection] is invoked on the delegate on every API level
+ *   where it's available (24+), as soon as possible.
  */
 internal sealed interface NullableInputConnectionWrapper : InputConnection {
     /**
@@ -83,7 +83,7 @@ internal sealed interface NullableInputConnectionWrapper : InputConnection {
 
 private open class NullableInputConnectionWrapperApi21(
     delegate: InputConnection,
-    private val onConnectionClosed: () -> Unit
+    private val onConnectionClosed: (NullableInputConnectionWrapper) -> Unit
 ) : NullableInputConnectionWrapper {
 
     protected var delegate: InputConnection? = delegate
@@ -99,7 +99,7 @@ private open class NullableInputConnectionWrapperApi21(
     final override fun closeConnection() {
         delegate?.let {
             disposeDelegate()
-            onConnectionClosed()
+            onConnectionClosed(this)
         }
     }
 
@@ -109,18 +109,17 @@ private open class NullableInputConnectionWrapperApi21(
     override fun getTextAfterCursor(p0: Int, p1: Int): CharSequence? =
         delegate?.getTextAfterCursor(p0, p1)
 
-    override fun getSelectedText(p0: Int): CharSequence = delegate?.getSelectedText(p0) ?: ""
+    override fun getSelectedText(p0: Int): CharSequence? = delegate?.getSelectedText(p0)
 
     override fun getCursorCapsMode(p0: Int): Int = delegate?.getCursorCapsMode(p0) ?: 0
 
-    override fun getExtractedText(p0: ExtractedTextRequest?, p1: Int): ExtractedText =
-        delegate?.getExtractedText(p0, p1) ?: ExtractedText()
+    override fun getExtractedText(p0: ExtractedTextRequest?, p1: Int): ExtractedText? =
+        delegate?.getExtractedText(p0, p1)
 
     override fun deleteSurroundingText(p0: Int, p1: Int): Boolean =
         delegate?.deleteSurroundingText(p0, p1) ?: false
 
-    override fun deleteSurroundingTextInCodePoints(p0: Int, p1: Int): Boolean =
-        false
+    override fun deleteSurroundingTextInCodePoints(p0: Int, p1: Int): Boolean = false
 
     override fun setComposingText(p0: CharSequence?, p1: Int): Boolean =
         delegate?.setComposingText(p0, p1) ?: false
@@ -167,19 +166,16 @@ private open class NullableInputConnectionWrapperApi21(
     override fun getHandler(): Handler? = null
 
     // Only supported on higher API level.
-    override fun commitContent(p0: InputContentInfo, p1: Int, p2: Bundle?): Boolean =
-        false
+    override fun commitContent(p0: InputContentInfo, p1: Int, p2: Bundle?): Boolean = false
 
-    /**
-     * Support method to invoke [InputConnection.closeConnection] on supported API levels.
-     */
+    /** Support method to invoke [InputConnection.closeConnection] on supported API levels. */
     protected open fun closeDelegate(delegate: InputConnection) {}
 }
 
 @RequiresApi(24)
 private open class NullableInputConnectionWrapperApi24(
     delegate: InputConnection,
-    onConnectionClosed: () -> Unit
+    onConnectionClosed: (NullableInputConnectionWrapper) -> Unit
 ) : NullableInputConnectionWrapperApi21(delegate, onConnectionClosed) {
 
     final override fun deleteSurroundingTextInCodePoints(p0: Int, p1: Int): Boolean =
@@ -195,9 +191,28 @@ private open class NullableInputConnectionWrapperApi24(
 @RequiresApi(25)
 private open class NullableInputConnectionWrapperApi25(
     delegate: InputConnection,
-    onConnectionClosed: () -> Unit
+    onConnectionClosed: (NullableInputConnectionWrapper) -> Unit
 ) : NullableInputConnectionWrapperApi24(delegate, onConnectionClosed) {
 
     final override fun commitContent(p0: InputContentInfo, p1: Int, p2: Bundle?): Boolean =
         delegate?.commitContent(p0, p1, p2) ?: false
+}
+
+@RequiresApi(34)
+private open class NullableInputConnectionWrapperApi34(
+    delegate: InputConnection,
+    onConnectionClosed: (NullableInputConnectionWrapper) -> Unit
+) : NullableInputConnectionWrapperApi25(delegate, onConnectionClosed) {
+    final override fun performHandwritingGesture(
+        gesture: HandwritingGesture,
+        executor: Executor?,
+        consumer: IntConsumer?
+    ) {
+        delegate?.performHandwritingGesture(gesture, executor, consumer)
+    }
+
+    final override fun previewHandwritingGesture(
+        gesture: PreviewableHandwritingGesture,
+        cancellationSignal: CancellationSignal?
+    ): Boolean = delegate?.previewHandwritingGesture(gesture, cancellationSignal) ?: false
 }

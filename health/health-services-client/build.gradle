@@ -26,20 +26,20 @@ import androidx.build.LibraryType
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("com.google.protobuf")
     id("org.jetbrains.kotlin.android")
     id("androidx.stableaidl")
 }
 
 dependencies {
+    api(libs.jspecify)
     api(libs.kotlinStdlib)
     implementation(libs.kotlinCoroutinesCore)
-    api("androidx.annotation:annotation:1.1.0")
+    api("androidx.annotation:annotation:1.8.1")
     implementation(libs.guavaListenableFuture)
     implementation(libs.guavaAndroid)
     implementation("androidx.core:core-ktx:1.7.0")
     implementation("androidx.concurrent:concurrent-futures-ktx:1.1.0")
-    implementation(libs.protobufLite)
+    implementation(project(":health:health-services-client-proto"))
 
     testImplementation(libs.junit)
     testImplementation(libs.kotlinReflect)
@@ -58,27 +58,14 @@ android {
     buildFeatures {
         aidl = true
     }
-    buildTypes.all {
+    buildTypes.configureEach {
+        consumerProguardFiles "proguard-rules.pro"
+
         stableAidl {
             version 1
         }
     }
     namespace "androidx.health.services.client"
-}
-
-protobuf {
-    protoc {
-        artifact = libs.protobufCompiler.get()
-    }
-    generateProtoTasks {
-        all().each { task ->
-                task.builtins {
-                    java {
-                        option 'lite'
-                    }
-                }
-        }
-    }
 }
 
 androidx {
@@ -87,5 +74,5 @@ androidx {
     mavenVersion = LibraryVersions.HEALTH_SERVICES_CLIENT
     inceptionYear = "2021"
     description = "This library helps developers create performant health applications in a platform agnostic way"
-    metalavaK2UastEnabled = true
+    legacyDisableKotlinStrictApiMode = true
 }

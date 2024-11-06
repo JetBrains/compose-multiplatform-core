@@ -19,7 +19,6 @@ package androidx.compose.material3.benchmark
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.adaptive.navigationsuite.ExperimentalMaterial3AdaptiveNavigationSuiteApi
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableIntState
@@ -36,10 +35,10 @@ import org.junit.Rule
 import org.junit.Test
 
 class NavigationSuiteScaffoldBenchmarkTest {
-    @get:Rule
-    val benchmarkRule = ComposeBenchmarkRule()
+    @get:Rule val benchmarkRule = ComposeBenchmarkRule()
 
     private val testCaseFactory = { NavigationSuiteScaffoldTestCase() }
+
     @Test
     fun firstPixel() {
         benchmarkRule.benchmarkFirstRenderUntilStable(testCaseFactory)
@@ -59,7 +58,6 @@ class NavigationSuiteScaffoldBenchmarkTest {
     }
 }
 
-@OptIn(ExperimentalMaterial3AdaptiveNavigationSuiteApi::class)
 internal class NavigationSuiteScaffoldTestCase : LayeredComposeTestCase(), ToggleableTestCase {
     private lateinit var selectedIndexState: MutableIntState
 
@@ -85,9 +83,7 @@ internal class NavigationSuiteScaffoldTestCase : LayeredComposeTestCase(), Toggl
 
     @Composable
     override fun ContentWrappers(content: @Composable () -> Unit) {
-        MaterialTheme {
-            content()
-        }
+        MaterialTheme { content() }
     }
 
     override fun toggleState() {

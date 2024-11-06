@@ -33,9 +33,7 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 import org.robolectric.shadows.StreamConfigurationMapBuilder
 
-/**
- * Unit tests for [StreamConfigurationMapCompat].
- */
+/** Unit tests for [StreamConfigurationMapCompat]. */
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
 @Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
@@ -54,11 +52,10 @@ class StreamConfigurationMapCompatTest {
 
     @Before
     fun setUp() {
-        val builder = StreamConfigurationMapBuilder.newBuilder().apply {
-            privateFormatOutputSizes.forEach { size ->
-                addOutputSize(FORMAT_PRIVATE, size)
+        val builder =
+            StreamConfigurationMapBuilder.newBuilder().apply {
+                privateFormatOutputSizes.forEach { size -> addOutputSize(FORMAT_PRIVATE, size) }
             }
-        }
         streamConfigurationMapCompat =
             StreamConfigurationMapCompat(
                 builder.build(),
@@ -68,16 +65,16 @@ class StreamConfigurationMapCompatTest {
 
     @Test
     fun getOutputSizes_withFormat_callGetOutputSizes() {
-        assertThat(
-            streamConfigurationMapCompat.getOutputSizes(FORMAT_PRIVATE)?.toList()
-        ).containsExactlyElementsIn(privateFormatOutputSizes)
+        assertThat(streamConfigurationMapCompat.getOutputSizes(FORMAT_PRIVATE)?.toList())
+            .containsExactlyElementsIn(privateFormatOutputSizes)
     }
 
     @Test
     fun getOutputSizes_withClass_callGetOutputSizes() {
         assertThat(
-            streamConfigurationMapCompat.getOutputSizes(SurfaceTexture::class.java)?.toList()
-        ).containsExactlyElementsIn(privateFormatOutputSizes)
+                streamConfigurationMapCompat.getOutputSizes(SurfaceTexture::class.java)?.toList()
+            )
+            .containsExactlyElementsIn(privateFormatOutputSizes)
     }
 
     @Test
@@ -96,11 +93,27 @@ class StreamConfigurationMapCompatTest {
     @Config(minSdk = 23)
     fun getHighResolutionOutputSizesTwice_whenReturnedArrayIsNull() {
         assumeTrue(
-            streamConfigurationMapCompat.getHighResolutionOutputSizes(
-                ImageFormat.JPEG
-            ) == null
+            streamConfigurationMapCompat.getHighResolutionOutputSizes(ImageFormat.JPEG) == null
         )
         assertThat(streamConfigurationMapCompat.getHighResolutionOutputSizes(ImageFormat.JPEG))
             .isNull()
+    }
+
+    @Test
+    fun getOutputFormats_notThrowingNullPointerException() {
+        val builder = StreamConfigurationMapBuilder.newBuilder()
+        val compat =
+            StreamConfigurationMapCompat(
+                builder.build(),
+                OutputSizesCorrector(FakeCameraMetadata(), builder.build())
+            )
+
+        // b/361590210: check the workaround for NullPointerException issue (on API 23+) of
+        // StreamConfigurationMap provided by Robolectric is applied.
+        if (Build.VERSION.SDK_INT >= 23) {
+            assertThat(compat.getOutputFormats()).isNull()
+        } else {
+            assertThat(compat.getOutputFormats()).isNotNull()
+        }
     }
 }

@@ -25,11 +25,10 @@ import static java.util.Objects.requireNonNull;
 
 import android.annotation.SuppressLint;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.car.app.Screen;
 import androidx.car.app.SurfaceCallback;
 import androidx.car.app.annotations.CarProtocol;
+import androidx.car.app.annotations.KeepFields;
 import androidx.car.app.annotations.RequiresCarApi;
 import androidx.car.app.model.Action;
 import androidx.car.app.model.ActionStrip;
@@ -50,7 +49,9 @@ import androidx.car.app.model.Row;
 import androidx.car.app.model.Template;
 import androidx.car.app.model.Toggle;
 import androidx.car.app.model.constraints.CarTextConstraints;
-import androidx.car.app.annotations.KeepFields;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Collections;
 import java.util.List;
@@ -77,38 +78,58 @@ import java.util.Objects;
  * </ul>
  *
  * <p>In order to use this template your car app <b>MUST</b> declare that it uses the {@code
- * androidx.car.app.NAVIGATION_TEMPLATES} permission in the manifest.
+ * androidx.car.app.NAVIGATION_TEMPLATES} permission in the manifest.</p>
+ *
+ *  <br>For instance, using the deprecated {@link PlaceListNavigationTemplate}, if the template was:
+ *
+ *  <pre>
+ *  <code>PlaceListNavigationTemplate template = new PlaceListNavigationTemplate.Builder()
+ *          .setItemList(itemListBuilder.build())
+ *          .setHeader(header)
+ *          .setActionStrip(actionStrip)
+ *          .setMapActionStrip(mapActionStrip)
+ *          .build();
+ * </code>
+ * </pre>
+ * Using the new {@link MapWithContentTemplate}, the template would be:
+ *  <pre>
+ *  <code>MapWithContentTemplate template = new MapWithContentTemplate.Builder()
+ *            .setContentTemplate(new ListTemplate.Builder()
+ *                   .setSingleList(itemListBuilder.build())
+ *                   .setHeader(header)
+ *                   .build())
+ *            .setActionStrip(actionStrip)
+ *            .setMapController(new MapController.Builder()
+ *                  .setMapActionStrip(mapActionStrip)
+ *                  .build())
+ *            .build();
+ * </code>
+ * </pre>
+ * @deprecated with API 7. Use the {@link MapWithContentTemplate} API instead.
  */
 @CarProtocol
 @KeepFields
+@Deprecated
 public final class PlaceListNavigationTemplate implements Template {
     private final boolean mIsLoading;
     /**
      * @deprecated Use the Header to set up the Title.
      */
     // TODO(b/225914724): remove after hosts switch over to setHeader().
-    @Nullable
     @Deprecated
-    private final CarText mTitle;
-    @Nullable
-    private final ItemList mItemList;
-    @Nullable
-    private final Header mHeader;
+    private final @Nullable CarText mTitle;
+    private final @Nullable ItemList mItemList;
+    private final @Nullable Header mHeader;
     /**
      * @deprecated Use the Header to set up the HeaderAction.
      */
     // TODO(b/225914724): remove after hosts switch over to setHeader().
-    @Nullable
     @Deprecated
-    private final Action mHeaderAction;
-    @Nullable
-    private final ActionStrip mActionStrip;
-    @Nullable
-    private final ActionStrip mMapActionStrip;
-    @Nullable
-    private final PanModeDelegate mPanModeDelegate;
-    @Nullable
-    private final OnContentRefreshDelegate mOnContentRefreshDelegate;
+    private final @Nullable Action mHeaderAction;
+    private final @Nullable ActionStrip mActionStrip;
+    private final @Nullable ActionStrip mMapActionStrip;
+    private final @Nullable PanModeDelegate mPanModeDelegate;
+    private final @Nullable OnContentRefreshDelegate mOnContentRefreshDelegate;
 
     /**
      * Returns the title of the template or {@code null} if not set.
@@ -117,9 +138,8 @@ public final class PlaceListNavigationTemplate implements Template {
      * @deprecated use {@link #getHeader()}
      */
     // TODO(b/225914724): remove after hosts switch over to getHeader()
-    @Nullable
     @Deprecated
-    public CarText getTitle() {
+    public @Nullable CarText getTitle() {
         return mTitle;
     }
 
@@ -128,9 +148,8 @@ public final class PlaceListNavigationTemplate implements Template {
      *
      * @see Builder#setHeader(Header)
      */
-    @Nullable
     @RequiresCarApi(5)
-    public Header getHeader() {
+    public @Nullable Header getHeader() {
         return mHeader;
     }
 
@@ -142,9 +161,8 @@ public final class PlaceListNavigationTemplate implements Template {
      * @deprecated use {@link #getHeader()}
      */
     // TODO(b/225914724): remove after hosts switch over to getHeader().
-    @Nullable
     @Deprecated
-    public Action getHeaderAction() {
+    public @Nullable Action getHeaderAction() {
         return mHeaderAction;
     }
 
@@ -153,8 +171,7 @@ public final class PlaceListNavigationTemplate implements Template {
      *
      * @see Builder#setActionStrip(ActionStrip)
      */
-    @Nullable
-    public ActionStrip getActionStrip() {
+    public @Nullable ActionStrip getActionStrip() {
         return mActionStrip;
     }
 
@@ -164,8 +181,7 @@ public final class PlaceListNavigationTemplate implements Template {
      * @see Builder#setMapActionStrip(ActionStrip)
      */
     @RequiresCarApi(4)
-    @Nullable
-    public ActionStrip getMapActionStrip() {
+    public @Nullable ActionStrip getMapActionStrip() {
         return mMapActionStrip;
     }
 
@@ -174,8 +190,7 @@ public final class PlaceListNavigationTemplate implements Template {
      * pan mode on this template, or {@code null} if a {@link PanModeListener} was not set.
      */
     @RequiresCarApi(4)
-    @Nullable
-    public PanModeDelegate getPanModeDelegate() {
+    public @Nullable PanModeDelegate getPanModeDelegate() {
         return mPanModeDelegate;
     }
 
@@ -194,8 +209,7 @@ public final class PlaceListNavigationTemplate implements Template {
      *
      * @see Builder#setItemList(ItemList)
      */
-    @Nullable
-    public ItemList getItemList() {
+    public @Nullable ItemList getItemList() {
         return mItemList;
     }
 
@@ -205,14 +219,12 @@ public final class PlaceListNavigationTemplate implements Template {
      *
      * @see PlaceListMapTemplate.Builder#setOnContentRefreshListener
      */
-    @Nullable
-    public OnContentRefreshDelegate getOnContentRefreshDelegate() {
+    public @Nullable OnContentRefreshDelegate getOnContentRefreshDelegate() {
         return mOnContentRefreshDelegate;
     }
 
-    @NonNull
     @Override
-    public String toString() {
+    public @NonNull String toString() {
         return "PlaceListNavigationTemplate";
     }
 
@@ -272,23 +284,15 @@ public final class PlaceListNavigationTemplate implements Template {
 
     /** A builder of {@link PlaceListNavigationTemplate}. */
     public static final class Builder {
-        @Nullable
-        CarText mTitle;
+        @Nullable CarText mTitle;
         boolean mIsLoading;
-        @Nullable
-        ItemList mItemList;
-        @Nullable
-        Header mHeader;
-        @Nullable
-        Action mHeaderAction;
-        @Nullable
-        ActionStrip mActionStrip;
-        @Nullable
-        ActionStrip mMapActionStrip;
-        @Nullable
-        PanModeDelegate mPanModeDelegate;
-        @Nullable
-        OnContentRefreshDelegate mOnContentRefreshDelegate;
+        @Nullable ItemList mItemList;
+        @Nullable Header mHeader;
+        @Nullable Action mHeaderAction;
+        @Nullable ActionStrip mActionStrip;
+        @Nullable ActionStrip mMapActionStrip;
+        @Nullable PanModeDelegate mPanModeDelegate;
+        @Nullable OnContentRefreshDelegate mOnContentRefreshDelegate;
 
         /**
          * Sets the title of the template.
@@ -302,9 +306,8 @@ public final class PlaceListNavigationTemplate implements Template {
          * @deprecated use {@link #setHeader(Header)}
          */
         // TODO(b/225914724): remove after hosts switch over to setHeader().
-        @NonNull
         @Deprecated
-        public Builder setTitle(@NonNull CharSequence title) {
+        public @NonNull Builder setTitle(@NonNull CharSequence title) {
             mTitle = CarText.create(requireNonNull(title));
             CarTextConstraints.TEXT_ONLY.validateOrThrow(mTitle);
             return this;
@@ -322,9 +325,8 @@ public final class PlaceListNavigationTemplate implements Template {
          * @deprecated use {@link #setHeader(Header)}
          */
         // TODO(b/225914724): remove after hosts switch over to setHeader().
-        @NonNull
         @Deprecated
-        public Builder setTitle(@NonNull CarText title) {
+        public @NonNull Builder setTitle(@NonNull CarText title) {
             mTitle = requireNonNull(title);
             CarTextConstraints.TEXT_ONLY.validateOrThrow(mTitle);
             return this;
@@ -339,8 +341,7 @@ public final class PlaceListNavigationTemplate implements Template {
          * host once the data is ready. If set to {@code false}, the UI shows the {@link ItemList}
          * contents added via {@link #setItemList}.
          */
-        @NonNull
-        public Builder setLoading(boolean isLoading) {
+        public @NonNull Builder setLoading(boolean isLoading) {
             mIsLoading = isLoading;
             return this;
         }
@@ -361,9 +362,8 @@ public final class PlaceListNavigationTemplate implements Template {
          * @deprecated use {@link #setHeader(Header)}
          */
         // TODO(b/225914724): remove after hosts switch over to setHeader().
-        @NonNull
         @Deprecated
-        public Builder setHeaderAction(@NonNull Action headerAction) {
+        public @NonNull Builder setHeaderAction(@NonNull Action headerAction) {
             ACTIONS_CONSTRAINTS_HEADER.validateOrThrow(
                     Collections.singletonList(requireNonNull(headerAction)));
             mHeaderAction = headerAction;
@@ -400,8 +400,7 @@ public final class PlaceListNavigationTemplate implements Template {
          * @throws NullPointerException     if {@code itemList} is {@code null}
          * @see androidx.car.app.constraints.ConstraintManager#getContentLimit(int)
          */
-        @NonNull
-        public Builder setItemList(@NonNull ItemList itemList) {
+        public @NonNull Builder setItemList(@NonNull ItemList itemList) {
             List<Item> items = requireNonNull(itemList).getItems();
             ROW_LIST_CONSTRAINTS_SIMPLE.validateOrThrow(itemList);
             ModelUtils.validateAllNonBrowsableRowsHaveDistance(items);
@@ -416,9 +415,8 @@ public final class PlaceListNavigationTemplate implements Template {
          *
          * @throws NullPointerException if {@code header} is null
          */
-        @NonNull
         @RequiresCarApi(5)
-        public Builder setHeader(@NonNull Header header) {
+        public @NonNull Builder setHeader(@NonNull Header header) {
             mHeader = requireNonNull(header);
             return this;
         }
@@ -444,8 +442,7 @@ public final class PlaceListNavigationTemplate implements Template {
          * @throws IllegalArgumentException if {@code actionStrip} does not meet the requirements
          * @throws NullPointerException     if {@code actionStrip} is {@code null}
          */
-        @NonNull
-        public Builder setActionStrip(@NonNull ActionStrip actionStrip) {
+        public @NonNull Builder setActionStrip(@NonNull ActionStrip actionStrip) {
             ACTIONS_CONSTRAINTS_NAVIGATION
                     .validateOrThrow(requireNonNull(actionStrip).getActions());
             mActionStrip = actionStrip;
@@ -473,8 +470,7 @@ public final class PlaceListNavigationTemplate implements Template {
          * @throws NullPointerException     if {@code actionStrip} is {@code null}
          */
         @RequiresCarApi(4)
-        @NonNull
-        public Builder setMapActionStrip(@NonNull ActionStrip actionStrip) {
+        public @NonNull Builder setMapActionStrip(@NonNull ActionStrip actionStrip) {
             ACTIONS_CONSTRAINTS_MAP.validateOrThrow(
                     requireNonNull(actionStrip).getActions());
             mMapActionStrip = actionStrip;
@@ -494,8 +490,7 @@ public final class PlaceListNavigationTemplate implements Template {
          */
         @SuppressLint({"MissingGetterMatchingBuilder", "ExecutorRegistration"})
         @RequiresCarApi(4)
-        @NonNull
-        public Builder setPanModeListener(@NonNull PanModeListener panModeListener) {
+        public @NonNull Builder setPanModeListener(@NonNull PanModeListener panModeListener) {
             requireNonNull(panModeListener);
             mPanModeDelegate = PanModeDelegateImpl.create(panModeListener);
             return this;
@@ -512,9 +507,8 @@ public final class PlaceListNavigationTemplate implements Template {
          *
          * @throws NullPointerException if {@code itemVisibilityChangedListener} is {@code null}
          */
-        @NonNull
         @SuppressLint({"MissingGetterMatchingBuilder", "ExecutorRegistration"})
-        public Builder setOnContentRefreshListener(
+        public @NonNull Builder setOnContentRefreshListener(
                 @NonNull OnContentRefreshListener onContentRefreshListener) {
             mOnContentRefreshDelegate =
                     OnContentRefreshDelegateImpl.create(onContentRefreshListener);
@@ -532,8 +526,7 @@ public final class PlaceListNavigationTemplate implements Template {
          * @throws IllegalArgumentException if the template is in a loading state but the list is
          *                                  set, or vice versa
          */
-        @NonNull
-        public PlaceListNavigationTemplate build() {
+        public @NonNull PlaceListNavigationTemplate build() {
             boolean hasList = mItemList != null;
             if (mIsLoading == hasList) {
                 throw new IllegalArgumentException(

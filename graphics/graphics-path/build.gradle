@@ -34,7 +34,7 @@ dependencies {
 
     implementation('androidx.core:core:1.12.0')
 
-    androidTestImplementation("androidx.annotation:annotation:1.7.0")
+    androidTestImplementation("androidx.annotation:annotation:1.8.1")
     androidTestImplementation("androidx.core:core-ktx:1.12.0")
     androidTestImplementation("androidx.test:core:1.5.0@aar")
     androidTestImplementation(libs.testExtJunit)
@@ -48,14 +48,12 @@ android {
     namespace "androidx.graphics.path"
 
     defaultConfig {
-        minSdkVersion 21 // Limited to 21+ due to native changes before that release
         externalNativeBuild {
             cmake {
                 cppFlags.addAll([
                     "-std=c++17",
                     "-Wno-unused-command-line-argument",
                     "-Wl,--hash-style=both", // Required to support API levels below 23
-                    "-fno-stack-protector",
                     "-fno-exceptions",
                     "-fno-unwind-tables",
                     "-fno-asynchronous-unwind-tables",
@@ -67,7 +65,6 @@ android {
                     "-fomit-frame-pointer",
                     "-ffunction-sections",
                     "-fdata-sections",
-                    "-fstack-protector",
                     "-Wl,--gc-sections",
                     "-Wl,-Bsymbolic-functions",
                     "-nostdlib++"
@@ -91,5 +88,5 @@ androidx {
     mavenVersion = LibraryVersions.GRAPHICS_PATH
     inceptionYear = "2022"
     description = "Query segment data for android.graphics.Path objects"
-    metalavaK2UastEnabled = true
+    legacyDisableKotlinStrictApiMode = true
 }

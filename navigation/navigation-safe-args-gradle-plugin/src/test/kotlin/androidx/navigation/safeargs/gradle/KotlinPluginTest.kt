@@ -38,14 +38,17 @@ class KotlinPluginTest : BasePluginTest() {
     fun runGenerateTaskForKotlinWithSuffix() {
         testData("app-project-kotlin").copyRecursively(projectRoot())
         projectSetup.writeDefaultBuildGradle(
-            prefix = """
+            prefix =
+                """
                 plugins {
                     id('com.android.application')
                     id('kotlin-android')
                     id('androidx.navigation.safeargs.kotlin')
                 }
-            """.trimIndent(),
-            suffix = """
+            """
+                    .trimIndent(),
+            suffix =
+                """
                 android {
                     namespace 'androidx.navigation.testapp'
                     buildTypes {
@@ -60,7 +63,7 @@ class KotlinPluginTest : BasePluginTest() {
                 }
                 dependencies {
                     implementation "${projectSetup.props.kotlinStblib}"
-                    implementation "${projectSetup.props.navigationRuntime}"
+                    implementation "$NAVIGATION_RUNTIME"
                 }
                 tasks.withType(
                     org.jetbrains.kotlin.gradle.tasks.KotlinCompile
@@ -69,7 +72,8 @@ class KotlinPluginTest : BasePluginTest() {
                         jvmTarget = "1.8"
                     }
                 }
-            """.trimIndent()
+            """
+                    .trimIndent()
         )
         runGradle("assembleDebug").assertSuccessfulTask("assembleDebug")
 

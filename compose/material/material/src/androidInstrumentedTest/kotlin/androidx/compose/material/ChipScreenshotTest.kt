@@ -24,7 +24,6 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.testutils.assertAgainstGolden
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -39,23 +38,17 @@ import org.junit.runner.RunWith
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
-@OptIn(ExperimentalMaterialApi::class, ExperimentalTestApi::class)
+@OptIn(ExperimentalMaterialApi::class)
 class ChipScreenshotTest {
 
-    @get:Rule
-    val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule()
 
-    @get:Rule
-    val screenshotRule = AndroidXScreenshotTestRule(GOLDEN_MATERIAL)
+    @get:Rule val screenshotRule = AndroidXScreenshotTestRule(GOLDEN_MATERIAL)
 
     @Test
     fun actionChip() {
         rule.setMaterialContent {
-            Chip(
-                onClick = {},
-                enabled = true,
-                modifier = Modifier.testTag(TestTag)
-            ) {
+            Chip(onClick = {}, enabled = true, modifier = Modifier.testTag(TestTag)) {
                 Text("Action Chip")
             }
         }
@@ -65,11 +58,7 @@ class ChipScreenshotTest {
     @Test
     fun actionChip_disabled() {
         rule.setMaterialContent {
-            Chip(
-                onClick = {},
-                enabled = false,
-                modifier = Modifier.testTag(TestTag)
-            ) {
+            Chip(onClick = {}, enabled = false, modifier = Modifier.testTag(TestTag)) {
                 Text("Action Chip")
             }
         }
@@ -137,10 +126,7 @@ class ChipScreenshotTest {
                 onClick = {},
                 modifier = Modifier.testTag(TestTag),
                 leadingIcon = {
-                    Icon(
-                        Icons.Filled.Home,
-                        contentDescription = "Localized Description"
-                    )
+                    Icon(Icons.Filled.Home, contentDescription = "Localized Description")
                 },
                 selectedIcon = {
                     Icon(
@@ -198,10 +184,7 @@ class ChipScreenshotTest {
                 enabled = false,
                 modifier = Modifier.testTag(TestTag),
                 leadingIcon = {
-                    Icon(
-                        Icons.Filled.Home,
-                        contentDescription = "Localized Description"
-                    )
+                    Icon(Icons.Filled.Home, contentDescription = "Localized Description")
                 },
                 selectedIcon = {
                     Icon(
@@ -233,7 +216,8 @@ class ChipScreenshotTest {
     }
 
     private fun assertChipAgainstGolden(goldenIdentifier: String) {
-        rule.onNodeWithTag(TestTag)
+        rule
+            .onNodeWithTag(TestTag)
             .captureToImage()
             .assertAgainstGolden(screenshotRule, goldenIdentifier)
     }

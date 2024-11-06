@@ -59,7 +59,7 @@ function regenerateVerificationMetadata() {
   if [ "$dryrun" == "true" ]; then
     dryrunArg="--dry-run"
   fi
-  runGradle --stacktrace --write-verification-metadata pgp,sha256 --export-keys $dryrunArg --clean -Pandroidx.update.signatures=true -Pandroid.dependencyResolutionAtConfigurationTime.disallow=false -Pandroidx.enabled.kmp.target.platforms=+native $task
+  runGradle --stacktrace --write-verification-metadata pgp,sha256 --export-keys $dryrunArg --clean -Pandroid.dependencyResolutionAtConfigurationTime.disallow=false -Pandroidx.enabled.kmp.target.platforms=+native $task
 
   # update verification metadata file
 
@@ -69,7 +69,11 @@ function regenerateVerificationMetadata() {
   fi
 
   # next, remove 'version=' lines https://github.com/gradle/gradle/issues/20192
-  sed -i 's/\(trusted-key.*\)version="[^"]*"/\1/' gradle/verification-metadata.xml
+  if [ "$(uname)" = "Darwin" ]; then
+      sed -i '' 's/\(trusted-key.*\)version="[^"]*"/\1/' gradle/verification-metadata.xml
+  else
+      sed -i 's/\(trusted-key.*\)version="[^"]*"/\1/' gradle/verification-metadata.xml
+  fi
 
   # rename keyring
   if [ "$dryrun" == "true" ]; then

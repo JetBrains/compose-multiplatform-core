@@ -61,14 +61,6 @@ NOTE For best practices on writing libraries in a way that makes it easy for end
 users -- and library developers -- to write tests, see the
 [Testability](/docs/testability.md) guide.
 
-### Adding a JVM based screenshot test
-
-For UI heavy libraries, it might make sense to add screenshot tests to verify
-that everything still renders as expected. For that you need to write the test
-([example](https://r.android.com/2428035)) and add new goldens
-([example](https://r.android.com/2428721)). You can run these tests just like
-any other JVM test using `test` Gradle task.
-
 ### Adding screenshots tests using scuba library
 
 #### Prerequisites
@@ -173,16 +165,22 @@ Step 1: Click on the “Test” button below:
 Step 2: Click on the “Update scuba goldens” below:
 ![alt_text](onboarding_images/image8.png "Update scuba button")
 
-Step 3: You should see a dashboard similar to the example below. Check-out if
-the new screenshots look as expected and if yes click approve. This will create
-a new CL.
+Step 3: Select the tests for which you want to update the golden images. Confirm
+the images look correct and click on “Approve Changes”
 ![alt_text](onboarding_images/image9.png "Button to approve scuba changes")
 
-Step 4: Link your original CL with the new goldens CL by setting the same Topic
+Step 4: In the Approve changes dialog box, enter the following details and click
+on Approve: \
+Select gerrit host as shown in image below \
+Repo: platform/frameworks/support-golden \
+Branch: androidx-main
+![alt_text](onboarding_images/image10.png "Approve changes dialog box with dropdown field to select gerrit host and textboxes to select repo and branch")
+
+Step 5: Link your original CL with the new goldens CL by setting the same Topic
 field in both CLs (any arbitrary string will do). This tells Gerrit to submit
 the CLs together, effectively providing a reference from the original CL to the
 new goldens. And re-run presubmit. Your tests should now pass!
-![alt_text](onboarding_images/image10.png "Topic for connecting cls")
+![alt_text](onboarding_images/image11.png "Topic for connecting cls, so they can run together")
 
 #### Running manually / debugging
 

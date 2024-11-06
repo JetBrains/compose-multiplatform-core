@@ -17,6 +17,7 @@
 package androidx.build.testConfiguration
 
 import com.google.gson.GsonBuilder
+import groovy.xml.XmlUtil
 
 class ConfigBuilder {
     lateinit var configName: String
@@ -26,6 +27,7 @@ class ConfigBuilder {
     lateinit var applicationId: String
     var isMicrobenchmark: Boolean = false
     var isMacrobenchmark: Boolean = false
+    var enablePrivacySandbox: Boolean = false
     var isPostsubmit: Boolean = true
     lateinit var minSdk: String
     val tags = mutableListOf<String>()
@@ -56,6 +58,10 @@ class ConfigBuilder {
 
     fun isPostsubmit(isPostsubmit: Boolean) = apply { this.isPostsubmit = isPostsubmit }
 
+    fun enablePrivacySandbox(enablePrivacySandbox: Boolean) = apply {
+        this.enablePrivacySandbox = enablePrivacySandbox
+    }
+
     fun minSdk(minSdk: String) = apply { this.minSdk = minSdk }
 
     fun tag(tag: String) = apply { this.tags.add(tag) }
@@ -73,9 +79,9 @@ class ConfigBuilder {
     fun buildJson(): String {
         val gson = GsonBuilder().setPrettyPrinting().create()
         val instrumentationArgsList = mutableListOf<InstrumentationArg>()
-        instrumentationArgsMap.forEach { (key, value) ->
-            instrumentationArgsList.add(InstrumentationArg(key, value))
-        }
+        instrumentationArgsMap
+            .filter { it.key !in INST_ARG_BLOCKLIST }
+            .forEach { (key, value) -> instrumentationArgsList.add(InstrumentationArg(key, value)) }
         instrumentationArgsList.addAll(
             if (isMicrobenchmark && !isPostsubmit) {
                 listOf(
@@ -110,27 +116,39 @@ class ConfigBuilder {
         sb.append(MODULE_METADATA_TAG_OPTION.replace("APPLICATION_ID", applicationId))
             .append(WIFI_DISABLE_OPTION)
             .append(FLAKY_TEST_OPTION)
-        if (isMicrobenchmark) {
-            if (isPostsubmit) {
-                sb.append(MICROBENCHMARK_POSTSUBMIT_OPTIONS)
-            } else {
-                sb.append(MICROBENCHMARK_PRESUBMIT_OPTION)
+        if (!isPostsubmit && (isMicrobenchmark || isMacrobenchmark)) {
+            sb.append(BENCHMARK_PRESUBMIT_INST_ARGS)
+        }
+        val instrumentationArgsList = mutableListOf<InstrumentationArg>()
+        instrumentationArgsMap
+            .filter { it.key !in INST_ARG_BLOCKLIST }
+            .forEach { (key, value) -> instrumentationArgsList.add(InstrumentationArg(key, value)) }
+        if (isMicrobenchmark || isMacrobenchmark) {
+            instrumentationArgsList.add(
+                InstrumentationArg("androidx.benchmark.output.payload.testApkSha256", testApkSha256)
+            )
+            if (isMacrobenchmark) {
+                instrumentationArgsList.add(
+                    InstrumentationArg(
+                        "androidx.benchmark.output.payload.appApkSha256",
+                        checkNotNull(appApkSha256) {
+                            "app apk sha should be provided for macrobenchmarks."
+                        }
+                    )
+                )
             }
         }
-        instrumentationArgsMap.forEach { (key, value) ->
-            sb.append("""
-                <option name="instrumentation-arg" key="$key" value="$value" />
+        instrumentationArgsList.forEach { (key, value) ->
+            sb.append(
+                """
+                    <option name="instrumentation-arg" key="${XmlUtil.escapeXml(key)}" value="${XmlUtil.escapeXml(value)}" />
 
-                """.trimIndent())
+                    """
+                    .trimIndent()
+            )
         }
-        if (isMacrobenchmark) {
-            sb.append(MACROBENCHMARK_POSTSUBMIT_OPTIONS)
-        }
-        sb.append(SETUP_INCLUDE)
-            .append(TARGET_PREPARER_OPEN.replace("CLEANUP_APKS", "true"))
-        initialSetupApks.forEach { apk ->
-            sb.append(APK_INSTALL_OPTION.replace("APK_NAME", apk))
-        }
+        sb.append(SETUP_INCLUDE).append(TARGET_PREPARER_OPEN.replace("CLEANUP_APKS", "true"))
+        initialSetupApks.forEach { apk -> sb.append(APK_INSTALL_OPTION.replace("APK_NAME", apk)) }
         sb.append(APK_INSTALL_OPTION.replace("APK_NAME", testApkName))
         if (!appApkName.isNullOrEmpty()) {
             if (appSplits.isEmpty()) {
@@ -145,9 +163,22 @@ class ConfigBuilder {
         if (isMicrobenchmark) {
             sb.append(benchmarkPostInstallCommandOption(applicationId))
         }
+        if (enablePrivacySandbox) {
+            sb.append(PRIVACY_SANDBOX_ENABLE_PREPARER)
+        }
         sb.append(TEST_BLOCK_OPEN)
             .append(RUNNER_OPTION.replace("TEST_RUNNER", testRunner))
             .append(PACKAGE_OPTION.replace("APPLICATION_ID", applicationId))
+            .apply {
+                if (isPostsubmit) {
+                    // These listeners should be unified eventually (b/331974955)
+                    if (isMicrobenchmark) {
+                        sb.append(MICROBENCHMARK_POSTSUBMIT_LISTENERS)
+                    } else if (isMacrobenchmark) {
+                        sb.append(MACROBENCHMARK_POSTSUBMIT_LISTENERS)
+                    }
+                }
+            }
             .append(TEST_BLOCK_CLOSE)
         sb.append(CONFIGURATION_CLOSE)
         return sb.toString()
@@ -358,25 +389,30 @@ private val PACKAGE_OPTION =
 """
         .trimIndent()
 
-private val MICROBENCHMARK_PRESUBMIT_OPTION =
+private val BENCHMARK_PRESUBMIT_INST_ARGS =
     """
     <option name="instrumentation-arg" key="androidx.benchmark.dryRunMode.enable" value="true" />
 
 """
         .trimIndent()
 
-private val MICROBENCHMARK_POSTSUBMIT_OPTIONS =
+/** These args may never be passed in CI, even if they are set per module */
+private val INST_ARG_BLOCKLIST = listOf("androidx.benchmark.profiling.skipWhenDurationRisksAnr")
+
+private val MICROBENCHMARK_POSTSUBMIT_LISTENERS =
     """
-    <option name="instrumentation-arg" key="listener" value="androidx.benchmark.junit4.InstrumentationResultsRunListener" />
-    <option name="instrumentation-arg" key="listener" value="androidx.benchmark.junit4.SideEffectRunListener" />
+    <option name="device-listeners" value="androidx.benchmark.junit4.InstrumentationResultsRunListener" />
+    <option name="device-listeners" value="androidx.benchmark.junit4.SideEffectRunListener" />
 
 """
         .trimIndent()
 
-private val MACROBENCHMARK_POSTSUBMIT_OPTIONS =
+// NOTE: listeners are duplicated in macro package due to no common module w/ junit dependency
+// See b/331974955
+private val MACROBENCHMARK_POSTSUBMIT_LISTENERS =
     """
-    <option name="instrumentation-arg" key="listener" value="androidx.benchmark.junit4.InstrumentationResultsRunListener" />
-    <option name="instrumentation-arg" key="listener" value="androidx.benchmark.macro.junit4.SideEffectRunListener" />
+    <option name="device-listeners" value="androidx.benchmark.macro.junit4.InstrumentationResultsRunListener" />
+    <option name="device-listeners" value="androidx.benchmark.macro.junit4.SideEffectRunListener" />
 
 """
         .trimIndent()
@@ -384,6 +420,18 @@ private val MACROBENCHMARK_POSTSUBMIT_OPTIONS =
 private val FLAKY_TEST_OPTION =
     """
     <option name="instrumentation-arg" key="notAnnotation" value="androidx.test.filters.FlakyTest" />
+
+"""
+        .trimIndent()
+
+private val PRIVACY_SANDBOX_ENABLE_PREPARER =
+    """
+    <target_preparer class="com.android.tradefed.targetprep.RunCommandTargetPreparer">
+    <option name="run-command" value="cmd sdk_sandbox set-state --enabled"/>
+    <option name="run-command" value="device_config set_sync_disabled_for_tests persistent" />
+    <option name="teardown-command" value="cmd sdk_sandbox set-state --reset"/>
+    <option name="teardown-command" value="device_config set_sync_disabled_for_tests none" />
+    </target_preparer>
 
 """
         .trimIndent()

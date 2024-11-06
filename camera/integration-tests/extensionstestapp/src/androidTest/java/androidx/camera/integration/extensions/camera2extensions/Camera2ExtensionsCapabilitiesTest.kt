@@ -40,26 +40,25 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
-/**
- * Tests for checking mandatory support of certain extensions capabilities.
- */
+/** Tests for checking mandatory support of certain extensions capabilities. */
 @LargeTest
 @RunWith(Parameterized::class)
 @SdkSuppress(minSdkVersion = 33)
 class Camera2ExtensionsCapabilitiesTest(private val config: CameraIdExtensionModePair) {
     @get:Rule
     val useCamera =
-        CameraUtil.grantCameraPermissionAndPreTest(
+        CameraUtil.grantCameraPermissionAndPreTestAndPostTest(
             CameraUtil.PreTestCameraIdList(Camera2Config.defaultConfig())
         )
 
     companion object {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+
         @Parameterized.Parameters(name = "config = {0}")
         @JvmStatic
         fun parameters() = Camera2ExtensionsTestUtil.getAllCameraIdExtensionModeCombinations()
     }
 
-    private val context = ApplicationProvider.getApplicationContext<Context>()
     private val cameraManager = context.getSystemService(Context.CAMERA_SERVICE) as CameraManager
 
     private lateinit var extensionsCharacteristics: CameraExtensionCharacteristics
@@ -92,11 +91,12 @@ class Camera2ExtensionsCapabilitiesTest(private val config: CameraIdExtensionMod
         assumeTrue(minFocusDistance != null && minFocusDistance > 0f)
 
         val keys = extensionsCharacteristics.getAvailableCaptureRequestKeys(config.extensionMode)
-        val requiredAutoFocusKeys = listOf(
-            CaptureRequest.CONTROL_AF_MODE,
-            CaptureRequest.CONTROL_AF_TRIGGER,
-            CaptureRequest.CONTROL_AF_REGIONS,
-        )
+        val requiredAutoFocusKeys =
+            listOf(
+                CaptureRequest.CONTROL_AF_MODE,
+                CaptureRequest.CONTROL_AF_TRIGGER,
+                CaptureRequest.CONTROL_AF_REGIONS,
+            )
         Truth.assertThat(keys).containsAtLeastElementsIn(requiredAutoFocusKeys)
     }
 

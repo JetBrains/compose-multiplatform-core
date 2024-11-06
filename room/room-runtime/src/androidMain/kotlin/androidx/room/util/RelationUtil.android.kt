@@ -14,14 +14,13 @@
  * limitations under the License.
  */
 
+@file:JvmMultifileClass
 @file:JvmName("RelationUtil")
-@file:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 
 package androidx.room.util
 
 import androidx.annotation.RestrictTo
 import androidx.collection.ArrayMap
-import androidx.collection.LongSparseArray
 import androidx.room.RoomDatabase
 
 /**
@@ -32,6 +31,7 @@ import androidx.room.RoomDatabase
  * @param isRelationCollection - True if [V] is a [Collection] which means it is non null.
  * @param fetchBlock - A lambda for calling the generated _fetchRelationship function.
  */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 fun <K : Any, V> recursiveFetchHashMap(
     map: HashMap<K, V>,
     isRelationCollection: Boolean,
@@ -70,48 +70,8 @@ fun <K : Any, V> recursiveFetchHashMap(
     }
 }
 
-/**
- * Same as [recursiveFetchHashMap] but for [LongSparseArray].
- */
-fun <V> recursiveFetchLongSparseArray(
-    map: LongSparseArray<V>,
-    isRelationCollection: Boolean,
-    fetchBlock: (LongSparseArray<V>) -> Unit
-) {
-    val tmpMap = LongSparseArray<V>(RoomDatabase.MAX_BIND_PARAMETER_CNT)
-    var count = 0
-    var mapIndex = 0
-    val limit = map.size()
-    while (mapIndex < limit) {
-        if (isRelationCollection) {
-            tmpMap.put(map.keyAt(mapIndex), map.valueAt(mapIndex))
-        } else {
-            // Safe because `V` is a nullable type arg when isRelationCollection == false
-            @Suppress("UNCHECKED_CAST")
-            tmpMap.put(map.keyAt(mapIndex), null as V)
-        }
-        mapIndex++
-        count++
-        if (count == RoomDatabase.MAX_BIND_PARAMETER_CNT) {
-            fetchBlock(tmpMap)
-            if (!isRelationCollection) {
-                map.putAll(tmpMap)
-            }
-            tmpMap.clear()
-            count = 0
-        }
-    }
-    if (count > 0) {
-        fetchBlock(tmpMap)
-        if (!isRelationCollection) {
-            map.putAll(tmpMap)
-        }
-    }
-}
-
-/**
- * Same as [recursiveFetchHashMap] but for [ArrayMap].
- */
+/** Same as [recursiveFetchHashMap] but for [ArrayMap]. */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 fun <K : Any, V> recursiveFetchArrayMap(
     map: ArrayMap<K, V>,
     isRelationCollection: Boolean,

@@ -22,17 +22,13 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.ViewGroup.FOCUS_DOWN
 import android.view.ViewTreeObserver
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusDirection.Companion.Exit
+import androidx.compose.ui.focus.FocusEnterExitScope
 import androidx.compose.ui.focus.FocusOwner
 import androidx.compose.ui.focus.FocusProperties
 import androidx.compose.ui.focus.FocusPropertiesModifierNode
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.FocusRequester.Companion.Cancel
-import androidx.compose.ui.focus.FocusRequester.Companion.Default
 import androidx.compose.ui.focus.FocusTargetNode
 import androidx.compose.ui.focus.focusTarget
 import androidx.compose.ui.focus.performRequestFocus
@@ -42,82 +38,95 @@ import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.node.Nodes
 import androidx.compose.ui.node.requireLayoutNode
 import androidx.compose.ui.node.requireOwner
+import androidx.compose.ui.node.requireView
 import androidx.compose.ui.node.visitLocalDescendants
 import androidx.compose.ui.platform.InspectorInfo
 
-internal fun Modifier.focusInteropModifier(): Modifier = this
-    // Focus Group to intercept focus enter/exit.
-    .then(FocusGroupPropertiesElement)
-    .focusTarget()
-    // Focus Target to make the embedded view focusable.
-    .then(FocusTargetPropertiesElement)
-    .focusTarget()
+internal fun Modifier.focusInteropModifier(): Modifier =
+    this
+        // Focus Group to intercept focus enter/exit.
+        .then(FocusGroupPropertiesElement)
+        .focusTarget()
+        // Focus Target to make the embedded view focusable.
+        .then(FocusTargetPropertiesElement)
+        .focusTarget()
 
 private class FocusTargetPropertiesNode : Modifier.Node(), FocusPropertiesModifierNode {
     override fun applyFocusProperties(focusProperties: FocusProperties) {
-        focusProperties.canFocus = node.isAttached && getView().hasFocusable()
+        focusProperties.canFocus = node.isAttached && getEmbeddedView().hasFocusable()
     }
 }
 
-private class FocusGroupPropertiesNode : Modifier.Node(), FocusPropertiesModifierNode,
-    ViewTreeObserver.OnGlobalFocusChangeListener, View.OnAttachStateChangeListener {
+private class FocusGroupPropertiesNode :
+    Modifier.Node(),
+    FocusPropertiesModifierNode,
+    ViewTreeObserver.OnGlobalFocusChangeListener,
+    View.OnAttachStateChangeListener {
     var focusedChild: View? = null
+
+    val onEnter: FocusEnterExitScope.() -> Unit = {
+        // If this requestFocus is triggered by the embedded view getting focus,
+        // then we don't perform this onEnter logic.
+        val embeddedView = getEmbeddedView()
+        if (!embeddedView.isFocused && !embeddedView.hasFocus()) {
+            val focusOwner = requireOwner().focusOwner
+            val hostView = requireView()
+
+            val targetViewFocused =
+                embeddedView.requestInteropFocus(
+                    direction = requestedFocusDirection.toAndroidFocusDirection(),
+                    rect = getCurrentlyFocusedRect(focusOwner, hostView, embeddedView)
+                )
+            if (!targetViewFocused) {
+                cancelFocus()
+            }
+        }
+    }
+
+    val onExit: FocusEnterExitScope.() -> Unit = {
+        val embeddedView = getEmbeddedView()
+        if (embeddedView.hasFocus()) {
+            val focusOwner = requireOwner().focusOwner
+            val hostView = requireView()
+
+            // If the embedded view is not a view group, then we can safely exit this focus group.
+            if (embeddedView !is ViewGroup) {
+                check(hostView.requestFocus()) { "host view did not take focus" }
+            } else {
+                val focusedRect = getCurrentlyFocusedRect(focusOwner, hostView, embeddedView)
+                val androidFocusDirection =
+                    requestedFocusDirection.toAndroidFocusDirection() ?: FOCUS_DOWN
+
+                val nextView =
+                    with(FocusFinder.getInstance()) {
+                        if (focusedChild != null) {
+                            findNextFocus(
+                                hostView as ViewGroup,
+                                focusedChild,
+                                androidFocusDirection
+                            )
+                        } else {
+                            findNextFocusFromRect(
+                                hostView as ViewGroup,
+                                focusedRect,
+                                androidFocusDirection
+                            )
+                        }
+                    }
+                if (nextView != null && embeddedView.containsDescendant(nextView)) {
+                    nextView.requestFocus(androidFocusDirection, focusedRect)
+                    cancelFocus()
+                } else {
+                    check(hostView.requestFocus()) { "host view did not take focus" }
+                }
+            }
+        }
+    }
 
     override fun applyFocusProperties(focusProperties: FocusProperties) {
         focusProperties.canFocus = false
-        @OptIn(ExperimentalComposeUiApi::class)
-        focusProperties.enter = ::onEnter
-        @OptIn(ExperimentalComposeUiApi::class)
-        focusProperties.exit = ::onExit
-    }
-
-    fun onEnter(focusDirection: FocusDirection): FocusRequester {
-        // If this requestFocus is triggered by the embedded view getting focus,
-        // then we don't perform this onEnter logic.
-        val embeddedView = getView()
-        if (embeddedView.isFocused || embeddedView.hasFocus()) return Default
-
-        val focusOwner = requireOwner().focusOwner
-        val hostView = requireOwner() as View
-
-        val targetViewFocused = embeddedView.requestInteropFocus(
-            direction = focusDirection.toAndroidFocusDirection(),
-            rect = getCurrentlyFocusedRect(focusOwner, hostView, embeddedView)
-        )
-        return if (targetViewFocused) Default else @OptIn(ExperimentalComposeUiApi::class) Cancel
-    }
-
-    fun onExit(focusDirection: FocusDirection): FocusRequester {
-        val embeddedView = getView()
-        if (!embeddedView.hasFocus()) return Default
-
-        val focusOwner = requireOwner().focusOwner
-        val hostView = requireOwner() as View
-
-        // If the embedded view is not a view group, then we can safely exit this focus group.
-        if (embeddedView !is ViewGroup) {
-            check(hostView.requestFocus()) { "host view did not take focus" }
-            return Default
-        }
-
-        val focusedRect = getCurrentlyFocusedRect(focusOwner, hostView, embeddedView)
-        val androidFocusDirection = focusDirection.toAndroidFocusDirection() ?: FOCUS_DOWN
-
-        val nextView = with(FocusFinder.getInstance()) {
-            if (focusedChild != null) {
-                findNextFocus(hostView as ViewGroup, focusedChild, androidFocusDirection)
-            } else {
-                findNextFocusFromRect(hostView as ViewGroup, focusedRect, androidFocusDirection)
-            }
-        }
-        if (nextView != null && embeddedView.containsDescendant(nextView)) {
-            nextView.requestFocus(androidFocusDirection, focusedRect)
-            @OptIn(ExperimentalComposeUiApi::class)
-            return Cancel
-        } else {
-            check(hostView.requestFocus()) { "host view did not take focus" }
-            return Default
-        }
+        focusProperties.onEnter = onEnter
+        focusProperties.onExit = onExit
     }
 
     private fun getFocusTargetOfEmbeddedViewWrapper(): FocusTargetNode {
@@ -131,7 +140,7 @@ private class FocusGroupPropertiesNode : Modifier.Node(), FocusPropertiesModifie
 
     override fun onGlobalFocusChanged(oldFocus: View?, newFocus: View?) {
         if (requireLayoutNode().owner == null) return
-        val embeddedView = getView()
+        val embeddedView = getEmbeddedView()
         val focusOwner = requireOwner().focusOwner
         val hostView = requireOwner()
         val subViewLostFocus =
@@ -160,7 +169,7 @@ private class FocusGroupPropertiesNode : Modifier.Node(), FocusPropertiesModifie
                         force = false,
                         refreshFocusEvents = true,
                         clearOwnerFocus = false,
-                        focusDirection = @OptIn(ExperimentalComposeUiApi::class) Exit
+                        focusDirection = Exit
                     )
                 }
             }
@@ -173,11 +182,11 @@ private class FocusGroupPropertiesNode : Modifier.Node(), FocusPropertiesModifie
 
     override fun onAttach() {
         super.onAttach()
-        getView().addOnAttachStateChangeListener(this)
+        getEmbeddedView().addOnAttachStateChangeListener(this)
     }
 
     override fun onDetach() {
-        getView().removeOnAttachStateChangeListener(this)
+        getEmbeddedView().removeOnAttachStateChangeListener(this)
         focusedChild = null
         super.onDetach()
     }
@@ -190,23 +199,36 @@ private class FocusGroupPropertiesNode : Modifier.Node(), FocusPropertiesModifie
         v.viewTreeObserver.removeOnGlobalFocusChangeListener(this)
     }
 }
+
 private object FocusGroupPropertiesElement : ModifierNodeElement<FocusGroupPropertiesNode>() {
     override fun create(): FocusGroupPropertiesNode = FocusGroupPropertiesNode()
+
     override fun update(node: FocusGroupPropertiesNode) {}
-    override fun InspectorInfo.inspectableProperties() { name = "FocusGroupProperties" }
+
+    override fun InspectorInfo.inspectableProperties() {
+        name = "FocusGroupProperties"
+    }
+
     override fun hashCode() = "FocusGroupProperties".hashCode()
+
     override fun equals(other: Any?) = other === this
 }
 
 private object FocusTargetPropertiesElement : ModifierNodeElement<FocusTargetPropertiesNode>() {
     override fun create(): FocusTargetPropertiesNode = FocusTargetPropertiesNode()
+
     override fun update(node: FocusTargetPropertiesNode) {}
-    override fun InspectorInfo.inspectableProperties() { name = "FocusTargetProperties" }
+
+    override fun InspectorInfo.inspectableProperties() {
+        name = "FocusTargetProperties"
+    }
+
     override fun hashCode() = "FocusTargetProperties".hashCode()
+
     override fun equals(other: Any?) = other === this
 }
 
-private fun Modifier.Node.getView(): View {
+private fun Modifier.Node.getEmbeddedView(): View {
     @OptIn(InternalComposeUiApi::class)
     return checkNotNull(node.requireLayoutNode().getInteropView()) {
         "Could not fetch interop view"

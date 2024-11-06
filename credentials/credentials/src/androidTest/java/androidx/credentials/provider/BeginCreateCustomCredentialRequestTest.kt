@@ -16,20 +16,22 @@
 
 package androidx.credentials.provider
 
-import android.content.pm.SigningInfo
+import android.content.Context
 import android.os.Bundle
+import androidx.credentials.assertEquals
+import androidx.credentials.getTestCallingAppInfo
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
 import com.google.common.truth.Truth.assertThat
 import org.junit.Assert
 import org.junit.Test
 import org.junit.runner.RunWith
 
-@SdkSuppress(minSdkVersion = 28)
 @RunWith(AndroidJUnit4::class)
 @SmallTest
 class BeginCreateCustomCredentialRequestTest {
+    private val mContext: Context = ApplicationProvider.getApplicationContext()
 
     @Test
     fun constructor_success() {
@@ -43,10 +45,9 @@ class BeginCreateCustomCredentialRequestTest {
             IllegalArgumentException::class.java
         ) {
             BeginCreateCustomCredentialRequest(
-                "", Bundle.EMPTY,
-                CallingAppInfo(
-                    "package", SigningInfo()
-                )
+                "",
+                Bundle.EMPTY,
+                getTestCallingAppInfo(mContext, "origin"),
             )
         }
     }
@@ -70,5 +71,20 @@ class BeginCreateCustomCredentialRequestTest {
             BeginCreateCustomCredentialRequest("type", expectedBundle, null)
         val actualBundle = beginCreateCustomCredentialRequest.candidateQueryData
         assertThat(actualBundle.getString(expectedKey)).isEqualTo(expectedValue)
+    }
+
+    @Test
+    fun bundleConversion_success() {
+        val expectedKey = "query"
+        val expectedValue = "data"
+        val expectedBundle = Bundle()
+        expectedBundle.putString(expectedKey, expectedValue)
+        val expected = BeginCreateCustomCredentialRequest("type", expectedBundle, null)
+
+        val actual =
+            BeginCreateCredentialRequest.fromBundle(BeginCreateCredentialRequest.asBundle(expected))
+
+        assertThat(actual).isInstanceOf(BeginCreateCustomCredentialRequest::class.java)
+        assertEquals(actual!!, expected)
     }
 }

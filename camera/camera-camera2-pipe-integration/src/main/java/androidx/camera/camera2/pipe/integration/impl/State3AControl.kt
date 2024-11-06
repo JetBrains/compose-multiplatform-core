@@ -18,13 +18,10 @@ package androidx.camera.camera2.pipe.integration.impl
 
 import android.hardware.camera2.CameraDevice
 import android.hardware.camera2.CaptureRequest
-import android.util.Range
 import androidx.annotation.GuardedBy
-import androidx.annotation.RequiresApi
 import androidx.camera.camera2.pipe.core.Log.debug
 import androidx.camera.camera2.pipe.integration.adapter.SessionConfigAdapter
 import androidx.camera.camera2.pipe.integration.adapter.propagateTo
-import androidx.camera.camera2.pipe.integration.compat.workaround.AeFpsRange
 import androidx.camera.camera2.pipe.integration.compat.workaround.AutoFlashAEModeDisabler
 import androidx.camera.camera2.pipe.integration.config.CameraScope
 import androidx.camera.core.CameraControl
@@ -41,87 +38,121 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Deferred
 
 @CameraScope
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
-class State3AControl @Inject constructor(
-    val cameraProperties: CameraProperties,
+public class State3AControl
+@Inject
+constructor(
+    public val cameraProperties: CameraProperties,
     private val aeModeDisabler: AutoFlashAEModeDisabler,
-    private val aeFpsRange: AeFpsRange,
-) : UseCaseCameraControl, UseCaseCamera.RunningUseCasesChangeListener {
-    private var _useCaseCamera: UseCaseCamera? = null
-    override var useCaseCamera: UseCaseCamera?
-        get() = _useCaseCamera
+) : UseCaseCameraControl, UseCaseManager.RunningUseCasesChangeListener {
+    private var _requestControl: UseCaseCameraRequestControl? = null
+    override var requestControl: UseCaseCameraRequestControl?
+        get() = _requestControl
         set(value) {
-            _useCaseCamera = value
+            _requestControl = value
             value?.let {
-                val previousSignals = synchronized(lock) {
-                    updateSignal = null
-                    updateSignals.toList()
-                }
+                val previousSignals =
+                    synchronized(lock) {
+                        updateSignal = null
+                        updateSignals.toList()
+                    }
 
                 invalidate() // Always apply the settings to the camera.
 
-                synchronized(lock) { updateSignal }?.let { newUpdateSignal ->
-                    previousSignals.forEach { newUpdateSignal.propagateTo(it) }
-                } ?: run { previousSignals.forEach { it.complete(Unit) } }
+                synchronized(lock) { updateSignal }?.propagateToAll(previousSignals)
+                    ?: run { for (signals in previousSignals) signals.complete(Unit) }
             }
         }
 
-    override fun onRunningUseCasesChanged() {
-        _useCaseCamera?.runningUseCases?.run {
-            updateTemplate()
+    override fun onRunningUseCasesChanged(runningUseCases: Set<UseCase>) {
+        if (runningUseCases.isNotEmpty()) {
+            runningUseCases.updateTemplate()
+        }
+    }
+
+    private fun Deferred<Unit>.propagateToAll(previousSignals: List<CompletableDeferred<Unit>>) {
+        for (previousSignal in previousSignals) {
+            propagateTo(previousSignal)
         }
     }
 
     private val lock = Any()
+    private val invalidateLock = Any()
+
+    @GuardedBy("lock") private val updateSignals = mutableSetOf<CompletableDeferred<Unit>>()
 
     @GuardedBy("lock")
-    private val updateSignals = mutableSetOf<CompletableDeferred<Unit>>()
-
-    @GuardedBy("lock")
-    var updateSignal: Deferred<Unit>? = null
+    public var updateSignal: Deferred<Unit>? = null
         private set
-    var flashMode by updateOnPropertyChange(DEFAULT_FLASH_MODE)
-    var template by updateOnPropertyChange(DEFAULT_REQUEST_TEMPLATE)
-    var tryExternalFlashAeMode: Boolean by updateOnPropertyChange(false)
-    var preferredAeMode: Int? by updateOnPropertyChange(null)
-    var preferredFocusMode: Int? by updateOnPropertyChange(null)
-    var preferredAeFpsRange: Range<Int>? by updateOnPropertyChange(aeFpsRange.getTargetAeFpsRange())
+
+    public var flashMode: Int by updateOnPropertyChange(DEFAULT_FLASH_MODE)
+    public var template: Int by updateOnPropertyChange(DEFAULT_REQUEST_TEMPLATE)
+    public var tryExternalFlashAeMode: Boolean by updateOnPropertyChange(false)
+
+    /**
+     * The [CaptureRequest.CONTROL_AE_MODE] that is set to camera if supported.
+     *
+     * If null, a value based on other settings is calculated and available via
+     * [getFinalPreferredAeMode]. If not supported, [getSupportedAeMode] is used to find the next
+     * best option.
+     */
+    public var preferredAeMode: Int? by updateOnPropertyChange(null)
+    public var preferredFocusMode: Int? by updateOnPropertyChange(null)
 
     override fun reset() {
         synchronized(lock) { updateSignals.toList() }.cancelAll()
         tryExternalFlashAeMode = false
         preferredAeMode = null
-        preferredAeFpsRange = null
         preferredFocusMode = null
         flashMode = DEFAULT_FLASH_MODE
         template = DEFAULT_REQUEST_TEMPLATE
     }
 
-    private fun <T> updateOnPropertyChange(
-        initialValue: T
-    ) = object : ObservableProperty<T>(initialValue) {
-        override fun afterChange(property: KProperty<*>, oldValue: T, newValue: T) {
-            if (newValue != oldValue) {
-                invalidate()
+    private fun <T> updateOnPropertyChange(initialValue: T) =
+        object : ObservableProperty<T>(initialValue) {
+            override fun setValue(thisRef: Any?, property: KProperty<*>, value: T) {
+                synchronized(invalidateLock) { super.setValue(thisRef, property, value) }
+            }
+
+            override fun afterChange(property: KProperty<*>, oldValue: T, newValue: T) {
+                if (newValue != oldValue) {
+                    invalidate()
+                }
             }
         }
-    }
 
+    /**
+     * Returns the AE mode that is finally set to camera based on all other settings and camera
+     * capabilities.
+     */
+    public fun getFinalSupportedAeMode(): Int =
+        cameraProperties.metadata.getSupportedAeMode(getFinalPreferredAeMode())
+
+    /**
+     * Returns the AE mode that is finally set to camera based on all other settings.
+     *
+     * Note that this may not be supported via the camera and should be sanitized with
+     * [getSupportedAeMode].
+     */
     private fun getFinalPreferredAeMode(): Int {
-        var preferAeMode = preferredAeMode ?: when (flashMode) {
-            ImageCapture.FLASH_MODE_OFF -> CaptureRequest.CONTROL_AE_MODE_ON
-            ImageCapture.FLASH_MODE_ON -> CaptureRequest.CONTROL_AE_MODE_ON_ALWAYS_FLASH
-            ImageCapture.FLASH_MODE_AUTO -> aeModeDisabler.getCorrectedAeMode(
-                CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH
-            )
-            else -> CaptureRequest.CONTROL_AE_MODE_ON
-        }
+        var preferAeMode =
+            preferredAeMode
+                ?: when (flashMode) {
+                    ImageCapture.FLASH_MODE_OFF -> CaptureRequest.CONTROL_AE_MODE_ON
+                    ImageCapture.FLASH_MODE_ON -> CaptureRequest.CONTROL_AE_MODE_ON_ALWAYS_FLASH
+                    ImageCapture.FLASH_MODE_AUTO ->
+                        aeModeDisabler.getCorrectedAeMode(
+                            CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH
+                        )
+                    else -> CaptureRequest.CONTROL_AE_MODE_ON
+                }
 
         // Overwrite AE mode to ON_EXTERNAL_FLASH only if required and explicitly supported
         if (tryExternalFlashAeMode) {
             val isSupported = cameraProperties.metadata.isExternalFlashAeModeSupported()
-            debug { "State3AControl.invalidate: trying external flash AE mode" +
-                ", supported = $isSupported" }
+            debug {
+                "State3AControl.invalidate: trying external flash AE mode" +
+                    ", supported = $isSupported"
+            }
             if (isSupported) {
                 preferAeMode = CaptureRequest.CONTROL_AE_MODE_ON_EXTERNAL_FLASH
             }
@@ -132,61 +163,56 @@ class State3AControl @Inject constructor(
         return preferAeMode
     }
 
-    fun invalidate() {
+    public fun invalidate() {
         // TODO(b/276779600): Refactor and move the setting of these parameter to
         //  CameraGraph.Config(requiredParameters = mapOf(....)).
-        val preferAeMode = getFinalPreferredAeMode()
-        val preferAfMode = preferredFocusMode ?: getDefaultAfMode()
+        synchronized(invalidateLock) {
+                val preferAeMode = getFinalPreferredAeMode()
+                val preferAfMode = preferredFocusMode ?: getDefaultAfMode()
 
-        val parameters: MutableMap<CaptureRequest.Key<*>, Any> = mutableMapOf(
-            CaptureRequest.CONTROL_AE_MODE to cameraProperties.metadata.getSupportedAeMode(
-                preferAeMode
-            ),
-            CaptureRequest.CONTROL_AF_MODE to cameraProperties.metadata.getSupportedAfMode(
-                preferAfMode
-            ),
-            CaptureRequest.CONTROL_AWB_MODE to cameraProperties.metadata.getSupportedAwbMode(
-                CaptureRequest.CONTROL_AWB_MODE_AUTO
-            )
-        )
+                val parameters: MutableMap<CaptureRequest.Key<*>, Any> =
+                    mutableMapOf(
+                        CaptureRequest.CONTROL_AE_MODE to
+                            cameraProperties.metadata.getSupportedAeMode(preferAeMode),
+                        CaptureRequest.CONTROL_AF_MODE to
+                            cameraProperties.metadata.getSupportedAfMode(preferAfMode),
+                        CaptureRequest.CONTROL_AWB_MODE to
+                            cameraProperties.metadata.getSupportedAwbMode(
+                                CaptureRequest.CONTROL_AWB_MODE_AUTO
+                            )
+                    )
 
-        preferredAeFpsRange?.let {
-            parameters[CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE] = it
-        }
-
-        useCaseCamera?.requestControl?.addParametersAsync(
-            values = parameters
-        )?.apply {
-            toCompletableDeferred().also { signal ->
-                synchronized(lock) {
-                    updateSignals.add(signal)
-                    updateSignal = signal
-                    signal.invokeOnCompletion {
-                        synchronized(lock) {
-                            updateSignals.remove(signal)
+                requestControl?.setParametersAsync(values = parameters)
+            }
+            ?.apply {
+                toCompletableDeferred().also { signal ->
+                    synchronized(lock) {
+                        updateSignals.add(signal)
+                        updateSignal = signal
+                        signal.invokeOnCompletion {
+                            synchronized(lock) { updateSignals.remove(signal) }
                         }
                     }
                 }
-            }
-        } ?: run {
-            synchronized(lock) { updateSignal = CompletableDeferred(Unit) }
-        }
+            } ?: run { synchronized(lock) { updateSignal = CompletableDeferred(Unit) } }
     }
 
-    private fun getDefaultAfMode(): Int = when (template) {
-        CameraDevice.TEMPLATE_RECORD -> CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_VIDEO
-        CameraDevice.TEMPLATE_PREVIEW -> CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE
-        else -> CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE
-    }
+    private fun getDefaultAfMode(): Int =
+        when (template) {
+            CameraDevice.TEMPLATE_RECORD -> CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_VIDEO
+            CameraDevice.TEMPLATE_PREVIEW -> CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE
+            else -> CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE
+        }
 
     private fun Collection<UseCase>.updateTemplate() {
         SessionConfigAdapter(this).getValidSessionConfigOrNull()?.let {
             val templateType = it.repeatingCaptureConfig.templateType
-            template = if (templateType != CaptureConfig.TEMPLATE_TYPE_NONE) {
-                templateType
-            } else {
-                DEFAULT_REQUEST_TEMPLATE
-            }
+            template =
+                if (templateType != CaptureConfig.TEMPLATE_TYPE_NONE) {
+                    templateType
+                } else {
+                    DEFAULT_REQUEST_TEMPLATE
+                }
         }
     }
 
@@ -198,9 +224,9 @@ class State3AControl @Inject constructor(
     }
 
     @Module
-    abstract class Bindings {
+    public abstract class Bindings {
         @Binds
         @IntoSet
-        abstract fun provideControls(state3AControl: State3AControl): UseCaseCameraControl
+        public abstract fun provideControls(state3AControl: State3AControl): UseCaseCameraControl
     }
 }

@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("Deprecation")
+
 package androidx.credentials.playservices
 
 import android.app.Activity
@@ -30,6 +32,8 @@ import androidx.credentials.playservices.controllers.CredentialProviderBaseContr
 import androidx.credentials.playservices.controllers.CredentialProviderBaseController.Companion.GET_INTERRUPTED
 import androidx.credentials.playservices.controllers.CredentialProviderBaseController.Companion.GET_NO_CREDENTIALS
 import androidx.credentials.playservices.controllers.CredentialProviderBaseController.Companion.GET_UNKNOWN
+import androidx.credentials.playservices.controllers.CredentialProviderBaseController.Companion.reportError
+import androidx.credentials.playservices.controllers.CredentialProviderBaseController.Companion.reportResult
 import com.google.android.gms.auth.api.identity.BeginSignInRequest
 import com.google.android.gms.auth.api.identity.GetSignInIntentRequest
 import com.google.android.gms.auth.api.identity.Identity
@@ -38,11 +42,9 @@ import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.fido.Fido
 import com.google.android.gms.fido.fido2.api.common.PublicKeyCredentialCreationOptions
 
-/**
- * An activity used to ensure all required API versions work as intended.
- */
+/** An activity used to ensure all required API versions work as intended. */
 @RestrictTo(RestrictTo.Scope.LIBRARY)
-@Suppress("Deprecation", "ForbiddenSuperClass")
+@Suppress("ForbiddenSuperClass")
 open class HiddenActivity : Activity() {
 
     private var resultReceiver: ResultReceiver? = null
@@ -52,8 +54,8 @@ open class HiddenActivity : Activity() {
         super.onCreate(savedInstanceState)
         overridePendingTransition(0, 0)
         val type: String? = intent.getStringExtra(CredentialProviderBaseController.TYPE_TAG)
-        resultReceiver = intent.getParcelableExtra(
-            CredentialProviderBaseController.RESULT_RECEIVER_TAG)
+        resultReceiver =
+            intent.getParcelableExtra(CredentialProviderBaseController.RESULT_RECEIVER_TAG)
 
         if (resultReceiver == null) {
             finish()
@@ -61,7 +63,8 @@ open class HiddenActivity : Activity() {
 
         restoreState(savedInstanceState)
         if (mWaitingForActivityResult) {
-            return; // Past call still active
+            return
+            // Past call still active
         }
 
         when (type) {
@@ -76,7 +79,8 @@ open class HiddenActivity : Activity() {
             }
             CredentialProviderBaseController.SIGN_IN_INTENT_TAG -> {
                 handleGetSignInIntent()
-            } else -> {
+            }
+            else -> {
                 Log.w(TAG, "Activity handed an unsupported type")
                 finish()
             }
@@ -90,11 +94,13 @@ open class HiddenActivity : Activity() {
     }
 
     private fun handleCreatePublicKeyCredential() {
-        val fidoRegistrationRequest: PublicKeyCredentialCreationOptions? = intent
-            .getParcelableExtra(CredentialProviderBaseController.REQUEST_TAG)
-        val requestCode: Int = intent.getIntExtra(
-            CredentialProviderBaseController.ACTIVITY_REQUEST_CODE_TAG,
-                DEFAULT_VALUE)
+        val fidoRegistrationRequest: PublicKeyCredentialCreationOptions? =
+            intent.getParcelableExtra(CredentialProviderBaseController.REQUEST_TAG)
+        val requestCode: Int =
+            intent.getIntExtra(
+                CredentialProviderBaseController.ACTIVITY_REQUEST_CODE_TAG,
+                DEFAULT_VALUE
+            )
         fidoRegistrationRequest?.let {
             Fido.getFido2ApiClient(this)
                 .getRegisterPendingIntent(fidoRegistrationRequest)
@@ -104,42 +110,49 @@ open class HiddenActivity : Activity() {
                         startIntentSenderForResult(
                             result.intentSender,
                             requestCode,
-                            null, /* fillInIntent= */
-                            0, /* flagsMask= */
-                            0, /* flagsValue= */
-                            0, /* extraFlags= */
-                            null /* options= */
-                        )
+                            null,
+                            /* fillInIntent= */ 0,
+                            /* flagsMask= */ 0,
+                            /* flagsValue= */ 0,
+                            /* extraFlags= */ null
+                        /* options= */ )
                     } catch (e: IntentSender.SendIntentException) {
-                        setupFailure(resultReceiver!!,
+                        setupFailure(
+                            resultReceiver!!,
                             CREATE_UNKNOWN,
                             "During public key credential, found IntentSender " +
-                                "failure on public key creation: ${e.message}")
+                                "failure on public key creation: ${e.message}"
+                        )
                     }
                 }
                 .addOnFailureListener { e: Exception ->
                     var errName: String = CREATE_UNKNOWN
-                    if (e is ApiException && e.statusCode in
-                        CredentialProviderBaseController.retryables) {
+                    if (
+                        e is ApiException &&
+                            e.statusCode in CredentialProviderBaseController.retryables
+                    ) {
                         errName = CREATE_INTERRUPTED
                     }
-                    setupFailure(resultReceiver!!, errName,
+                    setupFailure(
+                        resultReceiver!!,
+                        errName,
                         "During create public key credential, fido registration " +
-                            "failure: ${e.message}")
+                            "failure: ${e.message}"
+                    )
                 }
-        } ?: run {
-            Log.w(TAG, "During create public key credential, request is null, so nothing to " +
-                "launch for public key credentials")
-            finish()
         }
+            ?: run {
+                Log.w(
+                    TAG,
+                    "During create public key credential, request is null, so nothing to " +
+                        "launch for public key credentials"
+                )
+                finish()
+            }
     }
 
     private fun setupFailure(resultReceiver: ResultReceiver, errName: String, errMsg: String) {
-        val bundle = Bundle()
-        bundle.putBoolean(CredentialProviderBaseController.FAILURE_RESPONSE_TAG, true)
-        bundle.putString(CredentialProviderBaseController.EXCEPTION_TYPE_TAG, errName)
-        bundle.putString(CredentialProviderBaseController.EXCEPTION_MESSAGE_TAG, errMsg)
-        resultReceiver.send(Integer.MAX_VALUE, bundle)
+        resultReceiver.reportError(errName, errMsg)
         finish()
     }
 
@@ -149,95 +162,73 @@ open class HiddenActivity : Activity() {
     }
 
     private fun handleGetSignInIntent() {
-        val params: GetSignInIntentRequest? = intent.getParcelableExtra(
-            CredentialProviderBaseController.REQUEST_TAG)
-        val requestCode: Int = intent.getIntExtra(
-            CredentialProviderBaseController.ACTIVITY_REQUEST_CODE_TAG,
-            DEFAULT_VALUE)
+        val params: GetSignInIntentRequest? =
+            intent.getParcelableExtra(CredentialProviderBaseController.REQUEST_TAG)
+        val requestCode: Int =
+            intent.getIntExtra(
+                CredentialProviderBaseController.ACTIVITY_REQUEST_CODE_TAG,
+                DEFAULT_VALUE
+            )
         params?.let {
-            Identity.getSignInClient(this).getSignInIntent(params).addOnSuccessListener {
-                try {
-                    mWaitingForActivityResult = true
-                    startIntentSenderForResult(
-                        it.intentSender,
-                        requestCode,
-                        null,
-                        0,
-                        0,
-                        0,
-                        null
+            Identity.getSignInClient(this)
+                .getSignInIntent(params)
+                .addOnSuccessListener {
+                    try {
+                        mWaitingForActivityResult = true
+                        startIntentSenderForResult(
+                            it.intentSender,
+                            requestCode,
+                            null,
+                            0,
+                            0,
+                            0,
+                            null
+                        )
+                    } catch (e: IntentSender.SendIntentException) {
+                        setupFailure(
+                            resultReceiver!!,
+                            GET_UNKNOWN,
+                            "During get sign-in intent, one tap ui intent sender " +
+                                "failure: ${e.message}"
+                        )
+                    }
+                }
+                .addOnFailureListener { e: Exception ->
+                    var errName: String = GET_NO_CREDENTIALS
+                    if (
+                        e is ApiException &&
+                            e.statusCode in CredentialProviderBaseController.retryables
+                    ) {
+                        errName = GET_INTERRUPTED
+                    }
+                    setupFailure(
+                        resultReceiver!!,
+                        errName,
+                        "During get sign-in intent, failure response from one tap: ${e.message}"
                     )
-                } catch (e: IntentSender.SendIntentException) {
-                    setupFailure(resultReceiver!!,
-                        GET_UNKNOWN,
-                        "During get sign-in intent, one tap ui intent sender " +
-                            "failure: ${e.message}")
                 }
-            }.addOnFailureListener { e: Exception ->
-                var errName: String = GET_NO_CREDENTIALS
-                if (e is ApiException && e.statusCode in
-                    CredentialProviderBaseController.retryables) {
-                    errName = GET_INTERRUPTED
-                }
-                setupFailure(resultReceiver!!, errName,
-                    "During get sign-in intent, failure response from one tap: ${e.message}")
-            }
-        } ?: run {
-            Log.i(TAG, "During get sign-in intent, params is null, nothing to launch for " +
-                "get sign-in intent")
-            finish()
         }
+            ?: run {
+                Log.i(
+                    TAG,
+                    "During get sign-in intent, params is null, nothing to launch for " +
+                        "get sign-in intent"
+                )
+                finish()
+            }
     }
 
     private fun handleBeginSignIn() {
-        val params: BeginSignInRequest? = intent.getParcelableExtra(
-            CredentialProviderBaseController.REQUEST_TAG)
-        val requestCode: Int = intent.getIntExtra(
-            CredentialProviderBaseController.ACTIVITY_REQUEST_CODE_TAG,
-            DEFAULT_VALUE)
+        val params: BeginSignInRequest? =
+            intent.getParcelableExtra(CredentialProviderBaseController.REQUEST_TAG)
+        val requestCode: Int =
+            intent.getIntExtra(
+                CredentialProviderBaseController.ACTIVITY_REQUEST_CODE_TAG,
+                DEFAULT_VALUE
+            )
         params?.let {
-            Identity.getSignInClient(this).beginSignIn(params).addOnSuccessListener {
-                try {
-                    mWaitingForActivityResult = true
-                    startIntentSenderForResult(
-                        it.pendingIntent.intentSender,
-                        requestCode,
-                        null,
-                        0,
-                        0,
-                        0,
-                        null
-                    )
-                } catch (e: IntentSender.SendIntentException) {
-                    setupFailure(resultReceiver!!,
-                        GET_UNKNOWN,
-                            "During begin sign in, one tap ui intent sender " +
-                                "failure: ${e.message}")
-                }
-            }.addOnFailureListener { e: Exception ->
-                var errName: String = GET_NO_CREDENTIALS
-                if (e is ApiException && e.statusCode in
-                    CredentialProviderBaseController.retryables) {
-                    errName = GET_INTERRUPTED
-                }
-                setupFailure(resultReceiver!!, errName,
-                    "During begin sign in, failure response from one tap: ${e.message}")
-            }
-        } ?: run {
-            Log.i(TAG, "During begin sign in, params is null, nothing to launch for " +
-                "begin sign in")
-            finish()
-        }
-    }
-
-    private fun handleCreatePassword() {
-        val params: SavePasswordRequest? = intent.getParcelableExtra(
-            CredentialProviderBaseController.REQUEST_TAG)
-        val requestCode: Int = intent.getIntExtra(
-            CredentialProviderBaseController.ACTIVITY_REQUEST_CODE_TAG,
-            DEFAULT_VALUE)
-        params?.let {
-            Identity.getCredentialSavingClient(this).savePassword(params)
+            Identity.getSignInClient(this)
+                .beginSignIn(params)
                 .addOnSuccessListener {
                     try {
                         mWaitingForActivityResult = true
@@ -251,34 +242,103 @@ open class HiddenActivity : Activity() {
                             null
                         )
                     } catch (e: IntentSender.SendIntentException) {
-                        setupFailure(resultReceiver!!,
-                            CREATE_UNKNOWN,
-                                "During save password, found UI intent sender " +
-                                    "failure: ${e.message}")
+                        setupFailure(
+                            resultReceiver!!,
+                            GET_UNKNOWN,
+                            "During begin sign in, one tap ui intent sender " +
+                                "failure: ${e.message}"
+                        )
                     }
-            }.addOnFailureListener { e: Exception ->
+                }
+                .addOnFailureListener { e: Exception ->
+                    var errName: String = GET_NO_CREDENTIALS
+                    if (
+                        e is ApiException &&
+                            e.statusCode in CredentialProviderBaseController.retryables
+                    ) {
+                        errName = GET_INTERRUPTED
+                    }
+                    setupFailure(
+                        resultReceiver!!,
+                        errName,
+                        "During begin sign in, failure response from one tap: ${e.message}"
+                    )
+                }
+        }
+            ?: run {
+                Log.i(
+                    TAG,
+                    "During begin sign in, params is null, nothing to launch for " + "begin sign in"
+                )
+                finish()
+            }
+    }
+
+    private fun handleCreatePassword() {
+        val params: SavePasswordRequest? =
+            intent.getParcelableExtra(CredentialProviderBaseController.REQUEST_TAG)
+        val requestCode: Int =
+            intent.getIntExtra(
+                CredentialProviderBaseController.ACTIVITY_REQUEST_CODE_TAG,
+                DEFAULT_VALUE
+            )
+        params?.let {
+            Identity.getCredentialSavingClient(this)
+                .savePassword(params)
+                .addOnSuccessListener {
+                    try {
+                        mWaitingForActivityResult = true
+                        startIntentSenderForResult(
+                            it.pendingIntent.intentSender,
+                            requestCode,
+                            null,
+                            0,
+                            0,
+                            0,
+                            null
+                        )
+                    } catch (e: IntentSender.SendIntentException) {
+                        setupFailure(
+                            resultReceiver!!,
+                            CREATE_UNKNOWN,
+                            "During save password, found UI intent sender " +
+                                "failure: ${e.message}"
+                        )
+                    }
+                }
+                .addOnFailureListener { e: Exception ->
                     var errName: String = CREATE_UNKNOWN
-                    if (e is ApiException && e.statusCode in
-                        CredentialProviderBaseController.retryables) {
+                    if (
+                        e is ApiException &&
+                            e.statusCode in CredentialProviderBaseController.retryables
+                    ) {
                         errName = CREATE_INTERRUPTED
                     }
-                    setupFailure(resultReceiver!!, errName, "During save password, found " +
-                        "password failure response from one tap ${e.message}")
-            }
-        } ?: run {
-            Log.i(TAG, "During save password, params is null, nothing to launch for create" +
-                " password")
-            finish()
+                    setupFailure(
+                        resultReceiver!!,
+                        errName,
+                        "During save password, found " +
+                            "password failure response from one tap ${e.message}"
+                    )
+                }
         }
+            ?: run {
+                Log.i(
+                    TAG,
+                    "During save password, params is null, nothing to launch for create" +
+                        " password"
+                )
+                finish()
+            }
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        val bundle = Bundle()
-        bundle.putBoolean(CredentialProviderBaseController.FAILURE_RESPONSE_TAG, false)
-        bundle.putInt(CredentialProviderBaseController.ACTIVITY_REQUEST_CODE_TAG, requestCode)
-        bundle.putParcelable(CredentialProviderBaseController.RESULT_DATA_TAG, data)
-        resultReceiver?.send(resultCode, bundle)
+        resultReceiver?.reportResult(
+            requestCode = requestCode,
+            data = data,
+            resultCode = resultCode
+        )
         mWaitingForActivityResult = false
         finish()
     }

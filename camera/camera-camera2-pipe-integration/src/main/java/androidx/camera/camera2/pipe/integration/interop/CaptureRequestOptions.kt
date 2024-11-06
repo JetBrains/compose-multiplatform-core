@@ -16,7 +16,6 @@
 package androidx.camera.camera2.pipe.integration.interop
 
 import android.hardware.camera2.CaptureRequest
-import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
 import androidx.camera.camera2.pipe.integration.impl.CAPTURE_REQUEST_ID_STEM
 import androidx.camera.camera2.pipe.integration.impl.createCaptureRequestOption
@@ -30,17 +29,13 @@ import androidx.camera.core.impl.ReadableConfig
 /**
  * A bundle of Camera2 capture request options.
  *
- * @property config The config that potentially contains Camera2 capture request options.
  * @constructor Creates a CaptureRequestOptions for reading Camera2 capture request options from the
- * given config.
+ *   given config.
+ * @property config The config that potentially contains Camera2 capture request options.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 @ExperimentalCamera2Interop
-
-open class CaptureRequestOptions private constructor(
-    private val config: Config,
-    @Suppress("UNUSED_PARAMETER") unused: Boolean
-) :
+public open class CaptureRequestOptions
+private constructor(private val config: Config, @Suppress("UNUSED_PARAMETER") unused: Boolean) :
     ReadableConfig {
 
     internal constructor(config: Config) : this(config, false)
@@ -48,12 +43,11 @@ open class CaptureRequestOptions private constructor(
     /**
      * Returns a value for the given [CaptureRequest.Key] or null if it hasn't been set.
      *
-     * @param key            The key to retrieve.
-     * @param ValueT         The type of the value.
-     * @return The stored value or null if the value does not exist in this
-     * configuration.
+     * @param key The key to retrieve.
+     * @param ValueT The type of the value.
+     * @return The stored value or null if the value does not exist in this configuration.
      */
-    open fun <ValueT> getCaptureRequestOption(key: CaptureRequest.Key<ValueT>): ValueT? {
+    public open fun <ValueT> getCaptureRequestOption(key: CaptureRequest.Key<ValueT>): ValueT? {
         // Type should have been only set via Builder#setCaptureRequestOption()
         @Suppress("UNCHECKED_CAST")
         val opt = key.createCaptureRequestOption() as Config.Option<ValueT>
@@ -63,11 +57,11 @@ open class CaptureRequestOptions private constructor(
     /**
      * Returns a value for the given [CaptureRequest.Key].
      *
-     * @param key            The key to retrieve.
+     * @param key The key to retrieve.
      * @param valueIfMissing The value to return if this configuration option has not been set.
-     * @param ValueT         The type of the value.
+     * @param ValueT The type of the value.
      * @return The stored value or `valueIfMissing` if the value does not exist in this
-     * configuration.
+     *   configuration.
      */
     internal fun <ValueT> getCaptureRequestOption(
         key: CaptureRequest.Key<ValueT>,
@@ -79,22 +73,17 @@ open class CaptureRequestOptions private constructor(
         return config.retrieveOption(opt, valueIfMissing)
     }
 
-    /**
-     * Returns the [Config] object associated with this [CaptureRequestOptions].
-     */
+    /** Returns the [Config] object associated with this [CaptureRequestOptions]. */
     @RestrictTo(RestrictTo.Scope.LIBRARY)
     override fun getConfig(): Config {
         return config
     }
 
-    /**
-     * Builder for creating [CaptureRequestOptions] instance.
-     */
-    @RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
-    class Builder : ExtendableBuilder<CaptureRequestOptions?> {
+    /** Builder for creating [CaptureRequestOptions] instance. */
+    public class Builder : ExtendableBuilder<CaptureRequestOptions?> {
         private val mutableOptionsBundle = MutableOptionsBundle.create()
 
-        companion object {
+        public companion object {
             /**
              * Generates a Builder from another Config object.
              *
@@ -103,14 +92,13 @@ open class CaptureRequestOptions private constructor(
              */
             @JvmStatic
             @RestrictTo(RestrictTo.Scope.LIBRARY)
-            fun from(config: Config): Builder {
+            public fun from(config: Config): Builder {
                 val bundleBuilder = Builder()
                 config.findOptions(CAPTURE_REQUEST_ID_STEM) {
                     // Erase the type of the option. Capture request options should only be
                     // set via Camera2Interop so that the type of the key and value should
                     // always match.
-                    @Suppress("UNCHECKED_CAST")
-                    val objectOpt = it as Config.Option<Any>
+                    @Suppress("UNCHECKED_CAST") val objectOpt = it as Config.Option<Any>
                     bundleBuilder.mutableConfig.insertOption(
                         objectOpt,
                         config.getOptionPriority(objectOpt),
@@ -122,18 +110,14 @@ open class CaptureRequestOptions private constructor(
             }
         }
 
-        /**
-         * {@inheritDoc}
-         */
+        /** {@inheritDoc} */
         @RestrictTo(RestrictTo.Scope.LIBRARY)
         override fun getMutableConfig(): MutableConfig {
             return mutableOptionsBundle
         }
 
-        /**
-         * Inserts new capture request option with specific [CaptureRequest.Key] setting.
-         */
-        fun <ValueT> setCaptureRequestOption(
+        /** Inserts new capture request option with specific [CaptureRequest.Key] setting. */
+        public fun <ValueT> setCaptureRequestOption(
             key: CaptureRequest.Key<ValueT>,
             value: ValueT
         ): Builder {
@@ -142,12 +126,8 @@ open class CaptureRequestOptions private constructor(
             return this
         }
 
-        /**
-         * Removes a capture request option with specific [CaptureRequest.Key] setting.
-         */
-        fun <ValueT> clearCaptureRequestOption(
-            key: CaptureRequest.Key<ValueT>
-        ): Builder {
+        /** Removes a capture request option with specific [CaptureRequest.Key] setting. */
+        public fun <ValueT> clearCaptureRequestOption(key: CaptureRequest.Key<ValueT>): Builder {
             val opt = key.createCaptureRequestOption()
             mutableOptionsBundle.removeOption(opt)
             return this

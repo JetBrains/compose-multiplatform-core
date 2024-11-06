@@ -1,0 +1,9 @@
+// Baseline format: 1.0
+RemovedMethod: androidx.collection.FloatFloatPair#getFirst():
+    Removed method androidx.collection.FloatFloatPair.getFirst()
+RemovedMethod: androidx.collection.FloatFloatPair#getSecond():
+    Removed method androidx.collection.FloatFloatPair.getSecond()
+RemovedMethod: androidx.collection.IntIntPair#getFirst():
+    Removed method androidx.collection.IntIntPair.getFirst()
+RemovedMethod: androidx.collection.IntIntPair#getSecond():
+    Removed method androidx.collection.IntIntPair.getSecond()

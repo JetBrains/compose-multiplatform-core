@@ -19,7 +19,6 @@ package androidx.compose.material3.adaptive.layout
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.currentWindowSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -30,7 +29,6 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.toSize
 
-@OptIn(ExperimentalMaterial3AdaptiveApi::class)
 internal fun ComposeContentTestRule.setContentWithSimulatedSize(
     simulatedWidth: Dp,
     simulatedHeight: Dp,
@@ -38,12 +36,9 @@ internal fun ComposeContentTestRule.setContentWithSimulatedSize(
 ) {
     setContent {
         val currentDensity = LocalDensity.current
-        val windowSize = with(currentDensity) {
-            currentWindowSize().toSize().toDpSize();
-        }
-        val simulatedDensity = Density(
-            currentDensity.density * (windowSize.width / simulatedWidth)
-        )
+        val windowSize = with(currentDensity) { currentWindowSize().toSize().toDpSize() }
+
+        val simulatedDensity = Density(currentDensity.density * (windowSize.width / simulatedWidth))
         CompositionLocalProvider(LocalDensity provides simulatedDensity) {
             Box(
                 Modifier.fillMaxWidth().height(simulatedHeight),

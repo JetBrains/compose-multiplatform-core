@@ -5,7 +5,7 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.Publish
+import androidx.build.LibraryType
 
 plugins {
     id("AndroidXPlugin")
@@ -13,8 +13,8 @@ plugins {
 }
 
 dependencies {
-    api("androidx.annotation:annotation:1.1.0")
-    implementation("androidx.collection:collection:1.0.0")
+    api("androidx.annotation:annotation:1.8.1")
+    implementation("androidx.collection:collection:1.4.2")
     api("androidx.appcompat:appcompat:1.0.0")
     api("androidx.recyclerview:recyclerview:1.3.2")
     api("androidx.preference:preference:1.1.0")
@@ -22,10 +22,7 @@ dependencies {
 }
 
 android {
-    defaultConfig {
-        minSdkVersion 21
-    }
-
+    compileSdk 35
     sourceSets {
         main.java.srcDirs += [
                 "api21"
@@ -36,10 +33,9 @@ android {
 
 androidx {
     name = "Leanback Preference"
-    publish = Publish.SNAPSHOT_AND_RELEASE
+    type = LibraryType.PUBLISHED_LIBRARY
     mavenVersion = LibraryVersions.LEANBACK_PREFERENCE
     inceptionYear = "2015"
     description = "AndroidX Leanback Preference"
     failOnDeprecationWarnings = false
-    metalavaK2UastEnabled = true
 }

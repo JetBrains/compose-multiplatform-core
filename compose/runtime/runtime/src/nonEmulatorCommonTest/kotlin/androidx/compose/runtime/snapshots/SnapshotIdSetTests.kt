@@ -16,9 +16,12 @@
 
 package androidx.compose.runtime.snapshots
 
+import androidx.collection.LongList
+import androidx.collection.mutableLongListOf
 import kotlin.random.Random
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class SnapshotIdSetTests {
@@ -26,166 +29,144 @@ class SnapshotIdSetTests {
     fun emptySetShouldBeEmpty() {
         val empty = SnapshotIdSet.EMPTY
 
-        repeat(1000) {
-            empty.shouldBe(it, false)
-        }
+        repeat(1000L) { empty.shouldBe(it, false) }
     }
 
     @Test
     fun shouldBeAbleToSetItems() {
-        val times = 10000
-        val set = (0..times).fold(SnapshotIdSet.EMPTY) { prev, index ->
-            prev.set(index)
-        }
+        val times = 10000L
+        val set = (0..times).fold(SnapshotIdSet.EMPTY) { prev, index -> prev.set(index) }
 
-        repeat(times) {
-            set.shouldBe(it, true)
-        }
+        repeat(times) { set.shouldBe(it, true) }
     }
 
     @Test
     fun shouldBeAbleToSetOnlyEven() {
-        val times = 10000
-        val set = (0..times).fold(SnapshotIdSet.EMPTY) { prev, index ->
-            if (index % 2 == 0) prev.set(index) else prev
-        }
+        val times = 10000L
+        val set =
+            (0..times).fold(SnapshotIdSet.EMPTY) { prev, index ->
+                if (index % 2L == 0L) prev.set(index) else prev
+            }
 
-        repeat(times) {
-            set.shouldBe(it, it % 2 == 0)
-        }
+        repeat(times) { set.shouldBe(it, it % 2L == 0L) }
     }
 
     @Test
     fun shouldBeAbleToSetOnlyOdds() {
-        val times = 10000
-        val set = (0..times).fold(SnapshotIdSet.EMPTY) { prev, index ->
-            if (index % 2 == 1) prev.set(index) else prev
-        }
+        val times = 10000L
+        val set =
+            (0..times).fold(SnapshotIdSet.EMPTY) { prev, index ->
+                if (index % 2L == 1L) prev.set(index) else prev
+            }
 
-        repeat(times) {
-            set.shouldBe(it, it % 2 == 1)
-        }
+        repeat(times) { set.shouldBe(it, it % 2L == 1L) }
     }
 
     @Test
     fun shouldBeAbleToClearEvens() {
-        val times = 10000
-        val allSet = (0..times).fold(SnapshotIdSet.EMPTY) { prev, index ->
-            prev.set(index)
-        }
+        val times = 10000L
+        val allSet = (0..times).fold(SnapshotIdSet.EMPTY) { prev, index -> prev.set(index) }
 
-        val set = (0..times).fold(allSet) { prev, index ->
-            if (index % 2 == 0) prev.clear(index) else prev
-        }
+        val set =
+            (0..times).fold(allSet) { prev, index ->
+                if (index % 2L == 0L) prev.clear(index) else prev
+            }
 
-        repeat(times - 1) {
-            set.shouldBe(it, it % 2 == 1)
-        }
+        repeat(times - 1) { set.shouldBe(it, it % 2L == 1L) }
     }
 
     @Test
     fun shouldBeAbleToCrawlSet() {
-        val times = 10000
-        val set = (0..times).fold(SnapshotIdSet.EMPTY) { prev, index ->
-            prev.clear(index - 1).set(index)
-        }
+        val times = 10000L
+        val set =
+            (0..times).fold(SnapshotIdSet.EMPTY) { prev, index -> prev.clear(index - 1).set(index) }
 
         set.shouldBe(times, true)
-        repeat(times - 1) {
-            set.shouldBe(it, false)
-        }
+        repeat(times - 1) { set.shouldBe(it, false) }
     }
 
     @Test
     fun shouldBeAbleToCrawlAndClear() {
-        val times = 10000
-        val set = (0..times).fold(SnapshotIdSet.EMPTY) { prev, index ->
-            prev.let {
-                if ((index - 1) % 33 != 0) it.clear(index - 1) else it
-            }.set(index)
-        }
+        val times = 10000L
+        val set =
+            (0..times).fold(SnapshotIdSet.EMPTY) { prev, index ->
+                prev.let { if ((index - 1L) % 33L != 0L) it.clear(index - 1) else it }.set(index)
+            }
 
         set.shouldBe(times, true)
 
         // The multiples of 33 items should now be set
-        repeat(times - 1) {
-            set.shouldBe(it, it % 33 == 0)
-        }
+        repeat(times - 1) { set.shouldBe(it, it % 33L == 0L) }
 
-        val newSet = (0 until times).fold(set) { prev, index ->
-            prev.clear(index)
-        }
+        val newSet = (0 until times).fold(set) { prev, index -> prev.clear(index) }
 
         newSet.shouldBe(times, true)
 
-        repeat(times - 1) {
-            newSet.shouldBe(it, false)
-        }
+        repeat(times - 1) { newSet.shouldBe(it, false) }
     }
 
     @Test
     fun shouldBeAbleToInsertAndRemoveOutOfOptimalRange() {
-        SnapshotIdSet.EMPTY
-            .set(1000)
-            .set(1)
-            .shouldBe(1000, true)
-            .shouldBe(1, true)
-            .set(10)
-            .shouldBe(10, true)
-            .set(4)
-            .shouldBe(4, true)
-            .clear(1)
-            .shouldBe(1, false)
-            .clear(4)
-            .shouldBe(4, false)
-            .clear(10)
-            .shouldBe(1, false)
-            .shouldBe(4, false)
-            .shouldBe(10, false)
-            .shouldBe(1000, true)
+        SnapshotIdSet.EMPTY.set(1000L)
+            .set(1L)
+            .shouldBe(1000L, true)
+            .shouldBe(1L, true)
+            .set(10L)
+            .shouldBe(10L, true)
+            .set(4L)
+            .shouldBe(4L, true)
+            .clear(1L)
+            .shouldBe(1L, false)
+            .clear(4L)
+            .shouldBe(4L, false)
+            .clear(10L)
+            .shouldBe(1L, false)
+            .shouldBe(4L, false)
+            .shouldBe(10L, false)
+            .shouldBe(1000L, true)
     }
 
     @Test
     fun shouldMatchBooleanArray() {
         val random = Random(10)
         val booleans = BooleanArray(1000)
-        val set = (0..100).fold(SnapshotIdSet.EMPTY) { prev, _ ->
-            val value = random.nextInt(0, 1000)
-            booleans[value] = true
-            prev.set(value)
-        }
+        val set =
+            (0..100L).fold(SnapshotIdSet.EMPTY) { prev, _ ->
+                val value = random.nextInt(0, 1000)
+                booleans[value] = true
+                prev.set(value.toLong())
+            }
 
-        val clear = (0..100).fold(set) { prev, _ ->
-            val value = random.nextInt(0, 1000)
-            booleans[value] = false
-            prev.clear(value)
-        }
+        val clear =
+            (0..100).fold(set) { prev, _ ->
+                val value = random.nextInt(0, 1000)
+                booleans[value] = false
+                prev.clear(value.toLong())
+            }
 
-        repeat(1000) {
-            clear.shouldBe(it, booleans[it])
-        }
+        repeat(1000L) { clear.shouldBe(it, booleans[it.toInt()]) }
     }
 
     @Test
     fun shouldBeAbleToAndNotBits() {
         val random = Random(11)
         val booleans = BooleanArray(1000)
-        val setA = (0..100).fold(SnapshotIdSet.EMPTY) { prev, _ ->
-            val value = random.nextInt(0, 1000)
-            booleans[value] = true
-            prev.set(value)
-        }
+        val setA =
+            (0..100).fold(SnapshotIdSet.EMPTY) { prev, _ ->
+                val value = random.nextInt(0, 1000)
+                booleans[value] = true
+                prev.set(value.toLong())
+            }
 
-        val setB = (0..100).fold(SnapshotIdSet.EMPTY) { prev, _ ->
-            val value = random.nextInt(0, 1000)
-            booleans[value] = false
-            prev.set(value)
-        }
+        val setB =
+            (0..100).fold(SnapshotIdSet.EMPTY) { prev, _ ->
+                val value = random.nextInt(0, 1000)
+                booleans[value] = false
+                prev.set(value.toLong())
+            }
 
         val set = setA.andNot(setB)
-        repeat(1000) {
-            set.shouldBe(it, booleans[it])
-        }
+        repeat(1000L) { set.shouldBe(it, booleans[it.toInt()]) }
     }
 
     @Test
@@ -193,22 +174,22 @@ class SnapshotIdSetTests {
         fun test(size: Int) {
             val random = Random(size)
             val booleans = BooleanArray(1024)
-            val setA = (0 until size).fold(SnapshotIdSet.EMPTY) { prev, index ->
-                if (random.nextInt(0, 1000) > 500) {
-                    booleans[index] = true
-                    prev.set(index)
-                } else prev
-            }
-            val setB = (0 until size).fold(SnapshotIdSet.EMPTY) { prev, index ->
-                if (random.nextInt(0, 1000) > 500) {
-                    booleans[index] = false
-                    prev.set(index)
-                } else prev
-            }
+            val setA =
+                (0 until size).fold(SnapshotIdSet.EMPTY) { prev, index ->
+                    if (random.nextInt(0, 1000) > 500) {
+                        booleans[index] = true
+                        prev.set(index.toLong())
+                    } else prev
+                }
+            val setB =
+                (0 until size).fold(SnapshotIdSet.EMPTY) { prev, index ->
+                    if (random.nextInt(0, 1000) > 500) {
+                        booleans[index] = false
+                        prev.set(index.toLong())
+                    } else prev
+                }
             val set = setA.andNot(setB)
-            repeat(size) {
-                set.shouldBe(it, booleans[it])
-            }
+            repeat(size) { set.shouldBe(it.toLong(), booleans[it]) }
         }
         test(32)
         test(64)
@@ -222,22 +203,22 @@ class SnapshotIdSetTests {
         fun test(size: Int) {
             val random = Random(size)
             val booleans = BooleanArray(1024)
-            val setA = (0 until size).fold(SnapshotIdSet.EMPTY) { prev, index ->
-                if (random.nextInt(0, 1000) > 500) {
-                    booleans[index] = true
-                    prev.set(index)
-                } else prev
-            }
-            val setB = (0 until size).fold(SnapshotIdSet.EMPTY) { prev, index ->
-                if (random.nextInt(0, 1000) > 500) {
-                    booleans[index] = true
-                    prev.set(index)
-                } else prev
-            }
+            val setA =
+                (0 until size).fold(SnapshotIdSet.EMPTY) { prev, index ->
+                    if (random.nextInt(0, 1000) > 500) {
+                        booleans[index] = true
+                        prev.set(index.toLong())
+                    } else prev
+                }
+            val setB =
+                (0 until size).fold(SnapshotIdSet.EMPTY) { prev, index ->
+                    if (random.nextInt(0, 1000) > 500) {
+                        booleans[index] = true
+                        prev.set(index.toLong())
+                    } else prev
+                }
             val set = setA.or(setB)
-            repeat(size) {
-                set.shouldBe(it, booleans[it])
-            }
+            repeat(size) { set.shouldBe(it.toLong(), booleans[it]) }
         }
         test(32)
         test(64)
@@ -250,16 +231,15 @@ class SnapshotIdSetTests {
     fun shouldBeAbleToIterate() {
         fun test(size: Int) {
             val random = Random(size)
-            val values = mutableListOf<Int>()
-            val set = (0 until size).fold(SnapshotIdSet.EMPTY) { prev, index ->
-                if (random.nextInt(0, 1000) > 500) {
-                    values.add(index)
-                    prev.set(index)
-                } else prev
-            }
-            values.zip(set).forEach {
-                assertEquals(it.first, it.second)
-            }
+            val values = mutableLongListOf()
+            val set =
+                (0 until size).fold(SnapshotIdSet.EMPTY) { prev, index ->
+                    if (random.nextInt(0, 1000) > 500) {
+                        values.add(index.toLong())
+                        prev.set(index.toLong())
+                    } else prev
+                }
+            values.zip(set).forEach { assertEquals(it.first, it.second) }
             assertEquals(values.size, set.count())
         }
 
@@ -271,19 +251,26 @@ class SnapshotIdSetTests {
 
     @Test // Regression b/182822837
     fun shouldReportTheCorrectLowest() {
-        fun test(number: Int) {
+        fun test(number: Long) {
             val set = SnapshotIdSet.EMPTY.set(number)
             assertEquals(number, set.lowest(-1))
         }
 
-        repeat(64) {
-            test(it)
-        }
+        repeat(64) { test(it) }
+    }
+
+    @Test
+    fun shouldOverflowGracefully() {
+        val s = SnapshotIdSet.EMPTY.set(0).set(Long.MAX_VALUE)
+        assertTrue(s.get(0))
+        assertTrue(s.get(Long.MAX_VALUE))
+        assertFalse(s.get(1))
     }
 
     @Test // Regression: b/147836978
     fun shouldValidWhenSetIsLarge() {
-        val data = """
+        val data =
+            """
 2:true,
 2:false,
 3:true,
@@ -5632,22 +5619,40 @@ class SnapshotIdSetTests {
 3089:false,
 3093:true"""
 
-        val operations = data.replace("\n", "").split(",").filter {
-            it.isNotEmpty()
-        }.map {
-            it.split(":").let {
-                it[0].toInt() to it[1].toBoolean()
-            }
-        }
+        val operations =
+            data
+                .replace("\n", "")
+                .split(",")
+                .filter { it.isNotEmpty() }
+                .map { it.split(":").let { it[0].toInt() to it[1].toBoolean() } }
         operations.fold(SnapshotIdSet.EMPTY) { prev, (value, op) ->
-            assertTrue(prev.get(value) != op, "Error on bit $value, expected ${!op}, received $op")
-            val result = if (op) prev.set(value) else prev.clear(value)
+            assertTrue(
+                prev.get(value.toLong()) != op,
+                "Error on bit $value, expected ${!op}, received $op"
+            )
+            val result = if (op) prev.set(value.toLong()) else prev.clear(value.toLong())
             result
         }
     }
 }
 
-private fun SnapshotIdSet.shouldBe(index: Int, value: Boolean): SnapshotIdSet {
+private fun SnapshotIdSet.shouldBe(index: Long, value: Boolean): SnapshotIdSet {
     assertEquals(value, get(index), "Bit $index should be $value")
     return this
+}
+
+private inline fun repeat(times: Long, action: (Long) -> Unit) {
+    for (index in 0 until times) {
+        action(index)
+    }
+}
+
+private fun <R> LongList.zip(other: Iterable<R>): List<Pair<Long, R>> {
+    val second = other.iterator()
+    val list = mutableListOf<Pair<Long, R>>()
+    forEach {
+        if (!second.hasNext()) return@forEach
+        list.add(it to second.next())
+    }
+    return list
 }

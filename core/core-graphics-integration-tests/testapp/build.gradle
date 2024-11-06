@@ -21,6 +21,7 @@ plugins {
 }
 
 android {
+    compileSdkVersion 35
     defaultConfig {
         applicationId "androidx.core.graphics.sample"
     }
@@ -29,8 +30,8 @@ android {
 
 dependencies {
     implementation(project(":core:core-ktx"))
-    implementation(projectOrArtifact(":appcompat:appcompat"))
-    implementation projectOrArtifact(":annotation:annotation")
+    implementation(project(":appcompat:appcompat"))
+    implementation("androidx.annotation:annotation:1.8.1")
     compileOnly(project(":annotation:annotation-sampled"))
 }
 

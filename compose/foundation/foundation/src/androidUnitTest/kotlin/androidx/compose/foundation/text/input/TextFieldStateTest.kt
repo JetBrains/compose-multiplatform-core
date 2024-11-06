@@ -17,6 +17,10 @@
 package androidx.compose.foundation.text.input
 
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.text.input.internal.DefaultImeEditCommandScope
+import androidx.compose.foundation.text.input.internal.TransformedTextFieldState
+import androidx.compose.foundation.text.input.internal.setComposingText
+import androidx.compose.foundation.text.input.internal.withImeScope
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.runtime.snapshots.SnapshotStateObserver
@@ -73,9 +77,7 @@ class TextFieldStateTest {
         ) {
             state.edit {
                 replace(0, 0, "hello")
-                state.edit {
-                    replace(0, 0, "hello")
-                }
+                state.edit { replace(0, 0, "hello") }
             }
         }
         assertThat(state.text.toString()).isEmpty()
@@ -133,9 +135,7 @@ class TextFieldStateTest {
         }
         assertThat(state.text.toString()).isEmpty()
 
-        state.edit {
-            replace(0, 0, "hello")
-        }
+        state.edit { replace(0, 0, "hello") }
         assertThat(state.text.toString()).isEqualTo("hello")
     }
 
@@ -159,9 +159,7 @@ class TextFieldStateTest {
             assertThat(invalidationCount).isEqualTo(0)
 
             // Act.
-            state.edit {
-                selection = TextRange(0, length)
-            }
+            state.edit { selection = TextRange(0, length) }
             advanceUntilIdle()
             runCurrent()
 
@@ -192,9 +190,7 @@ class TextFieldStateTest {
             assertThat(invalidationCount).isEqualTo(0)
 
             // Act.
-            state.edit {
-                append("1")
-            }
+            state.edit { append("1") }
             advanceUntilIdle()
             runCurrent()
 
@@ -307,12 +303,8 @@ class TextFieldStateTest {
     @Test
     fun edit_placeCursorBeforeChar_throws_whenInvalid() {
         state.edit {
-            assertFailsWith<IllegalArgumentException> {
-                placeCursorBeforeCharAt(500)
-            }
-            assertFailsWith<IllegalArgumentException> {
-                placeCursorBeforeCharAt(-1)
-            }
+            assertFailsWith<IllegalArgumentException> { placeCursorBeforeCharAt(500) }
+            assertFailsWith<IllegalArgumentException> { placeCursorBeforeCharAt(-1) }
             placeCursorAtEnd()
         }
     }
@@ -338,18 +330,10 @@ class TextFieldStateTest {
     @Test
     fun edit_selectChars_throws_whenInvalid() {
         state.edit {
-            assertFailsWith<IllegalArgumentException> {
-                selection = TextRange(500, 501)
-            }
-            assertFailsWith<IllegalArgumentException> {
-                selection = TextRange(-1, 500)
-            }
-            assertFailsWith<IllegalArgumentException> {
-                selection = TextRange(500, -1)
-            }
-            assertFailsWith<IllegalArgumentException> {
-                selection = TextRange(-500, -1)
-            }
+            assertFailsWith<IllegalArgumentException> { selection = TextRange(500, 501) }
+            assertFailsWith<IllegalArgumentException> { selection = TextRange(-1, 500) }
+            assertFailsWith<IllegalArgumentException> { selection = TextRange(500, -1) }
+            assertFailsWith<IllegalArgumentException> { selection = TextRange(-500, -1) }
             placeCursorAtEnd()
         }
     }
@@ -500,9 +484,7 @@ class TextFieldStateTest {
             snapshotFlow { state.value }.collectLatest { texts += it }
         }
 
-        state.edit {
-            placeCursorAtEnd()
-        }
+        state.edit { placeCursorAtEnd() }
 
         assertThat(texts).hasSize(2)
         assertThat(texts.last()).isSameInstanceAs(state.value)
@@ -612,18 +594,17 @@ class TextFieldStateTest {
             val texts = mutableListOf<TextFieldCharSequence>()
 
             launch(Dispatchers.Unconfined) {
-                snapshotFlow { state.value }.collectLatest {
-                    texts += it
-                    awaitCancellation()
-                }
+                snapshotFlow { state.value }
+                    .collectLatest {
+                        texts += it
+                        awaitCancellation()
+                    }
             }
 
             state.setTextAndPlaceCursorAtEnd("hello")
             state.setTextAndPlaceCursorAtEnd("world")
 
-            assertThat(texts.map { it.toString() })
-                .containsExactly("", "hello", "world")
-                .inOrder()
+            assertThat(texts.map { it.toString() }).containsExactly("", "hello", "world").inOrder()
         }
 
     @Test
@@ -632,13 +613,7 @@ class TextFieldStateTest {
             val state = TextFieldState()
             val texts = mutableListOf<CharSequence>()
 
-            launch(Dispatchers.Unconfined) {
-                snapshotFlow {
-                    state.text
-                }.collect {
-                    texts += it
-                }
-            }
+            launch(Dispatchers.Unconfined) { snapshotFlow { state.text }.collect { texts += it } }
 
             state.edit { append("a") }
             state.edit { append("b") }
@@ -646,9 +621,7 @@ class TextFieldStateTest {
             state.edit { placeCursorAtEnd() }
             state.edit { append("c") }
 
-            assertThat(texts.map { it.toString() })
-                .containsExactly("", "a", "ab", "abc")
-                .inOrder()
+            assertThat(texts.map { it.toString() }).containsExactly("", "a", "ab", "abc").inOrder()
         }
     }
 
@@ -656,13 +629,7 @@ class TextFieldStateTest {
     fun toString_doesNotReadSnapshotState() {
         val state = TextFieldState("hello")
         var isRead = false
-        Snapshot.observe(
-            readObserver = {
-                isRead = true
-            }
-        ) {
-            state.toString()
-        }
+        Snapshot.observe(readObserver = { isRead = true }) { state.toString() }
 
         assertThat(isRead).isFalse()
     }
@@ -683,11 +650,175 @@ class TextFieldStateTest {
         assertThat(isRead).isEqualTo(false)
     }
 
-    private fun runTestWithSnapshotsThenCancelChildren(testBody: suspend TestScope.() -> Unit) {
-        val globalWriteObserverHandle = Snapshot.registerGlobalWriteObserver {
-            // This is normally done by the compose runtime.
-            Snapshot.sendApplyNotifications()
+    @Test
+    fun onlyHighlightChange_doesNotTriggerInputTransformation() {
+        val state = TextFieldState("abc def ghi")
+        var transformationCalled = 0
+        val inputTransformation = InputTransformation { transformationCalled++ }
+        state.editAsUser(inputTransformation) {
+            setHighlight(TextHighlightType.HandwritingSelectPreview, 0, 3)
         }
+        state.editAsUser(inputTransformation) {
+            setHighlight(TextHighlightType.HandwritingDeletePreview, 4, 7)
+        }
+        assertThat(transformationCalled).isEqualTo(0)
+    }
+
+    @Test
+    fun inputTransformationRejectsChanges_removesComposition() {
+        val state = TextFieldState()
+        val inputTransformation = InputTransformation { revertAllChanges() }
+        state.withImeScope(inputTransformation) { setComposingText("hello", 1) }
+        assertThat(state.text).isEqualTo("")
+        assertThat(state.selection).isEqualTo(TextRange.Zero)
+        assertThat(state.composition).isNull()
+    }
+
+    @Test
+    fun notifyImeListener_firesAfterProgrammaticEdit() {
+        val state = TextFieldState("Hello")
+        var oldValueCalled: TextFieldCharSequence? = null
+        var newValueCalled: TextFieldCharSequence? = null
+        var restartImeCalled: Boolean? = null
+        val listener =
+            TextFieldState.NotifyImeListener { oldValue, newValue, restartIme ->
+                oldValueCalled = oldValue
+                newValueCalled = newValue
+                restartImeCalled = restartIme
+            }
+        state.addNotifyImeListener(listener)
+
+        state.edit { append(" World") }
+
+        assertThat(oldValueCalled.toString()).isEqualTo("Hello")
+        assertThat(newValueCalled.toString()).isEqualTo("Hello World")
+        assertThat(restartImeCalled).isFalse()
+    }
+
+    @Test
+    fun notifyImeListener_firesAfterProgrammaticEdit_restartsImeIfComposing() {
+        val state = TextFieldState("Hello")
+        // We need a composing region to fire restartIme
+        state.editAsUser(null) { setComposition(0, 5) }
+        var oldValueCalled: TextFieldCharSequence? = null
+        var newValueCalled: TextFieldCharSequence? = null
+        var restartImeCalled: Boolean? = null
+        val listener =
+            TextFieldState.NotifyImeListener { oldValue, newValue, restartIme ->
+                oldValueCalled = oldValue
+                newValueCalled = newValue
+                restartImeCalled = restartIme
+            }
+        state.addNotifyImeListener(listener)
+
+        state.edit { append(" World") }
+
+        assertThat(oldValueCalled.toString()).isEqualTo("Hello")
+        assertThat(newValueCalled.toString()).isEqualTo("Hello World")
+        assertThat(restartImeCalled).isTrue()
+    }
+
+    @Test
+    fun notifyImeListener_firesAfterProgrammaticEdit_doesNotRestartIfContentIsSame() {
+        val state = TextFieldState("Hello")
+        // We need a composing region to fire restartIme
+        state.editAsUser(null) { setComposition(0, 5) }
+        var oldValueCalled: TextFieldCharSequence? = null
+        var newValueCalled: TextFieldCharSequence? = null
+        var restartImeCalled: Boolean? = null
+        val listener =
+            TextFieldState.NotifyImeListener { oldValue, newValue, restartIme ->
+                oldValueCalled = oldValue
+                newValueCalled = newValue
+                restartImeCalled = restartIme
+            }
+        state.addNotifyImeListener(listener)
+
+        state.edit {
+            // this ends up being no-op
+            append(" World")
+            delete(5, length)
+        }
+
+        assertThat(oldValueCalled.toString()).isEqualTo("Hello")
+        assertThat(newValueCalled.toString()).isEqualTo("Hello")
+        assertThat(restartImeCalled).isFalse()
+    }
+
+    @Test
+    fun notifyImeListener_firesAfterUserEdit() {
+        val state = TextFieldState("Hello")
+        // We need a composing region for restartIme to be true. It's not going to be but let's
+        // cover all corners
+        state.editAsUser(null) { setComposition(0, 5) }
+        var oldValueCalled: TextFieldCharSequence? = null
+        var newValueCalled: TextFieldCharSequence? = null
+        var restartImeCalled: Boolean? = null
+        val listener =
+            TextFieldState.NotifyImeListener { oldValue, newValue, restartIme ->
+                oldValueCalled = oldValue
+                newValueCalled = newValue
+                restartImeCalled = restartIme
+            }
+        state.addNotifyImeListener(listener)
+
+        DefaultImeEditCommandScope(TransformedTextFieldState(state)).setComposingText("World", 1)
+
+        assertThat(oldValueCalled.toString()).isEqualTo("Hello")
+        assertThat(newValueCalled.toString()).isEqualTo("World")
+        // Even though content changes and there was a composing region, IME is not restarted
+        assertThat(restartImeCalled).isFalse()
+    }
+
+    @Test
+    fun notifyImeListener_firesAfterUndoRedo() {
+        val state = TextFieldState("Hello")
+        state.editAsUser(null) { append(" World") }
+        var oldValueCalled: TextFieldCharSequence? = null
+        var newValueCalled: TextFieldCharSequence? = null
+        var restartImeCalled: Boolean? = null
+        val listener =
+            TextFieldState.NotifyImeListener { oldValue, newValue, restartIme ->
+                oldValueCalled = oldValue
+                newValueCalled = newValue
+                restartImeCalled = restartIme
+            }
+        state.addNotifyImeListener(listener)
+
+        state.undoState.undo() // should remove " World"
+
+        assertThat(oldValueCalled.toString()).isEqualTo("Hello World")
+        assertThat(newValueCalled.toString()).isEqualTo("Hello")
+        assertThat(restartImeCalled).isFalse()
+    }
+
+    @Test
+    fun notifyImeListener_restartImeIsFalse_ifOnlySelectionIsChanged() {
+        val state = TextFieldState("Hello", TextRange(3))
+        var oldValueCalled: TextFieldCharSequence? = null
+        var newValueCalled: TextFieldCharSequence? = null
+        var restartImeCalled: Boolean? = null
+        val listener =
+            TextFieldState.NotifyImeListener { oldValue, newValue, restartIme ->
+                oldValueCalled = oldValue
+                newValueCalled = newValue
+                restartImeCalled = restartIme
+            }
+        state.addNotifyImeListener(listener)
+
+        state.editAsUser(null, restartImeIfContentChanges = true) { selection = TextRange.Zero }
+
+        assertThat(oldValueCalled?.selection).isEqualTo(TextRange(3))
+        assertThat(newValueCalled?.selection).isEqualTo(TextRange(0))
+        assertThat(restartImeCalled).isFalse()
+    }
+
+    private fun runTestWithSnapshotsThenCancelChildren(testBody: suspend TestScope.() -> Unit) {
+        val globalWriteObserverHandle =
+            Snapshot.registerGlobalWriteObserver {
+                // This is normally done by the compose runtime.
+                Snapshot.sendApplyNotifications()
+            }
         try {
             runTest {
                 testBody()

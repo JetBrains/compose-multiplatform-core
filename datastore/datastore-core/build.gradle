@@ -28,8 +28,6 @@ import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("com.google.protobuf")
-    id ("kotlin-parcelize")
 }
 
 android {
@@ -42,37 +40,19 @@ android {
     namespace "androidx.datastore.core"
 }
 
-protobuf {
-    protoc {
-        artifact = libs.protobufCompiler.get()
-    }
-    generateProtoTasks {
-        all().each { task ->
-            task.builtins {
-                java {
-                    option "lite"
-                }
-            }
-        }
-    }
-}
-
-def protoDir = project.layout.projectDirectory.dir("src/androidInstrumentedTest/proto")
-tasks.named("extractAndroidTestProto").configure {
-    it.inputFiles.from(project.files(protoDir))
-}
-
 androidXMultiplatform {
     jvm()
     mac()
     linux()
     ios()
+    watchos()
+    tvos()
     android()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
     sourceSets {
-        all {
+        configureEach {
             languageSettings.optIn("kotlin.RequiresOptIn")
         }
 
@@ -80,7 +60,7 @@ androidXMultiplatform {
             dependencies {
                 api(libs.kotlinStdlib)
                 api(libs.kotlinCoroutinesCore)
-                api("androidx.annotation:annotation:1.7.0")
+                api("androidx.annotation:annotation:1.8.1")
             }
         }
 
@@ -102,7 +82,7 @@ androidXMultiplatform {
                 implementation(libs.kotlinTestAnnotationsCommon)
                 implementation(libs.kotlinCoroutinesTest)
                 implementation(libs.okio)
-                api(project(":datastore:datastore-core-okio"))
+                implementation(project(":datastore:datastore-core-okio"))
                 implementation(project(":kruth:kruth"))
                 implementation(project(":internal-testutils-datastore"))
             }
@@ -135,7 +115,6 @@ androidXMultiplatform {
         androidInstrumentedTest {
             dependsOn(commonJvmTest)
             dependencies {
-                implementation(libs.protobufLite)
                 implementation(libs.truth)
                 implementation(project(":internal-testutils-truth"))
                 implementation(libs.testRunner)
@@ -157,7 +136,7 @@ androidXMultiplatform {
             dependsOn(commonTest)
         }
 
-        targets.all { target ->
+        targets.configureEach { target ->
             if (target.platformType == KotlinPlatformType.native) {
                 target.compilations["main"].defaultSourceSet {
                     dependsOn(nativeMain)
@@ -176,4 +155,5 @@ androidx {
     inceptionYear = "2020"
     description = "Android DataStore Core - contains the underlying store used by each serialization method"
     legacyDisableKotlinStrictApiMode = true
+    metalavaK2UastEnabled = false
 }

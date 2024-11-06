@@ -20,17 +20,22 @@ import android.app.Activity;
 import android.app.ActivityOptions;
 import android.app.PendingIntent;
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Rect;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
 
-import androidx.annotation.DoNotInline;
+import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
+import androidx.annotation.RestrictTo;
 import androidx.core.util.Pair;
+
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 
 /**
  * Helper for accessing features in {@link android.app.ActivityOptions} in a backwards compatible
@@ -49,6 +54,20 @@ public class ActivityOptionsCompat {
      * each key is a package name, whose value is a long containing the time (in ms).
      */
     public static final String EXTRA_USAGE_TIME_REPORT_PACKAGES = "android.usage_time_packages";
+
+    /**
+     * Enumeration of background activity start modes.
+     * <p/>
+     * These define if an app wants to grant it's background activity start privileges to a
+     * {@link PendingIntent}.
+     */
+    @Retention(RetentionPolicy.SOURCE)
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    @IntDef(value = {
+            ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_SYSTEM_DEFINED,
+            ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED,
+            ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_DENIED})
+    public @interface BackgroundActivityStartMode {}
 
     /**
      * Create an ActivityOptions specifying a custom animation to run when the
@@ -289,6 +308,7 @@ public class ActivityOptionsCompat {
             return Api24Impl.getLaunchBounds(mActivityOptions);
         }
 
+        @NonNull
         @Override
         public ActivityOptionsCompat setShareIdentityEnabled(boolean shareIdentity) {
             if (Build.VERSION.SDK_INT < 34) {
@@ -296,6 +316,21 @@ public class ActivityOptionsCompat {
             }
             return new ActivityOptionsCompatImpl(
                     Api34Impl.setShareIdentityEnabled(mActivityOptions, shareIdentity));
+        }
+
+        @NonNull
+        @Override
+        public ActivityOptionsCompat setPendingIntentBackgroundActivityStartMode(
+                @BackgroundActivityStartMode int state) {
+            if (Build.VERSION.SDK_INT >= 34) {
+                Api34Impl.setPendingIntentBackgroundActivityStartMode(mActivityOptions, state);
+            } else if (Build.VERSION.SDK_INT >= 33) {
+                // Matches the behavior of isPendingIntentBackgroundActivityLaunchAllowed().
+                boolean isAllowed = state != ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_DENIED;
+                Api33Impl.setPendingIntentBackgroundActivityLaunchAllowed(
+                        mActivityOptions, isAllowed);
+            }
+            return this;
         }
     }
 
@@ -402,24 +437,36 @@ public class ActivityOptionsCompat {
         return this;
     }
 
+    /**
+     * Sets the mode for allowing or denying the senders privileges to start background activities
+     * to the PendingIntent.
+     * <p/>
+     * This is typically used in when executing {@link PendingIntent#send(Context, int, Intent)} or
+     * similar methods. A privileged sender of a PendingIntent should only grant
+     * {@link ActivityOptions#MODE_BACKGROUND_ACTIVITY_START_ALLOWED} if the PendingIntent is from a
+     * trusted source and/or executed on behalf the user.
+     */
+    @NonNull
+    public ActivityOptionsCompat setPendingIntentBackgroundActivityStartMode(
+            @BackgroundActivityStartMode int state) {
+        return this;
+    }
+
     @RequiresApi(23)
     static class Api23Impl {
         private Api23Impl() {
             // This class is not instantiable.
         }
 
-        @DoNotInline
         static ActivityOptions makeClipRevealAnimation(View source, int startX, int startY,
                 int width, int height) {
             return ActivityOptions.makeClipRevealAnimation(source, startX, startY, width, height);
         }
 
-        @DoNotInline
         static ActivityOptions makeBasic() {
             return ActivityOptions.makeBasic();
         }
 
-        @DoNotInline
         static void requestUsageTimeReport(ActivityOptions activityOptions,
                 PendingIntent receiver) {
             activityOptions.requestUsageTimeReport(receiver);
@@ -432,7 +479,6 @@ public class ActivityOptionsCompat {
             // This class is not instantiable.
         }
 
-        @DoNotInline
         static ActivityOptions makeSceneTransitionAnimation(Activity activity, View sharedElement,
                 String sharedElementName) {
             return ActivityOptions.makeSceneTransitionAnimation(activity, sharedElement,
@@ -440,13 +486,11 @@ public class ActivityOptionsCompat {
         }
 
         @SafeVarargs
-        @DoNotInline
         static ActivityOptions makeSceneTransitionAnimation(Activity activity,
                 android.util.Pair<View, String>... sharedElements) {
             return ActivityOptions.makeSceneTransitionAnimation(activity, sharedElements);
         }
 
-        @DoNotInline
         static ActivityOptions makeTaskLaunchBehind() {
             return ActivityOptions.makeTaskLaunchBehind();
         }
@@ -458,15 +502,26 @@ public class ActivityOptionsCompat {
             // This class is not instantiable.
         }
 
-        @DoNotInline
         static ActivityOptions setLaunchBounds(ActivityOptions activityOptions,
                 Rect screenSpacePixelRect) {
             return activityOptions.setLaunchBounds(screenSpacePixelRect);
         }
 
-        @DoNotInline
         static Rect getLaunchBounds(ActivityOptions activityOptions) {
             return activityOptions.getLaunchBounds();
+        }
+    }
+
+    @RequiresApi(33)
+    static class Api33Impl {
+        private Api33Impl() {
+            // This class is not instantiable.
+        }
+
+        @SuppressWarnings("deprecation")
+        static void setPendingIntentBackgroundActivityLaunchAllowed(ActivityOptions activityOptions,
+                boolean allowed) {
+            activityOptions.setPendingIntentBackgroundActivityLaunchAllowed(allowed);
         }
     }
 
@@ -476,10 +531,14 @@ public class ActivityOptionsCompat {
             // This class is not instantiable.
         }
 
-        @DoNotInline
         static ActivityOptions setShareIdentityEnabled(ActivityOptions activityOptions,
                 boolean shareIdentity) {
             return activityOptions.setShareIdentityEnabled(shareIdentity);
+        }
+
+        static ActivityOptions setPendingIntentBackgroundActivityStartMode(
+                ActivityOptions activityOptions, int state) {
+            return activityOptions.setPendingIntentBackgroundActivityStartMode(state);
         }
     }
 }

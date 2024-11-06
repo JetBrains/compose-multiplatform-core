@@ -5,7 +5,7 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.Publish
+import androidx.build.LibraryType
 
 plugins {
     id("AndroidXPlugin")
@@ -13,7 +13,7 @@ plugins {
 }
 
 dependencies {
-    api("androidx.annotation:annotation:1.1.0")
+    api("androidx.annotation:annotation:1.8.1")
     api("androidx.core:core:1.1.0")
     androidTestImplementation(project(":appcompat:appcompat"))
     androidTestImplementation(project(":asynclayoutinflater:asynclayoutinflater-appcompat"))
@@ -27,10 +27,9 @@ dependencies {
 
 androidx {
     name = "AsyncLayoutInflater"
-    publish = Publish.SNAPSHOT_AND_RELEASE
+    type = LibraryType.PUBLISHED_LIBRARY
     inceptionYear = "2018"
     description = "Provides support for inflating layouts off the UI thread."
-    metalavaK2UastEnabled = true
 }
 
 android {

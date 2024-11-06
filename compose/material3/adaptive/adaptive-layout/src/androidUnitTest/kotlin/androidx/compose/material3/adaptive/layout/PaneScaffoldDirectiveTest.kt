@@ -32,13 +32,12 @@ import org.junit.runners.JUnit4
 @RunWith(JUnit4::class)
 class PaneScaffoldDirectiveTest {
     @Test
+    @Suppress("DEPRECATION") // WindowSizeClass#compute is deprecated
     fun test_calculateStandardPaneScaffoldDirective_compactWidth() {
-        val scaffoldDirective = calculatePaneScaffoldDirective(
-            WindowAdaptiveInfo(
-                WindowSizeClass(400, 800),
-                Posture()
+        val scaffoldDirective =
+            calculatePaneScaffoldDirective(
+                WindowAdaptiveInfo(WindowSizeClass.compute(400f, 800f), Posture())
             )
-        )
 
         assertThat(scaffoldDirective.maxHorizontalPartitions).isEqualTo(1)
         assertThat(scaffoldDirective.maxVerticalPartitions).isEqualTo(1)
@@ -48,13 +47,12 @@ class PaneScaffoldDirectiveTest {
     }
 
     @Test
+    @Suppress("DEPRECATION") // WindowSizeClass#compute is deprecated
     fun test_calculateStandardPaneScaffoldDirective_mediumWidth() {
-        val scaffoldDirective = calculatePaneScaffoldDirective(
-            WindowAdaptiveInfo(
-                WindowSizeClass(750, 900),
-                Posture()
+        val scaffoldDirective =
+            calculatePaneScaffoldDirective(
+                WindowAdaptiveInfo(WindowSizeClass.compute(750f, 900f), Posture())
             )
-        )
 
         assertThat(scaffoldDirective.maxHorizontalPartitions).isEqualTo(1)
         assertThat(scaffoldDirective.maxVerticalPartitions).isEqualTo(1)
@@ -64,13 +62,12 @@ class PaneScaffoldDirectiveTest {
     }
 
     @Test
+    @Suppress("DEPRECATION") // WindowSizeClass#compute is deprecated
     fun test_calculateStandardPaneScaffoldDirective_expandedWidth() {
-        val scaffoldDirective = calculatePaneScaffoldDirective(
-            WindowAdaptiveInfo(
-                WindowSizeClass(1200, 800),
-                Posture()
+        val scaffoldDirective =
+            calculatePaneScaffoldDirective(
+                WindowAdaptiveInfo(WindowSizeClass.compute(1200f, 800f), Posture())
             )
-        )
 
         assertThat(scaffoldDirective.maxHorizontalPartitions).isEqualTo(2)
         assertThat(scaffoldDirective.maxVerticalPartitions).isEqualTo(1)
@@ -80,13 +77,12 @@ class PaneScaffoldDirectiveTest {
     }
 
     @Test
+    @Suppress("DEPRECATION") // WindowSizeClass#compute is deprecated
     fun test_calculateStandardPaneScaffoldDirective_tabletop() {
-        val scaffoldDirective = calculatePaneScaffoldDirective(
-            WindowAdaptiveInfo(
-                WindowSizeClass(700, 800),
-                Posture(isTabletop = true)
+        val scaffoldDirective =
+            calculatePaneScaffoldDirective(
+                WindowAdaptiveInfo(WindowSizeClass.compute(700f, 800f), Posture(isTabletop = true))
             )
-        )
 
         assertThat(scaffoldDirective.maxHorizontalPartitions).isEqualTo(1)
         assertThat(scaffoldDirective.maxVerticalPartitions).isEqualTo(2)
@@ -96,13 +92,12 @@ class PaneScaffoldDirectiveTest {
     }
 
     @Test
+    @Suppress("DEPRECATION") // WindowSizeClass#compute is deprecated
     fun test_calculateDensePaneScaffoldDirective_compactWidth() {
-        val scaffoldDirective = calculatePaneScaffoldDirectiveWithTwoPanesOnMediumWidth(
-            WindowAdaptiveInfo(
-                WindowSizeClass(400, 800),
-                Posture()
+        val scaffoldDirective =
+            calculatePaneScaffoldDirectiveWithTwoPanesOnMediumWidth(
+                WindowAdaptiveInfo(WindowSizeClass.compute(400f, 800f), Posture())
             )
-        )
 
         assertThat(scaffoldDirective.maxHorizontalPartitions).isEqualTo(1)
         assertThat(scaffoldDirective.maxVerticalPartitions).isEqualTo(1)
@@ -112,13 +107,12 @@ class PaneScaffoldDirectiveTest {
     }
 
     @Test
+    @Suppress("DEPRECATION") // WindowSizeClass#compute is deprecated
     fun test_calculateDensePaneScaffoldDirective_mediumWidth() {
-        val scaffoldDirective = calculatePaneScaffoldDirectiveWithTwoPanesOnMediumWidth(
-            WindowAdaptiveInfo(
-                WindowSizeClass(750, 900),
-                Posture()
+        val scaffoldDirective =
+            calculatePaneScaffoldDirectiveWithTwoPanesOnMediumWidth(
+                WindowAdaptiveInfo(WindowSizeClass.compute(750f, 900f), Posture())
             )
-        )
 
         assertThat(scaffoldDirective.maxHorizontalPartitions).isEqualTo(2)
         assertThat(scaffoldDirective.maxVerticalPartitions).isEqualTo(1)
@@ -128,13 +122,12 @@ class PaneScaffoldDirectiveTest {
     }
 
     @Test
+    @Suppress("DEPRECATION") // WindowSizeClass#compute is deprecated
     fun test_calculateDensePaneScaffoldDirective_expandedWidth() {
-        val scaffoldDirective = calculatePaneScaffoldDirectiveWithTwoPanesOnMediumWidth(
-            WindowAdaptiveInfo(
-                WindowSizeClass(1200, 800),
-                Posture()
+        val scaffoldDirective =
+            calculatePaneScaffoldDirectiveWithTwoPanesOnMediumWidth(
+                WindowAdaptiveInfo(WindowSizeClass.compute(1200f, 800f), Posture())
             )
-        )
 
         assertThat(scaffoldDirective.maxHorizontalPartitions).isEqualTo(2)
         assertThat(scaffoldDirective.maxVerticalPartitions).isEqualTo(1)
@@ -144,13 +137,12 @@ class PaneScaffoldDirectiveTest {
     }
 
     @Test
+    @Suppress("DEPRECATION") // WindowSizeClass#compute is deprecated
     fun test_calculateDensePaneScaffoldDirective_tabletop() {
-        val scaffoldDirective = calculatePaneScaffoldDirectiveWithTwoPanesOnMediumWidth(
-            WindowAdaptiveInfo(
-                WindowSizeClass(700, 800),
-                Posture(isTabletop = true)
+        val scaffoldDirective =
+            calculatePaneScaffoldDirectiveWithTwoPanesOnMediumWidth(
+                WindowAdaptiveInfo(WindowSizeClass.compute(700f, 800f), Posture(isTabletop = true))
             )
-        )
 
         assertThat(scaffoldDirective.maxHorizontalPartitions).isEqualTo(2)
         assertThat(scaffoldDirective.maxVerticalPartitions).isEqualTo(2)
@@ -160,131 +152,151 @@ class PaneScaffoldDirectiveTest {
     }
 
     @Test
+    @Suppress("DEPRECATION") // WindowSizeClass#compute is deprecated
     fun test_calculateStandardPaneScaffoldDirective_alwaysAvoidHinge() {
-        val scaffoldDirective = calculatePaneScaffoldDirective(
-            WindowAdaptiveInfo(
-                WindowSizeClass(700, 800),
-                Posture(hingeList = hingeList)
-            ),
-            HingePolicy.AlwaysAvoid
-        )
+        val scaffoldDirective =
+            calculatePaneScaffoldDirective(
+                WindowAdaptiveInfo(
+                    WindowSizeClass.compute(700f, 800f),
+                    Posture(hingeList = hingeList)
+                ),
+                HingePolicy.AlwaysAvoid
+            )
 
         assertThat(scaffoldDirective.excludedBounds).isEqualTo(hingeList.getBounds())
     }
 
     @Test
+    @Suppress("DEPRECATION") // WindowSizeClass#compute is deprecated
     fun test_calculateStandardPaneScaffoldDirective_avoidOccludingHinge() {
-        val scaffoldDirective = calculatePaneScaffoldDirective(
-            WindowAdaptiveInfo(
-                WindowSizeClass(700, 800),
-                Posture(hingeList = hingeList)
-            ),
-            HingePolicy.AvoidOccluding
-        )
+        val scaffoldDirective =
+            calculatePaneScaffoldDirective(
+                WindowAdaptiveInfo(
+                    WindowSizeClass.compute(700f, 800f),
+                    Posture(hingeList = hingeList)
+                ),
+                HingePolicy.AvoidOccluding
+            )
 
         assertThat(scaffoldDirective.excludedBounds).isEqualTo(hingeList.subList(0, 2).getBounds())
     }
 
     @Test
+    @Suppress("DEPRECATION") // WindowSizeClass#compute is deprecated
     fun test_calculateStandardPaneScaffoldDirective_avoidSeparatingHinge() {
-        val scaffoldDirective = calculatePaneScaffoldDirective(
-            WindowAdaptiveInfo(
-                WindowSizeClass(700, 800),
-                Posture(hingeList = hingeList)
-            ),
-            HingePolicy.AvoidSeparating
-        )
+        val scaffoldDirective =
+            calculatePaneScaffoldDirective(
+                WindowAdaptiveInfo(
+                    WindowSizeClass.compute(700f, 800f),
+                    Posture(hingeList = hingeList)
+                ),
+                HingePolicy.AvoidSeparating
+            )
 
         assertThat(scaffoldDirective.excludedBounds).isEqualTo(hingeList.subList(2, 3).getBounds())
     }
 
     @Test
+    @Suppress("DEPRECATION") // WindowSizeClass#compute is deprecated
     fun test_calculateStandardPaneScaffoldDirective_neverAvoidHinge() {
-        val scaffoldDirective = calculatePaneScaffoldDirective(
-            WindowAdaptiveInfo(
-                WindowSizeClass(700, 800),
-                Posture(hingeList = hingeList)
-            ),
-            HingePolicy.NeverAvoid
-        )
+        val scaffoldDirective =
+            calculatePaneScaffoldDirective(
+                WindowAdaptiveInfo(
+                    WindowSizeClass.compute(700f, 800f),
+                    Posture(hingeList = hingeList)
+                ),
+                HingePolicy.NeverAvoid
+            )
 
         assertThat(scaffoldDirective.excludedBounds).isEmpty()
     }
 
     @Test
+    @Suppress("DEPRECATION") // WindowSizeClass#compute is deprecated
     fun test_calculateDensePaneScaffoldDirective_alwaysAvoidHinge() {
-        val scaffoldDirective = calculatePaneScaffoldDirectiveWithTwoPanesOnMediumWidth(
-            WindowAdaptiveInfo(
-                WindowSizeClass(700, 800),
-                Posture(hingeList = hingeList)
-            ),
-            HingePolicy.AlwaysAvoid
-        )
+        val scaffoldDirective =
+            calculatePaneScaffoldDirectiveWithTwoPanesOnMediumWidth(
+                WindowAdaptiveInfo(
+                    WindowSizeClass.compute(700f, 800f),
+                    Posture(hingeList = hingeList)
+                ),
+                HingePolicy.AlwaysAvoid
+            )
 
         assertThat(scaffoldDirective.excludedBounds).isEqualTo(hingeList.getBounds())
     }
 
     @Test
+    @Suppress("DEPRECATION") // WindowSizeClass#compute is deprecated
     fun test_calculateDensePaneScaffoldDirective_avoidOccludingHinge() {
-        val scaffoldDirective = calculatePaneScaffoldDirectiveWithTwoPanesOnMediumWidth(
-            WindowAdaptiveInfo(
-                WindowSizeClass(700, 800),
-                Posture(hingeList = hingeList)
-            ),
-            HingePolicy.AvoidOccluding
-        )
+        val scaffoldDirective =
+            calculatePaneScaffoldDirectiveWithTwoPanesOnMediumWidth(
+                WindowAdaptiveInfo(
+                    WindowSizeClass.compute(700f, 800f),
+                    Posture(hingeList = hingeList)
+                ),
+                HingePolicy.AvoidOccluding
+            )
 
         assertThat(scaffoldDirective.excludedBounds).isEqualTo(hingeList.subList(0, 2).getBounds())
     }
 
     @Test
+    @Suppress("DEPRECATION") // WindowSizeClass#compute is deprecated
     fun test_calculateDensePaneScaffoldDirective_avoidSeparatingHinge() {
-        val scaffoldDirective = calculatePaneScaffoldDirectiveWithTwoPanesOnMediumWidth(
-            WindowAdaptiveInfo(
-                WindowSizeClass(700, 800),
-                Posture(hingeList = hingeList)
-            ),
-            HingePolicy.AvoidSeparating
-        )
+        val scaffoldDirective =
+            calculatePaneScaffoldDirectiveWithTwoPanesOnMediumWidth(
+                WindowAdaptiveInfo(
+                    WindowSizeClass.compute(700f, 800f),
+                    Posture(hingeList = hingeList)
+                ),
+                HingePolicy.AvoidSeparating
+            )
 
         assertThat(scaffoldDirective.excludedBounds).isEqualTo(hingeList.subList(2, 3).getBounds())
     }
 
     @Test
+    @Suppress("DEPRECATION") // WindowSizeClass#compute is deprecated
     fun test_calculateDensePaneScaffoldDirective_neverAvoidHinge() {
-        val scaffoldDirective = calculatePaneScaffoldDirectiveWithTwoPanesOnMediumWidth(
-            WindowAdaptiveInfo(
-                WindowSizeClass(700, 800),
-                Posture(hingeList = hingeList)
-            ),
-            HingePolicy.NeverAvoid
-        )
+        val scaffoldDirective =
+            calculatePaneScaffoldDirectiveWithTwoPanesOnMediumWidth(
+                WindowAdaptiveInfo(
+                    WindowSizeClass.compute(700f, 800f),
+                    Posture(hingeList = hingeList)
+                ),
+                HingePolicy.NeverAvoid
+            )
 
         assertThat(scaffoldDirective.excludedBounds).isEmpty()
     }
 }
 
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
-private val hingeList = listOf(
-    HingeInfo(
-        bounds = Rect(0F, 0F, 1F, 1F),
-        isVertical = true,
-        isSeparating = false,
-        isOccluding = true
-    ),
-    HingeInfo(
-        bounds = Rect(1F, 1F, 2F, 2F),
-        isVertical = true,
-        isSeparating = false,
-        isOccluding = true
-    ),
-    HingeInfo(
-        bounds = Rect(2F, 2F, 3F, 3F),
-        isVertical = true,
-        isSeparating = true,
-        isOccluding = false
-    ),
-)
+private val hingeList =
+    listOf(
+        HingeInfo(
+            bounds = Rect(0F, 0F, 1F, 1F),
+            isFlat = true,
+            isVertical = true,
+            isSeparating = false,
+            isOccluding = true
+        ),
+        HingeInfo(
+            bounds = Rect(1F, 1F, 2F, 2F),
+            isFlat = false,
+            isVertical = true,
+            isSeparating = false,
+            isOccluding = true
+        ),
+        HingeInfo(
+            bounds = Rect(2F, 2F, 3F, 3F),
+            isFlat = true,
+            isVertical = true,
+            isSeparating = true,
+            isOccluding = false
+        ),
+    )
 
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
 private fun List<HingeInfo>.getBounds(): List<Rect> {

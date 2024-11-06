@@ -19,7 +19,6 @@ package androidx.compose.ui.graphics
 import android.annotation.SuppressLint
 import android.graphics.Canvas
 import android.os.Build
-import androidx.annotation.DoNotInline
 import androidx.annotation.RequiresApi
 import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
@@ -43,28 +42,31 @@ internal object CanvasUtils {
                 try {
                     if (Build.VERSION.SDK_INT == Build.VERSION_CODES.P) {
                         // use double reflection to avoid grey list on P
-                        val getDeclaredMethod = Class::class.java.getDeclaredMethod(
-                            "getDeclaredMethod",
-                            String::class.java,
-                            arrayOf<Class<*>>()::class.java
-                        )
-                        reorderBarrierMethod = getDeclaredMethod.invoke(
-                            Canvas::class.java,
-                            "insertReorderBarrier",
-                            emptyArray<Class<*>>()
-                        ) as Method?
-                        inorderBarrierMethod = getDeclaredMethod.invoke(
-                            Canvas::class.java,
-                            "insertInorderBarrier",
-                            emptyArray<Class<*>>()
-                        ) as Method?
+                        val getDeclaredMethod =
+                            Class::class
+                                .java
+                                .getDeclaredMethod(
+                                    "getDeclaredMethod",
+                                    String::class.java,
+                                    arrayOf<Class<*>>()::class.java
+                                )
+                        reorderBarrierMethod =
+                            getDeclaredMethod.invoke(
+                                Canvas::class.java,
+                                "insertReorderBarrier",
+                                emptyArray<Class<*>>()
+                            ) as Method?
+                        inorderBarrierMethod =
+                            getDeclaredMethod.invoke(
+                                Canvas::class.java,
+                                "insertInorderBarrier",
+                                emptyArray<Class<*>>()
+                            ) as Method?
                     } else {
-                        reorderBarrierMethod = Canvas::class.java.getDeclaredMethod(
-                            "insertReorderBarrier"
-                        )
-                        inorderBarrierMethod = Canvas::class.java.getDeclaredMethod(
-                            "insertInorderBarrier"
-                        )
+                        reorderBarrierMethod =
+                            Canvas::class.java.getDeclaredMethod("insertReorderBarrier")
+                        inorderBarrierMethod =
+                            Canvas::class.java.getDeclaredMethod("insertInorderBarrier")
                     }
                     reorderBarrierMethod?.isAccessible = true
                     inorderBarrierMethod?.isAccessible = true
@@ -90,7 +92,6 @@ internal object CanvasUtils {
 
 @RequiresApi(29)
 private object CanvasZHelper {
-    @DoNotInline
     fun enableZ(canvas: Canvas, enable: Boolean) {
         if (enable) {
             canvas.enableZ()

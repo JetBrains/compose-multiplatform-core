@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<issues format="6" by="lint 8.3.0-beta01" type="baseline" client="gradle" dependencies="false" name="AGP (8.3.0-beta01)" variant="all" version="8.3.0-beta01">
+<issues format="6" by="lint 8.6.0-beta01" type="baseline" client="gradle" dependencies="false" name="AGP (8.6.0-beta01)" variant="all" version="8.6.0-beta01">
 
     <issue
         id="BanThreadSleep"
@@ -94,19 +94,19 @@
     <issue
         id="BanThreadSleep"
         message="Uses Thread.sleep()"
-        errorLine1="        Thread.sleep(100); // Let db auto close"
-        errorLine2="               ~~~~~">
+        errorLine1="                            Thread.sleep(delayMillis, delayNanos);"
+        errorLine2="                                   ~~~~~">
         <location
-            file="src/androidTest/java/androidx/room/integration/testapp/test/AutoClosingRoomOpenHelperTest.java"/>
+            file="src/androidTest/java/androidx/room/integration/testapp/test/InvalidationTrackerBehavioralTest.java"/>
     </issue>
 
     <issue
         id="BanThreadSleep"
         message="Uses Thread.sleep()"
-        errorLine1="                            Thread.sleep(delayMillis, delayNanos);"
-        errorLine2="                                   ~~~~~">
+        errorLine1="                        Thread.sleep(200);"
+        errorLine2="                               ~~~~~">
         <location
-            file="src/androidTest/java/androidx/room/integration/testapp/test/InvalidationTrackerBehavioralTest.java"/>
+            file="src/androidTest/java/androidx/room/integration/testapp/test/MultiInstanceInvalidationTest.java"/>
     </issue>
 
     <issue
@@ -186,6 +186,24 @@
         message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
         errorLine1="    LiveData&lt;List&lt;Customer>> all();"
         errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/room/integration/testapp/database/CustomerDao.java"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    boolean contains(int id, String name, String lastName);"
+        errorLine2="                             ~~~~~~">
+        <location
+            file="src/main/java/androidx/room/integration/testapp/database/CustomerDao.java"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    boolean contains(int id, String name, String lastName);"
+        errorLine2="                                          ~~~~~~">
         <location
             file="src/main/java/androidx/room/integration/testapp/database/CustomerDao.java"/>
     </issue>
@@ -305,33 +323,6 @@
         errorLine2="                    ~~~~~~~~~~">
         <location
             file="src/main/java/androidx/room/integration/testapp/database/SampleDatabase.java"/>
-    </issue>
-
-    <issue
-        id="UnknownNullness"
-        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
-        errorLine1="    public static Intent intentFor(Context context, String databaseName) {"
-        errorLine2="                  ~~~~~~">
-        <location
-            file="src/main/java/androidx/room/integration/testapp/SampleDatabaseService.java"/>
-    </issue>
-
-    <issue
-        id="UnknownNullness"
-        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
-        errorLine1="    public static Intent intentFor(Context context, String databaseName) {"
-        errorLine2="                                   ~~~~~~~">
-        <location
-            file="src/main/java/androidx/room/integration/testapp/SampleDatabaseService.java"/>
-    </issue>
-
-    <issue
-        id="UnknownNullness"
-        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
-        errorLine1="    public static Intent intentFor(Context context, String databaseName) {"
-        errorLine2="                                                    ~~~~~~">
-        <location
-            file="src/main/java/androidx/room/integration/testapp/SampleDatabaseService.java"/>
     </issue>
 
     <issue

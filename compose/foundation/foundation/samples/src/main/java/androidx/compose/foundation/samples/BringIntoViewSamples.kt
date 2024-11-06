@@ -18,7 +18,6 @@ package androidx.compose.foundation.samples
 
 import androidx.annotation.Sampled
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Box
@@ -43,7 +42,6 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalFoundationApi::class)
 @Sampled
 @Composable
 fun BringIntoViewSample() {
@@ -71,7 +69,6 @@ fun BringIntoViewSample() {
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Sampled
 @Composable
 fun BringPartOfComposableIntoViewSample() {
@@ -80,14 +77,12 @@ fun BringPartOfComposableIntoViewSample() {
         val coroutineScope = rememberCoroutineScope()
         Column {
             Box(
-                Modifier
-                    .border(2.dp, Color.Black)
+                Modifier.border(2.dp, Color.Black)
                     .size(500f.toDp())
                     .horizontalScroll(rememberScrollState())
             ) {
                 Canvas(
-                    Modifier
-                        .size(1500f.toDp(), 500f.toDp())
+                    Modifier.size(1500f.toDp(), 500f.toDp())
                         // This associates the RelocationRequester with a Composable that wants
                         // to be brought into view.
                         .bringIntoViewRequester(bringIntoViewRequester)

@@ -39,27 +39,24 @@ import androidx.annotation.IntRange
  * }
  * ```
  */
-class Pools private constructor() {
+public class Pools private constructor() {
     /**
      * Interface for managing a pool of objects.
      *
      * @param T The pooled type.
      */
-    interface Pool<T : Any> {
-        /**
-         * @return An instance from the pool if such, null otherwise.
-         */
-        fun acquire(): T?
+    public interface Pool<T : Any> {
+        /** @return An instance from the pool if such, null otherwise. */
+        public fun acquire(): T?
 
         /**
          * Release an instance to the pool.
          *
          * @param instance The instance to release.
          * @return Whether the instance was put in the pool.
-         *
          * @throws IllegalStateException If the instance is already in the pool.
          */
-        fun release(instance: T): Boolean
+        public fun release(instance: T): Boolean
     }
 
     /**
@@ -68,10 +65,8 @@ class Pools private constructor() {
      * @param maxPoolSize The maximum pool size
      * @param T The pooled type.
      */
-    open class SimplePool<T : Any>(
-        /**
-         * The max pool size
-         */
+    public open class SimplePool<T : Any>(
+        /** The max pool size */
         @IntRange(from = 1) maxPoolSize: Int
     ) : Pool<T> {
         private val pool: Array<Any?>
@@ -85,8 +80,7 @@ class Pools private constructor() {
         override fun acquire(): T? {
             if (poolSize > 0) {
                 val lastPooledIndex = poolSize - 1
-                @Suppress("UNCHECKED_CAST")
-                val instance = pool[lastPooledIndex] as T
+                @Suppress("UNCHECKED_CAST") val instance = pool[lastPooledIndex] as T
                 pool[lastPooledIndex] = null
                 poolSize--
                 return instance
@@ -120,14 +114,19 @@ class Pools private constructor() {
      * @param maxPoolSize The maximum pool size
      * @param T The pooled type.
      */
-    open class SynchronizedPool<T : Any>(maxPoolSize: Int) : SimplePool<T>(maxPoolSize) {
+    public open class SynchronizedPool<T : Any>(maxPoolSize: Int) : SimplePool<T>(maxPoolSize) {
         private val lock = Any()
+
         override fun acquire(): T? {
-            synchronized(lock) { return super.acquire() }
+            synchronized(lock) {
+                return super.acquire()
+            }
         }
 
         override fun release(instance: T): Boolean {
-            synchronized(lock) { return super.release(instance) }
+            synchronized(lock) {
+                return super.release(instance)
+            }
         }
     }
 }

@@ -21,7 +21,6 @@ import android.view.View
 import android.view.autofill.AutofillValue
 import androidx.benchmark.junit4.BenchmarkRule
 import androidx.benchmark.junit4.measureRepeated
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.autofill.AutofillNode
 import androidx.compose.ui.autofill.AutofillTree
 import androidx.compose.ui.autofill.AutofillType
@@ -39,15 +38,12 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 @LargeTest
-@OptIn(ExperimentalComposeUiApi::class)
 @RunWith(AndroidJUnit4::class)
 class AndroidAutofillBenchmark {
 
-    @get:Rule
-    val composeTestRule = createComposeRule()
+    @get:Rule val composeTestRule = createComposeRule()
 
-    @get:Rule
-    val benchmarkRule = BenchmarkRule()
+    @get:Rule val benchmarkRule = BenchmarkRule()
 
     private lateinit var autofillTree: AutofillTree
     private lateinit var composeView: View
@@ -60,26 +56,25 @@ class AndroidAutofillBenchmark {
         }
     }
 
-    @OptIn(ExperimentalComposeUiApi::class)
     @Test
     @UiThreadTest
     @SdkSuppress(minSdkVersion = 26)
     fun provideAutofillVirtualStructure_performAutofill() {
 
         // Arrange.
-        val autofillNode = AutofillNode(
-            onFill = {},
-            autofillTypes = listOf(AutofillType.PersonFullName),
-            boundingBox = Rect(0f, 0f, 0f, 0f)
-        )
-        val autofillValues = SparseArray<AutofillValue>().apply {
-            append(autofillNode.id, AutofillValue.forText("Name"))
-        }
+        val autofillNode =
+            AutofillNode(
+                onFill = {},
+                autofillTypes = listOf(AutofillType.PersonFullName),
+                boundingBox = Rect(0f, 0f, 0f, 0f)
+            )
+        val autofillValues =
+            SparseArray<AutofillValue>().apply {
+                append(autofillNode.id, AutofillValue.forText("Name"))
+            }
         autofillTree += autofillNode
 
         // Assess.
-        benchmarkRule.measureRepeated {
-            composeView.autofill(autofillValues)
-        }
+        benchmarkRule.measureRepeated { composeView.autofill(autofillValues) }
     }
 }

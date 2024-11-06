@@ -20,7 +20,9 @@
     <string name="m3c_dialog" msgid="7617233117134790350">"Muloqot oynasi"</string>
     <string name="m3c_dropdown_menu_expanded" msgid="2360841780724299882">"Yoyilgan"</string>
     <string name="m3c_dropdown_menu_collapsed" msgid="3177828188723359358">"Yigʻilgan"</string>
+    <string name="m3c_dropdown_menu_toggle" msgid="8687821690726149911">"Pastga ochiluvchi menyuni koʻrsatish/yashirish"</string>
     <string name="m3c_snackbar_dismiss" msgid="6152755701819882931">"Yopish"</string>
+    <string name="m3c_snackbar_pane_title" msgid="3868801555855510515">"Signal"</string>
     <string name="m3c_search_bar_search" msgid="6152806324422087846">"Qidiruv"</string>
     <string name="m3c_suggestions_available" msgid="7655536806087401899">"Takliflar quyida"</string>
     <string name="m3c_date_picker_title" msgid="7430790972741451689">"Sanani tanlang"</string>
@@ -73,4 +75,6 @@
     <string name="m3c_time_picker_hour" msgid="2349193472625211372">"Soat"</string>
     <string name="m3c_time_picker_minute_text_field" msgid="7661234488295443182">"bir daqiqa"</string>
     <string name="m3c_time_picker_hour_text_field" msgid="6973808109666874069">"bir soat"</string>
+    <string name="m3c_wide_navigation_rail_close_rail" msgid="6564222473543418073">"Panelni yopish"</string>
+    <string name="m3c_wide_navigation_rail_pane_title" msgid="8350283435461615411">"Navigatsiya paneli"</string>
 </resources>

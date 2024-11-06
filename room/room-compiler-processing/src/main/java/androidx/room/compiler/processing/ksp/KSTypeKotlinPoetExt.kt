@@ -18,6 +18,7 @@ package androidx.room.compiler.processing.ksp
 
 import androidx.room.compiler.processing.util.ISSUE_TRACKER_LINK
 import com.google.devtools.ksp.KspExperimental
+import com.google.devtools.ksp.outerType
 import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.symbol.KSDeclaration
 import com.google.devtools.ksp.symbol.KSName
@@ -26,11 +27,13 @@ import com.google.devtools.ksp.symbol.KSTypeAlias
 import com.google.devtools.ksp.symbol.KSTypeArgument
 import com.google.devtools.ksp.symbol.KSTypeParameter
 import com.google.devtools.ksp.symbol.KSTypeReference
+import com.google.devtools.ksp.symbol.Nullability
 import com.google.devtools.ksp.symbol.Variance
 import com.squareup.kotlinpoet.ANY
 import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.javapoet.KClassName
+import com.squareup.kotlinpoet.javapoet.KParameterizedTypeName
 import com.squareup.kotlinpoet.javapoet.KTypeName
 import com.squareup.kotlinpoet.javapoet.KTypeVariableName
 import com.squareup.kotlinpoet.javapoet.KWildcardTypeName
@@ -40,10 +43,7 @@ internal val ERROR_KTYPE_NAME = KClassName("error", "NonExistentClass")
 private typealias KTypeArgumentTypeLookup = LinkedHashMap<KSName, KTypeName>
 
 internal fun KSTypeReference?.asKTypeName(resolver: Resolver): KTypeName =
-    asKTypeName(
-        resolver = resolver,
-        typeArgumentTypeLookup = KTypeArgumentTypeLookup()
-    )
+    asKTypeName(resolver = resolver, typeArgumentTypeLookup = KTypeArgumentTypeLookup())
 
 private fun KSTypeReference?.asKTypeName(
     resolver: Resolver,
@@ -57,10 +57,7 @@ private fun KSTypeReference?.asKTypeName(
 }
 
 internal fun KSDeclaration.asKTypeName(resolver: Resolver): KTypeName =
-    asKTypeName(
-        resolver = resolver,
-        typeArgumentTypeLookup = KTypeArgumentTypeLookup()
-    )
+    asKTypeName(resolver = resolver, typeArgumentTypeLookup = KTypeArgumentTypeLookup())
 
 private fun KSDeclaration.asKTypeName(
     resolver: Resolver,
@@ -74,11 +71,13 @@ private fun KSDeclaration.asKTypeName(
     }
     val qualified = qualifiedName?.asString() ?: return ERROR_KTYPE_NAME
     val pkg = getNormalizedPackageName()
-    val shortNames = if (pkg == "") {
-        qualified
-    } else {
-        qualified.substring(pkg.length + 1)
-    }.split('.')
+    val shortNames =
+        if (pkg == "") {
+                qualified
+            } else {
+                qualified.substring(pkg.length + 1)
+            }
+            .split('.')
     return KClassName(pkg, shortNames.first(), *(shortNames.drop(1).toTypedArray()))
 }
 
@@ -92,9 +91,7 @@ private fun KSTypeParameter.asKTypeName(
     val mutableBounds = mutableListOf(ANY.copy(nullable = true))
     val typeName = createModifiableTypeVariableName(name = name.asString(), bounds = mutableBounds)
     typeArgumentTypeLookup[name] = typeName
-    val resolvedBounds = bounds.map {
-        it.asKTypeName(resolver, typeArgumentTypeLookup)
-    }.toList()
+    val resolvedBounds = bounds.map { it.asKTypeName(resolver, typeArgumentTypeLookup) }.toList()
     if (resolvedBounds.isNotEmpty()) {
         mutableBounds.addAll(resolvedBounds)
         mutableBounds.remove(ANY.copy(nullable = true))
@@ -103,12 +100,8 @@ private fun KSTypeParameter.asKTypeName(
     return typeName
 }
 
-internal fun KSTypeArgument.asKTypeName(
-    resolver: Resolver
-): KTypeName = asKTypeName(
-    resolver = resolver,
-    typeArgumentTypeLookup = KTypeArgumentTypeLookup()
-)
+internal fun KSTypeArgument.asKTypeName(resolver: Resolver): KTypeName =
+    asKTypeName(resolver = resolver, typeArgumentTypeLookup = KTypeArgumentTypeLookup())
 
 private fun KSTypeArgument.asKTypeName(
     resolver: Resolver,
@@ -130,40 +123,53 @@ private fun KSTypeArgument.asKTypeName(
 }
 
 internal fun KSType.asKTypeName(resolver: Resolver): KTypeName =
-    asKTypeName(
-        resolver = resolver,
-        typeArgumentTypeLookup = KTypeArgumentTypeLookup()
-    )
+    asKTypeName(resolver = resolver, typeArgumentTypeLookup = KTypeArgumentTypeLookup())
 
 @OptIn(KspExperimental::class)
 private fun KSType.asKTypeName(
     resolver: Resolver,
     typeArgumentTypeLookup: KTypeArgumentTypeLookup
 ): KTypeName {
-    return if (declaration is KSTypeAlias) {
-        replaceTypeAliases(resolver).asKTypeName(resolver, typeArgumentTypeLookup)
-    } else if (this.arguments.isNotEmpty() && !resolver.isJavaRawType(this)) {
-        val args: List<KTypeName> = this.arguments
-            .map { typeArg ->
-                typeArg.asKTypeName(
-                    resolver = resolver,
-                    typeArgumentTypeLookup = typeArgumentTypeLookup
-                )
-            }
+    if (declaration is KSTypeAlias) {
+        return replaceTypeAliases(resolver).asKTypeName(resolver, typeArgumentTypeLookup)
+    }
+    fun resolveTypeName(): KTypeName {
         val typeName = declaration.asKTypeName(resolver, typeArgumentTypeLookup)
-        check(typeName is KClassName) { "Unexpected type name for KSType: $typeName" }
-        typeName.parameterizedBy(args)
-    } else {
-        this.declaration.asKTypeName(resolver, typeArgumentTypeLookup)
-    }.copy(nullable = isMarkedNullable)
+        if (!isTypeParameter() && !resolver.isJavaRawType(this)) {
+            check(typeName is KClassName) { "Unexpected type name for KSType: $typeName" }
+            val args: List<KTypeName> =
+                this.innerArguments.map { typeArg ->
+                    typeArg.asKTypeName(
+                        resolver = resolver,
+                        typeArgumentTypeLookup = typeArgumentTypeLookup
+                    )
+                }
+            val outerType = this.outerType
+            if (outerType != null) {
+                val outerTypeName = outerType.asKTypeName(resolver, typeArgumentTypeLookup)
+                if (outerTypeName is KParameterizedTypeName) {
+                    return outerTypeName.nestedClass(typeName.simpleName, args)
+                }
+            }
+            return if (args.isEmpty()) {
+                typeName
+            } else {
+                typeName.parameterizedBy(args)
+            }
+        } else {
+            return typeName
+        }
+    }
+    return resolveTypeName()
+        .copy(nullable = isMarkedNullable || nullability == Nullability.PLATFORM)
 }
 
-/**
- * See [KTypeVariableNameFactory.newInstance]
- */
+/** See [KTypeVariableNameFactory.newInstance] */
 private val typeVarNameCompanionInstance by lazy {
     try {
-        KTypeVariableName::class.java.getDeclaredField("Companion")
+        KTypeVariableName::class
+            .java
+            .getDeclaredField("Companion")
             .apply { trySetAccessible() }
             .get(null)
     } catch (ex: NoSuchFieldException) {
@@ -171,7 +177,8 @@ private val typeVarNameCompanionInstance by lazy {
             """
             Room couldn't find the field it is looking for in KotlinPoet.
             Please file a bug at $ISSUE_TRACKER_LINK.
-            """.trimIndent(),
+            """
+                .trimIndent(),
             ex
         )
     }
@@ -183,26 +190,31 @@ private val typeVarNameCompanionInstance by lazy {
  */
 private val typeVarNameFactoryMethod by lazy {
     try {
-        typeVarNameCompanionInstance::class.java.methods.first {
-            it.name.startsWith("of") &&
-                it.parameterCount == 3 &&
-                it.parameters[0].type == String::class.java &&
-                it.parameters[1].type == List::class.java &&
-                it.parameters[2].type == KModifier::class.java
-        }.apply { trySetAccessible() }
+        typeVarNameCompanionInstance::class
+            .java
+            .methods
+            .first {
+                it.name.startsWith("of") &&
+                    it.parameterCount == 3 &&
+                    it.parameters[0].type == String::class.java &&
+                    it.parameters[1].type == List::class.java &&
+                    it.parameters[2].type == KModifier::class.java
+            }
+            .apply { trySetAccessible() }
     } catch (ex: NoSuchElementException) {
         throw IllegalStateException(
             """
             Room couldn't find the method it is looking for in KotlinPoet.
             Please file a bug at $ISSUE_TRACKER_LINK.
-            """.trimIndent(),
+            """
+                .trimIndent(),
         )
     }
 }
 
 /**
- * Creates a TypeVariableName where we can change the bounds after constructor.
- * This is used to workaround a case for self referencing type declarations.
+ * Creates a TypeVariableName where we can change the bounds after constructor. This is used to
+ * workaround a case for self referencing type declarations.
  */
 private fun createModifiableTypeVariableName(
     name: String,
@@ -211,7 +223,6 @@ private fun createModifiableTypeVariableName(
     try {
         KTypeVariableNameFactory.newInstance(name, bounds)
     } catch (ex: NoSuchMethodError) {
-        typeVarNameFactoryMethod.invoke(
-            typeVarNameCompanionInstance, name, bounds, null
-        ) as KTypeVariableName
+        typeVarNameFactoryMethod.invoke(typeVarNameCompanionInstance, name, bounds, null)
+            as KTypeVariableName
     }

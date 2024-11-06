@@ -15,4 +15,5 @@
  */
 package androidx.compose.ui.node
 
-internal actual typealias WeakReference<T> = java.lang.ref.WeakReference<T>
+internal actual class WeakReference<T : Any> actual constructor(referent: T) :
+    java.lang.ref.WeakReference<T>(referent)

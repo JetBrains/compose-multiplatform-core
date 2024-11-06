@@ -16,7 +16,6 @@
 
 package androidx.compose.ui.viewinterop
 
-import android.os.Build.VERSION_CODES.P
 import android.view.KeyEvent
 import android.view.View
 import android.widget.LinearLayout
@@ -46,7 +45,6 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.requestFocus
 import androidx.compose.ui.unit.dp
 import androidx.test.filters.MediumTest
-import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
@@ -57,8 +55,7 @@ import org.junit.runners.Parameterized
 @MediumTest
 @RunWith(Parameterized::class)
 class FocusSearchRightInteropTest(private val moveFocusProgrammatically: Boolean) {
-    @get:Rule
-    val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule()
 
     private lateinit var focusManager: FocusManager
     private lateinit var view: View
@@ -73,9 +70,7 @@ class FocusSearchRightInteropTest(private val moveFocusProgrammatically: Boolean
     @Test
     fun singleFocusableComposable() {
         // Arrange.
-        setContent {
-            FocusableComponent(composable)
-        }
+        setContent { FocusableComponent(composable) }
 
         // Act.
         rule.focusSearchRight()
@@ -87,17 +82,13 @@ class FocusSearchRightInteropTest(private val moveFocusProgrammatically: Boolean
     @Test
     fun singleFocusableView() {
         // Arrange.
-        setContent {
-            AndroidView({ FocusableView(it).apply { view = this } })
-        }
+        setContent { AndroidView({ FocusableView(it).apply { view = this } }) }
 
         // Act.
         rule.focusSearchRight()
 
         // Assert.
-        rule.runOnIdle {
-            assertThat(view.isFocused).isTrue()
-        }
+        rule.runOnIdle { assertThat(view.isFocused).isTrue() }
     }
 
     @Test
@@ -188,33 +179,39 @@ class FocusSearchRightInteropTest(private val moveFocusProgrammatically: Boolean
         rule.runOnIdle { assertThat(view.isFocused).isTrue() }
     }
 
-    @SdkSuppress(minSdkVersion = P) // b/328143586
     @Test
     fun focusedComposableWithFocusableView_view_inLinearLayout() {
         // Arrange.
+        var isComposableFocused = false
         setContent {
-            AndroidView({
-                LinearLayout(it).apply {
+            AndroidView({ context ->
+                LinearLayout(context).apply {
                     orientation = HORIZONTAL
-                    addView(ComposeView(it).apply {
-                        setContent {
-                            Row(Modifier.testTag(composable).focusable()) {
-                                AndroidView({ FocusableView(it).apply { view1 = this } })
+                    addView(
+                        ComposeView(context).apply {
+                            setContent {
+                                Row(
+                                    Modifier.testTag(composable)
+                                        .onFocusChanged { isComposableFocused = it.isFocused }
+                                        .focusable()
+                                ) {
+                                    AndroidView({ FocusableView(it).apply { view1 = this } })
+                                }
                             }
                         }
-                    })
-                    addView(FocusableView(it).apply { view2 = this })
+                    )
+                    addView(FocusableView(context).apply { view2 = this })
                 }
             })
         }
         rule.onNodeWithTag(composable).requestFocus()
+        rule.waitUntil { isComposableFocused }
 
         // Act.
-        rule.focusSearchRight()
+        rule.focusSearchRight(waitForIdle = false)
 
         // Assert.
-        rule.onNodeWithTag(composable).assertIsNotFocused()
-        rule.runOnIdle { assertThat(view2.isFocused).isTrue() }
+        rule.waitUntil { !isComposableFocused && view2.isFocused }
     }
 
     @Test
@@ -255,11 +252,7 @@ class FocusSearchRightInteropTest(private val moveFocusProgrammatically: Boolean
                 LinearLayout(it).apply {
                     orientation = HORIZONTAL
                     addView(FocusableView(it).apply { view1 = this })
-                    addView(
-                        ComposeView(it).apply {
-                            setContent { FocusableComponent(composable) }
-                        }
-                    )
+                    addView(ComposeView(it).apply { setContent { FocusableComponent(composable) } })
                     addView(FocusableView(it).apply { view2 = this })
                 }
             })
@@ -652,13 +645,12 @@ class FocusSearchRightInteropTest(private val moveFocusProgrammatically: Boolean
         rule.onNodeWithTag(composable).assertIsNotFocused()
     }
 
-    private fun ComposeContentTestRule.focusSearchRight() {
+    private fun ComposeContentTestRule.focusSearchRight(waitForIdle: Boolean = true) {
+        if (waitForIdle) waitForIdle()
         if (moveFocusProgrammatically) {
-            runOnIdle { focusManager.moveFocus(FocusDirection.Right) }
+            runOnUiThread { focusManager.moveFocus(FocusDirection.Right) }
         } else {
-            waitForIdle()
-            InstrumentationRegistry
-                .getInstrumentation()
+            InstrumentationRegistry.getInstrumentation()
                 .sendKeySync(KeyEvent(KeyEvent.ACTION_DOWN, Key.DirectionRight.nativeKeyCode))
         }
     }

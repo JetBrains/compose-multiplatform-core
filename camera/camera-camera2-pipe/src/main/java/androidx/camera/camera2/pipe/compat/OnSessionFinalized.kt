@@ -16,21 +16,15 @@
 
 package androidx.camera.camera2.pipe.compat
 
-import android.os.Build
-import androidx.annotation.RequiresApi
-
-/**
- * Base class for CameraCaptureSession.StateCallback()
- */
-@RequiresApi(Build.VERSION_CODES.LOLLIPOP)
-interface OnSessionFinalized {
+/** Base class for CameraCaptureSession.StateCallback() */
+public interface OnSessionFinalized {
     /**
-     * Artificial event indicating the session is no longer in use and may be called several
-     * times. onClosed() and [onConfigureFailed() methods should call this method directly.
-     * This method should also be called whenever the underlying camera devices is closed, and
-     * whenever a subsequent capture session is configured on the same camera device.
+     * Artificial event indicating the session is no longer in use and may be called several times.
+     * onClosed() and [onConfigureFailed() methods should call this method directly. This method
+     * should also be called whenever the underlying camera devices is closed, and whenever a
+     * subsequent capture session is configured on the same camera device.
      *
      * See b/249258992 for more details.
      */
-    fun onSessionFinalized()
+    public fun onSessionFinalized()
 }

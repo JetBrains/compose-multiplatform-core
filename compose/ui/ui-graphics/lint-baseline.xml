@@ -1,5 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<issues format="6" by="lint 8.3.0-beta01" type="baseline" client="gradle" dependencies="false" name="AGP (8.3.0-beta01)" variant="all" version="8.3.0-beta01">
+<issues format="6" by="lint 8.7.0-alpha02" type="baseline" client="gradle" dependencies="false" name="AGP (8.7.0-alpha02)" variant="all" version="8.7.0-alpha02">
+
+    <issue
+        id="NewApi"
+        message="This Kotlin extension function will be hidden by `java.util.SequencedCollection` starting in API 35"
+        errorLine1="                val node = s.removeLastKt()"
+        errorLine2="                           ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/commonMain/kotlin/androidx/compose/ui/graphics/IntervalTree.kt"/>
+    </issue>
+
+    <issue
+        id="PrimitiveInCollection"
+        message="method drawPoints has parameter points with type List&lt;Offset>: replace with LongList"
+        errorLine1="    override fun drawPoints(pointMode: PointMode, points: List&lt;Offset>, paint: Paint) {"
+        errorLine2="                                                          ~~~~~~~~~~~~">
+        <location
+            file="src/androidMain/kotlin/androidx/compose/ui/graphics/AndroidCanvas.android.kt"/>
+    </issue>
 
     <issue
         id="PrimitiveInCollection"
@@ -85,8 +103,8 @@
     <issue
         id="PrimitiveInCollection"
         message="method makeTransparentColors has parameter colors with type List&lt;Color>: replace with LongList"
-        errorLine1="    colors: List&lt;Color>,"
-        errorLine2="            ~~~~~~~~~~~">
+        errorLine1="internal fun makeTransparentColors(colors: List&lt;Color>, numTransparentColors: Int): IntArray {"
+        errorLine2="                                           ~~~~~~~~~~~">
         <location
             file="src/androidMain/kotlin/androidx/compose/ui/graphics/AndroidShader.android.kt"/>
     </issue>
@@ -166,8 +184,8 @@
     <issue
         id="PrimitiveInCollection"
         message="method sweepGradient has parameter colors with type List&lt;Color>: replace with LongList"
-        errorLine1="            colors: List&lt;Color>,"
-        errorLine2="                    ~~~~~~~~~~~">
+        errorLine1="        fun sweepGradient(colors: List&lt;Color>, center: Offset = Offset.Unspecified): Brush ="
+        errorLine2="                                  ~~~~~~~~~~~">
         <location
             file="src/commonMain/kotlin/androidx/compose/ui/graphics/Brush.kt"/>
     </issue>
@@ -295,6 +313,24 @@
         errorLine1="        points: List&lt;Offset>,"
         errorLine2="                ~~~~~~~~~~~~">
         <location
+            file="src/commonMain/kotlin/androidx/compose/ui/graphics/drawscope/CanvasDrawScope.kt"/>
+    </issue>
+
+    <issue
+        id="PrimitiveInCollection"
+        message="method drawPoints has parameter points with type List&lt;Offset>: replace with LongList"
+        errorLine1="        points: List&lt;Offset>,"
+        errorLine2="                ~~~~~~~~~~~~">
+        <location
+            file="src/commonMain/kotlin/androidx/compose/ui/graphics/drawscope/CanvasDrawScope.kt"/>
+    </issue>
+
+    <issue
+        id="PrimitiveInCollection"
+        message="method drawPoints has parameter points with type List&lt;Offset>: replace with LongList"
+        errorLine1="        points: List&lt;Offset>,"
+        errorLine2="                ~~~~~~~~~~~~">
+        <location
             file="src/commonMain/kotlin/androidx/compose/ui/graphics/drawscope/DrawScope.kt"/>
     </issue>
 
@@ -305,6 +341,15 @@
         errorLine2="                ~~~~~~~~~~~~">
         <location
             file="src/commonMain/kotlin/androidx/compose/ui/graphics/drawscope/DrawScope.kt"/>
+    </issue>
+
+    <issue
+        id="PrimitiveInCollection"
+        message="method drawPoints has parameter points with type List&lt;Offset>: replace with LongList"
+        errorLine1="    override fun drawPoints(pointMode: PointMode, points: List&lt;Offset>, paint: Paint) {"
+        errorLine2="                                                          ~~~~~~~~~~~~">
+        <location
+            file="src/commonMain/kotlin/androidx/compose/ui/graphics/drawscope/EmptyCanvas.kt"/>
     </issue>
 
     <issue

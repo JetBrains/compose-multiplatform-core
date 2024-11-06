@@ -46,9 +46,9 @@ import androidx.compose.ui.unit.constrain
 import kotlinx.coroutines.launch
 
 /**
- * This modifier animates its own size when its child modifier (or the child composable if it
- * is already at the tail of the chain) changes size. This allows the parent modifier to observe
- * a smooth size change, resulting in an overall continuous visual change.
+ * This modifier animates its own size when its child modifier (or the child composable if it is
+ * already at the tail of the chain) changes size. This allows the parent modifier to observe a
+ * smooth size change, resulting in an overall continuous visual change.
  *
  * A [FiniteAnimationSpec] can be optionally specified for the size change animation. By default,
  * [spring] will be used.
@@ -61,26 +61,26 @@ import kotlinx.coroutines.launch
  * y dimensions).
  *
  * @sample androidx.compose.animation.samples.AnimateContent
- *
  * @param animationSpec a finite animation that will be used to animate size change, [spring] by
- *                      default
+ *   default
  * @param finishedListener an optional listener to be called when the content change animation is
- *                         completed.
+ *   completed.
  */
-fun Modifier.animateContentSize(
-    animationSpec: FiniteAnimationSpec<IntSize> = spring(
-        stiffness = Spring.StiffnessMediumLow,
-        visibilityThreshold = IntSize.VisibilityThreshold
-    ),
+public fun Modifier.animateContentSize(
+    animationSpec: FiniteAnimationSpec<IntSize> =
+        spring(
+            stiffness = Spring.StiffnessMediumLow,
+            visibilityThreshold = IntSize.VisibilityThreshold
+        ),
     finishedListener: ((initialValue: IntSize, targetValue: IntSize) -> Unit)? = null
 ): Modifier =
     this.clipToBounds() then
         SizeAnimationModifierElement(animationSpec, Alignment.TopStart, finishedListener)
 
 /**
- * This modifier animates its own size when its child modifier (or the child composable if it
- * is already at the tail of the chain) changes size. This allows the parent modifier to observe
- * a smooth size change, resulting in an overall continuous visual change.
+ * This modifier animates its own size when its child modifier (or the child composable if it is
+ * already at the tail of the chain) changes size. This allows the parent modifier to observe a
+ * smooth size change, resulting in an overall continuous visual change.
  *
  * A [FiniteAnimationSpec] can be optionally specified for the size change animation. By default,
  * [spring] will be used.
@@ -93,19 +93,19 @@ fun Modifier.animateContentSize(
  * y dimensions).
  *
  * @sample androidx.compose.animation.samples.AnimateContent
- *
  * @param animationSpec a finite animation that will be used to animate size change, [spring] by
- *                      default
+ *   default
  * @param alignment sets the alignment of the content during the animation. [Alignment.TopStart] by
- *                  default.
+ *   default.
  * @param finishedListener an optional listener to be called when the content change animation is
- *                         completed.
+ *   completed.
  */
-fun Modifier.animateContentSize(
-    animationSpec: FiniteAnimationSpec<IntSize> = spring(
-        stiffness = Spring.StiffnessMediumLow,
-        visibilityThreshold = IntSize.VisibilityThreshold
-    ),
+public fun Modifier.animateContentSize(
+    animationSpec: FiniteAnimationSpec<IntSize> =
+        spring(
+            stiffness = Spring.StiffnessMediumLow,
+            visibilityThreshold = IntSize.VisibilityThreshold
+        ),
     alignment: Alignment = Alignment.TopStart,
     finishedListener: ((initialValue: IntSize, targetValue: IntSize) -> Unit)? = null,
 ): Modifier =
@@ -153,6 +153,7 @@ private class SizeAnimationModifierNode(
             field = value
             lookaheadConstraintsAvailable = true
         }
+
     private var lookaheadConstraintsAvailable: Boolean = false
 
     private fun targetConstraints(default: Constraints) =
@@ -162,10 +163,7 @@ private class SizeAnimationModifierNode(
             default
         }
 
-    data class AnimData(
-        val anim: Animatable<IntSize, AnimationVector2D>,
-        var startSize: IntSize
-    )
+    data class AnimData(val anim: Animatable<IntSize, AnimationVector2D>, var startSize: IntSize)
 
     var animData: AnimData? by mutableStateOf(null)
 
@@ -186,56 +184,60 @@ private class SizeAnimationModifierNode(
         measurable: Measurable,
         constraints: Constraints
     ): MeasureResult {
-        val placeable = if (isLookingAhead) {
-            lookaheadConstraints = constraints
-            measurable.measure(constraints)
-        } else {
-            // Measure with lookahead constraints when available, to avoid unnecessary relayout
-            // in child during the lookahead animation.
-            measurable.measure(targetConstraints(constraints))
-        }
-        val measuredSize = IntSize(placeable.width, placeable.height)
-        val (width, height) = if (isLookingAhead) {
-            lookaheadSize = measuredSize
-            measuredSize
-        } else {
-            animateTo(if (lookaheadSize.isValid) lookaheadSize else measuredSize).let {
-                // Constrain the measure result to incoming constraints, so that parent doesn't
-                // force center this layout.
-                constraints.constrain(it)
+        val placeable =
+            if (isLookingAhead) {
+                lookaheadConstraints = constraints
+                measurable.measure(constraints)
+            } else {
+                // Measure with lookahead constraints when available, to avoid unnecessary relayout
+                // in child during the lookahead animation.
+                measurable.measure(targetConstraints(constraints))
             }
-        }
+        val measuredSize = IntSize(placeable.width, placeable.height)
+        val (width, height) =
+            if (isLookingAhead) {
+                lookaheadSize = measuredSize
+                measuredSize
+            } else {
+                animateTo(if (lookaheadSize.isValid) lookaheadSize else measuredSize).let {
+                    // Constrain the measure result to incoming constraints, so that parent doesn't
+                    // force center this layout.
+                    constraints.constrain(it)
+                }
+            }
         return layout(width, height) {
-            val offset = alignment.align(
-                size = measuredSize,
-                space = IntSize(width, height),
-                layoutDirection = this@measure.layoutDirection
-            )
-            placeable.placeRelative(offset)
+            val offset =
+                alignment.align(
+                    size = measuredSize,
+                    space = IntSize(width, height),
+                    layoutDirection = this@measure.layoutDirection
+                )
+            placeable.place(offset)
         }
     }
 
     fun animateTo(targetSize: IntSize): IntSize {
-        val data = animData?.apply {
-            // TODO(b/322878517): Figure out a way to seamlessly continue the animation after
-            //  re-attach. Note that in some cases restarting the animation is the correct behavior.
-            val wasInterrupted = (targetSize != anim.value && !anim.isRunning)
+        val data =
+            animData?.apply {
+                // TODO(b/322878517): Figure out a way to seamlessly continue the animation after
+                //  re-attach. Note that in some cases restarting the animation is the correct
+                // behavior.
+                val wasInterrupted = (targetSize != anim.value && !anim.isRunning)
 
-            if (targetSize != anim.targetValue || wasInterrupted) {
-                startSize = anim.value
-                coroutineScope.launch {
-                    val result = anim.animateTo(targetSize, animationSpec)
-                    if (result.endReason == AnimationEndReason.Finished) {
-                        listener?.invoke(startSize, result.endState.value)
+                if (targetSize != anim.targetValue || wasInterrupted) {
+                    startSize = anim.value
+                    coroutineScope.launch {
+                        val result = anim.animateTo(targetSize, animationSpec)
+                        if (result.endReason == AnimationEndReason.Finished) {
+                            listener?.invoke(startSize, result.endState.value)
+                        }
                     }
                 }
             }
-        } ?: AnimData(
-            Animatable(
-                targetSize, IntSize.VectorConverter, IntSize(1, 1)
-            ),
-            targetSize
-        )
+                ?: AnimData(
+                    Animatable(targetSize, IntSize.VectorConverter, IntSize(1, 1)),
+                    targetSize
+                )
 
         animData = data
         return data.anim.value
@@ -260,28 +262,6 @@ internal abstract class LayoutModifierNodeWithPassThroughIntrinsics :
     ) = measurable.maxIntrinsicWidth(height)
 
     override fun IntrinsicMeasureScope.maxIntrinsicHeight(
-        measurable: IntrinsicMeasurable,
-        width: Int
-    ) = measurable.maxIntrinsicHeight(width)
-}
-
-internal abstract class LayoutModifierWithPassThroughIntrinsics : LayoutModifier {
-    final override fun IntrinsicMeasureScope.minIntrinsicWidth(
-        measurable: IntrinsicMeasurable,
-        height: Int
-    ) = measurable.minIntrinsicWidth(height)
-
-    final override fun IntrinsicMeasureScope.minIntrinsicHeight(
-        measurable: IntrinsicMeasurable,
-        width: Int
-    ) = measurable.minIntrinsicHeight(width)
-
-    final override fun IntrinsicMeasureScope.maxIntrinsicWidth(
-        measurable: IntrinsicMeasurable,
-        height: Int
-    ) = measurable.maxIntrinsicWidth(height)
-
-    final override fun IntrinsicMeasureScope.maxIntrinsicHeight(
         measurable: IntrinsicMeasurable,
         width: Int
     ) = measurable.maxIntrinsicHeight(width)

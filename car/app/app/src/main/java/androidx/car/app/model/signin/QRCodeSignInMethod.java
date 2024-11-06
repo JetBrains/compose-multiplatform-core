@@ -20,10 +20,12 @@ import static java.util.Objects.requireNonNull;
 
 import android.net.Uri;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.car.app.annotations.RequiresCarApi;
+import androidx.car.app.annotations.CarProtocol;
 import androidx.car.app.annotations.KeepFields;
+import androidx.car.app.annotations.RequiresCarApi;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Objects;
 
@@ -31,11 +33,11 @@ import java.util.Objects;
  * A {@link SignInTemplate.SignInMethod} that presents a QR Code that the user can use to sign-in.
  */
 @RequiresCarApi(4)
+@CarProtocol
 @KeepFields
 @SuppressWarnings("AcronymName")
 public final class QRCodeSignInMethod implements SignInTemplate.SignInMethod {
-    @Nullable
-    private final Uri mUri;
+    private final @Nullable Uri mUri;
 
     /**
      * Returns a {@link QRCodeSignInMethod} instance.
@@ -48,8 +50,7 @@ public final class QRCodeSignInMethod implements SignInTemplate.SignInMethod {
     }
 
     /** Returns the {@link Uri} to use to create a QR Code to present to the user. */
-    @NonNull
-    public Uri getUri() {
+    public @NonNull Uri getUri() {
         return requireNonNull(mUri);
     }
 

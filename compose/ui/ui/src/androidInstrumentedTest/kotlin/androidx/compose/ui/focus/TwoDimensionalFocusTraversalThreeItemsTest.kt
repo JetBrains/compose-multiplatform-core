@@ -37,8 +37,7 @@ private const val invalid = "Not applicable to a 2D focus search."
 
 @RunWith(Parameterized::class)
 class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
-    @get:Rule
-    val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule()
 
     // We need to wrap the inline class parameter in another class because Java can't instantiate
     // the inline class.
@@ -57,31 +56,31 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
     }
 
     /**
-     *   __________                    __________       *                            __________
-     *  |   Next  |                   |  Closer |       *              ^            |   Next  |
-     *  |   Item  |                   |   Item  |       *              |            |   Item  |
-     *  |_________|                   |_________|       *          Direction        |_________|
-     *                        ____________              *          of Search
-     *                       |  focused  |              *              |
-     *                       |    Item   |              *              |
-     *                       |___________|              *         ____________
-     *                                                  *        |  focused  |       __________
-     *                                                  *        |    Item   |      |  Closer |
-     *          <---- Direction of Search ---           *        |___________|      |  Item   |
-     *                                                  *                           |_________|
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-     *   __________                    _________        *                            __________
-     *  |  Closer |                   |  Next  |        *                           |  Closer |
-     *  |   Item  |                   |  Item  |        *         ____________      |   Item  |
-     *  |_________|                   |________|        *        |  focused  |      |_________|
-     *           ____________                           *        |    Item   |
-     *          |  focused  |                           *        |___________|
-     *          |    Item   |                           *
-     *          |___________|                           *              |              _________
-     *                                                  *          Direction         |  Next  |
-     *          ---- Direction of Search --->           *          of Search         |  Item  |
-     *                                                  *              |             |________|
-     *                                                  *              V
+     *     __________                    __________       *                            __________
+     *    |   Next  |                   |  Closer |       *              ^            |   Next  |
+     *    |   Item  |                   |   Item  |       *              |            |   Item  |
+     *    |_________|                   |_________|       *          Direction        |_________|
+     *                          ____________              *          of Search
+     *                         |  focused  |              *              |
+     *                         |    Item   |              *              |
+     *                         |___________|              *         ____________
+     *                                                    *        |  focused  |       __________
+     *                                                    *        |    Item   |      |  Closer |
+     *            <---- Direction of Search ---           *        |___________|      |  Item   |
+     *                                                    *                           |_________|
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *     __________                    _________        *                            __________
+     *    |  Closer |                   |  Next  |        *                           |  Closer |
+     *    |   Item  |                   |  Item  |        *         ____________      |   Item  |
+     *    |_________|                   |________|        *        |  focused  |      |_________|
+     *             ____________                           *        |    Item   |
+     *            |  focused  |                           *        |___________|
+     *            |    Item   |                           *
+     *            |___________|                           *              |              _________
+     *                                                    *          Direction         |  Next  |
+     *            ---- Direction of Search --->           *          of Search         |  Item  |
+     *                                                    *              |             |________|
+     *                                                    *              V
      */
     @MediumTest
     @Test
@@ -115,9 +114,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
         }
 
         // Act.
-        rule.runOnIdle {
-            focusManager.moveFocus(focusDirection)
-        }
+        rule.runOnIdle { focusManager.moveFocus(focusDirection) }
 
         // Assert.
         rule.runOnIdle {
@@ -140,7 +137,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *  |________|                    |_________|       *       |  Closer |    |    Item   |
      *          <---- Direction of Search ---           *       |  Item   |    |___________|
      *                                                  *       |_________|
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
      *           ____________                           *         __________
      *          |  focused  |                           *        |  Closer |
      *          |    Item   |                           *        |   Item  |     ____________
@@ -186,9 +183,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
         }
 
         // Act.
-        rule.runOnIdle {
-            focusManager.moveFocus(focusDirection)
-        }
+        rule.runOnIdle { focusManager.moveFocus(focusDirection) }
 
         // Assert.
         rule.runOnIdle {
@@ -199,36 +194,34 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
     }
 
     /**
-     *    _________                                     *   _________
-     *   |  Next  |                                     *  |  Next  |     ^
-     *   |  Item  |                                     *  |  Item  |     |
-     *   |________|                                     *  |________|  Direction
-     *                        ____________              *             of Search
-     *                       |  focused  |              *                 |
-     *                       |    Item   |              *                 |
-     *                       |___________|              *          ____________
-     *                               __________         *         |  focused  |
-     *                              |  Closer |         *         |    Item   |      __________
-     *                              |   Item  |         *         |___________|     |  Closer |
-     *                              |_________|         *                           |   Item  |
-     *          <---- Direction of Search ---           *                           |_________|
-     *                                                  *
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-     *   __________                                     *                            __________
-     *  |  Closer |                                     *                           |  Closer |
-     *  |   Item  |                                     *           ____________    |   Item  |
-     *  |_________|                                     *          |  focused  |    |_________|
-     *          ____________                            *          |    Item   |
-     *         |  focused  |                            *          |___________|
-     *         |    Item   |                            *                 |
-     *         |___________|                            *   _________  Direction
-     *                                 _________        *  |  Next  |  of Search
-     *                                |  Next  |        *  |  Item  |     |
-     *                                |  Item  |        *  |________|     |
-     *                                |________|        *                 V
-     *          ---- Direction of Search --->           *
-     *                                                  *
-     *                                                  *
+     *      _________                                     *   _________
+     *     |  Next  |                                     *  |  Next  |     ^
+     *     |  Item  |                                     *  |  Item  |     |
+     *     |________|                                     *  |________|  Direction
+     *                          ____________              *             of Search
+     *                         |  focused  |              *                 |
+     *                         |    Item   |              *                 |
+     *                         |___________|              *          ____________
+     *                                 __________         *         |  focused  |
+     *                                |  Closer |         *         |    Item   |      __________
+     *                                |   Item  |         *         |___________|     |  Closer |
+     *                                |_________|         *                           |   Item  |
+     *            <---- Direction of Search ---           *                           |_________|
+     *                                                    *
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *     __________                                     *                            __________
+     *    |  Closer |                                     *                           |  Closer |
+     *    |   Item  |                                     *           ____________    |   Item  |
+     *    |_________|                                     *          |  focused  |    |_________|
+     *            ____________                            *          |    Item   |
+     *           |  focused  |                            *          |___________|
+     *           |    Item   |                            *                 |
+     *           |___________|                            *   _________  Direction
+     *                                   _________        *  |  Next  |  of Search
+     *                                  |  Next  |        *  |  Item  |     |
+     *                                  |  Item  |        *  |________|     |
+     *                                  |________|        *                 V
+     *            ---- Direction of Search --->           *
      */
     @LargeTest
     @Test
@@ -262,9 +255,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
         }
 
         // Act.
-        rule.runOnIdle {
-            focusManager.moveFocus(focusDirection)
-        }
+        rule.runOnIdle { focusManager.moveFocus(focusDirection) }
 
         // Assert.
         rule.runOnIdle {
@@ -289,7 +280,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *     |________|                                   *  |   Item  |
      *          <---- Direction of Search ---           *  |_________|
      *                                                  *
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
      *                                _________         *    __________
      *                               |  Next  |         *   |  Closer |
      *                               |  Item  |         *   |   Item  |   ____________
@@ -338,9 +329,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
         }
 
         // Act.
-        rule.runOnIdle {
-            focusManager.moveFocus(focusDirection)
-        }
+        rule.runOnIdle { focusManager.moveFocus(focusDirection) }
 
         // Assert.
         rule.runOnIdle {
@@ -363,7 +352,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                                  *        |    Item   |      |_________|
      *          <---- Direction of Search ---           *        |___________|
      *                                                  *
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
      *                 __________                       *         ____________
      *                |  Closer |                       *        |  focused  |
      *                |   Item  |                       *        |    Item   |       __________
@@ -410,9 +399,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
         }
 
         // Act.
-        rule.runOnIdle {
-            focusManager.moveFocus(focusDirection)
-        }
+        rule.runOnIdle { focusManager.moveFocus(focusDirection) }
 
         // Assert.
         rule.runOnIdle {
@@ -435,7 +422,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                                  *       |    Item   |       |_________|
      *          <---- Direction of Search ---           *       |___________|
      *                                                  *
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
      *                 __________                       *        ____________
      *                |  Closer |                       *       |  focused  |
      *                |   Item  |                       *       |    Item   |        __________
@@ -482,9 +469,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
         }
 
         // Act.
-        rule.runOnIdle {
-            focusManager.moveFocus(focusDirection)
-        }
+        rule.runOnIdle { focusManager.moveFocus(focusDirection) }
 
         // Assert.
         rule.runOnIdle {
@@ -507,7 +492,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                                  *        |    Item   |      |_________|
      *          <---- Direction of Search ---           *        |___________|
      *                                                  *
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
      *                 __________                       *         ____________
      *                |  Closer |                       *        |  focused  |
      *                |   Item  |                       *        |    Item   |       __________
@@ -554,9 +539,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
         }
 
         // Act.
-        rule.runOnIdle {
-            focusManager.moveFocus(focusDirection)
-        }
+        rule.runOnIdle { focusManager.moveFocus(focusDirection) }
 
         // Assert.
         rule.runOnIdle {
@@ -579,7 +562,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                                  *        |    Item   |      |_________|
      *          <---- Direction of Search ---           *        |___________|
      *                                                  *
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
      *                 __________                       *         ____________
      *                |  Closer |                       *        |  focused  |
      *                |   Item  |                       *        |    Item   |       __________
@@ -626,9 +609,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
         }
 
         // Act.
-        rule.runOnIdle {
-            focusManager.moveFocus(focusDirection)
-        }
+        rule.runOnIdle { focusManager.moveFocus(focusDirection) }
 
         // Assert.
         rule.runOnIdle {
@@ -651,7 +632,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                                  *        |    Item     |    |_________|
      *          <---- Direction of Search ---           *        |_____________|
      *                                                  *
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
      *                 __________                       *         _____________
      *                |  Closer |                       *        |   focused  |
      *                |   Item  |                       *        |    Item    |       __________
@@ -698,9 +679,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
         }
 
         // Act.
-        rule.runOnIdle {
-            focusManager.moveFocus(focusDirection)
-        }
+        rule.runOnIdle { focusManager.moveFocus(focusDirection) }
 
         // Assert.
         rule.runOnIdle {
@@ -723,7 +702,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *   |______________|                               *         |  focused  |    |_________|
      *                                                  *         |    Item   |
      *          <---- Direction of Search ---           *         |___________|
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
      *                 __________                       *          ____________
      *                |  Closer |                       *         |  focused  |
      *                |   Item  |                       *         |    Item   |      __________
@@ -770,9 +749,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
         }
 
         // Act.
-        rule.runOnIdle {
-            focusManager.moveFocus(focusDirection)
-        }
+        rule.runOnIdle { focusManager.moveFocus(focusDirection) }
 
         // Assert.
         rule.runOnIdle {
@@ -794,7 +771,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                                  *        |    Item   |_________|
      *          <---- Direction of Search ---           *        |___________|
      *                                                  *
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
      *                 __________                       *         ____________
      *                |  Closer |                       *        |  focused  |
      *                |   Item  |                       *        |    Item   |__________
@@ -841,9 +818,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
         }
 
         // Act.
-        rule.runOnIdle {
-            focusManager.moveFocus(focusDirection)
-        }
+        rule.runOnIdle { focusManager.moveFocus(focusDirection) }
 
         // Assert.
         rule.runOnIdle {
@@ -866,7 +841,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                                  *       |    Item   |_________|
      *          <---- Direction of Search ---           *       |___________|
      *                                                  *
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
      *            __________                            *        ____________
      *           |  Closer |                            *       |  focused  |
      *           |   Item  |        _______________     *       |    Item   |__________
@@ -913,9 +888,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
         }
 
         // Act.
-        rule.runOnIdle {
-            focusManager.moveFocus(focusDirection)
-        }
+        rule.runOnIdle { focusManager.moveFocus(focusDirection) }
 
         // Assert.
         rule.runOnIdle {
@@ -938,7 +911,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *          <---- Direction of Search ---           *        |    Item   |_________|
      *                                                  *        |___________|
      *                                                  *
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
      *                 __________                       *         ____________
      *                |  Closer |                       *        |  focused  |
      *                |   Item  |                       *        |    Item   |__________
@@ -985,9 +958,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
         }
 
         // Act.
-        rule.runOnIdle {
-            focusManager.moveFocus(focusDirection)
-        }
+        rule.runOnIdle { focusManager.moveFocus(focusDirection) }
 
         // Assert.
         rule.runOnIdle {
@@ -1010,7 +981,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *          <---- Direction of Search ---           *       |    Item    |_________|
      *                                                  *       |____________|
      *                                                  *
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
      *                 __________                       *        _____________
      *                |  Closer |                       *       |   focused  |
      *                |   Item  |                       *       |     Item   |__________
@@ -1057,9 +1028,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
         }
 
         // Act.
-        rule.runOnIdle {
-            focusManager.moveFocus(focusDirection)
-        }
+        rule.runOnIdle { focusManager.moveFocus(focusDirection) }
 
         // Assert.
         rule.runOnIdle {
@@ -1082,7 +1051,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                                  *        |    Item    |_________|
      *          <---- Direction of Search ---           *        |____________|
      *                                                  *
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
      *                                                  *         _____________
      *                 __________                       *        |   focused  |
      *                |  Closer |                       *        |    Item    |__________
@@ -1129,9 +1098,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
         }
 
         // Act.
-        rule.runOnIdle {
-            focusManager.moveFocus(focusDirection)
-        }
+        rule.runOnIdle { focusManager.moveFocus(focusDirection) }
 
         // Assert.
         rule.runOnIdle {
@@ -1153,7 +1120,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                                  *        |  focused  |  Item   |
      *          <---- Direction of Search ---           *        |    Item   |_________|
      *                                                  *        |___________|
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
      *            __________                            *         ____________
      *           |  Closer |                            *        |  focused  |
      *           |   Item  |                            *        |    Item   |__________
@@ -1200,9 +1167,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
         }
 
         // Act.
-        rule.runOnIdle {
-            focusManager.moveFocus(focusDirection)
-        }
+        rule.runOnIdle { focusManager.moveFocus(focusDirection) }
 
         // Assert.
         rule.runOnIdle {
@@ -1225,7 +1190,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                                  *      |_________|    |    Item   |
      *          <---- Direction of Search ---           *                     |___________|
      *                                                  *
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
      *                                                  *                      ____________
      *         ____________            __________       *                     |  focused  |
      *        |  focused  |           |  Item   |       *       __________    |    Item   |
@@ -1272,9 +1237,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
         }
 
         // Act.
-        rule.runOnIdle {
-            focusManager.moveFocus(focusDirection)
-        }
+        rule.runOnIdle { focusManager.moveFocus(focusDirection) }
 
         // Assert.
         rule.runOnIdle {
@@ -1285,19 +1248,18 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
     }
 
     /**
-     *   _______________                                *         ^                 _________
-     *  | Item in Beam |          ____________          *         |                |  Item  |
-     *  |______________|         |  focused  |          *      Direction           | in beam|
-     *                           |    Item   |          *      of Search           |________|
-     *                           |___________|          *         |
-     *                     ___________                  *         |
-     *                    |  Closer  |                  *      __________
-     *                    |   Item   |                  *     |  Closer |     ____________
-     *                    |__________|                  *     |  Item   |    |  focused  |
-     *                                                  *     |_________|    |    Item   |
-     *          <---- Direction of Search ---           *                    |___________|
-     *                                                  *
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *     _______________                                *         ^                 _________
+     *    | Item in Beam |          ____________          *         |                |  Item  |
+     *    |______________|         |  focused  |          *      Direction           | in beam|
+     *                             |    Item   |          *      of Search           |________|
+     *                             |___________|          *         |
+     *                       ___________                  *         |
+     *                      |  Closer  |                  *      __________
+     *                      |   Item   |                  *     |  Closer |     ____________
+     *                      |__________|                  *     |  Item   |    |  focused  |
+     *                                                    *     |_________|    |    Item   |
+     *            <---- Direction of Search ---           *                    |___________|
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
      *                                _______________   *                     ____________
      *         ____________          | Item in Beam |   *                    |  focused  |
      *        |  focused  |          |______________|   *     __________     |    Item   |
@@ -1344,9 +1306,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
         }
 
         // Act.
-        rule.runOnIdle {
-            focusManager.moveFocus(focusDirection)
-        }
+        rule.runOnIdle { focusManager.moveFocus(focusDirection) }
 
         // Assert.
         rule.runOnIdle {
@@ -1369,7 +1329,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                                  *    |_________|    |    Item   |
      *          <---- Direction of Search ---           *                   |___________|
      *                                                  *
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
      *                                                  *                    ____________
      *     ____________             _______________     *                   |  focused  |
      *    |  focused  |            | Item in Beam |     *     __________    |    Item   |
@@ -1383,7 +1343,6 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *         ---- Direction of Search --->            *     of Search        |________|
      *                                                  *         |
      *                                                  *         V
-     *
      */
     @LargeTest
     @Test
@@ -1417,9 +1376,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
         }
 
         // Act.
-        rule.runOnIdle {
-            focusManager.moveFocus(focusDirection)
-        }
+        rule.runOnIdle { focusManager.moveFocus(focusDirection) }
 
         // Assert.
         rule.runOnIdle {
@@ -1442,7 +1399,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                                  *   |_________|      |    Item   |
      *          <---- Direction of Search ---           *                    |___________|
      *                                                  *
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
      *      ____________                                *                    ____________
      *     |           |              _______________   *                   |  focused  |
      *     |  focused  |             | Item in Beam |   *     __________    |    Item   |
@@ -1489,9 +1446,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
         }
 
         // Act.
-        rule.runOnIdle {
-            focusManager.moveFocus(focusDirection)
-        }
+        rule.runOnIdle { focusManager.moveFocus(focusDirection) }
 
         // Assert.
         rule.runOnIdle {
@@ -1514,7 +1469,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                                  *       |_________|      |    Item    |
      *          <---- Direction of Search ---           *                        |____________|
      *                                                  *
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
      *       ____________                               *                          _____________
      *      |  focused  |           _______________     *                         |  focused   |
      *      |    Item   |          | Item in Beam |     *        __________       |    Item    |
@@ -1561,9 +1516,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
         }
 
         // Act.
-        rule.runOnIdle {
-            focusManager.moveFocus(focusDirection)
-        }
+        rule.runOnIdle { focusManager.moveFocus(focusDirection) }
 
         // Assert.
         rule.runOnIdle {
@@ -1586,7 +1539,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                      |_________|                 *      |_________|         |    Item   |
      *          <---- Direction of Search ---           *                          |___________|
      *                                                  *
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
      *        ____________                              *                           ____________
      *       |  focused  |                              *                          |  focused  |
      *       |    Item   |         _______________      *       __________         |    Item   |
@@ -1634,9 +1587,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
         }
 
         // Act.
-        rule.runOnIdle {
-            focusManager.moveFocus(focusDirection)
-        }
+        rule.runOnIdle { focusManager.moveFocus(focusDirection) }
 
         // Assert.
         rule.runOnIdle {
@@ -1658,7 +1609,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                                  *        |  focused  |_________|
      *          <---- Direction of Search ---           *        |    Item   |
      *                                                  *        |___________|
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
      *                                                  *                   ____________
      *                                                  *                  |  focused  |
      *                                                  *          ________|    Item   |
@@ -1704,9 +1655,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
         }
 
         // Act.
-        rule.runOnIdle {
-            focusManager.moveFocus(focusDirection)
-        }
+        rule.runOnIdle { focusManager.moveFocus(focusDirection) }
 
         // Assert.
         rule.runOnIdle {
@@ -1729,7 +1678,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                                  *   |_________|    Item  |
      *          <---- Direction of Search ---           *             |__________|
      *                                                  *
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
      *                              _______________     *               ____________
      *   ____________              | Item in Beam |     *              |  focused  |
      *  |  focused  |              |______________|     *     _________|   Item    |
@@ -1775,9 +1724,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
         }
 
         // Act.
-        rule.runOnIdle {
-            focusManager.moveFocus(focusDirection)
-        }
+        rule.runOnIdle { focusManager.moveFocus(focusDirection) }
 
         // Assert.
         rule.runOnIdle {
@@ -1799,7 +1746,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                                  *      |_________|    focused   |
      *          <---- Direction of Search ---           *                |      Item    |
      *                                                  *                |______________|
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
      *                                                  *                 _______________
      *                                                  *                |   focused    |
      *                                                  *       _________|     Item     |
@@ -1846,9 +1793,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
         }
 
         // Act.
-        rule.runOnIdle {
-            focusManager.moveFocus(focusDirection)
-        }
+        rule.runOnIdle { focusManager.moveFocus(focusDirection) }
 
         // Assert.
         rule.runOnIdle {
@@ -1871,7 +1816,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *          <---- Direction of Search ---           *    |_________|   focused   |
      *                                                  *              |     Item    |
      *                                                  *              |_____________|
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
      *      ____________                                *               ______________
      *     |           |              _______________   *              |   focused   |
      *     |  focused  |             | Item in Beam |   *     _________|     Item    |
@@ -1917,9 +1862,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
         }
 
         // Act.
-        rule.runOnIdle {
-            focusManager.moveFocus(focusDirection)
-        }
+        rule.runOnIdle { focusManager.moveFocus(focusDirection) }
 
         // Assert.
         rule.runOnIdle {
@@ -1935,14 +1878,14 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *    _______________       |  focused  |           *             | in beam|        Direction
      *   | Item in Beam |       |    Item   |           *             |________|        of Search
      *   |______________|    ___|___________|           *                                  |
-     *                      |  Closer |                 *    __________                               |
+     *                      |  Closer |                 *    __________                    |
      *                      |   Item  |                 *   |  Closer |
      *                      |_________|                 *   |  Item   |____________
      *                                                  *   |_________|  focused  |
      *                                                  *             |    Item   |
      *          <---- Direction of Search ---           *             |___________|
      *                                                  *
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
      *         ____________                             *              ____________
      *        |  focused  |           _______________   *             |  focused  |
      *        |    Item   |          | Item in Beam |   *    _________|    Item   |
@@ -1986,9 +1929,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
         }
 
         // Act.
-        rule.runOnIdle {
-            focusManager.moveFocus(focusDirection)
-        }
+        rule.runOnIdle { focusManager.moveFocus(focusDirection) }
 
         // Assert.
         rule.runOnIdle {
@@ -2010,7 +1951,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                                  *   |  Item   |  focused  |
      *          <---- Direction of Search ---           *   |_________|    Item   |
      *                                                  *             |___________|
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
      *     ____________                                 *              ____________
      *    |  focused  |                                 *             |  focused  |
      *    |    Item   |            _______________      *    _________|    Item   |
@@ -2055,9 +1996,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
         }
 
         // Act.
-        rule.runOnIdle {
-            focusManager.moveFocus(focusDirection)
-        }
+        rule.runOnIdle { focusManager.moveFocus(focusDirection) }
 
         // Assert.
         rule.runOnIdle {
@@ -2080,7 +2019,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                                  *        |    Item   |      |_________|
      *          <---- Direction of Search ---           *        |___________|
      *                                                  *
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
      *              __________                          *
      *             |  Closer |                          *         ____________
      *             |   Item  |                          *        |  focused  |       __________
@@ -2126,9 +2065,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
         }
 
         // Act.
-        rule.runOnIdle {
-            focusManager.moveFocus(focusDirection)
-        }
+        rule.runOnIdle { focusManager.moveFocus(focusDirection) }
 
         // Assert.
         rule.runOnIdle {
@@ -2153,7 +2090,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                                  *        |    Item   |
      *          <---- Direction of Search ---           *        |___________|
      *                                                  *
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
      *                 __________                       *         ____________
      *                |  Closer |                       *        |  focused  |
      *                |   Item  |                       *        |    Item   |       __________
@@ -2198,9 +2135,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
         }
 
         // Act.
-        rule.runOnIdle {
-            focusManager.moveFocus(focusDirection)
-        }
+        rule.runOnIdle { focusManager.moveFocus(focusDirection) }
 
         // Assert.
         rule.runOnIdle {
@@ -2224,7 +2159,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                                  *       |  focused  |   |_________|
      *          <---- Direction of Search ---           *       |    Item   |
      *                                                  *       |___________|
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
      *                 __________                       *
      *                |  Closer |                       *        ____________
      *                |   Item  |                       *       |  focused  |
@@ -2270,9 +2205,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
         }
 
         // Act.
-        rule.runOnIdle {
-            focusManager.moveFocus(focusDirection)
-        }
+        rule.runOnIdle { focusManager.moveFocus(focusDirection) }
 
         // Assert.
         rule.runOnIdle {
@@ -2295,7 +2228,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                                  *        |   focused  |      |_________|
      *          <---- Direction of Search ---           *        |    Item    |
      *                                                  *        |____________|
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
      *                 __________                       *         ____________
      *                |  Closer |                       *        |  focused   |
      *                |   Item  |                       *        |    Item    |       __________
@@ -2341,9 +2274,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
         }
 
         // Act.
-        rule.runOnIdle {
-            focusManager.moveFocus(focusDirection)
-        }
+        rule.runOnIdle { focusManager.moveFocus(focusDirection) }
 
         // Assert.
         rule.runOnIdle {
@@ -2365,7 +2296,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                                  *   |    Item   |_________|
      *          <---- Direction of Search ---           *   |___________|
      *                                                  *
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
      *              __________                          *    ____________
      *             |  Closer |                          *   |  focused  |__________
      *             |   Item  |                          *   |    Item   |  Closer |
@@ -2408,9 +2339,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
         }
 
         // Act.
-        rule.runOnIdle {
-            focusManager.moveFocus(focusDirection)
-        }
+        rule.runOnIdle { focusManager.moveFocus(focusDirection) }
 
         // Assert.
         rule.runOnIdle {
@@ -2433,7 +2362,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                                  *        |    Item   |
      *          <---- Direction of Search ---           *        |___________|
      *                                                  *
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
      *                                                  *         ____________
      *                 __________                       *        |  focused  |
      *                |  Closer |                       *        |    Item   |__________
@@ -2478,9 +2407,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
         }
 
         // Act.
-        rule.runOnIdle {
-            focusManager.moveFocus(focusDirection)
-        }
+        rule.runOnIdle { focusManager.moveFocus(focusDirection) }
 
         // Assert.
         rule.runOnIdle {
@@ -2502,7 +2429,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                                  *       |  focused  |_________|
      *          <---- Direction of Search ---           *       |    Item   |
      *                                                  *       |___________|
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
      *                 __________                       *        ____________
      *                |  Closer |                       *       |  focused  |
      *                |   Item  |                       *       |    Item   |
@@ -2545,9 +2472,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
         }
 
         // Act.
-        rule.runOnIdle {
-            focusManager.moveFocus(focusDirection)
-        }
+        rule.runOnIdle { focusManager.moveFocus(focusDirection) }
 
         // Assert.
         rule.runOnIdle {
@@ -2569,7 +2494,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                                  *        |   focused  |_________|
      *          <---- Direction of Search ---           *        |    Item    |
      *                                                  *        |____________|
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
      *                 __________                       *         _____________
      *                |  Closer |                       *        |  focused   |
      *                |   Item  |                       *        |    Item    |__________
@@ -2614,9 +2539,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
         }
 
         // Act.
-        rule.runOnIdle {
-            focusManager.moveFocus(focusDirection)
-        }
+        rule.runOnIdle { focusManager.moveFocus(focusDirection) }
 
         // Assert.
         rule.runOnIdle {
@@ -2639,7 +2562,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                                  *       |_________|      |    Item   |
      *          <---- Direction of Search ---           *                        |___________|
      *                                                  *
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
      *         _____________________________            *
      *        |  focused  |   |    Item    |            *                         ____________
      *        |    Item   |   |   in beam  |            *        __________      |  focused  |
@@ -2685,9 +2608,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
         }
 
         // Act.
-        rule.runOnIdle {
-            focusManager.moveFocus(focusDirection)
-        }
+        rule.runOnIdle { focusManager.moveFocus(focusDirection) }
 
         // Assert.
         rule.runOnIdle {
@@ -2712,7 +2633,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                                  *                    |    Item   |
      *          <---- Direction of Search ---           *                    |___________|
      *                                                  *
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
      *         ______________________________           *                     ____________
      *        |  focused  |  | Item in Beam |           *     __________     |  focused  |
      *        |    Item   |__|______________|           *    |  Closer |     |    Item   |
@@ -2757,9 +2678,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
         }
 
         // Act.
-        rule.runOnIdle {
-            focusManager.moveFocus(focusDirection)
-        }
+        rule.runOnIdle { focusManager.moveFocus(focusDirection) }
 
         // Assert.
         rule.runOnIdle {
@@ -2783,7 +2702,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                                  *   |_________|     |  focused  |
      *          <---- Direction of Search ---           *                   |    Item   |
      *                                                  *                   |___________|
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
      *         _______________                          *
      *        |  focused   __|_______________           *                    ____________
      *        |    Item   |  | Item in Beam |           *                   |  focused  |
@@ -2829,9 +2748,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
         }
 
         // Act.
-        rule.runOnIdle {
-            focusManager.moveFocus(focusDirection)
-        }
+        rule.runOnIdle { focusManager.moveFocus(focusDirection) }
 
         // Assert.
         rule.runOnIdle {
@@ -2854,7 +2771,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                                  *      |_________|    |   focused  |
      *          <---- Direction of Search ---           *                     |    Item    |
      *                                                  *                     |____________|
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
      *         _______________                          *                      ____________
      *        |            __|________________          *                     |  focused   |
      *        |  focused  |  | Item in Beam  |          *       __________    |    Item    |
@@ -2899,9 +2816,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
         }
 
         // Act.
-        rule.runOnIdle {
-            focusManager.moveFocus(focusDirection)
-        }
+        rule.runOnIdle { focusManager.moveFocus(focusDirection) }
 
         // Assert.
         rule.runOnIdle {
@@ -2922,7 +2837,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                                  *      |_________|    Item   |
      *          <---- Direction of Search ---           *                |___________|
      *                                                  *
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
      *         _____________________________            *                 ____________
      *        |  focused  |   |    Item    |            *       _________|  focused  |
      *        |    Item   |   |   in beam  |            *      |  Closer |    Item   |
@@ -2965,9 +2880,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
         }
 
         // Act.
-        rule.runOnIdle {
-            focusManager.moveFocus(focusDirection)
-        }
+        rule.runOnIdle { focusManager.moveFocus(focusDirection) }
 
         // Assert.
         rule.runOnIdle {
@@ -2987,7 +2900,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                 |_________|                      *  |_________|  focused  |       |
      *                                                  *            |    Item   |
      *          <---- Direction of Search ---           *            |___________|
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
      *         ______________________________           *             ____________
      *        |  focused  |  | Item in Beam |           *  __________|  focused  |
      *        |    Item   |__|______________|           *  |  Closer |           |
@@ -3030,9 +2943,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
         }
 
         // Act.
-        rule.runOnIdle {
-            focusManager.moveFocus(focusDirection)
-        }
+        rule.runOnIdle { focusManager.moveFocus(focusDirection) }
 
         // Assert.
         rule.runOnIdle {
@@ -3052,7 +2963,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                 |_________|                      *   |_________|  focused  |
      *                                                  *             |    Item   |
      *          <---- Direction of Search ---           *             |___________|
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
      *         _______________                          *              ____________
      *        |  focused   __|_______________           *    _________|  focused  |
      *        |    Item   |  | Item in Beam |           *   |         |    Item   |
@@ -3095,9 +3006,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
         }
 
         // Act.
-        rule.runOnIdle {
-            focusManager.moveFocus(focusDirection)
-        }
+        rule.runOnIdle { focusManager.moveFocus(focusDirection) }
 
         // Assert.
         rule.runOnIdle {
@@ -3118,7 +3027,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                 |_________|                      *            |____________|       |
      *                                                  *
      *       <---- Direction of Search ---              *
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
      *         _______________                          *             _____________
      *        |            __|________________          *            |  focused   |
      *        |  focused  |  | Item in Beam  |          *   _________|    Item    |       |
@@ -3162,9 +3071,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
         }
 
         // Act.
-        rule.runOnIdle {
-            focusManager.moveFocus(focusDirection)
-        }
+        rule.runOnIdle { focusManager.moveFocus(focusDirection) }
 
         // Assert.
         rule.runOnIdle {
@@ -3187,7 +3094,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                                  *        |    Item   |      of Search
      *          <---- Direction of Search ---           *        |___________|          |
      *                                                  *                               |
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
      *                             __________           *
      *                            |  Closer |           *
      *                            |   Item  |           *         ____________          |
@@ -3233,9 +3140,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
         }
 
         // Act.
-        rule.runOnIdle {
-            focusManager.moveFocus(focusDirection)
-        }
+        rule.runOnIdle { focusManager.moveFocus(focusDirection) }
 
         // Assert.
         rule.runOnIdle {
@@ -3258,7 +3163,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                                  *     of Search        |    Item   |
      *          <---- Direction of Search ---           *         |            |___________|
      *                                                  *         |
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
      *     ____________        __________               *          |            ____________
      *    |  focused  |       |  Item   |               *      Direction       |  focused  |
      *    |    Item   |       | in beam |               *      of Search       |    Item   |
@@ -3302,9 +3207,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
         }
 
         // Act.
-        rule.runOnIdle {
-            focusManager.moveFocus(focusDirection)
-        }
+        rule.runOnIdle { focusManager.moveFocus(focusDirection) }
 
         // Assert.
         rule.runOnIdle {
@@ -3327,7 +3230,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                                  *        |    Item   |      of Search
      *          <---- Direction of Search ---           *        |___________|          |
      *                                                  *                               |
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
      *                          _____________           *
      *                         |   Closer   |           *
      *                         |    Item    |           *         ____________          |
@@ -3373,9 +3276,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
         }
 
         // Act.
-        rule.runOnIdle {
-            focusManager.moveFocus(focusDirection)
-        }
+        rule.runOnIdle { focusManager.moveFocus(focusDirection) }
 
         // Assert.
         rule.runOnIdle {
@@ -3398,7 +3299,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                                  *     of Search        |    Item   |
      *         <---- Direction of Search ---            *         |            |___________|
      *                                                  *         |
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
      *         ____________        __________           *          |            ____________
      *        |  focused  |       |  Item   |           *      Direction       |  focused  |
      *        |    Item   |       | in beam |           *      of Search       |    Item   |
@@ -3442,9 +3343,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
         }
 
         // Act.
-        rule.runOnIdle {
-            focusManager.moveFocus(focusDirection)
-        }
+        rule.runOnIdle { focusManager.moveFocus(focusDirection) }
 
         // Assert.
         rule.runOnIdle {
@@ -3467,7 +3366,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                                  *        |    Item   |      of Search
      *          <---- Direction of Search ---           *        |___________|          |
      *                                                  *                               |
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
      *                         ___________              *
      *                        |  Closer  |              *
      *                        |   Item   |              *         ____________          |
@@ -3513,9 +3412,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
         }
 
         // Act.
-        rule.runOnIdle {
-            focusManager.moveFocus(focusDirection)
-        }
+        rule.runOnIdle { focusManager.moveFocus(focusDirection) }
 
         // Assert.
         rule.runOnIdle {
@@ -3538,7 +3435,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *          <---- Direction of Search ---           *      of Search        |    Item   |
      *                                                  *          |            |___________|
      *                                                  *          |
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
      *       ____________        __________             *          |             ____________
      *      |  focused  |       |  Item   |             *      Direction        |  focused  |
      *      |    Item   |       | in beam |             *      of Search        |    Item   |
@@ -3582,9 +3479,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
         }
 
         // Act.
-        rule.runOnIdle {
-            focusManager.moveFocus(focusDirection)
-        }
+        rule.runOnIdle { focusManager.moveFocus(focusDirection) }
 
         // Assert.
         rule.runOnIdle {
@@ -3608,7 +3503,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *          <---- Direction of Search ---          *        |    Item   |       of Search
      *                                                 *        |___________|           |
      *                                                 *
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
      *                   ___________                   *         ____________           |
      *                  |  Closer  |                   *        |  focused  |       Direction
      *                  |   Item   |                   *        |    Item   |       of Search
@@ -3654,19 +3549,19 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
         }
 
         // Act.
-        rule.runOnIdle {
-            focusManager.moveFocus(focusDirection)
-        }
+        rule.runOnIdle { focusManager.moveFocus(focusDirection) }
 
         // Assert.
         rule.runOnIdle {
             assertThat(focusedItem.value).isFalse()
             when (focusDirection) {
-                Left, Right -> {
+                Left,
+                Right -> {
                     assertThat(closerItem.value).isFalse()
                     assertThat(itemInBeam.value).isTrue()
                 }
-                Up, Down -> {
+                Up,
+                Down -> {
                     assertThat(closerItem.value).isTrue()
                     assertThat(itemInBeam.value).isFalse()
                 }
@@ -3688,7 +3583,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *          <---- Direction of Search ---          *        Direction     |  focused  |
      *                                                 *        of Search     |    Item   |
      *                                                 *            |         |___________|
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
      *    ____________              __________         *            |          ____________
      *   |  focused  |             |  Item   |         *        Direction     |  focused  |
      *   |    Item   |             | in beam |         *        of Search     |    Item   |
@@ -3734,19 +3629,19 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
         }
 
         // Act.
-        rule.runOnIdle {
-            focusManager.moveFocus(focusDirection)
-        }
+        rule.runOnIdle { focusManager.moveFocus(focusDirection) }
 
         // Assert.
         rule.runOnIdle {
             assertThat(focusedItem.value).isFalse()
             when (focusDirection) {
-                Left, Right -> {
+                Left,
+                Right -> {
                     assertThat(closerItem.value).isFalse()
                     assertThat(itemInBeam.value).isTrue()
                 }
-                Up, Down -> {
+                Up,
+                Down -> {
                     assertThat(closerItem.value).isTrue()
                     assertThat(itemInBeam.value).isFalse()
                 }
@@ -3769,7 +3664,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *          <---- Direction of Search ---         *                             of Search
      *                                                *                                 |
      *                                                *
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
      *                ___________                     *                                 |
      *               |  Closer  |                     *                             Direction
      *               |   Item   |                     *         ____________        of Search
@@ -3815,19 +3710,19 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
         }
 
         // Act.
-        rule.runOnIdle {
-            focusManager.moveFocus(focusDirection)
-        }
+        rule.runOnIdle { focusManager.moveFocus(focusDirection) }
 
         // Assert.
         rule.runOnIdle {
             assertThat(focusedItem.value).isFalse()
             when (focusDirection) {
-                Left, Right -> {
+                Left,
+                Right -> {
                     assertThat(closerItem.value).isFalse()
                     assertThat(itemInBeam.value).isTrue()
                 }
-                Up, Down -> {
+                Up,
+                Down -> {
                     assertThat(closerItem.value).isTrue()
                     assertThat(itemInBeam.value).isFalse()
                 }
@@ -3850,7 +3745,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *          <---- Direction of Search ---         *        |    Item   |        Direction
      *                                                *        |___________|        of Search
      *                                                *                                 |
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
      *                   __________                   *
      *                  | Closer  |                   *                                 |
      *                  |  Item   |                   *         ____________        Direction
@@ -3898,19 +3793,19 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
         }
 
         // Act.
-        rule.runOnIdle {
-            focusManager.moveFocus(focusDirection)
-        }
+        rule.runOnIdle { focusManager.moveFocus(focusDirection) }
 
         // Assert.
         rule.runOnIdle {
             assertThat(focusedItem.value).isFalse()
             when (focusDirection) {
-                Left, Right -> {
+                Left,
+                Right -> {
                     assertThat(closerItem.value).isFalse()
                     assertThat(itemInBeam.value).isTrue()
                 }
-                Up, Down -> {
+                Up,
+                Down -> {
                     assertThat(closerItem.value).isTrue()
                     assertThat(itemInBeam.value).isFalse()
                 }
@@ -3933,7 +3828,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *          <---- Direction of Search ---         *        |___________|        Direction
      *                                                *                             of Search
      *                                                *                                 |
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
      *                __________                      *                                 |
      *               | Closer  |                      *                             Direction
      *               |  Item   |                      *         ____________        of Search
@@ -3980,19 +3875,19 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
         }
 
         // Act.
-        rule.runOnIdle {
-            focusManager.moveFocus(focusDirection)
-        }
+        rule.runOnIdle { focusManager.moveFocus(focusDirection) }
 
         // Assert.
         rule.runOnIdle {
             assertThat(focusedItem.value).isFalse()
             when (focusDirection) {
-                Left, Right -> {
+                Left,
+                Right -> {
                     assertThat(closerItem.value).isFalse()
                     assertThat(itemInBeam.value).isTrue()
                 }
-                Up, Down -> {
+                Up,
+                Down -> {
                     assertThat(closerItem.value).isTrue()
                     assertThat(itemInBeam.value).isFalse()
                 }
@@ -4014,7 +3909,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *          <---- Direction of Search ---         *    Direction      |___________|
      *                                                *    of Search
      *                                                *        |
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
      *    ____________           __________           *        |
      *   |  focused  |          |  Item   |           *    Direction
      *   |    Item   |          | in beam |           *    of Search       ____________
@@ -4060,19 +3955,19 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
         }
 
         // Act.
-        rule.runOnIdle {
-            focusManager.moveFocus(focusDirection)
-        }
+        rule.runOnIdle { focusManager.moveFocus(focusDirection) }
 
         // Assert.
         rule.runOnIdle {
             assertThat(focusedItem.value).isFalse()
             when (focusDirection) {
-                Left, Right -> {
+                Left,
+                Right -> {
                     assertThat(closerItem.value).isFalse()
                     assertThat(itemInBeam.value).isTrue()
                 }
-                Up, Down -> {
+                Up,
+                Down -> {
                     assertThat(closerItem.value).isTrue()
                     assertThat(itemInBeam.value).isFalse()
                 }
@@ -4095,7 +3990,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                                *     Direction       |    Item   |
      *                                                *     of Search       |___________|
      *                                                *         |
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
      *    ____________               __________       *
      *   |  focused  |              |  Item   |       *         |
      *   |    Item   |              | in beam |       *     Direction        ____________
@@ -4143,19 +4038,19 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
         }
 
         // Act.
-        rule.runOnIdle {
-            focusManager.moveFocus(focusDirection)
-        }
+        rule.runOnIdle { focusManager.moveFocus(focusDirection) }
 
         // Assert.
         rule.runOnIdle {
             assertThat(focusedItem.value).isFalse()
             when (focusDirection) {
-                Left, Right -> {
+                Left,
+                Right -> {
                     assertThat(closerItem.value).isFalse()
                     assertThat(itemInBeam.value).isTrue()
                 }
-                Up, Down -> {
+                Up,
+                Down -> {
                     assertThat(closerItem.value).isTrue()
                     assertThat(itemInBeam.value).isFalse()
                 }
@@ -4178,7 +4073,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                                *     Direction       |___________|
      *                                                *     of Search
      *                                                *         |
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
      *    ____________             __________         *         |
      *   |  focused  |            |  Item   |         *     Direction
      *   |    Item   |            | in beam |         *     of Search        ____________
@@ -4225,19 +4120,19 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
         }
 
         // Act.
-        rule.runOnIdle {
-            focusManager.moveFocus(focusDirection)
-        }
+        rule.runOnIdle { focusManager.moveFocus(focusDirection) }
 
         // Assert.
         rule.runOnIdle {
             assertThat(focusedItem.value).isFalse()
             when (focusDirection) {
-                Left, Right -> {
+                Left,
+                Right -> {
                     assertThat(closerItem.value).isFalse()
                     assertThat(itemInBeam.value).isTrue()
                 }
-                Up, Down -> {
+                Up,
+                Down -> {
                     assertThat(closerItem.value).isTrue()
                     assertThat(itemInBeam.value).isFalse()
                 }
@@ -4247,31 +4142,31 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
     }
 
     /**
-     *    ____________   ____________   ____________  *    ____________
-     *   |  In Beam  |  |  In Beam  |  |  focused  |  *   |  In Beam  |
-     *   |  Farther  |  |   Closer  |  |    Item   |  *   |  Farther  |
-     *   |___________|  |___________|  |___________|  *   |___________|        ^
-     *                                                *    ____________        |
-     *         <---- Direction of Search ---          *   |  In Beam  |    Direction
-     *                                                *   |   Closer  |    of Search
-     *                                                *   |___________|        |
-     *                                                *    ____________        |
-     *                                                *   |  focused  |
-     *                                                *   |    Item   |
-     *                                                *   |___________|
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-     *    ____________   ____________   ____________  *    ____________
-     *   |  focused  |  |  In Beam  |  |  In Beam  |  *   |  focused  |
-     *   |    Item   |  |   Closer  |  |  Farther  |  *   |    Item   |
-     *   |___________|  |___________|  |___________|  *   |___________|        |
-     *                                                *    ____________        |
-     *        ---- Direction of Search --->           *   |  In Beam  |    Direction
-     *                                                *   |   Closer  |    of Search
-     *                                                *   |___________|        |
-     *                                                *    ____________        v
-     *                                                *   |  In Beam  |
-     *                                                *   |  Farther  |
-     *                                                *   |___________|
+     *     ____________   ____________   ____________  *    ____________
+     *    |  In Beam  |  |  In Beam  |  |  focused  |  *   |  In Beam  |
+     *    |  Farther  |  |   Closer  |  |    Item   |  *   |  Farther  |
+     *    |___________|  |___________|  |___________|  *   |___________|        ^
+     *                                                 *    ____________        |
+     *          <---- Direction of Search ---          *   |  In Beam  |    Direction
+     *                                                 *   |   Closer  |    of Search
+     *                                                 *   |___________|        |
+     *                                                 *    ____________        |
+     *                                                 *   |  focused  |
+     *                                                 *   |    Item   |
+     *                                                 *   |___________|
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *     ____________   ____________   ____________  *    ____________
+     *    |  focused  |  |  In Beam  |  |  In Beam  |  *   |  focused  |
+     *    |    Item   |  |   Closer  |  |  Farther  |  *   |    Item   |
+     *    |___________|  |___________|  |___________|  *   |___________|        |
+     *                                                 *    ____________        |
+     *         ---- Direction of Search --->           *   |  In Beam  |    Direction
+     *                                                 *   |   Closer  |    of Search
+     *                                                 *   |___________|        |
+     *                                                 *    ____________        v
+     *                                                 *   |  In Beam  |
+     *                                                 *   |  Farther  |
+     *                                                 *   |___________|
      */
     @MediumTest
     @Test
@@ -4305,9 +4200,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
         }
 
         // Act.
-        rule.runOnIdle {
-            focusManager.moveFocus(focusDirection)
-        }
+        rule.runOnIdle { focusManager.moveFocus(focusDirection) }
 
         // Assert.
         rule.runOnIdle {
@@ -4332,7 +4225,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                                *  |     focused     |
      *                                                *  |      Item       |
      *                                                *  |_________________|
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
      *    ____________                                *   __________________
      *   |           |                                *  |     focused     |
      *   |           |                  ____________  *  |      Item       |
@@ -4378,9 +4271,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
         }
 
         // Act.
-        rule.runOnIdle {
-            focusManager.moveFocus(focusDirection)
-        }
+        rule.runOnIdle { focusManager.moveFocus(focusDirection) }
 
         // Assert.
         rule.runOnIdle {
@@ -4403,7 +4294,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                                *   |      focused     |
      *                                                *   |        Item      |
      *                                                *   |__________________|
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
      *                                                *    ___________________
      *    ____________                                *   |      focused     |
      *   |           |                  ____________  *   |        Item      |
@@ -4449,9 +4340,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
         }
 
         // Act.
-        rule.runOnIdle {
-            focusManager.moveFocus(focusDirection)
-        }
+        rule.runOnIdle { focusManager.moveFocus(focusDirection) }
 
         // Assert.
         rule.runOnIdle {
@@ -4474,7 +4363,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                                *    |    focused    |
      *                                                *    |      Item     |
      *                                                *    |_______________|
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
      *                                                *     ________________
      *    ____________                                *    |    focused    |
      *   |           |   ____________   ____________  *    |      Item     |
@@ -4520,9 +4409,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
         }
 
         // Act.
-        rule.runOnIdle {
-            focusManager.moveFocus(focusDirection)
-        }
+        rule.runOnIdle { focusManager.moveFocus(focusDirection) }
 
         // Assert.
         rule.runOnIdle {
@@ -4546,7 +4433,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                                *     |      focused      |
      *                                                *     |        Item       |
      *                                                *     |___________________|
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
      *                                                *      ____________________
      *    ____________   ____________                 *     |      focused      |
      *   |           |  |  In Beam  |   ____________  *     |        Item       |
@@ -4592,9 +4479,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
         }
 
         // Act.
-        rule.runOnIdle {
-            focusManager.moveFocus(focusDirection)
-        }
+        rule.runOnIdle { focusManager.moveFocus(focusDirection) }
 
         // Assert.
         rule.runOnIdle {
@@ -4618,7 +4503,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                                *     |     focused      |
      *         <---- Direction of Search ---          *     |       Item       |
      *                                                *     |__________________|
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
      *                   ____________                 *      ___________________
      *    ____________  |           |                 *     |     focused      |
      *   |           |  |  In Beam  |   ____________  *     |       Item       |
@@ -4664,9 +4549,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
         }
 
         // Act.
-        rule.runOnIdle {
-            focusManager.moveFocus(focusDirection)
-        }
+        rule.runOnIdle { focusManager.moveFocus(focusDirection) }
 
         // Assert.
         rule.runOnIdle {
@@ -4690,7 +4573,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                               *                                |    Item   |
      *        <---- Direction of Search ---          *                                |___________|
      *                                               *
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
      *                                               *   ____________
      *        ---- Direction of Search --->          *  |  focused  |
      *   ____________                                *  |    Item   |
@@ -4735,9 +4618,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
             }
         }
         // Act.
-        rule.runOnIdle {
-            focusManager.moveFocus(focusDirection)
-        }
+        rule.runOnIdle { focusManager.moveFocus(focusDirection) }
 
         // Assert.
         rule.runOnIdle {
@@ -4761,7 +4642,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                               *                                |    Item   |
      *        <---- Direction of Search ---          *                                |___________|
      *                                               *
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
      *                                               *   ____________
      *        ---- Direction of Search --->          *  |  focused  |
      *   ____________                                *  |    Item   |
@@ -4806,9 +4687,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
             }
         }
         // Act.
-        rule.runOnIdle {
-            focusManager.moveFocus(focusDirection)
-        }
+        rule.runOnIdle { focusManager.moveFocus(focusDirection) }
 
         // Assert.
         rule.runOnIdle {
@@ -4819,32 +4698,32 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
     }
 
     /**
-     *   ____________                                *        ____________                  ^
-     *  |           |                                *       |           |                  |
-     *  |  Farther  |   ____________                 *       |  Farther  |              Direction
-     *  |___________|  |           |                 *       |___________|              of Search
-     *                 |   Closer  |                 *               ____________            |
-     *                 |___________|                 *              |           |            |
-     *                                 ____________  *              |   Closer  |
-     *                                |  focused  |  *              |___________|
-     *                                |    Item   |  *                                 ____________
-     *                                |___________|  *                                |  focused  |
-     *                                               *                                |    Item   |
-     *        <---- Direction of Search ---          *                                |___________|
-     *                                               *
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-     *                                               *   ____________
-     *        ---- Direction of Search --->          *  |  focused  |
-     *   ____________                                *  |    Item   |
-     *  |  focused  |                                *  |___________|
-     *  |    Item   |                                *                  ____________
-     *  |___________|                                *                 |           |
-     *                  ____________                 *      |          |   Closer  |
-     *                 |           |                 *      |          |___________|
-     *                 |   Closer  |   ____________  *   Direction             ____________
-     *                 |___________|  |           |  *   of Search            |           |
-     *                                |  Farther  |  *      |                 |  Farther  |
-     *                                |___________|  *      v                 |___________|
+     *     ____________                                *        ____________                  ^
+     *    |           |                                *       |           |                  |
+     *    |  Farther  |   ____________                 *       |  Farther  |              Direction
+     *    |___________|  |           |                 *       |___________|              of Search
+     *                   |   Closer  |                 *               ____________           |
+     *                   |___________|                 *              |           |           |
+     *                                   ____________  *              |   Closer  |
+     *                                  |  focused  |  *              |___________|
+     *                                  |    Item   |  *                                 ____________
+     *                                  |___________|  *                                |  focused  |
+     *                                                 *                                |    Item   |
+     *          <---- Direction of Search ---          *                                |___________|
+     *                                                 *
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *                                                 *   ____________
+     *          ---- Direction of Search --->          *  |  focused  |
+     *     ____________                                *  |    Item   |
+     *    |  focused  |                                *  |___________|
+     *    |    Item   |                                *                  ____________
+     *    |___________|                                *                 |           |
+     *                    ____________                 *      |          |   Closer  |
+     *                   |           |                 *      |          |___________|
+     *                   |   Closer  |   ____________  *   Direction             ____________
+     *                   |___________|  |           |  *   of Search            |           |
+     *                                  |  Farther  |  *      |                 |  Farther  |
+     *                                  |___________|  *      v                 |___________|
      */
     @LargeTest
     @Test
@@ -4877,9 +4756,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
             }
         }
         // Act.
-        rule.runOnIdle {
-            focusManager.moveFocus(focusDirection)
-        }
+        rule.runOnIdle { focusManager.moveFocus(focusDirection) }
 
         // Assert.
         rule.runOnIdle {
@@ -4890,36 +4767,33 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
     }
 
     /**
-     *   ____________
-     *  |           |
-     *  |  Farther  |                                     ^
-     *  |___________|                                     |
-     *                  ____________                  Direction
-     *                 |           |                  of Search
-     *                 |   Closer  |                      |
-     *                 |___________|                      |
-     *                                 ____________
-     *                                |  focused  |
-     *                                |    Item   |
-     *                                |___________|
-     *
-     *        <---- Direction of Search ---
-     *
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-     *
-     *        ---- Direction of Search --->
-     *   ____________
-     *  |  focused  |
-     *  |    Item   |
-     *  |___________|
-     *                  ____________                      |
-     *                 |           |                      |
-     *                 |   Closer  |                   Direction
-     *                 |___________|                   of Search
-     *                                 ____________       |
-     *                                |           |       v
-     *                                |  Farther  |
-     *                                |___________|
+     *     ____________
+     *    |           |
+     *    |  Farther  |                                     ^
+     *    |___________|                                     |
+     *                    ____________                  Direction
+     *                   |           |                  of Search
+     *                   |   Closer  |                      |
+     *                   |___________|                      |
+     *                                   ____________
+     *                                  |  focused  |
+     *                                  |    Item   |
+     *                                  |___________|
+     *          <---- Direction of Search ---
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *          ---- Direction of Search --->
+     *     ____________
+     *    |  focused  |
+     *    |    Item   |
+     *    |___________|
+     *                    ____________                      |
+     *                   |           |                      |
+     *                   |   Closer  |                   Direction
+     *                   |___________|                   of Search
+     *                                   ____________       |
+     *                                  |           |       v
+     *                                  |  Farther  |
+     *                                  |___________|
      */
     @LargeTest
     @Test
@@ -4928,12 +4802,14 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
         val (focusedItem, closer, farther) = List(3) { mutableStateOf(false) }
         rule.setContentForTest {
             when (focusDirection) {
-                Left, Up -> {
+                Left,
+                Up -> {
                     FocusableBox(focusedItem, 60, 60, 20, 20, initialFocus)
                     FocusableBox(closer, 30, 30, 20, 20)
                     FocusableBox(farther, 0, 0, 20, 20)
                 }
-                Right, Down -> {
+                Right,
+                Down -> {
                     FocusableBox(focusedItem, 0, 0, 20, 20, initialFocus)
                     FocusableBox(closer, 30, 30, 20, 20)
                     FocusableBox(farther, 60, 60, 20, 20)
@@ -4942,9 +4818,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
             }
         }
         // Act.
-        rule.runOnIdle {
-            focusManager.moveFocus(focusDirection)
-        }
+        rule.runOnIdle { focusManager.moveFocus(focusDirection) }
 
         // Assert.
         rule.runOnIdle {
@@ -4970,7 +4844,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                               *                                |    Item   |
      *        <---- Direction of Search ---          *                                |___________|
      *                                               *
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
      *                                               *   ____________
      *        ---- Direction of Search --->          *  |  focused  |
      *   ____________                                *  |    Item   |
@@ -5017,9 +4891,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
             }
         }
         // Act.
-        rule.runOnIdle {
-            focusManager.moveFocus(focusDirection)
-        }
+        rule.runOnIdle { focusManager.moveFocus(focusDirection) }
 
         // Assert.
         rule.runOnIdle {
@@ -5045,7 +4917,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                               *                                |    Item   |
      *        <---- Direction of Search ---          *                                |___________|
      *                                               *
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
      *                                               *   ____________
      *        ---- Direction of Search --->          *  |  focused  |
      *   ____________                                *  |    Item   |
@@ -5092,9 +4964,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
             }
         }
         // Act.
-        rule.runOnIdle {
-            focusManager.moveFocus(focusDirection)
-        }
+        rule.runOnIdle { focusManager.moveFocus(focusDirection) }
 
         // Assert.
         rule.runOnIdle {
@@ -5120,7 +4990,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                               *                                |    Item   |
      *        <---- Direction of Search ---          *                                |___________|
      *                                               *
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
      *                                               *  ____________
      *        ---- Direction of Search --->          * |  focused  |
      *   ____________                                * |    Item   |
@@ -5167,9 +5037,7 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
             }
         }
         // Act.
-        rule.runOnIdle {
-            focusManager.moveFocus(focusDirection)
-        }
+        rule.runOnIdle { focusManager.moveFocus(focusDirection) }
 
         // Assert.
         rule.runOnIdle {

@@ -6,6 +6,8 @@ plugins {
     id "playground"
 }
 
+apply from: "../../buildSrc/ndk.gradle"
+
 rootProject.name = "appcompat-playground"
 
 playground {

@@ -31,7 +31,6 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -52,14 +51,12 @@ import org.junit.runner.RunWith
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
-@OptIn(ExperimentalTestApi::class, ExperimentalTvMaterial3Api::class)
+@OptIn(ExperimentalTvMaterial3Api::class)
 class IconButtonScreenshotTest {
 
-    @get:Rule
-    val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule()
 
-    @get:Rule
-    val screenshotRule = AndroidXScreenshotTestRule(TV_GOLDEN_MATERIAL3)
+    @get:Rule val screenshotRule = AndroidXScreenshotTestRule(TV_GOLDEN_MATERIAL3)
 
     private val wrap = Modifier.wrapContentSize(Alignment.TopStart)
     private val wrapperTestTag = "iconButtonWrapper"
@@ -84,10 +81,7 @@ class IconButtonScreenshotTest {
             DarkMaterialTheme {
                 Box(wrap.testTag(wrapperTestTag)) {
                     IconButton(onClick = { /* doSomething() */ }) {
-                        Icon(
-                            Icons.Filled.Favorite,
-                            contentDescription = "Localized description"
-                        )
+                        Icon(Icons.Filled.Favorite, contentDescription = "Localized description")
                     }
                 }
             }
@@ -136,8 +130,7 @@ class IconButtonScreenshotTest {
         }
 
         rule.mainClock.autoAdvance = false
-        rule.onNode(hasClickAction())
-            .performTouchInput { down(center) }
+        rule.onNode(hasClickAction()).performTouchInput { down(center) }
 
         rule.mainClock.advanceTimeByFrame()
         rule.waitForIdle() // Wait for measure
@@ -159,8 +152,7 @@ class IconButtonScreenshotTest {
         }
 
         rule.mainClock.autoAdvance = false
-        rule.onNode(hasClickAction())
-            .performTouchInput { down(center) }
+        rule.onNode(hasClickAction()).performTouchInput { down(center) }
 
         rule.mainClock.advanceTimeByFrame()
         rule.waitForIdle() // Wait for measure
@@ -180,9 +172,7 @@ class IconButtonScreenshotTest {
                 }
             }
         }
-        rule.onNodeWithTag(wrapperTestTag).performMouseInput {
-            enter(center)
-        }
+        rule.onNodeWithTag(wrapperTestTag).performMouseInput { enter(center) }
 
         assertAgainstGolden("iconButton_lightTheme_hovered")
     }
@@ -198,9 +188,7 @@ class IconButtonScreenshotTest {
                 }
             }
         }
-        rule.onNodeWithTag(wrapperTestTag).performMouseInput {
-            enter(center)
-        }
+        rule.onNodeWithTag(wrapperTestTag).performMouseInput { enter(center) }
 
         assertAgainstGolden("iconButton_darkTheme_hovered")
     }
@@ -214,9 +202,7 @@ class IconButtonScreenshotTest {
                 Box(Modifier.size(50.dp).testTag(wrapperTestTag)) {
                     IconButton(
                         onClick = { /* doSomething() */ },
-                        modifier = Modifier
-                            .align(Alignment.Center)
-                            .focusRequester(focusRequester)
+                        modifier = Modifier.align(Alignment.Center).focusRequester(focusRequester)
                     ) {
                         Icon(Icons.Filled.Favorite, contentDescription = "Localized description")
                     }
@@ -224,9 +210,7 @@ class IconButtonScreenshotTest {
             }
         }
 
-        rule.onNodeWithTag(wrapperTestTag)
-            .onChild()
-            .requestFocus()
+        rule.onNodeWithTag(wrapperTestTag).onChild().requestFocus()
         rule.waitForIdle()
 
         assertAgainstGolden("iconButton_lightTheme_focused")
@@ -241,9 +225,7 @@ class IconButtonScreenshotTest {
                 Box(Modifier.size(50.dp).testTag(wrapperTestTag)) {
                     IconButton(
                         onClick = { /* doSomething() */ },
-                        modifier = Modifier
-                            .align(Alignment.Center)
-                            .focusRequester(focusRequester)
+                        modifier = Modifier.align(Alignment.Center).focusRequester(focusRequester)
                     ) {
                         Icon(Icons.Filled.Favorite, contentDescription = "Localized description")
                     }
@@ -251,9 +233,7 @@ class IconButtonScreenshotTest {
             }
         }
 
-        rule.onNodeWithTag(wrapperTestTag)
-            .onChild()
-            .requestFocus()
+        rule.onNodeWithTag(wrapperTestTag).onChild().requestFocus()
         rule.waitForIdle()
 
         assertAgainstGolden("iconButton_darkTheme_focused")
@@ -265,10 +245,7 @@ class IconButtonScreenshotTest {
             LightMaterialTheme {
                 Box(wrap.testTag(wrapperTestTag)) {
                     IconButton(onClick = { /* doSomething() */ }) {
-                        Box(
-                            Modifier
-                                .size(100.dp)
-                                .background(Color.Blue))
+                        Box(Modifier.size(100.dp).background(Color.Blue))
                     }
                 }
             }
@@ -345,7 +322,8 @@ class IconButtonScreenshotTest {
     }
 
     private fun assertAgainstGolden(goldenName: String) {
-        rule.onNodeWithTag(wrapperTestTag)
+        rule
+            .onNodeWithTag(wrapperTestTag)
             .captureToImage()
             .assertAgainstGolden(screenshotRule, goldenName)
     }

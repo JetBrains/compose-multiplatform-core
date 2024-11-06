@@ -29,15 +29,15 @@ plugins {
 }
 
 dependencies {
-    api("androidx.annotation:annotation:1.1.0")
+    api("androidx.annotation:annotation:1.8.1")
 }
 
 androidx {
     name = "Compose Android Stubs"
-    type = LibraryType.PUBLISHED_KOTLIN_ONLY_LIBRARY
+    type = LibraryType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     inceptionYear = "2020"
     description = "Stubs for classes in older Android APIs"
-    metalavaK2UastEnabled = true
+    doNotDocumentReason = "Not published to maven"
 }
 
 android {

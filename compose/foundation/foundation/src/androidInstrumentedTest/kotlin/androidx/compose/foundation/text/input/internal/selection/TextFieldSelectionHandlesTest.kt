@@ -17,7 +17,11 @@
 package androidx.compose.foundation.text.input.internal.selection
 
 import android.os.Build
-import androidx.compose.foundation.ExperimentalFoundationApi
+import android.view.InputDevice
+import android.view.KeyCharacterMap
+import android.view.KeyEvent
+import android.view.KeyEvent.ACTION_DOWN
+import android.view.View
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.Orientation
@@ -25,6 +29,7 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -47,6 +52,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.WindowInfo
 import androidx.compose.ui.platform.testTag
@@ -55,6 +61,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.doubleClick
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTouchInput
@@ -65,6 +72,7 @@ import androidx.compose.ui.test.swipeUp
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.test.filters.LargeTest
@@ -75,12 +83,10 @@ import kotlinx.coroutines.launch
 import org.junit.Rule
 import org.junit.Test
 
-@OptIn(ExperimentalFoundationApi::class)
 @LargeTest
 class TextFieldSelectionHandlesTest : FocusedWindowTest {
 
-    @get:Rule
-    val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule()
 
     private lateinit var state: TextFieldState
 
@@ -96,9 +102,7 @@ class TextFieldSelectionHandlesTest : FocusedWindowTest {
             BasicTextField(
                 state,
                 textStyle = TextStyle(fontSize = fontSize, fontFamily = TEST_FONT_FAMILY),
-                modifier = Modifier
-                    .testTag(TAG)
-                    .width(100.dp)
+                modifier = Modifier.testTag(TAG).width(100.dp)
             )
         }
 
@@ -106,35 +110,34 @@ class TextFieldSelectionHandlesTest : FocusedWindowTest {
     }
 
     @Test
-    fun selectionHandles_haveMinimumTouchSizeArea() = with(rule.density) {
-        state = TextFieldState("hello, world", initialSelection = TextRange(2, 5))
-        rule.setContent {
-            BasicTextField(
-                state,
-                textStyle = TextStyle(fontSize = fontSize, fontFamily = TEST_FONT_FAMILY),
-                modifier = Modifier
-                    .testTag(TAG)
-                    .width(100.dp)
-            )
-        }
+    fun selectionHandles_haveMinimumTouchSizeArea() =
+        with(rule.density) {
+            state = TextFieldState("hello, world", initialSelection = TextRange(2, 5))
+            rule.setContent {
+                BasicTextField(
+                    state,
+                    textStyle = TextStyle(fontSize = fontSize, fontFamily = TEST_FONT_FAMILY),
+                    modifier = Modifier.testTag(TAG).width(100.dp)
+                )
+            }
 
-        focusAndWait()
+            focusAndWait()
 
-        var actualStartBottomRight = Offset.Zero
-        var actualEndBottomRight = Offset.Zero
-        rule.onNode(isSelectionHandle(Handle.SelectionStart)).performTouchInput {
-            actualStartBottomRight = bottomRight
-        }
-        rule.onNode(isSelectionHandle(Handle.SelectionEnd)).performTouchInput {
-            actualEndBottomRight = bottomRight
-        }
+            var actualStartBottomRight = Offset.Zero
+            var actualEndBottomRight = Offset.Zero
+            rule.onNode(isSelectionHandle(Handle.SelectionStart)).performTouchInput {
+                actualStartBottomRight = bottomRight
+            }
+            rule.onNode(isSelectionHandle(Handle.SelectionEnd)).performTouchInput {
+                actualEndBottomRight = bottomRight
+            }
 
-        val expectedBottomRight = Offset(40.dp.toPx(), 40.dp.toPx())
-        assertThat(actualStartBottomRight.x).isWithin(1f).of(expectedBottomRight.x)
-        assertThat(actualStartBottomRight.y).isWithin(1f).of(expectedBottomRight.y)
-        assertThat(actualEndBottomRight.x).isWithin(1f).of(expectedBottomRight.x)
-        assertThat(actualEndBottomRight.y).isWithin(1f).of(expectedBottomRight.y)
-    }
+            val expectedBottomRight = Offset(40.dp.toPx(), 40.dp.toPx())
+            assertThat(actualStartBottomRight.x).isWithin(1f).of(expectedBottomRight.x)
+            assertThat(actualStartBottomRight.y).isWithin(1f).of(expectedBottomRight.y)
+            assertThat(actualEndBottomRight.x).isWithin(1f).of(expectedBottomRight.x)
+            assertThat(actualEndBottomRight.y).isWithin(1f).of(expectedBottomRight.y)
+        }
 
     @Test
     fun selectionHandles_appears_whenFieldGetsFocused() {
@@ -143,9 +146,7 @@ class TextFieldSelectionHandlesTest : FocusedWindowTest {
             BasicTextField(
                 state,
                 textStyle = TextStyle(fontSize = fontSize, fontFamily = TEST_FONT_FAMILY),
-                modifier = Modifier
-                    .testTag(TAG)
-                    .width(100.dp)
+                modifier = Modifier.testTag(TAG).width(100.dp)
             )
         }
 
@@ -159,37 +160,51 @@ class TextFieldSelectionHandlesTest : FocusedWindowTest {
         val focusRequester = FocusRequester()
         rule.setTextFieldTestContent {
             Column {
-                Box(
-                    Modifier
-                        .size(100.dp)
-                        .focusRequester(focusRequester)
-                        .focusable())
+                Box(Modifier.size(100.dp).focusRequester(focusRequester).focusable())
                 BasicTextField(
                     state,
                     textStyle = TextStyle(fontSize = fontSize, fontFamily = TEST_FONT_FAMILY),
-                    modifier = Modifier
-                        .testTag(TAG)
-                        .width(100.dp)
+                    modifier = Modifier.testTag(TAG).width(100.dp)
                 )
             }
         }
 
         focusAndWait()
         assertHandlesDisplayed()
-        rule.runOnIdle {
-            focusRequester.requestFocus()
-        }
+        rule.runOnIdle { focusRequester.requestFocus() }
         assertHandlesNotExist()
+    }
+
+    @Test
+    fun selectionHandles_appear_whenTextAlignedToEnd() {
+        state = TextFieldState("hello", initialSelection = TextRange(0, 5))
+        rule.setTextFieldTestContent {
+            BasicTextField(
+                state,
+                textStyle =
+                    TextStyle(
+                        fontSize = fontSize,
+                        fontFamily = TEST_FONT_FAMILY,
+                        textAlign = TextAlign.End,
+                        letterSpacing = 1.2.sp,
+                    ),
+                modifier = Modifier.testTag(TAG).fillMaxWidth()
+            )
+        }
+
+        focusAndWait()
+        assertHandlesDisplayed()
     }
 
     @Test
     fun textField_noSelectionHandles_whenWindowLosesFocus() {
         state = TextFieldState("hello, world", initialSelection = TextRange(2, 5))
         val focusWindow = mutableStateOf(true)
-        val windowInfo = object : WindowInfo {
-            override val isWindowFocused: Boolean
-                get() = focusWindow.value
-        }
+        val windowInfo =
+            object : WindowInfo {
+                override val isWindowFocused: Boolean
+                    get() = focusWindow.value
+            }
 
         rule.setContent {
             CompositionLocalProvider(LocalWindowInfo provides windowInfo) {
@@ -216,10 +231,11 @@ class TextFieldSelectionHandlesTest : FocusedWindowTest {
     fun textField_redisplaysSelectionHandlesAndToolbar_whenWindowRegainsFocus() {
         state = TextFieldState("hello, world", initialSelection = TextRange(2, 5))
         val focusWindow = mutableStateOf(true)
-        val windowInfo = object : WindowInfo {
-            override val isWindowFocused: Boolean
-                get() = focusWindow.value
-        }
+        val windowInfo =
+            object : WindowInfo {
+                override val isWindowFocused: Boolean
+                    get() = focusWindow.value
+            }
 
         rule.setContent {
             CompositionLocalProvider(LocalWindowInfo provides windowInfo) {
@@ -256,27 +272,19 @@ class TextFieldSelectionHandlesTest : FocusedWindowTest {
             BasicTextField(
                 state,
                 textStyle = TextStyle(fontSize = fontSize, fontFamily = TEST_FONT_FAMILY),
-                modifier = Modifier
-                    .testTag(TAG)
-                    .width(100.dp)
+                modifier = Modifier.testTag(TAG).width(100.dp)
             )
         }
 
         focusAndWait()
 
         with(rule.onNode(isSelectionHandle(Handle.SelectionStart))) {
-            assertHandlePositionMatches(
-                (2 * fontSize.value).dp,
-                fontSize.value.dp
-            )
+            assertHandlePositionMatches((2 * fontSize.value).dp, fontSize.value.dp)
             assertHandleAnchorMatches(SelectionHandleAnchor.Left)
         }
 
         with(rule.onNode(isSelectionHandle(Handle.SelectionEnd))) {
-            assertHandlePositionMatches(
-                (5 * fontSize.value).dp,
-                fontSize.value.dp
-            )
+            assertHandlePositionMatches((5 * fontSize.value).dp, fontSize.value.dp)
             assertHandleAnchorMatches(SelectionHandleAnchor.Right)
         }
     }
@@ -289,27 +297,19 @@ class TextFieldSelectionHandlesTest : FocusedWindowTest {
             BasicTextField(
                 state,
                 textStyle = TextStyle(fontSize = fontSize, fontFamily = TEST_FONT_FAMILY),
-                modifier = Modifier
-                    .testTag(TAG)
-                    .width(100.dp)
+                modifier = Modifier.testTag(TAG).width(100.dp)
             )
         }
 
         focusAndWait()
 
         with(rule.onNode(isSelectionHandle(Handle.SelectionStart))) {
-            assertHandlePositionMatches(
-                (1 * fontSize.value).dp,
-                fontSize.value.dp
-            )
+            assertHandlePositionMatches((1 * fontSize.value).dp, fontSize.value.dp)
             assertHandleAnchorMatches(SelectionHandleAnchor.Left)
         }
 
         with(rule.onNode(isSelectionHandle(Handle.SelectionEnd))) {
-            assertHandlePositionMatches(
-                (5 * fontSize.value).dp,
-                fontSize.value.dp
-            )
+            assertHandlePositionMatches((5 * fontSize.value).dp, fontSize.value.dp)
             assertHandleAnchorMatches(SelectionHandleAnchor.Left)
         }
     }
@@ -323,9 +323,7 @@ class TextFieldSelectionHandlesTest : FocusedWindowTest {
                 state,
                 textStyle = TextStyle(fontSize = fontSize, fontFamily = TEST_FONT_FAMILY),
                 lineLimits = TextFieldLineLimits.SingleLine,
-                modifier = Modifier
-                    .testTag(TAG)
-                    .width(100.dp)
+                modifier = Modifier.testTag(TAG).width(100.dp)
             )
         }
 
@@ -334,15 +332,11 @@ class TextFieldSelectionHandlesTest : FocusedWindowTest {
 
         rule.onNodeWithTag(TAG).performTouchInput { swipeLeft() }
         assertHandlesNotExist()
-        rule.runOnIdle {
-            assertThat(state.selection).isEqualTo(TextRange(1, 2))
-        }
+        rule.runOnIdle { assertThat(state.selection).isEqualTo(TextRange(1, 2)) }
 
         rule.onNodeWithTag(TAG).performTouchInput { swipeRight() }
         assertHandlesDisplayed()
-        rule.runOnIdle {
-            assertThat(state.selection).isEqualTo(TextRange(1, 2))
-        }
+        rule.runOnIdle { assertThat(state.selection).isEqualTo(TextRange(1, 2)) }
     }
 
     @Test
@@ -354,30 +348,20 @@ class TextFieldSelectionHandlesTest : FocusedWindowTest {
                 state,
                 textStyle = TextStyle(fontSize = fontSize, fontFamily = TEST_FONT_FAMILY),
                 lineLimits = TextFieldLineLimits.MultiLine(maxHeightInLines = 2),
-                modifier = Modifier
-                    .testTag(TAG)
-                    .width(100.dp)
+                modifier = Modifier.testTag(TAG).width(100.dp)
             )
         }
 
         focusAndWait()
         assertHandlesDisplayed()
 
-        rule.onNodeWithTag(TAG).performTouchInput {
-            swipeUp()
-        }
+        rule.onNodeWithTag(TAG).performTouchInput { swipeUp() }
         assertHandlesNotExist()
-        rule.runOnIdle {
-            assertThat(state.selection).isEqualTo(TextRange(1, 2))
-        }
+        rule.runOnIdle { assertThat(state.selection).isEqualTo(TextRange(1, 2)) }
 
-        rule.onNodeWithTag(TAG).performTouchInput {
-            swipeDown()
-        }
+        rule.onNodeWithTag(TAG).performTouchInput { swipeDown() }
         assertHandlesDisplayed()
-        rule.runOnIdle {
-            assertThat(state.selection).isEqualTo(TextRange(1, 2))
-        }
+        rule.runOnIdle { assertThat(state.selection).isEqualTo(TextRange(1, 2)) }
     }
 
     @Test
@@ -386,42 +370,31 @@ class TextFieldSelectionHandlesTest : FocusedWindowTest {
         val containerTag = "container"
         state = TextFieldState("hello", initialSelection = TextRange(1, 2))
         rule.setTextFieldTestContent {
-            Row(modifier = Modifier
-                .width(200.dp)
-                .horizontalScroll(rememberScrollState())
-                .testTag(containerTag)
+            Row(
+                modifier =
+                    Modifier.width(200.dp)
+                        .horizontalScroll(rememberScrollState())
+                        .testTag(containerTag)
             ) {
                 BasicTextField(
                     state,
                     textStyle = TextStyle(fontSize = fontSize, fontFamily = TEST_FONT_FAMILY),
-                    modifier = Modifier
-                        .testTag(TAG)
-                        .width(100.dp)
+                    modifier = Modifier.testTag(TAG).width(100.dp)
                 )
-                Box(modifier = Modifier
-                    .height(12.dp)
-                    .width(400.dp))
+                Box(modifier = Modifier.height(12.dp).width(400.dp))
             }
         }
 
         focusAndWait()
         assertHandlesDisplayed()
 
-        rule.onNodeWithTag(containerTag).performTouchInput {
-            swipeLeft()
-        }
+        rule.onNodeWithTag(containerTag).performTouchInput { swipeLeft() }
         assertHandlesNotExist()
-        rule.runOnIdle {
-            assertThat(state.selection).isEqualTo(TextRange(1, 2))
-        }
+        rule.runOnIdle { assertThat(state.selection).isEqualTo(TextRange(1, 2)) }
 
-        rule.onNodeWithTag(containerTag).performTouchInput {
-            swipeRight()
-        }
+        rule.onNodeWithTag(containerTag).performTouchInput { swipeRight() }
         assertHandlesDisplayed()
-        rule.runOnIdle {
-            assertThat(state.selection).isEqualTo(TextRange(1, 2))
-        }
+        rule.runOnIdle { assertThat(state.selection).isEqualTo(TextRange(1, 2)) }
     }
 
     @Test
@@ -430,42 +403,31 @@ class TextFieldSelectionHandlesTest : FocusedWindowTest {
         val containerTag = "container"
         state = TextFieldState("hello", initialSelection = TextRange(1, 2))
         rule.setTextFieldTestContent {
-            Column(modifier = Modifier
-                .height(200.dp)
-                .verticalScroll(rememberScrollState())
-                .testTag(containerTag)
+            Column(
+                modifier =
+                    Modifier.height(200.dp)
+                        .verticalScroll(rememberScrollState())
+                        .testTag(containerTag)
             ) {
                 BasicTextField(
                     state,
                     textStyle = TextStyle(fontSize = fontSize, fontFamily = TEST_FONT_FAMILY),
-                    modifier = Modifier
-                        .testTag(TAG)
-                        .height(100.dp)
+                    modifier = Modifier.testTag(TAG).height(100.dp)
                 )
-                Box(modifier = Modifier
-                    .width(12.dp)
-                    .height(400.dp))
+                Box(modifier = Modifier.width(12.dp).height(400.dp))
             }
         }
 
         focusAndWait()
         assertHandlesDisplayed()
 
-        rule.onNodeWithTag(containerTag).performTouchInput {
-            swipeUp()
-        }
+        rule.onNodeWithTag(containerTag).performTouchInput { swipeUp() }
         assertHandlesNotExist()
-        rule.runOnIdle {
-            assertThat(state.selection).isEqualTo(TextRange(1, 2))
-        }
+        rule.runOnIdle { assertThat(state.selection).isEqualTo(TextRange(1, 2)) }
 
-        rule.onNodeWithTag(containerTag).performTouchInput {
-            swipeDown()
-        }
+        rule.onNodeWithTag(containerTag).performTouchInput { swipeDown() }
         assertHandlesDisplayed()
-        rule.runOnIdle {
-            assertThat(state.selection).isEqualTo(TextRange(1, 2))
-        }
+        rule.runOnIdle { assertThat(state.selection).isEqualTo(TextRange(1, 2)) }
     }
 
     @Test
@@ -475,18 +437,14 @@ class TextFieldSelectionHandlesTest : FocusedWindowTest {
             BasicTextField(
                 state,
                 textStyle = TextStyle(fontSize = fontSize, fontFamily = TEST_FONT_FAMILY),
-                modifier = Modifier
-                    .testTag(TAG)
-                    .width(200.dp)
+                modifier = Modifier.testTag(TAG).width(200.dp)
             )
         }
 
         focusAndWait()
 
         swipeToLeft(Handle.SelectionStart, fontSizePx * 4)
-        rule.runOnIdle {
-            assertThat(state.selection).isEqualTo(TextRange(0, 7))
-        }
+        rule.runOnIdle { assertThat(state.selection).isEqualTo(TextRange(0, 7)) }
     }
 
     @Test
@@ -496,18 +454,14 @@ class TextFieldSelectionHandlesTest : FocusedWindowTest {
             BasicTextField(
                 state,
                 textStyle = TextStyle(fontSize = fontSize, fontFamily = TEST_FONT_FAMILY),
-                modifier = Modifier
-                    .testTag(TAG)
-                    .width(200.dp)
+                modifier = Modifier.testTag(TAG).width(200.dp)
             )
         }
 
         focusAndWait()
 
         swipeToRight(Handle.SelectionEnd, fontSizePx * 4)
-        rule.runOnIdle {
-            assertThat(state.selection).isEqualTo(TextRange(4, 11))
-        }
+        rule.runOnIdle { assertThat(state.selection).isEqualTo(TextRange(4, 11)) }
     }
 
     @Test
@@ -517,9 +471,7 @@ class TextFieldSelectionHandlesTest : FocusedWindowTest {
             BasicTextField(
                 state,
                 textStyle = TextStyle(fontSize = fontSize, fontFamily = TEST_FONT_FAMILY),
-                modifier = Modifier
-                    .testTag(TAG)
-                    .width(200.dp)
+                modifier = Modifier.testTag(TAG).width(200.dp)
             )
         }
 
@@ -528,9 +480,7 @@ class TextFieldSelectionHandlesTest : FocusedWindowTest {
         rule.onNodeWithTag(TAG).performTouchInput {
             doubleClick(Offset(fontSizePx * 5, fontSizePx / 2)) // middle word
         }
-        rule.runOnIdle {
-            assertThat(state.selection).isEqualTo(TextRange(4, 7))
-        }
+        rule.runOnIdle { assertThat(state.selection).isEqualTo(TextRange(4, 7)) }
     }
 
     @SdkSuppress(minSdkVersion = 23)
@@ -541,9 +491,7 @@ class TextFieldSelectionHandlesTest : FocusedWindowTest {
             BasicTextField(
                 state,
                 textStyle = TextStyle(fontSize = fontSize, fontFamily = TEST_FONT_FAMILY),
-                modifier = Modifier
-                    .testTag(TAG)
-                    .width(200.dp)
+                modifier = Modifier.testTag(TAG).width(200.dp)
             )
         }
 
@@ -571,9 +519,7 @@ class TextFieldSelectionHandlesTest : FocusedWindowTest {
                 textStyle = TextStyle(fontSize = fontSize, fontFamily = TEST_FONT_FAMILY),
                 lineLimits = TextFieldLineLimits.SingleLine,
                 scrollState = scrollState,
-                modifier = Modifier
-                    .testTag(TAG)
-                    .width(100.dp)
+                modifier = Modifier.testTag(TAG).width(100.dp)
             )
         }
 
@@ -581,12 +527,8 @@ class TextFieldSelectionHandlesTest : FocusedWindowTest {
         scope.launch { scrollState.scrollTo(scrollState.maxValue) } // scroll to the most right
         focusAndWait() // selection handles show up
 
-        repeat(80) {
-            swipeToLeft(Handle.SelectionStart, fontSizePx)
-        }
-        rule.runOnIdle {
-            assertThat(state.selection).isEqualTo(TextRange(0, 80))
-        }
+        repeat(80) { swipeToLeft(Handle.SelectionStart, fontSizePx) }
+        rule.runOnIdle { assertThat(state.selection).isEqualTo(TextRange(0, 80)) }
     }
 
     @Test
@@ -601,9 +543,7 @@ class TextFieldSelectionHandlesTest : FocusedWindowTest {
                 textStyle = TextStyle(fontSize = fontSize, fontFamily = TEST_FONT_FAMILY),
                 lineLimits = TextFieldLineLimits.MultiLine(maxHeightInLines = 3),
                 scrollState = scrollState,
-                modifier = Modifier
-                    .testTag(TAG)
-                    .width(50.dp)
+                modifier = Modifier.testTag(TAG).width(50.dp)
             )
         }
 
@@ -614,9 +554,7 @@ class TextFieldSelectionHandlesTest : FocusedWindowTest {
         swipeUp(Handle.SelectionStart, scrollState.maxValue.toFloat() * 2)
         // make sure that we also swipe to start on the first line
         swipeToLeft(Handle.SelectionStart, fontSizePx * 10)
-        rule.runOnIdle {
-            assertThat(state.selection).isEqualTo(TextRange(0, 80))
-        }
+        rule.runOnIdle { assertThat(state.selection).isEqualTo(TextRange(0, 80)) }
     }
 
     @Test
@@ -627,21 +565,15 @@ class TextFieldSelectionHandlesTest : FocusedWindowTest {
                 state,
                 textStyle = TextStyle(fontSize = fontSize, fontFamily = TEST_FONT_FAMILY),
                 lineLimits = TextFieldLineLimits.SingleLine,
-                modifier = Modifier
-                    .testTag(TAG)
-                    .width(100.dp)
+                modifier = Modifier.testTag(TAG).width(100.dp)
             )
         }
 
         rule.waitForIdle()
         focusAndWait() // selection handles show up
 
-        repeat(80) {
-            swipeToRight(Handle.SelectionEnd, fontSizePx)
-        }
-        rule.runOnIdle {
-            assertThat(state.selection).isEqualTo(TextRange(0, 80))
-        }
+        repeat(80) { swipeToRight(Handle.SelectionEnd, fontSizePx) }
+        rule.runOnIdle { assertThat(state.selection).isEqualTo(TextRange(0, 80)) }
     }
 
     @Test
@@ -654,9 +586,7 @@ class TextFieldSelectionHandlesTest : FocusedWindowTest {
                 textStyle = TextStyle(fontSize = fontSize, fontFamily = TEST_FONT_FAMILY),
                 lineLimits = TextFieldLineLimits.MultiLine(maxHeightInLines = 3),
                 onTextLayout = { layoutResult = it },
-                modifier = Modifier
-                    .testTag(TAG)
-                    .width(100.dp)
+                modifier = Modifier.testTag(TAG).width(100.dp)
             )
         }
 
@@ -668,9 +598,7 @@ class TextFieldSelectionHandlesTest : FocusedWindowTest {
             swipeDown(Handle.SelectionEnd, layoutResult.size.height.toFloat())
             swipeToRight(Handle.SelectionEnd, layoutResult.size.width.toFloat())
         }
-        rule.runOnIdle {
-            assertThat(state.selection).isEqualTo(TextRange(0, 80))
-        }
+        rule.runOnIdle { assertThat(state.selection).isEqualTo(TextRange(0, 80)) }
     }
 
     @Test
@@ -680,9 +608,7 @@ class TextFieldSelectionHandlesTest : FocusedWindowTest {
             BasicTextField(
                 state,
                 textStyle = TextStyle(fontSize = fontSize, fontFamily = TEST_FONT_FAMILY),
-                modifier = Modifier
-                    .testTag(TAG)
-                    .width(200.dp)
+                modifier = Modifier.testTag(TAG).width(200.dp)
             )
         }
 
@@ -702,9 +628,7 @@ class TextFieldSelectionHandlesTest : FocusedWindowTest {
             BasicTextField(
                 state,
                 textStyle = TextStyle(fontSize = fontSize, fontFamily = TEST_FONT_FAMILY),
-                modifier = Modifier
-                    .testTag(TAG)
-                    .width(200.dp)
+                modifier = Modifier.testTag(TAG).width(200.dp)
             )
         }
 
@@ -724,9 +648,7 @@ class TextFieldSelectionHandlesTest : FocusedWindowTest {
             BasicTextField(
                 state,
                 textStyle = TextStyle(fontSize = fontSize, fontFamily = TEST_FONT_FAMILY),
-                modifier = Modifier
-                    .testTag(TAG)
-                    .width(200.dp)
+                modifier = Modifier.testTag(TAG).width(200.dp)
             )
         }
 
@@ -746,9 +668,7 @@ class TextFieldSelectionHandlesTest : FocusedWindowTest {
             BasicTextField(
                 state,
                 textStyle = TextStyle(fontSize = fontSize, fontFamily = TEST_FONT_FAMILY),
-                modifier = Modifier
-                    .testTag(TAG)
-                    .width(200.dp)
+                modifier = Modifier.testTag(TAG).width(200.dp)
             )
         }
 
@@ -768,18 +688,14 @@ class TextFieldSelectionHandlesTest : FocusedWindowTest {
             BasicTextField(
                 state,
                 textStyle = TextStyle(fontSize = fontSize, fontFamily = TEST_FONT_FAMILY),
-                modifier = Modifier
-                    .testTag(TAG)
-                    .width(200.dp)
+                modifier = Modifier.testTag(TAG).width(200.dp)
             )
         }
 
         focusAndWait()
 
         swipeToRight(Handle.SelectionStart, fontSizePx * 7)
-        rule.runOnIdle {
-            assertThat(state.selection).isEqualTo(TextRange(11, 7))
-        }
+        rule.runOnIdle { assertThat(state.selection).isEqualTo(TextRange(11, 7)) }
     }
 
     @Test
@@ -789,18 +705,61 @@ class TextFieldSelectionHandlesTest : FocusedWindowTest {
             BasicTextField(
                 state,
                 textStyle = TextStyle(fontSize = fontSize, fontFamily = TEST_FONT_FAMILY),
-                modifier = Modifier
-                    .testTag(TAG)
-                    .width(200.dp)
+                modifier = Modifier.testTag(TAG).width(200.dp)
             )
         }
 
         focusAndWait()
 
         swipeToLeft(Handle.SelectionEnd, fontSizePx * 7)
-        rule.runOnIdle {
-            assertThat(state.selection).isEqualTo(TextRange(4, 0))
+        rule.runOnIdle { assertThat(state.selection).isEqualTo(TextRange(4, 0)) }
+    }
+
+    @Test
+    fun selectionHandlesHide_whenHardwareKeyboardIsUsed_thenComesBackWithTouch() {
+        state = TextFieldState("hello")
+        lateinit var view: View
+        rule.setTextFieldTestContent {
+            view = LocalView.current
+            BasicTextField(
+                state,
+                textStyle = TextStyle(fontSize = fontSize, fontFamily = TEST_FONT_FAMILY),
+                modifier = Modifier.testTag(TAG)
+            )
         }
+
+        focusAndWait()
+
+        rule.onNodeWithTag(TAG).performTouchInput {
+            longClick(Offset(fontSize.toPx() * 2, fontSize.toPx() / 2))
+        }
+
+        assertHandlesDisplayed()
+
+        // regular `performKeyInput` scope does not set source to InputDevice.SOURCE_KEYBOARD
+        view.dispatchKeyEvent(
+            KeyEvent(
+                /* downTime = */ 0,
+                /* eventTime = */ 0,
+                /* action = */ ACTION_DOWN,
+                /* code = */ KeyEvent.KEYCODE_A,
+                /* repeat = */ 0,
+                /* metaState = */ KeyEvent.META_CTRL_ON,
+                KeyCharacterMap.VIRTUAL_KEYBOARD,
+                /* scancode= */ 0,
+                /* flags= */ 0,
+                /* source= */ InputDevice.SOURCE_KEYBOARD
+            )
+        )
+
+        assertHandlesNotExist()
+        assertThat(state.selection).isEqualTo(TextRange(0, 5))
+
+        rule.onNodeWithTag(TAG).performTouchInput {
+            longClick(Offset(fontSize.toPx() * 2, fontSize.toPx() / 2))
+        }
+
+        assertHandlesDisplayed()
     }
 
     private fun focusAndWait() {

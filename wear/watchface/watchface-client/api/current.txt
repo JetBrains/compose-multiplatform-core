@@ -73,6 +73,8 @@ package androidx.wear.watchface.client {
   }
 
   public final class DisconnectReasons {
+    property public static final int ENGINE_DETACHED;
+    property public static final int ENGINE_DIED;
     field public static final int ENGINE_DETACHED = 2; // 0x2
     field public static final int ENGINE_DIED = 1; // 0x1
     field public static final androidx.wear.watchface.client.DisconnectReasons INSTANCE;
@@ -176,6 +178,9 @@ package androidx.wear.watchface.client {
   }
 
   public static final class InteractiveWatchFaceClient.Companion {
+    property public static final int TAP_TYPE_CANCEL;
+    property public static final int TAP_TYPE_DOWN;
+    property public static final int TAP_TYPE_UP;
     field public static final int TAP_TYPE_CANCEL = 1; // 0x1
     field public static final int TAP_TYPE_DOWN = 0; // 0x0
     field public static final int TAP_TYPE_UP = 2; // 0x2
@@ -227,6 +232,7 @@ package androidx.wear.watchface.client {
   }
 
   public static final class WatchFaceControlClient.ServiceStartFailureException extends java.lang.Exception {
+    ctor public WatchFaceControlClient.ServiceStartFailureException();
     ctor public WatchFaceControlClient.ServiceStartFailureException(optional String message);
   }
 
@@ -255,6 +261,7 @@ package androidx.wear.watchface.client {
   }
 
   public static final class WatchFaceMetadataClient.ServiceStartFailureException extends java.lang.Exception {
+    ctor public WatchFaceMetadataClient.ServiceStartFailureException();
     ctor public WatchFaceMetadataClient.ServiceStartFailureException(optional String message);
   }
 

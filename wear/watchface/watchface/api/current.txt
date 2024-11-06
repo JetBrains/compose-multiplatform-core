@@ -12,7 +12,7 @@ package androidx.wear.watchface {
     method public float getTotalAngle();
     method public boolean hitTest(android.graphics.Rect rect, @Px float x, @Px float y);
     property public final float startAngle;
-    property public final float thickness;
+    property @Px public final float thickness;
     property public final float totalAngle;
   }
 
@@ -34,6 +34,8 @@ package androidx.wear.watchface {
   }
 
   public final class CanvasType {
+    property public static final int HARDWARE;
+    property public static final int SOFTWARE;
     field public static final int HARDWARE = 1; // 0x1
     field public static final androidx.wear.watchface.CanvasType INSTANCE;
     field public static final int SOFTWARE = 0; // 0x0
@@ -108,6 +110,9 @@ package androidx.wear.watchface {
   }
 
   public final class ComplicationSlotBoundsType {
+    property public static final int BACKGROUND;
+    property public static final int EDGE;
+    property public static final int ROUND_RECT;
     field public static final int BACKGROUND = 1; // 0x1
     field public static final int EDGE = 2; // 0x2
     field public static final androidx.wear.watchface.ComplicationSlotBoundsType INSTANCE;
@@ -179,6 +184,7 @@ package androidx.wear.watchface {
   }
 
   public static final class RenderParameters.Companion {
+    property public final androidx.wear.watchface.RenderParameters DEFAULT_INTERACTIVE;
   }
 
   public static final class RenderParameters.HighlightLayer {
@@ -232,9 +238,9 @@ package androidx.wear.watchface {
     method @SuppressCompatibility @androidx.wear.watchface.WatchFaceExperimental public final void setWatchfaceColors(androidx.wear.watchface.WatchFaceColors?);
     method @UiThread public boolean shouldAnimate();
     property public final java.util.Collection<kotlin.Pair<java.lang.Integer,androidx.wear.watchface.ContentDescriptionLabel>> additionalContentDescriptionLabels;
-    property public final float centerX;
-    property public final float centerY;
-    property public final long interactiveDrawModeUpdateDelayMillis;
+    property @Px public final float centerX;
+    property @Px public final float centerY;
+    property @IntRange(from=0L, to=60000L) public final long interactiveDrawModeUpdateDelayMillis;
     property public final androidx.wear.watchface.RenderParameters renderParameters;
     property public final android.graphics.Rect screenBounds;
     property public final android.view.SurfaceHolder surfaceHolder;
@@ -275,8 +281,8 @@ package androidx.wear.watchface {
     method @Deprecated @UiThread public suspend Object? onUiThreadGlSurfaceCreated(@Px int width, @Px int height, kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method @Deprecated @UiThread public abstract void render(java.time.ZonedDateTime zonedDateTime);
     method @Deprecated @UiThread public abstract void renderHighlightLayer(java.time.ZonedDateTime zonedDateTime);
-    method @Deprecated @WorkerThread public final suspend Object? runBackgroundThreadGlCommands(kotlin.jvm.functions.Function1<? super kotlin.coroutines.Continuation<? super kotlin.Unit>,?> commands, kotlin.coroutines.Continuation<? super kotlin.Unit>);
-    method @Deprecated public final suspend Object? runUiThreadGlCommands(kotlin.jvm.functions.Function1<? super kotlin.coroutines.Continuation<? super kotlin.Unit>,?> commands, kotlin.coroutines.Continuation<? super kotlin.Unit>);
+    method @Deprecated @WorkerThread public final suspend Object? runBackgroundThreadGlCommands(kotlin.jvm.functions.Function1<? super kotlin.coroutines.Continuation<? super kotlin.Unit>,? extends java.lang.Object?> commands, kotlin.coroutines.Continuation<? super kotlin.Unit>);
+    method @Deprecated public final suspend Object? runUiThreadGlCommands(kotlin.jvm.functions.Function1<? super kotlin.coroutines.Continuation<? super kotlin.Unit>,? extends java.lang.Object?> commands, kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method @Deprecated public final void setEglConfig(android.opengl.EGLConfig);
     method @Deprecated public final void setEglDisplay(android.opengl.EGLDisplay);
     property @Deprecated public final android.opengl.EGLContext eglBackgroundThreadContext;
@@ -346,11 +352,14 @@ package androidx.wear.watchface {
     method public int getXPos();
     method public int getYPos();
     property public final java.time.Instant tapTime;
-    property public final int xPos;
-    property public final int yPos;
+    property @Px public final int xPos;
+    property @Px public final int yPos;
   }
 
   public final class TapType {
+    property public static final int CANCEL;
+    property public static final int DOWN;
+    property public static final int UP;
     field public static final int CANCEL = 1; // 0x1
     field public static final int DOWN = 0; // 0x0
     field public static final androidx.wear.watchface.TapType INSTANCE;
@@ -371,6 +380,7 @@ package androidx.wear.watchface {
     method @Deprecated public androidx.wear.watchface.WatchFace setOverlayStyle(androidx.wear.watchface.WatchFace.OverlayStyle watchFaceOverlayStyle);
     method public androidx.wear.watchface.WatchFace setOverridePreviewReferenceInstant(java.time.Instant previewReferenceTimeMillis);
     method public androidx.wear.watchface.WatchFace setTapListener(androidx.wear.watchface.WatchFace.TapListener? tapListener);
+    method public androidx.wear.watchface.WatchFace setUpdateScreenshotOnConfigurationChange(boolean updateScreenshotOnConfigurationChange);
     method public void setWatchFaceType(int);
     property public final androidx.wear.watchface.WatchFace.LegacyWatchFaceOverlayStyle legacyWatchFaceStyle;
     property public final java.time.Instant? overridePreviewReferenceInstant;
@@ -390,7 +400,7 @@ package androidx.wear.watchface {
     method public int getStatusBarGravity();
     method public int getViewProtectionMode();
     method public boolean isTapEventsAccepted();
-    property public final int accentColor;
+    property @ColorInt public final int accentColor;
     property public final int statusBarGravity;
     property public final boolean tapEventsAccepted;
     property public final int viewProtectionMode;
@@ -450,9 +460,12 @@ package androidx.wear.watchface {
   }
 
   public static final class WatchFaceService.Companion {
+    property public static final int MAX_CREATE_WATCHFACE_TIME_MILLIS;
   }
 
   public final class WatchFaceType {
+    property public static final int ANALOG;
+    property public static final int DIGITAL;
     field public static final int ANALOG = 0; // 0x0
     field public static final int DIGITAL = 1; // 0x1
     field public static final androidx.wear.watchface.WatchFaceType INSTANCE;

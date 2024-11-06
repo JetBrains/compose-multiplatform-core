@@ -32,7 +32,6 @@ import androidx.compose.ui.tryPopulateReflectively
  *
  * @sample androidx.compose.ui.samples.ModifierNodeElementSample
  * @sample androidx.compose.ui.samples.SemanticsModifierNodeSample
- *
  * @see Modifier.Node
  * @see Modifier.Element
  */
@@ -40,12 +39,14 @@ abstract class ModifierNodeElement<N : Modifier.Node> : Modifier.Element, Inspec
 
     private var _inspectorValues: InspectorInfo? = null
     private val inspectorValues: InspectorInfo
-        get() = _inspectorValues ?: InspectorInfo()
-            .apply {
-                name = this@ModifierNodeElement::class.simpleName
-                inspectableProperties()
-            }
-            .also { _inspectorValues = it }
+        get() =
+            _inspectorValues
+                ?: InspectorInfo()
+                    .apply {
+                        name = this@ModifierNodeElement::class.simpleName
+                        inspectableProperties()
+                    }
+                    .also { _inspectorValues = it }
 
     final override val nameFallback: String?
         get() = inspectorValues.name

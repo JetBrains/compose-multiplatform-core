@@ -20,16 +20,23 @@ import android.os.Build
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.AccountCircle
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.testutils.assertAgainstGolden
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
@@ -38,12 +45,14 @@ import androidx.test.screenshot.AndroidXScreenshotTestRule
 import androidx.wear.compose.material3.Button
 import androidx.wear.compose.material3.ButtonDefaults
 import androidx.wear.compose.material3.CenteredText
+import androidx.wear.compose.material3.ChildButton
 import androidx.wear.compose.material3.CompactButton
+import androidx.wear.compose.material3.FilledTonalButton
+import androidx.wear.compose.material3.Icon
 import androidx.wear.compose.material3.MaterialTheme
 import androidx.wear.compose.material3.OutlinedButton
 import androidx.wear.compose.material3.SCREENSHOT_GOLDEN_PATH
 import androidx.wear.compose.material3.TEST_TAG
-import androidx.wear.compose.material3.TestIcon
 import androidx.wear.compose.material3.Text
 import androidx.wear.compose.material3.setContentWithTheme
 import org.junit.Rule
@@ -55,72 +64,185 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
 class ButtonScreenshotTest {
-    @get:Rule
-    val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule()
 
-    @get:Rule
-    val screenshotRule = AndroidXScreenshotTestRule(SCREENSHOT_GOLDEN_PATH)
+    @get:Rule val screenshotRule = AndroidXScreenshotTestRule(SCREENSHOT_GOLDEN_PATH)
 
-    @get:Rule
-    val testName = TestName()
+    @get:Rule val testName = TestName()
+
+    @Test fun button_enabled() = verifyScreenshot { BaseButton() }
+
+    @Test fun button_disabled() = verifyScreenshot { BaseButton(enabled = false) }
 
     @Test
-    fun button_enabled() = verifyScreenshot() {
-        BaseButton()
+    fun button_default_alignment() = verifyScreenshot {
+        // Uses the base Button overload, should be vertically centered by default
+        Button(onClick = {}, modifier = Modifier.fillMaxWidth().testTag(TEST_TAG)) {
+            Text("Button")
+        }
     }
 
     @Test
-    fun button_disabled() = verifyScreenshot() {
-        BaseButton(enabled = false)
+    fun button_top_alignment() = verifyScreenshot {
+        // Uses RowScope to override the default vertical alignment to be top
+        Button(onClick = {}, modifier = Modifier.fillMaxWidth().testTag(TEST_TAG)) {
+            Text("Button", modifier = Modifier.align(Alignment.Top))
+        }
     }
 
     @Test
-    fun three_slot_button_ltr() = verifyScreenshot(layoutDirection = LayoutDirection.Ltr) {
-        ThreeSlotButton()
-    }
+    fun three_slot_button_ltr() =
+        verifyScreenshot(layoutDirection = LayoutDirection.Ltr) { ThreeSlotButton() }
 
     @Test
-    fun three_slot_button_rtl() = verifyScreenshot(layoutDirection = LayoutDirection.Rtl) {
-        ThreeSlotButton()
-    }
+    fun three_slot_button_rtl() =
+        verifyScreenshot(layoutDirection = LayoutDirection.Rtl) { ThreeSlotButton() }
 
-    @Test
-    fun button_outlined_enabled() = verifyScreenshot() {
-        OutlinedButton()
-    }
+    @Test fun button_outlined_enabled() = verifyScreenshot() { OutlinedButton() }
 
-    @Test
-    fun button_outlined_disabled() = verifyScreenshot() {
-        OutlinedButton(enabled = false)
-    }
+    @Test fun button_outlined_disabled() = verifyScreenshot() { OutlinedButton(enabled = false) }
 
     @Test
     fun button_image_background_enabled() = verifyScreenshot {
-        ImageBackgroundButton()
+        ImageBackgroundButton(size = Size.Unspecified)
     }
 
     @Test
     fun button_image_background_disabled() = verifyScreenshot {
-        ImageBackgroundButton(enabled = false)
+        ImageBackgroundButton(enabled = false, size = Size.Unspecified)
     }
 
     @Test
-    fun compact_button_enabled() = verifyScreenshot {
-        CompactButton()
+    fun button_image_background_with_intrinsic_size() = verifyScreenshot {
+        ImageBackgroundButton(size = null)
     }
 
     @Test
-    fun compact_button_disabled() = verifyScreenshot {
-        CompactButton(enabled = false)
+    fun button_label_only_center_aligned() = verifyScreenshot {
+        Button(
+            onClick = {},
+            modifier = Modifier.fillMaxWidth().testTag(TEST_TAG),
+            label = { Text("Label only", modifier = Modifier.fillMaxWidth()) }
+        )
+    }
+
+    @Test
+    fun button_icon_and_label_start_aligned() = verifyScreenshot {
+        Button(
+            onClick = {},
+            modifier = Modifier.fillMaxWidth().testTag(TEST_TAG),
+            label = { Text("Label only", modifier = Modifier.fillMaxWidth()) },
+            icon = { ButtonIcon(size = ButtonDefaults.IconSize) },
+        )
+    }
+
+    @Test
+    fun button_large_icon() = verifyScreenshot {
+        Button(
+            onClick = {},
+            modifier = Modifier.fillMaxWidth().testTag(TEST_TAG),
+            label = { Text("Label", modifier = Modifier.fillMaxWidth()) },
+            secondaryLabel = { Text("Secondary label", modifier = Modifier.fillMaxWidth()) },
+            icon = { ButtonIcon(size = ButtonDefaults.LargeIconSize) },
+            contentPadding = ButtonDefaults.ButtonWithLargeIconContentPadding
+        )
+    }
+
+    @Test
+    fun button_extra_large_icon() = verifyScreenshot {
+        Button(
+            onClick = {},
+            modifier = Modifier.fillMaxWidth().testTag(TEST_TAG),
+            label = { Text("Label", modifier = Modifier.fillMaxWidth()) },
+            secondaryLabel = { Text("Secondary label", modifier = Modifier.fillMaxWidth()) },
+            icon = { ButtonIcon(size = ButtonDefaults.ExtraLargeIconSize) },
+            contentPadding = ButtonDefaults.ButtonWithExtraLargeIconContentPadding
+        )
+    }
+
+    @Test
+    fun filled_tonal_button_label_only_center_aligned() = verifyScreenshot {
+        FilledTonalButton(
+            onClick = {},
+            modifier = Modifier.fillMaxWidth().testTag(TEST_TAG),
+            label = { Text("Label only", modifier = Modifier.fillMaxWidth()) }
+        )
+    }
+
+    @Test
+    fun filled_tonal_button_icon_and_label_start_aligned() = verifyScreenshot {
+        FilledTonalButton(
+            onClick = {},
+            modifier = Modifier.fillMaxWidth().testTag(TEST_TAG),
+            label = { Text("Label only", modifier = Modifier.fillMaxWidth()) },
+            icon = { ButtonIcon(size = ButtonDefaults.IconSize) },
+        )
+    }
+
+    @Test
+    fun outlined_tonal_button_label_only_center_aligned() = verifyScreenshot {
+        OutlinedButton(
+            onClick = {},
+            modifier = Modifier.fillMaxWidth().testTag(TEST_TAG),
+            label = { Text("Label only", modifier = Modifier.fillMaxWidth()) }
+        )
+    }
+
+    @Test
+    fun outlined_tonal_button_icon_and_label_start_aligned() = verifyScreenshot {
+        OutlinedButton(
+            onClick = {},
+            modifier = Modifier.fillMaxWidth().testTag(TEST_TAG),
+            label = { Text("Label only", modifier = Modifier.fillMaxWidth()) },
+            icon = { ButtonIcon(size = ButtonDefaults.IconSize) },
+        )
+    }
+
+    @Test
+    fun child_button_label_only_center_aligned() = verifyScreenshot {
+        ChildButton(
+            onClick = {},
+            modifier = Modifier.fillMaxWidth().testTag(TEST_TAG),
+            label = { Text("Label only", modifier = Modifier.fillMaxWidth()) }
+        )
+    }
+
+    @Test
+    fun child_button_icon_and_label_start_aligned() = verifyScreenshot {
+        ChildButton(
+            onClick = {},
+            modifier = Modifier.fillMaxWidth().testTag(TEST_TAG),
+            label = { Text("Label only", modifier = Modifier.fillMaxWidth()) },
+            icon = { ButtonIcon(size = ButtonDefaults.IconSize) },
+        )
+    }
+
+    @Test fun compact_button_enabled() = verifyScreenshot { CompactButton() }
+
+    @Test fun compact_button_disabled() = verifyScreenshot { CompactButton(enabled = false) }
+
+    @Test
+    fun compact_button_label_only_center_aligned() = verifyScreenshot {
+        CompactButton(
+            onClick = {},
+            modifier = Modifier.fillMaxWidth().testTag(TEST_TAG),
+            label = { Text("Label only", modifier = Modifier.fillMaxWidth()) }
+        )
+    }
+
+    @Test
+    fun compact_button_icon_and_label_start_aligned() = verifyScreenshot {
+        CompactButton(
+            onClick = {},
+            modifier = Modifier.fillMaxWidth().testTag(TEST_TAG),
+            label = { Text("Label only", modifier = Modifier.fillMaxWidth()) },
+            icon = { ButtonIcon(size = ButtonDefaults.SmallIconSize) },
+        )
     }
 
     @Composable
     private fun BaseButton(enabled: Boolean = true) {
-        Button(
-            enabled = enabled,
-            onClick = {},
-            modifier = Modifier.testTag(TEST_TAG)
-        ) {
+        Button(enabled = enabled, onClick = {}, modifier = Modifier.testTag(TEST_TAG)) {
             CenteredText("Base Button")
         }
     }
@@ -132,33 +254,31 @@ class ButtonScreenshotTest {
             onClick = {},
             label = { Text("Three Slot Button") },
             secondaryLabel = { Text("Secondary Label") },
-            icon = { TestIcon() },
+            icon = { ButtonIcon(size = ButtonDefaults.IconSize) },
             modifier = Modifier.testTag(TEST_TAG)
         )
     }
 
     @Composable
     private fun OutlinedButton(enabled: Boolean = true) {
-        OutlinedButton(
-            enabled = enabled,
-            onClick = {},
-            modifier = Modifier.testTag(TEST_TAG)
-        ) {
+        OutlinedButton(enabled = enabled, onClick = {}, modifier = Modifier.testTag(TEST_TAG)) {
             CenteredText("Outlined Button")
         }
     }
 
     @Composable
-    private fun ImageBackgroundButton(enabled: Boolean = true) {
+    private fun ImageBackgroundButton(enabled: Boolean = true, size: Size?) {
         Button(
             enabled = enabled,
             onClick = {},
             label = { Text("Image Button") },
             secondaryLabel = { Text("Secondary Label") },
-            colors = ButtonDefaults.imageBackgroundButtonColors(
-                backgroundImagePainter = painterResource(R.drawable.backgroundimage1)
-            ),
-            icon = { TestIcon() },
+            colors =
+                ButtonDefaults.imageBackgroundButtonColors(
+                    backgroundImagePainter = painterResource(R.drawable.backgroundimage1),
+                    forcedSize = size
+                ),
+            icon = { ButtonIcon(size = ButtonDefaults.SmallIconSize) },
             modifier = Modifier.testTag(TEST_TAG)
         )
     }
@@ -168,7 +288,7 @@ class ButtonScreenshotTest {
         CompactButton(
             onClick = {},
             label = { Text("Compact Button") },
-            icon = { TestIcon() },
+            icon = { ButtonIcon(size = ButtonDefaults.SmallIconSize) },
             enabled = enabled,
             modifier = Modifier.testTag(TEST_TAG)
         )
@@ -181,17 +301,31 @@ class ButtonScreenshotTest {
         rule.setContentWithTheme {
             CompositionLocalProvider(LocalLayoutDirection provides layoutDirection) {
                 Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(MaterialTheme.colorScheme.background)
+                    modifier =
+                        Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)
                 ) {
                     content()
                 }
             }
         }
 
-        rule.onNodeWithTag(TEST_TAG)
+        rule
+            .onNodeWithTag(TEST_TAG)
             .captureToImage()
             .assertAgainstGolden(screenshotRule, testName.methodName)
+    }
+
+    @Composable
+    private fun ButtonIcon(
+        size: Dp,
+        modifier: Modifier = Modifier,
+        iconLabel: String = "ButtonIcon",
+    ) {
+        val testImage = Icons.Outlined.AccountCircle
+        Icon(
+            imageVector = testImage,
+            contentDescription = iconLabel,
+            modifier = modifier.testTag(iconLabel).size(size)
+        )
     }
 }

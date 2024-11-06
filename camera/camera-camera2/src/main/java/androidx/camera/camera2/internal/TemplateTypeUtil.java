@@ -20,7 +20,8 @@ import android.hardware.camera2.CameraDevice;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.OptIn;
-import androidx.annotation.RequiresApi;
+import androidx.camera.camera2.internal.compat.quirk.DeviceQuirks;
+import androidx.camera.camera2.internal.compat.quirk.PreviewUnderExposureQuirk;
 import androidx.camera.core.ExperimentalZeroShutterLag;
 import androidx.camera.core.ImageCapture;
 import androidx.camera.core.impl.UseCaseConfigFactory;
@@ -28,7 +29,6 @@ import androidx.camera.core.impl.UseCaseConfigFactory;
 /**
  * A class that contains utility methods for template type.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public class TemplateTypeUtil {
 
     private TemplateTypeUtil() {
@@ -49,12 +49,11 @@ public class TemplateTypeUtil {
                         ? CameraDevice.TEMPLATE_ZERO_SHUTTER_LAG :
                         CameraDevice.TEMPLATE_PREVIEW;
             case VIDEO_CAPTURE:
+                if (DeviceQuirks.get(PreviewUnderExposureQuirk.class) != null) {
+                    return CameraDevice.TEMPLATE_PREVIEW;
+                }
                 return CameraDevice.TEMPLATE_RECORD;
             case STREAM_SHARING:
-                // Uses TEMPLATE_PREVIEW instead of TEMPLATE_RECORD. Since there is a issue that
-                // captured results being stretched when requested for recording on some models,
-                // it would be safer to request for preview, which is also better tested. More
-                // detail please see b/297167569.
             case PREVIEW:
             case IMAGE_ANALYSIS:
             default:
@@ -76,10 +75,11 @@ public class TemplateTypeUtil {
                         ? CameraDevice.TEMPLATE_ZERO_SHUTTER_LAG :
                         CameraDevice.TEMPLATE_STILL_CAPTURE;
             case VIDEO_CAPTURE:
+                if (DeviceQuirks.get(PreviewUnderExposureQuirk.class) != null) {
+                    return CameraDevice.TEMPLATE_PREVIEW;
+                }
                 return CameraDevice.TEMPLATE_RECORD;
             case STREAM_SHARING:
-                // Uses TEMPLATE_PREVIEW instead of TEMPLATE_RECORD to align with
-                // getSessionConfigTemplateType method. More detail please see b/297167569.
             case PREVIEW:
             case IMAGE_ANALYSIS:
             default:

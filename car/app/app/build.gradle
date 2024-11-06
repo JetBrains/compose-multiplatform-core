@@ -53,16 +53,17 @@ plugins {
 }
 
 dependencies {
+    api(libs.jspecify)
     // OnBackPressedDispatcher is part of the API
     api("androidx.activity:activity:1.2.0")
     implementation(libs.guavaAndroid)
-    implementation("androidx.annotation:annotation:1.2.0")
+    implementation("androidx.annotation:annotation:1.8.1")
     implementation("androidx.core:core:1.7.0")
     implementation("androidx.lifecycle:lifecycle-viewmodel:2.2.0")
     implementation ("androidx.media:media:1.6.0")
     // Session and Screen both implement LifeCycleOwner so this needs to be exposed.
     api("androidx.lifecycle:lifecycle-common-java8:2.2.0")
-    api("androidx.annotation:annotation-experimental:1.4.0")
+    api("androidx.annotation:annotation-experimental:1.4.1")
 
     api(libs.kotlinStdlib)
     implementation(libs.kotlinStdlibCommon)
@@ -83,7 +84,7 @@ dependencies {
 }
 
 project.ext {
-    latestCarAppApiLevel = "7"
+    latestCarAppApiLevel = "8"
 }
 
 android {
@@ -92,14 +93,10 @@ android {
         aidl = true
     }
     defaultConfig {
-        minSdkVersion 21
-        multiDexEnabled = true
-        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-
         resValue "string", "car_app_library_version", androidx.LibraryVersions.CAR_APP.toString()
         consumerProguardFiles "proguard-rules.pro"
     }
-    buildTypes.all {
+    buildTypes.configureEach {
         stableAidl {
             version 1
         }
@@ -114,7 +111,7 @@ androidx {
     type = LibraryType.PUBLISHED_LIBRARY
     inceptionYear = "2020"
     description = "Build navigation, parking, and charging apps for Android Auto"
-    metalavaK2UastEnabled = true
+    legacyDisableKotlinStrictApiMode = true
 }
 
 // Use MetalavaRunnerKt to execute Metalava operations. MetalavaRunnerKt is defined in the buildSrc

@@ -22,8 +22,12 @@
     <string name="m3c_dropdown_menu_expanded">Expanded</string>
     <!-- Spoken description of collapsed state of a dropdown menu -->
     <string name="m3c_dropdown_menu_collapsed">Collapsed</string>
+    <!-- Describes the toggle action to change expanded/collapsed state of a dropdown menu -->
+    <string name="m3c_dropdown_menu_toggle">Toggle dropdown menu</string>
     <!-- Spoken description of a snackbar dismiss action -->
     <string name="m3c_snackbar_dismiss">Dismiss</string>
+    <!-- Accessibility pane title for a snackbar -->
+    <string name="m3c_snackbar_pane_title">Alert</string>
     <!-- Spoken description of a search bar -->
     <string name="m3c_search_bar_search">Search</string>
     <!-- Spoken description when search suggestions are available -->
@@ -109,4 +113,8 @@
     <string name="m3c_time_picker_minute_text_field">for minutes</string>
     <!-- A label for a textfield that allows the user to input hours. It reads: Edit Box, for hour -->
     <string name="m3c_time_picker_hour_text_field">for hour</string>
+    <!-- Spoken content description of an element which will close the modal rail when clicked. -->
+    <string name="m3c_wide_navigation_rail_close_rail">"Close rail"</string>
+    <!-- Accessibility pane title for the modal rail. -->
+    <string name="m3c_wide_navigation_rail_pane_title">"Navigation rail"</string>
 </resources>

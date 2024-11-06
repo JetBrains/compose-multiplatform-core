@@ -17,7 +17,6 @@
 package androidx.camera.testing.impl;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.camera.core.ImageProxy;
 
 import java.nio.ByteBuffer;
@@ -25,7 +24,6 @@ import java.nio.ByteBuffer;
 /**
  * Utility class to generate image planes and buffer data in image proxy for unit test.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public final class ImageProxyUtil {
 
     private ImageProxyUtil() {
@@ -68,6 +66,27 @@ public final class ImageProxyUtil {
                     createPlane(
                             width / 2, height / 2, pixelStrideUV, /*dataValue=*/ 1, incrementValue);
         }
+        return planes;
+    }
+
+    /**
+     * Creates {@link android.graphics.ImageFormat.RAW_SENSOR} image planes.
+     *
+     * @param width image width.
+     * @param height image height.
+     * @param incrementValue true if the data value will increment by position, e.g. 1, 2, 3, etc,.
+     * @return image planes in image proxy.
+     */
+    @NonNull
+    public static ImageProxy.PlaneProxy[] createRawImagePlanes(
+            final int width,
+            final int height,
+            final int pixelStride,
+            final boolean incrementValue) {
+        ImageProxy.PlaneProxy[] planes = new ImageProxy.PlaneProxy[1];
+
+        planes[0] =
+                createPlane(width, height, pixelStride, /*dataValue=*/ 1, incrementValue);
         return planes;
     }
 

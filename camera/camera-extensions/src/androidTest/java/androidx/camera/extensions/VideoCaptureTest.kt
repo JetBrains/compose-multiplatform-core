@@ -59,6 +59,7 @@ import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assume.assumeTrue
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -76,14 +77,14 @@ class VideoCaptureTest(
     @field:CameraSelector.LensFacing @param:CameraSelector.LensFacing private val lensFacing: Int
 ) {
     @get:Rule
-    val cameraPipeConfigTestRule = CameraPipeConfigTestRule(
-        active = implName == CAMERA_PIPE_IMPLEMENTATION_OPTION
-    )
+    val cameraPipeConfigTestRule =
+        CameraPipeConfigTestRule(active = implName == CAMERA_PIPE_IMPLEMENTATION_OPTION)
 
     @get:Rule
-    val useCamera = CameraUtil.grantCameraPermissionAndPreTest(
-        CameraUtil.PreTestCameraIdList(cameraXConfig)
-    )
+    val useCamera =
+        CameraUtil.grantCameraPermissionAndPreTestAndPostTest(
+            CameraUtil.PreTestCameraIdList(cameraXConfig)
+        )
 
     @get:Rule
     val temporaryFolder =
@@ -105,42 +106,36 @@ class VideoCaptureTest(
     private lateinit var latchForVideoRecording: CountDownLatch
     private lateinit var finalize: VideoRecordEvent.Finalize
     private lateinit var recording: Recording
-    private val videoRecordEventListener = Consumer<VideoRecordEvent> {
-        when (it) {
-            is VideoRecordEvent.Start -> {
-                Log.d(TAG, "Recording start")
-                latchForVideoStarted.countDown()
-            }
-
-            is VideoRecordEvent.Finalize -> {
-                Log.d(TAG, "Recording finalize")
-                finalize = it
-                latchForVideoSaved.countDown()
-            }
-
-            is VideoRecordEvent.Status -> {
-                Log.d(TAG, "Recording Status")
-                latchForVideoRecording.countDown()
-            }
-
-            is VideoRecordEvent.Pause,
-            is VideoRecordEvent.Resume -> {
-                // Do nothing.
-            }
-
-            else -> {
-                throw IllegalStateException()
+    private val videoRecordEventListener =
+        Consumer<VideoRecordEvent> {
+            when (it) {
+                is VideoRecordEvent.Start -> {
+                    Log.d(TAG, "Recording start")
+                    latchForVideoStarted.countDown()
+                }
+                is VideoRecordEvent.Finalize -> {
+                    Log.d(TAG, "Recording finalize")
+                    finalize = it
+                    latchForVideoSaved.countDown()
+                }
+                is VideoRecordEvent.Status -> {
+                    Log.d(TAG, "Recording Status")
+                    latchForVideoRecording.countDown()
+                }
+                is VideoRecordEvent.Pause,
+                is VideoRecordEvent.Resume -> {
+                    // Do nothing.
+                }
+                else -> {
+                    throw IllegalStateException()
+                }
             }
         }
-    }
 
     @Before
     fun setUp(): Unit = runBlocking {
         assumeTrue(
-            ExtensionsTestUtil.isTargetDeviceAvailableForExtensions(
-                lensFacing,
-                extensionMode
-            )
+            ExtensionsTestUtil.isTargetDeviceAvailableForExtensions(lensFacing, extensionMode)
         )
         skipVideoRecordingTestIfNotSupportedByEmulator()
 
@@ -148,17 +143,14 @@ class VideoCaptureTest(
         cameraProvider = ProcessCameraProvider.getInstance(context)[10000, TimeUnit.MILLISECONDS]
         ExtensionsTestlibControl.getInstance().setImplementationType(implType)
         baseCameraSelector = CameraSelector.Builder().requireLensFacing(lensFacing).build()
-        extensionsManager = ExtensionsManager.getInstanceAsync(
-            context,
-            cameraProvider
-        )[10000, TimeUnit.MILLISECONDS]
+        extensionsManager =
+            ExtensionsManager.getInstanceAsync(context, cameraProvider)[
+                    10000, TimeUnit.MILLISECONDS]
 
         assumeTrue(extensionsManager.isExtensionAvailable(baseCameraSelector, extensionMode))
 
-        extensionsCameraSelector = extensionsManager.getExtensionEnabledCameraSelector(
-            baseCameraSelector,
-            extensionMode
-        )
+        extensionsCameraSelector =
+            extensionsManager.getExtensionEnabledCameraSelector(baseCameraSelector, extensionMode)
 
         fakeLifecycleOwner = FakeLifecycleOwner().apply { startAndResume() }
     }
@@ -176,6 +168,7 @@ class VideoCaptureTest(
 
     @UiThreadTest
     @Test
+    @Ignore("b/331617278")
     fun canBindToLifeCycleAndRecordVideo() {
         // Arrange.
         val file = createTempFile()
@@ -203,6 +196,7 @@ class VideoCaptureTest(
 
     @UiThreadTest
     @Test
+    @Ignore("b/331617278")
     fun canBindToLifeCycleAndRecordVideoWithPreviewAndImageCaptureBound() {
         // Arrange.
         val file = createTempFile()
@@ -251,9 +245,7 @@ class VideoCaptureTest(
     }
 
     private fun createTempFile(): File {
-        return File.createTempFile("CameraX", ".tmp").apply {
-            deleteOnExit()
-        }
+        return File.createTempFile("CameraX", ".tmp").apply { deleteOnExit() }
     }
 
     private fun checkFileHasAudioAndVideo(uri: Uri) {
@@ -272,10 +264,11 @@ class VideoCaptureTest(
         latchForVideoSaved = CountDownLatch(1)
         latchForVideoRecording = CountDownLatch(5)
 
-        recording = output
-            .prepareRecording(context, FileOutputOptions.Builder(file).build())
-            .withAudioEnabled()
-            .start(CameraXExecutors.directExecutor(), videoRecordEventListener)
+        recording =
+            output
+                .prepareRecording(context, FileOutputOptions.Builder(file).build())
+                .withAudioEnabled()
+                .start(CameraXExecutors.directExecutor(), videoRecordEventListener)
 
         try {
             // Wait for status event to proceed recording for a while.
@@ -289,7 +282,8 @@ class VideoCaptureTest(
 
         // Check if any error after recording finalized
         assertWithMessage(TAG + "Finalize with error: ${finalize.error}, ${finalize.cause}.")
-            .that(finalize.hasError()).isFalse()
+            .that(finalize.hasError())
+            .isFalse()
     }
 
     companion object {

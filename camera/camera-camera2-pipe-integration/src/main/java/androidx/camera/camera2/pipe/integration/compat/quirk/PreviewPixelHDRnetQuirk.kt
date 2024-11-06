@@ -14,13 +14,11 @@
  * limitations under the License.
  */
 
-@file:RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
-
 package androidx.camera.camera2.pipe.integration.compat.quirk
 
 import android.annotation.SuppressLint
 import android.os.Build
-import androidx.annotation.RequiresApi
+import androidx.camera.camera2.pipe.integration.compat.quirk.Device.isGoogleDevice
 import androidx.camera.core.impl.Quirk
 import java.util.Locale
 
@@ -40,16 +38,15 @@ import java.util.Locale
  * TODO: enable CameraXQuirksClassDetector lint check when kotlin is supported.
  */
 @SuppressLint("CameraXQuirksClassDetector")
-class PreviewPixelHDRnetQuirk : Quirk {
+public class PreviewPixelHDRnetQuirk : Quirk {
 
-    companion object {
+    public companion object {
 
-        /** The devices that support wysiwyg preview in 3rd party apps (go/p20-wysiwyg-hdr)  */
+        /** The devices that support wysiwyg preview in 3rd party apps (go/p20-wysiwyg-hdr) */
         private val SUPPORTED_DEVICES = listOf("sunfish", "bramble", "redfin", "barbet")
 
-        fun isEnabled(): Boolean =
-            "Google".equals(Build.MANUFACTURER, ignoreCase = true) && SUPPORTED_DEVICES.contains(
-                Build.DEVICE.lowercase(Locale.getDefault())
-        )
+        public fun isEnabled(): Boolean =
+            isGoogleDevice() &&
+                SUPPORTED_DEVICES.contains(Build.DEVICE.lowercase(Locale.getDefault()))
     }
 }

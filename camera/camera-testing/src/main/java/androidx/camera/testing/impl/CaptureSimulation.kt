@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-@file:RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
-
 package androidx.camera.testing.impl
 
+import android.graphics.Bitmap
 import android.graphics.Rect
+import android.util.Size
 import android.view.Surface
-import androidx.annotation.RequiresApi
+import androidx.camera.core.Logger
 import androidx.camera.core.impl.DeferrableSurface
 import androidx.camera.core.impl.utils.executor.CameraXExecutors
 import androidx.camera.core.impl.utils.futures.FutureCallback
@@ -39,39 +39,59 @@ import kotlinx.coroutines.async
 private const val TAG = "CaptureSimulation"
 
 /** Simulates a capture frame being drawn on all of the provided surfaces. */
-suspend fun List<DeferrableSurface>.simulateCaptureFrame() =
-    forEach { it.simulateCaptureFrame() }
+internal suspend fun List<DeferrableSurface>.simulateCaptureFrame(): Unit = forEach {
+    it.simulateCaptureFrame()
+}
 
 /**
  * Simulates a capture frame being drawn on the provided surface.
  *
  * @throws IllegalStateException If [DeferrableSurface.getSurface] provides a null surface.
  */
-suspend fun DeferrableSurface.simulateCaptureFrame() {
+internal suspend fun DeferrableSurface.simulateCaptureFrame() {
     val deferred = CompletableDeferred<Unit>()
 
-    Futures.addCallback(surface, object : FutureCallback<Surface?> {
-        override fun onSuccess(surface: Surface?) {
-            if (surface == null) {
-                deferred.completeExceptionally(
-                    IllegalStateException("Null surface obtained from ${this@simulateCaptureFrame}")
-                )
-                return
-            }
-            val canvas = surface.lockCanvas(
-                Rect(0, 0, prescribedSize.width, prescribedSize.height)
-            )
-            // TODO: Draw something on the canvas (e.g. fake image bitmap or alternating color).
-            surface.unlockCanvasAndPost(canvas)
-            deferred.complete(Unit)
-        }
+    Futures.addCallback(
+        surface,
+        object : FutureCallback<Surface?> {
+            override fun onSuccess(surface: Surface?) {
+                if (surface == null) {
+                    Logger.w(TAG, "simulateCaptureFrame: surface obtained from $this is null!")
+                    deferred.completeExceptionally(
+                        IllegalStateException(
+                            "Null surface obtained from ${this@simulateCaptureFrame}"
+                        )
+                    )
+                    return
+                }
+                // TODO: Draw something on the canvas (e.g. fake image bitmap or alternating color).
+                surface.simulateCaptureFrame(prescribedSize)
 
-        override fun onFailure(t: Throwable) {
-            deferred.completeExceptionally(t)
-        }
-    }, CameraXExecutors.directExecutor())
+                deferred.complete(Unit)
+            }
+
+            override fun onFailure(t: Throwable) {
+                deferred.completeExceptionally(t)
+            }
+        },
+        CameraXExecutors.directExecutor()
+    )
 
     deferred.await()
+}
+
+/**
+ * Simulates a capture frame being drawn on a [Surface].
+ *
+ * @param canvasSize The canvas size for drawing.
+ * @param bitmap A bitmap to draw as the capture frame, if not null.
+ */
+internal fun Surface.simulateCaptureFrame(canvasSize: Size, bitmap: Bitmap? = null) {
+    val canvas = lockCanvas(Rect(0, 0, canvasSize.width, canvasSize.height))
+    if (bitmap != null) {
+        canvas.drawBitmap(bitmap, null, Rect(0, 0, canvasSize.width, canvasSize.height), null)
+    }
+    unlockCanvasAndPost(canvas)
 }
 
 // The following methods are adapters for Java invocations.
@@ -85,7 +105,7 @@ suspend fun DeferrableSurface.simulateCaptureFrame() {
  * @return A [ListenableFuture] representing when the operation has been completed.
  */
 @JvmOverloads
-fun List<DeferrableSurface>.simulateCaptureFrameAsync(
+internal fun List<DeferrableSurface>.simulateCaptureFrameAsync(
     executor: Executor = Dispatchers.Default.asExecutor()
 ): ListenableFuture<Void> {
     val scope = CoroutineScope(SupervisorJob() + executor.asCoroutineDispatcher())
@@ -101,7 +121,7 @@ fun List<DeferrableSurface>.simulateCaptureFrameAsync(
  * @return A [ListenableFuture] representing when the operation has been completed.
  */
 @JvmOverloads
-fun DeferrableSurface.simulateCaptureFrameAsync(
+internal fun DeferrableSurface.simulateCaptureFrameAsync(
     executor: Executor = Dispatchers.Default.asExecutor()
 ): ListenableFuture<Void> {
     val scope = CoroutineScope(SupervisorJob() + executor.asCoroutineDispatcher())

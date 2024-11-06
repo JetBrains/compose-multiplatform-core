@@ -16,9 +16,7 @@
 
 package androidx.compose.ui.test.injectionscope.key
 
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.input.key.Key
-import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.KeyInjectionScope
 import androidx.compose.ui.test.injectionscope.key.Common.assertTyped
 import androidx.compose.ui.test.injectionscope.key.Common.performKeyInput
@@ -34,22 +32,16 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 
-/**
- * Tests if [KeyInjectionScope.pressKey] works.
- */
+/** Tests if [KeyInjectionScope.pressKey] works. */
 @LargeTest
-@OptIn(ExperimentalComposeUiApi::class, ExperimentalTestApi::class)
 class KeyPressTest {
 
-    @get:Rule
-    val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule()
 
     @Before
     fun setUp() {
         // Set content to a simple text field.
-        rule.setContent {
-            TestTextField()
-        }
+        rule.setContent { TestTextField() }
         // Bring text field into focus by clicking on it.
         rule.onNodeWithTag(Tag).performClick()
     }

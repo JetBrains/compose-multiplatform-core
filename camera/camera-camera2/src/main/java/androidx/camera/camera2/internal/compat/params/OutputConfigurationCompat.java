@@ -34,7 +34,6 @@ import java.util.List;
 /**
  * Helper for accessing features in OutputConfiguration in a backwards compatible fashion.
  */
-@RequiresApi(21)
 public final class OutputConfigurationCompat {
 
     /**
@@ -114,6 +113,11 @@ public final class OutputConfigurationCompat {
         } else {
             mImpl = OutputConfigurationCompatApi26Impl.wrap(deferredConfig);
         }
+    }
+
+    @RequiresApi(33)
+    public OutputConfigurationCompat(@NonNull OutputConfiguration outputConfiguration) {
+        mImpl = OutputConfigurationCompatApi33Impl.wrap(outputConfiguration);
     }
 
     private OutputConfigurationCompat(@NonNull OutputConfigurationCompatImpl impl) {
@@ -197,6 +201,24 @@ public final class OutputConfigurationCompat {
      */
     public void enableSurfaceSharing() {
         mImpl.enableSurfaceSharing();
+    }
+
+    /**
+     * Returns mirror mode of {@link OutputConfiguration}.
+     * @return {@link OutputConfiguration#getMirrorMode()}
+     * @see OutputConfiguration#getMirrorMode()
+     */
+    public int getMirrorMode() {
+        return mImpl.getMirrorMode();
+    }
+
+    /**
+     * Sets mirror mode of {@link OutputConfiguration}.
+     * @param mirrorMode mirror mode to set for {@link OutputConfiguration}.
+     * @see OutputConfiguration#setMirrorMode(int)
+     */
+    public void setMirrorMode(int mirrorMode) {
+        mImpl.setMirrorMode(mirrorMode);
     }
 
     /**
@@ -487,6 +509,10 @@ public final class OutputConfigurationCompat {
 
     interface OutputConfigurationCompatImpl {
         void enableSurfaceSharing();
+
+        int getMirrorMode();
+
+        void setMirrorMode(int mirrorMode);
 
         @Nullable
         String getPhysicalCameraId();

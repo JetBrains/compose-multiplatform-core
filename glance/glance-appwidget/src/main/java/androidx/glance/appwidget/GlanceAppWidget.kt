@@ -17,6 +17,8 @@
 package androidx.glance.appwidget
 
 import android.appwidget.AppWidgetManager
+import android.appwidget.AppWidgetProviderInfo
+import android.content.ComponentName
 import android.content.Context
 import android.os.Build
 import android.os.Bundle
@@ -28,6 +30,9 @@ import androidx.annotation.RestrictTo.Scope
 import androidx.compose.runtime.Composable
 import androidx.glance.GlanceComposable
 import androidx.glance.GlanceId
+import androidx.glance.appwidget.action.ActionCallbackBroadcastReceiver
+import androidx.glance.appwidget.action.ActionTrampolineActivity
+import androidx.glance.appwidget.action.InvisibleActionTrampolineActivity
 import androidx.glance.appwidget.state.getAppWidgetState
 import androidx.glance.session.GlanceSessionManager
 import androidx.glance.session.SessionManager
@@ -41,26 +46,26 @@ import kotlinx.coroutines.CancellationException
 /**
  * Object handling the composition and the communication with [AppWidgetManager].
  *
- * The UI is defined by calling [provideContent] from within [provideGlance].
- * When the widget is requested, the composition is run and translated into a [RemoteViews] which is
- * then sent to the [AppWidgetManager].
+ * The UI is defined by calling [provideContent] from within [provideGlance]. When the widget is
+ * requested, the composition is run and translated into a [RemoteViews] which is then sent to the
+ * [AppWidgetManager].
  *
  * @param errorUiLayout Used by [onCompositionError]. When [onCompositionError] is called, it will,
- * unless overridden, update the appwidget to display error UI using this layout resource ID, unless
- * [errorUiLayout] is 0, in which case the error will be rethrown. If [onCompositionError] is
- * overridden, [errorUiLayout] will not be read..
+ *   unless overridden, update the appwidget to display error UI using this layout resource ID,
+ *   unless [errorUiLayout] is 0, in which case the error will be rethrown. If [onCompositionError]
+ *   is overridden, [errorUiLayout] will not be read..
  */
 abstract class GlanceAppWidget(
-    @LayoutRes
-    internal open val errorUiLayout: Int = R.layout.glance_error_layout,
+    @LayoutRes internal open val errorUiLayout: Int = R.layout.glance_error_layout,
 ) {
-    private val sessionManager: SessionManager = GlanceSessionManager
+    @RestrictTo(Scope.LIBRARY_GROUP)
+    open fun getSessionManager(context: Context): SessionManager = GlanceSessionManager
 
     /**
      * Override this function to provide the Glance Composable.
      *
-     * This is a good place to load any data needed to render the Composable. Use
-     * [provideContent] to provide the Composable once the data is ready.
+     * This is a good place to load any data needed to render the Composable. Use [provideContent]
+     * to provide the Composable once the data is ready.
      *
      * [provideGlance] is run in the background as a [androidx.work.CoroutineWorker] in response to
      * calls to [update] and [updateAll], as well as requests from the Launcher. Before
@@ -78,7 +83,6 @@ abstract class GlanceAppWidget(
      * Worker for this widget is not currently running.
      *
      * @sample androidx.glance.appwidget.samples.provideGlanceSample
-     *
      * @sample androidx.glance.appwidget.samples.provideGlancePeriodicWorkSample
      */
     abstract suspend fun provideGlance(
@@ -87,13 +91,33 @@ abstract class GlanceAppWidget(
     )
 
     /**
-     * Defines the handling of sizes.
+     * Override this function to provide a Glance Composable that will be used when running this
+     * widget in preview mode. Use [provideContent] to provide the composable once the data is
+     * ready.
+     *
+     * In order to generate and publish the previews for a provider, use [setWidgetPreviews]. You
+     * can use [composeForPreview] to generate a [RemoteViews] from this Composable without
+     * publishing it.
+     *
+     * The given [widgetCategory] value will be one of
+     * [AppWidgetProviderInfo.WIDGET_CATEGORY_HOME_SCREEN],
+     * [AppWidgetProviderInfo.WIDGET_CATEGORY_KEYGUARD], or
+     * [AppWidgetProviderInfo.WIDGET_CATEGORY_SEARCHBOX], or some combination of all three. This
+     * indicates what kind of widget host this preview can be used for. [widgetCategory] corresponds
+     * to the categories passed to [setWidgetPreviews].
+     *
+     * @sample androidx.glance.appwidget.samples.providePreviewSample
+     * @see AppWidgetProviderInfo.WIDGET_CATEGORY_HOME_SCREEN
      */
+    open suspend fun providePreview(context: Context, widgetCategory: Int) {}
+
+    /** Defines the handling of sizes. */
     open val sizeMode: SizeMode = SizeMode.Single
 
-    /**
-     * Data store for widget data specific to the view.
-     */
+    /** Defines handling of sizes for previews. */
+    open val previewSizeMode: PreviewSizeMode = SizeMode.Single
+
+    /** Data store for widget data specific to the view. */
     open val stateDefinition: GlanceStateDefinition<*>? = PreferencesGlanceStateDefinition
 
     /**
@@ -103,13 +127,8 @@ abstract class GlanceAppWidget(
      */
     open suspend fun onDelete(context: Context, glanceId: GlanceId) {}
 
-    /**
-     * Run the composition in [provideGlance] and send the result to [AppWidgetManager].
-     */
-    suspend fun update(
-        context: Context,
-        id: GlanceId
-    ) {
+    /** Run the composition in [provideGlance] and send the result to [AppWidgetManager]. */
+    suspend fun update(context: Context, id: GlanceId) {
         require(id is AppWidgetId && id.isRealId) { "Invalid Glance ID" }
         update(context, id.appWidgetId)
     }
@@ -121,9 +140,7 @@ abstract class GlanceAppWidget(
      */
     internal suspend fun deleted(context: Context, appWidgetId: Int) {
         val glanceId = AppWidgetId(appWidgetId)
-        sessionManager.runWithLock {
-            closeSession(glanceId.toSessionKey())
-        }
+        getSessionManager(context).runWithLock { closeSession(glanceId.toSessionKey()) }
         try {
             onDelete(context, glanceId)
         } catch (cancelled: CancellationException) {
@@ -134,12 +151,11 @@ abstract class GlanceAppWidget(
             stateDefinition?.let {
                 GlanceState.deleteStore(context, it, createUniqueRemoteUiName(appWidgetId))
             }
+            LayoutConfiguration.delete(context, glanceId)
         }
     }
 
-    /**
-     * Internal version of [update], to be used by the broadcast receiver directly.
-     */
+    /** Internal version of [update], to be used by the broadcast receiver directly. */
     internal suspend fun update(
         context: Context,
         appWidgetId: Int,
@@ -147,13 +163,8 @@ abstract class GlanceAppWidget(
     ) {
         Tracing.beginGlanceAppWidgetUpdate()
         val glanceId = AppWidgetId(appWidgetId)
-        sessionManager.runWithLock {
-            if (!isSessionRunning(context, glanceId.toSessionKey())) {
-                startSession(context, AppWidgetSession(this@GlanceAppWidget, glanceId, options))
-                return@runWithLock
-            }
-            val session = getSession(glanceId.toSessionKey()) as AppWidgetSession
-            session.updateGlance()
+        getOrCreateAppWidgetSession(context, glanceId, options) { session, wasRunning ->
+            if (wasRunning) session.updateGlance()
         }
     }
 
@@ -168,28 +179,23 @@ abstract class GlanceAppWidget(
         options: Bundle? = null,
     ) {
         val glanceId = AppWidgetId(appWidgetId)
-        sessionManager.getOrCreateAppWidgetSession(context, glanceId, options) { session ->
+        getOrCreateAppWidgetSession(context, glanceId, options) { session, _ ->
             session.runLambda(actionKey)
         }
     }
 
-    /**
-     * Internal method called when a resize event is detected.
-     */
-    internal suspend fun resize(
-        context: Context,
-        appWidgetId: Int,
-        options: Bundle
-    ) {
+    /** Internal method called when a resize event is detected. */
+    internal suspend fun resize(context: Context, appWidgetId: Int, options: Bundle) {
         // Note, on Android S, if the mode is `Responsive`, then all the sizes are specified from
         // the start and we don't need to update the AppWidget when the size changes.
-        if (sizeMode is SizeMode.Single ||
-            (Build.VERSION.SDK_INT > Build.VERSION_CODES.S && sizeMode is SizeMode.Responsive)
+        if (
+            sizeMode is SizeMode.Single ||
+                (Build.VERSION.SDK_INT > Build.VERSION_CODES.S && sizeMode is SizeMode.Responsive)
         ) {
             return
         }
         val glanceId = AppWidgetId(appWidgetId)
-        sessionManager.getOrCreateAppWidgetSession(context, glanceId, options) { session ->
+        getOrCreateAppWidgetSession(context, glanceId, options) { session, _ ->
             session.updateAppWidgetOptions(options)
         }
     }
@@ -206,7 +212,7 @@ abstract class GlanceAppWidget(
      * @param context Context.
      * @param glanceId The [GlanceId] of the widget experiencing the error.
      * @param appWidgetId The appWidgetId of the widget experiencing the error. This is provided as
-     * a convenience in addition to [GlanceId].
+     *   a convenience in addition to [GlanceId].
      * @param throwable The exception that was caught by [AppWidgetSession]
      */
     @Suppress("GenericException")
@@ -220,30 +226,48 @@ abstract class GlanceAppWidget(
         if (errorUiLayout == 0) {
             throw throwable // Maintains consistency with Glance 1.0 behavior.
         } else {
-            val rv = RemoteViews(
-                context.packageName,
-                errorUiLayout
-            ) // default impl: inflate the error layout
+            val rv =
+                RemoteViews(
+                    context.packageName,
+                    errorUiLayout
+                ) // default impl: inflate the error layout
             AppWidgetManager.getInstance(context).updateAppWidget(appWidgetId, rv)
         }
     }
 
-    private suspend fun SessionManager.getOrCreateAppWidgetSession(
+    internal suspend fun <T> getOrCreateAppWidgetSession(
         context: Context,
         glanceId: AppWidgetId,
         options: Bundle? = null,
-        block: suspend SessionManagerScope.(AppWidgetSession) -> Unit
-    ) = runWithLock {
-        if (!isSessionRunning(context, glanceId.toSessionKey())) {
-            startSession(context, AppWidgetSession(this@GlanceAppWidget, glanceId, options))
+        block: suspend SessionManagerScope.(AppWidgetSession, Boolean) -> T,
+    ): T =
+        getSessionManager(context).runWithLock {
+            val wasRunning = isSessionRunning(context, glanceId.toSessionKey())
+            if (!wasRunning) {
+                startSession(context, createAppWidgetSession(context, glanceId, options))
+            }
+            val session = getSession(glanceId.toSessionKey()) as AppWidgetSession
+            return@runWithLock block(session, wasRunning)
         }
-        val session = getSession(glanceId.toSessionKey()) as AppWidgetSession
-        block(session)
-    }
+
+    /**
+     * Override this function to specify the components that will be used for actions and
+     * RemoteViewsService. All of the components must run in the same process.
+     *
+     * If null, then the default components will be used.
+     */
+    @RestrictTo(Scope.LIBRARY_GROUP)
+    open fun getComponents(context: Context): GlanceComponents? = null
+
+    @RestrictTo(Scope.LIBRARY_GROUP)
+    protected open fun createAppWidgetSession(
+        context: Context,
+        id: AppWidgetId,
+        options: Bundle? = null
+    ) = AppWidgetSession(this@GlanceAppWidget, id, options)
 }
 
-@RestrictTo(Scope.LIBRARY_GROUP)
-data class AppWidgetId(val appWidgetId: Int) : GlanceId
+@RestrictTo(Scope.LIBRARY_GROUP) data class AppWidgetId(val appWidgetId: Int) : GlanceId
 
 /** Update all App Widgets managed by the [GlanceAppWidget] class. */
 suspend fun GlanceAppWidget.updateAll(@Suppress("ContextFirst") context: Context) {
@@ -268,13 +292,11 @@ suspend inline fun <reified State> GlanceAppWidget.updateIf(
 }
 
 /**
- * Provides [content] to the Glance host, suspending until the Glance session is
- * shut down.
+ * Provides [content] to the Glance host, suspending until the Glance session is shut down.
  *
  * If this function is called concurrently with itself, the previous call will throw
  * [CancellationException] and the new content will replace it. This function should only be called
  * from [GlanceAppWidget.provideGlance].
- *
  *
  * TODO: make this a protected member once b/206013293 is fixed.
  */
@@ -286,4 +308,31 @@ suspend fun GlanceAppWidget.provideContent(
             "provideContent requires a ContentReceiver and should only be called from " +
                 "GlanceAppWidget.provideGlance"
         )
+}
+
+/**
+ * Specifies which components will be used as targets for action trampolines, RunCallback actions,
+ * and RemoteViewsService when creating RemoteViews. These components must all run in the same
+ * process.
+ */
+@RestrictTo(Scope.LIBRARY_GROUP)
+class GlanceComponents(
+    val actionTrampolineActivity: ComponentName,
+    val invisibleActionTrampolineActivity: ComponentName,
+    val actionCallbackBroadcastReceiver: ComponentName,
+    val remoteViewsService: ComponentName,
+) {
+    companion object {
+        /** The default components used for GlanceAppWidget. */
+        fun getDefault(context: Context) =
+            GlanceComponents(
+                actionTrampolineActivity =
+                    ComponentName(context, ActionTrampolineActivity::class.java),
+                invisibleActionTrampolineActivity =
+                    ComponentName(context, InvisibleActionTrampolineActivity::class.java),
+                actionCallbackBroadcastReceiver =
+                    ComponentName(context, ActionCallbackBroadcastReceiver::class.java),
+                remoteViewsService = ComponentName(context, GlanceRemoteViewsService::class.java),
+            )
+    }
 }

@@ -23,7 +23,7 @@ import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.layout.AnimatedPane
 import androidx.compose.material3.adaptive.layout.PaneScaffoldDirective
 import androidx.compose.material3.adaptive.layout.ThreePaneScaffoldDestinationItem
-import androidx.compose.material3.adaptive.layout.ThreePaneScaffoldScope
+import androidx.compose.material3.adaptive.layout.ThreePaneScaffoldPaneScope
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -34,44 +34,27 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
-@OptIn(ExperimentalMaterial3AdaptiveApi::class)
-val singlePaneDirective = PaneScaffoldDirective(
-    maxHorizontalPartitions = 1,
-    horizontalPartitionSpacerSize = 0.dp,
-    maxVerticalPartitions = 1,
-    verticalPartitionSpacerSize = 0.dp,
-    defaultPanePreferredWidth = 360.dp,
-    excludedBounds = emptyList()
-)
+val singlePaneDirective = PaneScaffoldDirective.Default
+
+val dualPaneDirective =
+    PaneScaffoldDirective.Default.copy(
+        maxHorizontalPartitions = 2,
+        horizontalPartitionSpacerSize = 24.dp,
+    )
 
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
-val dualPaneDirective = PaneScaffoldDirective(
-    maxHorizontalPartitions = 2,
-    horizontalPartitionSpacerSize = 24.dp,
-    maxVerticalPartitions = 1,
-    verticalPartitionSpacerSize = 0.dp,
-    defaultPanePreferredWidth = 360.dp,
-    excludedBounds = emptyList()
-)
-
-@OptIn(ExperimentalMaterial3AdaptiveApi::class)
-internal abstract class ThreePaneScaffoldTestCase(
-    private val animated: Boolean
-) : LayeredComposeTestCase(), ToggleableTestCase {
+internal abstract class ThreePaneScaffoldTestCase(private val animated: Boolean) :
+    LayeredComposeTestCase(), ToggleableTestCase {
     var currentScaffoldDirective by mutableStateOf(singlePaneDirective)
     abstract var currentDestination: ThreePaneScaffoldDestinationItem<Int>
 
     override fun toggleState() {}
 
     @Composable
-    fun ThreePaneScaffoldScope.TestPane(color: Color) {
-        val content = @Composable {
-            Box(modifier = Modifier.fillMaxSize().background(color))
-        }
+    fun ThreePaneScaffoldPaneScope.TestPane(color: Color) {
+        val content = @Composable { Box(modifier = Modifier.fillMaxSize().background(color)) }
         if (animated) {
-            AnimatedPane(Modifier) {
-                content()
-            }
+            AnimatedPane(Modifier) { content() }
         } else {
             content()
         }

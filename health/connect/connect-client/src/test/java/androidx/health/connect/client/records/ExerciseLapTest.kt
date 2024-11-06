@@ -29,18 +29,19 @@ class ExerciseLapTest {
     @Test
     fun validLap_equals() {
         assertThat(
-            ExerciseLap(
-                startTime = Instant.ofEpochMilli(1234L),
-                endTime = Instant.ofEpochMilli(5678L),
-                length = 1.meters
+                ExerciseLap(
+                    startTime = Instant.ofEpochMilli(1234L),
+                    endTime = Instant.ofEpochMilli(5678L),
+                    length = 1.meters
+                )
             )
-        ).isEqualTo(
-            ExerciseLap(
-                startTime = Instant.ofEpochMilli(1234L),
-                endTime = Instant.ofEpochMilli(5678L),
-                length = 1.meters
+            .isEqualTo(
+                ExerciseLap(
+                    startTime = Instant.ofEpochMilli(1234L),
+                    endTime = Instant.ofEpochMilli(5678L),
+                    length = 1.meters
+                )
             )
-        )
     }
 
     @Test
@@ -75,5 +76,20 @@ class ExerciseLapTest {
                 length = 1_000_001.meters,
             )
         }
+    }
+
+    @Test
+    fun toString_containsMembers() {
+        assertThat(
+                ExerciseLap(
+                        startTime = Instant.ofEpochMilli(1234L),
+                        endTime = Instant.ofEpochMilli(1236L),
+                        length = 100.0.meters
+                    )
+                    .toString()
+            )
+            .isEqualTo(
+                "ExerciseLap(startTime=1970-01-01T00:00:01.234Z, endTime=1970-01-01T00:00:01.236Z, length=100.0 meters)"
+            )
     }
 }

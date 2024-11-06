@@ -23,7 +23,6 @@ import android.app.Application
 import android.content.Context
 import android.os.Build
 import android.os.Process
-import androidx.annotation.DoNotInline
 import androidx.annotation.RequiresApi
 import androidx.work.Configuration
 import androidx.work.Logger
@@ -31,9 +30,7 @@ import androidx.work.WorkManager
 
 private val TAG = Logger.tagWithPrefix("ProcessUtils")
 
-/**
- * @return `true` when `WorkManager` is running in the configured app process.
- */
+/** @return `true` when `WorkManager` is running in the configured app process. */
 fun isDefaultProcess(context: Context, configuration: Configuration): Boolean {
     val processName = getProcessName(context)
     return if (!configuration.defaultProcessName.isNullOrEmpty()) {
@@ -43,20 +40,15 @@ fun isDefaultProcess(context: Context, configuration: Configuration): Boolean {
     }
 }
 
-/**
- * @return The name of the active process.
- */
+/** @return The name of the active process. */
 @SuppressLint("PrivateApi", "DiscouragedPrivateApi")
 private fun getProcessName(context: Context): String? {
     if (Build.VERSION.SDK_INT >= 28) return Api28Impl.processName
 
     // Try using ActivityThread to determine the current process name.
     try {
-        val activityThread = Class.forName(
-            "android.app.ActivityThread",
-            false,
-            WorkManager::class.java.classLoader
-        )
+        val activityThread =
+            Class.forName("android.app.ActivityThread", false, WorkManager::class.java.classLoader)
 
         val currentProcessName = activityThread.getDeclaredMethod("currentProcessName")
         currentProcessName.isAccessible = true
@@ -75,7 +67,6 @@ private fun getProcessName(context: Context): String? {
 
 @RequiresApi(28)
 private object Api28Impl {
-    @get:DoNotInline
     val processName: String
         get() = Application.getProcessName()
 }

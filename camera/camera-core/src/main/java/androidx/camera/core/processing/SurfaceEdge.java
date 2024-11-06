@@ -31,7 +31,6 @@ import static androidx.core.util.Preconditions.checkState;
 import android.graphics.Matrix;
 import android.graphics.Rect;
 import android.graphics.SurfaceTexture;
-import android.os.Build;
 import android.util.Size;
 import android.view.Surface;
 import android.view.SurfaceView;
@@ -40,11 +39,11 @@ import android.view.TextureView;
 import androidx.annotation.MainThread;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.annotation.VisibleForTesting;
 import androidx.camera.core.CameraEffect;
 import androidx.camera.core.Preview;
 import androidx.camera.core.SurfaceOutput;
+import androidx.camera.core.SurfaceOutput.CameraInputInfo;
 import androidx.camera.core.SurfaceProcessor;
 import androidx.camera.core.SurfaceRequest;
 import androidx.camera.core.SurfaceRequest.TransformationInfo;
@@ -57,10 +56,13 @@ import androidx.camera.core.impl.StreamSpec;
 import androidx.camera.core.impl.utils.futures.Futures;
 import androidx.camera.core.streamsharing.StreamSharing;
 import androidx.concurrent.futures.CallbackToFutureAdapter;
+import androidx.core.util.Consumer;
 
 import com.google.common.util.concurrent.ListenableFuture;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -97,7 +99,6 @@ import java.util.Set;
  * {@link Surface} should no longer be used, and {@link #invalidate()} cleans the current
  * connection so it can be connected again.
  */
-@RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
 public class SurfaceEdge {
 
     private final int mFormat;
@@ -135,6 +136,9 @@ public class SurfaceEdge {
     // Tombstone flag indicates whether the edge has been closed. Once closed, the edge should
     // never be used again.
     private boolean mIsClosed = false;
+
+    private final List<Consumer<TransformationInfo>> mTransformationUpdatesListeners =
+            new ArrayList<>();
 
     /**
      * Please see the getters to understand the parameters.
@@ -246,12 +250,25 @@ public class SurfaceEdge {
     @MainThread
     @NonNull
     public SurfaceRequest createSurfaceRequest(@NonNull CameraInternal cameraInternal) {
+        return createSurfaceRequest(cameraInternal, true);
+    }
+
+    /**
+     * Creates a {@link SurfaceRequest} that is linked to this {@link SurfaceEdge}
+     * with the additional information whether camera is primary or secondary in dual camera case.
+     */
+    @MainThread
+    @NonNull
+    public SurfaceRequest createSurfaceRequest(
+            @NonNull CameraInternal cameraInternal,
+            boolean isPrimary) {
         checkMainThread();
         checkNotClosed();
         // TODO(b/238230154) figure out how to support HDR.
         SurfaceRequest surfaceRequest = new SurfaceRequest(
                 mStreamSpec.getResolution(),
                 cameraInternal,
+                isPrimary,
                 mStreamSpec.getDynamicRange(),
                 mStreamSpec.getExpectedFrameRateRange(),
                 () -> mainThreadExecutor().execute(() -> {
@@ -299,16 +316,16 @@ public class SurfaceEdge {
      * already has a Surface consumer. To remove the current Surface consumer, call
      * {@link #invalidate()} to reset the connection.
      *
-     * @param inputSize       resolution of input image buffer
-     * @param cropRect        crop rect of input image buffer
-     * @param rotationDegrees expected rotation to the input image buffer
-     * @param mirroring       expected mirroring to the input image buffer
+     * @param format output buffer format
+     * @param cameraInputInfo primary camera {@link CameraInputInfo}
+     * @param secondaryCameraInputInfo secondary camera {@link CameraInputInfo}
      */
     @MainThread
     @NonNull
-    public ListenableFuture<SurfaceOutput> createSurfaceOutputFuture(@NonNull Size inputSize,
-            @CameraEffect.Formats int format, @NonNull Rect cropRect, int rotationDegrees,
-            boolean mirroring, @Nullable CameraInternal cameraInternal) {
+    public ListenableFuture<SurfaceOutput> createSurfaceOutputFuture(
+            @CameraEffect.Formats int format,
+            @NonNull CameraInputInfo cameraInputInfo,
+            @Nullable CameraInputInfo secondaryCameraInputInfo) {
         checkMainThread();
         checkNotClosed();
         checkAndSetHasConsumer();
@@ -322,8 +339,9 @@ public class SurfaceEdge {
                         return immediateFailedFuture(e);
                     }
                     SurfaceOutputImpl surfaceOutputImpl = new SurfaceOutputImpl(surface,
-                            getTargets(), format, mStreamSpec.getResolution(), inputSize, cropRect,
-                            rotationDegrees, mirroring, cameraInternal, mSensorToBufferTransform);
+                            getTargets(), format, mStreamSpec.getResolution(),
+                            cameraInputInfo, secondaryCameraInputInfo,
+                            mSensorToBufferTransform);
                     surfaceOutputImpl.getCloseFuture().addListener(
                             settableSurface::decrementUseCount,
                             directExecutor());
@@ -509,13 +527,33 @@ public class SurfaceEdge {
         });
     }
 
+    /**
+     * Adds a listener to receive transformation info updates.
+     */
+    public void addTransformationUpdateListener(@NonNull Consumer<TransformationInfo> consumer) {
+        checkNotNull(consumer);
+        mTransformationUpdatesListeners.add(consumer);
+    }
+
+    /**
+     * Removes a listener to stop receiving transformation info updates.
+     */
+    public void removeTransformationUpdateListener(@NonNull Consumer<TransformationInfo> consumer) {
+        checkNotNull(consumer);
+        mTransformationUpdatesListeners.remove(consumer);
+    }
+
     @MainThread
     private void notifyTransformationInfoUpdate() {
         checkMainThread();
+        TransformationInfo transformationInfo = TransformationInfo.of(
+                mCropRect, mRotationDegrees, mTargetRotation, hasCameraTransform(),
+                mSensorToBufferTransform, mMirroring);
         if (mProviderSurfaceRequest != null) {
-            mProviderSurfaceRequest.updateTransformationInfo(TransformationInfo.of(
-                    mCropRect, mRotationDegrees, mTargetRotation, hasCameraTransform(),
-                    mSensorToBufferTransform, mMirroring));
+            mProviderSurfaceRequest.updateTransformationInfo(transformationInfo);
+        }
+        for (Consumer<TransformationInfo> listener : mTransformationUpdatesListeners) {
+            listener.accept(transformationInfo);
         }
     }
 

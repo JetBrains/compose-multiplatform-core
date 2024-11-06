@@ -17,61 +17,45 @@
 package androidx.wear.compose.material3.demos
 
 import android.widget.Toast
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.wear.compose.integration.demos.common.ScalingLazyColumnWithRSB
 import androidx.wear.compose.material3.ListHeader
+import androidx.wear.compose.material3.LocalTextConfiguration
 import androidx.wear.compose.material3.SplitRadioButton
 import androidx.wear.compose.material3.Text
 
 @Composable
 fun SplitRadioButtonDemo() {
     var selectedRadioIndex by remember { mutableIntStateOf(0) }
-    ScalingLazyColumnWithRSB(
-        modifier = Modifier.fillMaxSize(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
+    var selectedMultiLineRadioIndex by remember { mutableIntStateOf(0) }
+
+    ScalingLazyDemo {
+        item { ListHeader { Text("Split Radio Button") } }
         item {
-            ListHeader { Text("Radio Button") }
+            DemoSplitRadioButton(enabled = true, (selectedRadioIndex == 0)) {
+                selectedRadioIndex = 0
+            }
         }
+        item {
+            DemoSplitRadioButton(enabled = true, (selectedRadioIndex == 1)) {
+                selectedRadioIndex = 1
+            }
+        }
+        item { ListHeader { Text("Disabled Radio Button") } }
+        item { DemoSplitRadioButton(enabled = false, selected = true) }
+        item { DemoSplitRadioButton(enabled = false, selected = false) }
+        item { ListHeader { Text("Multi-line") } }
         item {
             DemoSplitRadioButton(
                 enabled = true,
-                (selectedRadioIndex == 0)
-            ) { selectedRadioIndex = 0 }
-        }
-        item {
-            DemoSplitRadioButton(
-                enabled = true,
-                (selectedRadioIndex == 1)
-            ) { selectedRadioIndex = 1 }
-        }
-        item {
-            ListHeader { Text("Disabled Radio Button") }
-        }
-        item {
-            DemoSplitRadioButton(enabled = false, selected = true)
-        }
-        item {
-            DemoSplitRadioButton(enabled = false, selected = false)
-        }
-        item {
-            ListHeader { Text("Multi-line") }
-        }
-        item {
-            DemoSplitRadioButton(
-                enabled = true,
-                selected = true,
+                selected = selectedMultiLineRadioIndex == 0,
+                onSelected = { selectedMultiLineRadioIndex = 0 },
                 primary = "8:15AM",
                 secondary = "Monday"
             )
@@ -79,17 +63,39 @@ fun SplitRadioButtonDemo() {
         item {
             DemoSplitRadioButton(
                 enabled = true,
-                selected = true,
-                primary = "Primary Label with 3 lines of content max"
+                selected = selectedMultiLineRadioIndex == 1,
+                onSelected = { selectedMultiLineRadioIndex = 1 },
+                primary = "Primary label with at most three lines of content"
             )
         }
         item {
             DemoSplitRadioButton(
                 enabled = true,
-                selected = true,
-                primary = "Primary Label with 3 lines of content max",
-                secondary = "Secondary label with 2 lines"
+                selected = selectedMultiLineRadioIndex == 2,
+                onSelected = { selectedMultiLineRadioIndex = 2 },
+                primary = "Primary label with at most three lines of content",
+                secondary = "Secondary label with at most two lines of text"
             )
+        }
+        item {
+            DemoSplitRadioButton(
+                enabled = true,
+                selected = selectedMultiLineRadioIndex == 3,
+                onSelected = { selectedMultiLineRadioIndex = 3 },
+                primary = "Override the maximum number of primary label content to be four",
+                primaryMaxLines = 4,
+            )
+        }
+        item { ListHeader { Text("Disabled Multi-line") } }
+        for (selected in booleanArrayOf(true, false)) {
+            item {
+                DemoSplitRadioButton(
+                    enabled = false,
+                    selected = selected,
+                    primary = "Primary label",
+                    secondary = "Secondary label"
+                )
+            }
         }
     }
 }
@@ -99,6 +105,7 @@ private fun DemoSplitRadioButton(
     enabled: Boolean,
     selected: Boolean,
     primary: String = "Primary label",
+    primaryMaxLines: Int? = null,
     secondary: String? = null,
     onSelected: () -> Unit = {},
 ) {
@@ -109,28 +116,26 @@ private fun DemoSplitRadioButton(
             Text(
                 primary,
                 Modifier.fillMaxWidth(),
-                maxLines = 3,
-                textAlign = TextAlign.Start,
-                overflow = TextOverflow.Ellipsis
+                maxLines = primaryMaxLines ?: LocalTextConfiguration.current.maxLines
             )
         },
-        secondaryLabel = secondary?.let {
-            {
-                Text(
-                    secondary,
-                    modifier = Modifier.fillMaxWidth(),
-                    maxLines = 2,
-                    textAlign = TextAlign.Start,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-        },
+        secondaryLabel =
+            secondary?.let {
+                {
+                    Text(
+                        secondary,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+            },
         selected = selected,
-        onSelect = onSelected,
-        onClick = {
-            val toastText = if (selected) "Checked" else "Not Checked"
+        onSelectionClick = onSelected,
+        selectionContentDescription = primary,
+        onContainerClick = {
+            val toastText = primary + " " + if (selected) "Checked" else "Not Checked"
             Toast.makeText(context, toastText, Toast.LENGTH_SHORT).show()
         },
+        containerClickLabel = "click",
         enabled = enabled,
     )
 }

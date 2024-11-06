@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION")
+
 package androidx.compose.foundation
 
 import androidx.compose.foundation.layout.PaddingValues
@@ -24,14 +26,14 @@ import androidx.compose.ui.graphics.Color
 /**
  * Metadata for overscroll effects for android platform.
  *
- * Note: this API is experimental and liable to be changed / removed. [glowColor] and [drawPadding]
- * only apply before Android S and so might be misleading to have in a generic configuration object.
- *
  * @param glowColor color for the glow effect, if the platform effect is a glow effect, otherwise
- * ignored.
- * @param drawPadding the amount of padding to apply from scrollable container bounds to
- * the effect before drawing it, if the platform effect is a glow effect, otherwise ignored.
+ *   ignored.
+ * @param drawPadding the amount of padding to apply from scrollable container bounds to the effect
+ *   before drawing it, if the platform effect is a glow effect, otherwise ignored.
  */
+@Deprecated(
+    "Providing `OverscrollConfiguration` through `LocalOverscrollConfiguration` to disable / configure overscroll has been replaced with `LocalOverscrollFactory` and `rememberPlatformOverscrollFactory`. To disable overscroll, instead of `LocalOverscrollConfiguration provides null`, use `LocalOverscrollFactory provides null`. To change the glow color / padding, instead of `LocalOverscrollConfiguration provides OverscrollConfiguration(myColor, myPadding)`, use `LocalOverscrollFactory provides rememberPlatformOverscrollFactory(myColor, myPadding)`"
+)
 @ExperimentalFoundationApi
 @Stable
 class OverscrollConfiguration(
@@ -62,14 +64,16 @@ class OverscrollConfiguration(
 }
 
 /**
- * Composition local to provide configuration for scrolling containers down the
- * hierarchy. `null` means there will be no overscroll at all.
- *
- * Note: this is experimental since the underlying [OverscrollConfiguration] is also experimental.
+ * Composition local to provide configuration for scrolling containers down the hierarchy. `null`
+ * means there will be no overscroll at all.
  */
+@Deprecated(
+    "Providing `OverscrollConfiguration` through `LocalOverscrollConfiguration` to disable / configure overscroll has been replaced with `LocalOverscrollFactory` and `rememberPlatformOverscrollFactory`. To disable overscroll, instead of `LocalOverscrollConfiguration provides null`, use `LocalOverscrollFactory provides null`. To change the glow color / padding, instead of `LocalOverscrollConfiguration provides OverscrollConfiguration(myColor, myPadding)`, use `LocalOverscrollFactory provides rememberPlatformOverscrollFactory(myColor, myPadding)`",
+    replaceWith =
+        ReplaceWith("LocalOverscrollFactory", "androidx.compose.foundation.LocalOverscrollFactory")
+)
 @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
 @ExperimentalFoundationApi
 @get:ExperimentalFoundationApi
-val LocalOverscrollConfiguration = compositionLocalOf<OverscrollConfiguration?> {
-    OverscrollConfiguration()
-}
+val LocalOverscrollConfiguration =
+    compositionLocalOf<OverscrollConfiguration?> { OverscrollConfiguration() }

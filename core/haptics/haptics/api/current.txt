@@ -35,6 +35,17 @@ package androidx.core.haptics {
   }
 
   public static final class HapticAttributes.Companion {
+    property public static final int FLAG_BYPASS_INTERRUPTION_POLICY;
+    property public static final int USAGE_ACCESSIBILITY;
+    property public static final int USAGE_ALARM;
+    property public static final int USAGE_COMMUNICATION_REQUEST;
+    property public static final int USAGE_HARDWARE_FEEDBACK;
+    property public static final int USAGE_MEDIA;
+    property public static final int USAGE_NOTIFICATION;
+    property public static final int USAGE_PHYSICAL_EMULATION;
+    property public static final int USAGE_RINGTONE;
+    property public static final int USAGE_TOUCH;
+    property public static final int USAGE_UNKNOWN;
   }
 
   public interface HapticManager {
@@ -153,7 +164,7 @@ package androidx.core.haptics.signal {
     method public float getAmplitudeScale();
     method public int getType();
     method public androidx.core.haptics.signal.CompositionSignal.PrimitiveAtom withAmplitudeScale(@FloatRange(from=0.0, to=1.0) float newAmplitudeScale);
-    property public final float amplitudeScale;
+    property @FloatRange(from=0.0, to=1.0) public final float amplitudeScale;
     property public final int type;
     field public static final int CLICK = 1; // 0x1
     field public static final androidx.core.haptics.signal.CompositionSignal.PrimitiveAtom.Companion Companion;
@@ -167,6 +178,14 @@ package androidx.core.haptics.signal {
   }
 
   public static final class CompositionSignal.PrimitiveAtom.Companion {
+    property public static final int CLICK;
+    property public static final int LOW_TICK;
+    property public static final int QUICK_FALL;
+    property public static final int QUICK_RISE;
+    property public static final int SLOW_RISE;
+    property public static final int SPIN;
+    property public static final int THUD;
+    property public static final int TICK;
   }
 
   public final class FallbackChainSignal implements androidx.core.haptics.signal.ResolvableSignal {
@@ -260,6 +279,7 @@ package androidx.core.haptics.signal {
   }
 
   public static final class WaveformSignal.ConstantVibrationAtom.Companion {
+    property public static final float DEFAULT_AMPLITUDE;
   }
 
 }

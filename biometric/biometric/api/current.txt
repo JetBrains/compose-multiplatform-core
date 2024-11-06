@@ -43,6 +43,7 @@ package androidx.biometric {
     field public static final int ERROR_HW_UNAVAILABLE = 1; // 0x1
     field public static final int ERROR_LOCKOUT = 7; // 0x7
     field public static final int ERROR_LOCKOUT_PERMANENT = 9; // 0x9
+    field public static final int ERROR_MORE_OPTIONS_BUTTON = 16; // 0x10
     field public static final int ERROR_NEGATIVE_BUTTON = 13; // 0xd
     field public static final int ERROR_NO_BIOMETRICS = 11; // 0xb
     field public static final int ERROR_NO_DEVICE_CREDENTIAL = 14; // 0xe
@@ -72,16 +73,22 @@ package androidx.biometric {
     ctor public BiometricPrompt.CryptoObject(java.security.Signature);
     ctor public BiometricPrompt.CryptoObject(javax.crypto.Cipher);
     ctor public BiometricPrompt.CryptoObject(javax.crypto.Mac);
+    ctor @RequiresApi(android.os.Build.VERSION_CODES.VANILLA_ICE_CREAM) public BiometricPrompt.CryptoObject(long);
     method public javax.crypto.Cipher? getCipher();
     method @RequiresApi(android.os.Build.VERSION_CODES.R) public android.security.identity.IdentityCredential? getIdentityCredential();
     method public javax.crypto.Mac? getMac();
+    method @RequiresApi(android.os.Build.VERSION_CODES.VANILLA_ICE_CREAM) public long getOperationHandle();
     method @RequiresApi(android.os.Build.VERSION_CODES.TIRAMISU) public android.security.identity.PresentationSession? getPresentationSession();
     method public java.security.Signature? getSignature();
   }
 
   public static class BiometricPrompt.PromptInfo {
     method public int getAllowedAuthenticators();
+    method public androidx.biometric.PromptContentView? getContentView();
     method public CharSequence? getDescription();
+    method @RequiresPermission(android.Manifest.permission.SET_BIOMETRIC_DIALOG_ADVANCED) public android.graphics.Bitmap? getLogoBitmap();
+    method @RequiresPermission(android.Manifest.permission.SET_BIOMETRIC_DIALOG_ADVANCED) public String? getLogoDescription();
+    method @DrawableRes @RequiresPermission(android.Manifest.permission.SET_BIOMETRIC_DIALOG_ADVANCED) public int getLogoRes();
     method public CharSequence getNegativeButtonText();
     method public CharSequence? getSubtitle();
     method public CharSequence getTitle();
@@ -94,116 +101,52 @@ package androidx.biometric {
     method public androidx.biometric.BiometricPrompt.PromptInfo build();
     method public androidx.biometric.BiometricPrompt.PromptInfo.Builder setAllowedAuthenticators(int);
     method public androidx.biometric.BiometricPrompt.PromptInfo.Builder setConfirmationRequired(boolean);
+    method public androidx.biometric.BiometricPrompt.PromptInfo.Builder setContentView(androidx.biometric.PromptContentView);
     method public androidx.biometric.BiometricPrompt.PromptInfo.Builder setDescription(CharSequence?);
     method @Deprecated public androidx.biometric.BiometricPrompt.PromptInfo.Builder setDeviceCredentialAllowed(boolean);
+    method @RequiresPermission(android.Manifest.permission.SET_BIOMETRIC_DIALOG_ADVANCED) public androidx.biometric.BiometricPrompt.PromptInfo.Builder setLogoBitmap(android.graphics.Bitmap);
+    method @RequiresPermission(android.Manifest.permission.SET_BIOMETRIC_DIALOG_ADVANCED) public androidx.biometric.BiometricPrompt.PromptInfo.Builder setLogoDescription(String);
+    method @RequiresPermission(android.Manifest.permission.SET_BIOMETRIC_DIALOG_ADVANCED) public androidx.biometric.BiometricPrompt.PromptInfo.Builder setLogoRes(@DrawableRes int);
     method public androidx.biometric.BiometricPrompt.PromptInfo.Builder setNegativeButtonText(CharSequence);
     method public androidx.biometric.BiometricPrompt.PromptInfo.Builder setSubtitle(CharSequence?);
     method public androidx.biometric.BiometricPrompt.PromptInfo.Builder setTitle(CharSequence);
   }
 
-}
-
-package androidx.biometric.auth {
-
-  public interface AuthPrompt {
-    method public void cancelAuthentication();
+  public interface PromptContentItem {
   }
 
-  public abstract class AuthPromptCallback {
-    ctor public AuthPromptCallback();
-    method public void onAuthenticationError(androidx.fragment.app.FragmentActivity?, int, CharSequence);
-    method public void onAuthenticationFailed(androidx.fragment.app.FragmentActivity?);
-    method public void onAuthenticationSucceeded(androidx.fragment.app.FragmentActivity?, androidx.biometric.BiometricPrompt.AuthenticationResult);
+  public final class PromptContentItemBulletedText implements androidx.biometric.PromptContentItem {
+    ctor public PromptContentItemBulletedText(String);
   }
 
-  public class AuthPromptHost {
-    ctor public AuthPromptHost(androidx.fragment.app.Fragment);
-    ctor public AuthPromptHost(androidx.fragment.app.FragmentActivity);
-    method public androidx.fragment.app.FragmentActivity? getActivity();
-    method public androidx.fragment.app.Fragment? getFragment();
+  public final class PromptContentItemPlainText implements androidx.biometric.PromptContentItem {
+    ctor public PromptContentItemPlainText(String);
   }
 
-  public class Class2BiometricAuthPrompt {
-    method public CharSequence? getDescription();
-    method public CharSequence getNegativeButtonText();
-    method public CharSequence? getSubtitle();
-    method public CharSequence getTitle();
-    method public boolean isConfirmationRequired();
-    method public androidx.biometric.auth.AuthPrompt startAuthentication(androidx.biometric.auth.AuthPromptHost, androidx.biometric.auth.AuthPromptCallback);
-    method public androidx.biometric.auth.AuthPrompt startAuthentication(androidx.biometric.auth.AuthPromptHost, java.util.concurrent.Executor, androidx.biometric.auth.AuthPromptCallback);
+  public interface PromptContentView {
   }
 
-  public static final class Class2BiometricAuthPrompt.Builder {
-    ctor public Class2BiometricAuthPrompt.Builder(CharSequence, CharSequence);
-    method public androidx.biometric.auth.Class2BiometricAuthPrompt build();
-    method public androidx.biometric.auth.Class2BiometricAuthPrompt.Builder setConfirmationRequired(boolean);
-    method public androidx.biometric.auth.Class2BiometricAuthPrompt.Builder setDescription(CharSequence);
-    method public androidx.biometric.auth.Class2BiometricAuthPrompt.Builder setSubtitle(CharSequence);
+  public final class PromptContentViewWithMoreOptionsButton implements androidx.biometric.PromptContentView {
+    method @RequiresPermission(android.Manifest.permission.SET_BIOMETRIC_DIALOG_ADVANCED) public String? getDescription();
   }
 
-  public class Class2BiometricOrCredentialAuthPrompt {
-    method public CharSequence? getDescription();
-    method public CharSequence? getSubtitle();
-    method public CharSequence getTitle();
-    method public boolean isConfirmationRequired();
-    method public androidx.biometric.auth.AuthPrompt startAuthentication(androidx.biometric.auth.AuthPromptHost, androidx.biometric.auth.AuthPromptCallback);
-    method public androidx.biometric.auth.AuthPrompt startAuthentication(androidx.biometric.auth.AuthPromptHost, java.util.concurrent.Executor, androidx.biometric.auth.AuthPromptCallback);
+  public static final class PromptContentViewWithMoreOptionsButton.Builder {
+    ctor public PromptContentViewWithMoreOptionsButton.Builder();
+    method @RequiresPermission(android.Manifest.permission.SET_BIOMETRIC_DIALOG_ADVANCED) public androidx.biometric.PromptContentViewWithMoreOptionsButton build();
+    method @RequiresPermission(android.Manifest.permission.SET_BIOMETRIC_DIALOG_ADVANCED) public androidx.biometric.PromptContentViewWithMoreOptionsButton.Builder setDescription(String);
   }
 
-  public static final class Class2BiometricOrCredentialAuthPrompt.Builder {
-    ctor public Class2BiometricOrCredentialAuthPrompt.Builder(CharSequence);
-    method public androidx.biometric.auth.Class2BiometricOrCredentialAuthPrompt build();
-    method public androidx.biometric.auth.Class2BiometricOrCredentialAuthPrompt.Builder setConfirmationRequired(boolean);
-    method public androidx.biometric.auth.Class2BiometricOrCredentialAuthPrompt.Builder setDescription(CharSequence);
-    method public androidx.biometric.auth.Class2BiometricOrCredentialAuthPrompt.Builder setSubtitle(CharSequence);
+  public final class PromptVerticalListContentView implements androidx.biometric.PromptContentView {
+    method public String? getDescription();
+    method public java.util.List<androidx.biometric.PromptContentItem!> getListItems();
   }
 
-  public class Class3BiometricAuthPrompt {
-    method public CharSequence? getDescription();
-    method public CharSequence getNegativeButtonText();
-    method public CharSequence? getSubtitle();
-    method public CharSequence getTitle();
-    method public boolean isConfirmationRequired();
-    method public androidx.biometric.auth.AuthPrompt startAuthentication(androidx.biometric.auth.AuthPromptHost, androidx.biometric.BiometricPrompt.CryptoObject?, androidx.biometric.auth.AuthPromptCallback);
-    method public androidx.biometric.auth.AuthPrompt startAuthentication(androidx.biometric.auth.AuthPromptHost, androidx.biometric.BiometricPrompt.CryptoObject?, java.util.concurrent.Executor, androidx.biometric.auth.AuthPromptCallback);
-  }
-
-  public static final class Class3BiometricAuthPrompt.Builder {
-    ctor public Class3BiometricAuthPrompt.Builder(CharSequence, CharSequence);
-    method public androidx.biometric.auth.Class3BiometricAuthPrompt build();
-    method public androidx.biometric.auth.Class3BiometricAuthPrompt.Builder setConfirmationRequired(boolean);
-    method public androidx.biometric.auth.Class3BiometricAuthPrompt.Builder setDescription(CharSequence);
-    method public androidx.biometric.auth.Class3BiometricAuthPrompt.Builder setSubtitle(CharSequence);
-  }
-
-  @RequiresApi(android.os.Build.VERSION_CODES.R) public class Class3BiometricOrCredentialAuthPrompt {
-    method public CharSequence? getDescription();
-    method public CharSequence? getSubtitle();
-    method public CharSequence getTitle();
-    method public boolean isConfirmationRequired();
-    method public androidx.biometric.auth.AuthPrompt startAuthentication(androidx.biometric.auth.AuthPromptHost, androidx.biometric.BiometricPrompt.CryptoObject?, androidx.biometric.auth.AuthPromptCallback);
-    method public androidx.biometric.auth.AuthPrompt startAuthentication(androidx.biometric.auth.AuthPromptHost, androidx.biometric.BiometricPrompt.CryptoObject?, java.util.concurrent.Executor, androidx.biometric.auth.AuthPromptCallback);
-  }
-
-  public static final class Class3BiometricOrCredentialAuthPrompt.Builder {
-    ctor public Class3BiometricOrCredentialAuthPrompt.Builder(CharSequence);
-    method public androidx.biometric.auth.Class3BiometricOrCredentialAuthPrompt build();
-    method public androidx.biometric.auth.Class3BiometricOrCredentialAuthPrompt.Builder setConfirmationRequired(boolean);
-    method public androidx.biometric.auth.Class3BiometricOrCredentialAuthPrompt.Builder setDescription(CharSequence);
-    method public androidx.biometric.auth.Class3BiometricOrCredentialAuthPrompt.Builder setSubtitle(CharSequence);
-  }
-
-  @RequiresApi(android.os.Build.VERSION_CODES.R) public class CredentialAuthPrompt {
-    method public CharSequence? getDescription();
-    method public CharSequence getTitle();
-    method public androidx.biometric.auth.AuthPrompt startAuthentication(androidx.biometric.auth.AuthPromptHost, androidx.biometric.BiometricPrompt.CryptoObject?, androidx.biometric.auth.AuthPromptCallback);
-    method public androidx.biometric.auth.AuthPrompt startAuthentication(androidx.biometric.auth.AuthPromptHost, androidx.biometric.BiometricPrompt.CryptoObject?, java.util.concurrent.Executor, androidx.biometric.auth.AuthPromptCallback);
-  }
-
-  public static final class CredentialAuthPrompt.Builder {
-    ctor public CredentialAuthPrompt.Builder(CharSequence);
-    method public androidx.biometric.auth.CredentialAuthPrompt build();
-    method public androidx.biometric.auth.CredentialAuthPrompt.Builder setDescription(CharSequence);
+  public static final class PromptVerticalListContentView.Builder {
+    ctor public PromptVerticalListContentView.Builder();
+    method public androidx.biometric.PromptVerticalListContentView.Builder addListItem(androidx.biometric.PromptContentItem);
+    method public androidx.biometric.PromptVerticalListContentView.Builder addListItem(androidx.biometric.PromptContentItem, int);
+    method public androidx.biometric.PromptVerticalListContentView build();
+    method public androidx.biometric.PromptVerticalListContentView.Builder setDescription(String);
   }
 
 }

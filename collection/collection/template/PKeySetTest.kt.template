@@ -15,6 +15,7 @@
  */
 package androidx.collection
 
+import kotlin.js.JsName
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -376,6 +377,7 @@ class PKeySetTest {
     }
 
     @Test
+    @JsName("jsEquals")
     fun equals() {
         val set = MutablePKeySet()
         set += 1KeySuffix
@@ -559,5 +561,48 @@ class PKeySetTest {
         assertTrue(3KeySuffix in set)
         assertTrue(4KeySuffix in set)
         assertFalse(5KeySuffix in set)
+    }
+
+    @Test
+    fun buildPKeySetFunction() {
+        val contract: Boolean
+        val set = buildPKeySet {
+            contract = true
+            add(1KeySuffix)
+            add(2KeySuffix)
+        }
+        assertTrue(contract)
+        assertEquals(2, set.size)
+        assertTrue(1KeySuffix in set)
+        assertTrue(2KeySuffix in set)
+    }
+
+    @Test
+    fun buildPKeySetWithCapacityFunction() {
+        val contract: Boolean
+        val set = buildPKeySet(20) {
+            contract = true
+            add(1KeySuffix)
+            add(2KeySuffix)
+        }
+        assertTrue(contract)
+        assertEquals(2, set.size)
+        assertTrue(set.capacity >= 18)
+        assertTrue(1KeySuffix in set)
+        assertTrue(2KeySuffix in set)
+    }
+
+    @Test
+    fun insertManyRemoveMany() {
+        val set = mutablePKeySetOf()
+
+        for (i in 0 .. 1000000) {
+            set.add(i.toPKey())
+            set.remove(i.toPKey())
+            assertTrue(
+                set.capacity < 16,
+                "Set grew larger than 16 after step $i"
+            )
+        }
     }
 }

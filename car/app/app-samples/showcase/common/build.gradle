@@ -26,6 +26,7 @@ import androidx.build.LibraryType
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
+    id("org.jetbrains.kotlin.android")
 }
 
 android {
@@ -36,9 +37,11 @@ android {
 }
 
 dependencies {
+    api(libs.jspecify)
     implementation(project(":car:app:app"))
     debugImplementation(libs.leakcanary)
 
+    implementation(libs.kotlinStdlibCommon)
     implementation("androidx.core:core:1.7.0")
     implementation project(":annotation:annotation-experimental")
 }

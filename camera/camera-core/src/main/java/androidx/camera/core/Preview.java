@@ -18,6 +18,7 @@ package androidx.camera.core;
 
 import static androidx.camera.core.CameraEffect.PREVIEW;
 import static androidx.camera.core.MirrorMode.MIRROR_MODE_ON_FRONT_ONLY;
+import static androidx.camera.core.MirrorMode.MIRROR_MODE_UNSPECIFIED;
 import static androidx.camera.core.impl.ImageFormatConstants.INTERNAL_DEFINED_IMAGE_FORMAT_PRIVATE;
 import static androidx.camera.core.impl.ImageInputConfig.OPTION_INPUT_DYNAMIC_RANGE;
 import static androidx.camera.core.impl.ImageInputConfig.OPTION_INPUT_FORMAT;
@@ -38,7 +39,6 @@ import static androidx.camera.core.impl.PreviewConfig.OPTION_TARGET_ASPECT_RATIO
 import static androidx.camera.core.impl.PreviewConfig.OPTION_TARGET_CLASS;
 import static androidx.camera.core.impl.PreviewConfig.OPTION_TARGET_NAME;
 import static androidx.camera.core.impl.PreviewConfig.OPTION_TARGET_ROTATION;
-import static androidx.camera.core.impl.PreviewConfig.OPTION_USE_CASE_EVENT_CALLBACK;
 import static androidx.camera.core.impl.UseCaseConfig.OPTION_CAPTURE_TYPE;
 import static androidx.camera.core.impl.UseCaseConfig.OPTION_HIGH_RESOLUTION_DISABLED;
 import static androidx.camera.core.impl.UseCaseConfig.OPTION_PREVIEW_STABILIZATION_MODE;
@@ -55,6 +55,7 @@ import android.graphics.Rect;
 import android.graphics.SurfaceTexture;
 import android.media.ImageReader;
 import android.media.MediaCodec;
+import android.os.Build;
 import android.util.Pair;
 import android.util.Range;
 import android.util.Size;
@@ -66,7 +67,6 @@ import android.view.TextureView;
 import androidx.annotation.MainThread;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 import androidx.annotation.UiThread;
@@ -95,6 +95,7 @@ import androidx.camera.core.internal.ThreadConfig;
 import androidx.camera.core.processing.Node;
 import androidx.camera.core.processing.SurfaceEdge;
 import androidx.camera.core.processing.SurfaceProcessorNode;
+import androidx.camera.core.processing.util.OutConfig;
 import androidx.camera.core.resolutionselector.AspectRatioStrategy;
 import androidx.camera.core.resolutionselector.ResolutionSelector;
 import androidx.camera.core.resolutionselector.ResolutionStrategy;
@@ -150,7 +151,6 @@ import java.util.concurrent.Executor;
  *     </code>
  * </pre>
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public final class Preview extends UseCase {
 
     ////////////////////////////////////////////////////////////////////////////////////////////
@@ -199,6 +199,8 @@ public final class Preview extends UseCase {
 
     @Nullable
     private SurfaceProcessorNode mNode;
+    @Nullable
+    private SessionConfig.CloseableErrorListener mCloseableErrorListener;
 
     /**
      * Creates a new preview use case from the given configuration.
@@ -220,7 +222,6 @@ public final class Preview extends UseCase {
     @NonNull
     @MainThread
     private SessionConfig.Builder createPipeline(
-            @NonNull String cameraId,
             @NonNull PreviewConfig config,
             @NonNull StreamSpec streamSpec) {
         // Check arguments
@@ -247,13 +248,12 @@ public final class Preview extends UseCase {
             // Create nodes and edges.
             mNode = new SurfaceProcessorNode(camera, effect.createSurfaceProcessorInternal());
             mCameraEdge.addOnInvalidatedListener(this::notifyReset);
-            SurfaceProcessorNode.OutConfig outConfig = SurfaceProcessorNode.OutConfig.of(
-                    mCameraEdge);
+            OutConfig outConfig = OutConfig.of(mCameraEdge);
             SurfaceProcessorNode.In nodeInput = SurfaceProcessorNode.In.of(mCameraEdge,
                     singletonList(outConfig));
             SurfaceProcessorNode.Out nodeOutput = mNode.transform(nodeInput);
             SurfaceEdge appEdge = requireNonNull(nodeOutput.get(outConfig));
-            appEdge.addOnInvalidatedListener(() -> onAppEdgeInvalidated(appEdge, camera));
+            appEdge.addOnInvalidatedListener(() -> onAppEdgeInvalidated(mCameraEdge, camera));
             mCurrentSurfaceRequest = appEdge.createSurfaceRequest(camera);
             mSessionDeferrableSurface = mCameraEdge.getDeferrableSurface();
         } else {
@@ -270,22 +270,23 @@ public final class Preview extends UseCase {
         // Send the camera Surface to the camera2.
         SessionConfig.Builder sessionConfigBuilder = SessionConfig.Builder.createFrom(config,
                 streamSpec.getResolution());
-        sessionConfigBuilder.setExpectedFrameRateRange(streamSpec.getExpectedFrameRateRange());
+        // Applies the AE fps range to the session config builder according to the stream spec and
+        // quirk values.
+        applyExpectedFrameRateRange(sessionConfigBuilder, streamSpec);
         sessionConfigBuilder.setPreviewStabilization(config.getPreviewStabilizationMode());
         if (streamSpec.getImplementationOptions() != null) {
             sessionConfigBuilder.addImplementationOptions(streamSpec.getImplementationOptions());
         }
-        addCameraSurfaceAndErrorListener(sessionConfigBuilder, cameraId, config, streamSpec);
+        addCameraSurfaceAndErrorListener(sessionConfigBuilder, streamSpec);
         return sessionConfigBuilder;
     }
 
     @MainThread
-    private void onAppEdgeInvalidated(@NonNull SurfaceEdge appEdge,
+    private void onAppEdgeInvalidated(@NonNull SurfaceEdge cameraEdge,
             @NonNull CameraInternal camera) {
         checkMainThread();
         if (camera == getCamera()) {
-            mCurrentSurfaceRequest = appEdge.createSurfaceRequest(camera);
-            sendSurfaceRequest();
+            cameraEdge.invalidate();
         }
     }
 
@@ -300,6 +301,12 @@ public final class Preview extends UseCase {
      * Creates previously allocated {@link DeferrableSurface} include those allocated by nodes.
      */
     private void clearPipeline() {
+        // Closes the old error listener
+        if (mCloseableErrorListener != null) {
+            mCloseableErrorListener.close();
+            mCloseableErrorListener = null;
+        }
+
         DeferrableSurface cameraSurface = mSessionDeferrableSurface;
         if (cameraSurface != null) {
             cameraSurface.close();
@@ -320,8 +327,6 @@ public final class Preview extends UseCase {
 
     private void addCameraSurfaceAndErrorListener(
             @NonNull SessionConfig.Builder sessionConfigBuilder,
-            @NonNull String cameraId,
-            @NonNull PreviewConfig config,
             @NonNull StreamSpec streamSpec) {
         // TODO(b/245309800): Add the Surface if post-processing pipeline is used. Post-processing
         //  pipeline always provide a Surface.
@@ -333,22 +338,26 @@ public final class Preview extends UseCase {
         if (mSurfaceProvider != null) {
             sessionConfigBuilder.addSurface(mSessionDeferrableSurface,
                     streamSpec.getDynamicRange(),
-                    getPhysicalCameraId());
+                    getPhysicalCameraId(),
+                    getMirrorModeInternal());
         }
 
-        sessionConfigBuilder.addErrorListener((sessionConfig, error) -> {
-            // Ensure the attached camera has not changed before resetting.
-            // TODO(b/143915543): Ensure this never gets called by a camera that is not attached
-            //  to this use case so we don't need to do this check.
-            if (isCurrentCamera(cameraId)) {
-                // Only reset the pipeline when the bound camera is the same.
-                SessionConfig.Builder sessionConfigBuilder1 = createPipeline(cameraId, config,
-                        streamSpec);
+        if (mCloseableErrorListener != null) {
+            mCloseableErrorListener.close();
+        }
+        mCloseableErrorListener = new SessionConfig.CloseableErrorListener(
+                (sessionConfig, error) -> {
+                    // Do nothing when the use case has been unbound.
+                    if (getCamera() == null) {
+                        return;
+                    }
 
-                updateSessionConfig(sessionConfigBuilder1.build());
-                notifyReset();
-            }
-        });
+                    updateConfigAndOutput((PreviewConfig) getCurrentConfig(),
+                            getAttachedStreamSpec());
+                    notifyReset();
+                });
+
+        sessionConfigBuilder.setErrorListener(mCloseableErrorListener);
     }
 
     /**
@@ -436,12 +445,22 @@ public final class Preview extends UseCase {
             // case may have been detached from the camera. Either way, try updating session
             // config and let createPipeline() sends a new SurfaceRequest.
             if (getAttachedSurfaceResolution() != null) {
-                updateConfigAndOutput(getCameraId(), (PreviewConfig) getCurrentConfig(),
+                updateConfigAndOutput((PreviewConfig) getCurrentConfig(),
                         getAttachedStreamSpec());
                 notifyReset();
             }
             notifyActive();
         }
+    }
+
+    /** Gets the {@link SurfaceProvider} associated with the preview. */
+    @VisibleForTesting
+    @RestrictTo(Scope.LIBRARY_GROUP)
+    @UiThread
+    @Nullable
+    public SurfaceProvider getSurfaceProvider() {
+        checkMainThread();
+        return mSurfaceProvider;
     }
 
     private void sendSurfaceRequest() {
@@ -472,10 +491,10 @@ public final class Preview extends UseCase {
         setSurfaceProvider(DEFAULT_SURFACE_PROVIDER_EXECUTOR, surfaceProvider);
     }
 
-    private void updateConfigAndOutput(@NonNull String cameraId, @NonNull PreviewConfig config,
+    private void updateConfigAndOutput(@NonNull PreviewConfig config,
             @NonNull StreamSpec streamSpec) {
-        mSessionConfigBuilder = createPipeline(cameraId, config, streamSpec);
-        updateSessionConfig(mSessionConfigBuilder.build());
+        mSessionConfigBuilder = createPipeline(config, streamSpec);
+        updateSessionConfig(List.of(mSessionConfigBuilder.build()));
     }
 
     /**
@@ -592,10 +611,11 @@ public final class Preview extends UseCase {
     @Override
     @RestrictTo(Scope.LIBRARY_GROUP)
     @NonNull
-    protected StreamSpec onSuggestedStreamSpecUpdated(@NonNull StreamSpec suggestedStreamSpec) {
-        updateConfigAndOutput(getCameraId(), (PreviewConfig) getCurrentConfig(),
-                suggestedStreamSpec);
-        return suggestedStreamSpec;
+    protected StreamSpec onSuggestedStreamSpecUpdated(
+            @NonNull StreamSpec primaryStreamSpec,
+            @Nullable StreamSpec secondaryStreamSpec) {
+        updateConfigAndOutput((PreviewConfig) getCurrentConfig(), primaryStreamSpec);
+        return primaryStreamSpec;
     }
 
     /**
@@ -606,7 +626,7 @@ public final class Preview extends UseCase {
     @RestrictTo(Scope.LIBRARY_GROUP)
     protected StreamSpec onSuggestedStreamSpecImplementationOptionsUpdated(@NonNull Config config) {
         mSessionConfigBuilder.addImplementationOptions(config);
-        updateSessionConfig(mSessionConfigBuilder.build());
+        updateSessionConfig(List.of(mSessionConfigBuilder.build()));
         return getAttachedStreamSpec().toBuilder().setImplementationOptions(config).build();
     }
 
@@ -677,7 +697,6 @@ public final class Preview extends UseCase {
      * {@link DynamicRange#UNSPECIFIED}
      *
      * @return the dynamic range set for this {@code Preview} use case.
-     *
      * @see Preview.Builder#setDynamicRange(DynamicRange)
      */
     // Internal implementation note: this method should not be used to retrieve the dynamic range
@@ -847,7 +866,11 @@ public final class Preview extends UseCase {
 
             setCaptureType(UseCaseConfigFactory.CaptureType.PREVIEW);
             setTargetClass(Preview.class);
-            mutableConfig.insertOption(OPTION_MIRROR_MODE, Defaults.DEFAULT_MIRROR_MODE);
+
+            if (mutableConfig.retrieveOption(
+                    OPTION_MIRROR_MODE, MIRROR_MODE_UNSPECIFIED) == MIRROR_MODE_UNSPECIFIED) {
+                mutableConfig.insertOption(OPTION_MIRROR_MODE, Defaults.DEFAULT_MIRROR_MODE);
+            }
         }
 
         /**
@@ -1025,13 +1048,30 @@ public final class Preview extends UseCase {
         }
 
         /**
-         * setMirrorMode is not supported on Preview.
+         * Sets the mirror mode.
+         *
+         * <p>Valid values include: {@link MirrorMode#MIRROR_MODE_OFF},
+         * {@link MirrorMode#MIRROR_MODE_ON} and {@link MirrorMode#MIRROR_MODE_ON_FRONT_ONLY}.
+         * If not set, it defaults to {@link MirrorMode#MIRROR_MODE_ON_FRONT_ONLY}.
+         *
+         * <p>For API 33 and above, it will change the mirroring behavior for Preview use case.
+         * It is calling
+         * {@link android.hardware.camera2.params.OutputConfiguration#setMirrorMode(int)}.
+         *
+         * <p> For API 32 and below, it will be no-op.
+         *
+         * @param mirrorMode The mirror mode of the intended target.
+         * @return The current Builder.
+         * @see android.hardware.camera2.params.OutputConfiguration#setMirrorMode(int)
          */
-        @RestrictTo(Scope.LIBRARY_GROUP)
+        @ExperimentalMirrorMode
         @NonNull
         @Override
         public Builder setMirrorMode(@MirrorMode.Mirror int mirrorMode) {
-            throw new UnsupportedOperationException("setMirrorMode is not supported.");
+            if (Build.VERSION.SDK_INT >= 33) {
+                getMutableConfig().insertOption(OPTION_MIRROR_MODE, mirrorMode);
+            }
+            return this;
         }
 
         /**
@@ -1318,7 +1358,6 @@ public final class Preview extends UseCase {
          *
          * @param enabled True if enable, otherwise false.
          * @return the current Builder.
-         *
          * @see PreviewCapabilities#isStabilizationSupported()
          */
         @NonNull
@@ -1369,15 +1408,6 @@ public final class Preview extends UseCase {
         @NonNull
         public Builder setSurfaceOccupancyPriority(int priority) {
             getMutableConfig().insertOption(OPTION_SURFACE_OCCUPANCY_PRIORITY, priority);
-            return this;
-        }
-
-        @RestrictTo(Scope.LIBRARY_GROUP)
-        @Override
-        @NonNull
-        public Builder setUseCaseEventCallback(
-                @NonNull UseCase.EventCallback useCaseEventCallback) {
-            getMutableConfig().insertOption(OPTION_USE_CASE_EVENT_CALLBACK, useCaseEventCallback);
             return this;
         }
 

@@ -16,8 +16,6 @@
 
 package androidx.build
 
-import androidx.build.dependencies.KOTLIN_NATIVE_VERSION
-import com.android.build.api.dsl.CommonExtension
 import com.android.build.api.variant.AndroidComponentsExtension
 import com.android.build.gradle.AppPlugin
 import com.android.build.gradle.LibraryPlugin
@@ -26,12 +24,10 @@ import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.artifacts.type.ArtifactTypeDefinition
 import org.gradle.api.attributes.Attribute
-import org.gradle.api.plugins.ExtraPropertiesExtension
 import org.gradle.api.tasks.bundling.Zip
 import org.gradle.kotlin.dsl.create
 import org.jetbrains.kotlin.gradle.plugin.CompilerPluginConfig
 import org.jetbrains.kotlin.gradle.plugin.KotlinBasePluginWrapper
-import org.jetbrains.kotlin.gradle.plugin.KotlinMultiplatformPluginWrapper
 import org.jetbrains.kotlin.gradle.plugin.SubpluginOption
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
@@ -43,21 +39,14 @@ class AndroidXComposeImplPlugin : Plugin<Project> {
     override fun apply(project: Project) {
         val extension =
             project.extensions.create<AndroidXComposeExtension>("androidxCompose", project)
-        project.plugins.all { plugin ->
+        project.plugins.configureEach { plugin ->
             when (plugin) {
-                is AppPlugin, is LibraryPlugin -> {
-                    val commonExtension =
-                        project.extensions.findByType(CommonExtension::class.java)
-                            ?: throw Exception("Failed to find Android extension")
-                    commonExtension.defaultConfig.minSdk = 21
+                is AppPlugin,
+                is LibraryPlugin -> {
                     project.configureAndroidCommonOptions()
                 }
                 is KotlinBasePluginWrapper -> {
                     configureComposeCompilerPlugin(project, extension)
-
-                    if (plugin is KotlinMultiplatformPluginWrapper) {
-                        project.configureForMultiplatform()
-                    }
                 }
             }
         }
@@ -65,10 +54,10 @@ class AndroidXComposeImplPlugin : Plugin<Project> {
 
     companion object {
         private fun Project.configureAndroidCommonOptions() {
-            extensions.findByType(AndroidComponentsExtension::class.java)!!.finalizeDsl {
+            extensions.findByType(AndroidComponentsExtension::class.java)!!.finalizeDsl { android ->
                 val isPublished = androidXExtension.shouldPublish()
 
-                it.lint {
+                android.lint {
                     // These lint checks are normally a warning (or lower), but we ignore (in
                     // AndroidX)
                     // warnings in Lint, so we make it an error here so it will fail the build.
@@ -114,54 +103,6 @@ class AndroidXComposeImplPlugin : Plugin<Project> {
                 )
             }
         }
-
-        /**
-         * General configuration for MPP projects. In the future, these workarounds should either be
-         * generified and added to AndroidXPlugin, or removed as/when the underlying issues have
-         * been resolved.
-         */
-        private fun Project.configureForMultiplatform() {
-            // This is to allow K/N not matching the kotlinVersion
-            (this.rootProject.property("ext") as ExtraPropertiesExtension).set(
-                "kotlin.native.version",
-                KOTLIN_NATIVE_VERSION
-            )
-
-            val multiplatformExtension =
-                checkNotNull(multiplatformExtension) {
-                    "Unable to configureForMultiplatform() when " +
-                        "multiplatformExtension is null (multiplatform plugin not enabled?)"
-                }
-
-            /*
-            The following configures source sets - note:
-
-            1. The common unit test source set, commonTest, is included by default in both android
-            unit and instrumented tests. This causes unnecessary duplication, so we explicitly do
-            _not_ use commonTest, instead choosing to just use the unit test variant.
-            TODO: Consider using commonTest for unit tests if a usable feature is added for
-            https://youtrack.jetbrains.com/issue/KT-34662.
-
-            2. The default (android) unit test source set is named 'androidTest', which conflicts / is
-            confusing as this shares the same name / expected directory as AGP's 'androidTest', which
-            represents _instrumented_ tests.
-            TODO: Consider changing unitTest to androidLocalTest and androidAndroidTest to
-            androidDeviceTest when https://github.com/JetBrains/kotlin/pull/2829 rolls in.
-            */
-            multiplatformExtension.sourceSets.all {
-                // Allow all experimental APIs, since MPP projects are themselves experimental
-                it.languageSettings.apply { optIn("kotlin.ExperimentalMultiplatform") }
-            }
-
-            afterEvaluate {
-                if (multiplatformExtension.targets.findByName("jvm") != null) {
-                    tasks.named("jvmTestClasses").also(::addToBuildOnServer)
-                }
-                if (multiplatformExtension.targets.findByName("desktop") != null) {
-                    tasks.named("desktopTestClasses").also(::addToBuildOnServer)
-                }
-            }
-        }
     }
 }
 
@@ -178,65 +119,66 @@ private fun configureComposeCompilerPlugin(project: Project, extension: AndroidX
         val shouldPublish = androidXExtension.shouldPublish()
 
         // Create configuration that we'll use to load Compose compiler plugin
-        val configuration = project.configurations.create(COMPILER_PLUGIN_CONFIGURATION) {
-            it.isCanBeConsumed = false
-        }
+        val configuration =
+            project.configurations.create(COMPILER_PLUGIN_CONFIGURATION) {
+                it.isCanBeConsumed = false
+            }
         // Add Compose compiler plugin to kotlinPlugin configuration, making sure it works
         // for Playground builds as well
-        val pluginVersionToml = project.getVersionByName("composeCompilerPlugin")
-        val versionToUse = if (ProjectLayoutType.isPlayground(project)) {
-            pluginVersionToml
-        } else {
-            // use exact project path instead of subprojects.find, it is faster
-            val compilerProject = project.rootProject.resolveProject(
-                ":compose:compiler:compiler"
-            )
-            val compilerMavenDirectory = File(
-                compilerProject.projectDir,
-                "compose-compiler-snapshot-repository"
-            )
-            if (!compilerMavenDirectory.exists()) {
-                pluginVersionToml
+        val isPlayground = ProjectLayoutType.isPlayground(project)
+        val compilerPluginVersion =
+            if (!isPlayground) {
+                project.getVersionByName("composeCompilerPlugin")
             } else {
-                project.repositories.maven {
-                    it.url = compilerMavenDirectory.toURI()
-                }
-                // Version chosen to be not a "-SNAPSHOT" since apparently gradle doesn't
-                // validate signatures for -SNAPSHOT builds.  Version is chosen to be higher
-                // than anything real to ensure it is seen as newer than any explicit dependency
-                // to prevent gradle from "upgrading" to a stable build instead of local build.
-                // This version is built by: snapshot-compose-compiler.sh (in compiler project)
-                "99.0.0"
+                project.getVersionByName("kotlin")
             }
-        }
         project.dependencies.add(
             COMPILER_PLUGIN_CONFIGURATION,
-            if (project.isComposeCompilerUnpinned()) {
-                if (ProjectLayoutType.isPlayground(project)) {
-                    AndroidXPlaygroundRootImplPlugin.projectOrArtifact(
-                        project.rootProject,
-                        ":compose:compiler:compiler"
-                    )
-                } else {
-                    project.rootProject.resolveProject(":compose:compiler:compiler")
-                }
-            } else {
-                "androidx.compose.compiler:compiler:$versionToUse"
-            }
+            "org.jetbrains.kotlin:kotlin-compose-compiler-plugin-embeddable:$compilerPluginVersion"
         )
 
-        val kotlinPluginProvider = project.provider {
-            configuration.incoming
-                .artifactView { view ->
-                    view.attributes { attributes ->
-                        attributes.attribute(
-                            Attribute.of("artifactType", String::class.java),
-                            ArtifactTypeDefinition.JAR_TYPE
-                        )
+        if (
+            !isPlayground &&
+                // ksp is also a compiler plugin, updating Kotlin for it will likely break the build
+                !project.plugins.hasPlugin("com.google.devtools.ksp")
+        ) {
+            if (compilerPluginVersion.endsWith("-SNAPSHOT")) {
+                // use exact project path instead of subprojects.find, it is faster
+                val compilerProject = project.rootProject.resolveProject(":compose")
+                val compilerMavenDirectory =
+                    File(
+                        compilerProject.projectDir,
+                        "compiler/compose-compiler-snapshot-repository"
+                    )
+                project.repositories.maven { it.url = compilerMavenDirectory.toURI() }
+                project.configurations.configureEach {
+                    it.resolutionStrategy.eachDependency { dep ->
+                        val requested = dep.requested
+                        if (
+                            requested.group == "org.jetbrains.kotlin" &&
+                                (requested.name == "kotlin-compiler-embeddable" ||
+                                    requested.name == "kotlin-compose-compiler-plugin-embeddable")
+                        ) {
+                            dep.useVersion(compilerPluginVersion)
+                        }
                     }
                 }
-                .files
+            }
         }
+
+        val kotlinPluginProvider =
+            project.provider {
+                configuration.incoming
+                    .artifactView { view ->
+                        view.attributes { attributes ->
+                            attributes.attribute(
+                                Attribute.of("artifactType", String::class.java),
+                                ArtifactTypeDefinition.JAR_TYPE
+                            )
+                        }
+                    }
+                    .files
+            }
 
         val enableMetrics = project.enableComposeCompilerMetrics()
         val enableReports = project.enableComposeCompilerReports()
@@ -248,9 +190,15 @@ private fun configureComposeCompilerPlugin(project: Project, extension: AndroidX
             compile.inputs.property("composeReportsEnabled", enableReports)
 
             compile.pluginClasspath.from(kotlinPluginProvider.get())
-            compile.addPluginOption(ComposeCompileOptions.StrongSkippingOption, "true")
-            compile.addPluginOption(ComposeCompileOptions.NonSkippingGroupOption, "true")
 
+            // Playground is using Compose compiler 2.0.10, which does not support feature flags.
+            if (isPlayground) {
+                compile.addPluginOption(ComposeCompileOptions.StrongSkipping, "true")
+                compile.addPluginOption(ComposeCompileOptions.NonSkippingGroupOptimization, "true")
+            } else {
+                compile.enableFeatureFlag(ComposeFeatureFlag.StrongSkipping)
+                compile.enableFeatureFlag(ComposeFeatureFlag.OptimizeNonSkippingGroups)
+            }
             if (shouldPublish) {
                 compile.addPluginOption(ComposeCompileOptions.SourceOption, "true")
             }
@@ -264,7 +212,9 @@ private fun configureComposeCompilerPlugin(project: Project, extension: AndroidX
             val metricsIntermediateDir = project.compilerMetricsIntermediatesDir()
             compileTasks.configureEach { compile ->
                 compile.addPluginOption(
-                    ComposeCompileOptions.MetricsOption, metricsIntermediateDir.path)
+                    ComposeCompileOptions.MetricsOption,
+                    metricsIntermediateDir.path
+                )
             }
         }
         if (enableReports) {
@@ -287,50 +237,62 @@ private fun KotlinCompile.addPluginOption(
     composeCompileOptions: ComposeCompileOptions,
     value: String
 ) =
-    pluginOptions.add(CompilerPluginConfig().apply {
-                addPluginArgument(
-                    composeCompileOptions.pluginId,
-                    SubpluginOption(composeCompileOptions.key, value))
-    }
-)
-
-public fun Project.zipComposeCompilerMetrics() {
-    if (project.enableComposeCompilerMetrics()) {
-        val zipComposeMetrics = project.tasks.register(zipComposeMetricsTaskName, Zip::class.java) {
-            zipTask ->
-            zipTask.from(project.compilerMetricsIntermediatesDir())
-            zipTask.destinationDirectory.set(project.composeCompilerDataDir())
-            zipTask.archiveBaseName.set("composemetrics")
+    pluginOptions.add(
+        CompilerPluginConfig().apply {
+            addPluginArgument(
+                composeCompileOptions.pluginId,
+                SubpluginOption(composeCompileOptions.key, value)
+            )
         }
+    )
+
+private fun KotlinCompile.enableFeatureFlag(featureFlag: ComposeFeatureFlag) {
+    addPluginOption(ComposeCompileOptions.FeatureFlagOption, featureFlag.featureName)
+}
+
+private fun KotlinCompile.disableFeatureFlag(featureFlag: ComposeFeatureFlag) {
+    addPluginOption(ComposeCompileOptions.FeatureFlagOption, "-${featureFlag.featureName}")
+}
+
+internal fun Project.zipComposeCompilerMetrics() {
+    if (project.enableComposeCompilerMetrics()) {
+        val zipComposeMetrics =
+            project.tasks.register(zipComposeMetricsTaskName, Zip::class.java) { zipTask ->
+                zipTask.from(project.compilerMetricsIntermediatesDir())
+                zipTask.destinationDirectory.set(project.composeCompilerDataDir())
+                zipTask.archiveBaseName.set("composemetrics")
+            }
         project.addToBuildOnServer(zipComposeMetrics)
     }
 }
 
-public fun Project.zipComposeCompilerReports() {
+internal fun Project.zipComposeCompilerReports() {
     if (project.enableComposeCompilerReports()) {
-        val zipComposeReports = project.tasks.register(zipComposeReportsTaskName, Zip::class.java) {
-            zipTask ->
-            zipTask.from(project.compilerReportsIntermediatesDir())
-            zipTask.destinationDirectory.set(project.composeCompilerDataDir())
-            zipTask.archiveBaseName.set("composereports")
-        }
+        val zipComposeReports =
+            project.tasks.register(zipComposeReportsTaskName, Zip::class.java) { zipTask ->
+                zipTask.from(project.compilerReportsIntermediatesDir())
+                zipTask.destinationDirectory.set(project.composeCompilerDataDir())
+                zipTask.archiveBaseName.set("composereports")
+            }
         project.addToBuildOnServer(zipComposeReports)
     }
 }
 
-fun Project.compilerMetricsIntermediatesDir(): File {
-    return project.rootProject.layout.buildDirectory.dir(
-        "libraryreports/composemetrics"
-    ).get().getAsFile()
+private fun Project.compilerMetricsIntermediatesDir(): File {
+    return project.rootProject.layout.buildDirectory
+        .dir("libraryreports/composemetrics")
+        .get()
+        .asFile
 }
 
-fun Project.compilerReportsIntermediatesDir(): File {
-    return project.rootProject.layout.buildDirectory.dir(
-        "libraryreports/composereports"
-    ).get().getAsFile()
+private fun Project.compilerReportsIntermediatesDir(): File {
+    return project.rootProject.layout.buildDirectory
+        .dir("libraryreports/composereports")
+        .get()
+        .asFile
 }
 
-fun Project.composeCompilerDataDir(): File {
+private fun Project.composeCompilerDataDir(): File {
     return File(getDistributionDirectory(), "compose-compiler-data")
 }
 
@@ -338,8 +300,14 @@ private const val ComposePluginId = "androidx.compose.compiler.plugins.kotlin"
 
 private enum class ComposeCompileOptions(val pluginId: String, val key: String) {
     SourceOption(ComposePluginId, "sourceInformation"),
+    StrongSkipping(ComposePluginId, "strongSkipping"),
+    NonSkippingGroupOptimization(ComposePluginId, "nonSkippingGroupOptimization"),
     MetricsOption(ComposePluginId, "metricsDestination"),
     ReportsOption(ComposePluginId, "reportsDestination"),
-    StrongSkippingOption(ComposePluginId, "experimentalStrongSkipping"),
-    NonSkippingGroupOption(ComposePluginId, "nonSkippingGroupOptimization")
+    FeatureFlagOption(ComposePluginId, "featureFlag"),
+}
+
+private enum class ComposeFeatureFlag(val featureName: String) {
+    StrongSkipping("StrongSkipping"),
+    OptimizeNonSkippingGroups("OptimizeNonSkippingGroups"),
 }

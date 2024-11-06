@@ -32,8 +32,7 @@ import org.junit.runners.JUnit4
 
 @RunWith(JUnit4::class)
 class LiveDataAsFlowTest {
-    @get:Rule
-    val scopes = ScopesRule()
+    @get:Rule val scopes = ScopesRule()
     private val mainScope = scopes.mainScope
     private val testScope = scopes.testScope
 
@@ -44,7 +43,7 @@ class LiveDataAsFlowTest {
         scopes.triggerAllActions()
         // check that flow creation didn't make livedata active
         assertThat(ld.hasActiveObservers()).isFalse()
-        val job = testScope.launch { flow.collect { } }
+        val job = testScope.launch { flow.collect {} }
         scopes.triggerAllActions()
         // collection started there should be an active observer
         assertThat(ld.hasActiveObservers()).isTrue()
@@ -55,15 +54,55 @@ class LiveDataAsFlowTest {
     }
 
     @Test
+    fun checkCancellationFromInitialValue() {
+        val ld = MutableLiveData<Int>()
+        ld.value = 1
+        val flow = ld.asFlow()
+        // check that flow creation didn't make livedata active
+        assertThat(ld.hasActiveObservers()).isFalse()
+        // Collect only a single value to get the initial value and cancel immediately
+        val job = testScope.launch { assertThat(flow.take(1).toList()).isEqualTo(listOf(1)) }
+        scopes.triggerAllActions()
+        mainScope.launch {
+            // This should never be received by the take(1)
+            ld.value = 2
+        }
+        scopes.triggerAllActions()
+        // Verify that the job completing removes the observer
+        assertThat(job.isCompleted).isTrue()
+        assertThat(ld.hasActiveObservers()).isFalse()
+    }
+
+    @Test
+    fun checkCancellationAfterJobCompletes() {
+        val ld = MutableLiveData<Int>()
+        ld.value = 1
+        val flow = ld.asFlow()
+        // check that flow creation didn't make livedata active
+        assertThat(ld.hasActiveObservers()).isFalse()
+        val job = testScope.launch { assertThat(flow.take(2).toList()).isEqualTo(listOf(1, 2)) }
+        scopes.triggerAllActions()
+        mainScope.launch {
+            // Receiving this should complete the job and remove the observer
+            ld.value = 2
+        }
+        scopes.triggerAllActions()
+        // Verify that the job completing removes the observer
+        assertThat(job.isCompleted).isTrue()
+        assertThat(ld.hasActiveObservers()).isFalse()
+    }
+
+    @Test
     fun dispatchMultiple() {
         val ld = MutableLiveData<Int>()
         val collected = mutableListOf<Int>()
-        val job = testScope.launch {
-            ld.asFlow().collect {
-                delay(100)
-                collected.add(it)
+        val job =
+            testScope.launch {
+                ld.asFlow().collect {
+                    delay(100)
+                    collected.add(it)
+                }
             }
-        }
         mainScope.launch {
             ld.value = 1
             delay(1000)
@@ -86,9 +125,7 @@ class LiveDataAsFlowTest {
     fun reusingFlow() {
         val ld = MutableLiveData<Int>()
         val flow = ld.asFlow()
-        val firstCollection = testScope.launch {
-            assertThat(flow.first()).isEqualTo(1)
-        }
+        val firstCollection = testScope.launch { assertThat(flow.first()).isEqualTo(1) }
         scopes.triggerAllActions()
         assertThat(ld.hasActiveObservers()).isTrue()
 
@@ -98,9 +135,8 @@ class LiveDataAsFlowTest {
         assertThat(ld.hasActiveObservers()).isFalse()
         assertThat(firstCollection.isCompleted).isTrue()
 
-        val secondCollection = testScope.launch {
-            assertThat(flow.take(2).toList()).isEqualTo(listOf(1, 2))
-        }
+        val secondCollection =
+            testScope.launch { assertThat(flow.take(2).toList()).isEqualTo(listOf(1, 2)) }
         scopes.triggerAllActions()
         assertThat(ld.hasActiveObservers()).isTrue()
         mainScope.launch { ld.value = 2 }
@@ -115,12 +151,8 @@ class LiveDataAsFlowTest {
         val flowA = ld.asFlow()
         val flowB = ld.asFlow()
         assertThat(ld.hasActiveObservers()).isFalse()
-        val jobA = testScope.launch {
-            assertThat(flowA.first()).isEqualTo(1)
-        }
-        val jobB = testScope.launch {
-            assertThat(flowB.take(2).toList()).isEqualTo(listOf(1, 2))
-        }
+        val jobA = testScope.launch { assertThat(flowA.first()).isEqualTo(1) }
+        val jobB = testScope.launch { assertThat(flowB.take(2).toList()).isEqualTo(listOf(1, 2)) }
         scopes.triggerAllActions()
         assertThat(ld.hasActiveObservers()).isTrue()
 

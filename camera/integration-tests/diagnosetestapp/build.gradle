@@ -23,8 +23,6 @@ plugins {
 android {
     defaultConfig {
         applicationId "androidx.camera.integration.diagnose"
-        minSdkVersion 21
-        multiDexEnabled true
     }
 
     buildTypes {
@@ -62,10 +60,8 @@ dependencies {
     testImplementation("androidx.test:core:1.4.0")
     testImplementation("junit:junit:4.12")
 
-    compileOnly(libs.kotlinCompiler)
-
     // Align dependencies in debugRuntimeClasspath and debugAndroidTestRuntimeClasspath.
-    androidTestImplementation("androidx.annotation:annotation-experimental:1.4.0")
+    androidTestImplementation("androidx.annotation:annotation-experimental:1.4.1")
 
     // Testing framework
     androidTestImplementation(libs.testExtJunit)

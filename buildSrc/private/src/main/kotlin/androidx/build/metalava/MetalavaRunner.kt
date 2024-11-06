@@ -53,7 +53,6 @@ fun runMetalavaWithArgs(
                 "RemovedFinalStrict",
                 "--error",
                 "UnresolvedImport",
-
                 "--kotlin-source",
                 kotlinSourceLevel.version,
 
@@ -63,6 +62,20 @@ fun runMetalavaWithArgs(
                 "androidx.annotation.RequiresOptIn",
                 "--suppress-compatibility-meta-annotation",
                 "kotlin.RequiresOptIn",
+
+                // Skip reading comments in Metalava for two reasons:
+                // - We prefer for developers to specify api information via annotations instead
+                //   of just javadoc comments (like @hide)
+                // - This allows us to improve cacheability of Metalava tasks
+                "--ignore-comments",
+                "--hide",
+                "DeprecationMismatch",
+                "--hide",
+                "DocumentExceptions",
+
+                // Don't track annotations that aren't needed for review or checking compat.
+                "--exclude-annotation",
+                "androidx.annotation.ReplaceWith",
             )
     val workQueue = workerExecutor.processIsolation()
     workQueue.submit(MetalavaWorkAction::class.java) { parameters ->
@@ -111,9 +124,7 @@ abstract class MetalavaWorkAction @Inject constructor(private val execOperations
 
 fun Project.getMetalavaClasspath(): FileCollection {
     val configuration =
-        configurations.detachedConfiguration(
-                dependencies.create(getLibraryByName("metalava"))
-        )
+        configurations.detachedConfiguration(dependencies.create(getLibraryByName("metalava")))
     return project.files(configuration)
 }
 
@@ -322,10 +333,7 @@ fun getGenerateApiArgs(
     if (existentCommonModuleSourcePaths.isNotEmpty()) {
         args += listOf("--common-source-path", existentCommonModuleSourcePaths.joinToString(":"))
     }
-    args += listOf(
-        "--format=v4",
-        "--warnings-as-errors"
-    )
+    args += listOf("--format=v4", "--warnings-as-errors")
 
     pathToManifest?.let { args += listOf("--manifest", pathToManifest) }
 
@@ -394,8 +402,6 @@ fun getGenerateApiArgs(
             args.addAll(
                 listOf(
                     "--error",
-                    "DeprecationMismatch", // Enforce deprecation mismatch
-                    "--error",
                     "ReferencesDeprecated",
                     "--error-message:api-lint",
                     """
@@ -413,8 +419,6 @@ fun getGenerateApiArgs(
         is ApiLintMode.Skip -> {
             args.addAll(
                 listOf(
-                    "--hide",
-                    "DeprecationMismatch",
                     "--hide",
                     "UnhiddenSystemApi",
                     "--hide",

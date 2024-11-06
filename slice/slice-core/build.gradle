@@ -30,15 +30,15 @@ plugins {
 }
 
 dependencies {
-    api("androidx.annotation:annotation:1.1.0")
+    api("androidx.annotation:annotation:1.8.1")
     implementation("androidx.appcompat:appcompat:1.4.0")
-    implementation("androidx.collection:collection:1.1.0")
+    implementation("androidx.collection:collection:1.4.2")
 
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.testCore)
     androidTestImplementation(libs.testRunner)
-    androidTestImplementation(libs.mockitoCore, excludes.bytebuddy)
-    androidTestImplementation(libs.dexmakerMockito, excludes.bytebuddy)
+    androidTestImplementation(libs.mockitoCore)
+    androidTestImplementation(libs.dexmakerMockito)
 
     annotationProcessor (project(":versionedparcelable:versionedparcelable-compiler"))
 }
@@ -50,7 +50,6 @@ androidx {
     mavenVersion = LibraryVersions.SLICE
     inceptionYear = "2017"
     description = "The slices core library provides utilities for the slices view and provider libraries"
-    metalavaK2UastEnabled = true
     failOnDeprecationWarnings = false
 
     deviceTests {

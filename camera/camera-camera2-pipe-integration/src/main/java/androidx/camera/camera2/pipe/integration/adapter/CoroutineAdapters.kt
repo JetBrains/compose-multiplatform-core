@@ -14,27 +14,26 @@
  * limitations under the License.
  */
 
-@file:RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
-
 package androidx.camera.camera2.pipe.integration.adapter
 
-import androidx.annotation.RequiresApi
 import androidx.concurrent.futures.CallbackToFutureAdapter
 import com.google.common.util.concurrent.ListenableFuture
 import java.util.concurrent.CancellationException
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 
 /**
  * Convert a job into a ListenableFuture<Void>.
  *
- * The return value of the Future is null, and canceling the future will not cancel the Job.
- * The tag field may be used to help debug futures.
+ * The return value of the Future is null, and canceling the future will not cancel the Job. The tag
+ * field may be used to help debug futures.
  */
-fun Job.asListenableFuture(tag: Any? = "Job.asListenableFuture"): ListenableFuture<Void> {
+public fun Job.asListenableFuture(tag: Any? = "Job.asListenableFuture"): ListenableFuture<Void> {
     val resolver: CallbackToFutureAdapter.Resolver<Void> =
         CallbackToFutureAdapter.Resolver<Void> { completer ->
             this.invokeOnCompletion {
@@ -53,11 +52,9 @@ fun Job.asListenableFuture(tag: Any? = "Job.asListenableFuture"): ListenableFutu
     return CallbackToFutureAdapter.getFuture(resolver)
 }
 
-/**
- * Convert a job into a ListenableFuture<T>.
- */
+/** Convert a job into a ListenableFuture<T>. */
 @OptIn(ExperimentalCoroutinesApi::class)
-fun <T> Deferred<T>.asListenableFuture(
+public fun <T> Deferred<T>.asListenableFuture(
     tag: Any? = "Deferred.asListenableFuture"
 ): ListenableFuture<T> {
     val resolver: CallbackToFutureAdapter.Resolver<T> =
@@ -79,26 +76,106 @@ fun <T> Deferred<T>.asListenableFuture(
     return CallbackToFutureAdapter.getFuture(resolver)
 }
 
-fun <T> Deferred<T>.propagateTo(destination: CompletableDeferred<T>) {
-    invokeOnCompletion {
-        propagateOnceTo(destination, it)
-    }
+/**
+ * Converts a [suspend] function `block` into a [ListenableFuture].
+ *
+ * @param block The suspend function to be converted.
+ * @return A [ListenableFuture] which is completed with the result of the `block`.
+ * @receiver The [CoroutineScope] used to execute the provided `block`.
+ */
+public inline fun <T> CoroutineScope.future(
+    crossinline block: suspend () -> T
+): ListenableFuture<T> {
+    val resolver: CallbackToFutureAdapter.Resolver<T> =
+        CallbackToFutureAdapter.Resolver<T> { completer -> this.launch { completer.set(block()) } }
+    return CallbackToFutureAdapter.getFuture(resolver)
 }
 
-@OptIn(ExperimentalCoroutinesApi::class)
-fun <T> Deferred<T>.propagateOnceTo(
-    destination: CompletableDeferred<T>,
-    throwable: Throwable?,
+/**
+ * Propagates the result of this to `destination` parameter when this deferred is completed.
+ *
+ * Cancelling the destination is no-op returned from this function does not cancel the `Deferred`
+ * returned by `block`.
+ */
+public fun <T> Deferred<T>.propagateTo(destination: CompletableDeferred<T>) {
+    invokeOnCompletion { propagateCompletion(destination, it) }
+}
+
+/**
+ * Propagates the result of this to `destination` parameter when this deferred is completed.
+ *
+ * Cancelling the destination is no-op returned from this function does not cancel the `Deferred`
+ * returned by `block`.
+ *
+ * @param destination The destination [CompletableDeferred] to which result is propagated to.
+ * @param transform Transformation function to convert the result during propagation.
+ */
+public fun <T, R> Deferred<T>.propagateTo(
+    destination: CompletableDeferred<R>,
+    transform: (T) -> R,
 ) {
-    if (throwable != null) {
-        if (throwable is CancellationException) {
-            destination.cancel(throwable)
-        } else {
-            destination.completeExceptionally(throwable)
-        }
+    invokeOnCompletion { propagateCompletion(destination, it, transform) }
+}
+
+/**
+ * Propagates the result of this to `destination` parameter immediately.
+ *
+ * This function assumes that [Deferred.invokeOnCompletion] has already been invoked.
+ *
+ * @param destination The destination `Deferred` to which result is propagated to.
+ * @param completionCause The `Throwable` cause of completion that was passed in
+ *   `Deferred.invokeOnCompletion`.
+ */
+@OptIn(ExperimentalCoroutinesApi::class)
+public fun <T> Deferred<T>.propagateCompletion(
+    destination: CompletableDeferred<T>,
+    completionCause: Throwable?,
+) {
+    if (completionCause != null) {
+        destination.completeFailing(completionCause)
     } else {
         // Ignore exceptions - This should never throw in this situation.
         destination.complete(getCompleted())
+    }
+}
+
+/**
+ * Propagates the result of this to `destination` parameter immediately.
+ *
+ * This function assumes that [Deferred.invokeOnCompletion] has already been invoked.
+ *
+ * @param destination The destination `Deferred` to which result is propagated to.
+ * @param completionCause The `Throwable` cause of completion that was passed in
+ *   `Deferred.invokeOnCompletion`.
+ * @param transform Transformation function to convert the result during propagation.
+ */
+@OptIn(ExperimentalCoroutinesApi::class)
+public fun <T, R> Deferred<T>.propagateCompletion(
+    destination: CompletableDeferred<R>,
+    completionCause: Throwable?,
+    transform: (T) -> R,
+) {
+    if (completionCause != null) {
+        destination.completeFailing(completionCause)
+    } else {
+        // Ignore exceptions - This should never throw in this situation.
+        destination.complete(transform(getCompleted()))
+    }
+}
+
+/**
+ * Completes this `Deferred` as failure based on the provided `cause`.
+ *
+ * @param cause If it's an instance of [CancellationException], [Deferred.cancel] is invoked for
+ *   this, otherwise, [CompletableDeferred.completeExceptionally] is invoked.
+ */
+public fun <T> CompletableDeferred<T>.completeFailing(
+    cause: Throwable,
+) {
+    if (cause is CancellationException) {
+        cancel(cause)
+    } else {
+        completeExceptionally(cause)
     }
 }
 
@@ -107,5 +184,5 @@ fun <T> Deferred<T>.propagateOnceTo(
  *
  * @return true if `Deferred.await` had completed, false otherwise.
  */
-suspend fun <T> Deferred<T>.awaitUntil(timeoutMillis: Long) =
+public suspend fun <T> Deferred<T>.awaitUntil(timeoutMillis: Long): Boolean =
     withTimeoutOrNull(timeoutMillis) { this@awaitUntil.await() }?.let { true } ?: false

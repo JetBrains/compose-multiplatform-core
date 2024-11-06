@@ -26,27 +26,35 @@ import androidx.build.PlatformIdentifier
 
 plugins {
     id("AndroidXPlugin")
-    id("com.android.library")
 }
 
-
 androidXMultiplatform {
-    android()
+    androidLibrary {
+        namespace = "androidx.graphics.shapes"
+        withAndroidTestOnDeviceBuilder {
+            it.compilationName = "instrumentedTest"
+            it.defaultSourceSetName = "androidInstrumentedTest"
+            it.sourceSetTreeName = "test"
+        }
+        withAndroidTestOnJvmBuilder {
+            it.defaultSourceSetName = "androidUnitTest"
+        }
+    }
     desktop()
+    linux()
+    ios()
+    watchos()
+    tvos()
+    mac()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
     sourceSets {
-        configureEach {
-            languageSettings.optIn("kotlin.RequiresOptIn")
-            languageSettings.optIn("kotlin.contracts.ExperimentalContracts")
-        }
-
         commonMain {
             dependencies {
-                implementation(libs.kotlinStdlibCommon)
-                implementation("androidx.collection:collection:1.4.0")
-                implementation("androidx.annotation:annotation:1.1.0")
+                implementation(libs.kotlinStdlib)
+                implementation("androidx.collection:collection:1.4.2")
+                implementation("androidx.annotation:annotation:1.8.1")
             }
         }
 
@@ -61,46 +69,24 @@ androidXMultiplatform {
             }
         }
 
-        skikoMain {
-            dependsOn(commonMain)
-            dependencies {
-            }
-        }
-
         androidMain {
             dependsOn(jvmMain)
             dependencies {
                 implementation("androidx.core:core-ktx:1.10.0")
-                implementation(project(":annotation:annotation-experimental"))
+                implementation("androidx.annotation:annotation-experimental:1.4.1")
             }
         }
 
         desktopMain {
-            dependsOn(skikoMain)
             dependsOn(jvmMain)
-            dependencies {
-                implementation(libs.kotlinStdlib)
-            }
         }
 
-        jvmTest {
-            dependsOn(commonTest)
-            dependencies {
-            }
-        }
-
-        androidUnitTest {
-            dependsOn(jvmTest)
-            dependencies {
-                implementation(libs.testRules)
-                implementation(libs.testRunner)
-                implementation(libs.junit)
-                implementation(libs.truth)
-            }
+        nativeMain {
+            dependsOn(commonMain)
         }
 
         androidInstrumentedTest {
-            dependsOn(jvmTest)
+            dependsOn(commonTest)
             dependencies {
                 implementation(libs.testRules)
                 implementation(libs.testRunner)
@@ -111,23 +97,18 @@ androidXMultiplatform {
             }
         }
 
-        desktopTest {
-            dependsOn(jvmTest)
-            dependencies {
-                implementation(libs.truth)
-                implementation(libs.junit)
-                implementation(libs.skikoCurrentOs)
+        targets.configureEach { target ->
+            if (target.platformType == org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType.native) {
+                target.compilations["main"].defaultSourceSet {
+                    dependsOn(nativeMain)
+                }
             }
         }
     }
+
+    enableBinaryCompatibilityValidator = false
 }
 
-android {
-    defaultConfig {
-        multiDexEnabled = true
-    }
-    namespace "androidx.graphics.shapes"
-}
 
 androidx {
     name = "Graphics Shapes"
@@ -135,5 +116,6 @@ androidx {
     mavenVersion = LibraryVersions.GRAPHICS_SHAPES
     inceptionYear = "2022"
     description = "create and render rounded polygonal shapes"
-    metalavaK2UastEnabled = true
+    legacyDisableKotlinStrictApiMode = true
+    metalavaK2UastEnabled = false
 }

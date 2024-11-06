@@ -28,6 +28,7 @@ import static com.google.common.truth.Truth.assertThat;
 
 import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.verify;
 import static org.robolectric.Shadows.shadowOf;
 
@@ -72,6 +73,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
+import org.mockito.stubbing.Answer;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -83,6 +85,11 @@ import java.util.List;
 
 @RunWith(AndroidJUnit4.class)
 public class Int32NodesTest {
+    private static final PlatformDataValues STEPS_70 =
+            PlatformDataValues.of(DAILY_STEPS, DynamicDataBuilders.DynamicDataValue.fromInt(70));
+    private static final PlatformDataValues STEPS_80 =
+            PlatformDataValues.of(DAILY_STEPS, DynamicDataBuilders.DynamicDataValue.fromInt(80));
+
     @Rule public final MockitoRule mockito = MockitoJUnit.rule();
 
     @Mock private DynamicTypeValueReceiverWithPreUpdate<Integer> mMockValueReceiver;
@@ -347,17 +354,43 @@ public class Int32NodesTest {
         verify(mMockDataProvider).setReceiver(any(), receiverCaptor.capture());
 
         PlatformDataReceiver receiver = receiverCaptor.getValue();
-        receiver.onData(
-                PlatformDataValues.of(
-                        DAILY_STEPS, DynamicDataBuilders.DynamicDataValue.fromInt(70)));
-        assertThat(results).hasSize(1);
+        receiver.onData(STEPS_70);
         assertThat(results).containsExactly(70);
 
-        receiver.onData(
-                PlatformDataValues.of(
-                        DAILY_STEPS, DynamicDataBuilders.DynamicDataValue.fromInt(80)));
-        assertThat(results).hasSize(2);
-        assertThat(results).containsExactly(70, 80);
+        receiver.onData(STEPS_80);
+        assertThat(results).containsExactly(70, 80).inOrder();
+    }
+
+    @Test
+    public void stateInt32Source_init_callsOnDataOnlyOnce() {
+        doAnswer(
+                        (Answer<Void>)
+                                invocation -> {
+                                    ((PlatformDataReceiver) invocation.getArgument(1))
+                                            .onData(STEPS_70);
+                                    return null;
+                                })
+                .when(mMockDataProvider)
+                .setReceiver(any(), any());
+        PlatformDataStore platformDataStore =
+                new PlatformDataStore(
+                        Collections.singletonMap(
+                                PlatformHealthSources.Keys.DAILY_STEPS, mMockDataProvider));
+        StateInt32Source dailyStepsSource =
+                StateInt32Source.newBuilder()
+                        .setSourceKey(PlatformHealthSources.Keys.DAILY_STEPS.getKey())
+                        .setSourceNamespace(PlatformHealthSources.Keys.DAILY_STEPS.getNamespace())
+                        .build();
+        List<Integer> results = new ArrayList<>();
+        AddToListCallback<Integer> addToListCallback = new AddToListCallback<>(results);
+        StateInt32SourceNode dailyStepsSourceNode =
+                new StateInt32SourceNode(platformDataStore, dailyStepsSource, addToListCallback);
+
+        dailyStepsSourceNode.preInit();
+        dailyStepsSourceNode.init();
+
+        assertThat(results).containsExactly(70);
+        assertThat(addToListCallback.isPreUpdateAndUpdateInSync()).isTrue();
     }
 
     @Test
@@ -373,8 +406,7 @@ public class Int32NodesTest {
                         .build();
         AddToListCallback<Integer> addToListCallback = new AddToListCallback<>(results);
         AnimatableFixedInt32Node node =
-                new AnimatableFixedInt32Node(
-                        protoNode, addToListCallback, quotaManager);
+                new AnimatableFixedInt32Node(protoNode, addToListCallback, quotaManager);
         node.setVisibility(true);
 
         node.preInit();
@@ -400,8 +432,7 @@ public class Int32NodesTest {
                         .build();
         AddToListCallback<Integer> addToListCallback = new AddToListCallback<>(results);
         AnimatableFixedInt32Node node =
-                new AnimatableFixedInt32Node(
-                        protoNode, addToListCallback, quotaManager);
+                new AnimatableFixedInt32Node(protoNode, addToListCallback, quotaManager);
         node.setVisibility(false);
 
         node.preInit();
@@ -455,9 +486,7 @@ public class Int32NodesTest {
         AddToListCallback<Integer> addToListCallback = new AddToListCallback<>(results);
         DynamicAnimatedInt32Node int32Node =
                 new DynamicAnimatedInt32Node(
-                        addToListCallback,
-                        AnimationSpec.getDefaultInstance(),
-                        quotaManager);
+                        addToListCallback, AnimationSpec.getDefaultInstance(), quotaManager);
         int32Node.setVisibility(false);
         StateInt32SourceNode stateNode =
                 new StateInt32SourceNode(
@@ -478,7 +507,6 @@ public class Int32NodesTest {
         shadowOf(Looper.getMainLooper()).idle();
 
         // Only contains last value.
-        assertThat(results).hasSize(1);
         assertThat(results).containsExactly(value2);
 
         int32Node.setVisibility(true);
@@ -534,8 +562,7 @@ public class Int32NodesTest {
                 PlatformDataValues.of(
                         HEART_RATE_BPM, DynamicDataBuilders.DynamicDataValue.fromFloat(80.0f)));
 
-        assertThat(results).hasSize(2);
-        assertThat(results).containsExactly(70, 80);
+        assertThat(results).containsExactly(70, 80).inOrder();
     }
 
     @Test
@@ -561,19 +588,13 @@ public class Int32NodesTest {
         verify(mMockDataProvider).setReceiver(any(), receiverCaptor.capture());
 
         PlatformDataReceiver receiver = receiverCaptor.getValue();
-        receiver.onData(
-                PlatformDataValues.of(
-                        DAILY_STEPS, DynamicDataBuilders.DynamicDataValue.fromInt(70)));
+        receiver.onData(STEPS_70);
 
-        assertThat(results).hasSize(1);
         assertThat(results).containsExactly(70);
 
-        receiver.onData(
-                PlatformDataValues.of(
-                        DAILY_STEPS, DynamicDataBuilders.DynamicDataValue.fromInt(80)));
+        receiver.onData(STEPS_80);
 
-        assertThat(results).hasSize(2);
-        assertThat(results).containsExactly(70, 80);
+        assertThat(results).containsExactly(70, 80).inOrder();
     }
 
     @Test
@@ -683,10 +704,10 @@ public class Int32NodesTest {
         ArithmeticInt32Node node = new ArithmeticInt32Node(protoNode, receiver);
 
         FixedInt32 lhsProtoNode = FixedInt32.newBuilder().setValue(lhs).build();
-        FixedInt32Node lhsNode = new FixedInt32Node(lhsProtoNode, node.getLhsUpstreamCallback());
+        FixedInt32Node lhsNode = new FixedInt32Node(lhsProtoNode, node.getLhsIncomingCallback());
 
         FixedInt32 rhsProtoNode = FixedInt32.newBuilder().setValue(rhs).build();
-        FixedInt32Node rhsNode = new FixedInt32Node(rhsProtoNode, node.getRhsUpstreamCallback());
+        FixedInt32Node rhsNode = new FixedInt32Node(rhsProtoNode, node.getRhsIncomingCallback());
         lhsNode.preInit();
         rhsNode.preInit();
 

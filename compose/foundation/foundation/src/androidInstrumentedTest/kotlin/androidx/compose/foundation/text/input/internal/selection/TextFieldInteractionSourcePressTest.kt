@@ -16,7 +16,6 @@
 
 package androidx.compose.foundation.text.input.internal.selection
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.interaction.Interaction
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
@@ -49,12 +48,10 @@ import kotlinx.coroutines.launch
 import org.junit.Rule
 import org.junit.Test
 
-@OptIn(ExperimentalFoundationApi::class)
 @LargeTest
 class TextFieldInteractionSourcePressTest : FocusedWindowTest {
 
-    @get:Rule
-    val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule()
 
     private val TAG = "BasicTextField"
 
@@ -144,9 +141,7 @@ class TextFieldInteractionSourcePressTest : FocusedWindowTest {
                 modifier = Modifier.testTag(TAG),
                 textStyle = defaultTextStyle,
                 interactionSource = interactionSource,
-                decorator = {
-                    Box(modifier = Modifier.size(100.dp))
-                }
+                decorator = { Box(modifier = Modifier.size(100.dp)) }
             )
         }
 
@@ -228,16 +223,15 @@ class TextFieldInteractionSourcePressTest : FocusedWindowTest {
             }
         }
 
-        rule.onNodeWithTag(TAG).performTouchInput {
-            doubleClick()
-        }
+        rule.onNodeWithTag(TAG).performTouchInput { doubleClick() }
 
         rule.runOnIdle {
             assertThat(interactions.size).isEqualTo(4)
             assertThat(interactions[0]).isInstanceOf(PressInteraction.Press::class.java)
             assertThat(interactions[1]).isInstanceOf(PressInteraction.Release::class.java)
             assertThat(interactions[2]).isInstanceOf(PressInteraction.Press::class.java)
-            assertThat(interactions[3]).isInstanceOf(PressInteraction.Release::class.java)
+            // second tap is consumed to select the tapped word, so this will be cancelled.
+            assertThat(interactions[3]).isInstanceOf(PressInteraction.Cancel::class.java)
         }
     }
 }

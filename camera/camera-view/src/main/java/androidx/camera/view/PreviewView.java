@@ -55,7 +55,6 @@ import androidx.annotation.MainThread;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.OptIn;
-import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.UiThread;
 import androidx.annotation.VisibleForTesting;
@@ -78,13 +77,13 @@ import androidx.camera.core.impl.CameraInfoInternal;
 import androidx.camera.core.impl.CameraInternal;
 import androidx.camera.core.impl.ImageOutputConfig;
 import androidx.camera.core.impl.utils.Threads;
+import androidx.camera.view.impl.ZoomGestureDetector;
 import androidx.camera.view.internal.ScreenFlashUiInfo;
 import androidx.camera.view.internal.compat.quirk.DeviceQuirks;
 import androidx.camera.view.internal.compat.quirk.SurfaceViewNotCroppedByParentQuirk;
 import androidx.camera.view.internal.compat.quirk.SurfaceViewStretchedQuirk;
 import androidx.camera.view.transform.CoordinateTransform;
 import androidx.camera.view.transform.OutputTransform;
-import androidx.camera.viewfinder.core.ZoomGestureDetector;
 import androidx.core.content.ContextCompat;
 import androidx.core.view.ViewCompat;
 import androidx.fragment.app.Fragment;
@@ -121,7 +120,6 @@ import java.util.concurrent.atomic.AtomicReference;
  *
  * @see <a href="https://developer.android.com/training/transitions#Limitations">Limitations</a>
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public final class PreviewView extends FrameLayout {
 
     private static final String TAG = "PreviewView";
@@ -215,6 +213,10 @@ public final class PreviewView extends FrameLayout {
             Logger.d(TAG, "Surface requested by Preview.");
             CameraInternal camera = surfaceRequest.getCamera();
             mCameraInfoInternal = camera.getCameraInfoInternal();
+            // PreviewViewMeteringPointFactory will convert the coordinates from previewView (x,y)
+            // to sensor coordinates and then to normalized coordinates. Thus sensor rect is needed.
+            mPreviewViewMeteringPointFactory.setSensorRect(
+                    camera.getCameraControlInternal().getSensorRect());
             surfaceRequest.setTransformationInfoListener(
                     getMainExecutor(getContext()),
                     transformationInfo -> {
@@ -326,10 +328,12 @@ public final class PreviewView extends FrameLayout {
         }
 
         mZoomGestureDetector = new ZoomGestureDetector(context,
-                (type, detector) -> {
-                    if (type == ZoomGestureDetector.ZOOM_GESTURE_MOVE
+                zoomEvent -> {
+                    if (zoomEvent instanceof ZoomGestureDetector.ZoomEvent.Move
                             && mCameraController != null) {
-                        mCameraController.onPinchToZoom(detector.getScaleFactor());
+                        mCameraController.onPinchToZoom(
+                                ((ZoomGestureDetector.ZoomEvent.Move) zoomEvent)
+                                        .getIncrementalScaleFactor());
                     }
                     return true;
                 });
@@ -782,7 +786,6 @@ public final class PreviewView extends FrameLayout {
      * {@link PreviewView} to decide what is the best internal implementation given the device
      * capabilities and user configurations.
      */
-    @RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
     public enum ImplementationMode {
 
         /**
@@ -838,7 +841,6 @@ public final class PreviewView extends FrameLayout {
     }
 
     /** Options for scaling the preview vis-à-vis its container {@link PreviewView}. */
-    @RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
     public enum ScaleType {
         /**
          * Scale the preview, maintaining the source aspect ratio, so it fills the entire
@@ -966,7 +968,7 @@ public final class PreviewView extends FrameLayout {
         }
         mCameraController = cameraController;
         attachToControllerIfReady(/*shouldFailSilently=*/false);
-        setScreenFlashUiInfo(getScreenFlash());
+        setScreenFlashUiInfo(getScreenFlashInternal());
     }
 
     /**
@@ -1143,7 +1145,16 @@ public final class PreviewView extends FrameLayout {
     public void setScreenFlashWindow(@Nullable Window screenFlashWindow) {
         checkMainThread();
         mScreenFlashView.setScreenFlashWindow(screenFlashWindow);
-        setScreenFlashUiInfo(getScreenFlash());
+        setScreenFlashUiInfo(getScreenFlashInternal());
+    }
+
+
+    // Workaround to expose getScreenFlash as experimental, so that other APIs already using it also
+    // don't need to be annotated with experimental (e.g. PreviewView.setController)
+    @UiThread
+    @Nullable
+    private ImageCapture.ScreenFlash getScreenFlashInternal() {
+        return mScreenFlashView.getScreenFlash();
     }
 
     /**
@@ -1151,25 +1162,37 @@ public final class PreviewView extends FrameLayout {
      * on the {@link Window} instance set via {@link #setScreenFlashWindow(Window)}.
      *
      * <p> This API uses an internally managed {@link ScreenFlashView} to provide the
-     * {@link ImageCapture.ScreenFlash} implementation.
+     * {@link ImageCapture.ScreenFlash} implementation which can be passed to the
+     * {@link ImageCapture#setScreenFlash(ImageCapture.ScreenFlash)} API. The following example
+     * shows the API usage.
+     * <pre>{@code
+     * mPreviewView.setScreenFlashWindow(activity.getWindow());
+     * mImageCapture.setScreenFlash(mPreviewView.getScreenFlash());
+     * mImageCapture.setFlashMode(ImageCapture.FLASH_MODE_SCREEN);
+     * mImageCapture.takePhoto(mCameraExecutor, mOnImageSavedCallback);
+     * }</pre>
      *
      * @return An {@link ImageCapture.ScreenFlash} implementation provided by
-     * {@link ScreenFlashView#getScreenFlash()}.
+     * {@link ScreenFlashView#getScreenFlash()} which can be null if a non-null {@code Window}
+     * instance hasn't been set.
+     *
+     * @see ScreenFlashView#getScreenFlash()
+     * @see ImageCapture#FLASH_MODE_SCREEN
      */
     @UiThread
     @Nullable
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public ImageCapture.ScreenFlash getScreenFlash() {
-        return mScreenFlashView.getScreenFlash();
+        return getScreenFlashInternal();
     }
 
     /**
      * Sets the color of the top overlay view during screen flash.
      *
      * @param color The color value of the top overlay.
+     *
      * @see #getScreenFlash()
+     * @see ImageCapture#FLASH_MODE_SCREEN
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public void setScreenFlashOverlayColor(@ColorInt int color) {
         mScreenFlashView.setBackgroundColor(color);
     }

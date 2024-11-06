@@ -17,10 +17,16 @@ plugins {
 
 androidXMultiplatform {
     androidNative()
-    jvm()
-    mac()
-    linux()
     ios()
+    js()
+    jvm()
+    linux()
+    mac()
+    mingwX64()
+    tvos()
+    wasmJs()
+    watchos()
+    watchosDeviceArm64()
 
     defaultPlatform(PlatformIdentifier.JVM)
 
@@ -32,17 +38,24 @@ androidXMultiplatform {
         }
 
         nonJvmMain {
-            dependsOn commonMain
+            dependsOn(commonMain)
         }
 
-        targets.all { target ->
+        wasmJsMain {
+            dependsOn(nonJvmMain)
+        }
+
+        jsMain {
+            dependsOn(nonJvmMain)
+        }
+
+        targets.configureEach { target ->
             if (target.platformType !in [KotlinPlatformType.jvm, KotlinPlatformType.common]) {
                 target.compilations["main"].defaultSourceSet {
                     dependsOn(nonJvmMain)
                 }
             }
         }
-
 
         // Workaround for https://youtrack.jetbrains.com/issue/KT-51763
         // Make sure commonization runs before any compilation task.
@@ -78,7 +91,7 @@ androidx {
     name = "Annotation"
     type = LibraryType.PUBLISHED_LIBRARY
     mavenVersion = LibraryVersions.ANNOTATION
-    kotlinTarget = KotlinTarget.KOTLIN_1_7
+    kotlinTarget = KotlinTarget.KOTLIN_1_9
     inceptionYear = "2013"
     description = "Provides source annotations for tooling and readability."
 }

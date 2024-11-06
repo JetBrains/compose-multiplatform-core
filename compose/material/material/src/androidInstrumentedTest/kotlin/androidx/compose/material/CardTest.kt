@@ -32,7 +32,6 @@ import androidx.compose.testutils.assertShape
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.test.SemanticsMatcher
@@ -53,7 +52,6 @@ import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import org.junit.Rule
 import org.junit.Test
@@ -63,8 +61,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class CardTest {
 
-    @get:Rule
-    val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule()
 
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
@@ -79,9 +76,8 @@ class CardTest {
                     cardColor = MaterialTheme.colors.surface
                     CompositionLocalProvider(LocalShapes provides Shapes(medium = shape)) {
                         Card(
-                            modifier = Modifier
-                                .semantics(mergeDescendants = true) {}
-                                .testTag("card"),
+                            modifier =
+                                Modifier.semantics(mergeDescendants = true) {}.testTag("card"),
                             elevation = 0.dp
                         ) {
                             Box(Modifier.size(50.dp, 50.dp))
@@ -91,14 +87,15 @@ class CardTest {
             }
         }
 
-        rule.onNodeWithTag("card")
+        rule
+            .onNodeWithTag("card")
             .captureToImage()
             .assertShape(
                 density = rule.density,
                 shape = shape,
                 shapeColor = cardColor,
                 backgroundColor = background,
-                shapeOverlapPixelCount = with(rule.density) { 1.dp.toPx() }
+                antiAliasingGap = with(rule.density) { 1.dp.toPx() }
             )
     }
 
@@ -107,15 +104,13 @@ class CardTest {
     fun clickableOverload_semantics() {
         val count = mutableStateOf(0)
         rule.setMaterialContent {
-            Card(
-                onClick = { count.value += 1 },
-                modifier = Modifier.testTag("card")
-            ) {
+            Card(onClick = { count.value += 1 }, modifier = Modifier.testTag("card")) {
                 Text("${count.value}")
                 Spacer(Modifier.size(30.dp))
             }
         }
-        rule.onNodeWithTag("card")
+        rule
+            .onNodeWithTag("card")
             .assertHasClickAction()
             .assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.Role))
             .assertIsEnabled()
@@ -130,20 +125,14 @@ class CardTest {
     fun clickableOverload_clickAction() {
         val count = mutableStateOf(0f)
         rule.setMaterialContent {
-            Card(
-                modifier = Modifier.testTag("card"),
-                onClick = { count.value += 1 }
-            ) {
+            Card(modifier = Modifier.testTag("card"), onClick = { count.value += 1 }) {
                 Spacer(Modifier.size(30.dp))
             }
         }
-        rule.onNodeWithTag("card")
-            .performClick()
+        rule.onNodeWithTag("card").performClick()
         Truth.assertThat(count.value).isEqualTo(1)
 
-        rule.onNodeWithTag("card")
-            .performClick()
-            .performClick()
+        rule.onNodeWithTag("card").performClick().performClick()
         Truth.assertThat(count.value).isEqualTo(3)
     }
 
@@ -161,19 +150,12 @@ class CardTest {
                 Spacer(Modifier.size(30.dp))
             }
         }
-        rule.onNodeWithTag("card")
-            .assertIsEnabled()
-            .performClick()
+        rule.onNodeWithTag("card").assertIsEnabled().performClick()
 
         Truth.assertThat(count.value).isEqualTo(1)
-        rule.runOnIdle {
-            enabled.value = false
-        }
+        rule.runOnIdle { enabled.value = false }
 
-        rule.onNodeWithTag("card")
-            .assertIsNotEnabled()
-            .performClick()
-            .performClick()
+        rule.onNodeWithTag("card").assertIsNotEnabled().performClick().performClick()
         Truth.assertThat(count.value).isEqualTo(1)
     }
 
@@ -197,24 +179,18 @@ class CardTest {
 
         val interactions = mutableListOf<Interaction>()
 
-        scope!!.launch {
-            interactionSource.interactions.collect { interactions.add(it) }
-        }
+        scope!!.launch { interactionSource.interactions.collect { interactions.add(it) } }
 
-        rule.runOnIdle {
-            Truth.assertThat(interactions).isEmpty()
-        }
+        rule.runOnIdle { Truth.assertThat(interactions).isEmpty() }
 
-        rule.onNodeWithTag("card")
-            .performTouchInput { down(center) }
+        rule.onNodeWithTag("card").performTouchInput { down(center) }
 
         rule.runOnIdle {
             Truth.assertThat(interactions).hasSize(1)
             Truth.assertThat(interactions.first()).isInstanceOf(PressInteraction.Press::class.java)
         }
 
-        rule.onNodeWithTag("card")
-            .performTouchInput { up() }
+        rule.onNodeWithTag("card").performTouchInput { up() }
 
         rule.runOnIdle {
             Truth.assertThat(interactions).hasSize(2)
@@ -239,9 +215,7 @@ class CardTest {
                 Card(Modifier.fillMaxSize()) {}
             }
         }
-        rule.onNodeWithTag("clickable")
-            .assertHasClickAction()
-            .performClick()
+        rule.onNodeWithTag("clickable").assertHasClickAction().performClick()
         // still 0
         Truth.assertThat(state.value).isEqualTo(0)
     }

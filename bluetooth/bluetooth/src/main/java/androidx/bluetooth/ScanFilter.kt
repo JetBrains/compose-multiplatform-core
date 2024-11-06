@@ -19,7 +19,6 @@ package androidx.bluetooth
 import android.bluetooth.le.ScanFilter as FwkScanFilter
 import android.os.Build
 import android.os.ParcelUuid
-import androidx.annotation.DoNotInline
 import androidx.annotation.RequiresApi
 import java.util.UUID
 
@@ -57,8 +56,9 @@ class ScanFilter(
 
     /**
      * The partial filter on service uuid. `null` if filter is not set.
-     * @throws IllegalArgumentException if this bit mask [serviceUuidMask] is set but
-     * [serviceUuid] is null
+     *
+     * @throws IllegalArgumentException if this bit mask [serviceUuidMask] is set but [serviceUuid]
+     *   is null
      */
     val serviceUuidMask: UUID? = null,
 
@@ -71,11 +71,11 @@ class ScanFilter(
 
     /**
      * The partial filter on service Solicitation uuid. This bit mask is for
-     * [serviceSolicitationUuid]. Set any bit in the mask to 1 to indicate a match is needed
-     * for the bit in [serviceSolicitationUuid], and 0 to ignore that bit.
-     * `null` if filter is not set.
+     * [serviceSolicitationUuid]. Set any bit in the mask to 1 to indicate a match is needed for the
+     * bit in [serviceSolicitationUuid], and 0 to ignore that bit. `null` if filter is not set.
+     *
      * @throws IllegalArgumentException if this bit mask [serviceSolicitationUuidMask] is set but
-     * [serviceSolicitationUuid] is null
+     *   [serviceSolicitationUuid] is null
      *
      * Please note that this will be ignored on versions before [android.os.Build.VERSION_CODES.Q].
      */
@@ -89,7 +89,6 @@ class ScanFilter(
     @RequiresApi(29)
     private object ScanFilterApi29Impl {
         @JvmStatic
-        @DoNotInline
         fun setServiceSolicitationUuid(
             builder: FwkScanFilter.Builder,
             serviceSolicitationUuid: UUID,
@@ -150,56 +149,47 @@ class ScanFilter(
         }
     }
 
-    internal val fwkScanFilter: FwkScanFilter by lazy(LazyThreadSafetyMode.PUBLICATION) {
-        FwkScanFilter.Builder().run {
-            deviceAddress?.let { setDeviceAddress(it.address) }
+    internal val fwkScanFilter: FwkScanFilter by
+        lazy(LazyThreadSafetyMode.PUBLICATION) {
+            FwkScanFilter.Builder().run {
+                deviceAddress?.let { setDeviceAddress(it.address) }
 
-            deviceName?.let { setDeviceName(it) }
+                deviceName?.let { setDeviceName(it) }
 
-            if (manufacturerId != MANUFACTURER_FILTER_NONE && manufacturerData != null) {
-                if (Build.VERSION.SDK_INT >= 33) {
-                    setManufacturerData(
-                        manufacturerId,
-                        manufacturerData,
-                        manufacturerDataMask
-                    )
-                } else {
-                    setManufacturerData(manufacturerId, manufacturerData)
+                if (manufacturerId != MANUFACTURER_FILTER_NONE && manufacturerData != null) {
+                    if (Build.VERSION.SDK_INT >= 33) {
+                        setManufacturerData(manufacturerId, manufacturerData, manufacturerDataMask)
+                    } else {
+                        setManufacturerData(manufacturerId, manufacturerData)
+                    }
                 }
-            }
 
-            if (serviceDataUuid != null) {
-                if (Build.VERSION.SDK_INT >= 33) {
-                    setServiceData(
-                        ParcelUuid(
-                            serviceDataUuid
-                        ),
-                        serviceData,
-                        serviceDataMask
-                    )
-                } else {
-                    setServiceData(ParcelUuid(serviceDataUuid), serviceData)
+                if (serviceDataUuid != null) {
+                    if (Build.VERSION.SDK_INT >= 33) {
+                        setServiceData(ParcelUuid(serviceDataUuid), serviceData, serviceDataMask)
+                    } else {
+                        setServiceData(ParcelUuid(serviceDataUuid), serviceData)
+                    }
                 }
-            }
 
-            serviceUuid?.let {
-                if (Build.VERSION.SDK_INT >= 33) {
-                    setServiceUuid(ParcelUuid(it), ParcelUuid(serviceUuidMask))
-                } else {
-                    setServiceUuid(ParcelUuid(it))
+                serviceUuid?.let {
+                    if (Build.VERSION.SDK_INT >= 33) {
+                        setServiceUuid(ParcelUuid(it), ParcelUuid(serviceUuidMask))
+                    } else {
+                        setServiceUuid(ParcelUuid(it))
+                    }
                 }
-            }
 
-            serviceSolicitationUuid?.let {
-                if (Build.VERSION.SDK_INT >= 29) {
-                    ScanFilterApi29Impl.setServiceSolicitationUuid(
-                        this,
-                        it,
-                        serviceSolicitationUuidMask
-                    )
+                serviceSolicitationUuid?.let {
+                    if (Build.VERSION.SDK_INT >= 29) {
+                        ScanFilterApi29Impl.setServiceSolicitationUuid(
+                            this,
+                            it,
+                            serviceSolicitationUuidMask
+                        )
+                    }
                 }
+                build()
             }
-            build()
         }
-    }
 }

@@ -10,20 +10,21 @@ dependencies {
     compileOnly(findGradleKotlinDsl())
 
     // Android Gradle Plugin APIs used by Stable AIDL
-    implementation(libs.androidGradlePluginApi)
+    api(libs.androidGradlePluginApi)
 
     // Plugins we use and configure
-    implementation(libs.androidGradlePluginz)
+    api(libs.kotlinGradlePlugin)
+    api(libs.kotlinCompilerEmbeddable) // for clang compiler
+    implementation(libs.androidGradlePlugin)
     implementation(libs.androidToolsCommon) // for com.android.Version.ANDROID_GRADLE_PLUGIN_VERSION
     implementation(libs.androidToolsRepository) // com.android.repository for Stable AIDL plugin
     implementation(libs.androidToolsSdkCommon) // com.android.ide.common for Stable AIDL plugin
-    implementation(libs.kotlinGradlePluginz)
     implementation(libs.spdxGradlePluginz)
     implementation(libs.androidKotlinMultiplatform)
-    implementation(libs.kotlinCompilerEmbeddable) // for clang compiler
+    implementation(libs.binaryCompatibilityValidator)
 
     // For Room Gradle Plugin
-    implementation(libs.kspGradlePluginz)
+    implementation(libs.kspGradlePlugin)
 
     // Force jsoup upgrade on spdx (b/309773103)
     implementation(libs.jsoup)
@@ -38,24 +39,23 @@ dependencies {
     }
     implementation(libs.xerces)
 
-    implementation(libs.ktfmt)
-    implementation(libs.kotlinCoroutinesCore)
     implementation(libs.shadow) // used by BundleInsideHelper.kt
-    implementation(libs.apacheAnt) // used in AarManifestTransformerTask.kt for unziping
+    api(libs.apacheAnt) // used in AarManifestTransformerTask.kt for unziping
     implementation(libs.toml)
     implementation(libs.apacheCommonIo) // used in CheckApiEquivalenceTask.kt
-    implementation(libs.dexMemberList) // used in ReportLibraryMetricsTask.kt
 
     implementation(libs.protobufGradlePlugin) // needed to compile inspection plugin
-    implementation(libs.kotlinPoet) // needed to compile material-icon-generator
-    implementation(libs.xmlpull) // needed to compile material-icon-generator
+    implementation(libs.kotlinPoet) // needed to compile glance-layout-generator
 
-    implementation(libs.protobuf) // needed to compile baseline-profile gradle plugins
+    implementation("com.google.protobuf:protobuf-java:3.22.3") // needed to compile baseline-profile gradle plugins
     implementation(libs.agpTestingPlatformCoreProto) // needed to compile baseline-profile gradle plugins
 
     // dependencies that aren't used by buildSrc directly but that we resolve here so that the
     // root project doesn't need to re-resolve them and their dependencies on every build
-    runtimeOnly(libs.hiltAndroidGradlePluginz)
-    runtimeOnly(libs.javapoet) // for hiltAndroidGradlePluginz to workaround https://github.com/google/dagger/issues/3068
+    runtimeOnly(libs.hiltAndroidGradlePlugin)
+    runtimeOnly(libs.javapoet) // for hiltAndroidGradlePlugin to workaround https://github.com/google/dagger/issues/3068
     runtimeOnly(libs.wireGradlePluginz)
+
+    // Plugin for analyzing dependencies
+    implementation(libs.dependency.analysis.gradle.plugin)
 }

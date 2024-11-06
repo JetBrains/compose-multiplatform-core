@@ -29,6 +29,7 @@ import androidx.compose.ui.test.withKeyDown
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -38,14 +39,14 @@ import org.junit.runner.RunWith
 @OptIn(ExperimentalTestApi::class)
 class TextFieldUndoTest {
 
-    @get:Rule
-    val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule()
 
     @Test
     fun undo_redo_withCtrlShiftZ() {
         undoRedoTest(redoKeys = listOf(Key.CtrlLeft, Key.ShiftLeft, Key.Z))
     }
 
+    @Ignore("b/336546377")
     @Test
     fun undo_redo_withCtrlY() {
         undoRedoTest(redoKeys = listOf(Key.CtrlLeft, Key.Y))
@@ -54,10 +55,7 @@ class TextFieldUndoTest {
     private fun undoRedoTest(redoKeys: List<Key>) {
         val state = mutableStateOf("hi")
         rule.setContent {
-            BasicTextField(
-                value = state.value,
-                onValueChange = { state.value = it }
-            )
+            BasicTextField(value = state.value, onValueChange = { state.value = it })
         }
 
         state.value = "hello"
@@ -65,16 +63,10 @@ class TextFieldUndoTest {
         // undo command
         with(rule.onNode(hasSetTextAction())) {
             requestFocus()
-            performKeyInput {
-                withKeyDown(Key.CtrlLeft) {
-                    pressKey(Key.Z)
-                }
-            }
+            performKeyInput { withKeyDown(Key.CtrlLeft) { pressKey(Key.Z) } }
         }
 
-        rule.runOnIdle {
-            assertThat(state.value).isEqualTo("hi")
-        }
+        rule.runOnIdle { assertThat(state.value).isEqualTo("hi") }
 
         // redo command
         rule.onNode(hasSetTextAction()).performKeyInput {
@@ -83,8 +75,6 @@ class TextFieldUndoTest {
             redoKeys.forEach { keyUp(it) }
         }
 
-        rule.runOnIdle {
-            assertThat(state.value).isEqualTo("hello")
-        }
+        rule.runOnIdle { assertThat(state.value).isEqualTo("hello") }
     }
 }

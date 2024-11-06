@@ -18,14 +18,15 @@ package androidx.room.processor
 
 import androidx.room.compiler.processing.util.Source
 import androidx.room.compiler.processing.util.XTestInvocation
-import androidx.room.compiler.processing.util.runProcessorTest
+import androidx.room.runProcessorTestWithK1
 import androidx.room.testing.context
 import androidx.room.vo.FtsEntity
 import java.io.File
 
 abstract class BaseFtsEntityParserTest {
     companion object {
-        const val ENTITY_PREFIX = """
+        const val ENTITY_PREFIX =
+            """
             package foo.bar;
             import androidx.room.*;
             import androidx.annotation.NonNull;
@@ -47,37 +48,38 @@ abstract class BaseFtsEntityParserTest {
         handler: (FtsEntity, XTestInvocation) -> Unit
     ) {
         val ftsVersion = getFtsVersion().toString()
-        val entityAttributesReplacement = if (entityAttributes.isEmpty()) {
-            ""
-        } else {
-            "(" + entityAttributes.entries.joinToString(",") { "${it.key} = ${it.value}" } + ")"
-        }
-        val ftsAttributesReplacement = if (ftsAttributes.isEmpty()) {
-            ""
-        } else {
-            "(" + ftsAttributes.entries.joinToString(",") { "${it.key} = ${it.value}" } + ")"
-        }
-        val baseClassReplacement = if (baseClass == "") {
-            ""
-        } else {
-            " extends $baseClass"
-        }
-        val entitySource = Source.java(
-            "foo.bar.MyEntity",
-            ENTITY_PREFIX.format(
-                entityAttributesReplacement, ftsVersion,
-                ftsAttributesReplacement, baseClassReplacement
-            ) + input + ENTITY_SUFFIX
-        )
-        runProcessorTest(
-            sources = sources + entitySource,
-            classpath = classpath
-        ) { invocation ->
-            val entity = invocation.processingEnv.requireTypeElement("foo.bar.MyEntity")
-            val processor = FtsTableEntityProcessor(
-                invocation.context,
-                entity
+        val entityAttributesReplacement =
+            if (entityAttributes.isEmpty()) {
+                ""
+            } else {
+                "(" + entityAttributes.entries.joinToString(",") { "${it.key} = ${it.value}" } + ")"
+            }
+        val ftsAttributesReplacement =
+            if (ftsAttributes.isEmpty()) {
+                ""
+            } else {
+                "(" + ftsAttributes.entries.joinToString(",") { "${it.key} = ${it.value}" } + ")"
+            }
+        val baseClassReplacement =
+            if (baseClass == "") {
+                ""
+            } else {
+                " extends $baseClass"
+            }
+        val entitySource =
+            Source.java(
+                "foo.bar.MyEntity",
+                ENTITY_PREFIX.format(
+                    entityAttributesReplacement,
+                    ftsVersion,
+                    ftsAttributesReplacement,
+                    baseClassReplacement
+                ) + input + ENTITY_SUFFIX
             )
+        runProcessorTestWithK1(sources = sources + entitySource, classpath = classpath) { invocation
+            ->
+            val entity = invocation.processingEnv.requireTypeElement("foo.bar.MyEntity")
+            val processor = FtsTableEntityProcessor(invocation.context, entity)
             val processedEntity = processor.process()
             handler(processedEntity, invocation)
         }

@@ -13,8 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import androidx.build.Publish
-import androidx.build.RunApiTasks
+import androidx.build.LibraryType
 
 plugins {
     id("AndroidXPlugin")
@@ -25,7 +24,7 @@ plugins {
 dependencies {
     api(project(":camera:camera-core"))
     api(project(":camera:camera-view"))
-    api("androidx.annotation:annotation:1.2.0")
+    api("androidx.annotation:annotation:1.8.1")
     api('com.google.mlkit:vision-interfaces:16.0.0') {
         version {
             prefer '16.0.0'
@@ -45,10 +44,6 @@ dependencies {
 }
 
 android {
-    defaultConfig {
-        multiDexEnabled = true
-    }
-
     lintOptions {
         enable 'CameraXQuirksClassDetector'
     }
@@ -59,11 +54,9 @@ android {
 
 androidx {
     name = "Camera MLKit Vision"
-    publish = Publish.SNAPSHOT_AND_RELEASE
+    type = LibraryType.PUBLISHED_LIBRARY
     inceptionYear = "2022"
-    runApiTasks = new RunApiTasks.Yes()
     description = "MLKit vision components for the Jetpack Camera Library, a library providing a " +
             "seamless integration that enables camera driven computer vision features " +
             "across all of Android."
-    metalavaK2UastEnabled = true
 }

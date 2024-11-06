@@ -23,13 +23,12 @@ import android.hardware.camera2.TotalCaptureResult;
 import android.os.Build;
 import android.view.Surface;
 
-import androidx.annotation.DoNotInline;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.OptIn;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.VisibleForTesting;
-import androidx.camera.camera2.impl.Camera2ImplConfig;
+import androidx.camera.camera2.internal.compat.workaround.TemplateParamsOverride;
 import androidx.camera.camera2.interop.CaptureRequestOptions;
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop;
 import androidx.camera.core.Logger;
@@ -47,7 +46,6 @@ import java.util.Map;
 /**
  * This class is used to build a camera2 {@link CaptureRequest} from a {@link CaptureConfig}
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 class Camera2CaptureRequestBuilder {
     private Camera2CaptureRequestBuilder() {
     }
@@ -79,6 +77,17 @@ class Camera2CaptureRequestBuilder {
         return surfaceList;
     }
 
+    private static void applyTemplateParamsOverrideWorkaround(
+            @NonNull CaptureRequest.Builder builder, int template,
+            @NonNull TemplateParamsOverride templateParamsOverride) {
+        for (Map.Entry<CaptureRequest.Key<?>, Object> entry :
+                templateParamsOverride.getOverrideParams(template).entrySet()) {
+            @SuppressWarnings("unchecked")
+            CaptureRequest.Key<Object> key = (CaptureRequest.Key<Object>) entry.getKey();
+            builder.set(key, entry.getValue());
+        }
+    }
+
     @OptIn(markerClass = ExperimentalCamera2Interop.class)
     private static void applyImplementationOptionToCaptureBuilder(
             CaptureRequest.Builder builder, Config config) {
@@ -101,11 +110,7 @@ class Camera2CaptureRequestBuilder {
     @OptIn(markerClass = ExperimentalCamera2Interop.class)
     private static void applyAeFpsRange(@NonNull CaptureConfig captureConfig,
             @NonNull CaptureRequest.Builder builder) {
-        boolean containsTargetFpsRange = CaptureRequestOptions.Builder.from(
-                captureConfig.getImplementationOptions()).build().containsOption(
-                Camera2ImplConfig.createCaptureRequestOption(
-                        CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE));
-        if (!containsTargetFpsRange && !captureConfig.getExpectedFrameRateRange().equals(
+        if (!captureConfig.getExpectedFrameRateRange().equals(
                 StreamSpec.FRAME_RATE_RANGE_UNSPECIFIED)) {
             builder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE,
                     captureConfig.getExpectedFrameRateRange());
@@ -143,7 +148,7 @@ class Camera2CaptureRequestBuilder {
     public static CaptureRequest build(@NonNull CaptureConfig captureConfig,
             @Nullable CameraDevice device,
             @NonNull Map<DeferrableSurface, Surface> configuredSurfaceMap,
-            boolean isRepeatingRequest)
+            boolean isRepeatingRequest, @NonNull TemplateParamsOverride mTemplateParamsOverride)
             throws CameraAccessException {
         if (device == null) {
             return null;
@@ -176,8 +181,8 @@ class Camera2CaptureRequestBuilder {
             }
         }
 
-        applyImplementationOptionToCaptureBuilder(builder,
-                captureConfig.getImplementationOptions());
+        applyTemplateParamsOverrideWorkaround(builder, captureConfig.getTemplateType(),
+                mTemplateParamsOverride);
 
         applyAeFpsRange(captureConfig, builder);
 
@@ -197,6 +202,12 @@ class Camera2CaptureRequestBuilder {
                             CaptureConfig.OPTION_JPEG_QUALITY).byteValue());
         }
 
+        // This should be the last to be applied due to Camera2Interop values with higher priority
+        // TODO: Properly use option priorities and tokens to ensure priorities are respected, but
+        //  doesn't seem to have any issue due to this right now (still a bit error-prone).
+        applyImplementationOptionToCaptureBuilder(builder,
+                captureConfig.getImplementationOptions());
+
         for (Surface surface : surfaceList) {
             builder.addTarget(surface);
         }
@@ -214,13 +225,19 @@ class Camera2CaptureRequestBuilder {
      */
     @Nullable
     public static CaptureRequest buildWithoutTarget(@NonNull CaptureConfig captureConfig,
-            @Nullable CameraDevice device)
+            @Nullable CameraDevice device, @NonNull TemplateParamsOverride templateParamsOverride)
             throws CameraAccessException {
         if (device == null) {
             return null;
         }
+        Logger.d(TAG, "template type = " + captureConfig.getTemplateType());
         CaptureRequest.Builder builder = device.createCaptureRequest(
                 captureConfig.getTemplateType());
+
+        applyTemplateParamsOverrideWorkaround(builder, captureConfig.getTemplateType(),
+                templateParamsOverride);
+
+        applyAeFpsRange(captureConfig, builder);
 
         applyImplementationOptionToCaptureBuilder(builder,
                 captureConfig.getImplementationOptions());
@@ -237,7 +254,6 @@ class Camera2CaptureRequestBuilder {
             // This class is not instantiable.
         }
 
-        @DoNotInline
         static CaptureRequest.Builder createReprocessCaptureRequest(
                 @NonNull CameraDevice cameraDevice,
                 @NonNull TotalCaptureResult totalCaptureResult)

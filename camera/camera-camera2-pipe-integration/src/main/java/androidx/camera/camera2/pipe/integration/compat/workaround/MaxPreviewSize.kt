@@ -17,16 +17,13 @@
 package androidx.camera.camera2.pipe.integration.compat.workaround
 
 import android.util.Size
-import androidx.annotation.RequiresApi
 import androidx.camera.camera2.pipe.integration.compat.quirk.DeviceQuirks
 import androidx.camera.camera2.pipe.integration.compat.quirk.ExtraCroppingQuirk
 import androidx.camera.core.impl.SurfaceConfig
 
-/**
- * Helper class that overrides the maximum preview size used in surface combination check.
- */
-@RequiresApi(21)
-class MaxPreviewSize constructor(
+/** Helper class that overrides the maximum preview size used in surface combination check. */
+public class MaxPreviewSize
+constructor(
     private val extraCroppingQuirk: ExtraCroppingQuirk? =
         DeviceQuirks[ExtraCroppingQuirk::class.java]
 ) {
@@ -34,20 +31,20 @@ class MaxPreviewSize constructor(
     /**
      * Gets the max preview resolution based on the default preview max resolution.
      *
-     *
-     *  If select resolution is larger than the default resolution, return the select
-     * resolution. The select resolution has been manually tested on the device. Otherwise,
-     * return the default max resolution.
+     * If select resolution is larger than the default resolution, return the select resolution. The
+     * select resolution has been manually tested on the device. Otherwise, return the default max
+     * resolution.
      */
-    fun getMaxPreviewResolution(defaultMaxPreviewResolution: Size): Size {
+    public fun getMaxPreviewResolution(defaultMaxPreviewResolution: Size): Size {
         if (extraCroppingQuirk == null) {
             return defaultMaxPreviewResolution
         }
-        val selectResolution: Size = extraCroppingQuirk.getVerifiedResolution(
-            SurfaceConfig.ConfigType.PRIV
-        ) ?: return defaultMaxPreviewResolution
-        val isSelectResolutionLarger = (selectResolution.width * selectResolution.height >
-            defaultMaxPreviewResolution.width * defaultMaxPreviewResolution.height)
+        val selectResolution: Size =
+            extraCroppingQuirk.getVerifiedResolution(SurfaceConfig.ConfigType.PRIV)
+                ?: return defaultMaxPreviewResolution
+        val isSelectResolutionLarger =
+            (selectResolution.width * selectResolution.height >
+                defaultMaxPreviewResolution.width * defaultMaxPreviewResolution.height)
         return if (isSelectResolutionLarger) selectResolution else defaultMaxPreviewResolution
     }
 }

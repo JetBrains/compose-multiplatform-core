@@ -65,7 +65,6 @@ import okhttp3.mockwebserver.RecordedRequest;
 
 @MediumTest
 @RunWith(AndroidJUnit4.class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.LOLLIPOP)
 public class WebViewCompatTest {
     WebViewOnUiThread mWebViewOnUiThread;
 
@@ -136,6 +135,7 @@ public class WebViewCompatTest {
      * android.webkit.cts.WebViewTest#testStartSafeBrowsingUseApplicationContext. Modifications to
      * this test should be reflected in that test as necessary. See http://go/modifying-webview-cts.
      */
+    @SuppressWarnings("deprecation")
     @Test
     public void testStartSafeBrowsingUseApplicationContext() throws Exception {
         WebkitUtils.checkFeature(WebViewFeature.START_SAFE_BROWSING);
@@ -155,6 +155,7 @@ public class WebViewCompatTest {
      * Modifications to this test should be reflected in that test as necessary. See
      * http://go/modifying-webview-cts.
      */
+    @SuppressWarnings("deprecation")
     @Test
     public void testStartSafeBrowsingWithNullCallbackDoesntCrash() throws Exception {
         WebkitUtils.checkFeature(WebViewFeature.START_SAFE_BROWSING);
@@ -167,6 +168,7 @@ public class WebViewCompatTest {
      * android.webkit.cts.WebViewTest#testStartSafeBrowsingInvokesCallback. Modifications to this
      * test should be reflected in that test as necessary. See http://go/modifying-webview-cts.
      */
+    @SuppressWarnings("deprecation")
     @Test
     public void testStartSafeBrowsingInvokesCallback() throws Exception {
         WebkitUtils.checkFeature(WebViewFeature.START_SAFE_BROWSING);

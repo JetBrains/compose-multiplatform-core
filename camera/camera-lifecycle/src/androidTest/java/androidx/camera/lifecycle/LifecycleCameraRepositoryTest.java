@@ -22,6 +22,7 @@ import static com.google.common.truth.Truth.assertThat;
 
 import static java.util.Collections.emptyList;
 
+import androidx.camera.core.CompositionSettings;
 import androidx.camera.core.concurrent.CameraCoordinator;
 import androidx.camera.core.impl.CameraConfig;
 import androidx.camera.core.impl.CameraConfigs;
@@ -332,14 +333,6 @@ public final class LifecycleCameraRepositoryTest {
         assertThat(useCase.isDetached()).isTrue();
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void exception_whenCreatingWithDestroyedLifecycle() {
-        mLifecycle.destroy();
-
-        // Should throw IllegalArgumentException
-        mRepository.createLifecycleCamera(mLifecycle, mCameraUseCaseAdapter);
-    }
-
     @Test
     public void lifecycleCameraIsStopped_whenNewLifecycleIsStarted() {
         // Starts first lifecycle and check LifecycleCamera active state is true.
@@ -616,6 +609,17 @@ public final class LifecycleCameraRepositoryTest {
         assertThat(firstLifecycleCamera.isActive()).isTrue();
     }
 
+    @Test
+    public void lifecycleCameraIsInactive_createAndBindToLifecycleCamera_AfterLifecycleDestroyed() {
+        mLifecycle.destroy();
+        LifecycleCamera lifecycleCamera = mRepository.createLifecycleCamera(mLifecycle,
+                mCameraUseCaseAdapter);
+        mRepository.bindToLifecycleCamera(lifecycleCamera, null, emptyList(),
+                Collections.singletonList(new FakeUseCase()), mCameraCoordinator);
+
+        assertThat(lifecycleCamera.isActive()).isFalse();
+    }
+
     private CameraUseCaseAdapter createNewCameraUseCaseAdapter() {
         String cameraId = String.valueOf(++mCameraId);
         CameraInternal fakeCamera = new FakeCamera(cameraId);
@@ -628,8 +632,12 @@ public final class LifecycleCameraRepositoryTest {
     private CameraUseCaseAdapter createCameraUseCaseAdapterWithNewCameraConfig() {
         CameraConfig cameraConfig = new FakeCameraConfig();
         return new CameraUseCaseAdapter(mCamera,
+                null,
                 new RestrictedCameraInfo((CameraInfoInternal) mCamera.getCameraInfo(),
                         cameraConfig),
+                null,
+                CompositionSettings.DEFAULT,
+                CompositionSettings.DEFAULT,
                 mCameraCoordinator,
                 new FakeCameraDeviceSurfaceManager(),
                 new FakeUseCaseConfigFactory());

@@ -16,7 +16,6 @@
 
 package androidx.compose.foundation.text.input.internal
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.text.appendCodePointX
 import androidx.compose.foundation.text.input.TextFieldCharSequence
 import androidx.compose.runtime.Stable
@@ -25,8 +24,8 @@ import androidx.compose.runtime.Stable
  * Visual transformation interface for input fields.
  *
  * This interface is responsible for 1-to-1 mapping of every codepoint in input state to another
- * codepoint before text is rendered. Visual transformation is useful when the underlying source
- * of input needs to remain but rendered content should look different, e.g. password obscuring.
+ * codepoint before text is rendered. Visual transformation is useful when the underlying source of
+ * input needs to remain but rendered content should look different, e.g. password obscuring.
  */
 @Stable
 internal fun interface CodepointTransformation {
@@ -46,12 +45,10 @@ internal fun interface CodepointTransformation {
 /**
  * Creates a masking [CodepointTransformation] that maps all codepoints to a specific [character].
  */
-@ExperimentalFoundationApi
 @Stable
 internal fun CodepointTransformation.Companion.mask(character: Char): CodepointTransformation =
     MaskCodepointTransformation(character)
 
-@OptIn(ExperimentalFoundationApi::class)
 private data class MaskCodepointTransformation(val character: Char) : CodepointTransformation {
     override fun transform(codepointIndex: Int, codepoint: Int): Int {
         return character.code
@@ -63,7 +60,6 @@ private data class MaskCodepointTransformation(val character: Char) : CodepointT
  * carriage returns(\r) to zero-width no-break space (U+FEFF). This transformation forces any
  * content to appear as single line.
  */
-@OptIn(ExperimentalFoundationApi::class)
 internal object SingleLineCodepointTransformation : CodepointTransformation {
 
     private const val LINE_FEED = '\n'.code
@@ -83,7 +79,6 @@ internal object SingleLineCodepointTransformation : CodepointTransformation {
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 internal fun TextFieldCharSequence.toVisualText(
     codepointTransformation: CodepointTransformation,
     offsetMappingCalculator: OffsetMappingCalculator

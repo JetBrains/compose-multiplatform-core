@@ -23,11 +23,7 @@ plugins {
 }
 
 android {
-    defaultConfig {
-        multiDexEnabled = true
-    }
-
-    buildTypes.all {
+    buildTypes.configureEach {
         consumerProguardFiles "proguard-rules.pro"
     }
 
@@ -46,10 +42,9 @@ dependencies {
     androidTestImplementation(libs.testRules)
     androidTestImplementation(libs.espressoCore)
     androidTestImplementation(libs.espressoIntents)
-    androidTestImplementation(libs.mockitoCore, excludes.bytebuddy)
-    androidTestImplementation(libs.dexmakerMockito, excludes.bytebuddy)
+    androidTestImplementation(libs.mockitoCore)
+    androidTestImplementation(libs.dexmakerMockito)
     androidTestImplementation(libs.truth)
-    androidTestImplementation(libs.multidex)
     androidTestImplementation(libs.junit)
 }
 
@@ -59,5 +54,4 @@ androidx {
     mavenVersion = LibraryVersions.CORE_GOOGLE_SHORTCUTS
     inceptionYear = "2021"
     description = "Library for powering Google features with Android app shortcuts"
-    metalavaK2UastEnabled = true
 }

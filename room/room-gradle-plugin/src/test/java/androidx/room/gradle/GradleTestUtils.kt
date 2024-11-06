@@ -27,12 +27,13 @@ internal fun runGradle(
     projectDir: File,
     expectFailure: Boolean = false
 ): BuildResult {
-    val runner = GradleRunner.create()
-        .withProjectDir(projectDir)
-        .withPluginClasspath()
-        .withDebug(true)
-        // workaround for b/231154556
-        .withArguments("-Dorg.gradle.jvmargs=-Xmx1g -XX:MaxMetaspaceSize=512m", *args)
+    val runner =
+        GradleRunner.create()
+            .withProjectDir(projectDir)
+            .withPluginClasspath()
+            .withDebug(true)
+            // workaround for b/231154556
+            .withArguments("-Dorg.gradle.jvmargs=-Xmx1g -XX:MaxMetaspaceSize=512m", *args)
     return if (expectFailure) {
         runner.buildAndFail()
     } else {
@@ -42,4 +43,8 @@ internal fun runGradle(
 
 internal fun BuildResult.assertTaskOutcome(taskPath: String, outcome: TaskOutcome) {
     assertThat(this.task(taskPath)!!.outcome).isEqualTo(outcome)
+}
+
+internal fun searchAndReplace(file: File, search: String, replace: String) {
+    file.writeText(file.readText().replace(search, replace))
 }

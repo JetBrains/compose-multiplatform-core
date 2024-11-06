@@ -19,8 +19,8 @@ package androidx.room.writer
 import androidx.room.DatabaseProcessingStep
 import androidx.room.compiler.processing.util.Source
 import androidx.room.compiler.processing.util.XTestInvocation
-import androidx.room.compiler.processing.util.runKspTest
 import androidx.room.processor.Context
+import androidx.room.runKspTestWithK1
 import loadTestSource
 import org.junit.Rule
 import org.junit.Test
@@ -29,14 +29,14 @@ import writeTestSource
 
 class DatabaseKotlinCodeGenTest {
 
-    @get:Rule
-    val testName = TestName()
+    @get:Rule val testName = TestName()
 
     @Test
     fun database_simple() {
-        val src = Source.kotlin(
-            "MyDatabase.kt",
-            """
+        val src =
+            Source.kotlin(
+                "MyDatabase.kt",
+                """
             import androidx.room.*
 
             @Database(entities = [MyEntity::class], version = 1, exportSchema = false)
@@ -55,19 +55,18 @@ class DatabaseKotlinCodeGenTest {
                 @PrimaryKey
                 var pk: Int
             )
-            """.trimIndent()
-        )
-        runTest(
-            sources = listOf(src),
-            expectedFilePath = getTestGoldenPath(testName.methodName)
-        )
+            """
+                    .trimIndent()
+            )
+        runTest(sources = listOf(src), expectedFilePath = getTestGoldenPath(testName.methodName))
     }
 
     @Test
     fun database_withFtsAndView() {
-        val src = Source.kotlin(
-            "MyDatabase.kt",
-            """
+        val src =
+            Source.kotlin(
+                "MyDatabase.kt",
+                """
             import androidx.room.*
 
             @Database(
@@ -121,19 +120,18 @@ class DatabaseKotlinCodeGenTest {
 
             @DatabaseView("SELECT text FROM MyFtsEntity")
             data class MyView(val text: String)
-            """.trimIndent()
-        )
-        runTest(
-            sources = listOf(src),
-            expectedFilePath = getTestGoldenPath(testName.methodName)
-        )
+            """
+                    .trimIndent()
+            )
+        runTest(sources = listOf(src), expectedFilePath = getTestGoldenPath(testName.methodName))
     }
 
     @Test
     fun database_internalVisibility() {
-        val src = Source.kotlin(
-            "MyDatabase.kt",
-            """
+        val src =
+            Source.kotlin(
+                "MyDatabase.kt",
+                """
             import androidx.room.*
 
             @Database(entities = [MyEntity::class], version = 1, exportSchema = false)
@@ -152,12 +150,90 @@ class DatabaseKotlinCodeGenTest {
                 @PrimaryKey
                 var pk: Int
             )
-            """.trimIndent()
-        )
+            """
+                    .trimIndent()
+            )
+        runTest(sources = listOf(src), expectedFilePath = getTestGoldenPath(testName.methodName))
+    }
+
+    @Test
+    fun database_javaSource() {
+        val dbSrc =
+            Source.java(
+                "MyDatabase",
+                """
+            import androidx.room.*;
+
+            @Database(entities = { MyEntity.class }, version = 1, exportSchema = false)
+            public abstract class MyDatabase extends RoomDatabase {
+              abstract MyDao getDao();
+            }
+            """
+                    .trimIndent()
+            )
+        val daoSrc =
+            Source.java(
+                "MyDao",
+                """
+            import androidx.annotation.NonNull;
+            import androidx.room.*;
+
+            @Dao
+            public interface MyDao {
+              @Query("SELECT * FROM MyEntity")
+              @NonNull MyEntity getEntity();
+            }
+            """
+                    .trimIndent()
+            )
+        val entitySrc =
+            Source.java(
+                "MyEntity",
+                """
+            import androidx.room.*;
+
+            @Entity
+            public class MyEntity {
+                @PrimaryKey
+                public int pk;
+            }
+            """
+                    .trimIndent()
+            )
         runTest(
-            sources = listOf(src),
+            sources = listOf(dbSrc, daoSrc, entitySrc),
             expectedFilePath = getTestGoldenPath(testName.methodName)
         )
+    }
+
+    @Test
+    fun database_daoProperty() {
+        val src =
+            Source.kotlin(
+                "MyDatabase.kt",
+                """
+            import androidx.room.*
+
+            @Database(entities = [MyEntity::class], version = 1, exportSchema = false)
+            abstract class MyDatabase : RoomDatabase() {
+              abstract val dao: MyDao
+            }
+
+            @Dao
+            abstract class MyDao {
+              @Query("SELECT * FROM MyEntity")
+              abstract fun getEntity(): MyEntity
+            }
+
+            @Entity
+            data class MyEntity(
+                @PrimaryKey
+                val pk: Int
+            )
+            """
+                    .trimIndent()
+            )
+        runTest(sources = listOf(src), expectedFilePath = getTestGoldenPath(testName.methodName))
     }
 
     private fun getTestGoldenPath(testName: String): String {
@@ -167,23 +243,21 @@ class DatabaseKotlinCodeGenTest {
     private fun runTest(
         sources: List<Source>,
         expectedFilePath: String,
-        handler: (XTestInvocation) -> Unit = { }
+        handler: (XTestInvocation) -> Unit = {}
     ) {
-        runKspTest(
+        runKspTestWithK1(
             sources = sources,
             options = mapOf(Context.BooleanProcessorOptions.GENERATE_KOTLIN.argName to "true"),
         ) {
             val databaseFqn = "androidx.room.Database"
-            DatabaseProcessingStep().process(
-                it.processingEnv,
-                mapOf(databaseFqn to it.roundEnv.getElementsAnnotatedWith(databaseFqn)),
-                it.roundEnv.isProcessingOver
-            )
-            it.assertCompilationResult {
-                val expectedSrc = loadTestSource(
-                    expectedFilePath,
-                    "MyDatabase_Impl"
+            DatabaseProcessingStep()
+                .process(
+                    it.processingEnv,
+                    mapOf(databaseFqn to it.roundEnv.getElementsAnnotatedWith(databaseFqn)),
+                    it.roundEnv.isProcessingOver
                 )
+            it.assertCompilationResult {
+                val expectedSrc = loadTestSource(expectedFilePath, "MyDatabase_Impl")
                 // Set ROOM_TEST_WRITE_SRCS env variable to make tests write expected sources,
                 // handy for big sweeping code gen changes. ;)
                 if (System.getenv("ROOM_TEST_WRITE_SRCS") != null) {

@@ -19,7 +19,8 @@ package androidx.room.writer
 import androidx.room.compiler.codegen.CodeLanguage
 import androidx.room.compiler.codegen.XClassName
 import androidx.room.compiler.codegen.XTypeSpec
-import androidx.room.compiler.codegen.XTypeSpec.Builder.Companion.apply
+import androidx.room.compiler.codegen.compat.XConverters.applyToJavaPoet
+import androidx.room.compiler.processing.XProcessingEnv.Platform
 import androidx.room.compiler.processing.util.Source
 import androidx.room.compiler.processing.util.XTestInvocation
 import androidx.room.processor.BaseEntityParserTest
@@ -31,7 +32,8 @@ import org.junit.runners.JUnit4
 @RunWith(JUnit4::class)
 class EntityCursorConverterWriterTest : BaseEntityParserTest() {
     companion object {
-        val OUT_PREFIX = """
+        val OUT_PREFIX =
+            """
             package foo.bar;
             import android.database.Cursor;
             import androidx.annotation.NonNull;
@@ -41,14 +43,16 @@ class EntityCursorConverterWriterTest : BaseEntityParserTest() {
             @Generated("androidx.room.RoomProcessor")
             @SuppressWarnings({"unchecked", "deprecation", "removal"})
             public final class MyContainerClass {
-        """.trimIndent()
+        """
+                .trimIndent()
         const val OUT_SUFFIX = "}"
     }
 
     @Test
     fun generateSimple() {
         generateAndMatch(
-            input = """
+            input =
+                """
                 @PrimaryKey
                 private int id;
                 String name;
@@ -56,21 +60,18 @@ class EntityCursorConverterWriterTest : BaseEntityParserTest() {
                 int age;
                 public int getId() { return id; }
                 public void setId(int id) { this.id = id; }
-                """.trimIndent(),
-            output = { isKsp ->
-                fun stringAdapterCode(out: String, indexVar: String) = if (isKsp) {
-                    """
-                    $out = cursor.getString($indexVar);
-                    """.trimIndent()
-                } else {
+                """
+                    .trimIndent(),
+            output = {
+                fun stringAdapterCode(out: String, indexVar: String) =
                     """
                     if (cursor.isNull($indexVar)) {
                       $out = null;
                     } else {
                       $out = cursor.getString($indexVar);
                     }
-                    """.trimIndent()
-                }
+                    """
+                        .trimIndent()
                 """
                 |private MyEntity __entityCursorConverter_fooBarMyEntity(@NonNull final Cursor cursor) {
                 |  final MyEntity _entity;
@@ -95,7 +96,8 @@ class EntityCursorConverterWriterTest : BaseEntityParserTest() {
                 |  }
                 |  return _entity;
                 |}
-                """.trimMargin()
+                """
+                    .trimMargin()
             }
         )
     }
@@ -116,22 +118,20 @@ class EntityCursorConverterWriterTest : BaseEntityParserTest() {
         }
     }
 
-    private fun generate(
-        input: String,
-        handler: (XTestInvocation) -> Unit
-    ) {
+    private fun generate(input: String, handler: (XTestInvocation) -> Unit) {
         singleEntity(input) { entity, invocation ->
             val className = XClassName.get("foo.bar", "MyContainerClass")
-            val writer = object : TypeWriter(CodeLanguage.JAVA) {
-                override fun createTypeSpecBuilder(): XTypeSpec.Builder {
-                    getOrCreateFunction(EntityCursorConverterWriter(entity))
-                    return XTypeSpec.classBuilder(codeLanguage, className)
-                        .apply(
-                            javaTypeBuilder = { addModifiers(Modifier.PUBLIC) },
-                            kotlinTypeBuilder = { }
-                        )
+            val writer =
+                object : TypeWriter(WriterContext(CodeLanguage.JAVA, setOf(Platform.JVM), true)) {
+                    override val packageName = className.packageName
+
+                    override fun createTypeSpecBuilder(): XTypeSpec.Builder {
+                        getOrCreateFunction(EntityCursorConverterWriter(entity, false))
+                        return XTypeSpec.classBuilder(codeLanguage, className).applyToJavaPoet {
+                            addModifiers(Modifier.PUBLIC)
+                        }
+                    }
                 }
-            }
             writer.write(invocation.processingEnv)
             handler(invocation)
         }

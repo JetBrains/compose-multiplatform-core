@@ -32,86 +32,89 @@ package androidx.build
  * LibraryType.checkApi represents whether we enforce API compatibility of the library according to
  * our semantic versioning protocol
  *
- * The possible values of LibraryType are as follows: PUBLISHED_LIBRARY: a conventional library,
- * published, sourced, documented, and versioned. PUBLISHED_TEST_LIBRARY: PUBLISHED_LIBRARY, but
- * allows calling @VisibleForTesting API. Used for libraries that allow developers to test code that
- * uses your library. Often provides test fakes. INTERNAL_TEST_LIBRARY: unpublished, untracked,
- * undocumented. Used in internal tests. Usually contains integration tests, but is _not_ an app.
- * Runs device tests. INTERNAL_HOST_TEST_LIBRARY: as INTERNAL_TEST_LIBRARY, but runs host tests
- * instead. Avoid mixing host tests and device tests in the same library, for performance /
- * test-result-caching reasons. SAMPLES: a library containing sample code referenced in your
- * library's documentation with @sampled, published as a documentation-related supplement to a
- * conventional library. LINT: a library of lint rules for using a conventional library. Published
- * through lintPublish as part of an AAR, not published standalone. COMPILER_DAEMON: a tool that
- * modifies the kotlin or java compiler. Used only while compiling. Has no API and does not publish
- * source jars, but does release to maven. COMPILER_DAEMON_TEST: a compiler plugin that is not
- * published at all, for internal-only use. COMPILER_PLUGIN: as COMPILER_DAEMON, but is compatible
- * with JDK 11. GRADLE_PLUGIN: a library that is a gradle plugin. ANNOTATION_PROCESSOR: a library
- * consisting of an annotation processor. Used only while compiling. ANNOTATION_PROCESSOR_UTILS:
- * contains reference code for understanding an annotation processor. Publishes source jars, but
- * does not track API. OTHER_CODE_PROCESSOR: a library that algorithmically generates and/or alters
- * code but not through hooking into custom annotations or the kotlin compiler. For example,
- * navigation:safe-args-generator or Jetifier. IDE_PLUGIN: a library that should only ever be
- * downloaded by studio. Unfortunately, we don't yet have a good way to track API for these.
- * b/281843422 UNSET: a library that has not yet been migrated to using LibraryType. Should never be
- * used. APP: an app, such as an example app or integration testsapp. Should never be used; apps
- * should not apply the AndroidX plugin or have an androidx block in their build.gradle files.
- *
- * TODO: potential future LibraryTypes: KOTLIN_ONLY_LIBRARY: like PUBLISHED_LIBRARY, but not
- *   intended for use from java. ktx and compose. INTERNAL_TEST DEMO IDE_PLUGIN
+ * The possible values of LibraryType are as follows:
+ * - [PUBLISHED_LIBRARY]: a conventional library published, sourced, documented, and versioned.
+ * - [PUBLISHED_TEST_LIBRARY]: [PUBLISHED_LIBRARY], but allows calling `@VisibleForTesting` API.
+ *   Used for libraries that allow developers to test code that uses your library. Often provides
+ *   test fakes.
+ * - [INTERNAL_TEST_LIBRARY]: unpublished, untracked, undocumented. Used in internal tests. Usually
+ *   contains integration tests, but is _not_ an app. Runs device tests.
+ * - [INTERNAL_HOST_TEST_LIBRARY]: as [INTERNAL_TEST_LIBRARY], but runs host tests instead. Avoid
+ *   mixing host tests and device tests in the same library, for performance / test-result-caching
+ *   reasons.
+ * - [SAMPLES]: a library containing sample code referenced in your library's documentation with
+ *   `@sampled`, published as a documentation-related supplement to a conventional library.
+ * - [LINT]: a library of lint rules for using a conventional library. Published through lintPublish
+ *   as part of an AAR, not published standalone.
+ * - [GRADLE_PLUGIN]: a library that is a gradle plugin.
+ * - [ANNOTATION_PROCESSOR]: a library consisting of an annotation processor. Used only while
+ *   compiling.
+ * - [ANNOTATION_PROCESSOR_UTILS]: contains reference code for understanding an annotation
+ *   processor. Publishes source jars, but does not track API.
+ * - [OTHER_CODE_PROCESSOR]: a library that algorithmically generates and/or alters code but not
+ *   through hooking into custom annotations or the kotlin compiler. For example,
+ *   navigation:safe-args-generator or Jetifier.
+ * - [IDE_PLUGIN]: a library that should only ever be downloaded by studio. Unfortunately, we don't
+ *   yet have a good way to track API for these. b/281843422
+ * - [UNSET]: a library that has not yet been migrated to using LibraryType. Should never be used.
  */
 sealed class LibraryType(
     val publish: Publish = Publish.NONE,
     val sourceJars: Boolean = false,
     val checkApi: RunApiTasks = RunApiTasks.No("Unknown Library Type"),
     val compilationTarget: CompilationTarget = CompilationTarget.DEVICE,
-    val allowCallingVisibleForTestsApis: Boolean = false
+    val allowCallingVisibleForTestsApis: Boolean = false,
+    val targetsKotlinConsumersOnly: Boolean = false
 ) {
     val name: String
         get() = javaClass.simpleName
 
     companion object {
-        val PUBLISHED_LIBRARY = PublishedLibrary()
-        val PUBLISHED_KOTLIN_ONLY_LIBRARY = PublishedKotlinOnlyLibrary()
-        val PUBLISHED_TEST_LIBRARY = PublishedTestLibrary()
-        val PUBLISHED_KOTLIN_ONLY_TEST_LIBRARY = PublishedKotlinOnlyTestLibrary()
-        val INTERNAL_TEST_LIBRARY = InternalTestLibrary()
-        val INTERNAL_HOST_TEST_LIBRARY = InternalHostTestLibrary()
-        val SAMPLES = Samples()
-        val LINT = Lint()
-        val COMPILER_DAEMON = CompilerDaemon()
-        val COMPILER_DAEMON_TEST = CompilerDaemonTest()
-        val COMPILER_PLUGIN = CompilerPlugin()
-        val GRADLE_PLUGIN = GradlePlugin()
-        val ANNOTATION_PROCESSOR = AnnotationProcessor()
-        val ANNOTATION_PROCESSOR_UTILS = AnnotationProcessorUtils()
-        val OTHER_CODE_PROCESSOR = OtherCodeProcessor()
-        val IDE_PLUGIN = IdePlugin()
+        @JvmStatic val ANNOTATION_PROCESSOR = AnnotationProcessor()
+        @JvmStatic val ANNOTATION_PROCESSOR_UTILS = AnnotationProcessorUtils()
+        @JvmStatic val GRADLE_PLUGIN = GradlePlugin()
+        @JvmStatic val IDE_PLUGIN = IdePlugin()
+        @JvmStatic val INTERNAL_TEST_LIBRARY = InternalTestLibrary()
+        @JvmStatic val INTERNAL_HOST_TEST_LIBRARY = InternalHostTestLibrary()
+        @JvmStatic val LINT = Lint()
+        @JvmStatic val STANDALONE_PUBLISHED_LINT = StandalonePublishedLint()
+        @JvmStatic val PUBLISHED_LIBRARY = PublishedLibrary()
+        @JvmStatic
+        val PUBLISHED_PROTO_LIBRARY =
+            PublishedLibrary(
+                checkApi =
+                    RunApiTasks.No("Metalava doesn't properly parse the proto sources b/180579063")
+            )
+        @JvmStatic
+        val PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS =
+            PublishedLibrary(targetsKotlinConsumersOnly = true)
+        @JvmStatic val PUBLISHED_TEST_LIBRARY = PublishedTestLibrary()
+        @JvmStatic
+        val PUBLISHED_KOTLIN_ONLY_TEST_LIBRARY =
+            PublishedTestLibrary(targetsKotlinConsumersOnly = true)
+        @JvmStatic val SAMPLES = Samples()
+        @JvmStatic val OTHER_CODE_PROCESSOR = OtherCodeProcessor()
         val UNSET = Unset()
-        @Deprecated("Do not use an androidx block for apps/testapps, only for libraries")
-        val APP = UNSET
 
-        @Suppress("DEPRECATION")
         private val allTypes =
             mapOf(
                 "PUBLISHED_LIBRARY" to PUBLISHED_LIBRARY,
-                "PUBLISHED_KOTLIN_ONLY_LIBRARY" to PUBLISHED_KOTLIN_ONLY_LIBRARY,
+                "PUBLISHED_PROTO_LIBRARY" to PUBLISHED_PROTO_LIBRARY,
+                "PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS" to
+                    PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS,
                 "PUBLISHED_TEST_LIBRARY" to PUBLISHED_TEST_LIBRARY,
                 "PUBLISHED_KOTLIN_ONLY_TEST_LIBRARY" to PUBLISHED_KOTLIN_ONLY_TEST_LIBRARY,
                 "INTERNAL_TEST_LIBRARY" to INTERNAL_TEST_LIBRARY,
                 "INTERNAL_HOST_TEST_LIBRARY" to INTERNAL_HOST_TEST_LIBRARY,
                 "SAMPLES" to SAMPLES,
                 "LINT" to LINT,
-                "COMPILER_DAEMON" to COMPILER_DAEMON,
-                "COMPILER_DAEMON_TEST" to COMPILER_DAEMON_TEST,
-                "COMPILER_PLUGIN" to COMPILER_PLUGIN,
+                "STANDALONE_PUBLISHED_LINT" to STANDALONE_PUBLISHED_LINT,
                 "GRADLE_PLUGIN" to GRADLE_PLUGIN,
                 "ANNOTATION_PROCESSOR" to ANNOTATION_PROCESSOR,
                 "ANNOTATION_PROCESSOR_UTILS" to ANNOTATION_PROCESSOR_UTILS,
                 "OTHER_CODE_PROCESSOR" to OTHER_CODE_PROCESSOR,
                 "IDE_PLUGIN" to IDE_PLUGIN,
                 "UNSET" to UNSET,
-                "APP" to APP
             )
 
         fun valueOf(name: String): LibraryType {
@@ -121,20 +124,17 @@ sealed class LibraryType(
         }
     }
 
-    open class PublishedLibrary(allowCallingVisibleForTestsApis: Boolean = false) :
+    open class PublishedLibrary(
+        checkApi: RunApiTasks = RunApiTasks.Yes(),
+        allowCallingVisibleForTestsApis: Boolean = false,
+        targetsKotlinConsumersOnly: Boolean = false
+    ) :
         LibraryType(
             publish = Publish.SNAPSHOT_AND_RELEASE,
             sourceJars = true,
-            checkApi = RunApiTasks.Yes(),
-            allowCallingVisibleForTestsApis = allowCallingVisibleForTestsApis
-        )
-
-    open class PublishedKotlinOnlyLibrary(allowCallingVisibleForTestsApis: Boolean = false) :
-        LibraryType(
-            publish = Publish.SNAPSHOT_AND_RELEASE,
-            sourceJars = true,
-            checkApi = RunApiTasks.Yes(),
-            allowCallingVisibleForTestsApis = allowCallingVisibleForTestsApis
+            checkApi = checkApi,
+            allowCallingVisibleForTestsApis = allowCallingVisibleForTestsApis,
+            targetsKotlinConsumersOnly = targetsKotlinConsumersOnly
         )
 
     open class InternalLibrary(
@@ -147,10 +147,11 @@ sealed class LibraryType(
             allowCallingVisibleForTestsApis = allowCallingVisibleForTestsApis
         )
 
-    class PublishedTestLibrary() : PublishedLibrary(allowCallingVisibleForTestsApis = true)
-
-    class PublishedKotlinOnlyTestLibrary() : PublishedKotlinOnlyLibrary(
-        allowCallingVisibleForTestsApis = true)
+    class PublishedTestLibrary(targetsKotlinConsumersOnly: Boolean = false) :
+        PublishedLibrary(
+            allowCallingVisibleForTestsApis = true,
+            targetsKotlinConsumersOnly = targetsKotlinConsumersOnly
+        )
 
     class InternalTestLibrary() : InternalLibrary(allowCallingVisibleForTestsApis = true)
 
@@ -167,6 +168,14 @@ sealed class LibraryType(
         LibraryType(
             publish = Publish.NONE,
             sourceJars = false,
+            checkApi = RunApiTasks.No("Lint Library"),
+            compilationTarget = CompilationTarget.HOST
+        )
+
+    class StandalonePublishedLint :
+        LibraryType(
+            publish = Publish.SNAPSHOT_AND_RELEASE,
+            sourceJars = true,
             checkApi = RunApiTasks.No("Lint Library"),
             compilationTarget = CompilationTarget.HOST
         )
@@ -274,8 +283,12 @@ enum class Publish {
 sealed class RunApiTasks {
     /** Automatically determine whether API tasks should be run. */
     object Auto : RunApiTasks()
+
     /** Always run API tasks regardless of other project properties. */
     data class Yes(val reason: String? = null) : RunApiTasks()
+
     /** Do not run any API tasks. */
     data class No(val reason: String) : RunApiTasks()
 }
+
+fun LibraryType.isLint() = this == LibraryType.LINT || this == LibraryType.STANDALONE_PUBLISHED_LINT

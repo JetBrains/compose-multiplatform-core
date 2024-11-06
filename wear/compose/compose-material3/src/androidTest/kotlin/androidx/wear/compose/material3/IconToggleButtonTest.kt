@@ -23,10 +23,13 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.testutils.assertContainsColor
 import androidx.compose.testutils.assertShape
 import androidx.compose.ui.Modifier
@@ -62,8 +65,7 @@ import org.junit.Test
 
 class IconToggleButtonTest {
 
-    @get:Rule
-    val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule()
 
     @Test
     fun supports_testTag() {
@@ -203,10 +205,7 @@ class IconToggleButtonTest {
         }
         rule.waitForIdle()
 
-        rule.onNodeWithTag(TEST_TAG)
-            .assertIsOff()
-            .performClick()
-            .assertIsOn()
+        rule.onNodeWithTag(TEST_TAG).assertIsOff().performClick().assertIsOn()
     }
 
     @Test
@@ -222,10 +221,7 @@ class IconToggleButtonTest {
         }
         rule.waitForIdle()
 
-        rule.onNodeWithTag(TEST_TAG)
-            .assertIsOn()
-            .performClick()
-            .assertIsOff()
+        rule.onNodeWithTag(TEST_TAG).assertIsOn().performClick().assertIsOff()
     }
 
     @Test
@@ -242,10 +238,7 @@ class IconToggleButtonTest {
         }
         rule.waitForIdle()
 
-        rule.onNodeWithTag(TEST_TAG)
-            .assertIsOff()
-            .performClick()
-            .assertIsOff()
+        rule.onNodeWithTag(TEST_TAG).assertIsOff().performClick().assertIsOff()
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -259,8 +252,8 @@ class IconToggleButtonTest {
             IconToggleButton(
                 enabled = true,
                 checked = true,
-                onCheckedChange = { },
-                content = { },
+                onCheckedChange = {},
+                content = {},
                 modifier = Modifier.testTag(TEST_TAG)
             )
         }
@@ -276,8 +269,8 @@ class IconToggleButtonTest {
             IconToggleButton(
                 enabled = true,
                 checked = true,
-                onCheckedChange = { },
-                content = { },
+                onCheckedChange = {},
+                content = {},
                 modifier = Modifier.testTag(TEST_TAG)
             )
         }
@@ -293,9 +286,9 @@ class IconToggleButtonTest {
             IconToggleButton(
                 enabled = true,
                 checked = true,
-                shape = RectangleShape,
-                onCheckedChange = { },
-                content = { },
+                shapes = IconToggleButtonDefaults.shapes(RectangleShape),
+                onCheckedChange = {},
+                content = {},
                 modifier = Modifier.testTag(TEST_TAG)
             )
         }
@@ -306,9 +299,9 @@ class IconToggleButtonTest {
             IconToggleButton(
                 enabled = true,
                 checked = true,
-                onCheckedChange = { },
-                content = { },
-                modifier = it.touchTargetAwareSize(IconButtonDefaults.DefaultButtonSize)
+                onCheckedChange = {},
+                content = {},
+                modifier = it.touchTargetAwareSize(IconToggleButtonDefaults.DefaultButtonSize)
             )
         }
 
@@ -318,21 +311,9 @@ class IconToggleButtonTest {
             IconToggleButton(
                 enabled = true,
                 checked = true,
-                onCheckedChange = { },
-                content = { },
-                modifier = it.touchTargetAwareSize(IconButtonDefaults.SmallButtonSize)
-            )
-        }
-
-    @Test
-    fun gives_extraSmall_correct_tapSize() =
-        rule.verifyTapSize(48.dp) {
-            IconToggleButton(
-                enabled = true,
-                checked = true,
-                onCheckedChange = { },
-                content = { },
-                modifier = it.touchTargetAwareSize(IconButtonDefaults.ExtraSmallButtonSize)
+                onCheckedChange = {},
+                content = {},
+                modifier = it.touchTargetAwareSize(IconToggleButtonDefaults.SmallButtonSize)
             )
         }
 
@@ -342,9 +323,21 @@ class IconToggleButtonTest {
             IconToggleButton(
                 enabled = true,
                 checked = true,
-                onCheckedChange = { },
-                content = { },
-                modifier = it.touchTargetAwareSize(IconButtonDefaults.LargeButtonSize)
+                onCheckedChange = {},
+                content = {},
+                modifier = it.touchTargetAwareSize(IconToggleButtonDefaults.LargeButtonSize)
+            )
+        }
+
+    @Test
+    fun gives_extraLarge_correct_tapSize() =
+        rule.verifyTapSize(72.dp) {
+            IconToggleButton(
+                enabled = true,
+                checked = true,
+                onCheckedChange = {},
+                content = {},
+                modifier = it.touchTargetAwareSize(IconToggleButtonDefaults.ExtraLargeButtonSize)
             )
         }
 
@@ -354,9 +347,9 @@ class IconToggleButtonTest {
             IconToggleButton(
                 enabled = true,
                 checked = true,
-                onCheckedChange = { },
-                content = { },
-                modifier = it.touchTargetAwareSize(IconButtonDefaults.DefaultButtonSize)
+                onCheckedChange = {},
+                content = {},
+                modifier = it.touchTargetAwareSize(IconToggleButtonDefaults.DefaultButtonSize)
             )
         }
 
@@ -366,21 +359,21 @@ class IconToggleButtonTest {
             IconToggleButton(
                 enabled = true,
                 checked = true,
-                onCheckedChange = { },
-                content = { },
-                modifier = it.touchTargetAwareSize(IconButtonDefaults.SmallButtonSize)
+                onCheckedChange = {},
+                content = {},
+                modifier = it.touchTargetAwareSize(IconToggleButtonDefaults.SmallButtonSize)
             )
         }
 
     @Test
-    fun gives_extraSmall_correct_size() =
-        rule.verifyActualSize(32.dp) {
+    fun gives_extraLarge_correct_size() =
+        rule.verifyActualSize(72.dp) {
             IconToggleButton(
                 enabled = true,
                 checked = true,
-                onCheckedChange = { },
-                content = { },
-                modifier = it.touchTargetAwareSize(IconButtonDefaults.ExtraSmallButtonSize)
+                onCheckedChange = {},
+                content = {},
+                modifier = it.touchTargetAwareSize(IconToggleButtonDefaults.ExtraLargeButtonSize)
             )
         }
 
@@ -390,9 +383,9 @@ class IconToggleButtonTest {
             IconToggleButton(
                 enabled = true,
                 checked = true,
-                onCheckedChange = { },
-                content = { },
-                modifier = it.touchTargetAwareSize(IconButtonDefaults.LargeButtonSize)
+                onCheckedChange = {},
+                content = {},
+                modifier = it.touchTargetAwareSize(IconToggleButtonDefaults.LargeButtonSize)
             )
         }
 
@@ -402,7 +395,7 @@ class IconToggleButtonTest {
         rule.verifyIconToggleButtonColors(
             status = Status.Enabled,
             checked = true,
-            colors = { IconButtonDefaults.iconToggleButtonColors() },
+            colors = { IconToggleButtonDefaults.iconToggleButtonColors() },
             containerColor = { MaterialTheme.colorScheme.primary },
             contentColor = { MaterialTheme.colorScheme.onPrimary }
         )
@@ -413,8 +406,8 @@ class IconToggleButtonTest {
         rule.verifyIconToggleButtonColors(
             status = Status.Enabled,
             checked = false,
-            colors = { IconButtonDefaults.iconToggleButtonColors() },
-            containerColor = { MaterialTheme.colorScheme.surface },
+            colors = { IconToggleButtonDefaults.iconToggleButtonColors() },
+            containerColor = { MaterialTheme.colorScheme.surfaceContainer },
             contentColor = { MaterialTheme.colorScheme.onSurfaceVariant }
         )
 
@@ -424,9 +417,11 @@ class IconToggleButtonTest {
         rule.verifyIconToggleButtonColors(
             status = Status.Disabled,
             checked = false,
-            colors = { IconButtonDefaults.iconToggleButtonColors() },
-            containerColor = { MaterialTheme.colorScheme.surface.toDisabledColor() },
-            contentColor = { MaterialTheme.colorScheme.onSurfaceVariant.toDisabledColor() }
+            colors = { IconToggleButtonDefaults.iconToggleButtonColors() },
+            containerColor = {
+                MaterialTheme.colorScheme.onSurface.toDisabledColor(DisabledContainerAlpha)
+            },
+            contentColor = { MaterialTheme.colorScheme.onSurface.toDisabledColor() }
         )
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -435,9 +430,11 @@ class IconToggleButtonTest {
         rule.verifyIconToggleButtonColors(
             status = Status.Disabled,
             checked = true,
-            colors = { IconButtonDefaults.iconToggleButtonColors() },
-            containerColor = { MaterialTheme.colorScheme.primary.toDisabledColor() },
-            contentColor = { MaterialTheme.colorScheme.onPrimary.toDisabledColor() },
+            colors = { IconToggleButtonDefaults.iconToggleButtonColors() },
+            containerColor = {
+                MaterialTheme.colorScheme.onSurface.toDisabledColor(DisabledContainerAlpha)
+            },
+            contentColor = { MaterialTheme.colorScheme.onSurface.toDisabledColor() },
         )
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -449,7 +446,7 @@ class IconToggleButtonTest {
             status = Status.Enabled,
             checked = true,
             colors = {
-                IconButtonDefaults.iconToggleButtonColors(
+                IconToggleButtonDefaults.iconToggleButtonColors(
                     checkedContainerColor = overrideColor
                 )
             },
@@ -467,9 +464,7 @@ class IconToggleButtonTest {
             status = Status.Enabled,
             checked = true,
             colors = {
-                IconButtonDefaults.iconToggleButtonColors(
-                    checkedContentColor = overrideColor
-                )
+                IconToggleButtonDefaults.iconToggleButtonColors(checkedContentColor = overrideColor)
             },
             containerColor = { MaterialTheme.colorScheme.primary },
             contentColor = { overrideColor }
@@ -485,7 +480,7 @@ class IconToggleButtonTest {
             status = Status.Enabled,
             checked = false,
             colors = {
-                IconButtonDefaults.iconToggleButtonColors(
+                IconToggleButtonDefaults.iconToggleButtonColors(
                     uncheckedContainerColor = overrideColor
                 )
             },
@@ -503,11 +498,11 @@ class IconToggleButtonTest {
             status = Status.Enabled,
             checked = false,
             colors = {
-                IconButtonDefaults.iconToggleButtonColors(
+                IconToggleButtonDefaults.iconToggleButtonColors(
                     uncheckedContentColor = overrideColor
                 )
             },
-            containerColor = { MaterialTheme.colorScheme.surface },
+            containerColor = { MaterialTheme.colorScheme.surfaceContainer },
             contentColor = { overrideColor }
         )
     }
@@ -521,13 +516,13 @@ class IconToggleButtonTest {
             status = Status.Disabled,
             checked = true,
             colors = {
-                IconButtonDefaults.iconToggleButtonColors(
+                IconToggleButtonDefaults.iconToggleButtonColors(
                     // Apply the content color override for the content alpha to be applied
                     disabledCheckedContainerColor = overrideColor
                 )
             },
             containerColor = { overrideColor },
-            contentColor = { MaterialTheme.colorScheme.onPrimary.toDisabledColor() }
+            contentColor = { MaterialTheme.colorScheme.onSurface.toDisabledColor() }
         )
     }
 
@@ -540,12 +535,14 @@ class IconToggleButtonTest {
             status = Status.Disabled,
             checked = true,
             colors = {
-                IconButtonDefaults.iconToggleButtonColors(
+                IconToggleButtonDefaults.iconToggleButtonColors(
                     // Apply the content color override for the content alpha to be applied
                     disabledCheckedContentColor = overrideColor
                 )
             },
-            containerColor = { MaterialTheme.colorScheme.primary.toDisabledColor() },
+            containerColor = {
+                MaterialTheme.colorScheme.onSurface.toDisabledColor(DisabledContainerAlpha)
+            },
             contentColor = { overrideColor }
         )
     }
@@ -559,13 +556,13 @@ class IconToggleButtonTest {
             status = Status.Disabled,
             checked = false,
             colors = {
-                IconButtonDefaults.iconToggleButtonColors(
+                IconToggleButtonDefaults.iconToggleButtonColors(
                     // Apply the content color override for the content alpha to be applied
                     disabledUncheckedContainerColor = overrideColor
                 )
             },
             containerColor = { overrideColor },
-            contentColor = { MaterialTheme.colorScheme.onSurfaceVariant.toDisabledColor() }
+            contentColor = { MaterialTheme.colorScheme.onSurface.toDisabledColor() }
         )
     }
 
@@ -578,13 +575,15 @@ class IconToggleButtonTest {
             status = Status.Disabled,
             checked = false,
             colors = {
-                IconButtonDefaults.iconToggleButtonColors(
+                IconToggleButtonDefaults.iconToggleButtonColors(
                     // Apply the content color override for the content alpha to be applied
                     disabledUncheckedContentColor = overrideColor
                 )
             },
             contentColor = { overrideColor },
-            containerColor = { MaterialTheme.colorScheme.surface.toDisabledColor() }
+            containerColor = {
+                MaterialTheme.colorScheme.onSurface.toDisabledColor(DisabledContainerAlpha)
+            }
         )
     }
 
@@ -600,12 +599,9 @@ class IconToggleButtonTest {
             )
         }
 
-        rule.onNodeWithTag(TEST_TAG).assert(
-            SemanticsMatcher.expectValue(
-                SemanticsProperties.Role,
-                Role.Checkbox
-            )
-        )
+        rule
+            .onNodeWithTag(TEST_TAG)
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Checkbox))
     }
 
     @Test
@@ -618,25 +614,104 @@ class IconToggleButtonTest {
                 onCheckedChange = {},
                 enabled = false,
                 content = { TestImage() },
-                modifier = Modifier
-                    .testTag(TEST_TAG)
-                    .semantics { role = overrideRole }
+                modifier = Modifier.testTag(TEST_TAG).semantics { role = overrideRole }
             )
         }
 
-        rule.onNodeWithTag(TEST_TAG).assert(
-            SemanticsMatcher.expectValue(
-                SemanticsProperties.Role,
-                overrideRole
+        rule
+            .onNodeWithTag(TEST_TAG)
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, overrideRole))
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    @Test
+    fun animates_corners_to_75_percent_on_click() {
+        val uncheckedShape = RoundedCornerShape(20.dp)
+        val checkedShape = RoundedCornerShape(10.dp)
+        val pressedShape = RoundedCornerShape(0.dp)
+        // Ignore the color transition from unchecked to checked color
+        val colors =
+            IconToggleButtonColors(
+                Color.Black,
+                Color.Black,
+                Color.Black,
+                Color.Black,
+                Color.Black,
+                Color.Black,
+                Color.Black,
+                Color.Black
             )
-        )
+
+        rule.verifyRoundedButtonTapAnimationEnd(
+            uncheckedShape,
+            pressedShape,
+            0.75f,
+            8,
+            color = { colors.checkedContainerColor }
+        ) { modifier ->
+            IconToggleButton(
+                checked = false,
+                onCheckedChange = {},
+                modifier = modifier,
+                shapes = IconToggleButtonShapes(uncheckedShape, checkedShape, pressedShape),
+                colors = colors
+            ) {}
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    @Test
+    fun changes_unchecked_to_checked_shape_on_click() {
+        val uncheckedShape = RoundedCornerShape(20.dp)
+        val checkedShape = RoundedCornerShape(10.dp)
+        val pressedShape = RoundedCornerShape(0.dp)
+        rule.verifyRoundedButtonTapAnimationEnd(
+            uncheckedShape,
+            checkedShape,
+            1f,
+            100,
+            color = { IconToggleButtonDefaults.iconToggleButtonColors().checkedContainerColor },
+            antiAliasingGap = 4f,
+        ) { modifier ->
+            var checked by remember { mutableStateOf(false) }
+            IconToggleButton(
+                checked = checked,
+                onCheckedChange = { checked = !checked },
+                modifier = modifier,
+                shapes = IconToggleButtonShapes(uncheckedShape, checkedShape, pressedShape)
+            ) {}
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    @Test
+    fun changes_checked_to_unchecked_shape_on_click() {
+        val uncheckedShape = RoundedCornerShape(10.dp)
+        val checkedShape = RoundedCornerShape(20.dp)
+        val pressedShape = RoundedCornerShape(0.dp)
+        rule.verifyRoundedButtonTapAnimationEnd(
+            checkedShape,
+            uncheckedShape,
+            1f,
+            100,
+            color = { IconToggleButtonDefaults.iconToggleButtonColors().uncheckedContainerColor },
+            antiAliasingGap = 4f,
+        ) { modifier ->
+            var checked by remember { mutableStateOf(true) }
+            IconToggleButton(
+                checked = checked,
+                onCheckedChange = { checked = !checked },
+                modifier = modifier,
+                shapes = IconToggleButtonShapes(uncheckedShape, checkedShape, pressedShape)
+            ) {}
+        }
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
     private fun ComposeContentTestRule.verifyIconToggleButtonColors(
         status: Status,
         checked: Boolean,
-        colors: @Composable () -> ToggleButtonColors,
+        colors: @Composable () -> IconToggleButtonColors,
         containerColor: @Composable () -> Color,
         contentColor: @Composable () -> Color,
     ) {
@@ -646,7 +721,7 @@ class IconToggleButtonTest {
             content = {
                 var actualContentColor = Color.Transparent
                 IconToggleButton(
-                    onCheckedChange = { },
+                    onCheckedChange = {},
                     enabled = status.enabled(),
                     checked = checked,
                     colors = colors(),
@@ -661,10 +736,9 @@ class IconToggleButtonTest {
 
     @Composable
     private fun shapeColor(): Color {
-        return IconButtonDefaults.iconToggleButtonColors().containerColor(
-            enabled = true,
-            checked = true
-        ).value
+        return IconToggleButtonDefaults.iconToggleButtonColors()
+            .containerColor(enabled = true, checked = true)
+            .value
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -680,13 +754,7 @@ class IconToggleButtonTest {
         setContentWithTheme {
             shapeColor = shapeColorComposable.invoke()
             CompositionLocalProvider(LocalLayoutDirection provides layoutDirection) {
-                Box(
-                    Modifier
-                        .padding(padding)
-                        .background(backgroundColor)
-                ) {
-                    content()
-                }
+                Box(Modifier.padding(padding).background(backgroundColor)) { content() }
             }
         }
 
@@ -699,7 +767,7 @@ class IconToggleButtonTest {
                 horizontalPadding = padding,
                 verticalPadding = padding,
                 backgroundColor = backgroundColor,
-                shapeOverlapPixelCount = 2.0f,
+                antiAliasingGap = 2.0f,
                 shapeColor = shapeColor
             )
     }
@@ -718,17 +786,11 @@ class IconToggleButtonTest {
             finalExpectedContainerColor =
                 expectedContainerColor().compositeOver(testBackgroundColor)
             finalExpectedContent = expectedContentColor()
-            Box(
-                Modifier
-                    .fillMaxSize()
-                    .background(testBackgroundColor)
-            ) {
+            Box(Modifier.fillMaxSize().background(testBackgroundColor)) {
                 actualContentColor = content()
             }
         }
         Assert.assertEquals(finalExpectedContent, actualContentColor)
-        onNodeWithTag(TEST_TAG)
-            .captureToImage()
-            .assertContainsColor(finalExpectedContainerColor)
+        onNodeWithTag(TEST_TAG).captureToImage().assertContainsColor(finalExpectedContainerColor)
     }
 }

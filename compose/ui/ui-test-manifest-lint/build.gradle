@@ -40,7 +40,7 @@ dependencies {
 
 androidx {
     name = "Compose Testing Manifest lint checks"
-    type = LibraryType.LINT
+    type = LibraryType.STANDALONE_PUBLISHED_LINT
     inceptionYear = "2022"
     description = "Lint checks for Android Test Manifest"
 }

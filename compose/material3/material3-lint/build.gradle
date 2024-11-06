@@ -32,7 +32,7 @@ plugins {
 BundleInsideHelper.forInsideLintJar(project)
 
 dependencies {
-    compileOnly libs.androidLintMinComposeApi
+    compileOnly libs.androidLintMinApi
     compileOnly libs.kotlinStdlib
     bundleInside(project(":compose:lint:common"))
 
@@ -46,7 +46,7 @@ dependencies {
 
 androidx {
     name = "Compose Material3 Lint Checks"
-    type = LibraryType.LINT
+    type = LibraryType.STANDALONE_PUBLISHED_LINT
     inceptionYear = "2022"
     description = "Compose Material3 Lint Checks"
 }

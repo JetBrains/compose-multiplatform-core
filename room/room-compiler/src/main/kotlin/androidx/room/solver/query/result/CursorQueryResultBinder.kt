@@ -16,7 +16,6 @@
 
 package androidx.room.solver.query.result
 
-import androidx.room.compiler.codegen.XCodeBlock.Builder.Companion.addLocalVal
 import androidx.room.compiler.codegen.XPropertySpec
 import androidx.room.ext.AndroidTypeNames
 import androidx.room.solver.CodeGenScope
@@ -29,11 +28,12 @@ class CursorQueryResultBinder : QueryResultBinder(NO_OP_RESULT_ADAPTER) {
         inTransaction: Boolean,
         scope: CodeGenScope
     ) {
-        val transactionWrapper = if (inTransaction) {
-            scope.builder.transactionWrapper(dbProperty.name)
-        } else {
-            null
-        }
+        val transactionWrapper =
+            if (inTransaction) {
+                scope.builder.transactionWrapper(dbProperty.name)
+            } else {
+                null
+            }
         transactionWrapper?.beginTransactionWithControlFlow()
         scope.builder.apply {
             val resultName = scope.getTmpVar("_tmpResult")
@@ -51,9 +51,13 @@ class CursorQueryResultBinder : QueryResultBinder(NO_OP_RESULT_ADAPTER) {
     }
 
     companion object {
-        private val NO_OP_RESULT_ADAPTER = object : QueryResultAdapter(emptyList()) {
-            override fun convert(outVarName: String, cursorVarName: String, scope: CodeGenScope) {
+        private val NO_OP_RESULT_ADAPTER =
+            object : QueryResultAdapter(emptyList()) {
+                override fun convert(
+                    outVarName: String,
+                    cursorVarName: String,
+                    scope: CodeGenScope
+                ) {}
             }
-        }
     }
 }

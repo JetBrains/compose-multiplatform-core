@@ -18,6 +18,8 @@ package androidx.compose.material3.adaptive.layout
 
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.saveable.Saver
+import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.ui.util.fastForEachReversed
 
 @ExperimentalMaterial3AdaptiveApi
@@ -38,17 +40,16 @@ private inline fun buildThreePaneScaffoldValue(
  *
  * The function will treat the current destination as the highest priority and then adapt the rest
  * panes according to the order of [ThreePaneScaffoldRole.Primary],
- * [ThreePaneScaffoldRole.Secondary] and [ThreePaneScaffoldRole.Tertiary]. If there
- * are still remaining partitions to put the pane, the pane will be set as
- * [PaneAdaptedValue.Expanded], otherwise it will be adapted according to its associated
- * [AdaptStrategy].
+ * [ThreePaneScaffoldRole.Secondary] and [ThreePaneScaffoldRole.Tertiary]. If there are still
+ * remaining partitions to put the pane, the pane will be set as [PaneAdaptedValue.Expanded],
+ * otherwise it will be adapted according to its associated [AdaptStrategy].
  *
  * @param maxHorizontalPartitions The maximum allowed partitions along the horizontal axis, i.e.,
- *        how many expanded panes can be shown at the same time.
+ *   how many expanded panes can be shown at the same time.
  * @param adaptStrategies The adapt strategies of each pane role that [ThreePaneScaffold] supports,
- *        the default value will be [ThreePaneScaffoldDefaults.threePaneScaffoldAdaptStrategies].
- * @param currentDestination The current destination item, which will be treated as having
- *        the highest priority, can be `null`.
+ *   the default value will be [ThreePaneScaffoldDefaults.adaptStrategies].
+ * @param currentDestination The current destination item, which will be treated as having the
+ *   highest priority, can be `null`.
  */
 @ExperimentalMaterial3AdaptiveApi
 fun calculateThreePaneScaffoldValue(
@@ -64,7 +65,6 @@ fun calculateThreePaneScaffoldValue(
                 expandedCount++
                 PaneAdaptedValue.Expanded
             }
-
             else -> adaptStrategies[role].adapt()
         }
     }
@@ -75,20 +75,20 @@ fun calculateThreePaneScaffoldValue(
  * [maxHorizontalPartitions], [adaptStrategies] and [destinationHistory]. The returned value can be
  * used as a unique representation of the current layout structure.
  *
- * The function will treat the current focus as the highest priority and then adapt the rest
- * panes according to the order of [ThreePaneScaffoldRole.Primary],
- * [ThreePaneScaffoldRole.Secondary] and [ThreePaneScaffoldRole.Tertiary]. If there are still
- * remaining partitions to put the pane, the pane will be set as [PaneAdaptedValue.Expanded],
- * otherwise it will be adapted according to its associated [AdaptStrategy].
+ * The function will treat the current focus as the highest priority and then adapt the rest panes
+ * according to the order of [ThreePaneScaffoldRole.Primary], [ThreePaneScaffoldRole.Secondary] and
+ * [ThreePaneScaffoldRole.Tertiary]. If there are still remaining partitions to put the pane, the
+ * pane will be set as [PaneAdaptedValue.Expanded], otherwise it will be adapted according to its
+ * associated [AdaptStrategy].
  *
  * @param maxHorizontalPartitions The maximum allowed partitions along the horizontal axis, i.e.,
- *        how many expanded panes can be shown at the same time.
+ *   how many expanded panes can be shown at the same time.
  * @param adaptStrategies The adapt strategies of each pane role that [ThreePaneScaffold] supports,
- *        the default value will be [ThreePaneScaffoldDefaults.threePaneScaffoldAdaptStrategies].
+ *   the default value will be [ThreePaneScaffoldDefaults.adaptStrategies].
  * @param destinationHistory The history of past destination items. The last destination will have
- *        the highest priority, and the second last destination will have the second highest
- *        priority, and so forth until all panes have a priority assigned. Note that the last
- *        destination is supposed to be the last item of the provided list.
+ *   the highest priority, and the second last destination will have the second highest priority,
+ *   and so forth until all panes have a priority assigned. Note that the last destination is
+ *   supposed to be the last item of the provided list.
  */
 @ExperimentalMaterial3AdaptiveApi
 fun calculateThreePaneScaffoldValue(
@@ -126,42 +126,47 @@ fun calculateThreePaneScaffoldValue(
         }
     }
     return ThreePaneScaffoldValue(
-        primary = primaryPaneAdaptedValue ?: if (expandedCount < maxHorizontalPartitions) {
-            expandedCount++
-            PaneAdaptedValue.Expanded
-        } else {
-            adaptStrategies[ThreePaneScaffoldRole.Primary].adapt()
-        },
-        secondary = secondaryPaneAdaptedValue ?: if (expandedCount < maxHorizontalPartitions) {
-            expandedCount++
-            PaneAdaptedValue.Expanded
-        } else {
-            adaptStrategies[ThreePaneScaffoldRole.Secondary].adapt()
-        },
-        tertiary = tertiaryPaneAdaptedValue ?: if (expandedCount < maxHorizontalPartitions) {
-            expandedCount++
-            PaneAdaptedValue.Expanded
-        } else {
-            adaptStrategies[ThreePaneScaffoldRole.Tertiary].adapt()
-        }
+        primary =
+            primaryPaneAdaptedValue
+                ?: if (expandedCount < maxHorizontalPartitions) {
+                    expandedCount++
+                    PaneAdaptedValue.Expanded
+                } else {
+                    adaptStrategies[ThreePaneScaffoldRole.Primary].adapt()
+                },
+        secondary =
+            secondaryPaneAdaptedValue
+                ?: if (expandedCount < maxHorizontalPartitions) {
+                    expandedCount++
+                    PaneAdaptedValue.Expanded
+                } else {
+                    adaptStrategies[ThreePaneScaffoldRole.Secondary].adapt()
+                },
+        tertiary =
+            tertiaryPaneAdaptedValue
+                ?: if (expandedCount < maxHorizontalPartitions) {
+                    expandedCount++
+                    PaneAdaptedValue.Expanded
+                } else {
+                    adaptStrategies[ThreePaneScaffoldRole.Tertiary].adapt()
+                }
     )
 }
 
 /**
  * The adapted value of [ThreePaneScaffold]. It contains each pane's adapted value.
- * [ThreePaneScaffold] will use the adapted values to decide which panes should be displayed
- * and how they should be displayed. With other input parameters of [ThreePaneScaffold] fixed,
- * each possible instance of this class should represent a unique state of [ThreePaneScaffold]
- * and developers can compare two [ThreePaneScaffoldValue] to decide if there is a layout structure
- * change.
+ * [ThreePaneScaffold] will use the adapted values to decide which panes should be displayed and how
+ * they should be displayed. With other input parameters of [ThreePaneScaffold] fixed, each possible
+ * instance of this class should represent a unique state of [ThreePaneScaffold] and developers can
+ * compare two [ThreePaneScaffoldValue] to decide if there is a layout structure change.
  *
  * For a Material-opinionated layout, it's suggested to use [calculateThreePaneScaffoldValue] to
  * calculate the current scaffold value.
  *
- * @constructor create an instance of [ThreePaneScaffoldValue]
  * @param primary [PaneAdaptedValue] of the primary pane of [ThreePaneScaffold]
  * @param secondary [PaneAdaptedValue] of the secondary pane of [ThreePaneScaffold]
  * @param tertiary [PaneAdaptedValue] of the tertiary pane of [ThreePaneScaffold]
+ * @constructor create an instance of [ThreePaneScaffoldValue]
  */
 @ExperimentalMaterial3AdaptiveApi
 @Immutable
@@ -169,7 +174,40 @@ class ThreePaneScaffoldValue(
     val primary: PaneAdaptedValue,
     val secondary: PaneAdaptedValue,
     val tertiary: PaneAdaptedValue
-) {
+) : PaneScaffoldValue<ThreePaneScaffoldRole>, PaneExpansionStateKeyProvider {
+    internal val expandedCount by lazy {
+        var count = 0
+        if (primary == PaneAdaptedValue.Expanded) {
+            count++
+        }
+        if (secondary == PaneAdaptedValue.Expanded) {
+            count++
+        }
+        if (tertiary == PaneAdaptedValue.Expanded) {
+            count++
+        }
+        count
+    }
+
+    override val paneExpansionStateKey by lazy {
+        if (expandedCount != 2) {
+            PaneExpansionStateKey.Default
+        } else {
+            val expandedPanes = Array<ThreePaneScaffoldRole?>(2) { null }
+            var count = 0
+            if (primary == PaneAdaptedValue.Expanded) {
+                expandedPanes[count++] = ThreePaneScaffoldRole.Primary
+            }
+            if (secondary == PaneAdaptedValue.Expanded) {
+                expandedPanes[count++] = ThreePaneScaffoldRole.Secondary
+            }
+            if (tertiary == PaneAdaptedValue.Expanded) {
+                expandedPanes[count] = ThreePaneScaffoldRole.Tertiary
+            }
+            TwoPaneExpansionStateKeyImpl(expandedPanes[0]!!, expandedPanes[1]!!)
+        }
+    }
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is ThreePaneScaffoldValue) return false
@@ -192,7 +230,7 @@ class ThreePaneScaffoldValue(
             "tertiary=$tertiary)"
     }
 
-    operator fun get(role: ThreePaneScaffoldRole): PaneAdaptedValue =
+    override operator fun get(role: ThreePaneScaffoldRole): PaneAdaptedValue =
         when (role) {
             ThreePaneScaffoldRole.Primary -> primary
             ThreePaneScaffoldRole.Secondary -> secondary
@@ -201,16 +239,31 @@ class ThreePaneScaffoldValue(
 }
 
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
-internal val ThreePaneScaffoldValue.expandedCount: Int get() {
-    var count = 0
-    if (primary == PaneAdaptedValue.Expanded) {
-        count++
+internal class TwoPaneExpansionStateKeyImpl(
+    val firstExpandedPane: ThreePaneScaffoldRole,
+    val secondExpandedPane: ThreePaneScaffoldRole
+) : PaneExpansionStateKey {
+    override fun hashCode(): Int {
+        return firstExpandedPane.hashCode() * 31 + secondExpandedPane.hashCode()
     }
-    if (secondary == PaneAdaptedValue.Expanded) {
-        count++
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        val otherKey = other as? TwoPaneExpansionStateKeyImpl ?: return false
+        return firstExpandedPane == otherKey.firstExpandedPane &&
+            secondExpandedPane == otherKey.secondExpandedPane
     }
-    if (tertiary == PaneAdaptedValue.Expanded) {
-        count++
+
+    companion object {
+        fun saver(): Saver<TwoPaneExpansionStateKeyImpl, Any> =
+            listSaver(
+                save = { listOf(it.firstExpandedPane, it.secondExpandedPane) },
+                restore = {
+                    TwoPaneExpansionStateKeyImpl(
+                        firstExpandedPane = it[0],
+                        secondExpandedPane = it[1]
+                    )
+                }
+            )
     }
-    return count
 }

@@ -21,6 +21,11 @@ import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.core.telecom.CallControlScope
 import androidx.core.telecom.CallEndpointCompat
+import androidx.core.telecom.extensions.LocalCallSilenceExtension
+import androidx.core.telecom.util.ExperimentalAppActions
+import kotlin.coroutines.coroutineContext
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 
 @RequiresApi(34)
 class VoipCall {
@@ -28,10 +33,14 @@ class VoipCall {
 
     var mAdapter: CallListAdapter? = null
     var mCallControl: CallControlScope? = null
+    var mParticipantControl: ParticipantControl? = null
     var mCurrentEndpoint: CallEndpointCompat? = null
     var mAvailableEndpoints: List<CallEndpointCompat>? = ArrayList()
     var mIsMuted = false
     var mTelecomCallId: String = ""
+    var mIsLocallySilence: Boolean = false
+    @OptIn(ExperimentalAppActions::class)
+    var mLocalCallSilenceExtension: LocalCallSilenceExtension? = null
 
     val mOnSetActiveLambda: suspend () -> Unit = {
         Log.i(TAG, "onSetActive: completing")
@@ -57,12 +66,40 @@ class VoipCall {
         mCallControl = callControl
     }
 
+    fun setParticipantControl(participantControl: ParticipantControl) {
+        mParticipantControl = participantControl
+    }
+
+    @OptIn(ExperimentalAppActions::class)
+    suspend fun toggleLocalCallSilence() {
+        CoroutineScope(coroutineContext).launch {
+            // toggle the value for the call
+            mIsLocallySilence = !mIsLocallySilence
+
+            mAdapter?.updateLocalCallSilenceIcon(mTelecomCallId, mIsLocallySilence)
+            // send update to the ICS
+            mLocalCallSilenceExtension?.updateIsLocallySilenced(mIsLocallySilence)
+        }
+    }
+
+    suspend fun onLocalCallSilenceUpdate(isSilenced: Boolean) {
+        // change the value for the app to match the ics
+        mIsLocallySilence = isSilenced
+        CoroutineScope(coroutineContext).launch {
+            mAdapter?.updateLocalCallSilenceIcon(mTelecomCallId, isSilenced)
+        }
+    }
+
     fun setCallAdapter(adapter: CallListAdapter?) {
         mAdapter = adapter
     }
 
     fun setCallId(callId: String) {
         mTelecomCallId = callId
+    }
+
+    fun onParticipantsChanged(participants: List<ParticipantState>) {
+        mAdapter?.updateParticipants(mTelecomCallId, participants)
     }
 
     fun onCallEndpointChanged(endpoint: CallEndpointCompat) {

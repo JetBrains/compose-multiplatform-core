@@ -45,7 +45,6 @@ import android.text.TextUtils;
 import android.webkit.MimeTypeMap;
 
 import androidx.annotation.CallSuper;
-import androidx.annotation.DoNotInline;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -96,12 +95,11 @@ import java.util.Map;
  * <p>
  * <b>Defining a FileProvider</b>
  * <p>
- * Extend FileProvider with a default constructor, and call super with an XML resource file that
- * specifies the available files (see below for the structure of the XML file):
+ * Extend FileProvider with a default constructor:
  * <pre class="prettyprint">
  * public class MyFileProvider extends FileProvider {
  *    public MyFileProvider() {
- *        super(R.xml.file_paths)
+ *        ...
  *    }
  * }
  * </pre>
@@ -355,11 +353,10 @@ import java.util.Map;
  * </p>
  */
 public class FileProvider extends ContentProvider {
-    private static final String[] COLUMNS = {
-            OpenableColumns.DISPLAY_NAME, OpenableColumns.SIZE };
+    private static final String[] COLUMNS = {OpenableColumns.DISPLAY_NAME, OpenableColumns.SIZE};
 
-    private static final String
-            META_DATA_FILE_PROVIDER_PATHS = "android.support.FILE_PROVIDER_PATHS";
+    private static final String META_DATA_FILE_PROVIDER_PATHS =
+            "android.support.FILE_PROVIDER_PATHS";
 
     private static final String TAG_ROOT_PATH = "root-path";
     private static final String TAG_FILES_PATH = "files-path";
@@ -381,16 +378,13 @@ public class FileProvider extends ContentProvider {
 
     @NonNull
     private final Object mLock = new Object();
-
+    private final int mResourceId;
     @GuardedBy("mLock")
     private String mAuthority;
-
     // Do NOT access directly! Use getLocalPathStrategy() instead.
     @GuardedBy("mLock")
     @Nullable
     private PathStrategy mLocalPathStrategy;
-
-    private final int mResourceId;
 
     public FileProvider() {
         this(ResourcesCompat.ID_NULL);
@@ -398,6 +392,223 @@ public class FileProvider extends ContentProvider {
 
     protected FileProvider(@XmlRes int resourceId) {
         mResourceId = resourceId;
+    }
+
+    /**
+     * Return a content URI for a given {@link File}. Specific temporary
+     * permissions for the content URI can be set with
+     * {@link Context#grantUriPermission(String, Uri, int)}, or added
+     * to an {@link Intent} by calling {@link Intent#setData(Uri) setData()} and then
+     * {@link Intent#setFlags(int) setFlags()}; in both cases, the applicable flags are
+     * {@link Intent#FLAG_GRANT_READ_URI_PERMISSION} and
+     * {@link Intent#FLAG_GRANT_WRITE_URI_PERMISSION}. A FileProvider can only return a
+     * <code>content</code> {@link Uri} for file paths defined in their <code>&lt;paths&gt;</code>
+     * meta-data element. See the Class Overview for more information.
+     *
+     * @param context   A {@link Context} for the current component.
+     * @param authority The authority of a {@link FileProvider} defined in a
+     *                  {@code <provider>} element in your app's manifest.
+     * @param file      A {@link File} pointing to the filename for which you want a
+     *                  <code>content</code> {@link Uri}.
+     * @return A content URI for the file.
+     * @throws IllegalArgumentException When the given {@link File} is outside
+     *                                  the paths supported by the provider.
+     */
+    public static Uri getUriForFile(@NonNull Context context, @NonNull String authority,
+            @NonNull File file) {
+        final PathStrategy strategy = getPathStrategy(context, authority, ResourcesCompat.ID_NULL);
+        return strategy.getUriForFile(file);
+    }
+
+    /**
+     * Return a content URI for a given {@link File}. Specific temporary
+     * permissions for the content URI can be set with
+     * {@link Context#grantUriPermission(String, Uri, int)}, or added
+     * to an {@link Intent} by calling {@link Intent#setData(Uri) setData()} and then
+     * {@link Intent#setFlags(int) setFlags()}; in both cases, the applicable flags are
+     * {@link Intent#FLAG_GRANT_READ_URI_PERMISSION} and
+     * {@link Intent#FLAG_GRANT_WRITE_URI_PERMISSION}. A FileProvider can only return a
+     * <code>content</code> {@link Uri} for file paths defined in their <code>&lt;paths&gt;</code>
+     * meta-data element. See the Class Overview for more information.
+     *
+     * @param context     A {@link Context} for the current component.
+     * @param authority   The authority of a {@link FileProvider} defined in a
+     *                    {@code <provider>} element in your app's manifest.
+     * @param file        A {@link File} pointing to the filename for which you want a
+     *                    <code>content</code> {@link Uri}.
+     * @param displayName The filename to be displayed. This can be used if the original filename
+     *                    is undesirable.
+     * @return A content URI for the file.
+     * @throws IllegalArgumentException When the given {@link File} is outside
+     *                                  the paths supported by the provider.
+     */
+    @SuppressLint("StreamFiles")
+    @NonNull
+    public static Uri getUriForFile(@NonNull Context context, @NonNull String authority,
+            @NonNull File file, @NonNull String displayName) {
+        Uri uri = getUriForFile(context, authority, file);
+        return uri.buildUpon().appendQueryParameter(DISPLAYNAME_FIELD, displayName).build();
+    }
+
+    /**
+     * Return {@link PathStrategy} for given authority, either by parsing or
+     * returning from cache.
+     */
+    private static PathStrategy getPathStrategy(Context context, String authority, int resourceId) {
+        PathStrategy strat;
+        synchronized (sCache) {
+            strat = sCache.get(authority);
+            if (strat == null) {
+                try {
+                    strat = parsePathStrategy(context, authority, resourceId);
+                } catch (IOException e) {
+                    throw new IllegalArgumentException(
+                            "Failed to parse " + META_DATA_FILE_PROVIDER_PATHS + " meta-data", e);
+                } catch (XmlPullParserException e) {
+                    throw new IllegalArgumentException(
+                            "Failed to parse " + META_DATA_FILE_PROVIDER_PATHS + " meta-data", e);
+                }
+                sCache.put(authority, strat);
+            }
+        }
+        return strat;
+    }
+
+    @VisibleForTesting
+    static XmlResourceParser getFileProviderPathsMetaData(Context context, String authority,
+            @Nullable ProviderInfo info, int resourceId) {
+        if (info == null) {
+            throw new IllegalArgumentException(
+                    "Couldn't find meta-data for provider with authority " + authority);
+        }
+
+        if (info.metaData == null && resourceId != ResourcesCompat.ID_NULL) {
+            info.metaData = new Bundle(1);
+            info.metaData.putInt(META_DATA_FILE_PROVIDER_PATHS, resourceId);
+        }
+
+        final XmlResourceParser in = info.loadXmlMetaData(context.getPackageManager(),
+                META_DATA_FILE_PROVIDER_PATHS);
+        if (in == null) {
+            throw new IllegalArgumentException(
+                    "Missing " + META_DATA_FILE_PROVIDER_PATHS + " meta-data");
+        }
+
+        return in;
+    }
+
+    /**
+     * Parse and return {@link PathStrategy} for given authority as defined in
+     * {@link #META_DATA_FILE_PROVIDER_PATHS} {@code <meta-data>}.
+     *
+     * @see #getPathStrategy(Context, String, int)
+     */
+    private static PathStrategy parsePathStrategy(Context context, String authority, int resourceId)
+            throws IOException, XmlPullParserException {
+        final SimplePathStrategy strat = new SimplePathStrategy(authority);
+
+        final ProviderInfo info = context.getPackageManager().resolveContentProvider(authority,
+                PackageManager.GET_META_DATA);
+        final XmlResourceParser in = getFileProviderPathsMetaData(context, authority, info,
+                resourceId);
+
+        int type;
+        while ((type = in.next()) != END_DOCUMENT) {
+            if (type == START_TAG) {
+                final String tag = in.getName();
+
+                final String name = in.getAttributeValue(null, ATTR_NAME);
+                String path = in.getAttributeValue(null, ATTR_PATH);
+
+                File target = null;
+                if (TAG_ROOT_PATH.equals(tag)) {
+                    target = DEVICE_ROOT;
+                } else if (TAG_FILES_PATH.equals(tag)) {
+                    target = context.getFilesDir();
+                } else if (TAG_CACHE_PATH.equals(tag)) {
+                    target = context.getCacheDir();
+                } else if (TAG_EXTERNAL.equals(tag)) {
+                    target = Environment.getExternalStorageDirectory();
+                } else if (TAG_EXTERNAL_FILES.equals(tag)) {
+                    File[] externalFilesDirs = ContextCompat.getExternalFilesDirs(context, null);
+                    if (externalFilesDirs.length > 0) {
+                        target = externalFilesDirs[0];
+                    }
+                } else if (TAG_EXTERNAL_CACHE.equals(tag)) {
+                    File[] externalCacheDirs = ContextCompat.getExternalCacheDirs(context);
+                    if (externalCacheDirs.length > 0) {
+                        target = externalCacheDirs[0];
+                    }
+                } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP
+                        && TAG_EXTERNAL_MEDIA.equals(tag)) {
+                    File[] externalMediaDirs = Api21Impl.getExternalMediaDirs(context);
+                    if (externalMediaDirs.length > 0) {
+                        target = externalMediaDirs[0];
+                    }
+                }
+
+                if (target != null) {
+                    strat.addRoot(name, buildPath(target, path));
+                }
+            }
+        }
+
+        return strat;
+    }
+
+    /**
+     * Copied from ContentResolver.java
+     */
+    private static int modeToMode(String mode) {
+        int modeBits;
+        if ("r".equals(mode)) {
+            modeBits = ParcelFileDescriptor.MODE_READ_ONLY;
+        } else if ("w".equals(mode) || "wt".equals(mode)) {
+            modeBits = ParcelFileDescriptor.MODE_WRITE_ONLY | ParcelFileDescriptor.MODE_CREATE
+                    | ParcelFileDescriptor.MODE_TRUNCATE;
+        } else if ("wa".equals(mode)) {
+            modeBits = ParcelFileDescriptor.MODE_WRITE_ONLY | ParcelFileDescriptor.MODE_CREATE
+                    | ParcelFileDescriptor.MODE_APPEND;
+        } else if ("rw".equals(mode)) {
+            modeBits = ParcelFileDescriptor.MODE_READ_WRITE | ParcelFileDescriptor.MODE_CREATE;
+        } else if ("rwt".equals(mode)) {
+            modeBits = ParcelFileDescriptor.MODE_READ_WRITE | ParcelFileDescriptor.MODE_CREATE
+                    | ParcelFileDescriptor.MODE_TRUNCATE;
+        } else {
+            throw new IllegalArgumentException("Invalid mode: " + mode);
+        }
+        return modeBits;
+    }
+
+    private static File buildPath(File base, String... segments) {
+        File cur = base;
+        for (String segment : segments) {
+            if (segment != null) {
+                cur = new File(cur, segment);
+            }
+        }
+        return cur;
+    }
+
+    private static String[] copyOf(String[] original, int newLength) {
+        final String[] result = new String[newLength];
+        System.arraycopy(original, 0, result, 0, newLength);
+        return result;
+    }
+
+    private static Object[] copyOf(Object[] original, int newLength) {
+        final Object[] result = new Object[newLength];
+        System.arraycopy(original, 0, result, 0, newLength);
+        return result;
+    }
+
+    @NonNull
+    private static String removeTrailingSlash(@NonNull String path) {
+        if (path.length() > 0 && path.charAt(path.length() - 1) == '/') {
+            return path.substring(0, path.length() - 1);
+        } else {
+            return path;
+        }
     }
 
     /**
@@ -414,7 +625,7 @@ public class FileProvider extends ContentProvider {
      * information about the provider.
      *
      * @param context A {@link Context} for the current component.
-     * @param info A {@link ProviderInfo} for the new provider.
+     * @param info    A {@link ProviderInfo} for the new provider.
      */
     @SuppressWarnings("StringSplitter")
     @CallSuper
@@ -442,62 +653,6 @@ public class FileProvider extends ContentProvider {
     }
 
     /**
-     * Return a content URI for a given {@link File}. Specific temporary
-     * permissions for the content URI can be set with
-     * {@link Context#grantUriPermission(String, Uri, int)}, or added
-     * to an {@link Intent} by calling {@link Intent#setData(Uri) setData()} and then
-     * {@link Intent#setFlags(int) setFlags()}; in both cases, the applicable flags are
-     * {@link Intent#FLAG_GRANT_READ_URI_PERMISSION} and
-     * {@link Intent#FLAG_GRANT_WRITE_URI_PERMISSION}. A FileProvider can only return a
-     * <code>content</code> {@link Uri} for file paths defined in their <code>&lt;paths&gt;</code>
-     * meta-data element. See the Class Overview for more information.
-     *
-     * @param context A {@link Context} for the current component.
-     * @param authority The authority of a {@link FileProvider} defined in a
-     *            {@code <provider>} element in your app's manifest.
-     * @param file A {@link File} pointing to the filename for which you want a
-     * <code>content</code> {@link Uri}.
-     * @return A content URI for the file.
-     * @throws IllegalArgumentException When the given {@link File} is outside
-     * the paths supported by the provider.
-     */
-    public static Uri getUriForFile(@NonNull Context context, @NonNull String authority,
-            @NonNull File file) {
-        final PathStrategy strategy = getPathStrategy(context, authority, ResourcesCompat.ID_NULL);
-        return strategy.getUriForFile(file);
-    }
-
-    /**
-     * Return a content URI for a given {@link File}. Specific temporary
-     * permissions for the content URI can be set with
-     * {@link Context#grantUriPermission(String, Uri, int)}, or added
-     * to an {@link Intent} by calling {@link Intent#setData(Uri) setData()} and then
-     * {@link Intent#setFlags(int) setFlags()}; in both cases, the applicable flags are
-     * {@link Intent#FLAG_GRANT_READ_URI_PERMISSION} and
-     * {@link Intent#FLAG_GRANT_WRITE_URI_PERMISSION}. A FileProvider can only return a
-     * <code>content</code> {@link Uri} for file paths defined in their <code>&lt;paths&gt;</code>
-     * meta-data element. See the Class Overview for more information.
-     *
-     * @param context A {@link Context} for the current component.
-     * @param authority The authority of a {@link FileProvider} defined in a
-     *            {@code <provider>} element in your app's manifest.
-     * @param file A {@link File} pointing to the filename for which you want a
-     * <code>content</code> {@link Uri}.
-     * @param displayName The filename to be displayed. This can be used if the original filename
-     * is undesirable.
-     * @return A content URI for the file.
-     * @throws IllegalArgumentException When the given {@link File} is outside
-     * the paths supported by the provider.
-     */
-    @SuppressLint("StreamFiles")
-    @NonNull
-    public static Uri getUriForFile(@NonNull Context context, @NonNull String authority,
-            @NonNull File file, @NonNull String displayName) {
-        Uri uri = getUriForFile(context, authority, file);
-        return uri.buildUpon().appendQueryParameter(DISPLAYNAME_FIELD, displayName).build();
-    }
-
-    /**
      * Use a content URI returned by
      * {@link #getUriForFile(Context, String, File) getUriForFile()} to get information about a file
      * managed by the FileProvider.
@@ -510,26 +665,29 @@ public class FileProvider extends ContentProvider {
      * {@link ContentProvider#query(Uri, String[], String, String[], String)
      * ContentProvider.query()}.
      *
-     * @param uri A content URI returned by {@link #getUriForFile}.
-     * @param projection The list of columns to put into the {@link Cursor}. If null all columns are
-     * included.
-     * @param selection Selection criteria to apply. If null then all data that matches the content
-     * URI is returned.
+     * @param uri           A content URI returned by {@link #getUriForFile}.
+     * @param projection    The list of columns to put into the {@link Cursor}. If null all
+     *                      columns are
+     *                      included.
+     * @param selection     Selection criteria to apply. If null then all data that matches the
+     *                      content
+     *                      URI is returned.
      * @param selectionArgs An array of {@link String}, containing arguments to bind to
-     * the <i>selection</i> parameter. The <i>query</i> method scans <i>selection</i> from left to
-     * right and iterates through <i>selectionArgs</i>, replacing the current "?" character in
-     * <i>selection</i> with the value at the current position in <i>selectionArgs</i>. The
-     * values are bound to <i>selection</i> as {@link String} values.
-     * @param sortOrder A {@link String} containing the column name(s) on which to sort
-     * the resulting {@link Cursor}.
+     *                      the <i>selection</i> parameter. The <i>query</i> method scans
+     *                      <i>selection</i> from left to
+     *                      right and iterates through <i>selectionArgs</i>, replacing the
+     *                      current "?" character in
+     *                      <i>selection</i> with the value at the current position in
+     *                      <i>selectionArgs</i>. The
+     *                      values are bound to <i>selection</i> as {@link String} values.
+     * @param sortOrder     A {@link String} containing the column name(s) on which to sort
+     *                      the resulting {@link Cursor}.
      * @return A {@link Cursor} containing the results of the query.
-     *
      */
     @NonNull
     @Override
     public Cursor query(@NonNull Uri uri, @Nullable String[] projection, @Nullable String selection,
-            @Nullable String[] selectionArgs,
-            @Nullable String sortOrder) {
+            @Nullable String[] selectionArgs, @Nullable String sortOrder) {
         // ContentProvider has already checked granted permissions
         final File file = getLocalPathStrategy().getFileForUri(uri);
         String displayName = uri.getQueryParameter(DISPLAYNAME_FIELD);
@@ -564,7 +722,7 @@ public class FileProvider extends ContentProvider {
      * {@link #getUriForFile(Context, String, File) getUriForFile()}.
      *
      * @param uri A content URI returned by
-     * {@link #getUriForFile(Context, String, File) getUriForFile()}.
+     *            {@link #getUriForFile(Context, String, File) getUriForFile()}.
      * @return If the associated file has an extension, the MIME type associated with that
      * extension; otherwise <code>application/octet-stream</code>.
      */
@@ -621,9 +779,9 @@ public class FileProvider extends ContentProvider {
      * returned by {@link #getUriForFile(Context, String, File) getUriForFile()}. Notice that this
      * method does <b>not</b> throw an {@link IOException}; you must check its return value.
      *
-     * @param uri A content URI for a file, as returned by
-     * {@link #getUriForFile(Context, String, File) getUriForFile()}.
-     * @param selection Ignored. Set to {@code null}.
+     * @param uri           A content URI for a file, as returned by
+     *                      {@link #getUriForFile(Context, String, File) getUriForFile()}.
+     * @param selection     Ignored. Set to {@code null}.
      * @param selectionArgs Ignored. Set to {@code null}.
      * @return 1 if the delete succeeds; otherwise, 0.
      */
@@ -644,10 +802,11 @@ public class FileProvider extends ContentProvider {
      *
      * To override this method, you must provide your own subclass of FileProvider.
      *
-     * @param uri A content URI associated with a file, as returned by
-     * {@link #getUriForFile(Context, String, File) getUriForFile()}.
+     * @param uri  A content URI associated with a file, as returned by
+     *             {@link #getUriForFile(Context, String, File) getUriForFile()}.
      * @param mode Access mode for the file. May be "r" for read-only access, "rw" for read and
-     * write access, or "rwt" for read and write access that truncates any existing file.
+     *             write access, or "rwt" for read and write access that truncates any existing
+     *             file.
      * @return A new {@link ParcelFileDescriptor} with which you can access the file.
      */
     @SuppressLint("UnknownNullness") // b/171012356
@@ -672,113 +831,6 @@ public class FileProvider extends ContentProvider {
             }
             return mLocalPathStrategy;
         }
-    }
-
-    /**
-     * Return {@link PathStrategy} for given authority, either by parsing or
-     * returning from cache.
-     */
-    private static PathStrategy getPathStrategy(Context context, String authority, int resourceId) {
-        PathStrategy strat;
-        synchronized (sCache) {
-            strat = sCache.get(authority);
-            if (strat == null) {
-                try {
-                    strat = parsePathStrategy(context, authority, resourceId);
-                } catch (IOException e) {
-                    throw new IllegalArgumentException(
-                            "Failed to parse " + META_DATA_FILE_PROVIDER_PATHS + " meta-data", e);
-                } catch (XmlPullParserException e) {
-                    throw new IllegalArgumentException(
-                            "Failed to parse " + META_DATA_FILE_PROVIDER_PATHS + " meta-data", e);
-                }
-                sCache.put(authority, strat);
-            }
-        }
-        return strat;
-    }
-
-    @VisibleForTesting
-    static XmlResourceParser getFileProviderPathsMetaData(Context context, String authority,
-            @Nullable ProviderInfo info,
-            int resourceId) {
-        if (info == null) {
-            throw new IllegalArgumentException(
-                    "Couldn't find meta-data for provider with authority " + authority);
-        }
-
-        if (info.metaData == null && resourceId != ResourcesCompat.ID_NULL) {
-            info.metaData = new Bundle(1);
-            info.metaData.putInt(META_DATA_FILE_PROVIDER_PATHS, resourceId);
-        }
-
-        final XmlResourceParser in = info.loadXmlMetaData(
-                context.getPackageManager(), META_DATA_FILE_PROVIDER_PATHS);
-        if (in == null) {
-            throw new IllegalArgumentException(
-                    "Missing " + META_DATA_FILE_PROVIDER_PATHS + " meta-data");
-        }
-
-        return in;
-    }
-
-    /**
-     * Parse and return {@link PathStrategy} for given authority as defined in
-     * {@link #META_DATA_FILE_PROVIDER_PATHS} {@code <meta-data>}.
-     *
-     * @see #getPathStrategy(Context, String, int)
-     */
-    private static PathStrategy parsePathStrategy(Context context, String authority, int resourceId)
-            throws IOException, XmlPullParserException {
-        final SimplePathStrategy strat = new SimplePathStrategy(authority);
-
-        final ProviderInfo info = context.getPackageManager()
-                .resolveContentProvider(authority, PackageManager.GET_META_DATA);
-        final XmlResourceParser in = getFileProviderPathsMetaData(context, authority, info,
-                resourceId);
-
-        int type;
-        while ((type = in.next()) != END_DOCUMENT) {
-            if (type == START_TAG) {
-                final String tag = in.getName();
-
-                final String name = in.getAttributeValue(null, ATTR_NAME);
-                String path = in.getAttributeValue(null, ATTR_PATH);
-
-                File target = null;
-                if (TAG_ROOT_PATH.equals(tag)) {
-                    target = DEVICE_ROOT;
-                } else if (TAG_FILES_PATH.equals(tag)) {
-                    target = context.getFilesDir();
-                } else if (TAG_CACHE_PATH.equals(tag)) {
-                    target = context.getCacheDir();
-                } else if (TAG_EXTERNAL.equals(tag)) {
-                    target = Environment.getExternalStorageDirectory();
-                } else if (TAG_EXTERNAL_FILES.equals(tag)) {
-                    File[] externalFilesDirs = ContextCompat.getExternalFilesDirs(context, null);
-                    if (externalFilesDirs.length > 0) {
-                        target = externalFilesDirs[0];
-                    }
-                } else if (TAG_EXTERNAL_CACHE.equals(tag)) {
-                    File[] externalCacheDirs = ContextCompat.getExternalCacheDirs(context);
-                    if (externalCacheDirs.length > 0) {
-                        target = externalCacheDirs[0];
-                    }
-                } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP
-                        && TAG_EXTERNAL_MEDIA.equals(tag)) {
-                    File[] externalMediaDirs = Api21Impl.getExternalMediaDirs(context);
-                    if (externalMediaDirs.length > 0) {
-                        target = externalMediaDirs[0];
-                    }
-                }
-
-                if (target != null) {
-                    strat.addRoot(name, buildPath(target, path));
-                }
-            }
-        }
-
-        return strat;
     }
 
     /**
@@ -837,8 +889,8 @@ public class FileProvider extends ContentProvider {
                 // Resolve to canonical path to keep path checking fast
                 root = root.getCanonicalFile();
             } catch (IOException e) {
-                throw new IllegalArgumentException(
-                        "Failed to resolve canonical path for " + root, e);
+                throw new IllegalArgumentException("Failed to resolve canonical path for " + root,
+                        e);
             }
 
             mRoots.put(name, root);
@@ -878,8 +930,8 @@ public class FileProvider extends ContentProvider {
 
             // Encode the tag and path separately
             path = Uri.encode(mostSpecific.getKey()) + '/' + Uri.encode(path, "/");
-            return new Uri.Builder().scheme("content")
-                    .authority(mAuthority).encodedPath(path).build();
+            return new Uri.Builder().scheme("content").authority(mAuthority).encodedPath(
+                    path).build();
         }
 
         @Override
@@ -887,6 +939,11 @@ public class FileProvider extends ContentProvider {
             String path = uri.getEncodedPath();
 
             final int splitIndex = path.indexOf('/', 1);
+            if (splitIndex == -1) {
+                // If the URI is trying to access a root path (e.g. content://authority/tag)
+                // there will be no trailing slash in `path`, returning root paths is not allowed.
+                throw new IllegalArgumentException("Unable to find path from root: " + uri);
+            }
             final String tag = Uri.decode(path.substring(1, splitIndex));
             path = Uri.decode(path.substring(splitIndex + 1));
 
@@ -910,80 +967,17 @@ public class FileProvider extends ContentProvider {
         }
 
         /**
-         * Check if the given file is located "under" the given root.
+         * Check if the given `filePath` is located as a descendant of the supplied `rootPath`.
          */
         private boolean belongsToRoot(@NonNull String filePath, @NonNull String rootPath) {
-            // If we naively did the
-            //    filePath.startsWith(rootPath)
-            // check, we would miss cases such as the following:
-            //    rootPath="files/data"
-            //    filePath="files/data2"
-            // Thus we'll have to do more here.
-
-            // Remove trailing '/'s (if any) first.
+            // Both `filePath` and `rootPath` are typically gained via methods (e.g.
+            // `getCanonicalPath`) which strip trailing slashes already. However this may not
+            // always be true in the future, so retain this defensive check.
             filePath = removeTrailingSlash(filePath);
             rootPath = removeTrailingSlash(rootPath);
 
-            return filePath.equals(rootPath) || filePath.startsWith(rootPath + '/');
-        }
-    }
-
-    /**
-     * Copied from ContentResolver.java
-     */
-    private static int modeToMode(String mode) {
-        int modeBits;
-        if ("r".equals(mode)) {
-            modeBits = ParcelFileDescriptor.MODE_READ_ONLY;
-        } else if ("w".equals(mode) || "wt".equals(mode)) {
-            modeBits = ParcelFileDescriptor.MODE_WRITE_ONLY
-                    | ParcelFileDescriptor.MODE_CREATE
-                    | ParcelFileDescriptor.MODE_TRUNCATE;
-        } else if ("wa".equals(mode)) {
-            modeBits = ParcelFileDescriptor.MODE_WRITE_ONLY
-                    | ParcelFileDescriptor.MODE_CREATE
-                    | ParcelFileDescriptor.MODE_APPEND;
-        } else if ("rw".equals(mode)) {
-            modeBits = ParcelFileDescriptor.MODE_READ_WRITE
-                    | ParcelFileDescriptor.MODE_CREATE;
-        } else if ("rwt".equals(mode)) {
-            modeBits = ParcelFileDescriptor.MODE_READ_WRITE
-                    | ParcelFileDescriptor.MODE_CREATE
-                    | ParcelFileDescriptor.MODE_TRUNCATE;
-        } else {
-            throw new IllegalArgumentException("Invalid mode: " + mode);
-        }
-        return modeBits;
-    }
-
-    private static File buildPath(File base, String... segments) {
-        File cur = base;
-        for (String segment : segments) {
-            if (segment != null) {
-                cur = new File(cur, segment);
-            }
-        }
-        return cur;
-    }
-
-    private static String[] copyOf(String[] original, int newLength) {
-        final String[] result = new String[newLength];
-        System.arraycopy(original, 0, result, 0, newLength);
-        return result;
-    }
-
-    private static Object[] copyOf(Object[] original, int newLength) {
-        final Object[] result = new Object[newLength];
-        System.arraycopy(original, 0, result, 0, newLength);
-        return result;
-    }
-
-    @NonNull
-    private static String removeTrailingSlash(@NonNull String path) {
-        if (path.length() > 0 && path.charAt(path.length() - 1) == '/') {
-            return path.substring(0, path.length() - 1);
-        } else {
-            return path;
+            // The `filePath` _must_ reside as a descendant of the `rootPath`
+            return filePath.startsWith(rootPath + '/');
         }
     }
 
@@ -993,7 +987,6 @@ public class FileProvider extends ContentProvider {
             // This class is not instantiable.
         }
 
-        @DoNotInline
         static File[] getExternalMediaDirs(Context context) {
             // Deprecated, otherwise this would belong on ContextCompat as a public method.
             return context.getExternalMediaDirs();

@@ -21,7 +21,7 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.Publish
+import androidx.build.LibraryType
 
 plugins {
     id("AndroidXPlugin")
@@ -29,12 +29,12 @@ plugins {
 }
 
 dependencies {
-    api("androidx.annotation:annotation:1.2.0")
+    api("androidx.annotation:annotation:1.8.1")
 
-    implementation project(":appsearch:appsearch")
-    implementation('androidx.collection:collection:1.2.0')
-    implementation("androidx.concurrent:concurrent-futures:1.0.0")
-    implementation("androidx.core:core:1.1.0")
+    implementation(project(":appsearch:appsearch"))
+    implementation("androidx.collection:collection:1.4.2")
+    implementation('androidx.concurrent:concurrent-futures:1.0.0')
+    implementation('androidx.core:core:1.0.0')
 
     androidTestImplementation(libs.testCore)
     androidTestImplementation(libs.testRules)
@@ -44,13 +44,13 @@ dependencies {
 
 androidx {
     name = "AppSearch Platform Storage"
-    publish = Publish.SNAPSHOT_AND_RELEASE
+    type = LibraryType.PUBLISHED_LIBRARY
     inceptionYear = "2021"
     description =
         "An implementation of AppSearchSession which uses the AppSearch service on Android S+"
-    metalavaK2UastEnabled = true
 }
 
 android {
+    compileSdk = 35
     namespace "androidx.appsearch.platformstorage"
 }

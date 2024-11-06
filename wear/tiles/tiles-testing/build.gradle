@@ -32,7 +32,7 @@ plugins {
 }
 
 dependencies {
-    api("androidx.annotation:annotation:1.1.0")
+    api("androidx.annotation:annotation:1.8.1")
     api(libs.guavaListenableFuture)
     api(project(":wear:tiles:tiles-renderer"))
 
@@ -54,6 +54,7 @@ dependencies {
     testImplementation(libs.testRules)
     testImplementation(libs.robolectric)
     testImplementation(libs.truth)
+    testImplementation(files("../../wear_sdk/wear-sdk.jar"))
 }
 
 android {
@@ -69,8 +70,7 @@ android {
 androidx {
     name = "Android Wear Tiles Testing Utilities"
     type = LibraryType.PUBLISHED_TEST_LIBRARY
-    publish = Publish.SNAPSHOT_AND_RELEASE
     inceptionYear = "2021"
     description = "Testing utilities for Android Wear Tiles."
-    metalavaK2UastEnabled = true
+    legacyDisableKotlinStrictApiMode = true
 }

@@ -48,24 +48,22 @@ import androidx.compose.ui.test.onChildAt
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.wear.compose.material3.samples.RadioButton
-import androidx.wear.compose.material3.samples.SplitRadioButton
+import androidx.wear.compose.material3.samples.RadioButtonSample
+import androidx.wear.compose.material3.samples.SplitRadioButtonSample
+import org.junit.Assert
 import org.junit.Rule
 import org.junit.Test
 
 class RadioButtonTest {
-    @get:Rule
-    val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule()
 
     @Test
     fun radio_button_supports_testtag() {
-        rule.setContentWithTheme {
-            RadioButtonWithDefaults(
-                modifier = Modifier.testTag(TEST_TAG)
-            )
-        }
+        rule.setContentWithTheme { RadioButtonWithDefaults(modifier = Modifier.testTag(TEST_TAG)) }
 
         rule.onNodeWithTag(TEST_TAG).assertExists()
     }
@@ -73,35 +71,35 @@ class RadioButtonTest {
     @Test
     fun split_radio_button_supports_testtag() {
         rule.setContentWithTheme {
-            SplitRadioButtonWithDefaults(
-                modifier = Modifier.testTag(TEST_TAG)
-            )
+            SplitRadioButtonWithDefaults(modifier = Modifier.testTag(TEST_TAG))
         }
 
         rule.onNodeWithTag(TEST_TAG).assertExists()
     }
 
     @Test
+    fun radio_button_has_role_radiobutton() {
+        rule.setContentWithTheme { RadioButtonWithDefaults(modifier = Modifier.testTag(TEST_TAG)) }
+
+        rule
+            .onNodeWithTag(TEST_TAG)
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.RadioButton))
+    }
+
+    @Test
     fun radio_button_samples_build() {
-        rule.setContentWithTheme {
-            RadioButton()
-        }
+        rule.setContentWithTheme { RadioButtonSample() }
     }
 
     @Test
     fun split_radio_button_samples_build() {
-        rule.setContentWithTheme {
-            SplitRadioButton()
-        }
+        rule.setContentWithTheme { SplitRadioButtonSample() }
     }
 
     @Test
     fun radio_button_has_clickaction_when_enabled() {
         rule.setContentWithTheme {
-            RadioButtonWithDefaults(
-                enabled = true,
-                modifier = Modifier.testTag(TEST_TAG)
-            )
+            RadioButtonWithDefaults(enabled = true, modifier = Modifier.testTag(TEST_TAG))
         }
 
         rule.onNodeWithTag(TEST_TAG).assertHasClickAction()
@@ -110,10 +108,7 @@ class RadioButtonTest {
     @Test
     fun split_radio_button_has_clickaction_when_enabled() {
         rule.setContentWithTheme {
-            SplitRadioButtonWithDefaults(
-                enabled = true,
-                modifier = Modifier.testTag(TEST_TAG)
-            )
+            SplitRadioButtonWithDefaults(enabled = true, modifier = Modifier.testTag(TEST_TAG))
         }
 
         rule.onNodeWithTag(TEST_TAG).onChildAt(0).assertHasClickAction()
@@ -122,10 +117,7 @@ class RadioButtonTest {
     @Test
     fun radio_button_has_clickaction_when_disabled() {
         rule.setContentWithTheme {
-            RadioButtonWithDefaults(
-                enabled = false,
-                modifier = Modifier.testTag(TEST_TAG)
-            )
+            RadioButtonWithDefaults(enabled = false, modifier = Modifier.testTag(TEST_TAG))
         }
 
         rule.onNodeWithTag(TEST_TAG).assertHasClickAction()
@@ -134,10 +126,7 @@ class RadioButtonTest {
     @Test
     fun split_radio_button_has_clickaction_when_disabled() {
         rule.setContentWithTheme {
-            SplitRadioButtonWithDefaults(
-                enabled = false,
-                modifier = Modifier.testTag(TEST_TAG)
-            )
+            SplitRadioButtonWithDefaults(enabled = false, modifier = Modifier.testTag(TEST_TAG))
         }
 
         rule.onNodeWithTag(TEST_TAG).onChildAt(0).assertHasClickAction()
@@ -145,11 +134,7 @@ class RadioButtonTest {
 
     @Test
     fun radio_button_is_selectable() {
-        rule.setContentWithTheme {
-            RadioButtonWithDefaults(
-                modifier = Modifier.testTag(TEST_TAG)
-            )
-        }
+        rule.setContentWithTheme { RadioButtonWithDefaults(modifier = Modifier.testTag(TEST_TAG)) }
 
         rule.onNode(isSelectable()).assertExists()
     }
@@ -157,9 +142,7 @@ class RadioButtonTest {
     @Test
     fun split_radio_button_is_selectable() {
         rule.setContentWithTheme {
-            SplitRadioButtonWithDefaults(
-                modifier = Modifier.testTag(TEST_TAG)
-            )
+            SplitRadioButtonWithDefaults(modifier = Modifier.testTag(TEST_TAG))
         }
 
         rule.onNode(isSelectable()).assertExists()
@@ -168,9 +151,7 @@ class RadioButtonTest {
     @Test
     fun split_radio_button_is_clickable() {
         rule.setContentWithTheme {
-            SplitRadioButtonWithDefaults(
-                modifier = Modifier.testTag(TEST_TAG)
-            )
+            SplitRadioButtonWithDefaults(modifier = Modifier.testTag(TEST_TAG))
         }
         rule.onNodeWithTag(TEST_TAG).onChildAt(0).assertHasClickAction()
     }
@@ -178,10 +159,7 @@ class RadioButtonTest {
     @Test
     fun radio_button_is_correctly_enabled() {
         rule.setContentWithTheme {
-            RadioButtonWithDefaults(
-                enabled = true,
-                modifier = Modifier.testTag(TEST_TAG)
-            )
+            RadioButtonWithDefaults(enabled = true, modifier = Modifier.testTag(TEST_TAG))
         }
 
         rule.onNodeWithTag(TEST_TAG).assertIsEnabled()
@@ -190,10 +168,7 @@ class RadioButtonTest {
     @Test
     fun split_radio_button_is_correctly_enabled() {
         rule.setContentWithTheme {
-            SplitRadioButtonWithDefaults(
-                enabled = true,
-                modifier = Modifier.testTag(TEST_TAG)
-            )
+            SplitRadioButtonWithDefaults(enabled = true, modifier = Modifier.testTag(TEST_TAG))
         }
 
         rule.onNodeWithTag(TEST_TAG).assertIsEnabled()
@@ -202,10 +177,7 @@ class RadioButtonTest {
     @Test
     fun radio_button_is_correctly_disabled() {
         rule.setContentWithTheme {
-            RadioButtonWithDefaults(
-                enabled = false,
-                modifier = Modifier.testTag(TEST_TAG)
-            )
+            RadioButtonWithDefaults(enabled = false, modifier = Modifier.testTag(TEST_TAG))
         }
 
         rule.onNodeWithTag(TEST_TAG).assertIsNotEnabled()
@@ -214,10 +186,7 @@ class RadioButtonTest {
     @Test
     fun split_radio_button_is_correctly_disabled() {
         rule.setContentWithTheme {
-            SplitRadioButtonWithDefaults(
-                enabled = false,
-                modifier = Modifier.testTag(TEST_TAG)
-            )
+            SplitRadioButtonWithDefaults(enabled = false, modifier = Modifier.testTag(TEST_TAG))
         }
 
         rule.onNodeWithTag(TEST_TAG).onChildAt(0).assertIsNotEnabled()
@@ -226,10 +195,7 @@ class RadioButtonTest {
     @Test
     fun radio_button_is_correctly_selected() {
         rule.setContentWithTheme {
-            RadioButtonWithDefaults(
-                selected = true,
-                modifier = Modifier.testTag(TEST_TAG)
-            )
+            RadioButtonWithDefaults(selected = true, modifier = Modifier.testTag(TEST_TAG))
         }
 
         rule.onNodeWithTag(TEST_TAG).assertIsSelected()
@@ -238,10 +204,7 @@ class RadioButtonTest {
     @Test
     fun split_radio_button_is_correctly_selected() {
         rule.setContentWithTheme {
-            SplitRadioButtonWithDefaults(
-                selected = true,
-                modifier = Modifier.testTag(TEST_TAG)
-            )
+            SplitRadioButtonWithDefaults(selected = true, modifier = Modifier.testTag(TEST_TAG))
         }
 
         rule.onNodeWithTag(TEST_TAG).onChildAt(1).assertIsSelected()
@@ -250,10 +213,7 @@ class RadioButtonTest {
     @Test
     fun radio_button_is_correctly_unselected() {
         rule.setContentWithTheme {
-            RadioButtonWithDefaults(
-                selected = false,
-                modifier = Modifier.testTag(TEST_TAG)
-            )
+            RadioButtonWithDefaults(selected = false, modifier = Modifier.testTag(TEST_TAG))
         }
 
         rule.onNodeWithTag(TEST_TAG).assertIsNotSelected()
@@ -262,10 +222,7 @@ class RadioButtonTest {
     @Test
     fun split_radio_button_is_correctly_unselected() {
         rule.setContentWithTheme {
-            SplitRadioButtonWithDefaults(
-                selected = false,
-                modifier = Modifier.testTag(TEST_TAG)
-            )
+            SplitRadioButtonWithDefaults(selected = false, modifier = Modifier.testTag(TEST_TAG))
         }
 
         rule.onNodeWithTag(TEST_TAG).onChildAt(1).assertIsNotSelected()
@@ -283,11 +240,7 @@ class RadioButtonTest {
             )
         }
 
-        rule
-            .onNodeWithTag(TEST_TAG)
-            .assertIsNotSelected()
-            .performClick()
-            .assertIsSelected()
+        rule.onNodeWithTag(TEST_TAG).assertIsNotSelected().performClick().assertIsSelected()
     }
 
     @Test
@@ -380,11 +333,7 @@ class RadioButtonTest {
             )
         }
 
-        rule
-            .onNodeWithTag(TEST_TAG)
-            .assertIsNotSelected()
-            .performClick()
-            .assertIsNotSelected()
+        rule.onNodeWithTag(TEST_TAG).assertIsNotSelected().performClick().assertIsNotSelected()
     }
 
     @Test
@@ -411,40 +360,27 @@ class RadioButtonTest {
     fun can_override_role() {
         rule.setContentWithTheme {
             RadioButtonWithDefaults(
-                modifier = Modifier
-                    .testTag(TEST_TAG)
-                    .semantics {
-                        role = Role.Button
-                    }
+                modifier = Modifier.testTag(TEST_TAG).semantics { role = Role.Button }
             )
         }
 
-        rule.onNodeWithTag(TEST_TAG)
-            .assert(
-                SemanticsMatcher.expectValue(
-                    SemanticsProperties.Role,
-                    Role.Button
-                )
-            )
+        rule
+            .onNodeWithTag(TEST_TAG)
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button))
     }
 
     @Test
     fun split_button_clickable_has_role_button() {
         rule.setContentWithTheme {
-            SplitRadioButtonWithDefaults(
-                modifier = Modifier.testTag(TEST_TAG)
-            )
+            SplitRadioButtonWithDefaults(modifier = Modifier.testTag(TEST_TAG))
         }
 
         // NB The toggle control (Checkbox or Switch) provides its own role,
         // but the main clickable section is a Button.
-        rule.onNodeWithTag(TEST_TAG).onChildAt(0)
-            .assert(
-                SemanticsMatcher.expectValue(
-                    SemanticsProperties.Role,
-                    Role.Button
-                )
-            )
+        rule
+            .onNodeWithTag(TEST_TAG)
+            .onChildAt(0)
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button))
     }
 
     @Test
@@ -455,9 +391,7 @@ class RadioButtonTest {
             RadioButtonWithDefaults(
                 selected = true,
                 onSelected = {},
-                label = {
-                    Text(text = textContent)
-                }
+                label = { Text(text = textContent) }
             )
         }
 
@@ -472,9 +406,7 @@ class RadioButtonTest {
             SplitRadioButtonWithDefaults(
                 selected = true,
                 onSelected = {},
-                label = {
-                    Text(text = textContent)
-                }
+                label = { Text(text = textContent) }
             )
         }
 
@@ -485,58 +417,172 @@ class RadioButtonTest {
     fun radio_button_hasAdjustableHeight() {
         val minHeight: Dp = 53.dp
 
-        rule.setContentWithThemeForSizeAssertions {
-            RadioButtonWithDefaults(
-                label = {
-                    Text(
-                        text = "RadioButton text spanning over multiple lines of text " +
-                            "to test height is adjustable. This should exceed the minimum height" +
-                            " for the RadioButton."
-                    )
-                },
-                secondaryLabel = {
-                    Text(
-                        text = "Secondary label with text."
-                    )
-                }
-            )
-        }.assertHeightIsAtLeast(minHeight)
+        rule
+            .setContentWithThemeForSizeAssertions {
+                RadioButtonWithDefaults(
+                    label = {
+                        Text(
+                            text =
+                                "RadioButton text spanning over multiple lines of text " +
+                                    "to test height is adjustable. This should exceed the minimum height" +
+                                    " for the RadioButton."
+                        )
+                    },
+                    secondaryLabel = { Text(text = "Secondary label with text.") }
+                )
+            }
+            .assertHeightIsAtLeast(minHeight)
     }
 
     @Test
     fun split_radio_button_hasAdjustableHeight() {
         val minHeight: Dp = 53.dp
 
-        rule.setContentWithThemeForSizeAssertions {
-            SplitRadioButtonWithDefaults(
-                label = {
-                    Text(
-                        text = "Primary label with 3 lines of text."
-                    )
-                },
-                secondaryLabel = {
-                    Text(
-                        text = "SplitRadioButton text spanning over multiple lines of text " +
-                            "to test height is adjustable. This should exceed the minimum height" +
-                            " for the SplitRadioButton."
-                    )
-                }
-            )
-        }.assertHeightIsAtLeast(minHeight)
+        rule
+            .setContentWithThemeForSizeAssertions {
+                SplitRadioButtonWithDefaults(
+                    label = { Text(text = "Primary label with 3 lines of text.") },
+                    secondaryLabel = {
+                        Text(
+                            text =
+                                "SplitRadioButton text spanning over multiple lines of text " +
+                                    "to test height is adjustable. This should exceed the minimum height" +
+                                    " for the SplitRadioButton."
+                        )
+                    }
+                )
+            }
+            .assertHeightIsAtLeast(minHeight)
     }
 
     @Test
     fun radio_button_height_defaults_52dp() {
-        rule.setContentWithThemeForSizeAssertions {
-            RadioButtonWithDefaults()
-        }.assertHeightIsEqualTo(52.dp)
+        rule
+            .setContentWithThemeForSizeAssertions {
+                RadioButtonWithDefaults(secondaryLabel = { Text("Secondary label") })
+            }
+            .assertHeightIsEqualTo(52.dp)
     }
 
     @Test
     fun split_radio_button_height_defaults_52dp() {
-        rule.setContentWithThemeForSizeAssertions {
-            SplitRadioButtonWithDefaults()
-        }.assertHeightIsEqualTo(52.dp)
+        rule
+            .setContentWithThemeForSizeAssertions { SplitRadioButtonWithDefaults() }
+            .assertHeightIsEqualTo(52.dp)
+    }
+
+    @Test
+    fun radio_defines_default_textalign() {
+        var labelTextAlign: TextAlign? = null
+        var secondaryLabelTextAlign: TextAlign? = null
+
+        rule.setContentWithTheme {
+            RadioButtonWithDefaults(
+                selected = true,
+                label = { labelTextAlign = LocalTextConfiguration.current.textAlign },
+                secondaryLabel = {
+                    secondaryLabelTextAlign = LocalTextConfiguration.current.textAlign
+                },
+            )
+        }
+
+        Assert.assertEquals(TextAlign.Start, labelTextAlign)
+        Assert.assertEquals(TextAlign.Start, secondaryLabelTextAlign)
+    }
+
+    @Test
+    fun splitradio_defines_default_textalign() {
+        var labelTextAlign: TextAlign? = null
+        var secondaryLabelTextAlign: TextAlign? = null
+
+        rule.setContentWithTheme {
+            SplitRadioButtonWithDefaults(
+                selected = true,
+                label = { labelTextAlign = LocalTextConfiguration.current.textAlign },
+                secondaryLabel = {
+                    secondaryLabelTextAlign = LocalTextConfiguration.current.textAlign
+                },
+            )
+        }
+
+        Assert.assertEquals(TextAlign.Start, labelTextAlign)
+        Assert.assertEquals(TextAlign.Start, secondaryLabelTextAlign)
+    }
+
+    @Test
+    fun radio_defines_default_overflow() {
+        var labelOverflow: TextOverflow? = null
+        var secondaryLabelOverflow: TextOverflow? = null
+
+        rule.setContentWithTheme {
+            RadioButtonWithDefaults(
+                selected = true,
+                label = { labelOverflow = LocalTextConfiguration.current.overflow },
+                secondaryLabel = {
+                    secondaryLabelOverflow = LocalTextConfiguration.current.overflow
+                },
+            )
+        }
+
+        Assert.assertEquals(TextOverflow.Ellipsis, labelOverflow)
+        Assert.assertEquals(TextOverflow.Ellipsis, secondaryLabelOverflow)
+    }
+
+    @Test
+    fun splitradio_defines_default_overflow() {
+        var labelOverflow: TextOverflow? = null
+        var secondaryLabelOverflow: TextOverflow? = null
+
+        rule.setContentWithTheme {
+            SplitRadioButtonWithDefaults(
+                selected = true,
+                label = { labelOverflow = LocalTextConfiguration.current.overflow },
+                secondaryLabel = {
+                    secondaryLabelOverflow = LocalTextConfiguration.current.overflow
+                },
+            )
+        }
+
+        Assert.assertEquals(TextOverflow.Ellipsis, labelOverflow)
+        Assert.assertEquals(TextOverflow.Ellipsis, secondaryLabelOverflow)
+    }
+
+    @Test
+    fun radio_defines_default_maxlines() {
+        var labelMaxLines: Int? = null
+        var secondaryLabelMaxLines: Int? = null
+
+        rule.setContentWithTheme {
+            RadioButtonWithDefaults(
+                selected = true,
+                label = { labelMaxLines = LocalTextConfiguration.current.maxLines },
+                secondaryLabel = {
+                    secondaryLabelMaxLines = LocalTextConfiguration.current.maxLines
+                },
+            )
+        }
+
+        Assert.assertEquals(3, labelMaxLines)
+        Assert.assertEquals(2, secondaryLabelMaxLines)
+    }
+
+    @Test
+    fun splitradio_defines_default_maxlines() {
+        var labelMaxLines: Int? = null
+        var secondaryLabelMaxLines: Int? = null
+
+        rule.setContentWithTheme {
+            SplitRadioButtonWithDefaults(
+                selected = true,
+                label = { labelMaxLines = LocalTextConfiguration.current.maxLines },
+                secondaryLabel = {
+                    secondaryLabelMaxLines = LocalTextConfiguration.current.maxLines
+                },
+            )
+        }
+
+        Assert.assertEquals(3, labelMaxLines)
+        Assert.assertEquals(2, secondaryLabelMaxLines)
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -584,19 +630,18 @@ class RadioButtonTest {
         rule.setContentWithTheme {
             RadioButtonWithDefaults(
                 selected = selected,
-                colors = RadioButtonDefaults.radioButtonColors(
-                    selectedContainerColor = SELECTED_COLOR,
-                    unselectedContainerColor = UNSELECTED_COLOR
-                ),
+                colors =
+                    RadioButtonDefaults.radioButtonColors(
+                        selectedContainerColor = SELECTED_COLOR,
+                        unselectedContainerColor = UNSELECTED_COLOR
+                    ),
                 onSelected = {},
                 enabled = enabled,
                 modifier = Modifier.testTag(TEST_TAG),
             )
         }
 
-        rule.onNodeWithTag(TEST_TAG)
-            .captureToImage()
-            .assertContainsColor(expectedColor)
+        rule.onNodeWithTag(TEST_TAG).captureToImage().assertContainsColor(expectedColor)
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -608,19 +653,18 @@ class RadioButtonTest {
         rule.setContentWithTheme {
             SplitRadioButtonWithDefaults(
                 selected = selected,
-                colors = RadioButtonDefaults.splitRadioButtonColors(
-                    selectedContainerColor = SELECTED_COLOR,
-                    unselectedContainerColor = UNSELECTED_COLOR
-                ),
+                colors =
+                    RadioButtonDefaults.splitRadioButtonColors(
+                        selectedContainerColor = SELECTED_COLOR,
+                        unselectedContainerColor = UNSELECTED_COLOR
+                    ),
                 onSelected = {},
                 enabled = enabled,
                 modifier = Modifier.testTag(TEST_TAG),
             )
         }
 
-        rule.onNodeWithTag(TEST_TAG)
-            .captureToImage()
-            .assertContainsColor(expectedColor)
+        rule.onNodeWithTag(TEST_TAG).captureToImage().assertContainsColor(expectedColor)
     }
 }
 
@@ -631,12 +675,9 @@ private fun RadioButtonWithDefaults(
     enabled: Boolean = true,
     colors: RadioButtonColors = RadioButtonDefaults.radioButtonColors(),
     onSelected: () -> Unit = {},
-    label: @Composable RowScope.() -> Unit = {
-        Text("Primary")
-    },
+    label: @Composable RowScope.() -> Unit = { Text("Primary") },
     secondaryLabel: @Composable (RowScope.() -> Unit)? = null,
     icon: @Composable (BoxScope.() -> Unit)? = null,
-    selectionControl: @Composable SelectionControlScope.() -> Unit = { Radio() }
 ) =
     RadioButton(
         modifier = modifier,
@@ -647,7 +688,6 @@ private fun RadioButtonWithDefaults(
         label = label,
         secondaryLabel = secondaryLabel,
         icon = icon,
-        selectionControl = selectionControl
     )
 
 @Composable
@@ -658,22 +698,20 @@ private fun SplitRadioButtonWithDefaults(
     colors: SplitRadioButtonColors = RadioButtonDefaults.splitRadioButtonColors(),
     onSelected: () -> Unit = {},
     onClick: () -> Unit = {},
-    label: @Composable RowScope.() -> Unit = {
-        Text("Primary")
-    },
+    label: @Composable RowScope.() -> Unit = { Text("Primary") },
     secondaryLabel: @Composable (RowScope.() -> Unit)? = null,
-    selectionControl: @Composable SelectionControlScope.() -> Unit = { Radio() }
-) = SplitRadioButton(
-    modifier = modifier,
-    colors = colors,
-    selected = selected,
-    enabled = enabled,
-    onSelect = onSelected,
-    label = label,
-    secondaryLabel = secondaryLabel,
-    onClick = onClick,
-    selectionControl = selectionControl,
-)
+) =
+    SplitRadioButton(
+        modifier = modifier,
+        colors = colors,
+        selected = selected,
+        enabled = enabled,
+        onSelectionClick = onSelected,
+        label = label,
+        secondaryLabel = secondaryLabel,
+        onContainerClick = onClick,
+        selectionContentDescription = null,
+    )
 
 private val SELECTED_COLOR = Color(0xFFA020F0)
 private val UNSELECTED_COLOR = Color(0xFFFFA500)

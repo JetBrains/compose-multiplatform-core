@@ -32,7 +32,6 @@ import android.media.AudioRecord;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.annotation.RequiresPermission;
 import androidx.annotation.VisibleForTesting;
 import androidx.camera.core.Logger;
@@ -70,7 +69,6 @@ import java.util.concurrent.atomic.AtomicReference;
  * @see BufferProvider
  * @see AudioRecord
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public final class AudioSource {
     private static final String TAG = "AudioSource";
 
@@ -146,6 +144,8 @@ public final class AudioSource {
             double mAudioAmplitude;
     long mAmplitudeTimestamp = 0;
     private final int mAudioFormat;
+    @VisibleForTesting
+    public final int mAudioSource;
 
     /**
      * Creates an AudioSource for the given settings.
@@ -194,6 +194,7 @@ public final class AudioSource {
         mAudioStream.setCallback(new AudioStreamCallback(), mExecutor);
         mSilentAudioStream = new SilentAudioStream(settings);
         mAudioFormat = settings.getAudioFormat();
+        mAudioSource = settings.getAudioSource();
     }
 
     @SuppressWarnings("WeakerAccess") /* synthetic accessor */

@@ -22,11 +22,13 @@ import android.annotation.SuppressLint;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import androidx.car.app.annotations.CarProtocol;
 import androidx.car.app.annotations.KeepFields;
 import androidx.car.app.serialization.Bundleable;
 import androidx.car.app.serialization.BundlerException;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A serializable class containing all the data required to render and interact with a surface from
@@ -35,10 +37,10 @@ import androidx.car.app.serialization.BundlerException;
  * This class exists for compatibility with Q devices. In Android R and later,
  * {@link android.view.SurfaceControlViewHost.SurfacePackage} will be used instead.
  */
+@CarProtocol
 @KeepFields
 public final class LegacySurfacePackage {
-    @Nullable
-    private ISurfaceControl mISurfaceControl;
+    private @Nullable ISurfaceControl mISurfaceControl;
 
     /**
      * Creates a {@link LegacySurfacePackage}.
@@ -87,8 +89,7 @@ public final class LegacySurfacePackage {
     private LegacySurfacePackage() {
     }
 
-    @NonNull
-    ISurfaceControl getSurfaceControl() {
+    @NonNull ISurfaceControl getSurfaceControl() {
         return requireNonNull(mISurfaceControl);
     }
 }

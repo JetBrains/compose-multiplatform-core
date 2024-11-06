@@ -30,11 +30,12 @@ class BuilderTest : BaseBuilderTest() {
     private val file = instrumentation.targetContext.getDatabasePath("test.db")
 
     override fun getRoomDatabaseBuilder(): RoomDatabase.Builder<SampleDatabase> {
-        return Room.databaseBuilder(
-            context = instrumentation.targetContext,
-            name = file.path,
-            factory = { SampleDatabase::class.instantiateImpl() }
-        ).setDriver(BundledSQLiteDriver())
+        return Room.databaseBuilder<SampleDatabase>(
+                context = instrumentation.targetContext,
+                name = file.path,
+                factory = SampleDatabaseConstructor::initialize
+            )
+            .setDriver(BundledSQLiteDriver())
     }
 
     @BeforeTest

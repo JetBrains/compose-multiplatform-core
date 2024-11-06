@@ -16,26 +16,50 @@
 
 package androidx.credentials.provider
 
-import android.content.pm.SigningInfo
+import android.os.Bundle
 import androidx.credentials.CreatePasswordRequest
+import androidx.credentials.assertEquals
+import androidx.credentials.getTestCallingAppInfo
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
+import androidx.testutils.assertThrows
 import org.junit.Test
 import org.junit.runner.RunWith
 
- @SdkSuppress(minSdkVersion = 28)
- @RunWith(AndroidJUnit4::class)
- @SmallTest
- class ProviderCreateCredentialRequestTest {
+@SdkSuppress(minSdkVersion = 23)
+@RunWith(AndroidJUnit4::class)
+@SmallTest
+class ProviderCreateCredentialRequestTest {
 
     @Test
     fun constructor_success() {
         val request = CreatePasswordRequest("id", "password")
 
-        ProviderCreateCredentialRequest(
-                request,
-                CallingAppInfo("name",
-                SigningInfo()))
+        ProviderCreateCredentialRequest(request, getTestCallingAppInfo("origin"))
     }
- }
+
+    @Test
+    fun bundleConversion_success() {
+        val request =
+            ProviderCreateCredentialRequest(
+                CreatePasswordRequest("id", "password", "origin"),
+                getTestCallingAppInfo("origin")
+            )
+
+        val actualRequest =
+            ProviderCreateCredentialRequest.fromBundle(
+                ProviderCreateCredentialRequest.asBundle(request)
+            )
+
+        assertEquals(ApplicationProvider.getApplicationContext(), request, actualRequest)
+    }
+
+    @Test
+    fun bundleConversion_emptyBundle_throws() {
+        assertThrows(IllegalArgumentException::class.java) {
+            ProviderCreateCredentialRequest.fromBundle(Bundle())
+        }
+    }
+}

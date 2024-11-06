@@ -32,6 +32,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth
+import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -54,12 +55,43 @@ class TextLayoutCacheTest {
     }
 
     @Test
+    fun capacity_one_shouldEvictTheCache_forEveryDifferentLayoutInput() {
+        val textLayoutCache = TextLayoutCache(1)
+
+        val input1 =
+            textLayoutInput(text = AnnotatedString("W"), style = TextStyle(color = Color.Red))
+        textLayoutCache.put(input1, layoutText(input1))
+
+        val input2 =
+            textLayoutInput(text = AnnotatedString("Wo"), style = TextStyle(color = Color.Red))
+        textLayoutCache.put(input2, layoutText(input2))
+        assertThat(textLayoutCache.get(input2)).isNotNull()
+        assertThat(textLayoutCache.get(input1)).isNull()
+
+        val input3 =
+            textLayoutInput(text = AnnotatedString("Wor"), style = TextStyle(color = Color.Red))
+        textLayoutCache.put(input3, layoutText(input3))
+        assertThat(textLayoutCache.get(input3)).isNotNull()
+        assertThat(textLayoutCache.get(input2)).isNull()
+
+        val input4 =
+            textLayoutInput(text = AnnotatedString("Worl"), style = TextStyle(color = Color.Red))
+        textLayoutCache.put(input4, layoutText(input4))
+        assertThat(textLayoutCache.get(input4)).isNotNull()
+        assertThat(textLayoutCache.get(input3)).isNull()
+
+        val input5 =
+            textLayoutInput(text = AnnotatedString("World"), style = TextStyle(color = Color.Red))
+        textLayoutCache.put(input5, layoutText(input5))
+        assertThat(textLayoutCache.get(input5)).isNotNull()
+        assertThat(textLayoutCache.get(input4)).isNull()
+    }
+
+    @Test
     fun exactInput_shouldReturnTheSameResult() {
         val textLayoutCache = TextLayoutCache(16)
-        val textLayoutInput = textLayoutInput(
-            text = AnnotatedString("Hello"),
-            style = TextStyle(color = Color.Red)
-        )
+        val textLayoutInput =
+            textLayoutInput(text = AnnotatedString("Hello"), style = TextStyle(color = Color.Red))
 
         val textLayoutResult = layoutText(textLayoutInput)
         textLayoutCache.put(textLayoutInput, textLayoutResult)
@@ -70,15 +102,11 @@ class TextLayoutCacheTest {
     @Test
     fun colorChange_shouldReturnFromCache() {
         val textLayoutCache = TextLayoutCache(16)
-        val firstInput = textLayoutInput(
-            text = AnnotatedString("Hello"),
-            style = TextStyle(color = Color.Red)
-        )
+        val firstInput =
+            textLayoutInput(text = AnnotatedString("Hello"), style = TextStyle(color = Color.Red))
 
-        val secondInput = textLayoutInput(
-            text = AnnotatedString("Hello"),
-            style = TextStyle(color = Color.Blue)
-        )
+        val secondInput =
+            textLayoutInput(text = AnnotatedString("Hello"), style = TextStyle(color = Color.Blue))
 
         val textLayoutResult = layoutText(firstInput)
         textLayoutCache.put(firstInput, textLayoutResult)
@@ -89,15 +117,14 @@ class TextLayoutCacheTest {
     @Test
     fun brushChange_shouldReturnFromCache() {
         val textLayoutCache = TextLayoutCache(16)
-        val firstInput = textLayoutInput(
-            text = AnnotatedString("Hello"),
-            style = TextStyle(color = Color.Red)
-        )
+        val firstInput =
+            textLayoutInput(text = AnnotatedString("Hello"), style = TextStyle(color = Color.Red))
 
-        val secondInput = textLayoutInput(
-            text = AnnotatedString("Hello"),
-            style = TextStyle(brush = Brush.linearGradient(listOf(Color.Blue, Color.Red)))
-        )
+        val secondInput =
+            textLayoutInput(
+                text = AnnotatedString("Hello"),
+                style = TextStyle(brush = Brush.linearGradient(listOf(Color.Blue, Color.Red)))
+            )
 
         val textLayoutResult = layoutText(firstInput)
         textLayoutCache.put(firstInput, textLayoutResult)
@@ -108,15 +135,17 @@ class TextLayoutCacheTest {
     @Test
     fun shadowChange_shouldReturnFromCache() {
         val textLayoutCache = TextLayoutCache(16)
-        val firstInput = textLayoutInput(
-            text = AnnotatedString("Hello"),
-            style = TextStyle(shadow = Shadow(color = Color.Red))
-        )
+        val firstInput =
+            textLayoutInput(
+                text = AnnotatedString("Hello"),
+                style = TextStyle(shadow = Shadow(color = Color.Red))
+            )
 
-        val secondInput = textLayoutInput(
-            text = AnnotatedString("Hello"),
-            style = TextStyle(shadow = Shadow(color = Color.Blue))
-        )
+        val secondInput =
+            textLayoutInput(
+                text = AnnotatedString("Hello"),
+                style = TextStyle(shadow = Shadow(color = Color.Blue))
+            )
 
         val textLayoutResult = layoutText(firstInput)
         textLayoutCache.put(firstInput, textLayoutResult)
@@ -127,15 +156,17 @@ class TextLayoutCacheTest {
     @Test
     fun textDecorationChange_shouldReturnFromCache() {
         val textLayoutCache = TextLayoutCache(16)
-        val firstInput = textLayoutInput(
-            text = AnnotatedString("Hello"),
-            style = TextStyle(textDecoration = TextDecoration.LineThrough)
-        )
+        val firstInput =
+            textLayoutInput(
+                text = AnnotatedString("Hello"),
+                style = TextStyle(textDecoration = TextDecoration.LineThrough)
+            )
 
-        val secondInput = textLayoutInput(
-            text = AnnotatedString("Hello"),
-            style = TextStyle(textDecoration = TextDecoration.Underline)
-        )
+        val secondInput =
+            textLayoutInput(
+                text = AnnotatedString("Hello"),
+                style = TextStyle(textDecoration = TextDecoration.Underline)
+            )
 
         val textLayoutResult = layoutText(firstInput)
         textLayoutCache.put(firstInput, textLayoutResult)
@@ -146,17 +177,19 @@ class TextLayoutCacheTest {
     @Test
     fun constraintsMinChanges_shouldReturnFromCache() {
         val textLayoutCache = TextLayoutCache(16)
-        val firstInput = textLayoutInput(
-            text = AnnotatedString("Hello"),
-            style = TextStyle(color = Color.Red),
-            constraints = Constraints(minWidth = 20, maxWidth = 200)
-        )
+        val firstInput =
+            textLayoutInput(
+                text = AnnotatedString("Hello"),
+                style = TextStyle(color = Color.Red),
+                constraints = Constraints(minWidth = 20, maxWidth = 200)
+            )
 
-        val secondInput = textLayoutInput(
-            text = AnnotatedString("Hello"),
-            style = TextStyle(color = Color.Red),
-            constraints = Constraints(minWidth = 60, maxWidth = 200)
-        )
+        val secondInput =
+            textLayoutInput(
+                text = AnnotatedString("Hello"),
+                style = TextStyle(color = Color.Red),
+                constraints = Constraints(minWidth = 60, maxWidth = 200)
+            )
 
         val textLayoutResult = layoutText(firstInput)
         textLayoutCache.put(firstInput, textLayoutResult)
@@ -180,15 +213,17 @@ class TextLayoutCacheTest {
     @Test
     fun fontSizeChange_shouldReturnNull() {
         val textLayoutCache = TextLayoutCache(16)
-        val firstInput = textLayoutInput(
-            text = AnnotatedString("Hello"),
-            style = TextStyle(color = Color.Red, fontSize = 14.sp)
-        )
+        val firstInput =
+            textLayoutInput(
+                text = AnnotatedString("Hello"),
+                style = TextStyle(color = Color.Red, fontSize = 14.sp)
+            )
 
-        val secondInput = textLayoutInput(
-            text = AnnotatedString("Hello"),
-            style = TextStyle(color = Color.Red, fontSize = 18.sp)
-        )
+        val secondInput =
+            textLayoutInput(
+                text = AnnotatedString("Hello"),
+                style = TextStyle(color = Color.Red, fontSize = 18.sp)
+            )
 
         val textLayoutResult = layoutText(firstInput)
         textLayoutCache.put(firstInput, textLayoutResult)
@@ -199,14 +234,9 @@ class TextLayoutCacheTest {
     @Test
     fun densityChange_shouldReturnNull() {
         val textLayoutCache = TextLayoutCache(16)
-        val firstInput = textLayoutInput(
-            text = AnnotatedString("Hello")
-        )
+        val firstInput = textLayoutInput(text = AnnotatedString("Hello"))
 
-        val secondInput = textLayoutInput(
-            text = AnnotatedString("Hello"),
-            density = Density(2f)
-        )
+        val secondInput = textLayoutInput(text = AnnotatedString("Hello"), density = Density(2f))
 
         val textLayoutResult = layoutText(firstInput)
         textLayoutCache.put(firstInput, textLayoutResult)
@@ -217,15 +247,11 @@ class TextLayoutCacheTest {
     @Test
     fun layoutDirectionChange_shouldReturnNull() {
         val textLayoutCache = TextLayoutCache(16)
-        val firstInput = textLayoutInput(
-            text = AnnotatedString("Hello"),
-            layoutDirection = LayoutDirection.Ltr
-        )
+        val firstInput =
+            textLayoutInput(text = AnnotatedString("Hello"), layoutDirection = LayoutDirection.Ltr)
 
-        val secondInput = textLayoutInput(
-            text = AnnotatedString("Hello"),
-            layoutDirection = LayoutDirection.Rtl
-        )
+        val secondInput =
+            textLayoutInput(text = AnnotatedString("Hello"), layoutDirection = LayoutDirection.Rtl)
 
         val textLayoutResult = layoutText(firstInput)
         textLayoutCache.put(firstInput, textLayoutResult)
@@ -236,17 +262,19 @@ class TextLayoutCacheTest {
     @Test
     fun constraintsMaxChanges_shouldReturnNull() {
         val textLayoutCache = TextLayoutCache(16)
-        val firstInput = textLayoutInput(
-            text = AnnotatedString("Hello"),
-            style = TextStyle(color = Color.Red),
-            constraints = Constraints(minWidth = 20, maxWidth = 200)
-        )
+        val firstInput =
+            textLayoutInput(
+                text = AnnotatedString("Hello"),
+                style = TextStyle(color = Color.Red),
+                constraints = Constraints(minWidth = 20, maxWidth = 200)
+            )
 
-        val secondInput = textLayoutInput(
-            text = AnnotatedString("Hello"),
-            style = TextStyle(color = Color.Red),
-            constraints = Constraints(minWidth = 20, maxWidth = 250)
-        )
+        val secondInput =
+            textLayoutInput(
+                text = AnnotatedString("Hello"),
+                style = TextStyle(color = Color.Red),
+                constraints = Constraints(minWidth = 20, maxWidth = 250)
+            )
 
         val textLayoutResult = layoutText(firstInput)
         textLayoutCache.put(firstInput, textLayoutResult)
@@ -301,21 +329,17 @@ class TextLayoutCacheTest {
         )
     }
 
-    private fun layoutText(textLayoutInput: TextLayoutInput) = with(textLayoutInput) {
-        val measurer = TextMeasurer(
-            fontFamilyResolver,
-            density,
-            layoutDirection,
-            0
-        )
-        measurer.measure(
-            text = text,
-            style = style,
-            overflow = overflow,
-            softWrap = softWrap,
-            maxLines = maxLines,
-            placeholders = placeholders,
-            constraints = constraints
-        )
-    }
+    private fun layoutText(textLayoutInput: TextLayoutInput) =
+        with(textLayoutInput) {
+            val measurer = TextMeasurer(fontFamilyResolver, density, layoutDirection, 0)
+            measurer.measure(
+                text = text,
+                style = style,
+                overflow = overflow,
+                softWrap = softWrap,
+                maxLines = maxLines,
+                placeholders = placeholders,
+                constraints = constraints
+            )
+        }
 }

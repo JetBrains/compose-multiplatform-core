@@ -19,19 +19,20 @@ package androidx.kruth
 import com.google.common.base.Optional
 import com.google.common.collect.Multimap
 import com.google.common.collect.Multiset
+import com.google.common.collect.Table
 import java.math.BigDecimal
 
-fun assertThat(actual: Class<*>): ClassSubject =
-    ClassSubject(actual)
+fun assertThat(actual: Class<*>): ClassSubject = ClassSubject(actual)
 
 fun <T : Any> assertThat(actual: Optional<T>?): GuavaOptionalSubject<T> =
     GuavaOptionalSubject(actual)
 
-fun assertThat(actual: BigDecimal): BigDecimalSubject =
-    BigDecimalSubject(actual)
+fun assertThat(actual: BigDecimal): BigDecimalSubject = BigDecimalSubject(actual)
 
-fun <T> assertThat(actual: Multiset<T>): MultisetSubject<T> =
-    MultisetSubject(actual = actual)
+fun <T> assertThat(actual: Multiset<T>): MultisetSubject<T> = MultisetSubject(actual = actual)
 
 fun <K, V> assertThat(actual: Multimap<K, V>): MultimapSubject<K, V> =
     MultimapSubject(actual = actual)
+
+fun <R, C, V> assertThat(actual: Table<R, C, V>): TableSubject<R, C, V> =
+    TableSubject(actual = actual)

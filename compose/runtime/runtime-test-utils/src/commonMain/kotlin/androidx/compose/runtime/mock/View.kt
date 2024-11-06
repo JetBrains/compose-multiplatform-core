@@ -17,7 +17,6 @@
 package androidx.compose.runtime.mock
 
 import androidx.compose.runtime.Stable
-import androidx.compose.ui.util.fastForEach
 
 fun indent(indent: Int, builder: StringBuilder) {
     repeat(indent) { builder.append(' ') }
@@ -25,7 +24,7 @@ fun indent(indent: Int, builder: StringBuilder) {
 
 @Stable
 interface Modifier {
-    companion object : Modifier { }
+    companion object : Modifier {}
 }
 
 open class View {
@@ -68,7 +67,7 @@ open class View {
                 removedChild.parent = null
             } else {
                 val removedChildren = children.subList(index, index + count)
-                removedChildren.fastForEach { child -> child.parent = null }
+                removedChildren.forEach { child -> child.parent = null }
                 removedChildren.clear()
             }
         }
@@ -88,11 +87,13 @@ open class View {
     }
 
     fun removeAllChildren() {
-        children.fastForEach { child -> child.parent = null }
+        children.forEach { child -> child.parent = null }
         children.clear()
     }
 
-    fun attribute(name: String, value: Any) { attributes[name] = value }
+    fun attribute(name: String, value: Any) {
+        attributes[name] = value
+    }
 
     var value: String?
         get() = attributes["value"] as? String
@@ -114,25 +115,30 @@ open class View {
             }
         }
 
-    private val attributesAsString get() =
-        if (attributes.isEmpty()) ""
-        else attributes.map { " ${it.key}='${it.value}'" }.joinToString()
-    private val childrenAsString: String get() =
-        children.map { it.toString() }.joinToString(" ")
+    private val attributesAsString
+        get() =
+            if (attributes.isEmpty()) ""
+            else attributes.map { " ${it.key}='${it.value}'" }.joinToString()
+
+    private val childrenAsString: String
+        get() = children.map { it.toString() }.joinToString(" ")
 
     override fun toString() =
-            if (children.isEmpty()) "<$name$attributesAsString>" else
-            "<$name$attributesAsString>$childrenAsString</$name>"
+        if (children.isEmpty()) "<$name$attributesAsString>"
+        else "<$name$attributesAsString>$childrenAsString</$name>"
 
-    fun toFmtString() = StringBuilder().let {
-        render(0, it)
-        it.toString()
-    }
+    fun toFmtString() =
+        StringBuilder().let {
+            render(0, it)
+            it.toString()
+        }
 
     private fun findFirstOrNull(predicate: (view: View) -> Boolean): View? {
         if (predicate(this)) return this
         for (child in children) {
-            child.findFirstOrNull(predicate)?.let { return it }
+            child.findFirstOrNull(predicate)?.let {
+                return it
+            }
         }
         return null
     }
@@ -140,4 +146,5 @@ open class View {
     fun findFirst(predicate: (view: View) -> Boolean) =
         findFirstOrNull(predicate) ?: error("View not found")
 }
+
 fun View.flatten(): List<View> = listOf(this) + children.flatMap { it.flatten() }

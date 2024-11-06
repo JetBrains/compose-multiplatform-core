@@ -26,6 +26,7 @@ android {
             minifyEnabled = true
         }
     }
+    compileSdkVersion 35
     defaultConfig {
         javaCompileOptions {
             annotationProcessorOptions {
@@ -43,9 +44,9 @@ android {
 }
 
 dependencies {
-    annotationProcessor(projectOrArtifact(":room:room-compiler"))
-    implementation(projectOrArtifact(":room:room-runtime"))
-    implementation(projectOrArtifact(":room:room-ktx"))
+    annotationProcessor(project(":room:room-compiler"))
+    implementation(project(":room:room-runtime"))
+    implementation(project(":room:room-ktx"))
 
     implementation(libs.constraintLayout)
     implementation("androidx.core:core:1.12.0")

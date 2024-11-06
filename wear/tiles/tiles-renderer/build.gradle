@@ -21,9 +21,8 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
-import androidx.build.Publish
+import androidx.build.LibraryType
 import androidx.build.LibraryType
 
 plugins {
@@ -34,7 +33,7 @@ plugins {
 }
 
 dependencies {
-    api("androidx.annotation:annotation:1.1.0")
+    api("androidx.annotation:annotation:1.8.1")
     api(libs.guavaListenableFuture)
 
     implementation "androidx.concurrent:concurrent-futures:1.1.0"
@@ -57,14 +56,6 @@ dependencies {
     androidTestImplementation(libs.testRules)
     androidTestImplementation(libs.protobuf)
 
-    // I'm not 100% sure why, but androidTestImplementation doesn't appear to use the standard
-    // results of a project build. This leads to it not using the shadow configuration from
-    // tiles-proto, and thus failing to find the protobuf classes at runtime.
-    //
-    // This line forces the androidTest to use the properly shaded proto library on the runtime
-    // classpath.
-    androidTestRuntimeOnly(project(path: ":wear:tiles:tiles-proto", configuration: "shadow"))
-
     testImplementation(libs.testExtJunit)
     testImplementation(libs.testExtTruth)
     testImplementation(libs.testCore)
@@ -82,7 +73,7 @@ android {
         minSdkVersion 26
     }
 
-    buildTypes.all {
+    buildTypes.configureEach {
         consumerProguardFiles "proguard-rules.pro"
     }
 
@@ -96,13 +87,14 @@ android {
 }
 
 protobuf {
-    protoc {
-        artifact = libs.protobufCompiler.get()
-    }
     generateProtoTasks {
-        all().each { task ->
+        all().configureEach { task ->
             task.builtins {
-                java {}
+                java {
+                    // AndroidXPlugin defaults to lite as most projects should use that library,
+                    // however TileRendererGoldenTest relies on full proto library.
+                    options.remove("lite")
+                }
             }
         }
     }
@@ -111,10 +103,9 @@ protobuf {
 androidx {
     name = "Android Wear Tiles Renderer"
     type = LibraryType.PUBLISHED_LIBRARY
-    publish = Publish.SNAPSHOT_AND_RELEASE
     inceptionYear = "2021"
     description = "Android Wear Tiles Renderer components. These components can be used to parse " +
             "and render an already constructed Wear Tile."
-    metalavaK2UastEnabled = true
+    legacyDisableKotlinStrictApiMode = true
 }
 

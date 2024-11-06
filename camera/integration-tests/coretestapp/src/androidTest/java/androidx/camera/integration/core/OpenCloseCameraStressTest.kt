@@ -69,20 +69,18 @@ class OpenCloseCameraStressTest(
     val cameraId: String
 ) {
     @get:Rule
-    val cameraPipeConfigTestRule = CameraPipeConfigTestRule(
-        active = implName == CameraPipeConfig::class.simpleName,
-    )
+    val cameraPipeConfigTestRule =
+        CameraPipeConfigTestRule(
+            active = implName == CameraPipeConfig::class.simpleName,
+        )
 
     @get:Rule
-    val useCamera = CameraUtil.grantCameraPermissionAndPreTest(
-        PreTestCameraIdList(cameraConfig)
-    )
+    val useCamera =
+        CameraUtil.grantCameraPermissionAndPreTestAndPostTest(PreTestCameraIdList(cameraConfig))
 
-    @get:Rule
-    val labTest: LabTestRule = LabTestRule()
+    @get:Rule val labTest: LabTestRule = LabTestRule()
 
-    @get:Rule
-    val repeatRule = RepeatRule()
+    @get:Rule val repeatRule = RepeatRule()
 
     private val context = ApplicationProvider.getApplicationContext<Context>()
 
@@ -96,19 +94,18 @@ class OpenCloseCameraStressTest(
 
     @Before
     fun setUp(): Unit = runBlocking {
-        // Skips CameraPipe part now and will open this when camera-pipe-integration can support
-        assumeTrue(implName != CameraPipeConfig::class.simpleName)
         // Configures the test target config
         ProcessCameraProvider.configureInstance(cameraConfig)
         cameraProvider = ProcessCameraProvider.getInstance(context)[10000, TimeUnit.MILLISECONDS]
 
         cameraIdCameraSelector = createCameraSelectorById(cameraId)
 
-        camera = withContext(Dispatchers.Main) {
-            lifecycleOwner = FakeLifecycleOwner()
-            lifecycleOwner.startAndResume()
-            cameraProvider.bindToLifecycle(lifecycleOwner, cameraIdCameraSelector)
-        }
+        camera =
+            withContext(Dispatchers.Main) {
+                lifecycleOwner = FakeLifecycleOwner()
+                lifecycleOwner.startAndResume()
+                cameraProvider.bindToLifecycle(lifecycleOwner, cameraIdCameraSelector)
+            }
 
         preview = createPreviewWithDeviceStateMonitor(implName, cameraDeviceStateMonitor)
         withContext(Dispatchers.Main) {
@@ -127,8 +124,7 @@ class OpenCloseCameraStressTest(
     }
 
     companion object {
-        @ClassRule
-        @JvmField val stressTest = StressTestRule()
+        @ClassRule @JvmField val stressTest = StressTestRule()
 
         @JvmStatic
         @Parameterized.Parameters(name = "config = {0}, cameraId = {2}")
@@ -230,12 +226,8 @@ class OpenCloseCameraStressTest(
                 cameraProvider.bindToLifecycle(
                     lifecycleOwner,
                     cameraIdCameraSelector,
-                    *listOfNotNull(
-                        preview,
-                        imageCapture,
-                        newVideoCapture,
-                        imageAnalysis
-                    ).toTypedArray()
+                    *listOfNotNull(preview, imageCapture, newVideoCapture, imageAnalysis)
+                        .toTypedArray()
                 )
             }
 
@@ -243,9 +235,7 @@ class OpenCloseCameraStressTest(
             cameraDeviceStateMonitor.awaitCameraOpenedAndAssert()
 
             // Act: unbinds all use cases
-            withContext(Dispatchers.Main) {
-                cameraProvider.unbindAll()
-            }
+            withContext(Dispatchers.Main) { cameraProvider.unbindAll() }
 
             // Assert: checks the CameraDevice closed event can be received
             cameraDeviceStateMonitor.awaitCameraClosedAndAssert()
@@ -264,8 +254,8 @@ class OpenCloseCameraStressTest(
                 androidx.camera.camera2.pipe.integration.interop.Camera2Interop.Extender(builder)
                     .setDeviceStateCallback(cameraDeviceStateMonitor)
             }
-            else -> Camera2Interop.Extender(builder)
-                .setDeviceStateCallback(cameraDeviceStateMonitor)
+            else ->
+                Camera2Interop.Extender(builder).setDeviceStateCallback(cameraDeviceStateMonitor)
         }
 
         return builder.build()
@@ -274,6 +264,7 @@ class OpenCloseCameraStressTest(
     private class CameraDeviceStateMonitor : CameraDevice.StateCallback() {
         private var openCameraLatch = CountDownLatch(1)
         private var closeCameraLatch = CountDownLatch(1)
+
         override fun onOpened(p0: CameraDevice) {
             openCameraLatch.countDown()
         }

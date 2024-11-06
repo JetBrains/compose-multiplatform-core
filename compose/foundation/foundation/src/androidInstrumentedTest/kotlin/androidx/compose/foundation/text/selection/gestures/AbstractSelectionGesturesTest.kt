@@ -21,21 +21,26 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.text.FocusedWindowTest
+import androidx.compose.foundation.text.Handle
 import androidx.compose.foundation.text.TEST_FONT_FAMILY
+import androidx.compose.foundation.text.selection.HandlePressedScope
 import androidx.compose.foundation.text.selection.gestures.util.FakeHapticFeedback
+import androidx.compose.foundation.text.selection.gestures.util.mouseDragNodeBy
+import androidx.compose.foundation.text.selection.gestures.util.mouseDragNodeTo
+import androidx.compose.foundation.text.selection.gestures.util.touchDragNodeBy
+import androidx.compose.foundation.text.selection.gestures.util.touchDragNodeTo
+import androidx.compose.foundation.text.selection.withHandlePressed
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.testutils.TestViewConfiguration
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.lerp
 import androidx.compose.ui.geometry.toRect
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalTextToolbar
 import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.platform.TextToolbar
-import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.MouseInjectionScope
 import androidx.compose.ui.test.TouchInjectionScope
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -49,17 +54,14 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.toSize
-import androidx.compose.ui.util.lerp
-import kotlin.math.max
-import kotlin.math.roundToInt
 import org.junit.Before
 import org.junit.Rule
 
-@OptIn(ExperimentalTestApi::class)
+const val RtlChar = "\u05D1"
+
 internal abstract class AbstractSelectionGesturesTest : FocusedWindowTest {
 
-    @get:Rule
-    val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule()
 
     protected abstract val pointerAreaTag: String
 
@@ -75,8 +77,7 @@ internal abstract class AbstractSelectionGesturesTest : FocusedWindowTest {
 
     protected lateinit var textToolbar: TextToolbar
 
-    @Composable
-    abstract fun Content()
+    @Composable abstract fun Content()
 
     @Before
     fun setup() {
@@ -84,18 +85,14 @@ internal abstract class AbstractSelectionGesturesTest : FocusedWindowTest {
             textToolbar = LocalTextToolbar.current
             CompositionLocalProvider(
                 LocalDensity provides density,
-                LocalViewConfiguration provides TestViewConfiguration(
-                    minimumTouchTargetSize = DpSize.Zero,
-                    touchSlop = Float.MIN_VALUE,
-                ),
+                LocalViewConfiguration provides
+                    TestViewConfiguration(
+                        minimumTouchTargetSize = DpSize.Zero,
+                        touchSlop = 0.1f, // less than 1, not too close to 0
+                    ),
                 LocalHapticFeedback provides hapticFeedback,
             ) {
-                Box(
-                    modifier = Modifier
-                        .padding(32.dp)
-                        .fillMaxSize()
-                        .wrapContentSize()
-                ) {
+                Box(modifier = Modifier.padding(32.dp).fillMaxSize().wrapContentSize()) {
                     Content()
                 }
             }
@@ -105,64 +102,97 @@ internal abstract class AbstractSelectionGesturesTest : FocusedWindowTest {
     private val bounds
         get() = rule.onNodeWithTag(pointerAreaTag).fetchSemanticsNode().size.toSize().toRect()
 
-    private val left get() = bounds.left + 1f
-    private val top get() = bounds.top + 1f
-    private val right get() = bounds.right - 1f
-    private val bottom get() = bounds.bottom - 1f
+    private val left
+        get() = bounds.left + 1f
 
-    private val start get() = textDirection.take(ltr = left, rtl = right)
-    private val end get() = textDirection.take(ltr = right, rtl = left)
+    private val top
+        get() = bounds.top + 1f
 
-    protected val topStart get() = Offset(start, top)
-    protected val centerStart get() = Offset(start, center.y)
-    protected val bottomStart get() = Offset(start, bottom)
+    private val right
+        get() = bounds.right - 1f
 
-    protected val center get() = bounds.center
+    private val bottom
+        get() = bounds.bottom - 1f
 
-    protected val topEnd get() = Offset(end, top)
-    protected val centerEnd get() = Offset(end, center.y)
-    protected val bottomEnd get() = Offset(end, bottom)
+    private val start
+        get() = textDirection.take(ltr = left, rtl = right)
 
-    protected enum class VerticalDirection { UP, DOWN, CENTER }
-    protected enum class HorizontalDirection { START, END, CENTER }
+    private val end
+        get() = textDirection.take(ltr = right, rtl = left)
+
+    protected val topStart
+        get() = Offset(start, top)
+
+    protected val centerStart
+        get() = Offset(start, center.y)
+
+    protected val bottomStart
+        get() = Offset(start, bottom)
+
+    protected val center
+        get() = bounds.center
+
+    protected val topEnd
+        get() = Offset(end, top)
+
+    protected val centerEnd
+        get() = Offset(end, center.y)
+
+    protected val bottomEnd
+        get() = Offset(end, bottom)
+
+    protected enum class VerticalDirection {
+        UP,
+        DOWN,
+        CENTER
+    }
+
+    protected enum class HorizontalDirection {
+        START,
+        END,
+        CENTER
+    }
 
     // nudge 2f since we start 1f inwards from the edges and want to ensure we move over them if
     // we nudge outwards again
     protected fun Offset.nudge(
         xDirection: HorizontalDirection = HorizontalDirection.CENTER,
         yDirection: VerticalDirection = VerticalDirection.CENTER,
-    ): Offset = Offset(
-        x = x.adjustHorizontal(xDirection, 2f),
-        y = y.adjustVertical(yDirection, 2f),
-    )
+    ): Offset =
+        Offset(
+            x = x.adjustHorizontal(xDirection, 2f),
+            y = y.adjustVertical(yDirection, 2f),
+        )
 
     private fun Float.adjustVertical(direction: VerticalDirection, diff: Float): Float =
-        this + diff * when (direction) {
-            VerticalDirection.UP -> -1f
-            VerticalDirection.CENTER -> 0f
-            VerticalDirection.DOWN -> 1f
-        }
+        this +
+            diff *
+                when (direction) {
+                    VerticalDirection.UP -> -1f
+                    VerticalDirection.CENTER -> 0f
+                    VerticalDirection.DOWN -> 1f
+                }
 
     private fun Float.adjustHorizontal(direction: HorizontalDirection, diff: Float): Float =
-        this + diff * when (direction) {
-            HorizontalDirection.START -> textDirection.take(ltr = -1f, rtl = 1f)
-            HorizontalDirection.CENTER -> 0f
-            HorizontalDirection.END -> textDirection.take(ltr = 1f, rtl = -1f)
-        }
+        this +
+            diff *
+                when (direction) {
+                    HorizontalDirection.START -> textDirection.take(ltr = -1f, rtl = 1f)
+                    HorizontalDirection.CENTER -> 0f
+                    HorizontalDirection.END -> textDirection.take(ltr = 1f, rtl = -1f)
+                }
 
-    private fun <T> ResolvedTextDirection.take(ltr: T, rtl: T): T = when (this) {
-        ResolvedTextDirection.Ltr -> ltr
-        ResolvedTextDirection.Rtl -> rtl
-        else -> throw AssertionError("Unrecognized text direction $textDirection")
-    }
+    private fun <T> ResolvedTextDirection.take(ltr: T, rtl: T): T =
+        when (this) {
+            ResolvedTextDirection.Ltr -> ltr
+            ResolvedTextDirection.Rtl -> rtl
+            else -> throw AssertionError("Unrecognized text direction $textDirection")
+        }
 
     // TODO(b/281584353) When touch mode can be changed globally,
     //  this should change to a single tap outside of the bounds.
     internal fun TouchInjectionScope.enterTouchMode() {
-        swipe(
-            start = bounds.center,
-            end = bounds.bottomCenter + Offset(0f, 10f)
-        )
+        swipe(start = bounds.center, end = bounds.bottomCenter + Offset(0f, 10f))
     }
 
     // TODO(b/281584353) When touch mode can be changed globally,
@@ -180,6 +210,10 @@ internal abstract class AbstractSelectionGesturesTest : FocusedWindowTest {
 
     protected fun performMouseGesture(block: MouseInjectionScope.() -> Unit) {
         rule.onNodeWithTag(pointerAreaTag).performMouseInput(block)
+    }
+
+    protected fun withHandlePressed(handle: Handle, block: HandlePressedScope.() -> Unit) {
+        rule.withHandlePressed(handle, block)
         rule.waitForIdle()
     }
 
@@ -187,86 +221,25 @@ internal abstract class AbstractSelectionGesturesTest : FocusedWindowTest {
         position: Offset,
         durationMillis: Long = 200L,
     ) {
-        require(durationMillis > 0) { "Duration cannot be <= 0" }
-
-        var startVar: Offset? = null
-        var dragEventPeriodMillisVar: Long? = null
-        performTouchGesture {
-            startVar = requireNotNull(currentPosition()) { "No pointer is down to animate." }
-            dragEventPeriodMillisVar = this.eventPeriodMillis
-        }
-
-        val start = startVar!!
-        val dragEventPeriodMillis = dragEventPeriodMillisVar!!
-
-        // How many steps will we take in durationMillis?
-        // At least 1, and a number that will bring as as close to eventPeriod as possible
-        val steps = max(1, (durationMillis / dragEventPeriodMillis.toFloat()).roundToInt())
-
-        var previousTime = 0L
-        for (step in 1..steps) {
-            val progress = step / steps.toFloat()
-            val nextTime = lerp(0, stop = durationMillis, fraction = progress)
-            val nextPosition = lerp(start, position, nextTime / durationMillis.toFloat())
-            performTouchGesture {
-                moveTo(nextPosition, delayMillis = nextTime - previousTime)
-            }
-            previousTime = nextTime
-        }
+        rule.onNodeWithTag(pointerAreaTag).touchDragNodeTo(position, durationMillis)
+        rule.waitForIdle()
     }
 
-    protected fun touchDragBy(
-        delta: Offset,
-        durationMillis: Long = 100L
-    ) {
-        var startVar: Offset? = null
-        performTouchGesture {
-            startVar = requireNotNull(currentPosition()) { "No pointer is down to animate." }
-        }
-        val start = startVar!!
-        touchDragTo(start + delta, durationMillis)
+    protected fun touchDragBy(delta: Offset, durationMillis: Long = 100L) {
+        rule.onNodeWithTag(pointerAreaTag).touchDragNodeBy(delta, durationMillis)
+        rule.waitForIdle()
     }
 
     protected fun mouseDragTo(
         position: Offset,
         durationMillis: Long = 200L,
     ) {
-        require(durationMillis > 0) { "Duration cannot be <= 0" }
-
-        var startVar: Offset? = null
-        var dragEventPeriodMillisVar: Long? = null
-        performMouseGesture {
-            startVar = currentPosition
-            dragEventPeriodMillisVar = this.eventPeriodMillis
-        }
-        val start = startVar!!
-        val dragEventPeriodMillis = dragEventPeriodMillisVar!!
-
-        // How many steps will we take in durationMillis?
-        // At least 1, and a number that will bring as as close to eventPeriod as possible
-        val steps = max(1, (durationMillis / dragEventPeriodMillis.toFloat()).roundToInt())
-
-        var previousTime = 0L
-        for (step in 1..steps) {
-            val progress = step / steps.toFloat()
-            val nextTime = lerp(0, stop = durationMillis, fraction = progress)
-            val nextPosition = lerp(start, position, nextTime / durationMillis.toFloat())
-            performMouseGesture {
-                moveTo(nextPosition, delayMillis = nextTime - previousTime)
-            }
-            previousTime = nextTime
-        }
+        rule.onNodeWithTag(pointerAreaTag).mouseDragNodeTo(position, durationMillis)
+        rule.waitForIdle()
     }
 
-    protected fun mouseDragBy(
-        delta: Offset,
-        durationMillis: Long = 100L
-    ) {
-        var startVar: Offset? = null
-        performMouseGesture {
-            startVar = currentPosition
-        }
-        val start = startVar!!
-        touchDragTo(start + delta, durationMillis)
+    protected fun mouseDragBy(delta: Offset, durationMillis: Long = 100L) {
+        rule.onNodeWithTag(pointerAreaTag).mouseDragNodeBy(delta, durationMillis)
+        rule.waitForIdle()
     }
 }

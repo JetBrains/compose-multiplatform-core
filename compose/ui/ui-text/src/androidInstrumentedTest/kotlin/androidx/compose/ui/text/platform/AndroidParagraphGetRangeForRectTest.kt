@@ -34,6 +34,7 @@ import androidx.compose.ui.text.font.toFontFamily
 import androidx.compose.ui.text.rangeOf
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextIndent
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.sp
@@ -59,11 +60,12 @@ class AndroidParagraphGetRangeForRectTest {
     fun getRangeForRect_characterGranularity_containsCenter_singleLine() {
         val fontSize = 10f
         val text = "abcdef"
-        val paragraph = simpleParagraph(
-            text = text,
-            style = TextStyle(fontSize = fontSize.sp, fontFamily = basicFontFamily),
-            width = Float.MAX_VALUE
-        )
+        val paragraph =
+            simpleParagraph(
+                text = text,
+                style = TextStyle(fontSize = fontSize.sp, fontFamily = basicFontFamily),
+                width = Float.MAX_VALUE
+            )
 
         // Precondition check: only 1 lines is laid out.
         assertThat(paragraph.lineCount).isEqualTo(1)
@@ -72,11 +74,12 @@ class AndroidParagraphGetRangeForRectTest {
                 val startBoundingBox = paragraph.getBoundingBox(start)
                 val endBoundingBox = paragraph.getBoundingBox(end - 1)
                 val rect = boundingBoxOf(startBoundingBox.center, endBoundingBox.center)
-                val range = paragraph.getRangeForRect(
-                    rect,
-                    TextGranularity.Character,
-                    TextInclusionStrategy.ContainsCenter
-                )
+                val range =
+                    paragraph.getRangeForRect(
+                        rect,
+                        TextGranularity.Character,
+                        TextInclusionStrategy.ContainsCenter
+                    )
                 assertThat(range).isEqualTo(TextRange(start, end))
             }
         }
@@ -86,11 +89,12 @@ class AndroidParagraphGetRangeForRectTest {
     fun getRangeForRect_characterGranularity_containsAll_singleLine() {
         val fontSize = 10f
         val text = "abcdef"
-        val paragraph = simpleParagraph(
-            text = text,
-            style = TextStyle(fontSize = fontSize.sp, fontFamily = basicFontFamily),
-            width = Float.MAX_VALUE
-        )
+        val paragraph =
+            simpleParagraph(
+                text = text,
+                style = TextStyle(fontSize = fontSize.sp, fontFamily = basicFontFamily),
+                width = Float.MAX_VALUE
+            )
 
         // Precondition check: only 1 lines is laid out.
         assertThat(paragraph.lineCount).isEqualTo(1)
@@ -99,11 +103,12 @@ class AndroidParagraphGetRangeForRectTest {
                 val startBoundingBox = paragraph.getBoundingBox(start)
                 val endBoundingBox = paragraph.getBoundingBox(end - 1)
                 val rect = boundingBoxOf(startBoundingBox, endBoundingBox)
-                val range = paragraph.getRangeForRect(
-                    rect,
-                    TextGranularity.Character,
-                    TextInclusionStrategy.ContainsAll
-                )
+                val range =
+                    paragraph.getRangeForRect(
+                        rect,
+                        TextGranularity.Character,
+                        TextInclusionStrategy.ContainsAll
+                    )
                 assertThat(range).isEqualTo(TextRange(start, end))
             }
         }
@@ -113,11 +118,12 @@ class AndroidParagraphGetRangeForRectTest {
     fun getRangeForRect_characterGranularity_anyOverlap_singleLine() {
         val fontSize = 10f
         val text = "abcdef"
-        val paragraph = simpleParagraph(
-            text = text,
-            style = TextStyle(fontSize = fontSize.sp, fontFamily = basicFontFamily),
-            width = Float.MAX_VALUE
-        )
+        val paragraph =
+            simpleParagraph(
+                text = text,
+                style = TextStyle(fontSize = fontSize.sp, fontFamily = basicFontFamily),
+                width = Float.MAX_VALUE
+            )
 
         // Precondition check: only 1 lines is laid out.
         assertThat(paragraph.lineCount).isEqualTo(1)
@@ -128,15 +134,15 @@ class AndroidParagraphGetRangeForRectTest {
                 val endBoundingBox = paragraph.getBoundingBox(end - 1)
 
                 // It's testing any overlap, make top and bottom 1 pixel away.
-                val rect = boundingBoxOf(startBoundingBox, endBoundingBox).copy(
-                    top = lineTop,
-                    bottom = lineTop + 1
-                )
-                val range = paragraph.getRangeForRect(
-                    rect,
-                    TextGranularity.Character,
-                    TextInclusionStrategy.AnyOverlap
-                )
+                val rect =
+                    boundingBoxOf(startBoundingBox, endBoundingBox)
+                        .copy(top = lineTop, bottom = lineTop + 1)
+                val range =
+                    paragraph.getRangeForRect(
+                        rect,
+                        TextGranularity.Character,
+                        TextInclusionStrategy.AnyOverlap
+                    )
                 assertThat(range).isEqualTo(TextRange(start, end))
             }
         }
@@ -147,22 +153,24 @@ class AndroidParagraphGetRangeForRectTest {
         val text = "abcdef"
         val fontSize = 10f
         val charPerLine = 3
-        val paragraph = simpleParagraph(
-            text = text,
-            style = TextStyle(fontSize = fontSize.sp, fontFamily = basicFontFamily),
-            width = fontSize * charPerLine
-        )
+        val paragraph =
+            simpleParagraph(
+                text = text,
+                style = TextStyle(fontSize = fontSize.sp, fontFamily = basicFontFamily),
+                width = fontSize * charPerLine
+            )
 
         // Precondition check: 2 lines are laid out.
         assertThat(paragraph.lineCount).isEqualTo(2)
 
         // Character 'b' and 'e' are covered in the rectangle.
         val rect = paragraph.boundingBoxOf(text.indexOf('b'), text.indexOf('e'))
-        val range = paragraph.getRangeForRect(
-            rect,
-            TextGranularity.Character,
-            TextInclusionStrategy.ContainsCenter
-        )
+        val range =
+            paragraph.getRangeForRect(
+                rect,
+                TextGranularity.Character,
+                TextInclusionStrategy.ContainsCenter
+            )
 
         assertThat(range).isEqualTo(text.rangeOf('b', 'e'))
     }
@@ -171,22 +179,24 @@ class AndroidParagraphGetRangeForRectTest {
     fun getRangeForRect_characterGranularity_singleLine_compoundCharacter() {
         val fontSize = 10f
         val text = "ab\uD83D\uDE03def" // \uD83D\uDE03 is the smiling face emoji
-        val paragraph = simpleParagraph(
-            text = text,
-            style = TextStyle(fontSize = fontSize.sp, fontFamily = basicFontFamily),
-            width = Float.MAX_VALUE
-        )
+        val paragraph =
+            simpleParagraph(
+                text = text,
+                style = TextStyle(fontSize = fontSize.sp, fontFamily = basicFontFamily),
+                width = Float.MAX_VALUE
+            )
 
         // Precondition check: only 1 line is laid out.
         assertThat(paragraph.lineCount).isEqualTo(1)
 
         // This rect should covers character 'b' and the following smiling emoji.
         val rect = paragraph.boundingBoxOf(text.indexOf('b'), text.indexOf('\uDE03'))
-        val range = paragraph.getRangeForRect(
-            rect,
-            TextGranularity.Character,
-            TextInclusionStrategy.ContainsCenter
-        )
+        val range =
+            paragraph.getRangeForRect(
+                rect,
+                TextGranularity.Character,
+                TextInclusionStrategy.ContainsCenter
+            )
 
         assertThat(range).isEqualTo(text.rangeOf('b', '\uDE03'))
     }
@@ -196,11 +206,12 @@ class AndroidParagraphGetRangeForRectTest {
         val fontSize = 10f
         val text = "abc\u05D1\u05D2\u05D3" // rendered in the order of: a b c \u05D3 \u05D2 \u05D1
 
-        val paragraph = simpleParagraph(
-            text = text,
-            style = TextStyle(fontSize = fontSize.sp, fontFamily = basicFontFamily),
-            width = Float.MAX_VALUE
-        )
+        val paragraph =
+            simpleParagraph(
+                text = text,
+                style = TextStyle(fontSize = fontSize.sp, fontFamily = basicFontFamily),
+                width = Float.MAX_VALUE
+            )
 
         // Precondition check: only 1 line is laid out.
         assertThat(paragraph.lineCount).isEqualTo(1)
@@ -208,11 +219,12 @@ class AndroidParagraphGetRangeForRectTest {
         // This rectangle covers character 'c' and also the character \u05D3, characters between
         // them are also included in the final range. The final range is [2, 6)
         val rect = paragraph.boundingBoxOf(text.indexOf('c'), text.indexOf('\u05D3'))
-        val range = paragraph.getRangeForRect(
-            rect,
-            TextGranularity.Character,
-            TextInclusionStrategy.ContainsCenter
-        )
+        val range =
+            paragraph.getRangeForRect(
+                rect,
+                TextGranularity.Character,
+                TextInclusionStrategy.ContainsCenter
+            )
 
         assertThat(range).isEqualTo(text.rangeOf('c', '\u05D3'))
     }
@@ -222,11 +234,12 @@ class AndroidParagraphGetRangeForRectTest {
         val fontSize = 10f
         val text = "abcdef"
 
-        val paragraph = simpleParagraph(
-            text = text,
-            style = TextStyle(fontSize = fontSize.sp, fontFamily = basicFontFamily),
-            width = Float.MAX_VALUE
-        )
+        val paragraph =
+            simpleParagraph(
+                text = text,
+                style = TextStyle(fontSize = fontSize.sp, fontFamily = basicFontFamily),
+                width = Float.MAX_VALUE
+            )
 
         // Precondition check: only 1 line is laid out.
         assertThat(paragraph.lineCount).isEqualTo(1)
@@ -239,13 +252,14 @@ class AndroidParagraphGetRangeForRectTest {
         val right = left + fontSize * 0.4f
 
         val rect = Rect(left, top, right, bottom)
-        val range = paragraph.getRangeForRect(
-            rect,
-            TextGranularity.Character,
-            TextInclusionStrategy.ContainsCenter
-        )
+        val range =
+            paragraph.getRangeForRect(
+                rect,
+                TextGranularity.Character,
+                TextInclusionStrategy.ContainsCenter
+            )
 
-        assertThat(range).isNull()
+        assertThat(range).isEqualTo(TextRange.Zero)
     }
 
     @Test
@@ -253,11 +267,12 @@ class AndroidParagraphGetRangeForRectTest {
         val fontSize = 10f
         val text = "abc def"
 
-        val paragraph = simpleParagraph(
-            text = text,
-            style = TextStyle(fontSize = fontSize.sp, fontFamily = basicFontFamily),
-            width = Float.MAX_VALUE
-        )
+        val paragraph =
+            simpleParagraph(
+                text = text,
+                style = TextStyle(fontSize = fontSize.sp, fontFamily = basicFontFamily),
+                width = Float.MAX_VALUE
+            )
 
         // Precondition check: only 1 line is laid out.
         assertThat(paragraph.lineCount).isEqualTo(1)
@@ -266,11 +281,12 @@ class AndroidParagraphGetRangeForRectTest {
 
         // This rectangle covers the center of the word "abc".
         val rect = boundingBoxOf(bBoundingBox.center)
-        val range = paragraph.getRangeForRect(
-            rect,
-            TextGranularity.Word,
-            TextInclusionStrategy.ContainsCenter
-        )
+        val range =
+            paragraph.getRangeForRect(
+                rect,
+                TextGranularity.Word,
+                TextInclusionStrategy.ContainsCenter
+            )
 
         assertThat(range).isEqualTo(text.rangeOf('a', 'c'))
     }
@@ -280,22 +296,20 @@ class AndroidParagraphGetRangeForRectTest {
         val fontSize = 10f
         val text = "abc def hij"
 
-        val paragraph = simpleParagraph(
-            text = text,
-            style = TextStyle(fontSize = fontSize.sp, fontFamily = basicFontFamily),
-            width = Float.MAX_VALUE
-        )
+        val paragraph =
+            simpleParagraph(
+                text = text,
+                style = TextStyle(fontSize = fontSize.sp, fontFamily = basicFontFamily),
+                width = Float.MAX_VALUE
+            )
 
         // Precondition check: only 1 line is laid out.
         assertThat(paragraph.lineCount).isEqualTo(1)
 
         // This rectangle covers the word "def"'s bounds and partially covers "hij".
         val rect = paragraph.boundingBoxOf(text.indexOf('d'), text.indexOf('i'))
-        val range = paragraph.getRangeForRect(
-            rect,
-            TextGranularity.Word,
-            TextInclusionStrategy.ContainsAll
-        )
+        val range =
+            paragraph.getRangeForRect(rect, TextGranularity.Word, TextInclusionStrategy.ContainsAll)
 
         assertThat(range).isEqualTo(text.rangeOf('d', 'f'))
     }
@@ -305,11 +319,12 @@ class AndroidParagraphGetRangeForRectTest {
         val fontSize = 10f
         val text = "abc def hij"
 
-        val paragraph = simpleParagraph(
-            text = text,
-            style = TextStyle(fontSize = fontSize.sp, fontFamily = basicFontFamily),
-            width = Float.MAX_VALUE
-        )
+        val paragraph =
+            simpleParagraph(
+                text = text,
+                style = TextStyle(fontSize = fontSize.sp, fontFamily = basicFontFamily),
+                width = Float.MAX_VALUE
+            )
 
         // Precondition check: only 1 line is laid out.
         assertThat(paragraph.lineCount).isEqualTo(1)
@@ -318,11 +333,8 @@ class AndroidParagraphGetRangeForRectTest {
         val dBoundingBox = paragraph.getBoundingBox(text.indexOf('d'))
 
         val rect = boundingBoxOf(dBoundingBox.topLeft)
-        val range = paragraph.getRangeForRect(
-            rect,
-            TextGranularity.Word,
-            TextInclusionStrategy.AnyOverlap
-        )
+        val range =
+            paragraph.getRangeForRect(rect, TextGranularity.Word, TextInclusionStrategy.AnyOverlap)
 
         assertThat(range).isEqualTo(text.rangeOf('d', 'f'))
     }
@@ -332,24 +344,26 @@ class AndroidParagraphGetRangeForRectTest {
         val fontSize = 10f
         val text = "abc def"
 
-        val paragraph = simpleParagraph(
-            text = text,
-            style = TextStyle(fontSize = fontSize.sp, fontFamily = basicFontFamily),
-            width = Float.MAX_VALUE
-        )
+        val paragraph =
+            simpleParagraph(
+                text = text,
+                style = TextStyle(fontSize = fontSize.sp, fontFamily = basicFontFamily),
+                width = Float.MAX_VALUE
+            )
 
         // Precondition check: only 1 line is laid out.
         assertThat(paragraph.lineCount).isEqualTo(1)
 
         // This rectangle covers only the space character, returned range is null
         val rect = paragraph.getBoundingBox(text.indexOf(' '))
-        val range = paragraph.getRangeForRect(
-            rect,
-            TextGranularity.Word,
-            TextInclusionStrategy.ContainsCenter
-        )
+        val range =
+            paragraph.getRangeForRect(
+                rect,
+                TextGranularity.Word,
+                TextInclusionStrategy.ContainsCenter
+            )
 
-        assertThat(range).isNull()
+        assertThat(range).isEqualTo(TextRange.Zero)
     }
 
     @Test
@@ -358,22 +372,24 @@ class AndroidParagraphGetRangeForRectTest {
         val charPerLine = 7
         val text = "abc def ghk lmn"
 
-        val paragraph = simpleParagraph(
-            text = text,
-            style = TextStyle(fontSize = fontSize.sp, fontFamily = basicFontFamily),
-            width = fontSize * charPerLine
-        )
+        val paragraph =
+            simpleParagraph(
+                text = text,
+                style = TextStyle(fontSize = fontSize.sp, fontFamily = basicFontFamily),
+                width = fontSize * charPerLine
+            )
 
         // Precondition check: 2 lines are laid out.
         assertThat(paragraph.lineCount).isEqualTo(2)
 
         // This rectangle covers the center of the word "abc" and "ghk".
         val rect = paragraph.boundingBoxOf(text.indexOf('b'), text.indexOf('h'))
-        val range = paragraph.getRangeForRect(
-            rect,
-            TextGranularity.Word,
-            TextInclusionStrategy.ContainsCenter
-        )
+        val range =
+            paragraph.getRangeForRect(
+                rect,
+                TextGranularity.Word,
+                TextInclusionStrategy.ContainsCenter
+            )
 
         assertThat(range).isEqualTo(text.rangeOf('a', 'k'))
     }
@@ -384,11 +400,12 @@ class AndroidParagraphGetRangeForRectTest {
         val charPerLine = 7
         val text = "abc def g hi"
 
-        val paragraph = simpleParagraph(
-            text = text,
-            style = TextStyle(fontSize = fontSize.sp, fontFamily = basicFontFamily),
-            width = fontSize * charPerLine
-        )
+        val paragraph =
+            simpleParagraph(
+                text = text,
+                style = TextStyle(fontSize = fontSize.sp, fontFamily = basicFontFamily),
+                width = fontSize * charPerLine
+            )
 
         // This paragraph is rendered like this:
         //   abc def
@@ -401,11 +418,12 @@ class AndroidParagraphGetRangeForRectTest {
         // This rectangle covers the center of the word "abc" but only covers the space at the
         // second line, the returned range only covers "abc".
         val rect = paragraph.boundingBoxOf(text.indexOf('b'), 9)
-        val range = paragraph.getRangeForRect(
-            rect,
-            TextGranularity.Word,
-            TextInclusionStrategy.ContainsCenter
-        )
+        val range =
+            paragraph.getRangeForRect(
+                rect,
+                TextGranularity.Word,
+                TextInclusionStrategy.ContainsCenter
+            )
 
         assertThat(range).isEqualTo(text.rangeOf('a', 'c'))
     }
@@ -417,11 +435,12 @@ class AndroidParagraphGetRangeForRectTest {
         //   abc \u05D4\u05D3 \u05D2\u05D1
         val text = "abc \u05D1\u05D2 \u05D3\u05D4"
 
-        val paragraph = simpleParagraph(
-            text = text,
-            style = TextStyle(fontSize = fontSize.sp, fontFamily = basicFontFamily),
-            width = Float.MAX_VALUE
-        )
+        val paragraph =
+            simpleParagraph(
+                text = text,
+                style = TextStyle(fontSize = fontSize.sp, fontFamily = basicFontFamily),
+                width = Float.MAX_VALUE
+            )
 
         // Precondition check: only 1 line is laid out.
         assertThat(paragraph.lineCount).isEqualTo(1)
@@ -429,11 +448,12 @@ class AndroidParagraphGetRangeForRectTest {
         // This rectangle covers the center of the word "abc" and "\u05D3\u05D4",
         // the returned range is [0, text.length)
         val rect = paragraph.boundingBoxOf(text.indexOf('b'), text.indexOf('\u05D3'))
-        val range = paragraph.getRangeForRect(
-            rect,
-            TextGranularity.Word,
-            TextInclusionStrategy.ContainsCenter
-        )
+        val range =
+            paragraph.getRangeForRect(
+                rect,
+                TextGranularity.Word,
+                TextInclusionStrategy.ContainsCenter
+            )
 
         assertThat(range).isEqualTo(TextRange(0, text.length))
     }
@@ -446,9 +466,7 @@ class AndroidParagraphGetRangeForRectTest {
         return boundingBoxOf(*offsets.map { getBoundingBox(it) }.toTypedArray())
     }
 
-    /**
-     * Helper function that returns the minimal [Rect] which contains all the given [rects].
-     */
+    /** Helper function that returns the minimal [Rect] which contains all the given [rects]. */
     private fun boundingBoxOf(vararg rects: Rect): Rect {
         return Rect(
             left = rects.minOf { it.left },
@@ -459,16 +477,16 @@ class AndroidParagraphGetRangeForRectTest {
     }
 
     /**
-     * Helper function that returns a minimal [Rect] which contains the given point represented
-     * in Offset.
+     * Helper function that returns a minimal [Rect] which contains the given point represented in
+     * Offset.
      */
     private fun boundingBoxOf(offset: Offset): Rect {
         return Rect(offset.x, offset.y, offset.x + 0.01f, offset.y + 0.01f)
     }
 
     /**
-     * Helper function that returns a minimal [Rect] which contains the given points represented
-     * in Offset.
+     * Helper function that returns a minimal [Rect] which contains the given points represented in
+     * Offset.
      */
     private fun boundingBoxOf(offset1: Offset, offset2: Offset): Rect {
         val left = min(offset1.x, offset2.x)
@@ -483,7 +501,6 @@ class AndroidParagraphGetRangeForRectTest {
         spanStyles: List<AnnotatedString.Range<SpanStyle>> = listOf(),
         textIndent: TextIndent? = null,
         textAlign: TextAlign = TextAlign.Unspecified,
-        ellipsis: Boolean = false,
         maxLines: Int = Int.MAX_VALUE,
         width: Float,
         height: Float = Float.POSITIVE_INFINITY,
@@ -492,19 +509,18 @@ class AndroidParagraphGetRangeForRectTest {
     ): AndroidParagraph {
         return AndroidParagraph(
             text = text,
-            spanStyles = spanStyles,
+            annotations = spanStyles,
             placeholders = listOf(),
-            style = TextStyle(
-                fontFamily = basicFontFamily,
-                textAlign = textAlign,
-                textIndent = textIndent
-            ).merge(style),
+            style =
+                TextStyle(
+                        fontFamily = basicFontFamily,
+                        textAlign = textAlign,
+                        textIndent = textIndent
+                    )
+                    .merge(style),
             maxLines = maxLines,
-            ellipsis = ellipsis,
-            constraints = Constraints(
-                maxWidth = width.ceilToInt(),
-                maxHeight = height.ceilToInt()
-            ),
+            overflow = TextOverflow.Clip,
+            constraints = Constraints(maxWidth = width.ceilToInt(), maxHeight = height.ceilToInt()),
             density = Density(density = 1f),
             fontFamilyResolver = fontFamilyResolver
         )

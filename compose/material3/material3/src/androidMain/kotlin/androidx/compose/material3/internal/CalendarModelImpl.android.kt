@@ -18,6 +18,7 @@ package androidx.compose.material3.internal
 
 import android.os.Build
 import androidx.annotation.RequiresApi
+import androidx.compose.material3.CalendarLocale
 import androidx.compose.material3.ExperimentalMaterial3Api
 import java.time.DayOfWeek
 import java.time.Instant
@@ -50,8 +51,12 @@ internal class CalendarModelImpl(locale: CalendarLocale) : CalendarModel(locale 
                 year = systemLocalDate.year,
                 month = systemLocalDate.monthValue,
                 dayOfMonth = systemLocalDate.dayOfMonth,
-                utcTimeMillis = systemLocalDate.atTime(LocalTime.MIDNIGHT)
-                    .atZone(utcTimeZoneId).toInstant().toEpochMilli()
+                utcTimeMillis =
+                    systemLocalDate
+                        .atTime(LocalTime.MIDNIGHT)
+                        .atZone(utcTimeZoneId)
+                        .toInstant()
+                        .toEpochMilli()
             )
         }
 
@@ -61,13 +66,8 @@ internal class CalendarModelImpl(locale: CalendarLocale) : CalendarModel(locale 
         // This will start with Monday as the first day, according to ISO-8601.
         with(locale) {
             DayOfWeek.values().map {
-                it.getDisplayName(
-                    TextStyle.FULL,
-                    /* locale = */ this
-                ) to it.getDisplayName(
-                    TextStyle.NARROW,
-                    /* locale = */ this
-                )
+                it.getDisplayName(TextStyle.FULL, /* locale= */ this) to
+                    it.getDisplayName(TextStyle.NARROW, /* locale= */ this)
             }
         }
 
@@ -83,8 +83,7 @@ internal class CalendarModelImpl(locale: CalendarLocale) : CalendarModel(locale 
     }
 
     override fun getCanonicalDate(timeInMillis: Long): CalendarDate {
-        val localDate =
-            Instant.ofEpochMilli(timeInMillis).atZone(utcTimeZoneId).toLocalDate()
+        val localDate = Instant.ofEpochMilli(timeInMillis).atZone(utcTimeZoneId).toLocalDate()
         return CalendarDate(
             year = localDate.year,
             month = localDate.monthValue,
@@ -95,11 +94,7 @@ internal class CalendarModelImpl(locale: CalendarLocale) : CalendarModel(locale 
 
     override fun getMonth(timeInMillis: Long): CalendarMonth {
         return getMonth(
-            Instant
-                .ofEpochMilli(timeInMillis)
-                .atZone(utcTimeZoneId)
-                .withDayOfMonth(1)
-                .toLocalDate()
+            Instant.ofEpochMilli(timeInMillis).atZone(utcTimeZoneId).withDayOfMonth(1).toLocalDate()
         )
     }
 
@@ -137,17 +132,20 @@ internal class CalendarModelImpl(locale: CalendarLocale) : CalendarModel(locale 
         locale: CalendarLocale
     ): String = formatWithPattern(utcTimeMillis, pattern, locale, formatterCache)
 
-    override fun parse(date: String, pattern: String): CalendarDate? {
-        // TODO: A DateTimeFormatter can be reused.
-        val formatter = DateTimeFormatter.ofPattern(pattern)
+    override fun parse(date: String, pattern: String, locale: CalendarLocale): CalendarDate? {
+        val formatter = getCachedDateTimeFormatter(pattern, locale, formatterCache)
         return try {
             val localDate = LocalDate.parse(date, formatter)
             CalendarDate(
                 year = localDate.year,
                 month = localDate.month.value,
                 dayOfMonth = localDate.dayOfMonth,
-                utcTimeMillis = localDate.atTime(LocalTime.MIDNIGHT)
-                    .atZone(utcTimeZoneId).toInstant().toEpochMilli()
+                utcTimeMillis =
+                    localDate
+                        .atTime(LocalTime.MIDNIGHT)
+                        .atZone(utcTimeZoneId)
+                        .toInstant()
+                        .toEpochMilli()
             )
         } catch (pe: DateTimeParseException) {
             null
@@ -175,16 +173,13 @@ internal class CalendarModelImpl(locale: CalendarLocale) : CalendarModel(locale 
             cache: MutableMap<String, Any>
         ): String {
             val formatter = getCachedDateTimeFormatter(pattern, locale, cache)
-            return Instant
-                .ofEpochMilli(utcTimeMillis)
+            return Instant.ofEpochMilli(utcTimeMillis)
                 .atZone(utcTimeZoneId)
                 .toLocalDate()
                 .format(formatter)
         }
 
-        /**
-         * Holds a UTC [ZoneId].
-         */
+        /** Holds a UTC [ZoneId]. */
         internal val utcTimeZoneId: ZoneId = ZoneId.of("UTC")
 
         private fun getCachedDateTimeFormatter(
@@ -204,13 +199,17 @@ internal class CalendarModelImpl(locale: CalendarLocale) : CalendarModel(locale 
 
     private fun getMonth(firstDayLocalDate: LocalDate): CalendarMonth {
         val difference = firstDayLocalDate.dayOfWeek.value - firstDayOfWeek
-        val daysFromStartOfWeekToFirstOfMonth = if (difference < 0) {
-            difference + DaysInWeek
-        } else {
-            difference
-        }
+        val daysFromStartOfWeekToFirstOfMonth =
+            if (difference < 0) {
+                difference + DaysInWeek
+            } else {
+                difference
+            }
         val firstDayEpochMillis =
-            firstDayLocalDate.atTime(LocalTime.MIDNIGHT).atZone(utcTimeZoneId).toInstant()
+            firstDayLocalDate
+                .atTime(LocalTime.MIDNIGHT)
+                .atZone(utcTimeZoneId)
+                .toInstant()
                 .toEpochMilli()
         return CalendarMonth(
             year = firstDayLocalDate.year,
@@ -226,10 +225,6 @@ internal class CalendarModelImpl(locale: CalendarLocale) : CalendarModel(locale 
     }
 
     private fun CalendarDate.toLocalDate(): LocalDate {
-        return LocalDate.of(
-            this.year,
-            this.month,
-            this.dayOfMonth
-        )
+        return LocalDate.of(this.year, this.month, this.dayOfMonth)
     }
 }

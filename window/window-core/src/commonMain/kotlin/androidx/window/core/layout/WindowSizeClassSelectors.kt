@@ -13,50 +13,91 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 @file:JvmName("WindowSizeClassSelectors")
+
 package androidx.window.core.layout
 
-/**
- * Calculates which [WindowSizeClass] has the closest matching [windowWidthDp] within the given
- * value. If there are multiple matches then the tallest [WindowSizeClass] is selected within the
- * given value.
- *
- * @param windowWidthDp the width of the current window in DP to choose a [WindowSizeClass].
- * @param windowHeightDp the height of the current window in DP to chose a [WindowSizeClass].
- * @return a [WindowSizeClass] that has [WindowSizeClass.widthDp] less than or equal to the
- * [windowWidthDp] and is the closest to [windowWidthDp] if possible `null` otherwise.
- */
-fun Set<WindowSizeClass>.widestOrEqualWidthDp(
-    windowWidthDp: Int,
-    windowHeightDp: Int
-): WindowSizeClass? {
-    require(0 <= windowHeightDp) {
-        "Window height must be non-negative but got windowHeightDp: $windowHeightDp"
-    }
-    require(0 <= windowWidthDp) {
-        "Window width must be non-negative but got windowHeightDp: $windowWidthDp"
-    }
-    var maxValue: WindowSizeClass? = null
-    forEach { sizeClass ->
-        if (sizeClass.widthDp > windowWidthDp) {
-            return@forEach
-        }
-        if (sizeClass.heightDp > windowHeightDp) {
-            return@forEach
-        }
+import kotlin.jvm.JvmName
 
-        val localMax = maxValue
-        if (localMax == null) {
-            maxValue = sizeClass
-            return@forEach
+/**
+ * Returns the largest [WindowSizeClass] that is within the bounds of ([widthDp], [heightDp]). This
+ * method prefers width and uses max height to break ties. If there is no match a default of
+ * `WindowSizeClass(0,0)` is returned. Examples: Input: Set: `setOf(WindowSizeClass(300, 300),
+ * WindowSizeClass(300, 600)` widthDp: `300.5f` heightDp: `800.5f` Output: `WindowSizeClass(300,
+ * 600)` Input: Set: `setOf(WindowSizeClass(300, 300), WindowSizeClass(300, 600)` widthDp: `300`
+ * heightDp: `400` Output: `WindowSizeClass(300, 300)`. This is an overload that truncates the
+ * floats to integers.
+ *
+ * @param widthDp the width of the window to match a [WindowSizeClass] to.
+ * @param heightDp the height of the window to match a [WindowSizeClass] to.
+ * @see computeWindowSizeClass
+ */
+fun Set<WindowSizeClass>.computeWindowSizeClass(widthDp: Float, heightDp: Float): WindowSizeClass {
+    return computeWindowSizeClass(widthDp.toInt(), heightDp.toInt())
+}
+
+/**
+ * Returns the largest [WindowSizeClass] that is within the bounds of ([widthDp], [heightDp]). This
+ * method prefers width and uses max height to break ties. If there is no match a default of
+ * `WindowSizeClass(0,0)` is returned. Examples: Input: Set: `setOf(WindowSizeClass(300, 300),
+ * WindowSizeClass(300, 600)` widthDp: `300` heightDp: `800` Output: `WindowSizeClass(300, 600)`
+ * Input: Set: `setOf(WindowSizeClass(300, 300), WindowSizeClass(300, 600)` widthDp: `300` heightDp:
+ * `400` Output: `WindowSizeClass(300, 300)`
+ *
+ * @param widthDp the width of the window to match a [WindowSizeClass] to.
+ * @param heightDp the height of the window to match a [WindowSizeClass] to.
+ */
+fun Set<WindowSizeClass>.computeWindowSizeClass(widthDp: Int, heightDp: Int): WindowSizeClass {
+    var maxWidth = 0
+    forEach { bucket ->
+        if (bucket.minWidthDp <= widthDp && bucket.minWidthDp > maxWidth) {
+            maxWidth = bucket.minWidthDp
         }
-        if (localMax.widthDp > sizeClass.widthDp) {
-            return@forEach
-        }
-        if (localMax.widthDp == sizeClass.widthDp && sizeClass.heightDp < localMax.heightDp) {
-            return@forEach
-        }
-        maxValue = sizeClass
     }
-    return maxValue
+    var match = WindowSizeClass(0, 0)
+    forEach { bucket ->
+        if (
+            bucket.minWidthDp == maxWidth &&
+                bucket.minHeightDp <= heightDp &&
+                match.minHeightDp <= bucket.minHeightDp
+        ) {
+            match = bucket
+        }
+    }
+    return match
+}
+
+/**
+ * Returns the largest [WindowSizeClass] that is within the bounds of ([widthDp], [heightDp]). This
+ * method prefers height and uses max width to break ties. If there is no match a default of
+ * `WindowSizeClass(0,0)` is returned. Examples: Input: Set: `setOf(WindowSizeClass(300, 300),
+ * WindowSizeClass(600, 300)` widthDp: `800` heightDp: `300` Output: `WindowSizeClass(600, 300)`
+ * Input: Set: `setOf(WindowSizeClass(300, 300), WindowSizeClass(600, 300)` widthDp: `400` heightDp:
+ * `300` Output: `WindowSizeClass(300, 300)`
+ *
+ * @param widthDp the width of the window to match a [WindowSizeClass] to.
+ * @param heightDp the height of the window to match a [WindowSizeClass] to.
+ */
+fun Set<WindowSizeClass>.computeWindowSizeClassPreferHeight(
+    widthDp: Int,
+    heightDp: Int
+): WindowSizeClass {
+    var maxHeight = 0
+    forEach { bucket ->
+        if (bucket.minHeightDp <= heightDp && bucket.minHeightDp > maxHeight) {
+            maxHeight = bucket.minHeightDp
+        }
+    }
+    var match = WindowSizeClass(0, 0)
+    forEach { bucket ->
+        if (
+            bucket.minHeightDp == maxHeight &&
+                bucket.minWidthDp <= widthDp &&
+                match.minWidthDp <= bucket.minWidthDp
+        ) {
+            match = bucket
+        }
+    }
+    return match
 }

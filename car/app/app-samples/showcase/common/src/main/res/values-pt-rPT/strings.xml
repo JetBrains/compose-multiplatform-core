@@ -51,9 +51,9 @@
     <string name="zoomed_in_toast_msg" msgid="8915301497303842649">"Zoom aumentado"</string>
     <string name="zoomed_out_toast_msg" msgid="6260981223227212493">"Zoom diminuído"</string>
     <string name="triggered_toast_msg" msgid="3396166539208366382">"Acionado"</string>
-    <string name="primary_toast_msg" msgid="7153771322662005447">"Botão principal premido"</string>
-    <string name="search_toast_msg" msgid="7826530065407699347">"Botão de pesquisa premido"</string>
-    <string name="options_toast_msg" msgid="2146223786877557730">"Botão de opções premido"</string>
+    <string name="primary_toast_msg" msgid="7153771322662005447">"Botão principal pressionado"</string>
+    <string name="search_toast_msg" msgid="7826530065407699347">"Botão de pesquisa pressionado"</string>
+    <string name="options_toast_msg" msgid="2146223786877557730">"Botão de opções pressionado"</string>
     <string name="favorite_toast_msg" msgid="522064494016370117">"Favorito!"</string>
     <string name="not_favorite_toast_msg" msgid="6831181108681007428">"Não é um favorito!"</string>
     <string name="nav_requested_toast_msg" msgid="6696525973145493908">"Navegação solicitada"</string>
@@ -66,12 +66,12 @@
     <string name="settings_toast_msg" msgid="7697794473002342727">"Clicou em Definições"</string>
     <string name="parked_toast_msg" msgid="2532422265890824446">"Ação de estacionado"</string>
     <string name="more_toast_msg" msgid="5938288138225509885">"Clicou em Mais"</string>
-    <string name="commute_toast_msg" msgid="4112684360647638688">"Botão de viagem regular premido"</string>
+    <string name="commute_toast_msg" msgid="4112684360647638688">"Botão de viagem regular pressionado"</string>
     <string name="grant_location_permission_toast_msg" msgid="268046297444808010">"Conceda autorização de acesso à localização para ver a localização atual"</string>
     <string name="sign_in_with_google_toast_msg" msgid="5720947549233124775">"Iniciar sessão com o Google começa aqui"</string>
     <string name="changes_selection_to_index_toast_msg_prefix" msgid="957766225794389167">"Seleção alterada para o índice"</string>
-    <string name="yes_action_toast_msg" msgid="6216215197177241247">"Botão Sim premido!"</string>
-    <string name="no_action_toast_msg" msgid="6165492423831023809">"Botão Não premido!"</string>
+    <string name="yes_action_toast_msg" msgid="6216215197177241247">"Botão Sim pressionado!"</string>
+    <string name="no_action_toast_msg" msgid="6165492423831023809">"Botão Não pressionado!"</string>
     <string name="alert_timeout_toast_msg" msgid="5568380708832805374">"Tempo limite do alerta excedido!"</string>
     <string name="first_row_title" msgid="219428344573165351">"Linha com uma imagem grande e texto longo texto longo texto longo texto longo texto longo"</string>
     <string name="first_row_text" msgid="3887390298628338716">"Texto texto texto"</string>
@@ -96,10 +96,10 @@
     <string name="unavailable" msgid="3636401138255192934">"Indisponível"</string>
     <string name="ev_connector_types" msgid="735458637011996125">"Tipos de conetores de VE"</string>
     <string name="example_title" msgid="530257630320010494">"%d de exemplo"</string>
-    <string name="example_1_text" msgid="8456567953748293512">"Este texto tem cor vermelha"</string>
-    <string name="example_2_text" msgid="718820705318661440">"Este texto tem cor verde"</string>
-    <string name="example_3_text" msgid="977269832109695627">"Este texto tem cor azul"</string>
-    <string name="example_4_text" msgid="2043547015979437373">"Este texto tem cor amarela"</string>
+    <string name="example_1_text" msgid="8631503055894800688">"Este texto tem cor "<annotation color="red">"vermelha"</annotation></string>
+    <string name="example_2_text" msgid="1359373957397219102">"Este texto tem cor "<annotation color="green">"verde"</annotation></string>
+    <string name="example_3_text" msgid="2409207170762049673">"Este texto tem cor "<annotation color="blue">"azul"</annotation></string>
+    <string name="example_4_text" msgid="9055989886645433000">"Este texto tem cor "<annotation color="yellow">"amarela"</annotation></string>
     <string name="example_5_text" msgid="8828804968749423500">"Este texto usa a cor principal"</string>
     <string name="example_6_text" msgid="7991523168517599600">"Este texto usa a cor secundária"</string>
     <string name="color_demo" msgid="1822427636476178993">"Demonstração de cor"</string>
@@ -236,8 +236,8 @@
     <string name="browse_places_title" msgid="7246005909846715898">"Procurar locais"</string>
     <string name="search_template_demo_title" msgid="1770474418958318114">"Demonstração do modelo de pesquisa"</string>
     <string name="search_hint" msgid="978495498991026792">"Pesquise aqui"</string>
-    <string name="additional_text" msgid="8410289578276941586">"Consulte os nossos Termos de Utilização"</string>
-    <string name="google_sign_in" msgid="6556259799319701727">"Início de sessão do Google"</string>
+    <string name="additional_text" msgid="5755100726890686184">"Reveja os nossos "<annotation link="terms_of_service">"Termos de Utilização"</annotation></string>
+    <string name="google_sign_in" msgid="6556259799319701727">"Início de sessão da Google"</string>
     <string name="use_pin" msgid="7850893299484337431">"Usar PIN"</string>
     <string name="qr_code" msgid="5487041647280777397">"Código QR"</string>
     <string name="sign_in_template_not_supported_text" msgid="7184733753948837646">"O anfitrião não suporta o modelo de início de sessão"</string>
@@ -253,7 +253,7 @@
     <string name="pin_sign_in_instruction" msgid="2288691296234360441">"Escreva este PIN no telemóvel"</string>
     <string name="qr_code_sign_in_title" msgid="8137070561006464518">"Leia o código QR para iniciar sessão"</string>
     <string name="sign_in_with_google_title" msgid="8043752000786977249">"Iniciar sessão com o Google"</string>
-    <string name="provider_sign_in_instruction" msgid="7586815688292506743">"Use este botão para concluir o Início de sessão do Google"</string>
+    <string name="provider_sign_in_instruction" msgid="7586815688292506743">"Use este botão para concluir o Início de sessão da Google"</string>
     <string name="sign_in_complete_text" msgid="8423984266325680606">"Iniciou sessão!"</string>
     <string name="sign_in_complete_title" msgid="8919868148773983428">"Início de sessão concluído"</string>
     <string name="sign_in_template_demo_title" msgid="6052035424941410249">"Demonstração do modelo de início de sessão"</string>

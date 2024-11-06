@@ -16,7 +16,7 @@
 
 package androidx.baselineprofile.gradle.utils
 
-import androidx.baselineprofile.gradle.utils.TestAgpVersion.TEST_AGP_VERSION_8_3_0
+import androidx.baselineprofile.gradle.utils.TestAgpVersion.TEST_AGP_VERSION_8_3_1
 import androidx.testutils.gradle.ProjectSetupRule
 import com.google.testing.platform.proto.api.core.LabelProto
 import com.google.testing.platform.proto.api.core.PathProto
@@ -26,7 +26,6 @@ import com.google.testing.platform.proto.api.core.TestStatusProto
 import com.google.testing.platform.proto.api.core.TestSuiteResultProto
 import java.io.File
 import java.util.Properties
-import org.gradle.configurationcache.extensions.capitalized
 import org.gradle.testkit.runner.GradleRunner
 import org.junit.rules.ExternalResource
 import org.junit.rules.RuleChain
@@ -46,14 +45,10 @@ class BaselineProfileProjectSetupRule(
 
     private val forcedTestAgpVersion = TestAgpVersion.fromVersionString(forceAgpVersion)
 
-    /**
-     * Root folder for the project setup that contains 3 modules.
-     */
+    /** Root folder for the project setup that contains 3 modules. */
     val rootFolder = TemporaryFolder().also { it.create() }
 
-    /**
-     * Represents a module with the app target plugin applied.
-     */
+    /** Represents a module with the app target plugin applied. */
     val appTarget by lazy {
         AppTargetModule(
             rule = appTargetSetupRule,
@@ -61,9 +56,7 @@ class BaselineProfileProjectSetupRule(
         )
     }
 
-    /**
-     * Represents a module with the consumer plugin applied.
-     */
+    /** Represents a module with the consumer plugin applied. */
     val consumer by lazy {
         ConsumerModule(
             rule = consumerSetupRule,
@@ -73,9 +66,7 @@ class BaselineProfileProjectSetupRule(
         )
     }
 
-    /**
-     * Represents a module with the producer plugin applied.
-     */
+    /** Represents a module with the producer plugin applied. */
     val producer by lazy {
         ProducerModule(
             rule = producerSetupRule,
@@ -85,14 +76,8 @@ class BaselineProfileProjectSetupRule(
         )
     }
 
-    /**
-     * Represents a simple java library dependency module.
-     */
-    val dependency by lazy {
-        DependencyModule(
-            name = dependencyName
-        )
-    }
+    /** Represents a simple java library dependency module. */
+    val dependency by lazy { DependencyModule(name = dependencyName) }
 
     // Temp folder for temp generated files that need to be referenced by a module.
     private val tempFolder by lazy { File(rootFolder.root, "temp").apply { mkdirs() } }
@@ -118,8 +103,7 @@ class BaselineProfileProjectSetupRule(
     }
 
     override fun apply(base: Statement, description: Description): Statement {
-        return RuleChain
-            .outerRule(appTargetSetupRule)
+        return RuleChain.outerRule(appTargetSetupRule)
             .around(producerSetupRule)
             .around(dependencySetupRule)
             .around(consumerSetupRule)
@@ -127,73 +111,87 @@ class BaselineProfileProjectSetupRule(
             .apply(base, description)
     }
 
-    private fun applyInternal(base: Statement) = object : Statement() {
-        override fun evaluate() {
+    private fun applyInternal(base: Statement) =
+        object : Statement() {
+            override fun evaluate() {
 
-            // Creates the main gradle.properties
-            rootFolder.newFile("gradle.properties").writer().use {
-                val props = Properties()
-                props.setProperty(
-                    "org.gradle.jvmargs",
-                    "-Xmx4g -XX:+UseParallelGC -XX:MaxMetaspaceSize=1g"
-                )
-                props.setProperty(
-                    "android.useAndroidX",
-                    "true"
-                )
-                props.store(it, null)
-            }
+                // Creates the main gradle.properties
+                rootFolder.newFile("gradle.properties").writer().use {
+                    val props = Properties()
+                    props.setProperty(
+                        "org.gradle.jvmargs",
+                        "-Xmx4g -XX:+UseParallelGC -XX:MaxMetaspaceSize=1g"
+                    )
+                    props.setProperty("android.useAndroidX", "true")
+                    props.store(it, null)
+                }
 
-            // Creates the main settings.gradle
-            rootFolder.newFile("settings.gradle").writeText(
-                """
+                // Creates the main settings.gradle
+                rootFolder
+                    .newFile("settings.gradle")
+                    .writeText(
+                        """
                 include '$appTargetName'
                 include '$producerName'
                 include '$dependencyName'
                 include '$consumerName'
-            """.trimIndent()
-            )
+            """
+                            .trimIndent()
+                    )
 
-            val repositoriesBlock = """
+                val repositoriesBlock =
+                    """
                 repositories {
                     ${producerSetupRule.allRepositoryPaths.joinToString("\n") { """ maven { url "$it" } """ }}
                 }
-            """.trimIndent()
+            """
+                        .trimIndent()
 
-            val agpDependency = if (forceAgpVersion == null) {
-                """"${appTargetSetupRule.props.agpDependency}""""
-            } else {
-                """
+                val agpDependency =
+                    if (forceAgpVersion == null) {
+                        """"${appTargetSetupRule.props.agpDependency}""""
+                    } else {
+                        """
                     ("com.android.tools.build:gradle") { version { strictly "$forceAgpVersion" } }
-                    """.trimIndent()
-            }
+                    """
+                            .trimIndent()
+                    }
 
-            val kotlinGradlePluginDependency = if (addKotlinGradlePluginToClasspath) {
-                """
-             "${appTargetSetupRule.props.kgpDependency}"
-                    """.trimIndent()
-            } else {
-                null
-            }
+                val kotlinGradlePluginDependency =
+                    if (addKotlinGradlePluginToClasspath) {
+                        """ "${appTargetSetupRule.props.kgpDependency}" """
+                    } else {
+                        null
+                    }
 
-            rootFolder.newFile("build.gradle").writeText(
-                """
+                rootFolder
+                    .newFile("build.gradle")
+                    .writeText(
+                        """
                 buildscript {
                     $repositoriesBlock
                     dependencies {
 
                         // Specifies agp dependency
                         ${
-                    listOfNotNull(
-                        agpDependency,
-                        kotlinGradlePluginDependency
-                    ).joinToString("\n") { "classpath $it" }
-                }
+                            listOfNotNull(
+                                agpDependency,
+                                kotlinGradlePluginDependency,
+                            ).joinToString("\n") { "classpath $it".trim() }
+                        }
 
                         // Specifies plugin dependency
-                        classpath "androidx.baselineprofile.consumer:androidx.baselineprofile.consumer.gradle.plugin:+"
-                        classpath "androidx.baselineprofile.producer:androidx.baselineprofile.producer.gradle.plugin:+"
-                        classpath "androidx.baselineprofile.apptarget:androidx.baselineprofile.apptarget.gradle.plugin:+"
+                        ${
+                            listOf(
+                                "consumer",
+                                "producer",
+                                "apptarget",
+                            ).joinToString(separator = System.lineSeparator()) {
+                                """
+            classpath "androidx.baselineprofile.$it:androidx.baselineprofile.$it.gradle.plugin:+"
+                                """.trimIndent()
+                            }
+                        }
                     }
                 }
 
@@ -201,24 +199,26 @@ class BaselineProfileProjectSetupRule(
                     $repositoriesBlock
                 }
 
-            """.trimIndent()
-            )
+            """
+                            .trimIndent()
+                    )
 
-            // Copies test project data
-            mapOf(
-                "app-target" to appTargetSetupRule,
-                "consumer" to consumerSetupRule,
-                "producer" to producerSetupRule,
-                "dependency" to dependencySetupRule,
-            ).forEach { (folder, project) ->
-                File("src/test/test-data", folder)
-                    .apply { deleteOnExit() }
-                    .copyRecursively(project.rootDir, overwrite = true)
+                // Copies test project data
+                mapOf(
+                        "app-target" to appTargetSetupRule,
+                        "consumer" to consumerSetupRule,
+                        "producer" to producerSetupRule,
+                        "dependency" to dependencySetupRule,
+                    )
+                    .forEach { (folder, project) ->
+                        File("src/test/test-data", folder)
+                            .apply { deleteOnExit() }
+                            .copyRecursively(project.rootDir, overwrite = true)
+                    }
+
+                base.evaluate()
             }
-
-            base.evaluate()
         }
-    }
 
     fun baselineProfileFile(variantName: String): File {
         // Warning: support for baseline profile source sets in library module was added with
@@ -226,25 +226,20 @@ class BaselineProfileProjectSetupRule(
         // main and always output only in src/main/baseline-prof.txt.
         return if (
             consumer.isLibraryModule == false ||
-            (consumer.isLibraryModule == true &&
-                forcedTestAgpVersion.isAtLeast(TEST_AGP_VERSION_8_3_0))
+                (consumer.isLibraryModule == true &&
+                    forcedTestAgpVersion.isAtLeast(TEST_AGP_VERSION_8_3_1))
         ) {
-            File(
-                consumer.rootDir,
-                "src/$variantName/$EXPECTED_PROFILE_FOLDER/baseline-prof.txt"
-            )
+            File(consumer.rootDir, "src/$variantName/$EXPECTED_PROFILE_FOLDER/baseline-prof.txt")
         } else if (consumer.isLibraryModule == true /* and version is not at least AGP 8.3.0 */) {
             if (variantName != "main") {
                 throw IllegalArgumentException(
                     """
                     Invalid variant name `$variantName` for library pre-agp 8.3.0. Only main is supported.
-                """.trimIndent()
+                """
+                        .trimIndent()
                 )
             }
-            File(
-                consumer.rootDir,
-                "src/main/baseline-prof.txt"
-            )
+            File(consumer.rootDir, "src/main/baseline-prof.txt")
         } else {
             // This happens only when trying to read the baseline profile file before defining
             // the consumer type (library or app).
@@ -252,16 +247,14 @@ class BaselineProfileProjectSetupRule(
         }
     }
 
-    fun startupProfileFile(variantName: String) = File(
-        consumer.rootDir,
-        "src/$variantName/$EXPECTED_PROFILE_FOLDER/startup-prof.txt"
-    )
+    fun startupProfileFile(variantName: String) =
+        File(consumer.rootDir, "src/$variantName/$EXPECTED_PROFILE_FOLDER/startup-prof.txt")
 
     fun mergedArtProfile(variantName: String): File {
         // Task name folder in path was first observed in the update to AGP 8.3.0-alpha10.
         // Before that, the folder was omitted in path.
         val taskNameFolder =
-            if (forcedTestAgpVersion.isAtLeast(TEST_AGP_VERSION_8_3_0)) {
+            if (forcedTestAgpVersion.isAtLeast(TEST_AGP_VERSION_8_3_1)) {
                 camelCase("merge", variantName, "artProfile")
             } else {
                 ""
@@ -283,25 +276,46 @@ data class VariantProfile(
     val flavorDimensions: Map<String, String>,
     val buildType: String,
     val profileFileLines: Map<String, List<String>>,
-    val startupFileLines: Map<String, List<String>>
+    val startupFileLines: Map<String, List<String>>,
+    val ftlFileLines: Map<String, List<String>> = mapOf(),
+    val useGsSchema: Boolean = false,
 ) {
 
-    val nonMinifiedVariant = camelCase(
-        *flavorDimensions.map { it.value }.toTypedArray(),
-        "nonMinified",
-        buildType
-    )
+    companion object {
+
+        fun release(
+            baselineProfileLines: List<String> = listOf(),
+            startupProfileLines: List<String> = listOf(),
+            ftlFileLines: List<String> = listOf(),
+            useGsSchema: Boolean = false,
+        ) =
+            listOf(
+                VariantProfile(
+                    flavorDimensions = mapOf(),
+                    buildType = "release",
+                    profileFileLines = mapOf("myTest" to baselineProfileLines),
+                    startupFileLines = mapOf("myStartupTest" to startupProfileLines),
+                    ftlFileLines = mapOf("anotherTest" to ftlFileLines),
+                    useGsSchema = useGsSchema,
+                )
+            )
+    }
+
+    val nonMinifiedVariant =
+        camelCase(*flavorDimensions.map { it.value }.toTypedArray(), "nonMinified", buildType)
 
     constructor(
         flavor: String?,
         buildType: String = "release",
         profileFileLines: Map<String, List<String>> = mapOf(),
-        startupFileLines: Map<String, List<String>> = mapOf()
+        startupFileLines: Map<String, List<String>> = mapOf(),
+        ftlFileLines: Map<String, List<String>> = mapOf(),
     ) : this(
         flavorDimensions = if (flavor != null) mapOf("version" to flavor) else mapOf(),
         buildType = buildType,
         profileFileLines = profileFileLines,
-        startupFileLines = startupFileLines
+        startupFileLines = startupFileLines,
+        ftlFileLines = ftlFileLines
     )
 }
 
@@ -311,15 +325,18 @@ interface Module {
     val rule: ProjectSetupRule
     val rootDir: File
         get() = rule.rootDir
+
     val gradleRunner: GradleRunner
         get() = GradleRunner.create().withProjectDir(rule.rootDir)
 
     fun setBuildGradle(buildGradleContent: String) =
         rule.writeDefaultBuildGradle(
             prefix = buildGradleContent,
-            suffix = """
+            suffix =
+                """
                 $GRADLE_CODE_PRINT_TASK
-            """.trimIndent()
+            """
+                    .trimIndent()
         )
 }
 
@@ -333,7 +350,8 @@ class AppTargetModule(
 ) : Module {
 
     fun setup(
-        buildGradleContent: String = """
+        buildGradleContent: String =
+            """
                 plugins {
                     id("com.android.application")
                     id("androidx.baselineprofile.apptarget")
@@ -341,7 +359,8 @@ class AppTargetModule(
                 android {
                     namespace 'com.example.namespace'
                 }
-            """.trimIndent()
+            """
+                .trimIndent()
     ) {
         setBuildGradle(buildGradleContent)
     }
@@ -351,7 +370,7 @@ class ProducerModule(
     override val rule: ProjectSetupRule,
     override val name: String,
     private val tempFolder: File,
-    private val consumer: Module
+    private val consumer: Module,
 ) : Module {
 
     fun setupWithFreeAndPaidFlavors(
@@ -363,6 +382,7 @@ class ProducerModule(
         paidReleaseStartupProfileLines: List<String> = listOf(),
         freeAnotherReleaseStartupProfileLines: List<String> = listOf(),
         paidAnotherReleaseStartupProfileLines: List<String> = listOf(),
+        otherPluginsBlock: String = "",
     ) {
         val variantProfiles = mutableListOf<VariantProfile>()
 
@@ -377,12 +397,9 @@ class ProducerModule(
                     VariantProfile(
                         flavor = flavor,
                         buildType = buildType,
-                        profileFileLines = mapOf(
-                            "my-$flavor-$buildType-profile" to profile
-                        ),
-                        startupFileLines = mapOf(
-                            "my-$flavor-$buildType-startup=profile" to startupProfile
-                        )
+                        profileFileLines = mapOf("my-$flavor-$buildType-profile" to profile),
+                        startupFileLines =
+                            mapOf("my-$flavor-$buildType-startup=profile" to startupProfile)
                     )
                 )
             }
@@ -413,58 +430,74 @@ class ProducerModule(
             startupProfile = paidAnotherReleaseStartupProfileLines
         )
 
-        setup(variantProfiles)
+        setup(
+            variantProfiles = variantProfiles,
+            otherPluginsBlock = otherPluginsBlock,
+        )
     }
 
     fun setupWithoutFlavors(
         releaseProfileLines: List<String> = listOf(),
         releaseStartupProfileLines: List<String> = listOf(),
+        otherPluginsBlock: String = "",
     ) {
         setup(
-            variantProfiles = listOf(
-                VariantProfile(
-                    flavor = null,
-                    buildType = "release",
-                    profileFileLines = mapOf("myTest" to releaseProfileLines),
-                    startupFileLines = mapOf("myStartupTest" to releaseStartupProfileLines)
-                )
-            )
+            variantProfiles =
+                listOf(
+                    VariantProfile(
+                        flavor = null,
+                        buildType = "release",
+                        profileFileLines = mapOf("myTest" to releaseProfileLines),
+                        startupFileLines = mapOf("myStartupTest" to releaseStartupProfileLines)
+                    )
+                ),
+            otherPluginsBlock = otherPluginsBlock,
         )
     }
 
     fun setup(
-        variantProfiles: List<VariantProfile> = listOf(
-            VariantProfile(
-                flavor = null,
-                buildType = "release",
-                profileFileLines = mapOf(
-                    "myTest" to listOf(
-                        Fixtures.CLASS_1_METHOD_1,
-                        Fixtures.CLASS_2_METHOD_2,
-                        Fixtures.CLASS_2,
-                        Fixtures.CLASS_1
-                    )
-                ),
-                startupFileLines = mapOf(
-                    "myStartupTest" to listOf(
-                        Fixtures.CLASS_3_METHOD_1,
-                        Fixtures.CLASS_4_METHOD_1,
-                        Fixtures.CLASS_3,
-                        Fixtures.CLASS_4
-                    )
-                ),
-            )
-        ),
+        variantProfiles: List<VariantProfile> =
+            listOf(
+                VariantProfile(
+                    flavor = null,
+                    buildType = "release",
+                    profileFileLines =
+                        mapOf(
+                            "myTest" to
+                                listOf(
+                                    Fixtures.CLASS_1_METHOD_1,
+                                    Fixtures.CLASS_2_METHOD_2,
+                                    Fixtures.CLASS_2,
+                                    Fixtures.CLASS_1
+                                )
+                        ),
+                    startupFileLines =
+                        mapOf(
+                            "myStartupTest" to
+                                listOf(
+                                    Fixtures.CLASS_3_METHOD_1,
+                                    Fixtures.CLASS_4_METHOD_1,
+                                    Fixtures.CLASS_3,
+                                    Fixtures.CLASS_4
+                                )
+                        ),
+                )
+            ),
+        otherPluginsBlock: String = "",
         baselineProfileBlock: String = "",
         additionalGradleCodeBlock: String = "",
         targetProject: Module = consumer,
-        managedDevices: List<String> = listOf()
+        managedDevices: List<String> = listOf(),
+        namespace: String = "com.example.namespace.test",
     ) {
-        val managedDevicesBlock = """
+        val managedDevicesBlock =
+            if (managedDevices.isEmpty()) ""
+            else
+                """
             testOptions.managedDevices.devices {
             ${
-            managedDevices.joinToString("\n") {
-                """
+                    managedDevices.joinToString("\n") {
+                        """
                 $it(ManagedVirtualDevice) {
                     device = "Pixel 6"
                     apiLevel = 31
@@ -472,59 +505,65 @@ class ProducerModule(
                 }
 
             """.trimIndent()
+                    }
+                }
             }
-        }
-            }
-        """.trimIndent()
+        """
+                    .trimIndent()
 
         val flavors = variantProfiles.flatMap { it.flavorDimensions.toList() }
-        val flavorDimensionNames = flavors
-            .map { it.first }
-            .toSet()
-            .joinToString { """ "$it"""" }
-        val flavorBlocks = flavors
-            .groupBy { it.second }
-            .toList()
-            .map { it.second }
-            .flatten()
-            .joinToString("\n") { """ ${it.second} { dimension "${it.first}" } """ }
-        val flavorsBlock = """
+        val flavorDimensionNames = flavors.map { it.first }.toSet().joinToString { """ "$it"""" }
+        val flavorBlocks =
+            flavors
+                .groupBy { it.second }
+                .toList()
+                .map { it.second }
+                .flatten()
+                .joinToString("\n") { """ ${it.second} { dimension "${it.first}" } """ }
+        val flavorsBlock =
+            """
             productFlavors {
                 flavorDimensions = [$flavorDimensionNames]
                 $flavorBlocks
             }
-        """.trimIndent()
+        """
+                .trimIndent()
 
-        val buildTypesBlock = """
+        val buildTypesBlock =
+            """
             buildTypes {
                 ${
-            variantProfiles
-                .filter { it.buildType.isNotBlank() && it.buildType != "release" }
-                .joinToString("\n") { " ${it.buildType} { initWith(debug) } " }
-        }
+                variantProfiles
+                    .filter { it.buildType.isNotBlank() && it.buildType != "release" }
+                    .joinToString("\n") { " ${it.buildType} { initWith(debug) } " }
             }
-        """.trimIndent()
+            }
+        """
+                .trimIndent()
 
-        val disableConnectedAndroidTestsBlock = variantProfiles.joinToString("\n") {
+        val disableConnectedAndroidTestsBlock =
+            variantProfiles.joinToString("\n") {
 
-            // Creates a folder to use as results dir
-            val variantOutputDir = File(tempFolder, it.nonMinifiedVariant)
-            val testResultsOutputDir =
-                File(variantOutputDir, "testResultsOutDir").apply { mkdirs() }
-            val profilesOutputDir =
-                File(variantOutputDir, "profilesOutputDir").apply { mkdirs() }
+                // Creates a folder to use as results dir
+                val variantOutputDir = File(tempFolder, it.nonMinifiedVariant)
+                val testResultsOutputDir =
+                    File(variantOutputDir, "testResultsOutDir").apply { mkdirs() }
+                val profilesOutputDir =
+                    File(variantOutputDir, "profilesOutputDir").apply { mkdirs() }
 
-            // Writes the fake test result proto in it, with the given lines
-            writeFakeTestResultsProto(
-                testResultsOutputDir = testResultsOutputDir,
-                profilesOutputDir = profilesOutputDir,
-                profileFileLines = it.profileFileLines,
-                startupFileLines = it.startupFileLines
-            )
+                // Writes the fake test result proto in it, with the given lines
+                writeFakeTestResultsProto(
+                    testResultsOutputDir = testResultsOutputDir,
+                    profilesOutputDir = profilesOutputDir,
+                    profileFileLines = it.profileFileLines,
+                    startupFileLines = it.startupFileLines,
+                    ftlProfileLines = it.ftlFileLines,
+                    useGsSchema = it.useGsSchema,
+                )
 
-            // Gradle script to injects a fake and disable the actual task execution for
-            // android test
-            """
+                // Gradle script to injects a fake and disable the actual task execution for
+                // android test
+                """
             afterEvaluate {
                 project.tasks.named("connected${it.nonMinifiedVariant.capitalized()}AndroidTest") {
                     it.resultsDir.set(new File("${testResultsOutputDir.absolutePath}"))
@@ -532,8 +571,9 @@ class ProducerModule(
                 }
             }
 
-                """.trimIndent()
-        }
+                """
+                    .trimIndent()
+            }
 
         setBuildGradle(
             """
@@ -542,6 +582,7 @@ class ProducerModule(
                 plugins {
                     id("com.android.test")
                     id("androidx.baselineprofile.producer")
+                    $otherPluginsBlock
                 }
 
                 android {
@@ -551,7 +592,7 @@ class ProducerModule(
 
                     $managedDevicesBlock
 
-                    namespace 'com.example.namespace.test'
+                    namespace "${namespace.trim()}"
                     targetProjectPath = ":${targetProject.name}"
                 }
 
@@ -566,7 +607,8 @@ class ProducerModule(
 
                 $additionalGradleCodeBlock
 
-            """.trimIndent()
+            """
+                .trimIndent()
         )
     }
 
@@ -574,48 +616,74 @@ class ProducerModule(
         testResultsOutputDir: File,
         profilesOutputDir: File,
         profileFileLines: Map<String, List<String>>,
-        startupFileLines: Map<String, List<String>>
+        startupFileLines: Map<String, List<String>>,
+        ftlProfileLines: Map<String, List<String>>,
+        useGsSchema: Boolean,
     ) {
-
-        val testResultProtoBuilder = TestResultProto.TestResult.newBuilder()
-
         // This function writes a profile file for each key of the map, containing for lines
         // the strings in the list in the value.
-        val writeProfiles: (Map<String, List<String>>, String) -> (Unit) = { map, fileNamePart ->
-            map.forEach {
+        fun buildProfileArtifact(
+            testNameToProfileLines: Map<String, List<String>>,
+            fileNamePart: String,
+            label: String,
+            useGsSchema: Boolean,
+        ) =
+            testNameToProfileLines.map {
 
-                val fakeProfileFile = File(
-                    profilesOutputDir,
-                    "fake-$fileNamePart-${it.key}.txt"
-                ).apply { writeText(it.value.joinToString(System.lineSeparator())) }
+                // Write the fake profile with the given list of profile rules.
+                val profileFileName = "fake-$fileNamePart-${it.key}.txt"
+                val fakeProfileFile =
+                    File(profilesOutputDir, profileFileName).apply {
+                        writeText(it.value.joinToString(System.lineSeparator()))
+                    }
 
-                testResultProtoBuilder.addOutputArtifact(
-                    TestArtifactProto.Artifact.newBuilder()
-                        .setLabel(
-                            LabelProto.Label.newBuilder()
-                                .setLabel("additionaltestoutput.benchmark.trace")
-                                .build()
+                // Creates an artifact for the test result proto. Note that this can be used
+                // both as a test result artifact and a global artifact.
+                val path = (if (useGsSchema) "gs://" else "") + fakeProfileFile.absolutePath
+                TestArtifactProto.Artifact.newBuilder()
+                    .setLabel(LabelProto.Label.newBuilder().setLabel(label).build())
+                    .setSourcePath(PathProto.Path.newBuilder().setPath(path).build())
+                    .build()
+            }
+
+        // Baseline and startup profiles are added as test results artifacts.
+        // For testing with FTL instead, we add the profile as global artifact.
+        val testSuiteResultProto =
+            TestSuiteResultProto.TestSuiteResult.newBuilder()
+                .setTestStatus(TestStatusProto.TestStatus.PASSED)
+                .addTestResult(
+                    TestResultProto.TestResult.newBuilder()
+                        .addAllOutputArtifact(
+                            buildProfileArtifact(
+                                testNameToProfileLines = profileFileLines,
+                                fileNamePart = "baseline-prof",
+                                label = "additionaltestoutput.benchmark.trace",
+                                useGsSchema = useGsSchema,
+                            )
                         )
-                        .setSourcePath(
-                            PathProto.Path.newBuilder()
-                                .setPath(fakeProfileFile.absolutePath)
-                                .build()
+                        .addAllOutputArtifact(
+                            buildProfileArtifact(
+                                testNameToProfileLines = startupFileLines,
+                                fileNamePart = "startup-prof",
+                                label = "additionaltestoutput.benchmark.trace",
+                                useGsSchema = useGsSchema,
+                            )
                         )
                         .build()
                 )
-            }
+                .addAllOutputArtifact(
+                    buildProfileArtifact(
+                        testNameToProfileLines = ftlProfileLines,
+                        fileNamePart = "baseline-prof",
+                        label = "firebase.toolOutput",
+                        useGsSchema = useGsSchema,
+                    )
+                )
+                .build()
+
+        File(testResultsOutputDir, "test-result.pb").apply {
+            outputStream().use { testSuiteResultProto.writeTo(it) }
         }
-
-        writeProfiles(profileFileLines, "baseline-prof")
-        writeProfiles(startupFileLines, "startup-prof")
-
-        val testSuiteResultProto = TestSuiteResultProto.TestSuiteResult.newBuilder()
-            .setTestStatus(TestStatusProto.TestStatus.PASSED)
-            .addTestResult(testResultProtoBuilder.build())
-            .build()
-
-        File(testResultsOutputDir, "test-result.pb")
-            .apply { outputStream().use { testSuiteResultProto.writeTo(it) } }
     }
 }
 
@@ -631,31 +699,42 @@ class ConsumerModule(
     fun setup(
         androidPlugin: String,
         flavors: Boolean = false,
-        dependenciesBlock: String = """
+        dependenciesBlock: String =
+            """
             implementation(project(":$dependencyName"))
-        """.trimIndent(),
+        """
+                .trimIndent(),
         dependencyOnProducerProject: Boolean = true,
         buildTypeAnotherRelease: Boolean = false,
         addAppTargetPlugin: Boolean = androidPlugin == ANDROID_APPLICATION_PLUGIN,
         baselineProfileBlock: String = "",
         additionalGradleCodeBlock: String = "",
-    ) = setupWithBlocks(
-        androidPlugin = androidPlugin,
-        otherPluginsBlock = "",
-        flavorsBlock = if (flavors) """
+    ) =
+        setupWithBlocks(
+            androidPlugin = androidPlugin,
+            otherPluginsBlock = "",
+            flavorsBlock =
+                if (flavors)
+                    """
                 flavorDimensions = ["version"]
                 free { dimension "version" }
                 paid { dimension "version" }
-            """.trimIndent() else "",
-        dependencyOnProducerProject = dependencyOnProducerProject,
-        dependenciesBlock = dependenciesBlock,
-        buildTypesBlock = if (buildTypeAnotherRelease) """
+            """
+                        .trimIndent()
+                else "",
+            dependencyOnProducerProject = dependencyOnProducerProject,
+            dependenciesBlock = dependenciesBlock,
+            buildTypesBlock =
+                if (buildTypeAnotherRelease)
+                    """
                 anotherRelease { initWith(release) }
-        """.trimIndent() else "",
-        addAppTargetPlugin = addAppTargetPlugin,
-        baselineProfileBlock = baselineProfileBlock,
-        additionalGradleCodeBlock = additionalGradleCodeBlock
-    )
+        """
+                        .trimIndent()
+                else "",
+            addAppTargetPlugin = addAppTargetPlugin,
+            baselineProfileBlock = baselineProfileBlock,
+            additionalGradleCodeBlock = additionalGradleCodeBlock
+        )
 
     fun setupWithBlocks(
         androidPlugin: String,
@@ -673,8 +752,8 @@ class ConsumerModule(
             """
                 plugins {
                     id("$androidPlugin")
-                    id("androidx.baselineprofile.consumer")
                     ${if (addAppTargetPlugin) "id(\"androidx.baselineprofile.apptarget\")" else ""}
+                    id("androidx.baselineprofile.consumer")
                     $otherPluginsBlock
                 }
                 android {
@@ -707,7 +786,8 @@ class ConsumerModule(
 
                 $additionalGradleCodeBlock
 
-            """.trimIndent()
+            """
+                .trimIndent()
         )
     }
 }

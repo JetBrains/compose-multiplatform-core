@@ -9,7 +9,6 @@ import androidx.room.util.dropFtsSyncTriggers
 import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.execSQL
 import javax.`annotation`.processing.Generated
-import kotlin.Any
 import kotlin.Lazy
 import kotlin.String
 import kotlin.Suppress
@@ -37,7 +36,7 @@ public class MyDatabase_Impl : MyDatabase() {
 
   protected override fun createOpenDelegate(): RoomOpenDelegate {
     val _openDelegate: RoomOpenDelegate = object : RoomOpenDelegate(1,
-        "89ba16fb8b062b50acf0eb06c853efcb") {
+        "89ba16fb8b062b50acf0eb06c853efcb", "8a71a68e07bdd62aa8c8324d870cf804") {
       public override fun createAllTables(connection: SQLiteConnection) {
         connection.execSQL("CREATE TABLE IF NOT EXISTS `MyParentEntity` (`parentKey` INTEGER NOT NULL, PRIMARY KEY(`parentKey`))")
         connection.execSQL("CREATE TABLE IF NOT EXISTS `MyEntity` (`pk` INTEGER NOT NULL, `indexedCol` TEXT NOT NULL, PRIMARY KEY(`pk`), FOREIGN KEY(`indexedCol`) REFERENCES `MyParentEntity`(`parentKey`) ON UPDATE NO ACTION ON DELETE CASCADE )")
@@ -159,9 +158,8 @@ public class MyDatabase_Impl : MyDatabase() {
     super.performClear(true, "MyParentEntity", "MyEntity", "MyFtsEntity")
   }
 
-  protected override fun getRequiredTypeConverterClasses():
-      Map<KClass<out Any>, List<KClass<out Any>>> {
-    val _typeConvertersMap: MutableMap<KClass<out Any>, List<KClass<out Any>>> = mutableMapOf()
+  protected override fun getRequiredTypeConverterClasses(): Map<KClass<*>, List<KClass<*>>> {
+    val _typeConvertersMap: MutableMap<KClass<*>, List<KClass<*>>> = mutableMapOf()
     _typeConvertersMap.put(MyDao::class, MyDao_Impl.getRequiredConverters())
     return _typeConvertersMap
   }

@@ -18,6 +18,7 @@ package androidx.lifecycle
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
+import androidx.testutils.lifecycle.FakeLifecycleOwner
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
@@ -33,31 +34,27 @@ class LaunchWhenTest {
     fun runSynchronously() {
         runBlocking(Dispatchers.Main.immediate) {
             val owner = FakeLifecycleOwner()
-            owner.lifecycle.addObserver(object : LifecycleObserver {
-                @OnLifecycleEvent(Lifecycle.Event.ON_CREATE)
-                fun onCreate() {
-                    expectations.expect(2)
-                }
+            owner.lifecycle.addObserver(
+                object : LifecycleObserver {
+                    @OnLifecycleEvent(Lifecycle.Event.ON_CREATE)
+                    fun onCreate() {
+                        expectations.expect(2)
+                    }
 
-                @OnLifecycleEvent(Lifecycle.Event.ON_START)
-                fun onStart() {
-                    expectations.expect(5)
-                }
+                    @OnLifecycleEvent(Lifecycle.Event.ON_START)
+                    fun onStart() {
+                        expectations.expect(5)
+                    }
 
-                @OnLifecycleEvent(Lifecycle.Event.ON_RESUME)
-                fun onResume() {
-                    expectations.expect(8)
+                    @OnLifecycleEvent(Lifecycle.Event.ON_RESUME)
+                    fun onResume() {
+                        expectations.expect(8)
+                    }
                 }
-            })
-            owner.lifecycleScope.launchWhenCreated {
-                expectations.expect(3)
-            }
-            owner.lifecycleScope.launchWhenStarted {
-                expectations.expect(6)
-            }
-            owner.lifecycleScope.launchWhenResumed {
-                expectations.expect(9)
-            }
+            )
+            owner.lifecycleScope.launchWhenCreated { expectations.expect(3) }
+            owner.lifecycleScope.launchWhenStarted { expectations.expect(6) }
+            owner.lifecycleScope.launchWhenResumed { expectations.expect(9) }
             expectations.expect(1)
             owner.setState(Lifecycle.State.CREATED)
             expectations.expect(4)

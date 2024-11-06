@@ -37,16 +37,17 @@ class GenericShape(
         layoutDirection: LayoutDirection,
         density: Density
     ): Outline {
-        val path = Path().apply {
-            builder(size, layoutDirection)
-            close()
-        }
+        val path =
+            Path().apply {
+                builder(size, layoutDirection)
+                close()
+            }
         return Outline.Generic(path)
     }
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
-        return (other as? GenericShape)?.builder == builder
+        return (other as? GenericShape)?.builder === builder
     }
 
     override fun hashCode(): Int {

@@ -26,10 +26,11 @@ import androidx.compose.ui.graphics.graphicsLayer
  * direction
  *
  * Usage of this API renders this composable into a separate graphics layer.
+ *
+ * @sample androidx.compose.ui.samples.RotateSample
  * @see graphicsLayer
  *
  * Example usage:
- * @sample androidx.compose.ui.samples.RotateSample
  */
 @Stable
 fun Modifier.rotate(degrees: Float) =

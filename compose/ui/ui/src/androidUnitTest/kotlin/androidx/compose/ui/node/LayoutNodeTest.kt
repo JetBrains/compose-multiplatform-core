@@ -17,10 +17,13 @@
 
 package androidx.compose.ui.node
 
+import androidx.collection.IntObjectMap
+import androidx.collection.intObjectMapOf
 import androidx.compose.testutils.TestViewConfiguration
-import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.autofill.Autofill
+import androidx.compose.ui.autofill.AutofillManager
 import androidx.compose.ui.autofill.AutofillTree
 import androidx.compose.ui.draganddrop.DragAndDropManager
 import androidx.compose.ui.draw.DrawModifier
@@ -45,6 +48,7 @@ import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.PointerIconService
 import androidx.compose.ui.input.pointer.PointerInputFilter
 import androidx.compose.ui.input.pointer.PointerInputModifier
+import androidx.compose.ui.input.pointer.PointerType
 import androidx.compose.ui.layout.AlignmentLine
 import androidx.compose.ui.layout.LayoutModifier
 import androidx.compose.ui.layout.LayoutModifierImpl
@@ -63,9 +67,12 @@ import androidx.compose.ui.platform.TextToolbar
 import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.platform.WindowInfo
 import androidx.compose.ui.platform.invertTo
+import androidx.compose.ui.semantics.EmptySemanticsModifier
 import androidx.compose.ui.semantics.SemanticsConfiguration
 import androidx.compose.ui.semantics.SemanticsModifier
+import androidx.compose.ui.semantics.SemanticsOwner
 import androidx.compose.ui.semantics.SemanticsPropertyReceiver
+import androidx.compose.ui.spatial.RectManager
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.TextInputService
@@ -77,10 +84,12 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toOffset
+import androidx.compose.ui.viewinterop.InteropView
 import androidx.compose.ui.zIndex
 import com.google.common.truth.Truth.assertThat
 import java.util.concurrent.Executors
 import kotlin.coroutines.CoroutineContext
+import kotlin.test.assertNotSame
 import kotlinx.coroutines.asCoroutineDispatcher
 import org.junit.Assert
 import org.junit.Assert.assertEquals
@@ -641,9 +650,7 @@ class LayoutNodeTest {
     fun testRemoveNegativeIndex() {
         val node = LayoutNode()
         node.insertAt(0, LayoutNode())
-        Assert.assertThrows(IndexOutOfBoundsException::class.java) {
-            node.removeAt(-1, 1)
-        }
+        Assert.assertThrows(IndexOutOfBoundsException::class.java) { node.removeAt(-1, 1) }
     }
 
     // LayoutNode should error when removing at index > count
@@ -651,9 +658,7 @@ class LayoutNodeTest {
     fun testRemoveBeyondIndex() {
         val node = LayoutNode()
         node.insertAt(0, LayoutNode())
-        Assert.assertThrows(IndexOutOfBoundsException::class.java) {
-            node.removeAt(1, 1)
-        }
+        Assert.assertThrows(NullPointerException::class.java) { node.removeAt(1, 1) }
     }
 
     // LayoutNode should error when removing at count < 0
@@ -661,9 +666,7 @@ class LayoutNodeTest {
     fun testRemoveNegativeCount() {
         val node = LayoutNode()
         node.insertAt(0, LayoutNode())
-        Assert.assertThrows(IllegalArgumentException::class.java) {
-            node.removeAt(0, -1)
-        }
+        Assert.assertThrows(IllegalArgumentException::class.java) { node.removeAt(0, -1) }
     }
 
     // LayoutNode should error when removing at count > entry count
@@ -671,18 +674,14 @@ class LayoutNodeTest {
     fun testRemoveWithIndexBeyondSize() {
         val node = LayoutNode()
         node.insertAt(0, LayoutNode())
-        Assert.assertThrows(IndexOutOfBoundsException::class.java) {
-            node.removeAt(0, 2)
-        }
+        Assert.assertThrows(NullPointerException::class.java) { node.removeAt(0, 2) }
     }
 
     // LayoutNode should error when there aren't enough items
     @Test
     fun testRemoveWithIndexEqualToSize() {
         val node = LayoutNode()
-        Assert.assertThrows(IndexOutOfBoundsException::class.java) {
-            node.removeAt(0, 1)
-        }
+        Assert.assertThrows(NullPointerException::class.java) { node.removeAt(0, 1) }
     }
 
     // LayoutNode should allow removing two items
@@ -695,12 +694,46 @@ class LayoutNodeTest {
         assertEquals(0, node.children.size)
     }
 
+    // Modifiers set before the layout node is attached should not be applied until after attach
+    @Test
+    fun modifierSetBeforeLayoutNodeAttached() {
+        val layoutNode = LayoutNode()
+        val layoutModifier = Modifier.graphicsLayer {}
+
+        layoutNode.modifier = layoutModifier
+        // Changes should not be applied yet
+        assertNotSame(layoutNode.modifier, layoutModifier)
+        assertFalse(layoutNode.outerCoordinator.isAttached)
+        assertFalse(layoutNode.nodes.has(Nodes.Any))
+
+        layoutNode.attach(MockOwner())
+        // Changes should now be applied
+        assertSame(layoutNode.modifier, layoutModifier)
+        assertTrue(layoutNode.outerCoordinator.isAttached)
+        assertTrue(layoutNode.nodes.has(Nodes.Any))
+    }
+
+    // Modifiers set after the layout node is attached should be applied immediately
+    @Test
+    fun modifierSetAfterLayoutNodeAttached() {
+        val layoutNode = LayoutNode()
+        val layoutModifier = Modifier.graphicsLayer {}
+        layoutNode.attach(MockOwner())
+
+        layoutNode.modifier = layoutModifier
+
+        // Changes should be applied
+        assertSame(layoutNode.modifier, layoutModifier)
+        assertTrue(layoutNode.outerCoordinator.isAttached)
+        assertTrue(layoutNode.nodes.has(Nodes.Any))
+    }
+
     // The layout coordinates of a LayoutNode should be attached when
     // the layout node is attached.
     @Test
     fun coordinatesAttachedWhenLayoutNodeAttached() {
         val layoutNode = LayoutNode()
-        val layoutModifier = Modifier.graphicsLayer { }
+        val layoutModifier = Modifier.graphicsLayer {}
         layoutNode.modifier = layoutModifier
         assertFalse(layoutNode.coordinates.isAttached)
         assertFalse(layoutNode.coordinates.isAttached)
@@ -716,16 +749,14 @@ class LayoutNodeTest {
     @Test
     fun nodeCoordinatorSameWithReplacementModifier() {
         val layoutNode = LayoutNode()
-        val layoutModifier = Modifier.graphicsLayer { }
+        layoutNode.attach(MockOwner())
+        val layoutModifier = Modifier.graphicsLayer {}
 
         layoutNode.modifier = layoutModifier
         val oldNodeCoordinator = layoutNode.outerCoordinator
-        assertFalse(oldNodeCoordinator.isAttached)
-
-        layoutNode.attach(MockOwner())
         assertTrue(oldNodeCoordinator.isAttached)
 
-        layoutNode.modifier = Modifier.graphicsLayer { }
+        layoutNode.modifier = Modifier.graphicsLayer {}
         val newNodeCoordinator = layoutNode.outerCoordinator
         assertSame(newNodeCoordinator, oldNodeCoordinator)
     }
@@ -739,10 +770,8 @@ class LayoutNodeTest {
                 drawContent()
             }
 
-            override fun MeasureScope.measure(
-                measurable: Measurable,
-                constraints: Constraints
-            ) = layout(0, 0) {}
+            override fun MeasureScope.measure(measurable: Measurable, constraints: Constraints) =
+                layout(0, 0) {}
         }
 
         val layoutNode = LayoutNode()
@@ -762,30 +791,32 @@ class LayoutNodeTest {
     fun nodeCoordinatorAttachedWhenLayoutNodeAttached() {
         val layoutNode = LayoutNode()
         // 2 modifiers at the start
-        val layoutModifier = Modifier
-            .graphicsLayer { }
-            .graphicsLayer { }
+        val layoutModifier = Modifier.graphicsLayer {}.graphicsLayer {}
 
         layoutNode.modifier = layoutModifier
-        val oldNodeCoordinator = layoutNode.outerCoordinator
-        val oldInnerNodeCoordinator = oldNodeCoordinator.wrapped
+        var oldNodeCoordinator = layoutNode.outerCoordinator
+        var oldInnerNodeCoordinator = oldNodeCoordinator.wrapped
         assertFalse(oldNodeCoordinator.isAttached)
-        assertNotNull(oldInnerNodeCoordinator)
-        assertFalse(oldInnerNodeCoordinator!!.isAttached)
+        assertNull(oldInnerNodeCoordinator)
 
         layoutNode.attach(MockOwner())
+        oldNodeCoordinator = layoutNode.outerCoordinator
+        oldInnerNodeCoordinator = oldNodeCoordinator.wrapped
         assertTrue(oldNodeCoordinator.isAttached)
+        assertNotNull(oldInnerNodeCoordinator)
+        assertTrue(oldInnerNodeCoordinator!!.isAttached)
 
         // only 1 modifier now, so one should be detached and the other can be reused
         layoutNode.modifier = Modifier.graphicsLayer()
         val newNodeCoordinator = layoutNode.outerCoordinator
 
         // one can be reused, but we don't care which one
-        val notReused = if (newNodeCoordinator == oldNodeCoordinator) {
-            oldInnerNodeCoordinator
-        } else {
-            oldNodeCoordinator
-        }
+        val notReused =
+            if (newNodeCoordinator == oldNodeCoordinator) {
+                oldInnerNodeCoordinator
+            } else {
+                oldNodeCoordinator
+            }
         assertTrue(newNodeCoordinator.isAttached)
         assertFalse(notReused.isAttached)
     }
@@ -794,7 +825,7 @@ class LayoutNodeTest {
     fun nodeCoordinatorParentLayoutCoordinates() {
         val layoutNode = LayoutNode()
         val layoutNode2 = LayoutNode()
-        val layoutModifier = Modifier.graphicsLayer { }
+        val layoutModifier = Modifier.graphicsLayer {}
         layoutNode.modifier = layoutModifier
         layoutNode2.insertAt(0, layoutNode)
         layoutNode2.attach(MockOwner())
@@ -813,29 +844,24 @@ class LayoutNodeTest {
     fun nodeCoordinatorParentCoordinates() {
         val layoutNode = LayoutNode()
         val layoutNode2 = LayoutNode()
-        val layoutModifier = object : LayoutModifier {
-            override fun MeasureScope.measure(
-                measurable: Measurable,
-                constraints: Constraints
-            ): MeasureResult {
-                TODO("Not yet implemented")
+        val layoutModifier =
+            object : LayoutModifier {
+                override fun MeasureScope.measure(
+                    measurable: Measurable,
+                    constraints: Constraints
+                ): MeasureResult {
+                    TODO("Not yet implemented")
+                }
             }
-        }
-        val drawModifier = Modifier.drawBehind { }
+        val drawModifier = Modifier.drawBehind {}
         layoutNode.modifier = layoutModifier.then(drawModifier)
         layoutNode2.insertAt(0, layoutNode)
         layoutNode2.attach(MockOwner())
 
         val layoutModifierWrapper = layoutNode.outerCoordinator
 
-        assertEquals(
-            layoutModifierWrapper,
-            layoutNode.innerCoordinator.parentCoordinates
-        )
-        assertEquals(
-            layoutNode2.innerCoordinator,
-            layoutModifierWrapper.parentCoordinates
-        )
+        assertEquals(layoutModifierWrapper, layoutNode.innerCoordinator.parentCoordinates)
+        assertEquals(layoutNode2.innerCoordinator, layoutModifierWrapper.parentCoordinates)
     }
 
     @Test
@@ -863,14 +889,13 @@ class LayoutNodeTest {
         parent.attach(MockOwner())
         val child = ZeroSizedLayoutNode()
         parent.insertAt(0, child)
-        child.modifier = Modifier.graphicsLayer {
-            translationX = 5f
-            translationY = 2f
-        }
-        parent.outerCoordinator
-            .measure(listOf(parent.outerCoordinator), Constraints())
-        child.outerCoordinator
-            .measure(listOf(child.outerCoordinator), Constraints())
+        child.modifier =
+            Modifier.graphicsLayer {
+                translationX = 5f
+                translationY = 2f
+            }
+        parent.outerCoordinator.measure(listOf(parent.outerCoordinator), Constraints())
+        child.outerCoordinator.measure(listOf(child.outerCoordinator), Constraints())
         parent.place(0, 0)
         child.place(0, 0)
 
@@ -892,13 +917,9 @@ class LayoutNodeTest {
         parent.attach(MockOwner())
         val child = ZeroSizedLayoutNode()
         parent.insertAt(0, child)
-        child.modifier = Modifier.graphicsLayer {
-            rotationZ = 90f
-        }
-        parent.outerCoordinator
-            .measure(listOf(parent.outerCoordinator), Constraints())
-        child.outerCoordinator
-            .measure(listOf(child.outerCoordinator), Constraints())
+        child.modifier = Modifier.graphicsLayer { rotationZ = 90f }
+        parent.outerCoordinator.measure(listOf(parent.outerCoordinator), Constraints())
+        child.outerCoordinator.measure(listOf(child.outerCoordinator), Constraints())
         parent.place(0, 0)
         child.place(0, 0)
 
@@ -920,13 +941,9 @@ class LayoutNodeTest {
         parent.attach(MockOwner())
         val child = ZeroSizedLayoutNode()
         parent.insertAt(0, child)
-        child.modifier = Modifier.graphicsLayer {
-            scaleX = 0f
-        }
-        parent.outerCoordinator
-            .measure(listOf(parent.outerCoordinator), Constraints())
-        child.outerCoordinator
-            .measure(listOf(child.outerCoordinator), Constraints())
+        child.modifier = Modifier.graphicsLayer { scaleX = 0f }
+        parent.outerCoordinator.measure(listOf(parent.outerCoordinator), Constraints())
+        child.outerCoordinator.measure(listOf(child.outerCoordinator), Constraints())
         parent.place(0, 0)
         child.place(0, 0)
 
@@ -966,24 +983,23 @@ class LayoutNodeTest {
         parent.attach(MockOwner())
         val child1 = ZeroSizedLayoutNode()
         parent.insertAt(0, child1)
-        child1.modifier = Modifier.graphicsLayer {
-            scaleX = 0.5f
-            scaleY = 0.25f
-            transformOrigin = TransformOrigin(0f, 0f)
-        }
+        child1.modifier =
+            Modifier.graphicsLayer {
+                scaleX = 0.5f
+                scaleY = 0.25f
+                transformOrigin = TransformOrigin(0f, 0f)
+            }
         val child2 = ZeroSizedLayoutNode()
         parent.insertAt(0, child2)
-        child2.modifier = Modifier.graphicsLayer {
-            scaleX = 5f
-            scaleY = 2f
-            transformOrigin = TransformOrigin(0f, 0f)
-        }
-        parent.outerCoordinator
-            .measure(listOf(parent.outerCoordinator), Constraints())
-        child1.outerCoordinator
-            .measure(listOf(child1.outerCoordinator), Constraints())
-        child2.outerCoordinator
-            .measure(listOf(child2.outerCoordinator), Constraints())
+        child2.modifier =
+            Modifier.graphicsLayer {
+                scaleX = 5f
+                scaleY = 2f
+                transformOrigin = TransformOrigin(0f, 0f)
+            }
+        parent.outerCoordinator.measure(listOf(parent.outerCoordinator), Constraints())
+        child1.outerCoordinator.measure(listOf(child1.outerCoordinator), Constraints())
+        child2.outerCoordinator.measure(listOf(child2.outerCoordinator), Constraints())
         parent.place(0, 0)
         child1.place(100, 200)
         child2.place(5, 11)
@@ -1040,10 +1056,7 @@ class LayoutNodeTest {
     fun hitTest_pointerInBounds_pointerInputFilterHit() {
         val pointerInputFilter: PointerInputFilter = mockPointerInputFilter()
         val layoutNode =
-            LayoutNode(
-                0, 0, 1, 1,
-                PointerInputModifierImpl(pointerInputFilter)
-            ).apply {
+            LayoutNode(0, 0, 1, 1, PointerInputModifierImpl(pointerInputFilter)).apply {
                 attach(MockOwner())
             }
         val hit = mutableListOf<Modifier.Node>()
@@ -1058,15 +1071,17 @@ class LayoutNodeTest {
         val pointerInputFilter: PointerInputFilter = mockPointerInputFilter()
         val layoutNode =
             LayoutNode(
-                0, 0, 1, 1,
-                PointerInputModifierImpl(pointerInputFilter),
-                DpSize(48.dp, 48.dp)
-            ).apply {
-                attach(MockOwner())
-            }
+                    0,
+                    0,
+                    1,
+                    1,
+                    PointerInputModifierImpl(pointerInputFilter),
+                    DpSize(48.dp, 48.dp)
+                )
+                .apply { attach(MockOwner()) }
         val hit = mutableListOf<Modifier.Node>()
 
-        layoutNode.hitTest(Offset(-3f, 3f), hit, true)
+        layoutNode.hitTest(Offset(-3f, 3f), hit, PointerType.Touch)
 
         assertThat(hit.toFilters()).isEqualTo(listOf(pointerInputFilter))
     }
@@ -1076,15 +1091,17 @@ class LayoutNodeTest {
         val pointerInputFilter: PointerInputFilter = mockPointerInputFilter()
         val layoutNode =
             LayoutNode(
-                0, 0, 1000, 1,
-                PointerInputModifierImpl(pointerInputFilter),
-                DpSize(48.dp, 48.dp)
-            ).apply {
-                attach(MockOwner())
-            }
+                    0,
+                    0,
+                    1000,
+                    1,
+                    PointerInputModifierImpl(pointerInputFilter),
+                    DpSize(48.dp, 48.dp)
+                )
+                .apply { attach(MockOwner()) }
         val hit = mutableListOf<Modifier.Node>()
 
-        layoutNode.hitTest(Offset(0f, 3f), hit, true)
+        layoutNode.hitTest(Offset(0f, 3f), hit, PointerType.Touch)
 
         assertThat(hit.toFilters()).isEqualTo(listOf(pointerInputFilter))
     }
@@ -1094,15 +1111,17 @@ class LayoutNodeTest {
         val pointerInputFilter: PointerInputFilter = mockPointerInputFilter()
         val layoutNode =
             LayoutNode(
-                0, 0, 1, 1000,
-                PointerInputModifierImpl(pointerInputFilter),
-                DpSize(48.dp, 48.dp)
-            ).apply {
-                attach(MockOwner())
-            }
+                    0,
+                    0,
+                    1,
+                    1000,
+                    PointerInputModifierImpl(pointerInputFilter),
+                    DpSize(48.dp, 48.dp)
+                )
+                .apply { attach(MockOwner()) }
         val hit = mutableListOf<Modifier.Node>()
 
-        layoutNode.hitTest(Offset(3f, 0f), hit, true)
+        layoutNode.hitTest(Offset(3f, 0f), hit, PointerType.Touch)
 
         assertThat(hit.toFilters()).isEqualTo(listOf(pointerInputFilter))
     }
@@ -1111,16 +1130,20 @@ class LayoutNodeTest {
     fun hitTest_pointerInMinimumTouchTarget_pointerInputFilterHit_nestedNodes() {
         val pointerInputFilter: PointerInputFilter = mockPointerInputFilter()
         val outerNode = LayoutNode(0, 0, 1, 1).apply { attach(MockOwner()) }
-        val layoutNode = LayoutNode(
-            0, 0, 1, 1,
-            PointerInputModifierImpl(pointerInputFilter),
-            DpSize(48.dp, 48.dp)
-        )
+        val layoutNode =
+            LayoutNode(
+                0,
+                0,
+                1,
+                1,
+                PointerInputModifierImpl(pointerInputFilter),
+                DpSize(48.dp, 48.dp)
+            )
         outerNode.add(layoutNode)
         layoutNode.onNodePlaced()
         val hit = mutableListOf<Modifier.Node>()
 
-        outerNode.hitTest(Offset(-3f, 3f), hit, true)
+        outerNode.hitTest(Offset(-3f, 3f), hit, PointerType.Touch)
 
         assertThat(hit.toFilters()).isEqualTo(listOf(pointerInputFilter))
     }
@@ -1128,15 +1151,12 @@ class LayoutNodeTest {
     @Test
     fun hitTest_pointerInputFilterHit_outsideParent() {
         val outerPointerInputFilter: PointerInputFilter = mockPointerInputFilter()
-        val outerNode = LayoutNode(
-            0, 0, 10, 10,
-            PointerInputModifierImpl(outerPointerInputFilter)
-        ).apply { attach(MockOwner()) }
+        val outerNode =
+            LayoutNode(0, 0, 10, 10, PointerInputModifierImpl(outerPointerInputFilter)).apply {
+                attach(MockOwner())
+            }
         val pointerInputFilter: PointerInputFilter = mockPointerInputFilter()
-        val layoutNode = LayoutNode(
-            20, 20, 30, 30,
-            PointerInputModifierImpl(pointerInputFilter)
-        )
+        val layoutNode = LayoutNode(20, 20, 30, 30, PointerInputModifierImpl(pointerInputFilter))
         outerNode.add(layoutNode)
         layoutNode.onNodePlaced()
         val hit = mutableListOf<Modifier.Node>()
@@ -1148,18 +1168,14 @@ class LayoutNodeTest {
 
     @Test
     fun hitTest_pointerInputFilterHit_outsideParent_interceptOutOfBoundsChildEvents() {
-        val outerPointerInputFilter: PointerInputFilter = mockPointerInputFilter(
-            interceptChildEvents = true
-        )
-        val outerNode = LayoutNode(
-            0, 0, 10, 10,
-            PointerInputModifierImpl(outerPointerInputFilter)
-        ).apply { attach(MockOwner()) }
+        val outerPointerInputFilter: PointerInputFilter =
+            mockPointerInputFilter(interceptChildEvents = true)
+        val outerNode =
+            LayoutNode(0, 0, 10, 10, PointerInputModifierImpl(outerPointerInputFilter)).apply {
+                attach(MockOwner())
+            }
         val pointerInputFilter: PointerInputFilter = mockPointerInputFilter()
-        val layoutNode = LayoutNode(
-            20, 20, 30, 30,
-            PointerInputModifierImpl(pointerInputFilter)
-        )
+        val layoutNode = LayoutNode(20, 20, 30, 30, PointerInputModifierImpl(pointerInputFilter))
         outerNode.add(layoutNode)
         layoutNode.onNodePlaced()
         val hit = mutableListOf<Modifier.Node>()
@@ -1172,18 +1188,26 @@ class LayoutNodeTest {
     @Test
     fun hitTest_pointerInMinimumTouchTarget_closestHit() {
         val pointerInputFilter1: PointerInputFilter = mockPointerInputFilter()
-        val layoutNode1 = LayoutNode(
-            0, 0, 5, 5,
-            PointerInputModifierImpl(pointerInputFilter1),
-            DpSize(48.dp, 48.dp)
-        )
+        val layoutNode1 =
+            LayoutNode(
+                0,
+                0,
+                5,
+                5,
+                PointerInputModifierImpl(pointerInputFilter1),
+                DpSize(48.dp, 48.dp)
+            )
 
         val pointerInputFilter2: PointerInputFilter = mockPointerInputFilter()
-        val layoutNode2 = LayoutNode(
-            6, 6, 11, 11,
-            PointerInputModifierImpl(pointerInputFilter2),
-            DpSize(48.dp, 48.dp)
-        )
+        val layoutNode2 =
+            LayoutNode(
+                6,
+                6,
+                11,
+                11,
+                PointerInputModifierImpl(pointerInputFilter2),
+                DpSize(48.dp, 48.dp)
+            )
         val outerNode = LayoutNode(0, 0, 11, 11).apply { attach(MockOwner()) }
         outerNode.add(layoutNode1)
         outerNode.add(layoutNode2)
@@ -1193,50 +1217,50 @@ class LayoutNodeTest {
         val hit = mutableListOf<Modifier.Node>()
 
         // Hit closer to layoutNode1
-        outerNode.hitTest(Offset(5.1f, 5.5f), hit, true)
+        outerNode.hitTest(Offset(5.1f, 5.5f), hit, PointerType.Touch)
 
         assertThat(hit.toFilters()).isEqualTo(listOf(pointerInputFilter1))
 
         hit.clear()
 
         // Hit closer to layoutNode2
-        outerNode.hitTest(Offset(5.9f, 5.5f), hit, true)
+        outerNode.hitTest(Offset(5.9f, 5.5f), hit, PointerType.Touch)
 
         assertThat(hit.toFilters()).isEqualTo(listOf(pointerInputFilter2))
 
         hit.clear()
 
         // Hit closer to layoutNode1
-        outerNode.hitTest(Offset(5.5f, 5.1f), hit, true)
+        outerNode.hitTest(Offset(5.5f, 5.1f), hit, PointerType.Touch)
 
         assertThat(hit.toFilters()).isEqualTo(listOf(pointerInputFilter1))
 
         hit.clear()
 
         // Hit closer to layoutNode2
-        outerNode.hitTest(Offset(5.5f, 5.9f), hit, true)
+        outerNode.hitTest(Offset(5.5f, 5.9f), hit, PointerType.Touch)
 
         assertThat(hit.toFilters()).isEqualTo(listOf(pointerInputFilter2))
 
         hit.clear()
 
         // Hit inside layoutNode1
-        outerNode.hitTest(Offset(4.9f, 4.9f), hit, true)
+        outerNode.hitTest(Offset(4.9f, 4.9f), hit, PointerType.Touch)
 
         assertThat(hit.toFilters()).isEqualTo(listOf(pointerInputFilter1))
 
         hit.clear()
 
         // Hit inside layoutNode2
-        outerNode.hitTest(Offset(6.1f, 6.1f), hit, true)
+        outerNode.hitTest(Offset(6.1f, 6.1f), hit, PointerType.Touch)
 
         assertThat(hit.toFilters()).isEqualTo(listOf(pointerInputFilter2))
     }
 
     /**
-     * When a child is in the minimum touch target area, but the parent is big enough to not
-     * worry about minimum touch target, the child should still be able to be hit outside the
-     * parent's bounds.
+     * When a child is in the minimum touch target area, but the parent is big enough to not worry
+     * about minimum touch target, the child should still be able to be hit outside the parent's
+     * bounds.
      */
     @Test
     fun hitTest_pointerInMinimumTouchTarget_inChild_closestHit() {
@@ -1247,11 +1271,10 @@ class LayoutNodeTest {
     }
 
     /**
-     * When a child is in the minimum touch target area, but the parent is big enough to not
-     * worry about minimum touch target, the child should still be able to be hit outside the
-     * parent's bounds. This is different from
-     * [hitTest_pointerInMinimumTouchTarget_inChild_closestHit] because the node with the nested
-     * child is after the other node.
+     * When a child is in the minimum touch target area, but the parent is big enough to not worry
+     * about minimum touch target, the child should still be able to be hit outside the parent's
+     * bounds. This is different from [hitTest_pointerInMinimumTouchTarget_inChild_closestHit]
+     * because the node with the nested child is after the other node.
      */
     @Test
     fun hitTest_pointerInMinimumTouchTarget_inChildOver_closestHit() {
@@ -1265,27 +1288,39 @@ class LayoutNodeTest {
         block: (outerNode: LayoutNode, nodeWithChild: LayoutNode, soloNode: LayoutNode) -> Unit
     ) {
         val pointerInputFilter1: PointerInputFilter = mockPointerInputFilter()
-        val layoutNode1 = LayoutNode(
-            5, 5, 10, 10,
-            PointerInputModifierImpl(pointerInputFilter1),
-            DpSize(48.dp, 48.dp)
-        )
+        val layoutNode1 =
+            LayoutNode(
+                5,
+                5,
+                10,
+                10,
+                PointerInputModifierImpl(pointerInputFilter1),
+                DpSize(48.dp, 48.dp)
+            )
 
         val pointerInputFilter2: PointerInputFilter =
             mockPointerInputFilter(interceptChildEvents = true)
-        val layoutNode2 = LayoutNode(
-            0, 0, 10, 10,
-            PointerInputModifierImpl(pointerInputFilter2),
-            DpSize(48.dp, 48.dp)
-        )
+        val layoutNode2 =
+            LayoutNode(
+                0,
+                0,
+                10,
+                10,
+                PointerInputModifierImpl(pointerInputFilter2),
+                DpSize(48.dp, 48.dp)
+            )
         layoutNode2.add(layoutNode1)
 
         val pointerInputFilter3: PointerInputFilter = mockPointerInputFilter()
-        val layoutNode3 = LayoutNode(
-            12, 12, 17, 17,
-            PointerInputModifierImpl(pointerInputFilter3),
-            DpSize(48.dp, 48.dp)
-        )
+        val layoutNode3 =
+            LayoutNode(
+                12,
+                12,
+                17,
+                17,
+                PointerInputModifierImpl(pointerInputFilter3),
+                DpSize(48.dp, 48.dp)
+            )
 
         val outerNode = LayoutNode(0, 0, 20, 20).apply { attach(MockOwner()) }
         block(outerNode, layoutNode2, layoutNode3)
@@ -1296,14 +1331,14 @@ class LayoutNodeTest {
         val hit = mutableListOf<Modifier.Node>()
 
         // Hit outside of layoutNode2, but near layoutNode1
-        outerNode.hitTest(Offset(10.1f, 10.1f), hit, true)
+        outerNode.hitTest(Offset(10.1f, 10.1f), hit, PointerType.Touch)
 
         assertThat(hit.toFilters()).isEqualTo(listOf(pointerInputFilter2, pointerInputFilter1))
 
         hit.clear()
 
         // Hit closer to layoutNode3
-        outerNode.hitTest(Offset(11.9f, 11.9f), hit, true)
+        outerNode.hitTest(Offset(11.9f, 11.9f), hit, PointerType.Touch)
 
         assertThat(hit.toFilters()).isEqualTo(listOf(pointerInputFilter3))
     }
@@ -1311,17 +1346,26 @@ class LayoutNodeTest {
     @Test
     fun hitTest_pointerInMinimumTouchTarget_closestHitWithOverlap() {
         val pointerInputFilter1: PointerInputFilter = mockPointerInputFilter()
-        val layoutNode1 = LayoutNode(
-            0, 0, 5, 5, PointerInputModifierImpl(pointerInputFilter1),
-            DpSize(48.dp, 48.dp)
-        )
+        val layoutNode1 =
+            LayoutNode(
+                0,
+                0,
+                5,
+                5,
+                PointerInputModifierImpl(pointerInputFilter1),
+                DpSize(48.dp, 48.dp)
+            )
 
         val pointerInputFilter2: PointerInputFilter = mockPointerInputFilter()
-        val layoutNode2 = LayoutNode(
-            4, 4, 9, 9,
-            PointerInputModifierImpl(pointerInputFilter2),
-            DpSize(48.dp, 48.dp)
-        )
+        val layoutNode2 =
+            LayoutNode(
+                4,
+                4,
+                9,
+                9,
+                PointerInputModifierImpl(pointerInputFilter2),
+                DpSize(48.dp, 48.dp)
+            )
         val outerNode = LayoutNode(0, 0, 9, 9).apply { attach(MockOwner()) }
         outerNode.add(layoutNode1)
         outerNode.add(layoutNode2)
@@ -1331,14 +1375,14 @@ class LayoutNodeTest {
         val hit = mutableListOf<Modifier.Node>()
 
         // Hit layoutNode1
-        outerNode.hitTest(Offset(3.95f, 3.95f), hit, true)
+        outerNode.hitTest(Offset(3.95f, 3.95f), hit, PointerType.Touch)
 
         assertThat(hit.toFilters()).isEqualTo(listOf(pointerInputFilter1))
 
         hit.clear()
 
         // Hit layoutNode2
-        outerNode.hitTest(Offset(4.05f, 4.05f), hit, true)
+        outerNode.hitTest(Offset(4.05f, 4.05f), hit, PointerType.Touch)
 
         assertThat(hit.toFilters()).isEqualTo(listOf(pointerInputFilter2))
     }
@@ -1346,15 +1390,12 @@ class LayoutNodeTest {
     @Test
     fun hitTestSemantics_pointerInMinimumTouchTarget_pointerInputFilterHit() {
         val semanticsConfiguration = SemanticsConfiguration()
-        val semanticsModifier = object : SemanticsModifier {
-            override val semanticsConfiguration: SemanticsConfiguration = semanticsConfiguration
-        }
+        val semanticsModifier =
+            object : SemanticsModifier {
+                override val semanticsConfiguration: SemanticsConfiguration = semanticsConfiguration
+            }
         val layoutNode =
-            LayoutNode(
-                0, 0, 1, 1,
-                semanticsModifier,
-                DpSize(48.dp, 48.dp)
-            ).apply {
+            LayoutNode(0, 0, 1, 1, semanticsModifier, DpSize(48.dp, 48.dp)).apply {
                 attach(MockOwner())
             }
         val hit = HitTestResult()
@@ -1362,15 +1403,16 @@ class LayoutNodeTest {
         layoutNode.hitTestSemantics(Offset(-3f, 3f), hit)
 
         assertThat(hit).hasSize(1)
-//        assertThat(hit[0].modifier).isEqualTo(semanticsModifier)
+        //        assertThat(hit[0].modifier).isEqualTo(semanticsModifier)
     }
 
     @Test
     fun hitTestSemantics_pointerInMinimumTouchTarget_pointerInputFilterHit_nestedNodes() {
         val semanticsConfiguration = SemanticsConfiguration()
-        val semanticsModifier = object : SemanticsModifier {
-            override val semanticsConfiguration: SemanticsConfiguration = semanticsConfiguration
-        }
+        val semanticsModifier =
+            object : SemanticsModifier {
+                override val semanticsConfiguration: SemanticsConfiguration = semanticsConfiguration
+            }
         val outerNode = LayoutNode(0, 0, 1, 1).apply { attach(MockOwner()) }
         val layoutNode = LayoutNode(0, 0, 1, 1, semanticsModifier, DpSize(48.dp, 48.dp))
         outerNode.add(layoutNode)
@@ -1385,16 +1427,18 @@ class LayoutNodeTest {
 
     @Test
     fun hitTestSemantics_pointerInMinimumTouchTarget_closestHit() {
-        val semanticsNode1 = object : SemanticsModifierNode, Modifier.Node() {
-            override fun SemanticsPropertyReceiver.applySemantics() { }
-        }
-        val semanticsNode2 = object : SemanticsModifierNode, Modifier.Node() {
-            override fun SemanticsPropertyReceiver.applySemantics() { }
-        }
-        data class TestSemanticsElement(
-            private val node: Modifier.Node
-        ) : ModifierNodeElement<Modifier.Node>() {
+        val semanticsNode1 =
+            object : SemanticsModifierNode, Modifier.Node() {
+                override fun SemanticsPropertyReceiver.applySemantics() {}
+            }
+        val semanticsNode2 =
+            object : SemanticsModifierNode, Modifier.Node() {
+                override fun SemanticsPropertyReceiver.applySemantics() {}
+            }
+        data class TestSemanticsElement(private val node: Modifier.Node) :
+            ModifierNodeElement<Modifier.Node>() {
             override fun create() = node
+
             override fun update(node: Modifier.Node) {}
         }
         val semanticsElement1 = TestSemanticsElement(semanticsNode1)
@@ -1409,42 +1453,42 @@ class LayoutNodeTest {
 
         // Hit closer to layoutNode1
         val hit1 = HitTestResult()
-        outerNode.hitTestSemantics(Offset(5.1f, 5.5f), hit1, true)
+        outerNode.hitTestSemantics(Offset(5.1f, 5.5f), hit1, PointerType.Touch)
 
         assertThat(hit1).hasSize(1)
         assertThat(hit1[0]).isEqualTo(semanticsNode1)
 
         // Hit closer to layoutNode2
         val hit2 = HitTestResult()
-        outerNode.hitTestSemantics(Offset(5.9f, 5.5f), hit2, true)
+        outerNode.hitTestSemantics(Offset(5.9f, 5.5f), hit2, PointerType.Touch)
 
         assertThat(hit2).hasSize(1)
         assertThat(hit2[0]).isEqualTo(semanticsNode2)
 
         // Hit closer to layoutNode1
         val hit3 = HitTestResult()
-        outerNode.hitTestSemantics(Offset(5.5f, 5.1f), hit3, true)
+        outerNode.hitTestSemantics(Offset(5.5f, 5.1f), hit3, PointerType.Touch)
 
         assertThat(hit3).hasSize(1)
         assertThat(hit3[0]).isEqualTo(semanticsNode1)
 
         // Hit closer to layoutNode2
         val hit4 = HitTestResult()
-        outerNode.hitTestSemantics(Offset(5.5f, 5.9f), hit4, true)
+        outerNode.hitTestSemantics(Offset(5.5f, 5.9f), hit4, PointerType.Touch)
 
         assertThat(hit4).hasSize(1)
         assertThat(hit4[0]).isEqualTo(semanticsNode2)
 
         // Hit inside layoutNode1
         val hit5 = HitTestResult()
-        outerNode.hitTestSemantics(Offset(4.9f, 4.9f), hit5, true)
+        outerNode.hitTestSemantics(Offset(4.9f, 4.9f), hit5, PointerType.Touch)
 
         assertThat(hit5).hasSize(1)
         assertThat(hit5[0]).isEqualTo(semanticsNode1)
 
         // Hit inside layoutNode2
         val hit6 = HitTestResult()
-        outerNode.hitTestSemantics(Offset(6.1f, 6.1f), hit6, true)
+        outerNode.hitTestSemantics(Offset(6.1f, 6.1f), hit6, PointerType.Touch)
 
         assertThat(hit6).hasSize(1)
         assertThat(hit6[0]).isEqualTo(semanticsNode2)
@@ -1453,12 +1497,14 @@ class LayoutNodeTest {
     @Test
     fun hitTestSemantics_pointerInMinimumTouchTarget_closestHitWithOverlap() {
         val semanticsConfiguration = SemanticsConfiguration()
-        val semanticsModifier1 = object : SemanticsModifier {
-            override val semanticsConfiguration: SemanticsConfiguration = semanticsConfiguration
-        }
-        val semanticsModifier2 = object : SemanticsModifier {
-            override val semanticsConfiguration: SemanticsConfiguration = semanticsConfiguration
-        }
+        val semanticsModifier1 =
+            object : SemanticsModifier {
+                override val semanticsConfiguration: SemanticsConfiguration = semanticsConfiguration
+            }
+        val semanticsModifier2 =
+            object : SemanticsModifier {
+                override val semanticsConfiguration: SemanticsConfiguration = semanticsConfiguration
+            }
         val layoutNode1 = LayoutNode(0, 0, 5, 5, semanticsModifier1, DpSize(48.dp, 48.dp))
         val layoutNode2 = LayoutNode(4, 4, 9, 9, semanticsModifier2, DpSize(48.dp, 48.dp))
         val outerNode = LayoutNode(0, 0, 11, 11).apply { attach(MockOwner()) }
@@ -1469,14 +1515,14 @@ class LayoutNodeTest {
 
         // Hit layoutNode1
         val hit1 = HitTestResult()
-        outerNode.hitTestSemantics(Offset(3.95f, 3.95f), hit1, true)
+        outerNode.hitTestSemantics(Offset(3.95f, 3.95f), hit1, PointerType.Touch)
 
         assertThat(hit1).hasSize(1)
         assertThat(hit1[0].toModifier()).isEqualTo(semanticsModifier1)
 
         // Hit layoutNode2
         val hit2 = HitTestResult()
-        outerNode.hitTestSemantics(Offset(4.05f, 4.05f), hit2, true)
+        outerNode.hitTestSemantics(Offset(4.05f, 4.05f), hit2, PointerType.Touch)
 
         assertThat(hit2).hasSize(1)
         assertThat(hit2[0].toModifier()).isEqualTo(semanticsModifier2)
@@ -1486,10 +1532,7 @@ class LayoutNodeTest {
     fun hitTest_pointerOutOfBounds_nothingHit() {
         val pointerInputFilter: PointerInputFilter = mockPointerInputFilter()
         val layoutNode =
-            LayoutNode(
-                0, 0, 1, 1,
-                PointerInputModifierImpl(pointerInputFilter)
-            ).apply {
+            LayoutNode(0, 0, 1, 1, PointerInputModifierImpl(pointerInputFilter)).apply {
                 attach(MockOwner())
             }
         val hit = mutableListOf<Modifier.Node>()
@@ -1514,12 +1557,14 @@ class LayoutNodeTest {
         val pointerInputFilter: PointerInputFilter = mockPointerInputFilter()
         val layoutNode =
             LayoutNode(
-                0, 0, 1, 1,
-                PointerInputModifierImpl(pointerInputFilter),
-                minimumTouchTargetSize = DpSize(4.dp, 8.dp)
-            ).apply {
-                attach(MockOwner())
-            }
+                    0,
+                    0,
+                    1,
+                    1,
+                    PointerInputModifierImpl(pointerInputFilter),
+                    minimumTouchTargetSize = DpSize(4.dp, 8.dp)
+                )
+                .apply { attach(MockOwner()) }
         val hit = mutableListOf<Modifier.Node>()
 
         layoutNode.hitTest(Offset(-3f, -5f), hit)
@@ -1560,40 +1605,25 @@ class LayoutNodeTest {
         val parentPointerInputFilter: PointerInputFilter = mockPointerInputFilter()
 
         val childLayoutNode =
-            LayoutNode(
-                100, 100, 200, 200,
-                PointerInputModifierImpl(
-                    childPointerInputFilter
-                )
-            )
+            LayoutNode(100, 100, 200, 200, PointerInputModifierImpl(childPointerInputFilter))
         val middleLayoutNode: LayoutNode =
-            LayoutNode(
-                100, 100, 400, 400,
-                PointerInputModifierImpl(
-                    middlePointerInputFilter
-                )
-            ).apply {
-                insertAt(0, childLayoutNode)
-            }
+            LayoutNode(100, 100, 400, 400, PointerInputModifierImpl(middlePointerInputFilter))
+                .apply { insertAt(0, childLayoutNode) }
         val parentLayoutNode: LayoutNode =
-            LayoutNode(
-                0, 0, 500, 500,
-                PointerInputModifierImpl(
-                    parentPointerInputFilter
-                )
-            ).apply {
+            LayoutNode(0, 0, 500, 500, PointerInputModifierImpl(parentPointerInputFilter)).apply {
                 insertAt(0, middleLayoutNode)
                 attach(MockOwner())
             }
         middleLayoutNode.onNodePlaced()
         childLayoutNode.onNodePlaced()
 
-        val offset = when (numberOfChildrenHit) {
-            3 -> Offset(250f, 250f)
-            2 -> Offset(150f, 150f)
-            1 -> Offset(50f, 50f)
-            else -> throw IllegalStateException()
-        }
+        val offset =
+            when (numberOfChildrenHit) {
+                3 -> Offset(250f, 250f)
+                2 -> Offset(150f, 150f)
+                1 -> Offset(50f, 50f)
+                else -> throw IllegalStateException()
+            }
 
         val hit = mutableListOf<Modifier.Node>()
 
@@ -1613,43 +1643,19 @@ class LayoutNodeTest {
                             childPointerInputFilter
                         )
                     )
-
             2 ->
                 assertThat(hit.toFilters())
-                    .isEqualTo(
-                        listOf(
-                            parentPointerInputFilter,
-                            middlePointerInputFilter
-                        )
-                    )
-
-            1 ->
-                assertThat(hit.toFilters())
-                    .isEqualTo(
-                        listOf(
-                            parentPointerInputFilter
-                        )
-                    )
-
+                    .isEqualTo(listOf(parentPointerInputFilter, middlePointerInputFilter))
+            1 -> assertThat(hit.toFilters()).isEqualTo(listOf(parentPointerInputFilter))
             else -> throw IllegalStateException()
         }
     }
 
     /**
      * This test creates a layout of this shape:
-     *
-     *  -------------
-     *  |     |     |
-     *  |  t  |     |
-     *  |     |     |
-     *  |-----|     |
-     *  |           |
-     *  |     |-----|
-     *  |     |     |
-     *  |     |  t  |
-     *  |     |     |
-     *  -------------
-     *
+     * -------------
+     * | | | | t | | | | | |-----| | | | | |-----| | | | | | t | | | |
+     * -------------
      * Where there is one child in the top right and one in the bottom left, and 2 pointers where
      * one in the top left and one in the bottom right.
      */
@@ -1662,26 +1668,17 @@ class LayoutNodeTest {
         val childPointerInputFilter2: PointerInputFilter = mockPointerInputFilter()
 
         val childLayoutNode1 =
-            LayoutNode(
-                0, 0, 50, 50,
-                PointerInputModifierImpl(
-                    childPointerInputFilter1
-                )
-            )
+            LayoutNode(0, 0, 50, 50, PointerInputModifierImpl(childPointerInputFilter1))
 
         val childLayoutNode2 =
-            LayoutNode(
-                50, 50, 100, 100,
-                PointerInputModifierImpl(
-                    childPointerInputFilter2
-                )
-            )
+            LayoutNode(50, 50, 100, 100, PointerInputModifierImpl(childPointerInputFilter2))
 
-        val parentLayoutNode = LayoutNode(0, 0, 100, 100).apply {
-            insertAt(0, childLayoutNode1)
-            insertAt(1, childLayoutNode2)
-            attach(MockOwner())
-        }
+        val parentLayoutNode =
+            LayoutNode(0, 0, 100, 100).apply {
+                insertAt(0, childLayoutNode1)
+                insertAt(1, childLayoutNode2)
+                attach(MockOwner())
+            }
         childLayoutNode1.onNodePlaced()
         childLayoutNode2.onNodePlaced()
 
@@ -1704,22 +1701,10 @@ class LayoutNodeTest {
 
     /**
      * This test creates a layout of this shape:
-     *
-     *  ---------------
-     *  | t      |    |
-     *  |        |    |
-     *  |  |-------|  |
-     *  |  | t     |  |
-     *  |  |       |  |
-     *  |  |       |  |
-     *  |--|  |-------|
-     *  |  |  | t     |
-     *  |  |  |       |
-     *  |  |  |       |
-     *  |  |--|       |
-     *  |     |       |
-     *  ---------------
-     *
+     * ---------------
+     * | t | | | | | | |-------| | | | t | | | | | | | | | | |--| |-------| | | | t | | | | | | | |
+     * | | |--| | | | |
+     * ---------------
      * There are 3 staggered children and 3 pointers, the first is on child 1, the second is on
      * child 2 in a space that overlaps child 1, and the third is in a space in child 3 that
      * overlaps child 2.
@@ -1732,35 +1717,21 @@ class LayoutNodeTest {
         val childPointerInputFilter3: PointerInputFilter = mockPointerInputFilter()
 
         val childLayoutNode1 =
-            LayoutNode(
-                0, 0, 100, 100,
-                PointerInputModifierImpl(
-                    childPointerInputFilter1
-                )
-            )
+            LayoutNode(0, 0, 100, 100, PointerInputModifierImpl(childPointerInputFilter1))
 
         val childLayoutNode2 =
-            LayoutNode(
-                50, 50, 150, 150,
-                PointerInputModifierImpl(
-                    childPointerInputFilter2
-                )
-            )
+            LayoutNode(50, 50, 150, 150, PointerInputModifierImpl(childPointerInputFilter2))
 
         val childLayoutNode3 =
-            LayoutNode(
-                100, 100, 200, 200,
-                PointerInputModifierImpl(
-                    childPointerInputFilter3
-                )
-            )
+            LayoutNode(100, 100, 200, 200, PointerInputModifierImpl(childPointerInputFilter3))
 
-        val parentLayoutNode = LayoutNode(0, 0, 200, 200).apply {
-            insertAt(0, childLayoutNode1)
-            insertAt(1, childLayoutNode2)
-            insertAt(2, childLayoutNode3)
-            attach(MockOwner())
-        }
+        val parentLayoutNode =
+            LayoutNode(0, 0, 200, 200).apply {
+                insertAt(0, childLayoutNode1)
+                insertAt(1, childLayoutNode2)
+                insertAt(2, childLayoutNode3)
+                attach(MockOwner())
+            }
         childLayoutNode1.onNodePlaced()
         childLayoutNode2.onNodePlaced()
         childLayoutNode3.onNodePlaced()
@@ -1784,21 +1755,9 @@ class LayoutNodeTest {
 
     /**
      * This test creates a layout of this shape:
-     *
-     *  ---------------
-     *  |             |
-     *  |      t      |
-     *  |             |
-     *  |  |-------|  |
-     *  |  |       |  |
-     *  |  |   t   |  |
-     *  |  |       |  |
-     *  |  |-------|  |
-     *  |             |
-     *  |      t      |
-     *  |             |
-     *  ---------------
-     *
+     * ---------------
+     * | | | t | | | | |-------| | | | | | | | t | | | | | | | |-------| | | | | t | | |
+     * ---------------
      * There are 2 children with one over the other and 3 pointers: the first is on background
      * child, the second is on the foreground child, and the third is again on the background child.
      */
@@ -1808,24 +1767,17 @@ class LayoutNodeTest {
         val childPointerInputFilter1: PointerInputFilter = mockPointerInputFilter()
         val childPointerInputFilter2: PointerInputFilter = mockPointerInputFilter()
 
-        val childLayoutNode1 = LayoutNode(
-            0, 0, 100, 150,
-            PointerInputModifierImpl(
-                childPointerInputFilter1
-            )
-        )
-        val childLayoutNode2 = LayoutNode(
-            25, 50, 75, 100,
-            PointerInputModifierImpl(
-                childPointerInputFilter2
-            )
-        )
+        val childLayoutNode1 =
+            LayoutNode(0, 0, 100, 150, PointerInputModifierImpl(childPointerInputFilter1))
+        val childLayoutNode2 =
+            LayoutNode(25, 50, 75, 100, PointerInputModifierImpl(childPointerInputFilter2))
 
-        val parentLayoutNode = LayoutNode(0, 0, 150, 150).apply {
-            insertAt(0, childLayoutNode1)
-            insertAt(1, childLayoutNode2)
-            attach(MockOwner())
-        }
+        val parentLayoutNode =
+            LayoutNode(0, 0, 150, 150).apply {
+                insertAt(0, childLayoutNode1)
+                insertAt(1, childLayoutNode2)
+                attach(MockOwner())
+            }
         childLayoutNode1.onNodePlaced()
         childLayoutNode2.onNodePlaced()
 
@@ -1852,17 +1804,9 @@ class LayoutNodeTest {
 
     /**
      * This test creates a layout of this shape:
-     *
-     *  -----------------
-     *  |               |
-     *  |   |-------|   |
-     *  |   |       |   |
-     *  | t |   t   | t |
-     *  |   |       |   |
-     *  |   |-------|   |
-     *  |               |
-     *  -----------------
-     *
+     * -----------------
+     * | | | |-------| | | | | | | t | t | t | | | | | | |-------| | | |
+     * -----------------
      * There are 2 children with one over the other and 3 pointers: the first is on background
      * child, the second is on the foreground child, and the third is again on the background child.
      */
@@ -1872,24 +1816,17 @@ class LayoutNodeTest {
         val childPointerInputFilter1: PointerInputFilter = mockPointerInputFilter()
         val childPointerInputFilter2: PointerInputFilter = mockPointerInputFilter()
 
-        val childLayoutNode1 = LayoutNode(
-            0, 0, 150, 100,
-            PointerInputModifierImpl(
-                childPointerInputFilter1
-            )
-        )
-        val childLayoutNode2 = LayoutNode(
-            50, 25, 100, 75,
-            PointerInputModifierImpl(
-                childPointerInputFilter2
-            )
-        )
+        val childLayoutNode1 =
+            LayoutNode(0, 0, 150, 100, PointerInputModifierImpl(childPointerInputFilter1))
+        val childLayoutNode2 =
+            LayoutNode(50, 25, 100, 75, PointerInputModifierImpl(childPointerInputFilter2))
 
-        val parentLayoutNode = LayoutNode(0, 0, 150, 150).apply {
-            insertAt(0, childLayoutNode1)
-            insertAt(1, childLayoutNode2)
-            attach(MockOwner())
-        }
+        val parentLayoutNode =
+            LayoutNode(0, 0, 150, 150).apply {
+                insertAt(0, childLayoutNode1)
+                insertAt(1, childLayoutNode2)
+                attach(MockOwner())
+            }
         childLayoutNode2.onNodePlaced()
         childLayoutNode1.onNodePlaced()
 
@@ -1915,23 +1852,13 @@ class LayoutNodeTest {
     }
 
     /**
-     * This test creates a layout of this shape:
-     *     0   1   2   3   4
-     *   .........   .........
-     * 0 .     t .   . t     .
-     *   .   |---|---|---|   .
-     * 1 . t | t |   | t | t .
-     *   ....|---|   |---|....
-     * 2     |           |
-     *   ....|---|   |---|....
-     * 3 . t | t |   | t | t .
-     *   .   |---|---|---|   .
-     * 4 .     t .   . t     .
-     *   .........   .........
+     * This test creates a layout of this shape: 0 1 2 3 4 ......... ......... 0 . t . . t . .
+     * |---|---|---| . 1 . t | t | | t | t . ....|---| |---|.... 2 | | ....|---| |---|.... 3 . t | t
+     * | | t | t . . |---|---|---| . 4 . t . . t . ......... .........
      *
      * 4 LayoutNodes with PointerInputModifiers that are clipped by their parent LayoutNode. 4
-     * touches touch just inside the parent LayoutNode and inside the child LayoutNodes. 8
-     * touches touch just outside the parent LayoutNode but inside the child LayoutNodes.
+     * touches touch just inside the parent LayoutNode and inside the child LayoutNodes. 8 touches
+     * touch just outside the parent LayoutNode but inside the child LayoutNodes.
      *
      * Because layout node bounds are not used to clip pointer input hit testing, all pointers
      * should hit.
@@ -1946,70 +1873,31 @@ class LayoutNodeTest {
         val pointerInputFilter3: PointerInputFilter = mockPointerInputFilter()
         val pointerInputFilter4: PointerInputFilter = mockPointerInputFilter()
 
-        val layoutNode1 = LayoutNode(
-            -1, -1, 1, 1,
-            PointerInputModifierImpl(
-                pointerInputFilter1
-            )
-        )
-        val layoutNode2 = LayoutNode(
-            2, -1, 4, 1,
-            PointerInputModifierImpl(
-                pointerInputFilter2
-            )
-        )
-        val layoutNode3 = LayoutNode(
-            -1, 2, 1, 4,
-            PointerInputModifierImpl(
-                pointerInputFilter3
-            )
-        )
-        val layoutNode4 = LayoutNode(
-            2, 2, 4, 4,
-            PointerInputModifierImpl(
-                pointerInputFilter4
-            )
-        )
+        val layoutNode1 = LayoutNode(-1, -1, 1, 1, PointerInputModifierImpl(pointerInputFilter1))
+        val layoutNode2 = LayoutNode(2, -1, 4, 1, PointerInputModifierImpl(pointerInputFilter2))
+        val layoutNode3 = LayoutNode(-1, 2, 1, 4, PointerInputModifierImpl(pointerInputFilter3))
+        val layoutNode4 = LayoutNode(2, 2, 4, 4, PointerInputModifierImpl(pointerInputFilter4))
 
-        val parentLayoutNode = LayoutNode(1, 1, 4, 4).apply {
-            insertAt(0, layoutNode1)
-            insertAt(1, layoutNode2)
-            insertAt(2, layoutNode3)
-            insertAt(3, layoutNode4)
-            attach(MockOwner())
-        }
+        val parentLayoutNode =
+            LayoutNode(1, 1, 4, 4).apply {
+                insertAt(0, layoutNode1)
+                insertAt(1, layoutNode2)
+                insertAt(2, layoutNode3)
+                insertAt(3, layoutNode4)
+                attach(MockOwner())
+            }
         layoutNode1.onNodePlaced()
         layoutNode2.onNodePlaced()
         layoutNode3.onNodePlaced()
         layoutNode4.onNodePlaced()
 
-        val offsetsThatHit1 =
-            listOf(
-                Offset(0f, 1f),
-                Offset(1f, 0f),
-                Offset(1f, 1f)
-            )
+        val offsetsThatHit1 = listOf(Offset(0f, 1f), Offset(1f, 0f), Offset(1f, 1f))
 
-        val offsetsThatHit2 =
-            listOf(
-                Offset(3f, 0f),
-                Offset(3f, 1f),
-                Offset(4f, 1f)
-            )
+        val offsetsThatHit2 = listOf(Offset(3f, 0f), Offset(3f, 1f), Offset(4f, 1f))
 
-        val offsetsThatHit3 =
-            listOf(
-                Offset(0f, 3f),
-                Offset(1f, 3f),
-                Offset(1f, 4f)
-            )
+        val offsetsThatHit3 = listOf(Offset(0f, 3f), Offset(1f, 3f), Offset(1f, 4f))
 
-        val offsetsThatHit4 =
-            listOf(
-                Offset(3f, 3f),
-                Offset(3f, 4f),
-                Offset(4f, 3f)
-            )
+        val offsetsThatHit4 = listOf(Offset(3f, 3f), Offset(3f, 4f), Offset(4f, 3f))
 
         val hit = mutableListOf<Modifier.Node>()
 
@@ -2050,20 +1938,11 @@ class LayoutNodeTest {
         val pointerInputFilter3: PointerInputFilter = mockPointerInputFilter()
 
         val modifier =
-            PointerInputModifierImpl(
-                pointerInputFilter1
-            ) then PointerInputModifierImpl(
-                pointerInputFilter2
-            ) then PointerInputModifierImpl(
-                pointerInputFilter3
-            )
+            PointerInputModifierImpl(pointerInputFilter1) then
+                PointerInputModifierImpl(pointerInputFilter2) then
+                PointerInputModifierImpl(pointerInputFilter3)
 
-        val layoutNode = LayoutNode(
-            25, 50, 75, 100,
-            modifier
-        ).apply {
-            attach(MockOwner())
-        }
+        val layoutNode = LayoutNode(25, 50, 75, 100, modifier).apply { attach(MockOwner()) }
 
         val offset1 = Offset(50f, 75f)
 
@@ -2075,13 +1954,8 @@ class LayoutNodeTest {
 
         // Assert.
 
-        assertThat(hit.toFilters()).isEqualTo(
-            listOf(
-                pointerInputFilter1,
-                pointerInputFilter2,
-                pointerInputFilter3
-            )
-        )
+        assertThat(hit.toFilters())
+            .isEqualTo(listOf(pointerInputFilter1, pointerInputFilter2, pointerInputFilter3))
     }
 
     @Test
@@ -2091,24 +1965,13 @@ class LayoutNodeTest {
 
         val pointerInputFilter: PointerInputFilter = mockPointerInputFilter()
 
-        val layoutNode1 =
-            LayoutNode(
-                1, 5, 500, 500,
-                PointerInputModifierImpl(
-                    pointerInputFilter
-                )
-            )
-        val layoutNode2: LayoutNode = LayoutNode(2, 6, 500, 500).apply {
-            insertAt(0, layoutNode1)
-        }
-        val layoutNode3: LayoutNode = LayoutNode(3, 7, 500, 500).apply {
-            insertAt(0, layoutNode2)
-        }
-        val layoutNode4: LayoutNode = LayoutNode(4, 8, 500, 500).apply {
-            insertAt(0, layoutNode3)
-        }.apply {
-            attach(MockOwner())
-        }
+        val layoutNode1 = LayoutNode(1, 5, 500, 500, PointerInputModifierImpl(pointerInputFilter))
+        val layoutNode2: LayoutNode = LayoutNode(2, 6, 500, 500).apply { insertAt(0, layoutNode1) }
+        val layoutNode3: LayoutNode = LayoutNode(3, 7, 500, 500).apply { insertAt(0, layoutNode2) }
+        val layoutNode4: LayoutNode =
+            LayoutNode(4, 8, 500, 500)
+                .apply { insertAt(0, layoutNode3) }
+                .apply { attach(MockOwner()) }
         layoutNode3.onNodePlaced()
         layoutNode2.onNodePlaced()
         layoutNode1.onNodePlaced()
@@ -2135,37 +1998,32 @@ class LayoutNodeTest {
         val pointerInputFilter3: PointerInputFilter = mockPointerInputFilter()
         val pointerInputFilter4: PointerInputFilter = mockPointerInputFilter()
 
-        val layoutNode1 = LayoutNode(
-            1, 6, 500, 500,
-            PointerInputModifierImpl(
-                pointerInputFilter1
-            ) then PointerInputModifierImpl(
-                pointerInputFilter2
+        val layoutNode1 =
+            LayoutNode(
+                1,
+                6,
+                500,
+                500,
+                PointerInputModifierImpl(pointerInputFilter1) then
+                    PointerInputModifierImpl(pointerInputFilter2)
             )
-        )
-        val layoutNode2: LayoutNode = LayoutNode(2, 7, 500, 500).apply {
-            insertAt(0, layoutNode1)
-        }
+        val layoutNode2: LayoutNode = LayoutNode(2, 7, 500, 500).apply { insertAt(0, layoutNode1) }
         val layoutNode3 =
             LayoutNode(
-                3, 8, 500, 500,
-                PointerInputModifierImpl(
-                    pointerInputFilter3
-                ) then PointerInputModifierImpl(
-                    pointerInputFilter4
+                    3,
+                    8,
+                    500,
+                    500,
+                    PointerInputModifierImpl(pointerInputFilter3) then
+                        PointerInputModifierImpl(pointerInputFilter4)
                 )
-            ).apply {
-                insertAt(0, layoutNode2)
-            }
+                .apply { insertAt(0, layoutNode2) }
 
-        val layoutNode4: LayoutNode = LayoutNode(4, 9, 500, 500).apply {
-            insertAt(0, layoutNode3)
-        }
-        val layoutNode5: LayoutNode = LayoutNode(5, 10, 500, 500).apply {
-            insertAt(0, layoutNode4)
-        }.apply {
-            attach(MockOwner())
-        }
+        val layoutNode4: LayoutNode = LayoutNode(4, 9, 500, 500).apply { insertAt(0, layoutNode3) }
+        val layoutNode5: LayoutNode =
+            LayoutNode(5, 10, 500, 500)
+                .apply { insertAt(0, layoutNode4) }
+                .apply { attach(MockOwner()) }
         layoutNode4.onNodePlaced()
         layoutNode3.onNodePlaced()
         layoutNode2.onNodePlaced()
@@ -2181,14 +2039,15 @@ class LayoutNodeTest {
 
         // Assert.
 
-        assertThat(hit.toFilters()).isEqualTo(
-            listOf(
-                pointerInputFilter3,
-                pointerInputFilter4,
-                pointerInputFilter1,
-                pointerInputFilter2
+        assertThat(hit.toFilters())
+            .isEqualTo(
+                listOf(
+                    pointerInputFilter3,
+                    pointerInputFilter4,
+                    pointerInputFilter1,
+                    pointerInputFilter2
+                )
             )
-        )
     }
 
     @Test
@@ -2197,24 +2056,15 @@ class LayoutNodeTest {
         val pointerInputFilter1: PointerInputFilter = mockPointerInputFilter()
         val pointerInputFilter2: PointerInputFilter = mockPointerInputFilter()
 
-        val layoutNode1 = LayoutNode(
-            0, 0, 100, 100,
-            PointerInputModifierImpl(
-                pointerInputFilter1
-            )
-        )
-        val layoutNode2 = LayoutNode(
-            0, 0, 100, 100,
-            PointerInputModifierImpl(
-                pointerInputFilter2
-            )
-        )
+        val layoutNode1 = LayoutNode(0, 0, 100, 100, PointerInputModifierImpl(pointerInputFilter1))
+        val layoutNode2 = LayoutNode(0, 0, 100, 100, PointerInputModifierImpl(pointerInputFilter2))
 
-        val parentLayoutNode = LayoutNode(0, 0, 100, 100).apply {
-            insertAt(0, layoutNode1)
-            insertAt(1, layoutNode2)
-            attach(MockOwner())
-        }
+        val parentLayoutNode =
+            LayoutNode(0, 0, 100, 100).apply {
+                insertAt(0, layoutNode1)
+                insertAt(1, layoutNode2)
+                attach(MockOwner())
+            }
         layoutNode1.onNodePlaced()
         layoutNode2.onNodePlaced()
 
@@ -2236,14 +2086,10 @@ class LayoutNodeTest {
 
         val pointerInputFilter: PointerInputFilter = mockPointerInputFilter()
 
-        val layoutNode = LayoutNode(
-            0, 0, 0, 0,
-            PointerInputModifierImpl(
-                pointerInputFilter
-            )
-        ).apply {
-            attach(MockOwner())
-        }
+        val layoutNode =
+            LayoutNode(0, 0, 0, 0, PointerInputModifierImpl(pointerInputFilter)).apply {
+                attach(MockOwner())
+            }
 
         val offset = Offset.Zero
 
@@ -2264,33 +2110,13 @@ class LayoutNodeTest {
         val pointerInputFilter1: PointerInputFilter = mockPointerInputFilter()
         val pointerInputFilter2: PointerInputFilter = mockPointerInputFilter()
 
-        val parent = LayoutNode(
-            0, 0, 2, 2
-        ).apply {
-            attach(
-                MockOwner().apply {
-                    measureIteration = 1L
-                }
-            )
-        }
+        val parent =
+            LayoutNode(0, 0, 2, 2).apply { attach(MockOwner().apply { measureIteration = 1L }) }
         parent.insertAt(
             0,
-            LayoutNode(
-                0, 0, 2, 2,
-                PointerInputModifierImpl(
-                    pointerInputFilter1
-                ).zIndex(1f)
-            )
+            LayoutNode(0, 0, 2, 2, PointerInputModifierImpl(pointerInputFilter1).zIndex(1f))
         )
-        parent.insertAt(
-            1,
-            LayoutNode(
-                0, 0, 2, 2,
-                PointerInputModifierImpl(
-                    pointerInputFilter2
-                )
-            )
-        )
+        parent.insertAt(1, LayoutNode(0, 0, 2, 2, PointerInputModifierImpl(pointerInputFilter2)))
         parent.remeasure()
         parent.replace()
 
@@ -2333,46 +2159,47 @@ class LayoutNodeTest {
         val measureLambda1: MeasureScope.(Measurable, Constraints) -> MeasureResult =
             { measurable, constraints ->
                 val placeable = measurable.measure(constraints)
-                layout(placeable.width, placeable.height) {
-                    placeable.place(0, 0)
-                }
+                layout(placeable.width, placeable.height) { placeable.place(0, 0) }
             }
         val modifier1 = Modifier.layout(measureLambda1)
 
         val measureLambda2: MeasureScope.(Measurable, Constraints) -> MeasureResult =
             { measurable, constraints ->
                 val placeable = measurable.measure(constraints)
-                layout(placeable.width, placeable.height) {
-                    placeable.place(1, 1)
-                }
+                layout(placeable.width, placeable.height) { placeable.place(1, 1) }
             }
         val modifier2 = Modifier.layout(measureLambda2)
 
         val root = LayoutNode()
+        root.attach(MockOwner())
         root.modifier = modifier1.then(modifier2)
 
         assertEquals(
             measureLambda1,
-            ((root.outerCoordinator as LayoutModifierNodeCoordinator)
-                .layoutModifierNode as LayoutModifierImpl).measureBlock
+            ((root.outerCoordinator as LayoutModifierNodeCoordinator).layoutModifierNode
+                    as LayoutModifierImpl)
+                .measureBlock
         )
         assertEquals(
             measureLambda2,
-            ((root.outerCoordinator.wrapped as LayoutModifierNodeCoordinator)
-                .layoutModifierNode as LayoutModifierImpl).measureBlock
+            ((root.outerCoordinator.wrapped as LayoutModifierNodeCoordinator).layoutModifierNode
+                    as LayoutModifierImpl)
+                .measureBlock
         )
 
         root.modifier = modifier2.then(modifier1)
 
         assertEquals(
             measureLambda1,
-            ((root.outerCoordinator.wrapped as LayoutModifierNodeCoordinator)
-                .layoutModifierNode as LayoutModifierImpl).measureBlock
+            ((root.outerCoordinator.wrapped as LayoutModifierNodeCoordinator).layoutModifierNode
+                    as LayoutModifierImpl)
+                .measureBlock
         )
         assertEquals(
             measureLambda2,
-            ((root.outerCoordinator as LayoutModifierNodeCoordinator)
-                .layoutModifierNode as LayoutModifierImpl).measureBlock
+            ((root.outerCoordinator as LayoutModifierNodeCoordinator).layoutModifierNode
+                    as LayoutModifierImpl)
+                .measureBlock
         )
     }
 
@@ -2381,12 +2208,15 @@ class LayoutNodeTest {
         val node = LayoutNode(20, 20, 100, 100)
         val owner = MockOwner()
         node.attach(owner)
-        node.innerCoordinator.measureResult = object : MeasureResult {
-            override val width = 50
-            override val height = 50
-            override val alignmentLines: Map<AlignmentLine, Int> get() = mapOf()
-            override fun placeChildren() {}
-        }
+        node.innerCoordinator.measureResult =
+            object : MeasureResult {
+                override val width = 50
+                override val height = 50
+                override val alignmentLines: Map<AlignmentLine, Int>
+                    get() = mapOf()
+
+                override fun placeChildren() {}
+            }
         assertEquals(1, owner.layoutChangeCount)
         node.place(0, 0)
         assertEquals(2, owner.layoutChangeCount)
@@ -2400,9 +2230,7 @@ class LayoutNodeTest {
         assertEquals(0, owner.layoutChangeCount)
         node.innerCoordinator.updateLayerBlock({ scaleX = 0.5f })
         assertEquals(1, owner.layoutChangeCount)
-        repeat(2) {
-            node.innerCoordinator.updateLayerBlock({ scaleX = 1f })
-        }
+        repeat(2) { node.innerCoordinator.updateLayerBlock({ scaleX = 1f }) }
         assertEquals(2, owner.layoutChangeCount)
         node.innerCoordinator.updateLayerBlock(null)
         assertEquals(3, owner.layoutChangeCount)
@@ -2410,27 +2238,24 @@ class LayoutNodeTest {
 
     @Test
     fun reuseModifiersThatImplementMultipleModifierInterfaces() {
-        val drawAndLayoutModifier: Modifier = object : DrawModifier, LayoutModifier {
-            override fun MeasureScope.measure(
-                measurable: Measurable,
-                constraints: Constraints
-            ): MeasureResult {
-                val placeable = measurable.measure(constraints)
-                return layout(placeable.width, placeable.height) {
-                    placeable.placeRelative(IntOffset.Zero)
+        val drawAndLayoutModifier: Modifier =
+            object : DrawModifier, LayoutModifier {
+                override fun MeasureScope.measure(
+                    measurable: Measurable,
+                    constraints: Constraints
+                ): MeasureResult {
+                    val placeable = measurable.measure(constraints)
+                    return layout(placeable.width, placeable.height) {
+                        placeable.placeRelative(IntOffset.Zero)
+                    }
+                }
+
+                override fun ContentDrawScope.draw() {
+                    drawContent()
                 }
             }
-
-            override fun ContentDrawScope.draw() {
-                drawContent()
-            }
-        }
-        val a = Modifier
-            .then(EmptyLayoutModifier())
-            .then(drawAndLayoutModifier)
-        val b = Modifier
-            .then(EmptyLayoutModifier())
-            .then(drawAndLayoutModifier)
+        val a = Modifier.then(EmptyLayoutModifier()).then(drawAndLayoutModifier)
+        val b = Modifier.then(EmptyLayoutModifier()).then(drawAndLayoutModifier)
         val node = LayoutNode(20, 20, 100, 100)
         val owner = MockOwner()
         node.attach(owner)
@@ -2443,12 +2268,10 @@ class LayoutNodeTest {
     @Test
     fun nodeCoordinator_alpha() {
         val root = LayoutNode().apply { this.modifier = Modifier.drawBehind {} }
-        val layoutNode1 = LayoutNode().apply {
-            this.modifier = Modifier
-                .graphicsLayer { }
-                .graphicsLayer { }
-                .drawBehind {}
-        }
+        val layoutNode1 =
+            LayoutNode().apply {
+                this.modifier = Modifier.graphicsLayer {}.graphicsLayer {}.drawBehind {}
+            }
         val layoutNode2 = LayoutNode().apply { this.modifier = Modifier.drawBehind {} }
         val owner = MockOwner()
 
@@ -2457,12 +2280,8 @@ class LayoutNodeTest {
         root.attach(owner)
 
         // provide alpha to the graphics layer
-        layoutNode1.outerCoordinator.wrapped!!.updateLayerBlock({
-            alpha = 0f
-        })
-        layoutNode1.outerCoordinator.wrapped!!.wrapped!!.updateLayerBlock({
-            alpha = 0.5f
-        })
+        layoutNode1.outerCoordinator.wrapped!!.updateLayerBlock({ alpha = 0f })
+        layoutNode1.outerCoordinator.wrapped!!.wrapped!!.updateLayerBlock({ alpha = 0.5f })
 
         assertFalse(layoutNode1.outerCoordinator.isTransparent())
         assertTrue(layoutNode1.innerCoordinator.isTransparent())
@@ -2491,15 +2310,15 @@ private class EmptyLayoutModifier : LayoutModifier {
         constraints: Constraints
     ): MeasureResult {
         val placeable = measurable.measure(constraints)
-        return layout(placeable.width, placeable.height) {
-            placeable.placeRelative(IntOffset.Zero)
-        }
+        return layout(placeable.width, placeable.height) { placeable.placeRelative(IntOffset.Zero) }
     }
 }
 
 internal class MockOwner(
     private val position: IntOffset = IntOffset.Zero,
     override val root: LayoutNode = LayoutNode(),
+    override val semanticsOwner: SemanticsOwner =
+        SemanticsOwner(root, EmptySemanticsModifier(), intObjectMapOf()),
     override val coroutineContext: CoroutineContext =
         Executors.newFixedThreadPool(3).asCoroutineDispatcher()
 ) : Owner {
@@ -2510,38 +2329,53 @@ internal class MockOwner(
 
     override val rootForTest: RootForTest
         get() = TODO("Not yet implemented")
+
     override val hapticFeedBack: HapticFeedback
         get() = TODO("Not yet implemented")
+
     override val inputModeManager: InputModeManager
         get() = TODO("Not yet implemented")
+
     override val clipboardManager: ClipboardManager
         get() = TODO("Not yet implemented")
+
     override val accessibilityManager: AccessibilityManager
         get() = TODO("Not yet implemented")
+
     override val graphicsContext: GraphicsContext
         get() = TODO("Not yet implemented")
+
     override val textToolbar: TextToolbar
         get() = TODO("Not yet implemented")
 
-    @OptIn(ExperimentalComposeUiApi::class)
     override val autofillTree: AutofillTree
         get() = TODO("Not yet implemented")
 
-    @OptIn(ExperimentalComposeUiApi::class)
     override val autofill: Autofill?
         get() = TODO("Not yet implemented")
+
+    override val autofillManager: AutofillManager
+        get() = TODO("Not yet implemented")
+
     override val density: Density
         get() = Density(1f)
+
     override val textInputService: TextInputService
         get() = TODO("Not yet implemented")
+
     override val softwareKeyboardController: SoftwareKeyboardController
         get() = TODO("Not yet implemented")
+
     override val pointerIconService: PointerIconService
         get() = TODO("Not yet implemented")
+
     override val focusOwner: FocusOwner
         get() = TODO("Not yet implemented")
+
     override val windowInfo: WindowInfo
         get() = TODO("Not yet implemented")
+
+    override val rectManager: RectManager = RectManager()
 
     @Deprecated(
         "fontLoader is deprecated, use fontFamilyResolver",
@@ -2550,15 +2384,18 @@ internal class MockOwner(
     @Suppress("DEPRECATION")
     override val fontLoader: Font.ResourceLoader
         get() = TODO("Not yet implemented")
+
     override val fontFamilyResolver: FontFamily.Resolver
         get() = TODO("Not yet implemented")
+
     override val layoutDirection: LayoutDirection
         get() = LayoutDirection.Ltr
-    @InternalCoreApi
-    override var showLayoutBounds: Boolean = false
+
+    @InternalCoreApi override var showLayoutBounds: Boolean = false
     override val snapshotObserver = OwnerSnapshotObserver { it.invoke() }
     override val modifierLocalManager: ModifierLocalManager = ModifierLocalManager(this)
-    override val dragAndDropManager: DragAndDropManager get() = TODO("Not yet implemented")
+    override val dragAndDropManager: DragAndDropManager
+        get() = TODO("Not yet implemented")
 
     override fun onRequestMeasure(
         layoutNode: LayoutNode,
@@ -2584,8 +2421,7 @@ internal class MockOwner(
         layoutNode.markLayoutPending()
     }
 
-    override fun requestOnPositionedCallback(layoutNode: LayoutNode) {
-    }
+    override fun requestOnPositionedCallback(layoutNode: LayoutNode) {}
 
     override fun onAttach(node: LayoutNode) {
         onAttachParams += node
@@ -2603,21 +2439,17 @@ internal class MockOwner(
 
     override fun requestFocus(): Boolean = false
 
-    override fun measureAndLayout(sendPointerUpdate: Boolean) {
-    }
+    override fun measureAndLayout(sendPointerUpdate: Boolean) {}
 
-    override fun measureAndLayout(layoutNode: LayoutNode, constraints: Constraints) {
-    }
+    override fun measureAndLayout(layoutNode: LayoutNode, constraints: Constraints) {}
 
-    override fun forceMeasureTheSubtree(layoutNode: LayoutNode, affectsLookahead: Boolean) {
-    }
+    override fun forceMeasureTheSubtree(layoutNode: LayoutNode, affectsLookahead: Boolean) {}
 
     override fun registerOnEndApplyChangesListener(listener: () -> Unit) {
         listener()
     }
 
-    override fun onEndApplyChanges() {
-    }
+    override fun onEndApplyChanges() {}
 
     override fun registerOnLayoutCompletedListener(listener: Owner.OnLayoutCompletedListener) {
         TODO("Not yet implemented")
@@ -2637,25 +2469,18 @@ internal class MockOwner(
         TODO("Not yet implemented")
     }
 
-    override fun localToScreen(localTransform: Matrix) {
-        TODO("Not yet implemented")
-    }
-
     val invalidatedLayers = mutableListOf<OwnedLayer>()
 
     override fun createLayer(
-        drawBlock: (Canvas) -> Unit,
+        drawBlock: (Canvas, GraphicsLayer?) -> Unit,
         invalidateParentLayer: () -> Unit,
-        explicitLayer: GraphicsLayer?
+        explicitLayer: GraphicsLayer?,
+        forceUseOldLayers: Boolean
     ): OwnedLayer {
         val transform = Matrix()
         val inverseTransform = Matrix()
         return object : OwnedLayer {
-            override fun updateLayerProperties(
-                scope: ReusableGraphicsLayerScope,
-                layoutDirection: LayoutDirection,
-                density: Density
-            ) {
+            override fun updateLayerProperties(scope: ReusableGraphicsLayerScope) {
                 transform.reset()
                 // This is not expected to be 100% accurate
                 transform.scale(scope.scaleX, scope.scaleY)
@@ -2666,38 +2491,35 @@ internal class MockOwner(
 
             override fun isInLayer(position: Offset) = true
 
-            override fun move(position: IntOffset) {
-            }
+            override fun move(position: IntOffset) {}
 
-            override fun resize(size: IntSize) {
-            }
+            override fun resize(size: IntSize) {}
 
             override fun drawLayer(canvas: Canvas, parentLayer: GraphicsLayer?) {
-                drawBlock(canvas)
+                drawBlock(canvas, null)
             }
 
-            override fun updateDisplayList() {
-            }
+            override fun updateDisplayList() {}
 
             override fun invalidate() {
                 invalidatedLayers.add(this)
             }
 
-            override fun destroy() {
-            }
+            override fun destroy() {}
 
-            override fun mapBounds(rect: MutableRect, inverse: Boolean) {
-            }
+            override fun mapBounds(rect: MutableRect, inverse: Boolean) {}
 
             override fun reuseLayer(
-                drawBlock: (Canvas) -> Unit,
+                drawBlock: (Canvas, GraphicsLayer?) -> Unit,
                 invalidateParentLayer: () -> Unit
-            ) {
-            }
+            ) {}
 
             override fun transform(matrix: Matrix) {
                 matrix.timesAssign(transform)
             }
+
+            override val underlyingMatrix: Matrix
+                get() = transform
 
             override fun inverseTransform(matrix: Matrix) {
                 matrix.timesAssign(inverseTransform)
@@ -2708,6 +2530,7 @@ internal class MockOwner(
     }
 
     var semanticsChanged: Boolean = false
+
     override fun onSemanticsChange() {
         semanticsChanged = true
     }
@@ -2715,6 +2538,10 @@ internal class MockOwner(
     override fun onLayoutChange(layoutNode: LayoutNode) {
         layoutChangeCount++
     }
+
+    override fun onLayoutNodeDeactivated(layoutNode: LayoutNode) {}
+
+    @InternalComposeUiApi override fun onInteropViewLayoutChange(view: InteropView) {}
 
     override fun getFocusDirection(keyEvent: KeyEvent): FocusDirection? {
         TODO("Not yet implemented")
@@ -2724,16 +2551,19 @@ internal class MockOwner(
     override val viewConfiguration: ViewConfiguration
         get() = TODO("Not yet implemented")
 
+    override val layoutNodes: IntObjectMap<LayoutNode>
+        get() = TODO("Not yet implemented")
+
     override val sharedDrawScope = LayoutNodeDrawScope()
 }
 
 private fun LayoutNode.hitTest(
     pointerPosition: Offset,
     hitPointerInputFilters: MutableList<Modifier.Node>,
-    isTouchEvent: Boolean = false
+    pointerType: PointerType = PointerType.Unknown
 ) {
     val hitTestResult = HitTestResult()
-    hitTest(pointerPosition, hitTestResult, isTouchEvent)
+    hitTest(pointerPosition, hitTestResult, pointerType)
     hitPointerInputFilters.addAll(hitTestResult)
 }
 
@@ -2743,56 +2573,60 @@ internal fun LayoutNode(
     x2: Int,
     y2: Int,
     modifier: Modifier = Modifier,
-    minimumTouchTargetSize: DpSize = DpSize.Zero
-) = LayoutNode().apply {
-    this.viewConfiguration = TestViewConfiguration(minimumTouchTargetSize = minimumTouchTargetSize)
-    this.modifier = modifier
-    measurePolicy = object : LayoutNode.NoIntrinsicsMeasurePolicy("not supported") {
-        override fun MeasureScope.measure(
-            measurables: List<Measurable>,
-            constraints: Constraints
-        ): MeasureResult =
-            layout(x2 - x, y2 - y) {
-                measurables.forEach { it.measure(constraints).place(0, 0) }
+    minimumTouchTargetSize: DpSize = DpSize.Zero,
+    layoutDirection: LayoutDirection = LayoutDirection.Ltr
+) =
+    LayoutNode().apply {
+        this.viewConfiguration =
+            TestViewConfiguration(minimumTouchTargetSize = minimumTouchTargetSize)
+        this.modifier = modifier
+        this.layoutDirection = layoutDirection
+        measurePolicy =
+            object : LayoutNode.NoIntrinsicsMeasurePolicy("not supported") {
+                override fun MeasureScope.measure(
+                    measurables: List<Measurable>,
+                    constraints: Constraints
+                ): MeasureResult =
+                    layout(x2 - x, y2 - y) {
+                        measurables.forEach { it.measure(constraints).place(0, 0) }
+                    }
             }
-    }
-    attach(MockOwner())
-    markMeasurePending()
-    remeasure(Constraints())
-    var wrapper: NodeCoordinator? = outerCoordinator
-    while (wrapper != null) {
-        wrapper.measureResult = innerCoordinator.measureResult
-        wrapper = (wrapper as? NodeCoordinator)?.wrapped
-    }
-    place(x, y)
-    detach()
-}
-
-private fun mockPointerInputFilter(
-    interceptChildEvents: Boolean = false
-): PointerInputFilter = object : PointerInputFilter() {
-    override fun onPointerEvent(
-        pointerEvent: PointerEvent,
-        pass: PointerEventPass,
-        bounds: IntSize
-    ) {
+        attach(MockOwner())
+        markMeasurePending()
+        remeasure(Constraints())
+        var wrapper: NodeCoordinator? = outerCoordinator
+        while (wrapper != null) {
+            wrapper.measureResult = innerCoordinator.measureResult
+            wrapper = (wrapper as? NodeCoordinator)?.wrapped
+        }
+        place(x, y)
+        detach()
     }
 
-    override fun onCancel() {
-    }
+private fun mockPointerInputFilter(interceptChildEvents: Boolean = false): PointerInputFilter =
+    object : PointerInputFilter() {
+        override fun onPointerEvent(
+            pointerEvent: PointerEvent,
+            pass: PointerEventPass,
+            bounds: IntSize
+        ) {}
 
-    override val interceptOutOfBoundsChildEvents: Boolean
-        get() = interceptChildEvents
-}
+        override fun onCancel() {}
+
+        override val interceptOutOfBoundsChildEvents: Boolean
+            get() = interceptChildEvents
+    }
 
 // This returns the corresponding modifier that produced the PointerInputNode. This is only
 // possible for PointerInputNodes that are BackwardsCompatNodes and once we refactor the
 // pointerInput modifier to use Modifier.Nodes directly, the tests that use this should be rewritten
 fun PointerInputModifierNode.toFilter(): PointerInputFilter {
-    val node = this as? BackwardsCompatNode
-        ?: error("Incorrectly assumed PointerInputNode was a BackwardsCompatNode")
-    val modifier = node.element as? PointerInputModifier
-        ?: error("Incorrectly assumed Modifier.Element was a PointerInputModifier")
+    val node =
+        this as? BackwardsCompatNode
+            ?: error("Incorrectly assumed PointerInputNode was a BackwardsCompatNode")
+    val modifier =
+        node.element as? PointerInputModifier
+            ?: error("Incorrectly assumed Modifier.Element was a PointerInputModifier")
     return modifier.pointerInputFilter
 }
 
@@ -2804,8 +2638,9 @@ fun List<Modifier.Node>.toFilters(): List<PointerInputFilter> = map {
 // Nodes that are BackwardsCompatNodes and once we refactor semantics / pointer input to use
 // Modifier.Nodes directly, the tests that use this should be rewritten
 fun DelegatableNode.toModifier(): Modifier.Element {
-    val node = node as? BackwardsCompatNode
-        ?: error("Incorrectly assumed Modifier.Node was a BackwardsCompatNode")
+    val node =
+        node as? BackwardsCompatNode
+            ?: error("Incorrectly assumed Modifier.Node was a BackwardsCompatNode")
     return node.element
 }
 

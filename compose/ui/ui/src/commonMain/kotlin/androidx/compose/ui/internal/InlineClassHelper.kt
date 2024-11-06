@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("NOTHING_TO_INLINE", "KotlinRedundantDiagnosticSuppress")
+
 package androidx.compose.ui.internal
 
 import kotlin.contracts.ExperimentalContracts
@@ -34,25 +36,33 @@ internal fun throwIllegalArgumentException(message: String) {
     throw IllegalArgumentException(message)
 }
 
+internal fun throwIllegalArgumentExceptionForNullCheck(message: String): Nothing {
+    throw IllegalArgumentException(message)
+}
+
+internal fun throwUnsupportedOperationException(message: String) {
+    throw UnsupportedOperationException(message)
+}
+
+internal fun throwIndexOutOfBoundsException(message: String) {
+    throw IndexOutOfBoundsException(message)
+}
+
 // Like Kotlin's check() but without the .toString() call and
 // a non-inline throw
 @Suppress("BanInlineOptIn")
 @OptIn(ExperimentalContracts::class)
 internal inline fun checkPrecondition(value: Boolean, lazyMessage: () -> String) {
-    contract {
-        returns() implies value
-    }
+    contract { returns() implies value }
     if (!value) {
         throwIllegalStateException(lazyMessage())
     }
 }
 
-@Suppress("NOTHING_TO_INLINE", "BanInlineOptIn")
+@Suppress("BanInlineOptIn")
 @OptIn(ExperimentalContracts::class)
 internal inline fun checkPrecondition(value: Boolean) {
-    contract {
-        returns() implies value
-    }
+    contract { returns() implies value }
     if (!value) {
         throwIllegalStateException("Check failed.")
     }
@@ -63,9 +73,7 @@ internal inline fun checkPrecondition(value: Boolean) {
 @Suppress("BanInlineOptIn")
 @OptIn(ExperimentalContracts::class)
 internal inline fun <T : Any> checkPreconditionNotNull(value: T?, lazyMessage: () -> String): T {
-    contract {
-        returns() implies (value != null)
-    }
+    contract { returns() implies (value != null) }
 
     if (value == null) {
         throwIllegalStateExceptionForNullCheck(lazyMessage())
@@ -75,12 +83,10 @@ internal inline fun <T : Any> checkPreconditionNotNull(value: T?, lazyMessage: (
 }
 
 // Like Kotlin's checkNotNull() but with a non-inline throw
-@Suppress("NOTHING_TO_INLINE", "BanInlineOptIn")
+@Suppress("BanInlineOptIn")
 @OptIn(ExperimentalContracts::class)
 internal inline fun <T : Any> checkPreconditionNotNull(value: T?): T {
-    contract {
-        returns() implies (value != null)
-    }
+    contract { returns() implies (value != null) }
 
     if (value == null) {
         throwIllegalStateExceptionForNullCheck("Required value was null.")
@@ -93,10 +99,22 @@ internal inline fun <T : Any> checkPreconditionNotNull(value: T?): T {
 @Suppress("BanInlineOptIn")
 @OptIn(ExperimentalContracts::class) // same opt-in as using Kotlin's require()
 internal inline fun requirePrecondition(value: Boolean, lazyMessage: () -> String) {
-    contract {
-        returns() implies value
-    }
+    contract { returns() implies value }
     if (!value) {
         throwIllegalArgumentException(lazyMessage())
     }
+}
+
+// Like Kotlin's requireNotNull() but without the .toString() call and
+// a non-inline throw
+@Suppress("BanInlineOptIn")
+@OptIn(ExperimentalContracts::class)
+internal inline fun <T : Any> requirePreconditionNotNull(value: T?, lazyMessage: () -> String): T {
+    contract { returns() implies (value != null) }
+
+    if (value == null) {
+        throwIllegalArgumentExceptionForNullCheck(lazyMessage())
+    }
+
+    return value
 }

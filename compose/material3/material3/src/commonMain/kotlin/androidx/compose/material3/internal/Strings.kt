@@ -19,6 +19,7 @@ package androidx.compose.material3.internal
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.ReadOnlyComposable
+import kotlin.jvm.JvmInline
 
 @Immutable
 @JvmInline
@@ -26,6 +27,7 @@ internal expect value class Strings constructor(val value: Int) {
     companion object {
         val NavigationMenu: Strings
         val CloseDrawer: Strings
+        val CloseRail: Strings
         val CloseSheet: Strings
         val DefaultErrorMessage: Strings
         val ExposedDropdownMenu: Strings
@@ -34,7 +36,9 @@ internal expect value class Strings constructor(val value: Int) {
         val Dialog: Strings
         val MenuExpanded: Strings
         val MenuCollapsed: Strings
+        val ToggleDropdownMenu: Strings
         val SnackbarDismiss: Strings
+        val SnackbarPaneTitle: Strings
         val SearchBarSearch: Strings
         val SuggestionsAvailable: Strings
         val DatePickerTitle: Strings
@@ -87,12 +91,11 @@ internal expect value class Strings constructor(val value: Int) {
         val TimePickerHourTextField: Strings
         val TimePickerMinuteTextField: Strings
         val TooltipPaneDescription: Strings
+        val WideNavigationRailPaneTitle: Strings
     }
 }
 
-@Composable
-@ReadOnlyComposable
-internal expect fun getString(string: Strings): String
+@Composable @ReadOnlyComposable internal expect fun getString(string: Strings): String
 
 @Composable
 @ReadOnlyComposable

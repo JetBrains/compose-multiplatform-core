@@ -44,7 +44,6 @@ import android.util.ArraySet;
 import android.util.Log;
 import android.util.SparseArray;
 
-import androidx.annotation.DoNotInline;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
@@ -139,9 +138,13 @@ class MediaRoute2Provider extends MediaRouteProvider {
     @Nullable
     @Override
     public DynamicGroupRouteController onCreateDynamicGroupRouteController(
-            @NonNull String initialMemberRouteId) {
-        for (Map.Entry<MediaRouter2.RoutingController, GroupRouteController> entry
-                : mControllerMap.entrySet()) {
+            @NonNull String initialMemberRouteId,
+            @NonNull RouteControllerOptions routeControllerOptions) {
+        // The parent implementation of onCreateDynamicGroupRouteController(String,
+        // RouteControllerOptions) calls onCreateDynamicGroupRouteController(String). We only need
+        // to override either one of the onCreateDynamicGroupRouteController methods.
+        for (Map.Entry<MediaRouter2.RoutingController, GroupRouteController> entry :
+                mControllerMap.entrySet()) {
             GroupRouteController controller = entry.getValue();
             if (TextUtils.equals(initialMemberRouteId, controller.mInitialMemberRouteId)) {
                 return controller;
@@ -194,7 +197,7 @@ class MediaRoute2Provider extends MediaRouteProvider {
         List<MediaRouteDescriptor> routeDescriptors = new ArrayList<>();
         for (MediaRoute2Info route : mRoutes) {
             MediaRouteDescriptor descriptor = MediaRouter2Utils.toMediaRouteDescriptor(route);
-            if (route != null) {
+            if (descriptor != null) {
                 routeDescriptors.add(descriptor);
             }
         }
@@ -406,7 +409,6 @@ class MediaRoute2Provider extends MediaRouteProvider {
     }
 
     private class TransferCallback extends MediaRouter2.TransferCallback {
-        TransferCallback() {}
 
         @Override
         public void onTransfer(@NonNull MediaRouter2.RoutingController oldController,
@@ -727,7 +729,6 @@ class MediaRoute2Provider extends MediaRouteProvider {
             // This class is not instantiable.
         }
 
-        @DoNotInline
         static void setPlatformRouteListingPreference(
                 @NonNull MediaRouter2 mediaRouter2,
                 @Nullable android.media.RouteListingPreference routeListingPreference) {

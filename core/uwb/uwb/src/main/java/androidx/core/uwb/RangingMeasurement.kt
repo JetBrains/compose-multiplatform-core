@@ -16,8 +16,9 @@
 
 package androidx.core.uwb
 
-/** Measurement providing the value and confidence of the ranging.
+/**
+ * Measurement providing the value and confidence of the ranging.
  *
  * @property value the value of this measurement.
  */
-class RangingMeasurement(val value: Float)
+public class RangingMeasurement(public val value: Float)

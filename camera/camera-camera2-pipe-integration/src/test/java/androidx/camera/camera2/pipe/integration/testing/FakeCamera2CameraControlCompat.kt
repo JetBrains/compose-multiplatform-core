@@ -16,16 +16,14 @@
 
 package androidx.camera.camera2.pipe.integration.testing
 
-import androidx.annotation.RequiresApi
 import androidx.camera.camera2.pipe.integration.compat.Camera2CameraControlCompat
-import androidx.camera.camera2.pipe.integration.impl.UseCaseCamera
+import androidx.camera.camera2.pipe.integration.impl.UseCaseCameraRequestControl
 import androidx.camera.camera2.pipe.integration.interop.CaptureRequestOptions
 import androidx.camera.camera2.pipe.integration.interop.ExperimentalCamera2Interop
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Deferred
 
 @OptIn(ExperimentalCamera2Interop::class)
-@RequiresApi(21)
 class FakeCamera2CameraControlCompat : Camera2CameraControlCompat {
     override fun addRequestOption(bundle: CaptureRequestOptions) {
         // No-op
@@ -43,7 +41,10 @@ class FakeCamera2CameraControlCompat : Camera2CameraControlCompat {
         // No-op
     }
 
-    override fun applyAsync(camera: UseCaseCamera?, cancelPreviousTask: Boolean): Deferred<Void?> {
+    override fun applyAsync(
+        requestControl: UseCaseCameraRequestControl?,
+        cancelPreviousTask: Boolean
+    ): Deferred<Void?> {
         return CompletableDeferred<Void?>(null).apply { complete(null) }
     }
 }

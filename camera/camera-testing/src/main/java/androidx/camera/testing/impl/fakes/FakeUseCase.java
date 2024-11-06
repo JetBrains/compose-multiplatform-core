@@ -18,7 +18,6 @@ package androidx.camera.testing.impl.fakes;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.camera.core.ImageCapture;
 import androidx.camera.core.UseCase;
@@ -33,13 +32,13 @@ import androidx.camera.core.impl.UseCaseConfigFactory.CaptureType;
 import androidx.core.util.Supplier;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * A fake {@link UseCase}.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public class FakeUseCase extends UseCase {
 
     private static final int DEFAULT_SURFACE_OCCUPANCY_PRIORITY = 0;
@@ -134,12 +133,14 @@ public class FakeUseCase extends UseCase {
 
     @Override
     @NonNull
-    protected StreamSpec onSuggestedStreamSpecUpdated(@NonNull StreamSpec suggestedStreamSpec) {
+    protected StreamSpec onSuggestedStreamSpecUpdated(
+            @NonNull StreamSpec primaryStreamSpec,
+            @Nullable StreamSpec secondaryStreamSpec) {
         SessionConfig sessionConfig = createPipeline();
         if (sessionConfig != null) {
-            updateSessionConfig(sessionConfig);
+            updateSessionConfig(List.of(sessionConfig));
         }
-        return suggestedStreamSpec;
+        return primaryStreamSpec;
     }
 
     @Nullable
@@ -208,7 +209,7 @@ public class FakeUseCase extends UseCase {
      * Calls the protected method {@link UseCase#updateSessionConfig}.
      */
     public void updateSessionConfigForTesting(@NonNull SessionConfig sessionConfig) {
-        updateSessionConfig(sessionConfig);
+        updateSessionConfig(List.of(sessionConfig));
     }
 
     /**

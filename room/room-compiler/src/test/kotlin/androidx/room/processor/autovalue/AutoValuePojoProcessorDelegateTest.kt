@@ -20,10 +20,10 @@ import androidx.room.compiler.codegen.XClassName
 import androidx.room.compiler.processing.util.Source
 import androidx.room.compiler.processing.util.XTestInvocation
 import androidx.room.compiler.processing.util.compileFiles
-import androidx.room.compiler.processing.util.runProcessorTest
 import androidx.room.processor.FieldProcessor
 import androidx.room.processor.PojoProcessor
 import androidx.room.processor.ProcessorErrors
+import androidx.room.runProcessorTestWithK1
 import androidx.room.testing.context
 import androidx.room.vo.Pojo
 import com.google.auto.value.processor.AutoValueProcessor
@@ -41,7 +41,8 @@ class AutoValuePojoProcessorDelegateTest {
     companion object {
         val MY_POJO = XClassName.get("foo.bar", "MyPojo")
         val AUTOVALUE_MY_POJO = XClassName.get("foo.bar", "AutoValue_MyPojo")
-        val HEADER = """
+        val HEADER =
+            """
             package foo.bar;
 
             import androidx.room.*;
@@ -51,7 +52,8 @@ class AutoValuePojoProcessorDelegateTest {
             @AutoValue
             public abstract class MyPojo {
             """
-        val AUTO_VALUE_HEADER = """
+        val AUTO_VALUE_HEADER =
+            """
             package foo.bar;
 
             import androidx.room.*;
@@ -83,19 +85,19 @@ class AutoValuePojoProcessorDelegateTest {
             assertThat(pojo.type.asTypeName(), `is`(MY_POJO))
             assertThat(pojo.fields.size, `is`(1))
             assertThat(pojo.constructor?.element, `is`(notNullValue()))
-            invocation.assertCompilationResult {
-                hasNoWarnings()
-            }
+            invocation.assertCompilationResult { hasNoWarnings() }
         }
     }
 
     @Test
     fun goodLibraryPojo() {
-        val libraryClasspath = compileFiles(
-            sources = listOf(
-                Source.java(
-                    MY_POJO.canonicalName,
-                    """
+        val libraryClasspath =
+            compileFiles(
+                sources =
+                    listOf(
+                        Source.java(
+                            MY_POJO.canonicalName,
+                            """
                     $HEADER
                     @AutoValue.CopyAnnotations
                     @PrimaryKey
@@ -103,28 +105,26 @@ class AutoValuePojoProcessorDelegateTest {
                     static MyPojo create(long value) { return new AutoValue_MyPojo(value); }
                     $FOOTER
                     """
-                )
-            ),
-            annotationProcessors = listOf(
-                AutoValueProcessor()
-            ),
-            // keep parameters as the naming convention for parameters is not the same
-            // between javac (argN) and kotlinc (pN).
-            javacArguments = listOf("-parameters")
-        )
-        runProcessorTest(
+                        )
+                    ),
+                annotationProcessors = listOf(AutoValueProcessor()),
+                // keep parameters as the naming convention for parameters is not the same
+                // between javac (argN) and kotlinc (pN).
+                javacArguments = listOf("-parameters")
+            )
+        // https://github.com/google/ksp/issues/2033
+        runProcessorTestWithK1(
             sources = emptyList(),
             classpath = libraryClasspath,
         ) { invocation: XTestInvocation ->
             PojoProcessor.createFor(
-                context = invocation.context,
-                element = invocation.processingEnv.requireTypeElement(MY_POJO),
-                bindingScope = FieldProcessor.BindingScope.READ_FROM_CURSOR,
-                parent = null
-            ).process()
-            invocation.assertCompilationResult {
-                hasNoWarnings()
-            }
+                    context = invocation.context,
+                    element = invocation.processingEnv.requireTypeElement(MY_POJO),
+                    bindingScope = FieldProcessor.BindingScope.READ_FROM_CURSOR,
+                    parent = null
+                )
+                .process()
+            invocation.assertCompilationResult { hasNoWarnings() }
         }
     }
 
@@ -151,7 +151,8 @@ class AutoValuePojoProcessorDelegateTest {
 
     @Test
     fun missingCopyAnnotationsWarning_inInheritedMethodFromSuper() {
-        val parent = """
+        val parent =
+            """
             package foo.bar;
 
             import androidx.room.*;
@@ -198,7 +199,8 @@ class AutoValuePojoProcessorDelegateTest {
 
     @Test
     fun missingCopyAnnotationsWarning_inInheritedMethodFromInterface() {
-        val parent = """
+        val parent =
+            """
             package foo.bar;
 
             import androidx.room.*;
@@ -252,12 +254,14 @@ class AutoValuePojoProcessorDelegateTest {
     ) {
         @Suppress("CHANGING_ARGUMENTS_EXECUTION_ORDER_FOR_NAMED_VARARGS")
         singleRunFullClass(
-            pojoCode = """
+            pojoCode =
+                """
                     $HEADER
                     $pojoCode
                     $FOOTER
                     """,
-            autoValuePojoCode = """
+            autoValuePojoCode =
+                """
                     $AUTO_VALUE_HEADER
                     $autoValuePojoCode
                     $FOOTER
@@ -278,17 +282,15 @@ class AutoValuePojoProcessorDelegateTest {
         val pojoSource = Source.java(MY_POJO.canonicalName, pojoCode)
         val autoValuePojoSource = Source.java(AUTOVALUE_MY_POJO.canonicalName, autoValuePojoCode)
         val all: List<Source> = sources.toList() + pojoSource + autoValuePojoSource
-        runProcessorTest(
-            sources = all,
-            classpath = classpathFiles
-        ) { invocation ->
+        runProcessorTestWithK1(sources = all, classpath = classpathFiles) { invocation ->
             handler.invoke(
                 PojoProcessor.createFor(
-                    context = invocation.context,
-                    element = invocation.processingEnv.requireTypeElement(MY_POJO),
-                    bindingScope = FieldProcessor.BindingScope.READ_FROM_CURSOR,
-                    parent = null
-                ).process(),
+                        context = invocation.context,
+                        element = invocation.processingEnv.requireTypeElement(MY_POJO),
+                        bindingScope = FieldProcessor.BindingScope.READ_FROM_CURSOR,
+                        parent = null
+                    )
+                    .process(),
                 invocation
             )
         }

@@ -21,7 +21,7 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.Publish
+import androidx.build.LibraryType
 
 import static androidx.inspection.gradle.InspectionPluginKt.packageInspector
 
@@ -37,7 +37,7 @@ android {
     buildFeatures {
         aidl = true
     }
-    buildTypes.all {
+    buildTypes.configureEach {
         consumerProguardFiles "proguard-rules.pro"
 
         stableAidl {
@@ -45,7 +45,6 @@ android {
         }
     }
     defaultConfig {
-        multiDexEnabled = true
         javaCompileOptions {
             annotationProcessorOptions {
                 arguments = [
@@ -56,6 +55,7 @@ android {
             }
         }
     }
+    compileSdk = 35
     sourceSets {
         androidTest.assets.srcDirs += files("$projectDir/src/schemas".toString())
     }
@@ -64,28 +64,28 @@ android {
 
 dependencies {
     ksp("androidx.room:room-compiler:2.6.1")
-    implementation("androidx.core:core:1.12.0")
+    api("androidx.core:core:1.12.0")
     implementation("androidx.room:room-ktx:2.6.1")
     implementation("androidx.concurrent:concurrent-futures-ktx:1.1.0")
-    api("androidx.annotation:annotation-experimental:1.4.0")
+    api("androidx.annotation:annotation-experimental:1.4.1")
     api(libs.guavaListenableFuture)
     api("androidx.lifecycle:lifecycle-livedata:2.6.2")
     api("androidx.startup:startup-runtime:1.1.1")
     implementation("androidx.lifecycle:lifecycle-service:2.6.2")
+    implementation("androidx.tracing:tracing-ktx:1.2.0")
     api(libs.kotlinStdlib)
     api(libs.kotlinCoroutinesAndroid)
     androidTestImplementation(libs.kotlinCoroutinesTest)
-    androidTestImplementation(libs.multidex)
     androidTestImplementation(libs.truth)
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.testCore)
     androidTestImplementation("androidx.arch.core:core-testing:2.2.0")
-    androidTestImplementation(projectOrArtifact(":lifecycle:lifecycle-runtime-testing"))
+    androidTestImplementation(project(":lifecycle:lifecycle-runtime-testing"))
     androidTestImplementation("androidx.room:room-testing:2.6.1")
     androidTestImplementation(libs.testRunner)
     androidTestImplementation(libs.espressoCore)
-    androidTestImplementation(libs.mockitoCore, excludes.bytebuddy) // DexMaker has its own MockMaker
-    androidTestImplementation(libs.dexmakerMockito, excludes.bytebuddy) // DexMaker has its own MockMaker
+    androidTestImplementation(libs.mockitoCore)
+    androidTestImplementation(libs.dexmakerMockito)
     androidTestImplementation(project(":internal-testutils-runtime"))
     testImplementation(libs.junit)
     testImplementation(libs.truth)
@@ -103,9 +103,9 @@ ksp {
 
 androidx {
     name = "WorkManager Runtime"
-    publish = Publish.SNAPSHOT_AND_RELEASE
+    type = LibraryType.PUBLISHED_LIBRARY
     inceptionYear = "2018"
     description = "Android WorkManager runtime library"
     failOnDeprecationWarnings = false
-    metalavaK2UastEnabled = true
+    legacyDisableKotlinStrictApiMode = true
 }

@@ -20,7 +20,6 @@ import android.graphics.Matrix
 import android.os.Build
 import android.view.inputmethod.CursorAnchorInfo
 import android.view.inputmethod.EditorBoundsInfo
-import androidx.annotation.DoNotInline
 import androidx.annotation.RequiresApi
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.toAndroidRectF
@@ -37,11 +36,11 @@ import androidx.compose.ui.text.style.ResolvedTextDirection
  * @param textFieldValue the text field's [TextFieldValue]
  * @param offsetMapping the offset mapping for the text field's visual transformation
  * @param textLayoutResult the text field's [TextLayoutResult]
- * @param matrix matrix that transforms local coordinates into screen coordinates
- * @param innerTextFieldBounds visible bounds of the text field in local coordinates, or an empty
- *   rectangle if the text field is not visible
- * @param decorationBoxBounds visible bounds of the decoration box in local coordinates, or an empty
- *   rectangle if the decoration box is not visible
+ * @param matrix matrix that transforms text layout coordinates into screen coordinates
+ * @param innerTextFieldBounds visible bounds of the text field in text layout coordinates, or an
+ *   empty rectangle if the text field is not visible
+ * @param decorationBoxBounds visible bounds of the decoration box in text layout coordinates, or an
+ *   empty rectangle if the decoration box is not visible
  * @param includeInsertionMarker whether to include insertion marker info in the CursorAnchorInfo
  * @param includeCharacterBounds whether to include character bounds info in the CursorAnchorInfo
  * @param includeEditorBounds whether to include editor bounds info in the CursorAnchorInfo
@@ -127,8 +126,8 @@ private fun CursorAnchorInfo.Builder.setInsertionMarker(
         flags = flags or CursorAnchorInfo.FLAG_HAS_INVISIBLE_REGION
     if (isRtl) flags = flags or CursorAnchorInfo.FLAG_IS_RTL
 
-    // Sets the location of the text insertion point (zero width cursor) as a rectangle in local
-    // coordinates.
+    // Sets the location of the text insertion point (zero width cursor) as a rectangle in text
+    // layout coordinates.
     setInsertionMarkerLocation(x, cursorRect.top, cursorRect.bottom, cursorRect.bottom, flags)
 
     return this
@@ -145,10 +144,9 @@ private fun CursorAnchorInfo.Builder.addCharacterBounds(
     val endOffsetTransformed = offsetMapping.originalToTransformed(endOffset)
     val array = FloatArray((endOffsetTransformed - startOffsetTransformed) * 4)
     textLayoutResult.multiParagraph.fillBoundingBoxes(
-        TextRange(
-            startOffsetTransformed,
-            endOffsetTransformed
-        ), array, 0
+        TextRange(startOffsetTransformed, endOffsetTransformed),
+        array,
+        0
     )
 
     for (offset in startOffset until endOffset) {
@@ -173,7 +171,7 @@ private fun CursorAnchorInfo.Builder.addCharacterBounds(
         }
         if (
             !innerTextFieldBounds.containsInclusive(rect.left, rect.top) ||
-            !innerTextFieldBounds.containsInclusive(rect.right, rect.bottom)
+                !innerTextFieldBounds.containsInclusive(rect.right, rect.bottom)
         ) {
             flags = flags or CursorAnchorInfo.FLAG_HAS_INVISIBLE_REGION
         }
@@ -189,7 +187,6 @@ private fun CursorAnchorInfo.Builder.addCharacterBounds(
 @RequiresApi(33)
 internal object CursorAnchorInfoApi33Helper {
     @JvmStatic
-    @DoNotInline
     fun setEditorBoundsInfo(
         builder: CursorAnchorInfo.Builder,
         decorationBoxBounds: Rect
@@ -205,7 +202,6 @@ internal object CursorAnchorInfoApi33Helper {
 @RequiresApi(34)
 internal object CursorAnchorInfoApi34Helper {
     @JvmStatic
-    @DoNotInline
     fun addVisibleLineBounds(
         builder: CursorAnchorInfo.Builder,
         textLayoutResult: TextLayoutResult,

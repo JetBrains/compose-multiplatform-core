@@ -21,23 +21,24 @@ import com.android.tools.lint.checks.infrastructure.TestFile
 
 object UiStubs {
 
-    val Density: TestFile = bytecodeStub(
-        filename = "Density.kt",
-        filepath = "androidx/compose/ui/unit",
-        checksum = 0xcc05f7d8,
-        """
+    val Density: TestFile =
+        bytecodeStub(
+            filename = "Density.kt",
+            filepath = "androidx/compose/ui/unit",
+            checksum = 0xcc05f7d8,
+            """
             package androidx.compose.ui.unit
 
             interface Density
         """,
-"""
+            """
         META-INF/main.kotlin_module:
         H4sIAAAAAAAA/2VMQQoCMRAbUQR7EOkDBMWThzl7F1dkL4J+oGzr7oDOlHYK
         Pt/KejOQEBISAJgCwKRyAT+Yg9k59knIv7GTV5Qc8CGFvVMSxj5kLSlku2ok
         nVw3nMegVXM0m79lISSORTEKsYZk17eSY2BP3F/H6PLtG3pWW0+WZqb10c7v
         VVvdwh4+IfeLY6cAAAA=
         """,
-        """
+            """
         androidx/compose/ui/unit/Density.class:
         H4sIAAAAAAAA/4VOTUvDQBB9s9GmjV+pWqg38Qe4benNkyBCoCIoeMlpm6yy
         bbor3U2pt/4uD9KzP0qcqHdn4M17M/DefH69fwAYo0c4V7ZcOlOuZeEWr85r
@@ -46,13 +47,14 @@ object UiStubs {
         /KnLeWDx6OploW9NpQlnD7UNZqGfjDfTSl9b64IKxlnf4gzs4LcETn7wGKc8
         h2y5y93KEWWIM7QzdJAwxV6GfRzkII9DHOUQHqlH9xtDUhD7SQEAAA==
         """
-    )
+        )
 
-    val PointerEvent: TestFile = bytecodeStub(
-        filename = "PointerEvent.kt",
-        filepath = "androidx/compose/ui/input/pointer",
-        checksum = 0x7fd06e9b,
-        """
+    val PointerEvent: TestFile =
+        bytecodeStub(
+            filename = "PointerEvent.kt",
+            filepath = "androidx/compose/ui/input/pointer",
+            checksum = 0x7fd06e9b,
+            """
             package androidx.compose.ui.input.pointer
 
             import androidx.compose.ui.unit.Density
@@ -65,14 +67,14 @@ object UiStubs {
                 val id: PointerId
             )
         """,
-"""
+            """
         META-INF/main.kotlin_module:
         H4sIAAAAAAAA/2VMQQoCMRAbUQR7EOkDBMWThzl7F1dkL4J+oGzr7oDOlHYK
         Pt/KejOQEBISAJgCwKRyAT+Yg9k59knIv7GTV5Qc8CGFvVMSxj5kLSlku2ok
         nVw3nMegVXM0m79lISSORTEKsYZk17eSY2BP3F/H6PLtG3pWW0+WZqb10c7v
         VVvdwh4+IfeLY6cAAAA=
         """,
-        """
+            """
         androidx/compose/ui/input/pointer/AwaitPointerEventScope.class:
         H4sIAAAAAAAA/51Qu04CQRQ9d1F5+AAUFTvjBzhALIxWJGqyCUYjiQ3VsDua
         gWVmw9xF7PguC0PtRxlntaGgspgz5965j3Pm6/vjE8AFjgmX0sRTq+O5iOwk
@@ -82,7 +84,7 @@ object UiStubs {
         zaaRutOJIpw8ZYb1RD1rp4eJ6hpjWbK2xm15idjwlrZyZ54f/mIDR/5u+7z/
         F5QGKIQoh6iE2MaOp9gNsYfqAORQQ32AwGHf4eAHKmYZqccBAAA=
         """,
-        """
+            """
         androidx/compose/ui/input/pointer/PointerId.class:
         H4sIAAAAAAAA/5VQTW8SQRh+ZpZdlhVkwS+KH9XWQ4vRpY03TaM2mkBQm2q4
         cBrYSZ0Cs4SdJT3yW7x7MNGYeDDEoz/K+M5CPHkxmXnmfd558rwfv35//wHg
@@ -96,7 +98,7 @@ object UiStubs {
         1o0WipDu2ivKvQG39QWVT/+0Ka8FGxuOnRzvYJfeZ3mTLq4M4HRwtYNrHSp7
         g0I0OthCcwCW4iZuDVBMUU1xO0WQo5ciTFH7Azsv3rCuAgAA
         """,
-        """
+            """
         androidx/compose/ui/input/pointer/PointerInputChange.class:
         H4sIAAAAAAAA/5VSXU8TURA9d7dfLAXaIlJA8QOUUoQthPiCMSrRZJO1EjC8
         8HTbvSm3H3fJ7m3DI7/FX6CJRuODIT76o4xz2w0IvkiymTNnMnNmdub++v39
@@ -113,13 +115,15 @@ object UiStubs {
         ooy5pI1rjkSYrn7GzMcL7cwwOD7UzI8SEs2rEz8Z2sdYJ3xB0XnKWziC7eGO
         h7seFnGPXNz38AAPj8BiLGH5CNkYszEexcjFmI6RiVGOMfcHIp5sr08EAAA=
         """
-    )
+        )
 
-    val PointerInputScope: TestFile = bytecodeStub(
-        filename = "SuspendingPointerInputFilter.kt",
-        filepath = "androidx/compose/ui/input/pointer",
-        checksum = 0xa05e1a0a,
-        """
+    // Functional Interface for pointer input event handling
+    val PointerInputScope: TestFile =
+        bytecodeStub(
+            filename = "SuspendingPointerInputFilter.kt",
+            filepath = "androidx/compose/ui/input/pointer",
+            checksum = 0x9c1bd41d,
+            """
             package androidx.compose.ui.input.pointer
             import androidx.compose.ui.unit.Density
             import androidx.compose.ui.Modifier
@@ -130,65 +134,83 @@ object UiStubs {
                 ): R
             }
 
+            fun interface PointerInputEventHandler {
+                    suspend operator fun PointerInputScope.invoke()
+            }
+
             fun Modifier.pointerInput(
                 key1: Any?,
-                block: suspend PointerInputScope.() -> Unit
+                block: PointerInputEventHandler
             ): Modifier = Modifier
-        """,
-"""
-        META-INF/main.kotlin_module:
-        H4sIAAAAAAAA/2VMQQoCMRAbUQR7EOkDBMWThzl7F1dkL4J+oGzr7oDOlHYK
-        Pt/KejOQEBISAJgCwKRyAT+Yg9k59knIv7GTV5Qc8CGFvVMSxj5kLSlku2ok
-        nVw3nMegVXM0m79lISSORTEKsYZk17eSY2BP3F/H6PLtG3pWW0+WZqb10c7v
-        VVvdwh4+IfeLY6cAAAA=
-        """,
         """
-        androidx/compose/ui/input/pointer/PointerInputScope.class:
-        H4sIAAAAAAAA/51Ty24TMRS9nsljklKYDlDSFtqSlpdQmRBg04SKClo1VYAq
-        idh05UzcyOnEjsae0O7yLSz4CBYo6pIf4S8Qd/JQSxsRxML28fXx9T328Y9f
-        374DwEt4SOAFFY1A8saJ68l2RyrmhtzlohNqtyO50CxwD4ZjKQpWPdlhSSAE
-        7BbtUtenoul+rLeYp5NgElidlC4UXLvvmFBcnyYhTmCefqZcj/LudJkY5iVQ
-        e1w+ltrnwm112+5RKDzNpVDu7gjlC+N1TwYy1Fww5b6VAkFII0LhSflyXQUC
-        P4uVzavxrWmHFTfK029ne6KUwsaUQosbtUphq/B0QlnTNI62TlS6XpZB020x
-        XQ8oRy1UCKnpUNeH0Pdp3WdIW/sbTeqIiay5cSHvmaYNqinGjHbXRO+QqEtF
-        HRAgxxg/4dEsh6jxnIDq97JpI2MMm2We46jZ/d4A9HvWUabfyxs5sv/aNhaN
-        PTMbs/o928w/smOLaxZxYo6RSzhpx4rQnplLOgknliE5Kxc/+5IwrNTe2dc3
-        EbLT0dF5Aq/+4dGuWBqVZSfuu+hdJJEKgXjdlx5KdsbXc+5OApv/bxn8PdPc
-        TaLrXh6zdk50VJgU4wJqp4M0K9VQdZhocNG8KHSX+wifHWsCqSpvCqrDAP/c
-        UiXEE9qsJLpccfTH9rkZ0FCXVw9oQNsME/1BS1dlGHgMj8CMC6M9n67kS+Ab
-        QQw1JCLjxAgkwQIT7uPMgBRkcUzgahrHNWyzBk5mBh6bGVDWB/0qPMCxjNFr
-        EIfZQzBLcL0EN0pgwxxCcEpwE24dAlFwG+YPYUbBHQUZBUkFCwoWFSwpuKvg
-        noJlBSsKrN90t5jzEwUAAA==
-        """,
-        """
-        androidx/compose/ui/input/pointer/SuspendingPointerInputFilterKt.class:
-        H4sIAAAAAAAA/61VW28bRRT+Zu34VkPcDSmJE9KUmObSpusYym2jiBJRycIN
-        BZe85Gm8nroTr2esnd0ofetv4RcgnhAPKOKR38JvQJzZOKnTBAehPuyZc/nm
-        3OYc+8+/f/sdwCfYZviKq26kZffYC/RgqI3wEulJNUxib6ilikXktRMzFKor
-        Ve/pqaZpzY9lSOy3cR6MoXLIj7gXctXzvuscioC0GYbycAzPMFxrXRXsie7K
-        51JEfutNJ36rr+NQKu/waOA9T1QQS62M93jENfz1yQ4Z/nrbIbc3r3R4sWHj
-        bWoHeij8zTO3gY50EksljLerFTEJt363zwE/Khn7O/69y5ntXF/uSktHPe9Q
-        xJ2IS0qbK6VjflrCno73kjAkVG0SiiC8EwqC5bbjF9LsFFBiWBrrSlqb4qHX
-        VHFE92Vg8igzzAYvRNAfhXnKIz4QBGRYXbuiy681beuk56/vl/Eupkt4BxWG
-        qU6og34BLsPipJrzeI+huEsGrih/hsnvXTtH+mXcwvtFzGKOwa3ZSmsXp3Xp
-        umZn++LlFl2+XB3D8nWTy3DzDPJExLzLY046Z3CUocVklhQtAQPrW8Yh47G0
-        XJ24LsU1J69qpZNXJWfOSY8KkZF4/lWckbn6NZmrTp1t0NcoVJxqdo7VM43V
-        Sra6UmBu1nXqObfkFlKuUM+7OTdF1Kf++CnnFIqWVko2dIPZrNyz7MdLevi/
-        dmOsW/+yHb59jRHkm+NY0MxpdRb42cvUx93/9u5527/bk37RHvTp8bO7uisY
-        pluUy14y6Ijomd0KW7cOeLjPI2nlkbLYlj3F4yQifuGHhBIfiKY6kkaS+dHr
-        7aLVe9N6vicXYOWmUiLaDbkxgsRSWydRICg/CjA/crF/yT224CCL07GZxxRy
-        JH1M0vekt6Mzs+He+BU377szRH/B/Almf7azRf8EIDDFxTQeEr98CkcVC6m7
-        GSziA7JbzsUS3fg0vZfHZ6ObBTo/t/bMSKCupNTyGXxBtETSFi3cLcrty/R6
-        Az6dLdLfpmyXD5Bp4k4THzaxgloTH+FuE6tYOwAzWMfGAW4YTBksGCwa3DNw
-        De4bbBo8SEXPIPcPJkHsLNsGAAA=
-        """
-    )
+                .trimIndent(),
+            """
+                META-INF/main.kotlin_module:
+                H4sIAAAAAAAA/2VMQQoCMRAbUQR7EOkDBMWThzl7F1dkL4J+oGzr7oDOlHYK
+                Pt/KejOQEBISAJgCwKRyAT+Yg9k59knIv7GTV5Qc8CGFvVMSxj5kLSlku2ok
+                nVw3nMegVXM0m79lISSORTEKsYZk17eSY2BP3F/H6PLtG3pWW0+WZqb10c7v
+                VVvdwh4+IfeLY6cAAAA=
+                """,
+            """
+                androidx/compose/ui/input/pointer/PointerInputEventHandler.class:
+                H4sIAAAAAAAA/7VSTW8TMRB9dpJNs1DYlgJpy8cBDoAEDhVcSIsECNRFAapG
+                cMnJSazIycaO1t6o3PJbOPRHcEBRuPGjELMLFaUgpCIh2fPlN/PsGX/5+vET
+                gAe4xvBImn5qdf9A9Ox4Yp0SmRbaTDIvJlYbr1Kx913HefD5VBm/SzmJSqtg
+                DNFQTqVIpBmIN92h6vkqSgyBNlM7Ugz6Vut0BO2enahma2R9og2lpDbz2ign
+                nllDRia9tqZ5u3WStsnw/r9wbd89Arw12jcf/5n7ZsumAzFUvptKbZyQxlhf
+                5DvxOksS2U0UwW78DWZ9jiTUyhHjK+VlX3pJMT6elmhmLBe1XICBjSh+oHOv
+                QVb/PsPOfLYW8joPeTSfhbR4xAt/Plv6fLiYsfp8tsUb7OVqxDd4o3SHN8q7
+                i8Oniw8Bjyp5kS2G7VP28finoKvSzR7+0yQYrrczN1Gmr83g+PELnZB5b+QZ
+                am09MNJnKX2uzf2M5jRWsZlqp6nDT362k0Zy8nRPpnKsqNAvsLBts7SniIIq
+                rv/IefdbvYB6gzKKxpcZKghQwjp5HFVskA7o2UukN2kvc3JqxYxqBeRKIeu4
+                SnqHoiEVONNBKcbZGMsxzuE8mYhirGC1A+ZwAWsdBA4XHS45VAp52SH4BreP
+                UBy8AwAA
+                """,
+            """
+                androidx/compose/ui/input/pointer/PointerInputScope.class:
+                H4sIAAAAAAAA/51Ty24TMRS9nsljklKYDlDSFtqSlpdQmRBg04SKClo1VYAq
+                idh05UzcyOnEjsae0O7yLSz4CBYo6pIf4S8Qd/JQSxsRxML28fXx9T328Y9f
+                374DwEt4SOAFFY1A8saJ68l2RyrmhtzlohNqtyO50CxwD4ZjKQpWPdlhSSAE
+                7BbtUtenoul+rLeYp5NgElidlC4UXLvvmFBcnyYhTmCefqZcj/LudJkY5iVQ
+                e1w+ltrnwm112+5RKDzNpVDu7gjlC+N1TwYy1Fww5b6VAkFII0LhSflyXQUC
+                P4uVzavxrWmHFTfK029ne6KUwsaUQosbtUphq/B0QlnTNI62TlS6XpZB020x
+                XQ8oRy1UCKnpUNeH0Pdp3WdIW/sbTeqIiay5cSHvmaYNqinGjHbXRO+QqEtF
+                HRAgxxg/4dEsh6jxnIDq97JpI2MMm2We46jZ/d4A9HvWUabfyxs5sv/aNhaN
+                PTMbs/o928w/smOLaxZxYo6RSzhpx4rQnplLOgknliE5Kxc/+5IwrNTe2dc3
+                EbLT0dF5Aq/+4dGuWBqVZSfuu+hdJJEKgXjdlx5KdsbXc+5OApv/bxn8PdPc
+                TaLrXh6zdk50VJgU4wJqp4M0K9VQdZhocNG8KHSX+wifHWsCqSpvCqrDAP/c
+                UiXEE9qsJLpccfTH9rkZ0FCXVw9oQNsME/1BS1dlGHgMj8CMC6M9n67kS+Ab
+                QQw1JCLjxAgkwQIT7uPMgBRkcUzgahrHNWyzBk5mBh6bGVDWB/0qPMCxjNFr
+                EIfZQzBLcL0EN0pgwxxCcEpwE24dAlFwG+YPYUbBHQUZBUkFCwoWFSwpuKvg
+                noJlBSsKrN90t5jzEwUAAA==
+                """,
+            """
+                androidx/compose/ui/input/pointer/SuspendingPointerInputFilterKt.class:
+                H4sIAAAAAAAA/6VTW08TQRT+pi29WaUtoFCuSuUmsqWiMSkaDdG4sSCK4YWn
+                6XYs025nm51tg2/8AH+M8cn4YHj2RxnPtA33VBMf9sw53/nOZc6c/fX7x08A
+                G3jC8IKrqu/J6pHleM2Wp4XVlpZUrXZgtTypAuFbe23dEqoqVW23h9jG/Vq6
+                pL4NYmAM6TrvcMvlqma9q9SFQ2iYIdU6x2f4slS+rti2V5WfpPBL5ctJStfy
+                LzZ3vqVXHaGCNxTjUrblwcUY5sueX7PqIqj4XCptcaW8gAfSI33HC3barkus
+                /CAWUXjFFUSLbgaHUj+PI8Ew0/ACVyqr3mla3eYUdy1bBT7FS0fHcINhzDkU
+                TqNfZpf7vCmIyLC4dM0UzpA9k6RWWt5P4SZuJZHCMMNQxfWcRhwZhqlBd45h
+                hCGxRQ6uqH+Gwe+RP2WWUhjD7QRGcYchmzc3zV982pm/DTvSEJ/XKfjq7Rg2
+                /+eZGTLl/ry3RcCrPOCEhZqdMG04MyJhBBhYwyghch5JoxVIq1JPT0+Os8mT
+                42RoPNQ90iR6Zm6K9FyowFboK8bToVxknBXCxWg6QuiQiS8yk3rh3+YYwwOG
+                2UG/01qDhhnZ8qqCYbgsldhpNyvC/2i2zEzPc7i7z31p7D44+aGtAtkUtupI
+                LQl6ebahtL6Xvae7doGWspUS/pbLtRZkJve8tu8I6okKTPRT7F9Jj3WEEEFv
+                vBMYQhRhrJH1nnAz4pGVbPI70qvZLMlvGD/B6FfzBrBIRikohSwKpM/16JQk
+                1003gklMkd9oGUxTxHo/IkZn0eDhvsEQ70qjh/GIZJKsVVrWMUq30S33EI/p
+                fEb4DHU5e4CwjTkbd23cw7yNPO7bWMDiAZjGEpYPENUY0shpTGqsaGQ0pv8A
+                cjqS8TUFAAA=
+                """
+        )
 
-    val Alignment: TestFile = bytecodeStub(
-        filename = "Alignment.kt",
-        filepath = "androidx/compose/ui",
-        checksum = 0x72950571,
-        """
+    val Alignment: TestFile =
+        bytecodeStub(
+            filename = "Alignment.kt",
+            filepath = "androidx/compose/ui",
+            checksum = 0x72950571,
+            """
             package androidx.compose.ui
             class Alignment {
                 companion object {
@@ -196,14 +218,14 @@ object UiStubs {
                 }
             }
             """,
-"""
+            """
         META-INF/main.kotlin_module:
         H4sIAAAAAAAA/2VMQQoCMRAbUQR7EOkDBMWThzl7F1dkL4J+oGzr7oDOlHYK
         Pt/KejOQEBISAJgCwKRyAT+Yg9k59knIv7GTV5Qc8CGFvVMSxj5kLSlku2ok
         nVw3nMegVXM0m79lISSORTEKsYZk17eSY2BP3F/H6PLtG3pWW0+WZqb10c7v
         VVvdwh4+IfeLY6cAAAA=
         """,
-        """
+            """
         androidx/compose/ui/Alignment＄Companion.class:
         H4sIAAAAAAAA/5WTz08TQRTHv7PdtstSpeWH8kNFpEqL2gXiDWOEGpMmBRMg
         vXAw0+1Yp93Okp1pw7En/xD/AjlpPBjC0T/K+LasQDQRvbx57/ve583svJ3v
@@ -221,7 +243,7 @@ object UiStubs {
         9NtUO3uIVA1zNczXsIA75OJuDfeweAimcR9Lh8hquBoPNDIayxpFjXGN3E/q
         H9VdNgQAAA==
         """,
-        """
+            """
         androidx/compose/ui/Alignment.class:
         H4sIAAAAAAAA/4VSXU8TURA9d7ct7bJKqVIpHwJSpaCyQExMhJhgjUmTUhMh
         JISn2+213nZ7l+y9bXjkt/gLRB5IJDHER3+UcbYU8COBl5mdc+fMnJnZn7++
@@ -238,16 +260,15 @@ object UiStubs {
         doqxExTOYO2dYuIEI8d/cYepl43nFMXSc6QoT8Mt97WVSDDwkvApypreh13B
         wwpmKpjFHH3iUQXzKO6DaTzGk30kNByNBY2URv43qNs4vuQDAAA=
         """
-    )
+        )
 
-    /**
-     * Simplified Modifier.composed stub
-     */
-    val composed = bytecodeStub(
-        filename = "ComposedModifier.kt",
-        filepath = "androidx/compose/ui",
-        checksum = 0xc6ba0d09,
-        """
+    /** Simplified Modifier.composed stub */
+    val composed =
+        bytecodeStub(
+            filename = "ComposedModifier.kt",
+            filepath = "androidx/compose/ui",
+            checksum = 0xc6ba0d09,
+            """
             package androidx.compose.ui
 
             import androidx.compose.runtime.Composable
@@ -257,13 +278,13 @@ object UiStubs {
                 factory: @Composable Modifier.() -> Modifier
             ): Modifier = this
         """,
-"""
+            """
         META-INF/main.kotlin_module:
         H4sIAAAAAAAA/2NgYGBmYGBgBGJOBijgUuOSSMxLKcrPTKnQS87PLcgvTtUr
         Ks0rycxNFeIKSs1NzU1KLfIu4dLkEsZQV5opJOQMYaf45qdkpmWClfJxsZSk
         FpcIsYUASe8SJQYtBgBxwST5ewAAAA==
         """,
-        """
+            """
         androidx/compose/ui/ComposedModifierKt＄composed＄1.class:
         H4sIAAAAAAAA/5VU6U4TURT+7rR0GYoti7KIO2ILyrTg3oaENBAnFEwEmxh+
         3XYGuHR6x8xMG/zHK/gKPoFoIokmhvjThzKeO20NbqCTzJ2Tc77v7He+fvv4
@@ -282,7 +303,7 @@ object UiStubs {
         qP4HYZAIHobfAh6Ffym6/8S6soWIiasmrpm4jhsmNeOmiWnc2gLzkUWO7D5m
         fMz6SH8Hu1pp5uIEAAA=
         """,
-        """
+            """
         androidx/compose/ui/ComposedModifierKt.class:
         H4sIAAAAAAAA/7VUUU8bRxD+9mzss2OIsUlCHEJo4yRgSM4maZvWhAShIJ1q
         3CqmvPC0+NZk8XkP3Z0ReYn4C33sa39B1aeoDxXqY6X+paqz53MggHClqjrd
@@ -305,5 +326,5 @@ object UiStubs {
         mn9A8A93kLDxyMa8jQVUbCxiycZjPNkBC2ChuoNMgLEANwNMUuECLAcoBnga
         4FmAL/4BKp/c6X8HAAA=
         """
-    )
+        )
 }

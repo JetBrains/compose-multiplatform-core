@@ -19,7 +19,6 @@ package androidx.compose.ui.text.googlefonts
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
-import androidx.annotation.DoNotInline
 import androidx.annotation.RequiresApi
 
 /**
@@ -29,9 +28,7 @@ import androidx.annotation.RequiresApi
  */
 internal object HandlerHelper {
 
-    /**
-     * @return handler, with createAsync if API level supports it.
-     */
+    /** @return handler, with createAsync if API level supports it. */
     fun createAsync(looper: Looper): Handler {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             Handler28Impl.createAsync(looper)
@@ -42,7 +39,6 @@ internal object HandlerHelper {
 
     @RequiresApi(28)
     internal object Handler28Impl {
-        @DoNotInline
         fun createAsync(looper: Looper): Handler {
             return Handler.createAsync(looper)
         }

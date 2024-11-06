@@ -27,12 +27,17 @@ import androidx.appsearch.app.GenericDocument;
 import androidx.appsearch.app.GetByDocumentIdRequest;
 import androidx.appsearch.app.SearchResult;
 import androidx.appsearch.app.SearchResults;
+import androidx.appsearch.localstorage.visibilitystore.CallerAccess;
 import androidx.appsearch.localstorage.visibilitystore.VisibilityChecker;
+import androidx.appsearch.localstorage.visibilitystore.VisibilityStore;
 
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Future;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * Class with helper functions for testing for AppSearch.
@@ -41,9 +46,6 @@ import java.util.concurrent.Future;
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class AppSearchTestUtils {
-    private AppSearchTestUtils() {
-    }
-
     /** Checks batch result. */
     @NonNull
     public static <K, V> AppSearchBatchResult<K, V> checkIsBatchResultSuccess(
@@ -115,14 +117,76 @@ public class AppSearchTestUtils {
     }
 
     /**
-     * Creates a mock {@link VisibilityChecker}.
+     * Creates a mock {@link VisibilityChecker} where schema is searchable if prefixedSchema is
+     * one of the provided set of visiblePrefixedSchemas and caller does not have system access.
+     *
      * @param visiblePrefixedSchemas Schema types that are accessible to any caller.
-     * @return
+     * @return Mocked {@link VisibilityChecker} instance.
      */
     @NonNull
     public static VisibilityChecker createMockVisibilityChecker(
             @NonNull Set<String> visiblePrefixedSchemas) {
-        return (callerAccess, packageName, prefixedSchema, visibilityStore) ->
-                visiblePrefixedSchemas.contains(prefixedSchema);
+        return new VisibilityChecker() {
+            @Override
+            public boolean isSchemaSearchableByCaller(
+                    @NonNull CallerAccess callerAccess,
+                    @NonNull String packageName,
+                    @NonNull String prefixedSchema,
+                    @NonNull VisibilityStore visibilityStore) {
+                return visiblePrefixedSchemas.contains(prefixedSchema);
+            }
+
+            @Override
+            public boolean doesCallerHaveSystemAccess(@NonNull String s) {
+                return false;
+            }
+        };
+    }
+
+    /**
+     * Creates a mock {@link VisibilityChecker}, where it can be configured if schema is searchable
+     * by caller and caller does not have system access.
+     *
+     * @param isSchemaSearchableByCaller Schema visibility for caller.
+     * @return Mocked {@link VisibilityChecker} instance.
+     */
+    @NonNull
+    public static VisibilityChecker createMockVisibilityChecker(
+            boolean isSchemaSearchableByCaller) {
+        return new VisibilityChecker() {
+            @Override
+            public boolean isSchemaSearchableByCaller(
+                    @NonNull CallerAccess callerAccess,
+                    @NonNull String packageName,
+                    @NonNull String prefixedSchema,
+                    @NonNull VisibilityStore visibilityStore) {
+                return isSchemaSearchableByCaller;
+            }
+
+            @Override
+            public boolean doesCallerHaveSystemAccess(@NonNull String s) {
+                return false;
+            }
+        };
+    }
+
+    /** Generate an array contains random bytes for the given length.     */
+    @NonNull
+    public static byte[] generateRandomBytes(int length) {
+        byte[] bytes = new byte[length];
+        ThreadLocalRandom.current().nextBytes(bytes);
+        return bytes;
+    }
+
+    /** Calculate the sha-256 digest for the given data.     */
+    @NonNull
+    public static byte[] calculateDigest(@NonNull byte[] data)
+            throws NoSuchAlgorithmException {
+        MessageDigest messageDigest = MessageDigest.getInstance("SHA-256");
+        messageDigest.update(data);
+        return messageDigest.digest();
+    }
+
+    private AppSearchTestUtils() {
     }
 }

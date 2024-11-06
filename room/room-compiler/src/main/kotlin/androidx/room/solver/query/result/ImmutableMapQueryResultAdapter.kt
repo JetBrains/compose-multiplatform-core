@@ -36,17 +36,21 @@ class ImmutableMapQueryResultAdapter(
             resultAdapter.convert(mapVarName, cursorVarName, scope)
             addLocalVariable(
                 name = outVarName,
-                typeName = GuavaTypeNames.IMMUTABLE_MAP.parametrizedBy(
-                    keyTypeArg.asTypeName(),
-                    valueTypeArg.asTypeName()
-                ),
-                assignExpr = XCodeBlock.of(
-                    language = language,
-                    format = "%T.copyOf(%L)",
-                    GuavaTypeNames.IMMUTABLE_MAP,
-                    mapVarName
-                ),
+                typeName =
+                    GuavaTypeNames.IMMUTABLE_MAP.parametrizedBy(
+                        keyTypeArg.asTypeName(),
+                        valueTypeArg.asTypeName()
+                    ),
+                assignExpr =
+                    XCodeBlock.of(
+                        language = language,
+                        format = "%T.copyOf(%L)",
+                        GuavaTypeNames.IMMUTABLE_MAP,
+                        mapVarName
+                    ),
             )
         }
     }
+
+    override fun isMigratedToDriver() = true
 }

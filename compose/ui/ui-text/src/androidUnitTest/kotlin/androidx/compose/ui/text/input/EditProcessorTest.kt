@@ -16,7 +16,10 @@
 
 package androidx.compose.ui.text.input
 
+import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.assertFailsWith
 import org.junit.Test
@@ -45,10 +48,7 @@ class EditProcessorTest {
 
         assertThat(proc.mBufferState).isEqualTo(model)
         val captor = argumentCaptor<TextFieldValue>()
-        verify(tis, times(1)).updateState(
-            eq(TextFieldValue("", TextRange.Zero)),
-            captor.capture()
-        )
+        verify(tis, times(1)).updateState(eq(TextFieldValue("", TextRange.Zero)), captor.capture())
         assertThat(captor.allValues.size).isEqualTo(1)
         assertThat(captor.firstValue.text).isEqualTo("ABCDE")
         assertThat(captor.firstValue.selection.min).isEqualTo(0)
@@ -56,11 +56,7 @@ class EditProcessorTest {
 
         reset(tis)
 
-        val newState = proc.apply(
-            listOf(
-                CommitTextCommand("X", 1)
-            )
-        )
+        val newState = proc.apply(listOf(CommitTextCommand("X", 1)))
 
         assertThat(newState.text).isEqualTo("XABCDE")
         assertThat(newState.selection.min).isEqualTo(1)
@@ -75,17 +71,11 @@ class EditProcessorTest {
         val textInputSession = mock<TextInputSession>()
 
         val initialBuffer = processor.mBuffer
-        processor.reset(
-            TextFieldValue("qwerty", TextRange.Zero, TextRange.Zero),
-            textInputSession
-        )
+        processor.reset(TextFieldValue("qwerty", TextRange.Zero, TextRange.Zero), textInputSession)
         assertThat(processor.mBuffer).isNotEqualTo(initialBuffer)
 
         val updatedBuffer = processor.mBuffer
-        processor.reset(
-            TextFieldValue("qwerty", TextRange.Zero, TextRange.Zero),
-            textInputSession
-        )
+        processor.reset(TextFieldValue("qwerty", TextRange.Zero, TextRange.Zero), textInputSession)
         assertThat(processor.mBuffer).isEqualTo(updatedBuffer)
     }
 
@@ -95,19 +85,35 @@ class EditProcessorTest {
         val textInputSession = mock<TextInputSession>()
 
         val textFieldValue = TextFieldValue("qwerty", TextRange.Zero, TextRange.Zero)
-        processor.reset(
-            textFieldValue,
-            textInputSession
-        )
+        processor.reset(textFieldValue, textInputSession)
         val initialBuffer = processor.mBuffer
 
         val newTextFieldValue = textFieldValue.copy("abc")
-        processor.reset(
-            newTextFieldValue,
-            textInputSession
-        )
+        processor.reset(newTextFieldValue, textInputSession)
 
         assertThat(processor.mBuffer).isNotEqualTo(initialBuffer)
+    }
+
+    @Test
+    fun testNewState_compositionNotLost_ifTextIsSame_butAnnotationsAreDifferent() {
+        val processor = EditProcessor()
+        val textInputSession = mock<TextInputSession>()
+
+        val textFieldValue = TextFieldValue(buildAnnotatedString { append("abc") }, TextRange.Zero)
+        processor.reset(textFieldValue, textInputSession)
+        // first reset call always removes the composing region due to text change
+        processor.apply(listOf(SetComposingRegionCommand(0, 3)))
+        val initialBuffer = processor.mBuffer
+
+        val newTextFieldValue =
+            textFieldValue.copy(
+                buildAnnotatedString { withStyle(SpanStyle()) { append("abc") } },
+                composition = TextRange(0, 3)
+            )
+        processor.reset(newTextFieldValue, textInputSession)
+
+        assertThat(processor.mBuffer).isEqualTo(initialBuffer)
+        assertThat(processor.mBufferState.composition).isEqualTo(TextRange(0, 3))
     }
 
     @Test
@@ -115,17 +121,11 @@ class EditProcessorTest {
         val processor = EditProcessor()
         val textInputSession = mock<TextInputSession>()
         val textFieldValue = TextFieldValue("qwerty", TextRange.Zero, TextRange.Zero)
-        processor.reset(
-            textFieldValue,
-            textInputSession
-        )
+        processor.reset(textFieldValue, textInputSession)
         val initialBuffer = processor.mBuffer
 
         val newTextFieldValue = textFieldValue.copy(selection = TextRange(1))
-        processor.reset(
-            newTextFieldValue,
-            textInputSession
-        )
+        processor.reset(newTextFieldValue, textInputSession)
 
         assertThat(processor.mBuffer).isEqualTo(initialBuffer)
         assertThat(newTextFieldValue.selection.start).isEqualTo(processor.mBuffer.selectionStart)
@@ -137,10 +137,7 @@ class EditProcessorTest {
         val processor = EditProcessor()
         val textInputSeson = mock<TextInputSession>()
         val textFieldValue = TextFieldValue("qwerty", TextRange.Zero, TextRange(1))
-        processor.reset(
-            textFieldValue,
-            textInputSeson
-        )
+        processor.reset(textFieldValue, textInputSeson)
         val initialBuffer = processor.mBuffer
 
         // composition can not be set from app, IME owns it.
@@ -148,10 +145,7 @@ class EditProcessorTest {
         assertThat(EditingBuffer.NOWHERE).isEqualTo(initialBuffer.compositionEnd)
 
         val newTextFieldValue = textFieldValue.copy(composition = null)
-        processor.reset(
-            newTextFieldValue,
-            textInputSeson
-        )
+        processor.reset(newTextFieldValue, textInputSeson)
 
         assertThat(processor.mBuffer).isEqualTo(initialBuffer)
         assertThat(EditingBuffer.NOWHERE).isEqualTo(processor.mBuffer.compositionStart)
@@ -166,10 +160,7 @@ class EditProcessorTest {
         val textFieldValue = TextFieldValue("qwerty", initialSelection, TextRange(1))
 
         // set the initial selection to be reversed
-        processor.reset(
-            textFieldValue,
-            textInputSession
-        )
+        processor.reset(textFieldValue, textInputSession)
         val initialBuffer = processor.mBuffer
 
         assertThat(initialSelection.min).isEqualTo(initialBuffer.selectionStart)
@@ -178,10 +169,7 @@ class EditProcessorTest {
         val updatedSelection = TextRange(3, 0)
         val newTextFieldValue = textFieldValue.copy(selection = updatedSelection)
         // set the new selection
-        processor.reset(
-            newTextFieldValue,
-            textInputSession
-        )
+        processor.reset(newTextFieldValue, textInputSession)
 
         assertThat(processor.mBuffer).isEqualTo(initialBuffer)
         assertThat(updatedSelection.min).isEqualTo(initialBuffer.selectionStart)
@@ -194,12 +182,7 @@ class EditProcessorTest {
         val textInputSession = mock<TextInputSession>()
 
         // set the initial value
-        processor.apply(
-            listOf(
-                CommitTextCommand("ab", 0),
-                SetComposingRegionCommand(0, 2)
-            )
-        )
+        processor.apply(listOf(CommitTextCommand("ab", 0), SetComposingRegionCommand(0, 2)))
 
         // change the text
         val newValue = processor.mBufferState.copy(text = "cd")
@@ -237,12 +220,7 @@ class EditProcessorTest {
         val textInputSession = mock<TextInputSession>()
 
         // set the initial value
-        processor.apply(
-            listOf(
-                CommitTextCommand("ab", 0),
-                SetComposingRegionCommand(-1, -1)
-            )
-        )
+        processor.apply(listOf(CommitTextCommand("ab", 0), SetComposingRegionCommand(-1, -1)))
 
         // change the composition
         val newValue = processor.mBufferState.copy(composition = TextRange(0, 2))
@@ -258,12 +236,7 @@ class EditProcessorTest {
         val textInputSession = mock<TextInputSession>()
 
         // set the initial value
-        processor.apply(
-            listOf(
-                CommitTextCommand("ab", 0),
-                SetComposingRegionCommand(0, 2)
-            )
-        )
+        processor.apply(listOf(CommitTextCommand("ab", 0), SetComposingRegionCommand(0, 2)))
 
         // change the composition
         val newValue = processor.mBufferState.copy(composition = TextRange(0, 1))
@@ -307,28 +280,30 @@ class EditProcessorTest {
             }
         }
 
-        val processor = EditProcessor().apply {
-            mBuffer.replace(0, 0, "hello world")
-            mBuffer.setSelection(0, 5)
-            mBuffer.setComposition(5, 7)
-        }
-        val batch = listOf(
-            CommitTextCommand("ab", 0),
-            InvalidCommand(),
-            SetSelectionCommand(0, 2),
-        )
+        val processor =
+            EditProcessor().apply {
+                mBuffer.replace(0, 0, "hello world")
+                mBuffer.setSelection(0, 5)
+                mBuffer.setComposition(5, 7)
+            }
+        val batch =
+            listOf(
+                CommitTextCommand("ab", 0),
+                InvalidCommand(),
+                SetSelectionCommand(0, 2),
+            )
 
-        val error = assertFailsWith<RuntimeException> {
-            processor.apply(batch)
-        }
+        val error = assertFailsWith<RuntimeException> { processor.apply(batch) }
 
-        assertThat(error).hasMessageThat().isEqualTo(
-            "Error while applying EditCommand batch to buffer " +
-                "(length=11, composition=null, selection=TextRange(5, 5)):\n" +
-                "   CommitTextCommand(text.length=2, newCursorPosition=0)\n" +
-                " > Unknown EditCommand: InvalidCommand\n" +
-                "   SetSelectionCommand(start=0, end=2)"
-        )
+        assertThat(error)
+            .hasMessageThat()
+            .isEqualTo(
+                "Error while applying EditCommand batch to buffer " +
+                    "(length=11, composition=null, selection=TextRange(5, 5)):\n" +
+                    "   CommitTextCommand(text.length=2, newCursorPosition=0)\n" +
+                    " > Unknown EditCommand: InvalidCommand\n" +
+                    "   SetSelectionCommand(start=0, end=2)"
+            )
         assertThat(error).hasCauseThat().hasMessageThat().isEqualTo("Better luck next time")
     }
 }

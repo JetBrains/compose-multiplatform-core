@@ -19,72 +19,71 @@ package androidx.room
 import android.app.ActivityManager
 import android.content.Context
 import android.os.Build
+import androidx.arch.core.executor.testing.CountingTaskExecutorRule
 import androidx.kruth.assertThat
+import androidx.kruth.assertWithMessage
 import androidx.room.support.AutoClosingRoomOpenHelper
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.SdkSuppress
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import kotlin.test.Ignore
 import kotlin.test.Test
-import org.junit.Before
+import org.junit.Rule
 
 class MultiInstanceInvalidationTest {
-    @Entity
-    data class SampleEntity(
-        @PrimaryKey
-        val pk: Int
-    )
+    @Entity data class SampleEntity(@PrimaryKey val pk: Int)
 
-    @Database(
-        entities = [SampleEntity::class],
-        version = 1,
-        exportSchema = false
-    )
+    @Database(entities = [SampleEntity::class], version = 1, exportSchema = false)
     abstract class SampleDatabase : RoomDatabase()
 
-    private lateinit var autoCloseDb: SampleDatabase
+    @get:Rule val countingTaskExecutorRule = CountingTaskExecutorRule()
 
-    @Suppress("DEPRECATION") // For `getRunningServices()`
     @Test
+    @OptIn(ExperimentalRoomApi::class)
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.N)
+    @Ignore // Flaky Test b/359161892
+    @Suppress("DEPRECATION") // For getRunningServices()
     fun invalidateInAnotherInstanceAutoCloser() {
-        val latch = CountDownLatch(1)
         val context = ApplicationProvider.getApplicationContext<Context>()
-        val manager = context.getSystemService(
-            ActivityManager::class.java
-        )
+        val autoCloseDb =
+            Room.databaseBuilder(context, SampleDatabase::class.java, "MyDb")
+                .enableMultiInstanceInvalidation()
+                .setAutoCloseTimeout(200, TimeUnit.MILLISECONDS)
+                .build()
+        val manager = context.getSystemService(ActivityManager::class.java)
         val autoCloseHelper = autoCloseDb.openHelper as AutoClosingRoomOpenHelper
-        val autoCloser = autoCloseHelper.autoCloser
+
+        // Force open the database causing the multi-instance invalidation service  to start
         autoCloseHelper.writableDatabase
-        // Make sure the service is running.
+
+        // Assert multi-instance invalidation service is running.
         assertThat(manager.getRunningServices(100)).isNotEmpty()
 
-        // Let Room call setAutoCloseCallback
-        val trackerCallback = autoCloser.onAutoCloseCallback
-        autoCloser.setAutoCloseCallback {
-            trackerCallback?.run()
+        // Remember the current auto close callback, it should be the one installed by the
+        // invalidation tracker
+        val trackerCallback = autoCloseHelper.autoCloser.autoCloseCallbackForTest!!
+
+        // Set a new callback, intercepting when DB is auto-closed
+        val latch = CountDownLatch(1)
+        autoCloseHelper.autoCloser.setAutoCloseCallback {
+            // Run the remember auto close callback
+            trackerCallback.invoke()
             // At this point in time InvalidationTracker's callback has run and unbind should have
             // been invoked.
             latch.countDown()
         }
-        latch.await()
 
-        // Make sure the service is no longer running.
+        assertWithMessage("Auto close callback latch await")
+            .that(latch.await(2, TimeUnit.SECONDS))
+            .isTrue()
+
+        countingTaskExecutorRule.drainTasks(2, TimeUnit.SECONDS)
+        assertWithMessage("Executor isIdle").that(countingTaskExecutorRule.isIdle).isTrue()
+
+        // Assert multi-instance invalidation service is no longer running.
         assertThat(manager.getRunningServices(100)).isEmpty()
-        autoCloseDb.close()
-    }
 
-    @OptIn(ExperimentalRoomApi::class)
-    @Before
-    fun initDb() {
-        val context: Context = ApplicationProvider.getApplicationContext()
-        autoCloseDb = Room.databaseBuilder(
-            context,
-            SampleDatabase::class.java,
-            "MyDb"
-        )
-            .enableMultiInstanceInvalidation()
-            .setAutoCloseTimeout(200, TimeUnit.MILLISECONDS)
-            .build()
+        autoCloseDb.close()
     }
 }

@@ -24,7 +24,6 @@ import android.os.Build;
 import android.os.Handler;
 import android.view.Surface;
 
-import androidx.annotation.DoNotInline;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -64,7 +63,6 @@ import java.util.concurrent.ScheduledExecutorService;
  * SynchronizedCaptureSessionBaseImpl, it would be useful when implementing the workaround of
  * Quirks.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 class SynchronizedCaptureSessionBaseImpl extends SynchronizedCaptureSession.StateCallback implements
         SynchronizedCaptureSession, SynchronizedCaptureSession.Opener {
 
@@ -639,7 +637,6 @@ class SynchronizedCaptureSessionBaseImpl extends SynchronizedCaptureSession.Stat
         private Api23Impl() {
         }
 
-        @DoNotInline
         static Surface getInputSurface(CameraCaptureSession cameraCaptureSession) {
             return cameraCaptureSession.getInputSurface();
         }

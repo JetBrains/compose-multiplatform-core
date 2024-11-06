@@ -17,6 +17,7 @@
 package androidx.compose.foundation.text.modifiers
 
 import androidx.compose.foundation.text.DefaultMinLines
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.ui.graphics.ColorProducer
 import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.platform.InspectorInfo
@@ -37,37 +38,37 @@ internal class TextStringSimpleElement(
     private val softWrap: Boolean = true,
     private val maxLines: Int = Int.MAX_VALUE,
     private val minLines: Int = DefaultMinLines,
-    private val color: ColorProducer? = null
+    private val color: ColorProducer? = null,
+    private val autoSize: TextAutoSize? = null
 ) : ModifierNodeElement<TextStringSimpleNode>() {
 
-    override fun create(): TextStringSimpleNode = TextStringSimpleNode(
-        text,
-        style,
-        fontFamilyResolver,
-        overflow,
-        softWrap,
-        maxLines,
-        minLines,
-        color
-    )
+    override fun create(): TextStringSimpleNode =
+        TextStringSimpleNode(
+            text,
+            style,
+            fontFamilyResolver,
+            overflow,
+            softWrap,
+            maxLines,
+            minLines,
+            color,
+            autoSize
+        )
 
     override fun update(node: TextStringSimpleNode) {
         node.doInvalidations(
-            drawChanged = node.updateDraw(
-                color,
-                style
-            ),
-            textChanged = node.updateText(
-                text = text
-            ),
-            layoutChanged = node.updateLayoutRelatedArgs(
-                style = style,
-                minLines = minLines,
-                maxLines = maxLines,
-                softWrap = softWrap,
-                fontFamilyResolver = fontFamilyResolver,
-                overflow = overflow
-            )
+            drawChanged = node.updateDraw(color, style),
+            textChanged = node.updateText(text = text),
+            layoutChanged =
+                node.updateLayoutRelatedArgs(
+                    style = style,
+                    minLines = minLines,
+                    maxLines = maxLines,
+                    softWrap = softWrap,
+                    fontFamilyResolver = fontFamilyResolver,
+                    overflow = overflow,
+                    autoSize = autoSize
+                )
         )
     }
 
@@ -83,6 +84,7 @@ internal class TextStringSimpleElement(
 
         // these are equally unlikely to change
         if (fontFamilyResolver != other.fontFamilyResolver) return false
+        if (autoSize != other.autoSize) return false
         if (overflow != other.overflow) return false
         if (softWrap != other.softWrap) return false
         if (maxLines != other.maxLines) return false
@@ -100,6 +102,7 @@ internal class TextStringSimpleElement(
         result = 31 * result + maxLines
         result = 31 * result + minLines
         result = 31 * result + (color?.hashCode() ?: 0)
+        result = 31 * result + (autoSize?.hashCode() ?: 0)
         return result
     }
 

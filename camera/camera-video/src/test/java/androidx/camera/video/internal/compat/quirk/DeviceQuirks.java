@@ -18,8 +18,8 @@ package androidx.camera.video.internal.compat.quirk;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.camera.core.impl.Quirk;
+import androidx.camera.core.impl.QuirkSettingsHolder;
 import androidx.camera.core.impl.Quirks;
 
 import java.util.ArrayList;
@@ -42,10 +42,9 @@ public class DeviceQuirks {
     }
 
     /** Returns all video specific quirks loaded on the current device. */
-    @RequiresApi(21)
     @NonNull
     public static Quirks getAll() {
-        return new Quirks(DeviceQuirksLoader.loadQuirks());
+        return new Quirks(DeviceQuirksLoader.loadQuirks(QuirkSettingsHolder.DEFAULT));
     }
 
     /**
@@ -55,11 +54,10 @@ public class DeviceQuirks {
      * @return A device {@link Quirk} instance of the provided type, or {@code null} if it isn't
      * found.
      */
-    @RequiresApi(21)
     @SuppressWarnings("unchecked")
     @Nullable
     public static <T extends Quirk> T get(@NonNull final Class<T> quirkClass) {
-        final List<Quirk> quirks = DeviceQuirksLoader.loadQuirks();
+        final List<Quirk> quirks = DeviceQuirksLoader.loadQuirks(QuirkSettingsHolder.DEFAULT);
         for (final Quirk quirk : quirks) {
             if (quirk.getClass() == quirkClass) {
                 return (T) quirk;
@@ -75,11 +73,10 @@ public class DeviceQuirks {
      * @return A device {@link Quirk} list of the provided type. An empty list is returned if it
      * isn't found.
      */
-    @RequiresApi(21)
     @SuppressWarnings("unchecked")
     @NonNull
     public static <T extends Quirk> List<T> getAll(@NonNull Class<T> quirkClass) {
-        List<Quirk> quirks = DeviceQuirksLoader.loadQuirks();
+        List<Quirk> quirks = DeviceQuirksLoader.loadQuirks(QuirkSettingsHolder.DEFAULT);
         List<T> list = new ArrayList<>();
         for (Quirk quirk : quirks) {
             if (quirkClass.isAssignableFrom(quirk.getClass())) {

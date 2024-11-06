@@ -21,7 +21,7 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.Publish
+import androidx.build.LibraryType
 
 plugins {
     id("AndroidXPlugin")
@@ -29,16 +29,15 @@ plugins {
 }
 
 dependencies {
-    implementation("androidx.annotation:annotation:1.2.0")
+    implementation("androidx.annotation:annotation:1.8.1")
     implementation(project(":mediarouter:mediarouter"))
 }
 
 androidx {
     name = "MediaRouter Testing"
-    publish = Publish.SNAPSHOT_AND_RELEASE
+    type = LibraryType.PUBLISHED_LIBRARY
     inceptionYear = "2021"
     description = "Test utilities for AndroidX MediaRouter"
-    metalavaK2UastEnabled = true
 }
 
 android {

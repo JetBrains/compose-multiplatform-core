@@ -34,4 +34,3 @@ dependencies {
 android {
     namespace "androidx.appcompat.benchmark"
 }
-

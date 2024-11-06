@@ -19,7 +19,9 @@ package androidx.camera.camera2.pipe.integration.compat.quirk
 import android.annotation.SuppressLint
 import android.hardware.camera2.CameraCharacteristics
 import android.os.Build
-import androidx.annotation.RequiresApi
+import androidx.camera.camera2.pipe.integration.compat.quirk.Device.isJioDevice
+import androidx.camera.camera2.pipe.integration.compat.quirk.Device.isSamsungDevice
+import androidx.camera.camera2.pipe.integration.compat.quirk.Device.isVivoDevice
 import androidx.camera.core.impl.Quirk
 import java.nio.BufferUnderflowException
 
@@ -28,29 +30,28 @@ import java.nio.BufferUnderflowException
  *
  * QuirkSummary
  * - Bug Id: 231701345
- * - Description: When attempting to retrieve the
- *   [CameraCharacteristics.CONTROL_ZOOM_RATIO_RANGE] characteristic, an
- *   [AssertionError] is thrown. This is an undocumented exception
- *   on the [CameraCharacteristics.get] method, so this violates the API contract.
+ * - Description: When attempting to retrieve the [CameraCharacteristics.CONTROL_ZOOM_RATIO_RANGE]
+ *   characteristic, an [AssertionError] is thrown. This is an undocumented exception on the
+ *   [CameraCharacteristics.get] method, so this violates the API contract.
  * - Device(s): Jio JioPhone Next, Samsung Galaxy A02s, Vivo V2039
  *
  * @see androidx.camera.camera2.pipe.integration.compat.workaround.getControlZoomRatioRangeSafely
  */
-@SuppressLint("CameraXQuirksClassDetector") // TODO(b/270421716): enable when kotlin is supported.
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
-class ControlZoomRatioRangeAssertionErrorQuirk : Quirk {
-    companion object {
-        fun isEnabled() = isJioPhoneNext() || isSamsungA2s() || isVivo2039()
+@SuppressLint("CameraXQuirksClassDetector")
+// TODO(b/270421716): enable when kotlin is supported.
+public class ControlZoomRatioRangeAssertionErrorQuirk : Quirk {
+    public companion object {
+        public fun isEnabled(): Boolean = isJioPhoneNext() || isSamsungA2s() || isVivo2039()
 
-        private fun isJioPhoneNext() = Build.BRAND.equals("JIO", ignoreCase = true) &&
-            Build.MODEL.startsWith("LS1542QW", ignoreCase = true)
+        private fun isJioPhoneNext() =
+            isJioDevice() && Build.MODEL.startsWith("LS1542QW", ignoreCase = true)
 
-        private fun isSamsungA2s() = Build.BRAND.equals("SAMSUNG", ignoreCase = true) && (
-            Build.MODEL.startsWith("SM-A025", ignoreCase = true) ||
-            Build.MODEL.equals("SM-S124DL", ignoreCase = true)
-        )
+        private fun isSamsungA2s() =
+            isSamsungDevice() &&
+                (Build.MODEL.startsWith("SM-A025", ignoreCase = true) ||
+                    Build.MODEL.equals("SM-S124DL", ignoreCase = true))
 
-        private fun isVivo2039() = Build.BRAND.equals("VIVO", ignoreCase = true) &&
-            Build.MODEL.equals("VIVO 2039", ignoreCase = true)
+        private fun isVivo2039() =
+            isVivoDevice() && Build.MODEL.equals("VIVO 2039", ignoreCase = true)
     }
 }

@@ -21,6 +21,8 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
+
+import androidx.build.KotlinTarget
 import androidx.build.LibraryType
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
@@ -34,9 +36,9 @@ plugins {
 dependencies {
     compileOnly(project(":annotation:annotation-sampled"))
     implementation(libs.kotlinStdlib)
-    implementation projectOrArtifact(":lifecycle:lifecycle-common-java8")
-    implementation projectOrArtifact(":lifecycle:lifecycle-viewmodel-compose")
-    implementation projectOrArtifact(":lifecycle:lifecycle-viewmodel-savedstate")
+    implementation project(":lifecycle:lifecycle-common-java8")
+    implementation project(":lifecycle:lifecycle-viewmodel-compose")
+    implementation project(":lifecycle:lifecycle-viewmodel-savedstate")
 }
 
 androidx {
@@ -44,8 +46,10 @@ androidx {
     type = LibraryType.SAMPLES
     inceptionYear = "2021"
     description = "Samples for Compose integration with Lifecycle ViewModel"
+    kotlinTarget = KotlinTarget.KOTLIN_1_9
 }
 
 android {
+    compileSdk 35
     namespace "androidx.lifecycle.viewmodel.compose.samples"
 }

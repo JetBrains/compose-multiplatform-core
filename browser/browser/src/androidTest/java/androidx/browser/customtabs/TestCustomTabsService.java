@@ -85,6 +85,18 @@ public class TestCustomTabsService extends CustomTabsService {
         }
 
         @Override
+        public void prefetch(ICustomTabsCallback callback, Uri url, Bundle options)
+                throws RemoteException {
+            mMock.prefetch(callback, url, options);
+        }
+
+        @Override
+        public void prefetchWithMultipleUrls(ICustomTabsCallback callback, List<Uri> urls,
+                Bundle options) throws RemoteException {
+            mMock.prefetchWithMultipleUrls(callback, urls, options);
+        }
+
+        @Override
         public Bundle extraCommand(String commandName, Bundle args) throws RemoteException {
             return null;
         }
@@ -159,6 +171,11 @@ public class TestCustomTabsService extends CustomTabsService {
     protected boolean mayLaunchUrl(@NonNull CustomTabsSessionToken sessionToken,
             @NonNull Uri url, Bundle extras, List<Bundle> otherLikelyBundles) {
         return false;
+    }
+
+    @Override
+    protected void prefetch(@NonNull CustomTabsSessionToken sessionToken,
+            @NonNull Uri url, @NonNull PrefetchOptions options) {
     }
 
     @NonNull

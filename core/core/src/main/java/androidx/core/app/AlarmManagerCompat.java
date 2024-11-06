@@ -24,7 +24,6 @@ import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.os.Build;
 
-import androidx.annotation.DoNotInline;
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 
@@ -162,7 +161,10 @@ public final class AlarmManagerCompat {
      * @see AlarmManager#ELAPSED_REALTIME_WAKEUP
      * @see AlarmManager#RTC
      * @see AlarmManager#RTC_WAKEUP
+     * @deprecated Call {@link AlarmManager#setExact()} directly.
      */
+    @Deprecated
+    @androidx.annotation.ReplaceWith(expression = "alarmManager.setExact(type, triggerAtMillis, operation)")
     public static void setExact(@NonNull AlarmManager alarmManager, int type, long triggerAtMillis,
             @NonNull PendingIntent operation) {
         alarmManager.setExact(type, triggerAtMillis, operation);
@@ -268,13 +270,11 @@ public final class AlarmManagerCompat {
             // This class is not instantiable.
         }
 
-        @DoNotInline
         static void setAlarmClock(AlarmManager alarmManager, Object info,
                 PendingIntent operation) {
             alarmManager.setAlarmClock((AlarmManager.AlarmClockInfo) info, operation);
         }
 
-        @DoNotInline
         static AlarmManager.AlarmClockInfo createAlarmClockInfo(long triggerTime,
                 PendingIntent showIntent) {
             return new AlarmManager.AlarmClockInfo(triggerTime, showIntent);
@@ -287,13 +287,11 @@ public final class AlarmManagerCompat {
             // This class is not instantiable.
         }
 
-        @DoNotInline
         static void setAndAllowWhileIdle(AlarmManager alarmManager, int type, long triggerAtMillis,
                 PendingIntent operation) {
             alarmManager.setAndAllowWhileIdle(type, triggerAtMillis, operation);
         }
 
-        @DoNotInline
         static void setExactAndAllowWhileIdle(AlarmManager alarmManager, int type,
                 long triggerAtMillis, PendingIntent operation) {
             alarmManager.setExactAndAllowWhileIdle(type, triggerAtMillis, operation);
@@ -306,7 +304,6 @@ public final class AlarmManagerCompat {
             // This class is not instantiable.
         }
 
-        @DoNotInline
         static boolean canScheduleExactAlarms(AlarmManager alarmManager) {
             return alarmManager.canScheduleExactAlarms();
         }

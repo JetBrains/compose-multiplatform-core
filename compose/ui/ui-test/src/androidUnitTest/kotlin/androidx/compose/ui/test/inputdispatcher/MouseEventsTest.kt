@@ -34,7 +34,6 @@ import android.view.MotionEvent.BUTTON_TERTIARY
 import androidx.compose.testutils.expectError
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.AndroidInputDispatcher
-import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.InputDispatcher.Companion.eventPeriodMillis
 import androidx.compose.ui.test.MouseButton
 import androidx.compose.ui.test.RobolectricMinSdk
@@ -46,16 +45,14 @@ import androidx.compose.ui.test.util.verifyTouchPointer
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
+import kotlin.collections.removeFirst as removeFirstKt
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 
-/**
- * Tests if [AndroidInputDispatcher.enqueueMousePress] and friends work.
- */
+/** Tests if [AndroidInputDispatcher.enqueueMousePress] and friends work. */
 @RunWith(AndroidJUnit4::class)
 @Config(minSdk = RobolectricMinSdk)
-@OptIn(ExperimentalTestApi::class)
 class MouseEventsTest : InputDispatcherTest() {
     companion object {
         // Positions
@@ -473,6 +470,7 @@ class MouseEventsTest : InputDispatcherTest() {
 
     @Test
     fun scroll_vertically() {
+        // Scroll delta is inverted before sending off to align platforms, see b/224992993
         scrollTest(ScrollWheel.Vertical) { Pair(AXIS_VSCROLL, -it) }
     }
 
@@ -745,8 +743,9 @@ class MouseEventsTest : InputDispatcherTest() {
     fun enqueueMouseDown_outOfBounds() {
         subject.updateMousePosition(positionMin1)
         expectError<IllegalStateException>(
-            expectedMessage = "Cannot start a mouse gesture outside the Compose root bounds, " +
-                "mouse position is .* and bounds are .*"
+            expectedMessage =
+                "Cannot start a mouse gesture outside the Compose root bounds, " +
+                    "mouse position is .* and bounds are .*"
         ) {
             subject.enqueueMousePress(1)
         }
@@ -784,8 +783,9 @@ class MouseEventsTest : InputDispatcherTest() {
     @Test
     fun enqueueMouseEnter_outOfBounds() {
         expectError<IllegalStateException>(
-            expectedMessage = "Cannot send mouse hover enter event, " +
-                "Offset\\(-1\\.0, -1\\.0\\) is out of bounds"
+            expectedMessage =
+                "Cannot send mouse hover enter event, " +
+                    "Offset\\(-1\\.0, -1\\.0\\) is out of bounds"
         ) {
             subject.enqueueMouseEnter(positionMin1)
         }
@@ -811,12 +811,11 @@ class MouseEventsTest : InputDispatcherTest() {
 
     private fun AndroidInputDispatcher.verifyMousePosition(expectedPosition: Offset) {
         assertWithMessage("currentMousePosition")
-            .that(currentMousePosition).isEqualTo(expectedPosition)
+            .that(currentMousePosition)
+            .isEqualTo(expectedPosition)
     }
 
     private fun <E> MutableList<E>.removeFirst(n: Int): List<E> {
-        return mutableListOf<E>().also { result ->
-            repeat(n) { result.add(removeFirst()) }
-        }
+        return mutableListOf<E>().also { result -> repeat(n) { result.add(removeFirstKt()) } }
     }
 }

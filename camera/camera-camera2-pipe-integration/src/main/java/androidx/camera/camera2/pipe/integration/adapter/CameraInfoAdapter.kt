@@ -14,30 +14,35 @@
  * limitations under the License.
  */
 
-@file:RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
-
 package androidx.camera.camera2.pipe.integration.adapter
 
 import android.annotation.SuppressLint
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraCharacteristics.CONTROL_VIDEO_STABILIZATION_MODE_ON
 import android.hardware.camera2.CameraCharacteristics.CONTROL_VIDEO_STABILIZATION_MODE_PREVIEW_STABILIZATION
-import android.hardware.camera2.CameraMetadata
 import android.hardware.camera2.params.DynamicRangeProfiles
+import android.os.Build
 import android.util.Range
 import android.util.Size
 import android.view.Surface
-import androidx.annotation.RequiresApi
 import androidx.camera.camera2.pipe.CameraId
+import androidx.camera.camera2.pipe.CameraMetadata
+import androidx.camera.camera2.pipe.CameraMetadata.Companion.isHardwareLevelLegacy
+import androidx.camera.camera2.pipe.CameraMetadata.Companion.supportsLogicalMultiCamera
+import androidx.camera.camera2.pipe.CameraMetadata.Companion.supportsPrivateReprocessing
 import androidx.camera.camera2.pipe.CameraPipe
+import androidx.camera.camera2.pipe.UnsafeWrapper
 import androidx.camera.camera2.pipe.core.Log
 import androidx.camera.camera2.pipe.integration.compat.DynamicRangeProfilesCompat
 import androidx.camera.camera2.pipe.integration.compat.StreamConfigurationMapCompat
 import androidx.camera.camera2.pipe.integration.compat.quirk.CameraQuirks
+import androidx.camera.camera2.pipe.integration.compat.quirk.DeviceQuirks
+import androidx.camera.camera2.pipe.integration.compat.quirk.ZslDisablerQuirk
 import androidx.camera.camera2.pipe.integration.compat.workaround.isFlashAvailable
 import androidx.camera.camera2.pipe.integration.config.CameraConfig
 import androidx.camera.camera2.pipe.integration.config.CameraScope
 import androidx.camera.camera2.pipe.integration.impl.CameraCallbackMap
+import androidx.camera.camera2.pipe.integration.impl.CameraPipeCameraProperties
 import androidx.camera.camera2.pipe.integration.impl.CameraProperties
 import androidx.camera.camera2.pipe.integration.impl.DeviceInfoLogger
 import androidx.camera.camera2.pipe.integration.impl.FocusMeteringControl
@@ -67,15 +72,16 @@ import androidx.camera.core.impl.utils.CameraOrientationUtil
 import androidx.lifecycle.LiveData
 import java.util.concurrent.Executor
 import javax.inject.Inject
+import kotlin.reflect.KClass
 
-/**
- * Adapt the [CameraInfoInternal] interface to [CameraPipe].
- */
+/** Adapt the [CameraInfoInternal] interface to [CameraPipe]. */
 @SuppressLint(
     "UnsafeOptInUsageError" // Suppressed due to experimental ExposureState
 )
 @CameraScope
-class CameraInfoAdapter @Inject constructor(
+public class CameraInfoAdapter
+@Inject
+constructor(
     private val cameraProperties: CameraProperties,
     private val cameraConfig: CameraConfig,
     private val cameraStateAdapter: CameraStateAdapter,
@@ -86,27 +92,42 @@ class CameraInfoAdapter @Inject constructor(
     private val encoderProfilesProviderAdapter: EncoderProfilesProviderAdapter,
     private val streamConfigurationMapCompat: StreamConfigurationMapCompat,
     private val cameraFovInfo: CameraFovInfo,
-) : CameraInfoInternal {
+) : CameraInfoInternal, UnsafeWrapper {
     init {
         DeviceInfoLogger.logDeviceInfo(cameraProperties)
     }
 
-    private val isLegacyDevice by lazy {
-        cameraProperties.metadata[
-            CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL
-        ] == CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY
+    private val _physicalCameraInfos by lazy {
+        cameraProperties.metadata.physicalCameraIds.mapTo(mutableSetOf<CameraInfo>()) {
+            physicalCameraId ->
+            val cameraProperties =
+                CameraPipeCameraProperties(
+                    CameraConfig(physicalCameraId),
+                    cameraProperties.metadata.awaitPhysicalMetadata(physicalCameraId)
+                )
+            PhysicalCameraInfoAdapter(cameraProperties)
+        }
     }
+
+    private val isLegacyDevice by lazy { cameraProperties.metadata.isHardwareLevelLegacy }
 
     @OptIn(ExperimentalCamera2Interop::class)
     internal val camera2CameraInfo: Camera2CameraInfo by lazy {
         Camera2CameraInfo.create(cameraProperties)
     }
 
+    override fun isLogicalMultiCameraSupported(): Boolean {
+        return cameraProperties.metadata.supportsLogicalMultiCamera
+    }
+
+    override fun getPhysicalCameraInfos(): Set<CameraInfo> = _physicalCameraInfos
+
     override fun getCameraId(): String = cameraConfig.cameraId.value
+
     override fun getLensFacing(): Int =
         getCameraSelectorLensFacing(cameraProperties.metadata[CameraCharacteristics.LENS_FACING]!!)
 
-    override fun getCameraCharacteristics() =
+    override fun getCameraCharacteristics(): CameraCharacteristics =
         cameraProperties.metadata.unwrapAs(CameraCharacteristics::class)!!
 
     override fun getPhysicalCameraCharacteristics(physicalCameraId: String): Any? {
@@ -114,24 +135,25 @@ class CameraInfoAdapter @Inject constructor(
         if (!cameraProperties.metadata.physicalCameraIds.contains(cameraId)) {
             return null
         }
-        return cameraProperties.metadata.awaitPhysicalMetadata(cameraId).unwrapAs(
-            CameraCharacteristics::class
-        )
+        return cameraProperties.metadata
+            .awaitPhysicalMetadata(cameraId)
+            .unwrapAs(CameraCharacteristics::class)
     }
 
-    @CameraSelector.LensFacing
-    private fun getCameraSelectorLensFacing(lensFacingInt: Int): Int {
+    private fun getCameraSelectorLensFacing(lensFacingInt: Int): @CameraSelector.LensFacing Int {
         return when (lensFacingInt) {
             CameraCharacteristics.LENS_FACING_FRONT -> CameraSelector.LENS_FACING_FRONT
             CameraCharacteristics.LENS_FACING_BACK -> CameraSelector.LENS_FACING_BACK
             CameraCharacteristics.LENS_FACING_EXTERNAL -> CameraSelector.LENS_FACING_EXTERNAL
-            else -> throw IllegalArgumentException(
-                "The specified lens facing integer $lensFacingInt can not be recognized."
-            )
+            else ->
+                throw IllegalArgumentException(
+                    "The specified lens facing integer $lensFacingInt can not be recognized."
+                )
         }
     }
 
     override fun getSensorRotationDegrees(): Int = getSensorRotationDegrees(Surface.ROTATION_0)
+
     override fun hasFlashUnit(): Boolean = cameraProperties.isFlashAvailable()
 
     override fun getSensorRotationDegrees(relativeRotation: Int): Int {
@@ -152,6 +174,7 @@ class CameraInfoAdapter @Inject constructor(
     }
 
     override fun getZoomState(): LiveData<ZoomState> = cameraControlStateAdapter.zoomStateLiveData
+
     override fun getTorchState(): LiveData<Int> = cameraControlStateAdapter.torchStateLiveData
 
     @SuppressLint("UnsafeOptInUsageError")
@@ -159,10 +182,12 @@ class CameraInfoAdapter @Inject constructor(
 
     override fun getCameraState(): LiveData<CameraState> = cameraStateAdapter.cameraState
 
-    override fun addSessionCaptureCallback(executor: Executor, callback: CameraCaptureCallback) =
-        cameraCallbackMap.addCaptureCallback(callback, executor)
+    override fun addSessionCaptureCallback(
+        executor: Executor,
+        callback: CameraCaptureCallback
+    ): Unit = cameraCallbackMap.addCaptureCallback(callback, executor)
 
-    override fun removeSessionCaptureCallback(callback: CameraCaptureCallback) =
+    override fun removeSessionCaptureCallback(callback: CameraCaptureCallback): Unit =
         cameraCallbackMap.removeCaptureCallback(callback)
 
     override fun getImplementationType(): String =
@@ -174,12 +199,11 @@ class CameraInfoAdapter @Inject constructor(
     }
 
     override fun getTimebase(): Timebase {
-        val timeSource = cameraProperties.metadata[
-            CameraCharacteristics.SENSOR_INFO_TIMESTAMP_SOURCE
-        ]!!
+        val timeSource =
+            cameraProperties.metadata[CameraCharacteristics.SENSOR_INFO_TIMESTAMP_SOURCE]!!
         return when (timeSource) {
-            CameraMetadata.SENSOR_INFO_TIMESTAMP_SOURCE_REALTIME -> Timebase.REALTIME
-            CameraMetadata.SENSOR_INFO_TIMESTAMP_SOURCE_UNKNOWN -> Timebase.UPTIME
+            CameraCharacteristics.SENSOR_INFO_TIMESTAMP_SOURCE_REALTIME -> Timebase.REALTIME
+            CameraCharacteristics.SENSOR_INFO_TIMESTAMP_SOURCE_UNKNOWN -> Timebase.UPTIME
             else -> Timebase.UPTIME
         }
     }
@@ -199,32 +223,41 @@ class CameraInfoAdapter @Inject constructor(
             ?: emptyList()
     }
 
+    @Suppress("UNCHECKED_CAST")
+    @OptIn(ExperimentalCamera2Interop::class)
+    override fun <T : Any> unwrapAs(type: KClass<T>): T? =
+        when (type) {
+            Camera2CameraInfo::class -> camera2CameraInfo as T
+            CameraProperties::class -> cameraProperties as T
+            CameraMetadata::class -> cameraProperties.metadata as T
+            else -> cameraProperties.metadata.unwrapAs(type)
+        }
+
     override fun toString(): String = "CameraInfoAdapter<$cameraConfig.cameraId>"
 
     override fun getCameraQuirks(): Quirks {
         return cameraQuirks.quirks
     }
 
-    override fun isFocusMeteringSupported(action: FocusMeteringAction) =
+    override fun isFocusMeteringSupported(action: FocusMeteringAction): Boolean =
         focusMeteringControl.isFocusMeteringSupported(action)
 
-    override fun getSupportedFrameRateRanges(): Set<Range<Int>> = cameraProperties
-        .metadata[CameraCharacteristics.CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES]?.toSet()
-        ?: emptySet()
+    override fun getSupportedFrameRateRanges(): Set<Range<Int>> =
+        cameraProperties.metadata[CameraCharacteristics.CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES]
+            ?.toSet() ?: emptySet()
 
     override fun isZslSupported(): Boolean {
-        Log.warn { "TODO: isZslSupported are not yet supported." }
-        return false
+        return Build.VERSION.SDK_INT >= 23 &&
+            isPrivateReprocessingSupported &&
+            DeviceQuirks[ZslDisablerQuirk::class.java] == null
     }
 
     override fun isPrivateReprocessingSupported(): Boolean {
-        Log.warn { "TODO: isPrivateReprocessingSupported are not yet supported." }
-        return false
+        return cameraProperties.metadata.supportsPrivateReprocessing
     }
 
     override fun getSupportedDynamicRanges(): Set<DynamicRange> {
-        return DynamicRangeProfilesCompat
-            .fromCameraMetaData(cameraProperties.metadata)
+        return DynamicRangeProfilesCompat.fromCameraMetaData(cameraProperties.metadata)
             .supportedDynamicRanges
     }
 
@@ -235,8 +268,9 @@ class CameraInfoAdapter @Inject constructor(
     }
 
     override fun isPreviewStabilizationSupported(): Boolean {
-        val availableVideoStabilizationModes = cameraProperties.metadata[
-            CameraCharacteristics.CONTROL_AVAILABLE_VIDEO_STABILIZATION_MODES]
+        val availableVideoStabilizationModes =
+            cameraProperties.metadata[
+                    CameraCharacteristics.CONTROL_AVAILABLE_VIDEO_STABILIZATION_MODES]
         return availableVideoStabilizationModes != null &&
             availableVideoStabilizationModes.contains(
                 CONTROL_VIDEO_STABILIZATION_MODE_PREVIEW_STABILIZATION
@@ -244,12 +278,11 @@ class CameraInfoAdapter @Inject constructor(
     }
 
     override fun isVideoStabilizationSupported(): Boolean {
-        val availableVideoStabilizationModes = cameraProperties.metadata[
-            CameraCharacteristics.CONTROL_AVAILABLE_VIDEO_STABILIZATION_MODES]
+        val availableVideoStabilizationModes =
+            cameraProperties.metadata[
+                    CameraCharacteristics.CONTROL_AVAILABLE_VIDEO_STABILIZATION_MODES]
         return availableVideoStabilizationModes != null &&
-            availableVideoStabilizationModes.contains(
-                CONTROL_VIDEO_STABILIZATION_MODE_ON
-            )
+            availableVideoStabilizationModes.contains(CONTROL_VIDEO_STABILIZATION_MODE_ON)
     }
 
     override fun getIntrinsicZoomRatio(): Float {
@@ -275,20 +308,37 @@ class CameraInfoAdapter @Inject constructor(
         }
     }
 
-    companion object {
-        private val PROFILE_TO_DR_MAP: Map<Long, DynamicRange> = mapOf(
-            DynamicRangeProfiles.STANDARD to SDR,
-            DynamicRangeProfiles.HLG10 to HLG_10_BIT,
-            DynamicRangeProfiles.HDR10 to HDR10_10_BIT,
-            DynamicRangeProfiles.HDR10_PLUS to HDR10_PLUS_10_BIT,
-            DynamicRangeProfiles.DOLBY_VISION_10B_HDR_OEM to DOLBY_VISION_10_BIT,
-            DynamicRangeProfiles.DOLBY_VISION_10B_HDR_OEM_PO to DOLBY_VISION_10_BIT,
-            DynamicRangeProfiles.DOLBY_VISION_10B_HDR_REF to DOLBY_VISION_10_BIT,
-            DynamicRangeProfiles.DOLBY_VISION_10B_HDR_REF_PO to DOLBY_VISION_10_BIT,
-            DynamicRangeProfiles.DOLBY_VISION_8B_HDR_OEM to DOLBY_VISION_8_BIT,
-            DynamicRangeProfiles.DOLBY_VISION_8B_HDR_OEM_PO to DOLBY_VISION_8_BIT,
-            DynamicRangeProfiles.DOLBY_VISION_8B_HDR_REF to DOLBY_VISION_8_BIT,
-            DynamicRangeProfiles.DOLBY_VISION_8B_HDR_REF_PO to DOLBY_VISION_8_BIT,
-        )
+    public companion object {
+        private val PROFILE_TO_DR_MAP: Map<Long, DynamicRange> =
+            mapOf(
+                DynamicRangeProfiles.STANDARD to SDR,
+                DynamicRangeProfiles.HLG10 to HLG_10_BIT,
+                DynamicRangeProfiles.HDR10 to HDR10_10_BIT,
+                DynamicRangeProfiles.HDR10_PLUS to HDR10_PLUS_10_BIT,
+                DynamicRangeProfiles.DOLBY_VISION_10B_HDR_OEM to DOLBY_VISION_10_BIT,
+                DynamicRangeProfiles.DOLBY_VISION_10B_HDR_OEM_PO to DOLBY_VISION_10_BIT,
+                DynamicRangeProfiles.DOLBY_VISION_10B_HDR_REF to DOLBY_VISION_10_BIT,
+                DynamicRangeProfiles.DOLBY_VISION_10B_HDR_REF_PO to DOLBY_VISION_10_BIT,
+                DynamicRangeProfiles.DOLBY_VISION_8B_HDR_OEM to DOLBY_VISION_8_BIT,
+                DynamicRangeProfiles.DOLBY_VISION_8B_HDR_OEM_PO to DOLBY_VISION_8_BIT,
+                DynamicRangeProfiles.DOLBY_VISION_8B_HDR_REF to DOLBY_VISION_8_BIT,
+                DynamicRangeProfiles.DOLBY_VISION_8B_HDR_REF_PO to DOLBY_VISION_8_BIT,
+            )
+
+        public fun <T : Any> CameraInfo.unwrapAs(type: KClass<T>): T? =
+            when (this) {
+                is UnsafeWrapper -> this.unwrapAs(type)
+                is CameraInfoInternal -> {
+                    if (this.implementation !== this) {
+                        this.implementation.unwrapAs(type)
+                    } else {
+                        null
+                    }
+                }
+                else -> null
+            }
+
+        public val CameraInfo.cameraId: CameraId?
+            get() = this.unwrapAs(CameraMetadata::class)?.camera
     }
 }

@@ -21,8 +21,9 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.Publish
-import androidx.build.RunApiTasks
+
+import androidx.build.KotlinTarget
+import androidx.build.LibraryType
 
 plugins {
     id("AndroidXPlugin")
@@ -34,6 +35,7 @@ plugins {
 }
 
 android {
+    compileSdk 35
     defaultConfig {
         testInstrumentationRunner "androidx.hilt.navigation.compose.TestRunner"
     }
@@ -43,7 +45,7 @@ android {
 dependencies {
 
     implementation(libs.kotlinStdlib)
-    api projectOrArtifact(":hilt:hilt-navigation")
+    api project(":hilt:hilt-navigation")
     api("androidx.compose.runtime:runtime:1.0.1")
     api("androidx.compose.ui:ui:1.0.1")
     api("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.1")
@@ -57,13 +59,13 @@ dependencies {
     androidTestImplementation(libs.hiltAndroid)
     androidTestImplementation(libs.hiltAndroidTesting)
     kspAndroidTest(libs.hiltCompiler)
-    androidTestImplementation(projectOrArtifact(":compose:material:material"))
+    androidTestImplementation(project(":compose:material:material"))
     androidTestImplementation(project(":compose:test-utils"))
-    androidTestImplementation(projectOrArtifact(":lifecycle:lifecycle-common"))
-    androidTestImplementation(projectOrArtifact(":lifecycle:lifecycle-common-java8"))
-    androidTestImplementation(projectOrArtifact(":lifecycle:lifecycle-livedata-core"))
-    androidTestImplementation(projectOrArtifact(":lifecycle:lifecycle-viewmodel"))
-    androidTestImplementation(projectOrArtifact(":lifecycle:lifecycle-viewmodel-savedstate"))
+    androidTestImplementation(project(":lifecycle:lifecycle-common"))
+    androidTestImplementation(project(":lifecycle:lifecycle-common-java8"))
+    androidTestImplementation(project(":lifecycle:lifecycle-livedata-core"))
+    androidTestImplementation(project(":lifecycle:lifecycle-viewmodel"))
+    androidTestImplementation(project(":lifecycle:lifecycle-viewmodel-savedstate"))
 }
 
 hilt {
@@ -72,12 +74,11 @@ hilt {
 
 androidx {
     name = "Navigation Compose Hilt Integration"
-    publish = Publish.SNAPSHOT_AND_RELEASE
+    type = LibraryType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     mavenVersion = LibraryVersions.HILT_NAVIGATION_COMPOSE
     inceptionYear = "2021"
     description = "Navigation Compose Hilt Integration"
-    runApiTasks = new RunApiTasks.Yes()
     legacyDisableKotlinStrictApiMode = true
-    metalavaK2UastEnabled = true
-    samples(projectOrArtifact(":hilt:hilt-navigation-compose-samples"))
+    samples(project(":hilt:hilt-navigation-compose-samples"))
+    kotlinTarget = KotlinTarget.KOTLIN_1_9
 }

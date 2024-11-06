@@ -137,7 +137,6 @@ public class BloodGlucoseRecord(
     /**
      * List of supported blood glucose specimen sources (type of body fluid used to measure the
      * blood glucose).
-     *
      */
     @Retention(AnnotationRetention.SOURCE)
     @IntDef(
@@ -154,9 +153,7 @@ public class BloodGlucoseRecord(
     @RestrictTo(RestrictTo.Scope.LIBRARY)
     annotation class SpecimenSources
 
-    /**
-     * Temporal relationship of measurement time to a meal.
-     */
+    /** Temporal relationship of measurement time to a meal. */
     @RestrictTo(RestrictTo.Scope.LIBRARY)
     @Retention(AnnotationRetention.SOURCE)
     @IntDef(
@@ -199,5 +196,9 @@ public class BloodGlucoseRecord(
         result = 31 * result + relationToMeal
         result = 31 * result + metadata.hashCode()
         return result
+    }
+
+    override fun toString(): String {
+        return "BloodGlucoseRecord(time=$time, zoneOffset=$zoneOffset, level=$level, specimenSource=$specimenSource, mealType=$mealType, relationToMeal=$relationToMeal, metadata=$metadata)"
     }
 }

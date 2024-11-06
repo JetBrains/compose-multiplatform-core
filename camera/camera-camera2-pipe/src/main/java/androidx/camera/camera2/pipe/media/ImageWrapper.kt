@@ -22,46 +22,30 @@ import java.nio.ByteBuffer
 /**
  * Wrapper interfaces that mirrors the primary read-only properties of {@link android.media.Image}.
  */
-interface ImageWrapper : UnsafeWrapper, AutoCloseable {
-    /**
-     * @see {@link android.media.Image.getWidth}
-     */
-    val width: Int
+public interface ImageWrapper : UnsafeWrapper, AutoCloseable {
+    /** @see {@link android.media.Image.getWidth} */
+    public val width: Int
 
-    /**
-     * @see {@link android.media.Image.getHeight}
-     */
-    val height: Int
+    /** @see {@link android.media.Image.getHeight} */
+    public val height: Int
 
-    /**
-     * @see {@link android.media.Image.getFormat}
-     */
-    val format: Int
+    /** @see {@link android.media.Image.getFormat} */
+    public val format: Int
 
-    /**
-     * @see {@link android.media.Image.getPlanes}
-     */
-    val planes: List<ImagePlane>
+    /** @see {@link android.media.Image.getPlanes} */
+    public val planes: List<ImagePlane>
 
-    /**
-     * @see {@link android.media.Image.getTimestamp}
-     */
-    val timestamp: Long
+    /** @see {@link android.media.Image.getTimestamp} */
+    public val timestamp: Long
 }
 
-interface ImagePlane : UnsafeWrapper {
-    /**
-     * @see {@link android.media.Image.Plane.getRowStride
-     */
-    val rowStride: Int
+public interface ImagePlane : UnsafeWrapper {
+    /** @see {@link android.media.Image.Plane.getRowStride */
+    public val rowStride: Int
 
-    /**
-     * @see {@link android.media.Image.Plane.getPixelStride
-     */
-    val pixelStride: Int
+    /** @see {@link android.media.Image.Plane.getPixelStride */
+    public val pixelStride: Int
 
-    /**
-     * @see {@link android.media.Image.Plane.getBuffer
-     */
-    val buffer: ByteBuffer?
+    /** @see {@link android.media.Image.Plane.getBuffer */
+    public val buffer: ByteBuffer?
 }

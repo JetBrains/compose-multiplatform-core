@@ -28,12 +28,13 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewParent;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.core.view.ViewCompat;
 import androidx.fragment.R;
 import androidx.fragment.app.strictmode.FragmentStrictMode;
 import androidx.lifecycle.ViewModelStoreOwner;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 class FragmentStateManager {
     private static final String TAG = FragmentManager.TAG;
@@ -48,8 +49,7 @@ class FragmentStateManager {
 
     private final FragmentLifecycleCallbacksDispatcher mDispatcher;
     private final FragmentStore mFragmentStore;
-    @NonNull
-    private final Fragment mFragment;
+    private final @NonNull Fragment mFragment;
 
     private boolean mMovingToState = false;
     private int mFragmentManagerState = Fragment.INITIALIZING;
@@ -133,8 +133,7 @@ class FragmentStateManager {
         mFragment.mArguments = state.getBundle(ARGUMENTS_KEY);
     }
 
-    @NonNull
-    Fragment getFragment() {
+    @NonNull Fragment getFragment() {
         return mFragment;
     }
 
@@ -206,6 +205,14 @@ class FragmentStateManager {
                 }
             }
         }
+        // For fragments that are added via FragmentTransaction.add(ViewGroup)
+        if (mFragment.mInDynamicContainer) {
+            if (mFragment.mContainer == null) {
+                // If their container is not available yet (onContainerAvailable hasn't been
+                // called), don't allow the fragment to go beyond ACTIVITY_CREATED
+                maxState = Math.min(maxState, Fragment.ACTIVITY_CREATED);
+            }
+        }
         // Fragments that are not currently added will sit in the CREATED state.
         if (!mFragment.mAdded) {
             maxState = Math.min(maxState, Fragment.CREATED);
@@ -238,7 +245,7 @@ class FragmentStateManager {
         }
         // Fragments that are transitioning are part of a seeking effect and must be at least
         // AWAITING_EXIT_EFFECTS
-        if (mFragment.mTransitioning && mFragment.mContainer != null) {
+        if (mFragment.mTransitioning) {
             maxState = Math.max(maxState, Fragment.AWAITING_EXIT_EFFECTS);
         }
         if (FragmentManager.isLoggingEnabled(Log.VERBOSE)) {
@@ -548,7 +555,7 @@ class FragmentStateManager {
             FragmentContainer fragmentContainer = mFragment.mFragmentManager.getContainer();
             container = (ViewGroup) fragmentContainer.onFindViewById(mFragment.mContainerId);
             if (container == null) {
-                if (!mFragment.mRestored) {
+                if (!mFragment.mRestored && !mFragment.mInDynamicContainer) {
                     String resName;
                     try {
                         resName = mFragment.getResources().getResourceName(mFragment.mContainerId);
@@ -693,8 +700,7 @@ class FragmentStateManager {
         mDispatcher.dispatchOnFragmentStopped(mFragment, false);
     }
 
-    @NonNull
-    Bundle saveState() {
+    @NonNull Bundle saveState() {
         Bundle stateBundle = new Bundle();
         if (mFragment.mState == Fragment.INITIALIZING) {
             // We never even got to ATTACHED, but we could still have some state
@@ -746,8 +752,7 @@ class FragmentStateManager {
         return stateBundle;
     }
 
-    @Nullable
-    Fragment.SavedState saveInstanceState() {
+    Fragment.@Nullable SavedState saveInstanceState() {
         if (mFragment.mState > Fragment.INITIALIZING) {
             return new Fragment.SavedState(saveState());
         }

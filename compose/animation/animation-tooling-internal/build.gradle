@@ -21,9 +21,7 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.Publish
-import androidx.build.RunApiTasks
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import androidx.build.LibraryType
 
 plugins {
     id("AndroidXPlugin")
@@ -37,8 +35,6 @@ dependencies {
 androidx {
     name = "Compose Animation Tooling"
     description = "Compose Animation APIs for tooling support. Internal use only."
-    publish = Publish.SNAPSHOT_AND_RELEASE
-    runApiTasks = new RunApiTasks.Yes()
-    metalavaK2UastEnabled = true
+    type = LibraryType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     doNotDocumentReason = "Only used externally by Android Studio"
 }

@@ -21,6 +21,7 @@ import androidx.room.compiler.processing.javac.kotlin.typeNameFromJvmSignature
 import androidx.room.compiler.processing.tryBox
 import androidx.room.compiler.processing.util.ISSUE_TRACKER_LINK
 import com.google.devtools.ksp.KspExperimental
+import com.google.devtools.ksp.outerType
 import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.symbol.KSDeclaration
 import com.google.devtools.ksp.symbol.KSName
@@ -50,14 +51,9 @@ private class TypeResolutionContext(
     val typeArgumentTypeLookup: MutableMap<KSName, JTypeName> = LinkedHashMap(),
 )
 
-/**
- * Turns a KSTypeReference into a TypeName in java's type system.
- */
+/** Turns a KSTypeReference into a TypeName in java's type system. */
 internal fun KSTypeReference?.asJTypeName(resolver: Resolver): JTypeName =
-    asJTypeName(
-        resolver = resolver,
-        typeResolutionContext = TypeResolutionContext()
-    )
+    asJTypeName(resolver = resolver, typeResolutionContext = TypeResolutionContext())
 
 private fun KSTypeReference?.asJTypeName(
     resolver: Resolver,
@@ -70,14 +66,9 @@ private fun KSTypeReference?.asJTypeName(
     }
 }
 
-/**
- * Turns a KSDeclaration into a TypeName in java's type system.
- */
+/** Turns a KSDeclaration into a TypeName in java's type system. */
 internal fun KSDeclaration.asJTypeName(resolver: Resolver): JTypeName =
-    asJTypeName(
-        resolver = resolver,
-        typeResolutionContext = TypeResolutionContext()
-    )
+    asJTypeName(resolver = resolver, typeResolutionContext = TypeResolutionContext())
 
 @OptIn(KspExperimental::class)
 private fun KSDeclaration.asJTypeName(
@@ -103,7 +94,11 @@ private fun KSDeclaration.asJTypeName(
     // type args of another type, (e.g. List<MyInlineType>).
     val isInline = isValueClass()
     val isKotlinType = pkg == "kotlin" || pkg.startsWith("kotlin.")
-    if ((isInline && isUsedDirectly(typeResolutionContext)) || (!isInline && isKotlinType)) {
+    val isKotlinUnitType = qualified == "kotlin.Unit"
+    if (
+        !isKotlinUnitType &&
+            ((isInline && isUsedDirectly(typeResolutionContext)) || (!isInline && isKotlinType))
+    ) {
         val jvmSignature = resolver.mapToJvmSignature(this)
         if (!jvmSignature.isNullOrBlank()) {
             return jvmSignature.typeNameFromJvmSignature()
@@ -111,21 +106,19 @@ private fun KSDeclaration.asJTypeName(
     }
 
     // using qualified name and pkg, figure out the short names.
-    val shortNames = if (pkg == "") {
-        qualified
-    } else {
-        qualified.substring(pkg.length + 1)
-    }.split('.')
+    val shortNames =
+        if (pkg == "") {
+                qualified
+            } else {
+                qualified.substring(pkg.length + 1)
+            }
+            .split('.')
     return JClassName.get(pkg, shortNames.first(), *(shortNames.drop(1).toTypedArray()))
 }
 
-/**
- * Turns a KSTypeArgument into a TypeName in java's type system.
- */
-internal fun KSTypeArgument.asJTypeName(resolver: Resolver): JTypeName = asJTypeName(
-    resolver = resolver,
-    typeResolutionContext = TypeResolutionContext()
-)
+/** Turns a KSTypeArgument into a TypeName in java's type system. */
+internal fun KSTypeArgument.asJTypeName(resolver: Resolver): JTypeName =
+    asJTypeName(resolver = resolver, typeResolutionContext = TypeResolutionContext())
 
 private fun KSTypeParameter.asJTypeName(
     resolver: Resolver,
@@ -138,9 +131,8 @@ private fun KSTypeParameter.asJTypeName(
     val mutableBounds = mutableListOf<JTypeName>()
     val typeName = createModifiableTypeVariableName(name = name.asString(), bounds = mutableBounds)
     typeResolutionContext.typeArgumentTypeLookup[name] = typeName
-    val resolvedBounds = bounds.map {
-        it.asJTypeName(resolver, typeResolutionContext).tryBox()
-    }.toList()
+    val resolvedBounds =
+        bounds.map { it.asJTypeName(resolver, typeResolutionContext).tryBox() }.toList()
     if (resolvedBounds.isNotEmpty()) {
         mutableBounds.addAll(resolvedBounds)
         mutableBounds.remove(JTypeName.OBJECT)
@@ -162,77 +154,95 @@ private fun KSTypeArgument.asJTypeName(
     }
 }
 
-/**
- * Turns a KSType into a TypeName in java's type system.
- */
+/** Turns a KSType into a TypeName in java's type system. */
 internal fun KSType.asJTypeName(resolver: Resolver): JTypeName =
-    asJTypeName(
-        resolver = resolver,
-        typeResolutionContext = TypeResolutionContext(this)
-    )
+    asJTypeName(resolver = resolver, typeResolutionContext = TypeResolutionContext(this))
 
 @OptIn(KspExperimental::class)
 private fun KSType.asJTypeName(
     resolver: Resolver,
     typeResolutionContext: TypeResolutionContext,
 ): JTypeName {
-    return if (declaration is KSTypeAlias) {
-        replaceTypeAliases(resolver).asJTypeName(resolver, typeResolutionContext)
-    } else if (this.arguments.isNotEmpty() && !resolver.isJavaRawType(this) &&
+    if (declaration is KSTypeAlias) {
+        return replaceTypeAliases(resolver).asJTypeName(resolver, typeResolutionContext)
+    }
+    val typeName = declaration.asJTypeName(resolver, typeResolutionContext)
+    val isJavaPrimitiveOrVoid = typeName.tryBox() !== typeName
+    if (
+        !isTypeParameter() &&
+            !resolver.isJavaRawType(this) &&
             // Excluding generic value classes used directly otherwise we may generate something
             // like `Object<String>`.
-            !(declaration.isValueClass() && declaration.isUsedDirectly(typeResolutionContext))) {
-        val args: Array<JTypeName> = this.arguments
-            .map { typeArg -> typeArg.asJTypeName(resolver, typeResolutionContext) }
-            .map { it.tryBox() }
-            .toTypedArray()
+            !(declaration.isValueClass() && declaration.isUsedDirectly(typeResolutionContext)) &&
+            !isJavaPrimitiveOrVoid
+    ) {
+        val args: Array<JTypeName> =
+            this.innerArguments
+                .map { typeArg -> typeArg.asJTypeName(resolver, typeResolutionContext) }
+                .map { it.tryBox() }
+                .toTypedArray()
 
-        when (val typeName = declaration.asJTypeName(resolver, typeResolutionContext).tryBox()) {
-            is JArrayTypeName -> JArrayTypeName.of(args.single())
-            is JClassName -> JParameterizedTypeName.get(typeName, *args)
+        when (typeName) {
+            is JArrayTypeName -> {
+                return if (args.isEmpty()) {
+                    // e.g. IntArray
+                    typeName
+                } else {
+                    JArrayTypeName.of(args.single())
+                }
+            }
+            is JClassName -> {
+                val outerType = this.outerType
+                if (outerType != null) {
+                    val outerTypeName = outerType.asJTypeName(resolver, typeResolutionContext)
+                    if (outerTypeName is JParameterizedTypeName) {
+                        return outerTypeName.nestedClass(typeName.simpleName(), args.toList())
+                    }
+                }
+                return if (args.isEmpty()) {
+                    typeName
+                } else {
+                    JParameterizedTypeName.get(typeName, *args)
+                }
+            }
             else -> error("Unexpected type name for KSType: $typeName")
         }
     } else {
-        this.declaration.asJTypeName(resolver, typeResolutionContext)
+        return typeName
     }
 }
 
 /**
- * The private constructor of [JTypeVariableName] which receives a list.
- * We use this in [createModifiableTypeVariableName] to create a [JTypeVariableName] whose bounds
- * can be modified afterwards.
+ * The private constructor of [JTypeVariableName] which receives a list. We use this in
+ * [createModifiableTypeVariableName] to create a [JTypeVariableName] whose bounds can be modified
+ * afterwards.
  */
 private val typeVarNameConstructor by lazy {
     try {
-        JTypeVariableName::class.java.getDeclaredConstructor(
-            String::class.java,
-            List::class.java
-        ).also {
-            it.trySetAccessible()
-        }
+        JTypeVariableName::class
+            .java
+            .getDeclaredConstructor(String::class.java, List::class.java)
+            .also { it.trySetAccessible() }
     } catch (ex: NoSuchMethodException) {
         throw IllegalStateException(
             """
             Room couldn't find the constructor it is looking for in JavaPoet.
             Please file a bug at $ISSUE_TRACKER_LINK.
-            """.trimIndent(),
+            """
+                .trimIndent(),
             ex
         )
     }
 }
 
 /**
- * Creates a TypeVariableName where we can change the bounds after constructor.
- * This is used to workaround a case for self referencing type declarations.
- * see b/187572913 for more details
+ * Creates a TypeVariableName where we can change the bounds after constructor. This is used to
+ * workaround a case for self referencing type declarations. see b/187572913 for more details
  */
 private fun createModifiableTypeVariableName(
     name: String,
     bounds: List<JTypeName>
-): JTypeVariableName = typeVarNameConstructor.newInstance(
-    name,
-    bounds
-) as JTypeVariableName
+): JTypeVariableName = typeVarNameConstructor.newInstance(name, bounds) as JTypeVariableName
 
 private fun KSDeclaration.isUsedDirectly(typeResolutionContext: TypeResolutionContext): Boolean {
     val qualified = qualifiedName?.asString()

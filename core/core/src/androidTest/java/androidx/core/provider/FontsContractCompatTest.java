@@ -108,6 +108,7 @@ public class FontsContractCompatTest {
     public void setUp() throws Exception {
         mInstrumentation = InstrumentationRegistry.getInstrumentation();
         mContext = mInstrumentation.getTargetContext();
+        FontProvider.clearProviderCache();
         MockFontProvider.prepareFontFiles(
                 InstrumentationRegistry.getInstrumentation().getTargetContext());
     }
@@ -407,7 +408,7 @@ public class FontsContractCompatTest {
             @Override
             public void run() {
                 Handler handler = new Handler(Looper.getMainLooper());
-                FontsContractCompat.requestFont(mContext, request, Typeface.NORMAL,
+                FontsContractCompat.requestFont(mContext, List.of(request), Typeface.NORMAL,
                         false /* isBlockingFetch */, 300 /* timeout */, handler, callback);
             }
         });

@@ -21,6 +21,8 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
+
+import androidx.build.KotlinTarget
 import androidx.build.LibraryType
 
 plugins {
@@ -36,10 +38,11 @@ dependencies {
     compileOnly(project(":annotation:annotation-sampled"))
 
     implementation(project(":compose:animation:animation"))
-    implementation("androidx.compose.foundation:foundation:1.2.1")
-    implementation("androidx.compose.material:material:1.2.1")
-    implementation("androidx.compose.runtime:runtime:1.2.1")
-    implementation("androidx.compose.ui:ui-text:1.2.1")
+    implementation("androidx.compose.foundation:foundation:1.6.8")
+    implementation("androidx.compose.material:material:1.6.8")
+    implementation("androidx.compose.material:material-icons-core:1.6.8")
+    implementation("androidx.compose.runtime:runtime:1.6.8")
+    implementation("androidx.compose.ui:ui-text:1.6.8")
 }
 
 androidx {
@@ -47,8 +50,10 @@ androidx {
     type = LibraryType.SAMPLES
     inceptionYear = "2019"
     description = "Contains the sample code for the Androidx Compose UI Animation Library"
+    kotlinTarget = KotlinTarget.KOTLIN_1_9
 }
 
 android {
+    compileSdk 35
     namespace "androidx.compose.animation.samples"
 }

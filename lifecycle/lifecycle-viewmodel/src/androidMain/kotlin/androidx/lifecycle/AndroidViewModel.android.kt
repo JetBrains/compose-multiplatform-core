@@ -24,11 +24,20 @@ import android.app.Application
  */
 public open class AndroidViewModel(private val application: Application) : ViewModel() {
 
-    /**
-     * Return the application.
-     */
+    /** Return the application. */
     @Suppress("UNCHECKED_CAST")
     public open fun <T : Application> getApplication(): T {
         return application as T
     }
 }
+
+/**
+ * The underlying [Application] inside [AndroidViewModel]
+ *
+ * One common hierarchy, such as KotlinViewModel <: JavaViewModel <: [AndroidViewModel], exposes
+ * private property `application` incorrectly. It is now fixed in K2 (Kotlin language version 2.0),
+ * but not backward compatible. This `inline` extension will make compilations of both pre- and
+ * post- 2.0 go well.
+ */
+public inline val AndroidViewModel.application: Application
+    get() = getApplication()

@@ -18,8 +18,9 @@ package androidx.build
 
 import androidx.build.buildInfo.CreateLibraryBuildInfoFileTask
 import androidx.build.checkapi.shouldConfigureApiTasks
+import androidx.build.sources.sourcesConfigurationName
+import com.android.build.api.dsl.LibraryExtension
 import com.android.build.gradle.AppPlugin
-import com.android.build.gradle.BaseExtension
 import com.android.build.gradle.LibraryPlugin
 import com.android.utils.childrenIterator
 import com.android.utils.forEach
@@ -29,7 +30,10 @@ import com.google.gson.stream.JsonWriter
 import java.io.File
 import java.io.StringWriter
 import org.dom4j.Element
+import org.dom4j.Namespace
+import org.dom4j.QName
 import org.dom4j.io.XMLWriter
+import org.dom4j.tree.DefaultText
 import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.api.XmlProvider
@@ -51,7 +55,7 @@ import org.gradle.api.tasks.bundling.Zip
 import org.gradle.kotlin.dsl.configure
 import org.gradle.kotlin.dsl.create
 import org.gradle.kotlin.dsl.findByType
-import org.gradle.kotlin.dsl.getByType
+import org.gradle.work.DisableCachingByDefault
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jetbrains.kotlin.gradle.plugin.KotlinMultiplatformPluginWrapper
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinAndroidTarget
@@ -81,7 +85,7 @@ fun Project.configureMavenArtifactUpload(
         if (!androidXExtension.shouldPublish()) {
             return@afterEvaluate
         }
-        components.all { component ->
+        components.configureEach { component ->
             if (isValidReleaseComponent(component)) {
                 registerOnFirstPublishableArtifact(component)
             }
@@ -99,10 +103,11 @@ fun Project.configureMavenArtifactUpload(
 }
 
 private fun Project.validateTaskIsRegistered(taskName: String) =
-    tasks.findByName(taskName) ?: throw GradleException(
-        "Project $name is configured for publishing, but a '$taskName' task was never " +
-        "registered. This is likely a bug in AndroidX plugin configuration."
-    )
+    tasks.findByName(taskName)
+        ?: throw GradleException(
+            "Project $name is configured for publishing, but a '$taskName' task was never " +
+                "registered. This is likely a bug in AndroidX plugin configuration."
+        )
 
 private fun Project.releaseTaskShouldBeRegistered(extension: AndroidXExtension): Boolean {
     if (plugins.hasPlugin(AppPlugin::class.java)) {
@@ -141,7 +146,7 @@ private fun Project.configureComponentPublishing(
     val androidLibrariesSetProvider: Provider<Set<String>> = provider {
         val androidxAndroidProjects = mutableSetOf<String>()
         // Check every project is the project map to see if they are an Android Library
-        val projectModules = project.getProjectsMap()
+        val projectModules = extension.mavenCoordinatesToProjectPathMap
         for ((mavenCoordinates, projectPath) in projectModules) {
             project.findProject(projectPath)?.plugins?.let { plugins ->
                 if (plugins.hasPlugin(LibraryPlugin::class.java)) {
@@ -179,7 +184,7 @@ private fun Project.configureComponentPublishing(
                 }
             }
         }
-        publications.withType(MavenPublication::class.java).all { publication ->
+        publications.withType(MavenPublication::class.java).configureEach { publication ->
             val isKmpAnchor = (publication.name == KMP_ANCHOR_PUBLICATION_NAME)
             val pomPlatform = androidxKmpExtension.defaultPlatform
             // b/297355397 If a kmp project has Android as the default platform, there might
@@ -189,25 +194,33 @@ private fun Project.configureComponentPublishing(
             val addStubAar = isKmpAnchor && pomPlatform == PlatformIdentifier.ANDROID.id
             val buildDir = project.layout.buildDirectory
             if (addStubAar) {
-                // After b/327630926 is fixed move to:
-                // project.extensions.getByType<LibraryAndroidComponentsExtension>().onVariants {
-                //   it.minSdk
-                // }
-                val baseExtension = project.extensions.getByType<BaseExtension>()
+                val minSdk =
+                    project.extensions.findByType<LibraryExtension>()?.defaultConfig?.minSdk
+                        ?: extensions
+                            .findByType<AndroidXMultiplatformExtension>()
+                            ?.agpKmpExtension
+                            ?.minSdk
+                        ?: throw GradleException(
+                            "Couldn't find valid Android extension to read minSdk from"
+                        )
                 // create a unique namespace for this .aar, different from the android artifact
-                val stubNamespace = project.group.toString().replace(':', '.') +
-                    "." + project.name.toString().replace('-', '.') + ".anchor"
+                val stubNamespace =
+                    project.group.toString().replace(':', '.') +
+                        "." +
+                        project.name.toString().replace('-', '.') +
+                        ".anchor"
                 val unpackedStubAarTask =
                     tasks.register("unpackedStubAar", UnpackedStubAarTask::class.java) { aarTask ->
-                    aarTask.aarPackage.set(stubNamespace)
-                    aarTask.minSdkVersion.set(baseExtension.defaultConfig.minSdk)
-                    aarTask.outputDir.set(buildDir.dir("intermediates/stub-aar"))
-                }
-                val stubAarTask = tasks.register("stubAar", Zip::class.java) { zipTask ->
-                    zipTask.from(unpackedStubAarTask.flatMap { it.outputDir })
-                    zipTask.destinationDirectory.set(buildDir.dir("outputs"))
-                    zipTask.archiveExtension.set("aar")
-                }
+                        aarTask.aarPackage.set(stubNamespace)
+                        aarTask.minSdkVersion.set(minSdk)
+                        aarTask.outputDir.set(buildDir.dir("intermediates/stub-aar"))
+                    }
+                val stubAarTask =
+                    tasks.register("stubAar", ZipStubAarTask::class.java) { zipTask ->
+                        zipTask.from(unpackedStubAarTask.flatMap { it.outputDir })
+                        zipTask.destinationDirectory.set(buildDir.dir("outputs"))
+                        zipTask.archiveExtension.set("aar")
+                    }
                 publication.artifact(stubAarTask)
             }
 
@@ -232,6 +245,7 @@ private fun Project.configureComponentPublishing(
         task.doLast {
             val metadataFile = task.outputFile.asFile.get()
             val metadata = metadataFile.readText()
+            verifyGradleMetadata(metadata)
             val sortedMetadata = sortGradleMetadataDependencies(metadata)
 
             if (metadata != sortedMetadata) {
@@ -263,6 +277,10 @@ private fun Project.configureComponentPublishing(
     }
 }
 
+private val ARTIFACT_ID = QName("artifactId", Namespace("", "http://maven.apache.org/POM/4.0.0"))
+
+private fun Element.textElements() = content().filterIsInstance<DefaultText>()
+
 /** Looks for a dependencies XML element within [pom] and sorts its contents. */
 fun sortPomDependencies(pom: String): String {
     // Workaround for using the default namespace in dom4j.
@@ -274,15 +292,24 @@ fun sortPomDependencies(pom: String): String {
         element ->
         val deps = element.elements()
         val sortedDeps = deps.toSortedSet(compareBy { it.stringValue }).toList()
-
+        sortedDeps.map { // b/356612738 https://github.com/gradle/gradle/issues/30112
+            val itsArtifactId = it.element(ARTIFACT_ID)
+            if (itsArtifactId.stringValue.endsWith("-debug")) {
+                itsArtifactId.textElements().last().text =
+                    itsArtifactId.textElements().last().text.removeSuffix("-debug")
+            } else if (itsArtifactId.stringValue.endsWith("-release")) {
+                itsArtifactId.textElements().last().text =
+                    itsArtifactId.textElements().last().text.removeSuffix("-release")
+            }
+        }
         // Content contains formatting nodes, so to avoid modifying those we replace
         // each element with the sorted element from its respective index. Note this
         // will not move adjacent elements, so any comments would remain in their
         // original order.
         element.content().replaceAll {
-            val index = deps.indexOf(it)
+            val index = sortedDeps.indexOf(it)
             if (index >= 0) {
-                sortedDeps[index]
+                deps[index]
             } else {
                 it
             }
@@ -320,6 +347,21 @@ fun sortGradleMetadataDependencies(metadata: String): String {
     return stringWriter.toString()
 }
 
+/**
+ * Checks the variants field in the metadata file has an entry containing "sourcesElements". All our
+ * publications must be published with a sources variant.
+ */
+fun verifyGradleMetadata(metadata: String) {
+    val gson = GsonBuilder().create()
+    val jsonObj = gson.fromJson(metadata, JsonObject::class.java)!!
+    jsonObj.getAsJsonArray("variants").firstOrNull { variantElement ->
+        variantElement.asJsonObject
+            .get("name")
+            .asString
+            .contains(other = sourcesConfigurationName, ignoreCase = true)
+    } ?: throw Exception("The $sourcesConfigurationName variant must exist in the module file.")
+}
+
 private fun Project.isMultiplatformPublicationEnabled(): Boolean {
     return extensions.findByType<KotlinMultiplatformExtension>() != null
 }
@@ -330,7 +372,7 @@ private fun Project.configureMultiplatformPublication(
 ) {
     val multiplatformExtension = extensions.findByType<KotlinMultiplatformExtension>()!!
 
-    multiplatformExtension.targets.all { target ->
+    multiplatformExtension.targets.configureEach { target ->
         if (target is KotlinAndroidTarget) {
             target.publishLibraryVariants(Release.DEFAULT_PUBLISH_CONFIG)
         }
@@ -357,10 +399,7 @@ private fun Project.replaceBaseMultiplatformPublication(
             add("libraryVersionMetadata")
         }
     }
-    withSourcesComponents(
-        componentFactory,
-        sourcesElements
-    ) { sourcesComponents ->
+    withSourcesComponents(componentFactory, sourcesElements) { sourcesComponents ->
         configure<PublishingExtension> {
             publications { pubs ->
                 pubs.create<MavenPublication>(KMP_ANCHOR_PUBLICATION_NAME) {
@@ -500,11 +539,12 @@ private fun Project.addInformativeMetadata(extension: AndroidXExtension, pom: Ma
     pom.inceptionYear.set(provider { extension.inceptionYear })
     pom.licenses { licenses ->
         licenses.license { license ->
-            license.name.set("The Apache Software License, Version 2.0")
-            license.url.set("http://www.apache.org/licenses/LICENSE-2.0.txt")
+            license.name.set(extension.license.name)
+            license.url.set(extension.license.url)
             license.distribution.set("repo")
         }
-        for (extraLicense in extension.getLicenses()) {
+
+        for (extraLicense in extension.getExtraLicenses()) {
             licenses.license { license ->
                 license.name.set(provider { extraLicense.name })
                 license.url.set(provider { extraLicense.url })
@@ -688,3 +728,6 @@ private const val ANDROID_GIT_URL =
     "scm:git:https://android.googlesource.com/platform/frameworks/support"
 
 internal const val KMP_ANCHOR_PUBLICATION_NAME = "androidxKmp"
+
+@DisableCachingByDefault(because = "Not worth caching")
+internal abstract class ZipStubAarTask : Zip()

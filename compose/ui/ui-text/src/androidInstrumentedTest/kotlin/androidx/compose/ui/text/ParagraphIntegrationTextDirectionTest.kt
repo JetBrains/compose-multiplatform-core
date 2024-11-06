@@ -19,6 +19,7 @@ package androidx.compose.ui.text
 import androidx.compose.ui.text.intl.LocaleList
 import androidx.compose.ui.text.style.ResolvedTextDirection
 import androidx.compose.ui.text.style.TextDirection
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -58,13 +59,15 @@ class ParagraphIntegrationTextDirectionTest {
     fun unspecifiedTextDirection_withLtrLocale_resolvesToLtr() {
         Locale.setDefault(ltrLocale)
 
-        val paragraph = Paragraph(
-            text = "",
-            style = TextStyle(textDirection = TextDirection.Unspecified),
-            constraints = Constraints(),
-            density = defaultDensity,
-            fontFamilyResolver = resourceLoader
-        )
+        val paragraph =
+            Paragraph(
+                text = "",
+                style = TextStyle(textDirection = TextDirection.Unspecified),
+                constraints = Constraints(),
+                density = defaultDensity,
+                fontFamilyResolver = resourceLoader,
+                overflow = TextOverflow.Clip
+            )
 
         assertThat(paragraph.getParagraphDirection(0)).isEqualTo(ResolvedTextDirection.Ltr)
     }
@@ -73,45 +76,53 @@ class ParagraphIntegrationTextDirectionTest {
     fun unspecifiedTextDirection_withRtlLocale_resolvesToRtl() {
         Locale.setDefault(rtlLocale)
 
-        val paragraph = Paragraph(
-            text = "",
-            style = TextStyle(textDirection = TextDirection.Unspecified),
-            constraints = Constraints(),
-            density = defaultDensity,
-            fontFamilyResolver = resourceLoader
-        )
+        val paragraph =
+            Paragraph(
+                text = "",
+                style = TextStyle(textDirection = TextDirection.Unspecified),
+                constraints = Constraints(),
+                density = defaultDensity,
+                fontFamilyResolver = resourceLoader,
+                overflow = TextOverflow.Clip
+            )
 
         assertThat(paragraph.getParagraphDirection(0)).isEqualTo(ResolvedTextDirection.Rtl)
     }
 
     @Test
     fun unspecifiedTextDirection_withLtrLocaleList_resolvesToLtr() {
-        val paragraph = Paragraph(
-            text = "",
-            style = TextStyle(
-                textDirection = TextDirection.Unspecified,
-                localeList = ltrLocaleList
-            ),
-            constraints = Constraints(),
-            density = defaultDensity,
-            fontFamilyResolver = resourceLoader
-        )
+        val paragraph =
+            Paragraph(
+                text = "",
+                style =
+                    TextStyle(
+                        textDirection = TextDirection.Unspecified,
+                        localeList = ltrLocaleList
+                    ),
+                constraints = Constraints(),
+                density = defaultDensity,
+                fontFamilyResolver = resourceLoader,
+                overflow = TextOverflow.Clip
+            )
 
         assertThat(paragraph.getParagraphDirection(0)).isEqualTo(ResolvedTextDirection.Ltr)
     }
 
     @Test
     fun unspecifiedTextDirection_withRtlLocaleList_resolvesToRtl() {
-        val paragraph = Paragraph(
-            text = "",
-            style = TextStyle(
-                textDirection = TextDirection.Unspecified,
-                localeList = rtlLocaleList
-            ),
-            constraints = Constraints(),
-            density = defaultDensity,
-            fontFamilyResolver = resourceLoader
-        )
+        val paragraph =
+            Paragraph(
+                text = "",
+                style =
+                    TextStyle(
+                        textDirection = TextDirection.Unspecified,
+                        localeList = rtlLocaleList
+                    ),
+                constraints = Constraints(),
+                density = defaultDensity,
+                fontFamilyResolver = resourceLoader,
+                overflow = TextOverflow.Clip
+            )
 
         assertThat(paragraph.getParagraphDirection(0)).isEqualTo(ResolvedTextDirection.Rtl)
     }

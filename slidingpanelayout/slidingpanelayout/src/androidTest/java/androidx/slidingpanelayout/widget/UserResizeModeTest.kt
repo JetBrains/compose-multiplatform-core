@@ -63,22 +63,14 @@ class UserResizeModeTest {
         spl.onTouchEvent(moveEvent(25f, 50f))
         assertWithMessage("divider dragging").that(spl.isDividerDragging).isTrue()
         spl.onTouchEvent(upEvent(25f, 50f))
-        assertWithMessage("visualDividerPosition")
-            .that(spl.visualDividerPosition)
-            .isEqualTo(30)
+        assertWithMessage("visualDividerPosition").that(spl.visualDividerPosition).isEqualTo(30)
         assertWithMessage("SlidingPaneLayout.isLayoutRequested")
             .that(spl.isLayoutRequested)
             .isTrue()
         spl.measureAndLayoutForTest()
-        assertWithMessage("splitDividerPosition")
-            .that(spl.splitDividerPosition)
-            .isEqualTo(30)
-        assertWithMessage("leftPane width after drag")
-            .that(leftPane.width)
-            .isEqualTo(30)
-        assertWithMessage("rightPane width after drag")
-            .that(rightPane.width)
-            .isEqualTo(70)
+        assertWithMessage("splitDividerPosition").that(spl.splitDividerPosition).isEqualTo(30)
+        assertWithMessage("leftPane width after drag").that(leftPane.width).isEqualTo(30)
+        assertWithMessage("rightPane width after drag").that(rightPane.width).isEqualTo(70)
     }
 
     @Test
@@ -99,29 +91,15 @@ class UserResizeModeTest {
             .that(spl.isLayoutRequested)
             .isTrue()
         spl.measureAndLayoutForTest()
-        assertWithMessage("splitDividerPosition")
-            .that(spl.splitDividerPosition)
-            .isEqualTo(30)
-        assertWithMessage("leftPane width during drag")
-            .that(leftPane.width)
-            .isEqualTo(30)
-        assertWithMessage("rightPane width during drag")
-            .that(rightPane.width)
-            .isEqualTo(70)
+        assertWithMessage("splitDividerPosition").that(spl.splitDividerPosition).isEqualTo(30)
+        assertWithMessage("leftPane width during drag").that(leftPane.width).isEqualTo(30)
+        assertWithMessage("rightPane width during drag").that(rightPane.width).isEqualTo(70)
 
         spl.onTouchEvent(upEvent(25f, 50f))
-        assertWithMessage("visualDividerPosition")
-            .that(spl.visualDividerPosition)
-            .isEqualTo(30)
-        assertWithMessage("splitDividerPosition")
-            .that(spl.splitDividerPosition)
-            .isEqualTo(30)
-        assertWithMessage("leftPane width after drag")
-            .that(leftPane.width)
-            .isEqualTo(30)
-        assertWithMessage("rightPane width after drag")
-            .that(rightPane.width)
-            .isEqualTo(70)
+        assertWithMessage("visualDividerPosition").that(spl.visualDividerPosition).isEqualTo(30)
+        assertWithMessage("splitDividerPosition").that(spl.splitDividerPosition).isEqualTo(30)
+        assertWithMessage("leftPane width after drag").that(leftPane.width).isEqualTo(30)
+        assertWithMessage("rightPane width after drag").that(rightPane.width).isEqualTo(70)
     }
 
     @Test
@@ -163,16 +141,12 @@ class UserResizeModeTest {
         spl.dispatchTouchEvent(moveEvent(25f, 50f))
         assertWithMessage("divider dragging").that(spl.isDividerDragging).isTrue()
         spl.dispatchTouchEvent(upEvent(25f, 50f))
-        assertWithMessage("visualDividerPosition")
-            .that(spl.visualDividerPosition)
-            .isEqualTo(30)
+        assertWithMessage("visualDividerPosition").that(spl.visualDividerPosition).isEqualTo(30)
         assertWithMessage("SlidingPaneLayout.isLayoutRequested")
             .that(spl.isLayoutRequested)
             .isTrue()
         spl.measureAndLayoutForTest()
-        assertWithMessage("splitDividerPosition")
-            .that(spl.splitDividerPosition)
-            .isEqualTo(30)
+        assertWithMessage("splitDividerPosition").that(spl.splitDividerPosition).isEqualTo(30)
     }
 
     @Test
@@ -192,9 +166,7 @@ class UserResizeModeTest {
     @Test
     fun savedInstanceStateRestoredSameSize() {
         val context = InstrumentationRegistry.getInstrumentation().context
-        val sourceSpl = createTestSpl(context).apply {
-            id = R.id.slidingPaneLayout
-        }
+        val sourceSpl = createTestSpl(context).apply { id = R.id.slidingPaneLayout }
 
         assertWithMessage("initial splitDividerPosition")
             .that(sourceSpl.splitDividerPosition)
@@ -207,9 +179,7 @@ class UserResizeModeTest {
         val savedState = SparseArray<Parcelable>()
         sourceSpl.saveHierarchyState(savedState)
 
-        val destSpl = createTestSpl(context).apply {
-            id = R.id.slidingPaneLayout
-        }
+        val destSpl = createTestSpl(context).apply { id = R.id.slidingPaneLayout }
         destSpl.restoreHierarchyState(savedState)
 
         assertWithMessage("restored splitDividerPosition")
@@ -262,24 +232,16 @@ class UserResizeModeTest {
             .that(spl.isLayoutRequested)
             .isTrue()
         spl.measureAndLayoutForTest()
-        assertWithMessage("first child expected width")
-            .that(spl[0].width)
-            .isEqualTo(35)
-        assertWithMessage("second child expected width")
-            .that(spl[1].width)
-            .isEqualTo(65)
+        assertWithMessage("first child expected width").that(spl[0].width).isEqualTo(35)
+        assertWithMessage("second child expected width").that(spl[1].width).isEqualTo(65)
 
         spl.splitDividerPosition = 70
         assertWithMessage("layout requested by splitDividerPosition change (2)")
             .that(spl.isLayoutRequested)
             .isTrue()
         spl.measureAndLayoutForTest()
-        assertWithMessage("first child expected width")
-            .that(spl[0].width)
-            .isEqualTo(70)
-        assertWithMessage("second child expected width")
-            .that(spl[1].width)
-            .isEqualTo(30)
+        assertWithMessage("first child expected width").that(spl[0].width).isEqualTo(70)
+        assertWithMessage("second child expected width").that(spl[1].width).isEqualTo(30)
     }
 
     @Test
@@ -288,12 +250,8 @@ class UserResizeModeTest {
         val spl = createTestSpl(context)
         spl.setPadding(4, 0, 10, 0)
         spl.measureAndLayoutForTest()
-        assertWithMessage("left padding")
-            .that(spl.paddingLeft)
-            .isEqualTo(4)
-        assertWithMessage("right padding")
-            .that(spl.paddingRight)
-            .isEqualTo(10)
+        assertWithMessage("left padding").that(spl.paddingLeft).isEqualTo(4)
+        assertWithMessage("right padding").that(spl.paddingRight).isEqualTo(10)
 
         fun testPadding(description: String) {
             assertWithMessage("left edge of first child $description")
@@ -309,9 +267,7 @@ class UserResizeModeTest {
         val secondChildExpectedWidth = spl[1].width
         spl.splitDividerPosition = spl.visualDividerPosition
         spl.measureAndLayoutForTest()
-        assertWithMessage("first child width")
-            .that(spl[0].width)
-            .isEqualTo(firstChildExpectedWidth)
+        assertWithMessage("first child width").that(spl[0].width).isEqualTo(firstChildExpectedWidth)
         assertWithMessage("second child width")
             .that(spl[1].width)
             .isEqualTo(secondChildExpectedWidth)
@@ -324,14 +280,10 @@ class UserResizeModeTest {
         val spl = createTestSpl(context)
         spl.splitDividerPosition = 0
         spl.measureAndLayoutForTest()
-        assertWithMessage("left pane has zero width")
-            .that(spl[0].width)
-            .isEqualTo(0)
+        assertWithMessage("left pane has zero width").that(spl[0].width).isEqualTo(0)
         spl.splitDividerPosition = spl.width
         spl.measureAndLayoutForTest()
-        assertWithMessage("right pane has zero width")
-            .that(spl[1].width)
-            .isEqualTo(0)
+        assertWithMessage("right pane has zero width").that(spl[1].width).isEqualTo(0)
     }
 
     @Test
@@ -341,14 +293,10 @@ class UserResizeModeTest {
         spl.splitDividerPosition = 0
         spl.setPadding(4, 0, 8, 0)
         spl.measureAndLayoutForTest()
-        assertWithMessage("left pane has zero width")
-            .that(spl[0].width)
-            .isEqualTo(0)
+        assertWithMessage("left pane has zero width").that(spl[0].width).isEqualTo(0)
         spl.splitDividerPosition = spl.width
         spl.measureAndLayoutForTest()
-        assertWithMessage("right pane has zero width")
-            .that(spl[1].width)
-            .isEqualTo(0)
+        assertWithMessage("right pane has zero width").that(spl[1].width).isEqualTo(0)
     }
 
     @Test
@@ -403,7 +351,7 @@ class UserResizeModeTest {
         val spl = createTestSpl(context, setDividerDrawable = false)
         val bitmap = spl.drawToBitmap()
         var hasNonTransparentPixel = false
-        outer@for (h in 0 until bitmap.height) {
+        outer@ for (h in 0 until bitmap.height) {
             for (w in 0 until bitmap.width) {
                 if (bitmap[w, h].alpha > 0) {
                     hasNonTransparentPixel = true
@@ -411,10 +359,46 @@ class UserResizeModeTest {
                 }
             }
         }
-        assertWithMessage("non-transparent pixels were drawn")
-            .that(hasNonTransparentPixel)
-            .isTrue()
+        assertWithMessage("non-transparent pixels were drawn").that(hasNonTransparentPixel).isTrue()
     }
+
+    @Test
+    fun skippedMeasurePassIsCorrected() {
+        val context = InstrumentationRegistry.getInstrumentation().context
+        val spl = createTestSpl(context, collapsibleContentViews = true)
+
+        fun assertAdjacentSiblings(message: String) {
+            val (leftChild, rightChild) = spl.leftAndRightViews()
+            assertWithMessage("adjacent view edges: $message")
+                .that(rightChild.left)
+                .isEqualTo(leftChild.right)
+        }
+
+        assertAdjacentSiblings("initial layout")
+
+        spl.splitDividerPosition = 0
+        spl.measureAndLayoutForTest()
+
+        assertAdjacentSiblings("with splitDividerPosition = 0")
+
+        val (left, right) = spl.leftAndRightViews()
+        assertWithMessage("left child width").that(left.width).isEqualTo(0)
+        assertWithMessage("right child width").that(right.width).isEqualTo(100)
+    }
+}
+
+private fun SlidingPaneLayout.leftAndRightViews(): Pair<View, View> {
+    val isRtl = this.layoutDirection == View.LAYOUT_DIRECTION_RTL
+    val leftChild: View
+    val rightChild: View
+    if (isRtl) {
+        leftChild = this[1]
+        rightChild = this[0]
+    } else {
+        leftChild = this[0]
+        rightChild = this[1]
+    }
+    return leftChild to rightChild
 }
 
 private fun View.drawToBitmap(): Bitmap {
@@ -427,40 +411,51 @@ private fun View.drawToBitmap(): Bitmap {
 private fun createTestSpl(
     context: Context,
     setDividerDrawable: Boolean = true,
-    childPanesAcceptTouchEvents: Boolean = false
-): SlidingPaneLayout = SlidingPaneLayout(context).apply {
-    addView(
-        TestPaneView(context).apply {
-            minimumWidth = 30
-            acceptTouchEvents = childPanesAcceptTouchEvents
-            layoutParams = SlidingPaneLayout.LayoutParams(
-                LayoutParams.WRAP_CONTENT,
-                LayoutParams.MATCH_PARENT
-            ).apply { weight = 1f }
+    childPanesAcceptTouchEvents: Boolean = false,
+    collapsibleContentViews: Boolean = false
+): SlidingPaneLayout =
+    SlidingPaneLayout(context).apply {
+        addView(
+            TestPaneView(context).apply {
+                val lpWidth: Int
+                if (collapsibleContentViews) {
+                    lpWidth = 0
+                } else {
+                    minimumWidth = 30
+                    lpWidth = LayoutParams.WRAP_CONTENT
+                }
+                acceptTouchEvents = childPanesAcceptTouchEvents
+                layoutParams =
+                    SlidingPaneLayout.LayoutParams(lpWidth, LayoutParams.MATCH_PARENT).apply {
+                        weight = 1f
+                    }
+            }
+        )
+        addView(
+            TestPaneView(context).apply {
+                val lpWidth: Int
+                if (collapsibleContentViews) {
+                    lpWidth = 0
+                } else {
+                    minimumWidth = 30
+                    lpWidth = LayoutParams.WRAP_CONTENT
+                }
+                acceptTouchEvents = childPanesAcceptTouchEvents
+                layoutParams =
+                    SlidingPaneLayout.LayoutParams(lpWidth, LayoutParams.MATCH_PARENT).apply {
+                        weight = 1f
+                    }
+            }
+        )
+        isUserResizingEnabled = true
+        isOverlappingEnabled = false
+        if (setDividerDrawable) {
+            setUserResizingDividerDrawable(TestDividerDrawable())
         }
-    )
-    addView(
-        TestPaneView(context).apply {
-            minimumWidth = 30
-            acceptTouchEvents = childPanesAcceptTouchEvents
-            layoutParams = SlidingPaneLayout.LayoutParams(
-                LayoutParams.WRAP_CONTENT,
-                LayoutParams.MATCH_PARENT
-            ).apply { weight = 1f }
-        }
-    )
-    isUserResizingEnabled = true
-    isOverlappingEnabled = false
-    if (setDividerDrawable) {
-        setUserResizingDividerDrawable(TestDividerDrawable())
+        measureAndLayoutForTest()
     }
-    measureAndLayoutForTest()
-}
 
-private fun View.measureAndLayoutForTest(
-    width: Int = 100,
-    height: Int = 100
-) {
+private fun View.measureAndLayoutForTest(width: Int = 100, height: Int = 100) {
     measure(
         MeasureSpec.makeMeasureSpec(width, MeasureSpec.EXACTLY),
         MeasureSpec.makeMeasureSpec(height, MeasureSpec.EXACTLY)
@@ -474,11 +469,15 @@ private class TestDividerDrawable(
 ) : Drawable() {
 
     override fun draw(canvas: Canvas) {}
+
     override fun setAlpha(alpha: Int) {}
+
     override fun setColorFilter(colorFilter: ColorFilter?) {}
-    @Deprecated("Deprecated in Java")
-    override fun getOpacity(): Int = PixelFormat.TRANSLUCENT
+
+    @Deprecated("Deprecated in Java") override fun getOpacity(): Int = PixelFormat.TRANSLUCENT
+
     override fun getIntrinsicWidth(): Int = intrinsicWidth
+
     override fun getIntrinsicHeight(): Int = intrinsicHeight
 }
 
@@ -518,9 +517,7 @@ private class TestPaneView(context: Context) : View(context) {
     }
 }
 
-/**
- * Create a test [MotionEvent]; this will have bogus time values, no history
- */
+/** Create a test [MotionEvent]; this will have bogus time values, no history */
 private fun motionEvent(
     action: Int,
     x: Float,
@@ -528,6 +525,9 @@ private fun motionEvent(
 ) = MotionEvent.obtain(0L, 0L, action, x, y, 0)
 
 private fun downEvent(x: Float, y: Float) = motionEvent(MotionEvent.ACTION_DOWN, x, y)
+
 private fun moveEvent(x: Float, y: Float) = motionEvent(MotionEvent.ACTION_MOVE, x, y)
+
 private fun upEvent(x: Float, y: Float) = motionEvent(MotionEvent.ACTION_UP, x, y)
+
 private fun cancelEvent() = motionEvent(MotionEvent.ACTION_CANCEL, 0f, 0f)

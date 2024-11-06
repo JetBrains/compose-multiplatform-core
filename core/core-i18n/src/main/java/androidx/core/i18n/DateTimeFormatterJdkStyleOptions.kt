@@ -20,10 +20,7 @@ import androidx.annotation.IntDef
 import androidx.annotation.RestrictTo
 import java.text.DateFormat
 
-/**
- * Date/time formatting styles,
- * compatible to the ones in [java.text.DateFormat]
- */
+/** Date/time formatting styles, compatible to the ones in [java.text.DateFormat] */
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 @Target(AnnotationTarget.TYPE)
 @Retention(AnnotationRetention.SOURCE)
@@ -37,54 +34,54 @@ import java.text.DateFormat
     /** FULL is pretty completely specified, such as Tuesday, April 12, 1952 AD or 3:30:42pm PST. */
     DateFormat.FULL
 )
-annotation class DateTimeStyle
+public annotation class DateTimeStyle
 
-/** This class provides functionality similar to the one
- * in [java.text.DateFormat].
+/**
+ * This class provides functionality similar to the one in [java.text.DateFormat].
  *
  * Although not very flexible, it makes migration easier.
  */
-class DateTimeFormatterJdkStyleOptions private constructor(
-    val dateStyle: @DateTimeStyle Int,
-    val timeStyle: @DateTimeStyle Int
+public class DateTimeFormatterJdkStyleOptions
+private constructor(
+    public val dateStyle: @DateTimeStyle Int,
+    public val timeStyle: @DateTimeStyle Int
 ) {
-    companion object {
-        /** Gets the date formatter with the given formatting style for the default locale.
+    public companion object {
+        /**
+         * Gets the date formatter with the given formatting style for the default locale.
          *
-         * @param style the given date formatting style.
-         *     For example, SHORT for "M/d/yy" in the US locale.
+         * @param style the given date formatting style. For example, SHORT for "M/d/yy" in the US
+         *   locale.
          * @return the formatting options to use with [androidx.core.i18n.DateTimeFormatter].
          */
         @JvmStatic
-        fun createDateInstance(
-            style: @DateTimeStyle Int
-        ): DateTimeFormatterJdkStyleOptions {
+        public fun createDateInstance(style: @DateTimeStyle Int): DateTimeFormatterJdkStyleOptions {
             return DateTimeFormatterJdkStyleOptions(style, -1)
         }
 
-        /** Gets the time formatter with the given formatting style for the default locale.
+        /**
+         * Gets the time formatter with the given formatting style for the default locale.
          *
-         * @param style the given time formatting style.
-         *     For example, SHORT for "h:mm a" in the US locale.
+         * @param style the given time formatting style. For example, SHORT for "h:mm a" in the US
+         *   locale.
          * @return the formatting options to use with [androidx.core.i18n.DateTimeFormatter].
          */
         @JvmStatic
-        fun createTimeInstance(
-            style: @DateTimeStyle Int
-        ): DateTimeFormatterJdkStyleOptions {
+        public fun createTimeInstance(style: @DateTimeStyle Int): DateTimeFormatterJdkStyleOptions {
             return DateTimeFormatterJdkStyleOptions(-1, style)
         }
 
-        /** Gets the date / time formatter with the given formatting styles for the default locale.
+        /**
+         * Gets the date / time formatter with the given formatting styles for the default locale.
          *
-         * @param dateStyle the given date formatting style.
-         *     For example, SHORT for "M/d/yy" in the US locale.
-         * @param timeStyle the given time formatting style.
-         *     For example, SHORT for "h:mm a" in the US locale.
+         * @param dateStyle the given date formatting style. For example, SHORT for "M/d/yy" in the
+         *   US locale.
+         * @param timeStyle the given time formatting style. For example, SHORT for "h:mm a" in the
+         *   US locale.
          * @return the formatting options to use with [androidx.core.i18n.DateTimeFormatter].
          */
         @JvmStatic
-        fun createDateTimeInstance(
+        public fun createDateTimeInstance(
             dateStyle: @DateTimeStyle Int,
             timeStyle: @DateTimeStyle Int
         ): DateTimeFormatterJdkStyleOptions {

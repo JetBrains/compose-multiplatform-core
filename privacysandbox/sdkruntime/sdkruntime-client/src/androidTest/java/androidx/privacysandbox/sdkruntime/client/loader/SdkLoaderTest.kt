@@ -22,6 +22,7 @@ import androidx.privacysandbox.sdkruntime.client.config.LocalSdkConfig
 import androidx.privacysandbox.sdkruntime.core.LoadSdkCompatException
 import androidx.privacysandbox.sdkruntime.core.Versions
 import androidx.privacysandbox.sdkruntime.core.controller.SdkSandboxControllerCompat
+import androidx.privacysandbox.sdkruntime.core.internal.ClientApiVersion
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SdkSuppress
@@ -45,10 +46,11 @@ class SdkLoaderTest {
     @Before
     fun setUp() {
         val context = ApplicationProvider.getApplicationContext<Context>()
-        sdkLoader = SdkLoader.create(
-            context = context,
-            controllerFactory = NoOpFactory,
-        )
+        sdkLoader =
+            SdkLoader.create(
+                context = context,
+                controllerFactory = NoOpFactory,
+            )
         testSdkConfig = TestSdkConfigs.CURRENT_WITH_RESOURCES
 
         // Clean extracted SDKs between tests
@@ -60,19 +62,27 @@ class SdkLoaderTest {
     fun loadSdk_callVersionsHandShake() {
         val loadedSdk = sdkLoader.loadSdk(testSdkConfig)
 
-        assertThat(loadedSdk.extractClientVersion())
-            .isEqualTo(Versions.API_VERSION)
+        assertThat(loadedSdk.extractClientVersion()).isEqualTo(Versions.API_VERSION)
     }
 
     @Test
     fun loadSdk_withCustomVersionHandshake_performsCustomHandShake() {
-        val customVersionHandshake = VersionHandshake(
-            overrideApiVersion = Int.MAX_VALUE
-        )
+        val customVersionHandshake = VersionHandshake(overrideApiVersion = Int.MAX_VALUE)
         val loadedSdk = sdkLoader.loadSdk(testSdkConfig, customVersionHandshake)
 
-        assertThat(loadedSdk.extractClientVersion())
-            .isEqualTo(Int.MAX_VALUE)
+        assertThat(loadedSdk.extractClientVersion()).isEqualTo(Int.MAX_VALUE)
+    }
+
+    @Test
+    fun loadSdk_forUnsupportedApiVersion_throwsLoadSdkCompatException() {
+        val customVersionHandshake =
+            VersionHandshake(overrideApiVersion = ClientApiVersion.MIN_SUPPORTED.apiLevel - 1)
+
+        assertThrows(LoadSdkCompatException::class.java) {
+                sdkLoader.loadSdk(testSdkConfig, customVersionHandshake)
+            }
+            .hasMessageThat()
+            .startsWith("SDK built with unsupported version of sdkruntime-provider library")
     }
 
     @Test
@@ -82,8 +92,7 @@ class SdkLoaderTest {
         val classLoader = loadedSdk.extractSdkProviderClassloader()
         val sdkContext = loadedSdk.extractSdkContext()
 
-        assertThat(sdkContext.classLoader)
-            .isSameInstanceAs(classLoader)
+        assertThat(sdkContext.classLoader).isSameInstanceAs(classLoader)
     }
 
     @Test
@@ -97,8 +106,7 @@ class SdkLoaderTest {
         val expectedSdkData = File(expectedSdksRoot, testSdkConfig.packageName)
         val expectedSdkFilesDir = File(expectedSdkData, "files")
 
-        assertThat(sdkContext.filesDir)
-            .isEqualTo(expectedSdkFilesDir)
+        assertThat(sdkContext.filesDir).isEqualTo(expectedSdkFilesDir)
     }
 
     @Test
@@ -106,12 +114,12 @@ class SdkLoaderTest {
         val loadedSdk = sdkLoader.loadSdk(testSdkConfig)
 
         val classLoader = loadedSdk.extractSdkProviderClassloader()
-        val content = classLoader.getResourceAsStream("test.txt").use { inputStream ->
-            inputStream.bufferedReader().readLine()
-        }
+        val content =
+            classLoader.getResourceAsStream("test.txt").use { inputStream ->
+                inputStream.bufferedReader().readLine()
+            }
 
-        assertThat(content)
-            .isEqualTo("test")
+        assertThat(content).isEqualTo("test")
     }
 
     @Test
@@ -134,25 +142,29 @@ class SdkLoaderTest {
     @SdkSuppress(maxSdkVersion = Build.VERSION_CODES.O)
     fun testLowSpace_failPreApi27() {
         val context = ApplicationProvider.getApplicationContext<Context>()
-        val sdkLoaderWithLowSpaceMode = SdkLoader.create(
-            context = context,
-            controllerFactory = NoOpFactory,
-            lowSpaceThreshold = Long.MAX_VALUE
-        )
+        val sdkLoaderWithLowSpaceMode =
+            SdkLoader.create(
+                context = context,
+                controllerFactory = NoOpFactory,
+                lowSpaceThreshold = Long.MAX_VALUE
+            )
 
         assertThrows(LoadSdkCompatException::class.java) {
-            sdkLoaderWithLowSpaceMode.loadSdk(testSdkConfig)
-        }.hasMessageThat().startsWith("Can't use InMemoryDexClassLoader")
+                sdkLoaderWithLowSpaceMode.loadSdk(testSdkConfig)
+            }
+            .hasMessageThat()
+            .startsWith("Can't use InMemoryDexClassLoader")
     }
 
     @Test
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O_MR1)
     fun testLowSpace_notFailApi27() {
-        val sdkLoaderWithLowSpaceMode = SdkLoader.create(
-            context = ApplicationProvider.getApplicationContext(),
-            controllerFactory = NoOpFactory,
-            lowSpaceThreshold = Long.MAX_VALUE
-        )
+        val sdkLoaderWithLowSpaceMode =
+            SdkLoader.create(
+                context = ApplicationProvider.getApplicationContext(),
+                controllerFactory = NoOpFactory,
+                lowSpaceThreshold = Long.MAX_VALUE
+            )
 
         val loadedSdk = sdkLoaderWithLowSpaceMode.loadSdk(testSdkConfig)
         val classLoader = loadedSdk.extractSdkProviderClassloader()
@@ -165,14 +177,15 @@ class SdkLoaderTest {
 
         val controllerImplClass = SdkSandboxControllerCompat.SandboxControllerImpl::class.java
 
-        val noOpProxy = Proxy.newProxyInstance(
-            controllerImplClass.classLoader,
-            arrayOf(controllerImplClass)
-        ) { proxy, method, args ->
-            throw UnsupportedOperationException(
-                "Unexpected method call (NoOp) object:$proxy, method: $method, args: $args"
-            )
-        } as SdkSandboxControllerCompat.SandboxControllerImpl
+        val noOpProxy =
+            Proxy.newProxyInstance(controllerImplClass.classLoader, arrayOf(controllerImplClass)) {
+                proxy,
+                method,
+                args ->
+                throw UnsupportedOperationException(
+                    "Unexpected method call (NoOp) object:$proxy, method: $method, args: $args"
+                )
+            } as SdkSandboxControllerCompat.SandboxControllerImpl
 
         override fun createControllerFor(sdkConfig: LocalSdkConfig) = noOpProxy
     }

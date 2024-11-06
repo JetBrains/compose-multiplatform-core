@@ -30,18 +30,25 @@ plugins {
     id("kotlin")
 }
 
+ext {
+    kotlin = "2.1.0-Beta1"
+    ksp = "2.1.0-Beta1-1.0.25"
+}
+
 dependencies {
     api(project(":room:room-compiler-processing"))
-    implementation(libs.kotlinStdlib)
-    implementation(libs.kspApi)
-    implementation(libs.kotlinStdlibJdk8) // KSP defines older version as dependency, force update.
-    implementation(libs.ksp)
+    implementation(libs.kotlinStdlibJdk8)
+    // For Java source compilation
     implementation(libs.googleCompileTesting)
-    // specify these to match the kotlin compiler version in AndroidX rather than what KSP or KCT
-    // uses
-    implementation(libs.kotlinCompilerEmbeddable)
-    implementation(libs.kotlinDaemonEmbeddable)
-    implementation(libs.kotlinAnnotationProcessingEmbeddable)
+    // For KSP processing
+    implementation("com.google.devtools.ksp:symbol-processing:$ksp")
+    implementation("com.google.devtools.ksp:symbol-processing-api:$ksp")
+    implementation("com.google.devtools.ksp:symbol-processing-common-deps:$ksp")
+    implementation("com.google.devtools.ksp:symbol-processing-aa-embeddable:$ksp")
+    // For Kotlin source compilation and KAPT
+    implementation("org.jetbrains.kotlin:kotlin-compiler-embeddable:$kotlin")
+    implementation("org.jetbrains.kotlin:kotlin-daemon-embeddable:$kotlin")
+    implementation("org.jetbrains.kotlin:kotlin-annotation-processing-embeddable:$kotlin")
 }
 
 /**

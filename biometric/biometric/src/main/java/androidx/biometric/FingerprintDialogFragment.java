@@ -141,9 +141,6 @@ public class FingerprintDialogFragment extends DialogFragment {
     @Nullable
     TextView mHelpMessageView;
 
-    // Prevent direct instantiation.
-    private FingerprintDialogFragment() {}
-
     /**
      * Creates a new instance of {@link FingerprintDialogFragment}.
      *
@@ -448,7 +445,6 @@ public class FingerprintDialogFragment extends DialogFragment {
     /**
      * Nested class to avoid verification errors for methods introduced in Android 5.0 (API 21).
      */
-    @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
     private static class Api21Impl {
         // Prevent instantiation.
         private Api21Impl() {}

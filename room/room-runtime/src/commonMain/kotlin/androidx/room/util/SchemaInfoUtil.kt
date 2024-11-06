@@ -20,6 +20,7 @@ import androidx.room.ColumnInfo
 import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.SQLiteStatement
 import androidx.sqlite.use
+import kotlin.collections.removeLast as removeLastKt
 
 /**
  * Implements https://www.sqlite.org/datatype3.html section 3.1
@@ -36,18 +37,20 @@ internal fun findAffinity(type: String?): Int {
     if (uppercaseType.contains("INT")) {
         return ColumnInfo.INTEGER
     }
-    if (uppercaseType.contains("CHAR") ||
-        uppercaseType.contains("CLOB") ||
-        uppercaseType.contains("TEXT")
+    if (
+        uppercaseType.contains("CHAR") ||
+            uppercaseType.contains("CLOB") ||
+            uppercaseType.contains("TEXT")
     ) {
         return ColumnInfo.TEXT
     }
     if (uppercaseType.contains("BLOB")) {
         return ColumnInfo.BLOB
     }
-    if (uppercaseType.contains("REAL") ||
-        uppercaseType.contains("FLOA") ||
-        uppercaseType.contains("DOUB")
+    if (
+        uppercaseType.contains("REAL") ||
+            uppercaseType.contains("FLOA") ||
+            uppercaseType.contains("DOUB")
     ) {
         return ColumnInfo.REAL
     }
@@ -69,11 +72,11 @@ private fun readForeignKeys(
 ): Set<TableInfo.ForeignKey> {
     // this seems to return everything in order but it is not documented so better be safe
     connection.prepare("PRAGMA foreign_key_list(`$tableName`)").use { stmt ->
-        val idColumnIndex = stmt.getColumnIndex("id")
-        val seqColumnIndex = stmt.getColumnIndex("seq")
-        val tableColumnIndex = stmt.getColumnIndex("table")
-        val onDeleteColumnIndex = stmt.getColumnIndex("on_delete")
-        val onUpdateColumnIndex = stmt.getColumnIndex("on_update")
+        val idColumnIndex = stmt.columnIndexOf("id")
+        val seqColumnIndex = stmt.columnIndexOf("seq")
+        val tableColumnIndex = stmt.columnIndexOf("table")
+        val onDeleteColumnIndex = stmt.columnIndexOf("on_delete")
+        val onUpdateColumnIndex = stmt.columnIndexOf("on_update")
         val ordered = readForeignKeyFieldMappings(stmt)
 
         // Reset cursor as readForeignKeyFieldMappings has moved it
@@ -88,12 +91,12 @@ private fun readForeignKeys(
                 val myColumns = mutableListOf<String>()
                 val refColumns = mutableListOf<String>()
 
-                ordered.filter {
-                    it.id == id
-                }.forEach { key ->
-                    myColumns.add(key.from)
-                    refColumns.add(key.to)
-                }
+                ordered
+                    .filter { it.id == id }
+                    .forEach { key ->
+                        myColumns.add(key.from)
+                        refColumns.add(key.to)
+                    }
 
                 add(
                     TableInfo.ForeignKey(
@@ -110,8 +113,8 @@ private fun readForeignKeys(
 }
 
 /**
- * Temporary data holder for a foreign key row in the pragma result. We need this to ensure
- * sorting in the generated foreign key object.
+ * Temporary data holder for a foreign key row in the pragma result. We need this to ensure sorting
+ * in the generated foreign key object.
  */
 private class ForeignKeyWithSequence(
     val id: Int,
@@ -129,26 +132,25 @@ private class ForeignKeyWithSequence(
     }
 }
 
-private fun readForeignKeyFieldMappings(
-    stmt: SQLiteStatement
-): List<ForeignKeyWithSequence> {
-    val idColumnIndex = stmt.getColumnIndex("id")
-    val seqColumnIndex = stmt.getColumnIndex("seq")
-    val fromColumnIndex = stmt.getColumnIndex("from")
-    val toColumnIndex = stmt.getColumnIndex("to")
+private fun readForeignKeyFieldMappings(stmt: SQLiteStatement): List<ForeignKeyWithSequence> {
+    val idColumnIndex = stmt.columnIndexOf("id")
+    val seqColumnIndex = stmt.columnIndexOf("seq")
+    val fromColumnIndex = stmt.columnIndexOf("from")
+    val toColumnIndex = stmt.columnIndexOf("to")
 
     return buildList {
-        while (stmt.step()) {
-            add(
-                ForeignKeyWithSequence(
-                    id = stmt.getLong(idColumnIndex).toInt(),
-                    sequence = stmt.getLong(seqColumnIndex).toInt(),
-                    from = stmt.getText(fromColumnIndex),
-                    to = stmt.getText(toColumnIndex)
+            while (stmt.step()) {
+                add(
+                    ForeignKeyWithSequence(
+                        id = stmt.getLong(idColumnIndex).toInt(),
+                        sequence = stmt.getLong(seqColumnIndex).toInt(),
+                        from = stmt.getText(fromColumnIndex),
+                        to = stmt.getText(toColumnIndex)
+                    )
                 )
-            )
+            }
         }
-    }.sorted()
+        .sorted()
 }
 
 private fun readColumns(
@@ -160,11 +162,11 @@ private fun readColumns(
             return emptyMap()
         }
 
-        val nameIndex = stmt.getColumnIndex("name")
-        val typeIndex = stmt.getColumnIndex("type")
-        val notNullIndex = stmt.getColumnIndex("notnull")
-        val pkIndex = stmt.getColumnIndex("pk")
-        val defaultValueIndex = stmt.getColumnIndex("dflt_value")
+        val nameIndex = stmt.columnIndexOf("name")
+        val typeIndex = stmt.columnIndexOf("type")
+        val notNullIndex = stmt.columnIndexOf("notnull")
+        val pkIndex = stmt.columnIndexOf("pk")
+        val defaultValueIndex = stmt.columnIndexOf("dflt_value")
 
         return buildMap {
             do {
@@ -176,28 +178,27 @@ private fun readColumns(
                     if (stmt.isNull(defaultValueIndex)) null else stmt.getText(defaultValueIndex)
                 put(
                     key = name,
-                    value = TableInfo.Column(
-                        name = name,
-                        type = type,
-                        notNull = notNull,
-                        primaryKeyPosition = primaryKeyPosition,
-                        defaultValue = defaultValue,
-                        createdFrom = TableInfo.CREATED_FROM_DATABASE
-                    )
+                    value =
+                        TableInfo.Column(
+                            name = name,
+                            type = type,
+                            notNull = notNull,
+                            primaryKeyPosition = primaryKeyPosition,
+                            defaultValue = defaultValue,
+                            createdFrom = TableInfo.CREATED_FROM_DATABASE
+                        )
                 )
             } while (stmt.step())
         }
     }
 }
 
-/**
- * @return null if we cannot read the indices due to older sqlite implementations.
- */
+/** @return null if we cannot read the indices due to older sqlite implementations. */
 private fun readIndices(connection: SQLiteConnection, tableName: String): Set<TableInfo.Index>? {
     connection.prepare("PRAGMA index_list(`$tableName`)").use { stmt ->
-        val nameColumnIndex = stmt.getColumnIndex("name")
-        val originColumnIndex = stmt.getColumnIndex("origin")
-        val uniqueIndex = stmt.getColumnIndex("unique")
+        val nameColumnIndex = stmt.columnIndexOf("name")
+        val originColumnIndex = stmt.columnIndexOf("origin")
+        val uniqueIndex = stmt.columnIndexOf("unique")
         if (nameColumnIndex == -1 || originColumnIndex == -1 || uniqueIndex == -1) {
             // we cannot read them so better not validate any index.
             return null
@@ -219,24 +220,22 @@ private fun readIndices(connection: SQLiteConnection, tableName: String): Set<Ta
     }
 }
 
-/**
- * @return null if we cannot read the index due to older sqlite implementations.
- */
+/** @return null if we cannot read the index due to older sqlite implementations. */
 private fun readIndex(
     connection: SQLiteConnection,
     name: String,
     unique: Boolean
 ): TableInfo.Index? {
     return connection.prepare("PRAGMA index_xinfo(`$name`)").use { stmt ->
-        val seqnoColumnIndex = stmt.getColumnIndex("seqno")
-        val cidColumnIndex = stmt.getColumnIndex("cid")
-        val nameColumnIndex = stmt.getColumnIndex("name")
-        val descColumnIndex = stmt.getColumnIndex("desc")
+        val seqnoColumnIndex = stmt.columnIndexOf("seqno")
+        val cidColumnIndex = stmt.columnIndexOf("cid")
+        val nameColumnIndex = stmt.columnIndexOf("name")
+        val descColumnIndex = stmt.columnIndexOf("desc")
         if (
             seqnoColumnIndex == -1 ||
-            cidColumnIndex == -1 ||
-            nameColumnIndex == -1 ||
-            descColumnIndex == -1
+                cidColumnIndex == -1 ||
+                nameColumnIndex == -1 ||
+                descColumnIndex == -1
         ) {
             // we cannot read them so better not validate any index.
             return null
@@ -265,7 +264,7 @@ internal fun readFtsColumns(connection: SQLiteConnection, tableName: String): Se
     return buildSet {
         connection.prepare("PRAGMA table_info(`$tableName`)").use { stmt ->
             if (!stmt.step()) return@use
-            val nameIndex = stmt.getColumnIndex("name")
+            val nameIndex = stmt.columnIndexOf("name")
             do {
                 add(stmt.getText(nameIndex))
             } while (stmt.step())
@@ -274,30 +273,36 @@ internal fun readFtsColumns(connection: SQLiteConnection, tableName: String): Se
 }
 
 internal fun readFtsOptions(connection: SQLiteConnection, tableName: String): Set<String> {
-    val sql = connection.prepare(
-        "SELECT * FROM sqlite_master WHERE `name` = '$tableName'"
-    ).use { stmt ->
-        if (stmt.step()) {
-            stmt.getText(stmt.getColumnIndex("sql"))
-        } else {
-            ""
+    val sql =
+        connection.prepare("SELECT * FROM sqlite_master WHERE `name` = '$tableName'").use { stmt ->
+            if (stmt.step()) {
+                stmt.getText(stmt.columnIndexOf("sql"))
+            } else {
+                ""
+            }
         }
-    }
     return parseFtsOptions(sql)
 }
 
 // A set of valid FTS Options
-private val FTS_OPTIONS = arrayOf(
-    "tokenize=", "compress=", "content=", "languageid=", "matchinfo=", "notindexed=",
-    "order=", "prefix=", "uncompress="
-)
+private val FTS_OPTIONS =
+    arrayOf(
+        "tokenize=",
+        "compress=",
+        "content=",
+        "languageid=",
+        "matchinfo=",
+        "notindexed=",
+        "order=",
+        "prefix=",
+        "uncompress="
+    )
 
 /**
  * Parses FTS options from the create statement of an FTS table.
  *
- * This method assumes the given create statement is a valid well-formed SQLite statement as
- * defined in the [CREATE VIRTUAL TABLE
-         * syntax diagram](https://www.sqlite.org/lang_createvtab.html).
+ * This method assumes the given create statement is a valid well-formed SQLite statement as defined
+ * in the [CREATE VIRTUAL TABLE syntax diagram](https://www.sqlite.org/lang_createvtab.html).
  *
  * @param createStatement the "CREATE VIRTUAL TABLE" statement.
  * @return the set of FTS option key and values in the create statement.
@@ -308,10 +313,11 @@ internal fun parseFtsOptions(createStatement: String): Set<String> {
     }
 
     // Module arguments are within the parenthesis followed by the module name.
-    val argsString = createStatement.substring(
-        createStatement.indexOf('(') + 1,
-        createStatement.lastIndexOf(')')
-    )
+    val argsString =
+        createStatement.substring(
+            createStatement.indexOf('(') + 1,
+            createStatement.lastIndexOf(')')
+        )
 
     // Split the module argument string by the comma delimiter, keeping track of quotation
     // so that if the delimiter is found within a string literal we don't substring at the
@@ -322,22 +328,27 @@ internal fun parseFtsOptions(createStatement: String): Set<String> {
     var lastDelimiterIndex = -1
     argsString.forEachIndexed { i, value ->
         when (value) {
-            '\'', '"', '`' ->
+            '\'',
+            '"',
+            '`' ->
                 if (quoteStack.isEmpty()) {
                     quoteStack.addFirst(value)
                 } else if (quoteStack.firstOrNull() == value) {
-                    quoteStack.removeLast()
+                    quoteStack.removeLastKt()
                 }
-            '[' -> if (quoteStack.isEmpty()) {
-                quoteStack.addFirst(value)
-            }
-            ']' -> if (!quoteStack.isEmpty() && quoteStack.firstOrNull() == '[') {
-                quoteStack.removeLast()
-            }
-            ',' -> if (quoteStack.isEmpty()) {
-                args.add(argsString.substring(lastDelimiterIndex + 1, i).trim { it <= ' ' })
-                lastDelimiterIndex = i
-            }
+            '[' ->
+                if (quoteStack.isEmpty()) {
+                    quoteStack.addFirst(value)
+                }
+            ']' ->
+                if (!quoteStack.isEmpty() && quoteStack.firstOrNull() == '[') {
+                    quoteStack.removeLastKt()
+                }
+            ',' ->
+                if (quoteStack.isEmpty()) {
+                    args.add(argsString.substring(lastDelimiterIndex + 1, i).trim { it <= ' ' })
+                    lastDelimiterIndex = i
+                }
         }
     }
 
@@ -345,23 +356,23 @@ internal fun parseFtsOptions(createStatement: String): Set<String> {
     args.add(argsString.substring(lastDelimiterIndex + 1).trim())
 
     // Match args against valid options, otherwise they are column definitions.
-    val options = args.filter { arg ->
-        FTS_OPTIONS.any { validOption ->
-            arg.startsWith(validOption)
-        }
-    }.toSet()
+    val options =
+        args
+            .filter { arg -> FTS_OPTIONS.any { validOption -> arg.startsWith(validOption) } }
+            .toSet()
     return options
 }
 
 internal fun readViewInfo(connection: SQLiteConnection, viewName: String): ViewInfo {
-    return connection.prepare(
-        "SELECT name, sql FROM sqlite_master " +
-            "WHERE type = 'view' AND name = '$viewName'"
-    ).use { stmt ->
-        if (stmt.step()) {
-            ViewInfo(stmt.getText(0), stmt.getText(1))
-        } else {
-            ViewInfo(viewName, null)
+    return connection
+        .prepare(
+            "SELECT name, sql FROM sqlite_master " + "WHERE type = 'view' AND name = '$viewName'"
+        )
+        .use { stmt ->
+            if (stmt.step()) {
+                ViewInfo(stmt.getText(0), stmt.getText(1))
+            } else {
+                ViewInfo(viewName, null)
+            }
         }
-    }
 }

@@ -31,6 +31,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.assertTopPositionInRootIsEqualTo
@@ -38,7 +39,9 @@ import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.fastForEach
 import androidx.paging.CombinedLoadStates
 import androidx.paging.LoadState
 import androidx.paging.LoadState.Loading
@@ -69,21 +72,21 @@ import org.junit.runner.RunWith
 @LargeTest
 @RunWith(AndroidJUnit4::class)
 class LazyPagingItemsTest {
-    @get:Rule
-    val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule()
 
     val items = (1..10).toList().map { it }
     private val itemsSizePx = 30f
     private val itemsSizeDp = with(rule.density) { itemsSizePx.toDp() }
 
     private fun createPager(
-        config: PagingConfig = PagingConfig(
-            pageSize = 1,
-            enablePlaceholders = false,
-            maxSize = 200,
-            initialLoadSize = 3,
-            prefetchDistance = 1,
-        ),
+        config: PagingConfig =
+            PagingConfig(
+                pageSize = 1,
+                enablePlaceholders = false,
+                maxSize = 200,
+                initialLoadSize = 3,
+                prefetchDistance = 1,
+            ),
         loadDelay: Long = 0,
         pagingSourceFactory: () -> PagingSource<Int, Int> = {
             TestPagingSource(items = items, loadDelay = loadDelay)
@@ -93,17 +96,19 @@ class LazyPagingItemsTest {
     }
 
     private fun createPagerWithPlaceholders(
-        config: PagingConfig = PagingConfig(
-            pageSize = 1,
-            enablePlaceholders = true,
-            maxSize = 200,
-            initialLoadSize = 3,
-            prefetchDistance = 0,
+        config: PagingConfig =
+            PagingConfig(
+                pageSize = 1,
+                enablePlaceholders = true,
+                maxSize = 200,
+                initialLoadSize = 3,
+                prefetchDistance = 0,
+            )
+    ) =
+        Pager(
+            config = config,
+            pagingSourceFactory = { TestPagingSource(items = items, loadDelay = 0) }
         )
-    ) = Pager(
-        config = config,
-        pagingSourceFactory = { TestPagingSource(items = items, loadDelay = 0) }
-    )
 
     @Test
     fun lazyPagingInitialLoadState() {
@@ -116,17 +121,19 @@ class LazyPagingItemsTest {
 
         rule.waitForIdle()
 
-        val expected = CombinedLoadStates(
-            refresh = LoadState.Loading,
-            prepend = LoadState.NotLoading(false),
-            append = LoadState.NotLoading(false),
-            source = LoadStates(
-                LoadState.Loading,
-                LoadState.NotLoading(false),
-                LoadState.NotLoading(false)
-            ),
-            mediator = null
-        )
+        val expected =
+            CombinedLoadStates(
+                refresh = LoadState.Loading,
+                prepend = LoadState.NotLoading(false),
+                append = LoadState.NotLoading(false),
+                source =
+                    LoadStates(
+                        LoadState.Loading,
+                        LoadState.NotLoading(false),
+                        LoadState.NotLoading(false)
+                    ),
+                mediator = null
+            )
         assertThat(loadStates).isNotEmpty()
         assertThat(loadStates.first()).isEqualTo(expected)
     }
@@ -162,17 +169,19 @@ class LazyPagingItemsTest {
         }
 
         assertThat(loadStates).isNotEmpty()
-        val expected = CombinedLoadStates(
-            refresh = LoadState.Loading,
-            prepend = LoadState.NotLoading(false),
-            append = LoadState.NotLoading(false),
-            source = LoadStates(
-                LoadState.Loading,
-                LoadState.NotLoading(false),
-                LoadState.NotLoading(false)
-            ),
-            mediator = null
-        )
+        val expected =
+            CombinedLoadStates(
+                refresh = LoadState.Loading,
+                prepend = LoadState.NotLoading(false),
+                append = LoadState.NotLoading(false),
+                source =
+                    LoadStates(
+                        LoadState.Loading,
+                        LoadState.NotLoading(false),
+                        LoadState.NotLoading(false)
+                    ),
+                mediator = null
+            )
         assertThat(loadStates.first()).isEqualTo(expected)
     }
 
@@ -191,17 +200,13 @@ class LazyPagingItemsTest {
 
         rule.waitForIdle()
 
-        rule.onNodeWithTag("1")
-            .assertIsDisplayed()
+        rule.onNodeWithTag("1").assertIsDisplayed()
 
-        rule.onNodeWithTag("2")
-            .assertIsDisplayed()
+        rule.onNodeWithTag("2").assertIsDisplayed()
 
-        rule.onNodeWithTag("3")
-            .assertDoesNotExist()
+        rule.onNodeWithTag("3").assertDoesNotExist()
 
-        rule.onNodeWithTag("4")
-            .assertDoesNotExist()
+        rule.onNodeWithTag("4").assertDoesNotExist()
     }
 
     @Test
@@ -219,17 +224,13 @@ class LazyPagingItemsTest {
 
         rule.waitForIdle()
 
-        rule.onNodeWithTag("1")
-            .assertIsDisplayed()
+        rule.onNodeWithTag("1").assertIsDisplayed()
 
-        rule.onNodeWithTag("2")
-            .assertIsDisplayed()
+        rule.onNodeWithTag("2").assertIsDisplayed()
 
-        rule.onNodeWithTag("3")
-            .assertDoesNotExist()
+        rule.onNodeWithTag("3").assertDoesNotExist()
 
-        rule.onNodeWithTag("4")
-            .assertDoesNotExist()
+        rule.onNodeWithTag("4").assertDoesNotExist()
     }
 
     @Test
@@ -247,17 +248,14 @@ class LazyPagingItemsTest {
             }
 
             LazyColumn(Modifier.height(itemsSizeDp * 2.5f), state) {
-                item(contentType = "not-to-reuse--1") {
-                    Content("-1")
-                }
-                item(contentType = "reuse") {
-                    Content("0")
-                }
+                item(contentType = "not-to-reuse--1") { Content("-1") }
+                item(contentType = "reuse") { Content("0") }
                 items(
                     count = lazyPagingItems.itemCount,
-                    contentType = lazyPagingItems.itemContentType(
-                        contentType = { if (it == 8) "reuse" else "not-to-reuse-$it" }
-                    )
+                    contentType =
+                        lazyPagingItems.itemContentType(
+                            contentType = { if (it == 8) "reuse" else "not-to-reuse-$it" }
+                        )
                 ) { index ->
                     val item = lazyPagingItems[index]
                     Content("$item")
@@ -265,6 +263,8 @@ class LazyPagingItemsTest {
             }
         }
 
+        val idMinus1 = rule.onNodeWithTag("-1").semanticsId()
+        val id0 = rule.onNodeWithTag("0").semanticsId()
         rule.runOnIdle {
             runBlocking {
                 state.scrollToItem(2)
@@ -272,10 +272,8 @@ class LazyPagingItemsTest {
             }
         }
 
-        rule.onNodeWithTag("-1")
-            .assertIsDeactivated()
-        rule.onNodeWithTag("0")
-            .assertIsDeactivated()
+        rule.onRoot().fetchSemanticsNode().assertLayoutDeactivatedById(idMinus1)
+        rule.onRoot().fetchSemanticsNode().assertLayoutDeactivatedById(id0)
 
         rule.runOnIdle {
             runBlocking {
@@ -284,17 +282,14 @@ class LazyPagingItemsTest {
             }
         }
 
-        rule.onNodeWithTag("-1")
-            .assertIsDeactivated()
+        // Assert -1 is deactivated still
+        rule.onRoot().fetchSemanticsNode().assertLayoutDeactivatedById(idMinus1)
+
         // node reused
-        rule.onNodeWithTag("0")
-            .assertDoesNotExist()
-        rule.onNodeWithTag("7")
-            .assertIsDisplayed()
-        rule.onNodeWithTag("8")
-            .assertIsDisplayed()
-        rule.onNodeWithTag("9")
-            .assertIsDisplayed()
+        rule.onNodeWithTag("0").assertDoesNotExist()
+        rule.onNodeWithTag("7").assertIsDisplayed()
+        rule.onNodeWithTag("8").assertIsDisplayed()
+        rule.onNodeWithTag("9").assertIsDisplayed()
     }
 
     @Test
@@ -315,19 +310,14 @@ class LazyPagingItemsTest {
             }
 
             LazyColumn(Modifier.height(itemsSizeDp * 2.5f), state) {
-                item(contentType = "not-to-reuse--1") {
-                    Content("-1")
-                }
+                item(contentType = "not-to-reuse--1") { Content("-1") }
                 // to be reused later by placeholder item
-                item(contentType = PagingPlaceholderContentType) {
-                    Content("0")
-                }
+                item(contentType = PagingPlaceholderContentType) { Content("0") }
                 items(
                     count = lazyPagingItems.itemCount,
                     // item 7 would be null, which should default to PagingPlaceholderContentType
-                    contentType = lazyPagingItems.itemContentType(
-                        contentType = { "not-to-reuse-$it" }
-                    )
+                    contentType =
+                        lazyPagingItems.itemContentType(contentType = { "not-to-reuse-$it" })
                 ) { index ->
                     val item = lazyPagingItems[index]
                     Content("$item")
@@ -335,9 +325,10 @@ class LazyPagingItemsTest {
             }
         }
 
-        rule.waitUntil {
-            loadedItem6
-        }
+        rule.waitUntil { loadedItem6 }
+
+        val idMinus1 = rule.onNodeWithTag("-1").semanticsId()
+        val id0 = rule.onNodeWithTag("0").semanticsId()
 
         rule.runOnIdle {
             runBlocking {
@@ -346,10 +337,8 @@ class LazyPagingItemsTest {
             }
         }
 
-        rule.onNodeWithTag("-1")
-            .assertIsDeactivated()
-        rule.onNodeWithTag("0")
-            .assertIsDeactivated()
+        rule.onRoot().fetchSemanticsNode().assertLayoutDeactivatedById(idMinus1)
+        rule.onRoot().fetchSemanticsNode().assertLayoutDeactivatedById(id0)
 
         rule.runOnIdle {
             runBlocking {
@@ -358,11 +347,10 @@ class LazyPagingItemsTest {
             }
         }
 
-        rule.onNodeWithTag("-1")
-            .assertIsDeactivated()
+        // Assert -1 is deactivated still
+        rule.onRoot().fetchSemanticsNode().assertLayoutDeactivatedById(idMinus1)
         // node reused
-        rule.onNodeWithTag("0")
-            .assertDoesNotExist()
+        rule.onNodeWithTag("0").assertDoesNotExist()
     }
 
     @Test
@@ -379,13 +367,9 @@ class LazyPagingItemsTest {
             }
 
             LazyColumn(Modifier.height(itemsSizeDp * 2.5f), state) {
-                item(contentType = "not-to-reuse--1") {
-                    Content("-1")
-                }
+                item(contentType = "not-to-reuse--1") { Content("-1") }
                 // to be reused later by real items
-                item(contentType = null) {
-                    Content("0")
-                }
+                item(contentType = null) { Content("0") }
                 items(
                     count = lazyPagingItems.itemCount,
                     // should default to null
@@ -397,6 +381,9 @@ class LazyPagingItemsTest {
             }
         }
 
+        val idMinus1 = rule.onNodeWithTag("-1").semanticsId()
+        val id0 = rule.onNodeWithTag("0").semanticsId()
+
         rule.runOnIdle {
             runBlocking {
                 state.scrollToItem(2)
@@ -404,10 +391,8 @@ class LazyPagingItemsTest {
             }
         }
 
-        rule.onNodeWithTag("-1")
-            .assertIsDeactivated()
-        rule.onNodeWithTag("0")
-            .assertIsDeactivated()
+        rule.onRoot().fetchSemanticsNode().assertLayoutDeactivatedById(idMinus1)
+        rule.onRoot().fetchSemanticsNode().assertLayoutDeactivatedById(id0)
 
         rule.runOnIdle {
             runBlocking {
@@ -416,14 +401,11 @@ class LazyPagingItemsTest {
             }
         }
 
-        rule.onNodeWithTag("-1")
-            .assertIsDeactivated()
+        // Assert -1 is deactivated still
+        rule.onRoot().fetchSemanticsNode().assertLayoutDeactivatedById(idMinus1)
         // node reused
-        rule.onNodeWithTag("0")
-            .assertDoesNotExist()
-        rule.onNodeWithTag("4")
-            .assertExists()
-            .assertIsDisplayed()
+        rule.onNodeWithTag("0").assertDoesNotExist()
+        rule.onNodeWithTag("4").assertExists().assertIsDisplayed()
     }
 
     @Test
@@ -440,9 +422,7 @@ class LazyPagingItemsTest {
             composedCount = lazyPagingItems.itemCount
         }
 
-        rule.waitUntil {
-            composedCount == items.size
-        }
+        rule.waitUntil { composedCount == items.size }
 
         assertThat(lazyPagingItems.itemSnapshotList).isEqualTo(items)
     }
@@ -462,9 +442,7 @@ class LazyPagingItemsTest {
             composedCount = lazyPagingItems.itemCount
         }
 
-        rule.waitUntil {
-            composedCount == 6
-        }
+        rule.waitUntil { composedCount == 6 }
 
         rule.runOnIdle {
             assertThat(lazyPagingItems.itemCount).isEqualTo(6)
@@ -493,9 +471,7 @@ class LazyPagingItemsTest {
         }
 
         lateinit var lazyPagingItems: LazyPagingItems<Int>
-        rule.setContent {
-            lazyPagingItems = pager.flow.collectAsLazyPagingItems()
-        }
+        rule.setContent { lazyPagingItems = pager.flow.collectAsLazyPagingItems() }
 
         assertThat(lazyPagingItems.itemSnapshotList).isEmpty()
 
@@ -521,9 +497,7 @@ class LazyPagingItemsTest {
         }
 
         lateinit var lazyPagingItems: LazyPagingItems<Int>
-        rule.setContent {
-            lazyPagingItems = pager.flow.collectAsLazyPagingItems()
-        }
+        rule.setContent { lazyPagingItems = pager.flow.collectAsLazyPagingItems() }
 
         assertThat(lazyPagingItems.itemSnapshotList).isEmpty()
 
@@ -537,9 +511,7 @@ class LazyPagingItemsTest {
     @Test
     fun itemCountIsObservable() {
         var items = listOf(0, 1)
-        val pager = createPager {
-            TestPagingSource(items = items, loadDelay = 0)
-        }
+        val pager = createPager { TestPagingSource(items = items, loadDelay = 0) }
 
         var composedCount = 0
         lateinit var lazyPagingItems: LazyPagingItems<Int>
@@ -548,35 +520,27 @@ class LazyPagingItemsTest {
             composedCount = lazyPagingItems.itemCount
         }
 
-        rule.waitUntil {
-            composedCount == 2
-        }
+        rule.waitUntil { composedCount == 2 }
 
         rule.runOnIdle {
             items = listOf(0, 1, 2)
             lazyPagingItems.refresh()
         }
 
-        rule.waitUntil {
-            composedCount == 3
-        }
+        rule.waitUntil { composedCount == 3 }
 
         rule.runOnIdle {
             items = listOf(0)
             lazyPagingItems.refresh()
         }
 
-        rule.waitUntil {
-            composedCount == 1
-        }
+        rule.waitUntil { composedCount == 1 }
     }
 
     @Test
     fun worksWhenUsedWithoutExtension() {
         var items = listOf(10, 20)
-        val pager = createPager {
-            TestPagingSource(items = items, loadDelay = 0)
-        }
+        val pager = createPager { TestPagingSource(items = items, loadDelay = 0) }
 
         lateinit var lazyPagingItems: LazyPagingItems<Int>
         rule.setContent {
@@ -589,44 +553,39 @@ class LazyPagingItemsTest {
             }
         }
 
-        rule.onNodeWithTag("10")
-            .assertIsDisplayed()
+        rule.onNodeWithTag("10").assertIsDisplayed()
 
-        rule.onNodeWithTag("20")
-            .assertIsDisplayed()
+        rule.onNodeWithTag("20").assertIsDisplayed()
 
         rule.runOnIdle {
             items = listOf(30, 20, 40)
             lazyPagingItems.refresh()
         }
 
-        rule.onNodeWithTag("30")
-            .assertIsDisplayed()
+        rule.onNodeWithTag("30").assertIsDisplayed()
 
-        rule.onNodeWithTag("20")
-            .assertIsDisplayed()
+        rule.onNodeWithTag("20").assertIsDisplayed()
 
-        rule.onNodeWithTag("40")
-            .assertIsDisplayed()
+        rule.onNodeWithTag("40").assertIsDisplayed()
 
-        rule.onNodeWithTag("10")
-            .assertDoesNotExist()
+        rule.onNodeWithTag("10").assertDoesNotExist()
     }
 
     @Test
     fun updatingItem() {
         var items = listOf(1, 2, 3)
-        val pager = createPager(
-            PagingConfig(
-                pageSize = 3,
-                enablePlaceholders = false,
-                maxSize = 200,
-                initialLoadSize = 3,
-                prefetchDistance = 3,
-            )
-        ) {
-            TestPagingSource(items = items, loadDelay = 0)
-        }
+        val pager =
+            createPager(
+                PagingConfig(
+                    pageSize = 3,
+                    enablePlaceholders = false,
+                    maxSize = 200,
+                    initialLoadSize = 3,
+                    prefetchDistance = 3,
+                )
+            ) {
+                TestPagingSource(items = items, loadDelay = 0)
+            }
 
         val itemSize = with(rule.density) { 100.dp.roundToPx().toDp() }
 
@@ -646,33 +605,30 @@ class LazyPagingItemsTest {
             lazyPagingItems.refresh()
         }
 
-        rule.onNodeWithTag("1")
-            .assertTopPositionInRootIsEqualTo(0.dp)
+        rule.onNodeWithTag("1").assertTopPositionInRootIsEqualTo(0.dp)
 
-        rule.onNodeWithTag("4")
-            .assertTopPositionInRootIsEqualTo(itemSize)
+        rule.onNodeWithTag("4").assertTopPositionInRootIsEqualTo(itemSize)
 
-        rule.onNodeWithTag("3")
-            .assertTopPositionInRootIsEqualTo(itemSize * 2)
+        rule.onNodeWithTag("3").assertTopPositionInRootIsEqualTo(itemSize * 2)
 
-        rule.onNodeWithTag("2")
-            .assertDoesNotExist()
+        rule.onNodeWithTag("2").assertDoesNotExist()
     }
 
     @Test
     fun addingNewItem() {
         var items = listOf(1, 2)
-        val pager = createPager(
-            PagingConfig(
-                pageSize = 3,
-                enablePlaceholders = false,
-                maxSize = 200,
-                initialLoadSize = 3,
-                prefetchDistance = 3,
-            )
-        ) {
-            TestPagingSource(items = items, loadDelay = 0)
-        }
+        val pager =
+            createPager(
+                PagingConfig(
+                    pageSize = 3,
+                    enablePlaceholders = false,
+                    maxSize = 200,
+                    initialLoadSize = 3,
+                    prefetchDistance = 3,
+                )
+            ) {
+                TestPagingSource(items = items, loadDelay = 0)
+            }
 
         val itemSize = with(rule.density) { 100.dp.roundToPx().toDp() }
 
@@ -692,30 +648,28 @@ class LazyPagingItemsTest {
             lazyPagingItems.refresh()
         }
 
-        rule.onNodeWithTag("1")
-            .assertTopPositionInRootIsEqualTo(0.dp)
+        rule.onNodeWithTag("1").assertTopPositionInRootIsEqualTo(0.dp)
 
-        rule.onNodeWithTag("2")
-            .assertTopPositionInRootIsEqualTo(itemSize)
+        rule.onNodeWithTag("2").assertTopPositionInRootIsEqualTo(itemSize)
 
-        rule.onNodeWithTag("3")
-            .assertTopPositionInRootIsEqualTo(itemSize * 2)
+        rule.onNodeWithTag("3").assertTopPositionInRootIsEqualTo(itemSize * 2)
     }
 
     @Test
     fun removingItem() {
         var items = listOf(1, 2, 3)
-        val pager = createPager(
-            PagingConfig(
-                pageSize = 3,
-                enablePlaceholders = false,
-                maxSize = 200,
-                initialLoadSize = 3,
-                prefetchDistance = 3,
-            )
-        ) {
-            TestPagingSource(items = items, loadDelay = 0)
-        }
+        val pager =
+            createPager(
+                PagingConfig(
+                    pageSize = 3,
+                    enablePlaceholders = false,
+                    maxSize = 200,
+                    initialLoadSize = 3,
+                    prefetchDistance = 3,
+                )
+            ) {
+                TestPagingSource(items = items, loadDelay = 0)
+            }
 
         val itemSize = with(rule.density) { 100.dp.roundToPx().toDp() }
 
@@ -723,10 +677,8 @@ class LazyPagingItemsTest {
         rule.setContent {
             lazyPagingItems = pager.flow.collectAsLazyPagingItems()
             LazyColumn(Modifier.height(itemSize * 3)) {
-                items(
-                    count = lazyPagingItems.itemCount,
-                    key = lazyPagingItems.itemKey { it }
-                ) { index ->
+                items(count = lazyPagingItems.itemCount, key = lazyPagingItems.itemKey { it }) {
+                    index ->
                     val item = lazyPagingItems[index]
                     Spacer(Modifier.height(itemSize).fillParentMaxWidth().testTag("$item"))
                 }
@@ -738,22 +690,17 @@ class LazyPagingItemsTest {
             lazyPagingItems.refresh()
         }
 
-        rule.onNodeWithTag("2")
-            .assertTopPositionInRootIsEqualTo(0.dp)
+        rule.onNodeWithTag("2").assertTopPositionInRootIsEqualTo(0.dp)
 
-        rule.onNodeWithTag("3")
-            .assertTopPositionInRootIsEqualTo(itemSize)
+        rule.onNodeWithTag("3").assertTopPositionInRootIsEqualTo(itemSize)
 
-        rule.onNodeWithTag("1")
-            .assertIsNotDisplayed()
+        rule.onNodeWithTag("1").assertIsNotDisplayed()
     }
 
     @Test
     fun stateIsMovedWithItemWithCustomKey_items() {
         var items = listOf(1)
-        val pager = createPager {
-            TestPagingSource(items = items, loadDelay = 0)
-        }
+        val pager = createPager { TestPagingSource(items = items, loadDelay = 0) }
 
         lateinit var lazyPagingItems: LazyPagingItems<Int>
         var counter = 0
@@ -765,9 +712,7 @@ class LazyPagingItemsTest {
                     key = lazyPagingItems.itemKey { it },
                 ) { index ->
                     val item = lazyPagingItems[index]
-                    BasicText(
-                        "Item=$item. counter=${remember { counter++ }}"
-                    )
+                    BasicText("Item=$item. counter=${remember { counter++ }}")
                 }
             }
         }
@@ -777,45 +722,31 @@ class LazyPagingItemsTest {
             lazyPagingItems.refresh()
         }
 
-        rule.onNodeWithText("Item=0. counter=1")
-            .assertExists()
+        rule.onNodeWithText("Item=0. counter=1").assertExists()
 
-        rule.onNodeWithText("Item=1. counter=0")
-            .assertExists()
+        rule.onNodeWithText("Item=1. counter=0").assertExists()
     }
 
     @Test
     fun collectOnDefaultThread() {
         val items = mutableListOf(1, 2, 3)
-        val pager = createPager {
-            TestPagingSource(items = items, loadDelay = 0)
-        }
+        val pager = createPager { TestPagingSource(items = items, loadDelay = 0) }
 
         lateinit var lazyPagingItems: LazyPagingItems<Int>
-        rule.setContent {
-            lazyPagingItems = pager.flow.collectAsLazyPagingItems()
-        }
+        rule.setContent { lazyPagingItems = pager.flow.collectAsLazyPagingItems() }
 
-        rule.waitUntil {
-            lazyPagingItems.itemCount == 3
-        }
-        assertThat(lazyPagingItems.itemSnapshotList).containsExactlyElementsIn(
-            items
-        )
+        rule.waitUntil { lazyPagingItems.itemCount == 3 }
+        assertThat(lazyPagingItems.itemSnapshotList).containsExactlyElementsIn(items)
     }
 
     @Test
     fun collectOnWorkerThread() {
         val items = mutableListOf(1, 2, 3)
-        val pager = createPager {
-            TestPagingSource(items = items, loadDelay = 0)
-        }
+        val pager = createPager { TestPagingSource(items = items, loadDelay = 0) }
 
         val context = StandardTestDispatcher()
         lateinit var lazyPagingItems: LazyPagingItems<Int>
-        rule.setContent {
-            lazyPagingItems = pager.flow.collectAsLazyPagingItems(context)
-        }
+        rule.setContent { lazyPagingItems = pager.flow.collectAsLazyPagingItems(context) }
 
         rule.runOnIdle {
             // collection should not have started yet
@@ -829,12 +760,8 @@ class LazyPagingItemsTest {
             // continue with pagingDataDiffer collections
             context.scheduler.advanceUntilIdle()
         }
-        rule.waitUntil {
-            lazyPagingItems.itemCount == items.size
-        }
-        assertThat(lazyPagingItems.itemSnapshotList).containsExactlyElementsIn(
-            items
-        )
+        rule.waitUntil { lazyPagingItems.itemCount == items.size }
+        assertThat(lazyPagingItems.itemSnapshotList).containsExactlyElementsIn(items)
     }
 
     @Test
@@ -893,9 +820,7 @@ class LazyPagingItemsTest {
             }
         }
 
-        rule.runOnIdle {
-            assertThat(lazyPagingItems.itemSnapshotList).isEmpty()
-        }
+        rule.runOnIdle { assertThat(lazyPagingItems.itemSnapshotList).isEmpty() }
 
         // we don't let dispatchers load and directly restore state
         restorationTester.emulateSavedInstanceStateRestore()
@@ -922,9 +847,7 @@ class LazyPagingItemsTest {
         val flow = MutableStateFlow(PagingData.from(items))
         lateinit var lazyPagingItems: LazyPagingItems<Int>
         val dispatcher = StandardTestDispatcher()
-        rule.setContent {
-            lazyPagingItems = flow.collectAsLazyPagingItems(dispatcher)
-        }
+        rule.setContent { lazyPagingItems = flow.collectAsLazyPagingItems(dispatcher) }
 
         rule.waitForIdle()
 
@@ -939,17 +862,16 @@ class LazyPagingItemsTest {
 
     @Test
     fun cachedPagingDataFromWithLoadStates() {
-        val flow = MutableStateFlow(
-            PagingData.from(
-                data = items,
-                sourceLoadStates = loadStates(refresh = Loading),
+        val flow =
+            MutableStateFlow(
+                PagingData.from(
+                    data = items,
+                    sourceLoadStates = loadStates(refresh = Loading),
+                )
             )
-        )
         lateinit var lazyPagingItems: LazyPagingItems<Int>
         val dispatcher = StandardTestDispatcher()
-        rule.setContent {
-            lazyPagingItems = flow.collectAsLazyPagingItems(dispatcher)
-        }
+        rule.setContent { lazyPagingItems = flow.collectAsLazyPagingItems(dispatcher) }
 
         rule.waitForIdle()
 
@@ -967,9 +889,7 @@ class LazyPagingItemsTest {
         val flow = MutableStateFlow(PagingData.from(emptyList<Int>()))
         lateinit var lazyPagingItems: LazyPagingItems<Int>
         val dispatcher = StandardTestDispatcher()
-        rule.setContent {
-            lazyPagingItems = flow.collectAsLazyPagingItems(dispatcher)
-        }
+        rule.setContent { lazyPagingItems = flow.collectAsLazyPagingItems(dispatcher) }
 
         rule.waitForIdle()
 
@@ -984,41 +904,34 @@ class LazyPagingItemsTest {
 
     @Test
     fun cachedPagingDataFromWithEmptyDataAndLoadStates() {
-        val flow = MutableStateFlow(
-            PagingData.from(
-                emptyList<Int>(),
-                sourceLoadStates = loadStates(
-                    prepend = NotLoading(true),
-                    append = NotLoading(true)
+        val flow =
+            MutableStateFlow(
+                PagingData.from(
+                    emptyList<Int>(),
+                    sourceLoadStates =
+                        loadStates(prepend = NotLoading(true), append = NotLoading(true))
                 )
             )
-        )
         lateinit var lazyPagingItems: LazyPagingItems<Int>
         val restorationTester = StateRestorationTester(rule)
         val dispatcher = StandardTestDispatcher()
-        restorationTester.setContent {
-            lazyPagingItems = flow.collectAsLazyPagingItems(dispatcher)
-        }
+        restorationTester.setContent { lazyPagingItems = flow.collectAsLazyPagingItems(dispatcher) }
 
         rule.waitForIdle()
 
         // assert before load
         assertThat(lazyPagingItems.itemSnapshotList).isEmpty()
-        assertThat(lazyPagingItems.loadState).isEqualTo(
-            localLoadStatesOf(
-                prependLocal = NotLoading(true),
-                appendLocal = NotLoading(true)
+        assertThat(lazyPagingItems.loadState)
+            .isEqualTo(
+                localLoadStatesOf(prependLocal = NotLoading(true), appendLocal = NotLoading(true))
             )
-        )
         dispatcher.scheduler.advanceUntilIdle()
         // assert data is still the same after load
         assertThat(lazyPagingItems.itemSnapshotList).isEmpty()
-        assertThat(lazyPagingItems.loadState).isEqualTo(
-            localLoadStatesOf(
-                prependLocal = NotLoading(true),
-                appendLocal = NotLoading(true)
+        assertThat(lazyPagingItems.loadState)
+            .isEqualTo(
+                localLoadStatesOf(prependLocal = NotLoading(true), appendLocal = NotLoading(true))
             )
-        )
     }
 
     @Test
@@ -1026,9 +939,7 @@ class LazyPagingItemsTest {
         val flow = MutableStateFlow(PagingData.empty<Int>())
         lateinit var lazyPagingItems: LazyPagingItems<Int>
         val dispatcher = StandardTestDispatcher()
-        rule.setContent {
-            lazyPagingItems = flow.collectAsLazyPagingItems(dispatcher)
-        }
+        rule.setContent { lazyPagingItems = flow.collectAsLazyPagingItems(dispatcher) }
 
         rule.waitForIdle()
 
@@ -1043,45 +954,38 @@ class LazyPagingItemsTest {
 
     @Test
     fun cachedPagingDataEmptyWithLoadStates() {
-        val flow = MutableStateFlow(
-            PagingData.empty<Int>(
-                sourceLoadStates = loadStates(
-                    prepend = NotLoading(true),
-                    append = NotLoading(true)
+        val flow =
+            MutableStateFlow(
+                PagingData.empty<Int>(
+                    sourceLoadStates =
+                        loadStates(prepend = NotLoading(true), append = NotLoading(true))
                 )
             )
-        )
         lateinit var lazyPagingItems: LazyPagingItems<Int>
         val dispatcher = StandardTestDispatcher()
-        rule.setContent {
-            lazyPagingItems = flow.collectAsLazyPagingItems(dispatcher)
-        }
+        rule.setContent { lazyPagingItems = flow.collectAsLazyPagingItems(dispatcher) }
 
         rule.waitForIdle()
 
         // assert before load
         assertThat(lazyPagingItems.itemSnapshotList).isEmpty()
-        assertThat(lazyPagingItems.loadState).isEqualTo(
-            localLoadStatesOf(
-                prependLocal = NotLoading(true),
-                appendLocal = NotLoading(true)
+        assertThat(lazyPagingItems.loadState)
+            .isEqualTo(
+                localLoadStatesOf(prependLocal = NotLoading(true), appendLocal = NotLoading(true))
             )
-        )
         dispatcher.scheduler.advanceUntilIdle()
         // assert data is still the same after load
         assertThat(lazyPagingItems.itemSnapshotList).isEmpty()
-        assertThat(lazyPagingItems.loadState).isEqualTo(
-            localLoadStatesOf(
-                prependLocal = NotLoading(true),
-                appendLocal = NotLoading(true)
+        assertThat(lazyPagingItems.loadState)
+            .isEqualTo(
+                localLoadStatesOf(prependLocal = NotLoading(true), appendLocal = NotLoading(true))
             )
-        )
     }
 
     @Test
     fun cachedData_withPlaceholders() {
-        val flow = createPagerWithPlaceholders().flow
-            .cachedIn(TestScope(UnconfinedTestDispatcher()))
+        val flow =
+            createPagerWithPlaceholders().flow.cachedIn(TestScope(UnconfinedTestDispatcher()))
         lateinit var lazyPagingItems: LazyPagingItems<Int>
         val restorationTester = StateRestorationTester(rule)
         val dispatcher = StandardTestDispatcher()
@@ -1107,9 +1011,8 @@ class LazyPagingItemsTest {
         // ensure we received the cached data + placeholders
         rule.runOnIdle {
             assertThat(lazyPagingItems.itemCount).isEqualTo(10)
-            assertThat(lazyPagingItems.itemSnapshotList).isEqualTo(
-                listOf(1, 2, 3, 4, 5, 6, null, null, null, null)
-            )
+            assertThat(lazyPagingItems.itemSnapshotList)
+                .isEqualTo(listOf(1, 2, 3, 4, 5, 6, null, null, null, null))
         }
 
         // try to load more data
@@ -1120,9 +1023,8 @@ class LazyPagingItemsTest {
             loadedMaxItem
         }
         rule.runOnIdle {
-            assertThat(lazyPagingItems.itemSnapshotList).isEqualTo(
-                listOf(1, 2, 3, 4, 5, 6, 7, null, null, null)
-            )
+            assertThat(lazyPagingItems.itemSnapshotList)
+                .isEqualTo(listOf(1, 2, 3, 4, 5, 6, 7, null, null, null))
         }
     }
 
@@ -1149,24 +1051,26 @@ class LazyPagingItemsTest {
                 lazyPagingItems.loadState.source.append is LoadState.NotLoading
         }
 
-        assertThat(lazyPagingItems.loadState).isEqualTo(
-            localLoadStatesOf(
-                refreshLocal = LoadState.NotLoading(false),
-                prependLocal = LoadState.NotLoading(true)
+        assertThat(lazyPagingItems.loadState)
+            .isEqualTo(
+                localLoadStatesOf(
+                    refreshLocal = LoadState.NotLoading(false),
+                    prependLocal = LoadState.NotLoading(true)
+                )
             )
-        )
 
         // we don't advance load dispatchers after restoration to prevent loads
         restorationTester.emulateSavedInstanceStateRestore()
 
         // ensure we received the cached loadstates
         rule.runOnIdle {
-            assertThat(lazyPagingItems.loadState).isEqualTo(
-                localLoadStatesOf(
-                    refreshLocal = LoadState.NotLoading(false),
-                    prependLocal = LoadState.NotLoading(true)
+            assertThat(lazyPagingItems.loadState)
+                .isEqualTo(
+                    localLoadStatesOf(
+                        refreshLocal = LoadState.NotLoading(false),
+                        prependLocal = LoadState.NotLoading(true)
+                    )
                 )
-            )
         }
     }
 
@@ -1186,12 +1090,8 @@ class LazyPagingItemsTest {
             }
             LazyColumn(Modifier.height(itemsSizeDp * 2.5f), state) {
                 // Static items are what triggers scroll state to erroneously reset to 0
-                item {
-                    Content("header")
-                }
-                items(
-                    lazyPagingItems.itemCount, lazyPagingItems.itemKey()
-                ) { index ->
+                item { Content("header") }
+                items(lazyPagingItems.itemCount, lazyPagingItems.itemKey()) { index ->
                     val item = lazyPagingItems[index]
                     Content("$item")
                 }
@@ -1221,5 +1121,13 @@ class LazyPagingItemsTest {
     @Composable
     private fun Content(tag: String) {
         Spacer(Modifier.height(itemsSizeDp).width(10.dp).testTag(tag))
+    }
+
+    private fun SemanticsNode.assertLayoutDeactivatedById(id: Int) {
+        children.fastForEach {
+            if (it.id == id) {
+                assert(it.layoutInfo.isDeactivated)
+            }
+        }
     }
 }

@@ -17,10 +17,10 @@
 package androidx.camera.camera2.pipe.integration.testing
 
 import android.view.Surface
-import androidx.annotation.RequiresApi
 import androidx.camera.camera2.pipe.AudioRestrictionMode
 import androidx.camera.camera2.pipe.AudioRestrictionMode.Companion.AUDIO_RESTRICTION_NONE
 import androidx.camera.camera2.pipe.CameraGraph
+import androidx.camera.camera2.pipe.CameraGraphId
 import androidx.camera.camera2.pipe.GraphState
 import androidx.camera.camera2.pipe.StreamGraph
 import androidx.camera.camera2.pipe.StreamId
@@ -31,21 +31,26 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.StateFlow
 
-@RequiresApi(21)
 class FakeCameraGraph(
     val fakeCameraGraphSession: FakeCameraGraphSession = FakeCameraGraphSession()
 ) : CameraGraph {
 
     val setSurfaceResults = mutableMapOf<StreamId, Surface?>()
     private var isClosed = false
+    override val id: CameraGraphId
+        get() = throw NotImplementedError("Not used in testing")
 
     override val streams: StreamGraph
         get() = throw NotImplementedError("Not used in testing")
 
     override val graphState: StateFlow<GraphState>
         get() = throw NotImplementedError("Not used in testing")
-    override var isForeground = false
+
+    override var isForeground = true
     private var audioRestrictionMode = AUDIO_RESTRICTION_NONE
+
+    override val parameters: CameraGraph.Parameters
+        get() = throw NotImplementedError("Not used in testing")
 
     override suspend fun acquireSession(): CameraGraph.Session {
         if (isClosed) {
@@ -55,17 +60,15 @@ class FakeCameraGraph(
     }
 
     override fun acquireSessionOrNull() = if (isClosed) null else fakeCameraGraphSession
+
     override suspend fun <T> useSession(
         action: suspend CoroutineScope.(CameraGraph.Session) -> T
-    ): T =
-        fakeCameraGraphSession.use { coroutineScope { action(it) } }
+    ): T = fakeCameraGraphSession.use { coroutineScope { action(it) } }
 
     override fun <T> useSessionIn(
         scope: CoroutineScope,
         action: suspend CoroutineScope.(CameraGraph.Session) -> T
-    ): Deferred<T> = scope.async {
-        useSession(action)
-    }
+    ): Deferred<T> = scope.async { useSession(action) }
 
     override fun close() {
         isClosed = true

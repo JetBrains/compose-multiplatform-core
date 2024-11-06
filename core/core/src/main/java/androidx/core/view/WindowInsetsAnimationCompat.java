@@ -614,27 +614,19 @@ public final class WindowInsetsAnimationCompat {
 
         static void setCallback(@NonNull final View view,
                 @Nullable final Callback callback) {
+            final View.OnApplyWindowInsetsListener proxyListener = callback != null
+                    ? createProxyListener(view, callback)
+                    : null;
+            view.setTag(R.id.tag_window_insets_animation_callback, proxyListener);
 
-            Object userListener = view.getTag(R.id.tag_on_apply_window_listener);
-            if (callback == null) {
-                view.setTag(R.id.tag_window_insets_animation_callback, null);
-                if (userListener == null) {
-                    // If no user defined listener is set, that means our listener is the one set.
-                    // Make sure to remove it.
-                    view.setOnApplyWindowInsetsListener(null);
-                }
-            } else {
-                View.OnApplyWindowInsetsListener proxyListener =
-                        createProxyListener(view, callback);
-                view.setTag(R.id.tag_window_insets_animation_callback, proxyListener);
-
-                // We rely on OnApplyWindowInsetsListener, but one might already be set by the
-                // application, so we only register it on the view if none is set yet.
-                // If one is set using ViewCompat.setOnApplyWindowInsetsListener,
-                // this Callback will be called by the exiting listener.
-                if (userListener == null) {
-                    view.setOnApplyWindowInsetsListener(proxyListener);
-                }
+            // We rely on View.OnApplyWindowInsetsListener, but one might already be set by the
+            // library, so we only register it on the view if none is set yet.
+            // If any of them is set via ViewGroupCompat#installCompatInsetsDispatch or
+            // ViewCompat.setOnApplyWindowInsetsListener, this Callback will be called by their
+            // listener.
+            if (view.getTag(R.id.tag_compat_insets_dispatch) == null
+                    && view.getTag(R.id.tag_on_apply_window_listener) == null) {
+                view.setOnApplyWindowInsetsListener(proxyListener);
             }
         }
 

@@ -14,13 +14,10 @@
  * limitations under the License.
  */
 
-@file:RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
-
 package androidx.camera.camera2.pipe.integration.compat.workaround
 
-import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraDevice
-import androidx.annotation.RequiresApi
+import androidx.camera.camera2.pipe.CameraMetadata.Companion.isHardwareLevelLegacy
 import androidx.camera.camera2.pipe.RequestTemplate
 import androidx.camera.camera2.pipe.core.Log
 import androidx.camera.camera2.pipe.integration.adapter.CaptureConfigAdapter.Companion.getStillCaptureTemplate
@@ -34,6 +31,7 @@ import androidx.camera.camera2.pipe.integration.impl.TorchControl
 import androidx.camera.camera2.pipe.integration.impl.UseCaseThreads
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.TorchState
+import androidx.camera.core.imagecapture.CameraCapturePipeline
 import androidx.camera.core.impl.CaptureConfig
 import androidx.camera.core.impl.Config
 import javax.inject.Inject
@@ -49,15 +47,15 @@ import kotlinx.coroutines.launch
  * OFF then ON after the capturing.
  */
 @UseCaseCameraScope
-class CapturePipelineTorchCorrection @Inject constructor(
+public class CapturePipelineTorchCorrection
+@Inject
+constructor(
     cameraProperties: CameraProperties,
     private val capturePipelineImpl: CapturePipelineImpl,
     private val threads: UseCaseThreads,
     private val torchControl: TorchControl,
 ) : CapturePipeline {
-    private val isLegacyDevice = cameraProperties.metadata[
-        CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL
-    ] == CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY
+    private val isLegacyDevice = cameraProperties.metadata.isHardwareLevelLegacy
 
     override suspend fun submitStillCaptures(
         configs: List<CaptureConfig>,
@@ -93,6 +91,13 @@ class CapturePipelineTorchCorrection @Inject constructor(
         return deferredResults
     }
 
+    override suspend fun getCameraCapturePipeline(
+        captureMode: Int,
+        flashMode: Int,
+        flashType: Int
+    ): CameraCapturePipeline =
+        capturePipelineImpl.getCameraCapturePipeline(captureMode, flashMode, flashType)
+
     override var template: Int = CameraDevice.TEMPLATE_PREVIEW
         set(value) {
             capturePipelineImpl.template = value
@@ -100,8 +105,8 @@ class CapturePipelineTorchCorrection @Inject constructor(
         }
 
     /**
-     * Return true means the Torch will be unexpectedly closed, and it requires turning on the
-     * Torch again after the capturing.
+     * Return true means the Torch will be unexpectedly closed, and it requires turning on the Torch
+     * again after the capturing.
      */
     private fun isCorrectionRequired(
         captureConfigs: List<CaptureConfig>,
@@ -109,15 +114,17 @@ class CapturePipelineTorchCorrection @Inject constructor(
     ): Boolean {
         return captureConfigs.any {
             it.getStillCaptureTemplate(
-                requestTemplate,
-                isLegacyDevice,
-            ).value == CameraDevice.TEMPLATE_STILL_CAPTURE
+                    requestTemplate,
+                    isLegacyDevice,
+                )
+                .value == CameraDevice.TEMPLATE_STILL_CAPTURE
         } && isTorchOn()
     }
 
     private fun isTorchOn() = torchControl.torchStateLiveData.value == TorchState.ON
 
-    companion object {
-        val isEnabled = DeviceQuirks[TorchIsClosedAfterImageCapturingQuirk::class.java] != null
+    public companion object {
+        public val isEnabled: Boolean =
+            DeviceQuirks[TorchIsClosedAfterImageCapturingQuirk::class.java] != null
     }
 }

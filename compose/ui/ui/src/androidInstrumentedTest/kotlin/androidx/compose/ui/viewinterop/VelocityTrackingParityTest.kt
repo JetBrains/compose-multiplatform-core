@@ -24,10 +24,9 @@ import android.view.View
 import androidx.activity.ComponentActivity
 import androidx.annotation.LayoutRes
 import androidx.compose.foundation.gestures.Orientation
-import androidx.compose.foundation.gestures.awaitEachGesture
-import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.gestures.awaitTouchSlopOrCancellation
 import androidx.compose.foundation.gestures.draggable
+import androidx.compose.foundation.gestures.draggable2D
+import androidx.compose.foundation.gestures.rememberDraggable2DState
 import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -38,14 +37,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.background
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.AwaitPointerEventScope
-import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.PointerId
 import androidx.compose.ui.input.pointer.PointerInputChange
 import androidx.compose.ui.input.pointer.changedToUpIgnoreConsumed
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.input.pointer.positionChangedIgnoreConsumed
 import androidx.compose.ui.input.pointer.util.VelocityTrackerAddPointsFix
-import androidx.compose.ui.input.pointer.util.addPointerInputChange
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.platform.ViewConfiguration
@@ -70,19 +65,17 @@ import com.google.common.truth.Truth.assertThat
 import com.google.errorprone.annotations.CanIgnoreReturnValue
 import kotlin.math.absoluteValue
 import kotlin.test.assertTrue
-import kotlinx.coroutines.coroutineScope
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
+@OptIn(ExperimentalComposeUiApi::class)
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class VelocityTrackingParityTest {
 
-    @get:Rule
-    val rule = createAndroidComposeRule<ComponentActivity>()
+    @get:Rule val rule = createAndroidComposeRule<ComponentActivity>()
 
     private val draggableView: VelocityTrackingView
         get() = rule.activity.findViewById(R.id.draggable_view)
@@ -92,7 +85,6 @@ class VelocityTrackingParityTest {
 
     private var latestComposeVelocity = Velocity.Zero
 
-    @OptIn(ExperimentalComposeUiApi::class)
     @Before
     fun setUp() {
         latestComposeVelocity = Velocity.Zero
@@ -273,7 +265,6 @@ class VelocityTrackingParityTest {
     }
 
     @Test
-    @Ignore("b/299092669")
     fun equalDraggable_withEqualSwipes_shouldProduceSimilarVelocity_orthogonal() {
         // Arrange
         createActivity(true)
@@ -307,17 +298,76 @@ class VelocityTrackingParityTest {
         assertIsWithinTolerance(latestComposeVelocity.y, latestVelocityInViewY)
     }
 
+    @Test
+    fun equalDraggable_withEqualSwipes_shouldProduceSimilarVelocity_regularSituationOne() {
+        // Arrange
+        createActivity()
+        checkVisibility(composeView, View.GONE)
+        checkVisibility(draggableView, View.VISIBLE)
+
+        // Act: Use system to send motion events and collect them.
+        regularGestureOne(R.id.draggable_view)
+
+        val latestVelocityInViewY = draggableView.latestVelocity.y
+
+        // switch visibility
+        rule.runOnUiThread {
+            composeView.visibility = View.VISIBLE
+            draggableView.visibility = View.GONE
+        }
+
+        checkVisibility(composeView, View.VISIBLE)
+        checkVisibility(draggableView, View.GONE)
+
+        assertTrue { isValidGesture(draggableView.motionEvents.filterNotNull()) }
+
+        // Inject the same events in compose view
+        for (event in draggableView.motionEvents) {
+            composeView.dispatchTouchEvent(event)
+        }
+
+        // assert
+        assertIsWithinTolerance(latestComposeVelocity.y, latestVelocityInViewY)
+    }
+
+    @Test
+    fun equalDraggable_withEqualSwipes_shouldProduceSimilarVelocity_regularSituationTwo() {
+        // Arrange
+        createActivity()
+        checkVisibility(composeView, View.GONE)
+        checkVisibility(draggableView, View.VISIBLE)
+
+        // Act: Use system to send motion events and collect them.
+        regularGestureTwo(R.id.draggable_view)
+
+        val latestVelocityInViewY = draggableView.latestVelocity.y
+
+        // switch visibility
+        rule.runOnUiThread {
+            composeView.visibility = View.VISIBLE
+            draggableView.visibility = View.GONE
+        }
+
+        checkVisibility(composeView, View.VISIBLE)
+        checkVisibility(draggableView, View.GONE)
+
+        assertTrue { isValidGesture(draggableView.motionEvents.filterNotNull()) }
+
+        // Inject the same events in compose view
+        for (event in draggableView.motionEvents) {
+            composeView.dispatchTouchEvent(event)
+        }
+
+        // assert
+        assertIsWithinTolerance(latestComposeVelocity.y, latestVelocityInViewY)
+    }
+
     private fun createActivity(twoDimensional: Boolean = false) {
-        rule
-            .activityRule
-            .scenario
-            .createActivityWithComposeContent(
-                R.layout.velocity_tracker_compose_vs_view
-            ) {
-                TestComposeDraggable(twoDimensional) {
-                    latestComposeVelocity = it
-                }
-            }
+        rule.activityRule.scenario.createActivityWithComposeContent(
+            R.layout.velocity_tracker_compose_vs_view
+        ) {
+            TestComposeDraggable(twoDimensional) { latestComposeVelocity = it }
+        }
     }
 
     private fun checkVisibility(view: View, visibility: Int) = assertTrue {
@@ -400,15 +450,30 @@ internal fun orthogonalGesture(id: Int) {
         )
 }
 
+internal fun regularGestureOne(id: Int) {
+    Espresso.onView(withId(id))
+        .perform(
+            espressoSwipe(
+                SwiperWithTime(100),
+                GeneralLocation.CENTER,
+                GeneralLocation.BOTTOM_CENTER
+            )
+        )
+}
+
+internal fun regularGestureTwo(id: Int) {
+    Espresso.onView(withId(id))
+        .perform(
+            espressoSwipe(SwiperWithTime(70), GeneralLocation.CENTER, GeneralLocation.TOP_CENTER)
+        )
+}
+
 private fun espressoSwipe(
     swiper: Swiper,
     start: CoordinatesProvider,
     end: CoordinatesProvider
 ): GeneralSwipeAction {
-    return GeneralSwipeAction(
-        swiper, start, end,
-        Press.FINGER
-    )
+    return GeneralSwipeAction(swiper, start, end, Press.FINGER)
 }
 
 @Composable
@@ -416,20 +481,24 @@ fun TestComposeDraggable(
     twoDimensional: Boolean = false,
     onDragStopped: (velocity: Velocity) -> Unit
 ) {
-    val viewConfiguration = object : ViewConfiguration by LocalViewConfiguration.current {
-        override val maximumFlingVelocity: Float get() = Float.MAX_VALUE // unlimited
-    }
+    val viewConfiguration =
+        object : ViewConfiguration by LocalViewConfiguration.current {
+            override val maximumFlingVelocity: Float
+                get() = Float.MAX_VALUE // unlimited
+        }
     CompositionLocalProvider(LocalViewConfiguration provides viewConfiguration) {
         Box(
-            Modifier
-                .fillMaxSize()
+            Modifier.fillMaxSize()
                 .background(Color.Black)
                 .then(
                     if (twoDimensional) {
-                        Modifier.draggable2D(onDragStopped)
+                        Modifier.draggable2D(
+                            rememberDraggable2DState {},
+                            onDragStopped = onDragStopped
+                        )
                     } else {
                         Modifier.draggable(
-                            rememberDraggableState(onDelta = { }),
+                            rememberDraggableState(onDelta = {}),
                             onDragStopped = { onDragStopped.invoke(Velocity(0.0f, it)) },
                             orientation = Orientation.Vertical
                         )
@@ -438,38 +507,6 @@ fun TestComposeDraggable(
         )
     }
 }
-
-fun Modifier.draggable2D(onDragStopped: (Velocity) -> Unit) =
-    this.pointerInput(Unit) {
-        coroutineScope {
-            awaitEachGesture {
-                val tracker = androidx.compose.ui.input.pointer.util.VelocityTracker()
-                val initialDown =
-                    awaitFirstDown(
-                        requireUnconsumed = false,
-                        pass = PointerEventPass.Initial
-                    )
-                tracker.addPointerInputChange(initialDown)
-
-                awaitTouchSlopOrCancellation(initialDown.id) { change, _ ->
-                    tracker.addPointerInputChange(change)
-                    change.consume()
-                }
-
-                val lastEvent = awaitDragOrUp(initialDown.id) {
-                    tracker.addPointerInputChange(it)
-                    it.consume()
-                    it.positionChangedIgnoreConsumed()
-                }
-                lastEvent?.let {
-                    tracker.addPointerInputChange(it)
-                }
-                onDragStopped(
-                    tracker.calculateVelocity()
-                )
-            }
-        }
-    }
 
 private fun ActivityScenario<*>.createActivityWithComposeContent(
     @LayoutRes layout: Int,
@@ -483,20 +520,18 @@ private fun ActivityScenario<*>.createActivityWithComposeContent(
             visibility = View.GONE
         }
 
-        activity.findViewById<VelocityTrackingView>(R.id.draggable_view)?.visibility =
-            View.VISIBLE
+        activity.findViewById<VelocityTrackingView>(R.id.draggable_view)?.visibility = View.VISIBLE
     }
     moveToState(Lifecycle.State.RESUMED)
 }
 
-/**
- * A view that adds data to a VelocityTracker.
- */
+/** A view that adds data to a VelocityTracker. */
 private class VelocityTrackingView(context: Context, attributeSet: AttributeSet) :
     View(context, attributeSet) {
     private val tracker = VelocityTracker.obtain()
     var latestVelocity: Velocity = Velocity.Zero
     val motionEvents = mutableListOf<MotionEvent?>()
+
     override fun onTouchEvent(event: MotionEvent?): Boolean {
         motionEvents.add(MotionEvent.obtain(event))
         when (event?.action) {
@@ -505,11 +540,8 @@ private class VelocityTrackingView(context: Context, attributeSet: AttributeSet)
                 latestVelocity = Velocity(tracker.xVelocity, tracker.yVelocity)
                 tracker.clear()
             }
-
-            MotionEvent.ACTION_DOWN, MotionEvent.ACTION_MOVE -> tracker.addMovement(
-                event
-            )
-
+            MotionEvent.ACTION_DOWN,
+            MotionEvent.ACTION_MOVE -> tracker.addMovement(event)
             else -> {
                 tracker.clear()
                 latestVelocity = Velocity.Zero
@@ -523,9 +555,7 @@ private class VelocityTrackingView(context: Context, attributeSet: AttributeSet)
     }
 }
 
-/**
- * Checks the contents of [events] represents a swipe gesture.
- */
+/** Checks the contents of [events] represents a swipe gesture. */
 internal fun isValidGesture(events: List<MotionEvent>): Boolean {
     val down = events.filter { it.action == MotionEvent.ACTION_DOWN }
     val move = events.filter { it.action == MotionEvent.ACTION_MOVE }
@@ -533,12 +563,10 @@ internal fun isValidGesture(events: List<MotionEvent>): Boolean {
     return down.size == 1 && move.isNotEmpty() && up.size == 1
 }
 
-// 1% tolerance
-private const val VelocityDifferenceTolerance = 0.1f
+// 5% tolerance
+private const val VelocityDifferenceTolerance = 0.05f
 
-/**
- * Copied from androidx.test.espresso.action.Swipe
- */
+/** Copied from androidx.test.espresso.action.Swipe */
 internal data class SwiperWithTime(val gestureDurationMs: Int) : Swiper {
     override fun sendSwipe(
         uiController: UiController,
@@ -581,11 +609,7 @@ internal data class SwiperWithTime(val gestureDurationMs: Int) : Swiper {
     private fun interpolate(start: FloatArray, end: FloatArray, steps: Int): Array<FloatArray> {
         checkElementIndex(1, start.size)
         checkElementIndex(1, end.size)
-        val res = Array(steps) {
-            FloatArray(
-                2
-            )
-        }
+        val res = Array(steps) { FloatArray(2) }
         for (i in 1 until steps + 1) {
             res[i - 1][0] = start[0] + (end[0] - start[0]) * i / (steps + 2f)
             res[i - 1][1] = start[1] + (end[1] - start[1]) * i / (steps + 2f)

@@ -96,6 +96,20 @@ package androidx.wear.watchface.complications {
   }
 
   public static final class SystemDataSources.Companion {
+    property public static final int DATA_SOURCE_APP_SHORTCUT;
+    property public static final int DATA_SOURCE_DATE;
+    property public static final int DATA_SOURCE_DAY_AND_DATE;
+    property public static final int DATA_SOURCE_DAY_OF_WEEK;
+    property public static final int DATA_SOURCE_FAVORITE_CONTACT;
+    property @RequiresApi(android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE) public static final int DATA_SOURCE_HEART_RATE;
+    property public static final int DATA_SOURCE_NEXT_EVENT;
+    property public static final int DATA_SOURCE_STEP_COUNT;
+    property public static final int DATA_SOURCE_SUNRISE_SUNSET;
+    property public static final int DATA_SOURCE_TIME_AND_DATE;
+    property public static final int DATA_SOURCE_UNREAD_NOTIFICATION_COUNT;
+    property public static final int DATA_SOURCE_WATCH_BATTERY;
+    property public static final int DATA_SOURCE_WORLD_CLOCK;
+    property public static final int NO_DATA_SOURCE;
   }
 
 }

@@ -47,9 +47,9 @@ internal class MetricsContainer(
      * ```
      *
      * NOTE: Performance of warmup is very dependent on this structure, be very careful changing
-     * changing this. E.g. using a single linear LongArray or an Array<LongArray> both caused
-     * warmup measurements of a noop loop to fluctuate, and increase significantly
-     * (from 75ns to 450ns on an API 30 Bramble).
+     * changing this. E.g. using a single linear LongArray or an Array<LongArray> both caused warmup
+     * measurements of a noop loop to fluctuate, and increase significantly (from 75ns to 450ns on
+     * an API 30 Bramble).
      */
     internal val data: List<LongArray> = List(repeatCount) { LongArray(names.size) }
 
@@ -85,6 +85,8 @@ internal class MetricsContainer(
     fun captureStart() {
         val timeNs = System.nanoTime()
         repeatTiming[runNum * 2] = timeNs
+
+        // reverse order so first metric sees least interference
         for (i in metrics.lastIndex downTo 0) {
             metrics[i].captureStart(timeNs) // put the most sensitive metric first to avoid overhead
         }
@@ -112,8 +114,8 @@ internal class MetricsContainer(
      * Call when you want to not capture the following part of a run.
      */
     fun capturePaused() {
-        for (i in metrics.lastIndex downTo 0) { // like stop, pause in reverse order
-            metrics[metrics.lastIndex - i].capturePaused()
+        for (i in 0..metrics.lastIndex) { // like stop, pause in reverse order from start
+            metrics[i].capturePaused()
         }
     }
 
@@ -123,7 +125,7 @@ internal class MetricsContainer(
      * Call when you want to resume capturing a capturePaused-ed run.
      */
     fun captureResumed() {
-        for (i in 0..metrics.lastIndex) {
+        for (i in metrics.lastIndex downTo 0) { // same order as start
             metrics[i].captureResumed()
         }
     }
@@ -134,28 +136,42 @@ internal class MetricsContainer(
      * Call exactly once at the end of a benchmark.
      */
     fun captureFinished(maxIterations: Int): List<MetricResult> {
-        for (i in 0..repeatTiming.lastIndex step 2) {
-            InMemoryTracing.beginSection("measurement ${i / 2}", nanoTime = repeatTiming[i])
-            InMemoryTracing.endSection(nanoTime = repeatTiming[i + 1])
-        }
-
-        return names.mapIndexed { index, name ->
-            val metricData = List(repeatCount) {
-                // convert to floats and divide by iter count here for efficiency
-                data[it][index] / maxIterations.toDouble()
-            }
-            metricData.chunked(10)
-                .forEachIndexed { chunkNum, chunk ->
+        val results =
+            names.mapIndexed { index, name ->
+                val metricData =
+                    List(repeatCount) {
+                        // convert to floats and divide by iter count here for efficiency
+                        data[it][index] / maxIterations.toDouble()
+                    }
+                metricData.chunked(10).forEachIndexed { chunkNum, chunk ->
                     Log.d(
                         BenchmarkState.TAG,
-                        name + "[%2d:%2d]: %s".format(
-                            chunkNum * 10,
-                            (chunkNum + 1) * 10,
-                            chunk.joinToString(" ") { it.toLong().toString() }
-                        )
+                        name +
+                            "[%2d:%2d]: %s"
+                                .format(
+                                    chunkNum * 10,
+                                    (chunkNum + 1) * 10,
+                                    chunk.joinToString(" ") { it.toLong().toString() }
+                                )
                     )
                 }
-            MetricResult(name, metricData)
+                MetricResult(name, metricData)
+            }
+
+        val metricTraceLabels = names.map { "metric: $it" }
+        for (i in 0..repeatTiming.lastIndex step 2) {
+            val measurementIndex = i / 2
+            InMemoryTracing.beginSection(
+                "measurement $measurementIndex",
+                nanoTime = repeatTiming[i],
+                counterNames = metricTraceLabels,
+                counterValues = results.map { it.data[measurementIndex] }
+            )
+            InMemoryTracing.endSection(nanoTime = repeatTiming[i + 1])
         }
+        // to clarify when measurement ends, reset metrics to 0
+        metricTraceLabels.forEach { InMemoryTracing.counter(it, 0.0, repeatTiming.last()) }
+
+        return results
     }
 }

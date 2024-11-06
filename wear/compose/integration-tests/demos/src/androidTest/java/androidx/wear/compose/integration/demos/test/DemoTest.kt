@@ -33,13 +33,15 @@ import androidx.wear.compose.integration.demos.WearComposeDemos
 import androidx.wear.compose.integration.demos.common.Demo
 import androidx.wear.compose.integration.demos.common.DemoCategory
 import com.google.common.truth.Truth.assertThat
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-private val ignoredDemos = listOf<String>(
-    // Not ignoring any of them \o/
-)
+private val ignoredDemos =
+    listOf<String>(
+        // Not ignoring any of them \o/
+    )
 
 // Run this test on a phone emulator.
 // There are issues running on Watch emulators that menu items off screen are not found,
@@ -48,9 +50,17 @@ private val ignoredDemos = listOf<String>(
 @RunWith(AndroidJUnit4::class)
 class DemoTest {
     // We need to provide the recompose factory first to use new clock.
-    @get:Rule
-    val rule = createAndroidComposeRule<DemoActivity>()
+    @get:Rule val rule = createAndroidComposeRule<DemoActivity>()
 
+    @Test
+    fun demoApp_builds() {
+        // This test just checks that the demo app builds without crashing and the root screen can
+        // be visited.
+        val title = AllButIgnoredDemos.demos.first().title
+        rule.onNode(hasText(title)).assertExists()
+    }
+
+    @Ignore // b/367234726
     @Test
     fun navigateThroughAllDemos() {
         // Compose integration-tests are split into batches due to size,
@@ -92,8 +102,8 @@ class DemoTest {
     /**
      * Visits a [Demo], and then navigates back up to the [DemoCategory] it was inside.
      *
-     * If this [Demo] is a [DemoCategory], this will visit sub-[Demo]s first before continuing
-     * in the current category.
+     * If this [Demo] is a [DemoCategory], this will visit sub-[Demo]s first before continuing in
+     * the current category.
      *
      * @param path The path of categories that leads to this demo
      */
@@ -108,7 +118,8 @@ class DemoTest {
             fastForwardClock()
         }
 
-        rule.onNode(hasScrollToNodeAction())
+        rule
+            .onNode(hasScrollToNodeAction())
             .performScrollToNode(hasText(title) and hasClickAction())
         rule.onNode(hasText(title) and hasClickAction()).performClick()
 
@@ -169,9 +180,7 @@ class DemoTest {
 }
 
 private val AllButIgnoredDemos =
-    WearComposeDemos.filter { path, demo ->
-        demo.navigationTitle(path) !in ignoredDemos
-    }
+    WearComposeDemos.filter { path, demo -> demo.navigationTitle(path) !in ignoredDemos }
 
 private fun Demo.navigationTitle(path: List<DemoCategory>): String {
     return path.plus(this).navigationTitle
@@ -181,8 +190,8 @@ private val List<Demo>.navigationTitle: String
     get() = if (size == 1) first().title else drop(1).joinToString(" > ")
 
 /**
- * Trims the tree of [Demo]s represented by this [DemoCategory] by cutting all leave demos for
- * which the [predicate] returns `false` and recursively removing all empty categories as a result.
+ * Trims the tree of [Demo]s represented by this [DemoCategory] by cutting all leave demos for which
+ * the [predicate] returns `false` and recursively removing all empty categories as a result.
  */
 private fun DemoCategory.filter(
     path: List<DemoCategory> = emptyList(),
@@ -204,9 +213,7 @@ private fun DemoCategory.filter(
     )
 }
 
-/**
- * Flattened recursive DFS [List] of every demo in [this].
- */
+/** Flattened recursive DFS [List] of every demo in [this]. */
 fun DemoCategory.allDemos(): List<Demo> {
     val allDemos = mutableListOf<Demo>()
     fun DemoCategory.addAllDemos() {

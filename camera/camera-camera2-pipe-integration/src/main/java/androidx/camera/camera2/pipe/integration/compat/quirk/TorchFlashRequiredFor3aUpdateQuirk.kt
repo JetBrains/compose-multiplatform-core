@@ -21,7 +21,6 @@ import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraMetadata.LENS_FACING_FRONT
 import android.hardware.camera2.CaptureRequest
 import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.camera.camera2.pipe.CameraMetadata
 import androidx.camera.camera2.pipe.integration.impl.isExternalFlashAeModeSupported
 import androidx.camera.core.impl.Quirk
@@ -29,39 +28,43 @@ import androidx.camera.core.impl.Quirk
 /**
  * QuirkSummary
  * - Bug Id: 294870640
- * - Description: Quirk denoting the devices where [CaptureRequest.FLASH_MODE_TORCH] has
- *  to be set for 3A states to be updated with good values (in some cases, AWB scanning is not
- *  triggered at all). This results in problems like color tint or bad exposure in captured image
- *  during captures where lighting condition changes (e.g. screen flash capture). This maybe
- *  required even if a flash unit is not available (e.g. with front camera) and
- *  [CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER] has been requested. If
- *  [CaptureRequest.CONTROL_AE_MODE_ON_EXTERNAL_FLASH] is supported, it can be used instead and thus
- *  setting `FLASH_MODE_TORCH` won't be required.
+ * - Description: Quirk denoting the devices where [CaptureRequest.FLASH_MODE_TORCH] has to be set
+ *   for 3A states to be updated with good values (in some cases, AWB scanning is not triggered at
+ *   all). This results in problems like color tint or bad exposure in captured image during
+ *   captures where lighting condition changes (e.g. screen flash capture). This maybe required even
+ *   if a flash unit is not available (e.g. with front camera) and
+ *   [CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER] has been requested. If
+ *   [CaptureRequest.CONTROL_AE_MODE_ON_EXTERNAL_FLASH] is supported, it can be used instead and
+ *   thus setting `FLASH_MODE_TORCH` won't be required.
  * - Device(s): Pixel 6A, 6 PRO, 7, 7A, 7 PRO, 8, 8 PRO.
  */
-@SuppressLint("CameraXQuirksClassDetector") // TODO: b/270421716 - enable when kotlin is supported.
-@RequiresApi(21) // TODO: b/200306659 - Remove and replace with annotation on package-info.java
-class TorchFlashRequiredFor3aUpdateQuirk(private val cameraMetadata: CameraMetadata) : Quirk {
+@SuppressLint("CameraXQuirksClassDetector")
+// TODO: b/270421716 - enable when kotlin is supported.
+public class TorchFlashRequiredFor3aUpdateQuirk(private val cameraMetadata: CameraMetadata) :
+    Quirk {
     /**
      * Returns whether [CaptureRequest.FLASH_MODE_TORCH] is required to be set.
      *
      * This will check if the [CaptureRequest.CONTROL_AE_MODE_ON_EXTERNAL_FLASH] is supported, which
      * is more recommended than using a quirk like using `FLASH_MODE_TORCH`.
      */
-    fun isFlashModeTorchRequired() = !cameraMetadata.isExternalFlashAeModeSupported()
+    public fun isFlashModeTorchRequired(): Boolean =
+        !cameraMetadata.isExternalFlashAeModeSupported()
 
-    companion object {
-        private val AFFECTED_PIXEL_MODELS: List<String> = mutableListOf(
-            "PIXEL 6A",
-            "PIXEL 6 PRO",
-            "PIXEL 7",
-            "PIXEL 7A",
-            "PIXEL 7 PRO",
-            "PIXEL 8",
-            "PIXEL 8 PRO"
-        )
+    public companion object {
+        private val AFFECTED_PIXEL_MODELS: List<String> =
+            mutableListOf(
+                "PIXEL 6A",
+                "PIXEL 6 PRO",
+                "PIXEL 7",
+                "PIXEL 7A",
+                "PIXEL 7 PRO",
+                "PIXEL 8",
+                "PIXEL 8 PRO"
+            )
 
-        fun isEnabled(cameraMetadata: CameraMetadata) = isAffectedModel(cameraMetadata)
+        public fun isEnabled(cameraMetadata: CameraMetadata): Boolean =
+            isAffectedModel(cameraMetadata)
 
         private fun isAffectedModel(cameraMetadata: CameraMetadata) =
             isAffectedPixelModel() && cameraMetadata.isFrontCamera

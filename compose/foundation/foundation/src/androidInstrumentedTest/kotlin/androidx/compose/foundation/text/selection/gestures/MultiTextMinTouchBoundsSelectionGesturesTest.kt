@@ -23,7 +23,9 @@ import androidx.compose.foundation.text.selection.Selection
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.text.selection.gestures.MultiTextMinTouchBoundsSelectionGesturesTest.ExpectedText.EITHER
 import androidx.compose.foundation.text.selection.gestures.MultiTextMinTouchBoundsSelectionGesturesTest.ExpectedText.FIRST
+import androidx.compose.foundation.text.selection.gestures.MultiTextMinTouchBoundsSelectionGesturesTest.ExpectedText.FIRST_REVERSED
 import androidx.compose.foundation.text.selection.gestures.MultiTextMinTouchBoundsSelectionGesturesTest.ExpectedText.SECOND
+import androidx.compose.foundation.text.selection.gestures.MultiTextMinTouchBoundsSelectionGesturesTest.ExpectedText.SECOND_REVERSED
 import androidx.compose.foundation.text.selection.gestures.MultiTextMinTouchBoundsSelectionGesturesTest.TestHorizontal.CENTER
 import androidx.compose.foundation.text.selection.gestures.MultiTextMinTouchBoundsSelectionGesturesTest.TestHorizontal.LEFT
 import androidx.compose.foundation.text.selection.gestures.MultiTextMinTouchBoundsSelectionGesturesTest.TestHorizontal.RIGHT
@@ -69,22 +71,21 @@ internal class MultiTextMinTouchBoundsSelectionGesturesTest(
     private val spLen = 20.sp
 
     /**
-     * When two 20x20 texts are stacked with 20 space between,
-     * we want the touch targets to overlap a little for this test,
-     * so we pick a minTouchTarget size of an additional 12 on each side.
+     * When two 20x20 texts are stacked with 20 space between, we want the touch targets to overlap
+     * a little for this test, so we pick a minTouchTarget size of an additional 12 on each side.
      *
      * With this setup, on the y-axis:
-     *   * 0..20 is the first text
-     *   * 40..60 is the second text
-     *   * -12..32 is the first minTouchTarget
-     *   * 28..72 is the second minTouchTarget
+     * * 0..20 is the first text
+     * * 40..60 is the second text
+     * * -12..32 is the first minTouchTarget
+     * * 28..72 is the second minTouchTarget
      *
      * Given the above:
-     *   * 21..27 belongs solely to the first text
-     *   * 29 overlaps both, but is closer to the first text
-     *   * 30 overlaps both, and is equidistant to both
-     *   * 31 overlaps both, but is closer to the second text
-     *   * 32..39 belongs solely to the second text
+     * * 21..27 belongs solely to the first text
+     * * 29 overlaps both, but is closer to the first text
+     * * 30 overlaps both, and is equidistant to both
+     * * 31 overlaps both, but is closer to the second text
+     * * 32..39 belongs solely to the second text
      */
     private val touchTargetDpLen = dpLen + 12.dp * 2
 
@@ -111,13 +112,15 @@ internal class MultiTextMinTouchBoundsSelectionGesturesTest(
         OVERLAP_BELONGS_TO_SECOND(y = 31f, coercedY = 41f),
         NO_OVERLAP_BELONGS_TO_SECOND(y = 35f, coercedY = 41f),
         ON_SECOND(y = 50f, coercedY = 50f),
-        BELOW(y = 66f, coercedY = 59f);
+        BELOW(y = 66f, coercedY = 59f)
     }
 
-    enum class ExpectedText(val selectableId: Long?) {
-        FIRST(1L),
-        SECOND(2L),
-        EITHER(null),
+    enum class ExpectedText(val selectableId: Long?, val crossed: Boolean) {
+        FIRST(1L, crossed = false),
+        SECOND(2L, crossed = false),
+        FIRST_REVERSED(1L, crossed = true),
+        SECOND_REVERSED(2L, crossed = true),
+        EITHER(null, crossed = false),
     }
 
     override val pointerAreaTag = "selectionContainer"
@@ -147,35 +150,36 @@ internal class MultiTextMinTouchBoundsSelectionGesturesTest(
     companion object {
         @JvmStatic
         @Parameterized.Parameters(name = "horizontal={0}, vertical={1} expectedId={2}")
-        fun data(): Collection<Array<Any>> = listOf(
-            arrayOf(LEFT, ABOVE, FIRST),
-            arrayOf(LEFT, ON_FIRST, FIRST),
-            arrayOf(LEFT, NO_OVERLAP_BELONGS_TO_FIRST, FIRST),
-            arrayOf(LEFT, OVERLAP_BELONGS_TO_FIRST, FIRST),
-            arrayOf(LEFT, OVERLAP_EQUIDISTANT, EITHER),
-            arrayOf(LEFT, OVERLAP_BELONGS_TO_SECOND, SECOND),
-            arrayOf(LEFT, NO_OVERLAP_BELONGS_TO_SECOND, SECOND),
-            arrayOf(LEFT, ON_SECOND, SECOND),
-            arrayOf(LEFT, BELOW, SECOND),
-            arrayOf(CENTER, ABOVE, FIRST),
-            arrayOf(CENTER, ON_FIRST, FIRST),
-            arrayOf(CENTER, NO_OVERLAP_BELONGS_TO_FIRST, FIRST),
-            arrayOf(CENTER, OVERLAP_BELONGS_TO_FIRST, FIRST),
-            arrayOf(CENTER, OVERLAP_EQUIDISTANT, EITHER),
-            arrayOf(CENTER, OVERLAP_BELONGS_TO_SECOND, SECOND),
-            arrayOf(CENTER, NO_OVERLAP_BELONGS_TO_SECOND, SECOND),
-            arrayOf(CENTER, ON_SECOND, SECOND),
-            arrayOf(CENTER, BELOW, SECOND),
-            arrayOf(RIGHT, ABOVE, FIRST),
-            arrayOf(RIGHT, ON_FIRST, FIRST),
-            arrayOf(RIGHT, NO_OVERLAP_BELONGS_TO_FIRST, FIRST),
-            arrayOf(RIGHT, OVERLAP_BELONGS_TO_FIRST, FIRST),
-            arrayOf(RIGHT, OVERLAP_EQUIDISTANT, EITHER),
-            arrayOf(RIGHT, OVERLAP_BELONGS_TO_SECOND, SECOND),
-            arrayOf(RIGHT, NO_OVERLAP_BELONGS_TO_SECOND, SECOND),
-            arrayOf(RIGHT, ON_SECOND, SECOND),
-            arrayOf(RIGHT, BELOW, SECOND),
-        )
+        fun data(): Collection<Array<Any>> =
+            listOf(
+                arrayOf(LEFT, ABOVE, FIRST_REVERSED),
+                arrayOf(LEFT, ON_FIRST, FIRST_REVERSED),
+                arrayOf(LEFT, NO_OVERLAP_BELONGS_TO_FIRST, FIRST),
+                arrayOf(LEFT, OVERLAP_BELONGS_TO_FIRST, FIRST),
+                arrayOf(LEFT, OVERLAP_EQUIDISTANT, EITHER),
+                arrayOf(LEFT, OVERLAP_BELONGS_TO_SECOND, SECOND_REVERSED),
+                arrayOf(LEFT, NO_OVERLAP_BELONGS_TO_SECOND, SECOND_REVERSED),
+                arrayOf(LEFT, ON_SECOND, SECOND_REVERSED),
+                arrayOf(LEFT, BELOW, SECOND),
+                arrayOf(CENTER, ABOVE, FIRST_REVERSED),
+                arrayOf(CENTER, ON_FIRST, FIRST),
+                arrayOf(CENTER, NO_OVERLAP_BELONGS_TO_FIRST, FIRST),
+                arrayOf(CENTER, OVERLAP_BELONGS_TO_FIRST, FIRST),
+                arrayOf(CENTER, OVERLAP_EQUIDISTANT, EITHER),
+                arrayOf(CENTER, OVERLAP_BELONGS_TO_SECOND, SECOND_REVERSED),
+                arrayOf(CENTER, NO_OVERLAP_BELONGS_TO_SECOND, SECOND_REVERSED),
+                arrayOf(CENTER, ON_SECOND, SECOND),
+                arrayOf(CENTER, BELOW, SECOND),
+                arrayOf(RIGHT, ABOVE, FIRST_REVERSED),
+                arrayOf(RIGHT, ON_FIRST, FIRST),
+                arrayOf(RIGHT, NO_OVERLAP_BELONGS_TO_FIRST, FIRST),
+                arrayOf(RIGHT, OVERLAP_BELONGS_TO_FIRST, FIRST),
+                arrayOf(RIGHT, OVERLAP_EQUIDISTANT, EITHER),
+                arrayOf(RIGHT, OVERLAP_BELONGS_TO_SECOND, SECOND_REVERSED),
+                arrayOf(RIGHT, NO_OVERLAP_BELONGS_TO_SECOND, SECOND_REVERSED),
+                arrayOf(RIGHT, ON_SECOND, SECOND),
+                arrayOf(RIGHT, BELOW, SECOND),
+            )
     }
 
     @Test
@@ -185,17 +189,18 @@ internal class MultiTextMinTouchBoundsSelectionGesturesTest(
 
     // Regression test for b/325307463
     @Test
-    fun dragIntoMinTouchTargetSelectionGestureTest() = runTest {
-        performTouchGesture {
-            longPress(Offset(horizontal.coercedX, vertical.coercedY))
-            // The crash involved a quick drag from on the text to off the text
-            // causing a race of some state not being set before the drag is executed,
-            // so we want to force the moveTo immediately after the long press finishes.
-            moveTo(Offset(horizontal.x, vertical.y), delayMillis = 0L)
+    fun dragIntoMinTouchTargetSelectionGestureTest() =
+        runTest(expectedText.crossed) {
+            performTouchGesture {
+                longPress(Offset(horizontal.coercedX, vertical.coercedY))
+                // The crash involved a quick drag from on the text to off the text
+                // causing a race of some state not being set before the drag is executed,
+                // so we want to force the moveTo immediately after the long press finishes.
+                moveTo(Offset(horizontal.x, vertical.y), delayMillis = 0L)
+            }
         }
-    }
 
-    fun runTest(block: () -> Unit) {
+    private fun runTest(crossed: Boolean = false, block: () -> Unit) {
         block()
 
         val expectedSelectableId = expectedText.selectableId
@@ -203,16 +208,19 @@ internal class MultiTextMinTouchBoundsSelectionGesturesTest(
             // verify something is selected
             assertThat(selection).isNotNull()
         } else {
-            assertSelectedSelectableIs(expectedSelectableId)
+            assertSelectedSelectableIs(expectedSelectableId, crossed)
         }
     }
 
-    private fun assertSelectedSelectableIs(selectableId: Long) {
-        val expectedSelection = Selection(
-            start = Selection.AnchorInfo(ResolvedTextDirection.Ltr, 0, selectableId),
-            end = Selection.AnchorInfo(ResolvedTextDirection.Ltr, 1, selectableId),
-            handlesCrossed = false,
-        )
+    private fun assertSelectedSelectableIs(selectableId: Long, crossed: Boolean) {
+        val startOffset = if (crossed) 1 else 0
+        val endOffset = if (crossed) 0 else 1
+        val expectedSelection =
+            Selection(
+                start = Selection.AnchorInfo(ResolvedTextDirection.Ltr, startOffset, selectableId),
+                end = Selection.AnchorInfo(ResolvedTextDirection.Ltr, endOffset, selectableId),
+                handlesCrossed = crossed,
+            )
         assertThat(selection.value).isEqualTo(expectedSelection)
     }
 }

@@ -13,6 +13,7 @@ plugins {
 }
 
 android {
+    compileSdk 35
     namespace "androidx.compose.integration.macrobenchmark.target"
     buildTypes {
         release {
@@ -29,6 +30,7 @@ dependencies {
     implementation 'androidx.viewpager2:viewpager2:1.0.0'
 
     implementation(libs.kotlinStdlib)
+    implementation(libs.material)
     implementation(project(":activity:activity-compose"))
     implementation("androidx.appcompat:appcompat:1.4.1")
     implementation("androidx.cardview:cardview:1.0.0")
@@ -41,6 +43,7 @@ dependencies {
     implementation(project(":compose:foundation:foundation-layout"))
     implementation(project(":compose:foundation:foundation"))
     implementation(project(":compose:material:material"))
+    implementation("androidx.compose.material:material-icons-core:1.6.7")
     implementation(project(":compose:material3:material3"))
     implementation(project(":compose:runtime:runtime"))
     implementation(project(":compose:runtime:runtime-tracing"))
@@ -50,5 +53,3 @@ dependencies {
     implementation(project(":constraintlayout:constraintlayout-compose"))
     implementation("io.coil-kt:coil-compose:2.5.0")
 }
-
-android.defaultConfig.minSdkVersion 21

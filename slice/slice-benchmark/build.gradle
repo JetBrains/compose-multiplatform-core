@@ -40,10 +40,9 @@ dependencies {
     androidTestImplementation(libs.testCore)
     androidTestImplementation(libs.testRunner)
     androidTestImplementation(libs.testRules)
-    androidTestImplementation(libs.espressoCore, excludes.espresso)
-    androidTestImplementation(libs.mockitoCore, excludes.bytebuddy)
-    androidTestImplementation(libs.dexmakerMockito, excludes.bytebuddy)
-    androidTestImplementation(libs.multidex)
+    androidTestImplementation(libs.espressoCore)
+    androidTestImplementation(libs.mockitoCore)
+    androidTestImplementation(libs.dexmakerMockito)
 }
 
 androidx {
@@ -60,8 +59,6 @@ androidx {
 }
 
 android {
+    compileSdk 35
     namespace "androidx.slice.benchmark"
-    defaultConfig {
-        multiDexEnabled = true
-    }
 }

@@ -25,14 +25,13 @@ import androidx.opengl.EGLExt
 import androidx.opengl.EGLImageKHR
 
 /**
- * Object that enables rendering into a [HardwareBuffer] by
- * creating a frame buffer object from it by leveraging Android
- * specific EGL extensions to create an [EGLImageKHR] object
- * that is loaded as a texture.
+ * Object that enables rendering into a [HardwareBuffer] by creating a frame buffer object from it
+ * by leveraging Android specific EGL extensions to create an [EGLImageKHR] object that is loaded as
+ * a texture.
  *
  * @param egl [EGLSpec] used to specify EGL version and call various EGL methods
  * @param hardwareBuffer the [HardwareBuffer] that this class wraps and used to generate a
- * [EGLImageKHR] object
+ *   [EGLImageKHR] object
  */
 @RequiresApi(Build.VERSION_CODES.O)
 class FrameBuffer(
@@ -43,39 +42,36 @@ class FrameBuffer(
     private var eglImage: EGLImageKHR?
     private var texture: Int = -1
 
-    /**
-     * Return the corresponding FrameBuffer identifier.
-     */
+    /** Return the corresponding FrameBuffer identifier. */
     internal var frameBuffer: Int = -1
         private set
 
-    /**
-     * Boolean that tells if the frame buffer is currently closed
-     */
+    /** Boolean that tells if the frame buffer is currently closed */
     var isClosed = false
         private set
 
     // Int array used for creation of fbos/textures
-    private val buffer = IntArray(1)
+    private val tmpBuffer = IntArray(1)
 
     init {
-        val image: EGLImageKHR = egl.eglCreateImageFromHardwareBuffer(hardwareBuffer)
-            ?: throw IllegalArgumentException("Unable to create EGLImage from HardwareBuffer")
+        val image: EGLImageKHR =
+            egl.eglCreateImageFromHardwareBuffer(hardwareBuffer)
+                ?: throw IllegalArgumentException("Unable to create EGLImage from HardwareBuffer")
         eglImage = image
 
-        GLES20.glGenTextures(1, buffer, 0)
-        texture = buffer[0]
+        GLES20.glGenTextures(1, tmpBuffer, 0)
+        texture = tmpBuffer[0]
 
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, texture)
         EGLExt.glEGLImageTargetTexture2DOES(GLES20.GL_TEXTURE_2D, image)
 
-        GLES20.glGenFramebuffers(1, buffer, 0)
-        frameBuffer = buffer[0]
+        GLES20.glGenFramebuffers(1, tmpBuffer, 0)
+        frameBuffer = tmpBuffer[0]
     }
 
     /**
-     * Binds this frame buffer to the read and draw framebuffer targets if it's not closed.
-     * If the frame buffer is already closed this method will do nothing.
+     * Binds this frame buffer to the read and draw framebuffer targets if it's not closed. If the
+     * frame buffer is already closed this method will do nothing.
      */
     fun makeCurrent() {
         if (!isClosed) {
@@ -91,17 +87,17 @@ class FrameBuffer(
     }
 
     /**
-     * Closes out the frame buffer, freeing all resources within it. This should be done only
-     * when the frame buffer is no longer needed or being accessed.
+     * Closes out the frame buffer, freeing all resources within it. This should be done only when
+     * the frame buffer is no longer needed or being accessed.
      */
     override fun close() {
         if (!isClosed) {
-            buffer[0] = frameBuffer
-            GLES20.glDeleteBuffers(1, buffer, 0)
+            tmpBuffer[0] = frameBuffer
+            GLES20.glDeleteFramebuffers(1, tmpBuffer, 0)
             frameBuffer = -1
 
-            buffer[0] = texture
-            GLES20.glDeleteTextures(1, buffer, 0)
+            tmpBuffer[0] = texture
+            GLES20.glDeleteTextures(1, tmpBuffer, 0)
             texture = -1
 
             eglImage?.let { egl.eglDestroyImageKHR(it) }
